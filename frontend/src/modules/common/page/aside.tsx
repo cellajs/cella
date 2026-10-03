@@ -43,12 +43,17 @@ export function PageAside<T extends PageTab>({ tabs, className, setFocus }: Page
             variant="ghost"
             size="lg"
             data-spy-link={id}
-            className={cn(btnClass, 'data-spy-active:bg-secondary')}
+            className={cn(
+              btnClass,
+              'data-spy-active:inset-ring data-spy-active:inset-ring-input data-spy-active:bg-secondary data-spy-active:font-semibold',
+            )}
             render={
               <Link
                 ref={index === 0 ? firstTabRef : undefined}
                 to="."
                 hash={id}
+                // Every link points at this page: without the hash, each would announce itself as the current page.
+                activeOptions={{ includeHash: true }}
                 draggable={false}
                 onClick={(e) => {
                   if (e.metaKey || e.ctrlKey) return;

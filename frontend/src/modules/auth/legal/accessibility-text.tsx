@@ -1,3 +1,5 @@
+import { Link } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { accessibilityReview, legalConfig } from '~/modules/auth/legal/legal-config';
@@ -11,6 +13,9 @@ const s = (id: string) => sections.find((sec) => sec.id === id)!;
 /** Joins items as prose: "a, b or c". */
 const orList = (items: string[]) => (items.length > 1 ? `${items.slice(0, -1).join(', ')} or ${items.at(-1)}` : (items[0] ?? ''));
 
+/** `orList` for elements: each language name carries its own `lang`, so a screen reader pronounces it right. */
+const orNodes = (items: ReactNode[]) => items.flatMap((item, index) => (index === 0 ? [item] : [index === items.length - 1 ? ' or ' : ', ', item]));
+
 function AccessibilityText() {
   const { t } = useTranslation();
   const lastUpdated = 'October 2, 2026';
@@ -20,7 +25,11 @@ function AccessibilityText() {
   const supportEmail = appConfig.company.supportEmail;
   const { standard, reviewedAt, limitations, report } = accessibilityReview;
 
-  const languages = appConfig.languages.map((lang) => t(`c:${lang}`));
+  const languages = appConfig.languages.map((lang) => (
+    <span key={lang} lang={lang}>
+      {t(`c:${lang}`)}
+    </span>
+  ));
   const strategies: readonly string[] = appConfig.enabledAuthStrategies;
   const oauthNames = mapOAuthProviders
     .filter(({ id }) => (appConfig.enabledOAuthProviders as readonly string[]).includes(id))
@@ -37,7 +46,9 @@ function AccessibilityText() {
     <div id="accessibility-content">
       <LegalSection id={s('overview').id} label={s('overview').label}>
         <p className="mb-2 pt-8 italic">Last updated: {lastUpdated}</p>
-        <p>Something in {appName} not working for you? Contact us.</p>
+        <p>
+          Something in {appName} not working for you? <Link to="/contact">Contact us</Link>.
+        </p>
         <LegalContact addressOnly className="mt-8" />
       </LegalSection>
 
@@ -63,7 +74,7 @@ function AccessibilityText() {
         <p>In {appName} you can:</p>
         <ul className="my-2">
           <li>Use light or dark mode. It starts in the mode your device uses, and you can switch at any time.</li>
-          {languages.length > 1 && <li>Choose your language: {orList(languages)}.</li>}
+          {languages.length > 1 && <li>Choose your language: {orNodes(languages)}.</li>}
           {signInMethods.length > 0 && <li>Sign in without a password, using {orList(signInMethods)}.</li>}
         </ul>
         {!reviewedAt && <p>We will add to this list as the review confirms more, such as keyboard and screen reader use.</p>}

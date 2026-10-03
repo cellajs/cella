@@ -21,7 +21,7 @@ export function SidebarHashItem({ to, hash, isActive, className, children }: Sid
       size="sm"
       className={cn(
         'focus-inset h-8 w-full gap-2 pl-5 text-left font-normal text-sm opacity-70 hover:bg-accent/50',
-        'data-[active=true]:opacity-100',
+        'data-[active=true]:font-medium data-[active=true]:opacity-100',
         className,
       )}
       render={

@@ -24,7 +24,11 @@ const statusCardClass = tw('flex items-center gap-2 rounded-md border border-das
 function StatusDot({ status }: { status: HealthStatus }) {
   return (
     <span
-      className={cn('inline-block size-2 shrink-0 animate-status-pulse rounded-full', statusStyleMap[status].dot, statusStyleMap[status].pulse)}
+      className={cn(
+        'inline-block size-2 shrink-0 animate-status-pulse rounded-full motion-reduce:animate-none',
+        statusStyleMap[status].dot,
+        statusStyleMap[status].pulse,
+      )}
       aria-hidden="true"
     />
   );

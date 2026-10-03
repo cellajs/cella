@@ -87,18 +87,34 @@ export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength,
       const shouldTruncate = str.length > collapseStringsAfterLength;
       const displayValue = !isExpanded && shouldTruncate ? str.slice(0, collapseStringsAfterLength) : str;
       const isMatch = searchText && str.toLowerCase().includes(searchText.toLowerCase());
-
-      return (
-        // biome-ignore lint/a11y/useKeyWithClickEvents: developer-facing JSON viewer; expanding a truncated string is a visual mouse affordance.
-        <span
-          className={cn(baseClass, 'inline-block max-w-[600px] align-top', shouldTruncate && 'cursor-pointer')}
-          onClick={shouldTruncate ? () => setIsExpanded(!isExpanded) : undefined}
-          title={shouldTruncate ? (isExpanded ? 'Click to collapse' : 'Click to expand') : undefined}
-        >
+      const text = (
+        <>
           <span className="group-data-[openapi-mode=schema]/jv:hidden">"</span>
           {isMatch ? highlightText(displayValue, searchText, theme.string, theme.searchMatch) : <span className={theme.string}>{displayValue}</span>}
           {!isExpanded && shouldTruncate && <span className="text-muted-foreground">…</span>}
           <span className="group-data-[openapi-mode=schema]/jv:hidden">"</span>
+        </>
+      );
+      const stringClass = cn(baseClass, 'inline-block max-w-[600px] align-top');
+      if (!shouldTruncate) return <span className={stringClass}>{text}</span>;
+
+      const toggle = () => setIsExpanded(!isExpanded);
+      return (
+        // biome-ignore lint/a11y/useSemanticElements: text inside a real button cannot be selected to copy, so the string stays a span.
+        <span
+          className={cn(stringClass, 'focus-effect cursor-pointer rounded')}
+          role="button"
+          tabIndex={0}
+          aria-expanded={isExpanded}
+          onClick={toggle}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            toggle();
+          }}
+          title={isExpanded ? 'Click to collapse' : 'Click to expand'}
+        >
+          {text}
         </span>
       );
     }

@@ -56,7 +56,7 @@ export function OperationDetail({ operation, detail: detailProp, className }: Op
     <Card id={`spy-${operation.hash}`} className={cn('border-0', className)}>
       <CardHeader className="group">
         <div className="flex items-center justify-between">
-          <CardTitle className="gap-2 leading-8 sm:text-xl">
+          <CardTitle level={3} className="gap-2 leading-8 sm:text-xl">
             {operation.summary}
             <HashUrlButton url={getHashUrl(operation.hash)} />
           </CardTitle>

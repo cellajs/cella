@@ -80,9 +80,9 @@ export function AboutPage() {
               </Button>
             </div>
           </div>
-          <Button variant="ghost" size="lg" className="group max-sm:hidden" onClick={() => scrollToSectionById('benefits')} aria-label="Read more">
+          <Button variant="ghost" size="lg" className="group max-sm:hidden" onClick={() => scrollToSectionById('benefits')}>
             <span className="font-normal text-base opacity-70 group-hover:opacity-100">{t('about:continue_below_fold')}</span>
-            <ArrowDownIcon className="animate-bounce opacity-70 group-hover:opacity-100" />
+            <ArrowDownIcon className="animate-bounce opacity-70 [animation-iteration-count:5] group-hover:opacity-100 motion-reduce:animate-none" />
           </Button>
         </Hero>
 

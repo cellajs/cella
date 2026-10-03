@@ -84,7 +84,7 @@ function CollapsibleTagItemBase<T>({
             className={cn(
               buttonVariants({ variant: 'ghost' }),
               'group focus-inset h-8 w-full pl-5 font-normal opacity-80',
-              'group-data-[active=true]/tag:bg-accent group-data-[expanded=true]/tag:opacity-100',
+              'group-data-[active=true]/tag:bg-accent group-data-[active=true]/tag:font-medium group-data-[expanded=true]/tag:opacity-100',
               triggerClassName,
             )}
             onMouseEnter={!isExpanded ? onPrerender : undefined}

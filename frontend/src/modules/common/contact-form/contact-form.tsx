@@ -28,7 +28,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const emailLabel = t('c:email').toLowerCase();
   const messageLabel = t('c:message').toLowerCase();
 
-  const formSchema = zCreateRequestBody.extend({ name: z.string().min(2, t('error:name_required')) });
+  const formSchema = zCreateRequestBody.extend({ name: z.string().min(1, t('error:name_required')).min(2, t('error:name_too_short')) });
 
   type FormValues = z.infer<typeof formSchema>;
 

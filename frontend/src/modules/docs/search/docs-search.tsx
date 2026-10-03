@@ -153,10 +153,11 @@ export function DocsSearch() {
               type="button"
               key={chip.value}
               tabIndex={-1}
+              aria-pressed={scope === chip.value}
               onClick={() => setScope(chip.value)}
               className={cn(
                 'rounded-md border px-2 py-0.5 font-medium text-xs transition-colors',
-                scope === chip.value ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50',
+                scope === chip.value ? 'border-input bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50',
               )}
             >
               {chip.label}

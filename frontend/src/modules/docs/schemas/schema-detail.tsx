@@ -22,7 +22,7 @@ function SchemaDetail({ schema, className }: SchemaDetailProps) {
   return (
     <Card id={`spy-${refId}`} className={cn('border-0', className)}>
       <CardHeader className="group">
-        <CardTitle className="gap-2 text-xl leading-8">
+        <CardTitle level={3} className="gap-2 text-xl leading-8">
           {schema.name}
           <HashUrlButton url={getHashUrl(refId)} />
         </CardTitle>

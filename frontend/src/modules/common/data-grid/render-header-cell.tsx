@@ -19,11 +19,11 @@ export function renderHeaderCell<R, SR>({ column, sortDirection }: RenderHeaderC
         {column.name}
       </span>
       {sortDirection === 'DESC' ? (
-        <ArrowDownIcon className="size-4 opacity-50 group-hover:opacity-75" />
+        <ArrowDownIcon className="size-4 opacity-70 group-hover:opacity-100" />
       ) : sortDirection === 'ASC' ? (
-        <ArrowUpIcon className="size-4 opacity-50 group-hover:opacity-75" />
+        <ArrowUpIcon className="size-4 opacity-70 group-hover:opacity-100" />
       ) : (
-        <ChevronsUpDownIcon className="size-4 opacity-50 group-hover:opacity-75" />
+        <ChevronsUpDownIcon className="size-4 opacity-70 group-hover:opacity-100" />
       )}
     </div>
   );

@@ -20,18 +20,10 @@ export function CallToAction() {
           onClick={() => window.open(appConfig.company.githubUrl, '_blank', 'noopener')}
           className="glow-button relative rounded-full bg-background/95 px-10 hover:bg-background! active:bg-background"
           press={false}
-          aria-label="Start building"
         >
           {t('c:start_building')}
         </Button>
-        <Button
-          ref={ref}
-          variant="plain"
-          size="xl"
-          onClick={() => contactFormHandler(ref)}
-          className="flex gap-1 rounded-full px-10"
-          aria-label="Talk to us"
-        >
+        <Button ref={ref} variant="plain" size="xl" onClick={() => contactFormHandler(ref)} className="flex gap-1 rounded-full px-10">
           {t('c:talk_to_us')}
         </Button>
       </div>

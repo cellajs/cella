@@ -68,7 +68,7 @@ export const ShouldOpenAndToggleLanguage: Story = {
     const body = within(canvasElement.ownerDocument.body);
 
     await step('open the language picker', async () => {
-      await userEvent.click(await body.findByRole('button', { name: /select language/i }));
+      await userEvent.click(await body.findByRole('button', { name: /select.languages/i }));
       expect(await body.findByRole('listbox')).toBeInTheDocument();
     });
 

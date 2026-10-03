@@ -19,7 +19,7 @@ export function InputGroup({ className, ...props }: React.ComponentProps<'div'>)
         'has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>[data-align=block-start]]:[&>input]:pb-3',
         'has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-end]]:[&>input]:pt-3',
 
-        'sm:has-[[data-slot=input-group-control]:focus-visible]:ring-2 sm:has-[[data-slot=input-group-control]:focus-visible]:ring-ring sm:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-2 sm:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-background',
+        'focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-2 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-ring focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-2 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-background',
 
         'has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-destructive/20 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40',
 

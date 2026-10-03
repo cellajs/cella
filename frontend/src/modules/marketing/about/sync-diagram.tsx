@@ -1,5 +1,5 @@
 import { ArrowRightIcon, DatabaseIcon, MonitorIcon, ServerIcon } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
@@ -158,10 +158,12 @@ export function SyncDiagram() {
   const [hint, setHint] = useState(true);
   const { nodeDelay, edgeAnim } = buildTimeline(lead);
   const { t } = useTranslation();
-  // The infinite loops run in JS every frame: they pause offscreen, and the hint arrow also below `sm`, where it is hidden
+  // The loops run in JS every frame: they pause offscreen and for a reader who asked for reduced motion. The hint arrow
+  // nudges five times and rests, and stays still below `sm`, where it is hidden.
   const { ref: inViewRef, inView } = useInView();
   const isMobile = useBreakpointBelow('sm');
-  const animateHint = inView && !isMobile;
+  const reducedMotion = useReducedMotion();
+  const animateHint = inView && !isMobile && !reducedMotion;
 
   // Keeps everything the previous part showed and animates only the delta.
   const switchMode = (target: SyncMode) => {
@@ -251,7 +253,7 @@ export function SyncDiagram() {
             {t('about:try_me')}
             <motion.span
               animate={{ x: animateHint ? [0, 4, 0] : 0 }}
-              transition={animateHint ? { repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut', duration: 1 } : { duration: 0 }}
+              transition={animateHint ? { repeat: 4, ease: 'easeInOut', duration: 1 } : { duration: 0 }}
             >
               <ArrowRightIcon />
             </motion.span>
@@ -412,7 +414,7 @@ export function SyncDiagram() {
               const delay = startDelay(anim.delay, drawn[key]);
               const labelDelay = delay + anim.duration;
               const animateDashes = introducedEdges.has(key);
-              const flowDashes = animateDashes && inView;
+              const flowDashes = animateDashes && inView && !reducedMotion;
               const showLabel = animateDashes || hovered === key || showAllLabels;
               // Bidirectional streams split into two collinear halves with a center gap, dashes flowing outward.
               const flowLanes = (() => {

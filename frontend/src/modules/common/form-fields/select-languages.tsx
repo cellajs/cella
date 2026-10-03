@@ -55,7 +55,9 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
             tabIndex={0}
           >
             <div className="flex flex-nowrap items-center truncate">
-              <span className="truncate">{option.label}</span>
+              <span className="truncate" lang={option.value}>
+                {option.label}
+              </span>
             </div>
             <CheckIcon strokeWidth={3} className={cn('text-success', !selected.includes(option.value) && 'invisible')} />
           </div>
@@ -83,7 +85,7 @@ export function SelectLanguages({ value, onChange }: SelectLanguagesProps) {
       ref={triggerRef}
       disabled={appConfig.languages.length < 2}
       variant="input"
-      aria-label="Select language"
+      aria-label={`${t('c:placeholder.select_languages')}: ${value.map((lang) => t(`c:${lang}`)).join(', ')}`}
       className="w-full justify-between font-normal data-dropdowner-active:ring-1 data-dropdowner-active:ring-ring"
       onClick={openDropdown}
     >
@@ -91,7 +93,9 @@ export function SelectLanguages({ value, onChange }: SelectLanguagesProps) {
         <div className="flex flex-nowrap items-center truncate">
           {value.map((lang, index) => (
             <span key={lang} className="mr-2 flex flex-nowrap items-center truncate">
-              <span className="truncate">{t(`c:${lang}`)}</span>
+              <span className="truncate" lang={lang}>
+                {t(`c:${lang}`)}
+              </span>
               {index !== value.length - 1 && <span className="ml-1">,</span>}
             </span>
           ))}

@@ -37,7 +37,7 @@ export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, hide
 
 function AllLoaded() {
   return (
-    <div className="mt-4 mb-10 w-full text-center text-muted-foreground text-xl">
+    <div aria-hidden className="mt-4 mb-10 w-full text-center text-muted-foreground text-xl">
       <div>&#183;</div>
       <div className="-mt-5">&#183;</div>
       <div className="-mt-5">&#183;</div>

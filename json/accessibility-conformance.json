@@ -1,7 +1,7 @@
 {
   "edition": "VPAT® 2.5Rev WCAG",
   "standard": "WCAG 2.2 Level AA",
-  "auditedAt": "2026-10-02",
+  "auditedAt": "2026-10-03",
   "scope": [
     "marketing-home",
     "features",
@@ -36,28 +36,28 @@
       "name": "Non-text Content",
       "level": "A",
       "en301549": "9.1.1.1",
-      "status": "partially-supports",
-      "remarks": "In tables, a small dot on the View button means some columns are hidden, but the dot has no text: open the View menu to see which columns are off. In account settings, each session shows a desktop or phone icon for the device type without text. The end-of-list marker under tables is read aloud as stray symbols and can be ignored.",
+      "status": "supports",
+      "remarks": "",
       "decidedBy": "agent",
       "open": [],
       "evidence": [
         {
           "check": "review:agent",
-          "result": "fail",
-          "summary": "Checked facts.images, every img and icon control in tree.yml, and the screenshot of all 26 states. All img elements are named (marketing-home 23 logos and flags, github icon, org-attachments 2 thumbnails named by filename, org-settings img 'Locked'); every icon-only control in the trees has a name. Failures: (1) org-attachments and system-organizations: the View button carries an empty Badge dot that means columns are hidden (data-table/columns-view.tsx:33, no children); tree.yml shows only button 'View'; absent on org-members and system-users where no column is hidden. (2) account: session tiles render MonitorIcon or SmartphoneIcon by session.deviceType (me/session-tile.tsx:31) with no text alternative; tree.yml shows 'Unnamed device Current' with empty paragraphs. Lesser: org-attachments, member-sheet and system-users end with text '· · · °', the decorative all-loaded marker (infinite-loader.tsx AllLoaded) exposed as text. Borderline, not counted: the sync-engine data-flow diagram is an aria-hidden SVG in a button 'Toggle all data-flow labels'; its edge labels are hidden, but the Part 2 and 3 paragraphs describe the flow. Not evaluated: the contact page map does not load in development.",
-          "where": [
-            "org-attachments",
-            "system-organizations",
-            "account",
-            "member-sheet",
-            "system-users"
-          ],
-          "date": "2026-10-02"
+          "result": "pass",
+          "summary": "After the Batch F fixes, re-read facts.images and every img, button and link in tree.yml of all 26 states: none is without a name. The three earlier failures are gone. org-attachments and system-organizations: the View button reads 'View Some columns hidden' (data-table/columns-view.tsx). account: each session's device icon is img 'Desktop' or 'Mobile' (me/session-tile.tsx), and the session values read 'Period: ...', 'Method: ...'. The all-loaded marker under tables is aria-hidden (data-table/infinite-loader.tsx) and no longer in the tree of org-attachments, member-sheet or system-users. Unchanged and not counted: the sync-engine data-flow diagram is an aria-hidden SVG inside the button 'Toggle all data-flow labels', and the Part 2 and 3 paragraphs describe the flow. Not evaluated: the contact page map does not load in development.",
+          "where": [],
+          "date": "2026-10-03"
         },
         {
           "check": "axe",
           "result": "pass",
           "summary": "axe image-alt passed on 5 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe svg-img-alt passed on 1 states.",
           "where": []
         }
       ]
@@ -217,22 +217,18 @@
       "level": "A",
       "en301549": "9.1.3.1",
       "status": "partially-supports",
-      "remarks": "Section titles on the account settings page, the organization settings page, the API docs Operations and Schemas pages, and the authentication error page look like headings but are not marked as headings, so a screen reader cannot jump to them by heading; the sections are still reachable by reading down the page or through the side navigation links. In account settings, the Email digest options (Off, Daily, Weekly) are not grouped under their label.",
+      "remarks": "On the API docs overview page, the table of API facts (title, version, description and counts) has no header cells: the first cell of each row is its label but is not marked as one, so a screen reader reads label and value as two plain cells of the same row.",
       "decidedBy": "agent",
       "open": [],
       "evidence": [
         {
           "check": "review:agent",
           "result": "fail",
-          "summary": "Compared screenshot against tree.yml and facts.headings for all 26 states. Lists, tables (legal-privacy 2 tables with column headers; all data grids with columnheaders), form labels (facts.fields) and dialogs match their visual structure in 21 states. Failures: (1) account: card titles General, Sessions, Authentication, Connected apps, Notifications, Delete account are not headings; facts.headings lists only 'Settings'. (2) org-settings: General, Details, API keys, Tabs, Delete organization likewise. Both come from ToolCard > CardTitle, a div (ui/card.tsx:27-28). (3) docs-operations: the 20 tag section titles are CardTitle divs (operations-page.tsx:110); facts.headings has only 'Operations'. (4) docs-schemas: data, base, errors likewise (schemas-page.tsx:91). (5) auth-error: the title 'Error' is a CardTitle div (error-notice.tsx:68); facts.headings is empty. (6) account: the Email digest radiogroup has no accessible name (account-notifications-card.tsx:59-66: the Label has no htmlFor and the RadioGroup no aria-labelledby); the invite-dialog group is correctly 'radiogroup Role'. Lesser: org-settings 'Languages*' label is not associated with its control (select-languages.tsx); docs-overview spec table is a grid without row or column headers.",
+          "summary": "After the Batch F fixes, compared screenshot, tree.yml and facts.headings of all 26 states. The earlier failures are gone: account lists h1 Settings and h2 General, Sessions, Authentication, Connected apps, Notifications, Delete account; org-settings h2 General, Details, API keys, Tabs, Delete organization (ToolCard > CardTitle level 2); docs-operations h1 Operations and 20 h2 tag sections; docs-schemas h2 data, base, errors; auth-error h1 Error; account has radiogroup 'Email digest'. Remaining: docs-overview renders the API facts as a grid with two gridcells per row and no rowheader or columnheader (docs/overview-table.tsx: a DataGrid with empty column names). Lesser, not counted: org-settings text 'Languages*' is not tied to its button, whose own name is 'Select languages: English'; axe's best-practice rule empty-table-header reports header cells without text on org-attachments, org-settings, system-users and system-organizations (selection and icon columns).",
           "where": [
-            "account",
-            "org-settings",
-            "docs-operations",
-            "docs-schemas",
-            "auth-error"
+            "docs-overview"
           ],
-          "date": "2026-10-02"
+          "date": "2026-10-03"
         },
         {
           "check": "axe",
@@ -363,24 +359,17 @@
       "name": "Use of Color",
       "level": "A",
       "en301549": "9.1.4.1",
-      "status": "partially-supports",
-      "remarks": "Which option is currently selected is shown only by a light grey background in a few places: the All, Documentation and API reference filters at the bottom of the docs search, the switches on the sync engine page, the list and table switch on the API Operations page, the current page in the docs sidebar, and the current section in the settings side navigation. The switches and sidebar links still announce the selected option; the search filters do not, so pick a filter again if unsure.",
+      "status": "supports",
+      "remarks": "",
       "decidedBy": "agent",
       "open": [],
       "evidence": [
         {
           "check": "review:agent",
-          "result": "fail",
-          "summary": "Checked links in text, status badges, required markers, method badges, selected and current states, and icons across all 26 states. Links inside paragraphs are underlined; required fields use an asterisk; badges carry text; the Sign out and Delete links in red also carry text; page tabs mark the current tab with an underline bar. Failures, all the same style (selected background rgb(240,240,244) against white, 1.14:1): (1) docs-search: scope chips 'All', 'Documentation', 'API reference' (docs-search.tsx:150-165) differ only by bg-accent and text color, no pressed state. (2) sync-engine toggle groups and docs-operations list/table toggle: ui/toggle.tsx data-pressed:bg-accent, no other cue. (3) docs-page sidebar current page: page-tree-item.tsx data-[active=true]:bg-accent, text identical. (4) account and org-settings side navigation current section: common/page/aside.tsx data-spy-active:bg-secondary. Not covered by the packets: form validation error states and dark mode.",
-          "where": [
-            "docs-search",
-            "sync-engine",
-            "docs-operations",
-            "docs-page",
-            "account",
-            "org-settings"
-          ],
-          "date": "2026-10-02"
+          "result": "pass",
+          "summary": "After the Batch F fixes, checked links in text, badges, required markers, and selected and current states across all 26 states; the four earlier failures now carry a second cue, measured in the live page. docs-search: the scope chips have aria-pressed, and the selected chip has a 3.35:1 border where the others have 1.27:1. docs-operations list/table toggle and the sync-engine toggle groups ('Todo app', 'Part 1'): the pressed toggle draws a 1px inset outline in the --input colour (ui/toggle.tsx) that unpressed ones lack. docs-page sidebar: the current page is weight 600, the others 400. account and org-settings side navigation: the current section is weight 600 against 500, has the same inset outline, and is the only link with aria-current (common/page/aside.tsx). Unchanged passes: links inside paragraphs are underlined (axe link-in-text-block passes), required fields use an asterisk, badges carry text, page tabs mark the current tab with an underline bar. Dark mode uses the same classes and was not measured separately.",
+          "where": [],
+          "date": "2026-10-03"
         },
         {
           "check": "axe",
@@ -424,30 +413,64 @@
       "name": "Contrast (Minimum)",
       "level": "AA",
       "en301549": "9.1.4.3",
-      "status": "partially-supports",
-      "remarks": "Automated checks found failures on 13 of the reviewed pages and states.",
-      "decidedBy": "audit",
-      "open": [],
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "review"
+      ],
       "evidence": [
         {
           "check": "axe",
-          "result": "fail",
-          "summary": "axe color-contrast: Elements must meet minimum color contrast ratio thresholds (21 elements).",
+          "result": "review",
+          "summary": "axe color-contrast needs a person to check 38 states: Elements must meet minimum color contrast ratio thresholds.",
           "where": [
+            "marketing-home (light)",
+            "features (light)",
+            "sync-engine (light)",
+            "contact (light)",
+            "legal-privacy (light)",
+            "legal-accessibility (light)",
+            "docs-search (light)",
+            "home (light)",
             "account (light)",
             "org-attachments (light)",
             "org-members (light)",
             "org-settings (light)",
+            "system-users (light)",
+            "system-organizations (light)",
+            "menu-sheet (light)",
+            "search-sheet (light)",
+            "account-sheet (light)",
             "invite-dialog (light)",
             "member-sheet (light)",
+            "marketing-home (dark)",
+            "features (dark)",
+            "sync-engine (dark)",
+            "contact (dark)",
+            "legal-privacy (dark)",
+            "legal-accessibility (dark)",
+            "docs-search (dark)",
+            "home (dark)",
             "account (dark)",
             "org-attachments (dark)",
             "org-members (dark)",
             "org-settings (dark)",
+            "system-users (dark)",
+            "system-organizations (dark)",
+            "menu-sheet (dark)",
+            "search-sheet (dark)",
             "account-sheet (dark)",
             "invite-dialog (dark)",
             "member-sheet (dark)"
           ]
+        },
+        {
+          "check": "review:agent",
+          "result": "review",
+          "summary": "After the token changes axe color-contrast reports no failing element in any of the 52 visits (26 states in light and dark; it was 21 elements on 13 states). It leaves 552 text nodes undecided on 38 visits. The 264 that are not short text were measured from rendered pixels (the text colour over the dominant colours behind it): 260 pass, the lowest at 5.3:1 ('Request info' in the public footer). The footer's column titles, 'Request info' and the credits line measured 2.6:1 to 4.2:1 and were raised to text-white/60 in the same change (marketing/footer.tsx). Two readings are artefacts of the method, the hero heading and its bold words on marketing-home, where the letters fill most of the box: in the screenshots they are near-black on a pale gradient (light) and near-white on a dark one (dark). Two nodes are an empty placeholder. The other 288 are short texts: avatar initials (text-black at 50% opacity on the placeholder colours, common/entity-avatar.tsx:35; 2.2:1 to 3.8:1 by axe's own colours) and the hidden all-loaded marker. For a person: decide whether avatar initials are decoration (the name stands next to them in grids, the menu and search; the account button shows the initial alone).",
+          "where": [],
+          "date": "2026-10-03"
         }
       ]
     },
@@ -517,25 +540,17 @@
       "name": "Non-text Contrast",
       "level": "AA",
       "en301549": "9.1.4.11",
-      "status": "partially-supports",
-      "remarks": "Borders of text fields, dropdowns, unchecked checkboxes and radio buttons are very light in both light and dark mode (about 1.4:1 in light, about 2:1 in dark), and an 'off' switch in light mode is almost invisible, so the edges of form controls are hard to see. The sort arrows in grid headers and the drag handles in organization settings are also faint in light mode. Focus outlines and icon buttons have strong contrast.",
+      "status": "supports",
+      "remarks": "",
       "decidedBy": "agent",
       "open": [],
       "evidence": [
         {
           "check": "review:agent",
-          "result": "fail",
-          "summary": "Measured computed colors (oklch resolved through canvas, composited over the real background) and cross-checked rendered pixels. Light: input, textarea and select-trigger border #d7d7db on #fbfbfc card = 1.39:1 (on white 1.44:1) on account firstName, bio, Language; org-settings name, API key name; org-members Role select; contact name, message; sign-in email (the --input token, tailwind.css:414). Unchecked checkbox border 1.39 to 1.44:1; radio 1.39:1; unchecked switch track #d2d2d4 on #fbfbfc = 1.46:1, thumb white on track 1.51:1. Members header sort icons #ababae at 0.5 opacity on white = 2.29:1; Language select chevron 2.29:1; org-settings Tabs grip icon #a0a0a8 on #fbfbfc = 2.51:1. Dark: input borders #4c4c53 on #1d1d22 = 1.97:1 (on #151519 = 2.14:1); checkbox and radio 1.97 to 2.14:1; unchecked switch track 2.03:1 but thumb #f2f3f3 at 15.1:1 against the page; sort icons 3.39:1; grip 8.85:1. Pass: focus ring 15.7 to 17.9:1 light, 8.4 to 11.9:1 dark; grid cell outline 17.9:1 light, 11.1:1 dark; sidebar and toolbar icons 16 to 18:1; Help and lock icons 3.37:1 light, 4.75:1 dark; Download and file icons 7.9:1 and 9.6:1. Outline buttons with text have borders at 1.12 to 1.27:1 light and 1.35 to 2.14:1 dark; their text identifies them, so not counted. Other row (2.4.7): below the sm breakpoint .focus-effect sets outline-hidden and draws no ring, so a focused contact input at 375px has no visible focus indicator.",
-          "where": [
-            "account",
-            "org-settings",
-            "org-members",
-            "org-attachments",
-            "contact",
-            "sign-in",
-            "invite-dialog"
-          ],
-          "date": "2026-10-02"
+          "result": "pass",
+          "summary": "Measured in the live page after the --input change, computed colours resolved through canvas and composited over the real background, light / dark. account: first name, bio and Language select borders 3.24 / 3.32; Language chevron 3.5 / 5.46; Newsletter checkbox border 3.24 / 3.32; Email digest radio border 3.24 / 3.32; the off MFA switch track against the card 3.24 / 3.32. org-members: header sort icon 3.5 / 5.46; Role filter border and Select All checkbox border 3.35 / 3.6. org-settings: name field border 3.24 / 3.32; Tabs grip icon 7.04 / 9.2. contact: name and message borders 3.35 / 3.6. sign-in: email border 3.35 / 3.6. Every measured value is at or above 3:1. Unchanged from the earlier pass: focus ring 15.7 to 17.9:1 light and 8.4 to 11.9:1 dark, grid cell outline, sidebar and toolbar icons, Help and lock icons 3.37:1 light. Outline buttons with text keep light borders (1.1 to 1.3:1 light); their text identifies them, so they are not counted.",
+          "where": [],
+          "date": "2026-10-03"
         }
       ]
     },
@@ -593,6 +608,15 @@
       ],
       "evidence": [
         {
+          "check": "review:agent",
+          "result": "review",
+          "summary": "Content that appears on hover or focus is of two kinds. Tooltips: the audit's probe passes on all 9 states with tooltips (hoverable, Escape closes), and no Tooltip in frontend/src sets disableHoverablePopup. One hover card: the status entries in the menu sheet's Info panel (navigation/menu-sheet/info-section.tsx:42). Driven in the live page: it opens on hover, stays open with the pointer on the card, and Escape closes it, but the same Escape also closes the whole menu sheet, which moves focus. A person decides whether that still counts as dismissible.",
+          "where": [
+            "menu-sheet"
+          ],
+          "date": "2026-10-03"
+        },
+        {
           "check": "probe:hover-content",
           "result": "pass",
           "summary": "Tooltips are hoverable and dismissible with Escape passed on all 9 states.",
@@ -606,21 +630,19 @@
       "level": "A",
       "en301549": "9.2.1.1",
       "status": "partially-supports",
-      "remarks": "Three things cannot be done with the keyboard: changing the order of the tabs in organization settings (drag only), changing the order of organizations in the menu's 'Manage content' mode (drag only; archive and mute work), and opening collapsed parts of a schema in the API docs (the small arrows are mouse only; the 'type', 'zod' and 'example' views show the full schema and work with the keyboard). The docs sidebar width can only be changed by dragging. Everything else tested works: menus, sheets, search, the members grid, the invite dialog, the attachment viewer, renaming attachments.",
+      "remarks": "Two things cannot be done with the keyboard: changing the order of the tabs in organization settings, and changing the order of organizations in the menu's 'Manage content' mode (both by dragging only; archive and mute work). Everything else tested works, including menus, sheets, search, the members grid, the invite dialog, the attachment viewer, renaming attachments, opening collapsed parts of a schema in the API docs, and setting the width of the docs sidebar with the arrow keys.",
       "decidedBy": "agent",
       "open": [],
       "evidence": [
         {
           "check": "review:agent",
           "result": "fail",
-          "summary": "Keyboard only. menu-sheet: Enter on 'Menu' opens it, Tab reaches Organizations, Manage content, Create, each organization link, Archived, Preferences, Info; Enter navigates; Escape closes. search-sheet: type, ArrowDown highlights (aria-activedescendant), Enter opens the user sheet. account-sheet: View profile, Settings, System panel, Sign out, Preferences, Info by Tab; Enter navigates; Escape closes. org-members grid: Tab enters at Select All, arrows move between cells, Space on a row's Select cell selects and shows 'Remove'; Enter on the Select All header selects all; Enter on a Name header sorts (aria-sort, url sort=name); Enter on a name button opens the member sheet (Escape closes, focus returns); Enter or F2 on a Role cell opens the inline role listbox; View and Export menus work; Remove plus Enter opens the confirm dialog. invite-dialog: Tab to Invite, Enter, 'Add by email', type address plus Enter makes a chip, ArrowLeft on the radios picks Admin, Enter on Invite sends the request. org-attachments: Enter on the thumbnail opens the viewer (Open, Download, Close, Zoom, Rotate, Toggle pan, Reset reachable; Escape returns focus); Enter, F2 or typing on the Name cell opens the inline rename; Enter on Description opens the description sheet. org-settings: Space toggles a tab's Visible switch; on the drag-handle cell of the Tabs grid Space, Enter, modifier plus ArrowDown and Shift+F10 change nothing, the row has no move control (tabs-arrangement-card.tsx, row-drag.tsx: pointer drag only). menu-sheet Manage content: organization rows are draggable divs with no tabindex; Tab reaches only Archive and Mute per row; the hint reads 'drag to change order'. docs-schemas: 10 collapsed nodes such as 'fieldTimestamps' and the truncated description are click-only elements with no tabindex (json-node.tsx:322, primitive-value.tsx:92); the format, example, zod and type buttons work by keyboard. docs-search: type, ArrowDown, Enter navigates. Docs 'Resize sidebar' button: focusable, but arrows, Enter and Space leave the width unchanged (onPointerDown only). The other flagged pointer handlers have keyboard paths (Escape or Close for backdrops, arrows and Enter for grid cells, a focusable input in select-emails, onKeyDown on the sync diagram toggle, Escape for the sheet overlay, a focusable anchor in the tag table). Not verified in this environment: opening txt and pdf attachments and Download fail because the seed files are CORS-blocked, and the description editor stayed at 'Connecting...' (yjs relay not running). Other row: after sorting with Enter focus leaves the grid to body (2.4.3).",
+          "summary": "Fixed in Batch F and driven by keyboard in the live page. docs-schemas, section 'data' open: 30 expander buttons with aria-expanded (json-viewer/json-node.tsx); Enter on a collapsed one gives aria-expanded true, Space collapses it again, and it shows the focus ring; 3 truncated strings are role button with aria-expanded, Enter grows one from 203 to 264 characters (json-viewer/primitive-value.tsx). Docs 'Resize sidebar' button: ArrowRight twice, ArrowLeft, End, Home move the sidebar 288 -> 320 -> 304 -> 400 -> 220 px (docs/docs-layout.tsx). Still drag only, code unchanged: org-settings Tabs grid has no move control on the drag-handle cell (entities/tabs-arrangement-card.tsx, data-grid/row-drag.tsx); menu-sheet 'Manage content' rows are draggable divs with no tabindex, Tab reaches only Archive and Mute. The keyboard flows of the earlier pass (menu, search and account sheets, members grid, invite dialog, attachments, docs search) were not redone; that code is unchanged except for names.",
           "where": [
             "org-settings",
-            "menu-sheet",
-            "docs-schemas",
-            "docs-operations"
+            "menu-sheet"
           ],
-          "date": "2026-10-02"
+          "date": "2026-10-03"
         },
         {
           "check": "axe",
@@ -631,7 +653,7 @@
         {
           "check": "probe:keyboard",
           "result": "review",
-          "summary": "Tab order recorded for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"Install command\" → button \"Copy\" → button \"Read more\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
+          "summary": "Tab order recorded for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"Install command\" → button \"Copy\" → button \"Read more about Cella\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
           "where": [
             "marketing-home",
             "features",
@@ -664,7 +686,7 @@
         {
           "check": "code:keyboard-handlers",
           "result": "review",
-          "summary": "12 elements handle pointer events without a keyboard equivalent, in frontend/src/modules/attachment/render/attachment-render.tsx, frontend/src/modules/attachment/table/description-cell.tsx, frontend/src/modules/common/blocknote/full-html.tsx, frontend/src/modules/common/board/board-panel.tsx, frontend/src/modules/common/data-grid/cell.tsx, frontend/src/modules/common/form-fields/select-emails.tsx, frontend/src/modules/common/json-viewer/json-node.tsx, frontend/src/modules/common/json-viewer/primitive-value.tsx, frontend/src/modules/docs/tag-table.tsx, frontend/src/modules/marketing/about/sync-diagram.tsx, frontend/src/modules/navigation/menu-sheet/sheet-panel.tsx; check that each has a keyboard path.",
+          "summary": "11 elements handle pointer events without a keyboard equivalent, in frontend/src/modules/attachment/render/attachment-render.tsx, frontend/src/modules/attachment/table/description-cell.tsx, frontend/src/modules/common/blocknote/full-html.tsx, frontend/src/modules/common/board/board-panel.tsx, frontend/src/modules/common/data-grid/cell.tsx, frontend/src/modules/common/form-fields/select-emails.tsx, frontend/src/modules/common/json-viewer/json-node.tsx, frontend/src/modules/docs/tag-table.tsx, frontend/src/modules/marketing/about/sync-diagram.tsx, frontend/src/modules/navigation/menu-sheet/sheet-panel.tsx; check that each has a keyboard path.",
           "where": [
             "frontend/src/modules/attachment/render/attachment-render.tsx",
             "frontend/src/modules/attachment/table/description-cell.tsx",
@@ -673,7 +695,6 @@
             "frontend/src/modules/common/data-grid/cell.tsx",
             "frontend/src/modules/common/form-fields/select-emails.tsx",
             "frontend/src/modules/common/json-viewer/json-node.tsx",
-            "frontend/src/modules/common/json-viewer/primitive-value.tsx",
             "frontend/src/modules/docs/tag-table.tsx",
             "frontend/src/modules/marketing/about/sync-diagram.tsx",
             "frontend/src/modules/navigation/menu-sheet/sheet-panel.tsx"
@@ -723,21 +744,16 @@
       "level": "A",
       "en301549": "9.2.2.1",
       "status": "partially-supports",
-      "remarks": "Messages in the corner of the screen close by themselves after 4 seconds, including error messages that show a request id to quote to support, and messages that say how long to wait after too many attempts. Hovering the message or pressing F6 holds it; there is no setting to keep messages longer. Setting up an authenticator app must be finished within 5 minutes; after that the form is replaced by 'Setup session expired' without a warning and you start again. Sign-in links and checks expire after 5 to 15 minutes but can be requested again without losing work; your session lasts a week.",
+      "remarks": "Short confirmation messages in the corner of the screen close by themselves after 4 seconds; hovering the message or pressing F6 holds it, and there is no setting to keep messages longer. Error messages that show a request id or a waiting time stay until you close them. Setting up an authenticator app must be finished within 5 minutes; the form says so, and after that you can start again with a new QR code. Sign-in links and checks expire after 5 to 15 minutes but can be requested again without losing work; your session lasts a week.",
       "decidedBy": "agent",
       "open": [],
       "evidence": [
         {
           "check": "review:agent",
           "result": "fail",
-          "summary": "Toasts: timeout={4000} for every toast (toaster-provider.tsx:9); Base UI pauses the timer on hover, focus and F6 but there is no warning or setting to turn off, adjust or extend. The global error handler puts the request id in the toast description (query/on-error.ts:83-89) and the retry wait of a 429 (on-error.ts:78-82); no other place shows them. Actionable toasts are persistent (reload-prompt.tsx:54, unsaveable-notices.tsx:96). TOTP setup: the form switches to the expired state after 4.5 minutes (totp-setup.tsx:23-27, 83-90) because the backend cookie lives 5 minutes (auth/totps/totps-handlers.ts:29); no warning, no extension. Other limits, restartable without data loss: magic link 15 min, invitation 7 days, oauth-verification 2 h, confirm-mfa 10 min, step-up 10 min (auth/tokens/token-policies.ts:59-92); passkey challenge 5 min; OAuth round trip 5 min; consent 10 min. Sessions last one week (sessions/operations/create-session.ts:88). A lost session redirects to sign-in with a return path and keeps unsynced local work (on-error.ts:92-104). No countdowns or idle timeouts in frontend/src.",
-          "where": [
-            "frontend/src/modules/common/toaster/toaster-provider.tsx",
-            "frontend/src/query/on-error.ts",
-            "frontend/src/modules/me/totp-setup.tsx",
-            "backend/src/modules/auth/totps/totps-handlers.ts"
-          ],
-          "date": "2026-10-02"
+          "summary": "Fixed in Batch F: the global error handler gives a toast with a request id or a 429 retry wait timeout 0 (query/on-error.ts). Driven in the live page: account with GET /api/me/auth answered by a 400 error carrying a request id; the toast with that id was still visible 9 s after it appeared. Other toasts keep timeout 4000 (toaster/toaster-provider.tsx:9); Base UI pauses on hover, focus and F6; no setting. TOTP setup: the QR text now states the 5 minute limit and that a new code can be made (locales/en/common.json totp_qr.description); the form still switches to 'Setup session expired' after 4.5 minutes with no extension (totp-setup.tsx). Unchanged: magic link 15 min, confirm-mfa and step-up 10 min, passkey challenge and OAuth round trip 5 min, all restartable without data loss; sessions last one week.",
+          "where": [],
+          "date": "2026-10-03"
         },
         {
           "check": "code:timing",
@@ -753,24 +769,19 @@
       "level": "A",
       "en301549": "9.2.2.2",
       "status": "partially-supports",
-      "remarks": "On the home page the screenshot carousels in the device mockups advance every 4 seconds and keep going; moving the mouse over one stops it, but there is no pause button, and keyboard or touch users have no way to stop it. On the home page, the sync engine page, the welcome screen for new users and the info panel of the menu, small animations (a bouncing arrow, moving dashes, a pulsing status dot) run without end, cannot be paused, and keep running when your system asks for reduced motion.",
+      "remarks": "On the sync engine page, dashes move along the lines of the two diagrams for as long as they are on screen, and in the info panel of the menu the status dots pulse without end. Neither has a pause button; both stop when your system asks for reduced motion. The screenshot carousels on the home page have a pause button and do not start by themselves with reduced motion, and the bouncing arrows stop after five bounces.",
       "decidedBy": "agent",
       "open": [],
       "evidence": [
         {
           "check": "review:agent",
           "result": "fail",
-          "summary": "Carousels: Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true }) with loop: true (attachments-carousel.tsx:112-113), used with isDialog={false} by device-mockup.tsx:31 on marketing-home (why.tsx:48, showcase.tsx:71). The plugin stops only on mouseenter, pointer down, focus inside a slide (slides hold only images) and tab hide; the prev/next buttons and dots do not stop it; no pause button, no prefers-reduced-motion check. Infinite animations beside content: hero arrow animate-bounce (about-page.tsx:85); sync-engine marching dashes while in view (entity-buckets.tsx:126-127, sync-diagram.tsx:449-450) and the 'Try me' arrows until first use (entity-buckets.tsx:202, sync-diagram.tsx:254); onboarding arrow animate-bounce (home/onboarding/welcome-text.tsx:31); menu sheet Info panel status dot animate-status-pulse 3.5s infinite (menu-sheet/info-section.tsx:27, tailwind.css:36). Reduced motion: the only CSS rule is for the page-enter curtain (tailwind.css:547-551); motion/react has no MotionConfig reducedMotion. Exempt loading indicators checked (spinner, skeleton, infinite-loader, code-viewer placeholder): each shows only while that content loads. Finite: logo pulse repeat 1, count-up 1.5 s, text effect 1.7 s, success checkmark, json highlight 3 s.",
+          "summary": "Fixed in Batch F and driven in the live page (marketing-home). The carousel has a button 'Pause'; slides advance while it plays; Enter on it turns it into 'Play' and the slides stay still for 9 s; after scrolling away and back (the carousel remounts) it is still paused; Enter plays again. With prefers-reduced-motion the button starts as 'Play' and nothing advances (attachment/attachments-carousel.tsx). Hero arrow: animation bounce with iteration count 5, and none under reduced motion (about-page.tsx); the onboarding arrow has the same classes (home/onboarding/welcome-text.tsx); the 'Try me' arrows repeat 4 times (entity-buckets.tsx, sync-diagram.tsx). Remaining, from the code: the marching dashes run with repeat Infinity while in view and stop only for useReducedMotion (entity-buckets.tsx, sync-diagram.tsx flowDashes); the status dot keeps animate-status-pulse infinite with motion-reduce:animate-none (navigation/menu-sheet/info-section.tsx). Loading indicators are exempt as before.",
           "where": [
-            "frontend/src/modules/attachment/attachments-carousel.tsx",
-            "frontend/src/modules/marketing/device-mockup.tsx",
-            "frontend/src/modules/marketing/about/about-page.tsx",
-            "frontend/src/modules/marketing/about/entity-buckets.tsx",
-            "frontend/src/modules/marketing/about/sync-diagram.tsx",
-            "frontend/src/modules/home/onboarding/welcome-text.tsx",
-            "frontend/src/modules/navigation/menu-sheet/info-section.tsx"
+            "sync-engine",
+            "menu-sheet"
           ],
-          "date": "2026-10-02"
+          "date": "2026-10-03"
         },
         {
           "check": "code:motion",
@@ -884,7 +895,7 @@
         {
           "check": "probe:keyboard",
           "result": "review",
-          "summary": "Tab order recorded for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"Install command\" → button \"Copy\" → button \"Read more\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
+          "summary": "Tab order recorded for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"Install command\" → button \"Copy\" → button \"Read more about Cella\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
           "where": [
             "marketing-home",
             "features",
@@ -927,20 +938,17 @@
       "name": "Link Purpose (In Context)",
       "level": "A",
       "en301549": "9.2.4.4",
-      "status": "partially-supports",
-      "remarks": "On the API reference pages (Operations and Schemas), each section ends with a link named only 'Show details'. Which section it opens is clear on screen but not from the link text. Workaround: read the section name shown above the link, or open a section from the sidebar's operations and schemas lists.",
+      "status": "supports",
+      "remarks": "",
       "decidedBy": "agent",
       "open": [],
       "evidence": [
         {
           "check": "review:agent",
-          "result": "fail",
-          "summary": "Every link in tree.yml of all 26 states read with its sentence, list item or row. docs-operations: 21 links named 'Show details' with different targets (/docs/operations?operationTag=<tag>); docs-schemas: 3 (?schemaTag=data, base, errors). The section name above each is plain text in a card title, not a heading, list item, table cell or the same paragraph (docs/tag-expand-link.tsx:32 inside CardContent in operations-page.tsx and schemas-page.tsx), so no programmatically determined context. All other links pass: operation path links repeated per method sit in named grid rows, footer 'Social' and 'Chat' sit under the 'Connect' list item, member and organization links carry the name, 'and more' and 'synced in real-time' sit in sentences.",
-          "where": [
-            "docs-operations",
-            "docs-schemas"
-          ],
-          "date": "2026-10-02"
+          "result": "pass",
+          "summary": "After the Batch F fix, read every link in tree.yml of docs-operations and docs-schemas: each expand link is named with its section, 'Show details: attachments', 'Show details: auth' and so on (19 on docs-operations, 3 on docs-schemas; docs/tag-expand-link.tsx), and no link named only 'Show details' is left. The other 24 states were read in the earlier pass and their links are unchanged: operation path links sit in named grid rows, footer 'Social' and 'Chat' under the 'Connect' list item, member and organization links carry the name.",
+          "where": [],
+          "date": "2026-10-03"
         },
         {
           "check": "axe",
@@ -965,12 +973,11 @@
         {
           "check": "review:agent",
           "result": "review",
-          "summary": "Ways per state from tree.yml of all 26: docs pages have sidebar, docs search and 'On this page'; /about via header logo, footer 'About', auth footer, docs sidebar logo and the menu sheet Info panel; /features and /sync-engine via header plus in-text links on the about page; legal pages via footer links plus the legal side nav; sign-in via header, footer and auth-error; /account via account-sheet 'Settings', the home MFA alert link and member-sheet 'Settings'; organization pages via menu-sheet links, search-sheet, system-organizations grid links and member-sheet cards; system pages via account-sheet 'System panel' plus the system tabs. Two pages have a single route: /contact is reached only by the footer link 'Contact us' (every public page), and /home only by the menu-sheet link 'Go to home page' plus the sign-in redirect. There is no site search or site map for the public pages. Whether a footer on every page counts as two techniques (a list of links plus home page links) is a judgement for a person.",
+          "summary": "Ways to reach each page, from the trees of all 26 states. Public pages: the marketing navigation and the footer link to about, features, sync engine, docs, legal, accessibility and contact; /contact has the footer link, the statement's 'Contact us' link (added in Batch F, auth/legal/accessibility-text.tsx) and the 'Open contact form' buttons. Docs pages: the sidebar and the docs search. App pages: the menu sheet and search reach organizations and users; the account sheet reaches profile, settings and the system panel. /home has one link, the logo in the menu sheet header (navigation/menu-sheet/header.tsx:46); it is also where sign-in lands. A person decides whether /home needs a second route or counts as the start of the app.",
           "where": [
-            "contact",
             "home"
           ],
-          "date": "2026-10-02"
+          "date": "2026-10-03"
         }
       ]
     },
@@ -1088,24 +1095,17 @@
       "name": "Label in Name",
       "level": "A",
       "en301549": "9.2.5.3",
-      "status": "partially-supports",
-      "remarks": "A few buttons have a spoken name that differs from the text on them, so voice control users cannot activate them by saying what they see: the green role button at the top of an organization page (shows 'Admin' or 'Member', is named 'Leave'), the 'Invite' step in the invite dialog title (named 'Go back'), the 'Go to Github' button at the bottom of the About page (named 'Start building'), the 'EN' language button on the authentication error page (named 'Change language'), and 'Read more about Cella' on the About page (named 'Read more'). Workaround: use your voice tool's numbered overlay, or the keyboard.",
+      "status": "supports",
+      "remarks": "",
       "decidedBy": "agent",
       "open": [],
       "evidence": [
         {
           "check": "review:agent",
-          "result": "fail",
-          "summary": "facts.labelNotInName of all 26 states plus every button and link in tree.yml whose name differs from its text. Fails (aria-label confirmed in source): org-attachments, org-members, org-settings (and behind invite-dialog, member-sheet): button 'Leave' showing the role (memberships/joined-button.tsx:47); invite-dialog: button 'Go back' showing Invite (user/invite-users.tsx:56); marketing-home: button 'Start building' showing Go to Github (marketing/about/call-to-action.tsx:23) and button 'Read more' showing Read more about Cella (about-page.tsx:83, name is only a prefix); auth-error: button 'Change language' showing EN (me/user-language.tsx:70). Minor, for a person to weigh: org-settings button 'Select language' showing English under the visible label 'Languages'. Not failures: combobox values, the member-sheet sort select showing only an icon, menu-sheet links named after the organization next to an avatar letter and count badge, the logo link 'Go to about page', button 'Open contact form' showing Contact and 'Expand all' showing Expand (name contains the text).",
-          "where": [
-            "marketing-home",
-            "auth-error",
-            "org-attachments",
-            "org-members",
-            "org-settings",
-            "invite-dialog"
-          ],
-          "date": "2026-10-02"
+          "result": "pass",
+          "summary": "After the Batch F fixes, read facts.labelNotInName of all 26 states and the buttons that failed before. The five failures are gone: the role button reads 'Admin Leave' (org-attachments, org-members, org-settings), the invite dialog's step button 'Invite', marketing-home 'Go to Github', 'Talk to us' and 'Read more about Cella', auth-error 'EN, Change language'; org-settings reads 'Select languages: English'. What facts.labelNotInName still lists are not failures: comboboxes named by their label that show their value ('Language*' showing English; 'Role: All' showing All; 'Sort: Alphabetical' showing an icon), the logo link 'Go to about page' (its other text is an SVG title), menu-sheet links named after the organization beside an avatar letter, role and count, and the sync-engine button 'Toggle all data-flow labels' around an aria-hidden diagram.",
+          "where": [],
+          "date": "2026-10-03"
         }
       ]
     },
@@ -1242,19 +1242,23 @@
       "name": "Language of Parts",
       "level": "AA",
       "en301549": "9.3.1.2",
-      "status": "partially-supports",
-      "remarks": "The Dutch language name 'Nederlands' appears in English text (in the accessibility statement and in the language menus) without being marked as Dutch, so a screen reader reads that one word with English pronunciation. Nothing else is affected.",
+      "status": "supports",
+      "remarks": "",
       "decidedBy": "agent",
       "open": [],
       "evidence": [
         {
           "check": "review:agent",
-          "result": "fail",
-          "summary": "facts.otherLanguages is empty in all 26 states and facts.lang is en everywhere; all tree.yml text read for non-English passages: names and the fake address are proper names, KvK and bank data are data. One word is Dutch by intent: legal-accessibility list item 'Choose your language: English or Nederlands.' rendered from t('c:nl') with no lang attribute (auth/legal/accessibility-text.tsx:66). The same string fills the language menus (me/user-language.tsx:59, the account Language select, org-settings language selects). WCAG's Understanding marks language names in a language selector with lang (H58) but also says single words count as the surrounding language, so a person may downgrade this to a note.",
-          "where": [
-            "legal-accessibility"
-          ],
-          "date": "2026-10-02"
+          "result": "pass",
+          "summary": "After the Batch F fix, facts.otherLanguages of legal-accessibility lists 'Nederlands' with lang nl (auth/legal/accessibility-text.tsx). Driven in the live page: the account Language select's options carry lang ('en: English', 'nl: Nederlands'); the language menu and the organization language selects set the same attribute in code (me/user-language.tsx, form-fields/select-language.tsx, select-languages.tsx). All other text in the 26 trees is English or a proper name, as in the earlier pass.",
+          "where": [],
+          "date": "2026-10-03"
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe valid-lang passed on 3 states.",
+          "where": []
         }
       ]
     },
@@ -1412,23 +1416,17 @@
       "name": "Error Suggestion",
       "level": "AA",
       "en301549": "9.3.3.3",
-      "status": "partially-supports",
-      "remarks": "Some messages say only that a value is wrong, not how to fix it: a one-letter name on the contact form gets 'Name is required' (two letters are needed); a wrong email gets 'Invalid email address' with no example of the expected form; a wrong handle in account or organization settings gets a technical pattern instead of plain words. Length messages on name fields do give the minimum.",
+      "status": "supports",
+      "remarks": "",
       "decidedBy": "agent",
       "open": [],
       "evidence": [
         {
           "check": "review:agent",
-          "result": "fail",
-          "summary": "Submitted wrong input and quoted the messages. contact: empty gives 'Name is required' and 'Invalid email address', toast 'Form is not yet valid. Email: Format of the input is invalid. Name: Value is too small'; name 'A' gives inline 'Name is required' (schema is min 2, contact-form.tsx:31); 'x@' and 'a@b' get only 'Invalid email address'. sign-in: empty or 'a@b' gives 'Invalid email address'. account: empty first or last name gives 'Too small: expected string to have >=2 characters' (gives the fix); handle 'a b!' gives 'Invalid string: must match pattern /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/'; 300 chars gives 'Too big: expected string to have <=255 characters'. org-settings: same name and handle messages; website 'foo:bar' gives 'URL must start with https://' (good); notification email 'a@b' was accepted and saved. invite-dialog: submit with no email gives 'Too small: expected array to have >=1 items' (the hint above the field does say 'Type an email address and press ENTER'); 'not-an-email' plus Enter gives toast 'Invalid email address' listing the text.",
-          "where": [
-            "contact",
-            "sign-in",
-            "account",
-            "org-settings",
-            "invite-dialog"
-          ],
-          "date": "2026-10-02"
+          "result": "pass",
+          "summary": "Submitted wrong input in the live page after the Batch F fixes. contact: name 'A' gives 'Name needs at least 2 characters'; email 'a@b' gives 'Enter an email address like name@example.com'. sign-in: 'a@b' gives the same email message (lib/i18n.ts sets it for every email field). account: handle 'a b!' gives 'Use only letters, numbers and hyphens. It cannot start or end with a hyphen.' (form-fields/slug.tsx). Unchanged from the earlier pass, for a person to weigh: length messages keep the validator's wording but state the limit ('Too small: expected string to have >=2 characters', 'Too big: expected string to have <=255 characters'; invite dialog with no address: 'Too small: expected array to have >=1 items', under the hint 'Type an email address and press ENTER'); website 'foo:bar' gives 'URL must start with https://'. Not an error message but a gap seen earlier: the organization notification email accepted 'a@b'.",
+          "where": [],
+          "date": "2026-10-03"
         }
       ]
     },
@@ -1437,20 +1435,17 @@
       "name": "Error Prevention (Legal, Financial, Data)",
       "level": "AA",
       "en301549": "9.3.3.4",
-      "status": "partially-supports",
-      "remarks": "Deleting an organization, your account, members or attachments and leaving an organization each ask 'Are you sure' first. Revoking an API key in organization settings happens at once with one click and cannot be undone; sessions are also revoked with one click (you can sign in again on that device). Be careful with the Revoke buttons.",
+      "status": "supports",
+      "remarks": "",
       "decidedBy": "agent",
       "open": [],
       "evidence": [
         {
           "check": "review:agent",
-          "result": "fail",
-          "summary": "Opened each flow to the confirmation. org-settings 'Delete organization' gives a dialog 'Are you sure you want to delete organization ...?' with Delete and Cancel, Escape closes, no request. account 'Delete account' gives 'Are you sure you want to delete your ... account ...?'. org-members: select a row, 'Remove' gives 'Are you sure you want to delete membership of ... for this organization?'. org page 'Admin' button (aria-label Leave) gives a popconfirm 'Are you sure you want to leave ...?'. org-attachments: select a row, 'Delete' gives 'Are you sure you want to delete 1 attachment?'. account Sessions 'Revoke' on one session sends DELETE /api/me/sessions at once, no dialog (sessions-list.tsx:60). org-settings API keys: created a key and clicked 'Revoke': DELETE .../service-accounts/<id>/keys/<id> sent at once, no dialog, key shown as revoked (service-account-tile.tsx:26-29).",
-          "where": [
-            "org-settings",
-            "account"
-          ],
-          "date": "2026-10-02"
+          "result": "pass",
+          "summary": "After the Batch F fix, driven in the live page: org-settings, API keys: 'Revoke' opens a confirmation 'Revoke API key <name>? Anything that uses it stops working, and this cannot be undone.' with Revoke and Cancel; no DELETE request before a choice, none after Cancel, one DELETE .../service-accounts/<id>/keys/<id> after Revoke (service-accounts/service-account-tile.tsx). Unchanged from the earlier pass: deleting an organization, the account, members and attachments, and leaving an organization each ask first. Revoking a session stays one click by decision (flip, 2026-10-03): it signs that device out, deletes no data, and signing in again restores access.",
+          "where": [],
+          "date": "2026-10-03"
         }
       ]
     },
@@ -1574,10 +1569,9 @@
         {
           "check": "axe",
           "result": "review",
-          "summary": "axe aria-valid-attr-value needs a person to check 3 states: ARIA attributes must conform to valid values.",
+          "summary": "axe aria-valid-attr-value needs a person to check 2 states: ARIA attributes must conform to valid values.",
           "where": [
             "docs-search (light)",
-            "account (light)",
             "search-sheet (light)"
           ]
         },
@@ -1614,7 +1608,7 @@
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-command-name passed on 1 states.",
+          "summary": "axe aria-command-name passed on 2 states.",
           "where": []
         },
         {

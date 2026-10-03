@@ -59,7 +59,7 @@ export function SelectEmails({ emails = [], onValueChange, placeholder, inputPro
     // biome-ignore lint/a11y/useKeyWithClickEvents: a click on the padding forwards focus to the input, which takes the keys
     <div
       onClick={(event) => event.target === event.currentTarget && inputRef.current?.focus()}
-      className="focus-effect flex flex-row flex-wrap items-center rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs ring-offset-background sm:focus-within:ring-2 sm:focus-within:ring-ring sm:focus-within:ring-offset-2"
+      className="focus-effect flex flex-row flex-wrap items-center rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs ring-offset-background focus-ring:focus-within:ring-2 focus-ring:focus-within:ring-ring focus-ring:focus-within:ring-offset-2"
     >
       {emails.length > 0 && (
         <div className="flex flex-row flex-wrap gap-1 rounded-md pr-1">
@@ -72,7 +72,7 @@ export function SelectEmails({ emails = [], onValueChange, placeholder, inputPro
                 size="micro"
                 aria-label={t('c:remove_resource', { resource: email })}
                 onClick={() => remove(email)}
-                className="size-4.5 cursor-pointer rounded-full p-0 ring-inset sm:focus-visible:ring-2"
+                className="size-4.5 cursor-pointer rounded-full p-0 ring-inset focus-ring:focus-visible:ring-2"
                 press={false}
               >
                 <XIcon />

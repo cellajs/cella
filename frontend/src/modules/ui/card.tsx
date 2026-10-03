@@ -24,8 +24,10 @@ export function CardHeader({ className, ...props }: React.ComponentProps<'div'>)
   );
 }
 
-export function CardTitle({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="card-title" className={cn('flex min-h-3 items-center font-semibold leading-none sm:min-h-6', className)} {...props} />;
+/** `level` makes the title a heading (h1 to h4) where it heads a section of the page, so assistive technology can jump to it. */
+export function CardTitle({ className, level, ...props }: React.ComponentProps<'div'> & { level?: 1 | 2 | 3 | 4 }) {
+  const Tag = (level ? `h${level}` : 'div') as 'div';
+  return <Tag data-slot="card-title" className={cn('flex min-h-3 items-center font-semibold leading-none sm:min-h-6', className)} {...props} />;
 }
 
 export function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {

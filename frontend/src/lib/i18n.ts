@@ -3,6 +3,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import Backend from 'i18next-http-backend';
 import { initReactI18next } from 'react-i18next';
 import { appConfig } from 'shared';
+import { z } from 'zod';
 import { env } from '~/env';
 import { locales } from '~/lib/i18n-locales';
 
@@ -34,6 +35,9 @@ instance.on('languageChanged', (lng) => {
 });
 
 instance.init(initOptions);
+
+// The validator's own text for a wrong email only says it is invalid; ours shows the expected form. A message set on a schema still wins.
+z.config({ customError: (issue) => (issue.code === 'invalid_format' && issue.format === 'email' ? i18n.t('error:invalid_email') : undefined) });
 
 // HMR for lazy-loaded locales (non-bundled languages and HTTP-loaded namespaces)
 if (import.meta.hot) {

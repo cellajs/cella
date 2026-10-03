@@ -47,12 +47,14 @@ export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending 
     : null;
 
   return (
-    <Card
-      className={cn('group/tile w-full py-0 transition-all sm:py-0 sm:has-[button:focus]:ring-2', !isLive && 'opacity-70')}
-      data-expanded={expanded}
-    >
+    <Card className="group/tile w-full py-0 transition-all focus-ring:has-[button:focus]:ring-2 sm:py-0" data-expanded={expanded}>
       <CardContent className="flex gap-2 p-2 sm:gap-3 sm:p-3 lg:items-center">
-        <DeviceIcon className="size-4 max-sm:mt-0.5 sm:size-8" strokeWidth={1.5} />
+        <DeviceIcon
+          className="size-4 shrink-0 max-sm:mt-0.5 sm:size-8"
+          strokeWidth={1.5}
+          role="img"
+          aria-label={t(session.deviceType === 'desktop' ? 'c:desktop' : 'c:mobile')}
+        />
         <div className="flex w-full flex-col gap-1 overflow-hidden">
           <div className="flex gap-1 xs:gap-2 max-xs:flex-col">
             <span className="text-sm">{session.deviceName || t('c:unknown_device')}</span>
@@ -92,27 +94,37 @@ export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending 
           </div>
 
           <div className="flex flex-wrap gap-x-2 gap-y-1 text-muted-foreground text-xs sm:text-sm md:gap-x-5">
-            <p className="truncate" aria-describedby={t('c:period')}>
+            <p className="truncate">
+              <span className="sr-only">{t('c:period')}: </span>
               {dateShort(session.createdAt)} - {dateShort(endedAt)}
             </p>
             {session.revocationReason && (
-              <p className="truncate" aria-describedby={t('c:revoked')}>
+              <p className="truncate">
+                <span className="sr-only">{t('c:revoked')}: </span>
                 {t(`c:revocation_reason.${session.revocationReason}`)}
               </p>
             )}
             {session.authStrategy && (
-              <p className="hidden truncate capitalize max-lg:group-data-[expanded=true]/tile:inline lg:inline" aria-describedby={t('c:strategy')}>
+              <p className="hidden truncate capitalize max-lg:group-data-[expanded=true]/tile:inline lg:inline">
+                <span className="sr-only">{t('c:strategy')}: </span>
                 {strategyLabel(session.authStrategy)}
               </p>
             )}
-            <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline" aria-describedby="os">
-              {session.deviceOs}
-            </p>
-            <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline" aria-describedby={t('c:browser')}>
-              {session.browser}
-            </p>
+            {session.deviceOs && (
+              <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline">
+                <span className="sr-only">OS: </span>
+                {session.deviceOs}
+              </p>
+            )}
+            {session.browser && (
+              <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline">
+                <span className="sr-only">{t('c:browser')}: </span>
+                {session.browser}
+              </p>
+            )}
             {countryName && (
-              <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline" aria-describedby={t('c:country')}>
+              <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline">
+                <span className="sr-only">{t('c:country')}: </span>
                 {countryName}
               </p>
             )}

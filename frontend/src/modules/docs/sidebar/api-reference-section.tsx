@@ -85,7 +85,7 @@ export function ApiReferenceSection({ label, tags }: ApiReferenceSectionProps) {
                     className={cn(
                       buttonVariants({ variant: 'ghost' }),
                       'group w-full items-center justify-start px-3 font-medium lowercase',
-                      isOperationsActive && 'bg-accent',
+                      isOperationsActive && 'bg-accent font-semibold',
                     )}
                   />
                 }
@@ -132,7 +132,7 @@ export function ApiReferenceSection({ label, tags }: ApiReferenceSectionProps) {
                     className={cn(
                       buttonVariants({ variant: 'ghost' }),
                       'group w-full justify-start px-3 font-medium lowercase',
-                      isSchemasRoute && 'bg-accent',
+                      isSchemasRoute && 'bg-accent font-semibold',
                     )}
                   />
                 }
