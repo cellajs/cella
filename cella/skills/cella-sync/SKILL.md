@@ -25,7 +25,8 @@ advances one stage (steps 6 and 7).
 
 ## 1. Preflight
 
-1. Clean working tree, fresh branch (sync creates `cella/sync/<date>` itself).
+1. Clean working tree, fresh branch (sync creates `cella/sync/<date>` itself). A run that stops with
+   `upstream needs @cellajs/cli ...` has changed nothing: run the `pnpm add` it prints, commit, rerun.
 2. Once the first run has merged, `pnpm cella migrate` lists the migration notes that arrived
    (the merge already recorded them, conflicts or not). Read each one (`--show <id>`) BEFORE
    resolving conflicts; conflicts usually belong to one of them.
@@ -46,20 +47,28 @@ copy, and their upstream hunks wait in the analyze list.
 
 ## 3. Silent-damage sweep
 
-Auto-merge can drop fork lines in UNCONFLICTED files with no signal. After the merge, before
-committing:
+Auto-merge can drop fork lines in UNCONFLICTED files with no signal. Sweep after the merge, before
+shipping. With conflicts open the merge is still staged; a clean first run has already committed it
+(step 6), so both sides of the comparison move:
 
 ```sh
-git diff HEAD --stat            # staged result vs pre-merge HEAD
-git log -p MERGE_HEAD -1 --stat # what upstream intended
+# conflicts open: the merge is staged, upstream is MERGE_HEAD
+git diff HEAD --stat             # staged result vs pre-merge HEAD
+git log -p MERGE_HEAD -1 --stat  # what upstream intended
+
+# clean run: the sync is committed, upstream is the commit the manifest records
+upstream=$(node -p "require('./cella/cella.manifest.json').upstream.commit")
+git diff HEAD~1 --stat           # sync commit vs pre-merge HEAD
+git log -p "$upstream" -1 --stat # what upstream intended
 ```
 
 For each auto-merged file in an area with `fork:` markers (grep them repo-wide as the map), verify
 the marked lines survived; CI stays green until typecheck when one is dropped.
 
 Ignored paths never merge, so upstream changes there arrive only by hand. Read
-`git diff HEAD MERGE_HEAD -- shared/config` for new config keys and version bumps, and the same for every
-app-owned module folder (`owner: 'app'`) that started as an upstream module.
+`git diff HEAD <upstream> -- shared/config` (`MERGE_HEAD` or `$upstream`, as above) for new config keys
+and version bumps, and the same for every app-owned module folder (`owner: 'app'`) that started as an
+upstream module.
 
 ## 4. Regenerate and gate
 
@@ -82,8 +91,7 @@ when you can; one left for later stays listed by `pnpm cella migrate` until it i
 Step 1's run committed a clean merge; after conflict resolution, rerun `pnpm cella sync` to
 commit. Never `git commit` the staged merge: a two-parent merge commit makes the squash-merged PR
 list the entire upstream history. The CLI squash-commits the staged delta as a single-parent
-commit and stops without pushing. (Pre-0.2.0 CLI: the commit rerun also ships; let it, then push
-this triage as follow-ups to the open PR.)
+commit and stops without pushing.
 
 Then `pnpm cella analyze` (diffs committed HEAD in a worktree; content reverts only show after
 commit). Follow-up triage commits may use plain `git commit`; only the staged merge needs the
@@ -92,7 +100,7 @@ rerun. Per `drifted` file:
 | Finding | Action |
 |---|---|
 | No fork marker, no known axis | Accidental drift: revert the file to upstream. |
-| Generic improvement the app authored | Contribute upstream (`pnpm cella contributions`); do not protect. |
+| Generic improvement the app authored | Contribute upstream; do not protect. Nothing to run in the app: the template maintainers adopt it from the app's trunk with `pnpm cella contributions`, a template-side command that needs `forks` in the config. |
 | App payload inside a cella-owned barrel/registry | Move the payload to a fork-owned file, import it directly, revert the barrel. |
 | Real fork axis on a cella-owned file | Every delta gets a `// fork:` marker. Pin only after auto-merge has mangled the file at least once. |
 | App identity (brand, locales, release config, root docs) | Add to `ignored` (never synced) or `pinned` (brand files whose upstream fixes you adopt by hand). |

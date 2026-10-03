@@ -23,7 +23,7 @@ An agent's decision is provisional. It is recorded as `decidedBy: "agent"`, the 
 4. **When unsure, record `open`** with what was seen. A wrong Supports reaches a published report; an open row costs a person a minute.
 5. **Stay inside the criterion.** Read its text in WCAG 2.2 Understanding first; note other problems for the row they belong to.
 6. **Do not decide what needs assistive technology.** 4.1.2 and 4.1.3 get findings from the tree, never Supports: only a screen reader shows what is announced.
-7. **Ignore development-only UI**: the debug menu, devtools and the sign-in hint banner.
+7. **Ignore development-only UI**: the debug menu, devtools and the "Testing credentials" banner.
 
 ## What to check
 
@@ -49,7 +49,7 @@ From the packets alone:
 
 From the source, with the tools' notes as the starting point: 1.2.1 to 1.2.5 and 1.4.2 (does the app publish media, or only play what users upload?), 2.2.1 (time limits), 2.2.2 (motion that starts by itself), 2.5.1 and 2.5.7 (is there a button for every gesture and drag?), 2.5.2 (do actions fire on release?).
 
-By driving the browser (`cella/skills/verify` explains how): 3.2.2 (change each kind of field, nothing navigates), 3.3.3 (do error messages say how to fix the input?), 3.3.4 (can destructive actions be confirmed or undone?), 3.3.7 (multi-step flows), 2.1.1 (each function by keyboard: menus, dialogs, the grid, the editor, uploads), 1.4.11 (measure borders and icons at 3:1), 2.5.8 (targets axe could not decide).
+By driving the browser (the `verify` skill explains how to launch, sign in and drive): 3.2.2 (change each kind of field, nothing navigates), 3.3.3 (do error messages say how to fix the input?), 3.3.4 (can destructive actions be confirmed or undone?), 3.3.7 (multi-step flows), 2.1.1 (each function by keyboard: menus, dialogs, the grid, the editor, uploads), 1.4.11 (measure borders and icons at 3:1), 2.5.8 (targets axe could not decide).
 
 ## Record
 
@@ -57,8 +57,8 @@ Write the decisions to a JSON file and record them in one go. A decision that th
 
 ```json
 [
-  { "id": "2.4.6", "status": "supports", "by": "agent", "evidence": "Read facts.headings and facts.fields of all 27 states: each heading names its section, each field its content." },
-  { "id": "1.1.1", "status": "partially-supports", "by": "agent", "remarks": "Icons in the attachment grid have no text alternative.", "evidence": "org-attachments: 3 file-type icons are img with no name (tree.yml); the other 26 states pass.", "where": ["org-attachments"] },
+  { "id": "2.4.6", "status": "supports", "by": "agent", "evidence": "Read facts.headings and facts.fields of all 26 states: each heading names its section, each field its content." },
+  { "id": "1.1.1", "status": "partially-supports", "by": "agent", "remarks": "Icons in the attachment grid have no text alternative.", "evidence": "org-attachments: 3 file-type icons are img with no name (tree.yml); the other 25 states pass.", "where": ["org-attachments"] },
   { "id": "4.1.2", "status": "open", "by": "agent", "evidence": "tree.yml of all states: custom controls expose role, name and state. Needs a screen reader." }
 ]
 ```

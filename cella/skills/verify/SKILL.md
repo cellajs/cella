@@ -17,10 +17,12 @@ description: Build, launch, and drive the cella frontend to verify UI changes at
 
 - Playwright is in the root pnpm store; bare `require('playwright')` fails outside the workspace. Import directly:
   `await import('<repo-root>/node_modules/.pnpm/playwright@<version>/node_modules/playwright/index.mjs')` (glob `node_modules/.pnpm/playwright@*` for the version). Chromium cache: `~/Library/Caches/ms-playwright`.
+- Signed-in pages: no UI login, and no cookie built by hand (the app signs every cookie). `pnpm --filter backend session:mint <email> [hours]` (development and test mode only) prints `<cookie name>=<signed value>` and a curl line with the API URL; the seeded admin is `ADMIN_EMAIL` in `backend/.env`. Set it with `context.addCookies([{ name, value, url: <appConfig.frontendUrl> }])`. The API is same-origin, under `<frontendUrl>/api`. Worked example: `startSession` in `a11y/src/session.ts`.
+- Realtime behavior across two tabs (entity sync, collaborative descriptions): the `two-tab-sync-test` skill and its driver.
 - Breakpoints come from `appConfig.theme.screenSizes` (Tailwind defaults: sm 640, md 768). `useBreakpointBelow('sm')` is strict `< 640`.
 
 ## Gotchas
 
 - `use-scroll-visibility.ts` ignores single-frame scroll jumps > 150px (`MAX_GESTURE_DELTA`) and has a 500ms initial cooldown, so `window.scrollBy(0, 1000)` will NOT hide floating nav buttons. Simulate gestures: repeated `page.mouse.wheel(0, ~100)` ticks at ~60ms intervals, after waiting ~1s post-load.
 - Floating nav buttons: `#floating-nav` container, item ids like `marketing-menu` / `docs-menu`; hidden = `opacity-0` class on the button.
-- The dev-mode "Testing credentials" toast at the bottom of marketing pages can overlap bottom-anchored UI in screenshots.
+- The dev-mode "Testing credentials" banner, fixed to the bottom of public pages, can overlap bottom-anchored UI in screenshots.

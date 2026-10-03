@@ -7,7 +7,7 @@ import { type Decision, recordDecisions } from './ledger.ts';
  * Records a reviewer's decision on criteria the audit leaves open.
  *
  * Usage:
- *   pnpm -C a11y decide --id 2.4.6 --status supports --by human --evidence "Read the headings of all 27 states."
+ *   pnpm -C a11y decide --id 2.4.6 --status supports --by human --evidence "Read the headings of all 26 states."
  *   pnpm -C a11y decide --file decisions.json     an array of { id, status, by, remarks?, evidence, where? }
  *
  * Status: supports | partially-supports | does-not-support | not-applicable | open (a finding, no decision).
