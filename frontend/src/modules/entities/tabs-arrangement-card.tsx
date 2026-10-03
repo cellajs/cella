@@ -110,20 +110,23 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
     setMoveStatus(t('c:success.move_position', { name: rows[fromIdx].name, position: toIdx + 1, total: rows.length }));
   };
 
+  // A phone has no room for the drag handle beside the move buttons, and the buttons do the same there
+  const dragHandleColumn: ColumnOrColumnGroup<TabRow> = {
+    key: 'drag-handle',
+    name: '',
+    width: 32,
+    maxWidth: 32,
+    cellClass: tw('flex cursor-grab items-center justify-center'),
+    rowDragHandle: true,
+    renderCell: () => <GripVerticalIcon className="size-3.5 text-muted-foreground" />,
+  };
+
   const columns: ColumnOrColumnGroup<TabRow>[] = [
-    {
-      key: 'drag-handle',
-      name: '',
-      width: 32,
-      maxWidth: 32,
-      cellClass: tw('flex cursor-grab items-center justify-center'),
-      rowDragHandle: true,
-      renderCell: () => <GripVerticalIcon className="size-3.5 text-muted-foreground" />,
-    },
+    ...(isMobile ? [] : [dragHandleColumn]),
     {
       key: 'label',
       name: t('c:resource_name', { resource: t('c:tab') }),
-      minWidth: 160,
+      minWidth: isMobile ? 132 : 160,
       renderCell: ({ row }) => {
         if (!row.description) return <span className="truncate text-sm">{row.name}</span>;
 
@@ -147,7 +150,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
     {
       key: 'move',
       name: t('c:order'),
-      width: 72,
+      width: isMobile ? 64 : 72,
       cellClass: tw('flex items-center justify-center'),
       headerCellClass: 'text-center',
       renderCell: ({ row, rowIdx }) => (
