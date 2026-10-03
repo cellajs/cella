@@ -150,7 +150,6 @@ export const mockInactiveMembership = (key = 'inactive-membership:default', opti
       channelId: base.channelId,
       email: faker.internet.email().toLowerCase(),
       userId: base.userId,
-      tokenId: mockUuid(),
       role: base.role,
       rejectedAt: null,
       remindedAt: null,

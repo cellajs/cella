@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { mockPaginated, mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
 import type { RequestModel } from '#/modules/requests/requests-db';
 
-export interface RequestResponse extends Omit<RequestModel, 'tokenId'> {
+export interface RequestResponse extends Omit<RequestModel, 'invitedAt'> {
   wasInvited: boolean;
 }
 
@@ -13,11 +13,11 @@ export const mockRequest = (key = 'request:default'): RequestModel =>
     type: 'contact' as const,
     message: faker.lorem.sentence(),
     createdAt: mockPastIsoDate(),
-    tokenId: null,
+    invitedAt: null,
   }));
 
 export const mockRequestResponse = (key = 'request:default'): RequestResponse => {
-  const { tokenId: _, ...request } = mockRequest(key);
+  const { invitedAt: _, ...request } = mockRequest(key);
   return { ...request, wasInvited: false };
 };
 

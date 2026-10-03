@@ -918,11 +918,6 @@
                         "required": true,
                         "format": "uuid"
                       },
-                      "tokenId": {
-                        "type": ["string", "null"],
-                        "required": true,
-                        "format": "uuid"
-                      },
                       "role": {
                         "type": "string",
                         "required": true,
@@ -973,13 +968,12 @@
                 "channelId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
                 "email": "carolyn5@yahoo.com",
                 "userId": "fdad27c1-21b8-4610-ac73-58603f33f5e5",
-                "tokenId": "915e1951-a439-40dc-9303-6bdbd6aea838",
                 "role": "member",
                 "rejectedAt": null,
                 "remindedAt": null,
                 "createdAt": "2024-11-13T15:29:06.546Z",
                 "createdBy": {
-                  "id": "228db2dc-c869-402a-b1c2-b305fd00a860",
+                  "id": "915e1951-a439-40dc-9303-6bdbd6aea838",
                   "name": "Sister Monahan",
                   "slug": "sister.monahan13",
                   "thumbnailUrl": null,
@@ -1007,13 +1001,12 @@
                 "channelId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
                 "email": "orion_king81@hotmail.com",
                 "userId": "ca0c17be-8d73-40a0-95e9-9f5949340302",
-                "tokenId": "7dee4eb2-c5eb-4722-91aa-d911de2e383b",
                 "role": "admin",
                 "rejectedAt": null,
                 "remindedAt": null,
                 "createdAt": "2024-04-11T17:15:50.993Z",
                 "createdBy": {
-                  "id": "dcc8a336-19bf-450f-b2bc-92443279eeb9",
+                  "id": "7dee4eb2-c5eb-4722-91aa-d911de2e383b",
                   "name": "John Morar",
                   "slug": "john.morar34",
                   "thumbnailUrl": null,

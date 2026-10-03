@@ -320,7 +320,6 @@ export const zInactiveMembership = z.object({
   channelId: z.uuid(),
   email: z.string().max(255),
   userId: z.uuid().nullable(),
-  tokenId: z.uuid().nullable(),
   role: z.enum(['admin', 'member']),
   rejectedAt: z.string().nullable(),
   remindedAt: z.string().nullable(),

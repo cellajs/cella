@@ -3,7 +3,7 @@ import { AppError } from '#/core/error';
 import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
 import { findSystemInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
 import { sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
-import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
+import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
 import { findVerifiedEmails } from '#/modules/system/system-queries';
 import { log } from '#/utils/logger';
 
@@ -63,7 +63,7 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
     recipientEmails.map((email) => ({ type: 'invitation' as const, email, createdBy: user.id })),
   );
 
-  await Promise.all(issued.map(({ token }) => linkWaitlistRequest(ctx, { email: token.email, tokenId: token.id })));
+  await Promise.all(issued.map(({ token }) => stampWaitlistRequestInvited(ctx, { email: token.email })));
 
   // No account holds these addresses (a verified one is rejected above) and no organization is involved: the mail
   // goes out in the app's language.

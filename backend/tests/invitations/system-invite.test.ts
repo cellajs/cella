@@ -1,8 +1,10 @@
 import { eq } from 'drizzle-orm';
-import { systemInvite } from 'sdk';
+import { getRequests, systemInvite } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens-db';
+import { requestsTable } from '#/modules/requests/requests-db';
+import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
 import { createSystemAdminUser, createTestSession, createTestUser, mailedLink } from '../helpers';
@@ -60,6 +62,31 @@ describe('System Invitation', async () => {
       const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
       expect(response.invitesSentCount).toBe(1); // Only one invitation sent
       expect(response.rejectedIds).toHaveLength(0);
+    });
+  });
+
+  describe('Waitlist', () => {
+    it('marks the waitlist request of an invited address as invited, at its first invitation', async () => {
+      const sessionCookie = await createAdminSession();
+      await db.insert(requestsTable).values([
+        { email: 'waiting@example.com', type: 'waitlist' },
+        { email: 'waiting@example.com', type: 'newsletter' },
+        { email: 'other@example.com', type: 'waitlist' },
+      ]);
+
+      await makeInviteRequest(['waiting@example.com'], sessionCookie);
+
+      const { data } = await call(getRequests, { query: {}, headers: { ...defaultHeaders, Cookie: sessionCookie } });
+      const listed = (data as { items: { email: string; type: string; wasInvited: boolean }[] }).items;
+      expect(listed.filter(({ wasInvited }) => wasInvited).map(({ email, type }) => ({ email, type }))).toEqual([
+        { email: 'waiting@example.com', type: 'waitlist' },
+      ]);
+
+      // A later invitation to the address leaves the first time standing.
+      const invitedAtOf = async () => (await db.select().from(requestsTable).where(eq(requestsTable.type, 'waitlist'))).map((r) => r.invitedAt);
+      const first = await invitedAtOf();
+      await stampWaitlistRequestInvited({ var: { db } }, { email: 'waiting@example.com' });
+      expect(await invitedAtOf()).toEqual(first);
     });
   });
 

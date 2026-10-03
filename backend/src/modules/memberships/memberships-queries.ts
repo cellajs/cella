@@ -146,17 +146,6 @@ export const stampInactiveMembershipsReminded = async (ctx: DbContext, { ids, re
   return db.update(inactiveMembershipsTable).set({ remindedAt }).where(inArray(inactiveMembershipsTable.id, ids));
 };
 
-interface UpdateInactiveMembershipTokenOpts {
-  id: string;
-  tokenId: string;
-}
-
-/** Point an inactive membership at a fresh invitation token (rotation at deferred dispatch). */
-export const updateInactiveMembershipToken = async (ctx: DbContext, { id, tokenId }: UpdateInactiveMembershipTokenOpts) => {
-  const { db } = ctx.var;
-  return db.update(inactiveMembershipsTable).set({ tokenId }).where(eq(inactiveMembershipsTable.id, id));
-};
-
 interface FindPendingInactiveMembershipOpts {
   id: string;
   /** Lock the row for the caller's transaction, so a concurrent answer, rejection or resend waits for it. */

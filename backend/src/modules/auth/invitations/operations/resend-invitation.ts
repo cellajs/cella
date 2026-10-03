@@ -2,9 +2,9 @@ import type { DbContext } from '#/core/context';
 import { issueToken, type NewToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findInvitationToken, type TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { findPendingInactiveMembership, updateInactiveMembershipToken } from '#/modules/memberships/memberships-queries';
+import { findPendingInactiveMembership } from '#/modules/memberships/memberships-queries';
 import { sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
-import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
+import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 
@@ -42,7 +42,6 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: TokenRecor
 
       // The new token replaces every older token of the invitation.
       const { token, rawToken } = await issueToken(txCtx, replacementOf(oldToken));
-      await updateInactiveMembershipToken(txCtx, { id: invitation.id, tokenId: token.id });
 
       return { invitation: { ...invitation, entity }, tokenId: token.id, rawToken };
     }
@@ -53,7 +52,7 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: TokenRecor
     // A system invitation is every invitation token for the address outside a membership invitation; the new token
     // replaces them all.
     const { token, rawToken } = await issueToken(txCtx, replacementOf(oldToken));
-    await linkWaitlistRequest(txCtx, { email, tokenId: token.id });
+    await stampWaitlistRequestInvited(txCtx, { email });
 
     return { invitation: null, tokenId: token.id, rawToken };
   });

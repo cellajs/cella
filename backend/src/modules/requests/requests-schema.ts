@@ -8,7 +8,7 @@ import { mockRequestBaseResponse } from './requests-mocks';
 const requestSelectSchema = createSelectSchema(requestsTable);
 
 export const requestSchema = requestSelectSchema
-  .omit({ tokenId: true })
+  .omit({ invitedAt: true })
   .extend({ wasInvited: z.boolean() })
   .openapi('Request', {
     description:
