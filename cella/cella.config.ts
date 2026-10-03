@@ -35,7 +35,7 @@ export default defineConfig({
       'frontend/public/static/common',
       'frontend/src/content',
       'frontend/src/routes/routeTree.gen.ts',
-      'frontend/src/modules/common/bg-animation',
+      'frontend/src/modules/common/morph-animation',
       // App identity: brand assets and the app's own locale namespace. cella has no upstream fix
       // to push into these, so they are never synced. Template-consumed copy lives in common.json,
       // never in app.json.

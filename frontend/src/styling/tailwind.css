@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "./gradients.css" layer(base); /* Custom gradients that are not easy to build using tailwind */
+@import "./plus-grain.css" layer(base); /* Dithered + texture echoing the morph animation */
 
 /* Breakpoints, the container cap and typography: the parts that need JS. */
 @plugin "./tailwind-plugin.ts";
