@@ -26,8 +26,8 @@ export const resolvePostgresSslCa = (ca: string | undefined, required: boolean):
     if (!required) return undefined;
     throw new Error(
       'FATAL: DATABASE_SSL_CA is required in production for verified TLS to PostgreSQL. ' +
-        'It is provisioned automatically by `pulumi up` (Scaleway RDB CA). Run the infra ' +
-        "CLI → 'Apply infra change', or check the database-ssl-ca runtime secret.",
+        'It is provisioned automatically by `pulumi up` (Scaleway RDB CA). Run ' +
+        '`pnpm infra apply`, or check the database-ssl-ca runtime secret.',
     );
   }
   return Buffer.from(ca, 'base64').toString('utf-8');

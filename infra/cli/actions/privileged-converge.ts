@@ -13,7 +13,7 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
-import { acquireStackLockOrExit, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
+import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { acquireOwnerKey } from './owner-key';
 
 export interface PrivilegedConvergeOptions {
@@ -46,7 +46,7 @@ export interface PrivilegedConvergeResult {
 }
 
 /**
- * The privileged converge shared by "Apply infra change", the DB-exposure toggle, and seeding, in order: resolve the passphrase, take the
+ * The privileged converge shared by "Apply changes", the DB access actions, and seeding, in order: resolve the passphrase, take the
  * Owner API key and the stack lock, reconcile rollout config from live state so a local `up` cannot revert compute to a stale generation,
  * apply the caller's config mutation, then `pulumi up` with an orphan-prune/retry loop.
  * Returns the provider env and stack for reading outputs after the lock releases, and exits the process on hard failures before the `up` loop.
@@ -54,7 +54,7 @@ export interface PrivilegedConvergeResult {
 export async function runPrivilegedConverge(context: InfraContext, opts: PrivilegedConvergeOptions): Promise<PrivilegedConvergeResult> {
   if (context.state !== 'bootstrapped') {
     console.error(`${warningMark} This action requires a fully bootstrapped stack (state=${context.state}). Run "${menuPath('resume')}" first.`);
-    process.exit(1);
+    endAction(1);
   }
 
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
@@ -85,7 +85,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
   // Lock the stack through the control bucket to exclude concurrent operators and CI.
-  // Every exit path must release, and process.exit skips finally blocks, so hard-failure paths release explicitly and the guard stops a double release.
+  // Every exit path must release. The hard-failure paths release before they print and end the action, and the guard stops the double release when the finally below runs too.
   const stackLock = await acquireStackLockOrExit({
     appConfig,
     accessKey: stateOverride.stateAccessKey ?? ownerKey.accessKey,
@@ -134,7 +134,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
       if (sync.status !== 0) {
         await releaseAll();
         console.error(`${warningMark} sync-rollout-config failed (exit ${sync.status}). Aborting to avoid applying against stale gen/sha.`);
-        process.exit(sync.status ?? 1);
+        endAction(sync.status ?? 1);
       }
 
       const configFile = await opts.prepare?.(env, stack);
@@ -146,7 +146,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
         if (preview.status !== 0) {
           await releaseAll();
           console.error(`${warningMark} pulumi preview exited ${preview.status}; nothing applied.`);
-          process.exit(preview.status ?? 1);
+          endAction(preview.status ?? 1);
         }
         if (!(await confirm({ message: `Apply this plan to ${context.environment}?`, default: false }))) {
           console.info('Declined; nothing applied.');

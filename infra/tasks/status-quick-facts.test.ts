@@ -49,7 +49,7 @@ describe('formatQuickFacts', () => {
   it('points at the fetch action when no key is configured at all, and claims nothing about a lock it could not read', () => {
     const lines = strip(formatQuickFacts({ unavailable: [] }, { now: T, configured: 'none' }));
     expect(lines).toEqual([
-      '⚠ Admin application key: none in infra/.env.<mode> (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY; Manage keys & secrets → Fetch admin application key)',
+      '⚠ Admin application key: none in infra/.env.<mode> (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY; Repair stack → Fetch admin application key)',
     ]);
   });
 

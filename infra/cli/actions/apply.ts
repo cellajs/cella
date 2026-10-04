@@ -1,5 +1,6 @@
+import { actionLabel } from '../../lib/operator-actions';
 import { pc } from '../../lib/utils/cli-output';
-import type { InfraContext } from '../shared';
+import { endAction, type InfraContext } from '../shared';
 import { printRevokeReminder } from './owner-key';
 import { runPrivilegedConverge } from './privileged-converge';
 
@@ -8,10 +9,12 @@ import { runPrivilegedConverge } from './privileged-converge';
  * It runs against a bootstrapped stack with live compute, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
  */
 export async function runApply(context: InfraContext): Promise<void> {
-  console.info(pc.dim('\nApply infra change: ensure registry IAM principals, preview the plan with your Owner API key, confirm, then pulumi up.\n'));
+  console.info(
+    pc.dim(`\n${actionLabel('apply')}: ensure registry IAM principals, preview the plan with your Owner API key, confirm, then pulumi up.\n`),
+  );
 
   console.warn(
-    `${pc.yellow(pc.bold('⚠  Keep this run in the foreground.'))} ${pc.dim('If it is interrupted, re-run "Apply infra change" to converge.')}`,
+    `${pc.yellow(pc.bold('⚠  Keep this run in the foreground.'))} ${pc.dim(`If it is interrupted, run "${actionLabel('apply')}" again to converge.`)}`,
   );
 
   // Established stacks apply compute directly and recover from interruption by rerunning `up`; fresh-provision deferral here would tear down the live VMs and load balancer.
@@ -24,5 +27,5 @@ export async function runApply(context: InfraContext): Promise<void> {
     debugProvider,
   });
   if (completed && ownerKeyPasted) printRevokeReminder();
-  if (completed && verified === false) process.exit(1);
+  if (completed && verified === false) endAction(1);
 }

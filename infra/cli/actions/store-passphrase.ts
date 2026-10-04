@@ -1,3 +1,4 @@
+import { actionLabel } from '../../lib/operator-actions';
 import { checkMark, pc } from '../../lib/utils/cli-output';
 import { keychainReference, modeEnvPath, storeInKeychain, writeModeEnvValues } from '../../lib/utils/env-files';
 import { type InfraContext, resolveVerifiedPassphrase } from '../shared';
@@ -10,7 +11,9 @@ export async function runStorePassphrase(context: InfraContext): Promise<void> {
   const service = `${context.appConfig.slug}-${context.environment}`;
   const account = 'PULUMI_CONFIG_PASSPHRASE';
   console.info(
-    pc.dim(`\nStore passphrase in keychain: keychain entry ${service}/${account}; infra/.env.${context.environment} keeps only the reference.\n`),
+    pc.dim(
+      `\n${actionLabel('store-passphrase')}: keychain entry ${service}/${account}; infra/.env.${context.environment} keeps only the reference.\n`,
+    ),
   );
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   storeInKeychain(service, account, passphrase);

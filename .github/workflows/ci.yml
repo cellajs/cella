@@ -267,7 +267,7 @@ jobs:
         run: docker build --target ${{ matrix.target }} -t ${{ matrix.target }}-check .
 
   # Privileged infra changes (a database privilege, a VM policy rule) need an operator
-  # "Apply infra change" before the release deploys; this read-only preview under the CI key
+  # `pnpm infra apply` before the release deploys; this read-only preview under the CI key
   # names them on the release PR, where an owed Apply blocks the merge. Skips when
   # the production Environment secrets are absent (an app without a set-up stack).
   infra-preflight:

@@ -12,7 +12,7 @@ import type { PrincipalNames } from '../../lib/scaleway/principals';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { keyPairOrPrompt } from '../shared';
+import { endAction, keyPairOrPrompt } from '../shared';
 
 /** Lifetime of the key a privileged run mints from a durable Owner API key. */
 export const MINTED_KEY_TTL_MS = 30 * 60_000;
@@ -57,7 +57,7 @@ export async function acquireOwnerKey(opts: {
     console.error(
       `${warningMark} Could not resolve the organization id (${errorMessage(error)}). Set SCW_ORGANIZATION_ID (backend/.env) or SCW_DEFAULT_ORGANIZATION_ID and re-run.`,
     );
-    process.exit(1);
+    endAction(1);
   }
   let desc: KeyDescription;
   let role: PrincipalRole;
@@ -65,7 +65,7 @@ export async function acquireOwnerKey(opts: {
     ({ desc, role } = await assertIamManager({ pair, names, organizationId }));
   } catch (error) {
     console.error(`${warningMark} ${errorMessage(error)}`);
-    process.exit(1);
+    endAction(1);
   }
 
   const hours = hoursUntilExpiry(desc);

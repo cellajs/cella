@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { actionCommand } from '../lib/operator-actions';
 import { adoptStateBackendEnv, PLAN_LIVE_ONLY_ENV, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
 import { PRIVILEGED_UP_ENV } from '../lib/stack/privileged-up';
 import { ExitCodeError } from '../lib/utils/errors';
@@ -92,7 +93,7 @@ const showValue = (value: unknown): string => (value === undefined ? '(unset)' :
 
 /** The exact operator command for the mode. */
 export function applyHint(mode: string): string {
-  return `pnpm infra --mode ${mode}  →  Stack setup  →  Apply infra change`;
+  return `${actionCommand('apply')} --mode ${mode}`;
 }
 
 export function formatPending(mode: string, pending: PendingPrivilegedChange[]): string {

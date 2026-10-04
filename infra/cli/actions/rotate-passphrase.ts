@@ -10,6 +10,7 @@ import { infraDir } from '../../lib/utils/paths';
 import {
   acquireStackLockOrExit,
   confirmPassphraseStored,
+  endAction,
   type InfraContext,
   keyPairOrPrompt,
   pulumiLoginAndSelect,
@@ -27,7 +28,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
     console.error(
       `${warningMark} "Rotate passphrase" requires an existing stack with encrypted state (state=${context.state}). A fresh setup generates its own passphrase.`,
     );
-    process.exit(1);
+    endAction(1);
   }
 
   const versionOutput = spawnSync('pulumi', ['version'], { encoding: 'utf8' }).stdout?.trim() ?? '';
@@ -35,7 +36,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
     console.error(
       `${crossMark} pulumi ${versionOutput} cannot rotate a passphrase non-interactively: v3.44.0 or newer is required. Upgrade: brew upgrade pulumi`,
     );
-    process.exit(1);
+    endAction(1);
   }
 
   console.info(
@@ -79,7 +80,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
     console.error(
       `\n${crossMark} change-secrets-provider exited ${rotate.status}. The stack most likely still uses the OLD passphrase: verify before changing GitHub or your password manager.`,
     );
-    process.exit(rotate.status ?? 1);
+    endAction(rotate.status ?? 1);
   }
 
   // Post-check: the rewritten stack yaml must decrypt with the new passphrase.
@@ -93,14 +94,14 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
     console.error(
       `${crossMark} Could not read ${stackPath} after rotation. Verify manually which passphrase the stack now uses before updating anything else.`,
     );
-    process.exit(1);
+    endAction(1);
   }
   if (!verifyStackPassphrase(rotatedYaml, newPassphrase)) {
     await stackLock.release();
     console.error(
       `${crossMark} Post-check failed: ${stackPath} does not verify against the new passphrase. Do not update GitHub or discard the old passphrase; investigate before retrying.`,
     );
-    process.exit(1);
+    endAction(1);
   }
   console.info(`${checkMark} Stack re-encrypted: ${pc.cyan(`Pulumi.${stackShort}.yaml`)} verifies against the new passphrase.`);
 

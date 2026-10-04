@@ -13,8 +13,7 @@ import {
   sequenceDatabaseReset,
   serialConsoleSteps,
 } from '../../tasks/reset-database';
-import { isPromptAbort } from '../prompts/abort';
-import type { InfraContext } from '../shared';
+import { endAction, endsAction, type InfraContext } from '../shared';
 import { acquireOwnerKey, printRevokeReminder } from './owner-key';
 
 /** Roles Pulumi provisions on the instance (`resources/stores/postgres-managed.ts`). Both must be re-granted. */
@@ -49,7 +48,7 @@ function describeTarget(target: ResetTarget, region: string): string {
 export async function runResetDatabase(context: InfraContext): Promise<void> {
   if (context.state !== 'bootstrapped') {
     console.error(`${warningMark} "Reset database" requires a fully bootstrapped stack (state=${context.state}).`);
-    process.exit(1);
+    endAction(1);
   }
 
   const { appConfig } = context;
@@ -106,13 +105,13 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
     if (ownerKey.pasted) printRevokeReminder();
   } catch (error) {
     await ownerKey.release();
-    if (isPromptAbort(error)) throw error;
+    if (endsAction(error)) throw error;
     if (error instanceof ResetIrrecoverableError) {
       console.error(`\n${restoreHint(error, region)}\n`);
-      process.exit(1);
+      endAction(1);
     }
     console.error(`\n${crossMark} Reset aborted: ${errorMessage(error)}`);
     console.error(`  ${pc.dim('Nothing was destroyed: the guards run before the delete.')}\n`);
-    process.exit(1);
+    endAction(1);
   }
 }

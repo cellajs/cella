@@ -1,38 +1,19 @@
-import { emitKeypressEvents } from 'node:readline';
-import { confirm, select } from '@inquirer/prompts';
+import { confirm } from '@inquirer/prompts';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { principalNames } from '../../lib/scaleway/principals';
 import { pc } from '../../lib/utils/cli-output';
 import { BACK, manageRuntimeSecrets } from '../../tasks/manage-runtime-secrets';
 import { maskedSecret } from '../prompts/masked-secret';
+import { ESCAPED, menuSelect } from '../prompts/menu-select';
 import type { InfraContext } from '../shared';
 import { acquireOwnerKey, printRevokeReminder } from './owner-key';
 
 type PromptOption<T extends string> = { name: string; value: T; description?: string };
 
-/**
- * `select` that also resolves the {@link BACK} sentinel on Esc, so a prompt can return to the previous menu without forcing a choice.
- * Inquirer's select has no native Esc handling, so it is aborted via an AbortController driven by a stdin keypress listener.
- */
-function selectWithEscape<T extends string>(options: { message: string; choices: Array<PromptOption<T>> }): Promise<T | typeof BACK> {
-  const controller = new AbortController();
-  const onKeypress = (_chunk: unknown, key?: { name?: string }) => {
-    if (key?.name === 'escape') controller.abort();
-  };
-  emitKeypressEvents(process.stdin);
-  process.stdin.on('keypress', onKeypress);
-  return select<T>(options, { signal: controller.signal })
-    .then(
-      (value): T | typeof BACK => value,
-      (error: unknown): T | typeof BACK => {
-        // An aborted prompt is the operator stepping back, not a failure.
-        if (error instanceof Error && error.name === 'AbortPromptError') return BACK;
-        throw error;
-      },
-    )
-    .finally(() => {
-      process.stdin.removeListener('keypress', onKeypress);
-    });
+/** The runtime-secrets menus through the CLI's menu select: Esc steps back and resolves to the {@link BACK} sentinel. */
+async function selectWithEscape<T extends string>(options: { message: string; choices: Array<PromptOption<T>> }): Promise<T | typeof BACK> {
+  const picked = await menuSelect({ message: options.message, items: options.choices, escape: 'back' });
+  return picked === ESCAPED ? BACK : picked;
 }
 
 /**

@@ -49,7 +49,7 @@ export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<S
   return { serviceAppIds, bootAppId: boot.applicationId, allAppIds: [...Object.values(serviceAppIds), boot.applicationId] };
 }
 
-/** Ensure every registry principal exists: one `vm-<service>` application per `principalServices` entry plus the boot application. Setup and "Apply infra change" share it, so a registry change converges in one privileged run. */
+/** Ensure every registry principal exists: one `vm-<service>` application per `principalServices` entry plus the boot application. Setup and "Apply changes" share it, so a registry change converges in one privileged run. */
 export async function ensureRegistryPrincipals(opts: Omit<SetupServiceAppsOptions, 'services'> & { singleVM: boolean }): Promise<ServiceAppsResult> {
   const { singleVM, ...rest } = opts;
   return setupServiceApps({ ...rest, services: principalServices(singleVM).map((svc) => svc.slug) });

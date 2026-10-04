@@ -20,6 +20,7 @@ import { infraDir } from '../../lib/utils/paths';
 import {
   acquireStackLockOrExit,
   confirmOrDefault,
+  endAction,
   type InfraContext,
   keyPairOrPrompt,
   pulumiLoginAndSelect,
@@ -154,7 +155,7 @@ async function reviewPendingOperations(context: InfraContext, opts: { s3: S3Like
   }
   if (failure) {
     console.error(`${crossMark} Pending creates not cleared: ${failure}`);
-    process.exit(1);
+    endAction(1);
   }
 }
 
