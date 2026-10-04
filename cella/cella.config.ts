@@ -69,6 +69,8 @@ export default defineConfig({
       'frontend/src/alert-config.tsx',
       'frontend/src/list-queries-config.tsx',
       'frontend/src/styling/gradients.css',
+      // Marketing copy: feature lists, pricing, showcases and the screenshots behind them
+      'frontend/src/modules/marketing/marketing-config.tsx',
       // The pages and states the accessibility audit covers
       'a11y/scope-config.ts',
       'frontend/src/modules/home/home-page.tsx',

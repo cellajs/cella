@@ -24,6 +24,12 @@ import type { InfoCard } from '~/modules/marketing/about/info-cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import type { ShowcaseItem } from '~/modules/marketing/about/showcase';
 
+/**
+ * The app's own marketing copy: nav and footer links, the feature and sync capability lists, info
+ * cards, pricing plans, FAQ, counters, screenshots and showcases. Pinned in `cella/cella.config.ts`,
+ * so the app copy always wins a sync; the pages in this module read these exports by name.
+ */
+
 // Nav
 
 export const marketingNavConfig = [
