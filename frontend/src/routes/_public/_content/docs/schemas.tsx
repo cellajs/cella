@@ -15,7 +15,7 @@ export const Route = createFileRoute('/_public/_content/docs/schemas')({
   search: { middlewares: [stripParams('operationTag')] },
   head: () => ({ meta: [{ title: appTitle('Schemas') }] }),
   loader: async () => {
-    await Promise.all([queryClient.ensureQueryData(schemasQueryOptions), queryClient.ensureQueryData(schemaTagsQueryOptions)]);
+    await Promise.all([queryClient.query(schemasQueryOptions), queryClient.query(schemaTagsQueryOptions)]);
   },
   component: withSuspense(SchemasPage),
 });

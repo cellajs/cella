@@ -41,9 +41,9 @@ export function invalidateMemberships(): void {
   queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
 }
 
-/** fetchQuery deduplicates against an in-flight getMyMemberships, which invalidateQueries would not, avoiding a redundant fetch on app init. */
+/** `query` deduplicates against an in-flight getMyMemberships, which invalidateQueries would not, avoiding a redundant fetch on app init. */
 export function fetchMemberships(): Promise<unknown> {
-  return queryClient.fetchQuery({ queryKey: meKeys.memberships, queryFn: async ({ signal }) => getMyMemberships({ signal }) });
+  return queryClient.query({ queryKey: meKeys.memberships, queryFn: async ({ signal }) => getMyMemberships({ signal }) });
 }
 
 /** Called after membership updates, since a role change alters permissions. */

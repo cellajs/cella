@@ -47,8 +47,8 @@ export function ApiReferenceSection({ label, tags }: ApiReferenceSectionProps) {
   const [forcedCollapsed, setForcedCollapsed] = useState<string | null>(initialForcedCollapsed);
 
   const prefetchOperations = () => {
-    queryClient.prefetchQuery(operationsQueryOptions);
-    queryClient.prefetchQuery(tagsQueryOptions);
+    void queryClient.query(operationsQueryOptions).catch(() => {});
+    void queryClient.query(tagsQueryOptions).catch(() => {});
   };
 
   const isListMode = !isOperationsTableRoute;

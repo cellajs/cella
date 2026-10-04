@@ -12,7 +12,7 @@ export const Route = createFileRoute('/_public/_content/docs/operations_/table')
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Operations table') }] }),
   loader: async () => {
-    await queryClient.ensureQueryData(operationsQueryOptions);
+    await queryClient.query(operationsQueryOptions);
   },
   component: withSuspense(OperationsTable),
 });

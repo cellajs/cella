@@ -20,8 +20,8 @@ export const Route = createFileRoute('/_app/welcome')({
     if (!user) return;
 
     await Promise.allSettled([
-      queryClient.ensureInfiniteQueryData(organizationsListQueryOptions({ relatableUserId: user.id })),
-      queryClient.ensureQueryData(meInvitationsQueryOptions()),
+      queryClient.infiniteQuery({ ...organizationsListQueryOptions({ relatableUserId: user.id }), staleTime: 'static' }),
+      queryClient.query({ ...meInvitationsQueryOptions(), staleTime: 'static' }),
     ]);
   },
   onEnter: () => {

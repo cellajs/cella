@@ -50,7 +50,7 @@ export function OperationsSidebar({ activeTag }: OperationsSidebarProps) {
             renderItem={renderItem}
             itemKey={itemKey}
             onPrerender={() => {
-              queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name));
+              void queryClient.query(tagDetailsQueryOptions(tag.name)).catch(() => {});
               prerender(tag.name);
             }}
           />

@@ -32,8 +32,8 @@ async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> 
     import('~/modules/docs/search/engine'),
     import('virtual:docs-search-sections'),
     // Same cache the API reference uses; a cold offline cache degrades to docs-only and retries per search
-    queryClient.ensureQueryData(operationsQueryOptions).catch(() => null),
-    queryClient.ensureQueryData(schemasQueryOptions).catch(() => null),
+    queryClient.query(operationsQueryOptions).catch(() => null),
+    queryClient.query(schemasQueryOptions).catch(() => null),
   ]);
 
   const sectionsBySlug = new Map(Object.entries(docsSectionsIndex).map(([path, s]) => [pathToSlug(path), s]));
@@ -61,14 +61,14 @@ async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> 
   return {
     async search(term, scope) {
       if (!hasOperations) {
-        const late = await queryClient.ensureQueryData(operationsQueryOptions).catch(() => null);
+        const late = await queryClient.query(operationsQueryOptions).catch(() => null);
         if (late) {
           engine.addOperations(late);
           hasOperations = true;
         }
       }
       if (!hasSchemas) {
-        const late = await queryClient.ensureQueryData(schemasQueryOptions).catch(() => null);
+        const late = await queryClient.query(schemasQueryOptions).catch(() => null);
         if (late) {
           engine.addSchemas(late);
           hasSchemas = true;

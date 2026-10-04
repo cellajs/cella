@@ -233,7 +233,7 @@ export async function fetchEntityAndUpdateList(
   const cached = entityType ? findInCache<ItemData>(entityType, entityId) : undefined;
 
   try {
-    const entity = await queryClient.fetchQuery<ItemData>({
+    const entity = await queryClient.query<ItemData>({
       queryKey: keys.detail.byId(entityId),
       staleTime: 0, // Always fetch fresh on SSE notification
       meta: organizationId ? { organizationId, tenantId } : undefined,

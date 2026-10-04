@@ -18,7 +18,7 @@ export const organizationLayoutBeforeLoad = async ({ params, cause }: Organizati
     detailQueryOptions: (id) => organizationQueryOptions(id, tenantId),
     fetchBySlug: () => getOrganization({ path: { tenantId, id: organizationSlug }, query: { slug: true, include: 'counts' } }),
     slugFetchCacheKey: organizationQueryKeys.detail.byId,
-    ensureRequiresOnline: false,
+    readRequiresOnline: false,
     revalidateIfStale: shouldRevalidate,
     params,
     buildSlugOverrides: (entity) => ({ tenantId, organizationSlug: entity.slug }),

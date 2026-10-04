@@ -7,7 +7,7 @@ export async function fetchSlugCacheId<T extends { id: string }>(
 ): Promise<T> {
   // Unique per call, so concurrent entity fetches cannot collide.
   const uniqueKey = `slug-fetch-${Date.now()}-${Math.random()}`;
-  const data = await queryClient.fetchQuery({ queryKey: [uniqueKey], queryFn: fetcher, gcTime: 0 });
+  const data = await queryClient.query({ queryKey: [uniqueKey], queryFn: fetcher, gcTime: 0 });
   queryClient.setQueryData(cacheKey(data.id), data);
   return data;
 }

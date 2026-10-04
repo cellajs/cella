@@ -11,7 +11,7 @@ export const Route = createFileRoute('/_public/_content/docs/overview')({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('API overview') }] }),
   loader: async () => {
-    await Promise.all([queryClient.ensureQueryData(infoQueryOptions), queryClient.ensureQueryData(openApiSpecQueryOptions)]);
+    await Promise.all([queryClient.query(infoQueryOptions), queryClient.query(openApiSpecQueryOptions)]);
   },
   component: withSuspense(OverviewPage),
 });

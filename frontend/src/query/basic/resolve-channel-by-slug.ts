@@ -17,9 +17,9 @@ type ResolveChannelBySlugConfig<T extends { id: string; slug: string }, P extend
   fetchBySlug: () => Promise<T>;
   /** Cache key `fetchSlugCacheId` seeds once `fetchBySlug` resolves. */
   slugFetchCacheKey: (id: string) => readonly unknown[];
-  /** Default true: skip the id-based `ensureQueryData` while offline, resolving to undefined. False always ensures and waits for reconnection. */
-  ensureRequiresOnline?: boolean;
-  /** Forwarded to `ensureQueryData` to force revalidation on fresh navigations. */
+  /** Default true: skip the id-based read while offline, resolving to undefined. False always reads and waits for reconnection. */
+  readRequiresOnline?: boolean;
+  /** Revalidate a stale cached entry in the background, for fresh navigations. */
   revalidateIfStale?: boolean;
   params: P;
   /** Builds the slug-based param overrides for `rewriteUrlToSlug` once the entity resolves. */
@@ -41,7 +41,7 @@ export async function resolveChannelBySlug<T extends { id: string; slug: string 
     detailQueryOptions,
     fetchBySlug,
     slugFetchCacheKey,
-    ensureRequiresOnline = true,
+    readRequiresOnline = true,
     revalidateIfStale,
     params,
     buildSlugOverrides,
@@ -58,17 +58,20 @@ export async function resolveChannelBySlug<T extends { id: string; slug: string 
   if (id) {
     const options = detailQueryOptions(id);
 
-    // Seeding the detail cache lets ensureQueryData return without blocking on a fetch.
+    // Seeding the detail cache lets the cache-first read below return without blocking on a fetch.
     if (cached && !queryClient.getQueryData<T>(options.queryKey)) {
       queryClient.setQueryData<T>(options.queryKey, cached);
     }
 
-    // ensureQueryData returns cached data without blocking and, with revalidateIfStale, prefetches a stale entry in the background.
+    // `staleTime: 'static'` returns a cached entry without blocking, whatever its age; the second read honors the
+    // options' own staleTime, so a stale entry refetches behind the navigation that already resolved.
     // Background revalidation is online-only so an offline entry never leaves the detail query in an error state.
-    const shouldEnsure = ensureRequiresOnline ? isOnline : true;
-    entity = shouldEnsure
-      ? await queryClient.ensureQueryData({ ...options, revalidateIfStale: revalidateIfStale && isOnline })
-      : queryClient.getQueryData<T>(options.queryKey);
+    if (readRequiresOnline && !isOnline) {
+      entity = queryClient.getQueryData<T>(options.queryKey);
+    } else {
+      entity = await queryClient.query({ ...options, staleTime: 'static' });
+      if (revalidateIfStale && isOnline) void queryClient.query(options).catch(() => {});
+    }
   } else if (isOnline) {
     entity = await fetchSlugCacheId(fetchBySlug, slugFetchCacheKey);
   }

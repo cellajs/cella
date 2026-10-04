@@ -1,4 +1,5 @@
 import { createFileRoute, defer, redirect } from '@tanstack/react-router';
+import { ApiError } from '~/lib/api';
 import { meQueryOptions } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
@@ -28,13 +29,13 @@ export const Route = createFileRoute('/_app')({
 
         // The cookie can still be valid while the store is empty after a backend-driven sign-in, so probe /me first.
         try {
-          storedUser = await queryClient.ensureQueryData({ ...meQueryOptions() });
+          storedUser = await queryClient.query({ ...meQueryOptions(), staleTime: 'static' });
         } catch {
           throw redirect({ to: '/auth/authenticate', search: { fromRoot: true }, replace: true });
         }
       } else {
         // Redirect without awaiting `/me` to keep first paint fast; background hydration restores valid sessions.
-        void queryClient.ensureQueryData({ ...meQueryOptions() }).catch(() => {});
+        void queryClient.query({ ...meQueryOptions(), staleTime: 'static' }).catch(() => {});
 
         console.info('Not authenticated -> redirect to sign in');
 
@@ -49,8 +50,11 @@ export const Route = createFileRoute('/_app')({
     await localUserStorageReady();
     // Start stream early so catchup runs in parallel with route loaders
     appStreamManager.connect();
-    queryClient.ensureQueryData({ ...meQueryOptions() }).catch(() => {
-      appStreamManager.disconnect();
+    // Only a definitive 401 means the session is gone and the stream has nothing to subscribe to. A network failure or
+    // 5xx leaves it connected: disconnect() also drops its own visibility and leader reconnect handlers, so nothing
+    // would bring the stream back for the rest of the session.
+    queryClient.query({ ...meQueryOptions(), staleTime: 'static' }).catch((error) => {
+      if (error instanceof ApiError && Number(error.status) === 401) appStreamManager.disconnect();
     });
     return { user: storedUser };
   },
@@ -61,7 +65,7 @@ export const Route = createFileRoute('/_app')({
     try {
       console.debug('[AppLayout] Fetching menu while loading app:', location.pathname);
 
-      queryClient.prefetchQuery(unseenCountsQueryOptions());
+      void queryClient.query(unseenCountsQueryOptions()).catch(() => {});
 
       return defer(getMenuData());
     } catch (error) {
