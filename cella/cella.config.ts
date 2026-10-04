@@ -47,6 +47,8 @@ export default defineConfig({
       'locales/en/app.json',
       'locales/nl/app.json',
       '.github/release-please-manifest.json',
+      // Accessibility results are about one product: each app's audit (`pnpm a11y`) writes its own ledger.
+      'json/accessibility-conformance.json',
     ],
     // Paths pinned to the app: the app copy always wins, upstream hunks never merge in. Adopt them by hand
     // from the analyze list ("protected but behind upstream").
@@ -67,6 +69,8 @@ export default defineConfig({
       'frontend/src/alert-config.tsx',
       'frontend/src/list-queries-config.tsx',
       'frontend/src/styling/gradients.css',
+      // The pages and states the accessibility audit covers
+      'a11y/scope-config.ts',
       'frontend/src/modules/home/home-page.tsx',
       'json/text-blocks.json',
       'locales/en/about.json',

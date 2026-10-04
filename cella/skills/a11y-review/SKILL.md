@@ -1,18 +1,52 @@
 ---
 name: a11y-review
-description: Review the WCAG criteria the accessibility audit leaves open, from its review packets, the source and the live app, and record each decision with its evidence in the conformance ledger.
+description: Run the WCAG audit, fix what it finds, check each fix in the running app, and review the criteria the audit leaves open, recording every decision with its evidence in the conformance ledger.
 ---
 
-# Reviewing the open WCAG criteria
+# The accessibility audit loop
 
-`pnpm a11y` decides what tools can prove. The rest it leaves open, with a packet per page for a reviewer. This skill is that reviewer's procedure. Use it after a full audit, when `pnpm -C a11y report` lists open criteria.
+`pnpm a11y:run` decides what tools can prove and writes the ledger, `json/accessibility-conformance.json`. The rest it leaves open, with a packet per page for a reviewer. This skill is the procedure around it: run, fix, check the fix, rerun, review, record. `a11y/README.md` explains the audit itself.
 
 An agent's decision is provisional. It is recorded as `decidedBy: "agent"`, the draft report marks it, and a person confirms it before anything is published. Studies of per-criterion agents find most real failures and also report many that are not there, so the rules below lean toward leaving a row open.
 
+## Run
+
+```
+pnpm a11y:run            # database, app, audit, stop
+pnpm a11y:run --keep     # the same, and leave the stack up for the fix loop
+pnpm -C a11y report      # draft report and the checklist a11y/results/manual-pass.md
+```
+
+- One audit stack per machine at a time: runs share the database `db_a11y`.
+- A kept stack is reached with the `DEV_PORT_OFFSET` the run printed: `DEV_PORT_OFFSET=<n> pnpm a11y --states <ids>` audits some states and writes `a11y/results/ledger-partial.json`, never the ledger. End it with `pnpm a11y:run --stop`.
+- A run with skipped visits writes no ledger. Fix the cause (a state's opener that no longer finds its button, a redirect) and run again.
+- A probe that fails once and passes on a rerun was a timing miss; rerun before recording it.
+
+## First run in an app
+
+- List the app's routes and states in `a11y/scope-config.ts`: every page type, plus each dialog, sheet and menu. Add a resolver under `placeholders` for every `{name}` in a path.
+- The ledger and `scope-config.ts` are the app's own: `ignored` and `pinned` in `cella/cella.config.ts`. A ledger that carries another product's name is never read, so the first run starts a new one.
+- The openers find controls by their English names; change the names where the app's default language differs.
+
+## The fix loop
+
+1. Read the failures in `a11y/results/manual-pass.md` and `a11y/results/axe.json` (every failing element per rule and state).
+2. Fix the cause in the component, not the instance: a token, a primitive in `frontend/src/modules/ui`, a shared form field.
+3. Check the fix in the running app before trusting it. Drive the kept stack with a short Playwright script: `startSession` (`a11y/src/session.ts`) signs in, `openState(session, '<id>')` (`a11y/src/drive.ts`) opens a state of the scope, also as a phone, a zoomed desktop or with motion allowed. Run it with the kept stack's `DEV_PORT_OFFSET` and `NODE_ENV=development`. Check the state the fix is about and one neighbor that shares the component.
+4. Changes that alter data (a reorder, a mute) are put back before the next run: the audit opens the first organization the audit user administers, and a changed order changes which one that is.
+5. Rerun the full audit. Rows the audit decides move by themselves.
+6. A row a reviewer decided keeps its decision and its remark, which now describes the old code. Decide it again, after step 3 showed the fix holds. `manual-pass.md` lists the rows whose evidence names a file that changed since.
+
+What the tools measure for you, so you do not script it again: text contrast where axe cannot decide and the edge of form controls (`a11y/src/probes/contrast.ts`), both color modes; color token contrast and memo dependencies a callback never reads (`pnpm style`).
+
+# Reviewing the open criteria
+
+Use this part after a full audit, when `pnpm -C a11y report` lists open criteria.
+
 ## Preconditions
 
-- Stack running (`pnpm offline`) and a fresh `pnpm a11y` with no skipped visits.
-- Packets in `a11y/results/review/<state>/`: `screenshot.png`, `tree.yml` (the accessibility tree a screen reader works from), `facts.json` (title, headings, landmarks, images, fields, visible label against accessible name, other languages, live regions) and `tab-order.json`. States are listed in `a11y/src/scope.ts`.
+- A fresh `pnpm a11y:run` with no skipped visits.
+- Packets in `a11y/results/review/<state>/`: `screenshot.png`, `tree.yml` (the accessibility tree a screen reader works from), `facts.json` (title, headings, landmarks, images, fields, visible label against accessible name, other languages, live regions) and `tab-order.json`. States are listed in `a11y/scope-config.ts`.
 - The open rows and the tools' notes: `a11y/results/manual-pass.md`.
 
 ## Rules
@@ -24,6 +58,7 @@ An agent's decision is provisional. It is recorded as `decidedBy: "agent"`, the 
 5. **Stay inside the criterion.** Read its text in WCAG 2.2 Understanding first; note other problems for the row they belong to.
 6. **Do not decide what needs assistive technology.** 4.1.2 and 4.1.3 get findings from the tree, never Supports: only a screen reader shows what is announced.
 7. **Ignore development-only UI**: the debug menu, devtools and the "Testing credentials" banner.
+8. **A row that failed before becomes Supports only after its fix was driven in the running app.** Reading the diff is not evidence; say in the evidence what you did and what happened.
 
 ## What to check
 
@@ -49,7 +84,7 @@ From the packets alone:
 
 From the source, with the tools' notes as the starting point: 1.2.1 to 1.2.5 and 1.4.2 (does the app publish media, or only play what users upload?), 2.2.1 (time limits), 2.2.2 (motion that starts by itself), 2.5.1 and 2.5.7 (is there a button for every gesture and drag?), 2.5.2 (do actions fire on release?).
 
-By driving the browser (the `verify` skill explains how to launch, sign in and drive): 3.2.2 (change each kind of field, nothing navigates), 3.3.3 (do error messages say how to fix the input?), 3.3.4 (can destructive actions be confirmed or undone?), 3.3.7 (multi-step flows), 2.1.1 (each function by keyboard: menus, dialogs, the grid, the editor, uploads), 1.4.11 (measure borders and icons at 3:1), 2.5.8 (targets axe could not decide).
+By driving the browser (the `verify` skill explains how to launch, sign in and drive): 3.2.2 (change each kind of field, nothing navigates), 3.3.3 (do error messages say how to fix the input?), 3.3.4 (can destructive actions be confirmed or undone?), 3.3.7 (multi-step flows), 2.1.1 (each function by keyboard: menus, dialogs, the grid, the editor, uploads), 1.4.11 (the audit measures the edge of form controls; measure icons that carry meaning and focus indicators at 3:1), 1.4.13 (hover a tooltip or card, press Escape: it closes, and the sheet or dialog around it stays), 2.5.8 (targets axe could not decide).
 
 ## Record
 

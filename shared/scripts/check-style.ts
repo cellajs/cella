@@ -1,6 +1,6 @@
 /**
- * The style check (`pnpm style`, also in `pnpm lint`, `pnpm check` and CI): terminology, prose rules for comments and
- * docs, comment placement, frontend conventions, Tailwind class names and migration note shape in one pass. Exits non-zero on any finding.
+ * The style check (`pnpm style`, also in `pnpm lint`, `pnpm check` and CI): terminology, prose, comment placement, frontend
+ * conventions, Tailwind class names, token contrast and migration notes in one pass. Exits non-zero on any finding.
  * `--audit` also prints review markers, which never fail; path arguments limit the files checked.
  */
 import { readFileSync } from 'node:fs';
@@ -11,6 +11,7 @@ import { docFindings } from './check-doc-style.ts';
 import { frontendFindings, frontendStores } from './check-frontend-style.ts';
 import { migrationNoteFindings } from './check-migration-notes.ts';
 import { tailwindContext, tailwindFindings } from './check-tailwind-classes.ts';
+import { tokenContrastFindings } from './check-token-contrast.ts';
 import { type Finding, formatFinding, isRequested, repoFiles, repoRoot } from './repo-files.ts';
 
 const audit = process.argv.includes('--audit');
@@ -35,6 +36,7 @@ for (const file of requested) {
     ...prose,
     ...frontendFindings(file, source, stores),
     ...tailwindFindings(file, source, tailwind),
+    ...tokenContrastFindings(file, source),
   ];
   findings.push(...inFile.sort((a, b) => (a.line ?? 0) - (b.line ?? 0) || (a.column ?? 0) - (b.column ?? 0)));
 }

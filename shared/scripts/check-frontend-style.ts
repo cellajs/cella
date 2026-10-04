@@ -94,6 +94,37 @@ function checkStoreSelector(node: ts.Node, stores: Set<string>, report: Report):
   report(node, 'store-selector', `${name}() subscribes to every field; select the values this component reads`);
 }
 
+/**
+ * A memo whose dependency array names a value its callback never reads. The React Compiler memoizes on what the callback
+ * reads, so that value stops triggering a recompute and the result goes stale; derive the result from the value itself.
+ */
+function checkMemoDependencies(node: ts.Node, report: Report): void {
+  if (!ts.isCallExpression(node) || !ts.isIdentifier(node.expression)) return;
+  if (node.expression.text !== 'useMemo' && node.expression.text !== 'useCallback') return;
+  const [callback, dependencies] = node.arguments;
+  if (!callback || !dependencies || !ts.isArrayLiteralExpression(dependencies)) return;
+  // A callback passed by name has its body elsewhere
+  if (!ts.isArrowFunction(callback) && !ts.isFunctionExpression(callback)) return;
+
+  const read = new Set<string>();
+  callback.forEachChild(function collect(child) {
+    if (ts.isIdentifier(child)) read.add(child.text);
+    child.forEachChild(collect);
+  });
+  for (const dependency of dependencies.elements) {
+    let root: ts.Expression = dependency;
+    while (ts.isPropertyAccessExpression(root) || ts.isElementAccessExpression(root) || ts.isNonNullExpression(root) || ts.isCallExpression(root)) {
+      root = root.expression;
+    }
+    if (!ts.isIdentifier(root) || read.has(root.text)) continue;
+    report(
+      dependency,
+      'memo-dependency-unread',
+      `${root.text} is a dependency the callback never reads, so the compiled memo ignores it; read it or derive the result from it`,
+    );
+  }
+}
+
 /** The zustand stores the frontend creates, read from every frontend file so a path-limited run still knows them. */
 export function frontendStores(files: string[]): Set<string> {
   const stores = new Set<string>();
@@ -120,6 +151,7 @@ export function frontendFindings(file: string, source: string, stores: Set<strin
   sourceFile.forEachChild(function visit(node) {
     checkReactComponentType(sourceFile, node, report);
     checkStoreSelector(node, stores, report);
+    checkMemoDependencies(node, report);
     node.forEachChild(visit);
   });
   return findings;
