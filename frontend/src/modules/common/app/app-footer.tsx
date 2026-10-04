@@ -8,13 +8,18 @@ import { Logo } from '~/modules/common/logo';
 import { UserLanguage } from '~/modules/me/user-language';
 import { UserTheme } from '~/modules/me/user-theme';
 import { Button } from '~/modules/ui/button';
-import { defaultFooterLinks } from '~/nav-config';
 import { cn } from '~/utils/cn';
 
 export interface FooterLinkProps {
   id: string;
   href: string;
 }
+
+/** The in-app footer's own links; a caller passing `links` replaces them. */
+const defaultFooterLinks: FooterLinkProps[] = [
+  { id: 'about', href: '/about' },
+  { id: 'legal', href: '/legal' },
+];
 
 function AppFooterLink({ id, href }: FooterLinkProps) {
   const { t } = useTranslation();

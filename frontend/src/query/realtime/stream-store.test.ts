@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('shared', () => ({ appConfig: { backendUrl: 'http://api.test', slug: 'test' } }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
 vi.mock('~/lib/tracing', () => ({ reportCriticalError: vi.fn() }));
-vi.mock('~/query/basic/sync-stale-config', () => ({ setSyncStreamHealthy: vi.fn() }));
+vi.mock('~/query/basic/sync-stale-state', () => ({ setSyncStreamHealthy: vi.fn() }));
 vi.mock('~/query/realtime/sync-store', () => ({
   syncStore: {
     getState: () => ({ cursor: null, setCursor: vi.fn(), setLastSyncAt: vi.fn(), getCatchupViews: () => [] }),

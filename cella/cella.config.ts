@@ -63,12 +63,12 @@ export default defineConfig({
       'backend/src/schemas/app-schemas.ts',
       'frontend/src/query/extra-local-user-stores.ts',
       'frontend/src/placement-config.ts',
-      'frontend/src/members-config.ts',
       'frontend/src/routes-config.tsx',
-      'frontend/src/menu-config.tsx',
       'frontend/src/alert-config.tsx',
-      'frontend/src/list-queries-config.tsx',
+      'frontend/src/entity-sync-queries.ts',
       'frontend/src/styling/gradients.css',
+      // Marketing copy: feature lists, pricing, showcases and the screenshots behind them
+      'frontend/src/modules/marketing/marketing-config.tsx',
       // The pages and states the accessibility audit covers
       'a11y/scope-config.ts',
       'frontend/src/modules/home/home-page.tsx',

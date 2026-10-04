@@ -3,7 +3,7 @@ import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/ad
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { useEffect } from 'react';
 import { appConfig } from 'shared';
-import { menuSectionsSchema } from '~/menu-config';
+import { getMenuSection } from '~/lib/entity-modules';
 import { Spinner } from '~/modules/common/spinner';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { MenuSheetHeader } from '~/modules/navigation/menu-sheet/header';
@@ -68,7 +68,7 @@ export function MenuSheet() {
   const renderedSections = appConfig.menuStructure
     .map(({ entityType }) => {
       const menuData = menu[entityType];
-      const menuSection = menuSectionsSchema[entityType];
+      const menuSection = getMenuSection(entityType);
       if (!menuSection) return null;
 
       return <MenuSheetSection key={entityType} options={menuSection} data={menuData} />;

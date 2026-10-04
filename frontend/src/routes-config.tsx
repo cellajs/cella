@@ -23,6 +23,10 @@ export type ChannelRouteEntry = {
 /**
  * Unified route config for channel entities. `paramName` is used both when the entity is the route
  * target AND when it appears as an ancestor in another entity's route.
+ *
+ * The one piece of a channel's frontend wiring that stays central: the router types `to` from the
+ * literal `path` strings below, and a registry filled at runtime hands back a widened `string`. A
+ * channel's menu section, list query and members-table defaults live in its own `<name>-module` file.
  */
 export const channelRouteConfig = {
   organization: {

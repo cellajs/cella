@@ -1,6 +1,6 @@
 import { BlockNoteEditor } from '@blocknote/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { customSchema } from '~/modules/common/blocknote/blocknote-config';
+import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import { handleChecklistItemEnter } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
 

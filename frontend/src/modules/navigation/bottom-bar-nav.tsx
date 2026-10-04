@@ -1,8 +1,8 @@
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { BottomBarNavButton } from '~/modules/navigation/nav-buttons';
+import { navItems } from '~/modules/navigation/nav-items';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
-import { navItems } from '~/nav-config';
 
 let baseNavItems: NavItem[] | null = null;
 function getBaseNavItems() {

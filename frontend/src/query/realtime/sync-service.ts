@@ -1,4 +1,4 @@
-import { buildEntitySyncQueries } from '~/list-queries-config';
+import { buildEntitySyncQueries } from '~/entity-sync-queries';
 import type { UserMenuItem } from '~/modules/me/types';
 import { queryClient } from '~/query/query-client';
 import { waitFor } from '~/utils/wait-for';

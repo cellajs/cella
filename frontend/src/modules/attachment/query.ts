@@ -27,7 +27,7 @@ import { fetchAllPages } from '~/query/basic/fetch-all-pages';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
 import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/invalidation-helpers';
-import { syncStaleTime } from '~/query/basic/sync-stale-config';
+import { syncStaleTime } from '~/query/basic/sync-stale-state';
 import type { OrgRoutableItemData } from '~/query/basic/types';
 import { addMutationRegistrar } from '~/query/mutation-registry';
 import { buildPreparedHandlers, type PreparedVars } from '~/query/offline/prepared-mutation';

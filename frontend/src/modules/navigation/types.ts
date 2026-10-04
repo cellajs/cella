@@ -2,7 +2,7 @@ import type { LinkComponentProps } from '@tanstack/react-router';
 import type { RefObject } from 'react';
 import type { IconComponent } from '~/modules/common/icons/types';
 import type { UserMenuItem } from '~/modules/me/types';
-import type { navItems } from '~/nav-config';
+import type { navItems } from '~/modules/navigation/nav-items';
 import type { DraggableItemData } from '~/utils/get-draggable-item-data';
 
 export type PageDraggableItemData = DraggableItemData<UserMenuItem, 'menuItem'>;

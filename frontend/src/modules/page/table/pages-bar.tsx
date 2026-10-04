@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { PageTreeRow } from '~/modules/page/table/page-tree-config';
+import type { PageTreeRow } from '~/modules/page/table/page-tree';
 import type { PagesRouteSearchParams } from '~/modules/page/types';
 
 interface PagesTableBarProps {

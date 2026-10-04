@@ -1,5 +1,4 @@
 import { BellIcon, MenuIcon, SearchIcon, UserIcon } from 'lucide-react';
-import type { FooterLinkProps } from '~/modules/common/app/app-footer';
 import { AccountNavIcon } from '~/modules/navigation/account-nav-icon';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
 import { AppNavLoader } from '~/modules/navigation/app-nav-loader';
@@ -10,9 +9,9 @@ import { UnreadNavBadge } from '~/modules/notification/unread-nav-badge';
 import { UnseenNavBadge } from '~/modules/seen/unseen-nav-badge';
 
 /**
- * Declare all of your main navigation items, visible in main navigation bar or as floating buttons
- * on mobile. `iconSlot` replaces the default icon rendering and `badgeSlot` renders a counter over
- * the button; both are plain components, so apps can swap or drop them here.
+ * The main navigation items, shown in the navigation bar and as floating buttons on mobile.
+ * `iconSlot` replaces the default icon rendering and `badgeSlot` renders a counter over the button;
+ * both are plain components. An app with its own set pins this file in `cella/cella.config.ts`.
  */
 export const navItems = [
   // Home lives in the menu sheet header, so the menu button also carries the brand intro and the loading spinner.
@@ -36,7 +35,3 @@ export const navItems = [
     iconSlot: AccountNavIcon,
   },
 ] as const;
-export const defaultFooterLinks: FooterLinkProps[] = [
-  { id: 'about', href: '/about' },
-  { id: 'legal', href: '/legal' },
-];

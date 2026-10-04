@@ -1,7 +1,7 @@
 import { useBlockNoteEditor, useComponentsContext, useSelectedBlocks } from '@blocknote/react';
 import { ScalingIcon } from 'lucide-react';
 import { useMemo, useRef } from 'react';
-import { customSchema } from '~/modules/common/blocknote/blocknote-config';
+import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 
 export function FileOpenPreviewButton() {

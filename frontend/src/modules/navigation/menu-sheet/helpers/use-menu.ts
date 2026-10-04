@@ -1,7 +1,7 @@
 import { useQueries } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { appConfig, type ChannelEntityType } from 'shared';
-import { channelListQueriesByType } from '~/list-queries-config';
+import { getChannelListQuery } from '~/lib/entity-modules';
 import type { UserMenuItem } from '~/modules/me/types';
 import { buildMenu } from './build-menu';
 import { menuEntityTypes, menuItemsFromList } from './build-menu-from-cache';
@@ -15,12 +15,11 @@ import { menuEntityTypes, menuItemsFromList } from './build-menu-from-cache';
 export function useMenu(userId: string | undefined) {
   // Entity types without a registered list query are dropped here, so no entry reaches useQueries without a queryKey.
   const lists = menuEntityTypes.flatMap((entityType) => {
-    const factory = channelListQueriesByType[entityType];
+    const factory = getChannelListQuery(entityType);
     return factory ? [{ entityType, options: { ...factory({ relatableUserId: userId ?? '' }), enabled: !!userId } }] : [];
   });
 
   const results = useQueries({
-    // @ts-expect-error useQueries types don't support infinite query options, but it works at runtime
     queries: lists.map(({ options }) => options),
   });
 

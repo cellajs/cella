@@ -1,7 +1,7 @@
 // biome-ignore lint/style/noRestrictedImports: imperative cache prefetch helper for the router loader path; not eligible for a hook.
 import { getMyMemberships } from 'sdk';
 import { appConfig } from 'shared';
-import { channelListQueriesByType } from '~/list-queries-config';
+import { getChannelListQuery } from '~/lib/entity-modules';
 import { meKeys } from '~/modules/me/query';
 import { getCurrentUser } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
@@ -21,7 +21,7 @@ export async function getMenuData() {
   // Fetch entity lists; the subscriber enriches them with memberships on cache write.
   await Promise.all(
     appConfig.channelEntityTypes.map(async (entityType) => {
-      const factory = channelListQueriesByType[entityType];
+      const factory = getChannelListQuery(entityType);
       if (!factory) return;
       const queryOpts = factory({ relatableUserId: userId });
       // biome-ignore lint/suspicious/noExplicitAny: heterogeneous infinite query options across entity types.

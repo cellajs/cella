@@ -10,7 +10,7 @@ import { childNodes, isDocumentNode, isRefusedMediaBlock } from 'shared/utils/va
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-url';
-import { customSchema } from '~/modules/common/blocknote/blocknote-config';
+import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { findClickedMedia, getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/modules/ui/ui-store';

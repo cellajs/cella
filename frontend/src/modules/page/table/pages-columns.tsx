@@ -6,7 +6,7 @@ import { EditCellInput, enumSelectEditorOptions, RenderEnumSelect } from '~/modu
 import { ExpandToggleColumn } from '~/modules/common/data-table/tree';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { docRenderModes } from '~/modules/page/content';
-import type { PageTreeRow } from '~/modules/page/table/page-tree-config';
+import type { PageTreeRow } from '~/modules/page/table/page-tree';
 import { canEditDocs } from '~/modules/page/utils/edit-doc-page';
 import { RenderModeLabel, renderModeLabelKey } from '~/modules/page/utils/render-mode';
 import { Badge } from '~/modules/ui/badge';

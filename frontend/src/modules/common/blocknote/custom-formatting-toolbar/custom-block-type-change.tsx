@@ -11,7 +11,7 @@ import {
 } from '@blocknote/react';
 import { ChevronDownIcon } from 'lucide-react';
 import { useState } from 'react';
-import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote-config';
+import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote-schema';
 import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 

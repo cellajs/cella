@@ -27,7 +27,7 @@ const { tenantsListQueryOptions } = await import('~/modules/tenants/query');
 const { membersListQueryOptions, pendingMembershipsQueryOptions, fetchMembersForExport } = await import('~/modules/memberships/query');
 const { requestsListQueryOptions, fetchRequestsForExport } = await import('~/modules/requests/query');
 const { attachmentsListQueryOptions } = await import('~/modules/attachment/query');
-const { syncStaleTime } = await import('~/query/basic/sync-stale-config');
+const { syncStaleTime } = await import('~/query/basic/sync-stale-state');
 
 type PagedOptions = {
   queryKey: readonly unknown[];

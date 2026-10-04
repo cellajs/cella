@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 // Labels are not under test, and i18next has no namespaces loaded here.
 vi.mock('i18next', () => ({ default: { t: (key: string) => key } }));
 
-import { getOnboardingSteps } from '~/modules/home/onboarding/onboarding-config';
+import { getOnboardingSteps } from '~/modules/home/onboarding/onboarding-steps';
 
 const stepIds = (ctx: Parameters<typeof getOnboardingSteps>[0]) => getOnboardingSteps(ctx).map(({ id }) => id);
 

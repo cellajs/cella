@@ -22,7 +22,7 @@ vi.mock('~/modules/user/user-store', async (importOriginal) => ({
   useCurrentUser: () => ({ name: 'Editor' }),
 }));
 
-const { customSchema } = await import('~/modules/common/blocknote/blocknote-config');
+const { customSchema } = await import('~/modules/common/blocknote/blocknote-schema');
 const { checkedExtension } = await import('~/modules/common/blocknote/custom-elements/checklist/checklist-extension');
 const { BlockNote } = await import('~/modules/common/blocknote/blocknote-editor');
 const { CollaborativeBlockNote } = await import('~/modules/common/blocknote/collaborative-blocknote');

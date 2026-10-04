@@ -1,3 +1,8 @@
+/**
+ * Mutable staleness state for sync-managed queries: two trust flags the realtime stream sets, and
+ * the staleTime they resolve to. Module-level, so the realtime modules can set it without a store.
+ */
+
 /** StaleTime for sync-managed queries while the sync engine owns freshness. */
 const syncTrustedStaleTime = Number.POSITIVE_INFINITY;
 

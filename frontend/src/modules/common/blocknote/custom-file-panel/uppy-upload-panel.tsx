@@ -14,7 +14,7 @@ import { appConfig, type UploadTemplateId } from 'shared';
 import { isSystemUploadTemplate } from 'shared/utils/upload-visibility';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
-import { customSchema } from '~/modules/common/blocknote/blocknote-config';
+import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { attachmentBlockProps, storedFileBlockProps } from '~/modules/common/blocknote/custom-file-panel/file-block-props';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import type { BaseUppyFilePanelProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';

@@ -1,7 +1,7 @@
 import type { DefaultReactSuggestionItem, SuggestionMenuProps } from '@blocknote/react';
 import { useEffect, useRef } from 'react';
 import { useEventListener } from '~/hooks/use-event-listener';
-import { customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-config';
+import { customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-schema';
 import type { CustomBlockTypes } from '~/modules/common/blocknote/types';
 
 interface CustomSlashMenuComponentProps extends SuggestionMenuProps<DefaultReactSuggestionItem> {
