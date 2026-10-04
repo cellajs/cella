@@ -27,10 +27,19 @@ advances one stage (steps 6 and 7).
 
 1. Clean working tree, fresh branch (sync creates `cella/sync/<date>` itself). A run that stops with
    `upstream needs @cellajs/cli ...` has changed nothing: run the `pnpm add` it prints, commit, rerun.
-2. Once the first run has merged, `pnpm cella migrate` lists the migration notes that arrived
+   The sync bumps the CLI itself, so the merge runs on the version installed before it. Compare
+   `pnpm cella --version` with the `@cellajs/cli` range in upstream's root `package.json`
+   (`git fetch cella-upstream && git show cella-upstream/main:package.json | grep @cellajs/cli`) and
+   install the newer one first: a CLI before 0.3 has no such stop and merges with the old rules.
+2. The merge uses `cella/cella.config.ts` as it stands, and that file never syncs. Before the first
+   run, read `git diff <last sync commit>..cella-upstream/main -- cella/cella.config.ts` (the commit is
+   `upstream.commit` in `cella/cella.manifest.json`) and copy the `ignored`, `pinned` and
+   `packageJsonSync` entries that fit the app, then commit. A path upstream newly ignores arrives
+   as ordinary synced files otherwise.
+3. Once the first run has merged, `pnpm cella migrate` lists the migration notes that arrived
    (the merge already recorded them, conflicts or not). Read each one (`--show <id>`) BEFORE
    resolving conflicts; conflicts usually belong to one of them.
-3. Skim `git log --oneline <old>..cella-upstream/main`. Upstream commits that ADOPT this app's
+4. Skim `git log --oneline <old>..cella-upstream/main`. Upstream commits that ADOPT this app's
    contributions come back as conflicts where ours = theirs + app payload.
 
 ## 2. Conflict triage
@@ -65,10 +74,12 @@ git log -p "$upstream" -1 --stat # what upstream intended
 For each auto-merged file in an area with `fork:` markers (grep them repo-wide as the map), verify
 the marked lines survived; CI stays green until typecheck when one is dropped.
 
-Ignored paths never merge, so upstream changes there arrive only by hand. Read
-`git diff HEAD <upstream> -- shared/config` (`MERGE_HEAD` or `$upstream`, as above) for new config keys
-and version bumps, and the same for every app-owned module folder (`owner: 'app'`) that started as an
-upstream module.
+Ignored and pinned paths never merge, so upstream changes there arrive only by hand. Read what
+upstream changed since the last sync, as a range: `git diff <last sync commit>..<upstream> -- shared/config`
+(`MERGE_HEAD` or `$upstream`, as above; the run prints this command for some paths). The form
+`git diff HEAD <upstream>` shows the app's whole copy against the template's, which hides the change.
+Do the same for every pinned path and every app-owned module folder (`owner: 'app'`) that started as
+an upstream module. A changed export there shows up as type errors in synced files.
 
 ## 4. Regenerate and gate
 

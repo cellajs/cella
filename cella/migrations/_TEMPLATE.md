@@ -45,7 +45,8 @@ pnpm exec tsx cella/migrations/<id>/<script>.ts rewrite   <roots>   # apply
 it deliberately skips, DB migrations, config keys. `backend/drizzle` is app-owned (the default sync
 config ignores it), so a template migration never arrives: say what `pnpm generate` produces and
 name the hand-written SQL to port (backfills, data moves), or state that `pnpm generate` alone is
-enough. Omit the section only if there are none.>
+enough. Ship the hints as `hints.json` and the hand-written statements as `data.sql` in the folder, so
+an app that works several schema notes generates once. Omit the section only if there are none.>
 
 ## Verify
 

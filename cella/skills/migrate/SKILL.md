@@ -39,11 +39,27 @@ pnpm cella migrate --show <id>
   ```
   If the app renamed or added entities, pass the note's customization flag (e.g.
   `--extra-renames app-renames.json`); never edit the extracted script.
+  The roots hold template-owned files too, and upstream may have changed one after it wrote the
+  codemod. Restore every rewritten file that had no app changes, or it becomes unmarked drift:
+  ```sh
+  upstream=$(node -p "require('./cella/cella.manifest.json').upstream.commit")
+  git diff --name-only "$upstream" -- <roots> | sort > /tmp/app-changed   # before the rewrite
+  # after it: a rewritten file that is not on the list goes back to upstream's version
+  git diff --name-only -- <roots> | sort | comm -23 - /tmp/app-changed | while read -r file; do git checkout "$upstream" -- "$file"; done
+  ```
 - **Both kinds**: work the numbered **Manual steps** (per-file changes a codemod skips, SQL,
   drizzle regen, rename-prompt answers) wherever the app customized that code.
 
 Then run every command and follow-up in the README's **Verify** section (`pnpm generate`,
 `pnpm sdk`, recalculation runbooks, seed steps).
+
+**Several schema notes in one sync make one migration.** Work the code steps of all of them first,
+then generate once: `cd backend && pnpm tsx scripts/generate.ts --name <name> --hints '<array>'`,
+where the array joins the notes' hints (a note's `hints.json`, or the hint in its steps). drizzle
+orders the statements for the combined diff, not per note: move each note's hand-written
+statements (its `data.sql`, or the template's `backend/drizzle/<folder>/migration.sql` at the
+upstream commit) to where the note says, such as after an `ADD COLUMN` and before the `DROP` it
+feeds. A second generate must report no changes.
 
 ## 3. Validate
 

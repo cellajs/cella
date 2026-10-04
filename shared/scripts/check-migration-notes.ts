@@ -1,6 +1,7 @@
 /**
  * Shape of the migration notes in `cella/migrations/<id>/`: each folder holds a README.md that opens with frontmatter,
  * then the title and a one-paragraph summary. Apps read the notes with `pnpm cella migrate`, which expects this shape.
+ * Also the rule that a branch changing an app-owned path synced code reads from brings a note.
  */
 import type { Finding } from './repo-files.ts';
 
@@ -106,4 +107,51 @@ export function migrationNoteFindings(files: string[], read: (file: string) => s
     if (note.roots.length > 0 && codemods.length === 0) finding(readme, 'roots is only for a note with a codemod', 1);
   }
   return findings;
+}
+
+/**
+ * App-owned paths with nothing synced code depends on: content, brand files and generated output. `shared/config` is
+ * here too, because the config type already reports a key an app's config lacks.
+ */
+const noteExempt = [
+  'README.md',
+  '.github/',
+  'a11y/scope-config.ts',
+  'frontend/public/',
+  'frontend/src/content',
+  'frontend/src/modules/home/home-page.tsx',
+  'frontend/src/routes/routeTree.gen.ts',
+  'frontend/src/styling/gradients.css',
+  'infra/',
+  'json/',
+  'locales/',
+  'sdk/gen',
+  'shared/config',
+];
+
+const isUnder = (file: string, entry: string) => file === entry || file.startsWith(entry.endsWith('/') ? entry : `${entry}/`);
+
+/** The `ignored` and `pinned` entries of the sync config, read from its source text. */
+export function ownedPaths(configSource: string): string[] {
+  const lists = [...configSource.matchAll(/\b(?:ignored|pinned): \[([\s\S]*?)\n {4}\]/g)].map((match) => match[1]);
+  return lists.flatMap((list) => [...list.matchAll(/^\s*'([^']+)',?\s*$/gm)].map((match) => match[1]));
+}
+
+/**
+ * The finding for a branch that changes an app-owned path synced code reads from (a pinned seam, `logo.tsx`,
+ * `backend/drizzle`) without a note. Such a change never reaches an app's copy, so the app's synced code breaks until
+ * someone tells it what to add. A `Migration-Note: none, <reason>` line in a commit message waives it.
+ */
+export function owedNoteFindings(changedFiles: string[], commitMessages: string, configSource: string): Finding[] {
+  const owned = ownedPaths(configSource).filter((entry) => !noteExempt.some((exempt) => isUnder(entry, exempt) || entry.startsWith(exempt)));
+  const touched = changedFiles.filter((file) => owned.some((entry) => isUnder(file, entry)));
+  if (touched.length === 0) return [];
+  const hasNote = changedFiles.some((file) => noteIdPattern.test(file.slice(notesDir.length).split('/')[0]) && file.startsWith(notesDir));
+  if (hasNote || /^Migration-Note: none\b.*\w/m.test(commitMessages)) return [];
+  return touched.map((file) => ({
+    file,
+    rule: 'migration-note',
+    message:
+      'apps own this path and their synced code reads from it: add a note under cella/migrations/ in this branch, or put `Migration-Note: none, <reason>` in a commit message',
+  }));
 }
