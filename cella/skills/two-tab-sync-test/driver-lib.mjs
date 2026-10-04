@@ -20,7 +20,7 @@ export function mintSession(email) {
   const apiMatch = /^curl (\S+)\/me /m.exec(minted.stdout);
   if (!cookieMatch || !apiMatch) throw new Error(`Could not mint a session for ${email}:\n${minted.stdout}\n${minted.stderr}`);
   const base = new URL(apiMatch[1]).origin;
-  return { base, cookie: { name: cookieMatch[1], value: cookieMatch[2], url: base, httpOnly: true, sameSite: 'Strict' } };
+  return { base, api: apiMatch[1], cookie: { name: cookieMatch[1], value: cookieMatch[2], url: base, httpOnly: true, sameSite: 'Strict' } };
 }
 
 // Exact name: bench rows are numbered, so "… 2" is also the start of "… 20" and "… 201".
