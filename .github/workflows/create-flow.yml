@@ -198,7 +198,8 @@ jobs:
           OUT_DIR: ${{ runner.temp }}/smoke
         run: node "$GITHUB_WORKSPACE/cella/skills/verify/smoke-driver.mjs"
 
-      # The mode config files are generated from string templates in create-cella; nothing else typechecks or formats them.
+      # `pnpm template:check` covers the config the template itself carries, on every PR. This covers the files
+      # create-cella writes from its own string templates, which that check never sees, and their formatting.
       - name: The generated config typechecks and is formatted
         id: config
         if: always() && steps.install.outcome == 'success'
