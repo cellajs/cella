@@ -9,7 +9,7 @@ import {
   NestBlockButton,
   UnnestBlockButton,
 } from '@blocknote/react';
-import { customFormattingToolBarConfig } from '~/modules/common/blocknote/blocknote-config';
+import { customFormattingToolBarConfig } from '~/modules/common/blocknote/blocknote-schema';
 import { CustomTextAlignSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-align-change';
 import { CustomBlockTypeSelect } from '~/modules/common/blocknote/custom-formatting-toolbar/custom-block-type-change';
 import { FileOpenPreviewButton } from '~/modules/common/blocknote/custom-formatting-toolbar/open-preview-button';

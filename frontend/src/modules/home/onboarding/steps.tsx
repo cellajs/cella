@@ -8,7 +8,7 @@ import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { Step, Stepper } from '~/modules/common/stepper/stepper';
 import { StepperFooter } from '~/modules/home/onboarding/footer';
 import { InvitationsStep } from '~/modules/home/onboarding/invitations-step';
-import { getOnboardingSteps } from '~/modules/home/onboarding/onboarding-config';
+import { getOnboardingSteps } from '~/modules/home/onboarding/onboarding-steps';
 import { WelcomeText } from '~/modules/home/onboarding/welcome-text';
 import { meInvitationsQueryOptions } from '~/modules/me/query';
 import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';

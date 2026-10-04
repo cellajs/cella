@@ -1,7 +1,7 @@
 import { SideMenuExtension } from '@blocknote/core/extensions';
 import type { BlockTypeSelectItem } from '@blocknote/react';
 import { useComponentsContext, useDictionary, useExtension, useExtensionState } from '@blocknote/react';
-import { customBlockTypeSwitchItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-config';
+import { customBlockTypeSwitchItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-schema';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
 import type { CommonBlockNoteProps, CustomBlockNoteEditor, CustomBlockTypes } from '~/modules/common/blocknote/types';

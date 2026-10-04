@@ -10,7 +10,7 @@ import { navSheetClassName } from '~/modules/navigation/nav-sheet-constants';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, NavItemId, TriggerNavItemFn } from '~/modules/navigation/types';
-import { navItems } from '~/nav-config';
+import { navItems } from '~/modules/navigation/nav-items';
 
 type FloatingNavConfig = { left: NavItemId[]; right: NavItemId[]; ownerPathname?: string };
 

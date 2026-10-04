@@ -11,7 +11,7 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { StopImpersonation } from '~/modules/navigation/stop-impersonation';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarMenu } from '~/modules/ui/sidebar';
-import { navItems } from '~/nav-config';
+import { navItems } from '~/modules/navigation/nav-items';
 import { lazyNamed } from '~/utils/lazy-named';
 
 const DebugDropdown = __DEV_TOOLS__ ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown') : () => null;

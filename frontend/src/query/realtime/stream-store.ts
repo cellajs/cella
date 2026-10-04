@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { isDebugMode } from '~/env';
 import { reportCriticalError } from '~/lib/tracing';
-import { setSyncStreamHealthy } from '~/query/basic/sync-stale-config';
+import { setSyncStreamHealthy } from '~/query/basic/sync-stale-state';
 import { type CatchupViewRequest, syncStore } from '~/query/realtime/sync-store';
 import { handleAppStreamNotification } from './app-stream-handler';
 import { catchupEntityTypes, processAppCatchup } from './catchup-processor';

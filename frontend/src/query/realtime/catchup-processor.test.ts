@@ -1,7 +1,7 @@
 import type { PostAppCatchupResponse } from 'sdk';
 import type { EntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-config';
+import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-state';
 import { stubLocalStorage } from '~/query/tests/query-client-env';
 
 // Real builder and resolvers over a synthetic sub-org hierarchy; only the app-bound config and hierarchy singletons are replaced.

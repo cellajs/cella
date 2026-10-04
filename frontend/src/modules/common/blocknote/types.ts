@@ -4,7 +4,7 @@ import type { FilePanelProps } from '@blocknote/react';
 import type React from 'react';
 import type { Attachment } from 'sdk';
 import type { UploadTemplateId } from 'shared';
-import type { customSchema } from '~/modules/common/blocknote/blocknote-config';
+import type { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import type { Member } from '~/modules/memberships/types';
 
 export interface ExtendableBlockNoteTypes {

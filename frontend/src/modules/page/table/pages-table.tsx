@@ -9,7 +9,7 @@ import { TreeProvider, useTreeRows } from '~/modules/common/data-table/tree';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { type DocPage, docPages } from '~/modules/page/content';
 import { PageRowPreview } from '~/modules/page/table/page-row-preview';
-import { MAX_PAGE_DEPTH, PAGES_ROW_HEIGHT, type PageTreeRow } from '~/modules/page/table/page-tree-config';
+import { MAX_PAGE_DEPTH, PAGES_ROW_HEIGHT, type PageTreeRow } from '~/modules/page/table/page-tree';
 import { PagesTableBar } from '~/modules/page/table/pages-bar';
 import { usePagesTableColumns } from '~/modules/page/table/pages-columns';
 import type { PagesRouteSearchParams } from '~/modules/page/types';

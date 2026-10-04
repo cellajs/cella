@@ -1,5 +1,5 @@
 import { BlockNoteEditor } from '@blocknote/core';
-import { customSchema } from '~/modules/common/blocknote/blocknote-config';
+import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 

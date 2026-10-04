@@ -1,7 +1,7 @@
 import { FilePanelExtension } from '@blocknote/core/extensions';
 import { useBlockNoteEditor, useExtension, useExtensionState } from '@blocknote/react';
 import { useEffect } from 'react';
-import { customSchema } from '~/modules/common/blocknote/blocknote-config';
+import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import type { UploadHostApi } from '~/modules/common/blocknote/custom-file-panel/upload-host';
 
 /** Reports the block that opened the file panel and the live editor up to `UploadHostProvider`; closing is host-driven. */
