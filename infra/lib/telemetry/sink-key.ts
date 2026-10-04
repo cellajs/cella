@@ -1,5 +1,6 @@
 import { engineConfig } from '../../config/engine-config';
 import { telemetrySink } from '../../config/telemetry.config';
+import { actionCommand } from '../operator-actions';
 import { type RuntimeSecretDefinition, runtimeSecrets } from '../runtime-secrets';
 import { createSecretManagerClient } from '../scaleway/scaleway-secret-manager';
 import { secretPathFor } from '../scaleway/secret-paths';
@@ -30,7 +31,7 @@ export async function lookupSinkIngestKey(opts: SinkKeyLookupOptions): Promise<S
   if (!definition) return { missing: `no runtime secret named '${secretName}' in config/runtime-secrets.config.ts` };
   const path = secretPathFor(definition, opts.slug, opts.mode);
   const secret = await opts.client.getSecretByName(secretName, path);
-  if (!secret) return { missing: `secret '${secretName}' not found in ${path}; seed it with 'pnpm infra' → Manage keys & secrets` };
+  if (!secret) return { missing: `secret '${secretName}' not found in ${path}; seed it with \`${actionCommand('secrets')}\`` };
   const value = (await opts.client.accessLatestValue(secret.id)).trim();
   return value ? { key: value } : { missing: `secret '${secretName}' in ${path} has an empty value` };
 }

@@ -1,6 +1,7 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
 import { engineConfig } from '../config/engine-config';
+import { actionCommand } from '../lib/operator-actions';
 
 const appConfig = engineConfig();
 
@@ -35,7 +36,9 @@ function findApplicationId(name: string): pulumi.Output<string | undefined> {
 function requirePrincipalId(resolved: pulumi.Output<string | undefined>, label: string): pulumi.Output<string> {
   return resolved.apply((id) => {
     if (!id)
-      throw new Error(`IAM application for ${label} not found: run the pnpm infra setup first, or "Apply infra change" after a registry change.`);
+      throw new Error(
+        `IAM application for ${label} not found: run the pnpm infra setup first, or \`${actionCommand('apply')}\` after a registry change.`,
+      );
     return id;
   });
 }
@@ -48,7 +51,7 @@ export const adminApplicationId: pulumi.Output<string | undefined> = findApplica
   if (id) return id;
   pulumi.log.warn(
     `Admin IAM application '${names.admin}' not found: admin bucket-policy statements are dropped this update. ` +
-      'Run the infra CLI ("Rotate keys") to create it; until then bucket access is CI-only.',
+      `Run \`${actionCommand('rotate-keys')}\` to create it; until then bucket access is CI-only.`,
   );
   return undefined;
 });
@@ -73,7 +76,7 @@ export const bootApplicationId: pulumi.Output<string> = requirePrincipalId(findA
  * Pulumi-managed IAM policies for the VM-side principals. Privileged: IAM policy write is forbidden to the CI key, so a privileged up creates these before compute exists, and compute VMs depend on them so grants attach before the first runtime-secret hydration.
  * One policy per service app (secret read conditioned to its own folder and the shared folders of the secrets it consumes) and one for the boot app (registry pull, diag write, handoff-only secret read). Conditions only narrow, and `assert-vm-grants` verifies no other policy un-scopes them.
  * Principals and conditions follow the service registry, not the enabled set: a service toggle changes compute only, while a registry change or a `singleVM` flip needs a privileged up.
- * CI ups ignore `rules` (they would 403 on the IAM write, and the provider shows a phantom ~rules from its condition empty-vs-unset asymmetry); a privileged up (CLI "Apply infra change") reconciles them, which is how a changed secret scope reaches the live policy.
+ * CI ups ignore `rules` (they would 403 on the IAM write, and the provider shows a phantom ~rules from its condition empty-vs-unset asymmetry); a privileged up (`pnpm infra apply`) reconciles them, which is how a changed secret scope reaches the live policy.
  * @see resources/compute.ts
  * @see lib/stack/privileged-up.ts
  */

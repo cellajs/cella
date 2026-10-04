@@ -101,7 +101,7 @@ describe('secret references', () => {
 
   it('names the missing entry and how to store it', () => {
     expect(() => resolveSecretReference('P', 'keychain:svc/acct', exec({ status: 44, stderr: 'not found' }), 'darwin')).toThrow(
-      /P: keychain entry svc\/acct not found .*Store passphrase in keychain/,
+      /P: keychain entry svc\/acct not found .*pnpm infra store-passphrase/,
     );
     expect(() => resolveSecretReference('K', 'op:op://v/i/f', exec({ status: 1, stderr: 'not signed in' }))).toThrow(
       /1Password read of op:\/\/v\/i\/f failed \(not signed in\)/,

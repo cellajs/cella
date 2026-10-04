@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
+import { actionCommand } from '../operator-actions';
 import { isPrivilegedResource } from '../scaleway/permissions';
 import { crossMark, pc, warningMark } from '../utils/cli-output';
 import { infraDir } from '../utils/paths';
@@ -151,12 +152,10 @@ export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJ
     if (hint) {
       console.error(`\n${warningMark} ${pc.bold('Permission hint:')} key lacks write on ${pc.cyan(hint.resource)}.`);
       if (hint.kind === 'privileged')
-        console.error(
-          `  A privileged resource. Re-run pnpm infra and choose ${pc.italic('"Apply infra change"')} to apply it with your Owner API key.`,
-        );
+        console.error(`  A privileged resource. Run ${pc.cyan(actionCommand('apply'))} to apply it with your Owner API key.`);
       else
         console.error(
-          `  Add the matching permission set to PROJECT_PERMISSION_SETS in lib/permissions.ts, then re-run pnpm infra and choose ${pc.italic('"Rotate keys"')}.`,
+          `  Add the matching permission set to PROJECT_PERMISSION_SETS in lib/permissions.ts, then run ${pc.cyan(actionCommand('rotate-keys'))}.`,
         );
     }
   }

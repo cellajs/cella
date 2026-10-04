@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { actionCommand } from '../operator-actions';
 import { infraDir } from './paths';
 
 /** Parse a dotenv-style file into key/value pairs (no interpolation). */
@@ -40,7 +41,7 @@ export function modeEnvValues(parsed: Record<string, string>, mode: string): { v
       if (values.SCW_ACCESS_KEY !== undefined) values.SCW_ADMIN_ACCESS_KEY = values.SCW_ACCESS_KEY;
       if (values.SCW_SECRET_KEY !== undefined) values.SCW_ADMIN_SECRET_KEY = values.SCW_SECRET_KEY;
       warnings.push(
-        `infra/.env.${mode}: SCW_ACCESS_KEY / SCW_SECRET_KEY are read as SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY; rename them (Manage keys & secrets → Fetch admin application key rewrites the file).`,
+        `infra/.env.${mode}: SCW_ACCESS_KEY / SCW_SECRET_KEY are read as SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY; rename them (\`${actionCommand('fetch-admin-key')}\` rewrites the file).`,
       );
     }
     for (const name of legacy) delete values[name];
@@ -109,7 +110,7 @@ export function resolveSecretReference(key: string, value: string, exec: ExecLik
   if (res.status !== 0 || res.stdout === '') {
     throw fail(
       `keychain entry ${ref.service}/${ref.account} not found`,
-      `store it with: pnpm infra → Manage keys & secrets → Store passphrase in keychain, or ${cmd} directly; ${res.stderr}`,
+      `store it with \`${actionCommand('store-passphrase')}\`, or ${cmd} directly; ${res.stderr}`,
     );
   }
   return res.stdout.replace(/\r?\n$/, '');

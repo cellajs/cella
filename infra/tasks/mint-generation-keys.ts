@@ -1,4 +1,5 @@
 import { writeFile } from 'node:fs/promises';
+import { actionCommand } from '../lib/operator-actions';
 import { createApiKey, deleteApiKey, type IamAuth, listApiKeys, resolveApplicationIdByName, type ScwApiKey } from '../lib/scaleway/iam-client';
 import { principalNames } from '../lib/scaleway/principals';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
@@ -133,7 +134,7 @@ export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promi
     const appName = names.vmService(service);
     const appId = await resolveApplicationIdByName(auth, opts.organizationId, appName);
     if (!appId) {
-      log(`  ~ dormant application ${appName} not found (run "Apply infra change")`);
+      log(`  ~ dormant application ${appName} not found (run \`${actionCommand('apply')}\`)`);
       continue;
     }
     await purgeDormantKeys(auth, opts.organizationId, appId, appName, log);

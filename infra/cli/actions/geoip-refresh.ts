@@ -1,9 +1,10 @@
 import { deriveInfra } from '../../lib/naming';
+import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { checkMark, crossMark, pc } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { DEFAULT_PREFIX, main as geoipRefresh, monthOf } from '../../tasks/geoip-refresh';
-import { confirmOrDefault, type InfraContext } from '../shared';
+import { confirmOrDefault, endAction, type InfraContext } from '../shared';
 
 /**
  * "Refresh GeoIP data": publish this month's DB-IP Lite databases to the `geoip/` prefix of the public bucket. Running
@@ -14,7 +15,7 @@ export async function runGeoipRefresh(context: InfraContext): Promise<void> {
   const { naming, region } = deriveInfra(context.appConfig);
   const bucket = naming.publicBucket;
 
-  console.info(pc.dim('\nRefresh GeoIP data: download the DB-IP Lite databases and publish them to the public bucket.'));
+  console.info(pc.dim(`\n${actionLabel('geoip-refresh')}: download the DB-IP Lite databases and publish them to the public bucket.`));
   console.info(
     `  bucket   ${pc.bold(bucket)} ${pc.dim(`(${region})`)}   prefix ${pc.bold(`${DEFAULT_PREFIX}/`)}   month ${pc.bold(monthOf(new Date()))}\n`,
   );
@@ -22,9 +23,9 @@ export async function runGeoipRefresh(context: InfraContext): Promise<void> {
   const admin = resolveOperatorIdentity().admin;
   if (!admin) {
     console.error(
-      `${crossMark} No admin application key in infra/.env.${context.environment} (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY): Manage keys & secrets → Fetch admin application key.`,
+      `${crossMark} No admin application key in infra/.env.${context.environment} (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY): run \`${actionCommand('fetch-admin-key')}\`.`,
     );
-    process.exit(1);
+    endAction(1);
   }
 
   const force = await confirmOrDefault({ message: 'Publish even when this month is already in the bucket?', default: false });
@@ -34,6 +35,6 @@ export async function runGeoipRefresh(context: InfraContext): Promise<void> {
     console.info(`\n${checkMark} ${pc.green('Done.')} ${pc.dim('Each API process re-checks the prefix daily and on boot.')}\n`);
   } catch (error) {
     console.error(`\n${crossMark} GeoIP refresh failed: ${errorMessage(error)}\n`);
-    process.exit(1);
+    endAction(1);
   }
 }

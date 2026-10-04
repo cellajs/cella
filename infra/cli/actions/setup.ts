@@ -4,7 +4,7 @@ import { confirm, select } from '@inquirer/prompts';
 import { syncGithubEnvironment } from '../../lib/github-sync';
 import { type ManagedKeyId, managedKeys } from '../../lib/managed-keys';
 import { deriveInfra } from '../../lib/naming';
-import { actionLabel } from '../../lib/operator-actions';
+import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
 import { deleteApiKey, fetchAppRulesByName } from '../../lib/scaleway/iam-client';
@@ -17,7 +17,7 @@ import { ensureBootstrapDnsGrant, removeBootstrapDnsGrant, resolveOrganizationId
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { secretManagerPath } from '../../lib/scaleway/secret-paths';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
-import { changeMark, checkMark, DIVIDER, failWithHint, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
+import { changeMark, checkMark, DIVIDER, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
 import { writeEnvVar } from '../../lib/utils/env-file';
 import { LEGACY_ADMIN_KEY_NAMES, writeModeEnvValues } from '../../lib/utils/env-files';
 import { errorMessage } from '../../lib/utils/errors';
@@ -27,7 +27,6 @@ import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { setupAdminApp } from '../../tasks/setup-admin-app';
 import { setupCiKey } from '../../tasks/setup-ci-key';
 import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
-import { isPromptAbort } from '../prompts/abort';
 import { maskedSecret } from '../prompts/masked-secret';
 import type { CliMode, InfraContext } from '../shared';
 import {
@@ -35,6 +34,9 @@ import {
   autoAcceptDefaults,
   confirmOrDefault,
   createStepRunner,
+  endAction,
+  endActionWithHint,
+  endsAction,
   inputOrDefault,
   keyPairOrPrompt,
   nonInteractive,
@@ -49,7 +51,7 @@ async function optionalSecret(message: string): Promise<string> {
   try {
     return await maskedSecret({ message });
   } catch (error) {
-    if (isPromptAbort(error)) throw error;
+    if (endsAction(error)) throw error;
     return '';
   }
 }
@@ -136,8 +138,7 @@ async function warnOnCiPolicyDrift(ctx: SetupContext): Promise<void> {
     for (const [key, rule] of liveByKey) problems.push(`unexpected rule [${rule.policyName}: ${key}]`);
     if (problems.length > 0) {
       console.warn(
-        `  ${warningMark} CI policy has drifted from code: ${problems.join('; ')}. ` +
-          `Re-run pnpm infra and choose ${pc.italic('"Rotate keys"')} to reconcile.`,
+        `  ${warningMark} CI policy has drifted from code: ${problems.join('; ')}. ` + `Run ${pc.cyan(actionCommand('rotate-keys'))} to reconcile.`,
       );
     }
   } catch {
@@ -203,12 +204,12 @@ function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; adminApp
   } else if (ciAccessKey) {
     console.info(`${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key: ${pc.cyanBright(ciAccessKey)}`);
   } else {
-    console.info(`${warningMark} ${pc.bold(pc.yellowBright('Done, but CI key was not created.'))} Re-run and choose ${pc.italic('"Rotate keys"')}.`);
+    console.info(`${warningMark} ${pc.bold(pc.yellowBright('Done, but CI key was not created.'))} Run ${pc.cyan(actionCommand('rotate-keys'))}.`);
   }
   if (adminAppId) {
     console.info(
       `  ${checkMark} Admin IAM app: ${pc.cyanBright(adminAppId)}\n` +
-        `    ${pc.dim('Its key is in infra/.env.<mode> here and in Secret Manager (admin-key); on another machine run "Fetch admin application key" with your Owner API key.')}`,
+        `    ${pc.dim('Its key is in infra/.env.<mode> here and in Secret Manager (admin-key); on another machine run `pnpm infra fetch-admin-key` with your Owner API key.')}`,
     );
   }
   console.info(divider);
@@ -259,12 +260,13 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
       }
       await ensureDnsZone({ secretKey: ctx.secretKey, projectId: ctx.projectId, domain: dnsZone });
     } catch (error) {
+      if (endsAction(error)) throw error;
       console.error(`\n${warningMark} DNS zone check failed: ${errorMessage(error)}`);
-      if (!(await confirmOrDefault({ message: 'Continue with pulumi up anyway?', default: false }))) process.exit(1);
+      if (!(await confirmOrDefault({ message: 'Continue with pulumi up anyway?', default: false }))) endAction(1);
     }
   }
 
-  // Lock provisioning against concurrent operators and CI; every exit path releases it, and abandoned locks expire or clear with "Unlock".
+  // Lock provisioning against concurrent operators and CI; every exit path releases it, and abandoned locks expire or clear with "Unlock stack".
   const stackLock = await acquireStackLockOrExit({
     appConfig: ctx.appConfig,
     accessKey: ctx.accessKey,
@@ -291,9 +293,9 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
     if (code === 0) break;
     if (nonInteractive() || !(await confirm({ message: 'Retry?', default: true }))) {
       await stackLock.release();
-      failWithHint(
+      endActionWithHint(
         `Base provisioning failed (pulumi up exited ${code})`,
-        { command: 'pnpm infra', description: 'fix the cause above, then re-run and choose "Resume" to continue' },
+        { command: actionCommand('resume'), description: 'fix the cause above, then run it again to continue' },
         code ?? 1,
       );
     }
@@ -426,8 +428,8 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: B
 }
 
 /** Set up or resume a stack: Owner API key, project, identities, CI key, state backend, and base infrastructure. */
-export async function runSetup(context: InfraContext, mode: Extract<CliMode, 'resume' | 'rotate'>): Promise<void> {
-  const needsCiKey = mode === 'rotate' || !context.hasCiKey;
+export async function runSetup(context: InfraContext, mode: Extract<CliMode, 'resume' | 'rotate-keys'>): Promise<void> {
+  const needsCiKey = mode === 'rotate-keys' || !context.hasCiKey;
   const { passphrase: pulumiPassphrase, generated: passphraseGenerated } = await resolveOrCreatePassphrase(context.stackYaml);
 
   // Provider authentication and all IAM / Secret Manager work use the Owner API key (SCW_OWNER_*, else a prompt) through SCW_* env (childEnv below), never stack config.
@@ -455,8 +457,12 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   }
 
   const proceedWith =
-    mode === 'rotate' ? actionLabel('rotate') : context.state === 'fresh' ? `the first setup of ${context.environment}` : actionLabel('resume');
-  if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) process.exit(0);
+    mode === 'rotate-keys'
+      ? actionLabel('rotate-keys')
+      : context.state === 'fresh'
+        ? `the first setup of ${context.environment}`
+        : actionLabel('resume');
+  if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return;
 
   // The state side (login, lock) takes the admin application key when this machine holds one, as Apply does; a first setup has none yet, and the Owner API key holds the object-storage rights too.
   const childEnv = buildProviderEnv(infraDir, {
@@ -521,7 +527,9 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
       });
       serviceAppIds = apps.allAppIds;
     } catch (error) {
-      console.warn(`${warningMark} Service app setup failed: ${errorMessage(error)}: the CI key-mint rule will be omitted; re-run "Rotate keys".`);
+      console.warn(
+        `${warningMark} Service app setup failed: ${errorMessage(error)}: the CI key-mint rule will be omitted; run \`${actionCommand('rotate-keys')}\`.`,
+      );
     }
   }
 
@@ -588,7 +596,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         await offerFirstDeploy(ctx, ciKey, inputs);
       }
     } else {
-      console.info(`  ${pc.dim('Recommended: re-run `pnpm infra` and choose "Resume" to retry.')}`);
+      console.info(`  ${pc.dim(`Recommended: run \`${actionCommand('resume')}\` to retry.`)}`);
       console.info('  Manual fallback if needed:');
       console.info(
         `  ${pc.cyan(`cd infra && SCW_ACCESS_KEY=<owner-access> SCW_SECRET_KEY=<owner-secret> AWS_ACCESS_KEY_ID=<admin-access> AWS_SECRET_ACCESS_KEY=<admin-secret> PULUMI_CONFIG_PASSPHRASE='<passphrase>' pulumi up --stack ${stackName}`)}`,

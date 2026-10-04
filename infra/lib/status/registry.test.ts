@@ -399,8 +399,8 @@ describe('database public endpoint', () => {
     const report = reportFor(base({ db: live(['51.158.210.62:6317'], 0) }));
     const check = find(report.checks, 'db.publicEndpoint');
     expect(check).toMatchObject({ status: 'warn', detail: '51.158.210.62:6317 is open although exposure is off (0 ACL rule(s))' });
-    expect(check?.nextAction?.description).toContain('Manage database');
-    expect(report.nextAction?.description).toContain('Manage database');
+    expect(check?.nextAction?.description).toContain('Close public DB access');
+    expect(report.nextAction?.description).toContain('Close public DB access');
   });
 
   it('shows the ACL rule count of an endpoint opened on purpose', () => {

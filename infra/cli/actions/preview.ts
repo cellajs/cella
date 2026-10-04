@@ -7,10 +7,10 @@ import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { type InfraContext, keyPairOrPrompt, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
+import { endAction, type InfraContext, keyPairOrPrompt, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 
 /**
- * Read-only `pulumi preview` of what "Apply infra change" would apply, authenticating the provider from SCW_* env, not stack config, so it also
+ * Read-only `pulumi preview` of what "Apply changes" would apply, authenticating the provider from SCW_* env, not stack config, so it also
  * validates that env-based auth resolves. The admin application key (infra/.env.<mode>) is enough: every read-only set plus the state bucket.
  * It builds the same environment as the privileged converge (organization id, privileged marker). A CI deploy applies the same
  * diff except the VM policy rules, which only a privileged run reconciles, so one simulation covers both.
@@ -20,7 +20,7 @@ export async function runPreview(context: InfraContext): Promise<void> {
     console.error(
       `${warningMark} "${actionLabel('preview')}" requires a fully bootstrapped stack (state=${context.state}). Run "${menuPath('resume')}" first.`,
     );
-    process.exit(1);
+    endAction(1);
   }
   console.info(pc.dim('\nPreview: read-only `pulumi preview` with a Scaleway key (supplied via env). No changes are made.\n'));
 
@@ -40,7 +40,7 @@ export async function runPreview(context: InfraContext): Promise<void> {
     console.error(
       `${warningMark} Could not resolve the organization id (${errorMessage(error)}). Set SCW_ORGANIZATION_ID (backend/.env) or SCW_DEFAULT_ORGANIZATION_ID and re-run.`,
     );
-    process.exit(1);
+    endAction(1);
   }
 
   // The admin application key serves both sides: the provider reads and the state bucket, which admits it.
@@ -50,7 +50,7 @@ export async function runPreview(context: InfraContext): Promise<void> {
   pulumiLoginAndSelect(infraDir, previewEnv, appConfig, targetStack);
 
   // --refresh reads every resource live first, so drift outside Pulumi (a rule re-scoped in the console) is part of the diff.
-  console.info(`\n→ pulumi preview (what "Apply infra change" would apply)\n  $ pulumi preview --stack ${targetStack} --diff --refresh`);
+  console.info(`\n→ pulumi preview (what "${actionLabel('apply')}" would apply)\n  $ pulumi preview --stack ${targetStack} --diff --refresh`);
   const preview = spawnSync('pulumi', ['preview', '--stack', targetStack, '--diff', '--refresh'], {
     cwd: infraDir,
     env: previewEnv,
@@ -58,9 +58,9 @@ export async function runPreview(context: InfraContext): Promise<void> {
   });
   if (preview.status !== 0) {
     console.error(`\n${warningMark} pulumi preview exited ${preview.status}. Check provider auth (SCW_* env) and the passphrase.`);
-    process.exit(preview.status ?? 1);
+    endAction(preview.status ?? 1);
   }
   console.info(
-    `\n${pc.dim('Provider auth resolved from SCW_* env (see the "Using: Environment variable" lines above). A clean "no changes" result means the stack matches code; any diff is what "Apply infra change" would apply (a CI deploy applies the same minus VM policy rules).')}`,
+    `\n${pc.dim('Provider auth resolved from SCW_* env (see the "Using: Environment variable" lines above). A clean "no changes" result means the stack matches code; any diff is what "Apply changes" would apply (a CI deploy applies the same minus VM policy rules).')}`,
   );
 }

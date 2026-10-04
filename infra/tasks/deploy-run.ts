@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { basename, resolve } from 'node:path';
 import { healthContract } from '../config/health.config';
+import { actionCommand } from '../lib/operator-actions';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
 import { adoptStateBackendEnv, stateBackendUrl } from '../lib/stack/control-store';
 import { deployEvents, deployTelemetry, initDeployTelemetry } from '../lib/telemetry/deploy-telemetry';
@@ -502,7 +503,7 @@ function createRealEffects(): DeployEffects {
       });
       if (!result.acquired) {
         throw new Error(
-          `stack ${stack} is locked by ${result.held.owner} (operation: ${result.held.operation}, since ${result.held.acquiredAt}). If that run is dead, clear it with the infra CLI "Unlock" action.`,
+          `stack ${stack} is locked by ${result.held.owner} (operation: ${result.held.operation}, since ${result.held.acquiredAt}). If that run is dead, clear it with \`${actionCommand('unlock')}\`.`,
         );
       }
       const uninstall = installSignalRelease(result.lease, { log: (msg) => console.warn(`[${operation}] ${msg}`) });

@@ -1,3 +1,4 @@
+import { actionCommand } from '../lib/operator-actions';
 import {
   fetchGrantedRules,
   type IamAuth,
@@ -123,7 +124,7 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
       `✗ dormant principal holds ${dormantKeys.length} API key(s): a registry service outside the deployed set must have none: ${dormantKeys.join(', ')}`,
     );
   if (extraBenign.length > 0)
-    log(`⚠ VM application has extra read-only grant(s) (benign drift; reconcile via "Apply infra change"): ${extraBenign.join(', ')}`);
+    log(`⚠ VM application has extra read-only grant(s) (benign drift; reconcile with \`${actionCommand('apply')}\`): ${extraBenign.join(', ')}`);
   if (ok) {
     const conditionNote = opts.requiredSecretCondition ? ', secret rules path-conditioned' : '';
     const scopeNote = opts.requiredProjectId ? ', project-scoped' : '';
@@ -181,7 +182,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     ].filter(Boolean);
     throw new Error(
       `VM application ${applicationId ?? applicationName} ${problems.join('; ')}. ` +
-        'The Pulumi-managed policy (infra/resources/vm-iam.ts) defines the exact grant. A CI deploy never rewrites policy rules: after a registry change run `pnpm infra` -> Apply infra change (a privileged up reconciles them), remove any manually-attached policy, and delete keys on dormant principals.',
+        `The Pulumi-managed policy (infra/resources/vm-iam.ts) defines the exact grant. A CI deploy never rewrites policy rules: after a registry change run \`${actionCommand('apply')}\` (a privileged up reconciles them), remove any manually-attached policy, and delete keys on dormant principals.`,
     );
   }
 }

@@ -1,3 +1,4 @@
+import { actionLabel, menuPath } from '../../lib/operator-actions';
 import { classifyPrincipal, describeKey, formatKeyLine, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { principalNames } from '../../lib/scaleway/principals';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
@@ -6,7 +7,7 @@ import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { LEGACY_ADMIN_KEY_NAMES, writeModeEnvValues } from '../../lib/utils/env-files';
 import { errorMessage } from '../../lib/utils/errors';
 import { ADMIN_KEY_SECRET_NAME } from '../../tasks/setup-admin-app';
-import type { InfraContext } from '../shared';
+import { endAction, type InfraContext } from '../shared';
 import { acquireOwnerKey, printRevokeReminder } from './owner-key';
 
 /**
@@ -16,7 +17,9 @@ import { acquireOwnerKey, printRevokeReminder } from './owner-key';
  */
 export async function runFetchAdminKey(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
-  console.info(pc.dim('\nFetch admin application key: read it from Secret Manager with your Owner API key and write it to infra/.env.<mode>.\n'));
+  console.info(
+    pc.dim(`\n${actionLabel('fetch-admin-key')}: read it from Secret Manager with your Owner API key and write it to infra/.env.<mode>.\n`),
+  );
   const names = principalNames(appConfig.slug, context.environment);
   const ownerKey = await acquireOwnerKey({
     identity: resolveOperatorIdentity(),
@@ -25,22 +28,34 @@ export async function runFetchAdminKey(context: InfraContext): Promise<void> {
     slug: appConfig.slug,
     mode: context.environment,
   });
+  // The key minted for this run is revoked on every way out, a failed read included.
+  try {
+    await writeAdminKey(context, ownerKey.secretKey);
+  } finally {
+    await ownerKey.release();
+  }
+  if (ownerKey.pasted) printRevokeReminder();
+}
 
-  const secrets = createSecretManagerClient({ secretKey: ownerKey.secretKey, region: appConfig.s3.region, projectId });
+/** Read the custodied admin application key with `ownerSecretKey`, confirm whose key it is, and write it to the mode env file. */
+async function writeAdminKey(context: InfraContext, ownerSecretKey: string): Promise<void> {
+  const { appConfig, projectId } = context;
+  const names = principalNames(appConfig.slug, context.environment);
+  const secrets = createSecretManagerClient({ secretKey: ownerSecretKey, region: appConfig.s3.region, projectId });
   const container = await secrets.getSecretByName(ADMIN_KEY_SECRET_NAME, engineSecretPath(appConfig.slug, context.environment));
   if (!container) {
     console.error(
-      `${warningMark} No '${ADMIN_KEY_SECRET_NAME}' secret under ${engineSecretPath(appConfig.slug, context.environment)}: run "Rotate keys" once to create the admin application and its key.`,
+      `${warningMark} No '${ADMIN_KEY_SECRET_NAME}' secret under ${engineSecretPath(appConfig.slug, context.environment)}: run "${menuPath('rotate-keys')}" once to create the admin application and its key.`,
     );
-    process.exit(1);
+    endAction(1);
   }
   let pair: { accessKey: string; secretKey: string };
   try {
     pair = JSON.parse(await secrets.accessLatestValue(container.id)) as { accessKey: string; secretKey: string };
     if (!pair.accessKey || !pair.secretKey) throw new Error('missing accessKey/secretKey');
   } catch (error) {
-    console.error(`${warningMark} The admin-key secret is not a usable key pair (${errorMessage(error)}); run "Rotate keys".`);
-    process.exit(1);
+    console.error(`${warningMark} The admin-key secret is not a usable key pair (${errorMessage(error)}); run "${menuPath('rotate-keys')}".`);
+    endAction(1);
   }
 
   // Trust but verify: the secret is expected to hold the admin application's key, nothing else goes into SCW_ADMIN_*.
@@ -48,7 +63,7 @@ export async function runFetchAdminKey(context: InfraContext): Promise<void> {
   const role = classifyPrincipal(desc, names);
   if (role !== 'admin') {
     console.error(`${warningMark} ${formatKeyLine(desc, role)} is not the admin application's key; refusing to write it.`);
-    process.exit(1);
+    endAction(1);
   }
   const written = writeModeEnvValues(
     context.environment,
@@ -59,6 +74,4 @@ export async function runFetchAdminKey(context: InfraContext): Promise<void> {
   if (written.removed.length > 0) {
     console.info(`  ${pc.dim(`Removed the superseded ${written.removed.join(', ')} from the file.`)}`);
   }
-  await ownerKey.release();
-  if (ownerKey.pasted) printRevokeReminder();
 }

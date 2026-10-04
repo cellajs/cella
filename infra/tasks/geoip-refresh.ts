@@ -21,7 +21,7 @@ export interface GeoipManifest {
  * Publishing the DB-IP Lite GeoIP databases (CC BY 4.0) to the `geoip/` prefix of the app's public bucket, where every
  * API process downloads them from at boot and daily (backend/src/lib/geoip.ts). Effects are injected like
  * reset-database, so unit tests assert the order and every guard; `main` supplies the live ones for `pnpm infra`
- * (Refresh GeoIP data), the deploy pipeline (staleness-gated) and the monthly workflow.
+ * (`pnpm infra geoip-refresh`), the deploy pipeline (staleness-gated) and the monthly workflow.
  */
 export interface GeoipRefreshPlan {
   bucket: string;
