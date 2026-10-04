@@ -7,7 +7,7 @@ description: Run the WCAG audit, fix what it finds, check each fix in the runnin
 
 `pnpm a11y:run` decides what tools can prove and writes the ledger, `json/accessibility-conformance.json`. The rest it leaves open, with a packet per page for a reviewer. This skill is the procedure around it: run, fix, check the fix, rerun, review, record. `a11y/README.md` explains the audit itself.
 
-An agent's decision is provisional. It is recorded as `decidedBy: "agent"`, the draft report marks it, and a person confirms it before anything is published. Studies of per-criterion agents find most real failures and also report many that are not there, so the rules below lean toward leaving a row open.
+An agent's decision is provisional. It is recorded as `decidedBy: "agent"`, the draft report marks it, and a person confirms it before the report is published as final. Until then `report --publish --draft` publishes it as a draft, and the accessibility statement calls the results provisional. Studies of per-criterion agents find most real failures and also report many that are not there, so the rules below lean toward leaving a row open.
 
 ## Run
 
@@ -15,6 +15,7 @@ An agent's decision is provisional. It is recorded as `decidedBy: "agent"`, the 
 pnpm a11y:run            # database, app, audit, stop
 pnpm a11y:run --keep     # the same, and leave the stack up for the fix loop
 pnpm -C a11y report      # draft report and the checklist a11y/results/manual-pass.md
+pnpm -C a11y report --publish --draft   # the draft PDF where the app serves it, and the values for the statement
 ```
 
 - One audit stack per machine at a time: runs share the database `db_a11y`.

@@ -39,6 +39,8 @@ against.
 | `pnpm a11y --only axe` | Refresh some parts only (`axe`, `probes`, `code`); the other parts' evidence is kept |
 | `pnpm a11y --workers 2` | States audited at the same time (default 4); lower it on a busy machine |
 | `pnpm -C a11y report` | Render the ledger as a draft VPAT and a checklist for the manual pass |
+| `pnpm -C a11y report --publish` | Put the report where the app serves it and print what the statement needs; refuses a draft |
+| `pnpm -C a11y report --publish --draft` | The same while rows still need a person: the statement calls the results provisional |
 | `pnpm -C a11y decide --file decisions.json` | Record a reviewer's decisions (an agent's or a person's) with their evidence |
 
 A visit that fails (a page that redirects, a check that cannot run) is reported, the command exits with an error, and
@@ -87,6 +89,11 @@ each decision with its evidence through `decide`.
 - **A person** confirms the agent's rows and decides what needs assistive technology (`--by human`).
   `a11y/results/manual-pass.md` lists both.
 
+The statement need not wait for the person. `report --publish --draft` publishes what there is: the report keeps its
+draft note and marks each row an agent decided, and the statement says that the results are provisional, how many
+criteria are met and which are not evaluated yet. Without `--draft`, publishing is refused until a person confirmed
+every row.
+
 A reviewer's decision survives later runs. If the audit later finds a failure on a row a reviewer called Supports, the
 row goes back to Partially Supports. A decision can also outlive the code it describes: the checklist lists the rows
 whose evidence names a file that changed after the day of the decision, to look at again.
@@ -107,7 +114,8 @@ The audit code arrives with a sync; the results and the list of pages are the ap
 - **`json/accessibility-conformance.json`** is never synced (`ignored` in `cella/cella.config.ts`). The first
   `pnpm a11y:run` writes the app's own ledger.
 - **`frontend/src/modules/auth/legal/legal-config.ts`** holds what the accessibility statement claims
-  (`accessibilityReview`); fill it from your own ledger after a person confirmed the rows.
+  (`accessibilityReview`). `pnpm -C a11y report --publish` prints it from your own ledger and puts the PDF under
+  `frontend/public/static/common`; shorten the descriptions for the statement's reader.
 - The state openers in `scope-config.ts` find buttons by their English names. An app with another default language
   changes those names there.
 

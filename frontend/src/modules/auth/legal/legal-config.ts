@@ -202,10 +202,43 @@ export const sharedDataTypes: SharedDataType[] = [
   },
 ];
 
-/** Accessibility review results the statement shows; the review fills these in, nothing is claimed before it. */
+/**
+ * Accessibility review results the statement shows, nothing is claimed before a review. `pnpm -C a11y report --publish`
+ * prints them from the ledger; the descriptions are shortened here for the statement's reader.
+ */
 export const accessibilityReview: AccessibilityReview = {
   standard: 'WCAG 2.2 Level AA',
-  reviewedAt: null,
-  limitations: [],
-  report: null,
+  reviewedAt: '2026-10-03',
+  provisional: true,
+  results: {
+    pagesAndStates: 26,
+    supports: 43,
+    partiallySupports: 3,
+    doesNotSupport: 0,
+    notApplicable: 6,
+    notEvaluated: ['2.4.5 Multiple Ways', '4.1.2 Name, Role, Value', '4.1.3 Status Messages'],
+  },
+  limitations: [
+    {
+      description: 'Long names in the menu are cut off when you increase the spacing of text.',
+      criteria: ['1.4.12'],
+    },
+    {
+      description: 'Short confirmation messages close by themselves after 4 seconds.',
+      criteria: ['2.2.1'],
+      workaround:
+        "Signed in, you can turn that off under Preferences with 'Keep messages open'. On the public pages, hover the message or press F6 to hold it.",
+    },
+    {
+      description: 'Setting up an authenticator app must be finished within 5 minutes.',
+      criteria: ['2.2.1'],
+      workaround: 'After that you can start again with a new QR code.',
+    },
+    {
+      description: 'The width of the docs sidebar and of table columns can only be set freely by dragging.',
+      criteria: ['2.5.7'],
+      workaround: 'A double-click resets the sidebar or fits a column to its content, and the keyboard resizes both.',
+    },
+  ],
+  report: { edition: 'VPAT® 2.5Rev WCAG', date: '2026-10-03', pdfUrl: '/static/common/accessibility-conformance-report.pdf' },
 };

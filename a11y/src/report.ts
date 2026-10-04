@@ -12,9 +12,10 @@ import { repoRoot } from './session.ts';
  * Renders the ledger as a VPAT® 2.5Rev WCAG report (Markdown, HTML and a tagged PDF), plus the checklist for the manual
  * pass. While rows are open or decided by an agent only, the report is a draft and says so.
  *
- * Usage: pnpm -C a11y report             the draft and the checklist, in a11y/results/
- *        pnpm -C a11y report --publish   refuses a draft; puts the PDF where the app serves it and prints what the
- *                                        accessibility statement needs
+ * Usage: pnpm -C a11y report                     the draft and the checklist, in a11y/results/
+ *        pnpm -C a11y report --publish           refuses a draft; puts the PDF where the app serves it and prints what
+ *                                                the accessibility statement needs
+ *        pnpm -C a11y report --publish --draft   the same for a draft: the statement then calls the results provisional
  */
 const ledger = readLedger();
 if (!ledger) {
@@ -37,16 +38,20 @@ const automated = (r: LedgerRow) => r.evidence.filter((e) => !e.check.startsWith
 /** Text made safe for a Markdown table cell; backslashes first, so the escapes added after them stay intact. */
 const cell = (text: string) => text.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ');
 
-function row(r: LedgerRow) {
-  // An agent's decision is provisional until a person confirms it; the draft says so on the row
-  const provisional = r.decidedBy === 'agent' ? ' *(agent review, to confirm)*' : '';
-  const conformance = r.status ? `Web: ${statusLabel[r.status]}${provisional}` : `**Open** (${r.open.join(', ')})`;
+/** A row's remarks for the reader; a failing row also names what the audit found. */
+function remarksOf(r: LedgerRow) {
   const failures = automated(r)
     .filter((e) => e.result === 'fail')
     .map((e) => e.summary);
-  const remarks = r.status === 'partially-supports' && failures.length ? `${r.remarks} ${failures.join(' ')}` : r.remarks;
+  return r.status === 'partially-supports' && failures.length ? `${r.remarks} ${failures.join(' ')}` : r.remarks;
+}
+
+function row(r: LedgerRow) {
+  // An agent's decision is provisional until a person confirms it; the draft says so on the row
+  const provisional = r.decidedBy === 'agent' ? ' *(agent review, to confirm)*' : '';
+  const conformance = r.status ? `Web: ${statusLabel[r.status]}${provisional}` : '**Not evaluated yet**';
   const en = r.en301549 ? `<br>EN 301 549: ${r.en301549}` : '';
-  return `| ${r.id} ${r.name} (Level ${r.level})${en} | ${conformance} | ${cell(remarks)} |`;
+  return `| ${r.id} ${r.name} (Level ${r.level})${en} | ${conformance} | ${cell(remarksOf(r))} |`;
 }
 
 const table = (level: 'A' | 'AA') =>
@@ -61,15 +66,19 @@ const byAgent = ledger.criteria.filter((r) => r.decidedBy === 'agent');
 const byPerson = ledger.criteria.filter((r) => r.decidedBy === 'human');
 const unconfirmed = open.length + byAgent.length;
 
+/** What keeps the report a draft, for its reader. */
+const draftNote = [
+  open.length ? `${open.length} criteria are not evaluated yet.` : '',
+  byAgent.length ? `${byAgent.length} criteria were decided by an AI agent and await confirmation by a person.` : '',
+]
+  .filter(Boolean)
+  .join(' ');
+
 const vpat = `# ${appConfig.name} Accessibility Conformance Report
 
 WCAG Edition (Based on VPAT® Version 2.5Rev)
 
-${
-  unconfirmed
-    ? `> **Draft.** Generated from \`json/accessibility-conformance.json\` on ${ledger.auditedAt}. ${open.length} criteria are open and ${byAgent.length} were decided by an agent: ${unconfirmed} need a person before this report can be published.\n`
-    : ''
-}
+${unconfirmed ? `> **Draft.** ${draftNote} Those rows are marked and can still change.\n` : ''}
 **Name of Product/Version:** ${appConfig.name} ${version}
 
 **Report Date:** ${ledger.auditedAt}
@@ -264,11 +273,11 @@ try {
 }
 
 if (process.argv.includes('--publish')) {
-  // Only what a person confirmed is published: an open row has no answer, and an agent's answer is provisional
-  if (unconfirmed) {
+  // Only what a person confirmed is published as final: an open row has no answer, and an agent's answer is provisional
+  if (unconfirmed && !process.argv.includes('--draft')) {
     const ids = [...open, ...byAgent].map((r) => r.id).join(', ');
     console.error(
-      `Not published: ${open.length} criteria are open and ${byAgent.length} are decided by an agent only (${ids}). See a11y/results/manual-pass.md.`,
+      `Not published: ${open.length} criteria are open and ${byAgent.length} are decided by an agent only (${ids}). See a11y/results/manual-pass.md, or add --draft to publish it as a draft.`,
     );
     process.exit(1);
   }
@@ -276,14 +285,24 @@ if (process.argv.includes('--publish')) {
   const publicPath = 'frontend/public/static/common/accessibility-conformance-report.pdf';
   mkdirSync(path.dirname(path.join(repoRoot, publicPath)), { recursive: true });
   copyFileSync(pdfPath, path.join(repoRoot, publicPath));
+  const count = (status: LedgerRow['status']) => ledger.criteria.filter((r) => r.status === status).length;
   const review = {
     standard: ledger.standard,
     reviewedAt: ledger.auditedAt,
-    limitations: failing.map((r) => ({ description: r.remarks, criteria: [r.id] })),
+    ...(unconfirmed ? { provisional: true } : {}),
+    results: {
+      pagesAndStates: ledger.scope.length,
+      supports: count('supports'),
+      partiallySupports: count('partially-supports'),
+      doesNotSupport: count('does-not-support'),
+      notApplicable: count('not-applicable'),
+      notEvaluated: open.map((r) => `${r.id} ${r.name}`),
+    },
+    limitations: failing.map((r) => ({ description: remarksOf(r), criteria: [r.id] })),
     report: { edition: ledger.edition, date: ledger.auditedAt, pdfUrl: publicPath.replace('frontend/public', '') },
   };
   console.info(
-    `Published ${publicPath}.\nPut this in frontend/src/modules/auth/legal/legal-config.ts, and shorten each description for the statement's reader:\n`,
+    `Published ${publicPath}${unconfirmed ? ' as a draft' : ''}.\nPut this in frontend/src/modules/auth/legal/legal-config.ts, and shorten each description for the statement's reader:\n`,
   );
   console.info(`export const accessibilityReview: AccessibilityReview = ${JSON.stringify(review, null, 2)};\n`);
 }
