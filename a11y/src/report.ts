@@ -1,17 +1,26 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { chromium } from 'playwright';
 import { appConfig } from 'shared';
-import { manualSteps } from './criteria.ts';
-import { type Ledger, type LedgerRow, ledgerPath } from './ledger.ts';
+import { manualSteps, screenReaderSteps } from './criteria.ts';
+import { type LedgerRow, product, readLedger } from './ledger.ts';
 import { repoRoot } from './session.ts';
 
 /**
- * Renders the ledger as a draft VPAT® 2.5Rev WCAG report, plus the checklist for the manual pass.
+ * Renders the ledger as a VPAT® 2.5Rev WCAG report (Markdown, HTML and a tagged PDF), plus the checklist for the manual
+ * pass. While rows are open or decided by an agent only, the report is a draft and says so.
  *
- * Usage: pnpm -C a11y report
+ * Usage: pnpm -C a11y report             the draft and the checklist, in a11y/results/
+ *        pnpm -C a11y report --publish   refuses a draft; puts the PDF where the app serves it and prints what the
+ *                                        accessibility statement needs
  */
-const ledger = JSON.parse(readFileSync(ledgerPath, 'utf8')) as Ledger;
+const ledger = readLedger();
+if (!ledger) {
+  console.error(`No ledger for ${product} yet: run \`pnpm a11y\` first.`);
+  process.exit(1);
+}
 const { version } = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8')) as { version: string };
 const resultsDir = path.join(import.meta.dirname, '../results');
 
@@ -56,9 +65,11 @@ const vpat = `# ${appConfig.name} Accessibility Conformance Report
 
 WCAG Edition (Based on VPAT® Version 2.5Rev)
 
-> **Draft.** Generated from \`json/accessibility-conformance.json\` on ${ledger.auditedAt}. ${open.length} criteria are open and
-> ${byAgent.length} were decided by an agent: ${unconfirmed} need a person before this report can be published.
-
+${
+  unconfirmed
+    ? `> **Draft.** Generated from \`json/accessibility-conformance.json\` on ${ledger.auditedAt}. ${open.length} criteria are open and ${byAgent.length} were decided by an agent: ${unconfirmed} need a person before this report can be published.\n`
+    : ''
+}
 **Name of Product/Version:** ${appConfig.name} ${version}
 
 **Report Date:** ${ledger.auditedAt}
@@ -110,6 +121,22 @@ Not evaluated.
 This report describes the product as tested on the report date. Accessibility can change as the product changes.
 `;
 
+/** Files a reviewer's evidence names that changed after the day of the decision: the decision may describe old code. */
+const tracked = spawnSync('git', ['ls-files', 'frontend/src', 'backend/src', 'locales'], { cwd: repoRoot, encoding: 'utf8' }).stdout.split('\n');
+function changedSince(r: LedgerRow) {
+  const review = r.evidence.find((e) => e.check === `review:${r.decidedBy}`);
+  if (!review?.date) return [];
+  const cited = new Set(review.summary.match(/[\w./-]+\.(?:tsx?|css|json)\b/g) ?? []);
+  const files = [...cited].flatMap((name) => tracked.filter((file) => file.endsWith(`/${name}`)).slice(0, 1));
+  return files.filter((file) =>
+    spawnSync('git', ['log', '-1', `--since=${review.date}T23:59:59`, '--format=%h', '--', file], { cwd: repoRoot, encoding: 'utf8' }).stdout.trim(),
+  );
+}
+const stale = ledger.criteria
+  .filter((r) => r.decidedBy === 'agent' || r.decidedBy === 'human')
+  .map((r) => ({ row: r, files: changedSince(r) }))
+  .filter(({ files }) => files.length);
+
 const failing = ledger.criteria.filter((r) => r.status === 'partially-supports' || r.status === 'does-not-support');
 const step = (id: string) => manualSteps[id] ?? (id.startsWith('1.2.') ? manualSteps['1.2.1'] : undefined);
 
@@ -133,6 +160,20 @@ ${byAgent
     ].join('\n');
   })
   .join('\n')}
+
+## Re-check: code changed since the decision (${stale.length})
+
+A reviewer's decision outlives the code it describes. For each row, look at the named files again and record the decision anew.
+
+${stale.map(({ row, files }) => `- [ ] **${row.id} ${row.name}**: ${files.join(', ')}`).join('\n')}
+
+## Screen reader pass (4.1.2 and 4.1.3)
+
+Go through each page type and overlay of the scope with a screen reader on, and listen for:
+
+${screenReaderSteps.map((line) => `- [ ] ${line}`).join('\n')}
+
+Name in the decision which screen readers and browsers you used; the report lists only those.
 
 ## Open criteria (${open.length})
 
@@ -159,8 +200,93 @@ ${failing
   .join('\n')}
 `;
 
+/** The report's Markdown as an HTML document: headings, paragraphs, a quote, lists and tables with header cells. */
+function toHtml(markdown: string) {
+  const inline = (text: string) =>
+    text
+      .replace(/&(?!lt;|gt;|amp;)/g, '&amp;')
+      .replace(/<(?!br>)/g, '&lt;')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*\((.+?)\)\*/g, '<em>($1)</em>')
+      .replace(/`(.+?)`/g, '<code>$1</code>');
+  const cells = (line: string) =>
+    line
+      .slice(1, -1)
+      .split(/(?<!\\)\|/)
+      .map((value) => inline(value.trim().replace(/\\\|/g, '|').replace(/\\\\/g, '\\')));
+  const body: string[] = [];
+  const lines = markdown.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const heading = /^(#{1,3}) (.+)$/.exec(line);
+    if (heading) body.push(`<h${heading[1].length}>${inline(heading[2])}</h${heading[1].length}>`);
+    else if (line.startsWith('| ')) {
+      const head = cells(line);
+      const rows: string[] = [];
+      for (i += 2; i < lines.length && lines[i].startsWith('| '); i++) {
+        const [first, ...rest] = cells(lines[i]);
+        rows.push(`<tr><th scope="row">${first}</th>${rest.map((value) => `<td>${value}</td>`).join('')}</tr>`);
+      }
+      i -= 1;
+      body.push(
+        `<table><thead><tr>${head.map((value) => `<th scope="col">${value}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`,
+      );
+    } else if (line.startsWith('- ')) {
+      const items: string[] = [];
+      for (; i < lines.length && lines[i].startsWith('- '); i++) items.push(`<li>${inline(lines[i].slice(2))}</li>`);
+      i -= 1;
+      body.push(`<ul>${items.join('')}</ul>`);
+    } else if (line.startsWith('> ')) body.push(`<p class="note">${inline(line.slice(2))}</p>`);
+    else if (line.trim()) body.push(`<p>${inline(line)}</p>`);
+  }
+  const style =
+    'body{font:11pt/1.45 system-ui,sans-serif;color:#111;margin:0}h1{font-size:20pt}h2{font-size:14pt;margin-top:1.6em}h3{font-size:12pt}' +
+    'table{border-collapse:collapse;width:100%;margin:.6em 0}th,td{border:1px solid #777;padding:5px 7px;text-align:left;vertical-align:top;font-size:9.5pt}' +
+    'thead th{background:#eee}tbody th{font-weight:600;width:27%}td:nth-child(2){width:19%}.note{border-left:4px solid #b45309;padding-left:10px}tr{break-inside:avoid}';
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${appConfig.name} Accessibility Conformance Report</title><style>${style}</style></head><body>${body.join('\n')}</body></html>`;
+}
+
+mkdirSync(resultsDir, { recursive: true });
 writeFileSync(path.join(resultsDir, 'vpat-draft.md'), vpat);
 writeFileSync(path.join(resultsDir, 'manual-pass.md'), checklist);
+
+// The same report as a document and as a tagged PDF with an outline, which a screen reader can navigate by heading and table
+const html = toHtml(vpat);
+const pdfPath = path.join(resultsDir, 'conformance-report.pdf');
+writeFileSync(path.join(resultsDir, 'conformance-report.html'), html);
+const browser = await chromium.launch();
+try {
+  const page = await browser.newPage();
+  await page.setContent(html);
+  await page.pdf({ path: pdfPath, format: 'A4', tagged: true, outline: true, margin: { top: '18mm', bottom: '18mm', left: '16mm', right: '16mm' } });
+} finally {
+  await browser.close();
+}
+
+if (process.argv.includes('--publish')) {
+  // Only what a person confirmed is published: an open row has no answer, and an agent's answer is provisional
+  if (unconfirmed) {
+    const ids = [...open, ...byAgent].map((r) => r.id).join(', ');
+    console.error(
+      `Not published: ${open.length} criteria are open and ${byAgent.length} are decided by an agent only (${ids}). See a11y/results/manual-pass.md.`,
+    );
+    process.exit(1);
+  }
+  // Under static/common: that folder is the app's own, so one product's report never syncs into another
+  const publicPath = 'frontend/public/static/common/accessibility-conformance-report.pdf';
+  mkdirSync(path.dirname(path.join(repoRoot, publicPath)), { recursive: true });
+  copyFileSync(pdfPath, path.join(repoRoot, publicPath));
+  const review = {
+    standard: ledger.standard,
+    reviewedAt: ledger.auditedAt,
+    limitations: failing.map((r) => ({ description: r.remarks, criteria: [r.id] })),
+    report: { edition: ledger.edition, date: ledger.auditedAt, pdfUrl: publicPath.replace('frontend/public', '') },
+  };
+  console.info(
+    `Published ${publicPath}.\nPut this in frontend/src/modules/auth/legal/legal-config.ts, and shorten each description for the statement's reader:\n`,
+  );
+  console.info(`export const accessibilityReview: AccessibilityReview = ${JSON.stringify(review, null, 2)};\n`);
+}
 console.info(
-  `Wrote ${path.relative(process.cwd(), resultsDir)}/vpat-draft.md and manual-pass.md (${open.length} criteria open, ${byAgent.length} decided by an agent).`,
+  `Wrote ${path.relative(process.cwd(), resultsDir)}/vpat-draft.md, conformance-report.html, conformance-report.pdf and manual-pass.md (${open.length} criteria open, ${byAgent.length} decided by an agent).`,
 );

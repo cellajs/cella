@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "./gradients.css" layer(base); /* Custom gradients that are not easy to build using tailwind */
+@import "./plus-grain.css" layer(base); /* Dithered + texture echoing the morph animation */
 
 /* Breakpoints, the container cap and typography: the parts that need JS. */
 @plugin "./tailwind-plugin.ts";
@@ -33,7 +34,7 @@
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-collapsible-down: collapsible-down 0.2s ease-out;
   --animate-collapsible-up: collapsible-up 0.2s ease-out;
-  --animate-status-pulse: status-pulse 3.5s ease-in-out infinite;
+  --animate-status-pulse: status-pulse 2.4s ease-in-out 2;
 
   @keyframes accordion-down {
     from {

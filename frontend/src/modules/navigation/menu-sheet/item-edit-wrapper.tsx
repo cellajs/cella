@@ -67,7 +67,7 @@ export function MenuItemEditWrapper({
   return (
     <li data-submenu={!!item.submenu} className="group/menu-options relative my-1">
       <div ref={dragRef}>
-        <MenuItemEdit item={item} icon={options?.icon} />
+        <MenuItemEdit item={item} siblings={unarchiveItems} icon={options?.icon} />
         {!item.membership.archived && !!item.submenu?.length && detailedMenu && (
           <div
             data-has-archived={!!item.submenu.filter((i) => i.membership.archived).length}

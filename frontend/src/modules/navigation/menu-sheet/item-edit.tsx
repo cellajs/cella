@@ -1,7 +1,8 @@
 import { onlineManager } from '@tanstack/react-query';
-import { ArchiveIcon, ArchiveRestoreIcon, BellIcon, BellOffIcon } from 'lucide-react';
+import { ArchiveIcon, ArchiveRestoreIcon, ArrowDownIcon, ArrowUpIcon, BellIcon, BellOffIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
+import { getRelativeOrder } from 'shared/utils/display-order';
 import { env } from '~/env';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
@@ -11,13 +12,16 @@ import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { MutationUpdateMembership } from '~/modules/memberships/types';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 interface MenuItemEditProps {
   item: UserMenuItem;
+  /** The list this item is ordered in, sorted; the move buttons step through it. */
+  siblings: UserMenuItem[];
   icon?: IconComponent;
 }
 
-export function MenuItemEdit({ item, icon: Icon }: MenuItemEditProps) {
+export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) {
   const { t } = useTranslation();
 
   const { mutate: updateMembership, status } = useMemberUpdateMutation();
@@ -35,6 +39,20 @@ export function MenuItemEdit({ item, icon: Icon }: MenuItemEditProps) {
     };
 
     updateMembership(updatedMembership);
+  };
+
+  // The drag reorder one step at a time, for the keyboard and for a pointer that cannot drag
+  const index = siblings.findIndex((sibling) => sibling.id === item.id);
+  const move = (step: -1 | 1) => {
+    const target = siblings[index + step];
+    if (!target) return;
+    const ordered = siblings.map((sibling) => ({ id: sibling.id, displayOrder: sibling.membership.displayOrder }));
+    updateMembership({
+      path: { id: item.membership.id, tenantId: item.tenantId, organizationId: item.membership.organizationId || item.id },
+      body: { displayOrder: getRelativeOrder(ordered, target.membership.displayOrder, item.id, step < 0 ? 'top' : 'bottom') },
+      channelId: item.id,
+      channelType: item.entityType,
+    });
   };
 
   return (
@@ -75,6 +93,28 @@ export function MenuItemEdit({ item, icon: Icon }: MenuItemEditProps) {
             onClick={() => handleUpdateMembershipKey('muted')}
             subitem={!item.submenu}
           />
+          {!item.membership.archived && siblings.length > 1 && (
+            <>
+              <MenuItemEditButton
+                icon={ArrowUpIcon}
+                title={t('c:move_up')}
+                label={`${t('c:move_up')}: ${item.name}`}
+                onClick={() => move(-1)}
+                disabled={index <= 0}
+                iconOnly
+                subitem={!item.submenu}
+              />
+              <MenuItemEditButton
+                icon={ArrowDownIcon}
+                title={t('c:move_down')}
+                label={`${t('c:move_down')}: ${item.name}`}
+                onClick={() => move(1)}
+                disabled={index === siblings.length - 1}
+                iconOnly
+                subitem={!item.submenu}
+              />
+            </>
+          )}
         </div>
       </div>
     </motion.div>
@@ -84,20 +124,31 @@ export function MenuItemEdit({ item, icon: Icon }: MenuItemEditProps) {
 interface MenuItemEditButtonProps {
   icon: React.ElementType;
   title: string;
+  /** Accessible name when it says more than the title. */
+  label?: string;
   onClick: () => void;
   subitem?: boolean;
+  /** Shows the icon alone, in a box wide enough to hit; the title stays the tooltip and the name. */
+  iconOnly?: boolean;
+  /** Stays focusable, so a move that reaches the end of the list does not drop keyboard focus. */
+  disabled?: boolean;
 }
-function MenuItemEditButton({ icon: Icon, title, onClick, subitem = false }: MenuItemEditButtonProps) {
+function MenuItemEditButton({ icon: Icon, title, label, onClick, subitem = false, iconOnly = false, disabled = false }: MenuItemEditButtonProps) {
   return (
     <Button
       variant="link"
       size="sm"
-      className="h-4 px-0 py-0 text-xs leading-3 underline-offset-1 opacity-80 hover:underline hover:opacity-100 focus-visible:bg-accent/50 focus-visible:ring-0 focus-visible:ring-offset-0"
-      aria-label={`Click ${title}`}
-      onClick={onClick}
+      className={cn(
+        'h-4 px-0 py-0 text-xs leading-3 underline-offset-1 opacity-80 hover:underline hover:opacity-100 focus-visible:bg-accent/50 focus-visible:ring-0 focus-visible:ring-offset-0',
+        iconOnly && 'h-6 w-6 justify-center aria-disabled:cursor-default aria-disabled:opacity-30',
+      )}
+      aria-label={label ?? `Click ${title}`}
+      aria-disabled={disabled || undefined}
+      title={iconOnly ? title : undefined}
+      onClick={() => !disabled && onClick()}
     >
       <Icon className={subitem ? 'size-3' : 'size-3.25'} />
-      {title}
+      {!iconOnly && title}
     </Button>
   );
 }

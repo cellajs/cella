@@ -1,5 +1,6 @@
 import { type AxeScan, axeScan } from './axe-scan.ts';
 import type { Check, Finding } from './findings.ts';
+import { controlContrast, textContrast } from './probes/contrast.ts';
 import { formErrors, inputs } from './probes/forms.ts';
 import { keyboardWalk } from './probes/keyboard.ts';
 import { layout } from './probes/layout.ts';
@@ -22,7 +23,7 @@ export interface Visit {
  * toast check before its toast closes), then the ones that restore what they change, and last the keyboard walk, whose
  * Escape closes the state's overlay, and the language switch, which changes the stored language.
  *
- * The dark visit runs axe's contrast rule only, the one rule whose result depends on the color mode.
+ * The dark visit runs what depends on the color mode: axe's contrast rule and the two contrast probes.
  */
 export async function visitState(session: Session, state: ScopeState, mode: Mode, parts: { axe: boolean; probes: boolean }): Promise<Visit> {
   const context = await newContext(session, { auth: state.auth, mode });
@@ -30,7 +31,6 @@ export async function visitState(session: Session, state: ScopeState, mode: Mode
     const page = await openPage(context, resolvePath(session, state.path));
     await state.open?.(page);
     const where = `${state.id} (${mode})`;
-    if (mode === 'dark') return { findings: [], scan: await axeScan(page, where, true) };
 
     const findings: Finding[] = [];
     // A check that throws fails the visit: a state with findings missing must not reach the ledger
@@ -38,12 +38,20 @@ export async function visitState(session: Session, state: ScopeState, mode: Mode
       const found = await check(page, state).catch((error: Error) => {
         throw new Error(`${check.name}: ${error.message}`);
       });
-      for (const finding of found) findings.push({ ...finding, state: state.id });
+      for (const finding of found) findings.push({ ...finding, state: mode === 'dark' ? where : state.id });
     };
+
+    if (mode === 'dark') {
+      const scan = await axeScan(page, where, true);
+      if (parts.probes) for (const check of [textContrast(scan.undecidedContrast), controlContrast]) await run(check);
+      return { findings, scan };
+    }
 
     if (parts.probes) for (const check of [statusMessages, pageStructure, inputs]) await run(check);
     const scan = parts.axe ? await axeScan(page, where) : null;
     if (parts.probes) {
+      if (scan) await run(textContrast(scan.undecidedContrast));
+      await run(controlContrast);
       await run(reviewPacket);
       await run(layout);
       await run(tooltips);

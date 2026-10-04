@@ -129,6 +129,8 @@ const buildTimeline = (lead: number) => {
   return { nodeDelay, edgeAnim };
 };
 const fallbackAnim = { delay: 0, duration: ANIM.fade, draw: false };
+// Runs of the 0.6 s dash cycle per start: 4.8 s, under the five seconds after which moving content needs a pause control.
+const DASH_RUNS = 8;
 
 // Extra room (px) kept between a line end and the icon box edge.
 const EDGE_PADDING = 8;
@@ -158,8 +160,8 @@ export function SyncDiagram() {
   const [hint, setHint] = useState(true);
   const { nodeDelay, edgeAnim } = buildTimeline(lead);
   const { t } = useTranslation();
-  // The loops run in JS every frame: they pause offscreen and for a reader who asked for reduced motion. The hint arrow
-  // nudges five times and rests, and stays still below `sm`, where it is hidden.
+  // Motion here is finite: the dashes march for under five seconds each time they start, the hint arrow nudges five times,
+  // and both rest offscreen, below `sm` (the arrow is hidden there) and for a reader who asked for reduced motion.
   const { ref: inViewRef, inView } = useInView();
   const isMobile = useBreakpointBelow('sm');
   const reducedMotion = useReducedMotion();
@@ -449,7 +451,7 @@ export function SyncDiagram() {
                         strokeDasharray="5 5"
                         markerEnd={`url(#stream-arrow-${from}-${to})`}
                         animate={{ strokeDashoffset: flowDashes ? [0, dir] : 0 }}
-                        transition={flowDashes ? { repeat: Number.POSITIVE_INFINITY, ease: 'linear', duration: 0.6 } : { duration: 0 }}
+                        transition={flowDashes ? { repeat: DASH_RUNS - 1, ease: 'linear', duration: 0.6 } : { duration: 0 }}
                       />
                     ))
                   ) : (

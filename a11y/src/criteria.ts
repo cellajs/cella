@@ -36,11 +36,11 @@ export const criteria: Criterion[] = [
   c('1.3.5', 'Identify Input Purpose', 'AA', ['axe', 'probe:autocomplete']),
   c('1.4.1', 'Use of Color', 'A', ['axe', 'manual']),
   c('1.4.2', 'Audio Control', 'A', ['code:autoplay']),
-  c('1.4.3', 'Contrast (Minimum)', 'AA', ['axe']),
+  c('1.4.3', 'Contrast (Minimum)', 'AA', ['axe', 'probe:text-contrast']),
   c('1.4.4', 'Resize Text', 'AA', ['probe:resize']),
   c('1.4.5', 'Images of Text', 'AA', ['manual']),
   c('1.4.10', 'Reflow', 'AA', ['probe:reflow']),
-  c('1.4.11', 'Non-text Contrast', 'AA', ['manual']),
+  c('1.4.11', 'Non-text Contrast', 'AA', ['probe:control-contrast', 'manual']),
   c('1.4.12', 'Text Spacing', 'AA', ['probe:text-spacing']),
   c('1.4.13', 'Content on Hover or Focus', 'AA', ['probe:hover-content', 'manual']),
   c('2.1.1', 'Keyboard', 'A', ['axe', 'probe:keyboard', 'manual']),
@@ -90,9 +90,10 @@ export const manualSteps: Record<string, string> = {
   '1.3.3': 'No instruction relies only on shape, color, size, position or sound ("press the round button on the right").',
   '1.4.1': 'Color is never the only signal: links in text, required fields, errors, status badges and charts also differ in text or shape.',
   '1.4.2': 'Nothing plays sound by itself.',
-  '1.4.3': 'Where axe could not compute contrast (text over images, gradients, overlays), measure it: 4.5:1, or 3:1 for large text, in both modes.',
+  '1.4.3':
+    'Where the audit could measure nothing (the probe says how many texts had no measurable pixels), check contrast by eye: 4.5:1, or 3:1 for large text.',
   '1.4.5': 'No text is shown as an image, except logos.',
-  '1.4.11': 'Input borders, button outlines, focus indicators, icons and chart parts reach 3:1 against their background in both modes.',
+  '1.4.11': 'The audit measures form control edges. By hand: icons that carry meaning, focus indicators and chart parts reach 3:1 in both modes.',
   '1.4.13': 'Tooltips, menus and popovers that appear on hover or focus can be dismissed with Escape, hovered, and stay until dismissed.',
   '2.1.1': 'Every function works with the keyboard alone: menus, dialogs, the data grid, the editor, uploads, drag and drop, date pickers.',
   '2.2.1': 'No time limit makes a user lose work or information they need; toasts that close by themselves repeat nothing essential.',
@@ -118,6 +119,23 @@ export const manualSteps: Record<string, string> = {
   '4.1.2': 'With a screen reader, custom controls (menus, tabs, toggles, the grid, the editor) announce their name, role, state and value.',
   '4.1.3': 'With a screen reader, status messages (toasts, result counts, saving states) are announced without moving focus.',
 };
+
+/**
+ * What to listen for in the screen reader pass that decides 4.1.2 and 4.1.3: no tool hears what is announced. One line
+ * per kind of control; go through it on each page type and overlay of the scope.
+ */
+export const screenReaderSteps: string[] = [
+  'Page load: the title is read, then the main heading; the rotor or elements list shows headings in order and the landmarks (navigation, main).',
+  'Buttons and links: each is read with a name that says what it does, and as a button or a link; an icon-only one has a name too.',
+  'Toggles, switches, checkboxes and radio groups: the state is read (on, off, selected, pressed) and again after changing it; a group is read with its name.',
+  'Selects, comboboxes and menus: the current value is read with the label; opening one is announced, each option is read as you arrow through, the choice is confirmed.',
+  'Form fields: the label, required and the description are read on focus; after a failed submit the error is read and tied to its field.',
+  'Dialogs, sheets and drawers: opening one reads its title and moves focus inside; nothing behind it is reachable; closing returns to the trigger.',
+  'Data grids: moving by arrow keys reads the column header and the cell; sorting and selecting a row are announced; row and column counts are read on entry.',
+  'The text editor: typing is echoed, block type and formatting changes are read, a mention or slash menu reads its options.',
+  'Status messages (4.1.3): toasts, search result counts, saving and syncing states, and the reorder message are read without focus moving to them.',
+  'Tabs and side navigation: the current tab or section is read as current or selected.',
+];
 
 /** Maps an axe tag such as `wcag1410` to its criterion id (`1.4.10`), or null for non-criterion tags. */
 export function criterionFromAxeTag(tag: string) {

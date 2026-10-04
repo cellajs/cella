@@ -74,6 +74,8 @@ const configOrder: ConfigKey[] = ['todo', 'docs', 'chat'];
 
 // Gap between tiles popping in on a config switch, so replaced tiles reveal one by one.
 const ENTER_STAGGER = 0.15;
+// Runs of the 0.6 s dash cycle per start: 4.8 s, under the five seconds after which moving content needs a pause control.
+const DASH_RUNS = 8;
 
 // Single entity: icon over label. Stacks one-per-line on mobile, sits in a row on larger screens.
 // `delay` sets the tile's place in the one-by-one reveal when it enters after a config switch.
@@ -124,7 +126,7 @@ function DashedBorder({ animated = false, paused = false }: { animated?: boolean
           strokeLinecap="round"
           strokeDasharray={animated ? '6 6' : '0.1 5'}
           animate={animated && !paused ? { strokeDashoffset: [0, -12] } : { strokeDashoffset: 0 }}
-          transition={animated && !paused ? { repeat: Number.POSITIVE_INFINITY, ease: 'linear', duration: 0.6 } : { duration: 0 }}
+          transition={animated && !paused ? { repeat: DASH_RUNS - 1, ease: 'linear', duration: 0.6 } : { duration: 0 }}
         />
       )}
     </svg>
@@ -185,8 +187,8 @@ export function EntityBuckets() {
   const [config, setConfig] = useState<ConfigKey>('todo');
   const [hint, setHint] = useState(true);
   const active = configs[config];
-  // The loops run in JS every frame: they pause offscreen and for a reader who asked for reduced motion. The hint arrow
-  // nudges five times and rests, and stays still below `sm`, where it is hidden.
+  // Motion here is finite: the dashes march for under five seconds each time they start, the hint arrow nudges five times,
+  // and both rest offscreen, below `sm` (the arrow is hidden there) and for a reader who asked for reduced motion.
   const { ref: inViewRef, inView } = useInView();
   const isMobile = useBreakpointBelow('sm');
   const reducedMotion = useReducedMotion();

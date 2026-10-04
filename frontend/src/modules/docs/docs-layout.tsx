@@ -160,8 +160,9 @@ function DocsLayout() {
         <ScrollArea className="size-full">{sidebarContent}</ScrollArea>
         <button
           type="button"
-          aria-label="Resize sidebar with the left and right arrow keys"
+          aria-label="Resize sidebar: drag, use the left and right arrow keys, or double-click to reset"
           onPointerDown={startSidebarResize}
+          onDoubleClick={() => setResizedSidebarWidth(null)}
           onKeyDown={resizeSidebarByKey}
           className="absolute top-0 right-0 z-30 h-full w-px cursor-col-resize bg-border transition-colors after:absolute after:inset-y-0 after:-right-1.5 after:w-3 after:content-[''] hover:bg-primary/50 focus-visible:bg-primary"
         />

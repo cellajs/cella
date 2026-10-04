@@ -11,6 +11,7 @@ import { PreferencesContent } from '~/modules/navigation/menu-sheet/preferences-
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
+import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
 interface MenuSheetPanelProps {
   id: string;
@@ -59,7 +60,8 @@ export function MenuSheetPanels() {
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Escape' && hasOpenPanel) {
+      // An open hover card takes the Escape first; the next one closes the panel
+      if (e.key === 'Escape' && hasOpenPanel && !isHoverContentOpen()) {
         e.stopPropagation();
         toggleMenuSheetPanel(menuSheetPanel);
       }

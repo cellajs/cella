@@ -64,6 +64,7 @@
     "story": "pnpm --filter frontend storybook",
     "bench": "pnpm -C bench bench",
     "a11y": "pnpm -C a11y a11y",
+    "a11y:run": "pnpm -C a11y stack",
     "deps:bundle:analyze": "cross-env ANALYZE=true pnpm --filter frontend build",
     "deps:unused": "knip --dependencies",
     "session": "bash session.sh"

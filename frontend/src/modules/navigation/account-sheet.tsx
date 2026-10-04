@@ -1,5 +1,6 @@
-import { Link, useNavigate } from '@tanstack/react-router';
-import { LogOutIcon, SettingsIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Link, useNavigate, useRouter } from '@tanstack/react-router';
+import { LogOutIcon, RefreshCwIcon, SettingsIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -56,6 +57,9 @@ function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action 
   );
 }
 
+/** The app runs installed, in its own window without browser controls. */
+const isInstalledApp = () => window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && navigator.standalone === true);
+
 export function AccountSheet() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -63,6 +67,9 @@ export function AccountSheet() {
   const isSystemAdmin = useUserStore((state) => state.isSystemAdmin);
   const isMobile = useBreakpointBelow('sm', false);
   const isOnline = useOnlineManager();
+
+  const router = useRouter();
+  const queryClient = useQueryClient();
 
   const buttonWrapper = useRef<HTMLDivElement | null>(null);
   const { hasStarted } = useMountedState();
@@ -84,6 +91,13 @@ export function AccountSheet() {
       useSheeter.getState().remove();
     }
     navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: user.id }), resetScroll: false });
+  };
+
+  // What pull to refresh does, as a button: the installed app has no browser reload to fall back on
+  const refresh = () => {
+    if (!isOnline) return toaster.warning(t('c:action.offline.text'));
+    if (!useNavigationStore.getState().keepNavOpen) useSheeter.getState().remove();
+    Promise.allSettled([queryClient.invalidateQueries(), router.invalidate()]);
   };
 
   return (
@@ -129,6 +143,18 @@ export function AccountSheet() {
         <AccountButton offlineAccess={false} isOnline={isOnline} icon={SettingsIcon} id="btn-account" label={t('c:settings')} action="/account" />
         {isSystemAdmin && (
           <AccountButton offlineAccess={false} isOnline={isOnline} icon={WrenchIcon} id="btn-system" label={t('c:system_panel')} action="/system" />
+        )}
+        {isInstalledApp() && (
+          <Button
+            variant="ghost"
+            size="lg"
+            id="btn-refresh"
+            className="focus-effect w-full justify-start text-left hover:bg-accent/50"
+            onClick={refresh}
+          >
+            <RefreshCwIcon className="size-4" aria-hidden="true" />
+            {t('c:refresh')}
+          </Button>
         )}
         <AccountButton offlineAccess={false} isOnline={isOnline} icon={LogOutIcon} id="btn-signout" label={t('c:sign_out')} action="/auth/sign-out" />
       </div>

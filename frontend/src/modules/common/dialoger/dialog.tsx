@@ -6,6 +6,7 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
+import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
 export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   const {
@@ -37,6 +38,8 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   );
 
   const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
+    if (!nextOpen && eventDetails.reason === 'escape-key' && isHoverContentOpen()) return;
+
     // An outside press landing on a dropdown must not close the dialog
     if (!nextOpen && eventDetails.reason === 'outside-press') {
       const dropdown = useDropdowner.getState().dropdown;

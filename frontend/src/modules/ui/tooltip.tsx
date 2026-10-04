@@ -1,16 +1,37 @@
 import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
-import type { ComponentPropsWithoutRef, ReactNode, RefAttributes } from 'react';
+import { type ComponentPropsWithoutRef, type ReactNode, type RefAttributes, useState } from 'react';
+import { useCloseOnEscape } from '~/hooks/use-close-on-escape';
 import { cn } from '~/utils/cn';
 
 export function TooltipProvider({ delay = 200, timeout = 400, ...props }: { children: ReactNode; delay?: number; timeout?: number }) {
   return <TooltipPrimitive.Provider data-slot="tooltip-provider" delay={delay} timeout={timeout} {...props} />;
 }
 
+/** Escape closes the tooltip from anywhere, also inside a sheet or dialog. A caller that controls `open` handles Escape itself. */
 export function Tooltip({
   disableHoverablePopup,
+  open,
+  defaultOpen = false,
+  onOpenChange,
   ...props
 }: Omit<TooltipPrimitive.Root.Props, 'children'> & { children?: ReactNode; disableHoverablePopup?: boolean }) {
-  return <TooltipPrimitive.Root data-slot="tooltip" disableHoverablePopup={disableHoverablePopup} {...props} />;
+  const [ownOpen, setOwnOpen] = useState(defaultOpen);
+  const controlled = open !== undefined;
+  const isOpen = controlled ? open : ownOpen;
+  useCloseOnEscape(!controlled && isOpen, () => setOwnOpen(false));
+
+  return (
+    <TooltipPrimitive.Root
+      data-slot="tooltip"
+      disableHoverablePopup={disableHoverablePopup}
+      open={isOpen}
+      onOpenChange={(nextOpen, eventDetails) => {
+        setOwnOpen(nextOpen);
+        onOpenChange?.(nextOpen, eventDetails);
+      }}
+      {...props}
+    />
+  );
 }
 
 export function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props & RefAttributes<HTMLElement>) {

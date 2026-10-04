@@ -9,6 +9,6 @@
     "types": ["node"],
     "skipLibCheck": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "scope-config.ts"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/"]
 }

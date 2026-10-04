@@ -1,9 +1,13 @@
+import { Suspense } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useInView } from '~/hooks/use-in-view';
 import type { TKey } from '~/lib/i18n-locales';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
+import { lazyNamed } from '~/utils/lazy-named';
 import { tw } from '~/utils/tw';
+
+const MorphAnimation = lazyNamed(() => import('~/modules/common/morph-animation/morph-animation'), 'MorphAnimation');
 
 interface HeroProps {
   title: TKey;
@@ -28,12 +32,20 @@ export function Hero({ title, text, children, chips }: HeroProps) {
           color-mix(in oklch, var(--primary), black 20%))`,
       }
     : undefined;
-  const sectionClass = tw('rich-gradient relative flex min-h-[90vh] items-center justify-center px-4 py-24 lg:py-32');
+  const sectionClass = tw('rich-gradient relative flex min-h-[90vh] items-center justify-center overflow-hidden px-4 py-24 lg:py-32');
   const headerClass = cn('transition-all duration-500 ease-out will-change-transform', inView ? 'opacity-100' : 'translate-y-4 scale-95 opacity-0');
 
   return (
     <section id="spy-welcome" className={sectionClass}>
-      <header ref={ref} className={cn('container flex max-w-4xl flex-col items-center gap-4 text-center', headerClass)}>
+      <header
+        ref={ref}
+        className={cn(
+          'container relative z-2 flex max-w-4xl flex-col items-center gap-4 text-center',
+          // Soft halo behind the text so it keeps contrast over the animation
+          "before:absolute before:-inset-x-12 before:-inset-y-16 before:z-[-1] before:rounded-full before:bg-background/40 before:blur-3xl before:content-['']",
+          headerClass,
+        )}
+      >
         <h1 className="mb-6 font-heading text-3xl leading-10 sm:mt-6 sm:text-4xl sm:leading-13 md:text-5xl md:leading-18 lg:text-6xl">
           <span className={cn('bg-linear-to-br', gradientClass, 'bg-clip-text font-bold')} style={gradientStyle}>
             {t(title)}
@@ -53,6 +65,15 @@ export function Hero({ title, text, children, chips }: HeroProps) {
         )}
         <div className="">{children}</div>
       </header>
+      {/* Morphing mark inside the hero, nudged left of center; the curve and the headline both paint over it */}
+      <Suspense fallback={null}>
+        <div
+          className="pointer-events-none absolute top-1/2 left-[12%] aspect-square w-[min(120vmin,985px)] -translate-x-1/2 -translate-y-1/2 opacity-20 mix-blend-multiply dark:mix-blend-normal"
+          aria-hidden="true"
+        >
+          <MorphAnimation variant="single" grid={192} stamp="plus" />
+        </div>
+      </Suspense>
       <BackgroundCurve />
     </section>
   );

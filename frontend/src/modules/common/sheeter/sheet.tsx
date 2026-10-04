@@ -7,6 +7,7 @@ import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-she
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { cn } from '~/utils/cn';
+import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
 export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExited?: () => void }) {
   const {
@@ -42,7 +43,7 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
 
   const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string; event?: Event }) => {
     if (!nextOpen && eventDetails.reason === 'escape-key') {
-      if (!closeSheetOnEsc) return;
+      if (!closeSheetOnEsc || isHoverContentOpen()) return;
       closeSheet();
       return;
     }
