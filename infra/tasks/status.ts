@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import type { EngineConfig } from '../config/engine-config';
 import { dbExposureConfigured } from '../lib/db-public-endpoint';
 import { deriveInfra } from '../lib/naming';
+import { menuPath } from '../lib/operator-actions';
 import {
   classifyPrincipal,
   describeKey,
@@ -275,7 +276,8 @@ export function formatQuickFacts(facts: QuickFacts, opts: { now?: number; config
     lines.push(
       `${expired ? warningMark : pc.yellow('●')} Lock: ${expired ? 'expired lease of' : 'held by'} ${pc.cyan(facts.lock.owner)} (${facts.lock.operation}, since ${facts.lock.acquiredAt.slice(0, 19).replace('T', ' ')} UTC)`,
     );
-  } else if (facts.control || !facts.unavailable.includes('state bucket')) {
+  } else if (opts.configured !== 'none' && (facts.control || !facts.unavailable.includes('state bucket'))) {
+    // Without a key the state bucket was never read, so the lock is unknown and gets no line.
     lines.push(`${pc.green('●')} Lock: free`);
   }
   if (facts.control) {
@@ -290,7 +292,7 @@ export function formatQuickFacts(facts: QuickFacts, opts: { now?: number; config
       : '';
     lines.push(`${pc.green('●')} Live: ${[...active, ...pending].join(', ') || 'nothing rolled out'}${when}`);
   }
-  const fetchHint = 'Manage keys & secrets → Fetch admin application key';
+  const fetchHint = menuPath('fetch-admin-key');
   if (facts.key) {
     const { desc, role, slot } = facts.key;
     const hours = hoursUntilExpiry(desc, now);

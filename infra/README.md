@@ -60,7 +60,7 @@ The deploy command opens an OTel trace: every pipeline step is a span, and audit
 
 ## Status command
 
-`infra status` is a read-only health check of the whole lifecycle. Menu: `pnpm infra` → **Status**; standalone:
+`infra status` is a read-only health check of the whole lifecycle. Menu: `pnpm infra` → **Show status**; standalone:
 
 ```
 pnpm --filter infra status [--mode <production|staging>] [--json]
@@ -89,7 +89,7 @@ Each check reports `ok | warn | missing | error | unknown`. `unknown` means "cou
 }
 ```
 
-Stable check `id`s: `tooling.pulumi`, `config.stackState`, `identity.project`, `github.environment`, `state.bucket`, `state.lock`, `state.pendingOperations`, `rollout`, `secrets.required`, `live.<service>`, `live.components`, `db.publicEndpoint`, `dns.zone`, `stores.<storeId>`. `state.pendingOperations` reads the stack's checkpoint from the state bucket (`.pulumi/stacks/<project>/<stack>.json`, plaintext URNs, no passphrase) and warns about operations an interrupted Pulumi run left there. **Stack setup → Unlock** lists them, drops pending creates after a confirm (export, then import without them, the export kept in the gitignored `infra/.state-backups/` as the rollback), and leaves an interrupted update or delete to `pulumi refresh`. `live.<service>` compares the served release with the `active` pointer of the service that rolls it out: its own, or the host's for a service on the `singleVM` host VM. `live.components` reads the primary service's `/health?depth=full` with the smoke step's verdict rule (`lib/health-components.ts`): only-degraded components warn, an unhealthy one errors. `db.publicEndpoint` reads the managed PostgreSQL instance over the RDB API: a public endpoint while exposure is off warns, and an open one shows its ACL rule count. Providers: `lib/status/providers/`; registered stores add `validate()` checks.
+Stable check `id`s: `tooling.pulumi`, `config.stackState`, `identity.project`, `github.environment`, `state.bucket`, `state.lock`, `state.pendingOperations`, `rollout`, `secrets.required`, `live.<service>`, `live.components`, `db.publicEndpoint`, `dns.zone`, `stores.<storeId>`. `state.pendingOperations` reads the stack's checkpoint from the state bucket (`.pulumi/stacks/<project>/<stack>.json`, plaintext URNs, no passphrase) and warns about operations an interrupted Pulumi run left there. **Stack setup → Unlock** removes an expired stack lock, and a live one only after a confirm (a run renews its lock while it works). It then lists these operations, drops pending creates after a confirm (export, then import without them, the export kept in the gitignored `infra/.state-backups/` as the rollback), and leaves an interrupted update or delete to `pulumi refresh`. `live.<service>` compares the served release with the `active` pointer of the service that rolls it out: its own, or the host's for a service on the `singleVM` host VM. `live.components` reads the primary service's `/health?depth=full` with the smoke step's verdict rule (`lib/health-components.ts`): only-degraded components warn, an unhealthy one errors. `db.publicEndpoint` reads the managed PostgreSQL instance over the RDB API: a public endpoint while exposure is off warns, and an open one shows its ACL rule count. Providers: `lib/status/providers/`; registered stores add `validate()` checks.
 
 ## Key files
 

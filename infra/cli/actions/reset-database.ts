@@ -13,6 +13,7 @@ import {
   sequenceDatabaseReset,
   serialConsoleSteps,
 } from '../../tasks/reset-database';
+import { isPromptAbort } from '../prompts/abort';
 import type { InfraContext } from '../shared';
 import { acquireOwnerKey, printRevokeReminder } from './owner-key';
 
@@ -105,6 +106,7 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
     if (ownerKey.pasted) printRevokeReminder();
   } catch (error) {
     await ownerKey.release();
+    if (isPromptAbort(error)) throw error;
     if (error instanceof ResetIrrecoverableError) {
       console.error(`\n${restoreHint(error, region)}\n`);
       process.exit(1);

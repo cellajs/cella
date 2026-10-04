@@ -4,6 +4,7 @@ import { confirm, select } from '@inquirer/prompts';
 import { syncGithubEnvironment } from '../../lib/github-sync';
 import { type ManagedKeyId, managedKeys } from '../../lib/managed-keys';
 import { deriveInfra } from '../../lib/naming';
+import { actionLabel } from '../../lib/operator-actions';
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
 import { deleteApiKey, fetchAppRulesByName } from '../../lib/scaleway/iam-client';
@@ -26,6 +27,7 @@ import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { setupAdminApp } from '../../tasks/setup-admin-app';
 import { setupCiKey } from '../../tasks/setup-ci-key';
 import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
+import { isPromptAbort } from '../prompts/abort';
 import { maskedSecret } from '../prompts/masked-secret';
 import type { CliMode, InfraContext } from '../shared';
 import {
@@ -41,6 +43,16 @@ import {
   stackNameFor,
 } from '../shared';
 import { OWNER_KEY_HINT } from './owner-key';
+
+/** An optional masked value: empty when the prompt cannot run (no terminal), while a Ctrl-C at it still leaves the wizard. */
+async function optionalSecret(message: string): Promise<string> {
+  try {
+    return await maskedSecret({ message });
+  } catch (error) {
+    if (isPromptAbort(error)) throw error;
+    return '';
+  }
+}
 
 /** Everything the per-phase helpers below share. */
 interface SetupContext {
@@ -436,14 +448,15 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
       envName: 'INFRA_ADMIN_EMAIL',
     });
     inputs.operatorSecrets.brevoApiKey =
-      inputs.operatorSecrets.adminEmail && !nonInteractive() ? await maskedSecret({ message: 'Brevo API key (optional)' }).catch(() => '') : '';
+      inputs.operatorSecrets.adminEmail && !nonInteractive() ? await optionalSecret('Brevo API key (optional)') : '';
     for (const key of managedKeys) {
       inputs.mintDecisions.set(key.id, await confirmOrDefault({ message: key.prompt.message, default: key.prompt.default }));
     }
   }
 
-  const modeLabel = mode === 'rotate' ? 'Rotate keys' : 'Resume';
-  if (!(await confirmOrDefault({ message: `Proceed with ${modeLabel}?`, default: true }))) process.exit(0);
+  const proceedWith =
+    mode === 'rotate' ? actionLabel('rotate') : context.state === 'fresh' ? `the first setup of ${context.environment}` : actionLabel('resume');
+  if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) process.exit(0);
 
   // The state side (login, lock) takes the admin application key when this machine holds one, as Apply does; a first setup has none yet, and the Owner API key holds the object-storage rights too.
   const childEnv = buildProviderEnv(infraDir, {

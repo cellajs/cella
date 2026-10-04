@@ -89,7 +89,7 @@ describe('no-unexpected-public sweep', () => {
     expect(
       offenders,
       `DB-exposure keys found in committed stack config: ${offenders.join(', ')}. ` +
-        'Run "Stop public DB exposure" (infra CLI) and remove the keys; exposure belongs in the gitignored overlay.',
+        'Run "Close public DB access" (infra CLI) and remove the keys; exposure belongs in the gitignored overlay.',
     ).toEqual([]);
   });
 });

@@ -2,9 +2,10 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { menuPath } from '../../lib/operator-actions';
 import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
-import { forceUnlock, lockKey, makeControlClient, peekLock, type S3Like, stateBucket } from '../../lib/stack/control-store';
+import { forceUnlock, type LockInfo, lockKey, makeControlClient, peekLock, type S3Like, stateBucket } from '../../lib/stack/control-store';
 import {
   checkpointKey,
   clearPendingCreates,
@@ -30,8 +31,17 @@ import {
 const STATE_BACKUP_DIR = resolve(infraDir, '.state-backups');
 
 /**
+ * What the stack lock is at `now`: `none` without one, `expired` once its lease lapsed (the run that held it is gone), `live` while the
+ * lease still runs. A holder renews its lease while it works, so a live lock most likely belongs to a run in progress.
+ */
+export function lockVerdict(held: Pick<LockInfo, 'expiresAt'> | undefined, now: number): 'none' | 'expired' | 'live' {
+  if (!held) return 'none';
+  return Date.parse(held.expiresAt) <= now ? 'expired' : 'live';
+}
+
+/**
  * Clear what an interrupted apply or deploy left behind: a stale conditional-write stack lock, then the operations the Pulumi state still records as
- * in flight. Use only when no other apply or deploy is in progress.
+ * in flight. An expired lock is removed without a question; a live one only after the operator confirms, and declining ends the action.
  */
 export async function runUnlock(context: InfraContext): Promise<void> {
   const { appConfig } = context;
@@ -42,17 +52,29 @@ export async function runUnlock(context: InfraContext): Promise<void> {
 
   const s3 = await makeControlClient(appConfig.s3.region, key.accessKey, key.secretKey);
   const held = await peekLock(s3, stateBucket(appConfig.slug), lockKey(targetStack));
-  if (held) {
-    const expired = Date.parse(held.expiresAt) <= Date.now();
-    console.info(
-      `Lock held by ${pc.cyan(held.owner)} (operation: ${held.operation}, since ${held.acquiredAt}, ${expired ? 'already expired' : `expires ${held.expiresAt}`}).`,
-    );
-  }
-  const removed = await forceUnlock(s3, stateBucket(appConfig.slug), lockKey(targetStack));
-  if (removed) {
-    console.info(`${pc.green('✓')} Cleared lock held by ${pc.cyan(removed.owner)} (operation: ${removed.operation}, since ${removed.acquiredAt}).`);
-  } else {
+  const verdict = lockVerdict(held, Date.now());
+  if (!held) {
     console.info(`${pc.dim('No lock present for')} ${targetStack}.`);
+  } else {
+    console.info(
+      `Lock held by ${pc.cyan(held.owner)} (operation: ${held.operation}, since ${held.acquiredAt}, ${verdict === 'expired' ? 'already expired' : `expires ${held.expiresAt}`}).`,
+    );
+    if (verdict === 'live') {
+      console.warn(
+        `${warningMark} This lock has not expired: a run renews its lock while it works, so that run is most likely still going.\n` +
+          '  Removing the lock lets a second run change the stack at the same time. A dead run frees its lock within minutes.',
+      );
+      if (!(await confirmOrDefault({ message: `Remove the live lock of ${held.owner}?`, default: false }))) {
+        console.info('Lock left in place. The Pulumi state was not reviewed: the operations in it may belong to the run that holds the lock.');
+        return;
+      }
+    }
+    const removed = await forceUnlock(s3, stateBucket(appConfig.slug), lockKey(targetStack));
+    if (removed) {
+      console.info(`${checkMark} Cleared lock held by ${pc.cyan(removed.owner)} (operation: ${removed.operation}, since ${removed.acquiredAt}).`);
+    } else {
+      console.info(pc.dim('The lock was released before it was removed.'));
+    }
   }
 
   await reviewPendingOperations(context, { s3, key, stack: targetStack });
@@ -92,7 +114,7 @@ async function reviewPendingOperations(context: InfraContext, opts: { s3: S3Like
   if (plan.others.length > 0) {
     console.info(
       '\n  An interrupted update or delete is resolved by a refresh: it reads each resource from Scaleway into the state and clears these records.\n' +
-        `  Run "Stack setup → Preview" first to see the drift a refresh records, then: ${pc.cyan(`pulumi refresh --stack ${opts.stack}`)}\n` +
+        `  Run "${menuPath('preview')}" first to see the drift a refresh records, then: ${pc.cyan(`pulumi refresh --stack ${opts.stack}`)}\n` +
         `  ${pc.dim('(logged in to the state backend with the admin application key, PULUMI_CONFIG_PASSPHRASE set, and no run in progress)')}\n` +
         `  ${pc.dim('Nothing is cleared here: dropping the records through an import would drop the interrupted updates and deletes unread.')}`,
     );

@@ -46,10 +46,9 @@ describe('formatQuickFacts', () => {
     expect(lines[3]).toContain('key lookup: no answer');
   });
 
-  it('points at the fetch action when no key is configured at all', () => {
+  it('points at the fetch action when no key is configured at all, and claims nothing about a lock it could not read', () => {
     const lines = strip(formatQuickFacts({ unavailable: [] }, { now: T, configured: 'none' }));
     expect(lines).toEqual([
-      '● Lock: free',
       '⚠ Admin application key: none in infra/.env.<mode> (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY; Manage keys & secrets → Fetch admin application key)',
     ]);
   });
