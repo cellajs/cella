@@ -143,6 +143,27 @@ describe('dropdowner store', () => {
     expect(isActive(data.triggerRef)).toBe(false);
   });
 
+  it('calls onClose once when the dropdown is removed, toggled closed or replaced', () => {
+    const onClose = vi.fn();
+    const data = dropdown('t1', { onClose });
+
+    useDropdowner.getState().create(null, data);
+    expect(onClose).not.toHaveBeenCalled();
+    useDropdowner.getState().remove();
+    useDropdowner.getState().remove();
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(301);
+    useDropdowner.getState().create(null, data);
+    useDropdowner.getState().create(null, data);
+    expect(onClose).toHaveBeenCalledTimes(2);
+
+    vi.advanceTimersByTime(301);
+    useDropdowner.getState().create(null, data);
+    useDropdowner.getState().create(null, dropdown('t2'));
+    expect(onClose).toHaveBeenCalledTimes(3);
+  });
+
   it('blurs any focused element without touching the focus fallback', () => {
     const input = document.body.appendChild(document.createElement('input'));
     input.focus();

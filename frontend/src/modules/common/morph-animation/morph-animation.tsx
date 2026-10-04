@@ -5,9 +5,11 @@ import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 /**
- * Generative mark animation on a transparent canvas that fills its container;
- * mount it lazily with a `null` Suspense fallback. `single` is one resting cell
- * (hero), `colony` divides 1-2-3-5 and flows back together (auth background).
+ * Generative mark animation on a transparent canvas; mount it lazily with a
+ * `null` Suspense fallback. `single` is one resting cell that fills its
+ * container (hero). `colony` divides 1-2-3-5 and flows back together as the
+ * auth page background: it lays itself out behind the page, so the auth
+ * layout renders it bare and an app's own background decides its own look.
  * Pauses off-screen; `prefers-reduced-motion` slows the whole piece down, and
  * nothing ever freezes. `grid` is the pixel density in cells across the canvas
  * (lower is chunkier, higher is finer); `speed` scales the clock, 1 being the
@@ -90,5 +92,9 @@ export function MorphAnimation({
     rendererRef.current?.setStamp(stamp === 'plus' ? 1 : 0);
   }, [stamp]);
 
-  return <canvas ref={canvasRef} className={cn('size-full opacity-0 transition-opacity duration-2000', faded && 'opacity-100', className)} />;
+  const canvas = <canvas ref={canvasRef} className={cn('size-full opacity-0 transition-opacity duration-2000', faded && 'opacity-100', className)} />;
+  if (variant !== 'colony') return canvas;
+
+  // The shader's light theme is tuned for this low-opacity multiply layer
+  return <div className="pointer-events-none fixed inset-0 opacity-20 mix-blend-multiply dark:mix-blend-normal">{canvas}</div>;
 }

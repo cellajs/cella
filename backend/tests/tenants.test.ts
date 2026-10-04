@@ -1,13 +1,17 @@
 import { eq } from 'drizzle-orm';
 import { getTenants, selfCreateTenant, type Tenant, updateTenant } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { defaultRestrictions, type Restrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { defaultHeaders } from './fixtures';
 import { createSystemAdminUser, createTestOrganization, createTestSession } from './helpers';
 import { createAppClient } from './test-client';
+import { clearDatabase } from './test-utils';
+
+// Each test signs in a system admin of its own; a system admin left behind shows up in the next file's user lists.
+afterEach(async () => await clearDatabase());
 
 /**
  * Stored restrictions can predate a field the schema gained. Every tenant response merges them with the current

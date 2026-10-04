@@ -415,10 +415,10 @@
       }
     },
     {
-      // Decorative svg assets (marketing illustrations, bg animation) are rendered
+      // Decorative svg assets (marketing illustrations, an app's own auth background) are rendered
       // aria-hidden via svgr; biome ≥2.5.3 lints .svg files, but a <title> on
       // decorative art would only add screen-reader noise.
-      "includes": ["frontend/src/modules/marketing/assets/**", "frontend/src/modules/common/bg-animation/**"],
+      "includes": ["frontend/src/modules/marketing/assets/**", "frontend/src/modules/common/morph-animation/**"],
       "linter": {
         "rules": {
           "a11y": {
@@ -477,6 +477,8 @@
         "yjs/src/env.ts",
         "mcp/src/mcp-worker.ts",
         "oauth/src/oauth-worker.ts",
+        "a11y/src/audit.ts",
+        "a11y/src/run.ts",
         "cli/**"
       ],
       "linter": {

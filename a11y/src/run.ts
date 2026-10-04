@@ -31,6 +31,8 @@ const databaseUrls = Object.fromEntries(
   }),
 );
 const env = {
+  // The seed creates the admin named in backend/.env, so the audit signs in as that user
+  ...(fileEnv.ADMIN_EMAIL ? { ADMIN_EMAIL: fileEnv.ADMIN_EMAIL } : {}),
   ...process.env,
   ...databaseUrls,
   DEV_PORT_OFFSET: String(appConfig.devPortOffset + portShift),
@@ -95,7 +97,9 @@ try {
 
   if (await reachable(frontendUrl))
     throw new Error(`Something already answers at ${frontendUrl}. Stop it, or run \`DEV_PORT_OFFSET=${env.DEV_PORT_OFFSET} pnpm a11y\` against it.`);
-  stack = spawn('pnpm', ['offline'], { cwd: repoRoot, env, detached: true, stdio: ['ignore', 'ignore', 'inherit'] });
+  // `pnpm offline` starts no Yjs relay; with it the editors show their usual sync status
+  const relay = appConfig.services.yjs.enabled ? 'pnpm --filter yjs-worker dev & ' : '';
+  stack = spawn('sh', ['-c', `${relay}pnpm offline`], { cwd: repoRoot, env, detached: true, stdio: ['ignore', 'ignore', 'inherit'] });
 
   const deadline = Date.now() + 5 * 60_000;
   while (!((await reachable(frontendUrl)) && (await reachable(`${backendUrl}/health`)))) {

@@ -34,7 +34,7 @@ export const startSso = async (ctx: StartContext, target: SsoTarget) => {
 
   if ('connectionId' in target) {
     const connection = await findConnectionById(dbCtx, { id: target.connectionId });
-    if (!connection || connection.kind !== 'sso' || !isFederationKey(connection.issuer)) {
+    if (connection?.kind !== 'sso' || !isFederationKey(connection.issuer)) {
       throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'connection' } });
     }
     // Refused here, before the redirect: the federation's own refusal pages never return to the app.
