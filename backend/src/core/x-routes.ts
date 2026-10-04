@@ -57,6 +57,16 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   // Security follows the guard: the first guard that declares schemes decides; a route with none is cookie-only.
   const security = xMiddlewares.find((mw) => mw.__security !== undefined)?.__security ?? [{ cookieAuth: [] }];
 
+  // An MCP call carries the caller's access token and nothing else, so a tool route whose guards take none can never run.
+  const accepted = config.security ?? security;
+  if (config.xTool && accepted.length && !accepted.some((requirement) => 'oauth2' in requirement)) {
+    const schemes = accepted.flatMap((requirement) => Object.keys(requirement)).join(', ');
+    throw new Error(
+      `[MCP] The tool route ${config.operationId} (${config.method} ${config.path}) takes no access token: its guards accept ${schemes} only. ` +
+        'Guard it with actorGuard or serviceGuard, or remove xTool.',
+    );
+  }
+
   // Extension props leave the route config: middleware runs, metadata returns under its `x-*` key.
   const extensionPropIds = getExtensionPropIds();
   const cleanConfig = {
