@@ -12,7 +12,7 @@ export const Route = createFileRoute('/_public')({
     if (cause !== 'enter' || location.pathname === '/auth/sign-out') return;
 
     // Hydrate user state without blocking public-page paint on `/me` or connectivity probing.
-    queryClient.ensureQueryData({ ...meQueryOptions() }).catch((error) => {
+    queryClient.query({ ...meQueryOptions(), staleTime: 'static' }).catch((error) => {
       // A 401 on /me is expected for unauthenticated visitors on public pages.
       if (error instanceof ApiError && error.status === 401) return;
 

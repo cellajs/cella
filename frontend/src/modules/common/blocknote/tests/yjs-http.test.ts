@@ -125,7 +125,7 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('~/query/query-client', () => ({
   queryClient: {
     invalidateQueries: vi.fn(),
-    fetchQuery: vi.fn(),
+    query: vi.fn(),
     getQueryCache: () => ({ find: () => ({ getObserversCount: () => 1 }) }),
     getQueryState: () => ({ error: null }),
   },

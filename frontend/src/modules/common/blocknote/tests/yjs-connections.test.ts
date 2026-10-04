@@ -109,7 +109,7 @@ let onlineListener: ((online: boolean) => void) | undefined;
 let online = true;
 const warning = vi.fn();
 const invalidateQueries = vi.fn();
-const fetchQuery = vi.fn();
+const tokenQuery = vi.fn();
 /** Observers of the token query: an open editor holds one. */
 let tokenObservers = 1;
 /** The error the token query last failed with: the token route's answer, which says why a token was withdrawn. */
@@ -150,7 +150,7 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('~/query/query-client', () => ({
   queryClient: {
     invalidateQueries: (...args: unknown[]) => invalidateQueries(...args),
-    fetchQuery: (...args: unknown[]) => fetchQuery(...args),
+    query: (...args: unknown[]) => tokenQuery(...args),
     getQueryCache: () => ({ find: () => ({ getObserversCount: () => tokenObservers }) }),
     getQueryState: () => ({ error: tokenError }),
   },
@@ -249,7 +249,7 @@ beforeEach(() => {
   parked.length = 0;
   warning.mockClear();
   invalidateQueries.mockClear();
-  fetchQuery.mockReset();
+  tokenQuery.mockReset();
   tokenError = null;
 });
 
@@ -488,12 +488,12 @@ describe('yjs connection: token refusals', () => {
   it('fetches its own token after a refusal while no editor observes the token query', async () => {
     const { provider, tokenKey } = await mountConnection();
     tokenObservers = 0;
-    fetchQuery.mockResolvedValueOnce('token-fresh');
+    tokenQuery.mockResolvedValueOnce('token-fresh');
     try {
       await refuseToken(provider);
       await act(async () => {});
 
-      expect(fetchQuery).toHaveBeenCalledOnce();
+      expect(tokenQuery).toHaveBeenCalledOnce();
       expect(useUserStore.getState().yjsTokens[tokenKey]).toBe('token-fresh');
     } finally {
       tokenObservers = 1;
@@ -506,7 +506,7 @@ describe('yjs connection: token refusals', () => {
     await refuseToken(provider);
 
     expect(invalidateQueries).toHaveBeenCalledOnce();
-    expect(fetchQuery).not.toHaveBeenCalled();
+    expect(tokenQuery).not.toHaveBeenCalled();
   });
 
   it('must not retry forever via tokens the relay keeps refusing: it stops after five refused tokens', async () => {

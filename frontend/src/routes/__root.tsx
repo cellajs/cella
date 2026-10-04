@@ -42,7 +42,7 @@ export const Route = createRootRouteWithContext()({
     if (storedUser) return;
 
     try {
-      await queryClient.ensureQueryData({ ...meQueryOptions() });
+      await queryClient.query({ ...meQueryOptions(), staleTime: 'static' });
     } catch (error) {
       // Only a definitive 401 means signed out; network blips and 5xx rethrow to the root error boundary.
       if (!(error instanceof ApiError) || Number(error.status) !== 401) throw error;

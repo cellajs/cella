@@ -657,7 +657,7 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
       // observing the key, so it fetches its own token, and a refusal withdraws it like the query's would.
       if (!queryClient.getQueryCache().find({ queryKey: tokenQueryKey })?.getObserversCount()) {
         queryClient
-          .fetchQuery(yjsTokenQueryOptions({ entityType, entityId: editSessionId, tenantId, organizationId }))
+          .query(yjsTokenQueryOptions({ entityType, entityId: editSessionId, tenantId, organizationId }))
           .then((token) => useUserStore.getState().setYjsToken(tokenKey, token))
           .catch((error) => {
             if (yjsTokenRefusal(error)) useUserStore.getState().setYjsToken(tokenKey, null);
@@ -898,7 +898,7 @@ export async function resumeConnection(record: YDocRecord): Promise<void> {
   const tokenKey = yjsTokenKey(entityType, entityId);
   if (!useUserStore.getState().yjsTokens[tokenKey]) {
     try {
-      const token = await queryClient.fetchQuery(yjsTokenQueryOptions({ entityType, entityId, tenantId, organizationId }));
+      const token = await queryClient.query(yjsTokenQueryOptions({ entityType, entityId, tenantId, organizationId }));
       useUserStore.getState().setYjsToken(tokenKey, token);
     } catch (error) {
       // Deleted, or edit rights lost while the edits waited: they can never be saved, so the stored document is parked

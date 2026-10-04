@@ -48,6 +48,17 @@ Five state owners. This document unpacks the query client. `localUserDb` is the 
 
 Each entity module registers its query keys and delta fetch once in its `query.ts`, so generic cache and realtime code never import entity modules. Staleness follows the stream ([Freshness](./SYNC_ENGINE.md#freshness)). Sync deliveries are plain cache writes: upserts or invalidations.
 
+### Imperative reads
+
+`queryClient.query()` and `queryClient.infiniteQuery()` are the only imperative read methods. `fetchQuery`, `prefetchQuery`, `ensureQueryData` and their infinite twins are deprecated upstream and go away in v6.
+
+- **Cache-first**, for route guards and offline cache seeding: `query({ ...options, staleTime: 'static' })`. Only a cold entry fetches; a cached one comes back whatever its age or invalidation state.
+- **The query's own freshness**: `query(options)`.
+- **Serve now, revalidate behind**: both, the static read awaited and the plain one fired as `void query(options).catch(() => {})`.
+- **Fire and forget**, the old `prefetchQuery`: `void query(options).catch(() => {})`.
+
+`staleTime: 'static'` is not `Infinity`. `Infinity` still refetches an invalidated entry; `'static'` ignores invalidation too. The sync engine leans on that difference, so `offlineStaleTime` and `syncTrustedStaleTime` stay `Infinity`: catchup reconciles those lists by invalidating them, and `'static'` would swallow the signal.
+
 ## Subscribers
 
 Cache subscribers, not extra stores:

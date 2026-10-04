@@ -69,7 +69,7 @@ function OperationsPage() {
             operations={operationsByTag[tag.name] || []}
             isOpen={activeTag === tag.name}
             onPrerender={() => {
-              queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name));
+              void queryClient.query(tagDetailsQueryOptions(tag.name)).catch(() => {});
               prerender(tag.name);
             }}
           />

@@ -36,7 +36,7 @@ const docsKeys = {
 export const openApiSpecQueryOptions = queryOptions({
   queryKey: docsKeys.spec,
   queryFn: () => fetchJson(openApiPath),
-  staleTime: Number.POSITIVE_INFINITY,
+  staleTime: 'static',
 });
 
 /** Group items by key(s). Supports single-key and multi-key (array) extractors. */
@@ -55,7 +55,7 @@ function groupBy<T>(items: T[], keyFn: (item: T) => string | string[]): Record<s
 export const operationsQueryOptions = queryOptions({
   queryKey: docsKeys.operations,
   queryFn: () => fetchJson<GenOperationSummary[]>(`${docsBaseUrl}/operations.gen.json`),
-  staleTime: Number.POSITIVE_INFINITY,
+  staleTime: 'static',
 });
 
 /** Operations grouped by tag name, derived per observer from the operationsQueryOptions cache. */
@@ -67,19 +67,19 @@ export const operationsByTagQueryOptions = queryOptions({
 export const tagsQueryOptions = queryOptions({
   queryKey: docsKeys.operationTags,
   queryFn: () => fetchJson<GenTagSummary[]>(`${docsBaseUrl}/tags.gen.json`),
-  staleTime: Number.POSITIVE_INFINITY,
+  staleTime: 'static',
 });
 
 export const infoQueryOptions = queryOptions({
   queryKey: docsKeys.info,
   queryFn: () => fetchJson<GenInfoSummary>(`${docsBaseUrl}/info.gen.json`),
-  staleTime: Number.POSITIVE_INFINITY,
+  staleTime: 'static',
 });
 
 export const schemasQueryOptions = queryOptions({
   queryKey: docsKeys.schemas,
   queryFn: () => fetchJson<GenComponentSchema[]>(`${docsBaseUrl}/schemas.gen.json`),
-  staleTime: Number.POSITIVE_INFINITY,
+  staleTime: 'static',
 });
 
 /** Schemas grouped by schema tag, derived per observer from the schemasQueryOptions cache. */
@@ -91,12 +91,12 @@ export const schemasByTagQueryOptions = queryOptions({
 export const schemaTagsQueryOptions = queryOptions({
   queryKey: docsKeys.schemaTags,
   queryFn: () => fetchJson<GenSchemaTagSummary[]>(`${docsBaseUrl}/schema-tags.gen.json`),
-  staleTime: Number.POSITIVE_INFINITY,
+  staleTime: 'static',
 });
 
 export const tagDetailsQueryOptions = (tagName: string) =>
   queryOptions({
     queryKey: docsKeys.tagDetails(tagName),
     queryFn: () => (tagName ? fetchJson<GenOperationDetail[]>(`${docsBaseUrl}/details.gen/${tagName}.gen.json`) : ([] as GenOperationDetail[])),
-    staleTime: Number.POSITIVE_INFINITY,
+    staleTime: 'static',
   });

@@ -28,9 +28,9 @@ describe('persister query filter', () => {
   it('must not persist the Yjs token or the pending magic link, while an ordinary query persists', async () => {
     const queryClient = new QueryClient();
     const yjsToken = yjsTokenQueryOptions({ entityType: 'attachment', entityId: 'attachment-1', tenantId: 'tenant-1', organizationId: 'org-1' });
-    await queryClient.prefetchQuery({ ...yjsToken, queryFn: async () => 'a-bearer-token' });
-    await queryClient.prefetchQuery({ ...pendingMagicLinkQueryOptions, queryFn: async () => ({ email: 'other@example.com' }) });
-    await queryClient.prefetchQuery({ queryKey: ['organization', 'list'], queryFn: async () => [] });
+    await queryClient.query({ ...yjsToken, queryFn: async () => 'a-bearer-token' });
+    await queryClient.query({ ...pendingMagicLinkQueryOptions, queryFn: async () => ({ email: 'other@example.com' }) });
+    await queryClient.query({ queryKey: ['organization', 'list'], queryFn: async () => [] });
 
     const { queries } = dehydrate(queryClient, { shouldDehydrateQuery: shouldPersistQuery });
 

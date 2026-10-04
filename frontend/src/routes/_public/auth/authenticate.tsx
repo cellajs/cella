@@ -19,7 +19,7 @@ export const Route = createFileRoute('/_public/auth/authenticate')({
     // so a sign-in made on this page lands on the confirm step too.
     if (search.tokenId) {
       try {
-        await queryClient.fetchQuery({ ...meQueryOptions() });
+        await queryClient.query({ ...meQueryOptions() });
       } catch {
         queryClient.removeQueries({ queryKey: meKeys.all, exact: true }); // No valid session -> sign-up or sign-in steps
       }
@@ -32,7 +32,7 @@ export const Route = createFileRoute('/_public/auth/authenticate')({
     // The session cookie is the authority: after a magic-link or OAuth sign-in it is valid while the store is empty.
     if (!useUserStore.getState().user) {
       try {
-        await queryClient.ensureQueryData({ ...meQueryOptions() });
+        await queryClient.query({ ...meQueryOptions(), staleTime: 'static' });
       } catch {
         return; // No valid session -> show the authenticate page
       }

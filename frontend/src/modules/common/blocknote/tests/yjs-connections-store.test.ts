@@ -90,7 +90,7 @@ const providers: MockProvider[] = [];
 
 let online = true;
 let onlineListener: ((online: boolean) => void) | undefined;
-const fetchQuery = vi.fn();
+const tokenQuery = vi.fn();
 /** Held open, a load waits for it: a slow disk. */
 let loadGate: Promise<void> | null = null;
 
@@ -111,7 +111,7 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('~/query/query-client', () => ({
   queryClient: {
     invalidateQueries: vi.fn(),
-    fetchQuery: (...args: unknown[]) => fetchQuery(...args),
+    query: (...args: unknown[]) => tokenQuery(...args),
     getQueryCache: () => ({ find: () => ({ getObserversCount: () => 1 }) }),
     getQueryState: () => ({ error: null }),
   },
@@ -158,7 +158,7 @@ beforeEach(() => {
   db = bindLocalUserDb(owner);
   online = true;
   loadGate = null;
-  fetchQuery.mockReset();
+  tokenQuery.mockReset();
 });
 
 afterEach(async () => {
@@ -579,7 +579,7 @@ describe('yjs connection with the store: boot resume', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
     await seedStored('resume-1', 'typed offline', { unsynced: true });
     const record = (await db.yDocs.get(keyPath('resume-1')))!;
-    fetchQuery.mockResolvedValueOnce('token-resume');
+    tokenQuery.mockResolvedValueOnce('token-resume');
 
     const done = resumeConnection(record);
     await vi.waitFor(() => expect(providers.at(-1)?.connect).toHaveBeenCalled());
@@ -603,7 +603,7 @@ describe('yjs connection with the store: boot resume', () => {
     await seedStored('resume-2', 'never to be saved', { unsynced: true });
     const record = (await db.yDocs.get(keyPath('resume-2')))!;
     const opened = providers.length;
-    fetchQuery.mockRejectedValueOnce({ status: 403 });
+    tokenQuery.mockRejectedValueOnce({ status: 403 });
 
     await resumeConnection(record);
     await settled();
@@ -620,7 +620,7 @@ describe('yjs connection with the store: boot resume', () => {
   it('keeps the stored edits when the token fetch fails on the network: the next reconnect resumes them (positive control)', async () => {
     await seedStored('resume-3', 'waiting', { unsynced: true });
     const record = (await db.yDocs.get(keyPath('resume-3')))!;
-    fetchQuery.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    tokenQuery.mockRejectedValueOnce(new TypeError('Failed to fetch'));
 
     await resumeConnection(record);
     await settled();

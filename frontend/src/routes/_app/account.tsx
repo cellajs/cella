@@ -32,7 +32,7 @@ export const Route = createFileRoute('/_app/account')({
   },
   loader: async () => {
     const userAuthOptions = meAuthQueryOptions();
-    return queryClient.ensureQueryData({ ...userAuthOptions });
+    return queryClient.query({ ...userAuthOptions, staleTime: 'static' });
   },
   component: withSuspenseSpinner(UserAccountPage),
 });

@@ -14,13 +14,13 @@ export const Route = createFileRoute('/_public/_content/docs')({
   notFoundComponent: createNotFoundComponent('public', '/docs'),
   loader: async () => {
     // Prefetch tags and schemas (used for error response deduplication)
-    const [tags] = await Promise.all([queryClient.ensureQueryData(tagsQueryOptions), queryClient.ensureQueryData(schemasQueryOptions)]);
+    const [tags] = await Promise.all([queryClient.query(tagsQueryOptions), queryClient.query(schemasQueryOptions)]);
     // Eagerly prefetch tag details so child routes don't waterfall (skip empty tags)
     for (const tag of tags) {
-      if (tag.count > 0) queryClient.prefetchQuery(tagDetailsQueryOptions(tag.name));
+      if (tag.count > 0) void queryClient.query(tagDetailsQueryOptions(tag.name)).catch(() => {});
     }
     // Prefetching operations also lets the service worker cache them for offline search.
-    queryClient.prefetchQuery(operationsQueryOptions);
+    void queryClient.query(operationsQueryOptions).catch(() => {});
   },
   component: withSuspense(DocsLayout),
 });

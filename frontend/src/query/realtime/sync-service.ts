@@ -4,12 +4,12 @@ import { queryClient } from '~/query/query-client';
 import { waitFor } from '~/utils/wait-for';
 import { getRouteOrgId } from './sync-priority';
 
-// Extended gc time for offline caching. staleTime is left unset so product queries keep their own syncStaleTime and ensureQueryData skips fresh caches after catchup.
+// Extended gc time for offline caching. The reads below pin staleTime to 'static', so each query's own staleTime plays no part here.
 const syncQueryConfig = {
   gcTime: 24 * 60 * 60 * 1000, // 24 hours
 };
 
-/** Resolves current-organization staleness once the stream is live, and fills other offline caches when enabled. `signal` cancels on unmount or retrigger. */
+/** Seeds offline caches once the stream is live: the current organization first, then the rest when offline access is on. `signal` cancels on unmount or retrigger. */
 export async function runSyncService(offlineAccess: boolean, signal: AbortSignal): Promise<void> {
   // Brief wait so a fleet of tabs does not all hit the server at connect time.
   await waitFor(1000);
@@ -46,7 +46,11 @@ export async function runSyncService(offlineAccess: boolean, signal: AbortSignal
   console.debug(`[SyncService] Complete: ${highPriority.length} high-priority, ${lowPriorityCount} low-priority`);
 }
 
-/** Refetches through ensureQueryData only when catchup marked the list stale; a fresh list is a no-op. */
+/**
+ * Seeds the offline cache for one menu item. `staleTime: 'static'` fetches a cold entry and leaves a cached one
+ * alone whatever its age or invalidation state, because freshness here is the sync engine's job: catchup patches
+ * these lists from CDC deltas, and a full list GET would race that work.
+ */
 async function syncMenuItem(item: UserMenuItem, offlineAccess: boolean): Promise<void> {
   if (item.membership.archived) return;
 
@@ -64,11 +68,12 @@ async function syncMenuItem(item: UserMenuItem, offlineAccess: boolean): Promise
     queries.map(async (source) => {
       const options = { ...source, ...syncQueryConfig };
       const isInfinite = 'getNextPageParam' in options;
+      const cacheFirst = { ...options, staleTime: 'static' };
       return isInfinite
         ? // biome-ignore lint/suspicious/noExplicitAny: runtime check narrows type but TS can't infer it
-          await queryClient.ensureInfiniteQueryData(options as any)
+          await queryClient.infiniteQuery(cacheFirst as any)
         : // biome-ignore lint/suspicious/noExplicitAny: runtime check narrows type but TS can't infer it
-          await queryClient.ensureQueryData(options as any);
+          await queryClient.query(cacheFirst as any);
     }),
   );
 }

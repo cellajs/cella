@@ -58,7 +58,9 @@ export const meKeys = {
   acceptInvitationToken: ['me', 'accept-invitation-token'] as const,
 };
 
-export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe });
+// `persist: false` keeps /me out of the IDB cache: the route guards read it with `staleTime: 'static'`, so a
+// persisted entry would let a session revoked between visits pass the guard and skip getAndSetMe's store write.
+export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe, meta: { persist: false } });
 
 export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: getAndSetMeAuthData });
 
