@@ -45,6 +45,11 @@ const answers = (url, accept) =>
 const session = mintSession(EMAIL);
 const { base, api } = session;
 log('target', { base, api, email: EMAIL, start: START || '(attached)' });
+// Every service is a path under the app origin; a backendUrl on a port of its own is a config from before that (create-cella < 0.3.8)
+if (!check('the API is a path under the app origin', new URL(api).pathname !== '/', { api })) {
+  writeFileSync(join(OUT, 'evidence.json'), JSON.stringify({ checks, evidence }, null, 2));
+  process.exit(1);
+}
 
 let stack = null;
 const logPath = join(OUT, 'dev-stack.log');
