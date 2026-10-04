@@ -9,10 +9,17 @@ name: Create flow
 #   heads            create-cella main with this checkout, so a cella branch can be tried by dispatch
 # Checks cella runs on itself every day (pnpm check, pnpm test, pnpm build) are left out on purpose.
 # Reproduce a leg locally: follow the README in a new app, then run cella/skills/verify/smoke-driver.mjs from it.
+# A PR that changes this workflow or the driver runs all legs, since a dispatch needs the file on main.
 
 on:
   schedule:
     - cron: '47 4 * * *'
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/create-flow.yml
+      - cella/skills/verify/smoke-driver.mjs
+      - cella/skills/two-tab-sync-test/driver-lib.mjs
   workflow_dispatch:
     inputs:
       leg:
