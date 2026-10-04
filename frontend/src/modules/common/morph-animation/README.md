@@ -5,6 +5,12 @@ that continuously morphs, anchored to the logo. Two variants share the engine:
 `single` (one resting cell, marketing hero) and `colony` (divides 1 → 2 → 3 → 5 and
 flows back together, auth background).
 
+`single` fills the container its caller gives it; the hero positions and blends it.
+`colony` is the page background of the auth layout, which renders it bare: the
+component lays itself out as a fixed, non-interactive layer at 20% opacity with
+`mix-blend-multiply` (normal blending in dark mode). An app that replaces this module
+with its own background owns that presentation too.
+
 How it works:
 
 - **One curve, many shapes.** The drawn boundary is a single parametric closed curve.
@@ -24,7 +30,7 @@ How it works:
   dissolves granularly. A grain stamps as a square or a small plus (`stamp` prop).
 - **Theme-aware shading.** Dark mode glows: brighter band core, white rim. Light mode
   inverts: saturated hues, whiteish band body, a thin vivid contour, tuned for the
-  low-opacity `mix-blend-multiply` the call sites use.
+  low-opacity `mix-blend-multiply` layer both variants are shown in.
 - **Mitosis.** Colony cells join through a smooth minimum, so a split pinches a shared
   membrane apart. Each daughter runs the same system at a time offset that scales with
   separation: siblings drift apart in character and re-synchronize as they merge.

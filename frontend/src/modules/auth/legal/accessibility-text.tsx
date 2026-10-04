@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
+import { appConfig, isStrategyEnabled } from 'shared';
 import { accessibilityReview, legalConfig } from '~/modules/auth/legal/legal-config';
 import { LegalContact } from '~/modules/auth/legal/legal-contact';
 import { LegalSection } from '~/modules/auth/legal/legal-section';
@@ -40,14 +40,13 @@ function AccessibilityText() {
       {t(`c:${lang}`)}
     </span>
   ));
-  const strategies: readonly string[] = appConfig.enabledAuthStrategies;
   const oauthNames = mapOAuthProviders
     .filter(({ id }) => (appConfig.enabledOAuthProviders as readonly string[]).includes(id))
     .map(({ name }) => name);
   const signInMethods = [
-    strategies.includes('passkey') && 'a passkey (your fingerprint, face or device PIN)',
-    strategies.includes('magic') && 'a link sent to your email',
-    strategies.includes('oauth') && oauthNames.length > 0 && `your ${orList(oauthNames)} account`,
+    isStrategyEnabled('passkey') && 'a passkey (your fingerprint, face or device PIN)',
+    isStrategyEnabled('magic') && 'a link sent to your email',
+    isStrategyEnabled('oauth') && oauthNames.length > 0 && `your ${orList(oauthNames)} account`,
   ].filter((method) => typeof method === 'string');
 
   const mailLink = <a href={`mailto:${supportEmail}`}>{supportEmail}</a>;

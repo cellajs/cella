@@ -19,6 +19,8 @@ export type DropdownData = {
   programmatic?: boolean;
   /** Extra classes merged onto a 'menu' popup, e.g. to widen its default min-width. */
   popupClassName?: string;
+  /** Runs once when this dropdown leaves the screen: dismissed, toggled closed by its trigger, or replaced by another. */
+  onClose?: () => void;
 };
 
 export type InternalDropdown = DropdownData & {
@@ -55,6 +57,7 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
     // The same trigger toggles the dropdown closed
     if (current?.triggerId === data.triggerId) {
       set({ dropdown: null, lastRemovedTriggerId: data.triggerId, lastRemovedAt: Date.now() });
+      current.onClose?.();
       return data.id;
     }
 
@@ -76,6 +79,7 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
     const trigger = data.triggerRef.current;
     const triggerLabel = trigger?.getAttribute('aria-label') || trigger?.textContent?.trim() || undefined;
     set({ dropdown: { ...withDefaults(defaults, data), content, triggerLabel, key: Date.now() } });
+    current?.onClose?.();
 
     return data.id;
   },
@@ -91,6 +95,7 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
     const current = get().dropdown;
     current?.triggerRef.current?.removeAttribute('data-dropdowner-active');
     set({ dropdown: null, lastRemovedTriggerId: current?.triggerId ?? null, lastRemovedAt: Date.now() });
+    current?.onClose?.();
   },
 
   get: () => get().dropdown,

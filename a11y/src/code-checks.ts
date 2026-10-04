@@ -53,7 +53,7 @@ export function runCodeChecks(evidence: EvidenceSet) {
       : { check: 'code:media', result: 'not-applicable', summary: 'The app contains no video or audio.', where: [] },
   );
 
-  const autoplay = search(String.raw`autoPlay|autoplay`);
+  const autoplay = search('autoPlay|autoplay');
   evidence.add(
     ['1.4.2'],
     autoplay.length
@@ -67,7 +67,7 @@ export function runCodeChecks(evidence: EvidenceSet) {
   );
 
   const sessionSpan = search(String.raw`new TimeSpan\(1, 'w'\)`, ['backend/src/modules/auth/sessions/**/*.ts']);
-  const toastTimeout = /timeout=\{(\d+)\}/.exec(search(String.raw`<Toaster .*timeout=`).join('\n'))?.[1];
+  const toastTimeout = /timeout=\{(\d+)\}/.exec(search('<Toaster .*timeout=').join('\n'))?.[1];
   evidence.add(['2.2.1'], {
     check: 'code:timing',
     result: 'review',
@@ -79,7 +79,7 @@ export function runCodeChecks(evidence: EvidenceSet) {
     where: [],
   });
 
-  const looping = search(String.raw`animate-(ping|pulse|bounce)|animation:[^;]*infinite|repeat: Infinity|carousel-autoplay`);
+  const looping = search('animate-(ping|pulse|bounce)|animation:[^;]*infinite|repeat: Infinity|carousel-autoplay');
   evidence.add(['2.2.2'], {
     check: 'code:motion',
     result: looping.length ? 'review' : 'pass',
@@ -110,7 +110,7 @@ export function runCodeChecks(evidence: EvidenceSet) {
       : { check: 'code:gestures', result: 'pass', summary: 'No multipoint or path-based gestures.', where: [] },
   );
 
-  const deviceMotion = search(String.raw`devicemotion|deviceorientation|DeviceMotionEvent|DeviceOrientationEvent`);
+  const deviceMotion = search('devicemotion|deviceorientation|DeviceMotionEvent|DeviceOrientationEvent');
   evidence.add(
     ['2.5.4'],
     deviceMotion.length

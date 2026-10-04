@@ -5,7 +5,9 @@
     ".": {
       "entry": ["cella/cella.config.ts", "cella/skills/**/*.mjs"],
       // Git hooks run lefthook; migration READMEs run their codemods with `pnpm exec tsx` from the root.
-      "ignoreDependencies": ["@evilmartians/lefthook", "tsx"]
+      "ignoreDependencies": ["@evilmartians/lefthook", "tsx"],
+      // `pnpm -C a11y stack` runs the a11y workspace's script of that name.
+      "ignoreBinaries": ["stack"]
     },
     "backend": {
       "entry": [
@@ -31,9 +33,6 @@
     "cdc": {
       "entry": ["src/**/*.type-check.ts"],
       "ignoreDependencies": ["@opentelemetry/.+", "^pino(-.+)?$"]
-    },
-    "frontend": {
-      "ignoreBinaries": ["pkill"]
     },
     "infra": {
       "entry": ["index.ts", "tasks/*.ts", "boot/src/entry.ts"]

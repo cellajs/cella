@@ -1,3 +1,5 @@
+import { appConfig } from 'shared';
+import type { FederationConfig } from 'shared/config-builder/types';
 import { testDatabaseName, withDatabase } from 'shared/test-db';
 import { vi } from 'vitest';
 
@@ -7,6 +9,20 @@ for (const key of ['DATABASE_URL', 'DATABASE_ADMIN_URL'] as const) {
   const url = process.env[key];
   if (url) process.env[key] = withDatabase(url, testDatabaseName);
 }
+
+// The SSO suites sign in through `surfconext`. An app that declares no such federation gets this one for the test run,
+// added before any app module loads: schemas list the federation keys when they are imported.
+const federations: Record<string, FederationConfig> = appConfig.federations;
+federations.surfconext ??= {
+  label: 'SURFconext',
+  issuer: 'https://connect.test.surfconext.nl',
+  idpMetadataUrl: 'https://metadata.test.surfconext.nl/idps-metadata.xml',
+  scopes: ['openid'],
+  clientAuthMethod: 'client_secret_basic',
+  tenantClaim: 'schac_home_organization',
+  snapshotClaims: ['eduperson_affiliation', 'eduperson_scoped_affiliation'],
+  addressAuthority: true,
+};
 
 // Every limiter passes every request; a test of a real limiter calls `vi.unmock('#/middlewares/rate-limiter/core')`.
 vi.mock('#/middlewares/rate-limiter/core', async () => (await import('./test-utils')).rateLimiterCoreMock());

@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { type SignInWithPasskeyData, sendMagicLink, signInWithPasskey } from 'sdk';
 import { zCheckEmailBody } from 'sdk/zod.gen';
-import { appConfig } from 'shared';
+import { appConfig, isStrategyEnabled } from 'shared';
 import type { z } from 'zod';
 import { useShallow } from 'zustand/react/shallow';
 import type { ApiError } from '~/lib/api';
@@ -25,9 +25,8 @@ import { Input } from '~/modules/ui/input';
 import { useUserStore } from '~/modules/user/user-store';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
-const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
-const emailEnabled = enabledStrategies.includes('passkey');
-const isMagicLinkEnabled = enabledStrategies.includes('magic');
+const emailEnabled = isStrategyEnabled('passkey');
+const isMagicLinkEnabled = isStrategyEnabled('magic');
 
 const formSchema = zCheckEmailBody;
 type FormValues = z.infer<typeof formSchema>;
@@ -59,7 +58,7 @@ export function SignInStep() {
   const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: { email } });
 
   useEffect(() => {
-    if (!enabledStrategies.includes('passkey')) return;
+    if (!isStrategyEnabled('passkey')) return;
     isConditionalMediationAvailable().then(setConditionalMediationSupported);
   }, []);
 
@@ -180,7 +179,7 @@ export function SignInStep() {
             )}
           </SubmitButton>
 
-          {enabledStrategies.includes('passkey') && <PasskeyStrategy type="authentication" />}
+          {isStrategyEnabled('passkey') && <PasskeyStrategy type="authentication" />}
         </form>
       )}
     </Form>

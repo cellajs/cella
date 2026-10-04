@@ -298,13 +298,21 @@ describe('csv export', () => {
   const cells = (types: readonly string[], cell: (type: string) => string) => types.map(cell).join(',');
 
   it('organizations: visible columns with names as text, the role, counts and dates, and a dash when missing', async () => {
+    // One count column per organization role, in the hierarchy's order; each role gets its own count.
+    const orgRoles: readonly string[] = hierarchy.getRoles('organization');
+    const roleCount = (role: string) => orgRoles.indexOf(role) + 2;
     const rows = [
       {
         id: 'org-48',
         name: 'Tenant 48',
         createdAt: created,
         membership: { role: 'admin' },
-        included: { counts: { membership: { admin: 2, member: 5 }, entities: Object.fromEntries(orgCountTypes.map((type) => [type, 0])) } },
+        included: {
+          counts: {
+            membership: Object.fromEntries(orgRoles.map((role) => [role, roleCount(role)])),
+            entities: Object.fromEntries(orgCountTypes.map((type) => [type, 0])),
+          },
+        },
       },
       { id: 'org-12', name: 'Organization 12', createdAt: null, membership: null, included: {} },
       // A row fetched for the export carries the caller's membership under `included`.
@@ -312,10 +320,10 @@ describe('csv export', () => {
     ];
 
     expect(await csvLines(columnsOf(organizations.useColumns), rows)).toEqual([
-      `c:name,c:your_role,c:created_at,c:admin,c:member,${cells(orgCountTypes, (type) => `c:${type}`)}`,
-      `Tenant 48,admin,${dateCell(created)},2,5,${cells(orgCountTypes, () => '0')}`,
-      `Organization 12,-,-,-,-,${cells(orgCountTypes, () => '-')}`,
-      `Seven,member,-,-,-,${cells(orgCountTypes, () => '-')}`,
+      `c:name,c:your_role,c:created_at,${cells(orgRoles, (role) => `c:${role}`)},${cells(orgCountTypes, (type) => `c:${type}`)}`,
+      `Tenant 48,admin,${dateCell(created)},${cells(orgRoles, (role) => String(roleCount(role)))},${cells(orgCountTypes, () => '0')}`,
+      `Organization 12,-,-,${cells(orgRoles, () => '-')},${cells(orgCountTypes, () => '-')}`,
+      `Seven,member,-,${cells(orgRoles, () => '-')},${cells(orgCountTypes, () => '-')}`,
     ]);
   });
 

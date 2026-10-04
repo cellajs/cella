@@ -44,8 +44,7 @@ export const completeSsoSignIn = async (ctx: Context<Env>, { federation, claims,
       : undefined;
 
   if (
-    !connection ||
-    connection.kind !== 'sso' ||
+    connection?.kind !== 'sso' ||
     connection.issuer !== federation.key ||
     connection.status !== 'active' ||
     !claimed ||

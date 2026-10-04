@@ -4,7 +4,7 @@ import { ServerOffIcon, TriangleAlertIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAuthHealth } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, isStrategyEnabled } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
@@ -17,14 +17,12 @@ import { meQueryOptions } from '~/modules/me/query';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { useUserStore } from '~/modules/user/user-store';
 
-const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
-
 // Warn after the slow delay and abort at the timeout, so a down backend never hangs on the browser default.
 const HEALTH_SLOW_MS = 5000;
 const HEALTH_TIMEOUT_MS = 20000;
 
 function shouldShowDivider(): boolean {
-  return enabledStrategies.includes('oauth') || enabledStrategies.includes('sso');
+  return isStrategyEnabled('oauth') || isStrategyEnabled('sso');
 }
 
 export function AuthenticatePage() {
@@ -141,8 +139,8 @@ export function AuthenticatePage() {
               <span className="px-2 text-muted-foreground">{t('c:or')}</span>
             </div>
           )}
-          {enabledStrategies.includes('sso') && <SsoProviders connectionId={tokenData?.ssoConnectionId} federations={healthData?.federations} />}
-          {enabledStrategies.includes('oauth') && <OAuthProviders authStep={step} />}
+          {isStrategyEnabled('sso') && <SsoProviders connectionId={tokenData?.ssoConnectionId} federations={healthData?.federations} />}
+          {isStrategyEnabled('oauth') && <OAuthProviders authStep={step} />}
         </>
       )}
 

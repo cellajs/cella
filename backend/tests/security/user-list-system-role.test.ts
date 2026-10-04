@@ -26,6 +26,8 @@ describe('System roles in the user list', async () => {
   };
 
   beforeAll(async () => {
+    // A system admin lists every user, so one left by an earlier file in this worker would join the lists below.
+    await clearSecurityTestData();
     const organization = await createTestOrganization();
     member = await createOrgUser(call, organization.tenantId, organization.id, 'role-list-member');
     // A system admin who is also a member here, so the member's list includes them.

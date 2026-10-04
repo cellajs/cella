@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { type CheckEmailData, type CheckEmailResponse, checkEmail } from 'sdk';
 import { zCheckEmailBody } from 'sdk/zod.gen';
-import { appConfig } from 'shared';
+import { appConfig, isStrategyEnabled } from 'shared';
 import type { z } from 'zod';
 import type { ApiError } from '~/lib/api';
 import { useAuthStore } from '~/modules/auth/auth-store';
@@ -14,8 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '~/modules/ui/input';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
-const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
-const emailEnabled = enabledStrategies.includes('passkey');
+const emailEnabled = isStrategyEnabled('passkey');
 
 const formSchema = zCheckEmailBody;
 type FormValues = z.infer<typeof formSchema>;

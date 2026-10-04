@@ -72,13 +72,24 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run Biome
-        run: pnpm biome check .
+        run: pnpm biome check . --error-on-warnings
+
+      # `pnpm check` ends with these fixes. One that is still open here gets applied in every app after
+      # its next sync, as a change in a file the app never touched.
+      - name: Check Biome has no fix left to apply
+        run: pnpm biome check --write --unsafe && git diff --exit-code
 
       - name: Run style checks (terminology / docs / comments / frontend)
         run: pnpm style
 
       - name: Run lens checks (append-only / collision / purity / wire completeness)
         run: pnpm --filter shared lens:check
+
+      # knip loads the vitest configs, which read DB_TEST_PORT from backend/.env
+      - name: Check dependencies (unused / unlisted)
+        run: |
+          cp ./backend/.env.example ./backend/.env
+          pnpm deps:unused
 
       # compose.gen.yml is a committed artifact read at deploy time
       # (infra/resources/compute.ts), so a stale copy must fail the PR.
@@ -143,6 +154,13 @@ jobs:
       - name: Build service bundles
         run: pnpm --filter backend --filter cdc-worker --filter yjs-worker build
 
+      # A new app starts from config.template.ts: no federation and no `sso` method. This repo's own config
+      # has both, so code that leans on them passes the typecheck above and fails in every new app (0.16.0).
+      - name: Typecheck as a new app
+        run: |
+          cp ./backend/.env.example ./backend/.env
+          pnpm template:check
+
   # Runs all tests (full mode with PostgreSQL). Heavy: runs on the release PR only.
   # `pnpm test:full` starts the `db_test` compose container (DB_TEST_PORT) and applies
   # migrations in the Vitest global setup, so the job needs no service container.
@@ -187,6 +205,10 @@ jobs:
       # results must match the superuser run above, proving authorization does not lean on RLS.
       - name: Run backend tests as runtime_role
         run: pnpm test:core:runtime
+
+      # The sign-in and connections suites again with the config a new app has (see "Typecheck as a new app").
+      - name: Run sign-in tests as a new app
+        run: pnpm template:check --tests
 
   # The production images are otherwise built for the first time by the release deploy
   # (0.11.0 failed there on a Node 26 base image without corepack). Build the shared base

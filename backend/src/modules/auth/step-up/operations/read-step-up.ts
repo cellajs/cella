@@ -1,4 +1,4 @@
-import { appConfig } from 'shared';
+import { isStrategyEnabled } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import type { SessionFacts } from '#/modules/auth/sessions/sessions-db';
@@ -24,7 +24,7 @@ export const readStepUp = async (session: SessionFacts): Promise<StepUpState> =>
   if (!row) return refused;
 
   const held = { passkey: row.hasPasskey, totp: row.hasTotp };
-  const factors = (['passkey', 'totp'] as const).filter((factor) => held[factor] && appConfig.enabledAuthStrategies.includes(factor));
+  const factors = (['passkey', 'totp'] as const).filter((factor) => held[factor] && isStrategyEnabled(factor));
   if (factors.length === 0) {
     return { steppedUp: !!row.stampedVia || row.signedInRecently, methods: ['email', 'sign_in'], factor: null };
   }

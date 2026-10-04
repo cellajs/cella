@@ -30,7 +30,7 @@ No script: manual.
 
 1. A `useMemo` or `useCallback` whose dependency array names a value the callback does not read: pass that value in, or derive the result from the data itself.
 2. `<MenuItemEdit item={item} />` → add `siblings`, the sorted list the item is ordered in.
-3. A sheet, dialog or panel with its own Escape handler returns early while `isHoverContentOpen()` is true.
+3. A sheet, dialog, panel or hotkey with its own Escape handler returns early while `isHoverContentOpen()` is true.
 4. A select that stands without a label in a filter bar passes `showTitle` to `ResponsiveSelect`.
 
 ## Verify

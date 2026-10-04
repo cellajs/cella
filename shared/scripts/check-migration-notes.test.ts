@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { migrationNoteFindings, parseMigrationNote } from './check-migration-notes.ts';
+import { migrationNoteFindings, owedNoteFindings, ownedPaths, parseMigrationNote } from './check-migration-notes.ts';
 
 const lines = (...rows: string[]) => rows.join('\n');
 const note = lines(
@@ -80,5 +80,63 @@ describe('migrationNoteFindings', () => {
       'cella/migrations/20261002T0614-no-readme: note folder has no README.md',
       'cella/migrations/20261002T0615-manual/README.md: roots is only for a note with a codemod',
     ]);
+  });
+});
+
+describe('owedNoteFindings', () => {
+  const config = lines(
+    'export default defineConfig({',
+    '  overrides: {',
+    '    ignored: [',
+    "      'README.md',",
+    "      'shared/config',",
+    "      'backend/drizzle',",
+    '      // App identity',
+    "      'frontend/src/modules/common/logo.tsx',",
+    "      'locales/en/app.json',",
+    '    ],',
+    '    pinned: [',
+    "      'backend/src/modules.ts',",
+    "      'json/text-blocks.json',",
+    '    ],',
+    '  },',
+    '});',
+  );
+  const rule = (files: string[], messages = '') => owedNoteFindings(files, messages, config).map((finding) => finding.file);
+
+  it('reads the ignored and pinned entries of the sync config', () => {
+    expect(ownedPaths(config)).toEqual([
+      'README.md',
+      'shared/config',
+      'backend/drizzle',
+      'frontend/src/modules/common/logo.tsx',
+      'locales/en/app.json',
+      'backend/src/modules.ts',
+      'json/text-blocks.json',
+    ]);
+  });
+
+  it('asks for a note when a branch changes an app-owned path synced code reads from', () => {
+    expect(rule(['frontend/src/modules/common/logo.tsx', 'frontend/src/modules/auth/auth-layout.tsx'])).toEqual([
+      'frontend/src/modules/common/logo.tsx',
+    ]);
+    expect(rule(['backend/drizzle/20261004_x/migration.sql', 'backend/src/modules.ts'])).toEqual([
+      'backend/drizzle/20261004_x/migration.sql',
+      'backend/src/modules.ts',
+    ]);
+  });
+
+  it('leaves content, brand files, generated output and config alone', () => {
+    expect(
+      rule(['README.md', 'shared/config/config.default.ts', 'locales/en/app.json', 'json/text-blocks.json', 'backend/src/modules/auth/x.ts']),
+    ).toEqual([]);
+  });
+
+  it('is met by a note in the same branch or a reasoned waiver in a commit message', () => {
+    const logo = 'frontend/src/modules/common/logo.tsx';
+    expect(rule([logo, 'cella/migrations/20261004T1215-logo-title/README.md'])).toEqual([]);
+    expect(rule([logo, 'cella/migrations/README.md'])).toEqual([logo]);
+    expect(rule([logo], 'fix: logo\n\nMigration-Note: none, comment only')).toEqual([]);
+    expect(rule([logo], 'fix: logo\n\nMigration-Note: none')).toEqual([logo]);
   });
 });

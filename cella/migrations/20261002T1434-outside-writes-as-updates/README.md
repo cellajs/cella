@@ -31,7 +31,7 @@ No script: manual.
 
 ## Manual steps
 
-1. Update ops of collaborative products store the resolved stx when a field changed, and `stripChangedFields(table.stx)` when none did, as `updateAttachmentOp` does. The yjs handler reads `stx.changedFields` to tell a description write.
+1. Update ops of collaborative products store the resolved stx when a field changed, and `stripChangedFields(table.stx)` when none did, as `updateAttachmentOp` does; that value is `SQL`, so the update query types `values` as `PgUpdateSetSource<typeof table>` from `drizzle-orm/pg-core`. An op that returns before the UPDATE when no field changed meets this too. The yjs handler reads `stx.changedFields` to tell a description write.
 2. A write path that dispatches no `<type>.updated` calls `recordYjsOutsideWrite({ var: { db: tx } }, { entityType, rows })` from `#/modules/yjs/operations/record-outside-write` in its transaction, after its UPDATE. `retireYjsDocuments(ctx, { entityType, entityIds })`, now in `#/modules/yjs/operations/retire-yjs-documents` and notifying, is for deletions only.
 3. Dispatch `<type>.updated` inside the write transaction (tenant context set): outside one, RLS hides the document and nothing is recorded.
 4. Remove app code that expects a reload or a new generation after an API write; editors receive it as an update.

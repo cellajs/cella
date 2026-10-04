@@ -44,6 +44,7 @@
     "check": "pnpm sdk && pnpm --filter backend ts && pnpm -r --filter '!backend' ts && pnpm --filter shared lens:check && pnpm lint:fix",
     "style": "node shared/scripts/check-style.ts",
     "style:audit": "node shared/scripts/check-style.ts --audit",
+    "template:check": "node shared/scripts/check-template-config.ts",
     "lint": "pnpm biome check . && pnpm style",
     "lint:fix": "pnpm biome check --write --unsafe && pnpm style",
     "ts": "pnpm -r ts",

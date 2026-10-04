@@ -82,7 +82,7 @@ export async function newContext(session: Session, { auth, mode }: ContextOption
     storageState,
     ...overrides,
   });
-  const uiState = { state: { mode, theme: 'none', offlineAccess: false, impersonating: false, publicAlertsSeen: ['test-credentials'] }, version: 1 };
+  const uiState = { state: { mode, theme: 'none', offlineAccess: false, publicAlertsSeen: ['test-credentials'] }, version: 1 };
   // tsx keeps function names with an `__name` helper that does not exist in the page
   await context.addInitScript({ content: 'window.__name = (fn) => fn;' });
   await context.addInitScript(

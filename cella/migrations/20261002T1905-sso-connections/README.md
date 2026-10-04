@@ -11,7 +11,7 @@ declares `surfconext`, the template `{}`), `enabledAuthStrategies` gains `'sso'`
 table (`backend/src/modules/connections/`), which replaces the `domains` module: its table, routes, the tenant
 `domainsCount` and the frontend domains sheet are gone. `backend/src/modules/auth/sso/` adds the entry, start and
 callback routes under `/auth/sso/`; `identities.connectionId` becomes a uuid foreign key, `tokens.connectionId` and the
-foreign keys on `sessions` and `identities` arrive. `pnpm generate` emits all of it.
+foreign keys on `sessions` and `identities` arrive. `pnpm generate` emits all of it, given the hint in step 2.
 
 ## What & why
 
@@ -32,8 +32,8 @@ No script: manual.
 
 ## Manual steps
 
-1. Add `federations` to `shared/config/config.default.ts` (`{}` to opt out; copy cella's `surfconext` entry to opt in) and, when opting in, `'sso'` to `enabledAuthStrategies`, the test issuer override to the mode configs and the two env variables to `.env.example`.
-2. `pnpm --filter backend generate` emits `connections`, `DROP TABLE domains`, `tokens.connection_id`, `identities.connection_id` as uuid (with the `USING` cast) and the foreign keys; commit the folder. An app that stored data in `domains` exports it first.
+1. Add `federations` to `shared/config/config.default.ts` (`{} as Record<string, FederationConfig>` to opt out; copy cella's `surfconext` entry to opt in) and, when opting in, `'sso'` to `enabledAuthStrategies`, the test issuer override to the mode configs and the two env variables to `.env.example`.
+2. `cd backend && pnpm tsx scripts/generate.ts --hints '[{"type":"create","kind":"table","entity":["public","connections"]}]'` (the diff also drops `domains`, so drizzle asks rename or create) emits `connections`, `DROP TABLE domains`, `tokens.connection_id`, `identities.connection_id` as uuid (with the `USING` cast) and the foreign keys; commit the folder. An app that stored data in `domains` exports it first.
 3. Remove app code that imported `#/modules/domains/*`, `domainsQueryOptions` or read `tenant.domainsCount`; the system tenants table and the tenant edit sheet no longer show domains.
 4. An app with its own `strategyLabels` or `authStrategiesEnum` copies derives them from `appConfig.federations` as cella does; locale keys `sso_*` in `error.json` are new.
 

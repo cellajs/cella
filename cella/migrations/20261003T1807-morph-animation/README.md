@@ -8,8 +8,9 @@ clientCacheBump: false
 The auth background engine `frontend/src/modules/common/bg-animation/` is gone. A new app-owned
 module `frontend/src/modules/common/morph-animation/` draws a generative, logo-shaped animation,
 and the synced `auth-layout.tsx` and `marketing/about/hero.tsx` now lazy-import `MorphAnimation`
-from it. The module never syncs (it is in the default `ignored` list), so an app must create it:
-copy it from upstream, write its own, or ship an empty shell.
+from it. The module is app-owned (the default `ignored` list names it). An app whose list still
+names `bg-animation` receives the template's module once, with this sync: do step 1, then keep it,
+replace it or empty it. An app whose list already names it creates the module itself.
 
 ## What & why
 
@@ -21,7 +22,8 @@ The drawn geometry is the template logo, so the module is app-owned, like `logo.
 
 ## Blast radius
 
-Sync-breaking for every app: the synced call sites import a module the sync never delivers.
+Sync-breaking for an app whose `ignored` list already names the module: the synced call sites
+import a module the sync does not deliver. Every other app shows the template's mark until it acts.
 No database, schema or cache impact. Apps that already replaced the auth layout and the about
 hero with their own are unaffected.
 

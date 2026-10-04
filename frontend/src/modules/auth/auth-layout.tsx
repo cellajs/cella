@@ -24,13 +24,11 @@ export function AuthLayout() {
       data-waited={hasWaited}
       className="group rich-gradient container flex min-h-[90svh] flex-col items-center before:fixed after:fixed sm:min-h-svh"
     >
-      {/* Dividing-colony mark behind the auth card; fades in once the layout has settled */}
+      {/* Dividing-colony mark behind the auth card; the module lays it out as the page background and fades it in */}
       <Suspense fallback={null}>
-        <div className="pointer-events-none fixed inset-0 opacity-20 mix-blend-multiply dark:mix-blend-normal">
-          {/* overscan below 1 zooms in: 0.45 keeps the colony larger than the viewport at every stage, so the window always crops it */}
-          {/* slowed further: the 0.45 overscan magnifies motion, so the clock compensates */}
-          <MorphAnimation variant="colony" grid={192} stamp="plus" overscan={0.375} speed={0.4} />
-        </div>
+        {/* overscan below 1 zooms in: 0.45 keeps the colony larger than the viewport at every stage, so the window always crops it */}
+        {/* slowed further: the 0.45 overscan magnifies motion, so the clock compensates */}
+        <MorphAnimation variant="colony" grid={192} stamp="plus" overscan={0.375} speed={0.4} />
       </Suspense>
 
       <div className="mt-auto mb-auto">

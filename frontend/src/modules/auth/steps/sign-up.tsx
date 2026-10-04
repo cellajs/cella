@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { sendMagicLink } from 'sdk';
 import { zCheckEmailBody } from 'sdk/zod.gen';
-import { appConfig } from 'shared';
+import { isStrategyEnabled } from 'shared';
 import type { z } from 'zod';
 import { useShallow } from 'zustand/react/shallow';
 import { AuthEmailButton } from '~/modules/auth/auth-email-button';
@@ -21,9 +21,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '~/modules/ui/input';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
-const enabledStrategies: readonly string[] = appConfig.enabledAuthStrategies;
-const emailEnabled = enabledStrategies.includes('passkey');
-const isMagicLinkEnabled = enabledStrategies.includes('magic');
+const emailEnabled = isStrategyEnabled('passkey');
+const isMagicLinkEnabled = isStrategyEnabled('magic');
 
 const formSchema = zCheckEmailBody;
 type FormValues = z.infer<typeof formSchema>;

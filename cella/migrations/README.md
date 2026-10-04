@@ -37,6 +37,10 @@ For each note: run its codemod or work its manual steps, run the follow-ups in i
 section (`pnpm generate`, `pnpm sdk`, ...), gate on `pnpm check`, then mark it. The
 [`migrate` skill](../skills/migrate/SKILL.md) drives this loop with an agent.
 
+Several notes that change the schema make one migration: work them all, then generate once with
+their `hints.json` arrays joined, and place each note's `data.sql` statements where their comments
+say. A second generate reports no changes.
+
 ## For maintainers: authoring a migration
 
 Ship the migration in the same PR as the breaking change:
@@ -47,6 +51,14 @@ Ship the migration in the same PR as the breaking change:
 2. Keep codemods entity-agnostic and driven by allow-lists or explicit maps, so apps extend them
    via a flag (e.g. `--extra-renames`) instead of editing the shipped script. Apps run the codemod
    from an extracted copy, so it must not import from other folders of this repo.
+3. A schema change ships what a combined generate needs: `hints.json`, the `--hints` array that
+   answers drizzle's rename-or-create questions (a `create` hint for every new table or column in a
+   diff that also drops one), and `data.sql`, the hand-written statements, each under a comment
+   that says where it goes in the generated migration.
+4. A change to an app-owned path that synced code reads from (a pinned file, `logo.tsx`,
+   `backend/drizzle`) is a breaking change for apps even when nothing else moves: the app's copy
+   never updates. `pnpm style` asks for the note; `Migration-Note: none, <reason>` in a commit
+   message answers it when apps have nothing to do.
 
 A `syncBreaking: true` change without a migration folder is what this system exists to prevent;
 treat it like a missing `clientCacheVersion` bump.
