@@ -14,7 +14,8 @@ export type ConfigSwitch =
 /** Whether a switch is on in this app's config, read per call: tests change the config at runtime. */
 export const isSwitchOn = (on: ConfigSwitch): boolean => {
   if ('service' in on) return appConfig.services[on.service]?.enabled !== false;
-  if (!appConfig.enabledAuthStrategies.includes(on.strategy)) return false;
+  // `some` with a comparison, like the providers below: an app's tuple may leave out strategies the type lists (`sso`)
+  if (!appConfig.enabledAuthStrategies.some((enabled) => enabled === on.strategy)) return false;
   const { provider } = on;
   return !provider || appConfig.enabledOAuthProviders.some((enabled) => enabled === provider);
 };
