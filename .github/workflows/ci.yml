@@ -85,8 +85,11 @@ jobs:
       - name: Run lens checks (append-only / collision / purity / wire completeness)
         run: pnpm --filter shared lens:check
 
+      # knip loads the vitest configs, which read DB_TEST_PORT from backend/.env
       - name: Check dependencies (unused / unlisted)
-        run: pnpm deps:unused
+        run: |
+          cp ./backend/.env.example ./backend/.env
+          pnpm deps:unused
 
       # compose.gen.yml is a committed artifact read at deploy time
       # (infra/resources/compute.ts), so a stale copy must fail the PR.
