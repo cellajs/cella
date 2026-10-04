@@ -1,13 +1,17 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignore": ["shared/config/config.template.ts"],
   "workspaces": {
     ".": {
-      "entry": ["cella/cella.config.ts", "cella/skills/**/*.mjs"],
+      // `pnpm cella migrate` runs each migration's codemod by path, so nothing imports them.
+      "entry": ["cella/cella.config.ts", "cella/skills/**/*.mjs", "cella/migrations/*/*.ts"],
       // Git hooks run lefthook; migration READMEs run their codemods with `pnpm exec tsx` from the root.
       "ignoreDependencies": ["@evilmartians/lefthook", "tsx"],
       // `pnpm -C a11y stack` runs the a11y workspace's script of that name.
       "ignoreBinaries": ["stack"]
+    },
+    "a11y": {
+      // `openState` is the starting point of a hand-written script that checks a fix in the running app; the audit never imports it.
+      "entry": ["src/drive.ts"]
     },
     "backend": {
       "entry": [
@@ -19,7 +23,9 @@
         "emails/preview-route.ts",
         "tests/**/*.ts",
         // Unused by cella itself; apps import it to derive search keywords from descriptions.
-        "src/utils/extract-keywords.ts"
+        "src/utils/extract-keywords.ts",
+        // Opt-in draft lifecycle: no cella table declares `publishedAt`, apps add the column with this helper.
+        "src/db/utils/published-column.ts"
       ],
       // The service image installs only `dependencies` (shared/src/keep-on-disk.ts). shared/src imports these, and the
       // bundle loads them from disk or by name (pino transports), so they are listed here without an import in this workspace.
@@ -33,6 +39,24 @@
     "cdc": {
       "entry": ["src/**/*.type-check.ts"],
       "ignoreDependencies": ["@opentelemetry/.+", "^pino(-.+)?$"]
+    },
+    "frontend": {
+      // Unused here, imported by the apps: no import in cella is no reason to delete one of these.
+      // board-layout.tsx also keeps board-drag.ts and resizable-panels.tsx reachable.
+      "entry": [
+        "src/modules/common/board/board-layout.tsx",
+        "src/modules/common/board/board-panel.tsx",
+        "src/modules/common/date-tooltip.tsx",
+        "src/modules/common/dropdowner/dropdown-select-item.tsx",
+        "src/modules/common/form-fields/select-combobox/parent.tsx",
+        "src/modules/common/list-skeleton.tsx",
+        "src/modules/common/page/local-tab-nav.tsx",
+        "src/modules/marketing/about/faq.tsx",
+        "src/utils/clean-url.ts",
+        "src/utils/date-full.ts",
+        "src/utils/in-numbers-array.ts",
+        "src/utils/stable-array.ts"
+      ]
     },
     "infra": {
       "entry": ["index.ts", "tasks/*.ts", "boot/src/entry.ts"]

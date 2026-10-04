@@ -7,7 +7,7 @@ Hono API server on PostgreSQL (Drizzle ORM): authentication, entity CRUD, file u
 tsup bundles the backend into `dist/`, and the production image installs only `dependencies` (`pnpm install --prod`). So
 `dependencies` lists the packages the bundle loads from disk ([keep-on-disk.ts](../shared/src/keep-on-disk.ts)), and every
 other package is a devDependency, runtime libraries included. The build throws on a `dependencies` entry it would inline.
-`pnpm deps:unused` (knip) reports unused and unlisted packages across the workspaces.
+`pnpm unused` (knip) reports unused files, plus unused and unlisted packages, across the workspaces.
 
 ## Query module conventions
 
