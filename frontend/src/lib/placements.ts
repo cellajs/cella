@@ -2,13 +2,13 @@ import type { ReactNode } from 'react';
 import type { UserBase } from 'sdk';
 import type { ChannelEntityType } from 'shared';
 import { hierarchy } from 'shared';
+import { allSlots, type Slot, surfaceOrder } from 'shared/placements';
 import type { ContextRole, SlotToolsConfig } from 'shared/tools-config';
 import type { TKey } from '~/lib/i18n-locales';
 import { onFrontendModuleRegister } from '~/lib/module';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import type { MeUser } from '~/modules/me/types';
 import type { EnrichedOrganization } from '~/modules/organization/types';
-import { placementOverrides } from '~/placement-config';
 
 /** Shared descriptor for placement-driven tabs and tools. Route tabs reuse it via `staticData.navTab`. */
 export interface PlacementDescriptor {
@@ -25,7 +25,7 @@ export interface PlacementDescriptor {
   requires?: string;
   /** Context-role pairs (e.g. 'course.staff') that may see this placement. A UI condition, never data authorization. */
   visibleTo?: ContextRole[];
-  /** Channel-stored config cannot hide a locked placement (reorder still works); app overrides in code still can. */
+  /** Channel-stored config cannot hide a locked placement (reorder still works); leaving it out of the app's `surfaces` list still can. */
   locked?: boolean;
 }
 
@@ -65,23 +65,17 @@ export interface SlotContexts extends ChannelSettingsSlotContexts, ChannelTabsSl
   'system.tabs': undefined;
 }
 
-export type Slot = keyof SlotContexts & string;
+/** Compile-time check that `SlotContexts` covers exactly the app's slots, no more and no fewer. */
+type _SlotsCovered = [keyof SlotContexts] extends [Slot] ? ([Slot] extends [keyof SlotContexts] ? true : never) : never;
+const _slotsCovered: _SlotsCovered = true;
+void _slotsCovered;
 
 /** A tool in one slot: `render` takes the slot context, returns its full content unit, and lazy-loads heavy UI. */
 export type ToolFor<S extends Slot> = PlacementDescriptor & { slot: S; render: (context: SlotContexts[S]) => ReactNode };
 
 export type Tool = { [S in Slot]: ToolFor<S> }[Slot];
 
-/** App adjustment to a declared placement or nav tab (see `~/placement-config`), limited to hiding and reordering. */
-export interface PlacementOverride {
-  /** Drops the placement from its host (applies even to `locked` placements: this layer is code). */
-  hidden?: boolean;
-  /** Replaces the declared sort position. */
-  order?: number;
-}
-
-/** Host-keyed override map: slot id for tools, parent route id for nav tabs. */
-export type PlacementOverrides = Partial<Record<string, Partial<Record<string, PlacementOverride>>>>;
+export type { Slot };
 
 /** Internal registry entry: render context erased so all slot families share one index. */
 type RegisteredTool = PlacementDescriptor & { slot: string; render: (context: never) => ReactNode };
@@ -138,7 +132,7 @@ export function orderBySlotConfig<T extends PlacementDescriptor & { order: numbe
   });
 }
 
-/** Resolution inputs a consumer passes for its host (all optional; absent means unconditioned). */
+/** Resolution inputs a consumer passes for a slot (all optional; absent means unconditioned). */
 export interface ResolvePlacementOptions {
   /** Grants the actor holds; placements declaring `requires` hide without a match. */
   grants?: readonly string[];
@@ -146,38 +140,54 @@ export interface ResolvePlacementOptions {
   pairs?: readonly ContextRole[];
   /** Channel-stored arrangement for this slot (order + hidden), reconciled fail-closed. */
   slotConfig?: SlotToolsConfig;
-  /** App override map (defaults to `~/placement-config`). */
-  overrides?: PlacementOverrides;
 }
 
-/** Hiding only: app override or channel-stored list (`locked` ignores the latter); no `requires`/`visibleTo` gating. */
-export function isPlacementHidden(
-  host: string,
-  item: PlacementDescriptor,
-  options: Pick<ResolvePlacementOptions, 'slotConfig' | 'overrides'> = {},
-): boolean {
-  const { slotConfig, overrides = placementOverrides } = options;
-  if (overrides[host]?.[item.id]?.hidden) return true;
-  return !item.locked && (slotConfig?.hidden ?? []).includes(item.id);
+/**
+ * Hiding only, no `requires`/`visibleTo` gating: the app left this id out of the slot's `surfaces`
+ * list, or the channel's stored arrangement hides it (which `locked` is immune to).
+ */
+export function isPlacementHidden(slot: Slot, item: PlacementDescriptor, options: Pick<ResolvePlacementOptions, 'slotConfig'> = {}): boolean {
+  const listed = surfaceOrder(slot);
+  if (listed && !listed.includes(item.id)) return true;
+  return !item.locked && (options.slotConfig?.hidden ?? []).includes(item.id);
 }
 
-/** Applies app overrides, channel-stored hiding (`locked` immune), `requires`/`visibleTo`, then stored ordering. */
+/**
+ * The app's `surfaces` list for this slot decides which placements exist and their base order; a
+ * slot the app does not list keeps every placement in its declared `order`. Channel-stored hiding
+ * (`locked` immune), then `requires`/`visibleTo`, then the channel's stored order apply on top.
+ */
 export function resolvePlacementList<T extends PlacementDescriptor & { order: number }>(
-  host: string,
+  slot: Slot,
   items: T[],
   options: ResolvePlacementOptions = {},
 ): T[] {
-  const { grants = [], pairs = [], slotConfig, overrides = placementOverrides } = options;
-  const hostOverrides = overrides[host];
+  const { grants = [], pairs = [], slotConfig } = options;
+  const listed = surfaceOrder(slot);
 
   const adjusted = items
-    .filter((item) => !isPlacementHidden(host, item, { slotConfig, overrides }))
-    .map((item) => {
-      const order = hostOverrides?.[item.id]?.order;
-      return order === undefined ? item : { ...item, order };
-    })
+    .filter((item) => !isPlacementHidden(slot, item, { slotConfig }))
     .filter((item) => !item.requires || grants.includes(item.requires))
-    .filter((item) => !item.visibleTo || item.visibleTo.some((pair) => pairs.includes(pair)));
+    .filter((item) => !item.visibleTo || item.visibleTo.some((pair) => pairs.includes(pair)))
+    // A listed slot orders by list position; the declared `order` is the base everywhere else.
+    .map((item) => (listed ? { ...item, order: listed.indexOf(item.id) } : item));
 
   return orderBySlotConfig(adjusted, slotConfig);
+}
+
+/**
+ * Startup check: every id an app lists must name a placement the slot actually has. Called once the
+ * route tree exists, so route-declared tabs count too; a typo would otherwise hide a tab in silence.
+ */
+export function assertSurfaceIds(candidateIdsBySlot: (slot: Slot) => readonly string[]): void {
+  for (const slot of allSlots()) {
+    const listed = surfaceOrder(slot);
+    if (!listed) continue;
+    const available = new Set(candidateIdsBySlot(slot));
+    for (const id of listed) {
+      if (!available.has(id)) {
+        throw new Error(`appConfig.surfaces['${slot}'] lists '${id}', which is no placement of that surface`);
+      }
+    }
+  }
 }

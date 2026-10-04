@@ -2,11 +2,12 @@ import type { AnyRoute } from '@tanstack/react-router';
 import { Link, type LinkComponentProps, redirect, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { ContextRole, SlotToolsConfig } from 'shared/tools-config';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import type { TKey } from '~/lib/i18n-locales';
-import { getSlotDescriptors, isPlacementHidden, type PlacementDescriptor, type PlacementOverrides, resolvePlacementList } from '~/lib/placements';
+import { assertSurfaceIds, getSlotDescriptors, isPlacementHidden, type PlacementDescriptor, resolvePlacementList, type Slot } from '~/lib/placements';
 import { ActiveTabMarker, useTabIndicator } from '~/modules/common/page/tab-indicator';
 import { type TabNavAvatar, TabNavShell } from '~/modules/common/page/tab-nav-shell';
 import { useScrollReset } from '~/modules/common/scroll-reset';
@@ -30,15 +31,36 @@ function getChildRoutes(route: AnyRoute): AnyRoute[] {
   return Array.isArray(route.children) ? route.children : [];
 }
 
-/** Override and arrangement host key: the tabs slot id when declared, else the parent route id. */
-function getTabsHost(parentRouteId: string): string {
+/** The tabs slot a parent route binds its bar to; every tabbed surface declares one. */
+function getTabsSlot(parentRouteId: string): Slot | undefined {
   // Cast: generated FileRoutesById is a closed interface without index signature
   const routesById = getRouter().routesById as unknown as Record<string, AnyRoute>;
-  if (!hasRoute(routesById, parentRouteId)) return parentRouteId;
-  return routesById[parentRouteId].options?.staticData?.tabsSlot ?? parentRouteId;
+  if (!hasRoute(routesById, parentRouteId)) return undefined;
+  return routesById[parentRouteId].options?.staticData?.tabsSlot;
 }
 
 export type NavCandidate = PlacementDescriptor & { order: number; path: PageTab['path']; params: PageTab['params'] };
+
+/**
+ * Startup check on `appConfig.surfaces`: an id that names no placement of its surface would hide a
+ * tab or section in silence. Called once the router exists, so route-declared tabs count. Throws
+ * outside production, where a hard crash over one misspelled id would be the worse failure.
+ */
+export function assertSurfaces(): void {
+  const routesById = getRouter().routesById as unknown as Record<string, AnyRoute>;
+  const parentRouteIdForSlot = (slot: Slot) => Object.keys(routesById).find((routeId) => routesById[routeId].options?.staticData?.tabsSlot === slot);
+
+  try {
+    assertSurfaceIds((slot) => {
+      const parentRouteId = parentRouteIdForSlot(slot);
+      const tabIds = parentRouteId ? getNavTabCandidates(parentRouteId).map((tab) => tab.id) : [];
+      return [...tabIds, ...getSlotDescriptors(slot).map((descriptor) => descriptor.id)];
+    });
+  } catch (error) {
+    if (appConfig.mode !== 'production') throw error;
+    console.error('[surfaces]', error);
+  }
+}
 
 /** Resolution inputs for a tabbed surface. An absent condition never hides a tab. */
 export interface ResolveNavTabsOptions {
@@ -48,8 +70,6 @@ export interface ResolveNavTabsOptions {
   pairs?: readonly ContextRole[];
   /** Channel-stored arrangement for the surface's tabs slot (order + hidden). */
   slotConfig?: SlotToolsConfig;
-  /** App override map (defaults to `~/placement-config`). */
-  overrides?: PlacementOverrides;
 }
 
 /**
@@ -103,11 +123,13 @@ export function resolveNavTabs(parentRouteId: string, options: ResolveNavTabsOpt
   const routesById = getRouter().routesById as unknown as Record<string, AnyRoute>;
   if (!hasRoute(routesById, parentRouteId)) return [];
 
-  const resolved = resolvePlacementList(getTabsHost(parentRouteId), getNavTabCandidates(parentRouteId), {
+  const slot = getTabsSlot(parentRouteId);
+  if (!slot) return [];
+
+  const resolved = resolvePlacementList(slot, getNavTabCandidates(parentRouteId), {
     grants: options.grants,
     pairs: options.pairs,
     slotConfig: options.slotConfig,
-    overrides: options.overrides,
   });
 
   return resolved.map(({ id, label, path, params }) => ({ id, label, path, params }));
@@ -120,13 +142,11 @@ export function defaultNavTabPath(parentRouteId: string, options?: ResolveNavTab
 
 export interface GuardNavTabsOptions {
   slotConfig?: SlotToolsConfig;
-  /** Preferred landing tab id; falls back to the first resolved tab when absent or disabled. */
-  defaultTabId?: string;
 }
 
 /**
  * `beforeLoad` guard for a tabbed surface: redirects to the landing tab from the bare parent
- * layout and from a tab that app overrides or channel arrangement disable, before that tab's
+ * layout and from a tab the app's `surfaces` list or the channel arrangement disables, before that tab's
  * route mounts and fetches. Detection uses {@link isPlacementHidden} on the arrangement layers
  * only, never `requires`/`visibleTo`, whose inputs may still be loading. Config changes while
  * sitting on a tab are handled by {@link useNavTabRedirect}.
@@ -140,28 +160,30 @@ export function guardNavTabs(
   const deepest = matches[matches.length - 1];
   if (!deepest) return;
 
-  const { slotConfig, defaultTabId } = options;
+  const { slotConfig } = options;
+  const slot = getTabsSlot(parentRouteId);
+  if (!slot) return;
 
-  // Registry tabs match on the deepest match's `$tool` param, route tabs on its route path
+  // Data-defined tabs match on the deepest match's `$tool` param, route tabs on its route path
   let needsLanding = deepest.routeId === parentRouteId;
   if (!needsLanding) {
     const candidates = getNavTabCandidates(parentRouteId);
     const toolId = (deepest.params as { tool?: string } | undefined)?.tool;
     const target = toolId ? candidates.find((tab) => tab.id === toolId) : candidates.find((tab) => tab.path === deepest.fullPath);
-    needsLanding = target !== undefined && isPlacementHidden(getTabsHost(parentRouteId), target, { slotConfig });
+    needsLanding = target !== undefined && isPlacementHidden(slot, target, { slotConfig });
   }
   if (!needsLanding) return;
 
-  const tabs = resolveNavTabs(parentRouteId, { slotConfig });
-  const landing = tabs.find((tab) => tab.id === defaultTabId) ?? tabs[0];
+  // The landing tab is the first one this surface resolves: the app's `surfaces` list sets it.
+  const landing = resolveNavTabs(parentRouteId, { slotConfig })[0];
   if (!landing) return;
 
   throw redirect({ to: landing.path, params: landing.params, search: true, replace: true, hash: true });
 }
 
 /**
- * Replace-navigates to the first resolved tab when the current location sits on a tab that app
- * overrides or channel arrangement hide. Detection uses {@link isPlacementHidden} on the
+ * Replace-navigates to the first resolved tab when the current location sits on a tab the app's
+ * `surfaces` list or the channel arrangement hides. Detection uses {@link isPlacementHidden} on the
  * arrangement layers only, never `requires`/`visibleTo`. {@link PageTabNav} runs this for
  * route-derived tab bars.
  */
@@ -174,7 +196,8 @@ export function useNavTabRedirect(parentRouteId: string, options: ResolveNavTabs
   const candidates = parentRouteId ? getNavTabCandidates(parentRouteId) : [];
   const active = toolId ? candidates.find((tab) => tab.id === toolId) : candidates.find((tab) => tab.path === leafPath);
 
-  const disabled = active !== undefined && isPlacementHidden(getTabsHost(parentRouteId), active, options);
+  const slot = getTabsSlot(parentRouteId);
+  const disabled = slot !== undefined && active !== undefined && isPlacementHidden(slot, active, options);
   const target = disabled ? resolveNavTabs(parentRouteId, options)[0] : undefined;
 
   const targetId = target?.id;

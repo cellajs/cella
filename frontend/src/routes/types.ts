@@ -10,7 +10,7 @@ declare module '@tanstack/react-router' {
     floatingNavButtons?: { right?: NavItemId; left?: NavItemId };
     /** Nav tab placement for PageTabNav: default order 0, lower first, ties keep route order. */
     navTab?: PlacementDescriptor;
-    /** Binds the tab bar to this slot so registry tab tools merge in; absent = route-file tabs keyed by parent route id. */
+    /** The placement surface this route's tab bar is: its tabs resolve against `appConfig.surfaces[tabsSlot]`. A tabbed layout route must declare it. */
     tabsSlot?: Slot;
   }
 }

@@ -51,7 +51,7 @@ Same flow, copying from `organization`:
 - Hierarchy: `.channel('<name>', { parent, roles })`. Roles must exist in the role registry.
 - Policies: elevation and self rows ([Permissions](./PERMISSIONS.md#the-policy-consulted)).
 - Table: spread `channelColumns('<name>')` plus a `unique(tenantId, id)` compound (composite-FK target). No RLS policies, no `seq`/`stx`.
-- Frontend: declare the entity in `<name>-module.tsx` as `channel: { entityType: '<name>', menuSection, listQuery }` (copy [organization-module.tsx](../frontend/src/modules/organization/organization-module.tsx); wrap the query factory in an arrow so the ESM binding is read at call time), add a `channelRouteConfig` entry in the pinned [routes-config.tsx](../frontend/src/routes-config.tsx), and add the entity to `menuStructure` in [config.default.ts](../shared/config/config.default.ts). Skip `buildEntitySyncQueries`.
+- Frontend: declare the entity in `<name>-module.tsx` as `channel: { entityType: '<name>', menuSection, listQuery }` (copy [organization-module.tsx](../frontend/src/modules/organization/organization-module.tsx); wrap the query factory in an arrow so the ESM binding is read at call time), add a `channelRouteConfig` entry in the pinned [routes-config.tsx](../frontend/src/routes-config.tsx), and add the entity to `menuStructure` in [config.default.ts](../shared/config/config.default.ts). To fix which tabs its page shows, in which order, list them under `surfaces['<name>.tabs']` there; the first id is the tab a link to the channel lands on. Skip `buildEntitySyncQueries`.
 
 ## Optional capabilities
 

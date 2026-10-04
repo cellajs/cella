@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { appConfig, type ChannelEntityType } from 'shared';
+import type { ChannelSlot } from 'shared/placements';
 import type { ToolsConfig } from 'shared/tools-config';
 import { type ChannelEntityContext, getSlotDescriptors, type PlacementDescriptor, resolvePlacementList } from '~/lib/placements';
 import { heldContextRoles } from '~/modules/entities/context-roles';
@@ -20,7 +21,7 @@ export type ChannelSettingsSection<C extends ChannelEntityType> = PlacementDescr
  */
 export function useChannelSettingsSections<C extends ChannelEntityType>(entity: ChannelSettingsHost<C>): ChannelSettingsSection<C>[] {
   const channelType = entity.entityType;
-  const slot = `${channelType}.settings`;
+  const slot = `${channelType}.settings` as ChannelSlot;
 
   // Grants: every entity action the actor holds on this channel, resolved per row
   const resolveCan = useResolveCan();

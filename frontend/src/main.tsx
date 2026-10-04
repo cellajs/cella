@@ -14,6 +14,7 @@ import { renderAscii } from 'shared/utils/ascii';
 import { createClientConfig } from '~/lib/api-client';
 import { reportReactError } from '~/lib/maple';
 import { AppRouter } from '~/modules/common/app/app-router';
+import { assertSurfaces } from '~/modules/common/page/tab-nav';
 import { QueryClientProvider } from '~/query/provider';
 import { initFaviconBadge } from '~/utils/init-favicon-badge';
 import { initViewportObserver } from '~/utils/viewport-observer';
@@ -23,6 +24,9 @@ client.setConfig(createClientConfig());
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
+
+// Both the module registry and the route tree are populated by now, so every listed id can be checked.
+assertSurfaces();
 
 renderAscii();
 

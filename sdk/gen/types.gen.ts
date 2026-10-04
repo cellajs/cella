@@ -526,7 +526,11 @@ export type Organization = {
   publishedAt: string | null;
   publicAt: string | null;
   toolsConfig: {
-    [key: string]: {
+    'organization.settings'?: {
+      order?: Array<string>;
+      hidden?: Array<string>;
+    };
+    'organization.tabs'?: {
       order?: Array<string>;
       hidden?: Array<string>;
     };
@@ -4957,7 +4961,11 @@ export type UpdateOrganizationData = {
       [key: string]: unknown;
     };
     toolsConfig?: {
-      [key: string]: {
+      'organization.settings'?: {
+        order?: Array<string>;
+        hidden?: Array<string>;
+      };
+      'organization.tabs'?: {
         order?: Array<string>;
         hidden?: Array<string>;
       };

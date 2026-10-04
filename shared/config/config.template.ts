@@ -1,4 +1,4 @@
-import type { ConfigMode, FederationConfig, ProductEmbedding, RequiredConfig, S3ConfigInput } from '../src/config-builder/types.ts';
+import type { ConfigMode, FederationConfig, ProductEmbedding, RequiredConfig, S3ConfigInput, SlotOf } from '../src/config-builder/types.ts';
 import { nonEmpty } from '../src/config-builder/utils.ts';
 import { hierarchy } from './hierarchy-config.ts';
 
@@ -58,6 +58,14 @@ export const config = {
    * If subentityType is set, the table must include `${entity}Id` foreign key.
    */
   menuStructure: [{ entityType: 'organization', subentityType: null } as const],
+
+  /**
+   * Placement ids per surface, in display order: tabs on a channel's bar, sections on a settings or
+   * profile page. A surface listed here is total, so an id left out has no placement on it; a
+   * surface left out renders every registered placement in its declared order. The first id of a
+   * tab bar is also the tab a channel link lands on. cella lists none.
+   */
+  surfaces: {} as Partial<Record<SlotOf<(typeof hierarchy.channelTypes)[number]>, readonly string[]>>,
 
   /** Default restrictions for tenants (entity quotas and rate limits) */
   defaultRestrictions: {

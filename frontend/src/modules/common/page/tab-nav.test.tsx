@@ -8,6 +8,7 @@ const fakeRoute = (over: Record<string, unknown>) => ({ children: [], options: {
 const routesById: Record<string, unknown> = {};
 vi.mock('~/routes/-router-instance', () => ({ getRouter: () => ({ routesById }) }));
 
+import { appConfig } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import { defineFrontendModule } from '~/lib/module';
 import { type GuardNavTabsOptions, guardNavTabs, resolveNavTabs } from '~/modules/common/page/tab-nav';
@@ -27,6 +28,19 @@ defineFrontendModule({
     { slot: 'system.tabs', id: 'audit', label: key('c:audit'), order: 5, render: () => null },
   ],
 });
+
+/** cella lists no surfaces, so a test that needs one states it and puts the config back. */
+function withSurface(slot: string, ids: readonly string[], run: () => void) {
+  const surfaces = appConfig.surfaces as Record<string, readonly string[] | undefined>;
+  const previous = surfaces[slot];
+  surfaces[slot] = ids;
+  try {
+    run();
+  } finally {
+    if (previous) surfaces[slot] = previous;
+    else delete surfaces[slot];
+  }
+}
 
 /** Builds a parent layout route with two route-file tab children plus a `$tool` host child. */
 function seedRoutes(id: string, tabsSlot: string) {
@@ -117,16 +131,20 @@ describe('guardNavTabs forwards bare-parent and disabled-tab navigations in befo
     expect(options).toMatchObject({ replace: true, search: true, hash: true, params: true });
   });
 
-  it('prefers defaultTabId when resolved, routing registry tabs through the $tool host', () => {
-    const options = runGuard([parentMatch], { defaultTabId: 'reports' });
-    expect(options?.to).toBe('/org/$tool');
-    const params = options?.params as (prev: Record<string, string>) => Record<string, string>;
-    expect(params({ tenantId: 't' })).toEqual({ tenantId: 't', tool: 'reports' });
+  it('lands on a data-defined tab through the $tool host when the surface list puts it first', () => {
+    withSurface('organization.tabs', ['reports', 'members', 'settings'], () => {
+      const options = runGuard([parentMatch]);
+      expect(options?.to).toBe('/org/$tool');
+      const params = options?.params as (prev: Record<string, string>) => Record<string, string>;
+      expect(params({ tenantId: 't' })).toEqual({ tenantId: 't', tool: 'reports' });
+    });
   });
 
-  it('falls back to the first resolved tab when defaultTabId is hidden by stored arrangement', () => {
-    const options = runGuard([parentMatch], { defaultTabId: 'reports', slotConfig: { hidden: ['reports'] } });
-    expect(options?.to).toBe('/org/members');
+  it('falls back to the next resolved tab when the stored arrangement hides the first one', () => {
+    withSurface('organization.tabs', ['reports', 'members', 'settings'], () => {
+      const options = runGuard([parentMatch], { slotConfig: { hidden: ['reports'] } });
+      expect(options?.to).toBe('/org/members');
+    });
   });
 
   it('forwards off a route tab hidden by stored arrangement, and passes enabled tabs through', () => {

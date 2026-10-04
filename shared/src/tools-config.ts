@@ -1,4 +1,5 @@
 import type { ChannelEntityType, EntityRole } from '../types.ts';
+import type { ChannelSlot } from './placements.ts';
 
 /**
  * A membership role qualified by the channel type holding it. Used in a tool's `visibleTo` as a
@@ -17,8 +18,9 @@ export interface SlotToolsConfig {
 }
 
 /**
- * Channel-persisted tool arrangement, keyed by placement slot id. Stored sparse on the channel
- * row (`toolsConfig` jsonb): a missing slot key means the slot renders manifest defaults.
- * Unknown tool ids reconcile fail-closed: they are dropped, never widened.
+ * Channel-persisted tool arrangement, keyed by one of that channel's own slots. Stored sparse on the channel row
+ * (`toolsConfig` jsonb): a missing slot key means the slot renders what the app's `surfaces` config
+ * and the module manifests give it. Unknown tool ids reconcile fail-closed: they are dropped, never
+ * widened, and an unknown slot key is refused at the wire.
  */
-export type ToolsConfig = Record<string, SlotToolsConfig>;
+export type ToolsConfig = Partial<Record<ChannelSlot, SlotToolsConfig>>;
