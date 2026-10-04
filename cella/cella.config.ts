@@ -58,7 +58,7 @@ export default defineConfig({
       'backend/src/modules.ts',
       'backend/src/bundle-config.ts',
       'backend/src/mocks/app-product-mocks.ts',
-      'backend/src/modules/attachment/helpers/attachment-placement.ts',
+      'backend/src/modules/attachment/attachment-placement.ts',
       'backend/src/modules/auth/sso/role-from-claims.ts',
       'backend/src/schemas/app-schemas.ts',
       'frontend/src/query/extra-local-user-stores.ts',

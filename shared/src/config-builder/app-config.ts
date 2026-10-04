@@ -23,6 +23,18 @@ if (!Object.hasOwn(configModes, rawMode)) {
 }
 const mode = rawMode as Config['mode'];
 
+// MCP takes access tokens only, and the app's authorization server (`services.oauth`) issues them. Checked for every
+// mode, so a combination only production has fails in development and in CI too.
+for (const [name, overrides] of typedEntries(configModes)) {
+  const { mcp, oauth } = mergeDeep(structuredClone(_default), overrides).services;
+  if (mcp.enabled && !oauth.enabled) {
+    throw new Error(
+      `Invalid config: services.mcp is enabled in ${name} mode while services.oauth is off. MCP calls carry an access token ` +
+        'that only the authorization server issues: enable services.oauth in that mode, or turn services.mcp off.',
+    );
+  }
+}
+
 // The type comes from _default so literal types survive for Drizzle v1 strict enum typing.
 const merged = mergeDeep(structuredClone(_default), configModes[mode]);
 

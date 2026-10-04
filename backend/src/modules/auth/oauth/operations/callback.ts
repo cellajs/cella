@@ -4,7 +4,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { finishSignIn } from '#/modules/auth/general/helpers/finish-sign-in';
+import { finishSignIn } from '#/modules/auth/general/operations/finish-sign-in';
 import { maySignUp } from '#/modules/auth/invitations/operations/may-sign-up';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
 import type { IdentityModel } from '#/modules/auth/oauth/identities-db';

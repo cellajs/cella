@@ -2,7 +2,6 @@ import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack
 import { appConfig, type ProductEntityType } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { resetConnectivityCache } from '~/query/offline/connectivity';
-import { recordPausedMutation } from '~/query/offline/mutation-queue';
 import { mutationRetry } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
 
@@ -18,9 +17,12 @@ function entityTypeOf(key: unknown): ProductEntityType | undefined {
 const handleError = (error: ApiError, meta: QueryMeta | undefined) => import('~/query/on-error').then((m) => m.onError(error, meta));
 const handleSuccess = () => import('~/query/on-success').then((m) => m.onSuccess());
 
+/** What an stx mutation's variables carry, alone or once per item of a batch. */
+type StxVariables = { stx?: { mutationId?: string; replayed?: boolean } };
+
 /** stx mutations carry stx.mutationId on the variables (single or batch shape). */
 function mutationIdOf(vars: unknown): string | undefined {
-  const variables = vars as { stx?: { mutationId?: string } } | Array<{ stx?: { mutationId?: string } }> | undefined;
+  const variables = vars as StxVariables | StxVariables[] | undefined;
   return Array.isArray(variables) ? variables[0]?.stx?.mutationId : variables?.stx?.mutationId;
 }
 
@@ -91,13 +93,17 @@ if (!import.meta.hot?.data?.listenersAttached) {
   handleOnlineStatus();
 }
 
-/** Marks every mutation that pauses offline, whether it pauses live or is restored paused from the persisted cache, so its eventual request is sent as a replay. */
-function trackPausedMutations(client: QueryClient): void {
+/**
+ * Flags every mutation that pauses offline, whether it pauses live or is restored paused from the persisted cache: the
+ * stx on its variables gets `replayed`, so the request its `mutationFn` sends on resume is arbitrated by intent time.
+ * The flag is part of the variables, so it persists with the mutation and no module sets it.
+ */
+function flagPausedMutations(client: QueryClient): void {
   client.getMutationCache().subscribe((event) => {
     if (event.type !== 'added' && event.type !== 'updated') return;
     if (!event.mutation.state.isPaused) return;
-    const mutationId = mutationIdOf(event.mutation.state.variables);
-    if (mutationId) recordPausedMutation(mutationId);
+    const variables = event.mutation.state.variables as StxVariables | StxVariables[] | undefined;
+    for (const item of Array.isArray(variables) ? variables : [variables]) if (item?.stx) item.stx.replayed = true;
   });
 }
 
@@ -132,7 +138,7 @@ export const queryClient: QueryClient =
   });
 
 // Subscribed once per page load; the HMR-preserved client keeps its subscription.
-if (!import.meta.hot?.data?.listenersAttached) trackPausedMutations(queryClient);
+if (!import.meta.hot?.data?.listenersAttached) flagPausedMutations(queryClient);
 
 let resolveCacheRestored: () => void;
 /** Resolves once PersistQueryClientProvider has restored the IDB cache. */

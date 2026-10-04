@@ -45,6 +45,26 @@ describe('appConfig service endpoints', () => {
   });
 });
 
+describe('appConfig service dependencies', () => {
+  const stagingServices = (services: Record<string, { enabled: boolean }>) =>
+    vi.doMock('../../config/config.staging.ts', async (original) => {
+      const { staging } = await original<typeof import('../../config/config.staging.ts')>();
+      return { staging: { ...staging, services } };
+    });
+
+  afterEach(() => vi.doUnmock('../../config/config.staging.ts'));
+
+  it('refuses MCP without the authorization server, also when another mode is the one running', async () => {
+    stagingServices({ mcp: { enabled: true }, oauth: { enabled: false } });
+    await expect(loadAppConfig({ APP_MODE: 'development' })).rejects.toThrow(/services\.mcp is enabled in staging mode while services\.oauth is off/);
+  });
+
+  it('accepts MCP with the authorization server on', async () => {
+    stagingServices({ mcp: { enabled: true }, oauth: { enabled: true } });
+    expect((await loadAppConfig({ APP_MODE: 'staging' })).services.mcp.enabled).toBe(true);
+  });
+});
+
 describe('appConfig dev port offset', () => {
   const port = (url: string) => Number(new URL(url).port);
 

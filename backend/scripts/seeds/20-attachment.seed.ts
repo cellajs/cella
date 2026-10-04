@@ -5,7 +5,7 @@ import { deriveDocument } from 'shared/utils/derive-description-core';
 import { noteSpinnerWarning, startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { getSeedDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { seedAttachmentPlacements } from '#/modules/attachment/helpers/attachment-placement';
+import { seedAttachmentPlacements } from '#/modules/attachment/attachment-placement';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockStx, mockUuid, setMockContext, withFakerSeed } from '#/mocks';
 import { defaultAdminUser } from '../fixtures';

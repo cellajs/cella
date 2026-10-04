@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { finishSignIn } from '#/modules/auth/general/helpers/finish-sign-in';
+import { finishSignIn } from '#/modules/auth/general/operations/finish-sign-in';
 import { findIdentityBySubject, updateIdentity } from '#/modules/auth/oauth/identities-queries';
 import type { OAuthCookiePayload } from '#/modules/auth/oauth/oauth-schema';
 import type { SsoClaims } from '#/modules/auth/sso/helpers/federation-client';

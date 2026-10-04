@@ -162,7 +162,7 @@ HLC: 1710500000123:0001:abcde
 
 Comparison uses milliseconds, then counter, then source. Each tab advances its own clock. The server advances its clock from received timestamps before generating its own. This is deterministic last-writer-wins, not a causal clock.
 
-Only a replayed offline write (`stx.replayed`) is arbitrated by its client timestamps: they are its intent time, which lets it lose to an edit made elsewhere while it was queued. An online write is ordered by server arrival: the server replaces its field timestamps with one fresh server HLC, so a device clock behind the stored value cannot get its edit silently dropped.
+Only a replayed offline write (`stx.replayed`) is arbitrated by its client timestamps: they are its intent time, which lets it lose to an edit made elsewhere while it was queued. The query client sets the flag on the stx in the variables of every mutation that pauses, so a module's `mutationFn` sends the stx it was given and sets nothing. An online write is ordered by server arrival: the server replaces its field timestamps with one fresh server HLC, so a device clock behind the stored value cannot get its edit silently dropped.
 
 Value shape selects merge behavior:
 

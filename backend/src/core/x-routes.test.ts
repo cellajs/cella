@@ -5,7 +5,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { createXRoute, createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { publicGuard } from '#/middlewares/guard';
+import { actorGuard, publicGuard, userGuard } from '#/middlewares/guard';
 import { errorResponseRefs } from '#/schemas';
 
 const itemSchema = z.object({ id: z.string() });
@@ -109,5 +109,25 @@ describe('route helpers', () => {
     appConfig.services.mcp.enabled = true;
     expect((await app.request('/switched')).status).toBe(204);
     expect(guardRan).toHaveBeenCalledOnce();
+  });
+
+  it('refuses a tool route whose guards take no access token, and names it', () => {
+    const toolRoute = (guard: typeof userGuard) =>
+      createXRoute({
+        operationId: 'getThings',
+        method: 'get',
+        path: '/things',
+        xGuard: [guard],
+        xTool: { description: 'Lists things', approvalRequired: false, entity: 'attachment' },
+        tags: ['things'],
+        summary: 'Get things',
+        responses: { 204: { description: 'Done' } },
+      });
+
+    expect(() => toolRoute(userGuard)).toThrow(/getThings \(get \/things\) takes no access token: its guards accept cookieAuth only/);
+
+    // Positive controls: a guard that takes a token, and a public route, which asks for no proof at all.
+    expect(toolRoute(actorGuard)).toMatchObject({ 'x-tool': { entity: 'attachment' } });
+    expect(toolRoute(publicGuard)).toMatchObject({ 'x-tool': { entity: 'attachment' } });
   });
 });

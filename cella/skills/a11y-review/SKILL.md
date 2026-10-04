@@ -20,7 +20,7 @@ pnpm -C a11y report --publish --draft   # the draft PDF where the app serves it,
 
 - One audit stack per machine at a time: runs share the database `db_a11y`.
 - A kept stack is reached with the `DEV_PORT_OFFSET` the run printed: `DEV_PORT_OFFSET=<n> pnpm a11y --states <ids>` audits some states and writes `a11y/results/ledger-partial.json`, never the ledger. End it with `pnpm a11y:run --stop`.
-- A run with skipped visits writes no ledger. Fix the cause (a state's opener that no longer finds its button, a redirect) and run again.
+- A run with skipped visits writes no ledger. Fix the cause (a state's opener that no longer finds its button, a redirect) and run again. The skipped visit names the step that failed and leaves `failure-<mode>.png` and `failure-<mode>.json` in `a11y/results/review/<state>/`: the page at that moment, its console errors and the steps that ran on it before. Read those first: a step often fails on what an earlier one left behind, such as a page that fell into its error boundary.
 - A probe that fails once and passes on a rerun was a timing miss; rerun before recording it.
 
 ## First run in an app
@@ -28,6 +28,17 @@ pnpm -C a11y report --publish --draft   # the draft PDF where the app serves it,
 - List the app's routes and states in `a11y/scope-config.ts`: every page type, plus each dialog, sheet and menu. Add a resolver under `placeholders` for every `{name}` in a path.
 - The ledger and `scope-config.ts` are the app's own: `ignored` and `pinned` in `cella/cella.config.ts`. A ledger that carries another product's name is never read, so the first run starts a new one.
 - The openers find controls by their English names; change the names where the app's default language differs.
+
+## Patterns for app UI
+
+The template's accessibility fixes arrive through synced files only. An app's own components need the same patterns, and the audit reports what is missing once the scope lists their pages:
+
+- **Names (1.1.1, 4.1.2)**: an icon-only button, toggle or link has a translated `aria-label`; a custom control states its role and state.
+- **Focus (2.4.7)**: a custom focus target carries `focus-effect`. Never remove the ring (`focus-visible:outline-hidden`, `ring-0`) without another visible indicator.
+- **Dragging (2.5.7)**: every drag (reorder, resize, move) has a button or key that does the same, as the move buttons in the menu's edit mode.
+- **Character keys (2.1.4)**: a hotkey of one character, or Shift plus one, is registered only while `keyboardShortcuts` in `navigation-store.ts` is on, as `app-nav.tsx` does.
+- **Motion (2.2.2)**: animation follows the reduced-motion preference: `motion-reduce:` on CSS transitions and animations, `<MotionConfig reducedMotion="user">` or `useReducedMotion()` for `motion` components.
+- **Dimmed text (1.4.3)**: dim text with a color token such as `text-muted-foreground`. `opacity-*` on text lowers its contrast below what the token was measured at.
 
 ## The fix loop
 

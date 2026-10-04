@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Check } from './findings.ts';
 import { devOnlySelectors } from './session.ts';
@@ -11,6 +11,11 @@ export function writePacketFile(stateId: string, name: string, content: string |
   const dir = path.join(reviewDir, stateId);
   mkdirSync(dir, { recursive: true });
   writeFileSync(path.join(dir, name), content);
+}
+
+/** Removes a file from a state's review packet; a missing one is fine. */
+export function removePacketFile(stateId: string, name: string) {
+  rmSync(path.join(reviewDir, stateId, name), { force: true });
 }
 
 /** What the page states about itself, for the criteria that compare it with what is visible. */

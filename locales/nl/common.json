@@ -90,6 +90,7 @@
   "paste_emails.placeholder": "Plak tekst met e-mailadressen...",
   "paste_emails.text": "E-mailadressen worden automatisch herkend; één rol geldt voor de hele batch.",
   "pending": "In afwachting",
+  "resize_panels": "Paneelbreedte aanpassen",
   "resource_name": "{{resource}} naam",
   "sign_in_another_way": "Op een andere manier inloggen",
   "sign_in_via_federation": "via {{federation}}",

@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { finishSignIn } from '#/modules/auth/general/helpers/finish-sign-in';
+import { finishSignIn } from '#/modules/auth/general/operations/finish-sign-in';
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { markEmailVerified } from '#/modules/user/operations/email-proof';
 import { findUserById } from '#/modules/user/user-queries';

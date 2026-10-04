@@ -1,7 +1,7 @@
 /**
- * Enforces frontend conventions Biome cannot express reliably. Components are named function declarations, also
- * inside wrappers such as `memo`; component values are typed `ComponentType<Props>`, never `FC`; zustand stores are
- * read through a selector, never a bare `useStore()` call.
+ * Enforces frontend conventions Biome cannot express reliably: components are named function declarations, component
+ * values are typed `ComponentType<Props>`, zustand stores and route context are read through a selector, a Button turns
+ * its press nudge off with `press={false}`. Each check below states its rule.
  */
 import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
@@ -95,6 +95,44 @@ function checkStoreSelector(node: ts.Node, stores: Set<string>, report: Report):
 }
 
 /**
+ * Route context is rebuilt on every navigation, search-only ones included, so a component that reads it whole renders
+ * again on each one. `select` narrows the read to a value that stays equal between navigations.
+ */
+function checkRouteContextSelector(node: ts.Node, report: Report): void {
+  if (!ts.isCallExpression(node)) return;
+  const callee = node.expression;
+  const name = ts.isPropertyAccessExpression(callee) ? callee.name.text : ts.isIdentifier(callee) ? callee.text : undefined;
+  if (name !== 'useRouteContext') return;
+  const [options] = node.arguments;
+  // Options passed by name or spread have their `select` elsewhere
+  if (options && (!ts.isObjectLiteralExpression(options) || options.properties.some(ts.isSpreadAssignment))) return;
+  if (options?.properties.some((property) => property.name?.getText() === 'select')) return;
+  report(
+    node,
+    'route-context-selector',
+    'useRouteContext() renders again on every navigation; pass `select` and return the id or flag this component reads',
+  );
+}
+
+/**
+ * A Button's press nudge is a `transform` (`active:press`). `active:translate-y-0` sets `translate`, another property,
+ * so it compiles and leaves the nudge in place; `press={false}` turns the nudge off.
+ */
+function checkButtonPressCancel(sourceFile: ts.SourceFile, node: ts.Node, report: Report): void {
+  if (!ts.isJsxOpeningElement(node) && !ts.isJsxSelfClosingElement(node)) return;
+  if (node.tagName.getText(sourceFile) !== 'Button') return;
+  for (const attribute of node.attributes.properties) {
+    if (!ts.isJsxAttribute(attribute) || attribute.name.getText(sourceFile) !== 'className' || !attribute.initializer) continue;
+    if (!/(?<![\w:-])!?active:translate-y-0!?(?![\w-])/.test(attribute.initializer.getText(sourceFile))) continue;
+    report(
+      attribute,
+      'button-press-cancel',
+      'active:translate-y-0 does not cancel the press nudge, which is a transform; pass press={false} to the Button',
+    );
+  }
+}
+
+/**
  * A memo whose dependency array names a value its callback never reads. The React Compiler memoizes on what the callback
  * reads, so that value stops triggering a recompute and the result goes stale; derive the result from the value itself.
  */
@@ -151,6 +189,8 @@ export function frontendFindings(file: string, source: string, stores: Set<strin
   sourceFile.forEachChild(function visit(node) {
     checkReactComponentType(sourceFile, node, report);
     checkStoreSelector(node, stores, report);
+    checkRouteContextSelector(node, report);
+    checkButtonPressCancel(sourceFile, node, report);
     checkMemoDependencies(node, report);
     node.forEachChild(visit);
   });

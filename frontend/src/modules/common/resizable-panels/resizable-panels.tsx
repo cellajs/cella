@@ -1,4 +1,5 @@
 import { createContext, type ReactNode, type Ref, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { cn } from '~/utils/cn';
 
@@ -870,10 +871,13 @@ interface SeparatorProps {
   index: number;
   className?: string;
   children?: ReactNode;
+  /** Accessible name; defaults to a generic "resize panels". Pass one that names the panel it resizes. */
+  'aria-label'?: string;
   [key: `data-${string}`]: string | undefined;
 }
 
-export function ResizableSeparator({ index, className, children, ...rest }: SeparatorProps) {
+export function ResizableSeparator({ index, className, children, 'aria-label': ariaLabel, ...rest }: SeparatorProps) {
+  const { t } = useTranslation();
   const ctx = useContext(PanelGroupContext);
   const dragCtx = useContext(SeparatorDragContext);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -956,14 +960,16 @@ export function ResizableSeparator({ index, className, children, ...rest }: Sepa
     <div
       ref={ref}
       role="separator"
-      aria-orientation="horizontal"
+      aria-label={ariaLabel ?? t('c:resize_panels')}
+      // The bar stands upright between two side-by-side panels and moves left and right
+      aria-orientation="vertical"
       aria-valuemin={minVal}
       aria-valuemax={maxVal === Number.POSITIVE_INFINITY ? undefined : maxVal}
       aria-valuenow={Math.round(currentLeftWidth)}
       aria-controls={ariaControls || undefined}
       tabIndex={0}
       data-separator="inactive"
-      className={cn('select-none focus-visible:outline-hidden focus-visible:ring-0', className)}
+      className={cn('focus-effect select-none', className)}
       style={{ touchAction: 'none', cursor: 'col-resize', flexShrink: 0 }}
       onPointerDown={handlePointerDown}
       onPointerEnter={handlePointerEnter}
