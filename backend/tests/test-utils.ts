@@ -29,6 +29,8 @@ export async function clearDatabase() {
     'actors',
     'oidc_payloads',
     'oauth_clients',
+    // No foreign key ties requests to the roots above, and a row left behind trips the unique signup index on the next run.
+    'requests',
   ]);
 }
 
