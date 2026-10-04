@@ -52,7 +52,6 @@ jobs:
         leg: ${{ fromJSON((inputs.leg == '' || inputs.leg == 'all') && '["published", "published-main", "heads"]' || format('["{0}"]', inputs.leg)) }}
     env:
       LEG: ${{ matrix.leg }}
-      APP_DIR: ${{ runner.temp }}/my-app
     steps:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -74,6 +73,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          echo "APP_DIR=$RUNNER_TEMP/my-app" >> "$GITHUB_ENV"
           tag=$(gh api repos/cellajs/cella/releases/latest --jq .tag_name)
           tag_sha=$(git ls-remote "$TEMPLATE_REPO" "refs/tags/$tag" "refs/tags/$tag^{}" | tail -1 | cut -f1)
           main_sha=$(git ls-remote "$TEMPLATE_REPO" refs/heads/main | cut -f1)
