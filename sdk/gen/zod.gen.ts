@@ -451,13 +451,20 @@ export const zOrganization = z.object({
   updatedBy: zUserMinimalBase.nullable(),
   publishedAt: z.string().nullable(),
   publicAt: z.string().nullable(),
-  toolsConfig: z.record(
-    z.string(),
-    z.object({
-      order: z.array(z.string()).optional(),
-      hidden: z.array(z.string()).optional(),
-    }),
-  ),
+  toolsConfig: z.object({
+    'organization.settings': z
+      .object({
+        order: z.array(z.string()).optional(),
+        hidden: z.array(z.string()).optional(),
+      })
+      .optional(),
+    'organization.tabs': z
+      .object({
+        order: z.array(z.string()).optional(),
+        hidden: z.array(z.string()).optional(),
+      })
+      .optional(),
+  }),
   path: z.string().nullable(),
   shortName: z.string().max(255).nullable(),
   country: z.string().max(255).nullable(),
@@ -1776,13 +1783,20 @@ export const zUpdateOrganizationBody = z.object({
   organizationFlags: z.record(z.string(), z.unknown()).optional(),
   setupConfig: z.record(z.string(), z.unknown()).optional(),
   toolsConfig: z
-    .record(
-      z.string(),
-      z.object({
-        order: z.array(z.string()).optional(),
-        hidden: z.array(z.string()).optional(),
-      }),
-    )
+    .object({
+      'organization.settings': z
+        .object({
+          order: z.array(z.string()).optional(),
+          hidden: z.array(z.string()).optional(),
+        })
+        .optional(),
+      'organization.tabs': z
+        .object({
+          order: z.array(z.string()).optional(),
+          hidden: z.array(z.string()).optional(),
+        })
+        .optional(),
+    })
     .optional(),
 });
 

@@ -62,7 +62,6 @@ export default defineConfig({
       'backend/src/modules/auth/sso/role-from-claims.ts',
       'backend/src/schemas/app-schemas.ts',
       'frontend/src/query/extra-local-user-stores.ts',
-      'frontend/src/placement-config.ts',
       'frontend/src/routes-config.tsx',
       'frontend/src/alert-config.tsx',
       'frontend/src/entity-sync-queries.ts',

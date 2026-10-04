@@ -1,8 +1,9 @@
+import { appConfig } from 'shared';
 import { getModules } from 'shared/module-registry';
 import { describe, expect, it } from 'vitest';
 import type { TKey } from '~/lib/i18n-locales';
 import { defineFrontendModule } from '~/lib/module';
-import { getTools, isPlacementHidden, orderBySlotConfig, resolvePlacementList } from '~/lib/placements';
+import { assertSurfaceIds, getTools, isPlacementHidden, orderBySlotConfig, resolvePlacementList } from '~/lib/placements';
 
 // Fixtures use synthetic labels that are not real translation keys.
 const key = (s: string) => s as TKey;
@@ -84,20 +85,38 @@ describe('orderBySlotConfig', () => {
   });
 });
 
+const slot = 'organization.settings' as const;
+
+/** cella lists no surfaces, so each test states the list it needs and puts the config back. */
+function withSurface(ids: readonly string[] | undefined, run: () => void) {
+  const surfaces = appConfig.surfaces as Record<string, readonly string[] | undefined>;
+  const previous = surfaces[slot];
+  if (ids) surfaces[slot] = ids;
+  else delete surfaces[slot];
+  try {
+    run();
+  } finally {
+    if (previous) surfaces[slot] = previous;
+    else delete surfaces[slot];
+  }
+}
+
 describe('isPlacementHidden', () => {
   const item = { id: 'extra', label: key('c:extra'), order: 50 };
 
   it('reports channel-stored hiding, with locked immune to it', () => {
     const slotConfig = { order: [], hidden: ['extra'] };
-    expect(isPlacementHidden('host', item, { overrides: {}, slotConfig })).toBe(true);
-    expect(isPlacementHidden('host', { ...item, locked: true }, { overrides: {}, slotConfig })).toBe(false);
-    expect(isPlacementHidden('host', item, { overrides: {} })).toBe(false);
+    expect(isPlacementHidden(slot, item, { slotConfig })).toBe(true);
+    expect(isPlacementHidden(slot, { ...item, locked: true }, { slotConfig })).toBe(false);
+    expect(isPlacementHidden(slot, item, {})).toBe(false);
   });
 
-  it('reports app-override hiding even for locked placements', () => {
-    const overrides = { host: { extra: { hidden: true } } };
-    expect(isPlacementHidden('host', { ...item, locked: true }, { overrides })).toBe(true);
-    expect(isPlacementHidden('other-host', item, { overrides })).toBe(false);
+  it('hides an id the app left out of the surface list, locked included', () => {
+    withSurface(['general'], () => {
+      expect(isPlacementHidden(slot, item, {})).toBe(true);
+      expect(isPlacementHidden(slot, { ...item, locked: true }, {})).toBe(true);
+      expect(isPlacementHidden(slot, { id: 'general', label: key('c:general'), order: 10 }, {})).toBe(false);
+    });
   });
 });
 
@@ -110,14 +129,13 @@ describe('resolvePlacementList', () => {
   ];
 
   it('drops entries whose required grant or visibleTo pair is absent', () => {
-    expect(resolvePlacementList('host', items, { overrides: {} }).map((i) => i.id)).toEqual(['general', 'extra']);
-    const full = resolvePlacementList('host', items, { overrides: {}, grants: ['delete'], pairs: ['organization.admin'] });
+    expect(resolvePlacementList(slot, items).map((i) => i.id)).toEqual(['general', 'extra']);
+    const full = resolvePlacementList(slot, items, { grants: ['delete'], pairs: ['organization.admin'] });
     expect(full.map((i) => i.id)).toEqual(['general', 'staff-only', 'extra', 'danger']);
   });
 
   it('applies channel config hiding and ordering, with locked immune to hiding', () => {
-    const resolved = resolvePlacementList('host', items, {
-      overrides: {},
+    const resolved = resolvePlacementList(slot, items, {
       grants: ['delete'],
       pairs: ['organization.admin'],
       slotConfig: { order: ['danger', 'general'], hidden: ['extra', 'general'] },
@@ -126,15 +144,26 @@ describe('resolvePlacementList', () => {
     expect(resolved.map((i) => i.id)).toEqual(['danger', 'general', 'staff-only']);
   });
 
-  it('applies app overrides: hide (even locked) and reorder', () => {
-    const resolved = resolvePlacementList('host', items, {
-      grants: ['delete'],
-      pairs: ['organization.admin'],
-      overrides: {
-        host: { general: { hidden: true }, danger: { order: 5 } },
-      },
+  it('a listed surface decides which placements exist and their order, declared order ignored', () => {
+    withSurface(['danger', 'general'], () => {
+      const resolved = resolvePlacementList(slot, items, { grants: ['delete'], pairs: ['organization.admin'] });
+      expect(resolved.map((i) => i.id)).toEqual(['danger', 'general']);
     });
-    // locked 'general' still hidden by the code layer; 'danger' moved first by the order override
-    expect(resolved.map((i) => i.id)).toEqual(['danger', 'staff-only', 'extra']);
+  });
+
+  it('the channel stored order still reorders within a listed surface', () => {
+    withSurface(['danger', 'general', 'extra'], () => {
+      const resolved = resolvePlacementList(slot, items, { grants: ['delete'], slotConfig: { order: ['extra'] } });
+      expect(resolved.map((i) => i.id)).toEqual(['extra', 'danger', 'general']);
+    });
+  });
+});
+
+describe('assertSurfaceIds', () => {
+  it('throws for an id the surface has no placement for, and passes once it does', () => {
+    withSurface(['general', 'ghost'], () => {
+      expect(() => assertSurfaceIds(() => ['general'])).toThrowError(/lists 'ghost', which is no placement/);
+      expect(() => assertSurfaceIds(() => ['general', 'ghost'])).not.toThrow();
+    });
   });
 });

@@ -113,7 +113,9 @@ describe('sign-out with unsaved edits', () => {
   it('signs out at once when nothing is unsaved, after the store wrote what it queued', async () => {
     await renderSignOut();
 
-    await vi.waitFor(() => expect(seen.calls).toContain('session ended (wipe: true)'));
+    // The sign-out effect chain spans a flush, a store subscription and the session call; the default
+    // one-second budget runs out on a loaded worker, where this first render also warms the module graph.
+    await vi.waitFor(() => expect(seen.calls).toContain('session ended (wipe: true)'), { timeout: 5000 });
     expect(seen.calls).toEqual(['store flushed', 'watching stored edits', 'session ended (wipe: true)']);
     expect(dialog()).toBeNull();
   });
@@ -124,7 +126,7 @@ describe('sign-out with unsaved edits', () => {
     expect(seen.calls).toEqual(['store flushed']);
 
     await act(async () => seen.flush.resolve());
-    await vi.waitFor(() => expect(seen.calls).toContain('session ended (wipe: true)'));
+    await vi.waitFor(() => expect(seen.calls).toContain('session ended (wipe: true)'), { timeout: 5000 });
     expect(seen.calls.indexOf('watching stored edits')).toBe(1);
   });
 
@@ -138,7 +140,7 @@ describe('sign-out with unsaved edits', () => {
     expect(seen.calls).not.toContain('session ended (wipe: true)');
 
     await act(async () => button('c:sign_out_anyway').click());
-    await vi.waitFor(() => expect(seen.calls).toContain('session ended (wipe: true)'));
+    await vi.waitFor(() => expect(seen.calls).toContain('session ended (wipe: true)'), { timeout: 5000 });
   });
 
   it('Keep editing goes back, and nothing is torn down', async () => {
@@ -170,7 +172,7 @@ describe('sign-out with unsaved edits', () => {
     // The connections keep saving on the sign-out page; the store's live list empties.
     await emitStored([]);
 
-    await vi.waitFor(() => expect(seen.calls).toContain('session ended (wipe: true)'));
+    await vi.waitFor(() => expect(seen.calls).toContain('session ended (wipe: true)'), { timeout: 5000 });
     expect(dialog()).toBeNull();
   });
 

@@ -174,6 +174,15 @@ export interface ConfigStringArrays {
  * The config an app must satisfy (`satisfies RequiredConfig` in its default.ts). The generic keeps
  * arrays as literal tuples (`['organization']`, not `readonly string[]`) so Drizzle v1 gets strict enums.
  */
+/** The placement surfaces that exist once per app; the rest belong to a channel. */
+export type SingletonSlot = 'account.settings' | 'home.sections' | 'user.profile' | 'system.tabs';
+
+/** A channel's own placement surfaces; the only ones a channel row can store an arrangement for. */
+export type ChannelSlotOf<C extends string> = `${C}.settings` | `${C}.tabs`;
+
+/** Every placement surface of an app whose channel types are `C`. */
+export type SlotOf<C extends string> = ChannelSlotOf<C> | SingletonSlot;
+
 export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArrays> {
   entityTypes: T['entityTypes'];
   channelEntityTypes: T['channelEntityTypes'];
@@ -184,6 +193,11 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   resourceTypes: T['resourceTypes'];
   productEmbeddings: readonly ProductEmbedding<T['productEntityTypes'][number] & string>[];
   menuStructure: readonly MenuStructureItem<T['channelEntityTypes'][number] & string>[];
+  /**
+   * Placement ids per surface, in display order. A listed surface is total: an id left out has no
+   * placement there. An unlisted surface renders every registered placement in its declared order.
+   */
+  surfaces: Partial<Record<SlotOf<T['channelEntityTypes'][number] & string>, readonly string[]>>;
   attachmentUploadTargets: readonly (T['channelEntityTypes'][number] & string)[];
   memberStatProductTypes: readonly (T['productEntityTypes'][number] & string)[];
   defaultRestrictions: {

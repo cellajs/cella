@@ -1,6 +1,7 @@
 import { ChevronDownIcon, ChevronUpIcon, GripVerticalIcon, LockIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ChannelSlot } from 'shared/placements';
 import type { SlotToolsConfig, ToolsConfig } from 'shared/tools-config';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
@@ -54,7 +55,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
 
-  const slot = `${entity.entityType}.tabs`;
+  const slot = `${entity.entityType}.tabs` as ChannelSlot;
   const slotConfig = entity.toolsConfig?.[slot];
   const hidden = new Set(slotConfig?.hidden ?? []);
 

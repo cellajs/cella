@@ -2187,19 +2187,38 @@
           },
           "toolsConfig": {
             "type": "object",
-            "additionalProperties": {
-              "type": "object",
-              "properties": {
-                "order": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
+            "properties": {
+              "organization.settings": {
+                "type": "object",
+                "properties": {
+                  "order": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "hidden": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
                   }
-                },
-                "hidden": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
+                }
+              },
+              "organization.tabs": {
+                "type": "object",
+                "properties": {
+                  "order": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "hidden": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
                   }
                 }
               }
@@ -10542,19 +10561,38 @@
                   },
                   "toolsConfig": {
                     "type": "object",
-                    "additionalProperties": {
-                      "type": "object",
-                      "properties": {
-                        "order": {
-                          "type": "array",
-                          "items": {
-                            "type": "string"
+                    "properties": {
+                      "organization.settings": {
+                        "type": "object",
+                        "properties": {
+                          "order": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "hidden": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
                           }
-                        },
-                        "hidden": {
-                          "type": "array",
-                          "items": {
-                            "type": "string"
+                        }
+                      },
+                      "organization.tabs": {
+                        "type": "object",
+                        "properties": {
+                          "order": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "hidden": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
                           }
                         }
                       }
