@@ -8,7 +8,7 @@ import { appConfig } from 'shared';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
 import { useMountedState } from '~/hooks/use-mounted-state';
-import { channelListQueriesByType } from '~/list-queries-config';
+import { getChannelListQueries } from '~/lib/entity-modules';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -82,7 +82,7 @@ export function AppSearch() {
   const userQ = useInfiniteQuery({ ...usersListQueryOptions({ q: debouncedSearchValue }), enabled: debouncedSearchValue.length > 0 });
 
   const channelResults = Object.fromEntries(
-    Object.entries(channelListQueriesByType).map(([entityType, queryOptions]) => [
+    Object.entries(getChannelListQueries()).map(([entityType, queryOptions]) => [
       entityType,
       useInfiniteQuery({
         // biome-ignore lint/suspicious/noExplicitAny: queryOptions union covers heterogeneous entity types.

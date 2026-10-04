@@ -37,7 +37,8 @@ Pick the kind ([Architecture](./ARCHITECTURE.md#entity-hierarchy-model)): a **ch
 
 - `frontend/src/modules/<name>/query.ts`, copy [attachment/query.ts](../frontend/src/modules/attachment/query.ts): `createEntityKeys<Filters>('<name>')` and `registerEntityQueryKeys('<name>', keys, deltaFetch)` (missing registration throws on SSE dispatch). Lists filtered on a row column can add `registerEqualityFilterKeys('<name>', ['<column>'])`, so a new row refetches only the lists it can belong to. Query options (canonical, infinite, detail) and mutations via `createOptimisticEntity`. Add `addMutationRegistrar(...)` so paused offline mutations resume after reload. Build the stx when the edit is made and pass it in the mutation's variables, as the attachment mutations do: an update that pauses offline is then sent as a replay (`stx.replayed`), which the query client sets. A product with a collaborative description registers the columns derived from it with `registerYjsOwnedFields` and `registerDescriptionDerivation`, as the attachment does.
 - Add `types.ts`, `search-params-schemas.ts`, and the UI components. Then `pnpm check` regenerates SDK types, client functions, and Zod schemas.
-- [list-queries-config.tsx](../frontend/src/list-queries-config.tsx): import the canonical options (the eager import triggers self-registration) and push them in `buildEntitySyncQueries` under the parent channel. Add a route file under `frontend/src/routes/`.
+- `<name>-module.ts`: declare the entity in `defineFrontendModule` as `product: { entityType: '<name>' }`, with `memberStatIcon` when `memberStatProductTypes` lists it and `hiddenMemberCount: true` to keep its members-table column collapsed. `frontend/src/modules.ts` glob-imports every module file before first render.
+- [entity-sync-queries.ts](../frontend/src/entity-sync-queries.ts) (pinned): import the canonical options (the eager import triggers self-registration) and push them in `buildEntitySyncQueries` under the parent channel. Add a route file under `frontend/src/routes/`.
 
 ### Verify
 
@@ -50,7 +51,7 @@ Same flow, copying from `organization`:
 - Hierarchy: `.channel('<name>', { parent, roles })`. Roles must exist in the role registry.
 - Policies: elevation and self rows ([Permissions](./PERMISSIONS.md#the-policy-consulted)).
 - Table: spread `channelColumns('<name>')` plus a `unique(tenantId, id)` compound (composite-FK target). No RLS policies, no `seq`/`stx`.
-- Frontend: register in `channelListQueriesByType` in [list-queries-config.tsx](../frontend/src/list-queries-config.tsx) and add the entity to `menuStructure` in [config.default.ts](../shared/config/config.default.ts). Skip `buildEntitySyncQueries`.
+- Frontend: declare the entity in `<name>-module.tsx` as `channel: { entityType: '<name>', menuSection, listQuery }` (copy [organization-module.tsx](../frontend/src/modules/organization/organization-module.tsx); wrap the query factory in an arrow so the ESM binding is read at call time), add a `channelRouteConfig` entry in the pinned [routes-config.tsx](../frontend/src/routes-config.tsx), and add the entity to `menuStructure` in [config.default.ts](../shared/config/config.default.ts). Skip `buildEntitySyncQueries`.
 
 ## Optional capabilities
 

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { appConfig } from 'shared';
-import { menuSectionsSchema } from '~/menu-config';
+import { getMenuSection } from '~/lib/entity-modules';
 import { Confetti } from '~/modules/home/onboarding/confetti';
 import { useUpdateSelfFlagsMutation } from '~/modules/me/query';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
@@ -29,7 +29,7 @@ export function OnboardingCompleted() {
   const hasOrganization = organizations.length > 0;
 
   // Without an organization, offer the same create action the menu offers; otherwise the text points to the navigation.
-  const createOrganization = menuSectionsSchema.organization?.createAction;
+  const createOrganization = getMenuSection('organization')?.createAction;
 
   useEffect(() => {
     // Run once, after the org list has either resolved or finished fetching.

@@ -6,7 +6,7 @@ import { createElement, Fragment, type ReactElement, type ReactNode } from 'reac
 import { renderToStaticMarkup } from 'react-dom/server';
 import { appConfig, hierarchy, isChannel } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { hiddenMemberCountColumns } from '~/members-config';
+import { isMemberCountHidden } from '~/lib/entity-modules';
 import type { EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
 
 /** The options of the ellipsis cell rendered last. */
@@ -293,7 +293,7 @@ describe('csv export', () => {
   // Members show the stat product types, then the sub-channels, minus the hidden ones.
   const statTypes: readonly string[] = appConfig.memberStatProductTypes;
   const memberCountTypes = [...statTypes, ...orgDescendants.filter((type) => isChannel(type) && type !== 'organization')].filter(
-    (type) => !(hiddenMemberCountColumns as readonly string[]).includes(type),
+    (type) => !isMemberCountHidden(type),
   );
   const cells = (types: readonly string[], cell: (type: string) => string) => types.map(cell).join(',');
 

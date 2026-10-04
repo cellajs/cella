@@ -6,11 +6,11 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
+import { navItems } from '~/modules/navigation/nav-items';
 import { navSheetClassName } from '~/modules/navigation/nav-sheet-constants';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, NavItemId, TriggerNavItemFn } from '~/modules/navigation/types';
-import { navItems } from '~/modules/navigation/nav-items';
 
 type FloatingNavConfig = { left: NavItemId[]; right: NavItemId[]; ownerPathname?: string };
 

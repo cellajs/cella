@@ -1,5 +1,5 @@
 import { appConfig, type ChannelEntityType } from 'shared';
-import { channelListQueriesByType } from '~/list-queries-config';
+import { getChannelListQuery } from '~/lib/entity-modules';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { queryClient } from '~/query/query-client';
@@ -22,7 +22,7 @@ export function buildMenuFromCache(userId: string): UserMenu {
   const byType = new Map<ChannelEntityType, UserMenuItem[]>();
 
   for (const entityType of menuEntityTypes) {
-    const factory = channelListQueriesByType[entityType];
+    const factory = getChannelListQuery(entityType);
     byType.set(entityType, factory ? menuItemsFromList(queryClient.getQueryData(factory({ relatableUserId: userId }).queryKey)) : []);
   }
 
