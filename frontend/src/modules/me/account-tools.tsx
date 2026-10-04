@@ -4,7 +4,7 @@ import { BuildingIcon, CheckIcon, TrashIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startOAuthConnect, type User } from 'sdk';
-import { appConfig, type EnabledOAuthProvider } from 'shared';
+import { appConfig, type EnabledOAuthProvider, isStrategyEnabled } from 'shared';
 import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
 import { ssoEntryQueryOptions, ssoStartUrl } from '~/modules/auth/sso-providers';
 import { withStepUp } from '~/modules/auth/step-up';
@@ -27,8 +27,6 @@ import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { useCurrentUser } from '~/modules/user/user-store';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
-
-const enabledStrategies = appConfig.enabledAuthStrategies;
 
 const cardClass = tw('mx-auto sm:w-full');
 
@@ -115,7 +113,7 @@ export function AccountAuthenticationCard() {
       <div className="text-sm">
         {
           /* MFA */
-          enabledStrategies.includes('passkey') && enabledStrategies.includes('totp') && (
+          isStrategyEnabled('passkey') && isStrategyEnabled('totp') && (
             <>
               <HelpText content={t('c:mfa.text')}>
                 <div className="flex items-center">
@@ -133,7 +131,7 @@ export function AccountAuthenticationCard() {
         }
         {
           /* Passkeys */
-          enabledStrategies.includes('passkey') && (
+          isStrategyEnabled('passkey') && (
             <>
               <HelpText content={t('c:passkey.text')}>
                 <p className="font-semibold">{t('c:passkeys')}</p>
@@ -145,7 +143,7 @@ export function AccountAuthenticationCard() {
 
         {
           /* TOTP */
-          enabledStrategies.includes('totp') && (
+          isStrategyEnabled('totp') && (
             <>
               <HelpText content={t('c:totp.text')}>
                 <p className="font-semibold">{t('c:totp')}</p>
@@ -157,7 +155,7 @@ export function AccountAuthenticationCard() {
 
         {
           /* OAuth */
-          enabledStrategies.includes('oauth') && (
+          isStrategyEnabled('oauth') && (
             <>
               <HelpText content={t('c:oauth.text')}>
                 <p className="font-semibold">{t('c:oauth')}</p>
@@ -207,7 +205,7 @@ export function AccountAuthenticationCard() {
 
         {
           /* Institution accounts: the connections of the organizations the user belongs to */
-          enabledStrategies.includes('sso') && institutions.length > 0 && (
+          isStrategyEnabled('sso') && institutions.length > 0 && (
             <>
               <HelpText content={t('c:institution_accounts.text')}>
                 <p className="font-semibold">{t('c:institution_accounts')}</p>

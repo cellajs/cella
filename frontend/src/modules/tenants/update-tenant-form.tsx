@@ -3,7 +3,7 @@ import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Tenant, UpdateTenantData } from 'sdk';
 import { zUpdateTenantBody } from 'sdk/zod.gen';
-import { appConfig } from 'shared';
+import { appConfig, isStrategyEnabled } from 'shared';
 import type { z } from 'zod';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import type { TKey } from '~/lib/i18n-locales';
@@ -35,12 +35,12 @@ type SignInMethod = NonNullable<NonNullable<UpdateTenantData['body']>['authStrat
 
 /** The sign-in methods a tenant may require: the enabled first factors, each OAuth provider and each federation (labelled by config). */
 const signInMethods: { value: SignInMethod; labelKey?: TKey; label?: string }[] = [
-  ...(appConfig.enabledAuthStrategies.includes('passkey') ? [{ value: 'passkey' as SignInMethod, labelKey: 'c:passkey' as TKey }] : []),
-  ...(appConfig.enabledAuthStrategies.includes('magic') ? [{ value: 'magic' as SignInMethod, labelKey: 'c:magic' as TKey }] : []),
-  ...(appConfig.enabledAuthStrategies.includes('oauth')
+  ...(isStrategyEnabled('passkey') ? [{ value: 'passkey' as SignInMethod, labelKey: 'c:passkey' as TKey }] : []),
+  ...(isStrategyEnabled('magic') ? [{ value: 'magic' as SignInMethod, labelKey: 'c:magic' as TKey }] : []),
+  ...(isStrategyEnabled('oauth')
     ? appConfig.enabledOAuthProviders.map((provider) => ({ value: provider as SignInMethod, labelKey: `c:${provider}` as TKey }))
     : []),
-  ...(appConfig.enabledAuthStrategies.includes('sso')
+  ...(isStrategyEnabled('sso')
     ? Object.entries(appConfig.federations).map(([key, federation]) => ({ value: key as SignInMethod, label: federation.label }))
     : []),
 ];

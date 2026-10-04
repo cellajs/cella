@@ -1,6 +1,6 @@
 import type { z } from '@hono/zod-openapi';
 import type { EnabledOAuthProvider } from 'shared';
-import { appConfig } from 'shared';
+import { appConfig, isStrategyEnabled } from 'shared';
 import type { UserContext } from '#/core/context';
 import { isFederationConfigured, isFederationKey } from '#/modules/auth/sso/helpers/federations';
 import { findActiveSsoConnectionsByTenants } from '#/modules/connections/connections-queries';
@@ -24,7 +24,7 @@ export async function getMyAuthOp(ctx: UserContext, { sessions }: GetMyAuthOpts)
 
   // The institutions of the tenants the user belongs to, flagged with whether the account is connected to each.
   const tenantIds = [...new Set(ctx.var.memberships.map(({ tenantId }) => tenantId))];
-  const connections = appConfig.enabledAuthStrategies.includes('sso') ? await findActiveSsoConnectionsByTenants({ var: { db } }, { tenantIds }) : [];
+  const connections = isStrategyEnabled('sso') ? await findActiveSsoConnectionsByTenants({ var: { db } }, { tenantIds }) : [];
   const institutions = connections
     .filter((connection) => isFederationKey(connection.issuer) && isFederationConfigured(connection.issuer))
     .map((connection) => ({

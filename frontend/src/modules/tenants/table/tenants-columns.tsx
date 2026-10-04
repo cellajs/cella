@@ -4,7 +4,7 @@ import { PencilIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Tenant } from 'sdk';
-import { appConfig } from 'shared';
+import { isStrategyEnabled } from 'shared';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -26,7 +26,7 @@ export const openUpdateSheet = (tenant: Tenant, triggerRef: TriggerRef) =>
     resource: 'c:tenant',
     triggerRef,
     children: <UpdateTenantForm tenant={tenant} sheet />,
-    after: appConfig.enabledAuthStrategies.includes('sso') ? (
+    after: isStrategyEnabled('sso') ? (
       <Card className="mb-20">
         <CardHeader>
           <CardTitle>{i18n.t('c:connection_other')}</CardTitle>

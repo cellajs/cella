@@ -1,4 +1,4 @@
-import { appConfig } from 'shared';
+import { isStrategyEnabled } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb, type DbOrTx, type Tx } from '#/db/db';
 import { getHeldFactors } from '#/modules/auth/mfa/mfa-queries';
@@ -24,7 +24,7 @@ export const mfaFactorRules = {
 
   /** Refuses turning MFA on unless both methods are enabled for the app and enrolled by the user. */
   async assertCanEnable(tx: DbOrTx, userId: string) {
-    const missing = (['passkey', 'totp'] as const).find((method) => !appConfig.enabledAuthStrategies.includes(method));
+    const missing = (['passkey', 'totp'] as const).find((method) => !isStrategyEnabled(method));
     if (missing) throw new AppError(400, 'forbidden_strategy', 'warn', { meta: { strategy: missing } });
 
     const { passkey, totp } = await getHeldFactors({ var: { db: tx } }, { userId });

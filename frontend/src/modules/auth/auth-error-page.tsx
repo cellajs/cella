@@ -3,13 +3,13 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { LogInIcon, MailIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { sendSsoRecoveryLink } from 'sdk';
-import { appConfig } from 'shared';
+import { isStrategyEnabled } from 'shared';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { ErrorNotice } from '~/modules/common/error-notice';
 import { ResendInvitationButton } from '~/modules/memberships/resend-invitation-button';
 import { Button } from '~/modules/ui/button';
 
-const magicLinkEnabled = (appConfig.enabledAuthStrategies as readonly string[]).includes('magic');
+const magicLinkEnabled = isStrategyEnabled('magic');
 
 export function AuthErrorPage() {
   const { t } = useTranslation();

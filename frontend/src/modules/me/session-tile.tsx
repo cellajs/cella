@@ -1,13 +1,16 @@
 import { ChevronDownIcon, MonitorIcon, ShieldCheckIcon, SmartphoneIcon, UnplugIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
+import { appConfig, type FederationKey } from 'shared';
 import type { Session } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
+
+/** The federation keys the app declares. An app without federations types the record by `string`, which names none. */
+type DeclaredFederation = string extends FederationKey ? never : FederationKey;
 
 interface SessionTileProps {
   session: Session;
@@ -23,8 +26,8 @@ export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending 
   /** A federation names itself in config; every other method has a locale key. */
   const strategyLabel = (strategy: NonNullable<Session['authStrategy']>) =>
     strategy in appConfig.federations
-      ? appConfig.federations[strategy as keyof typeof appConfig.federations].label
-      : t(`c:${strategy as Exclude<typeof strategy, keyof typeof appConfig.federations>}`);
+      ? appConfig.federations[strategy as FederationKey].label
+      : t(`c:${strategy as Exclude<typeof strategy, DeclaredFederation>}`);
 
   const [expanded, setExpanded] = useState(false);
 
