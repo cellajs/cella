@@ -14,6 +14,9 @@ export interface FloatingNavItem {
   visible?: boolean;
   /** Defaults to 'right'; with several items the first visible one defaults to 'left'. */
   direction?: 'left' | 'right';
+  /** Text shown after the icon while `labelVisible`, expanding the circle into a pill (e.g. a first-visit hint). */
+  label?: string;
+  labelVisible?: boolean;
 }
 
 interface FloatingNavButtonProps {
@@ -23,9 +26,20 @@ interface FloatingNavButtonProps {
   ariaLabel?: string;
   className?: string;
   direction?: 'left' | 'right';
+  label?: string;
+  labelVisible?: boolean;
 }
 
-export function FloatingNavButton({ id, icon: Icon, onClick, ariaLabel, className, direction = 'right' }: FloatingNavButtonProps) {
+export function FloatingNavButton({
+  id,
+  icon: Icon,
+  onClick,
+  ariaLabel,
+  className,
+  direction = 'right',
+  label,
+  labelVisible,
+}: FloatingNavButtonProps) {
   // A tap that interrupts a momentum scroll cancels the fling, and the browser suppresses its click,
   // so touch taps run on touchend. preventDefault there stops the synthesized click entirely, since
   // it would otherwise hit-test against whatever onClick just mounted (e.g. a drawer overlay) and
@@ -63,7 +77,9 @@ export function FloatingNavButton({ id, icon: Icon, onClick, ariaLabel, classNam
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchCancel}
       className={cn(
-        'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 flex size-14 items-center justify-center rounded-full bg-secondary opacity-100 shadow-xl transition-[translate,scale,opacity] duration-300 ease-in-out hover:bg-secondary active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
+        'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 flex items-center rounded-full bg-secondary opacity-100 shadow-xl transition-[translate,scale,opacity] duration-300 ease-in-out hover:bg-secondary active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
+        // With a label the width is content-driven: the icon keeps its centered-in-circle offset via pl-4, the pill grows to the right
+        label ? 'h-14 w-auto min-w-14 justify-start gap-0 pl-4' : 'size-14 justify-center',
         // Animate out while the floating selection action bar is shown; hiding moves by translate, which skips layout
         'group-[.selection-active]/body:pointer-events-none group-[.selection-active]/body:translate-y-16 group-[.selection-active]/body:scale-50 group-[.selection-active]/body:opacity-0',
         className,
@@ -71,6 +87,26 @@ export function FloatingNavButton({ id, icon: Icon, onClick, ariaLabel, classNam
       aria-label={ariaLabel ?? 'Navigate'}
     >
       <Icon className="size-6" />
+      {label && (
+        // 0fr -> 1fr animates the pill width without measuring the text; the inner span carries the collapsible padding
+        <span
+          className={cn(
+            'grid grid-cols-[0fr] transition-[grid-template-columns] duration-300 ease-in-out motion-reduce:transition-none',
+            labelVisible && 'grid-cols-[1fr] delay-150',
+          )}
+        >
+          <span className="overflow-hidden">
+            <span
+              className={cn(
+                'block -translate-x-2 pr-4 pl-2 font-semibold text-xs uppercase tracking-widest opacity-0 transition-[opacity,translate] duration-300 ease-in-out motion-reduce:transition-none',
+                labelVisible && 'translate-x-0 opacity-100 delay-150',
+              )}
+            >
+              {label}
+            </span>
+          </span>
+        </span>
+      )}
     </Button>
   );
 }

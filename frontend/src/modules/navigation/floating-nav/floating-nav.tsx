@@ -1,4 +1,4 @@
-import { type RefObject, useEffect } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
@@ -23,6 +23,8 @@ function trackViewportBottom(nav: HTMLElement | null) {
   return subscribeViewportBottom(apply);
 }
 
+const LABEL_COLLAPSE_MS = 350; // Label collapse duration (300ms) plus margin, so buttons hide only once the text is gone
+
 export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-nav', resetTrigger }: FloatingNavProps) {
   const isMobile = useBreakpointBelow('sm');
   const { isVisible: showButtons, reset } = useScrollVisibility(isMobile, scrollContainerRef);
@@ -31,6 +33,26 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
   useEffect(() => {
     if (resetTrigger !== undefined) reset();
   }, [resetTrigger, reset]);
+
+  // Hold buttons on screen while an expanded label collapses, so the text animates out before the buttons drop away
+  const hasExpandedLabel = items.some((item) => item.label && item.labelVisible);
+  const [labelHold, setLabelHold] = useState(false);
+  const prevExpanded = useRef(hasExpandedLabel);
+  const showButtonsRef = useRef(showButtons);
+  showButtonsRef.current = showButtons;
+  useEffect(() => {
+    const wasExpanded = prevExpanded.current;
+    prevExpanded.current = hasExpandedLabel;
+    if (hasExpandedLabel) {
+      setLabelHold(false);
+      return;
+    }
+    // Only hold when the collapse starts from a visible state; a label that expanded off-screen never flashes the buttons
+    if (!wasExpanded || !showButtonsRef.current) return;
+    setLabelHold(true);
+    const timeout = setTimeout(() => setLabelHold(false), LABEL_COLLAPSE_MS);
+    return () => clearTimeout(timeout);
+  }, [hasExpandedLabel]);
 
   // Count items that could be visible (for body class and empty check)
   const visibleItems = items.filter((item) => item.visible !== false);
@@ -50,8 +72,8 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
   return (
     <nav id="floating-nav" ref={trackViewportBottom}>
       {items.map((item) => {
-        // Combine global showButtons with individual item visibility
-        const isItemVisible = showButtons && item.visible !== false;
+        // Combine global showButtons (plus the label-collapse hold) with individual item visibility
+        const isItemVisible = (showButtons || labelHold) && item.visible !== false;
         return (
           <FloatingNavButton
             key={item.id}
@@ -61,6 +83,8 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
             onClick={item.onClick}
             ariaLabel={item.ariaLabel}
             direction={item.direction ?? 'right'}
+            label={item.label}
+            labelVisible={item.labelVisible}
           />
         );
       })}
