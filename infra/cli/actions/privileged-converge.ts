@@ -2,12 +2,13 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
+import { menuPath } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
-import { pc, warningMark } from '../../lib/utils/cli-output';
+import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
@@ -52,7 +53,7 @@ export interface PrivilegedConvergeResult {
  */
 export async function runPrivilegedConverge(context: InfraContext, opts: PrivilegedConvergeOptions): Promise<PrivilegedConvergeResult> {
   if (context.state !== 'bootstrapped') {
-    console.error(`${warningMark} This action requires a fully bootstrapped stack (state=${context.state}). Run Resume first.`);
+    console.error(`${warningMark} This action requires a fully bootstrapped stack (state=${context.state}). Run "${menuPath('resume')}" first.`);
     process.exit(1);
   }
 
@@ -213,7 +214,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
           ),
         );
       } else if (result.errors.length === 0) {
-        console.info(`${pc.green('✓')} live grants and privileges match the program`);
+        console.info(`${checkMark} live grants and privileges match the program`);
       }
     }
     if (completed && opts.afterUp) {

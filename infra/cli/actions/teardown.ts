@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
+import { actionLabel } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
@@ -21,7 +22,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   const mode = context.environment;
   const confirmToken = `${appConfig.slug}-${mode}`;
 
-  console.info(`\n${pc.bold(pc.redBright('Teardown'))} ${pc.dim(`(${confirmToken})`)}\n`);
+  console.info(`\n${pc.bold(pc.redBright(actionLabel('teardown')))} ${pc.dim(`(${confirmToken})`)}\n`);
   console.info(pc.dim('Destroys every Pulumi-managed resource of this stack (VMs, LB, buckets, DB…), then optionally deletes the IAM principals.'));
   if (mode === 'production') {
     console.warn(

@@ -1,9 +1,11 @@
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
+import { actionLabel } from '../../lib/operator-actions';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
+import { isPromptAbort } from '../prompts/abort';
 import type { InfraContext } from '../shared';
 import { detectPublicIp, prepareClose, prepareExpose, readDbCa, readPublicDsn, removeExposureOverlay } from './db-exposure';
 import { runPrivilegedConverge } from './privileged-converge';
@@ -18,10 +20,10 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
     process.exit(1);
   }
 
-  console.info(pc.dim('\nSeed database: expose to your IP -> run backend seeds -> close the endpoint.\n'));
+  console.info(pc.dim(`\n${actionLabel('seed-db')}: open the endpoint to your IP -> run backend seeds -> close the endpoint.\n`));
   const detected = await detectPublicIp();
   if (!detected) {
-    console.error(`${crossMark} Could not detect your public IP; use "Expose database publicly" + manual seeding instead.`);
+    console.error(`${crossMark} Could not detect your public IP; use "${actionLabel('expose-db')}" + manual seeding instead.`);
     process.exit(1);
   }
   console.info(`Seeds run from this machine over a temporary endpoint restricted to ${pc.cyan(`${detected}/32`)}.`);
@@ -35,11 +37,12 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
     operation: 'seed-db',
     prepare: prepareExpose(context, `${detected}/32`),
   }).catch((error: unknown) => {
+    if (isPromptAbort(error)) throw error;
     console.error(`${crossMark} exposing the database stopped: ${errorMessage(error)}`);
     process.exit(1);
   });
   if (!completed) {
-    console.error(`${crossMark} converge did not complete; run "Stop public DB exposure" to ensure it is closed.`);
+    console.error(`${crossMark} converge did not complete; run "${actionLabel('unexpose-db')}" to ensure it is closed.`);
     process.exit(1);
   }
 
@@ -72,6 +75,6 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
       },
     );
     if (closed) console.info(`${checkMark} Public endpoint closed; database is private-only again.`);
-    else console.error(`${crossMark} Run "Stop public DB exposure" to close it manually.`);
+    else console.error(`${crossMark} Run "${actionLabel('unexpose-db')}" to close it manually.`);
   }
 }

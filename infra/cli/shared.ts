@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
 import type { EngineConfig } from '../config/engine-config';
+import { menuPath, type OperatorActionId } from '../lib/operator-actions';
 import type { KeyPair } from '../lib/scaleway/operator-identity';
 import { controlActor, lockKey, makeControlClient, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
 import { generatePassphrase, verifyStackPassphrase } from '../lib/stack/pulumi-passphrase';
@@ -12,24 +13,8 @@ import { maskedSecret } from './prompts/masked-secret';
 
 type AppConfigType = EngineConfig;
 
-/** Infra CLI operation modes */
-export type CliMode =
-  | 'status'
-  | 'resume'
-  | 'rotate'
-  | 'rotate-passphrase'
-  | 'fetch-admin-key'
-  | 'store-passphrase'
-  | 'apply'
-  | 'preview'
-  | 'secrets'
-  | 'reset-database'
-  | 'seed-db'
-  | 'expose-db'
-  | 'unexpose-db'
-  | 'unlock'
-  | 'teardown'
-  | 'geoip-refresh';
+/** Infra CLI operation modes: the ids of the operator action table. */
+export type CliMode = OperatorActionId;
 
 /** Stack information and state, passed to every CLI action handler. */
 export interface InfraContext extends StackContext {
@@ -152,7 +137,7 @@ export function pulumiLoginAndSelect(infraDir: string, env: NodeJS.ProcessEnv, a
   const login = spawnSync('pulumi', ['login', pulumiLoginUrl(appConfig)], { cwd: infraDir, env, stdio: 'inherit' });
   if (login.status !== 0) {
     console.error(
-      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits only the admin and CI deploy applications: put the admin application's key in infra/.env.<mode> as SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY (Manage keys & secrets → Fetch admin application key).`,
+      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits only the admin and CI deploy applications: put the admin application's key in infra/.env.<mode> as SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY (${menuPath('fetch-admin-key')}).`,
     );
     process.exit(login.status ?? 1);
   }
@@ -206,7 +191,7 @@ export async function acquireStackLockOrExit(opts: {
     console.error(
       `${warningMark} Stack ${opts.stack} is still locked by ${pc.cyan(result.held.owner)} (operation: ${result.held.operation}, since ${result.held.acquiredAt}).`,
     );
-    console.error(`  If that run is dead, clear it with the CLI "Unlock" action or remove s3://${bucket}/${key}.`);
+    console.error(`  If that run is dead, clear it with "${menuPath('unlock')}" in the CLI or remove s3://${bucket}/${key}.`);
     process.exit(1);
   }
   const uninstall = installSignalRelease(result.lease, { log: (msg) => console.warn(`${warningMark} ${msg}`) });

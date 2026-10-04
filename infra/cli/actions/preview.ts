@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { actionLabel, menuPath } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
@@ -16,7 +17,9 @@ import { type InfraContext, keyPairOrPrompt, pulumiLoginAndSelect, resolveVerifi
  */
 export async function runPreview(context: InfraContext): Promise<void> {
   if (context.state !== 'bootstrapped') {
-    console.error(`${warningMark} "Preview" requires a fully bootstrapped stack (state=${context.state}). Run Resume first.`);
+    console.error(
+      `${warningMark} "${actionLabel('preview')}" requires a fully bootstrapped stack (state=${context.state}). Run "${menuPath('resume')}" first.`,
+    );
     process.exit(1);
   }
   console.info(pc.dim('\nPreview: read-only `pulumi preview` with a Scaleway key (supplied via env). No changes are made.\n'));

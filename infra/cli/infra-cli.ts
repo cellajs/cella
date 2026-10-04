@@ -2,10 +2,11 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { select } from '@inquirer/prompts';
 import { dbExposureConfigured } from '../lib/db-public-endpoint';
+import { CATEGORY_LABELS } from '../lib/operator-actions';
 import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
 import { detectComputeDeferred, pickStackShort } from '../lib/stack/bootstrap-stack-state';
 import { loadStackContext } from '../lib/stack/stack-context';
-import { failWithHint, pc, printHeader, warningMark, withSpinner } from '../lib/utils/cli-output';
+import { crossMark, failWithHint, pc, printHeader, warningMark, withSpinner } from '../lib/utils/cli-output';
 import { loadBaseEnvFiles } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
@@ -22,11 +23,16 @@ import { runSetup } from './actions/setup';
 import { runStorePassphrase } from './actions/store-passphrase';
 import { runTeardown } from './actions/teardown';
 import { runUnlock } from './actions/unlock';
-import type { CliMode, InfraContext } from './shared';
+import { actionChoices, BACK, categoryChoices, formatStackLine, type MenuAction, type MenuState, QUIT } from './menu';
+import { installPromptAbortHandler } from './prompts/abort';
+import type { InfraContext } from './shared';
 import { autoAcceptDefaults, nonInteractive } from './shared';
 
 // Load backend/.env before the root fallback so infra child tasks share the app's local config; ambient env keeps precedence over both files.
 loadBaseEnvFiles();
+
+// A Ctrl-C at any prompt below ends the run with one line and releases a held stack lock.
+installPromptAbortHandler();
 
 /**
  * The target mode. INFRA_MODE (or --mode) selects it explicitly, including a fresh stack with no Pulumi.<mode>.yaml yet;
@@ -100,12 +106,12 @@ const context = await loadContext();
   const { frontendApexIssue } = await import('../lib/naming');
   const apexIssue = frontendApexIssue(context.appConfig);
   if (apexIssue) {
-    console.error(`\u2717 ${apexIssue}`);
+    console.error(`${crossMark} ${apexIssue}`);
     process.exit(1);
   }
 }
 
-console.info(`State: ${context.state}${context.state === 'fresh' ? '' : ` (Pulumi.${context.environment}.yaml)`}\n`);
+console.info(`${formatStackLine({ slug: context.appConfig.slug, environment: context.environment, state: context.state })}\n`);
 
 // One line per key misconfiguration (a superseded name in the env file, SCW_OWNER_* holding the admin key, …) before any action trips over it.
 for (const warning of [...context.envWarnings, ...resolveOperatorIdentity().warnings]) console.warn(`${warningMark} ${warning}`);
@@ -119,128 +125,21 @@ if (deferredSince) {
   );
 }
 
-// Two-level action menu: category list, then the actions inside it, with Back returning to the top.
-// The two DB-exposure actions collapse into one status-aware toggle: the local exposure config, plus the live instance's public endpoints when
-// the admin application key reads them in time (undefined otherwise).
-const backChoice = { name: '← Back', value: 'back' as const, description: 'Return to the main menu.' };
-
-async function chooseDatabaseAction(dbExposed: boolean, liveEndpoints: string[] | undefined): Promise<Exclude<CliMode, 'status'> | 'back'> {
-  const strayEndpoint = !dbExposed && (liveEndpoints?.length ?? 0) > 0;
-  const toggle = strayEndpoint
-    ? {
-        name: `Public DB access: ${pc.yellow('OPEN')} with exposure off, close it`,
-        value: 'unexpose-db' as const,
-        description: `The instance serves public endpoint ${liveEndpoints?.join(', ')} although no exposure is configured: delete it.`,
-      }
-    : dbExposed
-      ? {
-          name: `Public DB access: ${pc.yellow('OPEN')}, close it`,
-          value: 'unexpose-db' as const,
-          description: 'Close the temporary public DB endpoint.',
-        }
-      : {
-          name: 'Open temporary public DB access',
-          value: 'expose-db' as const,
-          description: 'Open a temporary DB endpoint locked to your IP (close it after).',
-        };
-  return select<Exclude<CliMode, 'status'> | 'back'>({
-    message: 'Manage database',
-    loop: false,
-    choices: [
-      {
-        name: 'Reset database',
-        value: 'reset-database',
-        description: 'DESTRUCTIVE: wipe and rebuild the database empty (backup first).',
-      },
-      { name: 'Seed database', value: 'seed-db', description: 'Load seed data into a non-production database.' },
-      toggle,
-      backChoice,
-    ],
-  });
-}
-
-async function chooseKeysAction(): Promise<Exclude<CliMode, 'status'> | 'back'> {
-  return select<Exclude<CliMode, 'status'> | 'back'>({
-    message: 'Manage keys & secrets',
-    loop: false,
-    choices: [
-      {
-        name: 'Rotate keys',
-        value: 'rotate',
-        description: 'Replace the CI deploy key and the admin application key with fresh ones (the admin key is rewritten in infra/.env.<mode>).',
-      },
-      {
-        name: 'Rotate passphrase',
-        value: 'rotate-passphrase',
-        description: 'Re-encrypt stack state with a new Pulumi passphrase and sync it.',
-      },
-      {
-        name: 'Manage runtime secrets',
-        value: 'secrets',
-        description: 'List, set, rotate, or delete the runtime secrets.',
-      },
-      {
-        name: 'Fetch admin application key',
-        value: 'fetch-admin-key',
-        description: 'Put the admin application key in infra/.env.<mode> on this machine (needs your Owner API key once).',
-      },
-      {
-        name: 'Store passphrase in keychain',
-        value: 'store-passphrase',
-        description: 'Keep the Pulumi passphrase in the OS keychain; the env file keeps a reference.',
-      },
-      backChoice,
-    ],
-  });
-}
-
-async function chooseStackAction(): Promise<Exclude<CliMode, 'status'> | 'back'> {
-  return select<Exclude<CliMode, 'status'> | 'back'>({
-    message: 'Stack setup',
-    loop: false,
-    choices: [
-      {
-        name: 'Apply infra change',
-        value: 'apply',
-        description: 'Apply privileged changes: registry IAM principals and policies, database, VPC, network (needs your Owner API key).',
-      },
-      {
-        name: 'Preview',
-        value: 'preview',
-        description: 'Dry run of an Apply infra change (a CI deploy applies the same minus VM policy rules). Read-only.',
-      },
-      { name: 'Resume', value: 'resume', description: 'Re-sync config and GitHub secrets, and self-heal missing keys.' },
-      { name: 'Unlock', value: 'unlock', description: 'Clear a stale lock and review the operations an interrupted run left in the Pulumi state.' },
-      {
-        name: 'Refresh GeoIP data',
-        value: 'geoip-refresh',
-        description: "Publish this month's DB-IP databases to the public bucket; API processes pick them up within a day.",
-      },
-      {
-        name: 'Teardown',
-        value: 'teardown',
-        description: 'DESTRUCTIVE: destroy every stack resource, then optionally delete the IAM principals.',
-      },
-      backChoice,
-    ],
-  });
-}
-
-async function chooseAction(ctx: InfraContext): Promise<Exclude<CliMode, 'status'>> {
-  const dbExposed = dbExposureConfigured(ctx.environment, ctx.stackYaml);
+// Two-level action menu: the main menu, then the actions of one submenu, with Back returning to the top. Rows come from cli/menu.ts: a row that
+// cannot run now stays listed with the reason, and the two DB access actions share one row that follows the local exposure config and, when the
+// admin application key reads them in time, the instance's live public endpoints.
+async function chooseAction(ctx: InfraContext): Promise<MenuAction> {
   const { runStatus } = await import('../tasks/status');
+  const state: MenuState = {
+    stackState: ctx.state,
+    environment: ctx.environment,
+    encrypted: !!ctx.stackYaml && /^encryptionsalt:/m.test(ctx.stackYaml),
+    hasAdminKey: !!resolveOperatorIdentity().admin,
+    dbExposed: dbExposureConfigured(ctx.environment, ctx.stackYaml),
+  };
   while (true) {
-    const category = await select<'status' | 'database' | 'keys' | 'stack'>({
-      message: 'How would you like to proceed?',
-      default: 'status',
-      loop: false,
-      choices: [
-        { name: 'Show status', value: 'status', description: 'Health check: what is set up, what is live, and the next step.' },
-        { name: 'Manage database', value: 'database', description: 'Reset, seed, or open temporary public access.' },
-        { name: 'Manage keys & secrets', value: 'keys', description: 'Rotate keys or the passphrase; manage runtime secrets.' },
-        { name: 'Stack setup', value: 'stack', description: 'Apply or preview infra changes, resume, or unlock.' },
-      ],
-    });
+    const category = await select({ message: 'How would you like to proceed?', default: 'status', loop: false, choices: categoryChoices() });
+    if (category === QUIT) process.exit(0);
     // Status is read-only, so it runs in place and returns to the menu.
     if (category === 'status') {
       await runStatus(ctx);
@@ -248,13 +147,13 @@ async function chooseAction(ctx: InfraContext): Promise<Exclude<CliMode, 'status
       continue;
     }
     const liveEndpoints = category === 'database' ? await withSpinner('Reading the database endpoints', () => liveDbEndpoints(ctx)) : undefined;
-    const action =
-      category === 'database'
-        ? await chooseDatabaseAction(dbExposed, liveEndpoints)
-        : category === 'keys'
-          ? await chooseKeysAction()
-          : await chooseStackAction();
-    if (action !== 'back') return action;
+    const action = await select({
+      message: CATEGORY_LABELS[category],
+      loop: false,
+      pageSize: 10,
+      choices: actionChoices(category, { ...state, liveEndpoints }),
+    });
+    if (action !== BACK) return action;
   }
 }
 
@@ -264,7 +163,7 @@ if (context.state === 'bootstrapped' && !nonInteractive()) {
   await printQuickFacts(context);
 }
 
-const mode: Exclude<CliMode, 'status'> = context.state === 'fresh' || nonInteractive() ? 'resume' : await chooseAction(context);
+const mode: MenuAction = context.state === 'fresh' || nonInteractive() ? 'resume' : await chooseAction(context);
 
 if (mode === 'apply') {
   await runApply(context);

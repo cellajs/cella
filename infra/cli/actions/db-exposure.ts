@@ -7,6 +7,7 @@ import { appStores } from '../../config/stores.config';
 import { parseAclInput } from '../../lib/db-exposure-acl';
 import { closePublicEndpoints, dbInstanceUrn, endpointAddress, exposureOverlayPath, publicEndpoints } from '../../lib/db-public-endpoint';
 import { deriveInfra } from '../../lib/naming';
+import { actionLabel } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { createRdbClient, type RdbEndpoint } from '../../lib/scaleway/scaleway-rdb';
 import { pulumiConfigRm, pulumiConfigSet } from '../../lib/stack/pulumi-up';
@@ -15,6 +16,7 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { hardenPublicDsn } from '../../lib/utils/public-dsn';
 import { within } from '../../lib/utils/retry';
+import { isPromptAbort } from '../prompts/abort';
 import type { InfraContext } from '../shared';
 import { printRevokeReminder } from './owner-key';
 import { type PrivilegedConvergeOptions, runPrivilegedConverge } from './privileged-converge';
@@ -179,6 +181,7 @@ async function convergeOrExit(
   try {
     result = await runPrivilegedConverge(context, { operation, ...hooks });
   } catch (error) {
+    if (isPromptAbort(error)) throw error;
     console.error(`${crossMark} ${operation} stopped: ${errorMessage(error)}`);
     process.exit(1);
   }
@@ -191,10 +194,10 @@ async function convergeOrExit(
 
 /**
  * Open the database's public endpoint for scoped operator access: prompt for the client ACL (default the detected /32), converge with the Owner API key, print the admin DSN.
- * The endpoint is internet-reachable but restricted to the ACL; run "Stop public DB exposure" when finished.
+ * The endpoint is internet-reachable but restricted to the ACL; run "Close public DB access" when finished.
  */
 export async function runExposeDatabase(context: InfraContext): Promise<void> {
-  console.info(pc.dim('\nExpose database publicly: add a scoped, temporary public endpoint for operator tasks.\n'));
+  console.info(pc.dim(`\n${actionLabel('expose-db')}: add a scoped, temporary public endpoint for operator tasks.\n`));
 
   const detected = await detectPublicIp();
   const suggestion = detected ? `${detected}/32` : '';
@@ -219,7 +222,7 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
   console.warn(
     `\n${pc.yellow(pc.bold('⚠  This opens an internet-reachable database endpoint'))}, restricted to: ${pc.cyan(acl)}.\n` +
       `  ${pc.dim(`Exposure lives only in the gitignored overlay Pulumi.${context.environment}.exposure.yaml; the committed stack config stays clean.`)}\n` +
-      `  ${pc.dim('A deploy does not remove the endpoint: run "Stop public DB exposure" when done.')}\n`,
+      `  ${pc.dim(`A deploy does not remove the endpoint: run "${actionLabel('unexpose-db')}" when done.`)}\n`,
   );
   if (!(await confirm({ message: 'Proceed with exposing the database?', default: false }))) {
     console.info('Aborted; no changes made.');
@@ -235,7 +238,7 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
   });
 
   if (live && live.endpoints.length === 0) {
-    console.warn(`${warningMark} The up completed, but the instance has no public endpoint. Re-run "Open temporary public DB access".`);
+    console.warn(`${warningMark} The up completed, but the instance has no public endpoint. Re-run "${actionLabel('expose-db')}".`);
   } else if (live) {
     console.info(`${checkMark} Public endpoint ${live.endpoints.map(endpointAddress).join(', ')} is open with ${live.aclRules} ACL rule(s).`);
   }
@@ -253,13 +256,13 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
     if (caPath) console.info(`  ${pc.dim(`Server verification pins the instance CA written to ${caPath} (sslmode=verify-full).`)}`);
     else console.warn(`  ${warningMark} CA output unavailable; DSN left encrypt-only (sslmode=require). Re-run to pick up the CA.`);
   }
-  console.info(`\n  ${pc.bold('When finished, run "Stop public DB exposure" to close it again.')}`);
+  console.info(`\n  ${pc.bold(`When finished, run "${actionLabel('unexpose-db')}" to close it again.`)}`);
   if (ownerKeyPasted) printRevokeReminder();
 }
 
 /** Close the database's public endpoint: delete it over the RDB API, converge without the exposure config, and confirm the instance has none left. */
 export async function runUnexposeDatabase(context: InfraContext): Promise<void> {
-  console.info(pc.dim('\nStop public DB exposure: remove the public endpoint and ACL, return to private-only.\n'));
+  console.info(pc.dim(`\n${actionLabel('unexpose-db')}: remove the public endpoint and ACL, return to private-only.\n`));
   if (!(await confirm({ message: 'Close the public database endpoint now?', default: true }))) {
     console.info('Aborted; no changes made.');
     return;
@@ -275,9 +278,11 @@ export async function runUnexposeDatabase(context: InfraContext): Promise<void> 
   removeExposureOverlay(context.environment);
 
   if (!left) {
-    console.warn(`${warningMark} Could not re-read the instance after the up; the delete before it was confirmed. Check "Show status".`);
+    console.warn(`${warningMark} Could not re-read the instance after the up; the delete before it was confirmed. Check "${actionLabel('status')}".`);
   } else if (left.length > 0) {
-    console.warn(`${warningMark} The instance has public endpoint ${left.map(endpointAddress).join(', ')} again. Re-run "Stop public DB exposure".`);
+    console.warn(
+      `${warningMark} The instance has public endpoint ${left.map(endpointAddress).join(', ')} again. Re-run "${actionLabel('unexpose-db')}".`,
+    );
   } else {
     console.info(`\n${checkMark} ${pc.bold('Public endpoint closed.')} The database is private-only again.`);
   }

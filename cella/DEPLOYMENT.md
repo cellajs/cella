@@ -279,7 +279,7 @@ docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com backend
    IPv4-mapped IPv6 addresses are normalized to the IPv4 range they name.
 
    ```bash
-   pnpm infra   # → "Open temporary public DB access"
+   pnpm infra   # → Manage database → "Open public DB access"
    ```
 
 2. Seed locally:
@@ -291,7 +291,7 @@ docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com backend
 3. **Close the endpoint again** (and revoke a pasted key). A deploy does not close it. The close deletes the public endpoint over the RDB API and re-reads the instance until it has none; the menu offers it whenever the live instance has a public endpoint, and `pnpm infra status` warns about one (`db.publicEndpoint`):
 
    ```bash
-   pnpm infra   # → "Public DB access: OPEN, close it"
+   pnpm infra   # → Manage database → "Close public DB access"
    ```
 
 ### Reset the database
@@ -331,7 +331,7 @@ To put the admin application key on another operator machine, run **Manage keys 
 
 ### Teardown
 
-`pnpm infra` → **Teardown** deletes every resource to stop billing: it takes your Owner API key the way Apply infra change does ([API keys](#credentials)), requires typing `<slug>-<mode>`, runs `pulumi destroy --refresh` under the stack lock, then optionally deletes the stack's IAM principals. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket, operator secret values, and GitHub Environment secrets.
+`pnpm infra` → **Tear down stack** deletes every resource to stop billing: it takes your Owner API key the way Apply infra change does ([API keys](#credentials)), requires typing `<slug>-<mode>`, runs `pulumi destroy --refresh` under the stack lock, then optionally deletes the stack's IAM principals. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket, operator secret values, and GitHub Environment secrets.
 
 > **Clean slate** below is not a teardown: it resets stack tracking to set up a still-running stack again. Live resources stay.
 
