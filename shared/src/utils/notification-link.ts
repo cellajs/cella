@@ -7,7 +7,7 @@ export const notificationLinkPath = '/n';
 /**
  * Search params of the notification link: the subject's location as the backend snapshots it on
  * the notification row (emails and push carry it), plus the inbox row to mark read on open. With
- * `subjectId`, the channel's `notificationSearch` opens the subject itself (a sheet, a scroll target).
+ * `subjectId`, the product's `deepLinkParam` opens the subject itself (a sheet, a scroll target).
  */
 export const notificationLinkSearchSchema = z.object({
   tenantId: z.string(),

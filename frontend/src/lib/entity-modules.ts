@@ -30,6 +30,14 @@ export interface ProductModuleConfig {
   memberStatIcon?: IconComponent;
   /** Keeps this product's member-count column out of the members table until a user toggles it on. */
   hiddenMemberCount?: boolean;
+  /**
+   * Search param that opens one of these rows on the page that lists them: a sheet, a dialog, a
+   * pinned row. A notification deep link sets it to the subject's id; the module that declares it
+   * also declares it in that page's `validateSearch`, or the router strips it.
+   */
+  deepLinkParam?: string;
+  /** Product that hosts this one on screen (a comment in its item); a deep link opens that host, at the notification's context id. */
+  deepLinkHost?: ProductEntityType;
 }
 
 const channels = new Map<ChannelEntityType, ChannelModuleConfig>();
@@ -76,6 +84,16 @@ export function getChannelListQueries(): ChannelListQueryMap {
   }
   listQueries = map;
   return map;
+}
+
+/**
+ * The search params that open this product: its own, and the one of the product that hosts it on
+ * screen. A deep link may send both, since a route that declares neither strips both.
+ */
+export function getProductDeepLink(entityType: ProductEntityType): { param?: string; hostParam?: string } {
+  const product = products.get(entityType);
+  const host = product?.deepLinkHost;
+  return { param: product?.deepLinkParam, hostParam: host ? products.get(host)?.deepLinkParam : undefined };
 }
 
 /** Icon for a product's per-member stat column; the members table falls back to a generic one. */

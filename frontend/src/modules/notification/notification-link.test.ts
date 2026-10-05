@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getNotificationRoute } from '~/modules/notification/notification-link';
 
-const { notificationSearch } = vi.hoisted(() => ({
-  notificationSearch: vi.fn((_notification: Record<string, unknown>): Record<string, string> => ({})),
+const { getProductDeepLink } = vi.hoisted(() => ({
+  getProductDeepLink: vi.fn((): { param?: string; hostParam?: string } => ({})),
 }));
 
-// A channel whose notification search opens a comment's host item, the way an app with threads declares it.
 vi.mock('~/routes-config', () => ({
-  channelRouteConfig: { organization: { path: '/$tenantId/$organizationSlug/organization', paramName: 'organizationSlug', notificationSearch } },
+  channelRouteConfig: { organization: { path: '/$tenantId/$organizationSlug/organization', paramName: 'organizationSlug' } },
 }));
+vi.mock('~/lib/entity-modules', () => ({ getProductDeepLink }));
 
 const target = {
   tenantId: 'tenant1',
@@ -16,19 +16,40 @@ const target = {
   channelId: 'org-1',
   channelType: 'organization' as const,
   entityType: 'attachment' as const,
-  subjectId: 'comment-1',
+  subjectId: 'subject-1',
+  contextId: 'host-1',
 };
 
 describe('getNotificationRoute', () => {
-  beforeEach(() => notificationSearch.mockClear());
+  beforeEach(() => getProductDeepLink.mockReturnValue({}));
 
-  it("hands the channel's notification search the context id", () => {
-    getNotificationRoute({ ...target, contextId: 'post-1' });
-    expect(notificationSearch).toHaveBeenCalledWith({ entityType: 'attachment', subjectId: 'comment-1', contextId: 'post-1' });
+  it("opens the subject on the product's own param", () => {
+    getProductDeepLink.mockReturnValue({ param: 'attachmentDialogId' });
+    expect(getNotificationRoute(target)?.search).toEqual({ attachmentDialogId: 'subject-1' });
   });
 
-  it('hands null when the row has no context (inbox rows carry null)', () => {
-    getNotificationRoute({ ...target, contextId: null });
-    expect(notificationSearch).toHaveBeenCalledWith({ entityType: 'attachment', subjectId: 'comment-1', contextId: null });
+  // A product rendered inside a host (a comment in its item): the host's param, at the context id.
+  it('opens the host at the context id', () => {
+    getProductDeepLink.mockReturnValue({ hostParam: 'itemId' });
+    expect(getNotificationRoute(target)?.search).toEqual({ itemId: 'host-1' });
+  });
+
+  it('leaves the host out when the row has no context (inbox rows carry null)', () => {
+    getProductDeepLink.mockReturnValue({ hostParam: 'itemId' });
+    expect(getNotificationRoute({ ...target, contextId: null })?.search).toEqual({});
+  });
+
+  it('opens nothing for a product whose module declares no deep link', () => {
+    expect(getNotificationRoute(target)?.search).toEqual({});
+  });
+
+  it('routes to the channel, and asks for no param, when the notification names no subject', () => {
+    const route = getNotificationRoute({ ...target, entityType: undefined, subjectId: undefined });
+    expect(route).toEqual({
+      to: '/$tenantId/$organizationSlug/organization',
+      params: { tenantId: 'tenant1', organizationSlug: 'org-1' },
+      search: {},
+    });
+    expect(getProductDeepLink).not.toHaveBeenCalled();
   });
 });
