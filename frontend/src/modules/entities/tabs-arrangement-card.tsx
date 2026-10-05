@@ -1,4 +1,4 @@
-import { ChevronDownIcon, ChevronUpIcon, GripVerticalIcon, LockIcon } from 'lucide-react';
+import { LockIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelSlot } from 'shared/placements';
@@ -7,12 +7,12 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
 import { orderBySlotConfig } from '~/lib/placements';
 import { DataTable } from '~/modules/common/data-table/data-table';
+import { reorderColumn } from '~/modules/common/data-table/reorder-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { HelpText } from '~/modules/common/help-text';
 import { getNavTabCandidates } from '~/modules/common/page/tab-nav';
 import { ToolCard } from '~/modules/common/tool-card';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import { Button } from '~/modules/ui/button';
 import { Switch } from '~/modules/ui/switch';
 import { tw } from '~/utils/tw';
 
@@ -100,7 +100,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
     reorder(ids);
   };
 
-  // The same reorder one step at a time, for the keyboard and for a pointer that cannot drag
+  // The same reorder one step at a time, from the grip's menu, for the keyboard and for a pointer that cannot drag
   const [moveStatus, setMoveStatus] = useState('');
   const moveRow = (fromIdx: number, step: -1 | 1) => {
     const toIdx = fromIdx + step;
@@ -111,19 +111,9 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
     setMoveStatus(t('c:success.move_position', { name: rows[fromIdx].name, position: toIdx + 1, total: rows.length }));
   };
 
-  // A phone has no room for the drag handle beside the move buttons, and the buttons do the same there
-  const dragHandleColumn: ColumnOrColumnGroup<TabRow> = {
-    key: 'drag-handle',
-    name: '',
-    width: 32,
-    maxWidth: 32,
-    cellClass: tw('flex cursor-grab items-center justify-center'),
-    rowDragHandle: true,
-    renderCell: () => <GripVerticalIcon className="size-3.5 text-muted-foreground" />,
-  };
-
   const columns: ColumnOrColumnGroup<TabRow>[] = [
-    ...(isMobile ? [] : [dragHandleColumn]),
+    // A single tab has no order to change, so its grip would open a menu of two dead items
+    ...(rows.length > 1 ? [reorderColumn<TabRow>({ getName: (row) => row.name, onMove: moveRow, rowCount: rows.length })] : []),
     {
       key: 'label',
       name: t('c:resource_name', { resource: t('c:tab') }),
@@ -147,37 +137,6 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
           </div>
         );
       },
-    },
-    {
-      key: 'move',
-      name: t('c:order'),
-      width: isMobile ? 64 : 72,
-      cellClass: tw('flex items-center justify-center'),
-      headerCellClass: 'text-center',
-      renderCell: ({ row, rowIdx }) => (
-        <>
-          <Button
-            variant="ghost"
-            size="micro"
-            className="size-7 aria-disabled:cursor-default aria-disabled:opacity-40"
-            aria-label={`${t('c:move_up')}: ${row.name}`}
-            aria-disabled={rowIdx === 0}
-            onClick={() => moveRow(rowIdx, -1)}
-          >
-            <ChevronUpIcon />
-          </Button>
-          <Button
-            variant="ghost"
-            size="micro"
-            className="size-7 aria-disabled:cursor-default aria-disabled:opacity-40"
-            aria-label={`${t('c:move_down')}: ${row.name}`}
-            aria-disabled={rowIdx === rows.length - 1}
-            onClick={() => moveRow(rowIdx, 1)}
-          >
-            <ChevronDownIcon />
-          </Button>
-        </>
-      ),
     },
     {
       key: 'visible',

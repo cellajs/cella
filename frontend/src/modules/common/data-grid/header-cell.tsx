@@ -37,6 +37,8 @@ interface HeaderCellProps<R, SR> {
   shouldFocusGrid: boolean;
   isCellSelectionEnabled: boolean;
   onColumnsReorder?: Maybe<(sourceColumnKey: string, targetColumnKey: string) => void>;
+  /** Steps this column one place by keyboard, and reports whether a column stood there to swap with. */
+  moveColumn?: Maybe<(column: CalculatedColumn<R, SR>, step: -1 | 1) => boolean>;
   column: CalculatedColumn<R, SR>;
   colSpan: number | undefined;
   rowIdx: number;
@@ -52,6 +54,7 @@ export function HeaderCell<R, SR>({
   onColumnResize,
   onColumnResizeEnd,
   onColumnsReorder,
+  moveColumn,
   sortColumns,
   onSortColumnsChange,
   selectCell,
@@ -174,7 +177,14 @@ export function HeaderCell<R, SR>({
       // prevent scrolling
       event.preventDefault();
       onSort(event.ctrlKey || event.metaKey);
-    } else if (resizable && isCtrlKeyHeldDown(event) && (key === 'ArrowLeft' || key === 'ArrowRight')) {
+    } else if (draggable && moveColumn && isCtrlKeyHeldDown(event) && event.shiftKey && (key === 'ArrowLeft' || key === 'ArrowRight')) {
+      // stopPropagation keeps the grid from navigating to the cell the move passes over
+      event.stopPropagation();
+      event.preventDefault();
+      const step = key === 'ArrowLeft' ? -1 : 1;
+      // The header element is keyed by column, so focus travels with it; the selected cell follows so arrows resume there
+      if (moveColumn(column, step) && isCellSelectionEnabled) selectCell({ idx: column.idx + step, rowIdx });
+    } else if (resizable && !event.shiftKey && isCtrlKeyHeldDown(event) && (key === 'ArrowLeft' || key === 'ArrowRight')) {
       // stopPropagation prevents grid navigation during column resize
       event.stopPropagation();
       const { width } = event.currentTarget.getBoundingClientRect();

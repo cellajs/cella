@@ -733,6 +733,17 @@ export const ShouldReorderColumnOnDragDrop: Story = {
       expect(canvas.getByText('Department')).toBeTruthy();
       expect(canvas.getByText('Role')).toBeTruthy();
     });
+
+    await step('Ctrl+Shift+Arrow should move a column the drag has no key for', async () => {
+      const header = canvas.getAllByRole('columnheader')[0];
+      header.focus();
+      await userEvent.keyboard('{Control>}{Shift>}{ArrowRight}{/Shift}{/Control}');
+      await waitFor(() => {
+        expect(canvas.getByTestId('column-order').textContent).toBe('Last Name,First Name,Email,Department,Role');
+      });
+      // The header keeps focus through the move, so a second press carries the same column on
+      expect(canvas.getAllByRole('columnheader')[1]).toHaveFocus();
+    });
   },
 };
 
