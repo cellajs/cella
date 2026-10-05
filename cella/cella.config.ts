@@ -70,6 +70,8 @@ export default defineConfig({
       'frontend/src/modules/marketing/marketing-config.tsx',
       // The pages and states the accessibility audit covers
       'a11y/scope-config.ts',
+      // The pages and states the marketing screenshots show
+      'cella/skills/screenshots/shots-config.mjs',
       'frontend/src/modules/home/home-page.tsx',
       'json/text-blocks.json',
       'locales/en/about.json',
