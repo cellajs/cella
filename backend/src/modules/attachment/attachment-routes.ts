@@ -19,7 +19,12 @@ import {
   paginationSchema,
   tenantOrgParamSchema,
 } from '#/schemas';
-import { mockAttachmentResponse, mockBatchAttachmentsResponse, mockPaginatedAttachmentsResponse } from './attachment-mocks';
+import {
+  mockAttachmentResponse,
+  mockBatchAttachmentsResponse,
+  mockPaginatedAttachmentsResponse,
+  mockPresignedUrlsResponse,
+} from './attachment-mocks';
 
 const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
   getAttachments: xRoute({
@@ -111,16 +116,7 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
       'Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.',
     request: { params: tenantOrgParamSchema, body: jsonBody(presignedUrlsBodySchema) },
     responses: {
-      200: json('Presigned URLs', batchResponseSchema(presignedUrlItemSchema), {
-        data: [
-          {
-            attachmentId: '01890a5d-ac96-774b-b302-0f3e2ae14a2a',
-            variant: 'thumbnail',
-            url: 'https://bucket.s3.nl-ams.scw.cloud/key?X-Amz-Signature=…',
-          },
-        ],
-        rejectedIds: [],
-      }),
+      200: json('Presigned URLs', batchResponseSchema(presignedUrlItemSchema), mockPresignedUrlsResponse()),
     },
   }),
 });
