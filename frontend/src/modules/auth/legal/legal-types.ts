@@ -1,5 +1,11 @@
 import type { JSX } from 'react';
 
+/**
+ * Id of every subject's first section: the text above the first heading. The page wrapper carries its spy anchor, so
+ * a jump to it brings the subject title into view, the way the docs' `PAGE_SECTION_ID` wraps a page's own heading.
+ */
+export const LEGAL_OVERVIEW_ID = 'overview';
+
 export interface LegalSection {
   id: string;
   label: string | null;
