@@ -1932,6 +1932,7 @@ export const getMe = <ThrowOnError extends boolean = true>(
  *
  * @param {updateMeData} options
  * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
+ * @param {enum=} options.body.contrast - `enum` (optional)
  * @param {string | null=} options.body.description - `string | null` (optional)
  * @param {string | null=} options.body.firstName - `string | null` (optional)
  * @param {string | null=} options.body.lastName - `string | null` (optional)
@@ -2870,6 +2871,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(
  * @param {updateUserData} options
  * @param {string} options.path.id - `string`
  * @param {string | null=} options.body.bannerUrl - `string | null` (optional)
+ * @param {enum=} options.body.contrast - `enum` (optional)
  * @param {string | null=} options.body.description - `string | null` (optional)
  * @param {string | null=} options.body.firstName - `string | null` (optional)
  * @param {string | null=} options.body.lastName - `string | null` (optional)

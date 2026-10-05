@@ -2,6 +2,7 @@ import { InfoIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
+import { useUpdateSelfMutation } from '~/modules/me/query';
 import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-access-switch';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Switch } from '~/modules/ui/switch';
@@ -25,6 +26,17 @@ export function PreferencesContent() {
   const setMode = useUIStore((state) => state.setMode);
   const keepMessages = useUIStore((state) => state.keepMessages);
   const setKeepMessages = useUIStore((state) => state.setKeepMessages);
+  const contrast = useUIStore((state) => state.contrast);
+  const setContrast = useUIStore((state) => state.setContrast);
+
+  const { mutate: updateSelf } = useUpdateSelfMutation();
+
+  // Applied before the round trip, so the page answers the switch at once; the column is what makes it follow the user.
+  const toggleContrast = (checked: boolean) => {
+    const next = checked ? 'more' : 'system';
+    setContrast(next);
+    updateSelf({ contrast: next });
+  };
 
   return (
     <>
@@ -40,6 +52,13 @@ export function PreferencesContent() {
           />
           <label htmlFor="darkMode" className="cursor-pointer select-none font-medium text-sm leading-none">
             {t('c:dark_mode')}
+          </label>
+        </div>
+
+        <div className="flex items-center gap-4 px-4">
+          <Switch id="increaseContrast" checked={contrast === 'more'} onCheckedChange={toggleContrast} aria-label={t('c:increase_contrast')} />
+          <label htmlFor="increaseContrast" className="cursor-pointer select-none font-medium text-sm leading-none">
+            {t('c:increase_contrast')}
           </label>
         </div>
 

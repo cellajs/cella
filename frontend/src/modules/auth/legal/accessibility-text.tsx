@@ -91,6 +91,10 @@ function AccessibilityText() {
         <p>In {appName} you can:</p>
         <ul className="my-2">
           <li>Use light or dark mode. It starts in the mode your device uses, and you can switch at any time.</li>
+          <li>
+            Turn on more contrast, under Preferences, to draw the edges of fields, buttons and panels more strongly. If your device already asks for
+            more contrast, {appName} follows it without you setting anything.
+          </li>
           {languages.length > 1 && <li>Choose your language: {orNodes(languages)}.</li>}
           {signInMethods.length > 0 && <li>Sign in without a password, using {orList(signInMethods)}.</li>}
         </ul>
@@ -149,7 +153,8 @@ function AccessibilityText() {
           <p>
             Our review of {longDate(reviewedAt)} covered {results.pagesAndStates} pages and states of {appName}, such as open dialogs and menus, each
             in light and dark mode. Each one was scanned automatically and checked in the browser for zoom, text spacing, small screens and keyboard
-            use. We reviewed the code for what a scan cannot see, such as time limits and motion.{' '}
+            use. We reviewed the code for what a scan cannot see, such as time limits and motion. We measured with more contrast turned on, the
+            setting named above.{' '}
             {provisional
               ? 'An AI agent judged the criteria that tools cannot decide. Testing by a person, including with screen readers, is not finished yet.'
               : 'A person confirmed each result. The conformance report lists the methods in full.'}

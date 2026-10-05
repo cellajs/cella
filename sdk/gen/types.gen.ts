@@ -295,6 +295,7 @@ export type User = {
   lastName: string | null;
   language: 'en' | 'nl';
   newsletter: boolean;
+  contrast: 'system' | 'more';
   userFlags: {
     finishedOnboarding: boolean;
   };
@@ -2674,6 +2675,7 @@ export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
 export type UpdateMeData = {
   body: {
     bannerUrl?: string | null;
+    contrast?: 'system' | 'more';
     description?: string | null;
     firstName?: string | null;
     lastName?: string | null;
@@ -4005,6 +4007,7 @@ export type DeleteUsersResponse = DeleteUsersResponses[keyof DeleteUsersResponse
 export type UpdateUserData = {
   body: {
     bannerUrl?: string | null;
+    contrast?: 'system' | 'more';
     description?: string | null;
     firstName?: string | null;
     lastName?: string | null;

@@ -1,7 +1,7 @@
 /**
- * Contrast of the color tokens in the theme stylesheet, in light and dark mode: text on its own fill, the status colors
- * as text on the page, and the field border against the page. A changed token that drops below WCAG's ratios fails the
- * style check here, before any page is opened.
+ * Contrast of the color tokens in the theme stylesheet, in light and dark mode: text on its own fill, the status
+ * colors as text on the page, and `--edge-raised`, the control edge increased contrast paints and the audit measures.
+ * A token below WCAG's ratio fails here, before any page is opened.
  */
 import { type Finding, lineColumn } from './repo-files.ts';
 
@@ -78,7 +78,19 @@ export function tokenContrastFindings(file: string, source: string): Finding[] {
     };
     for (const fill of fills) check(fill === 'background' ? 'foreground' : `${fill}-foreground`, fill, 4.5, 'text on its fill');
     for (const token of textTokens) for (const surface of surfaces) check(token, surface, 4.5, 'status color as text');
-    for (const surface of surfaces) check('input', surface, 3, 'field border');
+    for (const surface of surfaces) check('edge-raised', surface, 3, 'raised control edge');
+
+    // A theme that drops the token has nothing to measure, which would pass every check above in silence
+    const anchor = set.get('background');
+    if (anchor && !set.get('edge-raised')) {
+      findings.push({
+        file,
+        ...lineColumn(source, anchor.offset),
+        rule: 'token-contrast',
+        term: '--edge-raised',
+        message: `no --edge-raised in ${mode} mode: increased contrast has no value to paint, and the 3:1 edge goes unchecked`,
+      });
+    }
   }
   return findings;
 }

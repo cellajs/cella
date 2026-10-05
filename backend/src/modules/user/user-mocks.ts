@@ -40,6 +40,7 @@ const generateUser = ({ email: emailOverride, enforceUnique = false }: MockUserO
     bannerUrl: null,
     language: appConfig.defaultLanguage,
     newsletter: faker.datatype.boolean(),
+    contrast: 'system' as const,
     mfaRequired: false,
     userFlags: { ...appConfig.defaultUserFlags },
     createdAt,

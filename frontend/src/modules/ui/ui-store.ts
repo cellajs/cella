@@ -1,3 +1,4 @@
+import type { User } from 'sdk';
 import { appConfig, type Theme } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
@@ -5,6 +6,9 @@ import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
 
 export type Mode = 'light' | 'dark';
+
+/** Mirrors the user's `contrast` column, so the two never drift. `system` leaves it to `prefers-contrast`. */
+export type Contrast = User['contrast'];
 
 interface UIStoreState {
   offlineAccess: boolean;
@@ -15,6 +19,9 @@ interface UIStoreState {
 
   theme: Theme; // Selected theme ('none' for default)
   setTheme: (theme: Theme) => void;
+
+  contrast: Contrast; // Non-text contrast: 'system' follows prefers-contrast, 'more' forces the raised tokens
+  setContrast: (contrast: Contrast) => void;
 
   keepMessages: boolean; // Toasts stay until dismissed, for a reader who needs more than a few seconds
   setKeepMessages: (status: boolean) => void;
@@ -40,10 +47,11 @@ const browserMode = typeof window !== 'undefined' && window.matchMedia?.('(prefe
 
 const initStore: Pick<
   UIStoreState,
-  'mode' | 'theme' | 'offlineAccess' | 'keepMessages' | 'publicAlertsSeen' | 'hintsSeen' | 'focusView' | 'uiLocks'
+  'mode' | 'theme' | 'contrast' | 'offlineAccess' | 'keepMessages' | 'publicAlertsSeen' | 'hintsSeen' | 'focusView' | 'uiLocks'
 > = {
   mode: browserMode,
   theme: 'none',
+  contrast: 'system',
   offlineAccess: false,
   keepMessages: false,
   publicAlertsSeen: [],
@@ -71,6 +79,11 @@ export const useUIStore = create<UIStoreState>()(
         setTheme: (theme) => {
           set((state) => {
             state.theme = theme;
+          });
+        },
+        setContrast: (contrast) => {
+          set((state) => {
+            state.contrast = contrast;
           });
         },
         setKeepMessages: (status) => {
@@ -108,7 +121,7 @@ export const useUIStore = create<UIStoreState>()(
             }
           });
         },
-        // Partial reset (not `set(initStore)`): only the session flag is cleared; mode/theme/uiLocks persist.
+        // Partial reset (not `set(initStore)`): only the session flag is cleared; mode/theme/contrast/uiLocks persist.
         reset: () => set(() => ({ offlineAccess: false })),
       })),
       {
@@ -118,6 +131,7 @@ export const useUIStore = create<UIStoreState>()(
           offlineAccess: state.offlineAccess,
           mode: state.mode,
           theme: state.theme,
+          contrast: state.contrast,
           keepMessages: state.keepMessages,
           publicAlertsSeen: state.publicAlertsSeen,
           hintsSeen: state.hintsSeen,

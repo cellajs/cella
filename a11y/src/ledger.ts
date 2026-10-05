@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { type Criterion, criteria } from './criteria.ts';
-import { repoRoot } from './session.ts';
+import { auditContrast, repoRoot } from './session.ts';
 
 type Status = 'supports' | 'partially-supports' | 'does-not-support' | 'not-applicable';
 
@@ -41,6 +41,8 @@ export interface Ledger {
   edition: string;
   standard: string;
   auditedAt: string;
+  /** Contrast setting the run measured. `more` means the evidence describes the opted-in state, not the default. */
+  contrast: 'system' | 'more';
   scope: string[];
   criteria: LedgerRow[];
 }
@@ -114,6 +116,7 @@ export function writeLedger(evidenceById: Map<string, Evidence[]>, scope: string
     edition: 'VPAT® 2.5Rev WCAG',
     standard: 'WCAG 2.2 Level AA',
     auditedAt: new Date().toISOString().slice(0, 10),
+    contrast: auditContrast,
     scope,
     criteria: rows,
   };

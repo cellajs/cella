@@ -65,6 +65,13 @@ interface ContextOptions {
   mode: Mode;
 }
 
+/**
+ * The audit measures the app with increased contrast turned on, which is what raises the edge tokens to 3:1.
+ * It is a user setting, not the default, so every report built from this run has to say so: `auditContrast` is
+ * written into the ledger and printed by the report for that reason. Set it to 'system' to audit the resting state.
+ */
+export const auditContrast: 'system' | 'more' = 'more';
+
 export const defaultViewport = { width: 1280, height: 900 };
 
 /**
@@ -77,12 +84,18 @@ export async function newContext(session: Session, { auth, mode }: ContextOption
   const context = await session.browser.newContext({
     viewport: defaultViewport,
     colorScheme: mode,
+    // Emulates `prefers-contrast`, which tailwind.css answers on its own, so public pages are covered like signed-in ones
+    contrast: auditContrast === 'more' ? 'more' : 'no-preference',
     reducedMotion: 'reduce',
     serviceWorkers: 'block',
     storageState,
     ...overrides,
   });
-  const uiState = { state: { mode, theme: 'none', offlineAccess: false, publicAlertsSeen: ['test-credentials'] }, version: 1 };
+  // `contrast` here is what the app's own `data-contrast` path reads; the context option above covers the media query
+  const uiState = {
+    state: { mode, theme: 'none', contrast: auditContrast, offlineAccess: false, publicAlertsSeen: ['test-credentials'] },
+    version: 1,
+  };
   // tsx keeps function names with an `__name` helper that does not exist in the page
   await context.addInitScript({ content: 'window.__name = (fn) => fn;' });
   await context.addInitScript(
