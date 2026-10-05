@@ -32,7 +32,7 @@ function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props
       {url && <AvatarImage src={url} draggable={false} />}
       <AvatarFallback className={avatarBackground}>
         <span className="sr-only">{name}</span>
-        <div className="flex h-full items-center justify-center font-semibold text-black uppercase opacity-85">
+        <div className="flex h-full items-center justify-center font-semibold text-black uppercase more-contrast:opacity-85 opacity-50">
           {name?.charAt(0).toUpperCase() || '-'}
         </div>
       </AvatarFallback>

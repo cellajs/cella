@@ -409,7 +409,8 @@
     --destructive: oklch(0.5137 0.2082 29.23);
     --destructive-foreground: oklch(0.9851 0 0);
     --border: oklch(0.92 0.004 285.75);
-    --input: oklch(0.88 0.005 285.75);
+    /* One resting edge: a field is outlined no more strongly than an outline button. Increased contrast raises both. */
+    --input: var(--border);
     /* What --border, --input and --sidebar-border become under increased contrast. Never used by a class: the
        three tokens below are what components read, this only holds the raised value so it is written once. */
     --edge-raised: oklch(0.64 0.005 285.75);
@@ -456,7 +457,7 @@
     --destructive: oklch(0.72 0.17 29.23);
     --destructive-foreground: oklch(0.1963 0.0092 285.53);
     --border: oklch(0.36 0.011 285.63);
-    --input: oklch(0.42 0.011 285.63);
+    --input: var(--border);
     --edge-raised: oklch(0.54 0.011 285.63);
     --ring: oklch(0.86 0.0096 285.72);
     --success: oklch(0.72 0.2 142.5);
