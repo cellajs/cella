@@ -8,13 +8,6 @@ export type ChannelRouteEntry = {
   paramName: string;
   /** When shown as a subitem, navigate to a parent entity's route. */
   subitemOf?: { entityType: ChannelEntityType; searchParam: string };
-  /** Search params a notification link on this channel opens with, e.g. a product's sheet id keyed by its entity type; the target route's `validateSearch` must declare them or the router strips them. */
-  notificationSearch?: (notification: {
-    entityType: string;
-    subjectId: string;
-    /** Grouping context (a comment's host item); null when the subject is its own context. */
-    contextId: string | null;
-  }) => Record<string, string>;
 };
 
 /**
@@ -25,12 +18,8 @@ export type ChannelRouteEntry = {
  * literal `path` strings below, and a registry filled at runtime hands back a widened `string`. A
  * channel's menu section, list query and members-table defaults live in its own `<name>-module`
  * file; which tabs its page shows, and the one a link lands on, come from `appConfig.surfaces`.
+ * What a notification deep link opens is the product's own `deepLinkParam`, not a channel's.
  */
 export const channelRouteConfig = {
-  organization: {
-    path: '/$tenantId/$organizationSlug/organization',
-    paramName: 'organizationSlug',
-    // The attachments tab reads `attachmentDialogId` and opens that attachment's dialog on top of the grid.
-    notificationSearch: ({ entityType, subjectId }): Record<string, string> => (entityType === 'attachment' ? { attachmentDialogId: subjectId } : {}),
-  },
+  organization: { path: '/$tenantId/$organizationSlug/organization', paramName: 'organizationSlug' },
 } as const satisfies Record<ChannelEntityType, ChannelRouteEntry>;
