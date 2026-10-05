@@ -158,7 +158,10 @@ export function RowDropTarget<R, SR>({ rowKey, config, renderRow, ...props }: Ro
   return renderRow(rowKey, { ...props, ref });
 }
 
-/** Handle cells are the drag sources; the native drag preview is portaled into the browser's drag image. */
+/**
+ * Handle cells are the drag sources, or a `[data-drag-handle]` button inside one when the cell renders a control that
+ * also works without a drag; the native drag preview is portaled into the browser's drag image.
+ */
 export function RowDragCell<R, SR>({ rowIdx, row, column, className, config, ...props }: CellRendererProps<R, SR> & { config: RowDragConfig<R> }) {
   const ref = useRef<HTMLDivElement>(null);
   // `isDragging` flips twice per drag, so React state stays off the per-mousemove path.
@@ -169,8 +172,11 @@ export function RowDragCell<R, SR>({ rowIdx, row, column, className, config, ...
     const el = ref.current;
     if (!el) return;
 
+    // A handle cell may render its own focusable button and mark it; the drag then starts from that button alone.
+    const handle = el.querySelector<HTMLElement>('[data-drag-handle]');
+
     return draggable({
-      element: el,
+      element: handle ?? el,
       getInitialData: (): RowDragData => ({ type: ROW_DRAG_TYPE, rowIdx }),
       onGenerateDragPreview: ({ nativeSetDragImage }) => {
         setCustomNativeDragPreview({ nativeSetDragImage, getOffset: () => ({ x: 16, y: 16 }), render: ({ container }) => setPreview({ container }) });

@@ -36,6 +36,16 @@ function HeaderRow<R, SR>({
   shouldFocusGrid,
   isCellSelectionEnabled,
 }: HeaderRowProps<R, SR>) {
+  // The drag that reorders columns has no key of its own, so Ctrl+Shift+Arrow steps one column past its neighbour.
+  const moveColumn = onColumnsReorder
+    ? (column: CalculatedColumn<R, SR>, step: -1 | 1) => {
+        const target = columns[column.idx + step];
+        if (!target?.draggable) return false;
+        onColumnsReorder(column.key, target.key);
+        return true;
+      }
+    : undefined;
+
   const cells: React.ReactNode[] = [];
   for (let index = 0; index < columns.length; index++) {
     const column = columns[index];
@@ -55,6 +65,7 @@ function HeaderRow<R, SR>({
         onColumnResize={onColumnResize}
         onColumnResizeEnd={onColumnResizeEnd}
         onColumnsReorder={onColumnsReorder}
+        moveColumn={moveColumn}
         onSortColumnsChange={onSortColumnsChange}
         sortColumns={sortColumns}
         selectCell={selectCell}

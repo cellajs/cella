@@ -40,6 +40,7 @@ function DragHandle({
   allowedTypes: CustomBlockNoteMenuProps['allowedTypes'];
   headingLevels: CustomBlockNoteMenuProps['headingLevels'];
 }) {
+  const { t } = useTranslation();
   const portalElement = usePortalElement();
   const [menuOpen, setMenuOpen] = useState(false);
   const isDragging = useRef(false);
@@ -73,7 +74,7 @@ function DragHandle({
       type="button"
       draggable
       className="bn-button cursor-grab text-muted-foreground/70"
-      aria-label="Drag handle"
+      aria-label={t('c:reorder')}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onClick={handleClick}

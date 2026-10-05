@@ -511,6 +511,7 @@
   "render_mode.default": "Default",
   "render_mode.node_only": "Node only",
   "render_mode.overview": "Overview",
+  "reorder": "Reorder",
   "repository": "Repository",
   "repository_other": "Repositories",
   "request": "Request",
