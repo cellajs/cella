@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.17.0](https://github.com/cellajs/cella/compare/0.16.0...0.17.0) (2026-10-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* **a11y:** field edges rest subtle again, and more contrast becomes a setting ([#1324](https://github.com/cellajs/cella/issues/1324))
+* **frontend:** a notification deep link opens a product on its own param ([#1322](https://github.com/cellajs/cella/issues/1322))
+* **frontend:** one ordered list per surface ([#1320](https://github.com/cellajs/cella/issues/1320))
+* **query:** imperative cache reads go through queryClient.query, and /me re-probes on a cold boot ([#1319](https://github.com/cellajs/cella/issues/1319))
+* **frontend:** the -config surface, swept ([#1317](https://github.com/cellajs/cella/issues/1317))
+* **sync:** patterns an app's modules could miss now fail a gate, and the replay flag sets itself ([#1316](https://github.com/cellajs/cella/issues/1316))
+* **sync:** act on raak's and projectcampus's 2026-10-04 sync feedback ([#1312](https://github.com/cellajs/cella/issues/1312))
+
+### 🎉 New features
+
+* **a11y:** field edges rest subtle again, and more contrast becomes a setting ([#1324](https://github.com/cellajs/cella/issues/1324)) ([165dbd5](https://github.com/cellajs/cella/commit/165dbd58574e9113f7238b9539546c9b5263c629))
+* **infra:** the operator CLI is one flat menu, and every action is a command ([#1315](https://github.com/cellajs/cella/issues/1315)) ([d75fdda](https://github.com/cellajs/cella/commit/d75fddac3b3cfb06809a1f70e7afb513d5b0ac81))
+* **skills:** an agent re-shoots the marketing screenshots ([#1323](https://github.com/cellajs/cella/issues/1323)) ([f6468d3](https://github.com/cellajs/cella/commit/f6468d373b4630057b80dc3b4d442636532927fe))
+
+
+### 🐞 Bug fixes
+
+* a tuning pass over marketing, legal, navigation and account settings ([#1326](https://github.com/cellajs/cella/issues/1326)) ([ef396ff](https://github.com/cellajs/cella/commit/ef396ffff667993e7872759b2b3e719bbe78e544))
+* **a11y:** one grip that drags and opens a move menu, for every table that reorders ([#1325](https://github.com/cellajs/cella/issues/1325)) ([c673d32](https://github.com/cellajs/cella/commit/c673d329af307d6a31f9be92e699636b837cd950))
+* **config:** a new app's auth switch typechecks without the sso strategy ([#1310](https://github.com/cellajs/cella/issues/1310)) ([6a39c06](https://github.com/cellajs/cella/commit/6a39c066a30abbfb4a5b3bccaa043b4fcd3e447c))
+* **infra:** the operator CLI cancels cleanly, names each action once and explains rows that cannot run ([#1314](https://github.com/cellajs/cella/issues/1314)) ([7dc46e9](https://github.com/cellajs/cella/commit/7dc46e9bcb23b498a3638af0c3760e60392f30e3))
+* **sync:** act on raak's and projectcampus's 2026-10-04 sync feedback ([#1312](https://github.com/cellajs/cella/issues/1312)) ([0ab8a08](https://github.com/cellajs/cella/commit/0ab8a083e71df740d042b8f1743a166cbcdb644a))
+* **sync:** patterns an app's modules could miss now fail a gate, and the replay flag sets itself ([#1316](https://github.com/cellajs/cella/issues/1316)) ([47a4b67](https://github.com/cellajs/cella/commit/47a4b673188633af5a0a84fc1e7f9eb1e20e26d6))
+
+
+### 🔧 Small improvements
+
+* **attachment:** the presigned-urls example comes from the mocks ([#1327](https://github.com/cellajs/cella/issues/1327)) ([9e81740](https://github.com/cellajs/cella/commit/9e817406c1476bc24babc0d169223d32d91cd91c))
+* **frontend:** a notification deep link opens a product on its own param ([#1322](https://github.com/cellajs/cella/issues/1322)) ([e1d27eb](https://github.com/cellajs/cella/commit/e1d27eb71b5a53a978cfa88d4e88f6a36eda7cf2))
+* **frontend:** one ordered list per surface ([#1320](https://github.com/cellajs/cella/issues/1320)) ([304df57](https://github.com/cellajs/cella/commit/304df577a29f8efcb75be8a1a9dc4356ff7ddbc3))
+* **frontend:** the -config surface, swept ([#1317](https://github.com/cellajs/cella/issues/1317)) ([f8bb8e3](https://github.com/cellajs/cella/commit/f8bb8e34f72b56c6db69842b14eb967a87c48727))
+* **query:** imperative cache reads go through queryClient.query, and /me re-probes on a cold boot ([#1319](https://github.com/cellajs/cella/issues/1319)) ([eebf5b5](https://github.com/cellajs/cella/commit/eebf5b5abc1dff302ba7658f1d6585d91b018466))
+
+
+### 🏗️ Build & deps
+
+* nightly create-flow check walks the newcomer path on a new app ([#1311](https://github.com/cellajs/cella/issues/1311)) ([4e4a3d1](https://github.com/cellajs/cella/commit/4e4a3d145a47c05d8675547572641b38d0529986))
+* the create-flow nightly moves to the scaffolder's repo, so apps stop inheriting it ([#1321](https://github.com/cellajs/cella/issues/1321)) ([14517ae](https://github.com/cellajs/cella/commit/14517ae3077d2b8f76d88e36b5dcc579c550f28f))
+
+
+### 🧹 Chores
+
+* strike a config file that never worked, three files nothing imports, and gate the rest ([#1318](https://github.com/cellajs/cella/issues/1318)) ([a75a53a](https://github.com/cellajs/cella/commit/a75a53ad46d451ab9ea3bf2e07af60601fa91a85))
+
 ## [0.16.0](https://github.com/cellajs/cella/compare/0.15.0...0.16.0) (2026-10-04)
 
 
