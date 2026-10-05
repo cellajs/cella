@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { appConfig } from 'shared';
 import { generateMockEntityChannelIdColumns, mockBatchResponse, mockNanoid, mockPaginated, mockProductColumns, withFakerSeed } from '#/mocks';
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
 import { mockAuditUsers } from '#/schemas/entity-base-mocks';
@@ -32,3 +33,15 @@ export const mockAttachmentResponse = (key = 'attachment:default') => {
 export const mockPaginatedAttachmentsResponse = (count = 2) => mockPaginated(mockAttachmentResponse, count);
 
 export const mockBatchAttachmentsResponse = (count = 2) => mockBatchResponse(mockAttachmentResponse, count);
+
+/** One signed download URL as `getPresignedUrls` returns it. The signature is truncated, and the ungenerated variant resolves to the original key. */
+export const mockPresignedUrlItem = (key = 'attachment:default') => {
+  const attachment = mockAttachment(key);
+  return {
+    attachmentId: attachment.id,
+    variant: 'thumbnail',
+    url: `https://${attachment.bucketName}.${appConfig.s3.host}/${attachment.keys.original}?X-Amz-Signature=…`,
+  };
+};
+
+export const mockPresignedUrlsResponse = (count = 2) => mockBatchResponse(mockPresignedUrlItem, count);
