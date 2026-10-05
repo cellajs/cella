@@ -5,6 +5,7 @@ import { HelpText } from '~/modules/common/help-text';
 import { ToolCard } from '~/modules/common/tool-card';
 import { notificationPreferencesQueryOptions, useUpdateNotificationPreferences } from '~/modules/notification/query';
 import { usePushSubscription } from '~/modules/notification/use-push-subscription';
+import { FieldContent, FieldLabel, FieldLayout, FieldTitle } from '~/modules/ui/field';
 import { Label } from '~/modules/ui/label';
 import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { Switch } from '~/modules/ui/switch';
@@ -55,21 +56,26 @@ export function AccountNotificationsCard() {
           </div>
         )}
 
-        <div className="mt-3 flex flex-col gap-1.5">
-          <HelpText type="popover" content={t('c:notifications.digest.text')} className="mb-0">
+        <div className="mt-3 flex flex-col gap-4">
+          <HelpText content={t('c:notifications.digest.text')} className="mb-0">
             <Label id="digest-label">{t('c:notifications.digest')}</Label>
           </HelpText>
+          {/* One tile per cadence: a bare `grid` is already the stacked column, so only the desktop row needs a class */}
           <RadioGroup
             aria-labelledby="digest-label"
             value={data.digest}
             onValueChange={(digest) => mutate({ digest: digest as DigestFrequency })}
-            className="flex flex-wrap items-center gap-4"
+            className="lg:grid-cols-3"
           >
             {digestOptions.map(({ value, label }) => (
-              <Label key={value} className="cursor-pointer font-normal">
-                <RadioGroupItem value={value} />
-                {t(label)}
-              </Label>
+              <FieldLabel key={value} htmlFor={`digest-${value}`} className="cursor-pointer">
+                <FieldLayout orientation="horizontal">
+                  <RadioGroupItem id={`digest-${value}`} value={value} />
+                  <FieldContent>
+                    <FieldTitle>{t(label)}</FieldTitle>
+                  </FieldContent>
+                </FieldLayout>
+              </FieldLabel>
             ))}
           </RadioGroup>
         </div>
