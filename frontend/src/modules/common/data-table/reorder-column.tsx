@@ -5,9 +5,6 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { tw } from '~/utils/tw';
 
-/** Key of the reorder column, so a table can find it among its own columns. */
-export const reorderColumnKey = 'reorder';
-
 interface ReorderHandleProps {
   /** Names the row this handle moves, so its menu button says which one. */
   name: string;
@@ -98,7 +95,7 @@ interface ReorderColumnOptions<TRow> {
  */
 export function reorderColumn<TRow>({ getName, onMove, rowCount }: ReorderColumnOptions<TRow>): ColumnOrColumnGroup<TRow> {
   return {
-    key: reorderColumnKey,
+    key: 'reorder',
     name: '',
     width: 36,
     maxWidth: 36,
