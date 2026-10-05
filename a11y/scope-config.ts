@@ -1,13 +1,16 @@
 import type { AuditApi, ScopeState } from './src/scope.ts';
-import { settle } from './src/session.ts';
+import { auditContrast, settle } from './src/session.ts';
 
 /**
  * Brings the audit user into the state the pages below expect, before the first visit. A freshly seeded user has not
  * finished onboarding, and `/home` then redirects to the welcome page.
  */
 export const prepare = async (api: AuditApi) => {
-  const { user } = await api<{ user: { userFlags: { finishedOnboarding?: boolean } } }>('/me');
+  const { user } = await api<{ user: { userFlags: { finishedOnboarding?: boolean }; contrast?: string } }>('/me');
   if (!user.userFlags.finishedOnboarding) await api('/me', { method: 'PUT', body: { userFlags: { finishedOnboarding: true } } });
+  // The browser context asks for more contrast, but `/me` overwrites the seeded UI store on every authenticated page.
+  // Without this the run would quietly measure the default edges on exactly the pages richest in form controls.
+  if (user.contrast !== auditContrast) await api('/me', { method: 'PUT', body: { contrast: auditContrast } });
 };
 
 /**

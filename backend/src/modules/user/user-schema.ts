@@ -54,6 +54,7 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
 })
   .pick({
     bannerUrl: true,
+    contrast: true,
     description: true,
     firstName: true,
     lastName: true,

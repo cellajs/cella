@@ -236,6 +236,11 @@
               "enum": ["en", "nl"]
             },
             "newsletter": { "type": "boolean", "required": true },
+            "contrast": {
+              "type": "string",
+              "required": true,
+              "enum": ["system", "more"]
+            },
             "userFlags": {
               "type": "object",
               "required": true,
@@ -277,6 +282,7 @@
           "bannerUrl": null,
           "language": "en",
           "newsletter": false,
+          "contrast": "system",
           "mfaRequired": false,
           "userFlags": { "finishedOnboarding": false },
           "createdAt": "2024-06-15T02:53:22.776Z",
@@ -342,6 +348,11 @@
             "type": ["string", "null"],
             "required": false,
             "maxLength": 2048
+          },
+          "contrast": {
+            "type": "string",
+            "required": false,
+            "enum": ["system", "more"]
           },
           "description": {
             "type": ["string", "null"],

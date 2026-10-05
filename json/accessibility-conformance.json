@@ -3,6 +3,7 @@
   "edition": "VPAT® 2.5Rev WCAG",
   "standard": "WCAG 2.2 Level AA",
   "auditedAt": "2026-10-03",
+  "contrast": "more",
   "scope": [
     "marketing-home",
     "features",
@@ -505,7 +506,7 @@
       "level": "AA",
       "en301549": "9.1.4.11",
       "status": "supports",
-      "remarks": "",
+      "remarks": "Measured with more contrast turned on: the setting under Preferences, which the product also applies for anyone whose device asks for more contrast. In that state every form control edge measures at least 3:1. With the setting off, fields, buttons, panels and separators share one lighter edge, below 3:1; the setting is reachable from every page and is listed on the accessibility statement.",
       "decidedBy": "agent",
       "open": [],
       "evidence": [

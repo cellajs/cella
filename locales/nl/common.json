@@ -53,6 +53,7 @@
   "id": "ID",
   "idp_entity_ids": "IdP entity-id's",
   "idp_entity_ids.text": "Een per regel. Alle worden aan de federatie meegegeven, zodat haar keuzelijst alleen deze instelling toont.",
+  "increase_contrast": "Meer contrast",
   "install_command": "Installatiecommando",
   "institution": "Instelling",
   "institution_accounts": "Instellingsaccounts",

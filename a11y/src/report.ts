@@ -87,7 +87,11 @@ ${unconfirmed ? `> **Draft.** ${draftNote} Those rows are marked and can still c
 
 **Contact Information:** ${appConfig.company.supportEmail}
 
-**Notes:** The report covers the website, the documentation and the signed-in app at ${appConfig.frontendUrl}: ${ledger.scope.length} pages and states, each in light and dark mode.
+**Notes:** The report covers the website, the documentation and the signed-in app at ${appConfig.frontendUrl}: ${ledger.scope.length} pages and states, each in light and dark mode.${
+  ledger.contrast === 'more'
+    ? ' Measured with increased contrast turned on. This is a user setting, not the default: it is switched on under Preferences, and follows the operating system for anyone who asks for more contrast there. With it off, the edges of form fields, buttons and separators are drawn more lightly than 1.4.11 requires.'
+    : ''
+}
 
 **Evaluation Methods Used:** Automated testing with axe-core on every page and state. Scripted browser checks for reflow at 320px, 200% zoom, text spacing, orientation, keyboard focus (visibility, obscuring, order inside overlays, Escape), page titles, landmarks, page language, form errors and input purpose. Source review for media, motion, keyboard shortcuts, time limits, gestures and sign-in methods. ${
   byAgent.length

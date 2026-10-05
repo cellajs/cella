@@ -24,13 +24,13 @@ describe('tokenContrastFindings', () => {
         '--foreground: oklch(0.2 0.01 285);',
         '--success: oklch(0.49 0.167 142.5);',
         '--success-foreground: oklch(0.985 0 0);',
-        '--input: oklch(0.64 0.005 285);',
+        '--edge-raised: oklch(0.64 0.005 285);',
       ],
       [
         '--foreground: oklch(0.96 0 0);',
         '--success: oklch(0.72 0.2 142.5);',
         '--success-foreground: oklch(0.2 0.01 285);',
-        '--input: oklch(0.54 0.011 285);',
+        '--edge-raised: oklch(0.54 0.011 285);',
       ],
     );
     expect(tokenContrastFindings(file, source)).toEqual([]);
@@ -50,14 +50,27 @@ describe('tokenContrastFindings', () => {
     expect(dark.map(({ message }) => message)).toContainEqual(expect.stringContaining('status color as text'));
   });
 
-  it('reports a field border below 3:1', () => {
-    const source = theme(['--input: oklch(0.88 0.005 285);'], ['--input: oklch(0.54 0.011 285);']);
+  it('reports a raised control edge below 3:1', () => {
+    const source = theme(['--edge-raised: oklch(0.88 0.005 285);'], ['--edge-raised: oklch(0.54 0.011 285);']);
     const findings = tokenContrastFindings(file, source);
     expect(findings).toHaveLength(1);
-    expect(findings[0]).toMatchObject({ rule: 'token-contrast', term: '--input', line: 4 });
+    expect(findings[0]).toMatchObject({ rule: 'token-contrast', term: '--edge-raised', line: 4 });
+  });
+
+  it('leaves the resting edge tokens alone, which are lighter on purpose', () => {
+    const source = theme(
+      ['--input: oklch(0.88 0.005 285);', '--border: oklch(0.92 0.004 285);', '--edge-raised: oklch(0.64 0.005 285);'],
+      ['--edge-raised: oklch(0.54 0.011 285);'],
+    );
+    expect(tokenContrastFindings(file, source)).toEqual([]);
+  });
+
+  it('reports a theme that drops the raised token, which would leave nothing to measure', () => {
+    const messages = tokenContrastFindings(file, theme(['--input: oklch(0.88 0.005 285);'], [])).map(({ message }) => message);
+    expect(messages).toContainEqual(expect.stringContaining('no --edge-raised in light mode'));
   });
 
   it('ignores every other file', () => {
-    expect(tokenContrastFindings('frontend/src/styling/other.css', theme(['--input: oklch(0.99 0 0);'], []))).toEqual([]);
+    expect(tokenContrastFindings('frontend/src/styling/other.css', theme(['--edge-raised: oklch(0.99 0 0);'], []))).toEqual([]);
   });
 });

@@ -232,6 +232,7 @@ export const zUser = z.object({
   lastName: z.string().max(255).nullable(),
   language: z.enum(['en', 'nl']),
   newsletter: z.boolean(),
+  contrast: z.enum(['system', 'more']),
   userFlags: z.object({
     finishedOnboarding: z.boolean(),
   }),
@@ -1012,6 +1013,7 @@ export const zGetMeResponse = zMe;
 
 export const zUpdateMeBody = z.object({
   bannerUrl: z.string().max(2048).nullish(),
+  contrast: z.enum(['system', 'more']).optional(),
   description: z.string().max(1000000).nullish(),
   firstName: z
     .string()
@@ -1354,6 +1356,7 @@ export const zDeleteUsersResponse = z.object({
 
 export const zUpdateUserBody = z.object({
   bannerUrl: z.string().max(2048).nullish(),
+  contrast: z.enum(['system', 'more']).optional(),
   description: z.string().max(1000000).nullish(),
   firstName: z
     .string()

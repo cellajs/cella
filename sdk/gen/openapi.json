@@ -1222,6 +1222,7 @@
             "bannerUrl": null,
             "language": "en",
             "newsletter": true,
+            "contrast": "system",
             "mfaRequired": false,
             "userFlags": {
               "finishedOnboarding": false
@@ -1292,6 +1293,10 @@
           "newsletter": {
             "type": "boolean"
           },
+          "contrast": {
+            "type": "string",
+            "enum": ["system", "more"]
+          },
           "userFlags": {
             "type": "object",
             "properties": {
@@ -1330,6 +1335,7 @@
           "lastName",
           "language",
           "newsletter",
+          "contrast",
           "userFlags",
           "updatedAt",
           "updatedBy",
@@ -1350,6 +1356,7 @@
           "bannerUrl": null,
           "language": "en",
           "newsletter": false,
+          "contrast": "system",
           "mfaRequired": false,
           "userFlags": {
             "finishedOnboarding": false
@@ -5655,6 +5662,7 @@
                     "bannerUrl": null,
                     "language": "en",
                     "newsletter": true,
+                    "contrast": "system",
                     "mfaRequired": false,
                     "userFlags": {
                       "finishedOnboarding": false
@@ -5717,6 +5725,10 @@
                   "bannerUrl": {
                     "type": ["string", "null"],
                     "maxLength": 2048
+                  },
+                  "contrast": {
+                    "type": "string",
+                    "enum": ["system", "more"]
                   },
                   "description": {
                     "type": ["string", "null"],
@@ -5782,6 +5794,7 @@
                   "bannerUrl": null,
                   "language": "en",
                   "newsletter": false,
+                  "contrast": "system",
                   "mfaRequired": false,
                   "userFlags": {
                     "finishedOnboarding": false
@@ -5904,6 +5917,7 @@
                   "bannerUrl": null,
                   "language": "en",
                   "newsletter": false,
+                  "contrast": "system",
                   "mfaRequired": false,
                   "userFlags": {
                     "finishedOnboarding": false
@@ -7992,6 +8006,10 @@
                     "type": ["string", "null"],
                     "maxLength": 2048
                   },
+                  "contrast": {
+                    "type": "string",
+                    "enum": ["system", "more"]
+                  },
                   "description": {
                     "type": ["string", "null"],
                     "maxLength": 1000000
@@ -8048,6 +8066,7 @@
                   "bannerUrl": null,
                   "language": "en",
                   "newsletter": false,
+                  "contrast": "system",
                   "mfaRequired": false,
                   "userFlags": {
                     "finishedOnboarding": false
@@ -9170,6 +9189,7 @@
                       "bannerUrl": null,
                       "language": "en",
                       "newsletter": false,
+                      "contrast": "system",
                       "mfaRequired": false,
                       "userFlags": {
                         "finishedOnboarding": false
@@ -9207,6 +9227,7 @@
                       "bannerUrl": null,
                       "language": "en",
                       "newsletter": true,
+                      "contrast": "system",
                       "mfaRequired": false,
                       "userFlags": {
                         "finishedOnboarding": false
@@ -9364,6 +9385,7 @@
                   "bannerUrl": null,
                   "language": "en",
                   "newsletter": false,
+                  "contrast": "system",
                   "mfaRequired": false,
                   "userFlags": {
                     "finishedOnboarding": false

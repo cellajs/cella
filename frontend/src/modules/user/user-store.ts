@@ -6,6 +6,7 @@ import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { isDebugMode } from '~/env';
 import type { MeUser } from '~/modules/me/types';
+import { uiStore } from '~/modules/ui/ui-store';
 
 type LastUser = Pick<MeUser, 'id' | 'email'>;
 
@@ -15,6 +16,14 @@ export const yjsTokenKey = (entityType: ProductEntityType, entityId: string) => 
 const syncLanguage = (language?: User['language']) => {
   const lng = language || 'en';
   if (i18n.language !== lng) i18n.changeLanguage(lng);
+};
+
+/**
+ * Mirrors the stored contrast preference into the UI store, which Themer watches. The UI store is what applies it,
+ * so the choice survives sign-out and reaches the public pages, where no user exists to read it from.
+ */
+const syncContrast = (contrast?: User['contrast']) => {
+  uiStore.getState().setContrast(contrast ?? 'system');
 };
 
 interface UserStoreState {
@@ -52,6 +61,7 @@ export const useUserStore = create<UserStoreState>()(
           }));
 
           syncLanguage(user.language);
+          syncContrast(user.contrast);
         },
         setMe: ({ user, isSystemAdmin, impersonator }) => {
           set((state) => {
@@ -63,6 +73,7 @@ export const useUserStore = create<UserStoreState>()(
           });
 
           syncLanguage(user.language);
+          syncContrast(user.contrast);
         },
         setLastUser: (lastUser) => {
           set((state) => {
