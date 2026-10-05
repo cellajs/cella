@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AtSignIcon, ChevronRightIcon, InfoIcon, SearchIcon } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { zMembershipInviteBody } from 'sdk/zod.gen';
 import { type ChannelEntityType, hierarchy } from 'shared';
@@ -46,6 +46,9 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
 
   const [inviteMode, setInviteMode] = useState(baseMode);
 
+  // The dialog's caller owns the description copy, so read it once and keep it to compose against.
+  const [baseDescription] = useState(() => (isDialog ? useDialoger.getState().get('invite-users')?.description : undefined));
+
   const updateMode = (mode: ('search' | 'email' | 'bulk')[]) => {
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
 
@@ -79,6 +82,30 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
       ),
     });
   };
+
+  // The switch to bulk belongs in the header, beside that copy: in the dismissible alert below, dismissing lost it.
+  // Onboarding renders no dialog and no bulk, so there is nothing to place there.
+  useEffect(() => {
+    if (!isDialog || !useDialoger.getState().get('invite-users')) return;
+
+    useDialoger.getState().update('invite-users', {
+      description:
+        inviteMode === 'email' ? (
+          <>
+            {baseDescription}{' '}
+            <button
+              type="button"
+              className="focus-effect cursor-pointer rounded-sm font-medium text-primary underline underline-offset-2"
+              onClick={() => updateMode(['bulk'])}
+            >
+              {t('c:invite_bulk_link')}
+            </button>
+          </>
+        ) : (
+          baseDescription
+        ),
+    });
+  }, [inviteMode, isDialog, baseDescription]);
 
   return (
     <MotionConfig transition={{ type: 'spring', bounce: 0, duration: 0.4 }}>
@@ -122,11 +149,6 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
                   : inviteMode === 'bulk'
                     ? 'c:explain.invite_bulk.text'
                     : 'c:explain.invite_email.text',
-              )}
-              {inviteMode === 'email' && (
-                <button type="button" className="ml-1 underline" onClick={() => updateMode(['bulk'])}>
-                  {t('c:invite_bulk_link')}
-                </button>
               )}
             </AlertBanner>
             {inviteMode === 'email' ? (
