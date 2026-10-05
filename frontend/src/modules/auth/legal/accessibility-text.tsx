@@ -173,30 +173,41 @@ function AccessibilityText() {
               {standard} has {criteriaCount(results)} success criteria. In our last review:
             </p>
             <ul className="my-2">
-              <li>{results.supports} are met</li>
-              {results.partiallySupports > 0 && <li>{results.partiallySupports} are partly met</li>}
-              {results.doesNotSupport > 0 && <li>{results.doesNotSupport} are not met</li>}
-              {results.notApplicable > 0 && (
+              <li>
+                <strong>{results.supports}</strong> are met
+              </li>
+              {results.partiallySupports > 0 && (
                 <li>
-                  {results.notApplicable} do not apply to {appName}
+                  <strong>{results.partiallySupports}</strong> are partly met
                 </li>
               )}
-              {notEvaluated.length > 0 && <li>{notEvaluated.length} are not evaluated yet</li>}
+              {results.doesNotSupport > 0 && (
+                <li>
+                  <strong>{results.doesNotSupport}</strong> are not met
+                </li>
+              )}
+              {results.notApplicable > 0 && (
+                <li>
+                  <strong>{results.notApplicable}</strong> do not apply to {appName}
+                </li>
+              )}
+              {notEvaluated.length > 0 && (
+                <li>
+                  <strong>{notEvaluated.length}</strong> are not evaluated yet
+                </li>
+              )}
             </ul>
           </>
         )}
         {report ? (
-          <>
-            <p>
-              {provisional
-                ? `Our report follows the ${report.edition} template. It is a draft, dated ${longDate(report.date)}: the rows a person has yet to confirm are marked in it.`
-                : `Our report follows the ${report.edition} template and was last updated on ${longDate(report.date)}.`}{' '}
-              <a href={report.pdfUrl} download>
-                Download the {provisional && 'draft '}conformance report (PDF)
-              </a>
-            </p>
-            <p>Need it in another format? Email {mailLink}.</p>
-          </>
+          <p>
+            {provisional
+              ? `Our report follows the ${report.edition} template. It is a draft, dated ${longDate(report.date)}: the rows a person has yet to confirm are marked in it.`
+              : `Our report follows the ${report.edition} template and was last updated on ${longDate(report.date)}.`}{' '}
+            <a href={report.pdfUrl} download>
+              Download the {provisional && 'draft '}conformance report (PDF)
+            </a>
+          </p>
         ) : (
           <p>We are preparing ours against {standard}. Once it is ready you can download it here.</p>
         )}

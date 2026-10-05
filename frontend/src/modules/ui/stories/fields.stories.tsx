@@ -300,6 +300,27 @@ export const RadioGroupExample: Story = {
 };
 
 /**
+ * Radio options as tiles: a FieldLabel that directly wraps a FieldLayout picks up `rounded-md border`, and the
+ * selected one takes `border-primary` from `has-data-checked`. Stacked by default, one row from `lg` up.
+ */
+export const RadioCards: Story = {
+  render: () => (
+    <RadioGroup defaultValue="daily" className="lg:grid-cols-3" aria-label="Email digest">
+      {['off', 'daily', 'weekly'].map((value) => (
+        <FieldLabel key={value} htmlFor={`digest-${value}`} className="cursor-pointer">
+          <FieldLayout orientation="horizontal">
+            <RadioGroupItem id={`digest-${value}`} value={value} />
+            <FieldContent>
+              <FieldTitle>{value}</FieldTitle>
+            </FieldContent>
+          </FieldLayout>
+        </FieldLabel>
+      ))}
+    </RadioGroup>
+  ),
+};
+
+/**
  * Complex form example using multiple field components.
  */
 export const ComplexForm: Story = {

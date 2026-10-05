@@ -24,12 +24,13 @@ export function DeviceMockup({ lightItems, darkItems, type, className }: DeviceM
 
   return (
     <div className={cn('relative', mockupClass, className)} ref={ref}>
-      {/* grain shadow grounding the device on its surface; first in DOM, so the device paints over it */}
+      {/* Grain shadow grounding the device on its surface. First in DOM, so the device paints over the 70% of it that
+          sits behind the device, and the last 30% reaches past the bottom edge. */}
       <div
         aria-hidden="true"
         className={cn(
-          'plus-grain pointer-events-none absolute left-1/2 -translate-x-1/2 opacity-30 dark:opacity-25',
-          type === 'mobile' ? '-bottom-20 h-40 w-[230%]' : '-bottom-24 h-48 w-[224%]',
+          'plus-grain pointer-events-none absolute left-1/2 -translate-x-1/2 opacity-25 dark:opacity-20',
+          type === 'mobile' ? '-bottom-6 h-20 w-[230%]' : '-bottom-7 h-24 w-[224%]',
         )}
         style={
           {

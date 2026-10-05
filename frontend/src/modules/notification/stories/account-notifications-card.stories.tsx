@@ -25,6 +25,8 @@ export const MentionEmailOnly: Story = {
     await expect(await canvas.findByRole('switch', { name: /mention_email/ })).toBeChecked();
     // No send path reads the comment preference, so the app shows it only when its config turns it on.
     await expect(canvas.queryByRole('switch', { name: /comment_email/ })).toBeNull();
+    // The seeded cadence owns its tile. i18next runs without resources here, so the name is the bare key.
+    await expect(await canvas.findByRole('radio', { name: /digest_weekly/ })).toBeChecked();
   },
 };
 

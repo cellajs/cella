@@ -1,12 +1,11 @@
 import { Field } from '@base-ui/react/field';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { ChevronUpIcon, CircleQuestionMarkIcon } from 'lucide-react';
 import * as React from 'react';
 import type { ControllerProps, FieldPath, FieldValues, FormProviderProps } from 'react-hook-form';
 import { Controller, FormProvider, useFormContext, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
-import { Button } from '~/modules/ui/button';
+import { HelpCollapse, HelpToggle } from '~/modules/ui/help-toggle';
 import { Label } from '~/modules/ui/label';
 import { Separator } from '~/modules/ui/separator';
 import { cn } from '~/utils/cn';
@@ -244,7 +243,6 @@ export function FormLabel({
   children,
   ...props
 }: React.ComponentProps<'label'> & { nativeLabel?: boolean; help?: React.ReactNode }) {
-  const { t } = useTranslation();
   const [helpOpen, setHelpOpen] = React.useState(false);
 
   const label = (
@@ -264,48 +262,11 @@ export function FormLabel({
     <div className="flex flex-col">
       <div className="flex items-center gap-2">
         {label}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label={t('c:help')}
-          aria-expanded={helpOpen}
-          onClick={() => setHelpOpen(!helpOpen)}
-          press={false}
-          className="-my-1 size-6 opacity-50 hover:opacity-100"
-        >
-          <span className="relative size-4">
-            <CircleQuestionMarkIcon
-              className={cn(
-                'absolute inset-0 transition-all duration-200 motion-reduce:transition-none',
-                helpOpen ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100',
-              )}
-            />
-            <ChevronUpIcon
-              className={cn(
-                'absolute inset-0 transition-all duration-200 motion-reduce:transition-none',
-                helpOpen ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0',
-              )}
-            />
-          </span>
-        </Button>
+        <HelpToggle open={helpOpen} onToggle={() => setHelpOpen(!helpOpen)} className="-my-1" />
       </div>
-      <div
-        className={cn(
-          'grid transition-[grid-template-rows] duration-200 motion-reduce:transition-none',
-          helpOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
-        )}
-      >
-        <Field.Description
-          render={<div />}
-          className={cn(
-            'overflow-hidden text-muted-foreground text-sm transition-opacity duration-200 motion-reduce:transition-none',
-            helpOpen ? 'opacity-100' : 'opacity-0',
-          )}
-        >
-          {help}
-        </Field.Description>
-      </div>
+      <HelpCollapse open={helpOpen}>
+        <Field.Description render={<div />}>{help}</Field.Description>
+      </HelpCollapse>
     </div>
   );
 }

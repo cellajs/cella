@@ -1,9 +1,11 @@
 import { ChevronDownIcon, PlusIcon, Settings2Icon } from 'lucide-react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
+import { widenMotion } from '~/modules/navigation/menu-sheet/helpers/widen-motion';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
@@ -36,6 +38,9 @@ export function MenuSectionButton({
 
   const createButtonRef = useRef(null);
 
+  const isMobile = useBreakpointBelow('sm', false);
+  const widen = widenMotion(isMobile);
+
   return (
     <div className="sticky top-0 z-10">
       <div className="z-10 flex items-center bg-card py-2">
@@ -64,42 +69,41 @@ export function MenuSectionButton({
             <ChevronDownIcon className="opacity-50 transition-transform duration-200 group-data-[visible=true]/menu-section:rotate-180" />
           </Button>
 
-          {/* Enter by transform and opacity, which skip layout; leaving is instant, so the toggle widens in one step */}
-          {isSectionVisible && !!data.length && (
-            <motion.div
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ bounce: 0, duration: 0.2 }}
-              className="ml-2 shrink-0 max-sm:hidden"
-            >
-              <TooltipButton toolTipContent={t('c:manage_content')} side="bottom" sideOffset={10}>
-                <Button className="w-10 px-2 shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={() => toggleIsEditing()}>
-                  <Settings2Icon className="size-5" />
-                </Button>
-              </TooltipButton>
-            </motion.div>
-          )}
+          {/* initial={false} so opening the sheet doesn't widen every open section at once, only a toggle does */}
+          <AnimatePresence initial={false}>
+            {isSectionVisible && !!data.length && (
+              <motion.div
+                key={`settings-${options.entityType}`}
+                {...widen}
+                transition={{ bounce: 0, duration: 0.2 }}
+                className="ml-2 shrink-0 max-sm:hidden"
+              >
+                <TooltipButton toolTipContent={t('c:manage_content')} side="bottom" sideOffset={10}>
+                  <Button className="w-10 px-2 shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={() => toggleIsEditing()}>
+                    <Settings2Icon className="size-5" />
+                  </Button>
+                </TooltipButton>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {isSectionVisible && handleCreateAction && (
-            <motion.div
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ bounce: 0, duration: 0.2 }}
-              className="ml-2 shrink-0"
-            >
-              <TooltipButton toolTipContent={t('c:create')} sideOffset={22} side="right">
-                <Button
-                  ref={createButtonRef}
-                  className="w-10 px-2 shadow-none"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleCreateAction(createButtonRef)}
-                >
-                  <PlusIcon className="size-5" />
-                </Button>
-              </TooltipButton>
-            </motion.div>
-          )}
+          <AnimatePresence initial={false}>
+            {isSectionVisible && handleCreateAction && (
+              <motion.div key={`create-${options.entityType}`} {...widen} transition={{ bounce: 0, duration: 0.2 }} className="ml-2 shrink-0">
+                <TooltipButton toolTipContent={t('c:create')} sideOffset={22} side="right">
+                  <Button
+                    ref={createButtonRef}
+                    className="w-10 px-2 shadow-none"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleCreateAction(createButtonRef)}
+                  >
+                    <PlusIcon className="size-5" />
+                  </Button>
+                </TooltipButton>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

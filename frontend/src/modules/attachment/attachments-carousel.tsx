@@ -52,9 +52,6 @@ type CarouselProps =
   | (CarouselPropsBase & { isDialog: true; saveInSearchParams: boolean })
   | (CarouselPropsBase & { isDialog?: false; saveInSearchParams?: never });
 
-// A reader who paused the slides keeps them paused: the marketing carousels remount each time they scroll back into view.
-let autoplayPaused = false;
-
 export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, saveInSearchParams = false, classNameContainer }: CarouselProps) {
   const navigate = useNavigate();
   const removeDialog = useDialoger((state) => state.remove);
@@ -97,13 +94,13 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
 
   const toggleWatchDrag = (enabled: boolean) => setWatchDrag(enabled && items.length > 1);
 
-  // Slides that advance by themselves get a pause button, and stay still for a reader who asked for reduced motion.
+  // Slides stay still for a reader who asked for reduced motion, who gets the control to start them; everyone else gets
+  // slides that hold while the pointer or the keyboard is on them and carry on once it leaves.
   const reducedMotion = useReducedMotion();
   const apiRef = useRef<CarouselApi>(undefined);
   const [autoplaying, setAutoplaying] = useState(false);
   const toggleAutoplay = () => {
     const autoplay = apiRef.current?.plugins().autoplay;
-    autoplayPaused = autoplaying;
     if (autoplaying) autoplay?.stop();
     else autoplay?.play();
   };
@@ -130,9 +127,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
     <BaseCarousel
       isDialog={isDialog}
       opts={{ duration: 20, loop: true, startIndex: startIndexRef.current ?? 0, watchDrag }}
-      plugins={
-        isDialog ? [] : [Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true, playOnInit: !reducedMotion && !autoplayPaused })]
-      }
+      plugins={isDialog ? [] : [Autoplay({ delay: 4000, stopOnInteraction: !!reducedMotion, stopOnMouseEnter: true, playOnInit: !reducedMotion })]}
       className="group size-full"
       setApi={handleSetApi}
     >
@@ -270,7 +265,9 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       {!isDialog && (
         <div className="relative mx-auto mt-[calc(1rem+2%)] w-fit">
           <CarouselDots size="sm" gap="lg" />
-          {items.length > 1 && (
+          {/* Only a reader on reduced motion needs it: their slides never start on their own, and theirs is the one pause
+              that must not be undone by the pointer leaving */}
+          {items.length > 1 && reducedMotion && (
             <Button
               variant="ghost"
               size="micro"

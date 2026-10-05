@@ -45,7 +45,9 @@ export function PageAside<T extends PageTab>({ tabs, className, setFocus }: Page
             data-spy-link={id}
             className={cn(
               btnClass,
-              'data-spy-active:inset-ring data-spy-active:inset-ring-input data-spy-active:bg-secondary data-spy-active:font-semibold',
+              // Fill and weight carry the active row; the ring is an edge only a reader who asked for contrast needs
+              'data-spy-active:bg-secondary data-spy-active:font-semibold',
+              'more-contrast:data-spy-active:inset-ring more-contrast:data-spy-active:inset-ring-input',
             )}
             render={
               <Link

@@ -1,7 +1,8 @@
-import { ChevronUpIcon, CircleQuestionMarkIcon } from 'lucide-react';
+import { CircleQuestionMarkIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
+import { HelpCollapse, HelpToggle } from '~/modules/ui/help-toggle';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { cn } from '~/utils/cn';
 
@@ -14,7 +15,7 @@ interface HelpTextProps {
 
 export function HelpText({ content, children, className, type }: HelpTextProps) {
   const { t } = useTranslation();
-  const [collapsed, setCollapsed] = useState(true);
+  const [open, setOpen] = useState(false);
 
   if (type === 'popover') {
     return (
@@ -38,21 +39,9 @@ export function HelpText({ content, children, className, type }: HelpTextProps) 
     <div className={cn('mb-4 flex flex-col', className)}>
       <div className="flex items-center gap-2">
         {children}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={() => setCollapsed(!collapsed)}
-          aria-label={t('c:help')}
-          aria-expanded={!collapsed}
-          press={false}
-          className="size-6 opacity-50 hover:opacity-100"
-        >
-          {collapsed && <CircleQuestionMarkIcon />}
-          {!collapsed && <ChevronUpIcon />}
-        </Button>
+        <HelpToggle open={open} onToggle={() => setOpen(!open)} />
       </div>
-      <div className="text-muted-foreground text-sm">{!collapsed && <span>{content}</span>}</div>
+      <HelpCollapse open={open}>{content}</HelpCollapse>
     </div>
   );
 }
