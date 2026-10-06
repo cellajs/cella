@@ -28,9 +28,6 @@ not grow back.
   `@public` when another workspace or a consumer knip cannot see does use it.
 - **Imports of a template symbol that is no longer exported stop compiling.** Each is either
   `@public` here now, or it was deleted; the lists are in step 3.
-- **`recharts` and `react-day-picker` are gone from `frontend/package.json`.** They backed
-  `ui/chart.tsx` and `ui/calendar.tsx`, which only their own stories used. An app that renders either
-  adds the dependency to its own manifest and keeps its copy of the component.
 - No database, schema, cache or API-surface impact: `pnpm sdk` reports the generated SDK unchanged.
 
 ## Run
@@ -54,8 +51,10 @@ No script: manual.
    (`"tags": ["-testSeam", "-sideEffect"]`): `@testSeam` for an export a test loads through
    `vi.importActual`, and `@sideEffect` for one that exists because constructing it does the work (a
    Pulumi resource, where nothing ever reads the name).
+   `knip.jsonc` also lists `frontend/src/modules/ui/chart.tsx` as an entry: the vendored shadcn chart
+   is kept whole for an app that wants it, and nothing in cella renders its legend parts yet. Declare
+   your own kept-for-later UI the same way rather than tagging each export.
 3. If your app imports any of these from the template, it now has to own them. Deleted outright:
-   `ui/chart.tsx`, `ui/calendar.tsx`, `ui/slider.tsx`, `ui/progress.tsx` with their stories;
    `data-grid/hooks/use-copy-paste.ts` plus `parseTSVToCells`, `getTSVDimensions`, `expandRange`,
    `getCellsInRange`; the unused sidebar, popover, combobox, table, card and breadcrumb sub-parts;
    `immutabilityTriggersSQL`; `federationKeys` (three local copies of it already exist, one per
