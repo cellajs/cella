@@ -38,12 +38,6 @@ export function serializeCellsToTSV<R, SR>(range: CellRange, rows: readonly R[],
   return lines.join('\n');
 }
 
-export function parseTSVToCells(tsv: string): string[][] {
-  if (!tsv || tsv.trim() === '') return [];
-
-  return tsv.split('\n').map((line) => line.split('\t'));
-}
-
 /** Serializes cells to an HTML table, for rich paste targets. */
 export function serializeCellsToHTML<R, SR>(range: CellRange, rows: readonly R[], columns: readonly CalculatedColumn<R, SR>[]): string {
   const normalized = normalizeCellRange(range);
@@ -71,11 +65,4 @@ export function serializeCellsToHTML<R, SR>(range: CellRange, rows: readonly R[]
 
   html += '</table>';
   return html;
-}
-
-export function getTSVDimensions(cells: string[][]): { rows: number; cols: number } {
-  if (cells.length === 0) return { rows: 0, cols: 0 };
-
-  const maxCols = Math.max(...cells.map((row) => row.length));
-  return { rows: cells.length, cols: maxCols };
 }

@@ -32,12 +32,3 @@ export function registerCacheInvalidation(): void {
 
   log.info('Entity cache hook registered');
 }
-
-export function unregisterCacheInvalidation(): void {
-  if (!isRegistered) return;
-
-  activityBus.offAny(handleActivityEvent);
-  isRegistered = false;
-
-  log.info('Entity cache hook unregistered');
-}

@@ -57,9 +57,6 @@ export const openDedicatedConnection = async (onError: (error: Error) => void): 
 
 let adminConnection: PgDB | undefined;
 
-/** True when this process was handed the admin credential (migrate, seed and maintenance paths). */
-export const hasAdminDb = (): boolean => !env.NODB && !!env.DATABASE_ADMIN_URL;
-
 /**
  * The admin pool (table owner, BYPASSRLS), opened on first use and never at import. The API
  * serves without `DATABASE_ADMIN_URL` when it owns neither migrations nor in-process jobs, and a

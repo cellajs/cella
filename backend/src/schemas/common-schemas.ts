@@ -48,17 +48,11 @@ export const tenantIdParamSchema = z.object({ tenantId: validIdSchema, id: valid
 
 export const tenantOnlyParamSchema = z.object({ tenantId: validIdSchema });
 
-export const inOrgParamSchema = z.object({ organizationId: validIdSchema });
-
-export const idInOrgParamSchema = z.object({ id: validIdSchema, organizationId: validIdSchema });
-
 // Tenant-scoped param schemas (for RLS-enabled routes)
 
 export const tenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema });
 
 export const idInTenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema, id: validIdSchema });
-
-export const userIdInTenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema, userId: validIdSchema });
 
 /** Cross-tenant routes with a relatability check. */
 export const relatableUserIdParamSchema = z.object({ relatableUserId: validIdSchema });
@@ -225,5 +219,3 @@ export const validCDNUrlSchema = z
   .trim()
   .max(maxLength.url)
   .superRefine(refineWithType((url: string) => isCDNUrl(url), 'invalid_cdn_url'));
-
-export const validDomainsSchema = validDomainSchema.array().optional();

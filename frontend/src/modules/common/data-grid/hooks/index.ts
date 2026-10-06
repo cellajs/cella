@@ -1,6 +1,5 @@
 export * from './use-calculated-columns';
 export * from './use-column-widths';
-export * from './use-copy-paste';
 export * from './use-drag-auto-scroll';
 export * from './use-grid-dimensions';
 export * from './use-near-end';

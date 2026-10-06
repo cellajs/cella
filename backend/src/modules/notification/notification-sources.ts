@@ -39,8 +39,6 @@ onBackendModuleRegister((module) => {
 
 export const getNotificationSource = (entityType: string): NotificationSource | undefined => sources.get(entityType);
 
-export const getNotificationSourceTypes = (): string[] => [...sources.keys()];
-
 // Subject reads: the declaration's function when the app gave one, else the product table.
 
 /**

@@ -4,7 +4,6 @@ export { generateMockChannelCounts } from './mock-channel-counts';
 export {
   generateMockActivityChannelIdColumns,
   generateMockChannelIdColumns,
-  generateMockEntityBodyChannelIdColumns,
   generateMockEntityChannelIdColumns,
 } from './mock-channel-id-columns';
 export {

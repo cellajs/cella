@@ -244,18 +244,6 @@ interface FindChangedEntityIdsOpts {
   afterSeq: number;
 }
 
-export const findChangedEntityIds = async (ctx: DbContext, { entityType, organizationId, afterSeq }: FindChangedEntityIdsOpts) => {
-  const { db } = ctx.var;
-  const table = getEntityTable(entityType);
-
-  const rows = await db
-    .select({ id: table.id })
-    .from(table)
-    .where(sql`seq > ${afterSeq} AND organization_id = ${organizationId}${publishedSqlFilter(table)}`);
-
-  return rows.map((r) => r.id);
-};
-
 /** Split into live updates and soft-delete tombstones. */
 export const findChangedEntityDeltaIds = async (ctx: DbContext, { entityType, organizationId, afterSeq }: FindChangedEntityIdsOpts) => {
   const { db } = ctx.var;

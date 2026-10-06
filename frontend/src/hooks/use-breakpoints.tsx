@@ -48,16 +48,6 @@ for (const mql of mediaQueries.values()) {
 }
 if (!window.matchMedia) window.addEventListener('resize', updateGlobalBreakpoint);
 
-/** Subscribe to breakpoint changes; works outside React components. Returns an unsubscribe fn. */
-export function subscribeToBreakpointChanges(callback: () => void) {
-  listeners.add(callback);
-  return () => listeners.delete(callback);
-}
-
-export function getBreakpointSnapshot() {
-  return currentBreakpoint;
-}
-
 function subscribe(callback: () => void) {
   listeners.add(callback);
   return () => listeners.delete(callback);
