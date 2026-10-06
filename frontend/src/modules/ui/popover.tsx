@@ -1,5 +1,5 @@
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
-import type { ComponentProps, RefAttributes } from 'react';
+import type { RefAttributes } from 'react';
 import { cn } from '~/utils/cn';
 
 export function Popover({ ...props }: PopoverPrimitive.Root.Props) {
@@ -63,20 +63,4 @@ export function PopoverContent({
       </PopoverPrimitive.Positioner>
     </PopoverPrimitive.Portal>
   );
-}
-
-export function PopoverAnchor({ ...props }: PopoverPrimitive.Trigger.Props & RefAttributes<HTMLElement>) {
-  return <PopoverPrimitive.Trigger data-slot="popover-anchor" {...props} />;
-}
-
-export function PopoverHeader({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot="popover-header" className={cn('flex flex-col gap-1 text-sm', className)} {...props} />;
-}
-
-export function PopoverTitle({ className, ...props }: ComponentProps<'h2'>) {
-  return <div data-slot="popover-title" className={cn('font-medium', className)} {...props} />;
-}
-
-export function PopoverDescription({ className, ...props }: ComponentProps<'p'>) {
-  return <p data-slot="popover-description" className={cn('text-muted-foreground', className)} {...props} />;
 }

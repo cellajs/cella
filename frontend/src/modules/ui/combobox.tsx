@@ -165,52 +165,8 @@ function ComboboxSeparator({ className, ...props }: ComboboxPrimitive.Separator.
   return <ComboboxPrimitive.Separator data-slot="combobox-separator" className={cn('-mx-1 my-1 h-px bg-border', className)} {...props} />;
 }
 
-function ComboboxStatus({ className, ...props }: ComboboxPrimitive.Status.Props) {
-  return <ComboboxPrimitive.Status data-slot="combobox-status" className={cn('px-3 py-2 text-muted-foreground text-sm', className)} {...props} />;
-}
-
-function ComboboxValue(props: ComboboxPrimitive.Value.Props) {
-  return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />;
-}
-
-function ComboboxLabel({ className, ...props }: ComboboxPrimitive.Label.Props) {
-  return <ComboboxPrimitive.Label data-slot="combobox-label" className={className} {...props} />;
-}
-
-function ComboboxChips({ className, ...props }: ComboboxPrimitive.Chips.Props) {
-  return <ComboboxPrimitive.Chips data-slot="combobox-chips" className={cn('flex flex-wrap items-center gap-1', className)} {...props} />;
-}
-
-function ComboboxChip({ className, children, ...props }: ComboboxPrimitive.Chip.Props) {
-  return (
-    <ComboboxPrimitive.Chip
-      data-slot="combobox-chip"
-      className={cn('inline-flex max-w-60 items-center gap-1 rounded-sm bg-secondary px-2 py-0.5 text-secondary-foreground text-xs', className)}
-      {...props}
-    >
-      {children}
-    </ComboboxPrimitive.Chip>
-  );
-}
-
-function ComboboxChipRemove({ className, ...props }: ComboboxPrimitive.ChipRemove.Props) {
-  return (
-    <ComboboxPrimitive.ChipRemove
-      data-slot="combobox-chip-remove"
-      className={cn('-mr-1 inline-flex size-4 items-center justify-center rounded-full opacity-60 hover:opacity-100', className)}
-      {...props}
-    >
-      <XIcon className="size-3" />
-    </ComboboxPrimitive.ChipRemove>
-  );
-}
-
 export {
   Combobox,
-  ComboboxChip,
-  ComboboxChipRemove,
-  ComboboxChips,
-  ComboboxClear,
   ComboboxContent,
   ComboboxEmpty,
   ComboboxGroup,
@@ -218,11 +174,7 @@ export {
   ComboboxInput,
   ComboboxItem,
   ComboboxItemIndicator,
-  ComboboxLabel,
   ComboboxList,
   ComboboxPrimitive,
   ComboboxSeparator,
-  ComboboxStatus,
-  ComboboxTrigger,
-  ComboboxValue,
 };

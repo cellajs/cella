@@ -1,5 +1,5 @@
 import { useRender } from '@base-ui/react/use-render';
-import { ChevronRightIcon, EllipsisIcon } from 'lucide-react';
+import { ChevronRightIcon } from 'lucide-react';
 import type React from 'react';
 import { cn } from '~/utils/cn';
 
@@ -52,21 +52,6 @@ function BreadcrumbSeparator({ children, className, ...props }: React.ComponentP
     <li data-slot="breadcrumb-separator" role="presentation" aria-hidden="true" className={cn('[&>svg]:size-3.5', className)} {...props}>
       {children ?? <ChevronRightIcon />}
     </li>
-  );
-}
-
-export function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<'span'>) {
-  return (
-    <span
-      data-slot="breadcrumb-ellipsis"
-      role="presentation"
-      aria-hidden="true"
-      className={cn('flex size-9 items-center justify-center', className)}
-      {...props}
-    >
-      <EllipsisIcon className="size-4" />
-      <span className="sr-only">More</span>
-    </span>
   );
 }
 
