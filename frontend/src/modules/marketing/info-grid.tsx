@@ -20,11 +20,10 @@ interface InfoTileProps {
   namespace: string;
   layers?: readonly string[];
   image?: boolean;
-  invertClassName?: string;
   tileClassName?: string;
 }
 
-function InfoTile({ id, namespace, layers, image, invertClassName, tileClassName = 'bg-card' }: InfoTileProps) {
+function InfoTile({ id, namespace, layers, image, tileClassName = 'bg-card' }: InfoTileProps) {
   const { t } = useTranslation();
   const title = `about:${namespace}.${id}` as TKey;
   const text = `about:${namespace}.${id}.text` as TKey;
@@ -33,11 +32,11 @@ function InfoTile({ id, namespace, layers, image, invertClassName, tileClassName
     return (
       <div className={cn('relative overflow-hidden rounded-lg p-2', tileClassName)}>
         <div className="flex h-44 flex-col justify-between gap-2 rounded-md p-2 sm:p-6">
-          <img
-            src={`/static/marketing/features/${id}.svg`}
-            alt={t(title)}
-            className={cn('plus-dither mb-2 size-12 object-contain', invertClassName)}
-            loading="lazy"
+          {/* App tile with the brand mark carved out of it; the heading below names it */}
+          <div
+            aria-hidden="true"
+            className="plus-punch mb-2 size-12 shrink-0 rounded-xl opacity-80"
+            style={{ '--punch-icon': `url(/static/marketing/features/${id}.svg)` } as React.CSSProperties}
           />
           <h3 className="font-medium">{t(title)}</h3>
           <p className="grow text-muted-foreground text-sm">{t(text)}</p>
@@ -93,15 +92,7 @@ export function InfoGrid<C extends string>({
   const isMediumScreen = useBreakpointAbove('md');
 
   const renderTile = (item: InfoGridItem<C>) => (
-    <InfoTile
-      key={item.id}
-      id={item.id}
-      namespace={namespace}
-      layers={item.layers}
-      image={image}
-      invertClassName="dark:invert"
-      tileClassName={tileClassName}
-    />
+    <InfoTile key={item.id} id={item.id} namespace={namespace} layers={item.layers} image={image} tileClassName={tileClassName} />
   );
 
   if (categoryIcons) {
