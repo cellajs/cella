@@ -34,8 +34,13 @@ How it works:
 - **Mitosis.** Colony cells join through a smooth minimum, so a split pinches a shared
   membrane apart. Each daughter runs the same system at a time offset that scales with
   separation: siblings drift apart in character and re-synchronize as they merge.
-- **Reduced motion = slow.** `prefers-reduced-motion` drops each instance to a fifth
-  of its `speed`; the piece keeps living, gently.
+- **Entrance = condense.** On mount the grain survival falloff starts wide open, so
+  sparse grains dust the whole frame; it tightens over `ENTER_SECONDS` and the mark
+  precipitates from the outside in. No grain travels. One uniform (`uEnter`) drives
+  it, and at 1 the shader is the resting piece, so the entrance costs nothing after.
+- **Reduced motion = slow, no entrance.** `prefers-reduced-motion` drops each instance
+  to a fifth of its `speed` and skips the entrance for a plain opacity fade; the piece
+  keeps living, gently.
 
 The component props are the tuning surface per page: `variant`, `grid` (pixel density),
 `speed` (clock scale, 1 = prototype pace), `overscan` (canvas margin around the shape;

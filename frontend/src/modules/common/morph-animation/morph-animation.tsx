@@ -10,10 +10,11 @@ import { cn } from '~/utils/cn';
  * container (hero). `colony` divides 1-2-3-5 and flows back together as the
  * auth page background: it lays itself out behind the page, so the auth
  * layout renders it bare and an app's own background decides its own look.
- * Pauses off-screen; `prefers-reduced-motion` slows the whole piece down, and
- * nothing ever freezes. `grid` is the pixel density in cells across the canvas
- * (lower is chunkier, higher is finer); `speed` scales the clock, 1 being the
- * pace the piece was tuned at.
+ * It enters by condensing out of a dusted frame. Pauses off-screen;
+ * `prefers-reduced-motion` swaps that entrance for a plain fade and slows the
+ * whole piece down, and nothing ever freezes. `grid` is the pixel density in
+ * cells across the canvas (lower is chunkier, higher is finer); `speed` scales
+ * the clock, 1 being the pace the piece was tuned at.
  */
 export function MorphAnimation({
   variant = 'single',
@@ -31,7 +32,7 @@ export function MorphAnimation({
   className?: string;
 }) {
   const mode = useUIStore((state) => state.mode);
-  // The component lazy-loads, so the fade-in keys on its own mount: it always starts from transparent
+  // Reduced motion only: the component lazy-loads, so its fade-in keys on its own mount and always starts from transparent
   const [faded, setFaded] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<MorphRenderer | null>(null);
@@ -51,8 +52,11 @@ export function MorphAnimation({
     renderer.setStamp(propsRef.current.stamp === 'plus' ? 1 : 0);
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    /* reduced motion slows to a fifth of the instance speed; the piece never freezes */
-    const applyMotion = () => renderer.setTimeScale(propsRef.current.speed * (reducedMotion.matches ? 0.2 : 1));
+    /* reduced motion slows to a fifth of the instance speed and opens at rest; the piece never freezes */
+    const applyMotion = () => {
+      renderer.setTimeScale(propsRef.current.speed * (reducedMotion.matches ? 0.2 : 1));
+      if (reducedMotion.matches) renderer.skipEntrance();
+    };
     applyMotion();
     reducedMotion.addEventListener('change', applyMotion);
 
@@ -92,7 +96,17 @@ export function MorphAnimation({
     rendererRef.current?.setStamp(stamp === 'plus' ? 1 : 0);
   }, [stamp]);
 
-  const canvas = <canvas ref={canvasRef} className={cn('size-full opacity-0 transition-opacity duration-2000', faded && 'opacity-100', className)} />;
+  // The shader's entrance brings the piece in; under reduced motion the canvas crossfades while the shader opens at rest
+  const canvas = (
+    <canvas
+      ref={canvasRef}
+      className={cn(
+        'size-full motion-reduce:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-2000',
+        faded && 'motion-reduce:opacity-100',
+        className,
+      )}
+    />
+  );
   if (variant !== 'colony') return canvas;
 
   // The shader's light theme is tuned for this low-opacity multiply layer
