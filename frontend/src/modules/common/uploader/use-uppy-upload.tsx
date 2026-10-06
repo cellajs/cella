@@ -45,11 +45,9 @@ export function useUploadUppy() {
         localUppy
           .on('file-editor:complete', (file) => {
             console.info('File editor complete:', file);
-            statusEventHandler.onFileEditorComplete?.(file);
           })
-          .on('upload', (uploadId, files) => {
+          .on('upload', (_uploadId, files) => {
             console.info('Upload started:', files);
-            statusEventHandler.onUploadStart?.(uploadId, files);
           })
           .on('error', (error) => {
             console.error('Upload error:', error);

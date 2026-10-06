@@ -17,8 +17,6 @@ export type CustomUppyOpt = UppyOptions<UppyMeta, UppyBody>;
 export type Plugins = ('webcam' | 'image-editor' | 'audio' | 'screen-capture' | 'url' | string)[];
 
 export type StatusEventHandlers = {
-  onFileEditorComplete?: (file: CustomUppyFile) => void;
-  onUploadStart?: (uploadId: string, files: CustomUppyFile[]) => void;
   onError?: (error: Error) => void;
   onComplete?: (mappedResult: UploadedUppyFile<UploadTemplateId>) => void | Promise<void>;
 };
