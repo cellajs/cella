@@ -26,7 +26,7 @@ export interface OpenApiTag {
 const tagRegistry = new Map<string, OpenApiTag>();
 
 /** Skips entries that are already registered. */
-export const registerTag = (tag: OpenApiTag): OpenApiTag => {
+const registerTag = (tag: OpenApiTag): OpenApiTag => {
   if (!tagRegistry.has(tag.tag)) tagRegistry.set(tag.tag, tag);
   return tag;
 };

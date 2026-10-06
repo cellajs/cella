@@ -32,7 +32,10 @@ export const useSpotlighter = create<SpotlighterState>((set) => ({
   close: (id) => set((state) => ({ stack: state.stack.filter((e) => e.id !== id) })),
 }));
 
-/** Declarative registration: the overlay shows while `active`, and backdrop/Esc call `onClose`. */
+/**
+ * Declarative registration: the overlay shows while `active`, and backdrop/Esc call `onClose`.
+ * @public
+ */
 export function useSpotlight(id: string, active: boolean, onClose: () => void) {
   // Ref'd so a re-rendered closure never re-registers (and close always sees fresh state).
   const onCloseRef = useRef(onClose);
@@ -44,7 +47,10 @@ export function useSpotlight(id: string, active: boolean, onClose: () => void) {
   }, [id, active]);
 }
 
-/** Raises an element above the overlay. Apply to the outermost element of the spotlit region. */
+/**
+ * Raises an element above the overlay. Apply to the outermost element of the spotlit region.
+ * @public
+ */
 export const spotlightLift = 'relative z-111';
 
 /**
@@ -52,5 +58,6 @@ export const spotlightLift = 'relative z-111';
  * (their own stacking context), so the z-index must land on the wrapper itself. The wrapper is
  * render-owned by virtua, so the row marks itself and a global rule (styling/tailwind.css) climbs
  * one level with `:has(>)`.
+ * @public
  */
 export const spotlightLiftRow = 'spotlight-lift-row';

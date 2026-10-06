@@ -6,7 +6,7 @@ export const greetingStyle: React.CSSProperties = { marginBottom: '4px' };
 
 export const smallTextStyle: React.CSSProperties = { fontSize: '0.75rem', lineHeight: '1.125rem' };
 
-export const finePrintStyle: React.CSSProperties = { ...smallTextStyle, textAlign: 'center' };
+const finePrintStyle: React.CSSProperties = { ...smallTextStyle, textAlign: 'center' };
 
 export const noteStyle: React.CSSProperties = { ...finePrintStyle, margin: '0.5rem 0 0 0' };
 

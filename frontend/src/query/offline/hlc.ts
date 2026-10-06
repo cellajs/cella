@@ -11,7 +11,7 @@ let lastCounter = 0;
 const sourceHash = hashSourceId(sourceId);
 
 /** Format `millis:counter:source`; lexicographic comparison gives causal ordering. */
-export function createHLC(): string {
+function createHLC(): string {
   const now = Date.now();
   if (now > lastTimestamp) {
     lastTimestamp = now;

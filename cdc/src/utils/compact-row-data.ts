@@ -11,7 +11,7 @@ import type { CdcRowData, TableMeta } from '../types';
 const cdcExcludeColumnLengthThreshold = 10_000;
 
 /** camelCase keys of large-text columns, from Drizzle introspection at startup. */
-export const excludedRowDataKeys: Set<string> = (() => {
+const excludedRowDataKeys: Set<string> = (() => {
   const keys = new Set<string>();
   const allTables = [...Object.values(entityTables), ...Object.values(resourceTables)];
   for (const table of allTables) {

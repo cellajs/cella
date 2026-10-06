@@ -29,7 +29,7 @@ import { mockOrganizationResponse } from './organization-mocks';
 const organizationIncludedSchema = channelIncludedSchema('organization');
 
 /** Flag keys come from the app-owned config; built loose then cast because with zero flags `keyof OrganizationFlags` is `never`. */
-export const organizationFlagsSchema = z.object(
+const organizationFlagsSchema = z.object(
   Object.keys(appConfig.defaultOrganizationFlags).reduce(
     (acc, key) => {
       acc[key] = z.boolean();

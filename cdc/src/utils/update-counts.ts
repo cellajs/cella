@@ -13,7 +13,7 @@ export interface CountDelta {
 }
 
 /** `e:li:h:<type>` (last insert) / `e:lu:h:<type>` (last update): epoch-ms stamps, never summed. */
-export function isActivityStampKey(key: string): boolean {
+function isActivityStampKey(key: string): boolean {
   return key.startsWith('e:li:') || key.startsWith('e:lu:');
 }
 

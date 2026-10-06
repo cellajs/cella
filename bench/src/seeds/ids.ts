@@ -26,7 +26,10 @@ export const userId = (i: number) => benchUuid(CORE_ID_VARIANTS.user, i);
 export const userEmail = (i: number) => `xbench-user-${String(i).padStart(4, '0')}@xbench.local`;
 export const emailId = (i: number) => benchUuid(CORE_ID_VARIANTS.email, i);
 export const attachmentId = (i: number) => benchUuid(CORE_ID_VARIANTS.attachment, i);
+/** @public */
 export const membershipId = (i: number) => benchUuid(CORE_ID_VARIANTS.membership, i);
 export const sessionId = (i: number) => benchUuid(CORE_ID_VARIANTS.session, i);
+/** @public */
 export const taskId = (i: number) => benchUuid(CORE_ID_VARIANTS.task, i);
+/** @public */
 export const projectId = (i: number) => benchUuid(CORE_ID_VARIANTS.project, i);

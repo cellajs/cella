@@ -19,7 +19,7 @@ export type MutationHandler = (ctx: ActorContext, payload: MutationPayload) => P
 const handlers = new Map<TrackedEventType, MutationHandler[]>();
 
 /** Direct registration, for cross-module handlers derived from other modules' declarations. */
-export function registerMutationHandler(event: TrackedEventType, handler: MutationHandler): void {
+function registerMutationHandler(event: TrackedEventType, handler: MutationHandler): void {
   const existing = handlers.get(event);
   if (existing) existing.push(handler);
   else handlers.set(event, [handler]);

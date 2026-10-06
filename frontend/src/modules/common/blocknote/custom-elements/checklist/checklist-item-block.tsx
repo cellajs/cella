@@ -1,11 +1,11 @@
 import { type BlockNoteEditor, createExtension, getBlockInfoFromSelection } from '@blocknote/core';
 import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
-import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
+import { createReactBlockSpec } from '@blocknote/react';
 import { SquareCheckBigIcon } from 'lucide-react';
 import { checklistItemConfig } from 'shared/utils/blocknote-schema-configs';
 import { nanoid } from 'shared/utils/nanoid';
 import { ChecklistItemRender } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-render';
-import type { CustomBlockNoteEditor, IconType } from '~/modules/common/blocknote/types';
+import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { cn } from '~/utils/cn';
 
 // A CustomBlockNoteEditor annotation would make customSchema reference itself through this block spec (TS2502 circular type).
@@ -105,10 +105,4 @@ export const getChecklistSlashItem = (editor: CustomBlockNoteEditor) => ({
   aliases: ['checklist', 'checkbox', 'todo', 'task', 'check', 'todos'],
   group: 'Basic blocks',
   icon: <SquareCheckBigIcon />,
-});
-
-export const insertSideChecklistItem = (): BlockTypeSelectItem & { oneInstanceOnly?: boolean } => ({
-  name: 'Todos',
-  type: 'checklistItem' as const,
-  icon: SquareCheckBigIcon as unknown as IconType,
 });

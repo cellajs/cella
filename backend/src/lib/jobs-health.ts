@@ -5,7 +5,7 @@ import type { HealthComponent, HealthStatus } from '#/lib/health-helpers';
 import { JOBS_SCHEMA } from '#/lib/pg-boss';
 
 /** The maintainer stamps `cron_on` every half minute; older than this and no process is scheduling. */
-export const CRON_STALE_MS = 5 * 60 * 1000;
+const CRON_STALE_MS = 5 * 60 * 1000;
 
 export interface JobsQueueHealth {
   name: string;

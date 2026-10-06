@@ -43,6 +43,7 @@ const orgSlugParam = (organizationId: string, tenantId: string) => findOrganizat
 /**
  * Route to a channel fresh from a create response (no enrichment yet): the org slug comes from
  * cache, the entity's own param takes its server-issued slug.
+ * @public
  */
 export const getCreatedChannelRoute = (
   entityType: ChannelEntityType,
@@ -58,6 +59,7 @@ export const getCreatedChannelRoute = (
  * Route to a channel's nearest ancestor page: the deepest non-null ancestor id column on the row,
  * else the organization. The ancestor id fills the target's own slug param; its `beforeLoad`
  * rewrites the URL to the canonical slug.
+ * @public
  */
 export const getNearestAncestorRoute = (
   entityType: ChannelEntityType,

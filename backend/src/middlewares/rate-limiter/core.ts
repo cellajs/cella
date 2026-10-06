@@ -7,7 +7,7 @@ import { reserveTiers, settleTiers, slowTier } from '#/middlewares/rate-limiter/
 import type { Outcome, RateLimiterHandler, RateLimiterOpts, RateLimitKeyPart, RateLimitMode, Tier } from '#/middlewares/rate-limiter/types';
 import { log } from '#/utils/logger';
 
-export const defaultOptions = {
+const defaultOptions = {
   points: 10,
   duration: 60 * 60, // within 1 hour
   blockDuration: 60 * 30,

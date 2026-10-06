@@ -63,7 +63,7 @@ export interface UserListItem extends UserWithActivity {
   role?: SystemRole;
 }
 
-export const mockUserListItem = (key = 'userListItem:default'): UserListItem => ({
+const mockUserListItem = (key = 'userListItem:default'): UserListItem => ({
   ...mockUserResponse(`${key}:user`),
   memberships: [mockMembershipBase(`${key}:membership`)],
   role: undefined,

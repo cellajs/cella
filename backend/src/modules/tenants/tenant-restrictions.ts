@@ -2,7 +2,10 @@ import { appConfig, type EntityType } from 'shared';
 import type { ActorContext } from '#/core/context';
 import { AppError } from '#/core/error';
 
-/** Quotas on machine actors and their keys, beside the entity quotas; one place to extend for a new kind. */
+/**
+ * Quotas on machine actors and their keys, beside the entity quotas; one place to extend for a new kind.
+ * @public
+ */
 export const machineQuotaKeys = ['serviceAccount', 'apiKey'] as const;
 
 /** Hard caps per tenant on entities and on machine actors and their keys. 0 = unlimited. */

@@ -15,7 +15,7 @@ const guardStyle: React.CSSProperties = {
 };
 
 /** Focusable elements in a container, using the DOM tabIndex property as ground truth. */
-export function getFocusableElements(container: HTMLElement): HTMLElement[] {
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
   const candidates = container.querySelectorAll<HTMLElement>(candidateSelector);
   return Array.from(candidates).filter(
     (el) =>

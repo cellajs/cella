@@ -4,7 +4,7 @@ export interface PreviewProps extends BaseProps<'div'> {}
 
 const maxLength = 150;
 
-export const renderWhiteSpace = (text: string) => {
+const renderWhiteSpace = (text: string) => {
   if (text.length >= maxLength) return null;
 
   const whiteSpaceCodes = '\xa0\u200C\u200B\u200D\u200E\u200F\uFEFF';

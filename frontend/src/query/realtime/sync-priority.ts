@@ -17,7 +17,7 @@ export function getRouteOrgId(): string | null {
 }
 
 /** Null outside an org layout. */
-export function getRouteTenantId(): string | null {
+function getRouteTenantId(): string | null {
   for (const match of getRouter().state.matches) {
     const ctx = match.context;
     if (ctx && 'tenantId' in ctx && typeof ctx.tenantId === 'string') {

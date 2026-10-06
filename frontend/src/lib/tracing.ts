@@ -13,10 +13,6 @@ export function getSpans(): SpanData[] {
   return spanStore.getSpans();
 }
 
-export function getSpansByPrefix(prefix: string): SpanData[] {
-  return spanStore.getSpansByPrefix(prefix);
-}
-
 export function subscribeToSpans(callback: (spans: SpanData[]) => void): () => void {
   return spanStore.subscribe(callback);
 }
@@ -51,6 +47,7 @@ function applyAttrs(span: Span, attrs: SpanAttrs): void {
 
 // withSpan helpers
 
+/** @public */
 export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => Promise<T>): Promise<T> {
   return tracer.startActiveSpan(name, async (span) => {
     applyAttrs(span, attrs);
@@ -88,6 +85,7 @@ export function withSpanSync<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceC
   }
 }
 
+/** @public */
 export function startSyncSpan(name: string, attributes?: Record<string, string | number | boolean | null>): Span {
   const span = tracer.startSpan(name);
   if (attributes) {

@@ -165,7 +165,7 @@ export async function touchDoc(doc: DocKey): Promise<LiveStamp> {
 }
 
 /** Tenants swept concurrently by the sweep; bounds its query fan-out on large installs. */
-export const SWEEP_TENANT_CONCURRENCY = 4;
+const SWEEP_TENANT_CONCURRENCY = 4;
 
 async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Promise<DocScope[]> {
   const cutoff = sql`now() - (${olderThanMs}::bigint * interval '1 millisecond')`;

@@ -40,12 +40,15 @@ const writeMyMemberships = (write: (items: MembershipBase[]) => MembershipBase[]
   });
 };
 
-export const updateMyMembershipCache = (updatedMembership: Partial<MembershipBase> & { id: string }) =>
+const updateMyMembershipCache = (updatedMembership: Partial<MembershipBase> & { id: string }) =>
   writeMyMemberships((items) => items.map((m) => (m.id === updatedMembership.id ? { ...m, ...updatedMembership } : m)), true);
 
 export const addMyMembershipCache = (newMembership: MembershipBase) => writeMyMemberships((items) => [...items, newMembership]);
 
-/** Matches on channel identity, not on membership id. */
+/**
+ * Matches on channel identity, not on membership id.
+ * @public
+ */
 export const upsertMyMembershipCache = (membership: MembershipBase) => {
   const isSameChannel = (m: MembershipBase) => getMembershipChannelKey(m) === getMembershipChannelKey(membership);
   writeMyMemberships((items) => (items.some(isSameChannel) ? items.map((m) => (isSameChannel(m) ? membership : m)) : [...items, membership]));

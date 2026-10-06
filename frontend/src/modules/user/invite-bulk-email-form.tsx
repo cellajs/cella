@@ -7,7 +7,7 @@ import { InviteFormFooter, useInviteSubmit } from '~/modules/user/invite-submit'
 import { useInviteFormDraft } from '~/modules/user/invite-users';
 
 /** Extract unique, lowercased email addresses from any pasted text (commas, newlines, address-book dumps). */
-export const extractEmails = (text: string): string[] => {
+const extractEmails = (text: string): string[] => {
   const matches = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi) ?? [];
   return [...new Set(matches.map((email) => email.toLowerCase()))];
 };

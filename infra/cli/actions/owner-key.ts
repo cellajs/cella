@@ -15,10 +15,10 @@ import { errorMessage } from '../../lib/utils/errors';
 import { endAction, keyPairOrPrompt } from '../shared';
 
 /** Lifetime of the key a privileged run mints from a durable Owner API key. */
-export const MINTED_KEY_TTL_MS = 30 * 60_000;
+const MINTED_KEY_TTL_MS = 30 * 60_000;
 
 /** A user key with more life than this is durable: a run mints a short-lived key from it and never drives Pulumi with the durable key itself. */
-export const DURABLE_KEY_HOURS = 24;
+const DURABLE_KEY_HOURS = 24;
 
 /** The prompt hint for an Owner API key. */
 export const OWNER_KEY_HINT = 'console → your user → API keys; any key holding IAMManager also works';

@@ -20,7 +20,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { queryClient } from '~/query/query-client';
 import type { MutationData, QueryOrgContext } from '~/query/types';
 
-export const serviceAccountKeys = {
+const serviceAccountKeys = {
   all: ['service-accounts'] as const,
   list: (path: QueryOrgContext) => ['service-accounts', 'list', path.tenantId, path.organizationId] as const,
   apiKeys: (path: QueryOrgContext, id: string) => ['service-accounts', 'apiKeys', path.tenantId, path.organizationId, id] as const,

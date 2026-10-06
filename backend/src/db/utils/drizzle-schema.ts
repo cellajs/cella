@@ -5,6 +5,7 @@ import { type SecretColumnsOf, secretColumnsOf } from '#/db/secret-columns';
 
 const factory = createSchemaFactory({ zodInstance: z });
 
+/** @public */
 export const { createInsertSchema, createUpdateSchema } = factory;
 
 type Coerce = typeof factory extends { createSelectSchema: CreateSelectSchema<infer C> } ? C : never;

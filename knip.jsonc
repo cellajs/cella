@@ -1,5 +1,8 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
+  // `@testSeam`: a test loads it through `vi.importActual`, which knip cannot resolve. `@sideEffect`: the
+  // export exists because constructing it does the work (a Pulumi resource), so nothing ever reads the name.
+  "tags": ["-testSeam", "-sideEffect"],
   "workspaces": {
     ".": {
       // `pnpm cella migrate` runs each migration's codemod by path, so nothing imports them.

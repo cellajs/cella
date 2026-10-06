@@ -19,7 +19,7 @@ import { mockInactiveMembershipResponse, mockMembershipBase, mockMembershipRespo
 
 const entityRoleSchema = z.enum(roles.all);
 
-export const membershipSchema = z
+const membershipSchema = z
   .object({
     ...createSelectSchema(membershipsTable).shape,
     // Override enum columns with explicit schemas to preserve literal types

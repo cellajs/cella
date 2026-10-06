@@ -13,7 +13,10 @@ type InlineContent =
  */
 const paragraphProps = { backgroundColor: 'default', textColor: 'default', textAlignment: 'left' } as const;
 
-/** One paragraph block with the given inline content. */
+/**
+ * One paragraph block with the given inline content.
+ * @public
+ */
 export const paragraphBlock = (content: InlineContent[]) => ({
   id: generateId(),
   type: 'paragraph' as const,
@@ -22,7 +25,10 @@ export const paragraphBlock = (content: InlineContent[]) => ({
   children: [],
 });
 
-/** Inline text, the common case. */
+/**
+ * Inline text, the common case.
+ * @public
+ */
 export const text = (value: string): InlineContent => ({ type: 'text', text: value, styles: {} });
 
 /** A stored block document (the `description` column) of one paragraph per string. */

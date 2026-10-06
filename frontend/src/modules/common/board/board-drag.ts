@@ -34,5 +34,8 @@ interface PanelDragContext {
 
 export const PanelDragHandleContext = createContext<PanelDragContext | null>(null);
 
-/** Returns drag handle registration and keyboard handler. Returns null if the panel is not reorderable. */
+/**
+ * Returns drag handle registration and keyboard handler. Returns null if the panel is not reorderable.
+ * @public
+ */
 export const usePanelDragHandle = () => useContext(PanelDragHandleContext);

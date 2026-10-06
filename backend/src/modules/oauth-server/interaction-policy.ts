@@ -11,7 +11,7 @@ import { findSession } from '#/modules/auth/sessions/operations/resolve-session'
  * @param req - The request as Node delivers it; only its cookies, forwarding header and socket are read.
  * @param res - Its response, which the reader never writes.
  */
-export async function appSessionUserId(req: IncomingMessage, res: ServerResponse): Promise<string | null> {
+async function appSessionUserId(req: IncomingMessage, res: ServerResponse): Promise<string | null> {
   const headers = new Headers();
   for (const name of ['cookie', 'x-forwarded-for']) {
     const value = req.headers[name];

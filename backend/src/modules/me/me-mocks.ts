@@ -66,7 +66,7 @@ export const mockUploadTokenResponse = (key = 'upload-token:default'): UploadTok
     };
   });
 
-export const mockPendingInvitationResponse = (key = 'pending-invitation:default') => ({
+const mockPendingInvitationResponse = (key = 'pending-invitation:default') => ({
   entity: mockChannelBase(`${key}:entity`),
   inactiveMembership: mockInactiveMembershipResponse(`${key}:inactive-membership`),
 });

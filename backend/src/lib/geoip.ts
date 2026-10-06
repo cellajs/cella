@@ -43,7 +43,7 @@ const asn: GeoipDatabase<AsnResponse> = {
  * from this prefix at boot and re-checks daily, so a refresh published by `pnpm infra` reaches every process within a
  * day. The default is the `geoip/` prefix of the app's public bucket, which in development is the shared template bucket.
  */
-export const geoipSourceUrl = (): string | null => {
+const geoipSourceUrl = (): string | null => {
   const configured = env.GEOIP_SOURCE_URL;
   if (configured === 'off') return null;
   const base = configured || `${appConfig.s3.publicCDNUrl}/geoip`;

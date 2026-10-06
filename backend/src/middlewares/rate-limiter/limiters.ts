@@ -69,6 +69,7 @@ export const passkeyChallengeLimiter = rateLimiter('limit', 'passkeyChallenge', 
 /**
  * Tenant-scoped points limiter capped at the global hourly ceiling; missing and zero tenant budgets use that ceiling.
  * @param cost Static request cost, or zero to derive it from the request.
+ * @public
  */
 export const pointsLimiter = (cost = 1) =>
   rateLimiter('limit', 'apiPoints', ['tenantId', 'actorId'], {

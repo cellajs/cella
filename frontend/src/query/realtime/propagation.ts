@@ -73,7 +73,10 @@ export function propagateEmbeddedProduct(embeddedProduct: ProductEntityType, ids
   propagateEmbeddings({ embeddedProduct, update: kind === 'update' ? ids : [], remove: kind === 'remove' ? ids : [] });
 }
 
-/** Rollback path for optimistic removals: propagation can strip an embedded copy but cannot re-insert one, so a failed delete recovers host data through a refetch. */
+/**
+ * Rollback path for optimistic removals: propagation can strip an embedded copy but cannot re-insert one, so a failed delete recovers host data through a refetch.
+ * @public
+ */
 export function invalidateEmbeddingHosts(embeddedProduct: ProductEntityType, organizationId: string): void {
   for (const embedding of appConfig.productEmbeddings) {
     if (embedding.embeddedProduct !== embeddedProduct) continue;

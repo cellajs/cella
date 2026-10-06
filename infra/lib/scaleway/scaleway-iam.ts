@@ -175,7 +175,7 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
 }
 
 /** Find an IAM policy id by exact name within an organization. Detects an orphaned policy that must be adopted into Pulumi state. */
-export async function findPolicyIdByName(secretKey: string, organizationId: string, name: string): Promise<string | undefined> {
+async function findPolicyIdByName(secretKey: string, organizationId: string, name: string): Promise<string | undefined> {
   const { policies } = await scwFetch<{ policies: ScwPolicy[] }>(
     { secretKey },
     'GET',
@@ -201,7 +201,7 @@ async function findGroup(callerSecretKey: string, organizationId: string, name: 
 }
 
 /** Ensure the `<slug>-<mode>` IAM group exists and contains the application. Never a policy principal: a group policy would grant every member. */
-export async function ensureGroupMembership(opts: {
+async function ensureGroupMembership(opts: {
   callerSecretKey: string;
   organizationId: string;
   slug: string;

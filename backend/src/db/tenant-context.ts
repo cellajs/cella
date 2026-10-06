@@ -38,6 +38,7 @@ export async function tenantReadById<T>(tenantId: string, fn: (tx: DbOrTx) => Pr
  * `tenantRead` with an explicit tenant id, for cross-tenant routes (bare `baseDb`, no
  * `ctx.var.tenantId`) that resolved the request's single tenant themselves, e.g. an org-scoped
  * list whose per-row subqueries read RLS-guarded product tables.
+ * @public
  */
 export async function tenantReadAs<T>(ctx: ActorContext, tenantId: string, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
   return baseDb.transaction(

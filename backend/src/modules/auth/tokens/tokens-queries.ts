@@ -14,7 +14,7 @@ export type TokenRecord = Omit<UnsafeTokenModel, 'secret' | 'singleUseToken'>;
 const { secret: _secret, singleUseToken: _singleUseToken, ...safeColumns } = getColumns(tokensTable);
 
 /** The columns of a {@link TokenRecord}, for the queries of this module. */
-export const tokenColumns = safeColumns;
+const tokenColumns = safeColumns;
 
 /** By the token's own id, or by its membership invitation (the newest token). */
 type FindInvitationTokenOpts = ({ id: string } | { inactiveMembershipId: string }) & {

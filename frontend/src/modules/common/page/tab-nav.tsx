@@ -135,7 +135,10 @@ export function resolveNavTabs(parentRouteId: string, options: ResolveNavTabsOpt
   return resolved.map(({ id, label, path, params }) => ({ id, label, path, params }));
 }
 
-/** First visible tab path under a parent route: the default-tab redirect target for layout routes. */
+/**
+ * First visible tab path under a parent route: the default-tab redirect target for layout routes.
+ * @public
+ */
 export function defaultNavTabPath(parentRouteId: string, options?: ResolveNavTabsOptions): string | undefined {
   return resolveNavTabs(parentRouteId, options)[0]?.path;
 }
@@ -186,6 +189,7 @@ export function guardNavTabs(
  * `surfaces` list or the channel arrangement hides. Detection uses {@link isPlacementHidden} on the
  * arrangement layers only, never `requires`/`visibleTo`. {@link PageTabNav} runs this for
  * route-derived tab bars.
+ * @public
  */
 export function useNavTabRedirect(parentRouteId: string, options: ResolveNavTabsOptions = {}): void {
   const navigate = useNavigate();

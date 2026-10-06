@@ -24,7 +24,10 @@ export function resolveWrapTextLines(wrapText: Maybe<number | boolean>): number 
   return 0;
 }
 
-/** Estimates wrapped lines from text length and rendered column width, so the budget follows resizing. */
+/**
+ * Estimates wrapped lines from text length and rendered column width, so the budget follows resizing.
+ * @public
+ */
 export function estimateWrappedLines(
   textLength: number,
   width: number,
@@ -58,7 +61,7 @@ function snapToTier(lines: number): number {
   return heightTiers[heightTiers.length - 1];
 }
 
-export function tierToHeight(tier: number, baseHeight: number, lineHeight = wrapTextLineHeight, padding = wrapTextPadding): number {
+function tierToHeight(tier: number, baseHeight: number, lineHeight = wrapTextLineHeight, padding = wrapTextPadding): number {
   if (tier <= 1) return baseHeight;
   return Math.max(baseHeight, tier * lineHeight + padding);
 }

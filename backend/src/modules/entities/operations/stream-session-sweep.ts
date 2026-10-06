@@ -53,7 +53,7 @@ const staleStreamError = (
  * lost their session or system role, or the system role was removed or granted since the stream connected (the
  * client reconnects on `access_changed`). Streams without a session, which an app may register, are left alone.
  */
-export async function sweepAppStreamSessions(): Promise<void> {
+async function sweepAppStreamSessions(): Promise<void> {
   const subscribers = streamSubscriberManager.all().filter(isAppStream);
   if (subscribers.length === 0) return;
 

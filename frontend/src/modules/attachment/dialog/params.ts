@@ -9,7 +9,7 @@ export const ATTACHMENT_DIALOG_PARAM = 'attachmentDialogId';
 const ATTACHMENT_DIALOG_EXTRA_PARAMS = ['groupId'] as const;
 
 /** Chrome shared by both ways of opening the carousel (URL-driven and imperative). */
-export const attachmentDialogClassName = tw('mt-0 flex h-dvh max-h-dvh min-w-full flex-col rounded-none border-0 p-0');
+const attachmentDialogClassName = tw('mt-0 flex h-dvh max-h-dvh min-w-full flex-col rounded-none border-0 p-0');
 
 /** Wrapper the carousel is mounted in, identical for both dialog entry points. */
 export const attachmentDialogContentClassName = tw('relative -z-1 flex h-dvh grow flex-wrap justify-center p-2');

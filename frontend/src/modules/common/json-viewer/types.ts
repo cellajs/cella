@@ -14,6 +14,7 @@ export interface DataType<T = any> {
   Component: ComponentType<DataTypeProps<T>>;
 }
 
+/** @public */
 // biome-ignore lint/suspicious/noExplicitAny: Allows typed DataType definitions
 export const defineDataType = <T = any>(config: DataType<T>): DataType<T> => config;
 

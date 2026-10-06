@@ -3,7 +3,7 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { TreeRow } from './build-tree';
 import { useTreeContext } from './tree-context';
 
-export const expandToggleColumnKey = 'expand-toggle-column';
+const expandToggleColumnKey = 'expand-toggle-column';
 
 /** Minimal row contract this column reads; any {@link buildTree} output satisfies it. */
 type AnyTreeRow = TreeRow<{ id: string }>;

@@ -9,7 +9,7 @@ import { getIsoDate } from '#/utils/iso-date';
 const CONSUMED_RETENTION_DAYS = 30;
 
 /** Deletes what the provider no longer reads: expired rows, and consumed rows past their retention. */
-export async function sweepOidcPayloads(): Promise<number> {
+async function sweepOidcPayloads(): Promise<number> {
   const now = getIsoDate();
   const deleted = await baseDb
     .delete(oidcPayloadsTable)

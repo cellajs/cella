@@ -12,7 +12,7 @@ import { Button } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
 
 /** A session that still authenticates: not revoked and not past its expiry. */
-export const isLiveSession = (session: Session) => session.revokedAt === null && new Date(session.expiresAt).getTime() > Date.now();
+const isLiveSession = (session: Session) => session.revokedAt === null && new Date(session.expiresAt).getTime() > Date.now();
 
 export function SessionsList() {
   const { t } = useTranslation();

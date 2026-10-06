@@ -5,7 +5,10 @@ import { findActivityByMutationId } from '#/db/prepared';
 import { tenantRead } from '#/db/tenant-context';
 import { requestScopeWhere } from '#/db/utils/request-scope';
 
-/** Replay check on the client-generated mutation id. Prepared, since it runs on every mutation. */
+/**
+ * Replay check on the client-generated mutation id. Prepared, since it runs on every mutation.
+ * @public
+ */
 export async function isTransactionProcessed(stxId: string): Promise<boolean> {
   const existing = await findActivityByMutationId.execute({ mutationId: stxId });
   return existing.length > 0;

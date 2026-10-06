@@ -19,7 +19,7 @@ import { queryClient } from '~/query/query-client';
 import { collectEmbeddingTouches, type EmbeddingTouches, invalidateEmbeddedUsage } from './propagation';
 
 /** Callers skip remote cache writes while this is true, so optimistic state survives; the mutation's onSuccess reconciles on settle. */
-export function hasPendingMutationForEntity(entityType: string, entityId: string): boolean {
+function hasPendingMutationForEntity(entityType: string, entityId: string): boolean {
   const mutationCache = queryClient.getMutationCache();
   for (const suffix of ['update', 'create', 'delete'] as const) {
     const mutations = mutationCache.findAll({ mutationKey: [entityType, suffix] });
@@ -119,7 +119,7 @@ export function invalidateEntityDetail(entityId: string, keys: EntityQueryKeys, 
   queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId), refetchType });
 }
 
-export function invalidateEntityList(keys: EntityQueryKeys, refetchType: 'active' | 'none' | 'all' = 'active'): void {
+function invalidateEntityList(keys: EntityQueryKeys, refetchType: 'active' | 'none' | 'all' = 'active'): void {
   queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType });
 }
 

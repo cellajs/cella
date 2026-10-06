@@ -116,7 +116,7 @@ function appBlock(slug: string, cfg: AppServiceConfig, opts: { extraEnv?: Record
 }
 
 /** The one-shot release companion's compose service name (and its own profile). */
-export function releaseServiceName(slug: string): string {
+function releaseServiceName(slug: string): string {
   return `${slug}-release`;
 }
 

@@ -22,7 +22,7 @@ type MockTenantEntityColumns<T extends TenantEntityType> = {
 type MockTenantEntityColumnOptions = Partial<Omit<MockTenantEntityColumns<TenantEntityType>, 'entityType'>>;
 
 /** Mirrors `tenantEntityColumns`. Runs inside the caller's faker seed, so composing it needs no nested reset. */
-export const mockTenantEntityColumns = <T extends TenantEntityType>(
+const mockTenantEntityColumns = <T extends TenantEntityType>(
   entityType: T,
   options: MockTenantEntityColumnOptions = {},
 ): MockTenantEntityColumns<T> => {

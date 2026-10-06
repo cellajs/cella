@@ -1,7 +1,7 @@
 import { acquireLock, type LockInfo, releaseLock, renewLock, type S3Like } from './control-store';
 
 /** Default lease lifetime: long enough to ride out a slow renewal, short enough that a dead run frees the stack within minutes. */
-export const DEFAULT_LEASE_TTL_MS = 3 * 60_000;
+const DEFAULT_LEASE_TTL_MS = 3 * 60_000;
 
 export interface LeaseOptions {
   s3: S3Like;

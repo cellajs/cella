@@ -19,7 +19,7 @@ const discovered = new Map<string, Promise<oauth.AuthorizationServer>>();
  * The federation's server metadata from its discovery document, fetched once per process at first use. One object per
  * federation, so oauth4webapi's JWKS cache (keyed on it) applies; forgotten on failure, so the next sign-in rediscovers.
  */
-export const discoverFederation = async (federation: Federation, options: FederationClientOptions = {}): Promise<oauth.AuthorizationServer> => {
+const discoverFederation = async (federation: Federation, options: FederationClientOptions = {}): Promise<oauth.AuthorizationServer> => {
   const pending = discovered.get(federation.key);
   if (pending) return pending;
 

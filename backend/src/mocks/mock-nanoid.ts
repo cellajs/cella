@@ -4,7 +4,7 @@ import { faker } from '@faker-js/faker';
 export type MockContext = 'example' | 'script' | 'loadtest';
 
 export const SCRIPT_ID_PREFIX = 'gen-';
-export const LOADTEST_ID_PREFIX = 'lt-';
+const LOADTEST_ID_PREFIX = 'lt-';
 
 let currentMockContext: MockContext = 'example';
 
@@ -48,7 +48,7 @@ export const mockNanoid = (length = 24) => {
 };
 
 export const SCRIPT_UUID_PREFIX = '00000000';
-export const LOADTEST_UUID_PREFIX = '00000001';
+const LOADTEST_UUID_PREFIX = '00000001';
 
 export const mockUuid = () => {
   const uuid = faker.string.uuid();

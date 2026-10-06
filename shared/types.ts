@@ -43,7 +43,7 @@ export type Severity = 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
 export const activityActions = ['create', 'update', 'delete'] as const;
 export type ActivityAction = (typeof activityActions)[number];
 
-export const activityVerbs = ['created', 'updated', 'deleted'] as const;
+const activityVerbs = ['created', 'updated', 'deleted'] as const;
 export type ActivityVerb = (typeof activityVerbs)[number];
 
 const actionVerbMap = { create: 'created', update: 'updated', delete: 'deleted' } as const satisfies Record<ActivityAction, ActivityVerb>;

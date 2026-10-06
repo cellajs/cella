@@ -1,5 +1,6 @@
 export type RejectionState = { rejectedIds: string[]; rejectionReasons: Record<string, string[]> };
 
+/** @public */
 export const createRejectionState = (): RejectionState => ({ rejectedIds: [], rejectionReasons: {} });
 
 /** No ids leaves the state untouched: clients read the reason keys, so a reason must not appear without ids. */

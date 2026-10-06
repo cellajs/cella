@@ -41,6 +41,7 @@ export const marketingNavConfig = [
 
 // Footer
 
+/** @public */
 export const socials = [
   { title: 'Social', href: appConfig.company.socialUrl, icon: CloudIcon },
   { title: 'Chat', href: appConfig.company.element, icon: ElementIcon },

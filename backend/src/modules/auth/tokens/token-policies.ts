@@ -12,7 +12,7 @@ type SameSite = 'lax' | 'strict';
  * - `session`: those bound to its session (a step-up link: one per session at a time).
  * - `none`: nothing; each one stands on its own (every sign-in holds its own second-factor challenge).
  */
-export const tokenReplacements = ['address-or-account', 'identity', 'invitation', 'account', 'session', 'none'] as const;
+const tokenReplacements = ['address-or-account', 'identity', 'invitation', 'account', 'session', 'none'] as const;
 export type TokenReplacement = (typeof tokenReplacements)[number];
 
 /**

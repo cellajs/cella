@@ -13,6 +13,7 @@ const stateBucketName = stateBucket(appConfig.slug);
  * Deny-by-default policy on the Pulumi state bucket, which tasks/ensure-state-bucket.ts creates with versioning and SSE-ONE encryption.
  * CI gets only what the Pulumi backend needs (list, read/write state objects, plain delete) and neither `s3:DeleteObjectVersion` nor `s3:PutBucketVersioning`, so a leaked CI key cannot destroy version history or suspend versioning.
  * The admin application keeps `s3:*` for recovery and state surgery; its statement is dropped with a warning when the app does not exist yet.
+ * @sideEffect
  */
 export const stateBucketPolicy = new scaleway.object.BucketPolicy('state-bucket-policy', {
   bucket: stateBucketName,

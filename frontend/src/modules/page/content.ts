@@ -25,7 +25,7 @@ const docsTileSchema = z.object({
   to: z.string().min(1),
 });
 
-export const docsSectionIds = ['apiReference', 'pages', 'links'] as const;
+const docsSectionIds = ['apiReference', 'pages', 'links'] as const;
 export type DocsSectionId = (typeof docsSectionIds)[number];
 
 const docsSectionSchema = z.object({ id: z.enum(docsSectionIds), label: z.string().min(1), visible: z.boolean().default(true) });

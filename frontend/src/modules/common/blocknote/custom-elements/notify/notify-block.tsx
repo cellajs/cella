@@ -1,10 +1,10 @@
 import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
-import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
+import { createReactBlockSpec } from '@blocknote/react';
 import { MessageCircleIcon } from 'lucide-react';
 import { useState } from 'react';
 import { notifyConfig } from 'shared/utils/blocknote-schema-configs';
 import { notifyTypes } from '~/modules/common/blocknote/custom-elements/notify/notify-options';
-import type { CustomBlockNoteEditor, IconType } from '~/modules/common/blocknote/types';
+import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,12 +64,6 @@ const insertSlashNotifyItem = (editor: CustomBlockNoteEditor) => ({
   aliases: ['notify', 'notification', 'emphasize', 'warning', 'error', 'info', 'success'],
   group: 'Custom',
   icon: <MessageCircleIcon />,
-});
-
-export const insertSideNotifyItem = (): BlockTypeSelectItem & { oneInstanceOnly?: boolean } => ({
-  name: 'Notify',
-  type: 'notify',
-  icon: MessageCircleIcon as IconType,
 });
 
 export const getSlashNotifySlashItem = (editor: CustomBlockNoteEditor) => insertSlashNotifyItem(editor);

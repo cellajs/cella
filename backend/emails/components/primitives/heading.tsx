@@ -17,7 +17,7 @@ export interface Margin {
 
 export type HeadingProps = BaseProps<PresentAs> & Margin & { as?: PresentAs };
 
-export const withSpace = (value: number | string | undefined, properties: MarginCSSProperty[]) =>
+const withSpace = (value: number | string | undefined, properties: MarginCSSProperty[]) =>
   properties.reduce((styles, property) => {
     if (!isNaN(Number.parseFloat(value as string))) {
       return { ...styles, [property as keyof MarginCSSProperty]: `${value}px` };
@@ -25,7 +25,7 @@ export const withSpace = (value: number | string | undefined, properties: Margin
     return styles;
   }, {});
 
-export const withMargin = (props: Margin) => {
+const withMargin = (props: Margin) => {
   const nonEmptyStyles = [
     withSpace(props.m, ['margin']),
     withSpace(props.mx, ['marginLeft', 'marginRight']),

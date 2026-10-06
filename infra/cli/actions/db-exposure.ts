@@ -21,8 +21,8 @@ import { printRevokeReminder } from './owner-key';
 import { type PrivilegedConvergeOptions, runPrivilegedConverge } from './privileged-converge';
 
 // Pulumi config keys consumed by resources/stores/postgres-managed.ts and the outputs it exports.
-export const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint';
-export const DB_ACL_KEY = 'infra:dbPublicAcl';
+const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint';
+const DB_ACL_KEY = 'infra:dbPublicAcl';
 // Keys within the primary store's entry of the `storeOutputs` stack output.
 const PUBLIC_DSN_OUTPUT = 'connectionStringAdminPublic';
 const DB_CA_OUTPUT = 'caCertificate';
@@ -32,7 +32,7 @@ const PRIMARY_STORE_ID = Object.keys(appStores)[0] ?? 'primary';
  * Create the exposure overlay by copying the committed stack config, which carries `encryptionsalt` so secret config encrypts with the same passphrase.
  * While the returned overlay file exists, the CLI menu treats the endpoint as exposure-managed.
  */
-export function writeExposureOverlay(stackPath: string, environment: string): string {
+function writeExposureOverlay(stackPath: string, environment: string): string {
   const overlayPath = exposureOverlayPath(environment);
   copyFileSync(stackPath, overlayPath);
   return overlayPath;
@@ -82,7 +82,7 @@ export function readDbCa(env: NodeJS.ProcessEnv, stack: string): string {
 }
 
 /** Write the instance CA to a 0600 temp file for `sslrootcert`, so the printed break-glass DSN verifies the server certificate and hostname. Undefined when the CA output is unavailable. */
-export function writeDbCaFile(env: NodeJS.ProcessEnv, stack: string, environment: string): string | undefined {
+function writeDbCaFile(env: NodeJS.ProcessEnv, stack: string, environment: string): string | undefined {
   const ca = readDbCa(env, stack);
   if (!ca) return undefined;
   const caPath = join(tmpdir(), `cella-db-ca-${environment}.pem`);
@@ -107,7 +107,7 @@ async function findDbInstance(context: InfraContext, secretKey: string) {
 }
 
 /** The instance's live public endpoints and ACL rules, read over the RDB API (RelationalDatabasesReadOnly is enough). */
-export async function readDbExposure(context: InfraContext, secretKey: string): Promise<{ endpoints: RdbEndpoint[]; aclRules: number }> {
+async function readDbExposure(context: InfraContext, secretKey: string): Promise<{ endpoints: RdbEndpoint[]; aclRules: number }> {
   const { client, instanceId } = await findDbInstance(context, secretKey);
   const [instance, rules] = await Promise.all([client.getInstance(instanceId), client.listAclRules(instanceId)]);
   return { endpoints: publicEndpoints(instance), aclRules: rules.length };

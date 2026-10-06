@@ -43,7 +43,7 @@ function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
 export type PermissionHint = { kind: 'privileged'; resource: string } | { kind: 'ci-grantable'; resource: string } | undefined;
 
 /** Classify a Scaleway "insufficient permissions: write <resource>" diagnostic in pulumi-up stderr as privileged or CI-grantable. */
-export function classifyPermissionError(stderr: string): PermissionHint {
+function classifyPermissionError(stderr: string): PermissionHint {
   const m = stderr.match(/insufficient permissions:\s*write\s+([\w_]+)/i);
   if (!m?.[1]) return undefined;
   const resource = m[1];

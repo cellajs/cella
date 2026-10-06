@@ -15,6 +15,7 @@ import { entityTables } from '#/tables';
  * `tenantRead` when counts are requested.
  */
 export type MemberStatProductType = (typeof appConfig.memberStatProductTypes)[number];
+/** @public */
 export const memberStatProductTypes = appConfig.memberStatProductTypes;
 
 /** Columns every stat product table carries (product columns); `publishedAt` marks draft-capable tables. */

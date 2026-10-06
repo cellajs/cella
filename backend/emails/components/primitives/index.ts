@@ -6,7 +6,6 @@ export { Column } from './column.js';
 export { Container } from './container.js';
 export { Head } from './head.js';
 export { Heading } from './heading.js';
-export { Hr } from './hr.js';
 export { Html } from './html.js';
 export { Img } from './img.js';
 export { Link } from './link.js';

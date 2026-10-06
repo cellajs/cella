@@ -12,8 +12,6 @@ export interface Federation extends FederationConfig {
   redirectUri: string;
 }
 
-export const federationKeys = Object.keys(appConfig.federations) as FederationKey[];
-
 export const isFederationKey = (key: string): key is FederationKey => Object.hasOwn(appConfig.federations, key);
 
 /** The client id and secret of a federation, from `SSO_<KEY>_CLIENT_ID` and `SSO_<KEY>_CLIENT_SECRET`. */
