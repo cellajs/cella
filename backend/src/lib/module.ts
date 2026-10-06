@@ -151,7 +151,10 @@ export function getBackendRoutes(): readonly BackendRoute[] {
   return backendRoutes;
 }
 
-/** Registers a job that belongs to no module (core infrastructure). */
+/**
+ * Registers a job that belongs to no module (core infrastructure).
+ * @public
+ */
 export function registerBackendJob(job: BackendJob): void {
   backendJobs.push(job);
 }

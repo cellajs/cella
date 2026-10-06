@@ -8,7 +8,7 @@ export const invokableTokenTypes = linkTokenTypes;
 
 export const emailBodySchema = z.object({ email: validEmailSchema });
 /** A federation the generic entrance offers: configured here, with at least one institution connected. */
-export const signInFederationSchema = z.object({ key: z.string(), label: z.string() });
+const signInFederationSchema = z.object({ key: z.string(), label: z.string() });
 
 export const authHealthSchema = z.object({
   restrictedMode: z.boolean(),

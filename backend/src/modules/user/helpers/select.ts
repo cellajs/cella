@@ -33,7 +33,7 @@ type TableColumns = (typeof usersTable)['_']['columns'];
 type UserBaseKeys = keyof typeof userBaseSchema.shape;
 type UserBaseSelect = Pick<TableColumns, UserBaseKeys>;
 
-export const userBaseSelect: UserBaseSelect = (() => {
+const userBaseSelect: UserBaseSelect = (() => {
   const cols = getColumns(usersTable);
   const keys = Object.keys(userBaseSchema.shape) as UserBaseKeys[];
   return pick(cols, keys);
@@ -47,7 +47,10 @@ export const memberSelect = (() => {
 type UserMinimalBaseKeys = keyof typeof userMinimalBaseSchema.shape;
 type UserMinimalBaseSelect = Pick<TableColumns, Exclude<UserMinimalBaseKeys, 'entityType'>>;
 
-/** id, name, slug and thumbnailUrl for createdBy/updatedBy; entityType is added as a SQL literal in joins. */
+/**
+ * id, name, slug and thumbnailUrl for createdBy/updatedBy; entityType is added as a SQL literal in joins.
+ * @public
+ */
 export const userMinimalBaseSelect: UserMinimalBaseSelect = (() => {
   const cols = getColumns(usersTable);
   const keys = (Object.keys(userMinimalBaseSchema.shape) as UserMinimalBaseKeys[]).filter((k) => k !== 'entityType');

@@ -15,7 +15,7 @@ import { limiterScope } from '#/middlewares/rate-limiter/helpers';
 import { createInteractionsApp } from '#/modules/oauth-server/interactions';
 import { signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
 
-export const OAUTH_MOUNT = '/oauth';
+const OAUTH_MOUNT = '/oauth';
 
 /** The `?depth=full` diagnostics, in the API's component shape: the store answers and a signing key exists, else 503. */
 async function probeHealth(): Promise<{ httpStatus: number; body: unknown }> {

@@ -467,7 +467,7 @@ export function relayUnseenEverywhere(): void {
  * One compaction per quiet window; a new update restarts the wait, up to a deadline YJS_COMPACT_MAX_WAIT_MS after the
  * first update since the last run, so someone typing without pause still reaches viewers and the row.
  */
-export function scheduleCompaction(collab: CollabSession): void {
+function scheduleCompaction(collab: CollabSession): void {
   if (collab.compactTimer) clearTimeout(collab.compactTimer);
   const now = Date.now();
   collab.compactDueAt ??= now + YJS_COMPACT_MAX_WAIT_MS;

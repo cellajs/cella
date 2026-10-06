@@ -3,7 +3,10 @@
 import { getInlineTextFromBlock, parseBlocks } from 'shared/blocknote';
 import type { CustomBlock, TitleLevel } from '~/modules/common/blocknote/types';
 
-/** Matches backend maxLength.field (backend/src/db/utils/constraints.ts): name column limit. */
+/**
+ * Matches backend maxLength.field (backend/src/db/utils/constraints.ts): name column limit.
+ * @public
+ */
 export const TITLE_MAX_LENGTH = 255;
 
 type LooseBlock = { type: string; props?: Record<string, unknown>; content?: unknown; children?: LooseBlock[] };
@@ -21,7 +24,10 @@ const titleBlock = (name: string, level: TitleLevel) =>
 /** A stringified single empty title block, the sync seed for create forms. */
 export const emptyTitleDocument = (level: TitleLevel = 1) => JSON.stringify([titleBlock('', level)]);
 
-/** A stringified title document seeded with `name`, for forms that open pre-titled. */
+/**
+ * A stringified title document seeded with `name`, for forms that open pre-titled.
+ * @public
+ */
 export const seededTitleDocument = (name: string, level: TitleLevel = 1) => JSON.stringify([titleBlock(name, level)]);
 
 /**
@@ -38,6 +44,7 @@ export const splitTitleBlocks = (blocks: LooseBlock[]): { name: string; body: Lo
 /**
  * Drops the trailing empty blocks the editor leaves behind before the document is stored. Block 0 is
  * kept whatever its state: an entity without a title yet still needs its title block to edit into.
+ * @public
  */
 export const trimTitleDocument = (strBlocks: string): string => {
   const blocks = JSON.parse(strBlocks) as LooseBlock[];

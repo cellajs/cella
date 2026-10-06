@@ -141,7 +141,10 @@ export const queryClient: QueryClient =
 if (!import.meta.hot?.data?.listenersAttached) flagPausedMutations(queryClient);
 
 let resolveCacheRestored: () => void;
-/** Resolves once PersistQueryClientProvider has restored the IDB cache. */
+/**
+ * Resolves once PersistQueryClientProvider has restored the IDB cache.
+ * @public
+ */
 export const cacheRestored: Promise<void> =
   (import.meta.hot?.data?.cacheRestored as Promise<void>) ?? new Promise<void>((r) => (resolveCacheRestored = r));
 export function markCacheRestored() {

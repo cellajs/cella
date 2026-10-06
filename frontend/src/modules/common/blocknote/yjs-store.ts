@@ -27,18 +27,18 @@ import { isLeader, tabCoordinatorStore } from '~/query/realtime/tab-coordinator'
 export const STORE_LOAD_TIMEOUT_MS = 5_000;
 /** A document's update rows are trimmed into its base past this many rows, or past `TRIM_BYTES`. */
 export const TRIM_ROWS = 100;
-export const TRIM_BYTES = 256 * 1024;
+const TRIM_BYTES = 256 * 1024;
 /** A trim waits this long for more rows, so a burst of edits trims once. */
 export const TRIM_DEBOUNCE_MS = 2_000;
 /** Eviction removes the least recently opened documents past this many, or past `MAX_STORED_BYTES` in all. */
 export const MAX_STORED_DOCS = 200;
 export const MAX_STORED_BYTES = 50 * 1024 * 1024;
 /** Eviction leaves a document opened within this window alone: another tab may hold it open. */
-export const EVICT_MIN_AGE_MS = 60 * 60_000;
+const EVICT_MIN_AGE_MS = 60 * 60_000;
 /** Eviction runs at most this often after a first store or a trim. */
-export const EVICT_INTERVAL_MS = 60_000;
+const EVICT_INTERVAL_MS = 60_000;
 /** Without offline access (session mode), eviction also drops synced documents not opened within this window. */
-export const SESSION_KEEP_MS = 2 * 60 * 60_000;
+const SESSION_KEEP_MS = 2 * 60 * 60_000;
 /** Background connections boot resume opens at a time. */
 export const RESUME_CONCURRENCY = 3;
 
@@ -715,7 +715,7 @@ export function useStoredYDoc(key: YDocKey | undefined): StoredState | undefined
 }
 
 /** Documents with unsynced edits a background connection should upload. */
-export async function listUnsyncedYDocs(): Promise<YDocRecord[]> {
+async function listUnsyncedYDocs(): Promise<YDocRecord[]> {
   const db = getLocalUserDb();
   if (!db) return [];
   return db.yDocs.filter((record) => record.unsynced === 1).toArray();

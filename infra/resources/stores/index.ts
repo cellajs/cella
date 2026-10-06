@@ -26,9 +26,6 @@ const results = Object.entries(appStores).map(([id, store]) => {
   return [id, store.provision(provisionContext)] as const;
 });
 
-/** The primary store's outputs (empty only if no store is registered). */
-export const primaryStoreOutputs: StoreOutputs = results[0]?.[1].outputs ?? {};
-
 /** Every store's outputs, keyed by store id; the stack exports these as one `storeOutputs` object addressed `<storeId>.<key>`. */
 export const allStoreOutputs: Record<string, StoreOutputs> = Object.fromEntries(results.map(([id, provisioned]) => [id, provisioned.outputs]));
 

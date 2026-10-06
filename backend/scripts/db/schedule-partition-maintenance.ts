@@ -3,7 +3,7 @@ import { getAdminDb, getAdminDbFor } from '#/db/db';
 import { env } from '#/env';
 
 /** pg_cron job name; pg_cron upserts on it, so every migrate run converges on one job. */
-export const PARTITION_MAINTENANCE_JOB = 'partition-maintenance';
+const PARTITION_MAINTENANCE_JOB = 'partition-maintenance';
 
 /**
  * Registers `CALL maintain_partitions()` as a nightly pg_cron job. pg_cron keeps its jobs in one

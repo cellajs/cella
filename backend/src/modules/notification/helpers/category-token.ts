@@ -14,7 +14,7 @@ export type UnsubscribeCategory = (typeof unsubscribeCategories)[number];
  * Keyed on the user id, not the email, so the link carries an opaque identifier and keeps
  * working after an email change.
  */
-export const generateCategoryToken = (userId: string, category: UnsubscribeCategory) =>
+const generateCategoryToken = (userId: string, category: UnsubscribeCategory) =>
   createHmac('sha256', modeSecret('UNSUBSCRIBE_SECRET')).update(`${userId}:${category}`, 'utf8').digest('hex');
 
 export const verifyCategoryToken = (userId: string, category: UnsubscribeCategory, token: string) =>

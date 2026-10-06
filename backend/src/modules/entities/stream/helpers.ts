@@ -41,7 +41,7 @@ export async function writeError(stream: SSEStreamingApi, payload: StreamErrorPa
  * A comment line: per the SSE spec, lines starting with `:` are ignored by EventSource, so this
  * keeps the socket and any proxies from idling out without firing a client event.
  */
-export async function writeHeartbeat(stream: SSEStreamingApi): Promise<void> {
+async function writeHeartbeat(stream: SSEStreamingApi): Promise<void> {
   await stream.write(': ping\n\n');
 }
 

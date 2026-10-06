@@ -24,7 +24,7 @@ function computeSpreadWindow(organizationId: string | null): number | null {
 }
 
 /** The single source of the `kind` discriminant: product entity sync, or membership change. */
-export function appNotificationKind(event: Pick<ActivityEvent, 'entityType'>): 'product' | 'membership' {
+function appNotificationKind(event: Pick<ActivityEvent, 'entityType'>): 'product' | 'membership' {
   return isProduct(event.entityType) ? 'product' : 'membership';
 }
 

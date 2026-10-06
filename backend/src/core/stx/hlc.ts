@@ -30,7 +30,7 @@ function requireHLC(value: string): ParsedHLC {
 }
 
 /** Advances beyond the last generated timestamp. */
-export function createHLC(now: number, sourceId: string): string {
+function createHLC(now: number, sourceId: string): string {
   if (!Number.isSafeInteger(now) || now < 0) throw new RangeError(`Invalid HLC time: ${now}`);
   const timestamp = BigInt(now);
   if (timestamp > lastTimestamp) {

@@ -6,7 +6,7 @@ export interface RequestResponse extends Omit<RequestModel, 'invitedAt'> {
   wasInvited: boolean;
 }
 
-export const mockRequest = (key = 'request:default'): RequestModel =>
+const mockRequest = (key = 'request:default'): RequestModel =>
   withFakerSeed(key, () => ({
     id: mockUuid(),
     email: faker.internet.email().toLowerCase(),
@@ -16,7 +16,7 @@ export const mockRequest = (key = 'request:default'): RequestModel =>
     invitedAt: null,
   }));
 
-export const mockRequestResponse = (key = 'request:default'): RequestResponse => {
+const mockRequestResponse = (key = 'request:default'): RequestResponse => {
   const { invitedAt: _, ...request } = mockRequest(key);
   return { ...request, wasInvited: false };
 };

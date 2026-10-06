@@ -15,7 +15,7 @@ export type ExtensionMetadata = {
 };
 
 /** Add new extensions here to expose them in the OpenAPI spec. In the order they apply to a request. */
-export const extensionMap = {
+const extensionMap = {
   'x-enabled-by': {
     id: 'xEnabledBy',
     description: 'Config switch the endpoint belongs to: a service, a sign-in method or an OAuth provider; refused before the guards while it is off',

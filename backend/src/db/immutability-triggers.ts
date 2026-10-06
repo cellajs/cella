@@ -9,13 +9,13 @@ const MEMBERSHIP_CHANNEL_ID_COLUMNS = appConfig.channelEntityTypes.map((type) =>
 const BASE_MEMBERSHIP_COLUMNS = ['tenant_id', 'channel_id', 'channel_type', ...MEMBERSHIP_CHANNEL_ID_COLUMNS] as const;
 
 /** Product entities with a parent org (tasks, labels, attachments). */
-export const productImmutableColumns = [...BASE_ENTITY_COLUMNS, 'organization_id'] as const;
+const productImmutableColumns = [...BASE_ENTITY_COLUMNS, 'organization_id'] as const;
 
 /** Active memberships include user_id. */
 export const membershipImmutableColumns = [...BASE_MEMBERSHIP_COLUMNS, 'user_id'] as const;
 
 /** Inactive memberships allow mutable user_id for re-assignable invitations. */
-export const inactiveMembershipImmutableColumns = BASE_MEMBERSHIP_COLUMNS;
+const inactiveMembershipImmutableColumns = BASE_MEMBERSHIP_COLUMNS;
 
 // SQL builders
 
@@ -43,36 +43,17 @@ $$ LANGUAGE plpgsql;`;
 export const immutableKeysTriggerName = (tableName: string) => `${tableName}_immutable_keys_trigger`;
 export const adminOnlyWriteTriggerName = (tableName: string) => `${tableName}_admin_only_write_trigger`;
 
-function buildTriggerSQL(tableName: string, functionName: string): string {
-  const triggerName = immutableKeysTriggerName(tableName);
-  return `
-DROP TRIGGER IF EXISTS ${triggerName} ON ${tableName};
-CREATE TRIGGER ${triggerName}
-  BEFORE UPDATE ON ${tableName}
-  FOR EACH ROW EXECUTE FUNCTION ${functionName}();`;
-}
-
-/** Write-guard trigger: covers INSERT, UPDATE and DELETE, blocking the write outright. */
-function buildAdminOnlyWriteTriggerSQL(tableName: string): string {
-  const triggerName = adminOnlyWriteTriggerName(tableName);
-  return `
-DROP TRIGGER IF EXISTS ${triggerName} ON ${tableName};
-CREATE TRIGGER ${triggerName}
-  BEFORE INSERT OR UPDATE OR DELETE ON ${tableName}
-  FOR EACH ROW EXECUTE FUNCTION admin_only_write_row();`;
-}
-
 // Pre-built trigger functions
 
-export const baseEntityImmutabilityFunctionSQL = buildFunctionSQL('base_entity_immutable_keys', BASE_ENTITY_COLUMNS);
+const baseEntityImmutabilityFunctionSQL = buildFunctionSQL('base_entity_immutable_keys', BASE_ENTITY_COLUMNS);
 
-export const productImmutabilityFunctionSQL = buildFunctionSQL('product_entity_immutable_keys', productImmutableColumns);
+const productImmutabilityFunctionSQL = buildFunctionSQL('product_entity_immutable_keys', productImmutableColumns);
 
-export const membershipImmutabilityFunctionSQL = buildFunctionSQL('membership_immutable_keys', membershipImmutableColumns);
+const membershipImmutabilityFunctionSQL = buildFunctionSQL('membership_immutable_keys', membershipImmutableColumns);
 
-export const inactiveMembershipImmutabilityFunctionSQL = buildFunctionSQL('inactive_membership_immutable_keys', inactiveMembershipImmutableColumns);
+const inactiveMembershipImmutabilityFunctionSQL = buildFunctionSQL('inactive_membership_immutable_keys', inactiveMembershipImmutableColumns);
 
-export const appendOnlyImmutabilityFunctionSQL = `
+const appendOnlyImmutabilityFunctionSQL = `
 CREATE OR REPLACE FUNCTION append_only_immutable_row() RETURNS TRIGGER AS $$
 BEGIN
   RAISE EXCEPTION 'Table % is append-only: updates are not allowed', TG_TABLE_NAME;
@@ -80,7 +61,7 @@ END;
 $$ LANGUAGE plpgsql;`;
 
 /** Blocks runtime_role writes even if provider reconciliation restores table privileges. Admin operations stay allowed. */
-export const adminOnlyWriteFunctionSQL = `
+const adminOnlyWriteFunctionSQL = `
 CREATE OR REPLACE FUNCTION admin_only_write_row() RETURNS TRIGGER AS $$
 BEGIN
   IF current_user = 'runtime_role' THEN
@@ -132,23 +113,3 @@ export const allImmutabilityFunctionsSQL: string[] = [
 ];
 
 // Combined SQL output
-
-const baseEntityTables = channelConfigs;
-const names = (configs: TableImmutabilityConfig[]) => configs.map((c) => c.tableName).join(', ');
-
-/** All immutability functions and triggers. Run after migrations. */
-export const immutabilityTriggersSQL = `
--- Functions (${allImmutabilityFunctionsSQL.length})
--- Base entities: ${names(baseEntityTables)}
--- Product entities with parent: ${names(productWithParentConfigs) || 'none'}
--- Memberships, inactive memberships
--- Append-only: ${names(appendOnlyConfigs)}
--- Admin-only writes: ${names(adminOnlyWriteConfigs)}
-${allImmutabilityFunctionsSQL.join('\n')}
-
--- Immutable-keys triggers (${allImmutabilityTables.length} tables)
-${allImmutabilityTables.map((t) => buildTriggerSQL(t.tableName, t.functionName)).join('\n')}
-
--- Write-guard triggers (${allAdminOnlyWriteTables.length} tables)
-${allAdminOnlyWriteTables.map((t) => buildAdminOnlyWriteTriggerSQL(t.tableName)).join('\n')}
-`;

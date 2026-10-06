@@ -20,6 +20,7 @@ interface AboutSectionHeaderProps {
   className?: string;
 }
 
+/** @public */
 export function AboutSectionHeader({ title, text, textComponents, className = '' }: AboutSectionHeaderProps) {
   const { t } = useTranslation();
 

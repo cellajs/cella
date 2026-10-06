@@ -48,7 +48,7 @@ interface OperationDetailProps {
   className?: string;
 }
 
-export function OperationDetail({ operation, detail: detailProp, className }: OperationDetailProps) {
+function OperationDetail({ operation, detail: detailProp, className }: OperationDetailProps) {
   const { t } = useTranslation();
   const detail = useResolvedDetail(operation, detailProp);
 

@@ -2,7 +2,7 @@ import ora, { type Ora } from 'ora';
 import pc from 'picocolors';
 import { warningMark } from 'shared/utils/console';
 
-export { changeMark, checkMark, crossMark, loadingMark, tildeMark, timestamp, warningMark } from 'shared/utils/console';
+export { checkMark, crossMark, tildeMark, timestamp } from 'shared/utils/console';
 
 // Spinner utilities
 
@@ -10,7 +10,7 @@ let activeSpinner: Ora | null = null;
 let spinnerStartedAt = 0;
 
 /** Compact elapsed time: 340ms, 12.3s, 4m 07s. */
-export function formatDuration(ms: number): string {
+function formatDuration(ms: number): string {
   if (ms < 1000) return `${Math.round(ms)}ms`;
   if (ms < 59_950) return `${(ms / 1000).toFixed(1)}s`;
   const totalSeconds = Math.round(ms / 1000);
@@ -40,6 +40,7 @@ function closeSpinner(method: 'succeed' | 'fail' | 'warn', message?: string): vo
 }
 
 export const succeedSpinner = (message?: string) => closeSpinner('succeed', message);
+/** @public */
 export const failSpinner = (message?: string) => closeSpinner('fail', message);
 /** Ends the spinner. For a warning while the step continues, use {@link noteSpinnerWarning}. */
 export const warnSpinner = (message?: string) => closeSpinner('warn', message);

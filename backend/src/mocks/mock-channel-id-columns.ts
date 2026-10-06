@@ -35,17 +35,3 @@ export const generateMockActivityChannelIdColumns = (): MockActivityChannelIdCol
   mockIdColumns(
     new Set(appConfig.productEntityTypes.flatMap((entityType) => hierarchy.getOrderedAncestors(entityType))),
   ) as MockActivityChannelIdColumns;
-
-/** Sub-organization ancestor and related-channel IDs for create-body mocks; the route supplies the organization ID. */
-export const generateMockEntityBodyChannelIdColumns = <E extends ProductEntityType>(
-  entityType: E,
-): Omit<MockEntityChannelIdColumns<E>, 'organizationId'> => {
-  // Nullable ancestors are optional placement resolved from real rows server-side, so a
-  // create-body mock carries only the required ones; an invented id would never resolve.
-  const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(entityType));
-  return mockIdColumns(
-    [...hierarchy.getOrderedAncestors(entityType), ...hierarchy.getRelatedChannels(entityType)].filter(
-      (channelType) => channelType !== 'organization' && !nullableAncestors.has(channelType),
-    ),
-  ) as Omit<MockEntityChannelIdColumns<E>, 'organizationId'>;
-};

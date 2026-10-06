@@ -4,6 +4,7 @@ import type { SystemRoleModel } from '#/modules/system/system-roles-db';
 export const mockSystemRoleBase = (key = 'system-role:base') =>
   withFakerSeed(key, () => ({ id: mockUuid(), userId: mockUuid(), role: 'admin' as const }));
 
+/** @public */
 export const mockSystemRoleResponse = (key = 'system-role:default'): SystemRoleModel =>
   withFakerSeed(key, () => {
     const createdAt = mockPastIsoDate();

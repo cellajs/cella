@@ -195,7 +195,7 @@ export const MENU_ROWS = {
 export type MenuRowId = keyof typeof MENU_ROWS;
 
 /** One action of the table under the shared shape. */
-export function operatorAction(id: OperatorActionId): OperatorAction {
+function operatorAction(id: OperatorActionId): OperatorAction {
   return OPERATOR_ACTIONS[id];
 }
 

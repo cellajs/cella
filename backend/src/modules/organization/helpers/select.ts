@@ -9,12 +9,15 @@ export const organizationFlagsSelect = sql<OrganizationFlags>`${JSON.stringify(a
 export const setupConfigSelect = sql<OrganizationSetupConfig>`${JSON.stringify(appConfig.defaultSetupConfig)}::jsonb || ${organizationsTable.setupConfig}`;
 
 /** JS-side equivalent of `organizationFlagsSelect` for rows that skip our select shapes (org-guard fetch, generic channel reads, `.returning()`). */
-export const withOrganizationFlagDefaults = <T extends { organizationFlags: OrganizationFlags }>(organization: T): T => ({
+const withOrganizationFlagDefaults = <T extends { organizationFlags: OrganizationFlags }>(organization: T): T => ({
   ...organization,
   organizationFlags: { ...appConfig.defaultOrganizationFlags, ...organization.organizationFlags },
 });
 
-/** JS-side equivalent of `setupConfigSelect` for rows that don't pass through our own select shapes. */
+/**
+ * JS-side equivalent of `setupConfigSelect` for rows that don't pass through our own select shapes.
+ * @public
+ */
 export const withSetupConfigDefaults = <T extends { setupConfig: Partial<OrganizationSetupConfig> }>(
   organization: T,
 ): T & { setupConfig: OrganizationSetupConfig } => ({

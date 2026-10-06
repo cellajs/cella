@@ -202,8 +202,3 @@ export const syncStore = createStore<SyncStoreState>()(
     { name: 'SyncStore', enabled: isDebugMode },
   ),
 );
-
-/** Get the current cursor value (for SSE reconnect). Returns 'now' if no cursor is set. */
-export function getSyncCursor(): string {
-  return syncStore.getState().cursor ?? 'now';
-}

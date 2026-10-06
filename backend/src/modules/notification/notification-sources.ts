@@ -39,8 +39,6 @@ onBackendModuleRegister((module) => {
 
 export const getNotificationSource = (entityType: string): NotificationSource | undefined => sources.get(entityType);
 
-export const getNotificationSourceTypes = (): string[] => [...sources.keys()];
-
 // Subject reads: the declaration's function when the app gave one, else the product table.
 
 /**
@@ -72,7 +70,7 @@ export async function loadSubjectPreview(source: NotificationSource, tx: DbOrTx,
 }
 
 /** Display names for context ids in digest lines. */
-export async function loadSubjectNames(source: NotificationSource, tx: DbOrTx, ids: string[]) {
+async function loadSubjectNames(source: NotificationSource, tx: DbOrTx, ids: string[]) {
   if (source.declaration.loadContextNames) return source.declaration.loadContextNames(tx, ids);
   const table = productTable(source.entityType);
   const rows = await tx.select({ id: table.id, name: table.name }).from(table).where(liveRows(table, ids));

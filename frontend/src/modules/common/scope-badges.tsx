@@ -6,7 +6,7 @@ type Translate = ReturnType<typeof useTranslation>['t'];
 type LooseTranslate = (key: string, options?: Record<string, string>) => string;
 
 /** `<entity>:<read|write>` as a label built from the entity's plural, so app entity types need no extra keys. */
-export function scopeLabel(t: Translate, scope: string): string {
+function scopeLabel(t: Translate, scope: string): string {
   const [entity, verb] = scope.split(':');
   const translate = t as unknown as LooseTranslate;
   const resource = translate(`c:${entity}_other`, { defaultValue: entity });

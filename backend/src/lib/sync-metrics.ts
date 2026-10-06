@@ -12,7 +12,7 @@ export type SyncTraceContext = TraceContext;
 
 const meter = meterProvider.getMeter('app-sync');
 
-export const cdcMessagesReceived = meter.createCounter('sync.cdc.messages_received', {
+const cdcMessagesReceived = meter.createCounter('sync.cdc.messages_received', {
   description: 'Messages received from CDC Worker via WebSocket',
 });
 

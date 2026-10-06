@@ -14,11 +14,14 @@ import type { UnsaveableReason } from '~/query/local-user-db';
 /** How long the socket may take to sync after starting before HTTP takes over, while the API answers. */
 export const WS_SYNC_DEADLINE_MS = 5_000;
 /** How often a connection an editor holds pulls peers' edits while the tab is visible. */
-export const HTTP_PULL_MS = 10_000;
+const HTTP_PULL_MS = 10_000;
 /** Local edits wait this long for more before one post carries them all, and never longer than `HTTP_PUSH_MAX_WAIT_MS`. */
-export const HTTP_PUSH_DEBOUNCE_MS = 500;
-export const HTTP_PUSH_MAX_WAIT_MS = 2_000;
-/** The most update bytes one post carries, under the API's 1 MB body limit once base64url-encoded. Matches the push route's limit. */
+const HTTP_PUSH_DEBOUNCE_MS = 500;
+const HTTP_PUSH_MAX_WAIT_MS = 2_000;
+/**
+ * The most update bytes one post carries, under the API's 1 MB body limit once base64url-encoded. Matches the push route's limit.
+ * @testSeam
+ */
 export const HTTP_CHUNK_BYTES = 512 * 1024;
 /** Focus, or the tab turning visible, pulls at most this often. */
 const HTTP_PULL_GAP_MS = 2_000;
@@ -84,6 +87,7 @@ const retryDelay = (attempt: number) => Math.min(HTTP_RETRY_MS * 2 ** attempt, H
 /**
  * Merges consecutive updates into posts of at most `cap` bytes, in order. An update larger than `cap` cannot go over
  * HTTP: it is left out, counted in `oversize`, and waits for the socket, which takes up to 2 MB.
+ * @testSeam
  */
 export function batchUpdates(updates: Uint8Array[], cap = HTTP_CHUNK_BYTES): { batches: Uint8Array[]; oversize: number } {
   const batches: Uint8Array[] = [];

@@ -48,17 +48,11 @@ export const tenantIdParamSchema = z.object({ tenantId: validIdSchema, id: valid
 
 export const tenantOnlyParamSchema = z.object({ tenantId: validIdSchema });
 
-export const inOrgParamSchema = z.object({ organizationId: validIdSchema });
-
-export const idInOrgParamSchema = z.object({ id: validIdSchema, organizationId: validIdSchema });
-
 // Tenant-scoped param schemas (for RLS-enabled routes)
 
 export const tenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema });
 
 export const idInTenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema, id: validIdSchema });
-
-export const userIdInTenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema, userId: validIdSchema });
 
 /** Cross-tenant routes with a relatability check. */
 export const relatableUserIdParamSchema = z.object({ relatableUserId: validIdSchema });
@@ -107,7 +101,7 @@ export const excludeArchivedQuerySchema = z
 /** True returns fully hydrated relations. */
 export const fullResponseQuerySchema = z.object({ fullResponse: booleanTransformSchema.optional() });
 
-export const includeOptions = ['counts', 'membership', 'members'] as const;
+const includeOptions = ['counts', 'membership', 'members'] as const;
 export type IncludeOption = (typeof includeOptions)[number];
 
 /** Comma-separated, e.g. `?include=counts,membership`. */
@@ -225,5 +219,3 @@ export const validCDNUrlSchema = z
   .trim()
   .max(maxLength.url)
   .superRefine(refineWithType((url: string) => isCDNUrl(url), 'invalid_cdn_url'));
-
-export const validDomainsSchema = validDomainSchema.array().optional();

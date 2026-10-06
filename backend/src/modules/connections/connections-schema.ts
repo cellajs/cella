@@ -10,7 +10,7 @@ import { mockConnectionResponse } from './connections-mocks';
 const federationKeys = Object.keys(appConfig.federations);
 
 /** A federation key of this app's config; the enum is listed when the app declares any. */
-export const federationKeySchema = z
+const federationKeySchema = z
   .string()
   .refine((key) => federationKeys.includes(key), { message: 'Unknown federation' })
   .openapi({ description: 'A federation key in appConfig.federations', ...(federationKeys.length ? { enum: federationKeys } : {}) });

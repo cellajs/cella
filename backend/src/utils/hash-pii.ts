@@ -1,18 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { modeSecret } from '#/env';
 
-/**
- * Deterministic 64-bit HMAC pseudonym for normalized PII, peppered by the server secret. Use only where the
- * original value need not be recovered and truncated-key collisions are acceptable; otherwise encrypt.
- * @param value Raw value; blank input returns an empty string.
- * @param namespace Domain mixed into the HMAC, separating unrelated use sites.
- */
-export const hashPii = (value: string, namespace = 'pii'): string => {
-  const normalized = value.trim().toLowerCase();
-  if (!normalized) return '';
-  return createHmac('sha256', modeSecret('PII_HASH_SECRET')).update(`${namespace}:${normalized}`).digest('hex').slice(0, 16);
-};
-
 /** Bound to the user, so a table leak cannot correlate one IP across users. Backs MFA trust checks. */
 export const hashIpForUser = (ip: string, userId: string): string => {
   if (!ip || !userId) return '';

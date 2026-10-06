@@ -9,7 +9,6 @@ type SheetOptions = Omit<SheetData, 'id' | 'triggerRef' | 'onClose'>;
 interface OverlayConfig<TOptions> {
   /** The search param key to watch (e.g., 'userSheetId') */
   searchParamKey: string;
-  additionalSearchParamKeys?: string[];
   /** Render overlay content. Receives the search param value and org ID from URL context. */
   renderContent: (id: string, organizationId: string | undefined) => ReactNode;
   /** Called after close (not during cleanup). Receives the search param value. */
@@ -43,12 +42,12 @@ function useCloseOverlay(searchParamKey: string, additionalParamKeys: string[] =
  * Opens a sheet when the search param is present, closes it when removed.
  */
 export function useUrlSheet(config: UseUrlSheetConfig) {
-  const { searchParamKey, additionalSearchParamKeys, renderContent, onAfterClose, options } = config;
+  const { searchParamKey, renderContent, onAfterClose, options } = config;
 
   // Primitive selects, so writes to other search keys don't re-render the host.
   const value = useSearch({ strict: false, select: (s) => (s as Record<string, string | undefined>)[searchParamKey] ?? null });
   const organizationId = useMatch({ from: '/_app/$tenantId/$organizationSlug', shouldThrow: false, select: (m) => m.context.organization?.id });
-  const close = useCloseOverlay(searchParamKey, additionalSearchParamKeys);
+  const close = useCloseOverlay(searchParamKey);
 
   useEffect(() => {
     if (!value) return;

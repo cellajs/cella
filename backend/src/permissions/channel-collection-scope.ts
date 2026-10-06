@@ -99,6 +99,7 @@ export const resolveChannelCollectionReadScopeForPolicies = ({
  * Which rows of `channelType` the caller can read via org-root or ancestor-level grants. Own-type
  * memberships are NOT in the result; list queries carry those through their membership join. Row
  * conditions and `publicRead` grants are never compiled here: channel matrices use plain `read: 1`.
+ * @public
  */
 export const resolveChannelCollectionReadScope = (
   memberships: MembershipBaseModel[],

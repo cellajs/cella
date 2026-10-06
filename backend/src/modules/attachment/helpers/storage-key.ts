@@ -7,7 +7,7 @@ import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
  * A local blob URL as a browser mints it for a file not yet uploaded: `blob:`, an http(s) origin and a UUID path, in
  * canonical form, so no dot segment, userinfo or query rides along. It names no stored object.
  */
-export const isLocalBlobUrl = (key: string): boolean => {
+const isLocalBlobUrl = (key: string): boolean => {
   if (!key.startsWith('blob:')) return false;
   try {
     const url = new URL(key.slice('blob:'.length));

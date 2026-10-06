@@ -21,7 +21,7 @@ export interface GradedStatusEntry {
 const appEntry: StatusEntry = { id: 'app', label: 'c:app', description: 'c:app_status.text', components: ['api', 'database'] };
 
 /** The info panel's status entries in display order: the one place to show, group or describe a service. */
-export const statusEntries: readonly StatusEntry[] = [
+const statusEntries: readonly StatusEntry[] = [
   appEntry,
   { id: 'live_updates', label: 'c:live_updates', description: 'c:live_updates_status.text', components: ['cdc'] },
   { id: 'collaboration', label: 'c:collaboration', description: 'c:collaboration_status.text', components: ['yjs'] },

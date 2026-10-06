@@ -24,6 +24,7 @@ export interface PricingPlan {
 
 const isFlexLayout = pricingPlans.length < 3;
 
+/** @public */
 export function Pricing() {
   const { t } = useTranslation();
   const navigate = useNavigate();

@@ -32,5 +32,6 @@ export const productColumns = <T extends ProductEntityType>(entityType: T) => ({
  * @deprecated The fan-out reads mentions from `description`, so no column stores them. Empty, so a
  * table that still spreads it drops its `mentions` column on the next `pnpm generate`; removed in a
  * later release.
+ * @public
  */
 export const mentionableColumns = {};

@@ -34,6 +34,7 @@ export interface PresentedSession extends ResolvedSession {
  * version of the user's bindings: from the session cache (`session-cache.ts`), keyed by the token's hash, or else read
  * by that hash, the only form the database stores. A cached entry stops at the session's expiry.
  * @throws AppError 401 `no_session` for an unknown token, `session_revoked` or `session_expired`.
+ * @public
  */
 export const readSession = async (sessionToken: string): Promise<ResolvedSession> => {
   const secretHash = hashToken(sessionToken);

@@ -12,7 +12,7 @@ export class StepUpDismissed extends Error {
 }
 
 /** Whether the server refused an action until the user proves it's them again. */
-export const isStepUpRequired = (error: unknown): error is ApiError => error instanceof ApiError && error.type === 'step_up_required';
+const isStepUpRequired = (error: unknown): error is ApiError => error instanceof ApiError && error.type === 'step_up_required';
 
 const methodsOf = (error: ApiError): StepUpMethod[] => {
   const methods = error.meta?.methods;

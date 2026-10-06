@@ -5,7 +5,6 @@ import { type Attachment, type GetAttachmentsData, getAttachment, getAttachments
 import { zAttachment } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import { deriveDocument } from 'shared/utils/derive-description-core';
-import { selectRecentActivity } from '~/modules/attachment/helpers/activity-feed';
 import type {
   CreateAttachmentInput,
   CreateAttachmentVars,
@@ -111,14 +110,6 @@ export const attachmentQueryOptions = (tenantId: string, organizationId: string,
 });
 
 export const findAttachmentInCache = createCacheFinder<Attachment>('attachment');
-
-export function useAttachmentActivityFeed(tenantId: string, organizationId: string, limit = 20) {
-  const { data } = useQuery({
-    ...attachmentsCanonicalOptions({ organizationId, tenantId }),
-    select: (data) => selectRecentActivity(data.items, limit),
-  });
-  return data ?? [];
-}
 
 export function useGroupAttachments(tenantId: string | undefined, organizationId: string | undefined, groupId: string | undefined) {
   const { data } = useQuery({

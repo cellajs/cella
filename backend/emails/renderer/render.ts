@@ -7,9 +7,9 @@ import { getMovePlugin } from './move-style.js';
 import { getRawPlugin, unescapeForRawComponent } from './raw.js';
 import type { PlainTextOptions, RenderOptions } from './types.js';
 
-export const jsxEmailTags = ['jsx-email-cond'];
+const jsxEmailTags = ['jsx-email-cond'];
 
-export const renderPlainText = async (component: React.ReactElement, options?: PlainTextOptions) => {
+const renderPlainText = async (component: React.ReactElement, options?: PlainTextOptions) => {
   const { formatters, selectors } = options || {};
 
   const result = await jsxToString(component);

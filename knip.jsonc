@@ -1,5 +1,8 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
+  // `@testSeam`: a test loads it through `vi.importActual`, which knip cannot resolve. `@sideEffect`: the
+  // export exists because constructing it does the work (a Pulumi resource), so nothing ever reads the name.
+  "tags": ["-testSeam", "-sideEffect"],
   "workspaces": {
     ".": {
       // `pnpm cella migrate` runs each migration's codemod by path, so nothing imports them.
@@ -44,6 +47,9 @@
       // Unused here, imported by the apps: no import in cella is no reason to delete one of these.
       // board-layout.tsx also keeps board-drag.ts and resizable-panels.tsx reachable.
       "entry": [
+        // Vendored shadcn chart, kept whole for an app that wants it: its own story carries the rest,
+        // and nothing in cella renders the legend parts yet.
+        "src/modules/ui/chart.tsx",
         "src/modules/common/board/board-layout.tsx",
         "src/modules/common/board/board-panel.tsx",
         "src/modules/common/date-tooltip.tsx",

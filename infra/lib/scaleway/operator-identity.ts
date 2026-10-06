@@ -157,7 +157,7 @@ export function hoursUntilExpiry(desc: KeyDescription, now = Date.now()): number
 }
 
 /** Where an Owner API key comes from, for every message that tells the operator how to get one. */
-export const OWNER_KEY_HOWTO = 'your own key as an organization Owner (console → your user → API keys)';
+const OWNER_KEY_HOWTO = 'your own key as an organization Owner (console → your user → API keys)';
 
 /**
  * A privileged run must be able to write IAM policies and privileged resources: an organization Owner, or a principal granted IAMManager.

@@ -6,7 +6,7 @@ export function secretManagerPath(slug: string, mode: string): string {
 // The path hierarchy is the security boundary: IAM conditions grant secret-value reads by `resource.name.startsWith(<path>)`, so where a secret lives decides who reads it. Never rename a path in place.
 
 /** Folder for secrets consumed by exactly one service. */
-export function serviceSecretPath(slug: string, mode: string, service: string): string {
+function serviceSecretPath(slug: string, mode: string, service: string): string {
   return `/${slug}-${mode}/${service}/`;
 }
 
@@ -15,7 +15,7 @@ export function serviceSecretPath(slug: string, mode: string, service: string): 
  * (`/shared/backend/mcp/`), so a grant on it reaches exactly the secrets that set consumes. A folder that prefixes
  * another belongs to a subset of its consumers, so a `startsWith` grant never reaches a secret outside its set.
  */
-export function sharedSecretPath(slug: string, mode: string, consumers: readonly string[]): string {
+function sharedSecretPath(slug: string, mode: string, consumers: readonly string[]): string {
   return `/${slug}-${mode}/shared/${[...consumers].sort().join('/')}/`;
 }
 

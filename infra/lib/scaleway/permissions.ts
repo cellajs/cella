@@ -22,7 +22,7 @@ export const PROJECT_PERMISSION_SETS = [
 export const DNS_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const;
 
 /** Organization-scoped sets: IAMReadOnly lets `pulumi up` look up applications by name. A single IAM policy rule may hold permission sets of only ONE scope type, so this needs its own org-keyed rule. */
-export const ORG_SCOPED_PERMISSION_SETS = ['IAMReadOnly'] as const;
+const ORG_SCOPED_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
 /** Audit union of the CI grants beyond the plain app-project rule (rule-agnostic). */
 export const ORG_PERMISSION_SETS = [...DNS_PERMISSION_SETS, ...ORG_SCOPED_PERMISSION_SETS] as const;
@@ -65,7 +65,7 @@ export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'Objec
  * CI key-mint grant. Must stay unconditioned: an api-key POST carries no `resource.id`, so a `resource.id in [<app ids>]` condition 403s even for a listed app.
  * Accepted widening: CI can manage applications and api-keys org-wide; the boundary is the absent IAMPolicyManager, so CI cannot grant permissions.
  */
-export const CI_KEY_MINT_PERMISSION_SETS = ['IAMApplicationManager'] as const;
+const CI_KEY_MINT_PERMISSION_SETS = ['IAMApplicationManager'] as const;
 
 /** The CI policy's per-rule shape, shared by the rule builder and the drift check so the two cannot diverge. Every CI rule is unconditioned; a condition on any CI rule is drift. */
 export interface CiRuleShape {
@@ -84,7 +84,7 @@ export const CI_RULE_SHAPES: readonly CiRuleShape[] = [
  * Resource-token fragments of the privileged resources, the ones NOT write-granted to the CI key: on "insufficient permissions: write <resource>" the fix is a privileged `pulumi up` with the Owner API key, never widening the CI key.
  * Matched as a case-insensitive substring (Scaleway emits `rdb_instance`, `vpc_private_network`, …).
  */
-export const PRIVILEGED_RESOURCE_FRAGMENTS = [
+const PRIVILEGED_RESOURCE_FRAGMENTS = [
   'private_network', // VPC private network; CI is read-only
   'vpc', // the VPC itself
   'rdb', // managed PostgreSQL (rdb_instance, rdb_acl, rdb_user, …)

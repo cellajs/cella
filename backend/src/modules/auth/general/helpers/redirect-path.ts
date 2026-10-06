@@ -2,7 +2,7 @@ import { appConfig } from 'shared';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 
 /** New users (never signed in) are sent to the welcome page. */
-export const getPostAuthRedirectPath = (user: { lastSignInAt: string | null }) => {
+const getPostAuthRedirectPath = (user: { lastSignInAt: string | null }) => {
   return user.lastSignInAt ? appConfig.defaultRedirectPath : appConfig.welcomeRedirectPath;
 };
 

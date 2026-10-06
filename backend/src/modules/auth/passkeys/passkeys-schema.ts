@@ -9,7 +9,7 @@ const challengeTypeSchema = z.enum([...passkeyTypeSchema.options, 'registration'
 export const passkeySchema = createSelectSchema(passkeysTable).omit({ credentialId: true, publicKey: true, counter: true });
 
 /** WebAuthn registration response (`RegistrationResponseJSON`); binary fields are base64url strings. */
-export const webAuthnAttestationSchema = z.object({
+const webAuthnAttestationSchema = z.object({
   id: z.string(),
   rawId: z.string(),
   response: z.object({

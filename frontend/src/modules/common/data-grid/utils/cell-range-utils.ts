@@ -1,4 +1,4 @@
-import type { CalculatedColumn, CellRange, Position } from '../types';
+import type { CellRange, Position } from '../types';
 
 /** Normalizes a range so start is top-left and end is bottom-right. */
 export function normalizeCellRange(range: CellRange): CellRange {
@@ -20,79 +20,8 @@ export function isCellInRange(position: Position, range: CellRange): boolean {
   );
 }
 
-export function getCellsInRange<R, SR>(
-  range: CellRange,
-  rows: readonly R[],
-  columns: readonly CalculatedColumn<R, SR>[],
-): Array<{ row: R; column: CalculatedColumn<R, SR>; rowIdx: number; colIdx: number }> {
-  const normalized = normalizeCellRange(range);
-  const cells: Array<{ row: R; column: CalculatedColumn<R, SR>; rowIdx: number; colIdx: number }> = [];
-
-  for (let rowIdx = normalized.start.rowIdx; rowIdx <= normalized.end.rowIdx; rowIdx++) {
-    if (rowIdx < 0 || rowIdx >= rows.length) continue;
-    const row = rows[rowIdx];
-
-    for (let colIdx = normalized.start.idx; colIdx <= normalized.end.idx; colIdx++) {
-      if (colIdx < 0 || colIdx >= columns.length) continue;
-      const column = columns[colIdx];
-      cells.push({ row, column, rowIdx, colIdx });
-    }
-  }
-
-  return cells;
-}
-
 export function createRange(anchor: Position, focus: Position): CellRange {
   return { start: anchor, end: focus };
-}
-
-/** Expands a range by one cell in the given direction. */
-export function expandRange(
-  range: CellRange,
-  anchor: Position,
-  direction: 'up' | 'down' | 'left' | 'right',
-  maxIdx: number,
-  maxRowIdx: number,
-): CellRange {
-  const { start, end } = range;
-
-  const isAnchorAtStart = anchor.idx === start.idx && anchor.rowIdx === start.rowIdx;
-
-  let newStart = { ...start };
-  let newEnd = { ...end };
-
-  switch (direction) {
-    case 'up':
-      if (isAnchorAtStart) {
-        newEnd = { ...newEnd, rowIdx: Math.max(0, end.rowIdx - 1) };
-      } else {
-        newStart = { ...newStart, rowIdx: Math.max(0, start.rowIdx - 1) };
-      }
-      break;
-    case 'down':
-      if (isAnchorAtStart) {
-        newEnd = { ...newEnd, rowIdx: Math.min(maxRowIdx, end.rowIdx + 1) };
-      } else {
-        newStart = { ...newStart, rowIdx: Math.min(maxRowIdx, start.rowIdx + 1) };
-      }
-      break;
-    case 'left':
-      if (isAnchorAtStart) {
-        newEnd = { ...newEnd, idx: Math.max(0, end.idx - 1) };
-      } else {
-        newStart = { ...newStart, idx: Math.max(0, start.idx - 1) };
-      }
-      break;
-    case 'right':
-      if (isAnchorAtStart) {
-        newEnd = { ...newEnd, idx: Math.min(maxIdx, end.idx + 1) };
-      } else {
-        newStart = { ...newStart, idx: Math.min(maxIdx, start.idx + 1) };
-      }
-      break;
-  }
-
-  return { start: newStart, end: newEnd };
 }
 
 /** Which range edges a cell sits on, for border styling. */

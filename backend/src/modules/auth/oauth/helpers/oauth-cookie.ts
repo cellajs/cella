@@ -3,7 +3,10 @@ import type { Env } from '#/core/context';
 import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { type OAuthCookiePayload, oauthCookiePayloadSchema } from '#/modules/auth/oauth/oauth-schema';
 
-/** Returns null when the cookie is missing, malformed, or fails schema validation. */
+/**
+ * Returns null when the cookie is missing, malformed, or fails schema validation.
+ * @public
+ */
 export const parseOAuthCookie = (raw: string | false | null | undefined): OAuthCookiePayload | null => {
   if (!raw) return null;
   try {

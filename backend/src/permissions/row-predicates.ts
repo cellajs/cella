@@ -15,7 +15,7 @@ const resolveColumn = (table: AnyPgTable, columnName: string, conditionName: str
 };
 
 /** SQL twin of the check-form `matchesRowCondition` (parity-tested); anonymous actors never match actor-bound forms. */
-export const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable, actor: PredicateActor): SQL => {
+const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable, actor: PredicateActor): SQL => {
   switch (name) {
     case 'own': {
       const actorId = 'anonymous' in actor ? undefined : actor.actorId;

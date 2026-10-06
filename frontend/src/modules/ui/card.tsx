@@ -34,10 +34,6 @@ export function CardDescription({ className, ...props }: React.ComponentProps<'d
   return <div data-slot="card-description" className={cn('wrap-break-word min-w-0 text-muted-foreground text-sm', className)} {...props} />;
 }
 
-export function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="card-action" className={cn('col-start-2 row-span-2 row-start-1 self-start justify-self-end', className)} {...props} />;
-}
-
 export function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="card-content" className={cn('px-3 sm:px-6', className)} {...props} />;
 }

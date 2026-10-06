@@ -9,7 +9,10 @@ import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, v
 import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
 import { mockAttachmentResponse } from './attachment-mocks';
 
-/** The single place the storage-key variant set is enumerated. `original` is always present. */
+/**
+ * The single place the storage-key variant set is enumerated. `original` is always present.
+ * @public
+ */
 export const attachmentKeysSchema = z.object({
   original: z.string(),
   preview: z.string().optional(),

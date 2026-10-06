@@ -171,7 +171,7 @@ interface FieldStateContextValue {
 const FieldStateContext = React.createContext<FieldStateContextValue>({ invalid: false, isDirty: false, isTouched: false });
 
 /** Read RHF field state from within a FormField render prop tree. */
-export function useFieldState() {
+function useFieldState() {
   return React.useContext(FieldStateContext);
 }
 

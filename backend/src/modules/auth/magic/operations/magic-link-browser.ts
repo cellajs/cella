@@ -16,7 +16,7 @@ const dbCtx = { var: { db: baseDb } };
 const heldLinkLifetime = new TimeSpan(10, 'm');
 
 /** The frontend page where a link opened in another browser is confirmed. */
-export const confirmSignInPath = '/auth/confirm-sign-in';
+const confirmSignInPath = '/auth/confirm-sign-in';
 
 /** The unopened, unexpired magic link a raw value names, or undefined. */
 export const findOpenableMagicLink = async (rawToken: string) => {

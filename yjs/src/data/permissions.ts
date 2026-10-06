@@ -21,7 +21,10 @@ import { type Tx, withRlsTx } from './db';
 
 // Constraint: no app-owned entity schema imports. App-declared entity tables are resolved dynamically from the DB.
 
-/** Runs on an RLS-scoped transaction, so the result is limited to the active tenant. */
+/**
+ * Runs on an RLS-scoped transaction, so the result is limited to the active tenant.
+ * @public
+ */
 export async function loadMemberships(tx: Tx, userId: string): Promise<AccessMembership[]> {
   return tx
     .select({ channelType: membershipsTable.channelType, channelId: membershipsTable.channelId, role: membershipsTable.role })
@@ -39,11 +42,7 @@ export interface EntityScopeRow extends Partial<ChannelIdColumns> {
 }
 
 /** Table and column names come from the app's schema conventions, filtered to columns the table has. Returns `null` if the entity type is not declared or the row does not exist. */
-export async function resolveEntityScope(
-  tx: Tx,
-  entityType: ChannelEntityType | ProductEntityType,
-  entityId: string,
-): Promise<EntityScopeRow | null> {
+async function resolveEntityScope(tx: Tx, entityType: ChannelEntityType | ProductEntityType, entityId: string): Promise<EntityScopeRow | null> {
   if (!(appConfig.entityTypes as readonly string[]).includes(entityType)) return null;
 
   const table = toTableName(entityType);

@@ -13,7 +13,7 @@ import { Badge } from '~/modules/ui/badge';
 import { dateShort } from '~/utils/date-short';
 import { tw } from '~/utils/tw';
 
-export const dragHandleColumnKey = 'drag-handle';
+const dragHandleColumnKey = 'drag-handle';
 
 /** Published/draft is stored as the `draft` frontmatter boolean; the editor works over these labels. */
 const publishStatuses = ['published', 'draft'] as const;

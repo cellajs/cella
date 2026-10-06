@@ -127,7 +127,7 @@ export const mockMembershipBase = (key = 'membership-base:default', options: Moc
   withFakerSeed(key, () => generateMembershipBase(options));
 
 /** Deterministic stored membership row. */
-export const mockMembership = (key = 'membership:default', options: MockMembershipBaseOptions = {}): MembershipModel =>
+const mockMembership = (key = 'membership:default', options: MockMembershipBaseOptions = {}): MembershipModel =>
   withFakerSeed(key, () => {
     const createdAt = mockPastIsoDate();
     const base = generateMembershipBase(options);
@@ -139,7 +139,7 @@ export const mockMembership = (key = 'membership:default', options: MockMembersh
 export const mockMembershipResponse = mockMembership;
 
 /** Deterministic stored inactive-membership row. */
-export const mockInactiveMembership = (key = 'inactive-membership:default', options: MockMembershipBaseOptions = {}): InactiveMembershipModel =>
+const mockInactiveMembership = (key = 'inactive-membership:default', options: MockMembershipBaseOptions = {}): InactiveMembershipModel =>
   withFakerSeed(key, () => {
     const createdAt = mockPastIsoDate();
     const base = generateMembershipBase(options);
@@ -167,14 +167,14 @@ export const mockInactiveMembershipResponse = (key = 'inactive-membership:defaul
 };
 
 /** Pending-invitation list row: the invited address, role and inviter, with no account fields. */
-export const mockPendingMembershipResponse = (key = 'pending-membership:default') => {
+const mockPendingMembershipResponse = (key = 'pending-membership:default') => {
   const { id, email, role, createdAt, createdBy } = mockInactiveMembershipResponse(key);
   return { id, email, role, createdAt, createdBy };
 };
 
 export const mockPaginatedPendingMembershipsResponse = (count = 2) => mockPaginated(mockPendingMembershipResponse, count);
 
-export const mockMemberResponse = (key = 'member:default') => {
+const mockMemberResponse = (key = 'member:default') => {
   const user = mockUserBase(`${key}:user`);
   return { ...user, lastSeenAt: user.updatedAt, membership: mockMembershipBase(`${key}:membership`, { userId: user.id }) };
 };

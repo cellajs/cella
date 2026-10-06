@@ -50,7 +50,7 @@ export const streamNotificationSchema = z
 export type StreamNotification = z.infer<typeof streamNotificationSchema>;
 
 /** One client view: a prefix set + entity types + the org-sequence cursor it has caught up to. */
-export const catchupViewSchema = z.object({
+const catchupViewSchema = z.object({
   key: z.string().max(512).openapi({ description: 'Client-chosen stable view key, echoed back verbatim to correlate responses' }),
   organizationId: z.string(),
   prefixes: z
@@ -82,7 +82,7 @@ export const streamCatchupBodySchema = z.object({
 });
 
 /** Product entity sync is answered per view (`catchupViewAnswerSchema`); this carries the org-level concerns. */
-export const catchupChangeSummarySchema = z.object({
+const catchupChangeSummarySchema = z.object({
   /** Org-level change signals: bump-only counters, no sequence semantics claimed. */
   signals: z.object({ membership: z.number().int().optional() }).optional(),
   /** Embedded-product changes that require patching the host's cache. */
@@ -95,7 +95,7 @@ export type CatchupChangeSummary = z.infer<typeof catchupChangeSummarySchema>;
  * `frontiers` and `counts` are present only for `status: 'ok'` views (unconditional read of the whole prefix
  * subtree). `opaque` views get no numbers and fall back to normal staleness; `forbidden` views must be dropped.
  */
-export const catchupViewAnswerSchema = z.object({
+const catchupViewAnswerSchema = z.object({
   key: z.string().openapi({ description: 'The client-supplied view key, echoed verbatim' }),
   status: z.enum(['ok', 'opaque', 'forbidden']),
   frontiers: z

@@ -2,7 +2,7 @@ import { getStepUp } from 'sdk';
 import { retryAfterStepUp, type StepUpMethod } from '~/modules/auth/step-up-retry';
 
 /** The re-auth dialog, loaded on first use so the query modules that step up stay free of UI imports. */
-export const openStepUpDialog = async (methods: StepUpMethod[]) => (await import('~/modules/auth/step-up-dialog')).openStepUpDialog(methods);
+const openStepUpDialog = async (methods: StepUpMethod[]) => (await import('~/modules/auth/step-up-dialog')).openStepUpDialog(methods);
 
 /**
  * Runs an account-security action; when the server asks the user to prove it's them first, opens the re-auth dialog

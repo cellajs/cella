@@ -10,7 +10,10 @@ export function isArrayDelta(value: unknown): value is ArrayDelta {
   return value != null && typeof value === 'object' && 'add' in value;
 }
 
-/** Returns the minimal `{ add, remove }` diff. */
+/**
+ * Returns the minimal `{ add, remove }` diff.
+ * @public
+ */
 export function computeArrayDelta(oldIds: string[], newIds: string[]): ArrayDelta {
   const oldSet = new Set(oldIds);
   const newSet = new Set(newIds);

@@ -4,8 +4,3 @@ import type { RowData } from '../types';
 export function isSoftDeleteTransition(newRow: RowData, oldRow: RowData | null | undefined): boolean {
   return oldRow != null && oldRow.deletedAt == null && newRow.deletedAt != null;
 }
-
-/** Inverse of `isSoftDeleteTransition`; count deltas treat it as a create so recalculation agrees. */
-export function isRestoreTransition(newRow: RowData, oldRow: RowData | null | undefined): boolean {
-  return oldRow != null && oldRow.deletedAt != null && newRow.deletedAt == null;
-}
