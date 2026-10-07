@@ -9,7 +9,9 @@ type ErrorMeta = { readonly [key: string]: number | string[] | string | boolean 
   /** The token a refusal is about; a redirect passes it to the error page, which can offer a new link. Never a secret. */
   tokenId?: string;
 };
-export type ErrorKey = Exclude<keyof (typeof locales)['en']['error'], `${string}.text`>;
+type ErrorTexts = (typeof locales)['en'];
+/** An error type: a key of `error.json`, or of `appError.json` for a type the app adds. */
+export type ErrorKey = Exclude<keyof ErrorTexts['error'] | keyof ErrorTexts['appError'], `${string}.text`>;
 
 export type AppErrorOpts = {
   entityType?: ErrorSchemaType['entityType'];

@@ -43,7 +43,7 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
   const coverUpdateCallback = (bannerUrl: string) => {
     mutate(
       { path: { tenantId: organization.tenantId, id: organization.id }, body: { bannerUrl } },
-      { onSuccess: () => toaster.success(t('c:success.upload_cover')), onError: () => toaster.error(t('error:image_upload_failed')) },
+      { onSuccess: () => toaster.success(t('c:success.upload_cover')) },
     );
   };
 

@@ -144,8 +144,8 @@ const attachmentCreateOptions = (
     insertEntitiesIntoHome(queryClient, optimisticAttachments);
     return { optimisticAttachments };
   },
-  onError: (_err, variables, context) => {
-    handleError('create');
+  onError: (error, variables, context) => {
+    handleError('create', error);
     if (context?.optimisticAttachments) cacheRemove(keys.list.org(variables.organizationId), context.optimisticAttachments);
   },
   onSuccess: (result, variables, context) => {
@@ -178,8 +178,8 @@ const attachmentUpdateOptions = (
     }
     return { previousAttachment };
   },
-  onError: (_err, variables, context) => {
-    handleError('update');
+  onError: (error, variables, context) => {
+    handleError('update', error);
     if (context?.previousAttachment) {
       cacheUpdate(keys.list.org(variables.organizationId), [context.previousAttachment]);
       queryClient.setQueryData(keys.detail.byId(context.previousAttachment.id), context.previousAttachment);
@@ -214,8 +214,8 @@ const attachmentDeleteOptions = (
     removeDetailQueriesById(queryClient, keys.detail.base, attachmentIds);
     return { deletedAttachments: attachments };
   },
-  onError: (_err, _variables, context) => {
-    handleError('delete');
+  onError: (error, _variables, context) => {
+    handleError('delete', error);
     if (context?.deletedAttachments) {
       insertEntitiesIntoHome(queryClient, context.deletedAttachments);
     }

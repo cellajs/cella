@@ -6,7 +6,6 @@ import { type ApiError, type SignInWithTotpData, type SignInWithTotpResponse, si
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
-import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
 
@@ -24,7 +23,6 @@ export function TotpStrategy({ isActive, setIsActive }: { isActive: boolean; set
       useAuthStore.getState().setSignedIn(true);
       navigateAfterAuth();
     },
-    onError: () => toaster.error(t('error:totp_verification_failed')),
   });
 
   return (

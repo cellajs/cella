@@ -9,7 +9,7 @@ clientCacheBump: false
 update the imports. Three failures left the `server_error` type: an exhausted database pool answers
 `service_unavailable`, a deadlock or serialization failure `write_conflict`, and a Hono `HTTPException` below 500
 `invalid_request`. `AppError`'s `message` option now wins over the type's `.text`, so check each throw of yours
-that passes one. Every language beyond `en` needs the two new types in its `error.json`.
+that passes one. An app that translates `error.json` adds the two new types to each language beyond `en`.
 
 ## What & why
 
@@ -33,7 +33,7 @@ No script: manual.
 1. Import `getErrorInfo` and `ErrorNoticeError` from `~/utils/get-error-info`; `handleAskForHelp` stays in `~/modules/common/error-helpers`.
 2. Where code or a test expects `server_error` for a pool timeout (503), a database conflict (409) or a 4xx `HTTPException`, expect `service_unavailable`, `write_conflict` or `invalid_request`.
 3. For each `new AppError(..., { message })` of your own on a type that has a `.text`: a client now reads your message on a 4xx, so drop the option where the type's text should show.
-4. Add `service_unavailable`, `service_unavailable.text`, `write_conflict` and `write_conflict.text` to `locales/<lng>/error.json` of each language beyond `en`, and translate the new `server_error.text`.
+4. Only where your app translates `error.json`: add `service_unavailable`, `service_unavailable.text`, `write_conflict` and `write_conflict.text` to that language's file and translate the new `server_error.text`. The template's `nl/error.json` holds the SSO texts alone; every other error reads in `en` there.
 5. Read your own `.text` sentences in `error.json` and `appError.json` once as a toast's second line: one that repeats its title can lose the repeated part.
 
 ## Verify
