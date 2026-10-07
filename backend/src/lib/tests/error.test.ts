@@ -1,7 +1,8 @@
 import { HTTPException } from 'hono/http-exception';
 import { describe, expect, it } from 'vitest';
-import { AppError } from '#/core/error';
+import { AppError, type ErrorKey } from '#/core/error';
 import { toClientError } from '#/lib/error';
+import { i18n } from '#/lib/i18n';
 
 /** What a client outside development sees of a thrown value. */
 const seenByClient = (err: unknown) => {
@@ -77,5 +78,23 @@ describe('AppError', () => {
     expect(error.message).toBe('orgGuard requires tenantGuard middleware');
     expect(toClientError(error, {}, { exposeServerMessage: true }).message).toBe('orgGuard requires tenantGuard middleware');
     expect(seenByClient(error).message).toBe('Internal server error');
+  });
+
+  it("reads a type from the app's own texts first, so an app adds types and can reword a template one", () => {
+    i18n.addResourceBundle('en', 'appError', {
+      label_mode_locked: 'Mode is fixed',
+      'label_mode_locked.text': 'A primary label keeps its mode.',
+      slug_exists: 'Handle taken',
+    });
+
+    try {
+      const refusal = new AppError(409, 'label_mode_locked' as ErrorKey, 'warn');
+      expect(seenByClient(refusal)).toEqual({ status: 409, type: 'label_mode_locked', severity: 'warn', message: 'A primary label keeps its mode.' });
+      expect(refusal.name).toBe('Mode is fixed');
+
+      expect(new AppError(409, 'slug_exists', 'warn').name).toBe('Handle taken');
+    } finally {
+      i18n.removeResourceBundle('en', 'appError');
+    }
   });
 });

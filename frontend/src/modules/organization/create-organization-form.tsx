@@ -58,20 +58,13 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
       const tenant = await selfCreateTenantMutation.mutateAsync({ name: `${values.name} workspace` });
       tenantId = tenant.id;
     } catch {
-      toaster.error(t('error:create_resource', { resource: t('c:tenant') }));
+      // The global error handler says what went wrong
       return;
     }
 
     createMutation.mutate(
       { path: { tenantId }, body: [{ ...values, id: `temp-${generateId()}` }] },
-      {
-        onSuccess: (createdOrganization) => onSuccess(createdOrganization),
-        onError: (error) => {
-          if (error.message === 'org_limit_reached') {
-            toaster.warning(t('error:org_limit_reached'));
-          }
-        },
-      },
+      { onSuccess: (createdOrganization) => onSuccess(createdOrganization) },
     );
   };
 

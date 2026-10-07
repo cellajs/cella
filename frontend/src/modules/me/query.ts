@@ -29,7 +29,7 @@ import {
   type UpdateMeData,
   updateMe,
 } from 'sdk';
-import type { ApiError } from '~/lib/api';
+import { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
 import { ensureStepUp, withStepUp } from '~/modules/auth/step-up';
 import { StepUpDismissed } from '~/modules/auth/step-up-retry';
@@ -118,7 +118,8 @@ export const useCreatePasskeyMutation = () => {
       toaster.success(t('c:success.passkey_added'));
     },
     onError(error) {
-      if (error instanceof StepUpDismissed) return;
+      // A refusal by the server is toasted by the global handler
+      if (error instanceof StepUpDismissed || error instanceof ApiError) return;
       // On cancel throws error NotAllowedError
       console.error('Error during passkey registration:', error);
       toaster.error(t('error:passkey_registration_failed'));
@@ -137,11 +138,6 @@ export const useDeletePasskeyMutation = () => {
       });
       toaster.success(t('c:success.delete_resource', { resource: t('c:passkey') }));
     },
-    onError(error) {
-      if (error instanceof StepUpDismissed) return;
-      console.error('Error deleting passkey:', error);
-      toaster.error(t('error:passkey_delete_failed'));
-    },
   });
 };
 
@@ -155,11 +151,6 @@ export const useDeleteTotpMutation = () => {
         if (!oldData) return oldData;
         return { ...oldData, hasTotp: false };
       });
-    },
-    onError(error) {
-      if (error instanceof StepUpDismissed) return;
-      console.error('Error deleting totp:', error);
-      toaster.error(t('error:totp_delete_failed'));
     },
   });
 };

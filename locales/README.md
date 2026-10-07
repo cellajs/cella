@@ -45,7 +45,7 @@ Settings for `.vscode/settings.json` (gitignored, once per contributor):
 | `about.json` | marketing 'about' page | `about:` |
 | `error.json` | error texts, frontend and backend | `error:` |
 | `backend.json` | pure backend texts, mostly emails | `backend:` |
-| `appError.json` | app-specific error texts, not shipped by cella: create it and register it in `backend/src/lib/i18n-locales.ts` instead of touching cella-owned `error.json` | `appError:`, tried before `error:` (`ns: ['appError', 'error']` in `backend/src/core/error.ts`) |
+| `appError.json` | the app's own error types, kept apart from cella-owned `error.json`. cella ships it empty and never syncs it. Add `<type>` (the title) and `<type>.text` (the explanation), then throw `new AppError(status, '<type>', severity)`: the type is typed from this file | `appError:`, tried before `error:` (`ns: ['appError', 'error']` in `backend/src/core/error.ts`) |
 
 > [!IMPORTANT] `common.json` and `app.json` are **merged into one `c` namespace** at runtime: every key from either file is `t('c:key')`. No `app:` or `common:` namespace exists; `t('app:key')` resolves to nothing. The backend loads `common.json` under the same `c` namespace.
 

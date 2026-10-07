@@ -95,9 +95,9 @@ export const useOrganizationCreateMutation = () => {
       if (!result.data.length) {
         const reasons = result.rejectionReasons ? Object.keys(result.rejectionReasons) : [];
         if (reasons.includes('org_limit_reached')) {
-          throw new ApiError({ status: 422, type: 'org_limit_reached' });
+          throw new ApiError({ status: 422, type: 'org_limit_reached', severity: 'warn' });
         }
-        throw new ApiError({ status: 422, type: 'create_resource' });
+        throw new ApiError({ status: 422, type: 'create_resource', entityType: 'organization', severity: 'error' });
       }
 
       // The endpoint creates a list; single creation is the only caller.

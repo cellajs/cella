@@ -51,7 +51,9 @@ Secret columns (a hash, a session or token secret, a private key) are declared o
 
 ## Error handling
 
-`AppError` is the structured error class: `status`, `type` (i18n key from `locales/en/error`), `severity`, `entityType`, `meta`, `willRedirect`. PostgreSQL error codes map automatically (FK violation → 400, unique constraint → 409, RLS denial → 403, deadlock → 409). A route that answers 302 is a browser navigation: outside tests, whatever refuses it (the config switch, a guard, a limiter, the handler) answers with a redirect to `/auth/error`, the `ctx.var.errorPagePath` a handler may point elsewhere; `willRedirect` forces that redirect in every mode.
+`AppError` is the structured error class: `status`, `type` (i18n key from `locales/en/error`, or from the app-owned `locales/en/appError` for a type an app adds), `severity`, `entityType`, `meta`, `willRedirect`. PostgreSQL error codes map automatically (FK violation → 400, unique constraint → 409, RLS denial → 403, deadlock → 409). A route that answers 302 is a browser navigation: outside tests, whatever refuses it (the config switch, a guard, a limiter, the handler) answers with a redirect to `/auth/error`, the `ctx.var.errorPagePath` a handler may point elsewhere; `willRedirect` forces that redirect in every mode.
+
+On the client the global handler (`frontend/src/query/on-error.ts`) toasts every `ApiError` with its type's title and text. A mutation shows an error toast of its own only when it sets `meta.suppressGlobalErrorToast`, as product entities do through `createResourceError`; any other local `onError` toast shows the failure twice.
 
 ## Auth
 
