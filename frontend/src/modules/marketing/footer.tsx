@@ -29,7 +29,11 @@ function FooterLinks() {
                 const target = isCDNUrl(link.href) ? '_blank' : '_self';
                 return (
                   <li key={link.title} className="mt-4">
-                    <Link to={link.href} target={target} className="focus-effect rounded-sm p-1 underline-offset-4 transition hover:underline">
+                    <Link
+                      to={link.href}
+                      target={target}
+                      className="focus-effect link-decoration active:link-decoration-strong rounded-sm p-1 transition hover:underline"
+                    >
                       {t(link.title as TKey)}
                     </Link>
                   </li>
@@ -83,7 +87,7 @@ export function MarketingFooter() {
             onClick={() => {
               scrollTo(0, 0);
             }}
-            className="focus-effect mt-12 rounded-sm p-1 hover:opacity-90 active:scale-95"
+            className="focus-effect active:press mt-12 rounded-sm p-1 transition-transform sm:hover:scale-105"
             aria-label={t('c:go_to_about')}
           >
             <Logo textColor="white" iconColor="#b07a939e" title={t('c:go_to_about')} />
@@ -92,7 +96,11 @@ export function MarketingFooter() {
           <ul className="mt-6 mb-12 flex flex-wrap justify-center gap-x-4 gap-y-4 border-white/20 border-t pt-12 text-center text-sm text-white/60">
             {legalFooterLinks.map((link) => (
               <li key={link.title}>
-                <Link to={link.href} draggable={false} className="focus-effect rounded-sm p-1 underline-offset-4 transition hover:underline">
+                <Link
+                  to={link.href}
+                  draggable={false}
+                  className="focus-effect link-decoration active:link-decoration-strong rounded-sm p-1 transition hover:underline"
+                >
                   {t(link.title as TKey)}
                 </Link>
               </li>

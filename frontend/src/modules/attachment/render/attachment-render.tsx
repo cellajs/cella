@@ -60,7 +60,7 @@ export function AttachmentRender({
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop dismiss is a mouse affordance; ESC closes the dialog for keyboard users
     <div className={containerClassName} onClick={handleBackdropClick}>
-      <Suspense fallback={<PageSpinner className="size-6" />}>
+      <Suspense fallback={<Spinner className="size-6" />}>
         {type.includes('image') &&
           (imagePanZoom && !isMobile ? (
             <ReactPanZoom

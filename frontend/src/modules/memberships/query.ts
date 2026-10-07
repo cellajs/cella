@@ -83,10 +83,10 @@ const fetchMembersPage = (
   signal?: AbortSignal,
 ) => getMembers({ query: { ...query, ...pageQuery(limit, offset) }, path, signal });
 
-/** Fetch members for table export. Bypasses cache; items carry their counts, as in the members table. */
+/** Fetch members for table export. Bypasses cache; items carry their counts and MFA setting, as in the members table. */
 export const fetchMembersForExport = async (params: MembersParams & { limit: number; offset?: number }) => {
   const { limit, offset = 0, tenantId, organizationId, q, role, entityId, entityType } = params;
   const { sort = membersSearchDefaults.sort, order = membersSearchDefaults.order } = params;
-  const query = { q, sort, order, role, entityId, entityType, include: 'counts' };
+  const query = { q, sort, order, role, entityId, entityType, include: 'counts,mfa' };
   return (await fetchMembersPage(query, { tenantId, organizationId }, limit, offset)).items;
 };

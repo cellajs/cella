@@ -285,6 +285,8 @@ export interface BaseRenderRowProps<TRow, TSummaryRow = unknown> extends BaseCel
 
 export interface RenderRowProps<TRow, TSummaryRow = unknown> extends BaseRenderRowProps<TRow, TSummaryRow> {
   row: TRow;
+  /** Height the grid reserves for the row, in pixels; a row with wrapping text may outgrow it. Readable from a cell as `--rdg-row-height`. */
+  height: number;
   /** Animates order changes with a motion layout transition. */
   animateReorder?: boolean;
   lastFrozenColumnIndex: number;

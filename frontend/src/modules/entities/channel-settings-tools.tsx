@@ -5,6 +5,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import type { PlacementDescriptor } from '~/lib/placements';
+import { ConfirmText } from '~/modules/common/confirm-text';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ToolCard } from '~/modules/common/tool-card';
 import { Button } from '~/modules/ui/button';
@@ -66,7 +67,7 @@ export function DeleteToolCard({ name, resource, dialogId, renderDialog }: Delet
       triggerRef: deleteButtonRef,
       className: 'md:max-w-xl',
       title: t('c:delete_resource', { resource: resourceName }),
-      description: t('c:confirm.delete_resource', { name, resource: resourceName }),
+      description: <ConfirmText i18nKey="c:confirm.delete_resource" values={{ name, resource: resourceName }} />,
     });
   };
 

@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { AtSignIcon, ChevronRightIcon, InfoIcon, SearchIcon } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { zMembershipInviteBody } from 'sdk/zod.gen';
 import { type ChannelEntityType, hierarchy } from 'shared';
 import type z from 'zod';
@@ -93,13 +93,19 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
         inviteMode === 'email' ? (
           <>
             {baseDescription}{' '}
-            <button
-              type="button"
-              className="focus-effect cursor-pointer rounded-sm font-medium text-primary underline underline-offset-2"
-              onClick={() => updateMode(['bulk'])}
-            >
-              {t('c:invite_bulk_link')}
-            </button>
+            <Trans
+              t={t}
+              i18nKey="c:invite_bulk_link"
+              components={{
+                bulk_anchor: (
+                  <button
+                    type="button"
+                    className="focus-effect link-inline cursor-pointer rounded-sm font-medium text-primary"
+                    onClick={() => updateMode(['bulk'])}
+                  />
+                ),
+              }}
+            />
           </>
         ) : (
           baseDescription

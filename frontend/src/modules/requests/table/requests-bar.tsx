@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Request } from 'sdk';
 import { appConfig } from 'shared';
+import { ConfirmText } from '~/modules/common/confirm-text';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
@@ -54,10 +55,15 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
       title: t('c:delete'),
-      description: t('c:confirm.delete_counted_resource', {
-        count: selected.length,
-        resource: selected.length > 1 ? t('c:request_other').toLowerCase() : t('c:request').toLowerCase(),
-      }),
+      description: (
+        <ConfirmText
+          i18nKey="c:confirm.delete_counted_resource"
+          values={{
+            count: selected.length,
+            resource: selected.length > 1 ? t('c:request_other').toLowerCase() : t('c:request').toLowerCase(),
+          }}
+        />
+      ),
     });
   };
 

@@ -32,7 +32,7 @@ export function ColumnsView<TData>({ columns, setColumns, className = '', childr
         <DropdownMenuTrigger render={<Button variant="outline" className="relative flex" />}>
           {filteredColumns.some((column) => column.hidden) && <Badge className="absolute -top-1 -right-1 z-10 flex size-2 justify-center p-0" />}
           <SlidersHorizontalIcon className="size-4" />
-          <span className="ml-1 max-xl:hidden">{t('c:view')}</span>
+          <span className="max-xl:hidden">{t('c:view')}</span>
           {filteredColumns.some((column) => column.hidden) && <span className="sr-only">{t('c:columns_hidden')}</span>}
         </DropdownMenuTrigger>
       </TooltipButton>

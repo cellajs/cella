@@ -36,13 +36,15 @@ interface SsoProvidersProps {
   connectionId?: string;
   /** Federations with a connected institution: one "sign in with your institution" button each, through the federation's own picker. */
   federations?: GetAuthHealthResponse['federations'];
+  /** The context's institution is the main way in: its button takes the primary look. */
+  primary?: boolean;
 }
 
 /**
  * The institution sign-in buttons. An invitation in hand resumes after the sign-in, on the confirm step, so SSO never
  * runs the invite flow itself; otherwise the explicit redirect is forwarded like the provider buttons do.
  */
-export function SsoProviders({ connectionId, federations = [] }: SsoProvidersProps) {
+export function SsoProviders({ connectionId, federations = [], primary = false }: SsoProvidersProps) {
   const { t } = useTranslation();
   const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
 
@@ -57,6 +59,7 @@ export function SsoProviders({ connectionId, federations = [] }: SsoProvidersPro
             href: ssoStartUrl({ connectionId: contextual.id }, { redirectAfter }),
             label: t('c:sign_in_with_institution', { institution: contextual.institution.displayName }),
             logo: undefined,
+            main: primary,
           },
         ]
       : []),
@@ -71,6 +74,7 @@ export function SsoProviders({ connectionId, federations = [] }: SsoProvidersPro
           href: ssoStartUrl({ federation: federation.key }, { redirectAfter }),
           label: logo ? t('c:sign_in_with_your_institution') : `${t('c:sign_in_with_your_institution')} ${via}`,
           logo: logo ? { src: logo, alt: federation.label } : undefined,
+          main: false,
         };
       }),
   ];
@@ -80,7 +84,7 @@ export function SsoProviders({ connectionId, federations = [] }: SsoProvidersPro
   return (
     <div className="flex flex-col gap-2">
       {items.map((item) => (
-        <Button key={item.href} type="button" variant="plain" render={<a href={item.href} />}>
+        <Button key={item.href} type="button" variant={item.main ? 'default' : 'plain'} render={<a href={item.href} />}>
           {item.logo ? <img src={item.logo.src} alt={item.logo.alt} className="h-5 w-auto" loading="lazy" /> : <BuildingIcon />}
           <span>{item.label}</span>
         </Button>

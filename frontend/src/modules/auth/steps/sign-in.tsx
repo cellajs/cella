@@ -117,6 +117,8 @@ export function SignInStep() {
   };
 
   const resetAuth = () => {
+    // Answering an invitation with another account: back to choosing the address, the invitation stays in hand.
+    if (inviteOtherAccount) return setStep('checkEmail', '');
     clearUserStore();
     resetSteps();
   };
@@ -149,7 +151,8 @@ export function SignInStep() {
             name="email"
             render={({ field }) => (
               <FormItem className={restrictedMode ? '-mb-2 gap-0' : 'hidden'}>
-                <FormLabel className="mb-2">{t('c:email')}</FormLabel>
+                {/* Hidden on purpose: the example address is the visible cue */}
+                <FormLabel className="sr-only">{t('c:email')}</FormLabel>
                 <FormControl>
                   <Input
                     {...field}

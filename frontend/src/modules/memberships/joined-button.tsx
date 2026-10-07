@@ -3,6 +3,7 @@ import { CheckIcon, XIcon } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MembershipBase } from 'sdk';
+import { ConfirmText } from '~/modules/common/confirm-text';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import type { LeaveChannelButtonProps } from '~/modules/memberships/leave-channel-button';
@@ -29,7 +30,7 @@ function JoinedButton({ role, size = 'sm', className, ...props }: JoinedButtonPr
   const openLeaveConfirm = (event: MouseEvent<HTMLButtonElement>) => {
     const { create, remove } = useDropdowner.getState();
     create(
-      <PopConfirm title={t('c:confirm.leave_channel', { name: channel.name })}>
+      <PopConfirm title={<ConfirmText i18nKey="c:confirm.leave_channel" values={{ name: channel.name }} />}>
         <LeaveChannelForm
           {...props}
           callback={(args) => {

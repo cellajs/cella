@@ -231,6 +231,24 @@ export const sharesOrgFilter = (ctx: DbContext, { myOrgIds }: { myOrgIds: string
   );
 };
 
+interface FindMfaRequiredOpts {
+  userId: string;
+  /** Limits the read to a user who is a member of one of these organizations. */
+  memberOfAny?: string[];
+}
+
+/** A user's MFA switch; undefined when no user matches, which includes a user outside `memberOfAny`. */
+export const findMfaRequired = async (ctx: DbContext, { userId, memberOfAny }: FindMfaRequiredOpts) => {
+  const filters: SQL[] = [eq(usersTable.id, userId)];
+  if (memberOfAny) filters.push(sharesOrgFilter(ctx, { myOrgIds: memberOfAny }));
+  const [user] = await ctx.var.db
+    .select({ mfaRequired: usersTable.mfaRequired })
+    .from(usersTable)
+    .where(and(...filters))
+    .limit(1);
+  return user?.mfaRequired;
+};
+
 interface FindAuditUsersByIdsOpts {
   ids: string[];
 }

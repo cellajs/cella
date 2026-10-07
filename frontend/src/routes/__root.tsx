@@ -1,6 +1,6 @@
 import { createRootRouteWithContext, redirect } from '@tanstack/react-router';
-import i18n from 'i18next';
 import { ApiError } from '~/lib/api';
+import { pageNotFoundError } from '~/modules/common/error-helpers';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Root } from '~/modules/common/root';
 import { meQueryOptions } from '~/modules/me/query';
@@ -13,18 +13,7 @@ function RootErrorComponent({ error }: { error: unknown }) {
 }
 
 function RootNotFoundComponent() {
-  return (
-    <ErrorNotice
-      error={{
-        type: 'page_not_found',
-        severity: 'info',
-        status: 404,
-        name: i18n.t('error:page_not_found'),
-        message: i18n.t('error:page_not_found.text'),
-      }}
-      boundary="root"
-    />
-  );
+  return <ErrorNotice boundary="root" error={pageNotFoundError()} />;
 }
 
 export const Route = createRootRouteWithContext()({

@@ -31,6 +31,7 @@ Settings for `.vscode/settings.json` (gitignored, once per contributor):
 - Two- or three-word translations have a two-word key
 - Above three words is a sentence
 - Action related sentences have a prefix such as `question.`, `confirm.` or `success.`
+- A confirmation that names what it hits wraps that part in `<strong>` (`Revoke API key <strong>{{name}}</strong>?`), never in quotes, and renders through `ConfirmText`, which shows it in bold
 - Other (explanation related) sentences have a suffix `.text`
 - Only the first letter of the first word is uppercase. For explicit lowercase, lowercase at the usage site (`.toLowerCase()` or an interpolation value such as `resourceLowerCase`).
 - Sort JSON translation keys alphabetically

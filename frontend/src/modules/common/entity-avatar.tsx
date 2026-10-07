@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import type { EntityType } from 'shared';
+import { getInitials } from 'shared/utils/get-initials';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Avatar, AvatarFallback, AvatarImage, type AvatarProps } from '~/modules/ui/avatar';
 import { cn } from '~/utils/cn';
@@ -26,14 +27,20 @@ function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props
     );
 
   const avatarBackground = numberToColorClass(id);
+  const [initial, secondInitial] = getInitials(name);
 
   return (
     <Avatar {...props} data-type={type} className={cn('overflow-hidden rounded-md data-[type=user]:rounded-full', className)}>
-      {url && <AvatarImage src={url} draggable={false} />}
-      <AvatarFallback className={avatarBackground}>
+      {url && <AvatarImage src={url} alt={name ?? ''} draggable={false} />}
+      {/* The fallback is the container: letters scale with the avatar, and the second one shows when it is wider than size-6 */}
+      <AvatarFallback className={cn('@container', avatarBackground)}>
         <span className="sr-only">{name}</span>
-        <div className="flex h-full items-center justify-center font-semibold text-black uppercase more-contrast:opacity-85 opacity-50">
-          {name?.charAt(0).toUpperCase() || '-'}
+        <div
+          aria-hidden
+          className="flex h-full items-center justify-center font-semibold @min-[calc(1.5rem+1px)]:text-[40cqi] text-[50cqi] text-black leading-none more-contrast:opacity-85 opacity-50"
+        >
+          {initial ?? '-'}
+          {secondInitial && <span className="@min-[calc(1.5rem+1px)]:inline hidden">{secondInitial}</span>}
         </div>
       </AvatarFallback>
     </Avatar>

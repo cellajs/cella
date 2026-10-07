@@ -12,10 +12,14 @@ import { log } from '#/utils/logger';
 /** The link is read and the stamp written on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
 
+/** The frontend page an opened link lands on. It carries the page that asked in `redirect`, for when that tab is gone. */
+const stepUpConfirmedPath = '/auth/step-up-confirmed';
+
 /**
  * Opens a step-up link. Only the browser that asked for it may open it: there the click stamps the session the link is
  * bound to, and nothing else, and signs nobody in. Opened anywhere else (another browser, a mail scanner) it is
- * refused before it is redeemed, so the browser that asked can still use it. Then back to the page that asked.
+ * refused before it is redeemed, so the browser that asked can still use it. The tab that asked holds the action and
+ * carries on by itself, so the link's own tab goes to a page that says so.
  * @throws AppError 401 `step-up_not_found`, 403 `step_up_other_browser`, 401 `step-up_expired` when the link or the
  *   session behind it ended.
  */
@@ -33,6 +37,8 @@ export const openStepUpLink = async (ctx: Context<Env>, rawToken: string) => {
 
   log.info('Session stepped up', { via: 'email', sessionId });
 
-  const path = isValidRedirectPath(redeemed.redirectPath) || appConfig.defaultRedirectPath;
-  return ctx.redirect(new URL(path, appConfig.frontendUrl), 302);
+  const confirmedUrl = new URL(stepUpConfirmedPath, appConfig.frontendUrl);
+  const redirectPath = isValidRedirectPath(redeemed.redirectPath);
+  if (redirectPath) confirmedUrl.searchParams.set('redirect', redirectPath);
+  return ctx.redirect(confirmedUrl, 302);
 };

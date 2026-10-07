@@ -1,14 +1,13 @@
 import { Link } from '@tanstack/react-router';
 import i18n from 'i18next';
-import { PencilIcon } from 'lucide-react';
+import { Link2OffIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Tenant } from 'sdk';
 import { isStrategyEnabled } from 'shared';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
-import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
+import { dateColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
@@ -51,14 +50,41 @@ export const useColumns = () => {
       renderCell: ({ row }) => <code className="font-mono text-xs">{row.id}</code>,
     },
     {
+      // The name opens the edit sheet, where the tenant and its connections are managed.
+      key: 'name',
+      name: t('c:name'),
+      sortable: true,
+      resizable: true,
+      minWidth: 180,
+      // Narrow enough on mobile for the three columns to fit a phone without sideways scroll.
+      modes: { mobile: { minWidth: 120 } },
+      renderCell: ({ row, tabIndex }) => (
+        <Button variant="cell" size="cell" tabIndex={tabIndex} onClick={(event) => openUpdateSheet(row, { current: event.currentTarget })}>
+          <span className="group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong truncate font-medium group-hover/cell-button:underline">
+            {row.name || '-'}
+          </span>
+        </Button>
+      ),
+    },
+    {
       // 1 tenant = 1 organization: link to the org it holds (avatar + name), or flag it as unlinked.
+      // On mobile the column narrows to the avatar; header and names stay readable to a screen reader.
       key: 'organization',
       name: t('c:organization'),
       resizable: true,
       minWidth: 200,
+      modes: { mobile: { width: 56, minWidth: 56 } },
+      headerCellClass: 'max-sm:*:sr-only',
       renderCell: ({ row, tabIndex }) => {
         const org = row.organization;
-        if (!org) return <Badge variant="plain">{t('c:not_linked')}</Badge>;
+        if (!org) {
+          return (
+            <Badge variant="plain">
+              <Link2OffIcon className="sm:hidden" />
+              <span className="max-sm:sr-only">{t('c:not_linked')}</span>
+            </Badge>
+          );
+        }
         return (
           <Button
             variant="cell"
@@ -73,7 +99,7 @@ export const useColumns = () => {
             }
           >
             <EntityAvatar type="organization" className="group-active/cell-button:press size-8" id={org.id} name={org.name} url={org.thumbnailUrl} />
-            <span className="group-active/cell-button:press truncate font-medium decoration-foreground/20 underline-offset-3 group-hover/cell-button:underline group-active/cell-button:decoration-foreground/50">
+            <span className="group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong truncate group-hover/cell-button:underline max-sm:sr-only">
               {org.name || '-'}
             </span>
           </Button>
@@ -93,17 +119,6 @@ export const useColumns = () => {
       },
       renderEditCell: (props) => <RenderEnumSelect {...props} field="status" options={statusOptions} renderOption={(status) => t(`c:${status}`)} />,
     },
-    { key: 'name', name: t('c:name'), sortable: true, resizable: true, minWidth: 180, placeholderValue: '-' },
-    ellipsisColumn<Tenant>(() => [
-      {
-        label: t('c:edit'),
-        icon: PencilIcon,
-        onSelect: (row, triggerRef) => {
-          useDropdowner.getState().remove();
-          openUpdateSheet(row, triggerRef);
-        },
-      },
-    ]),
     {
       key: 'subscriptionStatus',
       name: t('c:subscription'),

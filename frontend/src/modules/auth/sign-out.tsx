@@ -1,13 +1,11 @@
 import { useRouter, useSearch } from '@tanstack/react-router';
 import { HeartIcon } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { endSession } from '~/modules/auth/end-session';
 import type { UnsavedEdit } from '~/modules/auth/unsaved-edits-dialog';
 import { flushYjsStore } from '~/modules/common/blocknote/yjs-store';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { toaster } from '~/modules/common/toaster/toaster';
 import { teardownUserState } from '~/utils/teardown-user-state';
 
 // Loaded on demand: the list reaches the Yjs connections and the editor chunk, which the auth pages never need.
@@ -18,7 +16,6 @@ const UnsavedEditsGate = lazy(() => import('~/modules/auth/unsaved-edits-dialog'
  * sign-out continues by itself once they all saved. `force` (the account is gone) skips the question: nothing can save.
  */
 export function SignOut() {
-  const { t } = useTranslation();
   const router = useRouter();
 
   const { force } = useSearch({ from: '/_public/auth/sign-out' });
@@ -48,12 +45,10 @@ export function SignOut() {
         // `force` means the session is already gone: only this browser's state is left to clear.
         if (force) await teardownUserState();
         else await endSession({ wipe: true });
-        toaster.success(t('c:success.signed_out'));
       } catch (error) {
         console.error('Sign out error:', error);
-        toaster.warning(t('c:already_signed_out'));
       }
-      // Full page reload so every store and cache is rebuilt
+      // Full page reload so every store and cache is rebuilt. No toast: the reload would cut it off, and this page already says it
       window.location.href = appConfig.aboutUrl;
     };
 

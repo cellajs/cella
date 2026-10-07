@@ -117,8 +117,6 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
 
             {isSelf && (
               <>
-                <InputFormField inputClassName="border" control={form.control} name="description" label={t('c:bio')} type="textarea" />
-
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="account-email">{t('c:email')}</Label>
                   <Input id="account-email" value={currentUser.email} autoComplete="off" disabled />

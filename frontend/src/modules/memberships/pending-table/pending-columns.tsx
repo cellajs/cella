@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { dateColumn } from '~/modules/common/data-table/columns';
+import { dateColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { ResendPendingInvitationCell } from '~/modules/memberships/pending-table/resend-pending-cell';
 import type { PendingMembership } from '~/modules/memberships/types';
@@ -11,21 +11,7 @@ export const useColumns = (path: { tenantId: string; organizationId: string }, c
   const { t } = useTranslation();
 
   const columns: ColumnOrColumnGroup<PendingMembership>[] = [
-    {
-      key: 'email',
-      name: t('c:email'),
-
-      minWidth: 140,
-      placeholderValue: '-',
-      renderCell: ({ row, tabIndex }) => {
-        if (!row.email) return null;
-        return (
-          <a href={`mailto:${row.email}`} tabIndex={tabIndex} className="truncate underline-offset-4 outline-0 ring-0 hover:underline">
-            {row.email}
-          </a>
-        );
-      },
-    },
+    emailColumn({ name: t('c:email') }),
     {
       key: 'role',
       name: t('c:role'),

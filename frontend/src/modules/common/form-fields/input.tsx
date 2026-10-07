@@ -20,6 +20,7 @@ type InputFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFie
   icon?: ReactNode;
   autoFocus?: boolean;
   inputClassName?: string;
+  labelClassName?: string;
   autocomplete?: string;
 };
 
@@ -40,6 +41,7 @@ export function InputFormField<TFieldValues extends FieldValues>({
   icon,
   autoFocus,
   inputClassName,
+  labelClassName,
   autocomplete = 'off',
 }: InputFieldProps<TFieldValues>) {
   const InputComponent = type === 'textarea' ? Textarea : Input;
@@ -50,7 +52,7 @@ export function InputFormField<TFieldValues extends FieldValues>({
       name={name}
       render={({ field: { value: formFieldValue, onBlur: fieldOnBlur, ...rest } }) => (
         <FormItem name={name.toString()}>
-          <FormLabel help={description}>
+          <FormLabel help={description} className={labelClassName}>
             {label}
             {required && <span className="ml-1 opacity-50">*</span>}
           </FormLabel>

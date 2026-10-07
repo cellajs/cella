@@ -12,6 +12,7 @@ import type { CreateApiKeyInput } from '#/modules/service-accounts/service-accou
 import { assertTenantQuota } from '#/modules/tenants/tenant-restrictions';
 import { getValidChannel } from '#/permissions';
 import { log } from '#/utils/logger';
+import { withApiKeyCreator } from './with-api-key-creators';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -52,5 +53,5 @@ export async function createApiKeyOp(ctx: UserContext, serviceAccountId: string,
   invalidateCache.serviceAccount(account);
 
   log.info('ApiKey issued', { keyId: apiKey.id, serviceAccountId: account.id });
-  return { ...apiKey, secret };
+  return { ...(await withApiKeyCreator(ctx, apiKey)), secret };
 }

@@ -357,11 +357,13 @@ interface FindMembersPaginatedOpts {
   userIds?: string[];
   // Opt-in per-member insight counts; caller must run under tenantRead (product subqueries are RLS-guarded)
   includeCounts?: boolean;
+  // Each member's MFA switch; the caller decides who may see it
+  includeMfa?: boolean;
 }
 
 export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPaginatedOpts) => {
   const { db } = ctx.var;
-  const { organizationId, entityId, entityType, q, sort, order, offset, limit, role, userIds, includeCounts } = opts;
+  const { organizationId, entityId, entityType, q, sort, order, offset, limit, role, userIds, includeCounts, includeMfa } = opts;
 
   const $or = q ? [ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q))] : [];
 
@@ -397,6 +399,7 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
       membership: membershipBaseSelect,
       // Per-member insight counts on the page rows only; the total below stays free of the subqueries
       ...(includeCounts && { counts: memberCountsSelect(entityType, entityId, organizationId) }),
+      ...(includeMfa && { mfaRequired: usersTable.mfaRequired }),
     })
     .from(usersTable)
     .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))

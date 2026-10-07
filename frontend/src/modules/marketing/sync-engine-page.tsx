@@ -1,5 +1,4 @@
 import { Trans, useTranslation } from 'react-i18next';
-import { EntityBuckets } from '~/modules/marketing/about/entity-buckets';
 import { AboutSection } from '~/modules/marketing/about/section';
 import { SyncDiagram } from '~/modules/marketing/about/sync-diagram';
 import { InfoGrid } from '~/modules/marketing/info-grid';
@@ -25,27 +24,15 @@ export function SyncEnginePage() {
           />
         </p>
 
-        <p className="mx-auto mb-6 max-w-3xl text-foreground leading-normal">
-          <Trans
-            t={t}
-            i18nKey="about:cella_approach"
-            components={{
-              strong: <strong className="font-semibold text-foreground" />,
-            }}
-          />
-        </p>
-
         <p className="mx-auto mb-2 max-w-3xl rounded-full bg-accent/50 px-4 py-2 font-semibold text-foreground leading-normal sm:text-center">
           <Trans t={t} i18nKey="about:cella_approach_point_1" />
         </p>
         <p className="mx-auto mb-2 max-w-3xl rounded-full bg-accent/50 px-4 py-2 font-semibold text-foreground leading-normal sm:text-center">
           <Trans t={t} i18nKey="about:cella_approach_point_2" />
         </p>
-        <p className="mx-auto mb-8 max-w-3xl rounded-full bg-accent/50 px-4 py-2 font-semibold text-foreground leading-normal sm:text-center">
+        <p className="mx-auto max-w-3xl rounded-full bg-accent/50 px-4 py-2 font-semibold text-foreground leading-normal sm:text-center">
           <Trans t={t} i18nKey="about:cella_approach_point_3" />
         </p>
-
-        <EntityBuckets />
       </AboutSection>
 
       <AboutSection title="about:how.title" text="about:how.text" alternate>

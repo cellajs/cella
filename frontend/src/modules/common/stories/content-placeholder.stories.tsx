@@ -26,4 +26,6 @@ export const WithChildren: Story = {
   },
 };
 
+export const Small: Story = { args: { title: 'c:no_results' as TKey, icon: InboxIcon, size: 'sm' } };
+
 export const NoIcon: Story = { args: { title: 'c:no_results' as TKey } };

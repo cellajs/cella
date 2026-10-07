@@ -8,6 +8,7 @@ import { getApiKeyCache, setApiKeyCache } from '#/middlewares/guard/api-key-cach
 import { loadMemberships } from '#/middlewares/guard/membership-cache';
 import { getTokenGrantCache, setTokenGrantCache, type TokenGrantEntry } from '#/middlewares/guard/token-grant-cache';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
+import { updateLastSeenAt } from '#/middlewares/update-last-seen';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { findLiveGrantBindings } from '#/modules/oauth-server/oauth-server-queries';
@@ -99,6 +100,7 @@ async function resolveServiceToken(token: Extract<VerifiedAccessToken, { kind: '
   if (!found) throw unauthorized('invalid_api_key');
   const refusal = apiKeyRefusal(found.apiKey, found.account);
   if (refusal) throw unauthorized(refusal);
+  updateLastSeenAt(found.account.id);
   return found.account;
 }
 
@@ -152,6 +154,7 @@ export const serviceGuard = xMiddleware(
     const refusal = apiKeyRefusal(resolved.apiKey, resolved.account);
     if (refusal) throw unauthorized(refusal);
     const { apiKey, account } = resolved;
+    updateLastSeenAt(account.id);
 
     ctx.set('actor', {
       kind: 'service',

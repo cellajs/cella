@@ -72,29 +72,39 @@ export function InfoContent() {
   return (
     <div className="flex flex-col gap-6 pt-3 pb-8">
       <div className="flex flex-col gap-1">
-        <h3 className="px-4 font-medium text-muted-foreground text-sm lowercase">{t('c:support')}</h3>
-        <Button variant="ghost" className="w-full justify-start px-3.5 text-left" render={<Link to={appConfig.aboutUrl} draggable={false} />}>
+        <h3 className="px-3 font-medium text-muted-foreground text-sm lowercase">{t('c:support')}</h3>
+        <Button variant="ghost" className="w-full justify-start text-left font-normal" render={<Link to={appConfig.aboutUrl} draggable={false} />}>
           <InfoIcon className="size-4" aria-hidden="true" />
           {t('c:about')}
         </Button>
-        <Button variant="ghost" className="w-full justify-start px-3.5 text-left" render={<Link to="/docs" draggable={false} />}>
+        <Button variant="ghost" className="w-full justify-start text-left font-normal" render={<Link to="/docs" draggable={false} />}>
           <BookOpenIcon className="size-4" aria-hidden="true" />
           {t('c:api_docs')}
         </Button>
         {appConfig.has.chatSupport && (
-          <Button ref={supportRef} variant="ghost" className="w-full justify-start px-3.5 text-left" onClick={() => handleAskForHelp(supportRef)}>
+          <Button
+            ref={supportRef}
+            variant="ghost"
+            className="w-full justify-start text-left font-normal"
+            onClick={() => handleAskForHelp(supportRef)}
+          >
             <LifeBuoyIcon className="size-4" aria-hidden="true" />
             {t('c:support')}
           </Button>
         )}
-        <Button ref={contactRef} variant="ghost" className="w-full justify-start px-3.5 text-left" onClick={() => contactFormHandler(contactRef)}>
+        <Button
+          ref={contactRef}
+          variant="ghost"
+          className="w-full justify-start text-left font-normal"
+          onClick={() => contactFormHandler(contactRef)}
+        >
           <MailIcon className="size-4" aria-hidden="true" />
           {t('c:contact_us')}
         </Button>
       </div>
 
       <div className="flex flex-col gap-1">
-        <div className="flex items-center justify-between gap-2 px-4">
+        <div className="flex items-center justify-between gap-2 px-3">
           <h3 className="font-medium text-muted-foreground text-sm lowercase">{t('c:status')}</h3>
           {hasStatusPage && (
             <Button

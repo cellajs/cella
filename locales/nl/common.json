@@ -59,7 +59,7 @@
   "institution_accounts": "Instellingsaccounts",
   "institution_accounts.text": "Log in via het account van je instelling voor de organisaties die dat aanbieden.",
   "institution_name": "Naam instelling",
-  "invite_bulk_link": "Klik hier om leden in bulk uit te nodigen via kopiëren en plakken.",
+  "invite_bulk_link": "<bulk_anchor>Klik hier</bulk_anchor> om leden in bulk uit te nodigen via kopiëren en plakken.",
   "jit_provisioning": "Leden toelaten zonder uitnodiging",
   "jit_provisioning.text": "Uit: alleen uitgenodigde adressen krijgen via deze koppeling een account.",
   "keyboard_shortcuts": "Sneltoetsen",

@@ -1,5 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { PlusIcon, UndoIcon } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { HomeIcon, PlusIcon, UndoIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
@@ -53,11 +54,21 @@ export function OnboardingCompleted() {
         {t('c:onboarding_completed.text', { appName: appConfig.name })}
       </p>
 
-      {!hasOrganization && !orgQuery.isFetching && createOrganization && (
-        <Button ref={createButtonRef} variant="secondary" onClick={() => createOrganization(createButtonRef)}>
-          <PlusIcon />
-          {t('c:create_resource', { resource: t('c:organization').toLowerCase() })}
-        </Button>
+      {/* Both actions appear together, once the organization list has settled and the flag is set: neither moves under the pointer. */}
+      {user.userFlags.finishedOnboarding && (
+        <div className="flex gap-2 max-sm:w-full max-sm:flex-col">
+          {!hasOrganization && createOrganization && (
+            <Button ref={createButtonRef} variant="secondary" onClick={() => createOrganization(createButtonRef)}>
+              <PlusIcon />
+              {t('c:create_resource', { resource: t('c:organization').toLowerCase() })}
+            </Button>
+          )}
+          {/* Replaces the history entry: going back to welcome would only redirect forward again. */}
+          <Button variant="plain" render={<Link to="/home" replace />}>
+            <HomeIcon />
+            {t('c:home')}
+          </Button>
+        </div>
       )}
     </div>
   );

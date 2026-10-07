@@ -17,6 +17,10 @@ describe('cn', () => {
     ['border-2 soft-border-medium', 'border-2 soft-border-medium'],
     ['intent-primary intent-destructive', 'intent-destructive'],
     ['intent-brand soft-bg soft-text', 'intent-brand soft-bg soft-text'],
+    ['link-inline no-underline', 'no-underline'],
+    ['underline link-inline', 'link-inline'],
+    ['link-decoration decoration-foreground/40', 'decoration-foreground/40'],
+    ['link-decoration link-decoration-strong', 'link-decoration-strong'],
   ])('merges the custom utilities: %s', (input, merged) => {
     expect(cn(input)).toBe(merged);
   });

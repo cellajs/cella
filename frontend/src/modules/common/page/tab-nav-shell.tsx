@@ -32,13 +32,7 @@ export function TabNavShell({ title, avatar, className, indicator, children }: P
     >
       <div className="col-start-1 hidden min-w-max items-center starting:opacity-0 transition-opacity duration-300 @2xl:group-data-[sticky=true]/sticky:flex">
         {avatar && (
-          <EntityAvatar
-            className="m-3 size-5 text-xs"
-            type={avatar.type ?? 'organization'}
-            id={avatar.id}
-            name={avatar.name}
-            url={avatar.thumbnailUrl}
-          />
+          <EntityAvatar className="m-3 size-5" type={avatar.type ?? 'organization'} id={avatar.id} name={avatar.name} url={avatar.thumbnailUrl} />
         )}
         {title && <div className="@4xl:block hidden max-w-42 truncate font-semibold text-sm leading-5">{title}</div>}
       </div>

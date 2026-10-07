@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
-import { tw } from '~/utils/tw';
+import { cn } from '~/utils/cn';
 
 interface ReorderHandleProps {
   /** Names the row this handle moves, so its menu button says which one. */
@@ -87,19 +87,21 @@ interface ReorderColumnOptions<TRow> {
   /** Steps the row at `rowIdx` one place, with the table's own persist and announce. */
   onMove: (rowIdx: number, step: -1 | 1) => void;
   rowCount: number;
+  /** Extra classes for the grip's cell, for a table that places it itself. */
+  cellClass?: string;
 }
 
 /**
  * Grip column of a reorderable table: a drag for a pointer, a menu for everything else. Pair it with the grid's
  * `onRowReorder`, which the drag calls, while `onMove` takes the single steps the menu asks for.
  */
-export function reorderColumn<TRow>({ getName, onMove, rowCount }: ReorderColumnOptions<TRow>): ColumnOrColumnGroup<TRow> {
+export function reorderColumn<TRow>({ getName, onMove, rowCount, cellClass }: ReorderColumnOptions<TRow>): ColumnOrColumnGroup<TRow> {
   return {
     key: 'reorder',
     name: '',
     width: 36,
     maxWidth: 36,
-    cellClass: tw('flex items-center justify-center'),
+    cellClass: cn('flex items-center justify-center', cellClass),
     rowDragHandle: true,
     renderHeaderCell: () => <ReorderColumnHeader />,
     renderCell: ({ row, rowIdx }) => (

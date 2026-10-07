@@ -1000,6 +1000,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
           rowClass,
           animateReorder,
           gridRowStart,
+          height: getRowHeight(rowIdx),
           selectedCellIdx: selectedRowIdx === rowIdx ? selectedIdx : undefined,
           lastFrozenColumnIndex,
           onRowChange: handleFormatterRowChangeLatest,

@@ -26,7 +26,7 @@ export function FAQ() {
                         to={faq.link}
                         aria-label={`Visit ${faq.link}`}
                         target={faq.link?.startsWith('https:') ? '_blank' : '_self'}
-                        className="underline underline-offset-2"
+                        className="link-inline"
                       />
                     ),
                   }}

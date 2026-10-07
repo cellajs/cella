@@ -17,10 +17,12 @@ const statusKeys: Partial<Record<number, TKey>> = {
 
 const isKnown = (key: string) => i18n.exists(`error:${key}`);
 
-/** The keys in `error.json` that may describe the error, most specific first. */
+/**
+ * The keys in `error.json` that may describe the error, most specific first. An error names itself; the route's
+ * `error` search param names it only when there is none.
+ */
 function getErrorLocaleKeys(error?: ErrorNoticeError, errorFromQuery?: string): string[] {
-  if (errorFromQuery) return [errorFromQuery];
-  if (!error) return ['error'];
+  if (!error) return [errorFromQuery || 'error'];
 
   if (error instanceof SearchParamError) return ['invalid_param'];
 

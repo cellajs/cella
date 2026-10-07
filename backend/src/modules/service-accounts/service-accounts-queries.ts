@@ -1,7 +1,8 @@
-import { and, count, desc, eq, gt, ilike, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, desc, eq, getColumns, gt, ilike, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { insertActors } from '#/modules/actors/actors-queries';
 import { type ApiKeyModel, apiKeySafeColumns, apiKeysTable, type InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import { type InsertServiceAccountModel, type ServiceAccountModel, serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
@@ -11,11 +12,21 @@ interface InTenantOpts {
   tenantId: string;
 }
 
+/** A service account with the activity time its `actors` row holds. */
+export type ServiceAccountWithActivity = ServiceAccountModel & { lastSeenAt: string | null };
+
+/** The activity time comes from `actors` ({@link serviceAccountActorJoin}), outside CDC. */
+const serviceAccountSelect = { ...getColumns(serviceAccountsTable), lastSeenAt: actorsTable.lastSeenAt };
+
+/** Joins an account's `actors` row; every query that selects {@link serviceAccountSelect} needs it. */
+const serviceAccountActorJoin = eq(actorsTable.id, serviceAccountsTable.id);
+
 /** The account by id inside a tenant, or undefined. */
 export async function findServiceAccountInTenant(ctx: DbContext, { id, tenantId }: InTenantOpts & { id: string }) {
   const [account] = await ctx.var.db
-    .select()
+    .select(serviceAccountSelect)
     .from(serviceAccountsTable)
+    .innerJoin(actorsTable, serviceAccountActorJoin)
     .where(and(eq(serviceAccountsTable.id, id), eq(serviceAccountsTable.tenantId, tenantId)))
     .limit(1);
   return account;
@@ -33,8 +44,9 @@ export async function listServiceAccounts(ctx: DbContext, { tenantId, q, offset,
   if (q) where.push(ilike(serviceAccountsTable.name, prepareStringForILikeFilter(q)));
 
   const itemsQuery = ctx.var.db
-    .select()
+    .select(serviceAccountSelect)
     .from(serviceAccountsTable)
+    .innerJoin(actorsTable, serviceAccountActorJoin)
     .where(and(...where))
     .orderBy(desc(serviceAccountsTable.createdAt))
     .limit(limit)

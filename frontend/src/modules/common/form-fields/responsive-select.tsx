@@ -23,7 +23,7 @@ interface ResponsiveSelectProps {
   onChange: (value: string) => void;
   placeholder?: string;
   title?: string;
-  /** Shows the title before the value ("Role: All"), for a select that stands without a label, as in a filter bar. */
+  /** Shows the title before the value ("Role All"), for a select that stands without a label, as in a filter bar. */
   showTitle?: boolean;
   className?: string;
   disabled?: boolean;
@@ -46,7 +46,19 @@ export function ResponsiveSelect({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const selectedOption = options.find((o) => o.value === value);
-  const prefix = showTitle && title ? <span className="text-muted-foreground">{title}:</span> : null;
+  const selectedLabel = selectedOption ? labelOf(selectedOption) : placeholder;
+
+  // Title and value read as one item, the value in the weight of the buttons beside it. The title is dimmed at rest
+  // (still above 4.5:1 on a field); increased contrast gives it the full muted text color.
+  const display =
+    showTitle && title ? (
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="more-contrast:text-muted-foreground more-contrast:opacity-100 opacity-60">{title}</span>
+        <span className="truncate font-medium">{selectedLabel}</span>
+      </span>
+    ) : (
+      selectedLabel
+    );
 
   if (isMobile) {
     return (
@@ -59,9 +71,7 @@ export function ResponsiveSelect({
           aria-label={title ? `${title}: ${selectedOption?.label ?? placeholder}` : undefined}
           onClick={() => setDrawerOpen(true)}
         >
-          <span className="truncate text-sm">
-            {prefix} {selectedOption ? labelOf(selectedOption) : placeholder}
-          </span>
+          <span className="truncate text-sm">{display}</span>
           <ChevronDownIcon className="size-4 shrink-0 opacity-70" />
         </Button>
 
@@ -108,8 +118,7 @@ export function ResponsiveSelect({
         aria-label={title ? `${title}: ${selectedOption?.label ?? placeholder}` : undefined}
       >
         {selectedOption?.icon}
-        {prefix}
-        {selectedOption ? labelOf(selectedOption) : placeholder}
+        {display}
       </SelectTrigger>
       <SelectContent align={align}>
         {options.map((option) => (

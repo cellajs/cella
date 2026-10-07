@@ -14,8 +14,8 @@ app.openapi(userRoutes.getUsers, async (ctx) => {
 
 app.openapi(userRoutes.getUser, async (ctx) => {
   const { relatableUserId } = ctx.req.valid('param');
-  const { slug: bySlug } = ctx.req.valid('query');
-  const data = await getUserOp(ctx, relatableUserId, { bySlug });
+  const { slug: bySlug, include } = ctx.req.valid('query');
+  const data = await getUserOp(ctx, relatableUserId, { bySlug, include });
   return ctx.json(data, 200);
 });
 

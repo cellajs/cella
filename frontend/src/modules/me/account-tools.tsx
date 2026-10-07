@@ -3,12 +3,12 @@ import { useSearch } from '@tanstack/react-router';
 import { BuildingIcon, CheckIcon, TrashIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { startOAuthConnect, type User } from 'sdk';
+import { startOAuthConnect } from 'sdk';
 import { appConfig, type EnabledOAuthProvider, isStrategyEnabled } from 'shared';
 import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
 import { ssoEntryQueryOptions, ssoStartUrl } from '~/modules/auth/sso-providers';
 import { withStepUp } from '~/modules/auth/step-up';
-import type { CallbackArgs } from '~/modules/common/data-table/types';
+import { ConfirmText } from '~/modules/common/confirm-text';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { HelpText } from '~/modules/common/help-text';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -256,21 +256,13 @@ export function AccountDeleteCard() {
   const deleteButtonRef = useRef(null);
 
   const openDeleteDialog = () => {
-    useDialoger.getState().create(
-      <DeleteSelf
-        dialog
-        callback={({ status }: CallbackArgs<User>) => {
-          if (status === 'success') toaster.success(t('c:success.delete_resource', { resource: t('c:account') }));
-        }}
-      />,
-      {
-        id: 'delete-account',
-        triggerRef: deleteButtonRef,
-        className: 'md:max-w-xl',
-        title: t('c:delete_account'),
-        description: t('c:confirm.delete_account', { email: user.email, appName: appConfig.name }),
-      },
-    );
+    useDialoger.getState().create(<DeleteSelf dialog />, {
+      id: 'delete-account',
+      triggerRef: deleteButtonRef,
+      className: 'md:max-w-xl',
+      title: t('c:delete_account'),
+      description: <ConfirmText i18nKey="c:confirm.delete_account" values={{ email: user.email, appName: appConfig.name }} />,
+    });
   };
 
   return (

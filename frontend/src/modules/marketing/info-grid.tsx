@@ -32,12 +32,8 @@ function InfoTile({ id, namespace, layers, image, tileClassName = 'bg-card' }: I
     return (
       <div className={cn('relative overflow-hidden rounded-lg p-2', tileClassName)}>
         <div className="flex h-44 flex-col justify-between gap-2 rounded-md p-2 sm:p-6">
-          {/* App tile with the brand mark carved out of it; the heading below names it */}
-          <div
-            aria-hidden="true"
-            className="plus-punch mb-2 size-12 shrink-0 rounded-xl opacity-80"
-            style={{ '--punch-icon': `url(/static/marketing/features/${id}.svg)` } as React.CSSProperties}
-          />
+          {/* Decorative: the heading below names it */}
+          <img src={`/static/marketing/features/${id}.svg`} alt="" className="mb-2 size-8 object-contain dark:invert" loading="lazy" />
           <h3 className="font-medium">{t(title)}</h3>
           <p className="grow text-muted-foreground text-sm">{t(text)}</p>
         </div>

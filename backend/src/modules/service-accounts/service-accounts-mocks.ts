@@ -1,11 +1,12 @@
 import { faker } from '@faker-js/faker';
 import { appConfig, hierarchy } from 'shared';
 import { mockPaginated, mockPastIsoDate, mockTenantId, mockUuid, withFakerSeed } from '#/mocks';
-import type { ApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import { checksumOf } from '#/modules/service-accounts/helpers/api-key';
-import type { ServiceAccountModel } from '#/modules/service-accounts/service-accounts-db';
+import type { ApiKeyWithCreator } from '#/modules/service-accounts/operations/with-api-key-creators';
+import type { ServiceAccountWithActivity } from '#/modules/service-accounts/service-accounts-queries';
+import { mockUserMinimalBase } from '#/schemas/entity-base-mocks';
 
-export const mockServiceAccountResponse = (key = 'serviceAccount:default'): ServiceAccountModel =>
+export const mockServiceAccountResponse = (key = 'serviceAccount:default'): ServiceAccountWithActivity =>
   withFakerSeed(key, () => {
     const organizationId = mockUuid();
     const createdAt = mockPastIsoDate();
@@ -27,6 +28,7 @@ export const mockServiceAccountResponse = (key = 'serviceAccount:default'): Serv
       createdAt,
       updatedAt: createdAt,
       updatedBy: null,
+      lastSeenAt: createdAt,
     };
   });
 
@@ -34,8 +36,8 @@ export const mockServiceAccountResponse = (key = 'serviceAccount:default'): Serv
 const exampleBody = `${appConfig.slug}_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz012345`;
 const exampleSecret = `${exampleBody}${checksumOf(exampleBody)}`;
 
-export const mockApiKeyResponse = (key = 'apiKey:default'): ApiKeyModel =>
-  withFakerSeed(key, () => ({
+export const mockApiKeyResponse = (key = 'apiKey:default'): ApiKeyWithCreator => {
+  const apiKey = withFakerSeed<Omit<ApiKeyWithCreator, 'createdBy'>>(key, () => ({
     id: mockUuid(),
     actorId: mockUuid(),
     tenantId: mockTenantId(),
@@ -46,9 +48,11 @@ export const mockApiKeyResponse = (key = 'apiKey:default'): ApiKeyModel =>
     expiresAt: null,
     revokedAt: null,
     revokedBy: null,
-    createdBy: mockUuid(),
     createdAt: mockPastIsoDate(),
   }));
+  // Outside the seed above: a seeded mock ends by unseeding the generator, so a value drawn after it differs per run.
+  return { ...apiKey, createdBy: mockUserMinimalBase(`${key}:created-by`) };
+};
 
 export const mockCreatedApiKeyResponse = (key = 'createdApiKey:default') => ({ ...mockApiKeyResponse(key), secret: exampleSecret });
 

@@ -139,11 +139,14 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
             size="cell"
             tabIndex={tabIndex}
             title={row.path}
-            className="group w-full min-w-0 justify-start font-mono text-xs"
+            className="w-full min-w-0 justify-start font-mono text-xs"
             onClick={(e) => openOperationSheet(row, e.currentTarget)}
           >
             {/* The underline sits on the path alone: on the button it would reach the badge too */}
-            <span dir="rtl" className="block min-w-0 flex-1 truncate text-left decoration-foreground/30 underline-offset-3 group-hover:underline">
+            <span
+              dir="rtl"
+              className="group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong block min-w-0 flex-1 truncate text-left group-hover/cell-button:underline"
+            >
               &lrm;{row.path}
             </span>
             <SwitchedOffBadge enabledBy={row.enabledBy} />

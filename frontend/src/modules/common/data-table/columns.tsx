@@ -31,6 +31,30 @@ export const dateColumn = <T,>(
   exportValue: (row) => exportDate(get(row)),
 });
 
+interface EmailColumnOptions {
+  name: string;
+  minBreakpoint?: BreakpointKey;
+  resizable?: boolean;
+}
+
+/** The address as a mailto link; a row without one shows the placeholder. */
+export const emailColumn = <T extends { email?: string | null }>(options: EmailColumnOptions): ColumnOrColumnGroup<T> => ({
+  key: 'email',
+  minWidth: 140,
+  placeholderValue: '-',
+  ...options,
+  renderCell: ({ row, tabIndex }) =>
+    row.email ? (
+      <a
+        href={`mailto:${row.email}`}
+        tabIndex={tabIndex}
+        className="active:press link-decoration active:link-decoration-strong truncate opacity-80 outline-0 ring-0 hover:underline hover:opacity-100"
+      >
+        {row.email}
+      </a>
+    ) : null,
+});
+
 /** Row actions behind an ellipsis button; a row without options gets an empty cell. */
 export const ellipsisColumn = <T extends { id: string }>(
   getOptions: (row: T) => EllipsisOption<T>[],

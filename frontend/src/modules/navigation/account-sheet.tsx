@@ -120,7 +120,7 @@ export function AccountSheet() {
             className="absolute top-6 left-1/2 -ml-10"
           >
             <EntityAvatar
-              className="size-20 rounded-full text-2xl shadow-[0_0_0_4px_rgba(0,0,0,0.1)]"
+              className="size-20 rounded-full shadow-[0_0_0_4px_rgba(0,0,0,0.1)]"
               type="user"
               id={user.id}
               name={user.name}

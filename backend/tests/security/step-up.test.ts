@@ -145,6 +145,19 @@ describe('step-up', async () => {
       expect((await sessionRow(otherBrowser.id)).steppedUpAt).toBeNull();
     });
 
+    it('must not lose the page section that asked on the way back', async () => {
+      const user = await createTestUser('link-section@security-test.com');
+      const asking = await insertStaleSession(user);
+      const { browser, rawToken } = await askStepUpLink(asking, '/acme/settings?tab=keys#api-keys');
+
+      const opened = await openStepUpLink(rawToken, browser);
+
+      // The section travels inside the param: the landing page has no fragment of its own.
+      const landing = new URL(opened.response.headers.get('location') ?? '');
+      expect(landing.hash).toBe('');
+      expect(landing.searchParams.get('redirect')).toBe('/acme/settings?tab=keys#api-keys');
+    });
+
     it('must not sign anybody in via the emailed link', async () => {
       const user = await createTestUser('link-no-sign-in@security-test.com');
       const asking = await insertStaleSession(user);
@@ -153,7 +166,10 @@ describe('step-up', async () => {
       const opened = await openStepUpLink(rawToken, browser);
 
       expect(opened.response.status).toBe(302);
-      expect(new URL(opened.response.headers.get('location') ?? '').pathname).toBe('/account');
+      // The tab that asked carries on; the link's own tab says so and keeps the page for when that tab is gone.
+      const landing = new URL(opened.response.headers.get('location') ?? '');
+      expect(landing.pathname).toBe('/auth/step-up-confirmed');
+      expect(landing.searchParams.get('redirect')).toBe('/account');
       expect(cookieChange(opened.response, 'session')).not.toBe('set');
       // The browser that asked is stepped up on its own session; the link opens once.
       expect(await stateOf({ ...asking, headers: { ...defaultHeaders, Cookie: browser } })).toEqual({

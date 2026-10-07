@@ -51,7 +51,9 @@ export function SearchResultBlock({ results, entityType, hideSeparator = false, 
             >
               <div className="flex items-center gap-2 outline-0 ring-0">
                 <EntityAvatar type={entityType} className="size-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
-                <span className="truncate font-medium underline-offset-4 group-data-[already-member=true]:hover:underline">{item.name}</span>
+                <span className="link-decoration group-data-[already-member=true]:active:link-decoration-strong truncate font-medium group-data-[already-member=true]:hover:underline">
+                  {item.name}
+                </span>
               </div>
 
               <div className="flex items-center">

@@ -1,8 +1,9 @@
 import { onlineManager } from '@tanstack/react-query';
 import { MailIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import { isUnconditionalCan } from 'shared';
+import { ConfirmText } from '~/modules/common/confirm-text';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
@@ -69,8 +70,7 @@ export function MembersTableBar({
         className: 'max-w-xl',
         title: t('c:remove_resource', { resource: t('c:member_other').toLowerCase() }),
         description: (
-          <Trans
-            t={t}
+          <ConfirmText
             i18nKey="c:confirm.remove_members"
             values={{ entityType: channel.entityType, emails: selected.map((member) => member.email).join(', ') }}
           />
@@ -117,14 +117,7 @@ export function MembersTableBar({
       searchName="memberSearch"
       actions={canUpdate && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInviteDialog} />}
       countExtra={canUpdate && !barFilters.isFiltered && <PendingMembershipsCount channel={channel} />}
-      filters={
-        <SelectRole
-          entityType={channel.entityType}
-          value={role === undefined ? 'all' : role}
-          onChange={onRoleChange}
-          className="h-10 w-auto sm:min-w-32"
-        />
-      }
+      filters={<SelectRole entityType={channel.entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10" />}
       // Export is gated like the other admin actions in this bar; row selection needs the same grant
       export={!isSheet && canUpdate ? { filename: `${entityType} members`, selectedRows: selected, fetchRows: fetchExport } : undefined}
       focusView={!isSheet}

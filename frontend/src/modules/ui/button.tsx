@@ -15,11 +15,12 @@ export const buttonVariants = cva(
         success: 'intent-success',
         secondary: 'intent-secondary border border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
         outline: 'border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50',
-        ghost: 'shadow-none hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
+        // Ghost has no surface of its own, so its hover is a share of the text color: it shows on any backdrop, in both modes
+        ghost: 'shadow-none hover:bg-foreground/8 hover:text-accent-foreground',
         outlineGhost:
           'border border-foreground/20 bg-background/20 shadow-none hover:border-foreground/30 hover:bg-background/40 hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 shadow-none hover:underline',
-        cell: 'group/cell-button flex w-full justify-start gap-2 font-normal underline-offset-4 opacity-75 shadow-none hover:opacity-100 focus-visible:ring-transparent focus-visible:ring-offset-transparent',
+        link: 'link-inline text-primary shadow-none',
+        cell: 'group/cell-button flex w-full justify-start gap-2 font-normal opacity-75 shadow-none hover:opacity-100 focus-visible:ring-transparent focus-visible:ring-offset-transparent',
         plain: 'border border-primary/20 bg-primary/5 text-primary hover:border-primary/30 hover:bg-primary/10',
         input:
           'border border-input bg-background aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40',

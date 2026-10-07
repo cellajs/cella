@@ -68,7 +68,7 @@ export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) 
         </div>
       )}
       <EntityAvatar
-        className="m-2 mx-3 size-8 text-sm group-data-[submenu=false]/menu-options:mx-4 group-data-[submenu=false]/menu-options:my-1 group-data-[submenu=false]/menu-options:size-6 group-data-[subitem=true]/options-item:text-xs group-data-[archived=true]/options-item:opacity-70"
+        className="m-2 mx-3 size-8 group-data-[submenu=false]/menu-options:mx-4 group-data-[submenu=false]/menu-options:my-1 group-data-[submenu=false]/menu-options:size-6 group-data-[archived=true]/options-item:opacity-70"
         type={item.entityType}
         id={item.id}
         icon={Icon}
@@ -136,10 +136,10 @@ interface MenuItemEditButtonProps {
 function MenuItemEditButton({ icon: Icon, title, label, onClick, subitem = false, iconOnly = false, disabled = false }: MenuItemEditButtonProps) {
   return (
     <Button
-      variant="link"
+      variant="none"
       size="sm"
       className={cn(
-        'h-4 px-0 py-0 text-xs leading-3 underline-offset-1 opacity-80 hover:underline hover:opacity-100 focus-visible:bg-accent/50 focus-visible:ring-0 focus-visible:ring-offset-0',
+        'link-decoration active:link-decoration-strong h-4 px-0 py-0 text-primary text-xs leading-3 opacity-80 hover:underline hover:opacity-100 focus-visible:bg-accent/50 focus-visible:ring-0 focus-visible:ring-offset-0',
         iconOnly && 'h-6 w-6 justify-center aria-disabled:cursor-default aria-disabled:opacity-30',
       )}
       aria-label={label ?? `Click ${title}`}

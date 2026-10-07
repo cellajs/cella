@@ -28,6 +28,9 @@ const serviceAccountKeys = {
   revoke: ['service-accounts', 'revoke'] as const,
 };
 
+/** Id of this module's API keys tool, which is its section on the settings page: where a step-up comes back to. */
+const apiKeysSection = 'api-keys';
+
 export const serviceAccountsQueryOptions = (path: QueryOrgContext) =>
   queryOptions({
     queryKey: serviceAccountKeys.list(path),
@@ -45,7 +48,7 @@ export const useCreateServiceAccountMutation = () => {
   return useMutation<CreateServiceAccountResponse, ApiError, MutationData<CreateServiceAccountData>>({
     mutationKey: serviceAccountKeys.create,
     // Minting a key is an account-security action: the server may ask the user to prove it's them first.
-    mutationFn: ({ path, body }) => withStepUp(() => createServiceAccount({ path, body })),
+    mutationFn: ({ path, body }) => withStepUp(() => createServiceAccount({ path, body }), apiKeysSection),
     onSuccess: ({ serviceAccount, apiKey }, { path }) => {
       queryClient.setQueryData<GetServiceAccountsResponse>(serviceAccountKeys.list(path), (oldData) => {
         if (!oldData) return oldData;

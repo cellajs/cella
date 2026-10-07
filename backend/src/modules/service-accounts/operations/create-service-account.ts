@@ -7,6 +7,7 @@ import type { CreateServiceAccountInput } from '#/modules/service-accounts/servi
 import { assertTenantQuota } from '#/modules/tenants/tenant-restrictions';
 import { getValidChannel } from '#/permissions';
 import { log } from '#/utils/logger';
+import { withApiKeyCreator } from './with-api-key-creators';
 
 /**
  * The account's role is capped at the creator's own: an admin may bind `admin` or `member`, never more than they
@@ -28,7 +29,7 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
   assertTenantQuota(ctx, 'serviceAccount', await countServiceAccounts(ctx, { tenantId }));
 
   // Account and first key land together: a failed key insert never leaves a keyless account behind.
-  const { serviceAccount, apiKey } = await db.transaction(async (tx) => {
+  const { serviceAccount, apiKey: issued } = await db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
     const serviceAccount = await insertServiceAccount(txCtx, {
       values: {
@@ -52,9 +53,12 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
         ...parsed,
       },
     });
-    return { serviceAccount, apiKey: { ...apiKey, secret } };
+    return { serviceAccount, apiKey: { apiKey, secret } };
   });
 
-  log.info('Service account created', { serviceAccountId: serviceAccount.id, withKey: apiKey !== null });
-  return { serviceAccount, ...(apiKey && { apiKey }) };
+  log.info('Service account created', { serviceAccountId: serviceAccount.id, withKey: issued !== null });
+  // A new account has authenticated nothing yet.
+  const created = { ...serviceAccount, lastSeenAt: null };
+  if (!issued) return { serviceAccount: created };
+  return { serviceAccount: created, apiKey: { ...(await withApiKeyCreator(ctx, issued.apiKey)), secret: issued.secret } };
 }

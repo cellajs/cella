@@ -85,7 +85,8 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     path: '/members',
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get list of members',
-    description: 'Retrieves members (users) of a channel entity by ID, including their associated membership data.',
+    description:
+      'Retrieves members (users) of a channel entity by ID, including their associated membership data. Pass ?include=counts for per-member counts, and ?include=mfa for `mfaRequired`, which only admins of the organization receive.',
     request: { params: tenantOrgParamSchema, query: memberListQuerySchema },
     responses: { 200: json('Members', paginationSchema(memberSchema), mockPaginatedMembersResponse()) },
   }),

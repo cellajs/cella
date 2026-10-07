@@ -1,6 +1,6 @@
 import { redirect } from '@tanstack/react-router';
 
-/** Replaces id route params with available slugs during `beforeLoad`, redirecting without adding a history entry. */
+/** Replaces id route params with available slugs during `beforeLoad`, redirecting without adding a history entry; search and hash carry over. */
 export const rewriteUrlToSlug = <T extends Record<string, string>>(params: T, slugOverrides: Partial<Record<keyof T, string>>, routeTo: string) => {
   const newParams: Record<string, string> = { ...params };
   let hasChanges = false;
@@ -13,6 +13,6 @@ export const rewriteUrlToSlug = <T extends Record<string, string>>(params: T, sl
   }
 
   if (hasChanges) {
-    throw redirect({ to: routeTo, params: newParams, replace: true });
+    throw redirect({ to: routeTo, params: newParams, search: true, hash: true, replace: true });
   }
 };
