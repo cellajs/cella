@@ -550,6 +550,7 @@
   "results": "Results",
   "retry_in_minutes_one": "Please try again in {{count}} minute",
   "retry_in_minutes_other": "Please try again in {{count}} minutes",
+  "retry_now": "You can try again now",
   "retry_resend_invitation.text": "Please check your inbox before requesting another invite.",
   "revert": "Revert",
   "revert_handle": "Revert to current handle",

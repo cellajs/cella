@@ -18,6 +18,7 @@ export type AppErrorOpts = {
   /** Redirect to the error page in every mode, tests included; a route that answers 302 redirects on its own outside tests. */
   willRedirect?: boolean;
   name?: ErrorSchemaType['name'];
+  /** What went wrong at this throw, in place of the type's general text. A 5xx's message reaches a client in development and test only. */
   message?: ErrorSchemaType['message'];
 };
 
@@ -33,8 +34,7 @@ export class AppError extends Error {
 
   constructor(status: ErrorSchemaType['status'], type: ErrorKey, severity: ErrorSchemaType['severity'], opts?: AppErrorOpts) {
     const i18nOpts = { ns: ['appError', 'error'], defaultValue: opts?.name ?? 'Unknown error' };
-    const messageFallback = opts?.message ?? i18n.t(type, i18nOpts);
-    super(i18n.t(`${type}.text`, { ...i18nOpts, defaultValue: messageFallback }));
+    super(opts?.message ?? i18n.t(`${type}.text`, { ...i18nOpts, defaultValue: i18n.t(type, i18nOpts) }));
 
     this.name = opts?.name ?? i18n.t(type, { ...i18nOpts, defaultValue: 'ApiError' });
     this.status = status;

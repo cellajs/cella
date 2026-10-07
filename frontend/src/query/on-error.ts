@@ -1,40 +1,36 @@
-import i18n from 'i18next';
+import { createElement, type ReactNode } from 'react';
+import { appConfig } from 'shared';
 import { sessionLostTypes } from 'shared/utils/session-lost';
 import { ApiError } from '~/lib/api';
-import type { TKey } from '~/lib/i18n-locales';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
+import { ApiErrorDescription } from '~/modules/common/toaster/api-error-description';
+import { RetryWait } from '~/modules/common/toaster/retry-wait';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { checkConnectivity } from '~/query/offline/connectivity';
 import { isNetworkError } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
+import { getErrorInfo, getOwnMessage } from '~/utils/get-error-info';
 import { teardownUserState } from '~/utils/teardown-user-state';
 
-/** Fallback messages for common errors, called lazily so i18next is initialized. */
-const getFallbackMessage = (status: number): string | undefined => {
-  const messages: Partial<Record<number, string>> = {
-    400: i18n.t('error:bad_request_action'),
-    401: i18n.t('error:unauthorized_action'),
-    403: i18n.t('error:forbidden_action'),
-    404: i18n.t('error:not_found'),
-    429: i18n.t('error:too_many_requests'),
-  };
-  return messages[status];
-};
+/**
+ * What an error toast says under its title: the wait of a rate-limited request, else what happened in a sentence,
+ * the cause as a development server names it, and for severity `error` the request id to quote to support.
+ */
+const getToastDescription = (error: ApiError, message: string): ReactNode => {
+  const statusCode = Number(error.status);
 
-/** Priority: resource-specific translation, then type translation, then the backend message, then a status fallback. */
-const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
-  if (entityType && type && i18n.exists(`error:resource_${type}`)) {
-    return i18n.t(`error:resource_${type}` as TKey, { resource: i18n.t(entityType) });
+  // The wait counts down for as long as the toast stays open
+  if (statusCode === 429 && error.meta?.retryAfter) {
+    return createElement(RetryWait, { until: Date.now() + Number(error.meta.retryAfter) * 1000 });
   }
 
-  if (type && i18n.exists(`error:${type}`)) {
-    return i18n.t(`error:${type}` as TKey);
-  }
+  // A server answers a 5xx with its own message in development only; elsewhere that message is a fixed text.
+  const ownMessage = statusCode >= 500 && appConfig.mode === 'development' ? getOwnMessage(error) : '';
+  const cause = ownMessage && ownMessage !== message ? ownMessage : undefined;
+  const report = error.severity === 'error' && error.requestId ? error : undefined;
 
-  // The backend message carries the Zod-translated text for form errors.
-  if (message) return message;
-
-  return getFallbackMessage(status) || 'Unknown error occurred';
+  if (!message && !cause && !report) return undefined;
+  return createElement(ApiErrorDescription, { message, cause, report });
 };
 
 const isSessionLost = (error: ApiError) => !error.type || sessionLostTypes.has(error.type);
@@ -52,8 +48,9 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
 
     const isCasualSessionAttempt = error.path && ['/me', '/me/menu'].includes(error.path);
 
-    // Maintenance mode
-    if ([503, 502].includes(statusCode)) useAlertStore.getState().setDownAlert('maintenance');
+    // Maintenance mode: its banner says the service is down and lies over the toast stack, so no toast follows
+    const isDown = [503, 502].includes(statusCode);
+    if (isDown) useAlertStore.getState().setDownAlert('maintenance');
     // Authentication service is unavailable
     else if (statusCode === 500 && isCasualSessionAttempt) return useAlertStore.getState().setDownAlert('auth_unavailable');
     // Offline mode
@@ -69,25 +66,13 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
 
     // Honor opt-out from query/mutation `meta`; local handler will (or already did) show its own toast.
     const suppress = meta?.suppressGlobalErrorToast;
-    const skipToast = typeof suppress === 'function' ? suppress(error) : suppress === true;
+    const skipToast = isDown || (typeof suppress === 'function' ? suppress(error) : suppress === true);
 
     if (!skipToast) {
-      const errorMessage = getErrorMessage(error);
-
-      let description: string | undefined;
-      if (statusCode === 429 && error.meta?.retryAfter) {
-        const seconds = Number(error.meta.retryAfter);
-        const minutes = Math.ceil(seconds / 60);
-        description = i18n.t('c:retry_in_minutes', { count: minutes });
-      }
-      // Error toasts show the request id so users can quote it to support.
-      else if (error.severity === 'error' && error.requestId) {
-        description = `${i18n.t('c:request_id')}: ${error.requestId}`;
-      }
+      const { title, message } = getErrorInfo({ error });
 
       const toastType = error.severity === 'error' ? 'error' : error.severity === 'warn' ? 'warning' : 'info';
-      // A toast that carries a request id or a wait time stays until dismissed: 4 seconds is too short to note either.
-      toaster[toastType](errorMessage, { description, timeout: description ? 0 : undefined });
+      toaster[toastType](title, { description: getToastDescription(error, message) });
     }
 
     if (statusCode === 401 && isSessionLost(error) && !location.pathname.startsWith('/auth/')) {

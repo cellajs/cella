@@ -34,3 +34,13 @@ export class ApiError extends Error implements ApiErrorInit {
     this.name = name ?? fields.type ?? 'ApiError';
   }
 }
+
+/**
+ * The error for a response without the API's error body, as a proxy or load balancer sends one. A gateway status
+ * (502, 503, 504) reads as the service being unavailable and any other 5xx as a server error; a 4xx gets no type, so
+ * it is described by what its status means.
+ */
+export const apiErrorFromStatus = (status: number) => {
+  const type = [502, 503, 504].includes(status) ? 'service_unavailable' : status >= 500 ? 'server_error' : undefined;
+  return new ApiError({ status: status as ApiErrorInit['status'], type, severity: status >= 500 ? 'error' : 'warn' });
+};

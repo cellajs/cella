@@ -12,14 +12,11 @@ export const defaultHook: Hook<unknown, Env, '', unknown> = (result) => {
     const issue = result.error.issues[0];
     const { message, code } = issue;
 
-    // superRefine with refineWithType carries a custom type; otherwise fall back to `form.{code}`.
-    let type: ErrorKey;
-    if (code === 'custom' && 'params' in issue && issue.params?.type) {
-      type = issue.params.type as ErrorKey;
-    } else {
-      type = `form.${code}` as ErrorKey;
-    }
+    // superRefine with refineWithType carries a custom type, which has its own texts; otherwise fall back to
+    // `form.{code}` with the validator's message.
+    const customType = code === 'custom' && 'params' in issue ? (issue.params?.type as ErrorKey | undefined) : undefined;
+    const type = customType ?? (`form.${code}` as ErrorKey);
 
-    throw new AppError(400, type, 'error', { message, originalError: result.error });
+    throw new AppError(400, type, 'error', { message: customType ? undefined : message, originalError: result.error });
   }
 };
