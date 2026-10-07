@@ -41,9 +41,6 @@ export const languageSchema = z.enum(appConfig.languages);
 
 export const entityIdParamSchema = z.object({ id: validIdSchema });
 
-/** True resolves the entity by slug, not by ID. */
-export const slugQuerySchema = z.object({ slug: booleanTransformSchema.optional() });
-
 export const tenantIdParamSchema = z.object({ tenantId: validIdSchema, id: validIdSchema });
 
 export const tenantOnlyParamSchema = z.object({ tenantId: validIdSchema });

@@ -22,7 +22,6 @@ export {
   refineWithType,
   relatableUserIdParamSchema,
   slugIncludeQuerySchema,
-  slugQuerySchema,
   tenantIdParamSchema,
   tenantOnlyParamSchema,
   tenantOrgParamSchema,
