@@ -24,9 +24,10 @@ export function CheckEmailStep() {
 
   const setStep = useAuthStore((state) => state.setStep);
   const setRestrictedMode = useAuthStore((state) => state.setRestrictedMode);
+  const inviteOtherAccount = useAuthStore((state) => state.inviteOtherAccount);
 
   const isMobile = window.innerWidth < 640;
-  const title = appConfig.has.selfRegistration ? t('c:sign_in_or_up') : t('c:sign_in');
+  const title = inviteOtherAccount ? t('c:invite_sign_in') : appConfig.has.selfRegistration ? t('c:sign_in_or_up') : t('c:sign_in');
 
   const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: { email: '' } });
 
@@ -49,6 +50,7 @@ export function CheckEmailStep() {
   return (
     <Form {...form}>
       <h1 className="mt-4 pb-2 text-center text-2xl">{title}</h1>
+      {inviteOtherAccount && <p className="-mt-2 text-center font-light">{t('c:invite_sign_in.text')}</p>}
 
       {emailEnabled && (
         <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
@@ -58,7 +60,8 @@ export function CheckEmailStep() {
             render={({ field }) => (
               // Custom css due to html injection by browser extensions
               <FormItem className="gap-0">
-                <FormLabel className="mb-2">{t('c:email')}</FormLabel>
+                {/* Hidden on purpose: the example address is the visible cue */}
+                <FormLabel className="sr-only">{t('c:email')}</FormLabel>
                 <FormControl>
                   <Input {...field} className="h-12" type="email" autoFocus={!isMobile} autoComplete="email" placeholder="name@example.com" />
                 </FormControl>

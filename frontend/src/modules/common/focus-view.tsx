@@ -49,7 +49,8 @@ export function FocusView({ className = '', iconOnly }: FocusViewProps) {
 
 /**
  * Wraps the page's main content. While focus view is active, everything else in the enclosing `.focus-view-scope`
- * is hidden; chrome outside a scope opts in with the `focus-view:hidden` variant.
+ * is hidden; chrome outside a scope opts in with the `focus-view:hidden` variant. It is the page `container`, so
+ * content rendered inside never adds its own: a second one doubles the side gutter.
  */
 export function FocusViewContainer({ children, className = '', disabled }: FocusViewContainerProps) {
   const focusView = useUIStore((state) => state.focusView);

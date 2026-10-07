@@ -616,7 +616,8 @@
                         }
                       }
                     }
-                  }
+                  },
+                  "mfaRequired": { "type": "boolean", "required": false }
                 },
                 "extendsRef": "#/components/schemas/UserBase"
               }

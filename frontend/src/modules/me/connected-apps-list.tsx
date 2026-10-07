@@ -1,6 +1,7 @@
 import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { PlugZapIcon, UnplugIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { ScopeBadges } from '~/modules/common/scope-badges';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { meConnectedAppsQueryOptions, useRevokeConnectedAppMutation } from '~/modules/me/query';
@@ -22,7 +23,9 @@ export function ConnectedAppsList() {
   };
 
   if (!items.length)
-    return <p className="text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: t('c:connected_apps').toLowerCase() })}</p>;
+    return (
+      <ContentPlaceholder size="sm" icon={PlugZapIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:connected_apps').toLowerCase() }} />
+    );
 
   return (
     <div className="flex flex-col gap-2">

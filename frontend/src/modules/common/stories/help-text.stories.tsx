@@ -14,11 +14,3 @@ export const Collapsible: Story = {
     content: 'This setting controls the visibility of your profile to other users in the organization.',
   },
 };
-
-export const Popover: Story = {
-  args: {
-    type: 'popover',
-    children: <span className="font-medium text-sm">Privacy settings</span>,
-    content: 'Configure who can see your profile and activity.',
-  },
-};

@@ -2,15 +2,20 @@ import { z } from 'zod';
 import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import { errorSearchSchema } from '~/modules/common/search-params-schemas';
 
+/** An unsafe redirect reads as absent. */
+const redirectSearchSchema = z
+  .string()
+  .optional()
+  .transform((redirect) => safeRedirectPath(redirect));
+
 export const authenticateRouteSearchParamsSchema = z.object({
   tokenId: z.string().optional(),
-  /** An unsafe redirect reads as absent. */
-  redirect: z
-    .string()
-    .optional()
-    .transform((redirect) => safeRedirectPath(redirect)),
+  redirect: redirectSearchSchema,
   fromRoot: z.boolean().optional(),
 });
+
+/** The page that asked for the confirmation link, section included. */
+export const stepUpConfirmedRouteSearchParamsSchema = z.object({ redirect: redirectSearchSchema });
 
 export const authErrorRouteSearchParamsSchema = z.object({ tokenId: z.string().optional() }).extend(errorSearchSchema.shape);
 

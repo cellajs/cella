@@ -66,7 +66,7 @@ export function UserLanguage({ triggerClassName = '' }: Props) {
       ref={triggerRef}
       variant="ghost"
       size="icon"
-      className={cn('data-dropdowner-active:bg-accent', triggerClassName)}
+      className={cn('data-dropdowner-active:bg-foreground/8', triggerClassName)}
       aria-label={`${language.toUpperCase()}, ${t('c:change_language')}`}
       onClick={openDropdown}
     >

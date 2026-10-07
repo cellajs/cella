@@ -36,7 +36,10 @@ export function TagHashLink({ tagParam, tagName, hash, tabIndex, title, dir, chi
       className="group/link flex h-full min-w-0 flex-1 items-center font-mono text-sm outline-hidden"
     >
       {/* The underline sits on the text alone, while the whole cell takes the click */}
-      <span dir={dir} className="min-w-0 flex-1 truncate text-left decoration-foreground/30 underline-offset-3 group-hover/link:underline">
+      <span
+        dir={dir}
+        className="group-active/link:press link-decoration group-active/link:link-decoration-strong min-w-0 flex-1 truncate text-left group-hover/link:underline"
+      >
         {children}
       </span>
     </Link>

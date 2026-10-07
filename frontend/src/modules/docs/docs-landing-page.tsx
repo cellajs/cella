@@ -51,7 +51,7 @@ function DocsTileCard({ tile }: { tile: DocsTile }) {
   const inner = (
     <>
       <div className="min-w-0 flex-1">
-        <h3 className="font-medium text-base underline-offset-2 group-hover:underline">{tile.label}</h3>
+        <h3 className="link-decoration group-active:link-decoration-strong font-medium text-base group-hover:underline">{tile.label}</h3>
         {tile.description && <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">{tile.description}</p>}
       </div>
       <TrailingIcon className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />

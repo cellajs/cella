@@ -11,6 +11,7 @@ function Row<R, SR>({
   className,
   rowIdx,
   gridRowStart,
+  height,
   selectedCellIdx,
   isRowSelectionDisabled,
   isRowSelected,
@@ -82,7 +83,7 @@ function Row<R, SR>({
     [isRowSelectionDisabled, isRowSelected],
   );
 
-  const rowStyle = { gridRowStart, ...style };
+  const rowStyle = { gridRowStart, '--rdg-row-height': `${height}px`, ...style };
 
   if (animateReorder) {
     return (

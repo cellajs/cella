@@ -89,9 +89,7 @@ export function EntityGridBar({
         </FilterBarSearch>
         <FilterBarFilters>
           <SelectSort value={sort ?? sortOptions[0].value} onChange={onSortChange} className="h-10" sortOptions={sortOptions} />
-          {roleFilter && (
-            <SelectRole entityType={entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
-          )}
+          {roleFilter && <SelectRole entityType={entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10" />}
         </FilterBarFilters>
       </TableFilterBar>
 

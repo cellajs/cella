@@ -293,6 +293,40 @@
   transform: translateY(0.05rem);
 }
 
+/* A link whose place says "link" (table cell, tile, nav list) reveals its underline: `link-decoration` sets offset and
+   faded color at rest, so a color transition has nothing to fade from when `hover:underline` (or `group-hover/name:`)
+   draws the line; `active:link-decoration-strong` darkens it while held. The tiers are the --link-decoration tokens. */
+@utility link-decoration {
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklch, currentColor var(--link-decoration), transparent);
+}
+
+@utility link-decoration-strong {
+  text-decoration-color: color-mix(in oklch, currentColor var(--link-decoration-strong), transparent);
+}
+
+/* A link in running text, where only the underline tells it from the copy around it: always underlined, one tier up
+   the scale per state. Keyboard focus takes the hover tier, the one focus cue left where the focus ring is off. */
+@utility link-inline {
+  text-decoration-line: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklch, currentColor var(--link-decoration), transparent);
+
+  &:focus-visible {
+    text-decoration-color: color-mix(in oklch, currentColor var(--link-decoration-strong), transparent);
+  }
+
+  @media (hover: hover) {
+    &:hover {
+      text-decoration-color: color-mix(in oklch, currentColor var(--link-decoration-strong), transparent);
+    }
+  }
+
+  &:active {
+    text-decoration-color: currentColor;
+  }
+}
+
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -333,15 +367,9 @@
   line-height: 1.3;
 }
 
-/* Prose links follow the app-wide link affordance: small offset, faded underline that
-   strengthens on hover. currentColor keeps it correct for any link color in both themes. */
+/* Prose links are links in running text. Unlayered, so it outranks the typography theme. */
 .prose a:not(:where(.not-prose, .not-prose *)) {
-  text-underline-offset: 3px;
-  text-decoration-color: color-mix(in oklch, currentColor 30%, transparent);
-}
-
-.prose a:not(:where(.not-prose, .not-prose *)):hover {
-  text-decoration-color: color-mix(in oklch, currentColor 60%, transparent);
+  @apply link-inline;
 }
 
 /* Keep docs code unlayered so it outranks typography's utilities-layer theme. */
@@ -414,6 +442,9 @@
     /* What --border, --input and --sidebar-border become under increased contrast. Never used by a class: the
        three tokens below are what components read, this only holds the raised value so it is written once. */
     --edge-raised: oklch(0.64 0.005 285.75);
+    /* Link underline strength as a share of the text color, read by link-decoration and link-inline. */
+    --link-decoration: 20%;
+    --link-decoration-strong: 50%;
     --ring: oklch(0.2067 0.01 285.49);
     --radius: 0.5rem;
     --success: oklch(0.49 0.167 142.5);
@@ -475,12 +506,14 @@
   }
 
   /* Increased contrast (WCAG 1.4.11): every edge steps up together, since raising only the fields is what made
-     them read as a different family. Status and text tokens never move. */
+     them read as a different family. Link underlines step up one tier. Status and text tokens never move. */
   @media (prefers-contrast: more) {
     :root {
       --border: var(--edge-raised);
       --input: var(--edge-raised);
       --sidebar-border: var(--edge-raised);
+      --link-decoration: 50%;
+      --link-decoration-strong: 100%;
     }
   }
 
@@ -489,6 +522,8 @@
     --border: var(--edge-raised);
     --input: var(--edge-raised);
     --sidebar-border: var(--edge-raised);
+    --link-decoration: 50%;
+    --link-decoration-strong: 100%;
   }
 }
 

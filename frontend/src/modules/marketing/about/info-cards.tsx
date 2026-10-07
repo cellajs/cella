@@ -45,7 +45,7 @@ export function InfoCards() {
               <div className="grow overflow-hidden pt-4">{t(text)}</div>
               <div className="pt-2 text-sm">
                 <div className="mb-2 text-muted-foreground">{t(purpose)}</div>
-                <div className="font-semibold underline-offset-4 group-hover:underline">
+                <div className="link-decoration group-active:link-decoration-strong font-semibold group-hover:underline">
                   <CountryFlag countryCode={country} className="mr-2" />
                   {url}
                   <ArrowUpRightIcon className="-mt-2 ml-1 inline-block size-3 text-primary opacity-50 group-hover:opacity-100" />

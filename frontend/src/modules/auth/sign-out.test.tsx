@@ -56,7 +56,6 @@ vi.mock('~/query/query-client', async () => {
   const { QueryClient } = await import('@tanstack/react-query');
   return { queryClient: new QueryClient() };
 });
-vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { success: vi.fn(), warning: vi.fn() } }));
 vi.mock('~/modules/common/content-placeholder', () => ({ ContentPlaceholder: () => null }));
 vi.mock('i18next', () => ({ default: { t: (key: string) => key } }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));

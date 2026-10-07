@@ -1,6 +1,7 @@
 import { MailIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ConfirmText } from '~/modules/common/confirm-text';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
@@ -64,10 +65,15 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
       title: t('c:delete'),
-      description: t('c:confirm.delete_resource', {
-        name: selected.map((u) => u.email).join(', '),
-        resource: selected.length > 1 ? t('c:user_other').toLowerCase() : t('c:user').toLowerCase(),
-      }),
+      description: (
+        <ConfirmText
+          i18nKey="c:confirm.delete_resource"
+          values={{
+            name: selected.map((u) => u.email).join(', '),
+            resource: selected.length > 1 ? t('c:user_other').toLowerCase() : t('c:user').toLowerCase(),
+          }}
+        />
+      ),
     });
   };
 
@@ -78,7 +84,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       label="c:user"
       searchName="userSearch"
       actions={<TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInviteDialog} />}
-      filters={<SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />}
+      filters={<SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10" />}
       selection={{
         count: selected.length,
         onClear: clearSelection,

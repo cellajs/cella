@@ -29,7 +29,12 @@ function MenuSheetPanel({ id, label, children }: MenuSheetPanelProps) {
 
   return (
     <div>
-      <Button onClick={() => toggleMenuSheetPanel(id)} className="w-full justify-between shadow-none" variant={isOpen ? 'secondary' : 'ghost'}>
+      {/* Borderless in both states: the open variant's border would shift the label by a pixel on toggle. */}
+      <Button
+        onClick={() => toggleMenuSheetPanel(id)}
+        className="w-full justify-between border-0 shadow-none"
+        variant={isOpen ? 'secondary' : 'ghost'}
+      >
         <span>{t(label)}</span>
         <ChevronDownIcon className={cn('opacity-50 transition-transform duration-200', isOpen && 'rotate-180')} />
       </Button>

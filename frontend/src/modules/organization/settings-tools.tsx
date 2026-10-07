@@ -40,7 +40,7 @@ export function OrganizationGeneralCard({ organization }: { organization: Enrich
 export function OrganizationDetailsCard({ organization }: { organization: EnrichedOrganization }) {
   const callback = useSlugChangeCallback(organization);
   return (
-    <ToolCard label="c:details" id="update-organization-details">
+    <ToolCard label="c:details" unsaved id="update-organization-details">
       <UpdateOrganizationDetailsForm organization={organization} callback={callback} />
     </ToolCard>
   );

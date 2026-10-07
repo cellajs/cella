@@ -8,4 +8,4 @@ export interface PasskeyCredentialProps {
 
 export type TokenData = GetTokenDataResponse;
 
-export type AuthStep = 'checkEmail' | 'signIn' | 'signUp' | 'inviteOnly' | 'waitlist' | 'mfa' | 'magicLinkSent';
+export type AuthStep = 'checkEmail' | 'signIn' | 'signUp' | 'invitation' | 'inviteOnly' | 'waitlist' | 'mfa' | 'magicLinkSent';

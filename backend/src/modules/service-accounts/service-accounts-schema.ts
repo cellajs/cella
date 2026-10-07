@@ -5,6 +5,7 @@ import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountStatuses, serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { idInTenantOrgParamSchema, paginationQuerySchema, validIdSchema, validNameSchema } from '#/schemas';
+import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
 import { mockApiKeyResponse, mockCreatedApiKeyResponse, mockServiceAccountResponse } from './service-accounts-mocks';
 
 // `getRoles` returns a readonly array; a channel always has at least one role, which zod's enum needs to see.
@@ -26,7 +27,13 @@ export const apiKeyParamSchema = idInTenantOrgParamSchema.extend({ keyId: validI
 
 /** `createdBy` / `updatedBy` stay actor ids: the audit-user hydration resolves users only (service badge is a follow-up). */
 export const serviceAccountSchema = z
-  .object({ ...createSelectSchema(serviceAccountsTable).shape, status: z.enum(serviceAccountStatuses), bindings: z.array(roleBindingSchema) })
+  .object({
+    ...createSelectSchema(serviceAccountsTable).shape,
+    status: z.enum(serviceAccountStatuses),
+    bindings: z.array(roleBindingSchema),
+    /** The last request one of the account's API keys or tokens authenticated, to five minutes; null until the first. */
+    lastSeenAt: z.string().nullable(),
+  })
   .openapi('ServiceAccount', {
     description:
       'An actor that is not a person, in one tenant: API keys run as it, and it holds role bindings like a member holds memberships. An organization admin creates one, for example with Create API key in organization settings.',
@@ -35,7 +42,8 @@ export const serviceAccountSchema = z
   });
 
 export const apiKeySchema = createSelectSchema(apiKeysTable)
-  .extend({ scopes: z.array(scopeEnum).nullable() })
+  // Only people issue keys, so the creator is always a user the response can name.
+  .extend({ scopes: z.array(scopeEnum).nullable(), createdBy: nullableUserMinimalBaseSchema })
   .openapi('ApiKey', {
     description:
       'A secret key a service account authenticates with, sent as `Authorization: Bearer` or `x-api-key`. Only its prefix and last four characters are returned after creation; it can expire and be revoked.',

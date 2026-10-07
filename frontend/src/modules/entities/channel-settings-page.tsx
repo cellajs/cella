@@ -12,7 +12,7 @@ export function ChannelSettingsPage<C extends ChannelEntityType>({ entity }: Cha
   const sections = useChannelSettingsSections(entity);
 
   return (
-    <div className="container mx-auto my-4 gap-4 md:flex md:flex-row">
+    <div className="my-4 gap-4 md:flex md:flex-row">
       <div className="mx-auto flex h-auto flex-col max-md:hidden md:w-3/10 md:min-w-48">
         <div className="max-md:block! sticky top-15 z-10 max-h-[calc(100dvh-3.75rem)] overflow-y-auto p-1 md:mt-2">
           <PageAside tabs={sections} className="pb-2" />

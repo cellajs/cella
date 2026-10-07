@@ -88,30 +88,30 @@ export const WithSubmenus: Story = {
       <DropdownMenuTrigger>Open</DropdownMenuTrigger>
       <DropdownMenuContent className="w-44">
         <DropdownMenuItem>
-          <SearchIcon className="mr-2 size-4" />
+          <SearchIcon className="size-4" />
           <span>SearchIcon</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <PlusIcon className="mr-2 size-4" />
+            <PlusIcon className="size-4" />
             <span>New Team</span>
             <DropdownMenuShortcut>⌘+T</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              <UserPlusIcon className="mr-2 size-4" />
+              <UserPlusIcon className="size-4" />
               <span>Invite users</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent>
                 <DropdownMenuItem>
-                  <MailIcon className="mr-2 size-4" />
+                  <MailIcon className="size-4" />
                   <span>Email</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <CirclePlusIcon className="mr-2 size-4" />
+                  <CirclePlusIcon className="size-4" />
                   <span>More...</span>
                 </DropdownMenuItem>
               </DropdownMenuSubContent>

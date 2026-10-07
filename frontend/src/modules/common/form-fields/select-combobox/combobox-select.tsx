@@ -80,14 +80,14 @@ export function ComboboxSelect({
           {selectedOption ? (
             <div className="flex items-center gap-2 truncate">
               {renderAvatar && (
-                <EntityAvatar className="size-6 shrink-0 text-xs" id={selectedOption.value} name={selectedOption.label} url={selectedOption.url} />
+                <EntityAvatar className="size-6 shrink-0" id={selectedOption.value} name={selectedOption.label} url={selectedOption.url} />
               )}
               {renderOption ? renderOption(selectedOption) : <span className="truncate">{selectedOption.label}</span>}
             </div>
           ) : (
             <span className="truncate text-muted-foreground">{t(placeholders.trigger, { resource: t(placeholders.resource).toLowerCase() })}</span>
           )}
-          <ChevronDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
+          <ChevronDownIcon className="size-4 shrink-0 opacity-50" />
         </ComboboxPrimitive.Trigger>
       )}
       <ComboboxContent anchor={searchableTrigger ? anchorRef : undefined}>

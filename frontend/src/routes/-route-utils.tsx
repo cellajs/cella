@@ -1,4 +1,5 @@
 import { type ComponentType, type ReactNode, Suspense } from 'react';
+import { pageNotFoundError } from '~/modules/common/error-helpers';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { PageSpinner } from '~/modules/common/spinner';
 import type { BoundaryType } from '~/routes/types';
@@ -24,7 +25,7 @@ export const createErrorComponent = (boundary: BoundaryType, homePath?: string) 
 };
 
 export const createNotFoundComponent = (boundary: BoundaryType, homePath?: string) => {
-  const NotFoundComp = () => <ErrorNotice boundary={boundary} error={new Error('Page not found')} homePath={homePath} />;
+  const NotFoundComp = () => <ErrorNotice boundary={boundary} error={pageNotFoundError()} homePath={homePath} />;
   NotFoundComp.displayName = `NotFoundComponent(${boundary})`;
   return NotFoundComp;
 };

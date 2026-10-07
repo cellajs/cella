@@ -65,13 +65,14 @@ export function Hero({ title, text, children, chips }: HeroProps) {
         )}
         <div className="">{children}</div>
       </header>
-      {/* Morphing mark inside the hero, nudged left of center; the curve and the headline both paint over it */}
+      {/* Morphing mark inside the hero, nudged left of center; the curve and the headline both paint over it. A phone draws it larger, so the section crops more of it */}
       <Suspense fallback={null}>
         <div
-          className="pointer-events-none absolute top-1/2 left-[12%] aspect-square w-[min(120vmin,985px)] -translate-x-1/2 -translate-y-1/2 opacity-20 mix-blend-multiply dark:mix-blend-normal"
+          className="pointer-events-none absolute top-1/2 left-[12%] aspect-square w-[min(144vmin,1182px)] -translate-x-1/2 -translate-y-1/2 opacity-20 mix-blend-multiply max-sm:w-[174vmin] dark:mix-blend-normal"
           aria-hidden="true"
         >
-          <MorphAnimation variant="single" grid={192} stamp="plus" />
+          {/* A finer grid than the auth colony's: on this larger canvas it keeps the grain about the same size */}
+          <MorphAnimation variant="single" grid={230} stamp="plus" />
         </div>
       </Suspense>
       <BackgroundCurve />

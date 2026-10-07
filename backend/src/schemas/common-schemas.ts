@@ -101,7 +101,7 @@ export const excludeArchivedQuerySchema = z
 /** True returns fully hydrated relations. */
 export const fullResponseQuerySchema = z.object({ fullResponse: booleanTransformSchema.optional() });
 
-const includeOptions = ['counts', 'membership', 'members'] as const;
+const includeOptions = ['counts', 'membership', 'members', 'mfa'] as const;
 export type IncludeOption = (typeof includeOptions)[number];
 
 /** Comma-separated, e.g. `?include=counts,membership`. */

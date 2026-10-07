@@ -12,7 +12,7 @@ import {
   updateServiceAccount,
 } from 'sdk';
 import { appConfig, type OrganizationRole } from 'shared';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
@@ -48,7 +48,10 @@ describe('Service accounts and API keys', async () => {
       headers: ctx.headers,
     });
     expect(response.status).toBe(201);
-    const created = data as { serviceAccount: { id: string }; apiKey: { id: string; secret: string; prefix: string } };
+    const created = data as {
+      serviceAccount: { id: string; lastSeenAt: string | null };
+      apiKey: { id: string; secret: string; prefix: string; createdBy: { id: string } | null };
+    };
     return { ...ctx, account: created.serviceAccount, apiKey: created.apiKey, key: created.apiKey.secret };
   }
 
@@ -153,6 +156,31 @@ describe('Service accounts and API keys', async () => {
     const serialized = JSON.stringify(keys.data);
     expect(serialized).not.toContain(key);
     expect(serialized).not.toContain(hashToken(key));
+  });
+
+  it('names the user who issued a key, at creation and in the list', async () => {
+    const { org, user, headers, account, apiKey } = await issueKey();
+    expect(apiKey.createdBy).toMatchObject({ id: user.id, entityType: 'user' });
+
+    const keys = await call(getApiKeys, { path: { tenantId: org.tenantId, organizationId: org.id, id: account.id }, headers });
+    const [listed] = (keys.data as { items: { createdBy: { id: string } | null }[] }).items;
+    expect(listed.createdBy).toMatchObject({ id: user.id, entityType: 'user' });
+  });
+
+  it('shows when a key of the account last authenticated a request', async () => {
+    const { org, headers, account, key } = await issueKey();
+    expect(account.lastSeenAt).toBeNull();
+
+    const path = { tenantId: org.tenantId, organizationId: org.id };
+    const { response } = await call(getAttachments, { path, headers: bearerHeaders(key) });
+    expect(response.status).toBe(200);
+
+    // The guard does not wait for the write, so it can land after the response.
+    await vi.waitFor(async () => {
+      const list = await call(getServiceAccounts, { path, headers });
+      const items = (list.data as { items: { id: string; lastSeenAt: string | null }[] }).items;
+      expect(items.find((item) => item.id === account.id)?.lastSeenAt).not.toBeNull();
+    });
   });
 
   // The suite runs two hours off UTC (the root vitest config): an expiry stored without its zone and read back as local

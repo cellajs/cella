@@ -7,6 +7,7 @@ import { hierarchy, resolveCan, seenWindowMs } from 'shared';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
 import { DownloadCell, ThumbnailCell } from '~/modules/attachment/table/attachment-cells';
 import { DescriptionCell, openDescriptionSheetFromCell } from '~/modules/attachment/table/description-cell';
+import { ConfirmText } from '~/modules/common/confirm-text';
 import { EditCellInput, externalEditorOptions, RenderExternalEditor } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
@@ -110,7 +111,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
             onSelect: (row) => {
               const { remove } = useDropdowner.getState();
               openPopConfirm(
-                i18n.t('c:delete_confirm.text', { name: row.name }),
+                <ConfirmText i18nKey="c:delete_confirm.text" values={{ name: row.name }} />,
                 <DeleteAttachments attachments={[row]} callback={remove} onCancel={remove} />,
               );
             },

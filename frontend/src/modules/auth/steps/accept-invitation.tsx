@@ -3,6 +3,7 @@ import { CheckIcon, TriangleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { TokenData } from '~/modules/auth/types';
+import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useAcceptInvitationTokenMutation } from '~/modules/me/query';
 import type { MeUser } from '~/modules/me/types';
@@ -45,6 +46,7 @@ export function AcceptInvitationStep({ tokenData, user }: Props) {
 
   return (
     <>
+      {invitation && <EntityAvatar type={invitation.entityType} name={invitation.entityName} className="mx-auto size-14" />}
       <h1 className="text-center text-2xl">{t('c:invite_accept_as_account')}</h1>
 
       {invitation && (

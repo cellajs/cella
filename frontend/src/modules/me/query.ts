@@ -94,6 +94,13 @@ export const useUpdateSelfFlagsMutation = () => {
   return useMutation<User, ApiError, Pick<UpdateMeData['body'], 'userFlags'>>({
     mutationKey: meKeys.update.flags,
     mutationFn: (body) => updateMe({ body }),
+    // Applied before the request and kept when it fails: route guards read flags from the store, so a flag that
+    // waited for the answer would send a user who just finished onboarding back into it.
+    onMutate: ({ userFlags }) => {
+      useUserStore.setState((state) => {
+        if (state.user) Object.assign(state.user.userFlags, userFlags);
+      });
+    },
     onSuccess: (updatedUser) => applyUpdatedSelf(updatedUser),
     gcTime: 1000 * 10,
   });

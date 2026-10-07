@@ -24,7 +24,8 @@ const findUserInCache = createCacheFinder<User>('user');
 export const userQueryOptions = (id: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: () => getUser({ path: { relatableUserId: id } }),
+    // include=mfa: the profile header shows the MFA setting to whoever the API returns it to
+    queryFn: () => getUser({ path: { relatableUserId: id }, query: { include: 'mfa' } }),
     placeholderData: () => findUserInCache(id),
   });
 

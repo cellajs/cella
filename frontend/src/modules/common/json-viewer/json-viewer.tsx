@@ -59,7 +59,7 @@ function createRefDataType(onNavigate: (targetPath: string) => void): DataType<s
           e.stopPropagation();
           onNavigate(value);
         }}
-        className="cursor-pointer font-mono text-primary text-sm hover:underline"
+        className="link-decoration active:link-decoration-strong cursor-pointer font-mono text-primary text-sm hover:underline"
         title={`Go to ${value}`}
       >
         "{value}"

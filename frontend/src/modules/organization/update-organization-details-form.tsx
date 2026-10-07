@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Suspense } from 'react';
+import { type MouseEvent, Suspense, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
@@ -8,11 +8,12 @@ import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { persistAttachments } from '~/modules/attachment/helpers/persist-attachments';
-import { blocknoteFieldIsDirty } from '~/modules/common/blocknote/helpers/blocknote-field-is-dirty';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
+import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import type { BlockNoteContentFormField as BlockNoteContentFormFieldType } from '~/modules/common/form-fields/blocknote';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
+import { PopConfirm } from '~/modules/common/popconfirm';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -55,6 +56,9 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
 
   useBeforeUnload(form.isDirty);
 
+  // The editor reads its content once, at creation, so a reset remounts it to show the saved text again.
+  const [editorKey, setEditorKey] = useState(0);
+
   const onSubmit = (body: FormValues) => {
     mutate(
       { path: { tenantId: organization.tenantId, id: organization.id }, body },
@@ -69,10 +73,38 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
     );
   };
 
-  const isDirty = () => {
-    if (!form.isDirty) return false;
-    const { welcomeText } = form.getValues();
-    return typeof welcomeText === 'string' && blocknoteFieldIsDirty(welcomeText);
+  const discardChanges = () => {
+    form.reset();
+    setEditorKey((key) => key + 1);
+  };
+
+  // Discarding drops the unsaved text for good, so the click asks first.
+  const openDiscardConfirm = (event: MouseEvent<HTMLButtonElement>) => {
+    const { create, remove } = useDropdowner.getState();
+    create(
+      <PopConfirm title={t('c:confirm.discard_changes')}>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            variant="destructive"
+            className="justify-center sm:w-auto"
+            onClick={() => {
+              remove();
+              discardChanges();
+            }}
+          >
+            {t('c:discard')}
+          </Button>
+          <Button variant="secondary" data-autofocus onClick={() => remove()}>
+            {t('c:keep_editing')}
+          </Button>
+        </div>
+      </PopConfirm>,
+      {
+        id: 'discard-organization-details',
+        triggerId: `discard-organization-details-${organization.id}`,
+        triggerRef: { current: event.currentTarget },
+      },
+    );
   };
 
   if (form.loading) return null;
@@ -82,6 +114,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <Suspense fallback={<Spinner className="my-16 size-6 opacity-50" noDelay />}>
           <BlockNoteContentFormField
+            key={editorKey}
             control={form.control}
             name="welcomeText"
             label={t('c:introduction')}
@@ -89,7 +122,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
               id: `${appConfig.name}-blocknote-welcome`,
               trailingBlock: false,
               className:
-                'min-h-20 max-h-[50vh] overflow-auto bg-background pl-10 pr-6 p-3 border-input ring-offset-background focus-visible:ring-ring w-full rounded-md border text-sm focus-visible:outline-hidden focus-ring:focus-visible:ring-2 focus-visible:ring-offset-2',
+                'min-h-20 max-h-[50vh] overflow-auto bg-background p-3 pr-6 pl-8 border-input ring-offset-background focus-visible:ring-ring w-full rounded-md border text-sm focus-visible:outline-hidden focus-ring:focus-visible:ring-2 focus-visible:ring-offset-2',
               baseFilePanelProps: canUploadAttachments
                 ? {
                     mediaMode: 'private-attachment',
@@ -107,10 +140,10 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
         </Suspense>
 
         <div className="flex flex-col gap-2 sm:flex-row">
-          <SubmitButton disabled={!isDirty()} loading={isPending}>
+          <SubmitButton disabled={!form.isDirty} loading={isPending}>
             {t('c:save_changes')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={isDirty() ? '' : 'invisible'}>
+          <Button variant="secondary" onClick={openDiscardConfirm} className={form.isDirty ? '' : 'invisible'}>
             {t('c:cancel')}
           </Button>
         </div>

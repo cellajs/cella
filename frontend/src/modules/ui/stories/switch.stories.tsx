@@ -34,6 +34,11 @@ export const Default: Story = { args: { id: 'default-switch' } };
  */
 export const Disabled: Story = { args: { id: 'disabled-switch', disabled: true } };
 
+/**
+ * Use the `size` prop for a smaller switch in dense lists.
+ */
+export const Small: Story = { args: { id: 'small-switch', size: 'sm' } };
+
 export const ShouldToggle: Story = {
   name: 'when clicking the switch, should toggle it on and off',
   tags: ['!dev', '!autodocs'],

@@ -52,7 +52,7 @@ export function usePagesTableColumns() {
             params={{ _splat: row.id }}
             className="group/link flex min-w-0 items-center outline-0 ring-0"
           >
-            <span className="group-active/link:press truncate font-medium decoration-foreground/20 underline-offset-3 group-hover/link:underline group-active/link:decoration-foreground/50">
+            <span className="group-active/link:press link-decoration group-active/link:link-decoration-strong truncate font-medium group-hover/link:underline">
               {row.name}
             </span>
           </Link>

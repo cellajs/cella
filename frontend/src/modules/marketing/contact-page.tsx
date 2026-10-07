@@ -38,7 +38,7 @@ export function ContactPage() {
                 <p>
                   <a
                     href={method.link}
-                    className="group focus-effect rounded-md p-0.5 text-sm underline-offset-4 hover:underline sm:text-base"
+                    className="group focus-effect link-decoration active:link-decoration-strong rounded-md p-0.5 text-sm hover:underline sm:text-base"
                     target="_blank"
                     rel="noreferrer"
                   >

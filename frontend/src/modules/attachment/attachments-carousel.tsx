@@ -255,10 +255,11 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
 
       {items.length > 1 && (
         <>
-          <CarouselPrevious className="left-4 opacity-0 shadow-md transition-opacity focus-visible:opacity-90 group-hover:opacity-70 lg:left-8" />
+          {/* Solid on every backdrop: the slide behind can be any image, so neither the button nor its hover fill lets it through. */}
+          <CarouselPrevious className="left-4 size-11 opacity-0 shadow-lg/40 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 lg:left-8 dark:hover:bg-accent [&_svg]:size-5" />
           <CarouselNext
             ref={nextButtonRef}
-            className="right-4 opacity-0 shadow-md transition-opacity focus-visible:opacity-90 group-hover:opacity-70 lg:right-8"
+            className="right-4 size-11 opacity-0 shadow-lg/40 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 lg:right-8 dark:hover:bg-accent [&_svg]:size-5"
           />
         </>
       )}

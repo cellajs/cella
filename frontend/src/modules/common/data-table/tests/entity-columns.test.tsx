@@ -40,6 +40,8 @@ const invitations = await import('~/modules/me/invitations-table/invitations-col
 const attachments = await import('~/modules/attachment/table/attachments-columns');
 const { exportToCsv } = await import('~/lib/export');
 
+/** What a row's delete confirmation asks: the sentence key and the row name it shows in bold. */
+type ConfirmTextProps = { i18nKey: string; values: { name: string } };
 type Column = { key: string; renderCell?: (props: { row: never; tabIndex: number }) => ReactNode } & Record<string, unknown>;
 
 /** Runs a column hook inside a render and returns its columns. */
@@ -219,17 +221,20 @@ describe('ellipsis columns', () => {
 
     const update = vi.spyOn(useDropdowner.getState(), 'update');
     rowAction('c:delete').onSelect(row, trigger);
-    const content = update.mock.calls[0][0].content as ReactElement<{ title: string }>;
-    expect(content.props.title).toBe('c:delete_confirm.text');
+    const content = update.mock.calls[0][0].content as ReactElement<{ title: ReactElement<ConfirmTextProps> }>;
+    expect(content.props.title.props).toEqual({ i18nKey: 'c:delete_confirm.text', values: { name: 'Row one' } });
   });
 
-  it('tenants: edit only', () => {
-    const col = column(columnsOf(tenants.useColumns), 'ellipsis');
+  it('tenants: no ellipsis, the name opens the edit sheet', () => {
+    const columns = columnsOf(tenants.useColumns);
+    const col = column(columns, 'name');
+    const row = { id: 'tenant-1', name: 'One' };
 
-    expect(configOf(col)).toEqual({ key: 'ellipsis', name: '', width: 32 });
-    expect(cellMarkup(col, { id: 'tenant-1', name: 'One' })).toBe('<span>c:edit</span>');
+    expect(columns.map(({ key }) => key)).not.toContain('ellipsis');
+    expect(cellMarkup(col, row)).toContain('One');
 
-    rowAction('c:edit').onSelect({ id: 'tenant-1' }, trigger);
+    const cell = col.renderCell?.({ row: row as never, tabIndex: 0 }) as ReactElement<{ onClick: (event: unknown) => void }>;
+    cell.props.onClick({ currentTarget: null });
     expect(useSheeter.getState().sheets.map(({ id }) => id)).toEqual(['update-tenant']);
   });
 
@@ -246,10 +251,10 @@ describe('ellipsis columns', () => {
     const update = vi.spyOn(useDropdowner.getState(), 'update');
     rowAction('c:delete').onSelect(row, trigger);
     const content = update.mock.calls[0][0].content as ReactElement<{
-      title: string;
+      title: ReactElement<ConfirmTextProps>;
       children: ReactElement<{ callback: unknown; onCancel: unknown }>;
     }>;
-    expect(content.props.title).toBe('c:delete_confirm.text');
+    expect(content.props.title.props).toEqual({ i18nKey: 'c:delete_confirm.text', values: { name: 'File' } });
     expect(content.props.children.props.onCancel).toBe(useDropdowner.getState().remove);
     expect(content.props.children.props.callback).toBe(useDropdowner.getState().remove);
   });
@@ -327,7 +332,7 @@ describe('csv export', () => {
     ]);
   });
 
-  it('members: visible columns with the role, dates and per-member counts, and a dash when missing', async () => {
+  it('members: visible columns with the role, MFA setting, dates and per-member counts, and a dash when missing', async () => {
     const postedAt = Date.parse(seenAt);
     const rows = [
       {
@@ -335,6 +340,7 @@ describe('csv export', () => {
         name: 'Tenant 48',
         email: 'ada@example.com',
         membership: { role: 'member' },
+        mfaRequired: true,
         createdAt: created,
         lastSeenAt: seenAt,
         counts: { memberships: {}, products: Object.fromEntries(statTypes.map((type) => [type, 3])), activity: { [statTypes[0]]: postedAt } },
@@ -345,9 +351,16 @@ describe('csv export', () => {
     const columns = columnsOf(() => members.useColumns(true, false, 'organization'));
     // Channel counts are absent from the row, so their cells are dashes.
     expect(await csvLines(columns, rows)).toEqual([
-      `c:name,c:email,c:role,c:created_at,c:last_seen_at,c:last_post,${cells(memberCountTypes, (type) => `c:${type}`)}`,
-      `Tenant 48,ada@example.com,member,${dateCell(created)},${dateCell(seenAt)},${dateCell(postedAt)},${cells(memberCountTypes, (type) => (statTypes.includes(type) ? '3' : '-'))}`,
-      `Organization 12,-,-,-,-,-,${cells(memberCountTypes, () => '-')}`,
+      `c:name,c:email,c:role,c:mfa_short,c:created_at,c:last_seen_at,c:last_post,${cells(memberCountTypes, (type) => `c:${type}`)}`,
+      `Tenant 48,ada@example.com,member,c:enabled,${dateCell(created)},${dateCell(seenAt)},${dateCell(postedAt)},${cells(memberCountTypes, (type) => (statTypes.includes(type) ? '3' : '-'))}`,
+      `Organization 12,-,-,-,-,-,-,${cells(memberCountTypes, () => '-')}`,
     ]);
+
+    // The MFA column is the admins' alone
+    const [memberHeader] = await csvLines(
+      columnsOf(() => members.useColumns(false, false, 'organization')),
+      rows,
+    );
+    expect(memberHeader).not.toContain('c:mfa_short');
   });
 });

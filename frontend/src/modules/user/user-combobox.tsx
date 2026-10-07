@@ -159,7 +159,7 @@ export function UserCombobox({ value, onValueChange, channel }: Props) {
                         >
                           <div className="flex items-center gap-2 outline-0 ring-0">
                             <EntityAvatar type={entityType} className="size-8" id={id} name={name} url={thumbnailUrl} />
-                            <span className="truncate font-medium underline-offset-4 group-hover:underline group-data-[already-member=true]:no-underline">
+                            <span className="link-decoration group-active:link-decoration-strong truncate font-medium group-hover:underline group-data-[already-member=true]:no-underline">
                               {isMobile ? email : name}
                             </span>
                           </div>

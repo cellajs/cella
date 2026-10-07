@@ -31,8 +31,8 @@ export function Why() {
                         t={t}
                         i18nKey={text as never}
                         components={{
-                          featuresLink: <Link to="/features" className="underline underline-offset-4 hover:text-primary" />,
-                          syncEngineLink: <Link to="/sync-engine" className="underline underline-offset-4 hover:text-primary" />,
+                          featuresLink: <Link to="/features" className="link-inline hover:text-primary" />,
+                          syncEngineLink: <Link to="/sync-engine" className="link-inline hover:text-primary" />,
                         }}
                       />
                     </p>

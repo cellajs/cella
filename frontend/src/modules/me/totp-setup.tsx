@@ -55,7 +55,13 @@ export function SetupTotp() {
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   // A new key once the QR code expired may come after the step-up window: the re-auth dialog opens, then it loads.
-  const { data } = useSuspenseQuery({ queryKey: ['totp', 'uri'], queryFn: () => withStepUp(() => generateTotpKey()), staleTime: 0 });
+  // Only the refresh button asks for one: a refetch on reconnect would open that dialog, and mail its link, unasked.
+  const { data } = useSuspenseQuery({
+    queryKey: ['totp', 'uri'],
+    queryFn: () => withStepUp(() => generateTotpKey()),
+    staleTime: 0,
+    refetchOnReconnect: false,
+  });
 
   const openManualKey = () => {
     useDialoger.getState().create(<TotpManualKey manualKey={data.manualKey} />, {
@@ -73,7 +79,7 @@ export function SetupTotp() {
         <CircleAlertIcon className="size-3.5 shrink-0 text-warning" />
         <div className="text-muted-foreground text-sm">
           <span>{t('c:totp_manual.footer_description')}</span>
-          <Button ref={triggerRef} variant="none" className="inline h-auto cursor-pointer p-0 underline" onClick={openManualKey}>
+          <Button ref={triggerRef} variant="none" className="link-inline inline h-auto cursor-pointer p-0" onClick={openManualKey}>
             {t('c:totp_manual.button_text')}
           </Button>
         </div>

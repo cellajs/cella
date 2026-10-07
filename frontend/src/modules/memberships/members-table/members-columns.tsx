@@ -1,4 +1,4 @@
-import { BoxIcon } from 'lucide-react';
+import { BoxIcon, ShieldCheckIcon, ShieldMinusIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type ChannelEntityType, hierarchy, isChannel } from 'shared';
@@ -6,7 +6,7 @@ import { getMemberStatIcon, isMemberCountHidden } from '~/lib/entity-modules';
 import { exportDate } from '~/lib/export';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { dateColumn } from '~/modules/common/data-table/columns';
+import { dateColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { Member } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
@@ -31,26 +31,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, entityType: Chann
         resizable: true,
         renderCell: ({ row, tabIndex }) => <UserCell user={row} tabIndex={tabIndex} className="font-medium" />,
       },
-      {
-        key: 'email',
-        name: t('c:email'),
-        minBreakpoint: 'md',
-        resizable: true,
-        minWidth: 140,
-        placeholderValue: '-',
-        renderCell: ({ row, tabIndex }) => {
-          if (!row.email) return null;
-          return (
-            <a
-              href={`mailto:${row.email}`}
-              tabIndex={tabIndex}
-              className="truncate decoration-foreground/20 underline-offset-4 outline-0 ring-0 hover:underline"
-            >
-              {row.email}
-            </a>
-          );
-        },
-      },
+      emailColumn({ name: t('c:email'), minBreakpoint: 'md', resizable: true }),
       {
         key: 'role',
         name: t('c:role'),
@@ -75,6 +56,30 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, entityType: Chann
           ),
         }),
       },
+      // From include=mfa, which the API answers for the organization's admins only: empty for anyone else
+      ...(isAdmin
+        ? [
+            {
+              key: 'mfaRequired',
+              name: t('c:mfa_short'),
+              minBreakpoint: 'md',
+              width: 70,
+              placeholderValue: '-',
+              // The icon carries the state on screen; the text names it in the table tooltip and for screen readers
+              renderCell: ({ row }) => {
+                if (row.mfaRequired === undefined) return null;
+                const label = t(row.mfaRequired ? 'c:enabled' : 'c:disabled');
+                return (
+                  <span className="-mx-2 inline-flex h-full items-center px-2" data-tooltip="true" data-tooltip-content={label}>
+                    {row.mfaRequired ? <ShieldCheckIcon className="text-success" /> : <ShieldMinusIcon className="opacity-50" />}
+                    <span className="sr-only">{label}</span>
+                  </span>
+                );
+              },
+              exportValue: (row) => (row.mfaRequired === undefined ? undefined : t(row.mfaRequired ? 'c:enabled' : 'c:disabled')),
+            } satisfies ColumnOrColumnGroup<Member>,
+          ]
+        : []),
       dateColumn('createdAt', { name: t('c:created_at'), hidden: isSheet }),
       {
         key: 'lastSeenAt',

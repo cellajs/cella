@@ -14,6 +14,7 @@ import { getNavTabCandidates } from '~/modules/common/page/tab-nav';
 import { ToolCard } from '~/modules/common/tool-card';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { Switch } from '~/modules/ui/switch';
+import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
 interface TabRow {
@@ -33,6 +34,13 @@ interface TabRow {
 function rowKeyGetter(row: TabRow) {
   return row.id;
 }
+
+// The label cell stacks a tab's name and description, centred in the row
+const labelCellClass = tw('flex-col items-stretch justify-center py-2');
+// Below `sm` a row grows as its description unfolds. The top padding seats the name where a centred row has it (1.5rem is
+// the help toggle's height), and the other cells keep to the row's first line, so nothing shifts while the text opens beneath
+const helpLabelCellClass = tw('max-sm:justify-start max-sm:pt-[calc((var(--rdg-row-height)-1.5rem)/2)] max-sm:pb-3');
+const firstLineCellClass = tw('max-sm:h-(--rdg-row-height) max-sm:self-start');
 
 function renderRowDragPreview(row: TabRow) {
   return <div className="rounded border bg-background px-2 py-1 text-sm shadow-md">{row.name}</div>;
@@ -113,28 +121,34 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
 
   const columns: ColumnOrColumnGroup<TabRow>[] = [
     // A single tab has no order to change, so its grip would open a menu of two dead items
-    ...(rows.length > 1 ? [reorderColumn<TabRow>({ getName: (row) => row.name, onMove: moveRow, rowCount: rows.length })] : []),
+    ...(rows.length > 1
+      ? [reorderColumn<TabRow>({ getName: (row) => row.name, onMove: moveRow, rowCount: rows.length, cellClass: firstLineCellClass })]
+      : []),
     {
       key: 'label',
       name: t('c:resource_name', { resource: t('c:tab') }),
       minWidth: isMobile ? 132 : 160,
+      // Rows take their height from this cell, so a description wraps where a fixed row would truncate it
+      wrapText: true,
+      cellClass: (row) => cn(labelCellClass, row.description && helpLabelCellClass),
       renderCell: ({ row }) => {
-        if (!row.description) return <span className="truncate text-sm">{row.name}</span>;
+        const name = <span className="text-sm leading-tight">{row.name}</span>;
+        if (!row.description) return name;
 
-        // Fixed row height leaves no room for a second line on narrow screens, so the description moves into a popover
+        // A narrow column wraps a description over many lines, so there it unfolds from a help toggle
         if (isMobile) {
           return (
-            <HelpText type="popover" className="mb-0" content={row.description}>
-              <span className="truncate text-sm">{row.name}</span>
+            <HelpText className="mb-0" content={<p className="text-xs">{row.description}</p>}>
+              {name}
             </HelpText>
           );
         }
 
         return (
-          <div className="flex min-w-0 flex-col justify-center">
-            <span className="truncate text-sm leading-tight">{row.name}</span>
-            <span className="truncate text-muted-foreground text-xs leading-tight">{row.description}</span>
-          </div>
+          <>
+            {name}
+            <span className="text-muted-foreground text-xs">{row.description}</span>
+          </>
         );
       },
     },
@@ -142,7 +156,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       key: 'visible',
       name: t('c:visible'),
       width: 64,
-      cellClass: tw('flex items-center justify-center'),
+      cellClass: cn('flex items-center justify-center', firstLineCellClass),
       headerCellClass: 'text-center',
       renderCell: ({ row }) =>
         row.locked ? (

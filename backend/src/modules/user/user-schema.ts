@@ -41,6 +41,9 @@ export const memberSchema = memberUserSchema.extend({
   membership: memberMembershipSchema,
   // Per-member insight counts, present when the members list is fetched with include=counts
   counts: memberCountsSchema.optional(),
+  // With include=mfa, for the organization's admins. Absent for other callers: the field would list the accounts
+  // without a second factor.
+  mfaRequired: z.boolean().optional(),
 });
 
 export const userUpdateBodySchema = createInsertSchema(usersTable, {

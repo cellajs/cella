@@ -9,14 +9,12 @@ import { zCheckEmailBody } from 'sdk/zod.gen';
 import { isStrategyEnabled } from 'shared';
 import type { z } from 'zod';
 import { useShallow } from 'zustand/react/shallow';
-import { AuthEmailButton } from '~/modules/auth/auth-email-button';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 import type { TokenData } from '~/modules/auth/types';
 import { invitationResumePath } from '~/modules/auth/use-post-auth-redirect';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
@@ -27,18 +25,18 @@ const isMagicLinkEnabled = isStrategyEnabled('magic');
 const formSchema = zCheckEmailBody;
 type FormValues = z.infer<typeof formSchema>;
 
+/**
+ * Sign-up from the neutral sign-in step, on the address typed there. An invitation in hand is answered on its own step
+ * (`InvitationStep`); here it only matters when the visitor signs up on another address than the invited one.
+ */
 export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
   const { t } = useTranslation();
 
-  const { email, resetSteps, restrictedMode, setStep, setMagicLinkMode, inviteOtherAccount, setInviteOtherAccount } = useAuthStore(
+  const { email, setStep, setMagicLinkMode } = useAuthStore(
     useShallow((state) => ({
       email: state.email,
-      resetSteps: state.resetSteps,
-      restrictedMode: state.restrictedMode,
       setStep: state.setStep,
       setMagicLinkMode: state.setMagicLinkMode,
-      inviteOtherAccount: state.inviteOtherAccount,
-      setInviteOtherAccount: state.setInviteOtherAccount,
     })),
   );
   const { redirect, tokenId } = useSearch({ strict: false });
@@ -64,62 +62,33 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
 
   const onSubmit = () => sendMagic();
 
-  const getTitle = () => {
-    if (restrictedMode) return t('c:sign_up');
-    if (tokenData?.inactiveMembershipId) return t('c:invite_accept_proceed');
-    if (tokenData) return t('c:invite_create_account');
-    return `${t('c:create_resource', { resource: t('c:account').toLowerCase() })}?`;
-  };
-
   return (
     <Form {...form}>
-      {restrictedMode ? (
-        <h1 className="mt-4 text-center text-2xl">{getTitle()}</h1>
-      ) : (
-        <h1 className="text-center text-2xl">
-          {getTitle()} <br />
-          <AuthEmailButton email={email} onClick={resetSteps} className="mt-2" />
-        </h1>
-      )}
+      <h1 className="mt-4 text-center text-2xl">{t('c:sign_up')}</h1>
 
       <LegalNotice email={email || form.getValues('email')} mode="signup" />
 
       {(emailEnabled || isMagicLinkEnabled) && (
         <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
-          {restrictedMode && (
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem className="-mb-2 gap-0">
-                  <FormLabel className="mb-2">{t('c:email')}</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="email" className="h-12" autoFocus={!isMobile} autoComplete="email" placeholder="name@example.com" />
-                  </FormControl>
-                  <FormMessage className="mt-2" />
-                </FormItem>
-              )}
-            />
-          )}
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem className="-mb-2 gap-0">
+                {/* Hidden on purpose: the example address is the visible cue */}
+                <FormLabel className="sr-only">{t('c:email')}</FormLabel>
+                <FormControl>
+                  <Input {...field} type="email" className="h-12" autoFocus={!isMobile} autoComplete="email" placeholder="name@example.com" />
+                </FormControl>
+                <FormMessage className="mt-2" />
+              </FormItem>
+            )}
+          />
 
           <SubmitButton loading={isPending} icon={<MailIcon />} className="w-full">
             {t('c:magic_link_send_signup')}
           </SubmitButton>
         </form>
-      )}
-
-      {tokenData?.inactiveMembershipId && !inviteOtherAccount && (
-        <Button
-          type="button"
-          variant="link"
-          className="w-full"
-          onClick={() => {
-            setInviteOtherAccount(true);
-            setStep('checkEmail', '');
-          }}
-        >
-          {t('c:invite_use_existing_account')}
-        </Button>
       )}
     </Form>
   );

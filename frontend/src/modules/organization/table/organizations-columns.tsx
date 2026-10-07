@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { hierarchy, isChannel } from 'shared';
+import { ConfirmText } from '~/modules/common/confirm-text';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
@@ -53,7 +54,7 @@ export const useColumns = () => {
           }
         >
           <EntityAvatar type="organization" className="group-active/cell-button:press size-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
-          <span className="group-active/cell-button:press truncate font-medium decoration-foreground/20 underline-offset-3 group-hover/cell-button:underline group-active/cell-button:decoration-foreground/50">
+          <span className="group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong truncate font-medium group-hover/cell-button:underline">
             {row.name || '-'}
           </span>
         </Button>
@@ -74,7 +75,7 @@ export const useColumns = () => {
         onSelect: (row) => {
           const callback = () => useDropdowner.getState().remove();
           openPopConfirm(
-            i18n.t('c:delete_confirm.text', { name: row.name }),
+            <ConfirmText i18nKey="c:delete_confirm.text" values={{ name: row.name }} />,
             <DeleteOrganizations tenantId={row.tenantId} organizations={[row]} callback={callback} />,
           );
         },

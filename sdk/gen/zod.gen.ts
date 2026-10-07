@@ -565,6 +565,7 @@ export const zServiceAccount = z.object({
   updatedBy: z.uuid().nullable(),
   createdAt: z.string(),
   updatedAt: z.string().nullable(),
+  lastSeenAt: z.string().nullable(),
 });
 
 /**
@@ -581,7 +582,7 @@ export const zApiKey = z.object({
   expiresAt: z.string().nullable(),
   revokedAt: z.string().nullable(),
   revokedBy: z.uuid().nullable(),
-  createdBy: z.uuid().nullable(),
+  createdBy: zUserMinimalBase.nullable(),
   createdAt: z.string(),
 });
 
@@ -1602,6 +1603,7 @@ export const zGetUserQuery = z.object({
     .union([z.enum(['true', 'false']), z.boolean()])
     .optional()
     .default('false'),
+  include: z.string().optional(),
 });
 
 /**
@@ -1610,6 +1612,7 @@ export const zGetUserQuery = z.object({
 export const zGetUserResponse = zUserBase.and(
   z.object({
     lastSeenAt: z.string().nullable(),
+    mfaRequired: z.boolean().optional(),
   }),
 );
 
@@ -2147,6 +2150,7 @@ export const zGetMembersResponse = z.object({
             }),
           })
           .optional(),
+        mfaRequired: z.boolean().optional(),
       }),
     ),
   ),

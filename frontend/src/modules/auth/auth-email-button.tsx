@@ -15,7 +15,7 @@ export function AuthEmailButton({ email, onClick, disabled, className = '' }: Au
       variant="ghost"
       onClick={onClick}
       disabled={disabled}
-      className={cn('group mx-auto flex max-w-full truncate bg-foreground/10 font-normal sm:text-lg', className)}
+      className={cn('group mx-auto flex max-w-full truncate bg-foreground/10 font-normal hover:bg-foreground/15 sm:text-lg', className)}
     >
       <span className="truncate">{email}</span>
       <ChevronDownIcon className="group-disabled:hidden" />

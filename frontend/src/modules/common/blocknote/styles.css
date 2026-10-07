@@ -164,11 +164,12 @@ li:has(.is-focused) {
   line-height: 1.3;
 }
 
+/* Editor links follow link-inline (tailwind.css): the same three underline tiers. */
 .bn-container.bn-shadcn a {
   color: inherit;
   text-decoration: underline;
-  text-underline-offset: 0.2rem;
-  text-decoration-color: color-mix(in oklch, var(--foreground) 20%, transparent);
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklch, currentColor var(--link-decoration), transparent);
 }
 
 .bn-link-toolbar > button.px-3 {
@@ -181,8 +182,13 @@ li:has(.is-focused) {
   background-color: var(--muted);
 }
 
-.bn-container.bn-shadcn a:hover {
-  text-decoration-color: var(--foreground);
+.bn-container.bn-shadcn a:hover,
+.bn-container.bn-shadcn a:focus-visible {
+  text-decoration-color: color-mix(in oklch, currentColor var(--link-decoration-strong), transparent);
+}
+
+.bn-container.bn-shadcn a:active {
+  text-decoration-color: currentColor;
 }
 
 .bn-container.bn-shadcn b,

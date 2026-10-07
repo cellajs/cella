@@ -4,6 +4,12 @@ export type MorphVariant = 'single' | 'colony';
 
 // The grain look tolerates a low render resolution, so touch devices get a lower cap to save battery
 const MAX_PIXEL_RATIO = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches ? 1.25 : 1.75;
+// The shader lays `grid * GRID_SPAN` cells across the canvas's short side
+const GRID_SPAN = 1.25;
+// Smaller than this in CSS pixels a grain reads as noise, not as a pixel by design, so a small canvas gets fewer, larger grains
+const MIN_GRAIN_PX = 3;
+// A phone shows the same grain smaller, so its floor sits well above the size a desktop draws
+const MIN_GRAIN_PX_PHONE = 6;
 // The mark's true half-width is 0.0372; drawn a bit thicker here, which narrows the gap between the bands
 const BAND_HALF_WIDTH = 0.05;
 const WARP = 0.85;
@@ -73,6 +79,8 @@ export class MorphRenderer {
   private timeScale = 1;
   private enter = 0;
   private grid = 96;
+  private shortSide = 0;
+  private minGrain = MIN_GRAIN_PX;
   private stamp = 0;
   private overscan = 1.2;
   private dark = false;
@@ -114,9 +122,15 @@ export class MorphRenderer {
     this.enter = 1;
   }
 
-  /** Pixel-grid density in cells across the canvas; lower is chunkier. */
+  /** Pixel-grid density in cells across the canvas; lower is chunkier. A small canvas draws fewer: see `MIN_GRAIN_PX`. */
   setGrid(grid: number) {
     this.grid = grid;
+    if (this.paused) this.drawFrame(0);
+  }
+
+  /** A phone-sized viewport gets the larger grain floor: see `MIN_GRAIN_PX_PHONE`. */
+  setPhone(phone: boolean) {
+    this.minGrain = phone ? MIN_GRAIN_PX_PHONE : MIN_GRAIN_PX;
     if (this.paused) this.drawFrame(0);
   }
 
@@ -215,6 +229,7 @@ export class MorphRenderer {
 
   private fitCanvas(gl: WebGL2RenderingContext) {
     const rect = this.canvas.getBoundingClientRect();
+    this.shortSide = Math.min(rect.width, rect.height);
     const ratio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
     const width = Math.max(2, Math.round(rect.width * ratio));
     const height = Math.max(2, Math.round(rect.height * ratio));
@@ -237,7 +252,7 @@ export class MorphRenderer {
     gl.uniform2f(u.uRes, this.canvas.width, this.canvas.height);
     gl.uniform1f(u.uTime, this.time);
     gl.uniform1f(u.uDark, this.dark ? 1 : 0);
-    gl.uniform1f(u.uGrid, this.grid);
+    gl.uniform1f(u.uGrid, Math.max(1, Math.min(this.grid, this.shortSide / (GRID_SPAN * this.minGrain))));
     gl.uniform1i(u.uStamp, this.stamp);
     gl.uniform1f(u.uEnter, this.enter);
     if (this.variant !== 'colony') gl.uniform1f(u.uZoom, this.overscan);

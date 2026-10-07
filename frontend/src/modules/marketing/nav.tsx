@@ -105,7 +105,7 @@ export function MarketingNav() {
               to="/about"
               hash=""
               replace={location.pathname === '/about'}
-              className="focus-effect relative rounded-md p-0.5 transition-transform sm:active:scale-100 sm:hover:scale-105 md:pr-4"
+              className="focus-effect active:press relative rounded-md p-0.5 transition-transform sm:hover:scale-105 md:pr-4"
               aria-label={t('c:go_to_about')}
             >
               <Logo height={36} title={t('c:go_to_about')} />
@@ -158,7 +158,7 @@ export function MarketingNav() {
             <DrawerTitle>Navigation</DrawerTitle>
           </span>
           <div className="flex flex-col items-stretch gap-2 px-4">
-            <UserTheme buttonClassName="xs:hidden bg-accent m-1 self-end" />
+            <UserTheme buttonClassName="xs:hidden m-1 self-end" />
             <Button
               variant="ghost"
               size="lg"

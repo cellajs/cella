@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Request } from 'sdk';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { dateColumn } from '~/modules/common/data-table/columns';
+import { dateColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
@@ -30,19 +30,7 @@ export const useColumns = () => {
         </div>
       ),
     },
-    {
-      key: 'email',
-      name: t('c:email'),
-      resizable: true,
-      minWidth: 140,
-      renderCell: ({ row, tabIndex }) => {
-        return (
-          <a href={`mailto:${row.email}`} tabIndex={tabIndex} className="truncate underline-offset-4 outline-0 ring-0 hover:underline">
-            {row.email || <span className="text-muted">-</span>}
-          </a>
-        );
-      },
-    },
+    emailColumn({ name: t('c:email'), resizable: true }),
     {
       key: 'message',
       name: t('c:message'),

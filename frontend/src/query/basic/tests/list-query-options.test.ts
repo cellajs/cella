@@ -237,7 +237,7 @@ describe('export fetchers', () => {
     expect(sdk.getRequests).toHaveBeenCalledWith({ query: { q: '', sort: 'createdAt', order: 'desc', limit: '1000', offset: '0' } });
   });
 
-  it('members: the channel scopes the request, search defaults fill it and the rows include counts', async () => {
+  it('members: the channel scopes the request, search defaults fill it and the rows include counts and the MFA setting', async () => {
     await fetchMembersForExport({ ...channel, role: memberRole, limit: 1000, offset: 1000 });
 
     expect(sdk.getMembers).toHaveBeenCalledWith({
@@ -250,7 +250,7 @@ describe('export fetchers', () => {
         offset: '1000',
         entityId: 'org-1',
         entityType: 'organization',
-        include: 'counts',
+        include: 'counts,mfa',
       },
       path,
     });

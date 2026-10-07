@@ -49,8 +49,9 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
   const [columns, setColumns] = useColumns(canUpdate, isSheet, entityType);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  // include=counts feeds the per-member insight columns (last post, authored counts, sub-channel memberships)
-  const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, organizationId, ...search, limit, include: 'counts' });
+  // include=counts feeds the per-member insight columns (last post, authored counts, sub-channel memberships);
+  // include=mfa feeds the MFA column, which the API fills for the organization's admins only
+  const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, organizationId, ...search, limit, include: 'counts,mfa' });
 
   const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
   const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);

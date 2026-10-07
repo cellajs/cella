@@ -41,60 +41,70 @@ export function PreferencesContent() {
   return (
     <>
       <div className="mb-6 flex flex-col gap-4 pt-3">
-        <h3 className="px-4 font-medium text-muted-foreground text-sm lowercase">{t('c:appearance')}</h3>
+        <h3 className="px-3 font-medium text-muted-foreground text-sm lowercase">{t('c:appearance')}</h3>
 
-        <div className="flex items-center gap-4 px-4">
+        <div className="flex items-center gap-3 px-3">
           <Switch
+            size="sm"
             id="darkMode"
             checked={mode === 'dark'}
             onCheckedChange={(checked) => setMode(checked ? 'dark' : 'light')}
             aria-label={t('c:dark_mode')}
           />
-          <label htmlFor="darkMode" className="cursor-pointer select-none font-medium text-sm leading-none">
+          <label htmlFor="darkMode" className="cursor-pointer select-none text-sm leading-none">
             {t('c:dark_mode')}
           </label>
         </div>
 
-        <div className="flex items-center gap-4 px-4">
-          <Switch id="increaseContrast" checked={contrast === 'more'} onCheckedChange={toggleContrast} aria-label={t('c:increase_contrast')} />
-          <label htmlFor="increaseContrast" className="cursor-pointer select-none font-medium text-sm leading-none">
+        <div className="flex items-center gap-3 px-3">
+          <Switch
+            size="sm"
+            id="increaseContrast"
+            checked={contrast === 'more'}
+            onCheckedChange={toggleContrast}
+            aria-label={t('c:increase_contrast')}
+          />
+          <label htmlFor="increaseContrast" className="cursor-pointer select-none text-sm leading-none">
             {t('c:increase_contrast')}
           </label>
         </div>
 
-        <div className="flex items-center gap-4 px-4 max-xl:hidden">
+        {/* Shown from 2xl only: below it the nav sheet never pins (see `isDesktop` in app-nav). */}
+        <div className="flex items-center gap-3 px-3 max-2xl:hidden">
           <Switch
+            size="sm"
             id="keepNavOpen"
             checked={keepOpenPreference}
             onCheckedChange={(checked) => toggleKeepOpenPreference(checked)}
             aria-label={t('c:keep_nav_open')}
           />
-          <label htmlFor="keepNavOpen" className="cursor-pointer select-none font-medium text-sm leading-none">
+          <label htmlFor="keepNavOpen" className="cursor-pointer select-none text-sm leading-none">
             {t('c:keep_nav_open')}
           </label>
         </div>
         {showDesktopMenuOption && (
-          <div className="flex items-center gap-4 px-4">
-            <Switch id="detailedMenu" checked={detailedMenu} onCheckedChange={toggleDetailedMenu} aria-label={t('c:detailed_menu')} />
-            <label htmlFor="detailedMenu" className="cursor-pointer select-none font-medium text-sm leading-none">
+          <div className="flex items-center gap-3 px-3">
+            <Switch size="sm" id="detailedMenu" checked={detailedMenu} onCheckedChange={toggleDetailedMenu} aria-label={t('c:detailed_menu')} />
+            <label htmlFor="detailedMenu" className="cursor-pointer select-none text-sm leading-none">
               {t('c:detailed_menu')}
             </label>
           </div>
         )}
-        <div className="flex items-center gap-4 px-4">
+        <div className="flex items-center gap-3 px-3">
           <Switch
+            size="sm"
             id="keyboardShortcuts"
             checked={keyboardShortcuts}
             onCheckedChange={toggleKeyboardShortcuts}
             aria-label={t('c:keyboard_shortcuts')}
           />
-          <label htmlFor="keyboardShortcuts" className="cursor-pointer select-none font-medium text-sm leading-none">
+          <label htmlFor="keyboardShortcuts" className="cursor-pointer select-none text-sm leading-none">
             {t('c:keyboard_shortcuts')}
           </label>
         </div>
-        <div className="flex items-center gap-4 px-4">
-          <Switch id="keepMessages" checked={keepMessages} onCheckedChange={setKeepMessages} aria-label={t('c:keep_messages')} />
-          <label htmlFor="keepMessages" className="cursor-pointer select-none font-medium text-sm leading-none">
+        <div className="flex items-center gap-3 px-3">
+          <Switch size="sm" id="keepMessages" checked={keepMessages} onCheckedChange={setKeepMessages} aria-label={t('c:keep_messages')} />
+          <label htmlFor="keepMessages" className="cursor-pointer select-none text-sm leading-none">
             {t('c:keep_messages')}
           </label>
         </div>
@@ -102,7 +112,7 @@ export function PreferencesContent() {
 
       {pwaEnabled && (
         <div className="flex flex-col gap-4 pb-8">
-          <h3 className="px-4 font-medium text-muted-foreground text-sm lowercase">{t('c:offline')}</h3>
+          <h3 className="px-3 font-medium text-muted-foreground text-sm lowercase">{t('c:offline')}</h3>
           <OfflineAccessSwitch />
           <AlertBanner id="offline_access" animate variant="plain" icon={InfoIcon}>
             {t('c:offline_access.text')}

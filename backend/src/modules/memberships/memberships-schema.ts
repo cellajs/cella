@@ -83,7 +83,7 @@ export const memberListQuerySchema = paginationQuerySchema.extend({
   // lastPostedAt sorts by the member's latest product row in the viewed channel; default is recent activity
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'lastPostedAt']).default('lastSeenAt'),
   role: z.enum(roles.all).optional(),
-  // Opt-in per-member insight counts (member-counts.ts), mirroring the channel lists' include=counts
+  // Opt-in per-member insight counts (member-counts.ts), mirroring the channel lists' include=counts, and `mfa`
   include: includeQuerySchema,
   userIds: z
     .string()

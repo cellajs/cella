@@ -1,3 +1,5 @@
+import { getInitials } from 'shared/utils/get-initials';
+
 const getRandomColor = () => {
   const letters = '0123456789ABCDEF';
   let color = '#';
@@ -8,14 +10,7 @@ const getRandomColor = () => {
 };
 
 export const EmailAvatar = ({ name, type = 'user' }: { name?: string | null; type?: 'user' | 'organization' }) => {
-  let initials = 'U';
-  if (name) {
-    const words = name.split(' ');
-    initials = words
-      .slice(0, 2)
-      .map((word) => word.charAt(0).toUpperCase())
-      .join('');
-  }
+  let initials = getInitials(name).join('') || 'U';
   if (type === 'organization') initials = 'O';
 
   return (

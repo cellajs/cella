@@ -131,7 +131,7 @@ export function UserTheme({ buttonClassName = '', tooltip = false }: UserThemePr
       ref={triggerRef}
       variant="ghost"
       size="icon"
-      className={cn('data-dropdowner-active:bg-accent', buttonClassName)}
+      className={cn('data-dropdowner-active:bg-foreground/8', buttonClassName)}
       aria-label={label}
       onClick={openDropdown}
     >

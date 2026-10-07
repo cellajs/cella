@@ -14,6 +14,8 @@ export const cn = createCn({
       'bg-color': ['soft-bg', 'soft-bg-hover', 'soft-bg-strong', 'soft-bg-stronger'],
       'bg-image': ['soft-gradient'],
       'border-color': ['soft-border', 'soft-border-medium', 'soft-border-strong'],
+      'text-decoration': ['link-inline'],
+      'text-decoration-color': ['link-decoration', 'link-decoration-strong'],
       intent: [{ intent: ['primary', 'brand', 'destructive', 'success', 'secondary', 'warning'] }],
     },
   },

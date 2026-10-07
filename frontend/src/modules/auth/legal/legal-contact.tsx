@@ -28,7 +28,7 @@ export function LegalContact({ addressOnly = false, className }: { addressOnly?:
         </li>
         <li>{country}</li>
         <li>
-          <a className="underline" href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
+          <a className="link-inline" href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
             {supportEmail}
           </a>
         </li>

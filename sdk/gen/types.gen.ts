@@ -647,6 +647,7 @@ export type ServiceAccount = {
   updatedBy: string | null;
   createdAt: string;
   updatedAt: string | null;
+  lastSeenAt: string | null;
 };
 
 /**
@@ -663,7 +664,7 @@ export type ApiKey = {
   expiresAt: string | null;
   revokedAt: string | null;
   revokedBy: string | null;
-  createdBy: string | null;
+  createdBy: UserMinimalBase | null;
   createdAt: string;
 };
 
@@ -4585,6 +4586,7 @@ export type GetUserData = {
   };
   query?: {
     slug?: 'true' | 'false' | boolean;
+    include?: string;
   };
   url: '/users/users/{relatableUserId}';
 };
@@ -4624,6 +4626,7 @@ export type GetUserResponses = {
    */
   200: UserBase & {
     lastSeenAt: string | null;
+    mfaRequired?: boolean;
   };
 };
 
@@ -5857,6 +5860,7 @@ export type GetMembersResponses = {
             attachment: number | null;
           };
         };
+        mfaRequired?: boolean;
       }
     >;
     total: number;

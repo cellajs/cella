@@ -41,7 +41,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
           <Link
             to="/about"
             draggable={false}
-            className="focus-effect ml-1 flex h-8 items-center rounded-md transition-transform hover:scale-105 active:scale-100"
+            className="focus-effect active:press ml-1 flex h-8 items-center rounded-md transition-transform hover:scale-105"
             aria-label={t('c:go_to_about')}
             onClick={closeSheet}
           >

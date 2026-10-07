@@ -3295,13 +3295,14 @@ export const getUsers = <ThrowOnError extends boolean = true>(
 /**
  * Get user
  *
- * Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead.
+ * Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead. Pass ?include=mfa for `mfaRequired`, which only the user themselves, system admins and admins of an organization the user is a member of receive.
  *
  * **GET /users/users/{relatableUserId}** ·· [getUser](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/users/{relatableUserId}) ·· [getUser](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/users/users/{relatableUserId}) ·· _users_cella_
  *
  * @param {getUserData} options
  * @param {string} options.path.relatableuserid - `string`
  * @param {enum | boolean=} options.query.slug - `enum | boolean` (optional)
+ * @param {string=} options.query.include - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const getUser = <ThrowOnError extends boolean = true>(
@@ -4160,7 +4161,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
 /**
  * Get list of members
  *
- * Retrieves members (users) of a channel entity by ID, including their associated membership data.
+ * Retrieves members (users) of a channel entity by ID, including their associated membership data. Pass ?include=counts for per-member counts, and ?include=mfa for `mfaRequired`, which only admins of the organization receive.
  *
  * **GET /{tenantId}/{organizationId}/memberships/members** ·· [getMembers](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/{tenantId}/{organizationId}/memberships/members) ·· [getMembers](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/memberships/members) ·· _memberships_cella_
  *

@@ -59,7 +59,7 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: B
       <EntityAvatar type="user" className="group-active/cell-button:press size-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
       <span
         className={cn(
-          'group-active/cell-button:press truncate decoration-foreground/20 underline-offset-3 group-hover/cell-button:underline group-active/cell-button:decoration-foreground/50',
+          'group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong truncate group-hover/cell-button:underline',
           { [compactUserNameClass]: compactable },
         )}
       >

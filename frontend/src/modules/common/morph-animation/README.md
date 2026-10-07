@@ -44,7 +44,11 @@ How it works:
 
 The component props are the tuning surface per page: `variant`, `grid` (pixel density),
 `speed` (clock scale, 1 = prototype pace), `overscan` (canvas margin around the shape;
-below 1 it magnifies) and `stamp`. The static `+` texture language in
+below 1 it magnifies) and `stamp`. `grid` counts cells across the canvas, so grains
+shrink with it; `MIN_GRAIN_PX` in the renderer stops that at a size that still reads as
+a pixel, and a phone-sized canvas draws the same piece with fewer, larger grains. Below
+the `sm` breakpoint `MIN_GRAIN_PX_PHONE` takes over, so a phone's grains come out larger
+than a desktop's. The static `+` texture language in
 `styling/plus-grain.css` shares this module's pixel vocabulary for non-animated uses.
 
 Cost: one fullscreen pass, no textures, no feedback buffers; at rest only one cell is

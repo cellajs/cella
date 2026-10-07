@@ -78,7 +78,7 @@ function DebugDropdown({ className }: DebugDropdownProps) {
       <DropdownMenuContent side="right" align="end" sideOffset={24} positionerClassName="z-300" className="w-48 p-1">
         {debugOptions.map(({ id, icon, onSelect }) => (
           <DropdownMenuItem key={id} onClick={onSelect}>
-            <span className="mr-2">{icon}</span>
+            <span>{icon}</span>
             <span>{id}</span>
           </DropdownMenuItem>
         ))}

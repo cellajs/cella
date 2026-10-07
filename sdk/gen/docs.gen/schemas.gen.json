@@ -1584,9 +1584,10 @@
           "format": "uuid"
         },
         "createdBy": {
-          "type": ["string", "null"],
+          "type": ["object", "null"],
           "required": true,
-          "format": "uuid"
+          "ref": "#/components/schemas/UserMinimalBase",
+          "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
         },
         "createdAt": { "type": "string", "required": true }
       }
@@ -1609,8 +1610,14 @@
       "expiresAt": null,
       "revokedAt": null,
       "revokedBy": null,
-      "createdBy": "e522e29f-f395-42f7-999b-7ea34c4cb760",
-      "createdAt": "2024-11-05T21:01:57.922Z"
+      "createdBy": {
+        "id": "9656def5-1db7-49f5-8767-34aa5a1f68f2",
+        "name": "Jace Kozey",
+        "slug": "jace_kozey68",
+        "thumbnailUrl": null,
+        "entityType": "user"
+      },
+      "createdAt": "2024-05-18T01:54:27.698Z"
     }
   },
   {
@@ -1669,6 +1676,10 @@
         "updatedAt": {
           "type": ["string", "null"],
           "required": true
+        },
+        "lastSeenAt": {
+          "type": ["string", "null"],
+          "required": true
         }
       }
     },
@@ -1696,7 +1707,8 @@
       "createdBy": "9363c51c-e97a-4ee4-9dbe-ebe841e8f2f9",
       "createdAt": "2024-09-01T22:49:17.262Z",
       "updatedAt": "2024-09-01T22:49:17.262Z",
-      "updatedBy": null
+      "updatedBy": null,
+      "lastSeenAt": "2024-09-01T22:49:17.262Z"
     }
   },
   {

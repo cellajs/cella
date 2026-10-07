@@ -24,7 +24,10 @@ type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
   offsetBottom?: number;
   /** Disable sticky behaviour entirely (renders children in a plain div). */
   enabled?: boolean;
-  /** Hide the bar while scrolling down and reveal it while scrolling up. */
+  /**
+   * The bar scrolls away with the page on the way down, and slides in at the pin line when the reader scrolls up
+   * while its own place is off screen. It is never hidden while that place is on screen.
+   */
   hideWhenOutOfView?: boolean;
   /** CSS custom property the bar publishes its height to on the parent, e.g. `--sticky-stack-nav`. */
   publishVar?: string;
@@ -38,6 +41,18 @@ type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
  * from the parent it publishes on. Variable changes animate with the ancestor bar's transition.
  */
 const STACK_VARS = ['--sticky-stack-nav', '--sticky-stack-top'] as const;
+
+/** Offset (px) the stack variables add to the bar's pin line, leaving out the one it publishes itself. */
+function stackOffset(bar: HTMLElement, publishVar?: string) {
+  const barStyles = getComputedStyle(bar);
+  return Math.max(...STACK_VARS.filter((v) => v !== publishVar).map((v) => Number.parseFloat(barStyles.getPropertyValue(v)) || 0));
+}
+
+/**
+ * Where a `hideWhenOutOfView` bar is: `flow` in its own place in the page, `pinned` slid in at the pin line, `hidden`
+ * slid back out, `parked` just above the pin line without having animated there (its place had scrolled off anyway).
+ */
+type HidePhase = 'flow' | 'parked' | 'pinned' | 'hidden';
 export function StickyBox({
   enabled = true,
   offsetTop = 0,
@@ -53,7 +68,7 @@ export function StickyBox({
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const [stuck, setStuck] = useState(false);
-  const [visible, setVisible] = useState(true);
+  const [phase, setPhase] = useState<HidePhase>('flow');
   // When set, the bar is docked near the container bottom via `position: relative` and scrolls away
   const [clampedTop, setClampedTop] = useState<number | null>(null);
 
@@ -94,10 +109,7 @@ export function StickyBox({
         const parentRect = parent.getBoundingClientRect();
         const barHeight = bar.offsetHeight;
         const scrollTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top;
-        const barStyles = getComputedStyle(bar);
-        const stackValues = STACK_VARS.filter((v) => v !== publishVar).map((v) => Number.parseFloat(barStyles.getPropertyValue(v)) || 0);
-        const stackPx = Math.max(...stackValues);
-        const stickyBottom = scrollTop + stackPx + offsetTop + barHeight;
+        const stickyBottom = scrollTop + stackOffset(bar, publishVar) + offsetTop + barHeight;
         const spaceBelow = parentRect.bottom - stickyBottom;
         // Offset from the sentinel: at the release boundary it equals the stuck position exactly
         const naturalTop = sentinelRef.current?.getBoundingClientRect().top ?? parentRect.top;
@@ -118,12 +130,18 @@ export function StickyBox({
     };
   }, [enabled, offsetBottom, offsetTop, publishVar]);
 
-  // hideWhenOutOfView: reveal on scroll up, hide on scroll down, always show at top.
+  // hideWhenOutOfView: the bar sits in its place while that is on screen, and slides in or out at the pin line by scroll direction once it is not
   useEffect(() => {
-    if (!hideWhenOutOfView || !enabled || !sentinelRef.current) return;
-    const scrollParent = getScrollParent(sentinelRef.current);
+    const sentinel = sentinelRef.current;
+    const bar = barRef.current;
+    if (!hideWhenOutOfView || !enabled || !sentinel || !bar) {
+      setPhase('flow');
+      return;
+    }
+    const scrollParent = getScrollParent(sentinel);
     let lastScrollY = scrollParent === window ? window.scrollY : (scrollParent as HTMLElement).scrollTop;
     let accumulated = 0;
+    let scrollingUp = false;
     let ticking = false;
     const onScroll = () => {
       if (ticking) return;
@@ -131,33 +149,32 @@ export function StickyBox({
       requestAnimationFrame(() => {
         const currentY = scrollParent === window ? window.scrollY : (scrollParent as HTMLElement).scrollTop;
         const delta = currentY - lastScrollY;
-        if (currentY <= offsetTop) {
-          setVisible(true);
-          accumulated = 0;
-        } else if (isProgrammaticScroll()) {
-          setVisible(false);
-          accumulated = 0;
-        } else {
-          accumulated = Math.sign(delta) === Math.sign(accumulated) ? accumulated + delta : delta;
-          if (accumulated > 10) {
-            setVisible(false);
-            accumulated = 0;
-          } else if (accumulated < -10) {
-            setVisible(true);
-            accumulated = 0;
-          }
-        }
+        // A direction counts once it has carried 10px; a programmatic scroll never reveals the bar
+        accumulated = Math.sign(delta) === Math.sign(accumulated) ? accumulated + delta : delta;
+        if (isProgrammaticScroll()) scrollingUp = false;
+        else if (Math.abs(accumulated) > 10) scrollingUp = accumulated < 0;
+
+        // The bar's own place, measured from the pin line: the sentinel marks its top wherever the bar itself is drawn
+        const rootTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top;
+        const placeTop = sentinel.getBoundingClientRect().top - rootTop - offsetTop - stackOffset(bar, publishVar);
+        const placeOffScreen = placeTop + bar.offsetHeight <= 0;
+
+        setPhase((prev) => {
+          if (placeTop >= 0) return 'flow';
+          // Slid in: it stays pinned while its place scrolls back under it, and leaves on a scroll down
+          if (prev === 'pinned') return placeOffScreen && !scrollingUp ? 'hidden' : 'pinned';
+          if (!placeOffScreen) return 'flow';
+          // From `flow` it parks for a frame first, so the slide in has a position to start from
+          if (prev === 'flow') return 'parked';
+          return scrollingUp ? 'pinned' : prev;
+        });
         lastScrollY = currentY;
         ticking = false;
       });
     };
     scrollParent.addEventListener('scroll', onScroll, passiveArg);
     return () => scrollParent.removeEventListener('scroll', onScroll);
-  }, [hideWhenOutOfView, enabled, offsetTop]);
-
-  useEffect(() => {
-    if (hideWhenOutOfView && !stuck) setVisible(true);
-  }, [hideWhenOutOfView, stuck]);
+  }, [hideWhenOutOfView, enabled, offsetTop, publishVar]);
 
   // Publish the height on the parent so dependent sticky bars can pin below this one
   useEffect(() => {
@@ -190,12 +207,19 @@ export function StickyBox({
     barStyle.position = 'relative';
     barStyle.top = clampedTop;
   }
-  if (hideWhenOutOfView) {
-    barStyle.transition = 'transform 300ms ease, opacity 300ms ease';
-    if (!visible) {
-      barStyle.transform = 'translateY(-100%)';
-      barStyle.opacity = 0;
-      barStyle.pointerEvents = 'none';
+  if (hideWhenOutOfView && clampedTop === null) {
+    if (phase === 'flow') {
+      // In its place it is ordinary content: it scrolls away with the page and never pins
+      barStyle.position = 'relative';
+      barStyle.top = undefined;
+    } else {
+      // No transition into `parked`: the bar leaves its place off screen, and an animated move would flash it at the pin line
+      if (phase !== 'parked') barStyle.transition = 'transform 300ms ease, opacity 300ms ease';
+      if (phase !== 'pinned') {
+        barStyle.transform = 'translateY(-100%)';
+        barStyle.opacity = 0;
+        barStyle.pointerEvents = 'none';
+      }
     }
   }
 
@@ -203,7 +227,18 @@ export function StickyBox({
   return (
     <>
       <div ref={sentinelRef} aria-hidden className="pointer-events-none -mb-px h-px" />
-      <div ref={barRef} className={className} data-sticky={stuck} style={barStyle} {...rest}>
+      <div
+        ref={barRef}
+        className={className}
+        data-sticky={stuck}
+        style={barStyle}
+        {...rest}
+        // A keyboard reader who tabs into a bar that is slid out gets it slid in
+        onFocus={(event) => {
+          rest.onFocus?.(event);
+          if (phase === 'parked' || phase === 'hidden') setPhase('pinned');
+        }}
+      >
         {children}
       </div>
     </>

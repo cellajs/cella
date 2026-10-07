@@ -17,7 +17,6 @@ export function AuthErrorPage() {
 
   const { error: errorType, tokenId } = useSearch({ from: '/_public/auth/error' });
 
-  const error = useAuthStore((state) => state.error);
   const setStep = useAuthStore((state) => state.setStep);
   const setMagicLinkMode = useAuthStore((state) => state.setMagicLinkMode);
 
@@ -41,7 +40,7 @@ export function AuthErrorPage() {
   const hasPrimaryAction = !!resendTokenId || offersRecoveryLink;
 
   return (
-    <ErrorNotice error={error} boundary="public">
+    <ErrorNotice boundary="public">
       {resendTokenId && <ResendInvitationButton resendData={{ tokenId: resendTokenId }} />}
 
       {offersRecoveryLink && (

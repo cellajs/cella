@@ -19,9 +19,9 @@ export function OfflineAccessSwitch() {
   };
 
   return (
-    <div className="flex items-center gap-4 px-4">
-      <Switch id="offlineMode" checked={offlineAccess} onCheckedChange={onCheckedChange} aria-label={t('c:offline_access')} />
-      <label htmlFor="offlineMode" className="cursor-pointer select-none font-medium text-sm leading-none">
+    <div className="flex items-center gap-3 px-3">
+      <Switch size="sm" id="offlineMode" checked={offlineAccess} onCheckedChange={onCheckedChange} aria-label={t('c:offline_access')} />
+      <label htmlFor="offlineMode" className="cursor-pointer select-none text-sm leading-none">
         {t('c:offline_access')}
       </label>
     </div>

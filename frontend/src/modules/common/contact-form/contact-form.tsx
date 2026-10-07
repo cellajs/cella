@@ -64,6 +64,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             control={form.control}
             name="name"
             label={t('c:name')}
+            labelClassName="max-sm:sr-only"
             autocomplete="name"
             placeholder={t('c:placeholder.your_input', { inputLabel: nameLabel })}
             icon={<UserIcon />}
@@ -73,6 +74,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             control={form.control}
             name="email"
             label={t('c:email')}
+            labelClassName="max-sm:sr-only"
             type="email"
             autocomplete="email"
             placeholder={t('c:placeholder.your_input', { inputLabel: emailLabel })}
@@ -83,6 +85,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             control={form.control}
             name="message"
             label={t('c:message')}
+            labelClassName="max-sm:sr-only"
             type="textarea"
             placeholder={t('c:placeholder.your_input', { inputLabel: messageLabel })}
             icon={<MessageSquareIcon />}
@@ -97,7 +100,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
           </div>
         </form>
       </Form>
-      {!isMediumScreen && <LegalContact className="my-6 w-full sm:my-0" addressOnly />}
+      {!isMediumScreen && <LegalContact className="my-4 w-full sm:my-0" addressOnly />}
       {isMediumScreen && (
         <div className="w-full overflow-hidden rounded-md bg-accent md:mb-12">
           <Suspense>
