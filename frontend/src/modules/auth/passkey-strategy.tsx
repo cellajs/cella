@@ -11,6 +11,7 @@ import { useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
+import { cn } from '~/utils/cn';
 
 interface PasskeyStrategyProps {
   type: Exclude<PasskeyCredentialProps['type'], 'registration'>;
@@ -42,7 +43,13 @@ export function PasskeyStrategy({ type }: PasskeyStrategyProps) {
 
   return (
     <div data-mode={mode} className="group flex flex-col gap-2">
-      <Button type="button" variant={type === 'mfa' ? 'default' : 'plain'} onClick={() => passkeyAuth()} className="w-full gap-1.5 truncate">
+      {/* The auth backdrop shows through plain's tint, so here the button brings a surface of its own */}
+      <Button
+        type="button"
+        variant={type === 'mfa' ? 'default' : 'plain'}
+        onClick={() => passkeyAuth()}
+        className={cn('w-full gap-1.5 truncate', type !== 'mfa' && 'bg-secondary/60 hover:bg-secondary/80')}
+      >
         <FingerprintPatternIcon />
         <span className="truncate">
           {t('c:sign_in')} {t('c:with').toLowerCase()} {t('c:passkey').toLowerCase()}

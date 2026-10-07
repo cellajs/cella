@@ -24,7 +24,7 @@ export function AuthLayout() {
       data-waited={hasWaited}
       className="group rich-gradient container flex min-h-[90svh] flex-col items-center before:fixed after:fixed sm:min-h-svh"
     >
-      {/* Dividing-colony mark behind the auth card; the module lays it out as the page background and fades it in */}
+      {/* Dividing-colony mark behind the auth card; the module lays it out as the page background and brings it in */}
       <Suspense fallback={null}>
         {/* overscan below 1 zooms in: 0.45 keeps the colony larger than the viewport at every stage, so the window always crops it */}
         {/* slowed further: the 0.45 overscan magnifies motion, so the clock compensates */}

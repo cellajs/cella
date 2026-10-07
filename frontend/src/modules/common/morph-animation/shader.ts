@@ -26,6 +26,7 @@ uniform float uWidth;      /* band half-width */
 uniform float uZoom;       /* view eases back as the colony divides */
 uniform float uGrid;       /* pixel-grid cells across: lower is chunkier */
 uniform int uStamp;        /* grain stamp: 0 square, 1 plus */
+uniform float uEnter;      /* entrance progress 0..1; at 1 the piece is at rest */
 out vec4 outColor;
 
 /* marketing gradient hues (styling/gradients.css) */
@@ -148,15 +149,21 @@ vec3 brandFlow(vec2 p, float time){
 /* Soft-edge pixel renderer: the field quantized to a fine grid. Outside the
    boundary each cell survives with a probability that decays with distance,
    surviving grains shrink, fade individually and lose their hard corners, so
-   the edge dissolves granularly instead of ending at a pixel cliff. */
+   the edge dissolves granularly instead of ending at a pixel cliff.
+   Entrance (condense): the survival falloff K starts wide open, so sparse grains dust
+   the whole frame; as it tightens they wink out from the outside in and the mark
+   precipitates. No grain travels, and at uEnter = 1 every factor is the identity. */
 vec4 pixelLiquid(vec2 q, float time, float N, float K, float shrink, float alphaMul, float flick, float soft){
   vec2 cell = floor(q * N);
   vec2 qq = (cell + 0.5) / N;
   float d = scene(qq, time);
   float h = fract(sin(dot(cell, vec2(127.1, 311.7))) * 43758.5453);
   float h2 = fract(h * 7.13);
+  float ez = uEnter * uEnter * (3.0 - 2.0 * uEnter);
+  K = mix(0.75, K, ez * ez);
   float p = clamp(exp(-(d + 0.01) * K), 0.0, 1.0);
   p *= mix(1.0, 0.6 + 0.4 * sin(time * 1.4 + h * 6.2831), flick * clamp(d * K, 0.0, 1.0));
+  p *= mix(0.10, 1.0, ez);
   float on = step(h, p);
   float grainA = on * mix(1.0, p, soft);
   vec2 f = fract(q * N) - 0.5;
@@ -186,7 +193,7 @@ vec4 pixelLiquid(vec2 q, float time, float N, float K, float shrink, float alpha
   float mx = max(g.r, max(g.g, g.b));
   vec3 vivid = pow(g / max(mx, 1e-3), vec3(3.0)) * 0.85;
   g = mix(g, vivid, rimL * (1.0 - uDark));
-  return vec4(g, grainA * dotM * alphaMul);
+  return vec4(g, grainA * dotM * alphaMul * mix(0.45, 1.0, ez));
 }
 
 void main(){

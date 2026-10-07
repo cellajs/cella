@@ -11,6 +11,8 @@ const MELT = 0.8;
 
 /** Colony choreography: one full 1 -> 2 -> 3 -> 5 -> 3 -> 2 -> 1 pass. */
 const CYCLE_SECONDS = 60;
+/** Entrance length in real seconds, whatever the instance speed: the mark condenses out of a dusted frame. */
+const ENTER_SECONDS = 2.4;
 
 const UNIFORM_NAMES = [
   'uRes',
@@ -29,6 +31,7 @@ const UNIFORM_NAMES = [
   'uZoom',
   'uGrid',
   'uStamp',
+  'uEnter',
 ] as const;
 type UniformName = (typeof UNIFORM_NAMES)[number];
 
@@ -56,6 +59,7 @@ function splitProgress(t: number): [number, number, number, number] {
  * Drives the morph shader on a transparent WebGL2 canvas: one fullscreen pass per
  * frame, no textures and no feedback buffers. The clock advances by `timeScale`,
  * which is how reduced motion works here: everything slows down, nothing freezes.
+ * The first drawn seconds play the entrance once, unless `skipEntrance` ran first.
  * Browsers without WebGL2 get an empty transparent canvas.
  */
 export class MorphRenderer {
@@ -67,6 +71,7 @@ export class MorphRenderer {
   private lastNow = 0;
   private time = Math.random() * 1000;
   private timeScale = 1;
+  private enter = 0;
   private grid = 96;
   private stamp = 0;
   private overscan = 1.2;
@@ -102,6 +107,11 @@ export class MorphRenderer {
 
   setTimeScale(scale: number) {
     this.timeScale = scale;
+  }
+
+  /** Jump to the resting piece: called before `start` the entrance never plays, called during it ends it. */
+  skipEntrance() {
+    this.enter = 1;
   }
 
   /** Pixel-grid density in cells across the canvas; lower is chunkier. */
@@ -220,6 +230,8 @@ export class MorphRenderer {
     if (!gl) return;
     this.fitCanvas(gl);
     this.time += dt * this.timeScale;
+    // Advances on drawn frames only, so an instance mounted off-screen enters when it scrolls into view
+    this.enter = Math.min(1, this.enter + dt / ENTER_SECONDS);
 
     const u = this.uniforms;
     gl.uniform2f(u.uRes, this.canvas.width, this.canvas.height);
@@ -227,6 +239,7 @@ export class MorphRenderer {
     gl.uniform1f(u.uDark, this.dark ? 1 : 0);
     gl.uniform1f(u.uGrid, this.grid);
     gl.uniform1i(u.uStamp, this.stamp);
+    gl.uniform1f(u.uEnter, this.enter);
     if (this.variant !== 'colony') gl.uniform1f(u.uZoom, this.overscan);
 
     if (this.variant === 'colony') {
