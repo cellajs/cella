@@ -15,7 +15,6 @@ import { LegalNotice } from '~/modules/auth/legal-notice';
 import type { TokenData } from '~/modules/auth/types';
 import { invitationResumePath } from '~/modules/auth/use-post-auth-redirect';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
@@ -59,7 +58,6 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
       setMagicLinkMode('signup');
       setStep('magicLinkSent', form.getValues('email') || email);
     },
-    onError: () => toaster.error(t('error:reported_try_later')),
   });
 
   const onSubmit = () => sendMagic();

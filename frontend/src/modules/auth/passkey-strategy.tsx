@@ -37,7 +37,8 @@ export function PasskeyStrategy({ type }: PasskeyStrategyProps) {
       if (type === 'mfa' && error instanceof ApiError) {
         navigate({ to: '/error', search: { error: error.type, severity: error.severity } });
       }
-      if (type === 'authentication') toaster.error(t('error:passkey_verification_failed'));
+      // A refusal by the server is toasted by the global handler; the browser's own failure (a cancelled prompt) is not
+      if (type === 'authentication' && !(error instanceof ApiError)) toaster.error(t('error:passkey_verification_failed'));
     },
   });
 

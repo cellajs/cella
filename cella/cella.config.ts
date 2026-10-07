@@ -46,6 +46,9 @@ export default defineConfig({
       'frontend/src/modules/auth/legal/legal-config.ts',
       'locales/en/app.json',
       'locales/nl/app.json',
+      // The app's own error types; the template ships both files empty
+      'locales/en/appError.json',
+      'locales/nl/appError.json',
       '.github/release-please-manifest.json',
       // Accessibility results are about one product: each app's audit (`pnpm a11y`) writes its own ledger.
       'json/accessibility-conformance.json',
