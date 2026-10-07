@@ -199,6 +199,7 @@ Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control objec
 
 - Use `git` and `gh` CLI. Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`.
 - PRs: concise description, linked issues, passing checks, scoped changes.
+- **PR size**: a PR that adds more lines than it removes ends its description with a `## Size` section. It holds the table that `pnpm cella stats --since origin/main --md` prints, then one line per kind that grew (source, tests, stories, generated, json, docs) saying what those lines are for; for source, also how much of it is comments. Lines that have no reason are the first to cut.
 - Breaking OpenAPI diffs: [Cache-bust](./SCHEMA_EVOLUTION.md#cache-bust-interim).
 
 ## Commands
