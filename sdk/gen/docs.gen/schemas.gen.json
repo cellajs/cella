@@ -1610,14 +1610,14 @@
       "expiresAt": null,
       "revokedAt": null,
       "revokedBy": null,
+      "createdAt": "2024-11-20T15:58:25.416Z",
       "createdBy": {
         "id": "9656def5-1db7-49f5-8767-34aa5a1f68f2",
         "name": "Jace Kozey",
         "slug": "jace_kozey68",
         "thumbnailUrl": null,
         "entityType": "user"
-      },
-      "createdAt": "2024-08-10T14:28:10.856Z"
+      }
     }
   },
   {

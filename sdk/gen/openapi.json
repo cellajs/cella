@@ -2850,14 +2850,14 @@
           "expiresAt": null,
           "revokedAt": null,
           "revokedBy": null,
+          "createdAt": "2024-11-20T15:58:25.416Z",
           "createdBy": {
             "id": "9656def5-1db7-49f5-8767-34aa5a1f68f2",
             "name": "Jace Kozey",
             "slug": "jace_kozey68",
             "thumbnailUrl": null,
             "entityType": "user"
-          },
-          "createdAt": "2024-08-10T14:28:10.856Z"
+          }
         },
         "x-tags": ["data", "service-accounts", "cella"]
       }
@@ -13569,6 +13569,7 @@
                     "expiresAt": null,
                     "revokedAt": null,
                     "revokedBy": null,
+                    "createdAt": "2024-09-23T23:15:48.299Z",
                     "createdBy": {
                       "id": "e2d4ee31-6b4c-470d-b649-81d03f61d16d",
                       "name": "Stewart VonRueden",
@@ -13576,7 +13577,6 @@
                       "thumbnailUrl": null,
                       "entityType": "user"
                     },
-                    "createdAt": "2024-03-12T20:28:57.020Z",
                     "secret": "cella-development_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123452H6a53"
                   }
                 },
@@ -13614,6 +13614,7 @@
                         "expiresAt": null,
                         "revokedAt": null,
                         "revokedBy": null,
+                        "createdAt": "2024-09-23T23:15:48.299Z",
                         "createdBy": {
                           "id": "e2d4ee31-6b4c-470d-b649-81d03f61d16d",
                           "name": "Stewart VonRueden",
@@ -13621,7 +13622,6 @@
                           "thumbnailUrl": null,
                           "entityType": "user"
                         },
-                        "createdAt": "2024-03-05T12:40:12.093Z",
                         "secret": "cella-development_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123452H6a53"
                       },
                       "x-tags": ["data", "service-accounts", "cella"]
@@ -13979,14 +13979,14 @@
                       "expiresAt": null,
                       "revokedAt": null,
                       "revokedBy": null,
+                      "createdAt": "2024-11-20T15:58:25.416Z",
                       "createdBy": {
                         "id": "9656def5-1db7-49f5-8767-34aa5a1f68f2",
                         "name": "Jace Kozey",
                         "slug": "jace_kozey68",
                         "thumbnailUrl": null,
                         "entityType": "user"
-                      },
-                      "createdAt": "2024-02-15T02:33:41.980Z"
+                      }
                     }
                   ]
                 },
@@ -14124,6 +14124,7 @@
                   "expiresAt": null,
                   "revokedAt": null,
                   "revokedBy": null,
+                  "createdAt": "2024-09-23T23:15:48.299Z",
                   "createdBy": {
                     "id": "e2d4ee31-6b4c-470d-b649-81d03f61d16d",
                     "name": "Stewart VonRueden",
@@ -14131,7 +14132,6 @@
                     "thumbnailUrl": null,
                     "entityType": "user"
                   },
-                  "createdAt": "2024-03-07T05:32:20.889Z",
                   "secret": "cella-development_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123452H6a53"
                 },
                 "schema": {
@@ -14162,6 +14162,7 @@
                     "expiresAt": null,
                     "revokedAt": null,
                     "revokedBy": null,
+                    "createdAt": "2024-09-23T23:15:48.299Z",
                     "createdBy": {
                       "id": "e2d4ee31-6b4c-470d-b649-81d03f61d16d",
                       "name": "Stewart VonRueden",
@@ -14169,7 +14170,6 @@
                       "thumbnailUrl": null,
                       "entityType": "user"
                     },
-                    "createdAt": "2024-03-05T12:40:12.093Z",
                     "secret": "cella-development_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123452H6a53"
                   },
                   "x-tags": ["data", "service-accounts", "cella"]
@@ -14266,14 +14266,14 @@
                   "expiresAt": null,
                   "revokedAt": null,
                   "revokedBy": null,
+                  "createdAt": "2024-11-20T15:58:25.416Z",
                   "createdBy": {
                     "id": "9656def5-1db7-49f5-8767-34aa5a1f68f2",
                     "name": "Jace Kozey",
                     "slug": "jace_kozey68",
                     "thumbnailUrl": null,
                     "entityType": "user"
-                  },
-                  "createdAt": "2024-07-02T22:53:03.106Z"
+                  }
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiKey"

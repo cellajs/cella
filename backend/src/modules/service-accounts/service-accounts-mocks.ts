@@ -36,8 +36,8 @@ export const mockServiceAccountResponse = (key = 'serviceAccount:default'): Serv
 const exampleBody = `${appConfig.slug}_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz012345`;
 const exampleSecret = `${exampleBody}${checksumOf(exampleBody)}`;
 
-export const mockApiKeyResponse = (key = 'apiKey:default'): ApiKeyWithCreator =>
-  withFakerSeed(key, () => ({
+export const mockApiKeyResponse = (key = 'apiKey:default'): ApiKeyWithCreator => {
+  const apiKey = withFakerSeed<Omit<ApiKeyWithCreator, 'createdBy'>>(key, () => ({
     id: mockUuid(),
     actorId: mockUuid(),
     tenantId: mockTenantId(),
@@ -48,9 +48,11 @@ export const mockApiKeyResponse = (key = 'apiKey:default'): ApiKeyWithCreator =>
     expiresAt: null,
     revokedAt: null,
     revokedBy: null,
-    createdBy: mockUserMinimalBase(`${key}:created-by`),
     createdAt: mockPastIsoDate(),
   }));
+  // Outside the seed above: a seeded mock ends by unseeding the generator, so a value drawn after it differs per run.
+  return { ...apiKey, createdBy: mockUserMinimalBase(`${key}:created-by`) };
+};
 
 export const mockCreatedApiKeyResponse = (key = 'createdApiKey:default') => ({ ...mockApiKeyResponse(key), secret: exampleSecret });
 
