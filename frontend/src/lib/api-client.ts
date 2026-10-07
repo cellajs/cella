@@ -1,7 +1,7 @@
 import type { CreateClientConfig } from 'sdk/client.gen';
 import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
-import { ApiError, clientConfig } from '~/lib/api';
+import { ApiError, type ApiErrorInit, apiErrorFromStatus, clientConfig } from '~/lib/api';
 import { checkConnectivity } from '~/query/offline/connectivity';
 
 /**
@@ -39,7 +39,8 @@ export const createClientConfig: CreateClientConfig = (baseConfig) => ({
 
     if (response.ok) return response;
 
-    const json = await response.json();
-    throw new ApiError(json);
+    // A proxy answers in its own format, such as a 502 page: the status is then all there is to go on.
+    const body: ApiErrorInit | null = await response.json().catch(() => null);
+    throw body?.type ? new ApiError(body) : apiErrorFromStatus(response.status);
   },
 });

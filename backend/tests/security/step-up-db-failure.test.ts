@@ -23,8 +23,8 @@ vi.mock('#/modules/auth/totps/operations/verify-totp', async (importOriginal) =>
 
 /** What the pool throws when it hands out no connection in time, and a deadlock as the driver reports it. */
 const failures = [
-  { name: 'an exhausted pool', error: () => new Error('timeout exceeded when trying to connect'), status: 503 },
-  { name: 'a deadlock', error: () => Object.assign(new Error('deadlock detected'), { code: '40P01' }), status: 409 },
+  { name: 'an exhausted pool', error: () => new Error('timeout exceeded when trying to connect'), status: 503, type: 'service_unavailable' },
+  { name: 'a deadlock', error: () => Object.assign(new Error('deadlock detected'), { code: '40P01' }), status: 409, type: 'write_conflict' },
 ];
 
 /**
@@ -39,13 +39,13 @@ describe('a database failure while a second factor is checked', async () => {
     await clearSecurityTestData();
   });
 
-  it.each(failures)('answers a step-up with $status on $name', async ({ error, status }) => {
+  it.each(failures)('answers a step-up with $status on $name', async ({ error, status, type }) => {
     const user = await createTotpUser(`step-up-${nanoid(8)}@security-test.com`);
     const session = await insertStaleSession(user);
 
     nextCheck.failure = error();
     const failed = await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers });
-    await expectRefusal(failed, status, 'server_error');
+    await expectRefusal(failed, status, type);
     expect((await sessionRow(session.id)).steppedUpAt).toBeNull();
 
     // Positive control: the same proof steps the session up once the database answers.

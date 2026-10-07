@@ -1,6 +1,7 @@
 import type { ToastManagerEvent } from '@base-ui/react/toast';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { toaster, toastManager } from '~/modules/common/toaster/toaster';
+import { useUIStore } from '~/modules/ui/ui-store';
 
 // Stands in for the Toaster: the Base UI provider subscribes the same way.
 let events: ToastManagerEvent[] = [];
@@ -19,6 +20,7 @@ describe('toaster', () => {
     unsubscribe?.();
     unsubscribe = undefined;
     toaster.close();
+    useUIStore.setState({ keepMessages: false });
   });
 
   it('gives string messages a stable id so repeats refresh one toast', () => {
@@ -42,6 +44,28 @@ describe('toaster', () => {
       { title: 'Delete denied', type: 'info', description: 'Attachment kept', timeout: 8_000 },
       { title: 'Upload failed', type: 'error', priority: 'high' },
     ]);
+  });
+
+  it('closes a toast by itself, later when it is an error or carries a description', () => {
+    subscribe();
+
+    toaster.success('Saved');
+    toaster.warning('Offline');
+    toaster.error('Upload failed');
+    toaster.warning('Too many requests', { description: 'Please try again in 4 minutes' });
+
+    expect(events.map((event) => event.options.timeout)).toEqual([4_000, 4_000, 10_000, 10_000]);
+  });
+
+  it('keeps a toast open when the call asks for it or the reader keeps messages open', () => {
+    subscribe();
+
+    toaster('New version', { timeout: 0 });
+    useUIStore.setState({ keepMessages: true });
+    toaster.success('Saved');
+    toaster.error('Upload failed', { timeout: 8_000 });
+
+    expect(events.map((event) => event.options.timeout)).toEqual([0, 0, 0]);
   });
 
   it('keeps explicit ids and leaves the id of a non-string message to Base UI', () => {

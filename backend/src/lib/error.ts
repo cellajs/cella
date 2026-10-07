@@ -29,9 +29,9 @@ const PG_ERROR_MAP: Record<string, { status: number; type: ErrorKey; message: st
   // RLS policy violations (insufficient_privilege)
   '42501': { status: 403, type: 'forbidden', message: 'Access denied by security policy' },
   // Serialization failure (concurrent update)
-  '40001': { status: 409, type: 'server_error', message: 'Concurrent update conflict, please retry' },
+  '40001': { status: 409, type: 'write_conflict', message: 'Concurrent update conflict, please retry' },
   // Deadlock detected
-  '40P01': { status: 409, type: 'server_error', message: 'Operation conflict, please retry' },
+  '40P01': { status: 409, type: 'write_conflict', message: 'Operation conflict, please retry' },
 };
 
 /** Named database constraints whose refusal is a rule the user can act on, mapped ahead of the generic code map. */
@@ -62,6 +62,9 @@ function isPoolTimeoutError(err: unknown): boolean {
   const msg = err.message;
   return msg.includes('timeout exceeded when trying to connect') || msg.includes('Cannot use a pool after calling end');
 }
+
+/** A Hono `HTTPException` carries a status and no error key: below 500 it refuses the request itself. */
+const httpExceptionType = (status: number): ErrorKey => (status >= 500 ? 'server_error' : status === 403 ? 'forbidden' : 'invalid_request');
 
 /** What a client may see of a thrown value: status, type and a message that never carries server internals. */
 export interface ClientError {
@@ -109,7 +112,7 @@ export function toClientError(
       message: 'Service temporarily unavailable, please retry',
       name: 'ApiError',
       status: 503,
-      type: 'server_error',
+      type: 'service_unavailable',
       severity: 'error',
       willRedirect: false,
     };
@@ -122,7 +125,7 @@ export function toClientError(
       message: hideIfServerError(err.status, err.message || 'Request rejected'),
       name: 'ApiError',
       status: err.status,
-      type: err.status === 403 ? 'forbidden' : 'server_error',
+      type: httpExceptionType(err.status),
       severity: 'warn',
       willRedirect: false,
     };

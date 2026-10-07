@@ -6,13 +6,14 @@ import { useTranslation } from 'react-i18next';
 import { ApiError } from '~/lib/api';
 import { AppFooter } from '~/modules/common/app/app-footer';
 import { Dialoger } from '~/modules/common/dialoger/provider';
-import { type ErrorNoticeError, getErrorInfo, handleAskForHelp } from '~/modules/common/error-helpers';
+import { handleAskForHelp } from '~/modules/common/error-helpers';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 import type { BoundaryType } from '~/routes/types';
 import { cn } from '~/utils/cn';
+import { type ErrorNoticeError, getErrorInfo } from '~/utils/get-error-info';
 
-export type { ErrorNoticeError } from '~/modules/common/error-helpers';
+export type { ErrorNoticeError } from '~/utils/get-error-info';
 
 interface ErrorNoticeProps {
   boundary: BoundaryType;
