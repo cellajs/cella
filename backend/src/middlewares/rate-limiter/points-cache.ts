@@ -5,7 +5,8 @@ interface PointsEntry {
   consumed: number;
   /** Portion of `consumed` that has been written to the DB. */
   flushed: number;
-  windowStart: number;
+  /** When the hour this entry counts ends. The key's database row ends with it: see {@link windowSecondsLeft}. */
+  windowEnd: number;
 }
 
 /** Fraction of budget below which requests skip the DB entirely. */
@@ -26,14 +27,14 @@ export function tryFastConsume(key: string, cost: number, budget: number): 'allo
   const now = Date.now();
   const entry = cache.get(key);
 
-  const isFresh = !entry || now - entry.windowStart >= WINDOW_MS;
+  const isFresh = !entry || now >= entry.windowEnd;
   const priorConsumed = isFresh ? 0 : entry.consumed;
 
   // At or above the threshold goes to the DB, including a first request whose own cost already exceeds it
   if (priorConsumed + cost >= budget * FAST_PATH_THRESHOLD) return 'check-db';
 
   if (isFresh) {
-    cache.set(key, { consumed: cost, flushed: 0, windowStart: now });
+    cache.set(key, { consumed: cost, flushed: 0, windowEnd: now + WINDOW_MS });
   } else {
     entry.consumed = priorConsumed + cost;
     cache.set(key, entry);
@@ -59,12 +60,29 @@ export function restoreDebt(key: string, debt: number): void {
   cache.set(key, entry);
 }
 
-/** Called after a DB consume, accepted or rejected. The DB count is authoritative across all processes. */
-export function syncFromDb(key: string, consumedPoints: number): void {
+/**
+ * Seconds left in the hour the key counts in process, the whole hour for a key with no live count. The key's database
+ * row opens with this window, so the row and the in-process count restart together: a row with an hour of its own
+ * would still hold the spent budget when the in-process count restarts, or lose it while that count goes on.
+ */
+export function windowSecondsLeft(key: string): number {
   const now = Date.now();
   const entry = cache.get(key);
-  const windowStart = entry ? entry.windowStart : now;
-  cache.set(key, { consumed: consumedPoints, flushed: consumedPoints, windowStart });
+  return entry && now < entry.windowEnd ? Math.ceil((entry.windowEnd - now) / 1000) : WINDOW_MS / 1000;
+}
+
+/**
+ * Called after a DB consume, accepted or rejected. The DB count is authoritative across all processes, and so is the
+ * time `msBeforeNext` its row or the block on it has left: the in-process hour ends with it.
+ */
+export function syncFromDb(key: string, consumedPoints: number, msBeforeNext: number): void {
+  const now = Date.now();
+  const entry = cache.get(key);
+  // A store that reports no time left leaves the entry its own hour
+  const ownEnd = entry && now < entry.windowEnd ? entry.windowEnd : now + WINDOW_MS;
+  const windowEnd = msBeforeNext > 0 ? now + msBeforeNext : ownEnd;
+  // A block longer than the hour keeps its entry until it ends
+  cache.set(key, { consumed: consumedPoints, flushed: consumedPoints, windowEnd }, Math.max(WINDOW_MS, Math.ceil(windowEnd - now)));
 }
 
 export function clearCache(): void {

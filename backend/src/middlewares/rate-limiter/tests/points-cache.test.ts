@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { clearCache, restoreDebt, syncFromDb, takeDebt, tryFastConsume } from '#/middlewares/rate-limiter/points-cache';
+import { clearCache, restoreDebt, syncFromDb, takeDebt, tryFastConsume, windowSecondsLeft } from '#/middlewares/rate-limiter/points-cache';
+
+const HOUR_MS = 60 * 60 * 1000;
 
 describe('points-cache', () => {
   beforeEach(() => {
@@ -110,7 +112,7 @@ describe('points-cache', () => {
       }
 
       // DB path settled everything: count now includes our debt (and other processes).
-      syncFromDb('tenant:user1', 900);
+      syncFromDb('tenant:user1', 900, HOUR_MS);
 
       expect(takeDebt('tenant:user1')).toBe(0);
       // The local counter now reflects the DB, so the next request is over threshold
@@ -126,15 +128,78 @@ describe('points-cache', () => {
       expect(debt).toBe(799);
 
       // The DB trip consumes cost + debt, so the count it reports includes everything.
-      syncFromDb('tenant:user1', debt + 1);
+      syncFromDb('tenant:user1', debt + 1, HOUR_MS);
 
       expect(tryFastConsume('tenant:user1', 1, 1000)).toBe('check-db');
     });
 
     it('should create entry for unknown key', () => {
-      syncFromDb('tenant:new', 500);
+      syncFromDb('tenant:new', 500, HOUR_MS);
       // 500 + 1 = 501 < 800 threshold → allow
       expect(tryFastConsume('tenant:new', 1, 1000)).toBe('allow');
+    });
+  });
+
+  describe('the window shared with the database row', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should give a key with no count the whole hour', () => {
+      expect(windowSecondsLeft('tenant:nobody')).toBe(60 * 60);
+    });
+
+    it('should give a row the time left in the hour the key counts in process', () => {
+      tryFastConsume('tenant:user1', 1, 1000);
+      vi.advanceTimersByTime(50 * 60 * 1000);
+      // Later fast consumes leave the hour where the first one started it.
+      tryFastConsume('tenant:user1', 1, 1000);
+
+      expect(windowSecondsLeft('tenant:user1')).toBe(10 * 60);
+    });
+
+    it('should give the whole hour again once the in-process hour ended', () => {
+      tryFastConsume('tenant:user1', 1, 1000);
+      vi.advanceTimersByTime(HOUR_MS);
+
+      expect(windowSecondsLeft('tenant:user1')).toBe(60 * 60);
+    });
+
+    it("should keep a spent count until the row's time is up, past the hour the key started in process", () => {
+      tryFastConsume('tenant:user1', 1, 1000);
+      vi.advanceTimersByTime(50 * 60 * 1000);
+      // A row another process opened later has 40 minutes left, and its budget is spent.
+      syncFromDb('tenant:user1', 1000, 40 * 60 * 1000);
+      expect(windowSecondsLeft('tenant:user1')).toBe(40 * 60);
+
+      // Past the hour that began with the first fast consume, the row is still live.
+      vi.advanceTimersByTime(30 * 60 * 1000);
+      expect(tryFastConsume('tenant:user1', 1, 1000)).toBe('check-db');
+
+      vi.advanceTimersByTime(10 * 60 * 1000);
+      expect(tryFastConsume('tenant:user1', 1, 1000)).toBe('allow');
+    });
+
+    it('should restart the count when the block on a row ends, before the hour does', () => {
+      tryFastConsume('tenant:user1', 1, 1000);
+      // The budget is spent and the store blocks the key for five minutes.
+      syncFromDb('tenant:user1', 1001, 5 * 60 * 1000);
+      expect(tryFastConsume('tenant:user1', 1, 1000)).toBe('check-db');
+
+      vi.advanceTimersByTime(5 * 60 * 1000);
+      expect(tryFastConsume('tenant:user1', 1, 1000)).toBe('allow');
+    });
+
+    it('should leave the key its own hour when the store reports no time left', () => {
+      tryFastConsume('tenant:user1', 1, 1000);
+      vi.advanceTimersByTime(50 * 60 * 1000);
+      syncFromDb('tenant:user1', 900, -1);
+
+      expect(windowSecondsLeft('tenant:user1')).toBe(10 * 60);
     });
   });
 });

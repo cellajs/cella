@@ -2,7 +2,7 @@ import { RateLimiterRes } from 'rate-limiter-flexible';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { extractIdentifiers, getRateLimiterInstance, openBucket, rateLimitError, subjectSegment } from '#/middlewares/rate-limiter/helpers';
-import { restoreDebt, syncFromDb, takeDebt, tryFastConsume } from '#/middlewares/rate-limiter/points-cache';
+import { restoreDebt, syncFromDb, takeDebt, tryFastConsume, windowSecondsLeft } from '#/middlewares/rate-limiter/points-cache';
 import { reserveTiers, settleTiers, slowTier } from '#/middlewares/rate-limiter/tiers';
 import type { Outcome, RateLimiterHandler, RateLimiterOpts, RateLimitKeyPart, RateLimitMode, Tier } from '#/middlewares/rate-limiter/types';
 import { log } from '#/utils/logger';
@@ -95,15 +95,17 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
         if (limitState !== null && limitState.consumedPoints > effectiveBudget) {
           return rateLimitError(ctx, limitState);
         }
+        // A row opens with the time left in the hour the key counts in process, so both counts restart together.
+        const windowSeconds = fastPath ? windowSecondsLeft(fastKey) : config.duration;
         // No live row yet: create it first, or the first requests of a parallel burst each start the count at one.
-        if (limitState === null) await openBucketSafely(store, rateLimitKey, config.duration);
+        if (limitState === null) await openBucketSafely(store, rateLimitKey, windowSeconds);
 
         // Settle unflushed fast-path consumes with this request's cost, or `syncFromDb` resets the counter to an undercount
         const debt = fastPath ? takeDebt(fastKey) : 0;
 
         try {
-          const consumeResult = await store.consume(rateLimitKey, consumePoints + debt);
-          if (fastPath) syncFromDb(fastKey, consumeResult.consumedPoints);
+          const consumeResult = await store.consume(rateLimitKey, consumePoints + debt, { customDuration: windowSeconds });
+          if (fastPath) syncFromDb(fastKey, consumeResult.consumedPoints, consumeResult.msBeforeNext);
           // The library only rejects at the static ceiling; the smaller per-tenant budget is enforced here
           if (consumeResult.consumedPoints > effectiveBudget) {
             return rateLimitError(ctx, consumeResult);
@@ -111,7 +113,7 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
         } catch (rlRejected) {
           if (rlRejected instanceof RateLimiterRes) {
             // A refusal proves the bucket spent, and one from the store's in-memory block reports no count of its own
-            if (fastPath) syncFromDb(fastKey, Math.max(rlRejected.consumedPoints, config.points));
+            if (fastPath) syncFromDb(fastKey, Math.max(rlRejected.consumedPoints, config.points), rlRejected.msBeforeNext);
             return rateLimitError(ctx, rlRejected);
           }
           // DB write failed: return the claimed debt so it is settled on a later request.
