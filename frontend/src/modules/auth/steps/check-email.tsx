@@ -9,6 +9,7 @@ import { appConfig, isStrategyEnabled } from 'shared';
 import type { z } from 'zod';
 import type { ApiError } from '~/lib/api';
 import { useAuthStore } from '~/modules/auth/auth-store';
+import { SignUpDisabled } from '~/modules/auth/sign-up-disabled';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
@@ -51,6 +52,10 @@ export function CheckEmailStep() {
     <Form {...form}>
       <h1 className="mt-4 pb-2 text-center text-2xl">{title}</h1>
       {inviteOtherAccount && <p className="-mt-2 text-center font-light">{t('c:invite_sign_in.text')}</p>}
+      {/* An invitation in hand needs no sign-up, so its own line above stands alone */}
+      {!appConfig.has.selfRegistration && !inviteOtherAccount && (
+        <SignUpDisabled className="-mt-2" onRequest={() => setStep('waitlist', form.getValues('email'))} />
+      )}
 
       {emailEnabled && (
         <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">

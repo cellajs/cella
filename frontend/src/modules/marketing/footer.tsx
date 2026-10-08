@@ -14,6 +14,9 @@ const currentYear = new Date().getFullYear();
 const companyName = appConfig.company.name;
 const productName = appConfig.name;
 
+// The sign-up link only shows where visitors can sign up by themselves
+const isShown = (link: { title: string }) => link.title !== 'c:sign_up' || appConfig.has.selfRegistration;
+
 function FooterLinks() {
   const { t } = useTranslation();
 
@@ -25,7 +28,7 @@ function FooterLinks() {
             <div className="font-heading font-semibold text-sm text-white/60 tracking-wider">{t(section.title as TKey)}</div>
 
             <ul className="mt-4 text-sm text-white/90">
-              {section.links.map((link) => {
+              {section.links.filter(isShown).map((link) => {
                 const target = isCDNUrl(link.href) ? '_blank' : '_self';
                 return (
                   <li key={link.title} className="mt-4">

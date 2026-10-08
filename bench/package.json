@@ -12,8 +12,8 @@
     "db:teardown": "tsx src/data-setup.ts --teardown"
   },
   "dependencies": {
-    "@inquirer/prompts": "^8.7.2",
-    "nanoid": "^6.0.1",
+    "@inquirer/prompts": "^8.7.3",
+    "nanoid": "^6.0.2",
     "ora": "^9.4.1",
     "pg": "^8.23.1",
     "picocolors": "^1.1.1",
@@ -21,7 +21,7 @@
     "uuidv7": "^1.2.1"
   },
   "devDependencies": {
-    "@types/node": "^26.6.3",
+    "@types/node": "^26.6.4",
     "@types/pg": "^8.23.1",
     "@types/ws": "^8.18.2",
     "artillery": "^2.0.34",

@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
-    "@types/node": "^26.6.3",
+    "@types/node": "^26.6.4",
     "cross-env": "^10.1.0",
     "playwright": "^1.63.0",
     "tsx": "^4.23.15",
