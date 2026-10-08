@@ -4,9 +4,9 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
-import { getApiKeyCache, setApiKeyCache } from '#/middlewares/guard/api-key-cache';
+import { loadApiKeyCache } from '#/middlewares/guard/api-key-cache';
 import { loadMemberships } from '#/middlewares/guard/membership-cache';
-import { getTokenGrantCache, setTokenGrantCache, type TokenGrantEntry } from '#/middlewares/guard/token-grant-cache';
+import { loadTokenGrantCache, type TokenGrantEntry } from '#/middlewares/guard/token-grant-cache';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
 import { updateLastSeenAt } from '#/middlewares/update-last-seen';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
@@ -77,18 +77,16 @@ async function resolveUserToken(token: UserToken): Promise<{ user: UserModel; bi
   if (!live) throw unauthorized('grant_revoked');
 
   const { bindingsVersion } = live;
-  const entry = getTokenGrantCache(token, bindingsVersion) ?? (await loadTokenGrant(token, bindingsVersion));
+  const entry = await loadTokenGrantCache(token, bindingsVersion, () => readTokenGrant(token));
   if (entry.refusal !== null) throw unauthorized(entry.refusal);
   return { user: entry.user, bindingsVersion };
 }
 
-/** The grant policy's verdict on a live grant, with the user row, cached for the token's next uses. */
-async function loadTokenGrant(token: UserToken, bindingsVersion: string): Promise<TokenGrantEntry> {
+/** The grant policy's verdict on a live grant, with the user row. */
+async function readTokenGrant(token: UserToken): Promise<TokenGrantEntry> {
   const refusal = await grantRefusal({ userId: token.actorId, clientId: token.clientId, tenantId: token.tenantId });
   const [user] = refusal ? [] : await baseDb.select().from(usersTable).where(eq(usersTable.id, token.actorId));
-  const entry: TokenGrantEntry = user ? { refusal: null, user } : { refusal: refusal ?? 'unknown_user' };
-  setTokenGrantCache(token, bindingsVersion, entry);
-  return entry;
+  return user ? { refusal: null, user } : { refusal: refusal ?? 'unknown_user' };
 }
 
 /**
@@ -105,13 +103,7 @@ async function resolveServiceToken(token: Extract<VerifiedAccessToken, { kind: '
 }
 
 /** The key and its account in one read, cached by hash; a revoke, roll, or disable invalidates the account's keys. */
-async function resolveApiKey(hash: string) {
-  const cached = getApiKeyCache(hash);
-  if (cached) return cached;
-  const found = await findApiKeyWithAccount({ var: { db: baseDb } }, { key: { hash } });
-  if (found) setApiKeyCache(hash, found);
-  return found;
-}
+const resolveApiKey = (hash: string) => loadApiKeyCache(hash, () => findApiKeyWithAccount({ var: { db: baseDb } }, { key: { hash } }));
 
 /**
  * Authenticates a machine caller by API key or access token and sets the actor: a secret API key runs as its service account; a token from

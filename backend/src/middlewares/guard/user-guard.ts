@@ -7,8 +7,8 @@ import { loadMemberships } from './membership-cache';
 
 /**
  * Authenticates the session (an impersonation only on top of its admin's session) and sets user, session facts, the
- * admin behind an impersonation, memberships and base db context: the session is read per request, the memberships
- * come from the cache at its bindings version.
+ * admin behind an impersonation, memberships and base db context: the session comes from the session cache or one
+ * read shared by the requests presenting it, the memberships from the cache at its bindings version.
  */
 export const userGuard = xMiddleware(
   {
