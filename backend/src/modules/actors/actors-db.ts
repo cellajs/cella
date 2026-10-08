@@ -20,8 +20,8 @@ export const actorsTable = snakeCase.table('actors', {
   /** A new random value on every write to the user's memberships (`db/membership-rules.ts`); keys the membership cache. */
   bindingsVersion: uuid().notNull().defaultRandom(),
   /**
-   * A user's last authenticated GET, or the last request a service account's API key or token authenticated; written
-   * at most every five minutes (`middlewares/update-last-seen.ts`).
+   * A user's last authenticated GET on a session of their own (never an impersonation), or the last request a service
+   * account's API key or token authenticated; written at most every five minutes (`middlewares/update-last-seen.ts`).
    */
   lastSeenAt: timestamp({ mode: 'string' }),
   /** The user's last completed sign-in; null until the first, which picks the welcome redirect and skips the new-device notice. */

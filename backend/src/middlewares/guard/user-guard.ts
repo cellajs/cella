@@ -41,7 +41,8 @@ export const userGuard = xMiddleware(
       connectionId: session.connectionId,
     });
 
-    if (ctx.req.method === 'GET') updateLastSeenAt(user.id);
+    // An impersonation's requests are its admin's: only a session of the user's own marks the user as seen.
+    if (ctx.req.method === 'GET' && !impersonator) updateLastSeenAt(user.id);
 
     await next();
   },
