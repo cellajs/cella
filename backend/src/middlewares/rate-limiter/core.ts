@@ -110,7 +110,8 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
           }
         } catch (rlRejected) {
           if (rlRejected instanceof RateLimiterRes) {
-            if (fastPath) syncFromDb(fastKey, rlRejected.consumedPoints);
+            // A refusal proves the bucket spent, and one from the store's in-memory block reports no count of its own
+            if (fastPath) syncFromDb(fastKey, Math.max(rlRejected.consumedPoints, config.points));
             return rateLimitError(ctx, rlRejected);
           }
           // DB write failed: return the claimed debt so it is settled on a later request.

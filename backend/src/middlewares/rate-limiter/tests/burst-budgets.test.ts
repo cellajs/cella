@@ -4,7 +4,7 @@ import { nanoid } from 'nanoid';
 import { describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
 import { getAdminDb } from '#/db/db';
-import type { RateLimitMode } from '#/middlewares/rate-limiter/types';
+import type { RateLimiterOpts, RateLimitMode } from '#/middlewares/rate-limiter/types';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 
 // Undo the setup.ts mock: these tests drive the real middleware against the real database store.
@@ -23,8 +23,8 @@ type Answer = 200 | 204 | 302 | 400 | 401;
  * A route behind a fresh limiter whose handler counts its runs and answers with `status`, or 401 at once for a request
  * sent with `failFast`. While held, a request stays in the handler until `release`.
  */
-function guardedRoute(mode: RateLimitMode, status: Answer, limits: typeof budget = budget) {
-  const limiter = rateLimiter(mode, `burst_${nanoid(8)}`, ['ip'], { limits });
+function guardedRoute(mode: RateLimitMode, status: Answer, limits: typeof budget = budget, opts: Pick<RateLimiterOpts, 'getPointsBudget'> = {}) {
+  const limiter = rateLimiter(mode, `burst_${nanoid(8)}`, ['ip'], { limits, ...opts });
   const app = new Hono<Env>();
   app.onError(appErrorHandler);
   let reached = 0;
@@ -187,6 +187,24 @@ describe('send budgets under a parallel burst', () => {
 
     expect(statuses).toEqual(Array(15).fill(401));
     expect((await bucketOf(failing.limiter, ip))?.points ?? 0).toBe(0);
+  });
+});
+
+/**
+ * A limiter with a tenant budget counts in process while a key is under 80% of it and in the database past that. The
+ * static ceiling must hold across both, for every request sent after the bucket is spent.
+ */
+describe('a points budget at the static ceiling', () => {
+  it('must not accept requests past the static ceiling via the in-process counter', async () => {
+    // The points limiter's shape, scaled down: a tenant budget far above the ceiling, and no block past the window.
+    const route = guardedRoute('limit', 200, { points: 10, duration: 60 * 60, blockDuration: 0 }, { getPointsBudget: () => 5000 });
+    const ip = randomIp();
+
+    const statuses: number[] = [];
+    for (let attempt = 0; attempt < 25; attempt++) statuses.push((await route.attempt(ip)).status);
+
+    expect(statuses).toEqual([...Array(10).fill(200), ...Array(15).fill(429)]);
+    expect(route.reached()).toBe(10);
   });
 });
 
