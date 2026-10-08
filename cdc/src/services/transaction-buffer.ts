@@ -17,6 +17,9 @@ for (const { embeddedProduct, hostProduct } of appConfig.productEmbeddings) {
 
 const { transactionTimeoutMs } = RESOURCE_LIMITS.buffers;
 
+// PostgreSQL epoch: 2000-01-01T00:00:00Z in Unix ms
+const PG_EPOCH_MS = 946684800000;
+
 /**
  * Buffers CDC events per transaction and suppresses cascaded deletes as they arrive. Tracking
  * deleted channel ids bounds memory to surviving events regardless of cascade size; events outside
@@ -24,6 +27,11 @@ const { transactionTimeoutMs } = RESOURCE_LIMITS.buffers;
  */
 export class TransactionBuffer {
   private activeXid: number | null = null;
+  /**
+   * When the transaction being buffered committed. Its activities take this as `createdAt`: the activities key is
+   * (id, createdAt), so an event delivered twice has to carry the same time both times to be recorded once.
+   */
+  private commitTime: string | null = null;
   private pendingEvents: PendingEvent[] = [];
   private timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
@@ -51,6 +59,7 @@ export class TransactionBuffer {
     }
 
     this.activeXid = msg.xid;
+    this.commitTime = msg.commitTime ? new Date(Number(msg.commitTime.valueOf() / 1000n) + PG_EPOCH_MS).toISOString() : null;
     this.pendingEvents = [];
     this.deletedChannelIds.clear();
     this.suppressedCount = 0;
@@ -65,6 +74,7 @@ export class TransactionBuffer {
     }
 
     const { activity } = result;
+    if (this.commitTime) activity.createdAt = this.commitTime;
 
     if (activity.action === 'delete' && activity.entityType && isChannel(activity.entityType) && activity.subjectId) {
       this.deletedChannelIds.add(activity.subjectId);
@@ -139,6 +149,20 @@ export class TransactionBuffer {
   /** Whether a transaction is currently being buffered. */
   get isBuffering(): boolean {
     return this.activeXid !== null;
+  }
+
+  /** Whether the transaction being buffered holds events that are not flushed yet. */
+  get hasPendingEvents(): boolean {
+    return this.pendingEvents.length > 0;
+  }
+
+  /** Forgets the transaction being buffered: the replication stream starts over and delivers it again. */
+  reset(): void {
+    this.clearTimeout();
+    this.activeXid = null;
+    this.pendingEvents = [];
+    this.deletedChannelIds.clear();
+    this.suppressedCount = 0;
   }
 
   private isCascadedDelete(result: ParseMessageResult): boolean {

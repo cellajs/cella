@@ -12,7 +12,7 @@ const PG_EPOCH_MS = 946684800000n;
 
 import { runPostCatchupRecovery } from '../services/catchup-recovery';
 import { parseMessage } from './parse-message';
-import { processEvents } from './process-events';
+import { processFlush } from './process-events';
 
 // Message helpers
 
@@ -56,7 +56,13 @@ async function acknowledgeLsn(lsn: string): Promise<void> {
 }
 
 /** Accumulates events across transactions for micro-batching. */
-const flushBuffer = new FlushBuffer(processEvents, acknowledgeLsn, RESOURCE_LIMITS.buffers.flushWindowMs);
+const flushBuffer = new FlushBuffer(processFlush, acknowledgeLsn, RESOURCE_LIMITS.buffers.flushWindowMs);
+
+/** A failed flush ends the subscription: the next one starts at the slot's confirmed position and delivers its events again. */
+flushBuffer.onFailed = () => {
+  replicationState.flushFailed = true;
+  void replicationState.service?.stop();
+};
 
 /** Cascade suppression within a single transaction. */
 const txBuffer = new TransactionBuffer((events) => flushBuffer.enqueue(events));
@@ -94,6 +100,14 @@ export async function releaseHeldAck(): Promise<void> {
   const { heldAckLsn } = replicationState;
   if (heldAckLsn && wsClient.isConnected()) await sendAck(heldAckLsn);
   await acknowledgeIdlePosition();
+}
+
+/**
+ * Acknowledges a message the worker has nothing to do for, when no earlier event is still waiting: a position
+ * confirmed past a buffered event would lose that event in a crash. The next flush or idle check covers it otherwise.
+ */
+async function acknowledgeSkipped(lsn: string): Promise<void> {
+  if (flushBuffer.isIdle && !txBuffer.hasPendingEvents) await acknowledgeLsn(lsn);
 }
 
 /** Buffers events between BEGIN and COMMIT, suppressing child deletes cascaded from a channel delete. */
@@ -145,7 +159,7 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
   const tableName = msg.relation?.name;
 
   if (isSeededInsert(msg)) {
-    if (wsClient.isConnected()) await sendAck(lsn);
+    await acknowledgeSkipped(lsn);
     return;
   }
 
@@ -154,7 +168,7 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
 
     const parseResult = parseMessage(msg);
     if (!parseResult) {
-      await acknowledgeLsn(lsn);
+      await acknowledgeSkipped(lsn);
       return;
     }
 
@@ -169,4 +183,10 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
 /** Called during graceful shutdown. */
 export async function drainBuffers(): Promise<void> {
   await flushBuffer.drain();
+}
+
+/** Before every subscription: what was buffered is delivered again from the slot's confirmed position. */
+export function resetBuffers(): void {
+  txBuffer.reset();
+  flushBuffer.reset();
 }

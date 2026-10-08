@@ -43,6 +43,19 @@ describe('TransactionBuffer', () => {
     expect(processedEvents).toHaveLength(2);
   });
 
+  it('gives each event its transaction commit time, the same on every delivery', async () => {
+    // 2026-10-09T00:00:00.123Z in microseconds since the PostgreSQL epoch (2000-01-01).
+    const commitTime = BigInt(Date.parse('2026-10-09T00:00:00.123Z') - 946684800000) * 1000n;
+
+    for (const xid of [7, 8]) {
+      buffer.onBegin({ tag: 'begin', xid, commitLsn: null, commitTime });
+      await buffer.onEvent('0/1', mockParseResult({ action: 'create', entityType: 'attachment' }));
+      await buffer.onCommit();
+    }
+
+    expect(processedEvents.map((event) => event.result.activity.createdAt)).toEqual(['2026-10-09T00:00:00.123Z', '2026-10-09T00:00:00.123Z']);
+  });
+
   it('suppresses cascaded child deletes when the parent channel entity is deleted', async () => {
     buffer.onBegin({ tag: 'begin', xid: 42, commitLsn: null, commitTime: BigInt(0) });
 

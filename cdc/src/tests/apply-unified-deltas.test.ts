@@ -1,5 +1,6 @@
 import { createEntityHierarchy, createRoleRegistry } from 'shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DeltaExecutor } from '../utils/apply-unified-deltas';
 import type { BatchUnifiedDeltaPlan } from '../utils/compute-unified-deltas';
 import { changeEvent, tableMetaOf } from './factories';
 
@@ -11,23 +12,15 @@ interface DbOp {
 const dbOps: DbOp[] = [];
 let upsertReturnValue: Record<string, number> = {};
 
-vi.mock('../lib/db', () => {
-  const mockExecute = vi.fn(async (query: any) => {
+/** Stands in for the flush's transaction: records each statement as a counter upsert or another one. */
+const db = {
+  execute: vi.fn(async (query: any) => {
     const chunks = query?.queryChunks ?? [];
     const sqlParts = chunks.map((c: any) => c?.value?.[0] ?? String(c ?? '')).join('');
-    const isCounterUpsert = sqlParts.includes('channel_counters');
-
-    if (isCounterUpsert) {
-      dbOps.push({ type: 'upsert' });
-    } else {
-      dbOps.push({ type: 'execute', sql: 'raw-sql' });
-    }
-
+    dbOps.push(sqlParts.includes('channel_counters') ? { type: 'upsert' } : { type: 'execute', sql: sqlParts });
     return { rows: [{ counts: upsertReturnValue }], rowCount: 1 };
-  });
-
-  return { cdcDb: { execute: mockExecute } };
-});
+  }),
+} as unknown as DeltaExecutor;
 
 const { applyBatchUnifiedDeltas, sumInto } = await import('../utils/apply-unified-deltas');
 const { frontierNodeKeys } = await import('../utils/compute-unified-deltas');
@@ -63,7 +56,7 @@ describe('applyBatchUnifiedDeltas', () => {
       ]),
     };
 
-    await applyBatchUnifiedDeltas(plan, syntheticH);
+    await applyBatchUnifiedDeltas(plan, db, syntheticH);
 
     // Sequential seq values: 3, 4, 5.
     expect(events[0].result.rowData.seq).toBe(3);
@@ -84,14 +77,16 @@ describe('applyBatchUnifiedDeltas', () => {
       ]),
     };
 
-    await applyBatchUnifiedDeltas(plan, syntheticH);
+    await applyBatchUnifiedDeltas(plan, db, syntheticH);
 
     // Phase-1 org reservation, phase-2 org frontier, phase-2 proj-1 counts + frontier.
     const upserts = dbOps.filter((op) => op.type === 'upsert');
     expect(upserts).toHaveLength(3);
-    // One bulk UPDATE per table.
+    // Per table: the rows are locked in id order, then stamped by one bulk UPDATE.
     const executes = dbOps.filter((op) => op.type === 'execute');
-    expect(executes).toHaveLength(1);
+    expect(executes).toHaveLength(2);
+    expect(executes[0].sql).toContain('FOR NO KEY UPDATE');
+    expect(executes[1].sql).toContain('UPDATE');
   });
 
   it('every stamped event bumps frontiers: tombstones of published rows included', async () => {
@@ -111,19 +106,33 @@ describe('applyBatchUnifiedDeltas', () => {
       countDeltasByChannelKey: new Map(),
     };
 
-    await applyBatchUnifiedDeltas(plan, syntheticH);
+    await applyBatchUnifiedDeltas(plan, db, syntheticH);
 
     expect(events[0].result.rowData.seq).toBe(1);
     expect(events[1].result.rowData.seq).toBe(2);
     // Phase-1 org reservation + phase-2 frontier writes (org + proj-1); both events bump.
     expect(dbOps.filter((op) => op.type === 'upsert')).toHaveLength(3);
-    expect(dbOps.filter((op) => op.type === 'execute')).toHaveLength(1);
+    expect(dbOps.filter((op) => op.type === 'execute')).toHaveLength(2);
+  });
+
+  it('stamps a row that changed twice in one flush once, with its last position', async () => {
+    upsertReturnValue = { sequence: 3 };
+    const events = [mockEvent('t1'), mockEvent('t2'), mockEvent('t1')];
+
+    await applyBatchUnifiedDeltas({ orgSequenceGroups: [{ orgKey: 'org-1', count: 3, events }], countDeltasByChannelKey: new Map() }, db, syntheticH);
+
+    // Each event keeps the position it was given, for its notification.
+    expect(events.map((event) => event.result.rowData.seq)).toEqual([1, 2, 3]);
+    const stamp = vi.mocked(db.execute).mock.calls.at(-1)?.[0] as unknown as { queryChunks: unknown[] };
+    const params = JSON.stringify(stamp.queryChunks);
+    expect(params.match(/"t1"/g)).toHaveLength(1);
+    expect(params.match(/"t2"/g)).toHaveLength(1);
   });
 
   it('handles empty plan', async () => {
     const plan: BatchUnifiedDeltaPlan = { orgSequenceGroups: [], countDeltasByChannelKey: new Map() };
 
-    await applyBatchUnifiedDeltas(plan, syntheticH);
+    await applyBatchUnifiedDeltas(plan, db, syntheticH);
     expect(dbOps).toHaveLength(0);
   });
 });

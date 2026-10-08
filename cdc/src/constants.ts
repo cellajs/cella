@@ -42,10 +42,10 @@ export const RESOURCE_LIMITS = {
   buffers: {
     /** Micro-batching fallback deadline for low-traffic periods; 0 disables batching. */
     flushWindowMs: 50,
-    /** Primary flush trigger under load. */
+    /** Primary flush trigger under load; the replication stream is held while this many events are pending. */
     flushBatchSize: 100,
-    /** Hard cap that force-flushes the buffer. */
-    maxBufferedEvents: 20_000,
+    /** One flush, and so one database transaction, takes whole source transactions up to this many events; a larger source transaction goes alone. */
+    flushMaxEvents: 2000,
     /** Events flush individually when no commit arrives within this window. */
     transactionTimeoutMs: 30_000,
   },

@@ -65,7 +65,7 @@ class Metrics {
     return bucket;
   }
 
-  /** Record a processEvents() call (one group within a flush). */
+  /** Record one recorded and dispatched set of events (a flush, or one source transaction of it). */
   recordProcessing(eventCount: number, durationMs: number): void {
     const b = this.currentBucket();
     b.eventCount += eventCount;

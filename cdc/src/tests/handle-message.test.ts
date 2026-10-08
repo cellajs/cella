@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mocks must precede the import of the module under test.
-vi.mock('../pipeline/process-events', () => ({ processEvents: vi.fn() }));
+vi.mock('../pipeline/process-events', () => ({ processFlush: vi.fn() }));
 
 vi.mock('../services/catchup-recovery', () => ({ runPostCatchupRecovery: vi.fn() }));
 
@@ -31,7 +31,7 @@ vi.mock('../network/websocket-client', () => ({
   wsClient: { isConnected: vi.fn(() => true), connect: vi.fn(), send: vi.fn(() => true), setCallbacks: vi.fn() },
 }));
 
-import { handleDataMessage } from '../pipeline/handle-message';
+import { handleDataMessage, resetBuffers } from '../pipeline/handle-message';
 import { replicationState } from '../services/replication-state';
 import { dmlMessage } from './factories';
 
@@ -43,6 +43,7 @@ const mockDmlMessage = (tag: 'insert' | 'update' | 'delete', id: string) => dmlM
 describe('handleDataMessage: seeded entity filtering', () => {
   beforeEach(() => {
     replicationState.reset();
+    resetBuffers();
     vi.clearAllMocks();
   });
 
@@ -92,6 +93,20 @@ describe('handleDataMessage: seeded entity filtering', () => {
 
     expect(acknowledge).toHaveBeenCalledWith('0/7');
     expect(replicationState.lastAckedLsn).toBe('0/7');
+  });
+
+  it('leaves a skipped message unacknowledged while an earlier event waits for its flush', async () => {
+    const acknowledge = vi.fn(async () => {});
+    replicationState.service = { acknowledge } as unknown as typeof replicationState.service;
+
+    // An event outside a transaction goes straight to the flush buffer, where it waits for the window to end.
+    await handleDataMessage('0/5', mockDmlMessage('update', 'usr-1'));
+    replicationState.updateLag(15_000);
+    await handleDataMessage('0/7', mockDmlMessage('insert', '00000000-1234-4abc-8def-123456789abc'));
+
+    // Confirming 0/7 here would lose the event at 0/5 in a crash: the flush acknowledges past both.
+    expect(acknowledge).not.toHaveBeenCalled();
+    expect(replicationState.lastAckedLsn).toBeNull();
   });
 
   it('processes inserts of non-gen entities during catch-up', async () => {

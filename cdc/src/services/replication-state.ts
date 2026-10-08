@@ -19,6 +19,9 @@ class ReplicationStateManager {
   private _replicationPausedAt: Date | null = null;
 
   // Catchup mode state
+  /** Set when a flush failed: the subscription loop waits before it reads the same events again. */
+  flushFailed = false;
+
   private _catchingUp = false;
   private _catchupStartedAt: number | null = null;
   private _catchupEventsProcessed = 0;

@@ -7,7 +7,7 @@ import { buildVerifiedSsl, cdcDb, stripSslParams } from '../lib/db';
 import { log } from '../lib/pino';
 import { wsClient } from '../network/websocket-client';
 import { replicationState } from '../services/replication-state';
-import { acknowledgeIdlePosition, handleDataMessage, releaseHeldAck } from './handle-message';
+import { acknowledgeIdlePosition, handleDataMessage, releaseHeldAck, resetBuffers } from './handle-message';
 import { isStalePublicationError } from './replication-errors';
 
 const { reconnection, slotTakeover } = RESOURCE_LIMITS;
@@ -38,9 +38,9 @@ export function createReplicationService(): LogicalReplicationService {
     { acknowledge: { auto: false, timeoutSeconds: 0 }, flowControl: { enabled: true } },
   );
 
-  service.on('data', (lsn: string, message: unknown) => {
-    handleDataMessage(lsn, message as Pgoutput.Message);
-  });
+  // The handler's promise is returned: with flow control on, the service reads the next message only once it resolved,
+  // so a worker that is behind holds the stream where it is.
+  service.on('data', (lsn: string, message: unknown) => handleDataMessage(lsn, message as Pgoutput.Message));
 
   service.on('error', (error: Error) => {
     log.error('CDC replication error', { err: error });
@@ -155,7 +155,15 @@ export function setupBackpressure(): void {
 
 // Subscription loop
 
-export async function subscribeWithReconnect(service: LogicalReplicationService, plugin: PgoutputPlugin): Promise<never> {
+/**
+ * Subscribes for as long as the worker runs. Every subscription is a new service with empty buffers, so it starts at
+ * the slot's confirmed position: whatever an earlier subscription had received without acknowledging is delivered
+ * again, and a flush records each event once however often it arrives.
+ */
+export async function subscribeWithReconnect(
+  plugin: PgoutputPlugin,
+  createService: () => LogicalReplicationService = createReplicationService,
+): Promise<never> {
   // Fast retries during a rolling-deploy slot handoff, then the normal cadence under sustained contention.
   let attempt = 0;
   while (true) {
@@ -164,9 +172,20 @@ export async function subscribeWithReconnect(service: LogicalReplicationService,
       // unreachable. One catalog SELECT per attempt, and a no-op when another worker holds the slot.
       await ensureReplicationSlot();
 
+      resetBuffers();
+      const service = createService();
+      replicationState.service = service;
+
       log.info('Subscribing to replication slot...');
       replicationState.status = wsClient.isConnected() ? 'active' : 'paused';
       await service.subscribe(plugin, CDC_SLOT_NAME);
+
+      // The subscription ended without an error: a failed flush stopped it. The same events come next, so wait first.
+      if (replicationState.flushFailed) {
+        replicationState.flushFailed = false;
+        replicationState.markStopped();
+        await new Promise((resolve) => setTimeout(resolve, reconnection.retryDelayMs));
+      }
     } catch (error) {
       attempt += 1;
       const inHandoffWindow = attempt <= slotTakeover.maxAttempts;

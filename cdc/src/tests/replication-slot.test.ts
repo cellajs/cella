@@ -48,7 +48,7 @@ describe('subscribeWithReconnect: replication slot lifecycle', () => {
     execute.mockResolvedValue({ rows: [{ exists: 1 }] });
     const service = makeService(3);
 
-    void subscribeWithReconnect(service, plugin);
+    void subscribeWithReconnect(plugin, () => service);
     await vi.advanceTimersByTimeAsync(0);
     expect(execute).toHaveBeenCalledTimes(1);
 
@@ -69,7 +69,7 @@ describe('subscribeWithReconnect: replication slot lifecycle', () => {
 
     const service = makeService(1);
 
-    void subscribeWithReconnect(service, plugin);
+    void subscribeWithReconnect(plugin, () => service);
     await vi.advanceTimersByTimeAsync(0);
     expect(execute).toHaveBeenCalledTimes(1); // ensure attempted, swallowed the connection error
 
@@ -86,7 +86,7 @@ describe('subscribeWithReconnect: replication slot lifecycle', () => {
     execute.mockResolvedValue({ rows: [{ exists: 1 }] });
     const service = makeService(2);
 
-    void subscribeWithReconnect(service, plugin);
+    void subscribeWithReconnect(plugin, () => service);
     await vi.advanceTimersByTimeAsync(0);
     await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs);
     await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs);
@@ -126,7 +126,7 @@ describe('subscribeWithReconnect: stale-publication self-heal guards', () => {
     execute.mockResolvedValue({ rows: [{ x: 1 }] });
     const service = makeStaleService(1);
 
-    void subscribeWithReconnect(service, plugin);
+    void subscribeWithReconnect(plugin, () => service);
     await vi.advanceTimersByTimeAsync(0);
 
     // ensure(slot) + publication check + terminate + drop + create = 5 statements.
@@ -140,7 +140,7 @@ describe('subscribeWithReconnect: stale-publication self-heal guards', () => {
     execute.mockResolvedValue({ rows: [{ x: 1 }] }); // any later attempt
     const service = makeStaleService(1);
 
-    void subscribeWithReconnect(service, plugin);
+    void subscribeWithReconnect(plugin, () => service);
     await vi.advanceTimersByTimeAsync(0);
 
     // ensure(slot) + publication check only; no terminate/drop/create against a slot we cannot heal.
@@ -152,7 +152,7 @@ describe('subscribeWithReconnect: stale-publication self-heal guards', () => {
     execute.mockResolvedValue({ rows: [{ x: 1 }] }); // slot + publication both present throughout
     const service = makeStaleService(3);
 
-    void subscribeWithReconnect(service, plugin);
+    void subscribeWithReconnect(plugin, () => service);
     await vi.advanceTimersByTimeAsync(0);
     await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs);
     await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs);
