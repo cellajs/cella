@@ -47,6 +47,8 @@ export async function subscribeAndReact(context: { vars: Record<string, unknown>
     const started = Date.now();
     try {
       const res = await fetch(`${BASE_URL}/${TENANT_ID}/${ORG_ID}/attachments?seqCursor=${from},${until}&limit=1000`, { headers: { cookie } });
+      // The fetches here bypass Artillery's HTTP engine: their statuses are counted by hand, for the CLI's check on rejected responses.
+      events.emit('counter', `fetch.codes.${res.status}`, 1);
       await res.json();
       events.emit('histogram', 'sync.fetch_ms', Date.now() - started);
       events.emit('counter', 'sync.delta_fetches', 1);
@@ -98,6 +100,7 @@ export async function subscribeAndReact(context: { vars: Record<string, unknown>
   try {
     const started = Date.now();
     const res = await fetch(`${BASE_URL}/entities/app/stream`, { headers: { cookie, accept: 'text/event-stream' }, signal: controller.signal });
+    events.emit('counter', `fetch.codes.${res.status}`, 1);
     if (!res.ok || !res.body) {
       events.emit('counter', 'sse.errors', 1);
       return;
