@@ -186,6 +186,8 @@ interface ResolveEntityOpts<T extends EntityType> {
   entityType: T;
   identifier: string;
   bySlug?: boolean;
+  /** Locks the row until the caller's transaction ends; needs a read-write transaction. */
+  forUpdate?: boolean;
 }
 
 /**
@@ -195,7 +197,7 @@ interface ResolveEntityOpts<T extends EntityType> {
  */
 export async function resolveEntity<T extends EntityType>(
   ctx: DbContext,
-  { entityType, identifier, bySlug = false }: ResolveEntityOpts<T>,
+  { entityType, identifier, bySlug = false, forUpdate = false }: ResolveEntityOpts<T>,
 ): Promise<EntityModel<T> | undefined> {
   const { db } = ctx.var;
   const table = getEntityTable(entityType);
@@ -203,11 +205,13 @@ export async function resolveEntity<T extends EntityType>(
   const identityCondition = bySlug && hasSlug(table) ? eq(table.slug, identifier) : eq(table.id, identifier);
   const condition = hasDeletedAt(table) ? and(identityCondition, isNull(table.deletedAt)) : identityCondition;
 
-  const [entity] = await db
+  const query = db
     .select()
     // biome-ignore lint/suspicious/noExplicitAny: Drizzle .from() rejects generic table types (https://github.com/drizzle-team/drizzle-orm/issues/4367)
     .from(table as any)
     .where(condition);
+  // The lock an UPDATE of non-key columns takes: writers of the row wait, inserts that reference it do not.
+  const [entity] = forUpdate ? await query.for('no key update') : await query;
   return entity as EntityModel<T> | undefined;
 }
 

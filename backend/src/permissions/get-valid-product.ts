@@ -20,21 +20,29 @@ export interface ValidProductResult<K extends ProductEntityType> {
  * perform `action`. Every product carries `tenantId` and `organizationId`, and the row must match
  * the request scope set by the guard chain, so the answer is the same with RLS bypassed.
  * System-admin bypass sits inside `checkAccess` and never widens that scope.
+ *
+ * `forUpdate` locks the row until the caller's transaction ends. An update that merges its change with the stored row
+ * (field timestamps, list deltas) reads it this way: without the lock two overlapping updates each merge with the row
+ * the other is about to replace, and the later write drops what the earlier one merged.
  */
 export const getValidProduct = async <K extends ProductEntityType>(
   ctx: ActorContext,
   id: string,
   entityType: K,
   action: Exclude<EntityActionType, 'create'>,
+  { forUpdate = false }: { forUpdate?: boolean } = {},
 ): Promise<ValidProductResult<K>> => {
   // Product routes run behind tenantGuard + orgGuard; a route wired without them is a bug, not a request error.
   const { tenantId, organizationId } = requestScope(ctx, entityType);
+
+  // A lock lasts as long as its transaction, and the read below opens a read-only one of its own.
+  if (forUpdate && ctx.var.db === baseDb) throw new Error('getValidProduct: forUpdate needs the transaction of the write it guards');
 
   // Bare baseDb carries no RLS session context, so the read runs inside a tenant transaction.
   const entity =
     ctx.var.db === baseDb
       ? await tenantRead(ctx, (readCtx) => resolveEntity(readCtx, { entityType, identifier: id }))
-      : await resolveEntity(ctx, { entityType, identifier: id });
+      : await resolveEntity(ctx, { entityType, identifier: id, forUpdate });
 
   // Missing, soft-deleted, foreign-tenant, foreign-organization and invisible-draft rows all read
   // as the same 404, so a row's existence is never revealed outside its scope.

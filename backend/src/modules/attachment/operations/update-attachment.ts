@@ -29,7 +29,8 @@ export async function updateAttachmentOp(
   const actorId = ctx.var.actor.id;
 
   const updatedAttachmentRecord = await tenantContext(ctx, async (txCtx) => {
-    const { entity } = await getValidProduct(txCtx, id, 'attachment', 'update');
+    // Locked: the merge below starts from this row, so no other write may land between the read and the update.
+    const { entity } = await getValidProduct(txCtx, id, 'attachment', 'update', { forUpdate: true });
 
     attachmentContract.assertBlockFields(rawOps, entity.organizationId);
 

@@ -20,9 +20,10 @@ const writtenRowOf = ({ id, tenantId, organizationId, description }: PayloadRow)
 
 /**
  * True when the write itself wrote the row's description: the stx it stored names the fields it wrote (`buildStx`).
- * `before` was read ahead of the row lock, so a description committed in between differs from it although this write
- * left the description alone. Comparing with it only screens out a set an earlier write left in the stx, from an op
- * that keeps the stored stx on a write that changes nothing (updateAttachmentOp strips the set then).
+ * An op that reads `before` without locking the row may read it ahead of another write, so a description committed in
+ * between differs from it although this write left the description alone. Comparing with it only screens out a set an
+ * earlier write left in the stx, from an op that keeps the stored stx on a write that changes nothing
+ * (updateAttachmentOp strips the set then).
  */
 const wroteDescription = (row: PayloadRow, before: PayloadRow | undefined) => {
   const changedFields = (row.stx as { changedFields?: unknown } | null | undefined)?.changedFields;

@@ -43,8 +43,11 @@ export async function fanOutNotifications(event: ActivityEvent): Promise<boolean
   const subjectIds = collectSubjectIds(event);
   if (subjectIds.length === 0) return false;
 
-  // Batch events carry only permission columns, never the body, so the rows are always re-read.
   const readsMentions = source.declaration.mentionable !== false && mayAddMentions(event);
+  // Mentions and the source's recipient rule are the only ways a row notifies anyone: with neither, nothing to read.
+  if (!readsMentions && !source.declaration.resolveRecipients) return false;
+
+  // Batch events carry only permission columns, never the body, so the rows are re-read.
   const rows = await tenantReadById(tenantId, (tx) => loadSubjectRows(source, tx, subjectIds, { body: readsMentions }));
 
   let mailable = false;

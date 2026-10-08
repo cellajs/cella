@@ -68,6 +68,33 @@ describe('points budget enforcement (end to end)', () => {
     expect(state?.consumedPoints).toBe(90);
   });
 
+  it('enforces a limit counted in process exactly, without a tenant budget', async () => {
+    const limiter = rateLimiter('limit', 'reads', ['tenantId'], {
+      limits: { points: 100, duration: 60 * 60, blockDuration: 60 * 5 },
+      countsInProcess: true,
+    });
+    const app = new Hono<Env>();
+    app.onError((err, c) => (err instanceof AppError ? c.json({ error: err.type }, err.status as 429) : c.json({ error: 'internal' }, 500)));
+    app.use(async (c, next) => {
+      c.set('tenantId', 't1');
+      await next();
+    });
+    app.post('/t', limiter, (c) => c.json({ ok: true }, 200));
+
+    const { allowed, blocked } = await hammer(app, 130);
+
+    expect(allowed).toBe(100);
+    expect(blocked).toBe(30);
+    // The first 79 requests never reached the store; the 80th settled them with its own.
+    expect((await memoryStores.get('reads_limit')!.get('tenantId:t1'))?.consumedPoints).toBeGreaterThanOrEqual(100);
+  });
+
+  it('refuses in-process counting for a window other than one hour', () => {
+    expect(() =>
+      rateLimiter('limit', 'minute', ['tenantId'], { limits: { points: 10, duration: 60, blockDuration: 0 }, countsInProcess: true }),
+    ).toThrow('one-hour window');
+  });
+
   it('clamps tenant budgets to the static ceiling', async () => {
     const app = buildApp('clamp', 't1', 100, () => 1_000_000);
 
