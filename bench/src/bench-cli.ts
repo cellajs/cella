@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, resolve } from 'node:path';
@@ -15,6 +15,7 @@ import { BENCH_UUID_PREFIX } from 'shared/utils/bench-identity';
 import { BASE_URL, COOKIE_SECRET, createBenchProcessEnv, DB_URL, SESSION_COOKIE_NAME } from './config';
 import { benchSignInStatus, isPostgresReady, isServiceHealthy, SERVICES, unreadyReason } from './preflight';
 import { rejectedResponses } from './response-codes';
+import { counterFindings, pipelineFindings, settlePipeline } from './verify';
 
 const __dirname = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 const BENCH_ROOT = resolve(__dirname, '..');
@@ -212,15 +213,6 @@ function runArtillery(
   }
 }
 
-/** Samples CDC throughput and latency for every scenario, summarizing only when CDC processed events. A separate process, since `runArtillery` blocks the event loop on `execFileSync`. */
-function startCdcPoller(): { proc: ChildProcess; summary: Promise<string> } {
-  const proc = spawn('tsx', ['src/cdc-poller.ts', '--quiet'], { cwd: BENCH_ROOT, stdio: ['ignore', 'pipe', 'ignore'] });
-  const chunks: string[] = [];
-  proc.stdout?.on('data', (data: Buffer) => chunks.push(data.toString()));
-  const summary = new Promise<string>((res) => proc.on('close', () => res(chunks.join(''))));
-  return { proc, summary };
-}
-
 /** The counters of an Artillery report, empty when the run left none. */
 function reportCounters(reportPath: string): Record<string, number> {
   try {
@@ -365,16 +357,17 @@ function printComparison(current: BaselineMetrics, baseline: BaselineMetrics | n
   console.info();
 }
 
-/** Combined `--all` table: one row per scenario with key metrics and p95 delta vs baseline. Printed once at the end so the run stays quiet. */
+/** Combined `--all` table: one row per scenario with key metrics, the seconds the CDC worker needed to catch up, and p95 delta vs baseline. Printed once at the end so the run stays quiet. */
 function printAllSummary(results: { name: string; result: ScenarioResult }[]): void {
   console.info(`\n${pc.bold('Summary')} ${pc.dim(': all scenarios')}\n`);
 
-  const cols = `  ${pc.bold('Scenario'.padEnd(22))} ${pc.bold('Req/s'.padStart(8))} ${pc.bold('Mean'.padStart(8))} ${pc.bold('p95'.padStart(8))} ${pc.bold('p99'.padStart(8))} ${pc.bold('Errors'.padStart(8))} ${pc.bold('p95 Δ'.padStart(10))}`;
+  const cols = `  ${pc.bold('Scenario'.padEnd(22))} ${pc.bold('Req/s'.padStart(8))} ${pc.bold('Mean'.padStart(8))} ${pc.bold('p95'.padStart(8))} ${pc.bold('p99'.padStart(8))} ${pc.bold('Errors'.padStart(8))} ${pc.bold('CDC +s'.padStart(8))} ${pc.bold('p95 Δ'.padStart(10))}`;
   console.info(cols);
-  console.info(`  ${'─'.repeat(80)}`);
+  console.info(`  ${'─'.repeat(89)}`);
 
   for (const { name, result } of results) {
-    const { current, baseline, exitCode } = result;
+    const { current, baseline, exitCode, caughtUpMs } = result;
+    const caughtUp = caughtUpMs === null ? '-' : (caughtUpMs / 1000).toFixed(1);
     const fail = exitCode === 0 ? '' : pc.red('  ✗');
 
     if (!current) {
@@ -384,62 +377,63 @@ function printAllSummary(results: { name: string; result: ScenarioResult }[]): v
 
     const delta = baseline ? formatDelta(current.p95, baseline.p95, true) : pc.dim('new');
     console.info(
-      `  ${name.padEnd(22)} ${String(current.requestRate).padStart(8)} ${String(current.mean).padStart(8)} ${String(current.p95).padStart(8)} ${String(current.p99).padStart(8)} ${String(current.errors).padStart(8)} ${delta.padStart(10)}${fail}`,
+      `  ${name.padEnd(22)} ${String(current.requestRate).padStart(8)} ${String(current.mean).padStart(8)} ${String(current.p95).padStart(8)} ${String(current.p99).padStart(8)} ${String(current.errors).padStart(8)} ${caughtUp.padStart(8)} ${delta.padStart(10)}${fail}`,
     );
   }
   console.info();
-}
-
-const cleanupFns: (() => void)[] = [];
-
-function registerCleanup(fn: () => void) {
-  cleanupFns.push(fn);
-}
-
-function cleanup() {
-  for (const fn of cleanupFns) {
-    try {
-      fn();
-    } catch {}
-  }
-  cleanupFns.length = 0;
 }
 
 // ── Run a single scenario ──────────────────────────────────────────────────
 
 interface ScenarioResult {
   exitCode: number;
-  /** Aggregate metrics for this run, or null for a short, failed or rejected run. */
+  /** Aggregate metrics for this run, or null for a short or failed run. */
   current: BaselineMetrics | null;
   /** Previous baseline this run was compared against, or null on a first run. */
   baseline: BaselineMetrics | null;
+  /** How long the CDC worker needed after the run to record its writes; null for a run that wrote nothing it counts. */
+  caughtUpMs: number | null;
 }
 
 /**
- * Runs the CDC poller, Artillery, and the baseline compare or save. Short runs produce no comparable metrics and never touch
- * baselines, and neither does a run the stack rejected; `quiet` leaves output to the caller's combined summary.
+ * Runs Artillery between two readings of what the CDC worker recorded, checks the run, and compares or saves the
+ * baseline. A run fails on rejected responses, on a counter its scenario expects or forbids, and where the worker's
+ * record differs from the rows the run wrote. Short runs produce no comparable metrics and never touch baselines, and
+ * neither does a failed run; `quiet` leaves output to the caller's combined summary.
  */
 async function runScenario(name: string, { short, quiet }: { short: boolean; quiet: boolean }): Promise<ScenarioResult> {
-  const cdcPoller = startCdcPoller();
-  const stopPoller = () => cdcPoller.proc.kill('SIGINT');
-  registerCleanup(stopPoller);
+  // Whatever was written before, the seed included, is settled first: the run's own writes are then all that changes.
+  const { snapshot: before } = await settlePipeline();
 
   const spinner = quiet ? ora(`running ${name}${short ? ' (short)' : ''}...`).start() : null;
   if (!quiet) console.info(`${pc.cyan('▸')} running ${pc.bold(name)}${short ? pc.dim(' (short)') : ''}...\n`);
 
   const { exitCode: artilleryExit, reportPath } = runArtillery(name, { short, quiet });
+  const counters = reportCounters(reportPath);
   // Rejected responses fail the run, short or not: the latency of a 401 says nothing about the endpoint.
-  const rejected = rejectedResponses(reportCounters(reportPath));
-  const exitCode = artilleryExit || (rejected ? 1 : 0);
+  const rejected = rejectedResponses(counters);
 
-  // Stop the poller and flush its summary (printed only if CDC saw events).
-  stopPoller();
-  const cdcSummary = (await cdcPoller.summary).trimEnd();
+  const findings = rejected ? [rejected] : counterFindings(readFileSync(resolve(BENCH_ROOT, 'scenarios', `${name}.yaml`), 'utf-8'), counters, short);
+  let pipelineSummary = '';
+  let workerCaughtUpMs: number | null = null;
+  if (!rejected && before) {
+    const written = counters['bench.rows_written'];
+    const { snapshot: after, caughtUpMs } = await settlePipeline(written === undefined ? undefined : before.activities + written);
+    if (caughtUpMs === null) findings.push('the CDC worker did not catch up within 60 s of the run');
+    else if (after) {
+      findings.push(...pipelineFindings(before, after, counters));
+      const recorded = after.activities - before.activities;
+      if (written !== undefined) workerCaughtUpMs = caughtUpMs;
+      if (recorded > 0) pipelineSummary = `CDC recorded ${recorded} activities and caught up ${(caughtUpMs / 1000).toFixed(1)} s after the run`;
+    }
+  }
+  const failure = findings.join('; ');
+  const exitCode = artilleryExit || (failure ? 1 : 0);
 
   let current: BaselineMetrics | null = null;
   let baseline: BaselineMetrics | null = null;
 
-  if (!short && !rejected) {
+  if (!short && !failure) {
     current = extractMetrics(reportPath, name);
     if (current) {
       baseline = loadBaseline(name);
@@ -450,24 +444,17 @@ async function runScenario(name: string, { short, quiet }: { short: boolean; qui
 
   if (spinner) {
     if (exitCode === 0) spinner.succeed(`${name} ${pc.dim('done')}`);
-    else spinner.fail(`${name} ${pc.dim(rejected ?? `exited ${exitCode}`)}`);
+    else spinner.fail(`${name} ${pc.dim(failure || `exited ${exitCode}`)}`);
   }
-  if (!quiet && rejected) console.error(`${pc.red('✗')} ${name}: ${rejected}\n`);
+  if (!quiet && pipelineSummary) console.info(`${pc.cyan('▸')} ${pipelineSummary}\n`);
+  if (!quiet && failure) console.error(`${pc.red('✗')} ${name}: ${failure}\n`);
 
-  if (!quiet && cdcSummary) console.info(cdcSummary);
-
-  return { exitCode, current, baseline };
+  return { exitCode, current, baseline, caughtUpMs: workerCaughtUpMs };
 }
 
 async function main() {
-  process.on('SIGINT', () => {
-    cleanup();
-    process.exit(130);
-  });
-  process.on('SIGTERM', () => {
-    cleanup();
-    process.exit(143);
-  });
+  process.on('SIGINT', () => process.exit(130));
+  process.on('SIGTERM', () => process.exit(143));
 
   printHeader('bench cli');
 
@@ -514,7 +501,6 @@ async function main() {
       .catch((err: Error) => {
         seedSpinner.fail('database seed failed');
         console.error(err.message);
-        cleanup();
         process.exit(1);
       });
   }
@@ -535,7 +521,6 @@ async function main() {
 
       if (selected === 'exit') {
         console.info(pc.dim('\nexited.'));
-        cleanup();
         process.exit(0);
       }
     }
@@ -551,7 +536,6 @@ async function main() {
       .catch((err: Error) => {
         seedSpinner.fail('database seed failed');
         console.error(err.message);
-        cleanup();
         process.exit(1);
       });
   }
@@ -569,22 +553,18 @@ async function main() {
 
   const results: { name: string; result: ScenarioResult }[] = [];
   let failureCode = 0;
-  try {
-    for (let i = 0; i < toRun.length; i++) {
-      const name = toRun[i];
-      await clearRateLimits();
-      const result = await runScenario(name, { short, quiet });
-      results.push({ name, result });
-      if (result.exitCode !== 0) failureCode = result.exitCode;
+  for (let i = 0; i < toRun.length; i++) {
+    const name = toRun[i];
+    await clearRateLimits();
+    const result = await runScenario(name, { short, quiet });
+    results.push({ name, result });
+    if (result.exitCode !== 0) failureCode = result.exitCode;
 
-      if (pauseSeconds > 0 && i < toRun.length - 1) {
-        const cooldown = ora(`cooling down ${pauseSeconds}s...`).start();
-        await sleep(pauseSeconds * 1000);
-        cooldown.stop();
-      }
+    if (pauseSeconds > 0 && i < toRun.length - 1) {
+      const cooldown = ora(`cooling down ${pauseSeconds}s...`).start();
+      await sleep(pauseSeconds * 1000);
+      cooldown.stop();
     }
-  } finally {
-    cleanup();
   }
 
   if (all) {
@@ -603,6 +583,5 @@ async function main() {
 
 main().catch((err) => {
   console.error(pc.red('bench failed:'), err);
-  cleanup();
   process.exit(1);
 });

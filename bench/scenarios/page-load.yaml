@@ -1,20 +1,23 @@
-# Page Load: looping VUs simulate repeated page loads.
+# Page load: what a tab fetches when it opens an organization.
 #
-# Each VU loops 15 times, fetching /me + /me/memberships + /organizations.
-# Steps up: 40 → 50 → 60 arrivals/s (~2700 req/s peak).
+# What it answers: how the read path holds when every visitor also reads data. On top of /me, /me/memberships and
+# /organizations, each load fetches the first page of the organization's attachments: a product read, which runs in a
+# row-level-security transaction on the database.
+# Each VU loads the page 15 times. Steps up: 10 → 15 → 20 arrivals/s (150 → 300 page loads/s, ~1200 req/s peak),
+# about two thirds of what one API process serves on a laptop.
 config:
   target: "{{ $processEnvironment.BASE_URL }}"
   processor: "../src/processors/auth.ts"
   phases:
     - duration: 10
-      arrivalRate: 40
-      name: "hold 40"
+      arrivalRate: 10
+      name: "hold 10"
     - duration: 10
-      arrivalRate: 50
-      name: "hold 50"
+      arrivalRate: 15
+      name: "hold 15"
     - duration: 15
-      arrivalRate: 60
-      name: "hold 60"
+      arrivalRate: 20
+      name: "hold 20"
   plugins:
     ensure:
       maxErrorRate: 1
@@ -36,6 +39,10 @@ scenarios:
                 cookie: "{{ cookie }}"
           - get:
               url: "/organizations"
+              headers:
+                cookie: "{{ cookie }}"
+          - get:
+              url: "/{{ tenantId }}/{{ orgId }}/attachments?limit=40"
               headers:
                 cookie: "{{ cookie }}"
           - think: "100ms"

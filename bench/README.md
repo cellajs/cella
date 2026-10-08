@@ -6,7 +6,9 @@ The bench package: [Artillery](https://www.artillery.io/) load testing for the b
 
 Bench load-tests your running development app with repeatable scenarios and seed data that can be
 reset and reused. Test users are already signed in, so results focus on the endpoint under test.
-Each run is saved and compared with the previous one: read results as trends, not absolutes.
+A run passes on what the stack did with the load, not on how fast a laptop is: every response
+accepted, every written row recorded by the CDC worker, counters still right. Latencies are saved
+and compared with the previous run: read them as trends, not absolutes.
 
 ## Prerequisites
 
@@ -29,6 +31,28 @@ Start these first (bench checks they are reachable and exits with guidance if no
 
 Before the first scenario, bench signs in as one of its users and stops when the stack rejects the cookie, naming the cookie and the config mode it came from. A run in which more than 1% of the responses are not 2xx fails, also with `--short`, and is not saved: it timed rejections, not the endpoint.
 
+## Scenarios
+
+Each scenario asks one question of the stack. The first comment line of its YAML is the description `pnpm bench help` lists.
+
+| Scenario | What it answers | Checked after the run |
+| --- | --- | --- |
+| `get-me` | What the guard chain alone costs: the cheapest signed-in request, repeated | Responses |
+| `page-load` | How the read path holds when every visitor also reads data, a product list included | Responses |
+| `attachment-edit` | How many edits per second the write path takes | Responses, one activity per edit |
+| `attachment-churn` | Whether creating and deleting rows in batches keeps the books right | Responses, one activity per row, the attachment count |
+| `sse-fanout` | Whether every subscriber of an organization hears of a change and can fetch it | Responses, one activity per edit, notifications and delta fetches counted, no stream errors |
+| `yjs-typing` | How the Yjs relay holds under people typing together | Documents converged, saved and written to their rows |
+
+The checks:
+
+- **Responses.** More than 1% of responses that are not 2xx fail the run, also with `--short`.
+- **Activities.** A processor counts the rows its requests wrote as `bench.rows_written`. After the run the CLI waits for the CDC worker, for at most 60 seconds, and compares that count with the product activities the worker recorded for the bench organization. It prints how long the worker needed to catch up.
+- **Counts.** `bench.rows_created.<type>` minus `bench.rows_deleted.<type>` must equal the change of the organization's `<type>` count in `channel_counters`.
+- **Counters.** A scenario names counters in its header comments: `# expect: a, b` for ones that must have counted, `# forbid: c` for ones that must not. `sse-fanout` expects notifications this way, so subscribers that hear nothing fail the run. A `--short` run is asked only for what is forbidden: its single VU plays one role of a scenario.
+
+A failed run is not compared and not saved as a baseline. A scenario of your own gets the response check for free and the others by emitting those counters or adding those comment lines.
+
 `--all` waits 15 seconds between scenarios so a saturating one does not slow the next. A single-scenario run stays verbose with a live comparison table. The Vitest smoke test `bench/src/tests/all-scenarios.test.ts` runs `--all --short --if-ready` to catch broken scenarios: `--if-ready` makes the run a no-op when this checkout's stack is down.
 
 ## Collaborative typing
@@ -36,7 +60,7 @@ Before the first scenario, bench signs in as one of its users and stops when the
 `yjs-typing` measures the Yjs relay under people typing together. Artillery cannot speak the Yjs protocol, so its one VU runs `src/yjs-typing.ts`, which drives real y-websocket clients against the relay port. Each document is a bench attachment with a few typing clients and one idle viewer, and some users watch the SSE stream as non-editing viewers. Documents start spread over ten seconds, and every client is a user of its own.
 
 ```sh
-pnpm bench yjs-typing                                  # through the CLI, with the CDC poller
+pnpm bench yjs-typing                                  # through the CLI, with its checks
 pnpm -C bench yjs-typing --out report.json             # on its own, with a JSON report
 YJS_DOCS=40 YJS_DURATION_S=60 pnpm bench yjs-typing    # another shape
 ```
@@ -67,5 +91,6 @@ Bench measures the live dev stack. Before calling a result a regression:
 - **Auth reads.** A session is read once per 10 seconds per browser and a token at every request. Memberships are cached per process until they change, so the first request of each user in a run also reads its memberships.
 - **Per-mutation RLS transactions.** Each write wraps permission check + update in one short transaction that also sets tenant/user GUCs. The write ceiling is pool size (`DATABASE_POOL_MAX`) and DB round-trip latency, not handler CPU alone.
 - **Rate limiting is effectively off.** The seeded bench tenant has a very high `apiPointsPerHour`, the points limiter has an in-process fast path, and every scenario starts with the bench users' per-user budgets (stream connects, sync reads) cleared.
-- **Saturation.** At their configured arrival rates `attachment-edit`, `cdc-attachment` and `page-load` saturate a laptop that also runs the stack, so their thresholds fail on most runs. Compare medians and the trend between runs.
+- **Saturation.** At their configured arrival rates `attachment-edit` and `page-load` saturate a laptop that also runs the stack: latencies then show queueing, not the endpoint. Compare the trend between runs.
+- **A worktree's own stack.** Bench follows the checkout's port offset, and so does every process it starts. A worktree therefore measures its own stack, never the main checkout's.
 - **Telemetry is off without a key.** OpenTelemetry exports only when `MAPLE_SECRET_INGEST_KEY` is set.

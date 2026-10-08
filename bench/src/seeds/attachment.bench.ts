@@ -2,9 +2,8 @@ import { appConfig, hierarchy } from 'shared';
 import type { InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import { mockAttachment } from '#/modules/attachment/attachment-mocks';
 import { registerBenchSeed } from '../registry';
+import { TOTAL_ATTACHMENTS } from './attachment-constants';
 import { attachmentId, CORE_ID_VARIANTS, ORG_ID, TENANT_ID, userId } from './ids';
-
-export const TOTAL_ATTACHMENTS = 500;
 
 /**
  * Reference implementation for the app seed pattern.

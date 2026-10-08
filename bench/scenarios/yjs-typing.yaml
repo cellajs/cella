@@ -10,6 +10,9 @@
 # yjs.notify_delay_ms. The CLI's HTTP table stays empty by design. Standalone, with a JSON report:
 #
 #   pnpm -C bench yjs-typing --out report.json
+#
+# expect: yjs.keystrokes, yjs.materializations
+# forbid: yjs.unsaved_frames, yjs.docs_not_persisted, yjs.docs_diverged
 config:
   target: "{{ $processEnvironment.BASE_URL }}"
   processor: "../src/processors/yjs-typing.ts"

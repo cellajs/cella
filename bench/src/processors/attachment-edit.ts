@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import { uuidv7 } from 'uuidv7';
-import { TOTAL_ATTACHMENTS } from '../seeds/attachment.bench';
-import { attachmentId, ORG_ID, TENANT_ID } from '../seeds/ids';
+import { TOTAL_ATTACHMENTS } from '../seeds/attachment-constants';
+import { attachmentId } from '../seeds/ids';
 
 export { authenticate } from './auth';
 
@@ -31,9 +31,17 @@ export function buildAttachmentEditPayload(context: { vars: Record<string, unkno
 
   const stx: StxPayload = { mutationId: uuidv7(), sourceId, fieldTimestamps: { name: hlcTimestamp(sourceId) } };
 
-  context.vars.tenantId = TENANT_ID;
-  context.vars.orgId = ORG_ID;
   context.vars.attachmentId = aId;
   context.vars.payload = { ops: { name: `bench-attachment-${nanoid(8)}` }, stx };
+  done();
+}
+
+interface ArtilleryEvents {
+  emit(kind: 'counter', name: string, value: number): void;
+}
+
+/** Counts an accepted edit as a written row: the CLI checks that the CDC worker recorded as many. */
+export function countEdit(_request: unknown, response: { statusCode: number }, _context: unknown, events: ArtilleryEvents, done: () => void) {
+  if (response.statusCode === 200) events.emit('counter', 'bench.rows_written', 1);
   done();
 }

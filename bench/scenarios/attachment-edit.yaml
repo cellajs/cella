@@ -1,7 +1,11 @@
-# Attachment Edit step-up: looping VUs find the throughput ceiling.
+# Attachment edit: the write path under a step-up, one rename per request.
 #
-# Each VU loops 20 times (persistent connections, k6-style).
-# Steps up: 25 → 50 → 75 → 100 arrivals/s (~1200 req/s peak).
+# What it answers: how many edits per second the mutation path takes (guard chain, RLS transaction, per-field merge),
+# and whether the CDC worker records every one of them. Each VU edits its own attachment 20 times; VUs that share a row
+# are rare, contention is not the point here.
+# Steps up: 25 → 50 → 75 → 100 arrivals/s (~1200 req/s peak), past what a laptop that also runs the stack takes.
+#
+# The CLI checks after the run that the worker recorded one activity per accepted edit.
 config:
   target: "{{ $processEnvironment.BASE_URL }}"
   processor: "../src/processors/attachment-edit.ts"
@@ -35,5 +39,6 @@ scenarios:
                 Content-Type: "application/json"
                 cookie: "{{ cookie }}"
               json: "{{ payload }}"
+              afterResponse: "countEdit"
           - think: "50ms"
         count: 20

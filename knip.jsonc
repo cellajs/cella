@@ -35,8 +35,8 @@
       "ignoreDependencies": ["@opentelemetry/.+", "^pino(-.+)?$"]
     },
     "bench": {
-      // Artillery loads the processors from scenarios/*.yaml; bench-cli spawns the poller; data-setup imports every *.bench.ts.
-      "entry": ["src/processors/*.ts", "src/cdc-poller.ts", "src/seeds/*.bench.ts"],
+      // Artillery loads the processors from scenarios/*.yaml; data-setup imports every *.bench.ts.
+      "entry": ["src/processors/*.ts", "src/seeds/*.bench.ts"],
       "ignoreDependencies": ["artillery", "artillery-plugin-ensure"]
     },
     "cdc": {
