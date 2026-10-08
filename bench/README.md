@@ -27,7 +27,9 @@ Start these first (bench checks they are reachable and exits with guidance if no
 | `pnpm db:seed` | Seed test data (idempotent, cleans first) |
 | `pnpm db:teardown` | Remove all bench data (baselines are kept) |
 
-`--all` waits 15 seconds between scenarios so a saturating one does not slow the next. A single-scenario run stays verbose with a live comparison table. The Vitest smoke test `bench/src/tests/all-scenarios.test.ts` runs `--all --short` to catch broken scenarios and skips itself when the stack is down.
+Before the first scenario, bench signs in as one of its users and stops when the stack rejects the cookie, naming the cookie and the config mode it came from. A run in which more than 1% of the responses are not 2xx fails, also with `--short`, and is not saved: it timed rejections, not the endpoint.
+
+`--all` waits 15 seconds between scenarios so a saturating one does not slow the next. A single-scenario run stays verbose with a live comparison table. The Vitest smoke test `bench/src/tests/all-scenarios.test.ts` runs `--all --short --if-ready` to catch broken scenarios: `--if-ready` makes the run a no-op when this checkout's stack is down.
 
 ## Collaborative typing
 
