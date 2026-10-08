@@ -146,6 +146,28 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
     ]);
   });
 
+  it('records every row of one WAL record, which share an LSN', async () => {
+    const [first, second, third] = [await insertAttachment(), await insertAttachment(), await insertAttachment()];
+    const lsn = nextLsn();
+    // A COPY writes a page of rows in one record: the ordinal is what tells their events apart.
+    const delivery = async () => [
+      await Promise.all([first, second, third].map(async (id, ordinal) => ({ ...(await eventFor('insert', id, lsn)), ordinal }))),
+    ];
+    const before = await counts();
+
+    await processFlush(await delivery());
+
+    const recorded = await counts();
+    expect(await activitiesOf([first, second, third])).toBe(3);
+    expect(recorded['e:c:attachment']).toBe((before['e:c:attachment'] ?? 0) + 3);
+    expect([await seqOf(first), await seqOf(second), await seqOf(third)]).toEqual([recorded.sequence - 2, recorded.sequence - 1, recorded.sequence]);
+
+    await processFlush(await delivery());
+
+    expect(await activitiesOf([first, second, third])).toBe(3);
+    expect(await counts()).toEqual(recorded);
+  });
+
   it('stamps a row created and edited in one flush with its last position', async () => {
     const id = await insertAttachment();
     const created = await eventFor('insert', id, nextLsn());

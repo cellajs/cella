@@ -33,5 +33,7 @@ export type TableMeta = EntityTableMeta | ResourceTableMeta;
 /** A pending event within a transaction, including the LSN for acknowledgment. */
 export interface PendingEvent {
   lsn: string;
+  /** Position among the changes written at this LSN: the rows of one COPY share theirs. Zero for the first. */
+  ordinal?: number;
   result: ParseMessageResult;
 }

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mocks must precede the import of the module under test.
 vi.mock('../pipeline/process-events', () => ({ processFlush: vi.fn() }));
@@ -37,6 +37,7 @@ import { dmlMessage } from './factories';
 
 const { parseMessage } = await import('../pipeline/parse-message');
 const mocked = vi.mocked(parseMessage);
+const { processFlush } = await import('../pipeline/process-events');
 
 const mockDmlMessage = (tag: 'insert' | 'update' | 'delete', id: string) => dmlMessage(tag, 'tasks', { id });
 
@@ -125,5 +126,50 @@ describe('handleDataMessage: seeded entity filtering', () => {
     const msg = mockDmlMessage('update', 'gen-abc123');
     await handleDataMessage('0/1', msg);
     expect(mocked).toHaveBeenCalled();
+  });
+});
+
+describe('handleDataMessage: changes that share an LSN', () => {
+  beforeEach(() => {
+    replicationState.reset();
+    resetBuffers();
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Every event handed to a flush, as its LSN and ordinal. */
+  const flushed = () =>
+    vi.mocked(processFlush).mock.calls.flatMap(([transactions]) => transactions.flat().map(({ lsn, ordinal }) => `${lsn}#${ordinal}`));
+
+  it('tells the rows of one WAL record apart by their ordinal', async () => {
+    // A COPY writes a page of rows in one record: each arrives with that record's LSN.
+    for (const id of ['usr-1', 'usr-2', 'usr-3']) await handleDataMessage('0/10', mockDmlMessage('insert', id));
+    await handleDataMessage('0/20', mockDmlMessage('insert', 'usr-4'));
+    await vi.runAllTimersAsync();
+
+    expect(flushed()).toEqual(['0/10#0', '0/10#1', '0/10#2', '0/20#0']);
+  });
+
+  it('counts a change it skips, so the next one has the same ordinal on every delivery', async () => {
+    mocked.mockReturnValueOnce(null);
+    await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-1'));
+    await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-2'));
+    await vi.runAllTimersAsync();
+
+    expect(flushed()).toEqual(['0/10#1']);
+  });
+
+  it('counts from the start again for a new subscription', async () => {
+    await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-1'));
+    // The stream starts over at the confirmed position and delivers the same change again.
+    resetBuffers();
+    await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-1'));
+    await vi.runAllTimersAsync();
+
+    expect(flushed()).toEqual(['0/10#0']);
   });
 });

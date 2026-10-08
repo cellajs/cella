@@ -67,9 +67,9 @@ export class TransactionBuffer {
   }
 
   /** Drops cascaded child deletes inline once the parent channel entity delete has been seen. */
-  async onEvent(lsn: string, result: ParseMessageResult): Promise<void> {
+  async onEvent(lsn: string, result: ParseMessageResult, ordinal = 0): Promise<void> {
     if (this.activeXid === null) {
-      await this.onSurvivingEvents([{ lsn, result }]);
+      await this.onSurvivingEvents([{ lsn, ordinal, result }]);
       return;
     }
 
@@ -85,7 +85,7 @@ export class TransactionBuffer {
       return;
     }
 
-    this.pendingEvents.push({ lsn, result });
+    this.pendingEvents.push({ lsn, ordinal, result });
   }
 
   /** Emits the surviving buffered events; a second pass catches child deletes that preceded their parent. */

@@ -71,6 +71,12 @@ const txBuffer = new TransactionBuffer((events) => flushBuffer.enqueue(events));
 let inFlightMessages = 0;
 
 /**
+ * The LSN of the last change received and its position among the changes at that LSN. One WAL record can hold several
+ * rows (a COPY writes a page of them at once), and each of those arrives with the record's LSN.
+ */
+const lastChange = { lsn: '', ordinal: 0 };
+
+/**
  * Confirms the latest keepalive position once every received message is applied and acknowledged.
  * Data acks stop at the last published row, so an idle worker would otherwise pin the slot while
  * unpublished WAL grows behind it. Transactions committed before a keepalive were streamed ahead of
@@ -158,6 +164,10 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
 
   const tableName = msg.relation?.name;
 
+  // Counted for every change, kept or not, so a change has the same ordinal on every delivery.
+  lastChange.ordinal = lsn === lastChange.lsn ? lastChange.ordinal + 1 : 0;
+  lastChange.lsn = lsn;
+
   if (isSeededInsert(msg)) {
     await acknowledgeSkipped(lsn);
     return;
@@ -174,7 +184,7 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
 
     replicationState.markEvent();
 
-    await txBuffer.onEvent(lsn, parseResult);
+    await txBuffer.onEvent(lsn, parseResult, lastChange.ordinal);
   } catch (error) {
     log.error('Error processing CDC message - LSN NOT acknowledged', { err: error });
   }
@@ -189,4 +199,6 @@ export async function drainBuffers(): Promise<void> {
 export function resetBuffers(): void {
   txBuffer.reset();
   flushBuffer.reset();
+  lastChange.lsn = '';
+  lastChange.ordinal = 0;
 }

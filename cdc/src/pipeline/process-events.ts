@@ -43,8 +43,8 @@ function groupBy<T>(items: T[], keyOf: (item: T) => string): Map<string, T[]> {
 const ACTIVITY_CHUNK_SIZE = 1000;
 
 function prepareEvent(event: PendingEvent): PreparedEvent {
-  const { lsn, result } = event;
-  const activityWithId = { ...result.activity, id: generateActivityId(lsn) };
+  const { lsn, ordinal, result } = event;
+  const activityWithId = { ...result.activity, id: generateActivityId(lsn, ordinal) };
   const seq = typeof result.rowData.seq === 'number' ? result.rowData.seq : undefined;
   return { event, activityWithId, seq, lsn, rowData: result.rowData, movedFrom: result.movedFrom ?? null };
 }
@@ -57,8 +57,8 @@ const isStampedEvent = ({ event }: PreparedEvent): boolean => {
 /**
  * The bookkeeping of a flush, in commit order and in one transaction: the activity rows, then the sequence
  * reservation, counters and row stamps of the events whose activity this transaction inserted. An activity id comes
- * from the event's LSN, so an event delivered a second time inserts nothing and changes nothing: its row keeps the seq
- * it got the first time, read back here for the notification.
+ * from the event's LSN and its ordinal there, so an event delivered a second time inserts nothing and changes nothing:
+ * its row keeps the seq it got the first time, read back here for the notification.
  */
 async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
   await cdcDb.transaction(async (tx) => {
