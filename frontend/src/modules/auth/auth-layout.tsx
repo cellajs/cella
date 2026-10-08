@@ -3,7 +3,6 @@ import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { useMountedState } from '~/hooks/use-mounted-state';
 import { AppFooterLinks, type FooterLinkProps } from '~/modules/common/app/app-footer';
 import { Logo } from '~/modules/common/logo';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -12,7 +11,6 @@ const MorphAnimation = lazyNamed(() => import('~/modules/common/morph-animation/
 
 export function AuthLayout() {
   const { t } = useTranslation();
-  const { hasStarted, hasWaited } = useMountedState();
   const isMobile = useBreakpointBelow('sm');
   const isSignInPage = useRouterState({ select: (s) => (s.resolvedLocation ?? s.location).pathname === '/auth/authenticate' });
 
@@ -21,11 +19,7 @@ export function AuthLayout() {
   if (!isSignInPage) authFooterLinks.unshift({ id: 'sign_in', href: '/auth/authenticate' });
 
   return (
-    <div
-      data-started={hasStarted}
-      data-waited={hasWaited}
-      className="group rich-gradient container flex min-h-[90svh] flex-col items-center overflow-y-clip pt-8 pb-40 before:fixed after:fixed sm:min-h-svh"
-    >
+    <div className="group rich-gradient container flex min-h-[90svh] flex-col items-center overflow-y-clip pt-8 pb-40 before:fixed after:fixed sm:min-h-svh">
       {/* Dividing-colony mark behind the auth card; the module lays it out as the page background and brings it in */}
       <Suspense fallback={null}>
         {/* overscan below 1 zooms in: the colony stays larger than the viewport at every stage, so the window always crops it, and a phone zooms in further */}
@@ -35,13 +29,13 @@ export function AuthLayout() {
 
       {/* The content column's own box, clear of the entrance transform below: the veil measures itself on it */}
       <div className="relative my-auto">
-        {/* Veil above the colony and under the content: two soft ellipses calm the backdrop where the reading happens, and come in with the content */}
-        <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 ease-out group-data-[started=true]:opacity-100">
+        {/* Veil above the colony and under the content: two soft ellipses calm the backdrop where the reading happens, and come in with the content: both enter at mount, through `starting:` */}
+        <div className="pointer-events-none absolute inset-0 starting:opacity-0 transition-opacity duration-500 ease-out">
           <div className="rich-veil-gradient" />
           <div className="rich-veil-background" />
         </div>
 
-        <div className="mx-auto flex w-[90vw] xs:w-80 translate-y-4 flex-col justify-center gap-4 opacity-0 transition-[opacity,transform] duration-500 ease-out will-change-transform has-[.error-notice]:w-[90vw] group-data-[started=false]:scale-95 group-data-[started=true]:opacity-100 sm:w-lg has-[.error-notice]:sm:w-200">
+        <div className="mx-auto flex w-[90vw] xs:w-80 translate-y-4 starting:scale-95 flex-col justify-center gap-4 starting:opacity-0 transition-[opacity,transform] duration-500 ease-out will-change-transform has-[.error-notice]:w-[90vw] sm:w-lg has-[.error-notice]:sm:w-200">
           <main className="flex flex-col gap-4">
             <Outlet />
           </main>

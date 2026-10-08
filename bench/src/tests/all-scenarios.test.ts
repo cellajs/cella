@@ -34,7 +34,9 @@ describe('bench scenarios (short)', () => {
   it('every scenario completes a short run', () => {
     if (!ready) return;
 
-    // The exact CLI path users run; a non-zero exit throws and fails the test.
-    execFileSync('tsx', ['src/bench-cli.ts', '--all', '--short'], { cwd: BENCH_ROOT, stdio: 'inherit', env: createBenchProcessEnv() });
+    // The exact CLI path users run; a non-zero exit throws and fails the test. Vitest's NODE_ENV=test is dropped:
+    // it puts the CLI on the test config, whose session cookie name the running dev stack rejects.
+    const env = createBenchProcessEnv({ NODE_ENV: undefined });
+    execFileSync('tsx', ['src/bench-cli.ts', '--all', '--short'], { cwd: BENCH_ROOT, stdio: 'inherit', env });
   }, 120_000);
 });

@@ -101,7 +101,8 @@ export const Reorderable: Story = {
       grips[0].focus();
       await userEvent.keyboard('{Enter}');
       const menu = await body.findByRole('menu');
-      await expect(menu.contains(canvasElement.ownerDocument.activeElement)).toBe(true);
+      // Base UI moves focus into the popup a frame after it mounts
+      await waitFor(() => expect(menu.contains(canvasElement.ownerDocument.activeElement)).toBe(true));
     });
 
     await step('The first row cannot move up, and moving down puts it second', async () => {

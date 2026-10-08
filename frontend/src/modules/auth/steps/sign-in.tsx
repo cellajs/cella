@@ -16,6 +16,7 @@ import { useAuthStore } from '~/modules/auth/auth-store';
 import type { ConditionalMediationResult } from '~/modules/auth/passkey-credentials';
 import { isConditionalMediationAvailable, startConditionalMediation } from '~/modules/auth/passkey-credentials';
 import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
+import { SignUpDisabled } from '~/modules/auth/sign-up-disabled';
 import { invitationResumePath, useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -189,24 +190,17 @@ export function SignInStep() {
   );
 }
 
-/** Where a visitor without an account goes from the neutral step: sign-up, the waitlist, or the invite-only notice. */
+/** Where a visitor without an account goes from the neutral step: sign-up, or the notice that it is closed. */
 function NewHere({ onStep }: { onStep: (step: 'signUp' | 'waitlist') => void }) {
   const { t } = useTranslation();
 
-  if (!appConfig.has.selfRegistration && !appConfig.has.waitlist) {
-    return (
-      <p className="text-center">
-        {t('c:new_here')} {t('c:invite_only.text', { appName: appConfig.name })}
-      </p>
-    );
-  }
+  if (!appConfig.has.selfRegistration) return <SignUpDisabled onRequest={() => onStep('waitlist')} />;
 
-  const step = appConfig.has.selfRegistration ? 'signUp' : 'waitlist';
   return (
     <p className="text-center">
       {t('c:new_here')}{' '}
-      <Button type="button" variant="link" className="h-auto p-0 text-base" onClick={() => onStep(step)}>
-        {step === 'signUp' ? t('c:sign_up') : t('c:request_access')}
+      <Button type="button" variant="link" className="h-auto p-0 text-base" onClick={() => onStep('signUp')}>
+        {t('c:sign_up')}
       </Button>
     </p>
   );
