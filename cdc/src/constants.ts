@@ -28,14 +28,12 @@ export const RESOURCE_LIMITS = {
     retryDelayMs: 500,
   },
 
-  // Catchup mode thresholds
+  // When health reports the worker as catching up: by the age of the commits it reads
   catchup: {
     enterLagMs: 10_000,
     exitLagMs: 2_000,
-    /** Consecutive live transactions required before catchup mode exits. */
+    /** Consecutive transactions under the exit lag before the status clears. */
     exitConsecutiveLive: 3,
-    /** Log catchup progress every N events. */
-    progressLogInterval: 1000,
   },
 
   // Buffer safety caps

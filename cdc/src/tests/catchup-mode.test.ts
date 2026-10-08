@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { replicationState } from '../services/replication-state';
 
-describe('Catchup mode: replicationState', () => {
+describe('Catching-up status: replicationState', () => {
   beforeEach(() => {
     replicationState.reset();
     vi.clearAllMocks();
@@ -19,7 +19,6 @@ describe('Catchup mode: replicationState', () => {
       expect(result).toBe(true);
       expect(replicationState.catchingUp).toBe(true);
       expect(replicationState.catchupStartedAt).toBeTypeOf('number');
-      expect(replicationState.catchupEventsProcessed).toBe(0);
     });
 
     it('does not enter catchup at exactly the threshold', () => {
@@ -52,6 +51,7 @@ describe('Catchup mode: replicationState', () => {
       const result = replicationState.updateLag(500);
       expect(result).toBe(false);
       expect(replicationState.catchingUp).toBe(false);
+      expect(replicationState.catchupStartedAt).toBeNull();
     });
 
     it('resets consecutive counter on a high-lag spike', () => {
@@ -74,35 +74,9 @@ describe('Catchup mode: replicationState', () => {
     });
   });
 
-  describe('incrementCatchupEvents', () => {
-    it('increments by 1 by default', () => {
-      replicationState.incrementCatchupEvents();
-      replicationState.incrementCatchupEvents();
-      expect(replicationState.catchupEventsProcessed).toBe(2);
-    });
-
-    it('increments by a custom count', () => {
-      replicationState.incrementCatchupEvents(10);
-      expect(replicationState.catchupEventsProcessed).toBe(10);
-    });
-  });
-
-  describe('resetCatchup', () => {
-    it('clears catchup tracking state but not catchingUp flag', () => {
-      replicationState.updateLag(15_000);
-      replicationState.incrementCatchupEvents(50);
-
-      replicationState.resetCatchup();
-
-      expect(replicationState.catchupStartedAt).toBeNull();
-      expect(replicationState.catchupEventsProcessed).toBe(0);
-    });
-  });
-
   describe('reset', () => {
     it('clears everything including catchup state', () => {
       replicationState.updateLag(15_000);
-      replicationState.incrementCatchupEvents(100);
       replicationState.lastLsn = '0/ABCDEF';
       replicationState.status = 'active';
 
@@ -110,7 +84,6 @@ describe('Catchup mode: replicationState', () => {
 
       expect(replicationState.catchingUp).toBe(false);
       expect(replicationState.catchupStartedAt).toBeNull();
-      expect(replicationState.catchupEventsProcessed).toBe(0);
       expect(replicationState.lastLagMs).toBeNull();
       expect(replicationState.lastLsn).toBeNull();
       expect(replicationState.status).toBe('stopped');

@@ -44,8 +44,8 @@ describe('TransactionBuffer', () => {
   });
 
   it('gives each event its transaction commit time, the same on every delivery', async () => {
-    // 2026-10-09T00:00:00.123Z in microseconds since the PostgreSQL epoch (2000-01-01).
-    const commitTime = BigInt(Date.parse('2026-10-09T00:00:00.123Z') - 946684800000) * 1000n;
+    // As the replication client reports it: microseconds since the Unix epoch.
+    const commitTime = BigInt(Date.parse('2026-10-09T00:00:00.123Z')) * 1000n;
 
     for (const xid of [7, 8]) {
       buffer.onBegin({ tag: 'begin', xid, commitLsn: null, commitTime });

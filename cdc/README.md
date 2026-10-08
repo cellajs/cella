@@ -57,7 +57,7 @@ Each flush reserves a contiguous per-organization range from `channel_counters.c
 
 One server-to-server WebSocket to `/internal/cdc` (30-second ping) that carries entity row data and must never be exposed to browsers or external networks. Protection: served only on the backend's internal listener (`INTERNAL_PORT`, which the infra routes from the private network alone; the public listener answers 404), `CDC_SECRET` in the `x-cdc-secret` header, production source-IP allowlist, one connection at a time (a new one replaces the old), 90-second idle timeout.
 
-Data messages carry the activity, compacted row data, the previous location of reparented rows, permission-relevant batch rows, and trace context. The type check in `src/tests/wire-contract.type-check.ts` pins the outbound type to the backend's `CdcMessage` schema. Control messages (`health`, `catchup_complete`) bypass that schema.
+Data messages carry the activity, compacted row data, the previous location of reparented rows, permission-relevant batch rows, and trace context. The type check in `src/tests/wire-contract.type-check.ts` pins the outbound type to the backend's `CdcMessage` schema. Control messages (`health`, `wal_lag_alert`) bypass that schema.
 
 ## Failure and recovery
 
@@ -67,7 +67,7 @@ The slot advances only after a flush committed and is the only durable buffer, s
 | --- | --- | --- |
 | A flush cannot be recorded | Error in its transaction | Passing errors (deadlock, lost connection) repeat the transaction three times. Then the flush is tried one source transaction at a time. The one that still fails stops the subscription without an acknowledgement: after 5 seconds the worker reads again from the confirmed position. A failure that is not a passing error counts against the tables of that transaction: three open a per-table circuit for 60 seconds, then half-open, and events of a table with an open circuit are left out. |
 | API WebSocket unavailable | Connection drop. Slot lag is checked every 10 seconds (1 GB warns, 2 GB unhealthy) | Hold data acknowledgements so WAL stays behind the slot. Reconnect with exponential backoff, 1 to 30 seconds, then send the held acknowledgement. |
-| Worker more than 10 seconds behind | Commit timestamp lag | Catch-up mode: ignore seeded inserts (`00000000-` or `gen-` IDs). After three transactions under 2 seconds, recalculate counters and send `catchup_complete` so the backend invalidates its entity cache. |
+| Worker more than 10 seconds behind | Age of the commit time of the transaction being read | Health reports it as catching up, until three transactions in a row are under 2 seconds old. Processing is the same: every change is recorded, whatever the lag. |
 | Slot held by another worker (rolling deploy) | PostgreSQL error `55006`, logged with the holding walsender | Retry the subscription 12 times at 500 ms, then every 5 seconds (the same cadence as any subscribe error). |
 | Unexpected data | Draft row, or product row without an organization | Drop the draft row (rate-limited warning). A product row without an organization fails its flush: see the first row. |
 | Slot dropped or `lost` | Unacknowledged changes gone | Operator recalculates counters. The activity history keeps a gap. A missing publication makes the worker drop and recreate its slot once, discarding unacknowledged WAL. |

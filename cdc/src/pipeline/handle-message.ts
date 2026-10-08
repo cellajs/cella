@@ -5,12 +5,8 @@ import { wsClient } from '../network/websocket-client';
 import { FlushBuffer } from '../services/flush-buffer';
 import { replicationState } from '../services/replication-state';
 import { TransactionBuffer } from '../services/transaction-buffer';
+import { commitTimeMs } from '../utils/commit-time';
 import { formatLsn, lsnToBigInt } from '../utils/lsn';
-
-// PostgreSQL epoch: 2000-01-01T00:00:00Z in Unix ms
-const PG_EPOCH_MS = 946684800000n;
-
-import { runPostCatchupRecovery } from '../services/catchup-recovery';
 import { parseMessage } from './parse-message';
 import { processFlush } from './process-events';
 
@@ -20,22 +16,6 @@ type DmlMessage = Pgoutput.MessageInsert | Pgoutput.MessageUpdate | Pgoutput.Mes
 
 function isDmlMessage(msg: Pgoutput.Message): msg is DmlMessage {
   return msg.tag === 'insert' || msg.tag === 'update' || msg.tag === 'delete';
-}
-
-/** New row for INSERT/UPDATE, old row for DELETE. */
-function getMessageRow(msg: DmlMessage): Record<string, unknown> | null {
-  const row = 'new' in msg ? msg.new : 'old' in msg ? msg.old : null;
-  return row && typeof row === 'object' ? (row as Record<string, unknown>) : null;
-}
-
-/**
- * Seeded rows are recognized by the id prefix '00000000-' (mockUuid) or 'gen-'. Only inserts are
- * skipped: updates and deletes to seeded rows must still be tracked.
- */
-function isSeededInsert(msg: DmlMessage): boolean {
-  if (msg.tag !== 'insert' || !replicationState.catchingUp) return false;
-  const id = getMessageRow(msg)?.id;
-  return typeof id === 'string' && (id.startsWith('00000000-') || id.startsWith('gen-'));
 }
 
 /** Sends the standby status update and records it, so heartbeats can repeat the last flushed position. */
@@ -133,18 +113,10 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
   if (tag === 'begin') {
     const beginMsg = msg as Pgoutput.MessageBegin;
 
-    if (beginMsg.commitTime) {
-      const wasCatchingUp = replicationState.catchingUp;
-      const commitTimeMs = Number(beginMsg.commitTime.valueOf() / 1000n) + Number(PG_EPOCH_MS);
-      const lagMs = Date.now() - commitTimeMs;
-      const stillCatchingUp = replicationState.updateLag(lagMs);
-
-      // Catchup to live transition.
-      if (wasCatchingUp && !stillCatchingUp) {
-        await flushBuffer.drain();
-        runPostCatchupRecovery();
-      }
-    }
+    // How long ago the transaction committed is how far the worker is behind. Health reports it; every change is
+    // recorded the same way whatever the lag.
+    const committedAt = commitTimeMs(beginMsg);
+    if (committedAt !== null) replicationState.updateLag(Date.now() - committedAt);
 
     txBuffer.onBegin(beginMsg);
     return;
@@ -167,11 +139,6 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
   // Counted for every change, kept or not, so a change has the same ordinal on every delivery.
   lastChange.ordinal = lsn === lastChange.lsn ? lastChange.ordinal + 1 : 0;
   lastChange.lsn = lsn;
-
-  if (isSeededInsert(msg)) {
-    await acknowledgeSkipped(lsn);
-    return;
-  }
 
   try {
     log.trace('CDC message received', { lsn, tag, table: tableName });

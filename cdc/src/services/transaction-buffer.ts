@@ -6,6 +6,7 @@ import { log } from '../lib/pino';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent } from '../types';
 import { channelIdColumnKeys } from '../utils/channel-columns';
+import { commitTimeMs } from '../utils/commit-time';
 
 /** Reverse lookup: hostProduct to the products embedded into it. */
 const embeddedByHostProduct = new Map<string, Set<string>>();
@@ -16,9 +17,6 @@ for (const { embeddedProduct, hostProduct } of appConfig.productEmbeddings) {
 }
 
 const { transactionTimeoutMs } = RESOURCE_LIMITS.buffers;
-
-// PostgreSQL epoch: 2000-01-01T00:00:00Z in Unix ms
-const PG_EPOCH_MS = 946684800000;
 
 /**
  * Buffers CDC events per transaction and suppresses cascaded deletes as they arrive. Tracking
@@ -59,7 +57,8 @@ export class TransactionBuffer {
     }
 
     this.activeXid = msg.xid;
-    this.commitTime = msg.commitTime ? new Date(Number(msg.commitTime.valueOf() / 1000n) + PG_EPOCH_MS).toISOString() : null;
+    const committedAt = commitTimeMs(msg);
+    this.commitTime = committedAt === null ? null : new Date(committedAt).toISOString();
     this.pendingEvents = [];
     this.deletedChannelIds.clear();
     this.suppressedCount = 0;
