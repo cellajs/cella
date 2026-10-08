@@ -44,8 +44,6 @@ export const RESOURCE_LIMITS = {
     flushBatchSize: 100,
     /** One flush, and so one database transaction, takes whole source transactions up to this many events; a larger source transaction goes alone. */
     flushMaxEvents: 2000,
-    /** Events flush individually when no commit arrives within this window. */
-    transactionTimeoutMs: 30_000,
   },
 
   // WAL lag thresholds for backpressure
