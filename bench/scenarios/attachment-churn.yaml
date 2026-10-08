@@ -1,0 +1,44 @@
+# Attachment churn: batches of 10 attachments are created and deleted again.
+#
+# What it answers: whether the insert and delete path holds its books under load. Creates and deletes arrive as
+# multi-row statements, so the CDC worker handles them as batches, and the organization's attachment count moves
+# with every one of them. Each VU creates a batch and deletes it, 5 times (100 rows written per VU).
+# Steps up: 5 → 10 arrivals/s (~1000 rows/s peak).
+#
+# The CLI checks after the run that the worker recorded one activity per row, and that the attachment count is back
+# where it was.
+config:
+  target: "{{ $processEnvironment.BASE_URL }}"
+  processor: "../src/processors/attachment-churn.ts"
+  phases:
+    - duration: 10
+      arrivalRate: 5
+      name: "hold 5"
+    - duration: 20
+      arrivalRate: 10
+      name: "hold 10"
+  plugins:
+    ensure:
+      maxErrorRate: 1
+
+scenarios:
+  - beforeScenario: "authenticate"
+    flow:
+      - loop:
+          - function: "buildChurnBatch"
+          - post:
+              url: "/{{ tenantId }}/{{ orgId }}/attachments"
+              headers:
+                Content-Type: "application/json"
+                cookie: "{{ cookie }}"
+              json: "{{ createPayload }}"
+              afterResponse: "countCreated"
+          - delete:
+              url: "/{{ tenantId }}/{{ orgId }}/attachments"
+              headers:
+                Content-Type: "application/json"
+                cookie: "{{ cookie }}"
+              json: "{{ deletePayload }}"
+              afterResponse: "countDeleted"
+          - think: "100ms"
+        count: 5

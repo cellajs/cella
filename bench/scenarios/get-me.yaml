@@ -1,7 +1,8 @@
-# GET /me: looping VUs test read throughput ceiling.
+# GET /me: the cheapest signed-in request, repeated.
 #
-# Each VU loops 20 times, hitting the /me endpoint.
-# Sustained at 100 arrivals/s (~2000 req/s).
+# What it answers: what the guard chain alone costs. `/me` reads nothing beyond the session and the memberships the
+# guards load and cache, so its ceiling is that of the API process, not of the database.
+# Each VU loops 20 times. Sustained at 100 arrivals/s (~2000 req/s).
 config:
   target: "{{ $processEnvironment.BASE_URL }}"
   processor: "../src/processors/auth.ts"

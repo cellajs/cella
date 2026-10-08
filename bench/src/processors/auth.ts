@@ -1,8 +1,12 @@
+import { threadId } from 'node:worker_threads';
 import { COOKIE_SECRET, SESSION_COOKIE_NAME } from '../config';
+import { ORG_ID, TENANT_ID } from '../seeds/ids';
 import { sealSessionCookie, sessionToken } from '../seeds/session-auth';
 import { TOTAL_USERS } from '../seeds/user-constants';
 
-let userCounter = 0;
+/** Artillery runs VUs in several worker threads, each with a counter of its own: starting them apart keeps two workers from signing in as the same users. */
+const WORKER_STRIDE = 97;
+let userCounter = threadId * WORKER_STRIDE;
 
 // ── Session cache ──────────────────────────────────────────────────────────
 const cookieCache = new Map<number, string>();
@@ -22,4 +26,6 @@ export async function authenticate(context: { vars: Record<string, unknown> }, _
   const userIndex = userCounter++ % TOTAL_USERS;
   context.vars.cookie = buildCookie(userIndex);
   context.vars.userIndex = userIndex;
+  context.vars.tenantId = TENANT_ID;
+  context.vars.orgId = ORG_ID;
 }

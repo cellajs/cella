@@ -33,6 +33,7 @@ export async function typeTogether(_context: unknown, events: ArtilleryEvents): 
   events.emit('counter', 'yjs.sse_notifications', report.sse.total);
   events.emit('counter', 'yjs.unsaved_frames', report.end.unsavedFrames ?? 0);
   events.emit('counter', 'yjs.docs_not_persisted', report.end.docsNotPersisted);
+  events.emit('counter', 'yjs.docs_diverged', report.end.docsDiverged);
   for (const [name, value] of Object.entries(report.counters)) {
     if (name.includes('close') || name.includes('error') || name.includes('reconnect')) events.emit('counter', name, value);
   }
