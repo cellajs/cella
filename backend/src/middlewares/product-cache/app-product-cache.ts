@@ -37,7 +37,7 @@ const holdOff = (key: string, until: number): void => {
   noStoreBefore.set(key, Math.max(until, noStoreBefore.get(key) ?? 0));
 };
 
-/** Entity-keyed store of enriched detail responses; CDC invalidates by id and the next fetch re-enriches. */
+/** Entity-keyed store of enriched detail responses; the API's own writes and CDC messages drop entries by id, the next fetch re-enriches. */
 export const productCache = {
   /**
    * Called by the productCache middleware once the handler has fetched and enriched from the DB. Stores nothing when

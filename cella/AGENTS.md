@@ -111,7 +111,8 @@ Every check takes an `Access` from `accessFrom(ctx)`. Never assemble one by hand
 Model: [Sync engine](./SYNC_ENGINE.md).
 
 - **Stx helpers** (`frontend/src/query/offline/`): `createStxForCreate()`, `createStxForUpdate()`, `createStxForDelete()` build sync transaction metadata from the cached entity version. Idempotency runs through `isTransactionProcessed()` (`backend/src/utils/idempotency.ts`) against the `activities` table.
-- **Realtime backend**: `activityBus` (`backend/src/lib/activity-bus.ts`) → `createStreamDispatcher()` → `streamSubscriberManager` (`backend/src/modules/entities/stream/`, SSE fan-out). `CdcWebSocketServer` (`backend/src/lib/cdc-websocket.ts`) accepts the CDC worker on `/internal/cdc` of the internal listener (`backend/src/lib/listeners.ts`), which serves the server-to-server routes apart from the public API.
+- **Realtime backend**: `activityBus` (`backend/src/lib/activity-bus.ts`) → `createStreamDispatcher()` → `streamSubscriberManager` (`backend/src/modules/entities/stream/`, SSE fan-out). `CdcWebSocketServer` (`backend/src/lib/cdc-websocket.ts`) accepts the CDC worker on `/internal/cdc` of the internal listener (`backend/src/lib/listeners.ts`), which serves the server-to-server routes apart from the public API. One API process per deployment: the worker speaks to one, and that one holds every stream ([Scaling](./ARCHITECTURE.md#scaling)).
+- **Books** (`cdc/src/pipeline/verify.ts`): the worker checks `channel_counters` against the tables daily and rebuilds them in a lost case; every correction bumps `sync_state.generation`, the API ends app streams with `resync` and clients refetch. What each failure costs: [Sync engine](./SYNC_ENGINE.md#what-happens-when).
 - **Seen-by tracking**: `IntersectionObserver` marks entities seen. A Zustand store batches IDs, flushes on timer + `sendBeacon` on unload, persists flushed IDs in `localUserDb` (`kv` table). Unseen badges decrement optimistically in the query cache. Backend: `seen_by` (one row per user+product), `product_counters` (denormalized counts).
 - **Product cache** (`backend/src/middlewares/product-cache/`): [Sync engine](./SYNC_ENGINE.md#detail-cache).
 - **Sync signals** (`frontend/src/query/realtime/sync-signals.ts`): the only extension point for sync-derived per-user state. Never import module logic into the prioritizer. Contract: [Sync engine](./SYNC_ENGINE.md#fetch-prioritization).
@@ -211,6 +212,7 @@ Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control objec
 - `pnpm generate`: Create Drizzle migrations from schema changes.
 - `pnpm sdk`: Regenerate OpenAPI spec and frontend SDK.
 - `pnpm seed`: Seed database with test data.
+- `pnpm sync:verify` / `pnpm sync:rebuild`: Ask the running CDC worker to check its counters against the tables, or to rebuild them: [CDC worker](../cdc/README.md#verify-and-rebuild).
 - `pnpm test`: Run the full test suite with summary coverage.
 - `pnpm infra`: Infra CLI for deployment: [Infra docs](/docs/page/guides/deployment)
 - `pnpm bench`: Run benchmark scenarios: [Bench docs](/docs/page/guides/load-testing)

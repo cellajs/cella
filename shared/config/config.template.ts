@@ -146,7 +146,9 @@ export const config = {
 
   // Cost escape hatch: when true the backend (MODE=api) also boots every enabled
   // service in-process: one VM for previews/small apps. Default false keeps the
-  // split (one service per process). cdc co-hosting forfeits API blue-green.
+  // split (one service per process). HTTP keeps its LB overlap on a deploy; the
+  // co-hosted cdc and jobs wait for the old VM's slot and scheduler, so live
+  // updates pause until it is reaped.
   singleVM: false as boolean,
 
   /** About page URL */

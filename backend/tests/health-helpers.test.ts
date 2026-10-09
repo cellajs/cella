@@ -23,7 +23,6 @@ function worker(overrides: Record<string, unknown> = {}) {
     slotActive: true,
     lagBytes: 0,
     lastEventAt: new Date().toISOString(),
-    catchingUp: false,
     receivedAt: new Date().toISOString(),
     ageMs: 1000,
     ...overrides,

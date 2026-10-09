@@ -41,7 +41,7 @@ export const syncIncidentsTable = snakeCase.table('sync_incidents', {
   createdAt: timestamp({ mode: 'string' }).notNull().defaultNow(),
   /** `verify_corrected`: a verify found differences. `rebuild`: the books were replaced by a count from the tables. */
   kind: varchar({ enum: ['verify_corrected', 'rebuild'] }).notNull(),
-  /** `lost_slot`: the replication slot was gone. `lost_counters`: the unlogged counters were emptied. `stuck`: a change failed every read. */
+  /** `lost_slot`: the replication slot was gone. `lost_counters`: `channel_counters` was empty. `stuck`: a change failed every read. */
   reason: varchar({ enum: ['scheduled', 'requested', 'lost_slot', 'lost_counters', 'stuck'] }).notNull(),
   /** WAL positions the worker gave up between, for a rebuild that skipped a backlog. */
   positionFrom: varchar({ length: maxLength.field }),

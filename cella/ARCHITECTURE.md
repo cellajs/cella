@@ -77,6 +77,12 @@ The backend and its workers share OpenTelemetry setup ([Observability](./OTEL.md
 
 Tests cover generated contracts, permission parity, cross-scope access, database constraints, sync catchup, and offline replay ([Testing](./TESTING.md)).
 
+## Scaling
+
+Cella runs one API process per deployment and scales up and apart, not out. Up: a bigger VM for the API and a bigger managed database. Apart: each worker (CDC, Yjs, OAuth, MCP, jobs) moves to a VM of its own when the API's VM gets busy, and each is a singleton: the CDC worker holds the one replication slot, the jobs worker the one scheduler. The client carries work too: it keeps its own cache, the sync engine notifies and lets clients fetch, and the server spreads those fetches over time.
+
+A second API process is not part of the design. The CDC worker hands every change to one API process over one socket, and that process holds every SSE stream, drops its caches on each change and ends the streams when the sync books move to a new generation. A second process would hear none of it: its clients would learn of changes only at reconnect, and its caches would go stale. Running the API on more than one process would need a bus between them for the worker's changes, and the infra has no option for it. A deploy overlap is the one moment two API processes exist; [Deployment](./DEPLOYMENT.md#rollout-strategies) says what that costs.
+
 ## Repository map
 
 Flat-root monorepo:

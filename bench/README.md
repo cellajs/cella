@@ -49,6 +49,7 @@ The checks:
 - **Responses.** More than 1% of responses that are not 2xx fail the run, also with `--short`.
 - **Activities.** A processor counts the rows its requests wrote as `bench.rows_written`. After the run the CLI waits for the CDC worker, for at most 60 seconds, and compares that count with the product activities the worker recorded for the bench organization. It prints how long the worker needed to catch up.
 - **Counts.** `bench.rows_created.<type>` minus `bench.rows_deleted.<type>` must equal the change of the organization's `<type>` count in `channel_counters`.
+- **Books.** A full run ends with the worker's own verify (`pnpm sync:verify`): every counter, the sequence counter and the frontiers against the tables. Corrections, or no answer in time, fail the run. A correction also moves the sync generation, so every connected client refetches.
 - **Counters.** A scenario names counters in its header comments: `# expect: a, b` for ones that must have counted, `# forbid: c` for ones that must not. `sse-fanout` expects notifications this way, so subscribers that hear nothing fail the run. A `--short` run is asked only for what is forbidden: its single VU plays one role of a scenario.
 
 A failed run is not compared and not saved as a baseline. A scenario of your own gets the response check for free and the others by emitting those counters or adding those comment lines.
