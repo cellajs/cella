@@ -2,13 +2,11 @@ import { trace } from '@opentelemetry/api';
 import pino from 'pino';
 import type { Severity } from '../types.ts';
 import { appConfig } from './config-builder/app-config.ts';
+import { type OtlpSink, resolveOtlpSink } from './otlp-sink.ts';
 import { failedQueryReason, isFailedQueryMessage, replaceInStack } from './utils/failed-query.ts';
 import { scrubText, scrubUrl } from './utils/scrub-url.ts';
 
 export type { Logger } from 'pino';
-
-// Maple.dev OTLP logs ingest endpoint (kept in sync with MAPLE_INGEST_BASE in ./otel.ts).
-const MAPLE_LOGS_INGEST_URL = 'https://ingest.maple.dev/v1/logs';
 
 interface CreateLoggerOptions {
   level?: string;
@@ -18,15 +16,13 @@ interface CreateLoggerOptions {
   redactPaths: readonly string[];
   formatters?: pino.LoggerOptions['formatters'];
   transportOptions?: Record<string, unknown>;
-  /** With a `mapleSecretIngestKey` set, ships structured logs to Maple.dev alongside the console output, in dev and production alike. */
-  enableOtelTransport?: boolean;
-  /** Maple.dev secret ingest key. Without it the OTel transport is skipped. */
-  mapleSecretIngestKey?: string;
+  /** Where structured logs ship alongside the console output, in dev and production alike (`resolveOtlpSink`). Absent, the console is the only target. */
+  sink?: OtlpSink;
   /** Reported as `service.name` on exported logs; match the service's tracing serviceName. */
   serviceName?: string;
   /** Release identifier reported as `service.version` on exported logs. */
   serviceVersion?: string;
-  /** Writes every line here and builds no console or Maple target (tests). */
+  /** Writes every line here and builds no console or OTel target (tests). */
   destination?: pino.DestinationStream;
 }
 
@@ -80,8 +76,7 @@ export const createLogger = ({
   redactPaths,
   formatters,
   transportOptions,
-  enableOtelTransport,
-  mapleSecretIngestKey,
+  sink,
   serviceName,
   serviceVersion,
   destination: injectedDestination,
@@ -94,11 +89,11 @@ export const createLogger = ({
         options: { colorize: true, singleLine: true, ignore: 'pid,hostname', ...transportOptions },
       };
 
-  // pino-opentelemetry-transport runs in a worker thread with its own OTLP exporter, so it needs
-  // the endpoint and ingest key passed explicitly. Enabled in dev too, so logs reach Maple in the
-  // production shape while the console keeps pretty output.
+  // pino-opentelemetry-transport runs in a worker thread with its own OTLP exporter, so it is handed the
+  // sink's options. Enabled in dev too, so logs reach the sink in the production shape while the console
+  // keeps pretty output.
   const otelTarget: pino.TransportTargetOptions | undefined =
-    !injectedDestination && !isTest && enableOtelTransport && mapleSecretIngestKey
+    !injectedDestination && !isTest && sink
       ? {
           target: 'pino-opentelemetry-transport',
           options: {
@@ -112,7 +107,7 @@ export const createLogger = ({
               recordProcessorType: 'batch',
               exporterOptions: {
                 protocol: 'http',
-                httpExporterOptions: { url: MAPLE_LOGS_INGEST_URL, headers: { 'x-maple-ingest-key': mapleSecretIngestKey } },
+                httpExporterOptions: sink('logs'),
               },
             },
           },
@@ -227,6 +222,7 @@ interface WorkerLogEnv {
   NODE_ENV: string;
   PINO_LOG_LEVEL?: string;
   MAPLE_SECRET_INGEST_KEY?: string;
+  OTEL_EXPORTER_OTLP_ENDPOINT?: string;
   RELEASE_SHA?: string;
 }
 
@@ -240,8 +236,7 @@ export const createWorkerLog = (serviceSuffix: string, env: WorkerLogEnv, redact
       level: env.PINO_LOG_LEVEL,
       isProduction: env.NODE_ENV === 'production',
       isTest: env.NODE_ENV === 'test',
-      enableOtelTransport: true,
-      mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
+      sink: resolveOtlpSink(env),
       serviceName: `${appConfig.slug}-${serviceSuffix}`,
       serviceVersion: env.RELEASE_SHA,
       redactPaths,

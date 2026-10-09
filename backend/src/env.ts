@@ -107,6 +107,9 @@ export const env = createEnv({
     ELEMENT_BOT_ACCESS_TOKEN: z.string().optional(),
 
     MAPLE_SECRET_INGEST_KEY: z.string().optional(),
+    // The standard OTLP destination; it wins over the Maple key. The OTel exporters read it and its sibling variables
+    // (OTEL_EXPORTER_OTLP_HEADERS, per-signal endpoints) from the environment themselves.
+    OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
 
     // Key material the Ed25519 key signing Yjs editor tokens derives from; the relay holds only the public half.
     YJS_TOKEN_PRIVATE_KEY: secretString('YJS_TOKEN_PRIVATE_KEY', 32).optional(),

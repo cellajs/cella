@@ -1,12 +1,13 @@
 import { appConfig } from 'shared';
 import { createOtelSDK, type OtelSDK } from 'shared/otel';
+import { resolveOtlpSink } from 'shared/otlp-sink';
 import { env } from '../env';
 
 /** OTel SDK for the Yjs worker, built from the shared factory (traces/metrics/logs). */
 export const otel: OtelSDK = createOtelSDK({
   serviceName: `${appConfig.slug}-yjs`,
   serviceVersion: env.RELEASE_SHA,
-  mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
+  sink: resolveOtlpSink(env),
   autoInstrumentations: false,
 });
 

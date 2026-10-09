@@ -4,6 +4,7 @@ import { context, propagation, SpanStatusCode, trace } from '@opentelemetry/api'
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createOtelSDK } from './otel.ts';
+import { resolveOtlpSink } from './otlp-sink.ts';
 import { collectingExporter, failedLookup } from './testing/telemetry.ts';
 
 /** Everything a span carries to the backend that could hold a string. */
@@ -33,7 +34,12 @@ describe('createOtelSDK', () => {
 
   it('normalizes metric interval below exporter timeout', () => {
     expect(() =>
-      createOtelSDK({ serviceName: 'test-service', mapleSecretIngestKey: 'test-key', metricIntervalMs: 1, autoInstrumentations: false }),
+      createOtelSDK({
+        serviceName: 'test-service',
+        sink: resolveOtlpSink({ MAPLE_SECRET_INGEST_KEY: 'test-key' }),
+        metricIntervalMs: 1,
+        autoInstrumentations: false,
+      }),
     ).not.toThrow();
   });
 
@@ -42,13 +48,13 @@ describe('createOtelSDK', () => {
     await expect(otel.shutdown()).resolves.toBeUndefined();
   });
 
-  it('verifyConnection logs skip message when no Maple key', async () => {
+  it('verifyConnection says export is off when no sink is set', async () => {
     const spy = vi.spyOn(console, 'info').mockImplementation(() => {});
     const otel = createOtelSDK({ serviceName: 'test-svc' });
 
     await otel.verifyConnection();
 
-    expect(spy).toHaveBeenCalledWith(expect.stringContaining('MAPLE_SECRET_INGEST_KEY not set'));
+    expect(spy).toHaveBeenCalledWith(expect.stringContaining('telemetry export is off'));
     spy.mockRestore();
   });
 
@@ -66,6 +72,39 @@ describe('createOtelSDK', () => {
     await otel.shutdown();
 
     expect(exported.map((span) => span.name)).toEqual(['work']);
+  });
+
+  it('exports every signal to the endpoint and headers the standard OTLP variables name', async () => {
+    const requests: { path?: string; key?: string | string[] }[] = [];
+    const server = createServer((req, res) => {
+      requests.push({ path: req.url, key: req.headers['x-ingest-key'] });
+      req.resume();
+      res.setHeader('content-type', 'application/json').end('{}');
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const { port } = server.address() as AddressInfo;
+    const endpoint = `http://127.0.0.1:${port}`;
+    vi.stubEnv('OTEL_EXPORTER_OTLP_ENDPOINT', endpoint);
+    vi.stubEnv('OTEL_EXPORTER_OTLP_HEADERS', 'x-ingest-key=abc');
+    const otel = createOtelSDK({
+      serviceName: 'test-service',
+      sink: resolveOtlpSink({ OTEL_EXPORTER_OTLP_ENDPOINT: endpoint }),
+      autoInstrumentations: false,
+      flushOnShutdown: true,
+    });
+    otel.start();
+
+    try {
+      trace.getTracer('test').startSpan('work').end();
+      otel.meterProvider.getMeter('test').createCounter('work.done').add(1);
+      await otel.verifyConnection();
+      await otel.shutdown();
+    } finally {
+      server.close();
+      vi.unstubAllEnvs();
+    }
+
+    for (const signal of ['traces', 'metrics', 'logs']) expect(requests).toContainEqual({ path: `/v1/${signal}`, key: 'abc' });
   });
 
   it('reports the release as service.version, and leaves it off without one', async () => {

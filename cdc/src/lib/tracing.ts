@@ -1,6 +1,7 @@
 import { SpanStatusCode, trace } from '@opentelemetry/api';
 import { appConfig } from 'shared';
 import { createOtelSDK, type OtelSDK } from 'shared/otel';
+import { resolveOtlpSink } from 'shared/otlp-sink';
 import { activityAttrs, cdcAttrs, cdcSpanNames, createSpanStoreProcessor, type TraceContext } from 'shared/tracing';
 import { env } from '../env';
 import { log } from './pino';
@@ -20,7 +21,7 @@ const debugProcessor = createSpanStoreProcessor({
 export const otel: OtelSDK = createOtelSDK({
   serviceName: `${appConfig.slug}-cdc`,
   serviceVersion: env.RELEASE_SHA,
-  mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
+  sink: resolveOtlpSink(env),
   autoInstrumentations: false,
   spanProcessors: [debugProcessor],
 });
