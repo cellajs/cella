@@ -1,8 +1,6 @@
 import type { CdcRowData, RowData } from '../types';
 import { snakeToCamel } from './snake-to-camel';
 
-export type { CdcRowData, RowData };
-
 /** A columnNameMap gives O(1) lookup and avoids the regex conversion. */
 export function convertRowKeys(row: RowData, columnNameMap?: Map<string, string>): CdcRowData {
   const result: RowData = {};

@@ -5,7 +5,7 @@ import { getEntityTable } from '#/tables';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
-import { isSoftDeleteTransition } from './is-soft-delete-transition';
+import { isSoftDeleteTransition } from '../utils/is-soft-delete-transition';
 import { stripChangedFieldsStx } from './strip-changed-fields';
 
 type EmbeddingCleanupAction = Extract<ActivityAction, 'update' | 'delete'>;
@@ -102,7 +102,7 @@ export async function cleanupEmbeddingReferences(
             [hostColumnName]: sql`(
             SELECT coalesce(array_agg(elem), '{}')
             FROM unnest(${hostColumn}) AS elem
-            WHERE elem != ALL(${embeddedIds})
+            WHERE elem NOT IN ${embeddedIds}
           )`,
             stx: stripChangedFieldsStx(),
           })
@@ -110,4 +110,15 @@ export async function cleanupEmbeddingReferences(
       }),
     );
   }
+}
+
+/** Columns holding embedded entity id arrays, e.g. `task.labels`. */
+const embeddingColumns: Set<string> = new Set(appConfig.productEmbeddings.map((e) => e.hostColumn));
+
+/**
+ * Whether changed fields are those of the update `cleanupEmbeddingReferences` writes: embedding columns only, and no
+ * `updatedAt`, which an edit through the API always lists.
+ */
+export function isReferenceCleanupWrite(changedFields: string[] | null): boolean {
+  return changedFields !== null && !changedFields.includes('updatedAt') && changedFields.every((field) => embeddingColumns.has(field));
 }

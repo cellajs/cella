@@ -8,22 +8,8 @@ import { isCountableRow } from './countability';
 export interface CountDelta {
   /** Context key (organizationId or sub-context id): the row to update. */
   channelKey: string;
-  /** e.g. `{ 'm:c:admin': 1, 'm:c:total': 1 }`; max-merge keys carry epoch ms, see `isMaxMergeKey`. */
+  /** e.g. `{ 'm:c:admin': 1, 'm:c:total': 1 }`; an activity stamp (`e:li:h:<type>`, `e:lu:h:<type>`) carries epoch ms and merges as a maximum. */
   deltas: Record<string, number>;
-}
-
-/** `e:li:h:<type>` (last insert) / `e:lu:h:<type>` (last update): epoch-ms stamps, never summed. */
-function isActivityStampKey(key: string): boolean {
-  return key.startsWith('e:li:') || key.startsWith('e:lu:');
-}
-
-/**
- * Keys merged via GREATEST, never summed: activity stamps and sequence frontiers `e:f:<type>`
- * (subtree max seq) / `e:f:h:<type>` (max seq of rows homed at the node). Mirrored by the
- * apply_count_deltas PG function.
- */
-export function isMaxMergeKey(key: string): boolean {
-  return isActivityStampKey(key) || key.startsWith('e:f:');
 }
 
 /**

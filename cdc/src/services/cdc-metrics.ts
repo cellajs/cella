@@ -2,25 +2,18 @@ import { sql } from 'drizzle-orm';
 import { CDC_SLOT_NAME, RESOURCE_LIMITS } from '../constants';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
-import { wsClient } from '../network/websocket-client';
 
 const BUCKET_MS = 10_000; // 10s per bucket
 const BUCKET_COUNT = 6; // 6 buckets = 60s rolling window
 const LAG_POLL_MS = 10_000;
 
-const { warnBytes, unhealthyBytes } = RESOURCE_LIMITS.walLag;
+const { walLagWarnBytes, walLagUnhealthyBytes } = RESOURCE_LIMITS.health;
 
 interface Bucket {
   startMs: number;
   eventCount: number;
-  flushCount: number;
   processingDurations: number[];
-  flushDurations: number[];
   batchSizes: number[];
-}
-
-function createBucket(startMs: number): Bucket {
-  return { startMs, eventCount: 0, flushCount: 0, processingDurations: [], flushDurations: [], batchSizes: [] };
 }
 
 function percentile(sorted: number[], p: number): number {
@@ -35,11 +28,10 @@ class Metrics {
   private walSlotActive: boolean | null = null;
   private walSlotStatus: string | null = null;
   private lagInterval: ReturnType<typeof setInterval> | null = null;
-  private prevLagBytes: number | null = null;
   private hasWarned = false;
   private hasGoneUnhealthy = false;
 
-  /** WAL bytes behind the slot's confirmed flush LSN (null until first poll). */
+  /** WAL bytes behind the slot's acknowledged position (null until first poll). */
   get lagBytes(): number | null {
     return this.walLagBytes;
   }
@@ -49,7 +41,7 @@ class Metrics {
     return this.walSlotActive;
   }
 
-  /** pg_replication_slots.wal_status: 'active', 'reserved' or 'lost'; null until the first poll. */
+  /** pg_replication_slots.wal_status: 'reserved', 'extended', 'unreserved' or 'lost'; null until the first poll. */
   get slotStatus(): string | null {
     return this.walSlotStatus;
   }
@@ -59,7 +51,7 @@ class Metrics {
     const last = this.buckets[this.buckets.length - 1];
     if (last && now - last.startMs < BUCKET_MS) return last;
 
-    const bucket = createBucket(now);
+    const bucket: Bucket = { startMs: now, eventCount: 0, processingDurations: [], batchSizes: [] };
     this.buckets.push(bucket);
     while (this.buckets.length > BUCKET_COUNT) this.buckets.shift();
     return bucket;
@@ -73,27 +65,17 @@ class Metrics {
     b.batchSizes.push(eventCount);
   }
 
-  /** Record a full FlushBuffer flush cycle. */
-  recordFlush(_eventCount: number, durationMs: number): void {
-    const b = this.currentBucket();
-    b.flushCount++;
-    b.flushDurations.push(durationMs);
-    // eventCount is tracked in recordProcessing.
-  }
-
   /** Snapshot for health endpoint. */
   getSnapshot(): MetricsSnapshot {
     const allProcessing: number[] = [];
     const allBatchSizes: number[] = [];
     let totalEvents = 0;
-    let totalFlushes = 0;
     let windowMs = 0;
 
     const cutoff = Date.now() - BUCKET_COUNT * BUCKET_MS;
     for (const b of this.buckets) {
       if (b.startMs < cutoff) continue;
       totalEvents += b.eventCount;
-      totalFlushes += b.flushCount;
       allProcessing.push(...b.processingDurations);
       allBatchSizes.push(...b.batchSizes);
       windowMs = Math.max(windowMs, Date.now() - b.startMs);
@@ -119,9 +101,6 @@ class Metrics {
         avg: avgBatchSize,
         max: sortedBatch.length ? sortedBatch[sortedBatch.length - 1] : 0,
       },
-      flushes: totalFlushes,
-      walLagBytes: this.walLagBytes,
-      slotStatus: this.walSlotStatus,
     };
   }
 
@@ -137,40 +116,22 @@ class Metrics {
     this.lagInterval = null;
   }
 
-  private checkLagThresholds(currentBytes: number): void {
-    const prev = this.prevLagBytes;
-    this.prevLagBytes = currentBytes;
-
-    if (prev !== null && currentBytes < warnBytes) {
+  /** One log line each time the lag passes a threshold. Health carries the lag itself, with every push. */
+  private logLagThresholds(lagBytes: number): void {
+    if (lagBytes < walLagWarnBytes) {
       this.hasWarned = false;
       this.hasGoneUnhealthy = false;
       return;
     }
 
-    if (currentBytes >= warnBytes && !this.hasWarned) {
+    if (!this.hasWarned) {
       this.hasWarned = true;
-      log.warn('WAL lag approaching backpressure limit', { lagBytes: currentBytes, warnThreshold: warnBytes, unhealthyThreshold: unhealthyBytes });
-      this.emitLagControl('wal_lag_warn');
+      log.warn('Slot lag is high: the worker is far behind', { lagBytes, warnThreshold: walLagWarnBytes, unhealthyThreshold: walLagUnhealthyBytes });
     }
 
-    if (currentBytes >= unhealthyBytes && !this.hasGoneUnhealthy) {
+    if (lagBytes >= walLagUnhealthyBytes && !this.hasGoneUnhealthy) {
       this.hasGoneUnhealthy = true;
-      log.error('WAL lag exceeded backpressure limit: CDC unhealthy', { lagBytes: currentBytes, unhealthyThreshold: unhealthyBytes });
-      this.emitLagControl('wal_lag_unhealthy');
-    }
-  }
-
-  private emitLagControl(severity: 'wal_lag_warn' | 'wal_lag_unhealthy'): void {
-    const payload = {
-      _control: 'wal_lag_alert',
-      severity,
-      lagBytes: this.walLagBytes,
-      warnThreshold: warnBytes,
-      unhealthyThreshold: unhealthyBytes,
-      slotStatus: this.walSlotStatus,
-    };
-    if (!wsClient.send(payload)) {
-      log.warn('Failed to send WAL lag control message to backend');
+      log.error('Slot lag passed its limit: the worker reports unhealthy', { lagBytes, unhealthyThreshold: walLagUnhealthyBytes });
     }
   }
 
@@ -186,29 +147,28 @@ class Metrics {
         this.walLagBytes = Number(row.lag_bytes);
         this.walSlotActive = row.active;
         this.walSlotStatus = row.wal_status;
-        this.checkLagThresholds(this.walLagBytes);
+        this.logLagThresholds(this.walLagBytes);
       } else {
+        this.walLagBytes = null;
         this.walSlotActive = false;
         this.walSlotStatus = null;
-        this.prevLagBytes = null;
         this.hasWarned = false;
         this.hasGoneUnhealthy = false;
       }
     } catch {
-      // Non-critical: the next poll retries.
+      // Not critical: the next poll reads it.
     }
   }
 }
 
+/** What the worker did in the last minute, for the health endpoint. The bench reads `throughput` and `processingLatency.p95`. */
 export interface MetricsSnapshot {
   windowSeconds: number;
   eventsProcessed: number;
   throughput: number;
   processingLatency: { avg: number; p50: number; p95: number; p99: number };
   batchSize: { avg: number; max: number };
-  flushes: number;
-  walLagBytes: number | null;
-  slotStatus: string | null;
 }
 
+/** The worker's rolling minute of flushes, and the last poll of its slot: lag, whether it is read, its `wal_status`. */
 export const metrics = new Metrics();

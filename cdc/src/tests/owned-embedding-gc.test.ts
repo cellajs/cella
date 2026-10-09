@@ -6,6 +6,10 @@ import type { CdcRowData } from '../types';
 
 /** Ids the mocked refcount query reports as still referenced by a live host row. */
 let referencedIds: string[] = [];
+/** The condition of each lookup of still referenced ids, as SQL text. */
+const lookups: string[] = [];
+/** Set to make the soft-delete write fail, as a lock it did not get in time does. */
+let writeFailure: Error | null = null;
 /** Captured soft-delete writes: the set() values and the flattened where-clause params. */
 const updates: Array<{ values: Record<string, unknown>; params: unknown[] }> = [];
 
@@ -57,12 +61,18 @@ vi.mock('../lib/db', () => {
   return {
     cdcDb: {
       selectDistinct: vi.fn(() => ({
-        from: () => ({ where: async () => referencedIds.map((id) => ({ id })) }),
+        from: () => ({
+          where: async (condition: SQL) => {
+            lookups.push(dialect.sqlToQuery(condition).sql);
+            return referencedIds.map((id) => ({ id }));
+          },
+        }),
       })),
       update: vi.fn(() => ({
         set: (values: Record<string, unknown>) => ({
           where: (condition: SQL) => ({
             returning: async () => {
+              if (writeFailure) throw writeFailure;
               updates.push({ values, params: dialect.sqlToQuery(condition).params });
               return [{ id: 'deleted' }];
             },
@@ -73,7 +83,7 @@ vi.mock('../lib/db', () => {
   };
 });
 
-const { gcOwnedEmbeddedRows } = await import('../utils/owned-embedding-gc');
+const { gcOwnedEmbeddedRows } = await import('../embeddings/owned-embedding-gc');
 
 type GcEvents = Parameters<typeof gcOwnedEmbeddedRows>[1];
 
@@ -88,6 +98,8 @@ const base = { id: 't1', organizationId: 'o1', updatedBy: 'u1', deletedAt: null,
 
 beforeEach(() => {
   referencedIds = [];
+  lookups.length = 0;
+  writeFailure = null;
   updates.length = 0;
 });
 
@@ -102,6 +114,9 @@ describe('gcOwnedEmbeddedRows', () => {
     expect(updates[0].values.stx).toBeDefined();
     expect(updates[0].params).toContain('i2');
     expect(updates[0].params).not.toContain('i1');
+    // A bound id list is a list, not an array: Postgres takes it after IN and refuses it after ANY or ALL.
+    expect(lookups[0]).toMatch(/referenced\.id IN \(\$\d+\)/);
+    expect(lookups[0]).not.toMatch(/\b(ANY|ALL)\s*\(/);
   });
 
   it('spares candidates another live host row still references', async () => {
@@ -141,6 +156,12 @@ describe('gcOwnedEmbeddedRows', () => {
     await gc('item', [hostEvent({ ...base, items: [] }, { ...base, items: ['i1'] })]);
 
     expect(updates).toHaveLength(0);
+  });
+
+  it('must not swallow a write that fails: the flush fails with it and its changes are read again', async () => {
+    writeFailure = Object.assign(new Error('canceling statement due to lock timeout'), { code: '55P03' });
+
+    await expect(gc('task', [hostEvent({ ...base, items: [] }, { ...base, items: ['i1'] })])).rejects.toThrow('lock timeout');
   });
 
   it('skips host rows missing the organization id', async () => {

@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
-import type { CdcRowData } from '../types';
+import type { CdcRowData, RowData } from '../types';
 
-/** Fields carried for per-subscriber SSE visibility checks; content never belongs in batch metadata. */
+/** The columns of a product row that decide who may read it and where it is: all the API reads of a row from a message. */
 const permissionRowKeys: Set<string> = (() => {
   const keys = new Set<string>(['id', 'createdBy', 'deletedAt', 'publicAt', 'publishedAt']);
   for (const channelType of appConfig.channelEntityTypes) {
@@ -10,10 +10,9 @@ const permissionRowKeys: Set<string> = (() => {
   return keys;
 })();
 
-/** Null-safe passthrough. */
-export function pickPermissionRowData(rowData: CdcRowData | null | undefined): CdcRowData | null {
-  if (!rowData) return null;
-  const slim: Record<string, unknown> = {};
+/** A product row as a message carries it: its permission columns and no content. */
+export function pickPermissionRowData(rowData: CdcRowData): CdcRowData {
+  const slim: RowData = {};
   for (const [key, value] of Object.entries(rowData)) {
     if (permissionRowKeys.has(key)) slim[key] = value;
   }

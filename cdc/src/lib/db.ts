@@ -18,7 +18,7 @@ export const cdcDb: PgDB = createPgConnection(env.DATABASE_CDC_URL, {
   max: 10,
   sslCa,
   debug: env.DEBUG,
-  // A flush locks the product rows it stamps. The server ends a session of this pool that waits, runs or sits in a
+  // A flush locks the product rows it stamps. Postgres ends a session of this pool that waits, runs or sits in a
   // transaction for too long, so a worker that hangs or is cut off cannot keep those rows from the API.
   sessionTimeouts: RESOURCE_LIMITS.database,
 });

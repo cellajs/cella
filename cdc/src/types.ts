@@ -10,34 +10,34 @@ export interface CdcRowData extends RowData {
   seq?: number;
 }
 
-export type EntityTable = (typeof entityTables)[keyof typeof entityTables];
-
-export type ResourceTable = (typeof resourceTables)[keyof typeof resourceTables];
-
 export interface EntityTableMeta {
   kind: 'entity';
-  table: EntityTable;
+  table: (typeof entityTables)[keyof typeof entityTables];
   type: keyof typeof entityTables;
   columnNameMap: Map<string, string>;
 }
 
 export interface ResourceTableMeta {
   kind: 'resource';
-  table: ResourceTable;
+  table: (typeof resourceTables)[keyof typeof resourceTables];
   type: keyof typeof resourceTables;
   columnNameMap: Map<string, string>;
 }
 
 export type TableMeta = EntityTableMeta | ResourceTableMeta;
 
-/** A pending event within a transaction, including the LSN for acknowledgment. */
+/** A change the worker keeps, on its way from its source transaction to a flush. */
 export interface PendingEvent {
+  /** Position of the change itself. A failure is reported at the position of the first change of its flush. */
   lsn: string;
-  /** Commit position of the event's transaction, from its BEGIN; absent for an event outside one. */
+  /**
+   * Commit position of the change's source transaction, from its BEGIN; absent for a change outside one. A flush
+   * acknowledges the one of its last change.
+   */
   commitLsn?: string | null;
   /** Index of the change in its transaction, counted over every change received, kept or not. */
   index?: number;
-  /** Id of the event's transaction, from its BEGIN: it tells whether a count from the tables already saw the change. */
+  /** Id of the change's source transaction, from its BEGIN: it tells whether a recount already saw the change. */
   xid?: number;
   result: ParseMessageResult;
 }

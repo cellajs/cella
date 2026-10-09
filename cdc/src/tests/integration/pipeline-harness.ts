@@ -4,8 +4,8 @@ import { PgoutputPlugin } from 'pg-logical-replication';
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../constants';
 import { cdcDb } from '../../lib/db';
 import { wsClient } from '../../network/websocket-client';
-import { drainBuffers } from '../../pipeline/handle-message';
-import { createReplicationService, ensureReplicationSlot, setupBackpressure } from '../../pipeline/replication';
+import { ensureReplicationSlot, subscribeWithReconnect } from '../../pipeline/replication';
+import { stopCdcWorker } from '../../pipeline/worker';
 import { replicationState } from '../../services/replication-state';
 
 /** Poll a predicate until it holds or the deadline passes. */
@@ -25,13 +25,19 @@ export async function slotActive(): Promise<boolean> {
 }
 
 export interface CdcPipelineHarness {
+  /** Ends the worker's subscription loop as its shutdown does, and leaves the slot where it is. */
+  stopReading(): Promise<void>;
+  /** Starts the loop again on the same slot, as a worker that starts does, and waits until it reads. */
+  readAgain(): Promise<void>;
+  /** Stops the worker for good: the loop, the socket to the API, and the slot. */
   stop(): Promise<void>;
 }
 
 /**
- * Starts the in-process CDC pipeline without the reconnect loop and waits for streaming.
- * A downstream WebSocket server must already be listening. Import after runtime environment
- * setup because CDC modules parse configuration at load time.
+ * Starts the worker's real subscription loop in this process, on a slot made at the current position, and waits until
+ * it reads. The loop checks the setup and settles the lost cases as in production, so a test arranges its database
+ * first: counters that are empty on a database with a history are rebuilt. A downstream WebSocket server must already
+ * be listening. Import after runtime environment setup because CDC modules parse configuration at load time.
  */
 export async function startCdcPipeline(): Promise<CdcPipelineHarness> {
   // Drop a leftover slot from a previous run; bail if one is actively held.
@@ -43,28 +49,45 @@ export async function startCdcPipeline(): Promise<CdcPipelineHarness> {
     await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})`);
   }
 
+  // Made here, so the loop finds it: a slot the loop makes on a database with a history is a lost case.
   await ensureReplicationSlot();
 
-  const service = createReplicationService();
-  replicationState.service = service;
-  setupBackpressure();
-  wsClient.connect();
-  replicationState.status = 'active';
-
   const plugin = new PgoutputPlugin({ protoVersion: 1, publicationNames: [CDC_PUBLICATION_NAME], messages: true });
-  // subscribe() stays pending while streaming; it resolves on service.stop().
-  service.subscribe(plugin, CDC_SLOT_NAME).catch(() => {});
+  let looping = false;
 
+  const readAgain = async () => {
+    replicationState.stopping = false;
+    looping = true;
+    void subscribeWithReconnect(plugin).finally(() => {
+      looping = false;
+    });
+    await waitFor(() => replicationState.subscribed && slotActive(), 15_000, 'replication slot active');
+  };
+
+  /** Resolves once the loop has ended and Postgres shows the slot as free. */
+  const loopEnded = async () => {
+    // The loop ends with its subscription, or after the wait it is in: at most the longest wait before a read.
+    await waitFor(() => !looping, 35_000, 'the subscription loop ended');
+    await waitFor(async () => !(await slotActive()), 10_000, `replication slot '${CDC_SLOT_NAME}' released`);
+  };
+
+  const stopReading = async () => {
+    replicationState.stopping = true;
+    await replicationState.service?.stop().catch(() => {});
+    await loopEnded();
+  };
+
+  wsClient.connect();
   await waitFor(() => wsClient.isConnected(), 15_000, 'CDC worker websocket connected');
-  await waitFor(() => slotActive(), 15_000, 'replication slot active');
+  await readAgain();
 
   return {
+    stopReading,
+    readAgain,
     async stop() {
-      wsClient.close();
-      await service.stop().catch(() => {});
-      await drainBuffers().catch(() => {});
-      // service.stop() releases the active flag; wait for it before dropping.
-      await waitFor(async () => !(await slotActive()), 10_000, `replication slot '${CDC_SLOT_NAME}' released`).catch(() => {});
+      // The worker's own shutdown: what is pending is recorded while the API can take it, then the socket and the loop end.
+      await stopCdcWorker().catch(() => {});
+      await loopEnded().catch(() => {});
       await cdcDb
         .execute(
           sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})

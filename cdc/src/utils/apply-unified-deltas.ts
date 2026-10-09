@@ -4,7 +4,6 @@ import { hierarchy } from 'shared';
 import type { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import { type BatchUnifiedDeltaPlan, frontierNodeKeys, mergeDelta } from './compute-unified-deltas';
-import { isMaxMergeKey } from './update-counts';
 
 // ── Counter upsert ──────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -19,7 +18,7 @@ const STAMP_CHUNK_SIZE = 5000;
  * GREATEST(0, existing + delta) per key and max-merges `e:li:`/`e:lu:`/`e:f:` keys. The SQL shape is
  * fixed so PostgreSQL can cache the plan.
  */
-export async function applyCounterDeltas(db: DeltaExecutor, channelKey: string, deltas: Record<string, number>): Promise<Record<string, number>> {
+async function applyCounterDeltas(db: DeltaExecutor, channelKey: string, deltas: Record<string, number>): Promise<Record<string, number>> {
   if (Object.keys(deltas).length === 0) return {};
 
   const deltasJson = JSON.stringify(deltas);
@@ -35,19 +34,6 @@ export async function applyCounterDeltas(db: DeltaExecutor, channelKey: string, 
 }
 
 // ── Batch execution ─────────────────────────────────────────────────────────────────────────────────────────────────
-
-/**
- * Adds `source` into `target` in place, summing on key collision. Max-merge keys keep the max, since
- * apply_count_deltas only ever moves stamps and frontiers forward.
- */
-export function sumInto(target: Record<string, number>, source: Record<string, number> | undefined): Record<string, number> {
-  if (source) {
-    for (const [k, v] of Object.entries(source)) {
-      target[k] = isMaxMergeKey(k) ? Math.max(target[k] ?? 0, v) : (target[k] ?? 0) + v;
-    }
-  }
-  return target;
-}
 
 /**
  * Applies a batch delta plan on the flush's transaction and stamps eligible events with an organization sequence.
@@ -66,8 +52,8 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: D
 
   // Phase 1: one RETURNING UPSERT per organization sequence.
   for (const group of [...orgSequenceGroups].sort((a, b) => a.orgKey.localeCompare(b.orgKey))) {
-    // The sequence reservation merges with any count deltas for the org row itself.
-    const mergedDeltas = sumInto({ sequence: group.count }, countDeltasByChannelKey.get(group.orgKey));
+    // The sequence reservation goes with the count deltas of the organization's own row, which never hold a sequence.
+    const mergedDeltas = { ...countDeltasByChannelKey.get(group.orgKey), sequence: group.count };
     handledChannelKeys.add(group.orgKey);
 
     const counts = await applyCounterDeltas(db, group.orgKey, mergedDeltas);

@@ -54,9 +54,9 @@ meter
 meter
   .createObservableGauge('cdc.replication.status', { description: 'Replication status (0=stopped, 1=paused, 2=active)' })
   .addCallback(async (result) => {
-    const { replicationState } = await import('../services/replication-state');
+    const { replicationStatus } = await import('../services/replication-status');
     const statusMap = { stopped: 0, paused: 1, active: 2 } as const;
-    result.observe(statusMap[replicationState.status]);
+    result.observe(statusMap[replicationStatus()]);
   });
 
 // OTel tracer + withSpan
