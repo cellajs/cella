@@ -249,7 +249,7 @@
   "try_me": "Try me",
   "why.text_2": "Some data is <syncEngineLink>synced in real-time</syncEngineLink> to clients, some is just fetched. All data passes through Postgres, API & React Query.",
   "why.text_1": "Auth, permissions, a modern UI, automated SDK & docs, CLI to pull template changes, <featuresLink>and more</featuresLink>.",
-  "why.text_3": "Infrastructure as Code and a CLI allow you to easily deploy everything on European infrastructure.",
+  "why.text_3": "Infrastructure as Code - wrapped in a CLI - allows you to easily deploy everything on European infrastructure.",
   "why.title_2": "Selective sync engine",
   "why.title_1": "Batteries included template",
   "why.title_3": "100% EU cloud infra"

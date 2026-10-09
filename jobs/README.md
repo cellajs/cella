@@ -36,7 +36,7 @@ defineBackendModule({
 });
 ```
 
-A queue takes pg-boss's queue options (`policy`, `retryLimit`, `retryDelay`, `retryBackoff`, `expireInSeconds`, `retentionSeconds`, `deadLetter`, `warningQueueSize`, `partition`) plus a `handler` and its `work` options. The jobs worker runs the handler of every queue that has one; a queue without one belongs to a consumer process. A dead-letter target must be declared as a queue too. Policy and partitioning are fixed at creation; the other options converge on every start.
+A queue takes pg-boss's queue options plus a `handler` and its `work` options. The jobs worker runs the handler of every queue that has one; a queue without one belongs to a consumer process. A dead-letter target must be declared as a queue too. Policy and partitioning are fixed at creation; the other options converge on every start.
 
 Producers call `send` on the process instance:
 
@@ -49,33 +49,21 @@ Payloads carry ids, never row bodies: the handler re-reads through the query the
 
 ## Roles and the store
 
-- **Installer**: the migrate companion (`MODE=migrate`, `pnpm migrate`, and the API's boot in development) runs `installJobsSchema` on the admin DSN: it installs or upgrades the schema, waits for pg-boss's background index builds, grants `runtime_role` (the `jobs_grants` side-effect block), and creates every declared queue. A queue with `partition: true` gets its own table here, which only the owner can create.
-- **Producer**: the API, `migrate: false`, no supervision, a pool of 2.
-- **Consumer**: a process that works queues it owns, with `LISTEN`/`NOTIFY` wake-ups and a slow poll as the backstop.
-- **Maintainer**: the jobs worker, one per deployment: supervision, cron, queue creation and the template's handlers. It runs as `runtime_role` too; index rebuilds need the owner, so pg-boss reports bloat and `pnpm jobs` prints the statements for an operator.
-
-Tests use the schema `pgboss_test`, so a test run never touches a development store; `tests/integration/jobs-store.test.ts` proves the grants by enqueuing, working, scheduling and supervising as `runtime_role`.
+- **Installer**: the migrate companion (`MODE=migrate`, `pnpm migrate`, and the API's boot in development) installs or upgrades the schema as the table owner, grants the runtime role and creates every declared queue.
+- **Producer**: the API. It only enqueues.
+- **Consumer**: a process that works the queues it owns.
+- **Maintainer**: the jobs worker, one per deployment: supervision, cron, queue creation and the template's handlers. It runs as the runtime role too. Index rebuilds need the owner, so pg-boss reports bloat and `pnpm jobs` prints the statements for an operator.
 
 ## Operating
 
-`/health?depth=full` carries a `jobs` component on the API and on the jobs worker: when the scheduler last ran, and per queue the live depth, active count, failures in the last hour, the oldest waiting job and the dead-letter depth. It degrades, never fails, when no scheduler ran in five minutes, a queue passes its `warningQueueSize`, or dead letters wait; a cutover never blocks on it.
+`/health?depth=full` carries a `jobs` component on the API and on the jobs worker: when the scheduler last ran, and how each queue stands. It degrades, never fails, when no scheduler ran in five minutes, a queue passes its `warningQueueSize`, or dead letters wait, so a cutover never blocks on it.
 
 `pnpm jobs` prints the same for an operator without SQL, plus the schedules with their last job, the last failures with their error, pg-boss warnings and pending index rebuilds; `--json` for machines. Queues in the store that no module declares are marked, never deleted.
 
 ### Connection budget
 
-The managed instance (DB-DEV-S, PostgreSQL 17) runs the engine default of 100 for `max_connections`; the Scaleway API shows no override (read 2026-09-26). Three slots are reserved for superusers, so the app roles share 97; the CDC replication connection is a WAL sender and does not count.
+Every pool draws on one limit: the managed instance's `max_connections` of 100, of which the app roles share 97. The CDC replication connection is a WAL sender and does not count.
 
-Under `singleVM` the one backend process holds pool maxima of 20 (API) + 10 (cdc) + 10 (yjs) + 5 and one listener (jobs) = 46, and the migrate companion adds 7 while it runs. Pools open connections on demand and close idle ones after ten seconds, so these are ceilings, not footprints. Cockpit shows the real numbers: `rdb_instance_postgresql_pg_stat_database_numbackends` against `rdb_instance_postgresql_pg_settings_max_connection`; the `PostgreSQLTooManyConnections` alert fires at 80% for ten minutes.
+Under `singleVM` the one backend process holds pool maxima of 20 (API) + 10 (cdc) + 10 (yjs) + 5 and one listener (jobs) = 46, and the migrate companion adds 7 while it runs. Pools open connections on demand and close idle ones, so these are ceilings, not footprints. Cockpit shows the real numbers: `rdb_instance_postgresql_pg_stat_database_numbackends` against `rdb_instance_postgresql_pg_settings_max_connection`; the `PostgreSQLTooManyConnections` alert fires at 80% for ten minutes.
 
-Raising `max_connections` (50 to 10000, through the instance `settings` in [postgres-managed.ts](../infra/resources/stores/postgres-managed.ts)) restarts the instance, which has no standby. Shrink pools first; raise the limit only when the measurement says so.
-
-## Configuration
-
-| Key | Purpose |
-| --- | --- |
-| `services.jobs.enabled` | Runs the maintainer; `false` means no cron and no queue is worked anywhere |
-| `devPorts.jobs`, `PORT` | `MODE=jobs` selects this entry; the dev entry and the infra env set `PORT` to `devPorts.jobs` (4006) |
-| `DATABASE_URL`, `DATABASE_SSL_CA` | The runtime database role every job role uses |
-| `DATABASE_ADMIN_URL` | The installer only (the migrate companion); no worker needs it |
-| `DATABASE_POOL_MAX` | The API's own pool (default 20); the job store adds a pool of 5 plus one listener connection in each process that runs handlers |
+Raising `max_connections` (through the instance `settings` in [postgres-managed.ts](../infra/resources/stores/postgres-managed.ts)) restarts the instance, which has no standby. Shrink pools first.

@@ -8,6 +8,7 @@ import { log } from '#/utils/logger';
 
 const ALG = 'RS256';
 const ENCRYPTION_PURPOSE = 'signing-key';
+/** How long a process verifies with the public keys it read before it reads them again. */
 const VERIFY_CACHE_MS = 5 * 60 * 1000;
 
 async function mintKey(db: DbOrTx, status: 'current' | 'next'): Promise<void> {
