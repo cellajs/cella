@@ -40,9 +40,9 @@ function grant(accountId: string, grantId: string): void {
 
 /**
  * Drops what a write changed from this process's guard caches; call it once the write has committed, so no request
- * caches the old row again in between. The API process also drops sessions on CDC reports of user, membership and
- * system role changes. Other processes keep an entry until it expires: 10 seconds for sessions, 15 for token verdicts,
- * a minute for the rest. Grants, the API keys behind tokens and OAuth clients are read per request, and memberships
- * are cached under the bindings version.
+ * caches the old row again in between. A read that was in flight at the drop stores nothing (`TTLCache.load`). The API
+ * process also drops sessions on CDC reports of user, membership and system role changes. Other processes keep an
+ * entry until it expires: 10 seconds for sessions, 15 for token verdicts, a minute for the rest. Grants, the API keys
+ * behind tokens and OAuth clients are read per request, and memberships are cached under the bindings version.
  */
 export const invalidateCache = { user, org, tenant, serviceAccount, grant };

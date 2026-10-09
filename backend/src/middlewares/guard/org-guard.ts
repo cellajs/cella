@@ -5,7 +5,7 @@ import { xMiddleware } from '#/core/x-middleware';
 import { isMembershipRow } from '#/modules/memberships/helpers/select';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { getOrgCache, setOrgCache } from './org-cache';
+import { loadOrgCache } from './org-cache';
 
 /**
  * Grants org-scoped routes to system admins and to anyone holding a membership inside the
@@ -41,17 +41,13 @@ export const orgGuard = xMiddleware(
     const missing = () => new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
 
     // The lookup is bound to the request's tenant, so an organization of another tenant does not resolve.
-    const cached = getOrgCache(tenantId, organizationId);
-    const orgRow =
-      cached ??
-      (await (async () => {
-        const [row] = await db
-          .select()
-          .from(organizationsTable)
-          .where(and(eq(organizationsTable.id, organizationId), eq(organizationsTable.tenantId, tenantId)));
-        if (row) setOrgCache(tenantId, organizationId, row);
-        return row;
-      })());
+    const orgRow = await loadOrgCache(tenantId, organizationId, async () => {
+      const [row] = await db
+        .select()
+        .from(organizationsTable)
+        .where(and(eq(organizationsTable.id, organizationId), eq(organizationsTable.tenantId, tenantId)));
+      return row;
+    });
     if (!orgRow) throw missing();
 
     // Rows store organizationFlags sparse; merge config defaults under the stored bag

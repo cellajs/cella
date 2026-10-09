@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { getCachedSession, setCachedSession } from '#/middlewares/guard/session-cache';
+import { loadCachedSession } from '#/middlewares/guard/session-cache';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import type { SessionFacts } from '#/modules/auth/sessions/sessions-db';
 import { findSessionBySecret } from '#/modules/auth/sessions/sessions-queries';
@@ -32,27 +32,25 @@ export interface PresentedSession extends ResolvedSession {
 /**
  * The live session a cookie's token names, with its user, whether the user holds the admin system role and the
  * version of the user's bindings: from the session cache (`session-cache.ts`), keyed by the token's hash, or else read
- * by that hash, the only form the database stores. A cached entry stops at the session's expiry.
+ * by that hash, the only form the database stores. Requests presenting the token while that read runs share it, and a
+ * refusal is never cached. A cached entry stops at the session's expiry.
  * @throws AppError 401 `no_session` for an unknown token, `session_revoked` or `session_expired`.
  * @public
  */
 export const readSession = async (sessionToken: string): Promise<ResolvedSession> => {
   const secretHash = hashToken(sessionToken);
-  const cached = getCachedSession(secretHash);
-  if (cached) {
-    if (isExpiredDate(cached.session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
-    return cached;
-  }
+  const entry = await loadCachedSession(secretHash, async () => {
+    const result = await findSessionBySecret(dbCtx, { secret: secretHash });
 
-  const result = await findSessionBySecret(dbCtx, { secret: secretHash });
+    if (!result) throw new AppError(401, 'no_session', 'warn');
+    if (result.revokedAt) throw new AppError(401, 'session_revoked', 'warn');
+    if (isExpiredDate(result.session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
 
-  if (!result) throw new AppError(401, 'no_session', 'warn');
-  if (result.revokedAt) throw new AppError(401, 'session_revoked', 'warn');
-  if (isExpiredDate(result.session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
+    const { session, user, systemRole, bindingsVersion } = result;
+    return { session, user, hasSystemRole: systemRole === 'admin', bindingsVersion };
+  });
 
-  const { session, user, systemRole, bindingsVersion } = result;
-  const entry = { session, user, hasSystemRole: systemRole === 'admin', bindingsVersion };
-  setCachedSession(secretHash, entry);
+  if (isExpiredDate(entry.session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
   return entry;
 };
 

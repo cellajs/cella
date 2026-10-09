@@ -1,10 +1,10 @@
 import { eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { nanoid } from 'nanoid';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
 import { getAdminDb } from '#/db/db';
-import type { RateLimitMode } from '#/middlewares/rate-limiter/types';
+import type { RateLimiterOpts, RateLimitMode } from '#/middlewares/rate-limiter/types';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 
 // Undo the setup.ts mock: these tests drive the real middleware against the real database store.
@@ -23,8 +23,8 @@ type Answer = 200 | 204 | 302 | 400 | 401;
  * A route behind a fresh limiter whose handler counts its runs and answers with `status`, or 401 at once for a request
  * sent with `failFast`. While held, a request stays in the handler until `release`.
  */
-function guardedRoute(mode: RateLimitMode, status: Answer, limits: typeof budget = budget) {
-  const limiter = rateLimiter(mode, `burst_${nanoid(8)}`, ['ip'], { limits });
+function guardedRoute(mode: RateLimitMode, status: Answer, limits: typeof budget = budget, opts: Pick<RateLimiterOpts, 'getPointsBudget'> = {}) {
+  const limiter = rateLimiter(mode, `burst_${nanoid(8)}`, ['ip'], { limits, ...opts });
   const app = new Hono<Env>();
   app.onError(appErrorHandler);
   let reached = 0;
@@ -187,6 +187,76 @@ describe('send budgets under a parallel burst', () => {
 
     expect(statuses).toEqual(Array(15).fill(401));
     expect((await bucketOf(failing.limiter, ip))?.points ?? 0).toBe(0);
+  });
+});
+
+/**
+ * A limiter with a tenant budget counts in process while a key is under 80% of it and in the database past that. The
+ * static ceiling must hold across both: for every request sent after the bucket is spent, and in every hour.
+ */
+describe('a points budget at the static ceiling', () => {
+  it('must not accept requests past the static ceiling via the in-process counter', async () => {
+    // The points limiter's shape, scaled down: a tenant budget far above the ceiling, and no block past the window.
+    const route = guardedRoute('limit', 200, { points: 10, duration: 60 * 60, blockDuration: 0 }, { getPointsBudget: () => 5000 });
+    const ip = randomIp();
+
+    const statuses: number[] = [];
+    for (let attempt = 0; attempt < 25; attempt++) statuses.push((await route.attempt(ip)).status);
+
+    expect(statuses).toEqual([...Array(10).fill(200), ...Array(15).fill(429)]);
+    expect(route.reached()).toBe(10);
+  });
+
+  describe('across hours', () => {
+    const minutes = (count: number) => count * 60 * 1000;
+    let start = 0;
+
+    // The row's expiry, the store's block and the in-process hour all read the clock from Date.
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      start = Date.now();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    /** Sends `count` requests one after another at `minute` on the clock; returns how many were accepted. */
+    const acceptedAt = async (route: ReturnType<typeof guardedRoute>, ip: string, minute: number, count: number) => {
+      vi.setSystemTime(start + minutes(minute));
+      let accepted = 0;
+      for (let attempt = 0; attempt < count; attempt++) if ((await route.attempt(ip)).status === 200) accepted++;
+      return accepted;
+    };
+
+    const pointsRoute = () => guardedRoute('limit', 200, { points: 10, duration: 60 * 60, blockDuration: 0 }, { getPointsBudget: () => 5000 });
+
+    it('must not accept more than the ceiling in an hour via a row that restarts while the in-process count goes on', async () => {
+      const route = pointsRoute();
+      const ip = randomIp();
+
+      // A slow first hour: the count reaches the database only at minute 50, and the row opens there.
+      expect(await acceptedAt(route, ip, 0, 7)).toBe(7);
+      expect(await acceptedAt(route, ip, 50, 5)).toBe(3);
+
+      // The next hour's budget, spent at its start...
+      expect(await acceptedAt(route, ip, 61, 12)).toBe(10);
+      // ...stays spent for that hour: a row with an hour of its own, opened at minute 50, would restart here.
+      expect(await acceptedAt(route, ip, 111, 12)).toBe(0);
+
+      // Positive control: the hour after brings the budget back.
+      expect(await acceptedAt(route, ip, 121, 12)).toBe(10);
+    });
+
+    it('serves a client that stays under the ceiling in every hour (positive control)', async () => {
+      const route = pointsRoute();
+      const ip = randomIp();
+
+      // Nine requests an hour for three hours: the row opens late in each hour and must end with it.
+      let accepted = 0;
+      for (let request = 0; request < 27; request++) accepted += await acceptedAt(route, ip, (request * 60) / 9, 1);
+
+      expect(accepted).toBe(27);
+    });
   });
 });
 
