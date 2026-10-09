@@ -36,7 +36,9 @@ const cdcMessageSchema = z.object({
       }),
     )
     .optional(),
-  _trace: z.object({ traceId: z.string(), spanId: z.string(), cdcTimestamp: z.number(), lsn: z.string().optional() }).optional(),
+  _trace: z
+    .object({ traceId: z.string(), spanId: z.string(), traceFlags: z.number().optional(), cdcTimestamp: z.number(), lsn: z.string().optional() })
+    .optional(),
 });
 
 export type CdcMessage = z.infer<typeof cdcMessageSchema>;

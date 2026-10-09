@@ -1,3 +1,4 @@
+import { type Context, ROOT_CONTEXT, TraceFlags, trace } from '@opentelemetry/api';
 import type { EntityType } from '../../types.ts';
 
 export * from './span-names.ts';
@@ -29,8 +30,19 @@ export interface SpanEvent {
 export interface TraceContext {
   traceId: string;
   spanId: string;
+  /** W3C trace flags of the span, so a process that continues the trace keeps its sampling decision. */
+  traceFlags?: number;
   cdcTimestamp: number;
   lsn?: string;
+}
+
+/**
+ * The context of a span that ran in another process, for starting a span as its child: both then belong to one trace.
+ * A context that carries no flags counts as sampled.
+ */
+export function remoteParentContext(parent: Pick<TraceContext, 'traceId' | 'spanId' | 'traceFlags'>): Context {
+  const { traceId, spanId, traceFlags = TraceFlags.SAMPLED } = parent;
+  return trace.setSpanContext(ROOT_CONTEXT, { traceId, spanId, traceFlags, isRemote: true });
 }
 
 export interface SpanStoreOptions {
@@ -156,7 +168,7 @@ export interface CdcInput {
 }
 
 export function cdcAttrs(input: CdcInput): CleanSpanAttributes {
-  return { lsn: input.lsn, 'cdc.tag': input.tag ?? 'unknown', 'cdc.table': input.table ?? 'unknown' };
+  return { 'cdc.lsn': input.lsn, 'cdc.tag': input.tag ?? 'unknown', 'cdc.table': input.table ?? 'unknown' };
 }
 
 export interface ActivityInput {
@@ -170,8 +182,8 @@ export function activityAttrs(input: ActivityInput): CleanSpanAttributes {
   return {
     'activity.type': input.type ?? 'unknown',
     'activity.action': input.action ?? 'unknown',
-    'activity.subjectId': input.subjectId ?? 'unknown',
-    'activity.entityType': input.entityType ?? null,
+    'activity.subject_id': input.subjectId ?? 'unknown',
+    'activity.entity_type': input.entityType ?? null,
   };
 }
 
@@ -182,5 +194,5 @@ export interface EventInput {
 }
 
 export function eventAttrs(input: EventInput): CleanSpanAttributes {
-  return { 'event.type': input.type, 'event.subjectId': input.subjectId ?? null, 'event.entityType': input.entityType ?? null };
+  return { 'event.type': input.type, 'event.subject_id': input.subjectId ?? null, 'event.entity_type': input.entityType ?? null };
 }

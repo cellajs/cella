@@ -245,7 +245,7 @@ function TimelineView({ spans }: { spans: SpanData[] }) {
             return (
               <div key={span.spanId} style={{ marginBottom: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#94a3b8', marginBottom: '2px' }}>
-                  <span>{String(span.attributes['sync.entityType'] || 'unknown')}</span>
+                  <span>{String(span.attributes['sync.entity_type'] || 'unknown')}</span>
                   <span>{formatDuration(latency)}</span>
                 </div>
                 <div style={{ height: '4px', background: '#334155', borderRadius: '2px', overflow: 'hidden' }}>

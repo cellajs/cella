@@ -1,6 +1,7 @@
 import { SpanStatusCode, trace } from '@opentelemetry/api';
 import { appConfig } from 'shared';
 import { createOtelSDK, type OtelSDK } from 'shared/otel';
+import { resolveOtlpSink } from 'shared/otlp-sink';
 import { activityAttrs, cdcAttrs, cdcSpanNames, createSpanStoreProcessor, type TraceContext } from 'shared/tracing';
 import { env } from '../env';
 import { log } from './pino';
@@ -19,7 +20,8 @@ const debugProcessor = createSpanStoreProcessor({
 /** SpanStoreProcessor bridges spans to pino debug logging. */
 export const otel: OtelSDK = createOtelSDK({
   serviceName: `${appConfig.slug}-cdc`,
-  mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
+  serviceVersion: env.RELEASE_SHA,
+  sink: resolveOtlpSink(env),
   autoInstrumentations: false,
   spanProcessors: [debugProcessor],
 });
@@ -36,9 +38,7 @@ meter
   });
 
 meter
-  .createObservableGauge('cdc.ws.messages_sent', {
-    description: 'Total messages sent to backend via WebSocket',
-  })
+  .createObservableCounter('cdc.ws.messages_sent', { description: 'Total messages sent to backend via WebSocket', unit: '{message}' })
   .addCallback(async (result) => {
     const { wsClient } = await import('../network/websocket-client');
     result.observe(wsClient.messagesSent);
@@ -67,7 +67,7 @@ interface SpanAttrs {
   [key: string]: string | number | boolean | null | undefined;
 }
 
-/** Runs `fn` in a CDC span and hands it W3C traceId/spanId for `_trace` propagation. */
+/** Runs `fn` in a CDC span and hands it that span's W3C context for `_trace`, which the API continues the trace from. */
 export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => Promise<T>): Promise<T> {
   return tracer.startActiveSpan(name, async (span) => {
     for (const [key, value] of Object.entries(attrs)) {
@@ -76,11 +76,13 @@ export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: Trac
       }
     }
     try {
+      const { traceId, spanId, traceFlags } = span.spanContext();
       const ctx: TraceContext = {
-        traceId: span.spanContext().traceId,
-        spanId: span.spanContext().spanId,
+        traceId,
+        spanId,
+        traceFlags,
         cdcTimestamp: Date.now(),
-        lsn: (attrs.lsn as string) ?? undefined,
+        lsn: (attrs['cdc.lsn'] as string) ?? undefined,
       };
       const result = await fn(ctx);
       span.setStatus({ code: SpanStatusCode.OK });

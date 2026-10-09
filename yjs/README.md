@@ -165,6 +165,7 @@ Environment, validated in `src/env.ts` (loads the backend's `.env`):
 | `YJS_PORT` | WebSocket and health port, default 4002 (`devPorts.yjs`) |
 | `YJS_DB_POOL_MAX` | PostgreSQL pool size, default 10. The log listener holds one more connection, outside the pool |
 | `MAPLE_SECRET_INGEST_KEY` | Optional telemetry ingest key |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Optional OTLP base URL for telemetry; wins over the ingest key |
 | `NODB` | In-memory connection limiter, no TLS CA requirement and no log listener. Database reads still open lazily. |
 | `NODE_ENV`, `PINO_LOG_LEVEL`, `DEBUG` | Runtime mode and logging. `DEBUG` also prints every query, with its values, in the `development` app mode only |
 

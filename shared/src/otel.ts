@@ -13,6 +13,7 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { BatchSpanProcessor, type SpanExporter, type SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { appConfig } from './config-builder/app-config.ts';
+import type { OtlpSignal, OtlpSink } from './otlp-sink.ts';
 import { createRedactingSpanProcessor } from './tracing/redacting-span-processor.ts';
 
 /**
@@ -28,13 +29,14 @@ import { createRedactingSpanProcessor } from './tracing/redacting-span-processor
  */
 const instrumentations = () => [new HttpInstrumentation(), new UndiciInstrumentation(), new PgInstrumentation()];
 
-const MAPLE_INGEST_BASE = 'https://ingest.maple.dev/v1';
-const MAPLE_DISABLED_MSG = '[otel] MAPLE_SECRET_INGEST_KEY not set: skipping Maple.dev';
+const EXPORT_OFF_MSG = '[otel] no OTEL_EXPORTER_OTLP_ENDPOINT or MAPLE_SECRET_INGEST_KEY set: telemetry export is off';
 
 export interface OtelSDKOptions {
   serviceName: string;
+  /** Release identifier reported as `service.version`; left off the resource when absent. */
   serviceVersion?: string;
-  mapleSecretIngestKey?: string;
+  /** Where traces, metrics and logs go, from `resolveOtlpSink`. Absent, nothing is exported. */
+  sink?: OtlpSink;
   /** Metric export interval in ms (default: 5000). */
   metricIntervalMs?: number;
   /** Flush exporters on shutdown. Defaults false in development for fast hot restarts. */
@@ -43,7 +45,7 @@ export interface OtelSDKOptions {
   autoInstrumentations?: boolean;
   /** Additional span processors (e.g. SpanStoreProcessor for devtools/debug logging). */
   spanProcessors?: SpanProcessor[];
-  /** Receives finished spans. Defaults to Maple's OTLP endpoint when an ingest key is set; tests pass an in-memory one. */
+  /** Receives finished spans. Defaults to an OTLP exporter for the sink; tests pass an in-memory one. */
   traceExporter?: SpanExporter;
 }
 
@@ -56,19 +58,18 @@ export interface OtelSDK {
 }
 
 /**
- * NodeSDK plus MeterProvider for one service. Backend, CDC and YJS share this Maple.dev exporter
- * configuration.
+ * NodeSDK plus MeterProvider for one service. Backend, CDC and YJS share this exporter configuration.
  *
  * @example
- * const otel = createOtelSDK({ serviceName: 'raak-development-api', mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY });
+ * const otel = createOtelSDK({ serviceName: 'raak-development-api', sink: resolveOtlpSink(env) });
  * otel.start();
  * // on shutdown: await otel.shutdown();
  */
 export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   const {
     serviceName,
-    serviceVersion = '1.0',
-    mapleSecretIngestKey,
+    serviceVersion,
+    sink,
     metricIntervalMs = 5000,
     flushOnShutdown = appConfig.mode !== 'development',
     autoInstrumentations = true,
@@ -80,24 +81,17 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
 
   const resource = resourceFromAttributes({
     [ATTR_SERVICE_NAME]: serviceName,
-    [ATTR_SERVICE_VERSION]: serviceVersion,
-    // OTel semantic convention: reports the deploy environment to Maple.
+    ...(serviceVersion && { [ATTR_SERVICE_VERSION]: serviceVersion }),
+    // OTel semantic convention: reports the deploy environment.
     'deployment.environment.name': appConfig.mode,
   });
 
-  // Defined only when an ingest key is present, so an undefined `hasMaple` is this function's
-  // single signal that telemetry export is off.
-  const hasMaple = mapleSecretIngestKey
-    ? (signal: 'traces' | 'metrics' | 'logs') => ({
-        url: `${MAPLE_INGEST_BASE}/${signal}`,
-        headers: { 'x-maple-ingest-key': mapleSecretIngestKey },
-        timeoutMillis: exportTimeoutMs,
-      })
-    : undefined;
+  // Defined only with a sink, so an undefined `exporterOptions` is this function's single signal that export is off.
+  const exporterOptions = sink ? (signal: OtlpSignal) => ({ ...sink(signal), timeoutMillis: exportTimeoutMs }) : undefined;
 
-  const metricReader = hasMaple
+  const metricReader = exporterOptions
     ? new PeriodicExportingMetricReader({
-        exporter: new OTLPMetricExporter(hasMaple('metrics')),
+        exporter: new OTLPMetricExporter(exporterOptions('metrics')),
         exportIntervalMillis: metricExportIntervalMs,
         exportTimeoutMillis: exportTimeoutMs,
       })
@@ -107,7 +101,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   // unconditionally and reader-less observations go nowhere.
   const meterProvider = new SdkMeterProvider({ readers: metricReader ? [metricReader] : [], resource });
 
-  const traceExporter = options.traceExporter ?? (hasMaple ? new OTLPTraceExporter(hasMaple('traces')) : undefined);
+  const traceExporter = options.traceExporter ?? (exporterOptions ? new OTLPTraceExporter(exporterOptions('traces')) : undefined);
 
   // Skip NodeSDK startup when there is nothing to export and no local span processor.
   if (!traceExporter && spanProcessors.length === 0) {
@@ -117,12 +111,12 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
       start: () => {},
       shutdown: () => (flushOnShutdown ? meterProvider.shutdown() : Promise.resolve()),
       verifyConnection: async () => {
-        console.info(MAPLE_DISABLED_MSG);
+        console.info(EXPORT_OFF_MSG);
       },
     };
   }
 
-  const logExporter = hasMaple ? new OTLPLogExporter(hasMaple('logs')) : undefined;
+  const logExporter = exporterOptions ? new OTLPLogExporter(exporterOptions('logs')) : undefined;
 
   // Stable HTTP semantic attributes, chosen before instrumentation is constructed and never
   // overriding an explicit environment value.
@@ -176,7 +170,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
 
   async function verifyConnection(): Promise<void> {
     if (!traceExporter || !logExporter) {
-      console.info(MAPLE_DISABLED_MSG);
+      console.info(EXPORT_OFF_MSG);
       return;
     }
     try {
@@ -197,7 +191,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
           processors: [new SimpleLogRecordProcessor({ exporter: probeExporter })],
         });
         verifyLogProvider.getLogger(serviceName).emit({
-          // Matches pino-opentelemetry-transport (lowercase label plus numeric severity), so Maple
+          // Matches pino-opentelemetry-transport (lowercase label plus numeric severity), so the sink
           // groups these probes with application logs. 9 is OTel SeverityNumber.INFO, inlined to
           // avoid a runtime dependency on @opentelemetry/api-logs.
           severityNumber: 9,

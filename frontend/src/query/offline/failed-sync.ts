@@ -32,7 +32,7 @@ export async function quarantineFailedSync(record: Omit<FailedSyncRecord, 'id' |
     await db.failedSync.add({ ...record, createdAt: Date.now() });
   } catch (error) {
     console.error('[failed-sync] Failed to quarantine mutation:', error);
-    reportCriticalError('offline.quarantine_failed', error, { mutationId: record.mutationId });
+    reportCriticalError('offline.quarantine_failed', error, { mutation_id: record.mutationId });
   }
 }
 

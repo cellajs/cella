@@ -93,7 +93,7 @@ export const seenStore = createStore<SeenStoreState>()(
               }
               set({ flushedIds });
             } catch (error) {
-              reportCriticalError('seen.flush_failed', error, { productType });
+              reportCriticalError('seen.flush_failed', error, { product_type: productType });
               const requeued = pending.get(batchKey(organizationId, productType));
               if (requeued) for (const id of batch.productIds) requeued.productIds.add(id);
               else pending.set(batchKey(organizationId, productType), batch);

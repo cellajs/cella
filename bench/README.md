@@ -93,4 +93,4 @@ Bench measures the live dev stack. Before calling a result a regression:
 - **Rate limiting is effectively off.** The seeded bench tenant has a very high `apiPointsPerHour`, the points limiter has an in-process fast path, and every scenario starts with the bench users' per-user budgets (stream connects, sync reads) cleared.
 - **Saturation.** At their configured arrival rates `attachment-edit` and `page-load` saturate a laptop that also runs the stack: latencies then show queueing, not the endpoint. Compare the trend between runs.
 - **A worktree's own stack.** Bench follows the checkout's port offset, and so does every process it starts. A worktree therefore measures its own stack, never the main checkout's.
-- **Telemetry is off without a key.** OpenTelemetry exports only when `MAPLE_SECRET_INGEST_KEY` is set.
+- **Telemetry is off without a key.** OpenTelemetry exports only when `MAPLE_SECRET_INGEST_KEY` or `OTEL_EXPORTER_OTLP_ENDPOINT` is set.

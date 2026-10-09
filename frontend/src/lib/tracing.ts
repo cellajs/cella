@@ -40,8 +40,8 @@ function applyAttrs(span: Span, attrs: SpanAttrs): void {
     }
   }
   if (_trace?.cdcTimestamp) {
-    span.setAttribute('e2e_latency_ms', Date.now() - _trace.cdcTimestamp);
-    if (_trace.traceId) span.setAttribute('cdc_trace_id', _trace.traceId);
+    span.setAttribute('sync.e2e_latency_ms', Date.now() - _trace.cdcTimestamp);
+    if (_trace.traceId) span.setAttribute('sync.cdc_trace_id', _trace.traceId);
   }
 }
 
