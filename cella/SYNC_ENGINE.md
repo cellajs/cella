@@ -118,7 +118,7 @@ Apps derive per-user state from `query/realtime/sync-signals.ts`, never from que
 
 ### Freshness
 
-Synced product queries never go stale on their own while the stream is healthy: catchup owns their freshness. A failed stream or a delivery shortfall drops them to a five-minute stale time until a clean catchup restores trust ([REST fallback](#rest-fallback)). Other queries keep the global 30-second default, infinite while offline with `offlineAccess`.
+Synced product queries never go stale on their own while the stream is healthy: catchup owns their freshness. A failed stream, a delivery shortfall or a server whose CDC worker is away drops them to a five-minute stale time, until a clean catchup restores trust or the worker reads again ([REST fallback](#rest-fallback)). Other queries keep the global 30-second default, infinite while offline with `offlineAccess`.
 
 ### Unseen tracking
 
@@ -186,7 +186,7 @@ A stream counts as down when it errors, when the server ends it, and when nothin
 
 One fetch can fall back as well. A notified range whose fetch keeps failing is given up after three tries and its lists are invalidated, so the next read is a plain list request. A fetch that returns fewer rows than announced does the same, keeps the cursor where it was and puts synced queries on the stale time until a clean catchup.
 
-The fallback follows the client's own stream. A CDC worker that is down leaves the stream open and the queries trusted: its changes arrive late, as the table below says. Collaborative descriptions fall back to HTTP on their own ([Yjs](#yjs)), and the server side of every failure is in [CDC worker](../cdc/README.md#failure-and-recovery).
+The fallback has a second trigger, for a stream that is open and brings nothing: the server tells its streams when no CDC worker has been reading for a minute. While that lasts a client takes the first step above and only that one, a five-minute stale time with the stream left open. A restart, a deploy and a second read of a failed flush are shorter than the minute. What was missed arrives late and in order when the worker reads on. Collaborative descriptions fall back to HTTP on their own ([Yjs](#yjs)), and the server side of every failure is in [CDC worker](../cdc/README.md#failure-and-recovery).
 
 ### What happens when
 
@@ -195,7 +195,7 @@ A client that missed notifications while the books stayed right is repaired by i
 | What happened | What a user sees | What repairs it | What is lost |
 | --- | --- | --- | --- |
 | A client's stream is down (network, a proxy, three failed connections) | The app works as a REST app: own writes work, lists refetch when opened once five minutes old | Reconnect and catchup ([REST fallback](#rest-fallback)) | Nothing |
-| The worker is down, or reading again after a failure | Own writes work; other users' changes arrive late and in order | The worker reads on from the slot | Nothing |
+| The worker is down, or reading again after a failure | Own writes work; other users' changes arrive late and in order. After a minute lists refetch when opened once five minutes old | The worker reads on from the slot | Nothing |
 | The API restarts, or dies after taking a message from the worker | Streams drop and reconnect, at the latest after 75 seconds of silence | The client's catchup compares its cursors with the frontiers and fetches the gap, in every tab | Nothing durable. Mentions and push notifications of that moment |
 | A deploy overlap (`singleVM`) | Clients on the new API hear nothing until the slot moves | Their next notification or reconnect fetches the gap | Nothing |
 | A notification is lost inside the API while the stream stays open | That client lags until its next reconnect | The next catchup | Nothing durable |
@@ -219,7 +219,7 @@ Old tabs and old queued writes survive a wire-shape deploy through lenses: [Sche
 
 ### Multiple tabs
 
-The first tab to acquire the Web Lock becomes leader, owns SSE and runs catchup. It forwards each notification and each catchup answer through BroadcastChannel, and a follower processes both against its own cursors and its own cache, so it fills the same gaps the leader does. A follower runs no catchup of its own; its paused writes are released as soon as it listens. A follower is promoted when the leader closes. All tabs can mutate. Each tab keeps its own paused-mutation queue.
+The first tab to acquire the Web Lock becomes leader, owns SSE and runs catchup. It forwards each notification and each catchup answer through BroadcastChannel, and a follower processes both against its own cursors and its own cache, so it fills the same gaps the leader does. A follower runs no catchup of its own; its paused writes are released as soon as it listens. It has no stream to judge by either: the leader tells the other tabs whether its stream works and whether the server's worker reads, when that changes and when a tab opens, and a follower falls back on that word. A follower is promoted when the leader closes. All tabs can mutate. Each tab keeps its own paused-mutation queue.
 
 ### Yjs
 
@@ -231,7 +231,7 @@ The cache takes a Yjs-owned field, the description or a column derived from it (
 
 ### SSE wire
 
-Events: `offset` (the server's newest activity id, once after connect: the signal to post the catchup), `change` (one `StreamNotification`), `ping` (empty, every 30 seconds: a client that hears nothing for 75 reconnects), `error` (typed payload). The server ends a stream with `unauthorized` when the session behind it ended for good (sign-out, revoked from another session, evicted, expired, MFA turned on elsewhere, the account deleted, an impersonation that ended); the client then opens a 60-second circuit and reconnects after a visibility change that finds the API healthy (`forbidden` and `tenant_revoked` are reserved codes it treats the same way). `session_replaced` means the browser holds a newer session (a sign-in from the same browser, turning MFA on, stopping an impersonation), `access_changed` that the stream's system-admin reads changed, and `resync` that the server's sync books moved to another generation (a correction or a rebuild); the client reconnects on all three. The server checks every open stream's session again once a minute, which also catches endings on another instance.
+Events: `offset` (the server's newest activity id, once after connect: the signal to post the catchup), `change` (one `StreamNotification`), `ping` (every 30 seconds: a client that hears nothing for 75 reconnects; its data is empty, or `worker_away` while no CDC worker has been reading for a minute), `error` (typed payload). The server ends a stream with `unauthorized` when the session behind it ended for good (sign-out, revoked from another session, evicted, expired, MFA turned on elsewhere, the account deleted, an impersonation that ended); the client then opens a 60-second circuit and reconnects after a visibility change that finds the API healthy (`forbidden` and `tenant_revoked` are reserved codes it treats the same way). `session_replaced` means the browser holds a newer session (a sign-in from the same browser, turning MFA on, stopping an impersonation), `access_changed` that the stream's system-admin reads changed, and `resync` that the server's sync books moved to another generation (a correction or a rebuild); the client reconnects on all three. The server checks every open stream's session again once a minute, which also catches endings on another instance.
 
 ```typescript
 interface StreamNotification {

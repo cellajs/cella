@@ -39,6 +39,7 @@ Requirements:
 
 - Docker running
 - `backend/.env` with `DB_TEST_PORT` set (copied from `.env.example` during setup). [shared/src/test-db.ts](../shared/src/test-db.ts) derives the test database URL from it
+- The backend's test setup creates and migrates every database on that server: one per backend test worker, the shared one of the Yjs integration tests, and `cdc_integration` for the CDC worker's integration tests, which drop the slot and empty the sync books of the database they run on. Run the backend suite, or the root `pnpm test`, once before the worker's suite on a fresh server
 
 ### Variants
 

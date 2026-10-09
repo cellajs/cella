@@ -5,13 +5,6 @@ import type { ActivityAction, ProductEntityType } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 import type { PendingEvent } from '../../types';
 
-/**
- * The books on a deep hierarchy with an embedding, which the template itself does not have. The worker's own code
- * (parser, transaction buffer, counter deltas, the cleanup of embedding references) runs over a random workload on
- * synthetic tables in a schema of its own, and the recount of the backend counts those tables. The two must agree as
- * a verify compares them. Everything happens in one transaction that is rolled back: no table, slot or row is left.
- */
-
 // organization > course > courseSection > project, with `item` at any depth and `task` in a project.
 vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();
@@ -443,6 +436,11 @@ async function probeReady(): Promise<boolean> {
 
 const READY = await probeReady();
 
+/**
+ * The template has one channel level and no embedding. Here the worker's own parser, buffer, deltas and cleanup run
+ * over a random workload on synthetic tables, and the backend's recount counts those tables: the two must agree as a
+ * verify compares them. All of it happens in one transaction that is rolled back.
+ */
 describe.skipIf(!READY)('The books on a deep hierarchy with an embedding (integration)', () => {
   it.each([11, 23, 47, 101])(
     'agree with a recount from the tables after a random workload (seed %i)',
