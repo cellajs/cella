@@ -136,7 +136,7 @@ Apps derive per-user state from `query/realtime/sync-signals.ts`, never from que
 
 ### Freshness
 
-Synced product queries never go stale on their own while the stream is healthy: catchup owns their freshness. A failed stream or a delivery shortfall drops them to a five-minute stale time until a clean catchup restores trust. Other queries keep the global 30-second default, infinite while offline with `offlineAccess`.
+Synced product queries never go stale on their own while the stream is healthy: catchup owns their freshness. A failed stream or a delivery shortfall drops them to a five-minute stale time until a clean catchup restores trust ([REST fallback](#rest-fallback)). Other queries keep the global 30-second default, infinite while offline with `offlineAccess`.
 
 ### Unseen tracking
 
@@ -190,7 +190,21 @@ Idempotency is operation-specific: a product create runs `checkIdempotency(ctx, 
 
 ## Resilience
 
-The REST API and the database work whatever the CDC worker does: a write commits and a read answers while the worker is down, reading again or rebuilding. The failure handling behind the sync engine has three levels and no more ([CDC worker](../cdc/README.md#failure-and-recovery)): the core records a change once, whatever fails is read again from the replication slot, and when the WAL cannot help the worker rebuilds its books and every client refetches.
+The REST API and the database work whatever the CDC worker does: a write commits and a read answers while the worker is down, reading again or rebuilding. A client without live sync is a REST client ([REST fallback](#rest-fallback)). The failure handling behind the sync engine has three levels and no more ([CDC worker](../cdc/README.md#failure-and-recovery)): the core records a change once, whatever fails is read again from the replication slot, and when the WAL cannot help the worker rebuilds its books and every client refetches.
+
+### REST fallback
+
+Sync is a layer on an ordinary REST app, so losing the stream costs live updates and nothing else. Every read and write goes through the API with or without it, and a write updates the cache of the tab that made it from the row the API returns.
+
+While its stream is down, a client:
+
+1. Stops trusting its synced queries. They get a five-minute stale time and refetch as stale queries do: a list when it is opened, everything on screen when the browser comes back online ([Freshness](#freshness)).
+2. Reconnects after 5 seconds, doubling to 30, with up to 2 seconds of jitter. Three failures in a row stop that for a minute; after it, the leader tab reconnects when it becomes visible and the API answers a health check.
+3. Runs catchup on the new connection, fetches what its cursors miss and trusts its queries again ([Catchup](#catchup)).
+
+One fetch can fall back as well. A notified range whose fetch keeps failing is given up after three tries and its lists are invalidated, so the next read is a plain list request. A fetch that returns fewer rows than announced does the same, keeps the cursor where it was and puts synced queries on the stale time until a clean catchup.
+
+The fallback follows the client's own stream. A CDC worker that is down leaves the stream open and the queries trusted: its changes arrive late, as the table below says. Collaborative descriptions fall back to HTTP on their own ([Yjs](#yjs)), and the server side of every failure is in [CDC worker](../cdc/README.md#failure-and-recovery).
 
 ### What happens when
 
@@ -198,6 +212,7 @@ A client that missed notifications while the books stayed right is repaired by i
 
 | What happened | What a user sees | What repairs it | What is lost |
 | --- | --- | --- | --- |
+| A client's stream is down (network, a proxy, three failed connections) | The app works as a REST app: own writes work, lists refetch when opened once five minutes old | Reconnect and catchup ([REST fallback](#rest-fallback)) | Nothing |
 | The worker is down, or reading again after a failure | Own writes work; other users' changes arrive late and in order | The worker reads on from the slot | Nothing |
 | The API restarts, or dies after taking a message from the worker | Streams drop and reconnect | The client's catchup compares its cursors with the frontiers and fetches the gap | Nothing durable. Mentions and push notifications of that moment |
 | A deploy overlap (`singleVM`) | Clients on the new API hear nothing until the slot moves | Their next notification or reconnect fetches the gap | Nothing |
