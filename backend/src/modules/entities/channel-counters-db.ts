@@ -11,6 +11,3 @@ export const channelCountersTable = snakeCase.table('channel_counters', {
   path: text('path'),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
-
-export type ChannelCounterModel = typeof channelCountersTable.$inferSelect;
-export type InsertChannelCounterModel = typeof channelCountersTable.$inferInsert;

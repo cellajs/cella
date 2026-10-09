@@ -1,5 +1,7 @@
 import pg from 'pg';
 import { appConfig } from 'shared';
+import { createPgConnection } from '#/db/create-connection';
+import { awaitBooksAnswer, requestBooks } from '#/modules/entities/sync-requests';
 import { DB_URL } from './config';
 import { ORG_ID } from './seeds/ids';
 
@@ -112,39 +114,23 @@ export function pipelineFindings(before: PipelineSnapshot, after: PipelineSnapsh
 /**
  * Asks the running CDC worker to verify its books against the tables, as `pnpm sync:verify` does, and waits for its
  * answer. The worker counts every counter from the tables at a snapshot and compares, while it reads on.
- * @returns What it found wrong, as findings for the run; empty when the books were right. A worker that does not
- *   answer is a finding too.
+ * @returns What it found wrong, as findings for the run; empty when the books were right. The worker has rebuilt
+ *   books it found wrong. A worker that does not answer is a finding too.
  */
-export async function booksFindings(timeoutMs = 60_000): Promise<string[]> {
+export async function booksFindings(waitSeconds = 60): Promise<string[]> {
   if (!cdcEnabled) return [];
 
-  const pool = new pg.Pool({ connectionString: DB_URL, max: 1 });
+  const db = createPgConnection(DB_URL, { max: 1 });
   try {
-    const { rows: clock } = await pool.query<{ now: string }>('SELECT now()::timestamp::text AS now');
-    const asked = clock[0].now;
-    await pool.query(
-      `INSERT INTO sync_state (id, requested, requested_at) VALUES ('sync', 'verify', $1)
-       ON CONFLICT (id) DO UPDATE SET requested = 'verify', requested_at = $1`,
-      [asked],
-    );
-
-    const started = Date.now();
-    while (Date.now() - started < timeoutMs) {
-      const { rows: done } = await pool.query('SELECT 1 FROM sync_state WHERE verified_at > $1', [asked]);
-      if (done.length > 0) {
-        const { rows: incidents } = await pool.query<{ corrections: { channelKey: string; key: string; stored: number; counted: number }[] }>(
-          'SELECT corrections FROM sync_incidents WHERE created_at > $1 ORDER BY created_at',
-          [asked],
-        );
-        return incidents.flatMap(({ corrections }) =>
-          corrections.slice(0, 5).map(({ channelKey, key, stored, counted }) => `${key} of ${channelKey} held ${stored}, the tables give ${counted}`),
-        );
-      }
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
-    await pool.query("UPDATE sync_state SET requested = NULL WHERE id = 'sync'");
-    return ['the CDC worker did not verify its books within 60 s'];
+    const since = await requestBooks(db, 'verify');
+    const { answered, differences } = await awaitBooksAnswer(db, 'verify', since, waitSeconds);
+    if (!answered) return [`the CDC worker did not verify its books within ${waitSeconds} s`];
+    if (differences.length === 0) return [];
+    return [
+      `${differences.length} counter(s) differed from the tables, and the CDC worker rebuilt its books`,
+      ...differences.slice(0, 5).map(({ channelKey, key, stored, counted }) => `${key} of ${channelKey} held ${stored}, the tables give ${counted}`),
+    ];
   } finally {
-    await pool.end();
+    await db.$client.end();
   }
 }

@@ -1,34 +1,41 @@
 import { randomUUID } from 'node:crypto';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
-import { computeChannelCounters, isForwardOnlyCounterKey, recalculateCounters } from '#/modules/entities/counters-queries';
-import { type SyncCorrection, type SyncFence, syncIncidentsTable, syncStateTable } from '#/modules/entities/sync-state-db';
-import { CDC_SLOT_NAME, RESOURCE_LIMITS } from '../constants';
+import { isForwardOnlyCounterKey, isPlainCountKey } from '#/modules/entities/counter-keys';
+import { computeChannelCounters, recalculateCounters } from '#/modules/entities/counters-queries';
+import { clearBooksRequest, findBooksRequest, requestBooks } from '#/modules/entities/sync-requests';
+import { type SyncCorrection, type SyncFence, syncIncidentsTable, syncStateId, syncStateTable } from '#/modules/entities/sync-state-db';
+import { RESOURCE_LIMITS } from '../constants';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import { pushHealth } from '../network/health-reporter';
-import { type CounterDeltas, fence, isPlainCountKey } from '../services/fence';
+import { type CounterDeltas, fence } from '../services/fence';
 import { replicationState } from '../services/replication-state';
-import { applyCounterDeltas } from '../utils/apply-unified-deltas';
+import { replicationStatus } from '../services/replication-status';
 import { FENCE_MARKER_PREFIX, runBetweenFlushes } from './handle-message';
 
-const { countTimeoutMs, passTimeoutMs, rebuildIntervalMs, verifyHourUtc, requestPollMs } = RESOURCE_LIMITS.books;
+const { countTimeoutMs, verifyTimeoutMs, rebuildIntervalMs, verifyHourUtc, requestPollMs } = RESOURCE_LIMITS.books;
 
 type Counters = Map<string, Record<string, number>>;
 type Executor = Pick<typeof cdcDb, 'execute'>;
 type Transaction = Parameters<Parameters<typeof cdcDb.transaction>[0]>[0];
+type Incident = typeof syncIncidentsTable.$inferInsert;
 
-const STATE_ID = 'sync';
+/** Why the books were rebuilt, as the incident says it. */
+type IncidentReason = Incident['reason'];
+
+/** What an incident says besides its reason: the positions of a backlog that was given up with its error, or what a verify found different. */
+type IncidentDetails = Pick<Incident, 'positionFrom' | 'positionTo' | 'error' | 'corrections'>;
 
 /**
  * Compares the stored counters with a count from the tables taken at one snapshot. A plain count must equal what was
  * stored at the snapshot plus the changes the count already saw and the worker recorded later. The sequence counter
  * and a frontier may be ahead of the tables (values handed out to rows deleted since) but never behind them. Only
  * channels the count yields are compared: a counter row of a channel that is gone is nobody's book.
- * @returns One correction per key that is wrong; empty when the books are right.
+ * @returns One difference per key that is wrong; empty when the books are right.
  */
 export function compareBooks(stored: Counters, counted: Counters, alreadyCounted: CounterDeltas): SyncCorrection[] {
-  const corrections: SyncCorrection[] = [];
+  const differences: SyncCorrection[] = [];
   for (const [channelKey, countedCounts] of counted) {
     const storedCounts = stored.get(channelKey) ?? {};
     const seenCounts = alreadyCounted.get(channelKey) ?? {};
@@ -36,14 +43,14 @@ export function compareBooks(stored: Counters, counted: Counters, alreadyCounted
       const countedValue = Number(countedCounts[key] ?? 0);
       if (isForwardOnlyCounterKey(key)) {
         const storedValue = Number(storedCounts[key] ?? 0);
-        if (countedValue > storedValue) corrections.push({ channelKey, key, stored: storedValue, counted: countedValue });
+        if (countedValue > storedValue) differences.push({ channelKey, key, stored: storedValue, counted: countedValue });
       } else if (isPlainCountKey(key)) {
         const expected = Number(storedCounts[key] ?? 0) + (seenCounts[key] ?? 0);
-        if (expected !== countedValue) corrections.push({ channelKey, key, stored: expected, counted: countedValue });
+        if (expected !== countedValue) differences.push({ channelKey, key, stored: expected, counted: countedValue });
       }
     }
   }
-  return corrections;
+  return differences;
 }
 
 async function readStoredCounters(db: Executor): Promise<Counters> {
@@ -51,24 +58,17 @@ async function readStoredCounters(db: Executor): Promise<Counters> {
   return new Map(rows.rows.map((row) => [row.channel_key, row.counts]));
 }
 
-/**
- * Writes the logical message that tells the stream it has passed a snapshot. Not transactional, so it sits at its own
- * position in the WAL.
- * @returns That position.
- */
-async function emitMarker(marker: string): Promise<string> {
-  const result = await cdcDb.execute<{ lsn: string }>(sql`SELECT pg_logical_emit_message(false, ${FENCE_MARKER_PREFIX}, ${marker})::text AS lsn`);
-  return result.rows[0].lsn;
+/** The first query of a REPEATABLE READ transaction fixes its snapshot: everything it reads afterwards is as of that snapshot. */
+async function takeSnapshot(tx: Transaction): Promise<string> {
+  return (await tx.execute<{ snapshot: string }>(sql`SELECT pg_current_snapshot()::text AS snapshot`)).rows[0].snapshot;
 }
 
-type IncidentKind = 'verify_corrected' | 'rebuild';
-type IncidentReason = 'scheduled' | 'requested' | 'lost_slot' | 'lost_counters' | 'stuck';
-
-interface IncidentDetails {
-  positionFrom?: string | null;
-  positionTo?: string | null;
-  error?: string | null;
-  corrections?: SyncCorrection[];
+/**
+ * Writes the marker: the logical message that tells the stream it has passed a snapshot. Not transactional, so it is
+ * in the WAL at once, whatever becomes of the transaction that counts.
+ */
+async function emitMarker(marker: string): Promise<void> {
+  await cdcDb.execute(sql`SELECT pg_logical_emit_message(false, ${FENCE_MARKER_PREFIX}, ${marker})`);
 }
 
 /**
@@ -78,27 +78,29 @@ interface IncidentDetails {
 const nextGeneration = sql`GREATEST(${syncStateTable.generation} + 1, floor(extract(epoch FROM now()) / 60)::int)`;
 
 /**
- * What every correction and every rebuild leaves in the database: the next generation, which makes every client
- * refetch, and a row in `sync_incidents`. Written in the transaction that changes the books, so the books never
- * change without it.
+ * What every rebuild leaves in the database: the next generation, which makes every client refetch, and a row in
+ * `sync_incidents`. Written in the transaction that replaces the books, so the books never change without it.
  * @returns The new generation.
  */
-async function writeIncident(tx: Transaction, kind: IncidentKind, reason: IncidentReason, details: IncidentDetails): Promise<number> {
-  await tx.insert(syncStateTable).values({ id: STATE_ID }).onConflictDoNothing();
+async function writeIncident(tx: Transaction, reason: IncidentReason, details: IncidentDetails): Promise<number> {
+  await tx.insert(syncStateTable).values({ id: syncStateId }).onConflictDoNothing();
   const [state] = await tx
     .update(syncStateTable)
-    .set({ generation: nextGeneration, ...(kind === 'rebuild' ? { rebuiltAt: sql`now()` } : {}) })
-    .where(eq(syncStateTable.id, STATE_ID))
+    .set({ generation: nextGeneration, rebuiltAt: sql`now()` })
+    .where(eq(syncStateTable.id, syncStateId))
     .returning({ generation: syncStateTable.generation });
-  await tx.insert(syncIncidentsTable).values({ kind, reason, ...details, generation: state.generation });
+  await tx.insert(syncIncidentsTable).values({ reason, ...details, generation: state.generation });
   return state.generation;
 }
 
-/** After that transaction committed: health carries the generation to the API, and the log gets its error, so a rare failure is not missed. */
-function announceIncident(kind: IncidentKind, reason: IncidentReason, generation: number, details: IncidentDetails): void {
+/**
+ * After that transaction committed: health carries the generation to the API at once, and the log gets its line. An
+ * error, so a rare failure is not missed; a rebuild somebody asked for is no failure.
+ */
+function announceIncident(reason: IncidentReason, generation: number, details: IncidentDetails): void {
   replicationState.generation = generation;
   pushHealth();
-  log.error(kind === 'rebuild' ? 'Sync books rebuilt from the tables: clients refetch' : 'Sync books were wrong and are corrected: clients refetch', {
+  log[reason === 'requested' ? 'info' : 'error']('Sync books rebuilt from the tables: clients refetch', {
     reason,
     generation,
     ...details,
@@ -108,40 +110,97 @@ function announceIncident(kind: IncidentKind, reason: IncidentReason, generation
 }
 
 /**
- * Applies corrections as deltas, so changes recorded since the comparison stay counted, and records the incident
- * with them.
- * @returns The new generation.
+ * How many books operations run: a verify, a rebuild, or the rebuild a verify ends in. The schedule starts one only at
+ * zero, so a rebuild that was asked for never opens its fence over the one of a verify.
  */
-async function applyCorrections(corrections: SyncCorrection[], reason: IncidentReason): Promise<number> {
-  const byChannel = new Map<string, Record<string, number>>();
-  for (const { channelKey, key, stored, counted } of corrections) {
-    const deltas = byChannel.get(channelKey) ?? {};
-    // A frontier merges as a maximum in `apply_count_deltas`; the sequence counter and a plain count are added to.
-    deltas[key] = key.startsWith('e:f:') ? counted : counted - stored;
-    byChannel.set(channelKey, deltas);
-  }
-  return cdcDb.transaction(async (tx) => {
-    for (const [channelKey, deltas] of [...byChannel].sort(([a], [b]) => a.localeCompare(b))) await applyCounterDeltas(tx, channelKey, deltas);
-    return writeIncident(tx, 'verify_corrected', reason, { corrections });
-  });
+let operations = 0;
+
+/** When the last rebuild was, in epoch ms: read from `sync_state` at the start, so the interval holds across a restart. */
+let lastRebuildAt = 0;
+
+/** True when the worker found a rebuild's fence in `sync_state` at its start: it ended before the stream had passed that rebuild. */
+let fenceLeftOpen = false;
+
+/**
+ * Closes a rebuild's fence once the stream has passed its marker, and forgets it in the database. A fence another
+ * rebuild took over is that rebuild's to close.
+ */
+function closeFenceWhenPassed(marker: string): void {
+  void fence
+    .whenPassed()
+    .then(async (passed) => {
+      if (!passed || fence.marker !== marker) return;
+      fence.close();
+      await cdcDb
+        .update(syncStateTable)
+        .set({ fence: null })
+        .where(and(eq(syncStateTable.id, syncStateId), sql`${syncStateTable.fence}->>'marker' = ${marker}`));
+      log.info('The stream has passed the rebuild: every change counts again');
+    })
+    .catch((error) => log.warn('Could not clear the rebuild fence', { err: error }));
 }
 
-let verifying = false;
+/**
+ * The one repair of books that are wrong or lost: they are replaced by a recount from the tables, and every client
+ * refetches. Runs exactly between two flushes, with or without a subscription. The recount is taken at a snapshot, and
+ * until the stream has passed it, a source transaction the recount already saw adds nothing to the plain counts. The
+ * new counters, the fence, the incident and the next generation are one transaction: a worker that dies leaves either
+ * all of it or none.
+ * @param reason - Why the books are rebuilt.
+ * @param details - What the incident records besides the reason.
+ */
+export async function rebuildBooks(reason: IncidentReason, details: IncidentDetails = {}): Promise<void> {
+  operations += 1;
+  try {
+    const marker = randomUUID();
+    const generation = await runBetweenFlushes(async () => {
+      let snapshot = '';
+      const committed = await cdcDb.transaction(
+        async (tx) => {
+          snapshot = await takeSnapshot(tx);
+          await emitMarker(marker);
+          await tx.execute(sql.raw(`SET LOCAL statement_timeout = ${countTimeoutMs}`));
+          await recalculateCounters({ var: { db: tx } });
+          const next = await writeIncident(tx, reason, details);
+          const kept: SyncFence = { marker };
+          await tx.update(syncStateTable).set({ fence: kept }).where(eq(syncStateTable.id, syncStateId));
+          // A rebuild answers a request for one, whatever started it. A verify that is asked for still gets its own answer.
+          await clearBooksRequest(tx, 'rebuild');
+          return next;
+        },
+        { isolationLevel: 'repeatable read' },
+      );
+      // Still between two flushes: the next one already leaves out what the recount saw. A verify's fence that was
+      // open ends here, and that verify gives no answer.
+      fence.open('rebuild', snapshot, marker);
+      closeFenceWhenPassed(marker);
+      return committed;
+    });
+
+    announceIncident(reason, generation, details);
+    lastRebuildAt = Date.now();
+    fenceLeftOpen = false;
+    replicationState.clearFailure();
+  } finally {
+    operations -= 1;
+  }
+}
 
 /**
  * Checks the books against the tables while the worker reads on. The snapshot is taken exactly between two flushes;
- * the counting runs beside the stream, and the comparison waits until the stream has passed the snapshot. When the
- * books are right nothing is written. When they are wrong, each key is corrected by its difference.
- * @param reason - Whether the daily schedule or a request started it.
- * @returns The corrections made (empty when the books were right), or null when it could not run or finish.
+ * the recount runs beside the stream, and the comparison waits until the stream has passed the snapshot. A verify only
+ * detects: when the books are right nothing but `verified_at` is written, and when they differ the books are rebuilt,
+ * with the differences in the incident.
+ * @returns The differences found (empty when the books were right), or null when it could not run or finish.
  */
-export async function verifyBooks(reason: 'scheduled' | 'requested'): Promise<SyncCorrection[] | null> {
-  if (verifying || fence.mode || replicationState.status !== 'active') return null;
-  verifying = true;
+export async function verifyBooks(): Promise<SyncCorrection[] | null> {
+  if (operations > 0 || fence.mode || replicationStatus() !== 'active') return null;
+  operations += 1;
   const marker = randomUUID();
   let stored: Counters = new Map();
   let counted: Counters = new Map();
   let counting: Promise<void> = Promise.resolve();
+  let timer: NodeJS.Timeout | undefined;
 
   try {
     await runBetweenFlushes(
@@ -149,12 +208,11 @@ export async function verifyBooks(reason: 'scheduled' | 'requested'): Promise<Sy
         new Promise<void>((taken, failed) => {
           counting = cdcDb.transaction(
             async (tx) => {
-              // The first query of a REPEATABLE READ transaction fixes its snapshot: everything below is read as of it.
-              const snapshot = (await tx.execute<{ snapshot: string }>(sql`SELECT pg_current_snapshot()::text AS snapshot`)).rows[0].snapshot;
+              const snapshot = await takeSnapshot(tx);
               await emitMarker(marker);
               fence.open('verify', snapshot, marker);
               taken();
-              await tx.execute(sql.raw(`SET LOCAL statement_timeout = ${countTimeoutMs}`));
+              await tx.execute(sql.raw(`SET LOCAL statement_timeout = ${verifyTimeoutMs}`));
               stored = await readStoredCounters(tx);
               counted = await computeChannelCounters({ var: { db: tx } });
             },
@@ -165,157 +223,77 @@ export async function verifyBooks(reason: 'scheduled' | 'requested'): Promise<Sy
     );
 
     const passed = await Promise.race([
-      Promise.all([counting, fence.whenPassed()]).then(() => true),
-      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), passTimeoutMs).unref?.()),
+      Promise.all([counting, fence.whenPassed()]).then(([, streamPassed]) => streamPassed),
+      new Promise<boolean>((resolve) => {
+        timer = setTimeout(() => resolve(false), verifyTimeoutMs);
+        timer.unref?.();
+      }),
     ]);
-    if (!passed) {
-      log.warn('Verify abandoned: the stream did not reach the count in time', { reason });
+    if (!passed || fence.marker !== marker) {
+      log.warn('Verify abandoned: the stream did not pass its recount in time, or a rebuild took its place');
+      verifyGaveUpAt = Date.now();
       return null;
     }
 
-    const corrections = compareBooks(stored, counted, fence.close());
-    if (corrections.length > 0) {
-      const generation = await runBetweenFlushes(() => applyCorrections(corrections, reason));
-      announceIncident('verify_corrected', reason, generation, { corrections });
-    }
-    await cdcDb.insert(syncStateTable).values({ id: STATE_ID }).onConflictDoNothing();
-    await cdcDb.update(syncStateTable).set({ verifiedAt: sql`now()` }).where(eq(syncStateTable.id, STATE_ID));
-    log.info('Sync books verified', { reason, channels: counted.size, corrections: corrections.length });
-    return corrections;
+    const differences = compareBooks(stored, counted, fence.close());
+    if (differences.length > 0) await rebuildBooks('wrong_books', { corrections: differences });
+    await cdcDb.insert(syncStateTable).values({ id: syncStateId }).onConflictDoNothing();
+    await cdcDb.update(syncStateTable).set({ verifiedAt: sql`now()` }).where(eq(syncStateTable.id, syncStateId));
+    log.info('Sync books verified', { channels: counted.size, differences: differences.length });
+    return differences;
   } catch (error) {
-    log.warn('Verify failed: nothing was changed', { err: error, reason });
+    log.warn('Verify failed', { err: error });
+    verifyGaveUpAt = Date.now();
     return null;
   } finally {
-    if (fence.mode === 'verify') fence.close();
-    verifying = false;
+    clearTimeout(timer);
+    if (fence.marker === marker) fence.close();
+    operations -= 1;
   }
 }
 
-/** Closes a rebuild's fence once the stream has passed its snapshot, and forgets it in the database. */
-function closeFenceWhenPassed(): void {
-  void fence
-    .whenPassed()
-    .then(async () => {
-      fence.close();
-      await cdcDb.update(syncStateTable).set({ fence: null }).where(eq(syncStateTable.id, STATE_ID));
-      log.info('The stream has passed the rebuild: every change counts again');
-    })
-    .catch((error) => log.warn('Could not clear the rebuild fence', { err: error }));
-}
-
-/**
- * The lost case: the books are replaced by a count from the tables, and every client refetches. Runs between two
- * subscriptions. The count is taken at a snapshot, and until the stream has passed it, a transaction the count
- * already saw adds nothing to the plain counts. The new counters, the fence, the incident and the next generation are
- * one transaction: a worker that dies leaves either all of it or none.
- * @param reason - Why the books count as lost.
- * @param backlog - Set for a worker stuck on a change: the slot moves to the current position first, which gives up
- *   everything it had not recorded.
- */
-export async function rebuildBooks(reason: Exclude<IncidentReason, 'scheduled'>, backlog?: { position: string; error: string }): Promise<void> {
-  let positionTo: string | null = null;
-  if (backlog) {
-    // Moving the slot is no part of any transaction. The request is written first, so a worker that dies between
-    // the move and the rebuild finds it at its next start and rebuilds then.
-    await cdcDb
-      .insert(syncStateTable)
-      .values({ id: STATE_ID, requested: 'rebuild', requestedAt: sql`now()` })
-      .onConflictDoUpdate({ target: syncStateTable.id, set: { requested: 'rebuild', requestedAt: sql`now()` } });
-    const advanced = await cdcDb.execute<{ position: string }>(
-      sql`SELECT (pg_replication_slot_advance(${CDC_SLOT_NAME}, pg_current_wal_lsn())).end_lsn::text AS position`,
-    );
-    positionTo = advanced.rows[0]?.position ?? null;
-  }
-
-  const marker = randomUUID();
-  const details = { positionFrom: backlog?.position ?? null, positionTo, error: backlog?.error ?? null };
-  let snapshot = '';
-  const generation = await cdcDb.transaction(
-    async (tx) => {
-      snapshot = (await tx.execute<{ snapshot: string }>(sql`SELECT pg_current_snapshot()::text AS snapshot`)).rows[0].snapshot;
-      const markerLsn = await emitMarker(marker);
-      await tx.execute(sql.raw(`SET LOCAL statement_timeout = ${countTimeoutMs}`));
-      // A plain count the tables no longer give a row for is zero, not what it was.
-      await tx.execute(sql`
-        UPDATE channel_counters SET counts = counts || (
-          SELECT COALESCE(jsonb_object_agg(k, 0), '{}'::jsonb) FROM jsonb_object_keys(counts) k WHERE k LIKE 'e:c:%' OR k LIKE 'm:c:%'
-        )
-      `);
-      await recalculateCounters({ var: { db: tx } });
-      const next = await writeIncident(tx, 'rebuild', reason, details);
-      // A rebuild answers a request for one, whatever started it.
-      const kept: SyncFence = { mode: 'rebuild', snapshot, marker, markerLsn };
-      await tx.update(syncStateTable).set({ fence: kept, requested: null }).where(eq(syncStateTable.id, STATE_ID));
-      return next;
-    },
-    { isolationLevel: 'repeatable read' },
-  );
-
-  fence.open('rebuild', snapshot, marker);
-  closeFenceWhenPassed();
-  announceIncident('rebuild', reason, generation, details);
-  lastRebuildAt = Date.now();
-  replicationState.rebuildRequested = false;
-  replicationState.clearFailure();
-}
-
-let lastRebuildAt = 0;
+/** When a verify last started and ended without an answer: it timed out, failed, or the rebuild it asked for did. */
+let verifyGaveUpAt = 0;
 
 /** A fault that repeats costs one rebuild and one refetch per interval, not one per failing change. */
 export const rebuildAllowed = (): boolean => Date.now() - lastRebuildAt >= rebuildIntervalMs;
 
 /**
- * Whether the slot has confirmed a position at or past a fence's marker. Then every transaction the count saw is
- * recorded, and the marker itself never arrives again: the worker died between acknowledging it and forgetting the fence.
- */
-async function slotIsPast(markerLsn: string | undefined): Promise<boolean> {
-  if (!markerLsn) return false;
-  const result = await cdcDb.execute<{ passed: boolean }>(
-    sql`SELECT confirmed_flush_lsn >= ${markerLsn}::pg_lsn AS passed FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
-  );
-  return result.rows[0]?.passed === true;
-}
-
-/**
- * Reads the sync state when the worker starts: the generation health reports, when the last rebuild was, and a
- * rebuild's fence that a restart interrupted.
+ * Reads the sync state when the worker starts: the generation health reports, when the last rebuild was, and whether
+ * a rebuild's fence was left open.
  */
 export async function restoreBooksState(): Promise<void> {
-  const [state] = await cdcDb.select().from(syncStateTable).where(eq(syncStateTable.id, STATE_ID));
+  const [state] = await cdcDb.select().from(syncStateTable).where(eq(syncStateTable.id, syncStateId));
   replicationState.generation = state?.generation ?? 1;
   if (state?.rebuiltAt) lastRebuildAt = new Date(`${state.rebuiltAt}Z`).getTime();
-  if (state?.fence?.mode !== 'rebuild' || fence.mode) return;
-
-  if (await slotIsPast(state.fence.markerLsn)) {
-    await cdcDb.update(syncStateTable).set({ fence: null }).where(eq(syncStateTable.id, STATE_ID));
-    log.info('The stream had passed the rebuild before the restart: its fence is forgotten');
-    return;
-  }
-  fence.open('rebuild', state.fence.snapshot, state.fence.marker);
-  closeFenceWhenPassed();
+  fenceLeftOpen = Boolean(state?.fence);
+  booksStateRestored = true;
 }
+
+let booksStateRestored = false;
+
+/** Reads the sync state if the read at the worker's start failed: without it an interrupted rebuild goes unnoticed. */
+export const ensureBooksStateRestored = async (): Promise<void> => {
+  if (!booksStateRestored) await restoreBooksState();
+};
 
 /**
- * Whether a rebuild is asked for, read from the database: by `pnpm sync:rebuild`, or by a worker that gave up a
- * backlog and died before it rebuilt. Also lets the schedule end a subscription for the next request.
+ * Whether the worker before this one ended inside the fence of a rebuild. What that fence left out is gone with its
+ * process, so the changes it covered would count twice: the books are rebuilt again.
  */
-export async function rebuildIsRequested(): Promise<boolean> {
-  replicationState.rebuildRequested = false;
-  const [state] = await cdcDb.select({ requested: syncStateTable.requested }).from(syncStateTable).where(eq(syncStateTable.id, STATE_ID));
-  return state?.requested === 'rebuild';
-}
+export const rebuildWasInterrupted = (): boolean => fenceLeftOpen;
 
-/** Whether the counters are gone while the database has a history: a truncate or a partial restore emptied the table. */
-export async function countersAreLost(): Promise<boolean> {
+/**
+ * What the lost-case checks before a subscription start from, in one query. `hasHistory`: the database has activities,
+ * so a slot that had to be made on it missed changes. `countersAreLost`: the counters are gone while it has a history,
+ * which a truncate or a partial restore leaves behind.
+ */
+export async function readLostCaseFacts(): Promise<{ hasHistory: boolean; countersAreLost: boolean }> {
   const result = await cdcDb.execute<{ counters: boolean; history: boolean }>(
     sql`SELECT EXISTS (SELECT 1 FROM ${channelCountersTable}) AS counters, EXISTS (SELECT 1 FROM activities) AS history`,
   );
-  return result.rows[0].history && !result.rows[0].counters;
-}
-
-/** Whether the database has a history at all: a slot made on one that has none loses nothing. */
-export async function hasHistory(): Promise<boolean> {
-  return (await cdcDb.execute<{ history: boolean }>(sql`SELECT EXISTS (SELECT 1 FROM activities) AS history`)).rows[0].history;
+  const { counters, history } = result.rows[0];
+  return { hasHistory: history, countersAreLost: history && !counters };
 }
 
 /** The next time the clock shows the verify hour, in epoch ms. */
@@ -326,35 +304,44 @@ function nextVerifyAt(now = Date.now()): number {
   return next.getTime();
 }
 
+/** When the worker asks itself for the next daily verify. */
+let dailyVerifyAt = nextVerifyAt();
+
 let scheduleTimer: NodeJS.Timeout | null = null;
 
 /**
- * Verifies once a day, and picks up a verify or a rebuild that `pnpm sync:verify` or `pnpm sync:rebuild` asked for.
- * A rebuild runs between two subscriptions, so a request for one ends the subscription the worker holds.
+ * One poll of the schedule. At the verify hour the worker asks itself for a verify, as `pnpm sync:verify` does: one
+ * that cannot run now stays asked for, and a later poll finds it. Then it answers what is asked for while the
+ * subscription stays: a verify beside the stream, a rebuild between two flushes.
  */
+export async function answerBooksRequests(): Promise<void> {
+  if (Date.now() >= dailyVerifyAt) {
+    await requestBooks(cdcDb, 'verify', { unlessRequested: true });
+    dailyVerifyAt = nextVerifyAt();
+  }
+
+  const requested = await findBooksRequest(cdcDb);
+  // Between two subscriptions the loop settles the books itself. Checked after the read, with nothing awaited before
+  // the start: one books operation runs at a time.
+  if (!requested || operations > 0 || !replicationState.subscribed) return;
+
+  if (requested === 'rebuild') return rebuildBooks('requested');
+  // A verify that started and gave no answer stays asked for, and waits: a recount that cannot finish must not run
+  // back to back.
+  if (Date.now() - verifyGaveUpAt < rebuildIntervalMs) return;
+  if ((await verifyBooks()) !== null) await clearBooksRequest(cdcDb, 'verify');
+}
+
+/** Starts the poll for what the worker is asked for: by `pnpm sync:verify`, `pnpm sync:rebuild` or a seed, and by itself once a day. */
 export function startBooksSchedule(): void {
   if (scheduleTimer) return;
-  let dailyAt = nextVerifyAt();
   scheduleTimer = setInterval(() => {
-    void (async () => {
-      if (Date.now() >= dailyAt) {
-        dailyAt = nextVerifyAt();
-        await verifyBooks('scheduled');
-      }
-      const [state] = await cdcDb.select({ requested: syncStateTable.requested }).from(syncStateTable).where(eq(syncStateTable.id, STATE_ID));
-      if (!state?.requested) return;
-      if (state.requested === 'verify') {
-        if ((await verifyBooks('requested')) !== null)
-          await cdcDb.update(syncStateTable).set({ requested: null }).where(eq(syncStateTable.id, STATE_ID));
-      } else if (!replicationState.rebuildRequested) {
-        replicationState.rebuildRequested = true;
-        await replicationState.service?.stop();
-      }
-    })().catch((error) => log.warn('Sync books schedule failed', { err: error }));
+    void answerBooksRequests().catch((error) => log.warn('Sync books schedule failed', { err: error }));
   }, requestPollMs);
   scheduleTimer.unref?.();
 }
 
+/** Ends that poll, at shutdown. A verify or a rebuild that runs is left to finish. */
 export function stopBooksSchedule(): void {
   if (scheduleTimer) clearInterval(scheduleTimer);
   scheduleTimer = null;

@@ -1,3 +1,5 @@
+import { isPlainCountKey } from '#/modules/entities/counter-keys';
+
 /** A `pg_current_snapshot()`: transactions below `xmin` are over, those from `xmax` on had not started, `xip` were running. */
 export interface Snapshot {
   xmin: bigint;
@@ -34,9 +36,6 @@ export function isVisibleIn(xid: number, snapshot: Snapshot): boolean {
   return !snapshot.xip.has(full);
 }
 
-/** Whether a counter key is a plain count: the keys a count from the tables and the worker's deltas must agree on. */
-export const isPlainCountKey = (key: string): boolean => key.startsWith('e:c:') || key.startsWith('m:c:');
-
 /** The plain counts of a set of deltas. */
 export function plainCounts(deltas: CounterDeltas): CounterDeltas {
   const counts: CounterDeltas = new Map();
@@ -63,8 +62,9 @@ interface OpenFence {
   marker: string;
   /** Plain counts of the transactions the count already saw, recorded since the snapshot. */
   counted: CounterDeltas;
-  passed: Promise<void>;
-  resolvePassed: () => void;
+  /** True once the stream has passed the snapshot; false when the fence ended before that. */
+  passed: Promise<boolean>;
+  settle: (passed: boolean) => void;
 }
 
 let open: OpenFence | null = null;
@@ -76,17 +76,23 @@ let open: OpenFence | null = null;
  * passed the snapshot when the marker arrives: a logical message written right after the snapshot was taken.
  */
 export const fence = {
-  /** Opens the fence at a snapshot. One count runs at a time. */
+  /** Opens the fence at a snapshot. One fence is open at a time: one still open ends here, without having been passed. */
   open(mode: OpenFence['mode'], snapshotText: string, marker: string): void {
-    let resolvePassed = () => {};
-    const passed = new Promise<void>((resolve) => {
-      resolvePassed = resolve;
+    open?.settle(false);
+    let settle: OpenFence['settle'] = () => {};
+    const passed = new Promise<boolean>((resolve) => {
+      settle = resolve;
     });
-    open = { mode, snapshot: parseSnapshot(snapshotText), marker, counted: new Map(), passed, resolvePassed };
+    open = { mode, snapshot: parseSnapshot(snapshotText), marker, counted: new Map(), passed, settle };
   },
 
   get mode(): OpenFence['mode'] | null {
     return open?.mode ?? null;
+  },
+
+  /** The marker of the open fence, which tells it from a later one; null when none is open. */
+  get marker(): string | null {
+    return open?.marker ?? null;
   },
 
   /** Whether the count behind the open fence already saw this transaction. False when no fence is open. */
@@ -101,17 +107,21 @@ export const fence = {
 
   /** Called when a marker message arrives and everything before it is recorded. */
   markerArrived(marker: string): void {
-    if (open?.marker === marker) open.resolvePassed();
+    if (open?.marker === marker) open.settle(true);
   },
 
-  /** Resolves once the stream has passed the snapshot. */
-  whenPassed(): Promise<void> {
-    return open?.passed ?? Promise.resolve();
+  /**
+   * Resolves once the open fence is over: true when the stream has passed its snapshot, false when it was closed or
+   * another fence took its place before that. False at once when no fence is open.
+   */
+  whenPassed(): Promise<boolean> {
+    return open?.passed ?? Promise.resolve(false);
   },
 
   /** Closes the fence. @returns The plain counts of the already counted transactions recorded while it was open. */
   close(): CounterDeltas {
     const counted = open?.counted ?? new Map();
+    open?.settle(false);
     open = null;
     return counted;
   },

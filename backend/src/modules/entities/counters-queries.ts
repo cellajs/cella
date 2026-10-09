@@ -4,6 +4,7 @@ import { appConfig, type EntityType, entityIdColumnName, hierarchy, roles } from
 import type { DbContext } from '#/core/context';
 import type { DbOrTx } from '#/db/db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
+import { forwardOnlyCounterKeySql, plainCountKeySql } from '#/modules/entities/counter-keys';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { getEntityTable } from '#/tables';
 
@@ -31,9 +32,6 @@ const membershipPairs = (alias: string, fk: string, ctxType: string, ctxRoles: r
   countPair('m:c:pending', 'inactive_memberships im', `im.${fk} = ${alias}.id AND im.channel_type = '${ctxType}' AND im.rejected_at IS NULL`),
 ];
 
-/** Keys that only move forward: the sequence counter and every frontier. A recount never sets them back. */
-const forwardOnlyKey = (alias: string) => `(${alias} = 'sequence' OR ${alias} LIKE 'e:f:%')`;
-
 /**
  * Upsert a SELECT into channel_counters with JSONB || merge. A forward-only key keeps the higher of the stored and the
  * counted value: the worker may have handed out sequence values the count's snapshot does not see yet.
@@ -47,7 +45,7 @@ const upsertChannelCounters = (db: DbOrTx, selectSql: string) =>
       counts = channel_counters.counts || EXCLUDED.counts || (
         SELECT COALESCE(jsonb_object_agg(k, GREATEST((channel_counters.counts->>k)::bigint, (EXCLUDED.counts->>k)::bigint)), '{}'::jsonb)
         FROM jsonb_object_keys(EXCLUDED.counts) k
-        WHERE ${forwardOnlyKey('k')} AND channel_counters.counts ? k
+        WHERE ${forwardOnlyCounterKeySql('k')} AND channel_counters.counts ? k
       ),
       updated_at = NOW()
   `),
@@ -201,9 +199,6 @@ function channelCounterSelects(): string[] {
   return selects;
 }
 
-/** Whether a counter key only moves forward (the sequence counter, a frontier), where the others are plain counts. */
-export const isForwardOnlyCounterKey = (key: string): boolean => key === 'sequence' || key.startsWith('e:f:');
-
 /**
  * The channel counters as counted from the tables, without writing them. Run it in a REPEATABLE READ transaction to
  * count at one snapshot.
@@ -224,9 +219,23 @@ export const computeChannelCounters = async (ctx: DbContext): Promise<Map<string
   return counted;
 };
 
-/** Rebuilds counters from database state, for seeding or repair. */
+/**
+ * Replaces the channel counters by a recount from the tables: for a seed on a database no CDC worker reads yet, and
+ * for the worker's rebuild. A plain count the tables no longer give a row for becomes zero; the sequence counter and
+ * the frontiers never go down. Run it in one transaction, so no reader sees the counts at zero.
+ * @param ctx - The connection or transaction to recount in.
+ * @returns How many channels have a counter row afterwards.
+ */
 export const recalculateCounters = async (ctx: DbContext) => {
   const { db } = ctx.var;
+  // A plain count the tables give no row for any more is zero, not what it was.
+  await db.execute(
+    sql.raw(`
+    UPDATE channel_counters SET counts = counts || (
+      SELECT COALESCE(jsonb_object_agg(k, 0), '{}'::jsonb) FROM jsonb_object_keys(counts) k WHERE ${plainCountKeySql('k')}
+    )
+  `),
+  );
   for (const select of channelCounterSelects()) await upsertChannelCounters(db, select);
 
   // Canonical channel paths let catchup verify ancestry; CDC keeps them, this copies the ones that differ.
@@ -238,10 +247,19 @@ export const recalculateCounters = async (ctx: DbContext) => {
     );
   }
 
-  // ── Phase 4: Product counters ─────────────────────────────────────────
-  await db.delete(productCountersTable);
+  const [{ channelRows }] = await db.select({ channelRows: sql<number>`count(*)`.mapWith(Number) }).from(channelCountersTable);
+  return { channelRows };
+};
 
-  // 4a: viewCount from seen_by, unique user views over the 90-day partition retention window.
+/**
+ * Recounts the view count of every product from `seen_by` (unique users over its 90-day retention). The API keeps
+ * these counts itself with every view, and no sync client reads them: a seed is the only caller.
+ * @param ctx - The connection to recount on.
+ * @returns How many products have a view count afterwards.
+ */
+export const recalculateViewCounts = async (ctx: DbContext) => {
+  const { db } = ctx.var;
+  await db.delete(productCountersTable);
   await db.execute(
     sql.raw(`
     INSERT INTO product_counters (product_id, product_type, view_count)
@@ -252,9 +270,6 @@ export const recalculateCounters = async (ctx: DbContext) => {
       view_count = EXCLUDED.view_count
   `),
   );
-
-  const [{ channelRows }] = await db.select({ channelRows: sql<number>`count(*)`.mapWith(Number) }).from(channelCountersTable);
   const [{ productRows }] = await db.select({ productRows: sql<number>`count(*)`.mapWith(Number) }).from(productCountersTable);
-
-  return { channelRows, productRows };
+  return { productRows };
 };
