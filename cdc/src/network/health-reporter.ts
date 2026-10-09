@@ -7,7 +7,8 @@ const HEALTH_PUSH_INTERVAL_MS = 15_000;
 
 let timer: NodeJS.Timeout | null = null;
 
-function push(): void {
+/** Sends the status payload now. The timer does it every 15 seconds; a new generation of the books should not wait for it. */
+export function pushHealth(): void {
   if (!wsClient.isConnected()) return;
   const role = getRoleCapabilities();
   wsClient.send({
@@ -30,7 +31,7 @@ function push(): void {
 
 export function startHealthReporter(): void {
   if (timer) return;
-  timer = setInterval(push, HEALTH_PUSH_INTERVAL_MS);
+  timer = setInterval(pushHealth, HEALTH_PUSH_INTERVAL_MS);
   timer.unref?.();
 }
 

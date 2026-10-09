@@ -12,6 +12,16 @@ import * as membershipOps from './membership-ops';
 import { invalidateEmbeddedForHost, propagateEmbeddings } from './propagation';
 import { getSyncTier, getTenantIdForOrg } from './sync-priority';
 
+/** Every client learns of a new generation at about the same moment: each waits a random part of this before it refetches. */
+const GENERATION_REFETCH_SPREAD_MS = 10_000;
+
+/** Refetches what is on screen of every synced type and marks the rest stale, after this client's share of the spread. */
+function refetchSyncedQueries(): void {
+  setTimeout(() => {
+    for (const entityType of getRegisteredProductEntityTypes()) cacheOps.invalidateEntityQueries(getEntityQueryKeys(entityType));
+  }, Math.random() * GENERATION_REFETCH_SPREAD_MS);
+}
+
 /**
  * Readable views fetch deltas when their frontier advances; other statuses expose no summaries.
  * Cursors advance only after ingestion, invalidation handoff, or an intentional cache-free skip.
@@ -19,6 +29,10 @@ import { getSyncTier, getTenantIdForOrg } from './sync-priority';
 export async function processAppCatchup(response: PostAppCatchupResponse, baselineOnly = false): Promise<void> {
   const { changes, views } = response;
   const syncState = syncStore.getState();
+
+  // Another generation: the server corrected or rebuilt its sync books, and no cursor of before says anything about
+  // them. Cursors are back at 0, so the views below store their frontiers as baselines.
+  if (syncState.adoptGeneration(response.generation)) refetchSyncedQueries();
   let hadGap = false; // any view still behind the server frontier this cycle
 
   // ── Views: product entity sync per (org, entityType) ──────────────────────

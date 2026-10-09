@@ -2,8 +2,8 @@ import { baseDb } from '#/db/db';
 import type { SessionModel } from '#/modules/auth/sessions/sessions-db';
 import { findSessionStates } from '#/modules/auth/sessions/sessions-queries';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { closeAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
-import { type BaseStreamSubscriber, type StreamErrorPayload, streamSubscriberManager } from '#/modules/entities/stream';
+import { closeAppStreams, isAppStream, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
+import { type StreamErrorPayload, streamSubscriberManager } from '#/modules/entities/stream';
 import { findSystemRoleHolders } from '#/modules/system/system-queries';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
@@ -12,8 +12,6 @@ import { log } from '#/utils/logger';
 const dbCtx = { var: { db: baseDb } };
 
 /** App streams carry the session they authenticated with; a stream an app registers without one is not theirs. */
-const isAppStream = (subscriber: BaseStreamSubscriber): subscriber is AppStreamSubscriber =>
-  'sessionId' in subscriber && typeof subscriber.sessionId === 'string';
 
 /** How often the sweep re-checks the session behind every open stream. */
 const SWEEP_INTERVAL_MS = 60_000;

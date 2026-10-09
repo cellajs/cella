@@ -1,7 +1,8 @@
-import { eq, sql } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { activityBus } from '#/lib/activity-bus';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
@@ -45,6 +46,14 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     plan = await seedAttachmentHome(testOrg, testUser.id);
   });
 
+  const readCounts = async () => {
+    const [row] = await db
+      .select({ counts: channelCountersTable.counts })
+      .from(channelCountersTable)
+      .where(eq(channelCountersTable.channelKey, testOrg.id));
+    return (row?.counts ?? {}) as Record<string, number>;
+  };
+
   afterAll(async () => {
     await cdcHarness?.stop();
     await cleanupEntityHierarchy(db, plan);
@@ -63,6 +72,38 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     expect(event.resourceType).toBe('membership');
     expect(event.subjectId).toBe(membershipData.id);
     expect(event.rowData).toMatchObject({ channelType: 'organization', channelId: testOrg.id, organizationId: testOrg.id });
+    // The activity names its organization: without it the stream listener has nowhere to route the event.
+    expect(event.organizationId).toBe(testOrg.id);
+    // And the organization's bump-only signal moves, which is what a catchup screens membership changes with.
+    await waitFor(async () => ((await readCounts()).membership ?? 0) >= 1, 15_000, 'membership signal on channel_counters');
+  });
+
+  it('must not hand two memberships removed in one transaction to the API as one event', async () => {
+    const members = await insertUsers({ var: { db } }, { users: [mockUser(), mockUser()] });
+    const memberships = members.map((member) => mockChannelMembership('organization', testOrg, member));
+    await db.insert(membershipsTable).values(memberships);
+    const membershipIds = memberships.map((membership) => membership.id as string);
+    const signalBefore = async () => (await readCounts()).membership ?? 0;
+    await waitFor(async () => (await readCounts())['m:c:total'] === 3, 15_000, 'both memberships counted');
+    const before = await signalBefore();
+
+    const removed: { subjectId: string | null; organizationId: string | null; userId: unknown }[] = [];
+    activityBus.on('membership.deleted', (event) => {
+      removed.push({
+        subjectId: event.subjectId,
+        organizationId: event.organizationId ?? null,
+        userId: (event.rowData as { userId?: string } | null)?.userId,
+      });
+    });
+
+    await db.delete(membershipsTable).where(inArray(membershipsTable.id, membershipIds));
+
+    await waitFor(() => removed.length >= 2, 15_000, 'an event for each removed membership');
+    // One event per row, each with its own user: a listener that acts on one row acts on both.
+    expect(removed.map((event) => event.subjectId).sort()).toEqual([...membershipIds].sort());
+    expect(removed.map((event) => event.userId).sort()).toEqual(members.map((member) => member.id).sort());
+    expect(removed.every((event) => event.organizationId === testOrg.id)).toBe(true);
+    await waitFor(async () => (await signalBefore()) >= before + 2, 15_000, 'membership signal moved for both');
   });
 
   it("must not leave a runtime-created organization's counters row without its path", async () => {

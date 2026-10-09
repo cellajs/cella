@@ -6,6 +6,7 @@ import { type SyncCorrection, type SyncFence, syncIncidentsTable, syncStateTable
 import { CDC_SLOT_NAME, RESOURCE_LIMITS } from '../constants';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
+import { pushHealth } from '../network/health-reporter';
 import { type CounterDeltas, fence, isPlainCountKey } from '../services/fence';
 import { replicationState } from '../services/replication-state';
 import { applyCounterDeltas } from '../utils/apply-unified-deltas';
@@ -95,6 +96,7 @@ async function recordIncident(
     return state.generation;
   });
   replicationState.generation = generation;
+  pushHealth();
   log.error(kind === 'rebuild' ? 'Sync books rebuilt from the tables: clients refetch' : 'Sync books were wrong and are corrected: clients refetch', {
     reason,
     generation,

@@ -31,6 +31,8 @@ export interface RegisteredSyncView {
 
 interface SyncStoreState {
   cursor: string | null;
+  /** Generation of the server's sync books this client's cursors belong to; null before the first catchup. */
+  generation: number | null;
   lastSyncAt: string | null;
   orgs: Record<string, OrgSyncState>;
   /** Grant-boundary views registered by the app (views.ts), keyed by view key. */
@@ -39,6 +41,12 @@ interface SyncStoreState {
   known: Record<string, Record<string, number>>;
 
   setCursor: (cursor: string | null) => void;
+  /**
+   * Takes the generation a catchup answered with. Another one than the client held means the server corrected or
+   * rebuilt its books: every cursor goes back to 0, so the catchup that follows stores the frontiers as baselines.
+   * @returns true when the client held another generation and its synced data needs a refetch.
+   */
+  adoptGeneration: (generation: number | undefined) => boolean;
   setLastSyncAt: (timestamp: string | null) => void;
   setOrgTenantId: (orgId: string, tenantId: string) => void;
   getOrgTenantId: (orgId: string) => string | null;
@@ -66,6 +74,7 @@ interface SyncStoreState {
 
 const initStore = {
   cursor: null as string | null,
+  generation: null as number | null,
   lastSyncAt: null as string | null,
   orgs: {} as Record<string, OrgSyncState>,
   views: {} as Record<string, RegisteredSyncView>,
@@ -103,6 +112,21 @@ export const syncStore = createStore<SyncStoreState>()(
           set((s) => {
             s.lastSyncAt = ts;
           }),
+        adoptGeneration: (generation) => {
+          const held = get().generation;
+          if (generation === undefined || generation === held) return false;
+          set((s) => {
+            s.generation = generation;
+            if (held === null) return;
+            for (const org of Object.values(s.orgs)) {
+              for (const entityType of Object.keys(org.seqs)) org.seqs[entityType] = 0;
+              org.contexts = {};
+            }
+            for (const view of Object.values(s.views)) view.cursor = 0;
+            s.known = {};
+          });
+          return held !== null;
+        },
 
         setOrgTenantId: (orgId, tenantId) =>
           set((s) => {
@@ -196,7 +220,13 @@ export const syncStore = createStore<SyncStoreState>()(
         name: 'sync',
         skipHydration: true,
         storage: createJSONStorage(() => idbKvStorage('sync')),
-        partialize: (state) => ({ cursor: state.cursor, lastSyncAt: state.lastSyncAt, orgs: state.orgs, views: state.views }),
+        partialize: (state) => ({
+          cursor: state.cursor,
+          generation: state.generation,
+          lastSyncAt: state.lastSyncAt,
+          orgs: state.orgs,
+          views: state.views,
+        }),
       },
     ),
     { name: 'SyncStore', enabled: isDebugMode },

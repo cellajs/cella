@@ -2,7 +2,7 @@ import type { PredicateActor, ProductEntityType } from 'shared';
 import { appConfig, pathHomeId } from 'shared';
 import type { DbContext } from '#/core/context';
 import { baseDb as db } from '#/db/db';
-import { findChannelCountersByKeys, findLatestUserActivityId } from '#/modules/entities/entities-queries';
+import { findChannelCountersByKeys, findLatestUserActivityId, findSyncGeneration } from '#/modules/entities/entities-queries';
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
 import { buildPropagationHints } from '#/modules/entities/operations/propagation-hints';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -97,7 +97,9 @@ export async function appCatchupOp(
   // View answers resolve per prefix: an elevated reader holds no child memberships but declares views.
   const viewAnswers = actor && views?.length ? await answerCatchupViews(memberships, actor, views) : undefined;
 
-  if (organizationIds.size === 0) return { changes: {}, views: viewAnswers, cursor: cursor ?? null };
+  const generation = await findSyncGeneration(dbCtx);
+
+  if (organizationIds.size === 0) return { changes: {}, views: viewAnswers, cursor: cursor ?? null, generation };
 
   const organizationIdArray = Array.from(organizationIds);
 
@@ -125,7 +127,7 @@ export async function appCatchupOp(
       null;
   }
 
-  return { changes, views: viewAnswers, cursor: newCursor };
+  return { changes, views: viewAnswers, cursor: newCursor, generation };
 }
 
 /** Used for the 'now' offset and as the new cursor in catchup responses. */

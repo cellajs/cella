@@ -1,8 +1,9 @@
 import { appConfig } from 'shared';
 import { activityBus, getEventData } from '#/lib/activity-bus';
+import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { authEvents } from '#/modules/auth/auth-events';
 import { type AppStreamSubscriber, dispatchMoveOuts, dispatchToAppStream } from '#/modules/entities/helpers/dispatch-to-stream';
-import { closeAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
+import { closeAppStreams, resyncAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
 import { streamSubscriberManager } from './stream';
@@ -55,3 +56,9 @@ for (const action of ['created', 'updated', 'deleted'] as const) {
     }
   });
 }
+
+// The CDC worker corrected or rebuilt its books: cursors a client holds say nothing about them any more.
+cdcWebSocketServer.onGenerationChange((generation) => {
+  log.warn('The sync books moved to another generation: clients reconnect and refetch', { generation });
+  void resyncAppStreams();
+});

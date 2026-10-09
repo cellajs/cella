@@ -1,6 +1,6 @@
 import type { SessionEndReason } from '#/modules/auth/sessions/sessions-db';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import { type StreamErrorPayload, streamSubscriberManager, writeError } from '#/modules/entities/stream';
+import { type BaseStreamSubscriber, type StreamErrorPayload, streamSubscriberManager, writeError } from '#/modules/entities/stream';
 import { log } from '#/utils/logger';
 import { withinTimeout } from '#/utils/within-timeout';
 
@@ -27,6 +27,10 @@ async function closeAppStream(subscriber: AppStreamSubscriber, payload: StreamEr
   await subscriber.stream.close();
 }
 
+/** Whether a registered stream is an app stream, with a session and memberships behind it. */
+export const isAppStream = (subscriber: BaseStreamSubscriber): subscriber is AppStreamSubscriber =>
+  'sessionId' in subscriber && typeof subscriber.sessionId === 'string';
+
 /** Closes streams side by side, so a client that stopped reading holds up none of the others. */
 export async function closeAppStreams(closings: { subscriber: AppStreamSubscriber; payload: StreamErrorPayload }[], failure: string): Promise<void> {
   await Promise.allSettled(
@@ -34,4 +38,19 @@ export async function closeAppStreams(closings: { subscriber: AppStreamSubscribe
       closeAppStream(subscriber, payload).catch((error) => log.error(failure, { error, subscriberId: subscriber.id })),
     ),
   );
+}
+
+/**
+ * Ends every app stream with `resync`: the CDC worker corrected or rebuilt its books. Each client reconnects, and the
+ * catch-up of the new connection brings the generation that makes it refetch.
+ */
+export async function resyncAppStreams(): Promise<void> {
+  const streams = streamSubscriberManager.all().filter(isAppStream);
+  if (streams.length === 0) return;
+  const payload: StreamErrorPayload = { code: 'resync', message: 'Sync books were rebuilt' };
+  await closeAppStreams(
+    streams.map((subscriber) => ({ subscriber, payload })),
+    'Failed to close a stream for a resync',
+  );
+  log.info('Closed every app stream for a resync', { closed: streams.length });
 }
