@@ -19,6 +19,7 @@ const debugProcessor = createSpanStoreProcessor({
 /** SpanStoreProcessor bridges spans to pino debug logging. */
 export const otel: OtelSDK = createOtelSDK({
   serviceName: `${appConfig.slug}-cdc`,
+  serviceVersion: env.RELEASE_SHA,
   mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
   autoInstrumentations: false,
   spanProcessors: [debugProcessor],

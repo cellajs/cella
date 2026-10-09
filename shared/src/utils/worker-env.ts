@@ -15,6 +15,8 @@ export const workerEnvBase = z.object({
   // Provisioned by `pulumi up` and required in production.
   DATABASE_SSL_CA: z.string().optional(),
   MAPLE_SECRET_INGEST_KEY: z.string().optional(),
+  // Build-time git SHA baked into the image, reported by `/health` and as `service.version` in telemetry.
+  RELEASE_SHA: z.string().default('unknown'),
 
   NODE_ENV: z.enum(['development', 'production', 'staging', 'test']).default('development'),
   PINO_LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),

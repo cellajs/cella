@@ -19,8 +19,7 @@ let wss: WebSocketServer | null = null;
 
 /** The shared health app, mounted on both the bare path and the `/yjs` prefix, since the load balancer forwards `/yjs/...` without stripping it. */
 export function buildHttpApp(): Hono {
-  // biome-ignore lint/style/noProcessEnv: RELEASE_SHA is baked into the image by Docker, not part of the validated env schema
-  const version = process.env.RELEASE_SHA ?? 'unknown';
+  const version = env.RELEASE_SHA;
   const healthApp = createHealthApp({
     version,
     full: () => {

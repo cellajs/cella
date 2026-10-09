@@ -68,6 +68,27 @@ describe('createOtelSDK', () => {
     expect(exported.map((span) => span.name)).toEqual(['work']);
   });
 
+  it('reports the release as service.version, and leaves it off without one', async () => {
+    const versionOf = async (serviceVersion?: string) => {
+      const exported: ReadableSpan[] = [];
+      const otel = createOtelSDK({
+        serviceName: 'test-service',
+        serviceVersion,
+        traceExporter: collectingExporter(exported),
+        autoInstrumentations: false,
+        flushOnShutdown: true,
+      });
+      otel.start();
+      trace.getTracer('test').startSpan('work').end();
+      await otel.shutdown();
+      trace.disable();
+      return exported[0]?.resource.attributes['service.version'];
+    };
+
+    expect(await versionOf('abc1234')).toBe('abc1234');
+    expect(await versionOf()).toBeUndefined();
+  });
+
   it('must not export a token via a span name, attribute, event or status', async () => {
     const exported: ReadableSpan[] = [];
     const otel = createOtelSDK({

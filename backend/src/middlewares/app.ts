@@ -5,6 +5,7 @@ import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
+import { env } from '#/env';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { clientVersionMiddleware } from '#/middlewares/client-version';
 import { hasApiKeyHeader } from '#/middlewares/guard';
@@ -35,7 +36,10 @@ app.use(
 const requestIdHeader = 'X-Request-Id';
 
 // The span records the request id from the response header, so a trace is searchable by the id a user quotes.
-app.use('*', httpInstrumentationMiddleware({ serviceName: appConfig.name, serviceVersion: '1.0', captureResponseHeaders: [requestIdHeader] }));
+app.use(
+  '*',
+  httpInstrumentationMiddleware({ serviceName: appConfig.name, serviceVersion: env.RELEASE_SHA, captureResponseHeaders: [requestIdHeader] }),
+);
 
 // One id per request, generated here and never taken from the caller, so no two requests share one.
 app.use('*', (ctx, next) => {

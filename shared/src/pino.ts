@@ -24,6 +24,8 @@ interface CreateLoggerOptions {
   mapleSecretIngestKey?: string;
   /** Reported as `service.name` on exported logs; match the service's tracing serviceName. */
   serviceName?: string;
+  /** Release identifier reported as `service.version` on exported logs. */
+  serviceVersion?: string;
   /** Writes every line here and builds no console or Maple target (tests). */
   destination?: pino.DestinationStream;
 }
@@ -81,6 +83,7 @@ export const createLogger = ({
   enableOtelTransport,
   mapleSecretIngestKey,
   serviceName,
+  serviceVersion,
   destination: injectedDestination,
 }: CreateLoggerOptions): pino.Logger => {
   // Console target: human-readable pretty in dev, raw JSON on stdout in production/containers.
@@ -101,6 +104,7 @@ export const createLogger = ({
           options: {
             resourceAttributes: {
               ...(serviceName && { 'service.name': serviceName }),
+              ...(serviceVersion && { 'service.version': serviceVersion }),
               // OTel semantic convention: deploy environment (development/staging/production/…).
               'deployment.environment.name': appConfig.mode,
             },
@@ -223,6 +227,7 @@ interface WorkerLogEnv {
   NODE_ENV: string;
   PINO_LOG_LEVEL?: string;
   MAPLE_SECRET_INGEST_KEY?: string;
+  RELEASE_SHA?: string;
 }
 
 /**
@@ -238,6 +243,7 @@ export const createWorkerLog = (serviceSuffix: string, env: WorkerLogEnv, redact
       enableOtelTransport: true,
       mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
       serviceName: `${appConfig.slug}-${serviceSuffix}`,
+      serviceVersion: env.RELEASE_SHA,
       redactPaths,
     }),
   );

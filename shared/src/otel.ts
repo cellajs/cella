@@ -33,6 +33,7 @@ const MAPLE_DISABLED_MSG = '[otel] MAPLE_SECRET_INGEST_KEY not set: skipping Map
 
 export interface OtelSDKOptions {
   serviceName: string;
+  /** Release identifier reported as `service.version`; left off the resource when absent. */
   serviceVersion?: string;
   mapleSecretIngestKey?: string;
   /** Metric export interval in ms (default: 5000). */
@@ -67,7 +68,7 @@ export interface OtelSDK {
 export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
   const {
     serviceName,
-    serviceVersion = '1.0',
+    serviceVersion,
     mapleSecretIngestKey,
     metricIntervalMs = 5000,
     flushOnShutdown = appConfig.mode !== 'development',
@@ -80,7 +81,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
 
   const resource = resourceFromAttributes({
     [ATTR_SERVICE_NAME]: serviceName,
-    [ATTR_SERVICE_VERSION]: serviceVersion,
+    ...(serviceVersion && { [ATTR_SERVICE_VERSION]: serviceVersion }),
     // OTel semantic convention: reports the deploy environment to Maple.
     'deployment.environment.name': appConfig.mode,
   });

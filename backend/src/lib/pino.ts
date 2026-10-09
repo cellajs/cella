@@ -2,6 +2,7 @@ import { appConfig } from 'shared';
 import { createLog, createLogger } from 'shared/pino';
 import { env } from '#/env';
 import { redactedFields } from '#/lib/redact-keys';
+import { serviceName } from '#/lib/tracing';
 
 // NODE_ENV=production in containers disables pino-pretty.
 const isProduction = appConfig.mode === 'production' || env.NODE_ENV === 'production';
@@ -17,7 +18,8 @@ export const requestLogger = createLogger({
   isTest,
   enableOtelTransport: true,
   mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
-  serviceName: `${appConfig.slug}-api`,
+  serviceName,
+  serviceVersion: env.RELEASE_SHA,
   redactPaths: backendRedactPaths,
   transportOptions: {
     colorize: false,
@@ -35,7 +37,8 @@ const eventLogger = createLogger({
   isTest,
   enableOtelTransport: true,
   mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
-  serviceName: `${appConfig.slug}-api`,
+  serviceName,
+  serviceVersion: env.RELEASE_SHA,
   redactPaths: backendRedactPaths,
 });
 
