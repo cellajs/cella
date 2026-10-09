@@ -214,9 +214,9 @@ export const syncPageItems: SyncPageItem[] = [
   { id: 'rest_fallback', category: 'resilience', layers: ['client'] },
   { id: 'stream_reconnect', category: 'resilience', layers: ['client'] },
   { id: 'at_least_once', category: 'resilience', layers: ['cdc'] },
-  { id: 'circuit_breaker', category: 'resilience', layers: ['cdc'] },
-  { id: 'transient_retry', category: 'resilience', layers: ['cdc'] },
-  { id: 'catchup_recovery', category: 'resilience', layers: ['cdc', 'api'] },
+  { id: 'one_failure_path', category: 'resilience', layers: ['cdc'] },
+  { id: 'api_never_waits', category: 'resilience', layers: ['api'] },
+  { id: 'verified_books', category: 'resilience', layers: ['cdc', 'api', 'client'] },
 ];
 
 // About - Cards

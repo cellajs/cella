@@ -70,7 +70,7 @@ export async function answerCatchupViews(
       const parsed = countersByNode.get(pathHomeId(prefix));
       if (!parsed) continue;
       for (const entityType of view.entityTypes) {
-        // Family per depth: subtree rollups (f:/e:) or self summaries (fs:/es:).
+        // Family per depth: subtree rollups (e:f:, e:c:) or self summaries (e:f:h:, e:c:h:).
         const frontier = self ? parsed.selfFrontiers[entityType] : parsed.frontiers[entityType];
         if (frontier !== undefined) frontiers[entityType] = Math.max(frontiers[entityType] ?? 0, frontier);
         const count = self ? parsed.selfCounts[entityType] : parsed.entityCounts[entityType];
@@ -84,7 +84,7 @@ export async function answerCatchupViews(
 /**
  * Product entity sync is answered per client-declared view by `answerCatchupViews`; the per-org
  * `changes` block carries the membership signal and embedding propagation hints. A null cursor
- * returns baselines and makes the client invalidate its membership queries.
+ * returns baselines, which the client stores without fetching.
  */
 export async function appCatchupOp(
   memberships: MembershipBaseModel[],

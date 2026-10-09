@@ -12,7 +12,7 @@ import { syncStore } from './sync-store';
 import type { AppStreamNotification } from './types';
 import { resolveChannelPath } from './view-declaration';
 
-/** Fixed spread window until the server negotiates one per notification (Piece N-c). */
+/** Spread window of a range that carries none from the server, such as a catchup gap. */
 const DEFAULT_SPREAD_WINDOW_MS = 15_000;
 /** Transient fetch errors retry with exponential backoff before falling back to invalidation. */
 const MAX_FLUSH_ATTEMPTS = 3;

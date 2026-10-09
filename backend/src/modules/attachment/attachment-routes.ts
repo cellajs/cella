@@ -72,7 +72,7 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
       entity: 'attachment',
     },
     summary: 'Get attachment',
-    description: 'Returns a single attachment by ID. Served from the CDC-invalidated entity detail cache.',
+    description: 'Returns a single attachment by ID. Served from the entity detail cache, which every write to the row drops.',
     request: { params: idInTenantOrgParamSchema },
     responses: { 200: json('Attachment', attachmentSchema, mockAttachmentResponse()) },
   }),

@@ -5,7 +5,7 @@ import { productCache } from './app-product-cache';
 
 let isRegistered = false;
 
-/** Handles delete events for product entities only; cdc-websocket.ts invalidates on create and update. */
+/** Handles delete events for product entities; cdc-websocket.ts drops entries by id for every message, the mutation bus for the API's own writes. */
 function handleActivityEvent(event: ActivityEvent): void {
   const { action, entityType, subjectId } = event;
 

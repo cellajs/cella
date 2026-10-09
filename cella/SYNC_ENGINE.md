@@ -26,7 +26,7 @@ Only product entities sync. A **channel** (`ChannelEntityType`) is a container: 
 | **Summary** | Frontier, counts, and timestamps denormalized onto a channel row, so one read answers for a subtree |
 | **View** | The slice of the stream a client tracks (prefixes, entity types, depth, cursor). The unit catchup authorizes and answers. |
 | **Cursor** | Latest sequence position a view has ingested |
-| **Stream cursor** | ID of the last activity a connection received. Sent as `offset`, returned on reconnect. |
+| **Stream cursor** | ID of the last activity a connection received. Sent back in the catchup request; the server's `offset` event tells the client to start catchup. |
 | **Range fetch** | Ordinary list request bounded by `seqCursor` |
 | **Tombstone** | Soft-deleted row that remains fetchable so absent clients learn the deletion |
 | **`stx`** | Envelope on every product write (mutation ID, source ID, per-field HLC timestamps) for merge arbitration and echo recognition |
@@ -36,11 +36,11 @@ Only product entities sync. A **channel** (`ChannelEntityType`) is a container: 
 Renaming attachment `a42` inside `org1`:
 
 1. The tab optimistically patches every cached query containing `a42` and sends the update: `ops` carries the changed fields, `stx` the attempt ID and scalar field timestamps.
-2. The API drops scalar values with older timestamps, applies the rest, and returns the authoritative row. The initiating cache reconciles against it.
+2. The API stamps every changed scalar with a fresh server timestamp, applies the write, drops its cached detail of the row and returns the authoritative row. Only a replayed offline write is arbitrated by its own timestamps ([Merge metadata](#merge-metadata)). The initiating cache reconciles against the row.
 3. Postgres commits to the WAL. The CDC worker, in commit order, records the audit activity, reserves the next organization sequence position, stamps the row, and updates channel summaries.
 4. The worker sends the change to the API over the internal WebSocket. The API invalidates its detail cache and hands the change to the stream dispatcher.
 5. Dispatch checks the full row with the permission engine used by REST reads. Allowed subscribers receive an SSE notification with entity ID, path, sequence range, and `stx`.
-6. The originating tab recognizes its `sourceId` and patches only cached `stx`. Other clients fetch the notified range through the list endpoint and patch their caches.
+6. The originating tab recognizes its `sourceId` in a single-row notification and patches only cached `stx`. Other clients, and a tab whose own edit arrived in a batch, fetch the notified range through the list endpoint and patch their caches.
 
 Reconnect uses the same path: cursor `3` and frontier `7` become `seqCursor=4,7`, and the cursor advances to `7` only after ingest.
 
@@ -48,7 +48,7 @@ Reconnect uses the same path: cursor `3` and frontier `7` become `seqCursor=4,7`
 
 ### Ordering
 
-The CDC worker consumes PostgreSQL logical replication, preserves transaction boundaries so cascaded child deletes can be suppressed, then records committed transactions in commit order, several per database transaction, and notifies per type and action. Product batches are split by `(path, entityType)`, one audience per notification.
+The CDC worker consumes PostgreSQL logical replication, preserves transaction boundaries so cascaded child deletes can be suppressed, then records committed transactions in commit order, several per database transaction, and notifies per type and action. Product batches are split by `(path, entityType)`, one audience per notification. A row that is no product (a membership, a channel) goes to the API alone and first, in commit order. A flush waits for the API, and a send that fails is delivered again.
 
 Commit order is sequence order across product types.
 
@@ -66,6 +66,7 @@ In the same database transaction that records a batch of changes, the worker res
 | `e:c:h:{type}` | Home-only | Count of countable rows homed at the node |
 | `e:li:h:{type}` / `e:lu:h:{type}` | Home-only | Last insert and update timestamps |
 | `m:c:{role}` / `m:c:total` / `m:c:pending` | Channel | Membership counts |
+| `e:c:{host type}` | Embedded row | Live host rows that reference the embedded row. The key is the embedded row's id, not a channel |
 
 ### Drafts
 
@@ -104,7 +105,7 @@ The client derives its views from the user's memberships and the policy matrix b
 
 ### Notifications
 
-Membership changes invalidate membership and channel queries. Product notifications have four shapes:
+Only the user's own membership changes are streamed: a create or delete invalidates the channel list of that type and the user's memberships, an update invalidates the organization's member lists and refreshes the user. Other members' changes reach a client through the catchup signal. Product notifications have four shapes:
 
 | Shape | Detection | Behavior |
 | --- | --- | --- |
@@ -113,11 +114,11 @@ Membership changes invalidate membership and channel queries. Product notificati
 | Delete-style removal | `action: 'delete'` | Mark the detail stale and invalidate scoped lists. No sync-visible row remains to fetch. |
 | Move-out | `action: 'moveOut'` | Remove the row from caches and unseen tracking immediately |
 
-A non-delete notification carrying this tab's `stx.sourceId` is an echo: the tab patches only `stx`.
+A single-row, non-delete notification carrying this tab's `stx.sourceId` is an echo: the tab patches only `stx`. A batch is fetched whoever wrote it.
 
 ### Catchup
 
-Catchup runs on every connection before the stream goes live: the client opens SSE, waits for the server's `offset` marker, then posts its cursor and declared views. The server answers each view with a status, and for `ok` views the newest frontier and count. A first connection stores frontiers as baselines and fetches nothing. Route loaders own initial data. On later connections a view behind its frontier hands the gap to the fetch prioritizer, and the cursor advances only after ingest.
+Catchup runs on every connection before the stream goes live: the client opens SSE, waits for the server's `offset` marker, then posts its cursor and declared views. The server answers each view with a status, and for `ok` views the newest frontier and count. A view without a cursor (an organization the client has not synced before) stores the frontier as its baseline and refetches what it has cached of that organization; route loaders own initial data. A fresh client learns its organizations from the first answer and stores their baselines on the next connection. A view behind its frontier hands the gap to the fetch prioritizer; its cursor advances when the gap is ingested, when nothing of it is cached, or when the fetch gives up to an invalidation.
 
 ### Fetch prioritization
 
@@ -128,7 +129,7 @@ delay = clamp(tier minimum, this client's fixed slot within the server's spreadW
 ```
 
 - A viewed channel fetches immediately: at organization level the route decides, below it a mounted list query carrying the channel id.
-- A muted or archived channel fetches when opened.
+- A muted or archived channel fetches when opened; a catchup gap in it fetches in the background.
 - Every other channel fetches in the background between 2 and 30 seconds.
 
 Apps derive per-user state from `query/realtime/sync-signals.ts`, never from queue logic: `onChangeEvent` announces every readable notification before any tier decision, with ids only. `onSyncedRows` delivers a settled range's rows, or an empty `degraded` batch that means invalidate instead of derive.
@@ -185,13 +186,34 @@ Columns the server derives from a write stay outside the merge: the attachment `
 
 Paused mutations persist to IndexedDB and survive a reload, so mutation variables must carry all routing data. Hook closures no longer exist at replay. The attachment module is the reference: mutation functions are registered as replay defaults, and `stx` is minted at intent time and stored in the variables so a replay reuses the mutation ID and field timestamps.
 
-Idempotency is operation-specific: a product create runs `checkIdempotency(ctx, table, mutationId)`, which returns the batch the caller created under that id in the request scope, so another actor reusing the id creates its own rows. Update and delete do not.
+Idempotency is operation-specific: a product create runs `checkIdempotency(ctx, table, mutationId)`, which returns the batch the caller created under that id in the request scope (known once the CDC worker has recorded that create), so another actor reusing the id creates its own rows. Update and delete do not.
 
 ## Resilience
 
+The REST API and the database work whatever the CDC worker does: a write commits and a read answers while the worker is down, reading again or rebuilding. The failure handling behind the sync engine has three levels and no more ([CDC worker](../cdc/README.md#failure-and-recovery)): the core records a change once, whatever fails is read again from the replication slot, and when the WAL cannot help the worker rebuilds its books and every client refetches.
+
+### What happens when
+
+A client that missed notifications while the books stayed right is repaired by its own catchup, its cursors against the frontiers. A client is made to refetch only when the books themselves were wrong. Nothing in this table needs a fourth mechanism.
+
+| What happened | What a user sees | What repairs it | What is lost |
+| --- | --- | --- | --- |
+| The worker is down, or reading again after a failure | Own writes work; other users' changes arrive late and in order | The worker reads on from the slot | Nothing |
+| The API restarts, or dies after taking a message from the worker | Streams drop and reconnect | The client's catchup compares its cursors with the frontiers and fetches the gap | Nothing durable. Mentions and push notifications of that moment |
+| A deploy overlap (`singleVM`) | Clients on the new API hear nothing until the slot moves | Their next notification or reconnect fetches the gap | Nothing |
+| A notification is lost inside the API while the stream stays open | That client lags until its next reconnect | The next catchup | Nothing durable |
+| The replication slot is gone or invalidated | Live updates stop until the worker restarts; then every client refetches once | A new slot and a rebuild; the generation moves | Activities and notifications of the rows changed while the slot was gone |
+| `channel_counters` is emptied (a truncate, a partial restore) | Every client refetches once | A rebuild from the tables | Nothing |
+| One change can never be processed (a parse error, a transaction over 100,000 changes) | Live updates pause about a minute; then every client refetches once | After five reads the slot moves past the backlog and the books are rebuilt | Activities and notifications of that backlog |
+| The database is restored from a backup | As a lost slot | A new slot and a rebuild | Everything after the backup, as with any restore |
+
 ### Rebuilt books
 
-The counters, the sequence counter and the frontiers are the CDC worker's books. It checks them against the tables once a day and rebuilds them when the replication stream cannot bring them back: [CDC worker](../cdc/README.md#verify-and-rebuild). Whenever it corrected or rebuilt them it adds one to a generation. The catchup answer carries that generation, and a client that holds another one puts every cursor back at 0, refetches what it has cached of the synced types and takes the frontiers of that catchup as its new baselines. Open streams hear of it at once: the server ends them with `resync`, and each client reconnects.
+The counters, the sequence counter and the frontiers are the CDC worker's books. It checks them against the tables once a day and rebuilds them when the replication stream cannot bring them back: [CDC worker](../cdc/README.md#verify-and-rebuild). Whenever it corrected or rebuilt them it adds one to a generation. The catchup answer carries that generation. A client that holds another one puts its view cursors back at 0 (the stream cursor stays), takes the frontiers of that catchup as new baselines, refetches the lists on screen at once and, after a random delay of up to ten seconds, everything else it has cached of the synced types; member queries of every organization are invalidated as well. Open streams hear of it through the worker's health push: the API ends them with `resync`, and each leader tab reconnects after its backoff of a few seconds. A follower tab is not refetched; it keeps what it had until a reload or until it leads.
+
+### One API process
+
+The worker hands every change to one API process, and that process holds every stream, drops its caches and ends the streams on a new generation. The sync engine is built for one API process per deployment: [Scaling](./ARCHITECTURE.md#scaling).
 
 ### Schema changes
 
@@ -215,7 +237,7 @@ An app that shows a description in place, a static view that turns into the edit
 
 ### SSE wire
 
-Events: `offset` (stream cursor, once after connect), `change` (one `StreamNotification`), `error` (typed payload). An `unauthorized`, `forbidden`, or `tenant_revoked` error stops reconnecting; the server sends `unauthorized` when the session behind the stream ended for good (sign-out, revoked from another session, evicted, expired, the account deleted). `session_replaced` means the browser holds a newer session (a sign-in from the same browser, turning MFA on, stopping an impersonation), `access_changed` that the stream lost its system-admin reads, and `resync` that the server rebuilt its sync books; the client reconnects on all three. The server checks every open stream's session again once a minute, which also catches endings on another instance.
+Events: `offset` (the server's newest activity id, once after connect: the signal to post the catchup), `change` (one `StreamNotification`), `error` (typed payload). The server ends a stream with `unauthorized` when the session behind it ended for good (sign-out, revoked from another session, evicted, expired, MFA turned on elsewhere, the account deleted, an impersonation that ended); the client then opens a 60-second circuit and reconnects after a visibility change that finds the API healthy (`forbidden` and `tenant_revoked` are reserved codes it treats the same way). `session_replaced` means the browser holds a newer session (a sign-in from the same browser, turning MFA on, stopping an impersonation), `access_changed` that the stream's system-admin reads changed, and `resync` that the server's sync books moved to another generation (a correction or a rebuild); the client reconnects on all three. The server checks every open stream's session again once a minute, which also catches endings on another instance.
 
 ```typescript
 interface StreamNotification {
@@ -241,6 +263,7 @@ interface StxBase {
   mutationId: string;
   sourceId: string;
   fieldTimestamps: Record<string, string>;
+  replayed?: boolean; // a paused offline write at replay
 }
 
 interface PropagationHint {
@@ -256,7 +279,7 @@ interface PropagationHint {
 
 The request carries a stream cursor and views `{ key, organizationId, prefixes, entityTypes, depth?, cursor }` (`depth`: `self` or `subtree`, default `subtree`). The response carries view answers, organization change summaries, the stream cursor, and the generation of the sync books.
 
-A stream subscription covers the organizations the user belongs to when it opens plus a per-user subscription for self-membership events. A membership in a new organization reaches the user there, and the client reconnects to subscribe to that organization and catch up on its history.
+A stream subscription covers the organizations the user belongs to when it opens plus a per-user subscription for self-membership events. A membership in a new organization reaches the user there, and the client reconnects to subscribe to that organization and take its baselines.
 
 ```typescript
 interface CatchupViewAnswer {
@@ -278,4 +301,4 @@ interface CatchupChangeSummary {
 
 ### Detail cache
 
-The server keeps a TTL cache of enriched product detail responses (5,000 entries, 10 minutes) that CDC invalidates. Hits recheck permission and draft visibility. List fan-out bypasses it.
+The server keeps a TTL cache of enriched product detail responses (5,000 entries, 10 minutes). An entry is dropped by the API's own update or delete of the row (through the mutation bus, with a five-second hold on storing a read that started before it) and by every CDC message for the row; a read that started before a drop is never stored. Hits recheck permission, draft visibility, tenant and organization. Concurrent misses are fetched once. List fan-out bypasses it. A write outside the API process (the relay, a job) reaches the cache through its CDC message only.
