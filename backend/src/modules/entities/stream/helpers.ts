@@ -3,7 +3,8 @@ import type { SSEStreamingApi } from 'hono/streaming';
 /**
  * Stable codes so a client can react beyond a generic transport failure. The client treats `unauthorized`,
  * `forbidden` and `tenant_revoked` as final; `session_replaced` means the browser holds a newer session to reconnect
- * with, and `access_changed` that the session holds but the stream's access must be computed again.
+ * with, and `access_changed` that the session holds but the stream's access must be computed again. `resync` means the
+ * CDC worker corrected or rebuilt its books: the client reconnects, and its catch-up brings the new generation.
  */
 export type StreamErrorCode =
   | 'unauthorized'
@@ -11,6 +12,7 @@ export type StreamErrorCode =
   | 'tenant_revoked'
   | 'session_replaced'
   | 'access_changed'
+  | 'resync'
   | 'server_shutdown'
   | 'internal';
 

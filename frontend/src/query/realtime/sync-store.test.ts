@@ -83,3 +83,54 @@ describe('sync-store getCatchupViews', () => {
     expect(views[0].cursor).toBe(88);
   });
 });
+
+describe('sync-store adoptGeneration', () => {
+  afterEach(() => syncStore.getState().reset());
+
+  const view = { organizationId: 'org-1', prefixes: ['org-1/c1'], entityTypes: ['item'], depth: 'subtree' as const };
+  const withCursors = () => {
+    const store = syncStore.getState();
+    store.setOrgSeq('org-1', 'item', 40);
+    store.setChannelSeq('org-1', 'c1', 'item', 38);
+    store.declareSyncView('v1', view);
+    store.setViewCursor('v1', 40);
+    store.setKnownSeq('c1', 'item', 41);
+  };
+
+  it('takes the first generation it hears without touching a cursor', () => {
+    withCursors();
+
+    expect(syncStore.getState().adoptGeneration(3)).toBe(false);
+
+    expect(syncStore.getState().generation).toBe(3);
+    expect(syncStore.getState().getOrgSeq('org-1', 'item')).toBe(40);
+    expect(syncStore.getState().getView('v1')?.cursor).toBe(40);
+  });
+
+  it('keeps everything while the generation stays the same, or the server names none', () => {
+    syncStore.getState().adoptGeneration(3);
+    withCursors();
+
+    expect(syncStore.getState().adoptGeneration(3)).toBe(false);
+    expect(syncStore.getState().adoptGeneration(undefined)).toBe(false);
+
+    expect(syncStore.getState().getOrgSeq('org-1', 'item')).toBe(40);
+    expect(syncStore.getState().generation).toBe(3);
+  });
+
+  it('must not keep a cursor of the books before a rebuild: another generation puts every one back at 0', () => {
+    syncStore.getState().adoptGeneration(3);
+    withCursors();
+
+    expect(syncStore.getState().adoptGeneration(4)).toBe(true);
+
+    const store = syncStore.getState();
+    expect(store.generation).toBe(4);
+    expect(store.getOrgSeq('org-1', 'item')).toBe(0);
+    expect(store.getChannelSeq('org-1', 'c1', 'item')).toBe(0);
+    expect(store.getView('v1')?.cursor).toBe(0);
+    expect(store.getKnownSeq('c1', 'item')).toBe(0);
+    // The view itself stays declared: only where it stands is forgotten.
+    expect(store.getView('v1')?.prefixes).toEqual(['org-1/c1']);
+  });
+});

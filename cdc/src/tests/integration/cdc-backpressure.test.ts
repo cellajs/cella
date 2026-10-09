@@ -5,7 +5,6 @@ import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../constants';
 import { cdcDb } from '../../lib/db';
 import { wsClient } from '../../network/websocket-client';
 import { replicationState } from '../../services/replication-state';
-import { lsnToBigInt } from '../../utils/lsn';
 import { type CdcPipelineHarness, slotActive, startCdcPipeline, waitFor } from './pipeline-harness';
 
 const WS_PORT = Number(new URL(process.env.BACKEND_INTERNAL_URL ?? 'http://127.0.0.1:4788').port || 4788);
@@ -33,6 +32,13 @@ async function slotLagBytes(): Promise<number> {
   return Number(res.rows[0]?.lag ?? 0);
 }
 
+/** How many activities the worker recorded for these subjects. */
+const recordedOf = (ids: string[]) =>
+  sql`SELECT count(*)::text AS count FROM activities WHERE subject_id IN (${sql.join(
+    ids.map((id) => sql`${id}`),
+    sql`, `,
+  )})`;
+
 /** Insert a tracked `tenant` row (minimal columns) → one activity dispatched. */
 async function insertTenant(name: string): Promise<string> {
   // `id` has a JS-side default in the Drizzle schema (not a DB default), so generate it here.
@@ -42,8 +48,8 @@ async function insertTenant(name: string): Promise<string> {
 }
 
 /**
- * Verifies `setupBackpressure`: while the downstream WebSocket is down the worker stops
- * acking the replication slot (WAL retained, no data loss), and acks resume once it returns.
+ * The worker hands every change to the API, so while the API is away it consumes nothing: the stream is held, the
+ * WAL keeps the changes, and they are recorded and delivered once the API is back.
  * Skipped unless `DATABASE_CDC_URL` runs with `wal_level = logical` and `cdc_pub` exists.
  */
 describe.skipIf(!READY)('CDC backpressure (integration)', () => {
@@ -52,6 +58,8 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
   /** Activity messages received by the stub WS receiver (excludes health pushes). */
   let activityMsgs: Array<{ subjectId: string | null }> = [];
   let harness: CdcPipelineHarness | null = null;
+  /** Tenants written while the stub was down. */
+  const burstIds: string[] = [];
 
   /** Start (or restart) the stub WS receiver on the worker's configured port. */
   async function startStubWs(): Promise<void> {
@@ -122,53 +130,42 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
     await waitFor(slotReached, 15_000, 'idle slot advanced past unpublished WAL');
   }, 30_000);
 
-  it('retains WAL while the WebSocket is down (no ack)', async () => {
+  it('consumes nothing while the API is away: the changes stay in the WAL', async () => {
     await stopStubWs();
     await waitFor(() => !wsClient.isConnected(), 10_000, 'worker WS disconnected');
     await waitFor(() => replicationState.status === 'paused', 10_000, 'replication paused');
 
     const lagBefore = await slotLagBytes();
 
-    // Commit a clear burst of WAL while acks are held.
-    for (let i = 0; i < 199; i++) await insertTenant(`bp-down-${i}-${Date.now()}`);
-    const wal = await cdcDb.execute<{ lsn: string }>(sql`SELECT pg_current_wal_lsn()::text AS lsn`);
-    await insertTenant(`bp-down-last-${Date.now()}`);
+    // Committed while the worker has no API to hand them to.
+    for (let i = 0; i < 200; i++) burstIds.push(await insertTenant(`bp-down-${i}-${Date.now()}`));
 
-    // The whole burst is applied and its ack withheld before the WebSocket returns: no flush is left
-    // to straddle the reconnect, so only the reconnect itself can release the held position.
-    const lastInsertFloor = lsnToBigInt(wal.rows[0].lsn);
-    await waitFor(
-      () => !!replicationState.heldAckLsn && lsnToBigInt(replicationState.heldAckLsn) >= lastInsertFloor,
-      20_000,
-      'burst applied with its ack withheld',
-    );
+    // Long enough for a worker that still consumed to have recorded the burst.
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const recorded = await cdcDb.execute<{ count: string }>(recordedOf(burstIds));
+    expect(Number(recorded.rows[0].count)).toBe(0);
+    expect(replicationState.failure).toBeNull();
 
-    const lagAfter = await slotLagBytes();
-    expect(lagAfter).toBeGreaterThan(lagBefore);
-    // The replication connection to Postgres itself stays up: only acking pauses.
+    expect(await slotLagBytes()).toBeGreaterThan(lagBefore);
+    // The replication connection to Postgres itself stays up: the stream is held, not dropped.
     expect(await slotActive()).toBe(true);
   }, 30_000);
 
-  it('resumes acking and delivery after the WebSocket returns', async () => {
-    const lagPeak = await slotLagBytes();
+  it('delivers every change written meanwhile once the API is back, and confirms them', async () => {
     activityMsgs = [];
 
     await startStubWs();
-    // Force an immediate reconnect to keep this test independent of the backoff timer.
-    // that accumulated while the stub was down (keeps the test fast and deterministic).
-    wsClient.close();
-    wsClient.connect();
+    // No nudge: the worker's own reconnect brings the socket back.
     await waitFor(() => wsClient.isConnected(), 20_000, 'worker WS reconnected');
     await waitFor(() => replicationState.status === 'active', 20_000, 'replication resumed');
 
-    // Acks resume → retained WAL drains well below the WS-down peak.
-    await waitFor(async () => (await slotLagBytes()) < Math.max(65_536, lagPeak / 2), 30_000, 'slot drained after reconnect');
+    await waitFor(() => burstIds.every((id) => activityMsgs.some((m) => m.subjectId === id)), 30_000, 'the whole burst delivered after reconnect');
+    const recorded = await cdcDb.execute<{ count: string }>(recordedOf(burstIds));
+    expect(Number(recorded.rows[0].count)).toBe(burstIds.length);
 
-    // Drain to the floor before probing a fresh change: the previous threshold still allows
-    // half the burst to be in flight, whose replay competes with the probe on a slow runner.
-    await waitFor(async () => (await slotLagBytes()) < 65_536, 30_000, 'backlog fully drained after reconnect');
+    await waitFor(async () => (await slotLagBytes()) < 65_536, 30_000, 'backlog confirmed after reconnect');
 
     const id = await insertTenant(`bp-resume-${Date.now()}`);
-    await waitFor(() => activityMsgs.some((m) => m.subjectId === id), 30_000, 'delivery resumed after reconnect');
+    await waitFor(() => activityMsgs.some((m) => m.subjectId === id), 30_000, 'delivery goes on after reconnect');
   }, 120_000);
 });

@@ -5,11 +5,12 @@ import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import type { TraceContext } from '../lib/tracing';
 import { activityAttrs, cdcAttrs, cdcSpanNames, withSpan } from '../lib/tracing';
+import { wsClient } from '../network/websocket-client';
 import { type BatchEvent, generateActivityId, sendBatchMessageToApi, sendMessageToApi } from '../services/activity-service';
 import { metrics } from '../services/cdc-metrics';
-import { circuitBreaker } from '../services/circuit-breaker';
+import { ApiUnreachableError } from '../services/failure';
+import { addCounts, type CounterDeltas, fence, plainCounts } from '../services/fence';
 import { replicationState } from '../services/replication-state';
-import { isTransientError, withRetry } from '../services/retry';
 import type { CdcRowData, PendingEvent } from '../types';
 import { applyBatchUnifiedDeltas } from '../utils/apply-unified-deltas';
 import { syncChannelPaths } from '../utils/channel-path-sync';
@@ -46,8 +47,8 @@ const ACTIVITY_CHUNK_SIZE = 1000;
 const READ_BACK_CHUNK_SIZE = 5000;
 
 function prepareEvent(event: PendingEvent): PreparedEvent {
-  const { lsn, ordinal, result } = event;
-  const activityWithId = { ...result.activity, id: generateActivityId(lsn, ordinal) };
+  const { lsn, result } = event;
+  const activityWithId = { ...result.activity, id: generateActivityId(event) };
   const seq = typeof result.rowData.seq === 'number' ? result.rowData.seq : undefined;
   return { event, activityWithId, seq, lsn, rowData: result.rowData, movedFrom: result.movedFrom ?? null };
 }
@@ -60,10 +61,11 @@ const isStampedEvent = ({ event }: PreparedEvent): boolean => {
 /**
  * The bookkeeping of a flush, in commit order and in one transaction: the activity rows, then the sequence
  * reservation, counters and row stamps of the events whose activity this transaction inserted. An activity id comes
- * from the event's LSN and its ordinal there, so an event delivered a second time inserts nothing and changes nothing:
+ * from the commit position of its transaction and its index there, so an event delivered a second time inserts nothing and changes nothing:
  * its row keeps the seq it got the first time, read back here for the notification.
  */
 async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
+  let counted: CounterDeltas = new Map();
   await cdcDb.transaction(async (tx) => {
     const insertedIds = new Set<string>();
     for (let offset = 0; offset < prepared.length; offset += ACTIVITY_CHUNK_SIZE) {
@@ -73,7 +75,17 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
     }
 
     const fresh = prepared.filter((item) => insertedIds.has(item.activityWithId.id));
-    if (fresh.length > 0) await applyBatchUnifiedDeltas(computeBatchUnifiedDeltas(fresh.map((item) => item.event)), tx);
+    if (fresh.length > 0) {
+      const plan = computeBatchUnifiedDeltas(fresh.map((item) => item.event));
+      // A count from the tables that is still being caught up with already saw some of these transactions.
+      const seen = fresh.filter((item) => fence.sawTransaction(item.event.xid));
+      if (seen.length > 0) {
+        counted = plainCounts(computeBatchUnifiedDeltas(seen.map((item) => item.event)).countDeltasByChannelKey);
+        // A rebuild wrote the count itself: what it saw is not counted a second time. A verify only compares.
+        if (fence.mode === 'rebuild') addCounts(plan.countDeltasByChannelKey, counted, -1);
+      }
+      await applyBatchUnifiedDeltas(plan, tx);
+    }
 
     const replayed = prepared.filter((item) => !insertedIds.has(item.activityWithId.id) && isStampedEvent(item));
     for (const [tableName, items] of groupBy(replayed, (item) => item.event.result.activity.tableName)) {
@@ -90,12 +102,22 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
       for (const item of items) item.rowData.seq = seqById.get(item.rowData.id) ?? item.rowData.seq;
     }
   });
+  // Only what the transaction committed counts towards the comparison.
+  fence.addCounted(counted);
 }
 
 // Sync dispatch
 
-/** Forward stamped events to the API server: one batch payload, or a single payload. */
-function dispatchToApi(stamped: PreparedEvent[], traceCtx: TraceContext): void {
+const isProductEvent = ({ event }: PreparedEvent): boolean => {
+  const { tableMeta } = event.result;
+  return tableMeta.kind === 'entity' && isProduct(tableMeta.type);
+};
+
+/**
+ * Forwards product rows of one type and action to the API: one batch payload, or a single payload.
+ * @returns false when the API did not take a message.
+ */
+function dispatchToApi(stamped: PreparedEvent[], traceCtx: TraceContext): boolean {
   if (stamped.length > 1) {
     const batchInfos: BatchEvent[] = stamped.map(({ activityWithId, rowData, seq, movedFrom }) => ({
       activity: activityWithId,
@@ -103,87 +125,70 @@ function dispatchToApi(stamped: PreparedEvent[], traceCtx: TraceContext): void {
       seq,
       movedFrom,
     }));
-    sendBatchMessageToApi(batchInfos, traceCtx);
-  } else {
-    const { activityWithId, rowData, seq, movedFrom } = stamped[0];
-    sendMessageToApi(activityWithId, rowData, traceCtx, seq, movedFrom);
+    return sendBatchMessageToApi(batchInfos, traceCtx);
   }
+  const { activityWithId, rowData, seq, movedFrom } = stamped[0];
+  return sendMessageToApi(activityWithId, rowData, traceCtx, seq, movedFrom);
 }
 
 // Flush processing
 
 /**
  * One flush, in commit order across entity types and actions:
- *   1. record it in one transaction: activity rows, sequence positions, counters, row stamps
- *   2. per (type, action) group: mirror channel paths, dispatch the sync notification over WebSocket, clean up embeddings
+ *   1. wait for the API: a change the worker cannot hand over is left in the WAL
+ *   2. record it in one transaction: activity rows, sequence positions, counters, row stamps
+ *   3. mirror channel paths, then hand the changes to the API and clean up embeddings
  *
- * Step 1 happens exactly once per event however often the event is delivered; step 2 repeats on a redelivery, and each
- * part of it is safe to repeat. A deadlock or another passing database error repeats the transaction. Events of a
- * table whose circuit is open are left out.
+ * Step 2 happens exactly once per event however often the event is delivered; step 3 repeats on a redelivery, and each
+ * part of it is safe to repeat. Whatever fails rejects the flush: the caller then acknowledges nothing and the stream
+ * is read again from the last acknowledged position. Nothing is retried here and nothing is left out.
  */
-async function applyFlush(events: PendingEvent[]): Promise<void> {
+export async function processFlush(transactions: PendingEvent[][]): Promise<void> {
   const startMs = performance.now();
-  const prepared = events.filter((event) => circuitBreaker.shouldProcess(event.result.activity.tableName)).map(prepareEvent);
+  await wsClient.whenConnected();
+
+  const prepared = transactions.flat().map(prepareEvent);
   if (prepared.length === 0) return;
   replicationState.lastLsn = prepared[prepared.length - 1].lsn;
 
-  const recorded = await withSpan(cdcSpanNames.createActivity, activityAttrs(prepared[0].activityWithId), () =>
-    withRetry(() => recordFlush(prepared), 'record flush'),
-  );
-  if (!recorded.success) throw recorded.error;
+  await withSpan(cdcSpanNames.createActivity, activityAttrs(prepared[0].activityWithId), () => recordFlush(prepared));
 
   const groups = groupBy(prepared, ({ event }) => `${event.result.tableMeta.type}:${event.result.activity.action}`);
+
+  // Mirror channel paths onto counters rows: the view-ancestry verification source.
+  for (const group of groups.values()) await syncChannelPaths(group.map((item) => item.event));
+
+  // A row that is no product goes to the API alone and in commit order: its listeners act on that one row.
+  for (const item of prepared) {
+    if (isProductEvent(item)) continue;
+    const { activityWithId, rowData, lsn, movedFrom } = item;
+    const attrs = cdcAttrs({ lsn, tag: activityWithId.action, table: activityWithId.tableName });
+    const sent = await withSpan(cdcSpanNames.processWal, attrs, async (traceCtx) =>
+      sendMessageToApi(activityWithId, rowData, traceCtx, undefined, movedFrom),
+    );
+    if (!sent) throw new ApiUnreachableError();
+  }
+
+  // Product rows go per type and action, one notification per audience.
   for (const group of groups.values()) {
     const groupEvents = group.map((item) => item.event);
     const { tableMeta, activity } = groupEvents[0].result;
+    if (tableMeta.kind !== 'entity' || !isProduct(tableMeta.type)) continue;
+    const productType = tableMeta.type;
 
     await withSpan(cdcSpanNames.processWal, cdcAttrs({ lsn: group[0].lsn, tag: activity.action, table: activity.tableName }), async (traceCtx) => {
-      // Mirror channel paths onto counters rows: the view-ancestry verification source.
-      await syncChannelPaths(groupEvents);
-
       const stamped = group.map((item) => ({ ...item, seq: typeof item.rowData.seq === 'number' ? item.rowData.seq : item.seq }));
-      dispatchToApi(stamped, traceCtx);
+      if (!dispatchToApi(stamped, traceCtx)) throw new ApiUnreachableError();
 
       // Strip deleted embedded-entity ids from host-entity arrays.
-      if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && (activity.action === 'update' || activity.action === 'delete')) {
-        await cleanupEmbeddingReferences(tableMeta.type, activity.action, groupEvents);
-      }
+      if (activity.action === 'update' || activity.action === 'delete') await cleanupEmbeddingReferences(productType, activity.action, groupEvents);
 
       // Soft-delete embedded rows their host arrays stopped referencing; hard deletes ride FK cascades.
-      if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && activity.action === 'update') {
-        await gcOwnedEmbeddedRows(tableMeta.type, groupEvents);
-      }
+      if (activity.action === 'update') await gcOwnedEmbeddedRows(productType, groupEvents);
     });
 
-    circuitBreaker.recordSuccess(activity.tableName);
     log.trace('Group processed', { groupSize: group.length, entityType: activity.entityType, action: activity.action });
   }
 
   metrics.recordProcessing(prepared.length, performance.now() - startMs);
-}
-
-/**
- * Processes the source transactions of one flush together. When that fails, one source transaction at a time, to find
- * the one that cannot be recorded: its failure counts against its tables' circuits, unless the error is a passing one,
- * and rejects the flush. The caller then acknowledges nothing and the stream is read again from the last acknowledged
- * position, where an open circuit lets the rest of the stream pass.
- */
-export async function processFlush(transactions: PendingEvent[][]): Promise<void> {
-  try {
-    await applyFlush(transactions.flat());
-    return;
-  } catch (error) {
-    log.warn('Flush failed, processing its source transactions one at a time', { err: error, transactions: transactions.length });
-  }
-
-  for (const transaction of transactions) {
-    try {
-      await applyFlush(transaction);
-    } catch (error) {
-      if (!isTransientError(error)) {
-        for (const tableName of new Set(transaction.map((event) => event.result.activity.tableName))) circuitBreaker.recordFailure(tableName);
-      }
-      throw error;
-    }
-  }
 }

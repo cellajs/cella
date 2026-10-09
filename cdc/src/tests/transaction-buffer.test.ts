@@ -63,6 +63,20 @@ describe('TransactionBuffer', () => {
     }
   });
 
+  it('must not hold a transaction past its limit: it fails there and frees what it held', async () => {
+    const small = new TransactionBuffer(onSurvivingEvents, { maxEvents: 3 });
+    small.onBegin({ tag: 'begin', xid: 9, commitLsn: '0/90', commitTime: BigInt(0) });
+    for (let index = 0; index < 3; index++) await small.onEvent(`0/${index}`, mockParseResult({ action: 'create', entityType: 'attachment' }), index);
+
+    await expect(small.onEvent('0/3', mockParseResult({ action: 'create', entityType: 'attachment' }), 3)).rejects.toThrow(
+      'holds more than 3 changes',
+    );
+
+    expect(small.hasPendingEvents).toBe(false);
+    expect(small.isBuffering).toBe(false);
+    expect(onSurvivingEvents).not.toHaveBeenCalled();
+  });
+
   it('emits no part of a transaction whose COMMIT never came', async () => {
     buffer.onBegin({ tag: 'begin', xid: 3, commitLsn: null, commitTime: BigInt(0) });
     await buffer.onEvent('0/1', mockParseResult({ action: 'create', entityType: 'attachment' }));

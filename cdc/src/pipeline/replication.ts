@@ -7,10 +7,12 @@ import { buildVerifiedSsl, cdcDb, stripSslParams } from '../lib/db';
 import { log } from '../lib/pino';
 import { wsClient } from '../network/websocket-client';
 import { replicationState } from '../services/replication-state';
-import { acknowledgeIdlePosition, handleDataMessage, releaseHeldAck, resetBuffers } from './handle-message';
+import { checkReplicationSetup } from '../services/setup-check';
+import { acknowledgeIdlePosition, handleDataMessage, resetBuffers } from './handle-message';
 import { isStalePublicationError } from './replication-errors';
+import { clearRebuildRequest, countersAreLost, hasHistory, rebuildAllowed, rebuildBooks } from './verify';
 
-const { reconnection, slotTakeover } = RESOURCE_LIMITS;
+const { reconnection, runtime, slotTakeover } = RESOURCE_LIMITS;
 
 // Replication service setup
 
@@ -34,6 +36,9 @@ export function createReplicationService(): LogicalReplicationService {
       application_name: `${appConfig.slug}-cdc-worker`,
       // Verified TLS, matching the query connection; certificate identity is pinned to the dialed host in production.
       ssl: buildVerifiedSsl(env.DATABASE_CDC_URL),
+      // A peer that is gone without a word is noticed by the probes, and the read fails like any other.
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 30_000,
     },
     { acknowledge: { auto: false, timeoutSeconds: 0 }, flowControl: { enabled: true } },
   );
@@ -62,46 +67,68 @@ export function createReplicationService(): LogicalReplicationService {
     });
   });
 
+  // The server drops a sender it has not heard from for `wal_sender_timeout`. While a flush holds the stream nothing
+  // else is sent, so the last confirmed position is repeated on a timer. It confirms nothing new.
+  const statusTimer = setInterval(() => {
+    if (replicationState.service !== service) return clearInterval(statusTimer);
+    void service.acknowledge(replicationState.lastAckedLsn ?? '0/00000000').catch(() => {});
+  }, runtime.statusIntervalMs);
+  statusTimer.unref?.();
+
   return service;
 }
 
 // Slot management
 
-export async function ensureReplicationSlot(): Promise<void> {
+/**
+ * Makes sure the slot exists and still holds its WAL. A slot the server invalidated (it passed
+ * `max_slot_wal_keep_size` while nothing read it) cannot be read again: it is dropped and made anew.
+ * @returns `created` when a slot had to be made. On a database with a history that is a lost case: what was written
+ *   since the old slot's position is in no stream.
+ */
+export async function ensureReplicationSlot(): Promise<'present' | 'created' | 'unknown'> {
   try {
-    const slotCheck = await cdcDb.execute(sql`SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`);
-    if (slotCheck.rows.length === 0) {
+    const slot = (
+      await cdcDb.execute<{ wal_status: string | null }>(sql`SELECT wal_status FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`)
+    ).rows[0];
+    if (slot && slot.wal_status !== 'lost') return 'present';
+    if (slot) {
+      log.error(`Replication slot '${CDC_SLOT_NAME}' was invalidated: the server removed WAL it still needed`);
+      await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})`);
+    } else {
       log.info(`Replication slot '${CDC_SLOT_NAME}' not found, creating...`);
-      await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
-      log.info(`Replication slot '${CDC_SLOT_NAME}' created`);
     }
+    await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
+    log.info(`Replication slot '${CDC_SLOT_NAME}' created`);
+    return 'created';
   } catch (error) {
     log.warn('Could not verify/create replication slot', { err: error, slotName: CDC_SLOT_NAME });
+    return 'unknown';
   }
 }
 
-/** One stale-slot recovery per worker lifetime, so the retry loop cannot repeatedly discard WAL. */
-let slotRecreationAttempted = false;
+/** One stale-slot drop per worker lifetime, so the retry loop cannot give up WAL again and again. */
+let slotDropAttempted = false;
 
 /**
- * Recreates a slot whose WAL start predates its publication, after terminating its sender; the sync
- * sequence recovers the skipped WAL. Runs once per worker and only once the publication is confirmed
- * to exist, which distinguishes a stale slot from a missing publication.
+ * Drops a slot whose WAL start predates its publication, after terminating its sender. Decoding can never proceed
+ * from it, so what it held is lost: the next attempt makes a new slot and rebuilds the books. Runs once per worker
+ * and only once the publication is confirmed to exist, which tells a stale slot from a missing publication.
  */
-async function recreateReplicationSlot(): Promise<void> {
-  if (slotRecreationAttempted) {
-    log.warn(`Skipping slot recreation for '${CDC_SLOT_NAME}': already attempted once this worker lifetime`);
+async function dropStaleReplicationSlot(): Promise<void> {
+  if (slotDropAttempted) {
+    log.warn(`Not dropping slot '${CDC_SLOT_NAME}' again: already done once this worker lifetime`);
     return;
   }
   try {
     const publicationCheck = await cdcDb.execute(sql`SELECT 1 FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`);
     if (publicationCheck.rows.length === 0) {
-      log.warn(`Publication '${CDC_PUBLICATION_NAME}' does not exist; not recreating slot '${CDC_SLOT_NAME}'. Backing off until it appears.`);
+      log.warn(`Publication '${CDC_PUBLICATION_NAME}' does not exist; not dropping slot '${CDC_SLOT_NAME}'. Backing off until it appears.`);
       return;
     }
 
-    slotRecreationAttempted = true;
-    log.warn(`Recreating replication slot '${CDC_SLOT_NAME}' to clear a stale start position`);
+    slotDropAttempted = true;
+    log.error(`Dropping replication slot '${CDC_SLOT_NAME}': it predates its publication and cannot be read`);
     await cdcDb.execute(sql`
       SELECT pg_terminate_backend(active_pid) FROM pg_replication_slots
       WHERE slot_name = ${CDC_SLOT_NAME} AND active_pid IS NOT NULL
@@ -110,10 +137,8 @@ async function recreateReplicationSlot(): Promise<void> {
       SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})
       WHERE EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME})
     `);
-    await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
-    log.info(`Replication slot '${CDC_SLOT_NAME}' recreated at current WAL position`);
   } catch (error) {
-    log.warn('Could not recreate replication slot', { err: error, slotName: CDC_SLOT_NAME });
+    log.warn('Could not drop the stale replication slot', { err: error, slotName: CDC_SLOT_NAME });
   }
 }
 
@@ -135,29 +160,49 @@ async function describeSlotHolder(): Promise<Record<string, unknown> | null> {
   }
 }
 
-/** Backpressure: replication acknowledgment pauses while the WebSocket is disconnected. */
+/**
+ * The worker hands every change to the API, so it consumes nothing while the API is away: a flush waits for the
+ * socket and the changes stay in the WAL. This only keeps the status that health reports.
+ */
 export function setupBackpressure(): void {
   wsClient.setCallbacks({
     onConnect: () => {
-      const wasPaused = replicationState.status === 'paused';
-      if (wasPaused) {
-        log.info('WebSocket reconnected - resuming replication acknowledgment');
-      } else {
-        log.info('WebSocket connected - resuming replication acknowledgment');
-      }
-      replicationState.markActive();
-      void releaseHeldAck();
+      log.info('API reachable: the worker reads on');
+      if (replicationState.status === 'paused') replicationState.markActive();
     },
     onDisconnect: () => {
-      if (!wsClient.inGracePeriod()) {
-        log.warn('WebSocket disconnected - pausing replication acknowledgment');
-      }
-      replicationState.markPaused();
+      if (!wsClient.inGracePeriod()) log.warn('API away: flushes wait and the WAL keeps the changes');
+      if (replicationState.status === 'active') replicationState.markPaused();
     },
   });
 }
 
 // Subscription loop
+
+/** The steps of a subscription attempt that reach outside the loop, so a test can stand in for them. */
+interface SubscriptionSteps {
+  createService: () => LogicalReplicationService;
+  checkSetup: () => Promise<string[]>;
+  settle: (slotCreated: boolean) => Promise<void>;
+}
+
+/**
+ * The lost cases, handled between two subscriptions: the WAL cannot bring the books back, so they are rebuilt from the
+ * tables and every client refetches. A slot that had to be made on a database with a history, counters that are gone
+ * (an unlogged table is emptied by a crash or a failover), a change that failed every read, or a rebuild on request.
+ */
+export async function settleLostCases(slotCreated: boolean): Promise<void> {
+  if (slotCreated && (await hasHistory())) return rebuildBooks('lost_slot');
+  if (await countersAreLost()) return rebuildBooks('lost_counters');
+
+  const { failure, stuck } = replicationState;
+  if (stuck && failure && rebuildAllowed()) return rebuildBooks('stuck', { position: failure.position, error: failure.error });
+
+  if (replicationState.rebuildRequested) {
+    await rebuildBooks('requested');
+    await clearRebuildRequest();
+  }
+}
 
 /**
  * Subscribes for as long as the worker runs. Every subscription is a new service with empty buffers, so it starts at
@@ -166,32 +211,50 @@ export function setupBackpressure(): void {
  */
 export async function subscribeWithReconnect(
   plugin: PgoutputPlugin,
-  createService: () => LogicalReplicationService = createReplicationService,
-): Promise<never> {
+  { createService = createReplicationService, checkSetup = checkReplicationSetup, settle = settleLostCases }: Partial<SubscriptionSteps> = {},
+): Promise<void> {
   // Fast retries during a rolling-deploy slot handoff, then the normal cadence under sustained contention.
   let attempt = 0;
-  while (true) {
+  while (!replicationState.stopping) {
     let service: LogicalReplicationService | null = null;
     try {
+      // A subscription takes the slot: it waits for an API to hand the changes to.
+      if (!wsClient.isConnected()) replicationState.markPaused();
+      await wsClient.whenConnected();
+
       // Every attempt: dropping a database removes its slots, and no slot can be created while it is
       // unreachable. One catalog SELECT per attempt, and a no-op when another worker holds the slot.
-      await ensureReplicationSlot();
+      const slot = await ensureReplicationSlot();
+
+      // A stream from a setup that does not match the worker would drop or misread changes without a sign.
+      replicationState.setupProblems = await checkSetup();
+      if (replicationState.setupProblems.length)
+        throw new Error(`Replication setup does not match the worker: ${replicationState.setupProblems.join('; ')}`);
+
+      await settle(slot === 'created');
 
       resetBuffers();
       service = createService();
       replicationState.service = service;
 
       log.info('Subscribing to replication slot...');
+      replicationState.flushFailed = false;
       replicationState.status = wsClient.isConnected() ? 'active' : 'paused';
       await service.subscribe(plugin, CDC_SLOT_NAME);
+      replicationState.markStopped();
 
-      // The subscription ended without an error: a failed flush stopped it. The same events come next, so wait first.
-      if (replicationState.flushFailed) {
-        replicationState.flushFailed = false;
-        replicationState.markStopped();
-        await new Promise((resolve) => setTimeout(resolve, reconnection.retryDelayMs));
+      // The subscription ended without an error: a failed flush stopped it. The same events come next, so wait first:
+      // longer with every failure in a row.
+      if (replicationState.flushFailed && !replicationState.stopping) {
+        const { failure, rereadDelayMs, stuck } = replicationState;
+        log[stuck ? 'error' : 'warn'](stuck ? 'Stuck: the same position keeps failing, the WAL waits' : 'Reading again after a failed flush', {
+          ...failure,
+          rereadDelayMs,
+        });
+        await new Promise((resolve) => setTimeout(resolve, rereadDelayMs));
       }
     } catch (error) {
+      if (replicationState.stopping) break;
       // The stream of this attempt is over, but its service can still hold a connection and queued messages.
       await service?.stop().catch(() => {});
       attempt += 1;
@@ -204,11 +267,8 @@ export async function subscribeWithReconnect(
         ...(slotHolder && { slotHolder }),
       });
       replicationState.markStopped();
-      // Reposition a slot whose start predates its publication so decoding can proceed.
-      if (isStalePublicationError(error)) {
-        log.warn(`Slot '${CDC_SLOT_NAME}' predates publication '${CDC_PUBLICATION_NAME}', recreating to self-heal`);
-        await recreateReplicationSlot();
-      }
+      // A slot whose start predates its publication can never be read: it goes, and the next attempt handles the loss.
+      if (isStalePublicationError(error)) await dropStaleReplicationSlot();
       await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
     }
   }

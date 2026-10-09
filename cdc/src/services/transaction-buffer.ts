@@ -1,11 +1,13 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import type { ChannelIdColumns } from 'shared';
 import { appConfig, isChannel } from 'shared';
+import { RESOURCE_LIMITS } from '../constants';
 import { log } from '../lib/pino';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent } from '../types';
 import { channelIdColumnKeys } from '../utils/channel-columns';
 import { commitTimeMs } from '../utils/commit-time';
+import { TransactionTooLargeError } from './failure';
 
 /** Reverse lookup: hostProduct to the products embedded into it. */
 const embeddedByHostProduct = new Map<string, Set<string>>();
@@ -28,6 +30,8 @@ export class TransactionBuffer {
    * (id, createdAt), so an event delivered twice has to carry the same time both times to be recorded once.
    */
   private commitTime: string | null = null;
+  /** Commit position of the transaction being buffered: with a change's index it is the change's identity. */
+  private commitLsn: string | null = null;
   private pendingEvents: PendingEvent[] = [];
 
   /** Channel entity IDs deleted in the current transaction (streaming suppression). */
@@ -38,8 +42,14 @@ export class TransactionBuffer {
 
   private onSurvivingEvents: (events: PendingEvent[]) => Promise<void>;
 
-  constructor(onSurvivingEvents: (events: PendingEvent[]) => Promise<void>) {
+  private maxEvents: number;
+
+  constructor(
+    onSurvivingEvents: (events: PendingEvent[]) => Promise<void>,
+    { maxEvents = RESOURCE_LIMITS.buffers.maxTransactionEvents as number } = {},
+  ) {
     this.onSurvivingEvents = onSurvivingEvents;
+    this.maxEvents = maxEvents;
   }
 
   onBegin(msg: Pgoutput.MessageBegin): void {
@@ -56,15 +66,16 @@ export class TransactionBuffer {
     this.activeXid = msg.xid;
     const committedAt = commitTimeMs(msg);
     this.commitTime = committedAt === null ? null : new Date(committedAt).toISOString();
+    this.commitLsn = msg.commitLsn;
     this.pendingEvents = [];
     this.deletedChannelIds.clear();
     this.suppressedCount = 0;
   }
 
   /** Drops cascaded child deletes inline once the parent channel entity delete has been seen. */
-  async onEvent(lsn: string, result: ParseMessageResult, ordinal = 0): Promise<void> {
+  async onEvent(lsn: string, result: ParseMessageResult, index = 0): Promise<void> {
     if (this.activeXid === null) {
-      await this.onSurvivingEvents([{ lsn, ordinal, result }]);
+      await this.onSurvivingEvents([{ lsn, index, result }]);
       return;
     }
 
@@ -80,7 +91,14 @@ export class TransactionBuffer {
       return;
     }
 
-    this.pendingEvents.push({ lsn, ordinal, result });
+    this.pendingEvents.push({ lsn, commitLsn: this.commitLsn, index, xid: this.activeXid, result });
+
+    // The transaction is held whole until its commit: past the limit it would take the process's memory with it.
+    if (this.pendingEvents.length > this.maxEvents) {
+      const xid = this.activeXid;
+      this.reset();
+      throw new TransactionTooLargeError(this.maxEvents, xid);
+    }
   }
 
   /** Emits the surviving buffered events; a second pass catches child deletes that preceded their parent. */

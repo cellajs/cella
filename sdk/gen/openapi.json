@@ -5629,6 +5629,10 @@
                     "cursor": {
                       "type": ["string", "null"],
                       "description": "Last activity ID (use as offset for next request)"
+                    },
+                    "generation": {
+                      "type": "integer",
+                      "description": "Generation of the sync books. A client that holds another one refetches its synced data and takes the frontiers as baselines"
                     }
                   },
                   "required": ["changes", "cursor"]

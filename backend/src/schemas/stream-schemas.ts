@@ -120,6 +120,9 @@ export const appCatchupResponseSchema = z.object({
     .optional()
     .openapi({ description: 'Per-view answers for client-declared views (same order as the request)' }),
   cursor: z.string().nullable().openapi({ description: 'Last activity ID (use as offset for next request)' }),
+  generation: z.number().int().optional().openapi({
+    description: 'Generation of the sync books. A client that holds another one refetches its synced data and takes the frontiers as baselines',
+  }),
 });
 
 export type AppCatchupResponse = z.infer<typeof appCatchupResponseSchema>;

@@ -12,7 +12,6 @@ import { cdcDb } from '../../lib/db';
 import { wsClient } from '../../network/websocket-client';
 import { parseMessage } from '../../pipeline/parse-message';
 import { processFlush } from '../../pipeline/process-events';
-import { circuitBreaker } from '../../services/circuit-breaker';
 import type { PendingEvent } from '../../types';
 import { dmlMessage } from '../factories';
 
@@ -47,17 +46,18 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
     await cdcDb
       .insert(organizationsTable)
       .values({ ...mockOrganization(), id: organizationId, tenantId, slug: `flush-${tenantId}`, createdBy: null });
-    vi.spyOn(wsClient, 'send').mockImplementation((payload: unknown) => {
-      const { activity, batchRows } = payload as { activity?: { subjectId: string | null; seq?: number }; batchRows?: never };
-      if (activity) dispatched.push({ subjectId: activity.subjectId, seq: activity.seq, batchRows });
-      return true;
-    });
+    // No API in this test: the socket counts as open, and what the worker sends is collected.
+    vi.spyOn(wsClient, 'whenConnected').mockResolvedValue();
+    vi.spyOn(wsClient, 'send');
   });
 
   beforeEach(() => {
     dispatched = [];
-    // The singleton keeps its circuits across tests.
-    (circuitBreaker as unknown as { circuits: Map<string, unknown> }).circuits.clear();
+    vi.mocked(wsClient.send).mockImplementation((payload: unknown) => {
+      const { activity, batchRows } = payload as { activity?: { subjectId: string | null; seq?: number }; batchRows?: never };
+      if (activity) dispatched.push({ subjectId: activity.subjectId, seq: activity.seq, batchRows });
+      return true;
+    });
   });
 
   afterAll(async () => {
@@ -149,9 +149,10 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
   it('records every row of one WAL record, which share an LSN', async () => {
     const [first, second, third] = [await insertAttachment(), await insertAttachment(), await insertAttachment()];
     const lsn = nextLsn();
-    // A COPY writes a page of rows in one record: the ordinal is what tells their events apart.
+    // A COPY writes a page of rows in one record: their index in the transaction is what tells their events apart.
+    const commitLsn = nextLsn();
     const delivery = async () => [
-      await Promise.all([first, second, third].map(async (id, ordinal) => ({ ...(await eventFor('insert', id, lsn)), ordinal }))),
+      await Promise.all([first, second, third].map(async (id, index) => ({ ...(await eventFor('insert', id, lsn)), commitLsn, index }))),
     ];
     const before = await counts();
 
@@ -190,7 +191,7 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
     expect(edited.result.rowData.seq).toBe(recorded.sequence);
   });
 
-  it('records nothing of a source transaction that fails, and counts the failure against its table', async () => {
+  it('records nothing of a flush that fails, and nothing twice when it is read again', async () => {
     const [good, bad] = [await insertAttachment(), await insertAttachment()];
     const goodEvent = await eventFor('insert', good, nextLsn());
     const badEvent = await eventFor('insert', bad, nextLsn());
@@ -200,32 +201,77 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
 
     await expect(processFlush([[goodEvent], [badEvent]])).rejects.toThrow('No organization');
 
-    // The flush is repeated one source transaction at a time: the first one is recorded, the failing one not at all.
-    const recorded = await counts();
-    expect(await activitiesOf([good])).toBe(1);
-    expect(await activitiesOf([bad])).toBe(0);
-    expect(recorded['e:c:attachment']).toBe((before['e:c:attachment'] ?? 0) + 1);
-    expect(await seqOf(bad)).toBe(0);
+    // One transaction for the whole flush: the good change waits with the one that failed.
+    expect(await activitiesOf([good, bad])).toBe(0);
+    expect(await counts()).toEqual(before);
+    expect(await seqOf(good)).toBe(0);
+    expect(dispatched).toEqual([]);
 
-    // Delivered again after the restart: still rejected, and the good event is not counted twice.
+    // Read again, still failing: nothing changes however often.
     await expect(processFlush([[goodEvent], [badEvent]])).rejects.toThrow('No organization');
-    expect(await counts()).toEqual(recorded);
+    expect(await counts()).toEqual(before);
+
+    // Once the cause is gone the same events are recorded, once.
+    badEvent.result.activity.organizationId = organizationId;
+    await processFlush([[goodEvent], [badEvent]]);
+
+    const recorded = await counts();
+    expect(await activitiesOf([good, bad])).toBe(2);
+    expect(recorded['e:c:attachment']).toBe((before['e:c:attachment'] ?? 0) + 2);
   });
 
-  it('lets the stream pass once the circuit of a failing table is open', async () => {
-    const [good, bad] = [await insertAttachment(), await insertAttachment()];
-    const badEvent = await eventFor('insert', bad, nextLsn());
-    badEvent.result.activity.organizationId = null;
-    // The failing transaction is of another table, as far as the breaker is concerned.
-    badEvent.result.activity.tableName = 'flush_test_poison';
+  it('rejects a flush the API did not take, after recording it, and hands it over when it is read again', async () => {
+    const id = await insertAttachment();
+    const event = await eventFor('insert', id, nextLsn());
+    const before = await counts();
+    vi.mocked(wsClient.send).mockReturnValueOnce(false);
 
-    for (let attempt = 0; attempt < 3; attempt++) await expect(processFlush([[badEvent]])).rejects.toThrow();
+    await expect(processFlush([[event]])).rejects.toThrow('The API is not reachable');
 
-    const goodEvent = await eventFor('insert', good, nextLsn());
-    await processFlush([[badEvent], [goodEvent]]);
+    const recorded = await counts();
+    expect(await activitiesOf([id])).toBe(1);
 
-    expect(await activitiesOf([good])).toBe(1);
-    expect(await activitiesOf([bad])).toBe(0);
+    // The stream is read again from the unconfirmed position: recorded once, handed over now.
+    await processFlush([[event]]);
+
+    expect(await counts()).toEqual(recorded);
+    expect(recorded['e:c:attachment']).toBe((before['e:c:attachment'] ?? 0) + 1);
+    expect(dispatched.map((message) => message.subjectId)).toEqual([id]);
+  });
+
+  it('hands rows that are no product to the API one at a time, in commit order', async () => {
+    const [firstTenant, secondTenant] = [nanoidTenant(), nanoidTenant()];
+    for (const id of [firstTenant, secondTenant]) await cdcDb.execute(sql`INSERT INTO tenants (id, name) VALUES (${id}, ${`order-${id}`})`);
+    const tenantEvent = async (tag: 'insert' | 'update', id: string): Promise<PendingEvent> => {
+      const row = (await cdcDb.execute(sql`SELECT * FROM tenants WHERE id = ${id}`)).rows[0] as Record<string, unknown>;
+      // An update without a changed column is no event: the old row carries another name.
+      const result = parseMessage(dmlMessage(tag, 'tenants', row, tag === 'update' ? { ...row, name: 'before' } : undefined));
+      if (!result) throw new Error(`The parser dropped the ${tag} of tenant ${id}`);
+      return { lsn: nextLsn(), result };
+    };
+
+    try {
+      // One flush: the first tenant is updated, then the second is created and updated. Sent per type and action,
+      // the second tenant's update would reach the API before its create.
+      const events = [await tenantEvent('update', firstTenant), await tenantEvent('insert', secondTenant), await tenantEvent('update', secondTenant)];
+      const sent: { type: string; subjectId: string | null; batch: boolean }[] = [];
+      vi.mocked(wsClient.send).mockImplementation((payload: unknown) => {
+        const { activity, batchRows } = payload as { activity: { type: string; subjectId: string | null }; batchRows?: unknown[] };
+        sent.push({ type: activity.type, subjectId: activity.subjectId, batch: Boolean(batchRows) });
+        return true;
+      });
+
+      await processFlush(events.map((event) => [event]));
+
+      expect(sent).toEqual([
+        { type: 'tenant.updated', subjectId: firstTenant, batch: false },
+        { type: 'tenant.created', subjectId: secondTenant, batch: false },
+        { type: 'tenant.updated', subjectId: secondTenant, batch: false },
+      ]);
+    } finally {
+      await cdcDb.execute(sql`DELETE FROM activities WHERE subject_id IN (${firstTenant}, ${secondTenant})`);
+      await cdcDb.execute(sql`DELETE FROM tenants WHERE id IN (${firstTenant}, ${secondTenant})`);
+    }
   });
 
   it('records a source transaction larger than one statement takes', async () => {

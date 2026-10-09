@@ -15,7 +15,7 @@ import { BENCH_UUID_PREFIX } from 'shared/utils/bench-identity';
 import { BASE_URL, COOKIE_SECRET, createBenchProcessEnv, DB_URL, SESSION_COOKIE_NAME } from './config';
 import { benchSignInStatus, isPostgresReady, isServiceHealthy, SERVICES, unreadyReason } from './preflight';
 import { rejectedResponses } from './response-codes';
-import { counterFindings, pipelineFindings, settlePipeline } from './verify';
+import { booksFindings, counterFindings, pipelineFindings, settlePipeline } from './verify';
 
 const __dirname = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 const BENCH_ROOT = resolve(__dirname, '..');
@@ -397,8 +397,8 @@ interface ScenarioResult {
 
 /**
  * Runs Artillery between two readings of what the CDC worker recorded, checks the run, and compares or saves the
- * baseline. A run fails on rejected responses, on a counter its scenario expects or forbids, and where the worker's
- * record differs from the rows the run wrote. Short runs produce no comparable metrics and never touch baselines, and
+ * baseline. A run fails on rejected responses, on a counter its scenario expects or forbids, where the worker's
+ * record differs from the rows the run wrote, and where the worker's verify finds its books wrong. Short runs produce no comparable metrics and never touch baselines, and
  * neither does a failed run; `quiet` leaves output to the caller's combined summary.
  */
 async function runScenario(name: string, { short, quiet }: { short: boolean; quiet: boolean }): Promise<ScenarioResult> {
@@ -422,6 +422,8 @@ async function runScenario(name: string, { short, quiet }: { short: boolean; qui
     if (caughtUpMs === null) findings.push('the CDC worker did not catch up within 60 s of the run');
     else if (after) {
       findings.push(...pipelineFindings(before, after, counters));
+      // The worker's own check of every counter against the tables: a full run ends with it.
+      if (!short) findings.push(...(await booksFindings()));
       const recorded = after.activities - before.activities;
       if (written !== undefined) workerCaughtUpMs = caughtUpMs;
       if (recorded > 0) pipelineSummary = `CDC recorded ${recorded} activities and caught up ${(caughtUpMs / 1000).toFixed(1)} s after the run`;

@@ -2578,6 +2578,10 @@ export type PostAppCatchupResponses = {
      * Last activity ID (use as offset for next request)
      */
     cursor: string | null;
+    /**
+     * Generation of the sync books. A client that holds another one refetches its synced data and takes the frontiers as baselines
+     */
+    generation?: number;
   };
 };
 

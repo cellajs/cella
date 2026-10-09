@@ -225,6 +225,11 @@
               "type": ["string", "null"],
               "required": true,
               "description": "Last activity ID (use as offset for next request)"
+            },
+            "generation": {
+              "type": "integer",
+              "required": false,
+              "description": "Generation of the sync books. A client that holds another one refetches its synced data and takes the frontiers as baselines"
             }
           },
           "contentType": "application/json"

@@ -1000,6 +1000,7 @@ export const zPostAppCatchupResponse = z.object({
     )
     .optional(),
   cursor: z.string().nullable(),
+  generation: z.int().optional(),
 });
 
 /**

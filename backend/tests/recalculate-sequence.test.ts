@@ -5,7 +5,7 @@ import { baseDb as db, getSeedDb } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
-import { recalculateCounters } from '#/modules/entities/counters-queries';
+import { computeChannelCounters, recalculateCounters } from '#/modules/entities/counters-queries';
 import { getEntityTable } from '#/tables';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -118,5 +118,40 @@ describe('recalculateCounters (sequence + frontier)', async () => {
     const homeCounts = (await readCounts(homeChannelId())).counts as Record<string, number>;
     expect(homeCounts[`e:f:h:${PRODUCT}`]).toBe(47);
     expect(homeCounts[`e:c:h:${PRODUCT}`]).toBe(2);
+  });
+
+  it('counts the same without writing, for the worker to compare with', async () => {
+    await recalculateCounters({ var: { db: seedDb } });
+    const [stored] = await db
+      .select({ counts: channelCountersTable.counts })
+      .from(channelCountersTable)
+      .where(sql`channel_key = ${tenant.organization.id}`);
+
+    const counted = (await computeChannelCounters({ var: { db: seedDb } })).get(tenant.organization.id);
+
+    // One SQL body for both: every key the count yields is the key the rebuild stored.
+    expect(counted).toBeDefined();
+    for (const [key, value] of Object.entries(counted ?? {})) expect((stored.counts as Record<string, number>)[key], key).toBe(value);
+    expect(counted?.sequence).toBe(47);
+  });
+
+  it('must not set the sequence counter or a frontier back via a rebuild that counts less than is stored', async () => {
+    // The worker has handed out values up to 60 that the table rows do not show: in flight, or held by rows deleted since.
+    await seedDb.execute(sql`
+      UPDATE channel_counters SET counts = counts || ${JSON.stringify({ sequence: 60, [`e:f:${PRODUCT}`]: 60, [`e:c:${PRODUCT}`]: 9 })}::jsonb
+      WHERE channel_key = ${tenant.organization.id}
+    `);
+
+    await recalculateCounters({ var: { db: seedDb } });
+
+    const [row] = await db
+      .select({ counts: channelCountersTable.counts })
+      .from(channelCountersTable)
+      .where(sql`channel_key = ${tenant.organization.id}`);
+    const counts = row.counts as Record<string, number>;
+    expect(counts.sequence).toBe(60);
+    expect(counts[`e:f:${PRODUCT}`]).toBe(60);
+    // Positive control: a plain count is replaced by what the tables hold.
+    expect(counts[`e:c:${PRODUCT}`]).toBe(2);
   });
 });

@@ -45,12 +45,10 @@ meter
   });
 
 meter
-  .createObservableGauge('cdc.circuit_breaker.open_count', { description: 'Number of open/half-open circuit breakers' })
+  .createObservableGauge('cdc.replication.failures_at_position', { description: 'Failures in a row at the position the worker reads again from' })
   .addCallback(async (result) => {
-    const { circuitBreaker } = await import('../services/circuit-breaker');
-    const status = circuitBreaker.getStatus();
-    const openCount = Object.values(status).filter((s) => s.state !== 'closed').length;
-    result.observe(openCount);
+    const { replicationState } = await import('../services/replication-state');
+    result.observe(replicationState.failure?.count ?? 0);
   });
 
 meter

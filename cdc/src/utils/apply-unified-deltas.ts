@@ -19,7 +19,7 @@ const STAMP_CHUNK_SIZE = 5000;
  * GREATEST(0, existing + delta) per key and max-merges `e:li:`/`e:lu:`/`e:f:` keys. The SQL shape is
  * fixed so PostgreSQL can cache the plan.
  */
-async function mergedUpsert(db: DeltaExecutor, channelKey: string, deltas: Record<string, number>): Promise<Record<string, number>> {
+export async function applyCounterDeltas(db: DeltaExecutor, channelKey: string, deltas: Record<string, number>): Promise<Record<string, number>> {
   if (Object.keys(deltas).length === 0) return {};
 
   const deltasJson = JSON.stringify(deltas);
@@ -70,7 +70,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: D
     const mergedDeltas = sumInto({ sequence: group.count }, countDeltasByChannelKey.get(group.orgKey));
     handledChannelKeys.add(group.orgKey);
 
-    const counts = await mergedUpsert(db, group.orgKey, mergedDeltas);
+    const counts = await applyCounterDeltas(db, group.orgKey, mergedDeltas);
     const highSeq = counts.sequence ?? group.count;
     const baseSeq = highSeq - group.count;
 
@@ -103,7 +103,7 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: D
     mergeDelta(phase2Deltas, channelKey, deltas);
   }
   for (const channelKey of [...phase2Deltas.keys()].sort()) {
-    await mergedUpsert(db, channelKey, phase2Deltas.get(channelKey) ?? {});
+    await applyCounterDeltas(db, channelKey, phase2Deltas.get(channelKey) ?? {});
   }
 
   for (const [tableName, rows] of lastSeqByTable) {

@@ -19,9 +19,17 @@ export function createActivity(
   const resourceType = tableMeta.kind === 'resource' ? tableMeta.type : null;
   const subjectType = tableMeta.type;
 
-  // Channel entity ids come from the hierarchy ancestors; declared-nullable ancestors may be null.
+  // A resource row has no place in the hierarchy: it carries the channel ids its own columns hold, so a membership's
+  // activity names its organization.
   const channelIds: Record<string, string | null> = {};
-  if (subjectType) {
+  if (tableMeta.kind === 'resource') {
+    for (const idKey of channelIdColumnKeys) {
+      const value = getRowValue(row, idKey);
+      if (value) channelIds[idKey] = value;
+    }
+  }
+  // Channel entity ids come from the hierarchy ancestors; declared-nullable ancestors may be null.
+  if (subjectType && tableMeta.kind === 'entity') {
     const nullableAncestors = hierarchy.getNullableAncestors(subjectType);
     for (const ancestor of hierarchy.getOrderedAncestors(subjectType)) {
       const colKey = appConfig.entityIdColumnKeys[ancestor];

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { acknowledge, ws } = vi.hoisted(() => ({
   acknowledge: vi.fn(async (_lsn: string) => true),
@@ -22,7 +22,7 @@ vi.mock('../network/websocket-client', () => ({
 const { createReplicationService } = await import('../pipeline/replication');
 const { replicationState } = await import('../services/replication-state');
 
-const { handleDataMessage, releaseHeldAck } = await import('../pipeline/handle-message');
+const { handleDataMessage, resetBuffers } = await import('../pipeline/handle-message');
 const { dmlMessage } = await import('./factories');
 
 // Two ticks: the heartbeat handler defers its reply by one.
@@ -34,12 +34,21 @@ const settle = async () => {
 describe('replication heartbeat acknowledgement', () => {
   beforeEach(() => {
     replicationState.reset();
+    resetBuffers();
     acknowledge.mockClear();
     ws.connected = false;
   });
 
-  it('replies with 0/0 before anything was acknowledged, leaving the slot untouched', async () => {
+  /** A worker in the middle of a transaction: the keepalive position lies past what it has recorded. */
+  const busyService = async () => {
     const service = createReplicationService();
+    replicationState.service = service;
+    await handleDataMessage('0/100', { tag: 'begin', xid: 7 } as never);
+    return service;
+  };
+
+  it('replies with 0/0 before anything was acknowledged, leaving the slot untouched', async () => {
+    const service = await busyService();
     service.emit('heartbeat', '0/1F0', Date.now(), true);
     await settle();
 
@@ -48,7 +57,7 @@ describe('replication heartbeat acknowledgement', () => {
   });
 
   it('repeats the last acknowledged LSN instead of the keepalive position', async () => {
-    const service = createReplicationService();
+    const service = await busyService();
     replicationState.lastAckedLsn = '0/AB';
     service.emit('heartbeat', '0/1F0', Date.now(), true);
     await settle();
@@ -58,7 +67,7 @@ describe('replication heartbeat acknowledgement', () => {
   });
 
   it('stays silent when the server does not ask for a reply', async () => {
-    const service = createReplicationService();
+    const service = await busyService();
     service.emit('heartbeat', '0/1F0', Date.now(), false);
     await settle();
 
@@ -121,7 +130,6 @@ describe('replication heartbeat acknowledgement', () => {
     });
 
     it('forgets the keepalive position of a stream that ended', async () => {
-      const { resetBuffers } = await import('../pipeline/handle-message');
       connect();
       replicationState.lastAckedLsn = '0/AB';
       replicationState.lastKeepaliveLsn = '0/1F0';
@@ -135,46 +143,62 @@ describe('replication heartbeat acknowledgement', () => {
     });
 
     it('records no position a stopped service did not send', async () => {
-      connect();
-      replicationState.lastAckedLsn = '0/AB';
-      replicationState.heldAckLsn = '0/C0';
-      acknowledge.mockResolvedValueOnce(false);
-      await releaseHeldAck();
-
-      expect(replicationState.lastAckedLsn).toBe('0/AB');
-      expect(replicationState.heldAckLsn).toBe('0/C0');
-    });
-
-    it('stays put after a withheld acknowledgment', async () => {
       const service = connect();
       replicationState.lastAckedLsn = '0/AB';
-      replicationState.heldAckLsn = '0/C0';
+      acknowledge.mockResolvedValueOnce(false);
+      service.emit('heartbeat', '0/1F0', Date.now(), false);
+      await settle();
+
+      expect(acknowledge).toHaveBeenCalledWith('0/1EF');
+      expect(replicationState.lastAckedLsn).toBe('0/AB');
+    });
+
+    it('confirms the keepalive position while the API is away: nothing was consumed, so nothing can be lost', async () => {
+      const service = connect();
+      ws.connected = false;
+      replicationState.lastAckedLsn = '0/AB';
       service.emit('heartbeat', '0/1F0', Date.now(), true);
       await settle();
 
-      expect(acknowledge).toHaveBeenCalledTimes(1);
-      expect(acknowledge).toHaveBeenCalledWith('0/AB');
+      expect(acknowledge).toHaveBeenCalledWith('0/1EF');
     });
+  });
+});
 
-    it('sends the withheld acknowledgment once the WebSocket returns, then confirms the keepalive', async () => {
-      connect();
-      replicationState.lastAckedLsn = '0/AB';
-      replicationState.heldAckLsn = '0/C0';
-      replicationState.lastKeepaliveLsn = '0/1F0';
-      await releaseHeldAck();
+describe('replication status timer', () => {
+  beforeEach(() => {
+    replicationState.reset();
+    resetBuffers();
+    acknowledge.mockClear();
+    vi.useFakeTimers();
+  });
 
-      expect(acknowledge.mock.calls.map(([lsn]) => lsn)).toEqual(['0/C0', '0/1EF']);
-      expect(replicationState.heldAckLsn).toBeNull();
-    });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
-    it('keeps the acknowledgment withheld while the WebSocket is still down', async () => {
-      connect();
-      ws.connected = false;
-      replicationState.heldAckLsn = '0/C0';
-      await releaseHeldAck();
+  it('repeats the last confirmed position while a flush holds the stream, so the server keeps the connection', async () => {
+    const service = createReplicationService();
+    replicationState.service = service;
+    replicationState.lastAckedLsn = '0/AB';
+    // A transaction is open and nothing is read: without the timer the server would hear nothing for as long as that lasts.
+    await handleDataMessage('0/100', { tag: 'begin', xid: 7 } as never);
 
-      expect(acknowledge).not.toHaveBeenCalled();
-      expect(replicationState.heldAckLsn).toBe('0/C0');
-    });
+    await vi.advanceTimersByTimeAsync(35_000);
+
+    expect(acknowledge.mock.calls.map(([lsn]) => lsn)).toEqual(['0/AB', '0/AB', '0/AB']);
+  });
+
+  it('must not go on for a service that was replaced', async () => {
+    const old = createReplicationService();
+    replicationState.service = old;
+    replicationState.lastAckedLsn = '0/AB';
+    replicationState.service = createReplicationService();
+    acknowledge.mockClear();
+
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    // One update, from the service that holds the subscription now.
+    expect(acknowledge).toHaveBeenCalledTimes(1);
   });
 });

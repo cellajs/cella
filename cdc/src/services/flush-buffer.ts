@@ -12,7 +12,8 @@ const { flushBatchSize, flushMaxEvents } = RESOURCE_LIMITS.buffers;
  * `processFlush` resolved. windowMs 0 flushes immediately.
  *
  * A flush that rejects acknowledges nothing: the buffer drops what it holds, refuses new events and calls `onFailed`,
- * so the worker reads again from the last acknowledged position.
+ * so the worker reads again from the last acknowledged position. That is the one way a failure is handled: nothing is
+ * retried in place and nothing is left out.
  */
 export class FlushBuffer {
   /** Source transactions in commit order, each with its surviving events. */
@@ -32,8 +33,11 @@ export class FlushBuffer {
   /** Called after a flush that left nothing pending. */
   onDrained: (() => void) | null = null;
 
-  /** Called once when a flush rejected; the buffer stays closed until `reset`. */
-  onFailed: ((error: unknown) => void) | null = null;
+  /** Called once when a flush rejected, with the position of its first event; the buffer stays closed until `reset`. */
+  onFailed: ((error: unknown, position: string) => void) | null = null;
+
+  /** Called after every flush that was recorded and acknowledged. */
+  onFlushed: (() => void) | null = null;
 
   constructor(
     processFlush: (transactions: PendingEvent[][]) => Promise<void>,
@@ -95,24 +99,53 @@ export class FlushBuffer {
       try {
         await this.processFlush(transactions);
       } catch (error) {
-        this.failed = true;
-        this.pending = [];
-        this.pendingCount = 0;
-        log.error('Flush failed: position not acknowledged, reading again from the last acknowledged one', {
-          err: error,
-          events,
-          firstLsn: transactions[0][0].lsn,
-        });
-        this.onFailed?.(error);
+        this.fail(error, transactions[0][0].lsn, events);
         return;
       }
 
       // The last event of the flush implicitly acknowledges all prior ones.
       await this.acknowledgeLsn(lsn);
       metrics.recordFlush(events, performance.now() - flushStart);
+      this.onFlushed?.();
     }
 
     this.onDrained?.();
+  }
+
+  /**
+   * Runs `fn` while no flush is in progress and holds the next flush until it resolved: what `fn` reads sits exactly
+   * between two flushes. Events keep arriving meanwhile and are flushed after it.
+   */
+  async exclusive<T>(fn: () => Promise<T>): Promise<T> {
+    while (this.flushing) await this.flushing;
+    const run = fn();
+    this.flushing = run
+      .then(
+        () => {},
+        () => {},
+      )
+      .finally(() => {
+        this.flushing = null;
+        if (this.pendingCount > 0) void this.flush();
+      });
+    return run;
+  }
+
+  /**
+   * Closes the buffer on a failure: of a flush, or of a message that could not be handled before it reached one. What
+   * is pending is dropped, because the stream is read again from the last acknowledged position.
+   * @param error - What failed.
+   * @param position - The LSN the failure belongs to: a failed flush's first event.
+   * @param events - How many events the failed flush held.
+   */
+  fail(error: unknown, position: string, events = 0): void {
+    if (this.failed) return;
+    this.failed = true;
+    this.clearTimer();
+    this.pending = [];
+    this.pendingCount = 0;
+    log.error('Flush failed: position not acknowledged, reading again from the last acknowledged one', { err: error, events, position });
+    this.onFailed?.(error, position);
   }
 
   /** Whole source transactions from the front, up to `maxEvents`; always at least one. */

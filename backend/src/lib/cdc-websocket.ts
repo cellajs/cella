@@ -82,8 +82,12 @@ export interface CdcWorkerHealth {
   lagBytes?: number | null;
   /** ISO timestamp of the last applied DML change. */
   lastEventAt?: string | null;
-  /** Whether the worker is currently replaying backlogged WAL. */
-  catchingUp?: boolean;
+  /** How long ago the transaction the worker read last committed, in milliseconds. */
+  lagMs?: number | null;
+  /** Generation of the sync books: it moves when the worker corrected or rebuilt them. */
+  generation?: number;
+  /** Whether the worker keeps failing at one position because of the change there. */
+  stuck?: boolean;
   /** Whether the worker's database role effectively bypasses RLS on every RLS-enabled table (owner of never-forced tables, BYPASSRLS, or superuser); null until probed. */
   rlsBypass?: boolean | null;
   /** Whether the worker's database role may open a replication slot; null until probed. */
@@ -107,6 +111,8 @@ class CdcWebSocketServer {
   private _parseErrors = 0;
   private _workerHealth: { payload: CdcWorkerHealth; receivedAt: Date } | null = null;
   private _lastLagAlert: CdcLagAlert | null = null;
+  private _generation: number | null = null;
+  private generationListeners: ((generation: number) => void)[] = [];
 
   /** Completes the handshake of an upgrade the internal listener authenticated and takes the connection. */
   accept(request: IncomingMessage, socket: Duplex, head: Buffer): void {
@@ -214,12 +220,29 @@ class CdcWebSocketServer {
     }
   }
 
+  /**
+   * The first generation the worker reports is where this process starts; a later, other one means the books were
+   * corrected or rebuilt while clients were connected.
+   */
+  private noteGeneration(generation: number | undefined): void {
+    if (typeof generation !== 'number' || generation === this._generation) return;
+    const moved = this._generation !== null;
+    this._generation = generation;
+    if (moved) for (const listener of this.generationListeners) listener(generation);
+  }
+
+  /** Registers what to do when the worker's books move to another generation. */
+  onGenerationChange(listener: (generation: number) => void): void {
+    this.generationListeners.push(listener);
+  }
+
   /** Handle CDC signals sent outside the activity stream: health reports and WAL lag alerts. */
   private handleControlMessage(message: { _control: string; [key: string]: unknown }): void {
     if (message._control === 'health') {
       const payload = message.payload as CdcWorkerHealth | undefined;
       if (payload?.replicationStatus) {
         this._workerHealth = { payload, receivedAt: new Date() };
+        this.noteGeneration(payload.generation);
       }
       return;
     }

@@ -7,6 +7,7 @@ import { hasPublishedAt } from '#/db/utils/published-predicate';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
+import { syncStateTable } from '#/modules/entities/sync-state-db';
 import type { membershipCountSchema } from '#/schemas';
 import type { EntityModel, EntityType, ResolvableTable, TableWithIdAndSlug } from '#/tables';
 import { getEntityTable } from '#/tables';
@@ -178,6 +179,16 @@ export const findLatestUserActivityId = async (ctx: DbContext, { organizationIds
     .limit(1);
 
   return result[0]?.id ?? null;
+};
+
+/**
+ * The generation of the sync books. The CDC worker adds one whenever it corrected or rebuilt them, and a client that
+ * holds another one refetches.
+ * @returns The generation, 1 on a database the worker never had to touch.
+ */
+export const findSyncGeneration = async (ctx: DbContext): Promise<number> => {
+  const [state] = await ctx.var.db.select({ generation: syncStateTable.generation }).from(syncStateTable).limit(1);
+  return state?.generation ?? 1;
 };
 
 // Entity resolution queries

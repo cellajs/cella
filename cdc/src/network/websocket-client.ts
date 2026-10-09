@@ -1,10 +1,12 @@
 import WebSocket from 'ws';
 import { env } from '../env';
 import { log } from '../lib/pino';
+import { ApiUnreachableError } from '../services/failure';
 
 const WS_OPEN = 1;
 
-const MAX_RECONNECT_DELAY_MS = 30_000;
+/** A flush waits for this socket, so the wait for the next attempt stays short. */
+const MAX_RECONNECT_DELAY_MS = 5_000;
 
 const BASE_RECONNECT_DELAY_MS = 1_000;
 
@@ -32,11 +34,15 @@ class WebSocketClient {
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private pingInterval: NodeJS.Timeout | null = null;
   private callbacks: WebSocketClientCallbacks = {};
+  /** Flushes waiting for the socket: resolved when it opens, rejected when the client is closed for good. */
+  private waiters: { resolve: () => void; reject: (error: Error) => void }[] = [];
 
   private _state: WebSocketState = 'closed';
   private _lastMessageAt: Date | null = null;
   private _messagesSent = 0;
   private _disconnectedAt: Date | null = null;
+  /** Set by `close()`: the worker is shutting down. */
+  private closedForGood = false;
 
   constructor(url: string) {
     this.url = url;
@@ -50,6 +56,7 @@ class WebSocketClient {
     if (this._state === 'connecting' || this._state === 'open') {
       return;
     }
+    this.closedForGood = false;
 
     this._state = 'connecting';
 
@@ -71,6 +78,7 @@ class WebSocketClient {
       this.startPingInterval();
 
       this.callbacks.onConnect?.();
+      for (const waiter of this.waiters.splice(0)) waiter.resolve();
     });
 
     this.ws.on('close', (code, reason) => {
@@ -117,6 +125,16 @@ class WebSocketClient {
     return this.ws?.readyState === WS_OPEN;
   }
 
+  /**
+   * Resolves once the socket is open, at once when it already is. The worker hands every change to the API, so a
+   * flush waits here while the API is away and the changes stay in the WAL. Rejects when the client is closed.
+   */
+  whenConnected(): Promise<void> {
+    if (this.isConnected()) return Promise.resolve();
+    if (this._state === 'closed' && this.closedForGood) return Promise.reject(new ApiUnreachableError());
+    return new Promise((resolve, reject) => this.waiters.push({ resolve, reject }));
+  }
+
   get state(): WebSocketState {
     return this._state;
   }
@@ -143,14 +161,18 @@ class WebSocketClient {
   }
 
   close(): void {
+    this.closedForGood = true;
     this.cleanup();
     this.ws?.close();
     this.ws = null;
     this._state = 'closed';
+    for (const waiter of this.waiters.splice(0)) waiter.reject(new ApiUnreachableError());
   }
 
   private handleDisconnect(): void {
     this.cleanup();
+    // A deliberate close also fires this event: nothing reconnects after it.
+    if (this.closedForGood) return;
 
     const wasConnected = this._state === 'open';
     this._state = 'reconnecting';
@@ -170,7 +192,7 @@ class WebSocketClient {
   private scheduleReconnect(): void {
     if (this.reconnectTimeout) return;
 
-    // min(30s, 1s * 2^attempt)
+    // min(5s, 1s * 2^attempt)
     const exponentialDelay = Math.min(MAX_RECONNECT_DELAY_MS, BASE_RECONNECT_DELAY_MS * 2 ** this.reconnectAttempt);
 
     // Jitter: ±20%

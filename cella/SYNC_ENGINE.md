@@ -189,6 +189,10 @@ Idempotency is operation-specific: a product create runs `checkIdempotency(ctx, 
 
 ## Resilience
 
+### Rebuilt books
+
+The counters, the sequence counter and the frontiers are the CDC worker's books. It checks them against the tables once a day and rebuilds them when the replication stream cannot bring them back: [CDC worker](../cdc/README.md#verify-and-rebuild). Whenever it corrected or rebuilt them it adds one to a generation. The catchup answer carries that generation, and a client that holds another one puts every cursor back at 0, refetches what it has cached of the synced types and takes the frontiers of that catchup as its new baselines. Open streams hear of it at once: the server ends them with `resync`, and each client reconnects.
+
 ### Schema changes
 
 Old tabs and old queued writes survive a wire-shape deploy through lenses: [Schema evolution](./SCHEMA_EVOLUTION.md).
@@ -211,7 +215,7 @@ An app that shows a description in place, a static view that turns into the edit
 
 ### SSE wire
 
-Events: `offset` (stream cursor, once after connect), `change` (one `StreamNotification`), `error` (typed payload). An `unauthorized`, `forbidden`, or `tenant_revoked` error stops reconnecting; the server sends `unauthorized` when the session behind the stream ended for good (sign-out, revoked from another session, evicted, expired, the account deleted). `session_replaced` means the browser holds a newer session (a sign-in from the same browser, turning MFA on, stopping an impersonation) and `access_changed` that the stream lost its system-admin reads; the client reconnects on both. The server checks every open stream's session again once a minute, which also catches endings on another instance.
+Events: `offset` (stream cursor, once after connect), `change` (one `StreamNotification`), `error` (typed payload). An `unauthorized`, `forbidden`, or `tenant_revoked` error stops reconnecting; the server sends `unauthorized` when the session behind the stream ended for good (sign-out, revoked from another session, evicted, expired, the account deleted). `session_replaced` means the browser holds a newer session (a sign-in from the same browser, turning MFA on, stopping an impersonation), `access_changed` that the stream lost its system-admin reads, and `resync` that the server rebuilt its sync books; the client reconnects on all three. The server checks every open stream's session again once a minute, which also catches endings on another instance.
 
 ```typescript
 interface StreamNotification {
@@ -250,7 +254,7 @@ interface PropagationHint {
 
 ### Catchup wire
 
-The request carries a stream cursor and views `{ key, organizationId, prefixes, entityTypes, depth?, cursor }` (`depth`: `self` or `subtree`, default `subtree`). The response carries view answers, organization change summaries, and the stream cursor.
+The request carries a stream cursor and views `{ key, organizationId, prefixes, entityTypes, depth?, cursor }` (`depth`: `self` or `subtree`, default `subtree`). The response carries view answers, organization change summaries, the stream cursor, and the generation of the sync books.
 
 A stream subscription covers the organizations the user belongs to when it opens plus a per-user subscription for self-membership events. A membership in a new organization reaches the user there, and the client reconnects to subscribe to that organization and catch up on its history.
 
@@ -267,6 +271,8 @@ interface CatchupChangeSummary {
   propagation?: PropagationHint[];
 }
 ```
+
+`signals.membership` is the organization's bump-only membership signal: every membership and invitation change in the organization moves it, and a client whose stored value differs invalidates its member queries.
 
 `seqCursor=51,150` is the inclusive bounded range and the only form. Range fetches may carry `channelId` to narrow the read to one channel subtree. In hierarchies deeper than `organization -> channel`, a read covered by a `channelId` must AND a subtree predicate over the denormalized ancestor id columns on top of the permission-derived scope (`buildSubtreeCoverWhere`, `backend/src/db/utils/subtree-cover.ts`). Never fold the covering id into the permission scope, or an intermediate grant widens the read past the subtree.
 

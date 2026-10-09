@@ -118,6 +118,10 @@ export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerRepo
     status = worstStatus(status, 'degraded');
     reasons.push('slot_inactive');
   }
+  if (worker?.stuck) {
+    status = worstStatus(status, 'degraded');
+    reasons.push('worker_stuck');
+  }
   if (lagBytes !== null && lagBytes > CDC_LAG_BYTES_DEGRADED) {
     status = worstStatus(status, 'degraded');
     reasons.push('wal_lag_high');
@@ -144,7 +148,8 @@ export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerRepo
       lagBytes,
       lastLsn: worker?.lastLsn ?? null,
       lastEventAt: worker?.lastEventAt ?? null,
-      catchingUp: worker?.catchingUp ?? null,
+      lagMs: worker?.lagMs ?? null,
+      stuck: worker?.stuck ?? null,
       rlsBypass: worker?.rlsBypass ?? null,
       roleReplication: worker?.roleReplication ?? null,
       messages: socket.messagesReceived,
