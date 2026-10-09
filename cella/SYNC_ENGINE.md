@@ -48,25 +48,7 @@ Reconnect uses the same path: cursor `3` and frontier `7` become `seqCursor=4,7`
 
 ### Ordering
 
-The CDC worker reads PostgreSQL logical replication, keeps each transaction whole so cascaded child deletes can be suppressed, then records the transactions in commit order, several per [flush](../cdc/README.md#vocabulary), and notifies per type and action. Product batches are split by `(path, entityType)`, one audience per notification. A row that is no product (a membership, a channel) goes to the API alone and first, in commit order. A flush waits for the API, and a send that fails is delivered again.
-
-Commit order is sequence order across product types.
-
-### Counters
-
-In the one transaction that records a flush, the worker reserves a contiguous sequence range per organization, stamps product rows in commit order, and updates `channel_counters`. A change that is delivered again changes none of them. Keys are `sequence`, `membership`, or `<e|m>:<metric>:[h:]<type|role>`, where `e` holds entity metrics keyed by product or channel type, `m` holds membership metrics keyed by role, and `h` marks a home-only summary rather than the subtree aggregate.
-
-| Key | Scope | Meaning |
-| --- | --- | --- |
-| `sequence` | Org-wide | Sequence reservation counter |
-| `membership` | Org-wide | Bump-only membership change signal |
-| `e:f:{type}` | Subtree | Frontier of rows at or below the node |
-| `e:f:h:{type}` | Home-only | Frontier of rows homed at the node |
-| `e:c:{type}` | Subtree | Count of countable rows at or below the node |
-| `e:c:h:{type}` | Home-only | Count of countable rows homed at the node |
-| `e:li:h:{type}` / `e:lu:h:{type}` | Home-only | Last insert and update timestamps |
-| `m:c:{role}` / `m:c:total` / `m:c:pending` | Channel | Membership counts |
-| `e:c:{host type}` | Embedded row | Live host rows that reference the embedded row. The key is the embedded row's id, not a channel |
+The CDC worker records changes in commit order, and commit order is sequence order across product types. In one transaction it stamps product rows with the next sequence positions of their organization and updates the channel summaries. A change that is delivered again changes none of them. Notifications go out per audience: the rows of one type under one path. How the worker does it: [CDC worker](../cdc/README.md#normal-flow). The keys of `channel_counters`: [Counter keys](../cdc/README.md#counter-keys).
 
 ### Drafts
 
@@ -225,7 +207,7 @@ A client that missed notifications while the books stayed right is repaired by i
 
 ### Rebuilt books
 
-The counters, the sequence counter and the frontiers are the CDC worker's books. It checks them against the tables once a day, and rebuilds them when that check finds them wrong or when the replication stream cannot bring them back: [CDC worker](../cdc/README.md#verify-and-rebuild). Whenever it rebuilt them it moves a generation on: a number that grows and is never below the clock in minutes, so a database restored from a backup cannot hand out one a client already holds. The catchup answer carries that generation. A client that holds another one puts its view cursors back at 0 (the stream cursor stays), takes the frontiers of that catchup as new baselines, refetches the lists on screen at once and, after a random delay of up to ten seconds, everything else it has cached of the synced types; member queries of every organization are invalidated as well. Open streams hear of it through the worker's health push: the API ends them with `resync`, and each leader tab reconnects after its backoff of a few seconds. The leader passes every catchup answer to its follower tabs, so each puts its cursors back and refetches the same way.
+The counters, the sequence counter and the frontiers are the CDC worker's books. Whenever the worker rebuilt them it moves a generation on ([CDC worker](../cdc/README.md#verify-and-rebuild)), and the catchup answer carries that generation. A client that holds another one puts its view cursors back at 0 (the stream cursor stays), takes the frontiers of that catchup as new baselines, refetches the lists on screen at once and, after a random delay of up to ten seconds, everything else it has cached of the synced types; member queries of every organization are invalidated as well. The API ends open streams with `resync`, and each leader tab reconnects after its backoff of a few seconds. The leader passes every catchup answer to its follower tabs, so each puts its cursors back and refetches the same way.
 
 ### One API process
 
@@ -241,13 +223,9 @@ The first tab to acquire the Web Lock becomes leader, owns SSE and runs catchup.
 
 ### Yjs
 
-The template collaborates on attachment descriptions through the Yjs relay (`services.yjs.enabled`); an app adds a product by registering a `yjsMaterializer`. Relay, update log, compaction and materialization semantics: [Yjs worker](../yjs/README.md).
-
-With Yjs on, a description saves through the relay only, never as a REST write, so it never enters the replay queue. A description written through the API (REST, MCP, an import) reaches open editors as an update in place, and deleting the entity ends its editing sessions, which then show it as deleted. A document the user opened for editing is stored per user ([Client](./CLIENT.md#the-per-user-database)), so it opens from storage and stays editable offline. When the relay is out of reach but the API answers, the editor syncs over HTTP (pull and push through the API) and switches back once the socket syncs; a document never opened stays read-only offline. An edit no server has confirmed stays stored until one does, and an edit that can no longer be saved (access lost, entity deleted) is offered to copy before it is discarded.
+The template collaborates on attachment descriptions through the Yjs relay (`services.yjs.enabled`); an app adds a product by registering a `yjsMaterializer`. With Yjs on, a description saves through the relay only, never as a REST write, so it never enters the replay queue. Relay, update log, compaction, materialization and what an editor does offline: [Yjs worker](../yjs/README.md).
 
 The cache takes a Yjs-owned field, the description or a column derived from it (`registerYjsOwnedFields`), only from a server write of it. When a synced row carries the cached copy's `stx.fieldTimestamps` stamp for the field, the cached value stays, so a read that lags the relay cannot undo a collaborative patch. A create stamps no field, so a field neither row stamps counts as unwritten as well. A derived column has no stamp of its own and follows the description's.
-
-An app that shows a description in place, a static view that turns into the editor, builds it on `useDescriptionSlot` and `<DescriptionLayers>` (`frontend/src/modules/common/blocknote/`). One editor instance is warmed behind the static and handed back to it without a blink, a checklist toggle on the static commits like an edit, and the hook cools warm editors the app forgets. The `common/blocknote/DescriptionSlot` story runs it.
 
 ## Reference
 

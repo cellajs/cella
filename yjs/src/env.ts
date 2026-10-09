@@ -25,8 +25,10 @@ const envSchema = workerEnvBase.extend({
   // The backend's internal listener; its routes are not on the public API.
   BACKEND_INTERNAL_URL: z.url().default(`http://localhost:${appConfig.devPorts.internal}`),
   YJS_PORT: z.coerce.number().default(appConfig.devPorts.yjs),
+  // The log listener holds one more connection, outside this pool.
   YJS_DB_POOL_MAX: z.coerce.number().default(10),
 
+  // A relay without a database: in-memory connection limiter, no TLS CA requirement, no log listener and no sweep.
   NODB: z
     .string()
     .default('false')
