@@ -30,14 +30,21 @@ const sizes = [
   'size-26',
 ];
 
-/** Letters scale with the avatar; up to size-6 only the first initial shows. The bordered size-7 is the main nav avatar. */
+const sizeRows = [
+  { name: 'Flip van Haaren', type: 'user' },
+  { name: 'Mia Wu', type: 'user' },
+  { name: 'Shareworks', type: 'user' },
+  { name: 'Acme Corp', type: 'organization' },
+] as const;
+
+/** Letters scale with the avatar. A user shows a second initial above size-6, other entities always show one. The bordered size-7 is the main nav avatar. */
 export const Sizes: Story = {
   render: () => (
     <div className="flex flex-col gap-4">
-      {['Flip van Haaren', 'Mia Wu', 'Shareworks'].map((name, index) => (
+      {sizeRows.map(({ name, type }, index) => (
         <div key={name} className="flex items-center gap-4">
           {sizes.map((size) => (
-            <EntityAvatar key={size} id={String(index)} name={name} type="user" className={size} />
+            <EntityAvatar key={size} id={String(index)} name={name} type={type} className={size} />
           ))}
         </div>
       ))}
