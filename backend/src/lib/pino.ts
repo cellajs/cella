@@ -1,8 +1,8 @@
 import { appConfig } from 'shared';
 import { createLog, createLogger } from 'shared/pino';
 import { env } from '#/env';
+import { otlpSink, serviceName } from '#/lib/otel-env';
 import { redactedFields } from '#/lib/redact-keys';
-import { otlpSink, serviceName } from '#/lib/tracing';
 
 // NODE_ENV=production in containers disables pino-pretty.
 const isProduction = appConfig.mode === 'production' || env.NODE_ENV === 'production';
