@@ -121,6 +121,30 @@ describe('gradeWorker', () => {
       expect(grade()).toEqual({ status: 'unhealthy', reasons: ['api_away'] });
     });
 
+    it('must not stay degraded while one position fails for more than ten minutes, also when every failure passes: nothing else shows that stall', () => {
+      vi.useFakeTimers();
+      try {
+        // A statement that times out is a failure that passes, so the worker is never stuck on it.
+        const timedOut = Object.assign(new Error('canceling statement due to statement timeout'), { code: '57014' });
+        replicationState.recordFailure('0/50', timedOut);
+
+        vi.advanceTimersByTime(limits.rereadUnhealthyMs - 1000);
+        replicationState.recordFailure('0/50', timedOut);
+        expect(grade()).toEqual({ status: 'degraded', reasons: ['reading_again'] });
+
+        vi.advanceTimersByTime(2000);
+        replicationState.recordFailure('0/50', timedOut);
+        expect(replicationState.stuck).toBe(false);
+        expect(grade()).toEqual({ status: 'unhealthy', reasons: ['reading_again'] });
+
+        // Progress ends it: the next position starts its own clock.
+        replicationState.recordFailure('0/60', timedOut);
+        expect(grade()).toEqual({ status: 'degraded', reasons: ['reading_again'] });
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it.each(['lost', 'unreserved'])('reports a slot whose wal_status is %s', (slotStatus) => {
       world.slotStatus = slotStatus;
 
@@ -186,7 +210,13 @@ describe('gradeWorker', () => {
 
       replicationState.subscribed = false;
       expect(grade()).toEqual({ status: 'degraded', reasons: ['replication_stopped', 'reading_again'] });
-      expect(gradeWorker().details.failure).toEqual({ position: '0/50', count: 1, error: refused.message, passing: false });
+      expect(gradeWorker().details.failure).toEqual({
+        position: '0/50',
+        count: 1,
+        since: expect.any(String),
+        error: refused.message,
+        passing: false,
+      });
     });
 
     it('reports a slot Postgres shows as inactive while the worker is subscribed', () => {

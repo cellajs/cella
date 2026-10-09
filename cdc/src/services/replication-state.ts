@@ -10,6 +10,8 @@ export interface ReplicationFailure {
   position: string;
   /** Failures in a row at this position that the change itself caused. */
   count: number;
+  /** When the first failure at this position was, whatever its cause: how long the worker has made no progress. */
+  since: string;
   error: string;
   /** Whether the last failure said nothing about the change: a connection, a lock, the API being away. */
   passing: boolean;
@@ -59,8 +61,10 @@ class ReplicationStateManager {
     this.failuresInARow += 1;
     const passing = isPassingError(error);
     const message = error instanceof Error ? error.message : String(error);
-    const before = this.failure?.position === position ? this.failure.count : 0;
-    this.failure = { position, count: passing ? before : before + 1, error: message, passing };
+    const samePosition = this.failure?.position === position ? this.failure : null;
+    const before = samePosition?.count ?? 0;
+    const since = samePosition?.since ?? new Date().toISOString();
+    this.failure = { position, count: passing ? before : before + 1, since, error: message, passing };
   }
 
   /** A flush was recorded: whatever failed before is behind the worker. */

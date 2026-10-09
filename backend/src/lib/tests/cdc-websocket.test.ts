@@ -270,6 +270,68 @@ describe('CDC socket: control messages', () => {
   });
 });
 
+describe('CDC socket: whether a worker reads, for the app stream to tell its clients', () => {
+  const MINUTE = 60_000;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    // A worker that reads: whatever a case does starts from there.
+    connect().send(healthReport());
+  });
+
+  it('must not call a worker away for a restart, a deploy or a second read: a minute passes first', () => {
+    const worker = connect();
+    worker.send(healthReport());
+    expect(cdcWebSocketServer.isWorkerAway()).toBe(false);
+
+    worker.fireClose();
+    vi.advanceTimersByTime(MINUTE - 1000);
+    expect(cdcWebSocketServer.isWorkerAway()).toBe(false);
+
+    vi.advanceTimersByTime(1000);
+    expect(cdcWebSocketServer.isWorkerAway()).toBe(true);
+  });
+
+  it('is back the moment a worker reports that it reads', () => {
+    connect().fireClose();
+    vi.advanceTimersByTime(5 * MINUTE);
+    expect(cdcWebSocketServer.isWorkerAway()).toBe(true);
+
+    // Connected is not reading: the first report says whether it does.
+    const worker = connect();
+    expect(cdcWebSocketServer.isWorkerAway()).toBe(true);
+
+    worker.send(healthReport());
+    expect(cdcWebSocketServer.isWorkerAway()).toBe(false);
+  });
+
+  it.each([
+    ['is connected and does not read', healthReport({ status: 'degraded', reasons: ['replication_stopped'], details: { replication: 'stopped' } })],
+    ['reads and is unhealthy, as with a slot two gigabytes behind', healthReport({ status: 'unhealthy', reasons: ['wal_lag_critical'] })],
+    ['is stuck', healthReport({ status: 'unhealthy', reasons: ['worker_stuck'], details: { replication: 'stopped' } })],
+    ['sends a report of another release', { _control: 'health', payload: { replicationStatus: 'active' } }],
+  ])('calls a worker away that %s for a minute', (_case, report) => {
+    const worker = connect();
+    worker.send(report);
+    vi.advanceTimersByTime(MINUTE - 1000);
+    // The same report again, as every 15 seconds: the minute counts from the first.
+    worker.send(report);
+    expect(cdcWebSocketServer.isWorkerAway()).toBe(false);
+
+    vi.advanceTimersByTime(1000);
+    expect(cdcWebSocketServer.isWorkerAway()).toBe(true);
+  });
+
+  it('must not call a slow worker away: degraded and reading delivers, late', () => {
+    const worker = connect();
+    worker.send(healthReport({ status: 'degraded', reasons: ['wal_lag_high'] }));
+    vi.advanceTimersByTime(10 * MINUTE);
+    worker.send(healthReport({ status: 'degraded', reasons: ['wal_lag_high'] }));
+
+    expect(cdcWebSocketServer.isWorkerAway()).toBe(false);
+  });
+});
+
 describe('CDC socket: liveness', () => {
   beforeEach(() => {
     vi.useFakeTimers();

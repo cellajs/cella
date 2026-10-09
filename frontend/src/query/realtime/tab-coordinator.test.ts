@@ -85,7 +85,9 @@ const fakeLocks = new FakeLocks();
 vi.stubGlobal('navigator', { locks: fakeLocks });
 vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel);
 
-const { broadcastCatchup, initTabCoordinator, isLeader, onCatchup, releaseTabLeadership } = await import('./tab-coordinator');
+const { broadcastCatchup, broadcastSyncHealth, initTabCoordinator, isLeader, onCatchup, onSyncHealth, releaseTabLeadership } = await import(
+  './tab-coordinator'
+);
 
 /** Flush microtasks + timers so lock grants and promotions settle. */
 const tick = () => new Promise((r) => setTimeout(r, 0));
@@ -184,5 +186,56 @@ describe('a catchup answer, between tabs', () => {
     broadcastCatchup(answer, true);
 
     expect(FakeBroadcastChannel.opened?.posted).toContainEqual({ type: 'catchup', response: answer, baselineOnly: true });
+  });
+});
+
+describe("the health of the leader's stream, between tabs", () => {
+  const down = { streamHealthy: false, workerAway: true };
+
+  it('reaches a follower, which has no stream of its own to judge by', async () => {
+    fakeLocks.request('tab-leader', () => new Promise<void>(() => {}));
+    await initTabCoordinator();
+    const heard: unknown[] = [];
+    const stop = onSyncHealth((health) => heard.push(health));
+
+    receive({ type: 'sync-health', health: down });
+    stop();
+    receive({ type: 'sync-health', health: { streamHealthy: true, workerAway: false } });
+
+    expect(heard).toEqual([down]);
+  });
+
+  it('is not acted on by the leader: its own stream says', async () => {
+    await initTabCoordinator();
+    const heard: unknown[] = [];
+    const stop = onSyncHealth((health) => heard.push(health));
+
+    receive({ type: 'sync-health', health: down });
+    stop();
+
+    expect(heard).toEqual([]);
+  });
+
+  it('is said again by the leader to a tab that opens later: every tab announces its version as it opens', async () => {
+    await initTabCoordinator();
+    broadcastSyncHealth(down);
+    const posted = FakeBroadcastChannel.opened?.posted ?? [];
+    const saidBefore = posted.filter((message) => (message as { type: string }).type === 'sync-health').length;
+
+    receive({ type: 'schema-version', version: 1 });
+
+    expect(posted.filter((message) => (message as { type: string }).type === 'sync-health')).toHaveLength(saidBefore + 1);
+    expect(posted.at(-1)).toEqual({ type: 'sync-health', health: down });
+  });
+
+  it('must not be answered by a follower: it only knows what it was told', async () => {
+    fakeLocks.request('tab-leader', () => new Promise<void>(() => {}));
+    await initTabCoordinator();
+    const posted = FakeBroadcastChannel.opened?.posted ?? [];
+    const saidBefore = posted.length;
+
+    receive({ type: 'schema-version', version: 1 });
+
+    expect(posted.slice(saidBefore)).toEqual([]);
   });
 });

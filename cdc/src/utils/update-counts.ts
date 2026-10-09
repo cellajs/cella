@@ -57,30 +57,18 @@ export function getCountDeltas(
       }
     }
 
-    // Host references per embedded id; embedding cleanup rewrites soft-deleted references and emits their updates.
+    // How many countable hosts hold each embedded id, kept on the embedded row's own counter. It follows the host's
+    // countable set like every count, so a soft delete takes the host's references off and a restore puts them back:
+    // what the recount gives, which reads live and published hosts only.
     for (const embedding of appConfig.productEmbeddings) {
-      if (embedding.hostProduct !== tableMeta.type) continue;
+      if (embedding.hostProduct !== tableMeta.type || countAction === null) continue;
       const col = embedding.hostColumn;
       const counterKey = `e:c:${embedding.hostProduct}`;
+      const heldBefore = countAction === 'create' ? [] : getArrayValue(oldRow ?? newRow, col);
+      const heldAfter = countAction === 'delete' ? [] : getArrayValue(newRow, col);
 
-      if (action === 'delete') {
-        const ids = getArrayValue(oldRow ?? newRow, col);
-        for (const id of ids) {
-          deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
-        }
-      } else if (action === 'create') {
-        const ids = getArrayValue(newRow, col);
-        for (const id of ids) {
-          deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
-        }
-      } else if (action === 'update' && oldRow) {
-        const oldIds = getArrayValue(oldRow, col);
-        const newIds = getArrayValue(newRow, col);
-        const added = newIds.filter((id) => !oldIds.includes(id));
-        const removed = oldIds.filter((id) => !newIds.includes(id));
-        for (const id of added) deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
-        for (const id of removed) deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
-      }
+      for (const id of heldAfter) if (!heldBefore.includes(id)) deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
+      for (const id of heldBefore) if (!heldAfter.includes(id)) deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
     }
 
     return deltas;

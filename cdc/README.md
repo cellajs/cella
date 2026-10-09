@@ -59,17 +59,17 @@ The worker reads one publication through one replication slot. It tracks the tab
 
 ### Collect
 
-The worker holds a source transaction until its commit. That lets it drop the noise a cascade makes: the child deletes that follow a deleted channel. What remains joins a flush. A flush takes whole source transactions in commit order, and one flush runs at a time. A worker that falls behind stops reading until its pending changes are flushed, so the backlog waits in Postgres and not in the worker.
+The worker holds a source transaction until its commit. That lets it drop the noise a cascade makes: the child deletes that follow a deleted channel. Those rows are no activity, and they still leave the counts of every channel that remains above the deleted one. For an app with product embeddings the worker also drops a host update that does nothing but take a deleted row out of its references; an update that changed anything else stays a change. What remains joins a flush. A flush takes whole source transactions in commit order, and one flush runs at a time. A worker that falls behind stops reading until its pending changes are flushed, so the backlog waits in Postgres and not in the worker.
 
 ### Record
 
-A flush is recorded in one transaction of the worker: the activities, the sequence values, the counter changes and the `seq` stamp on each row. Sequence values are reserved per organization, one contiguous range per flush, and go to product creates and updates in commit order across entity types. A soft-delete and a restore count as a delete and a create.
+A flush is recorded in one transaction of the worker: the activities, the sequence values, the counter changes and the `seq` stamp on each row. Sequence values are reserved per organization, one contiguous range per flush, and go to product creates and updates in commit order across entity types. A soft-delete and a restore count as a delete and a create, for a row's own count and for the uses of the rows it embeds.
 
 Recording happens once per change, however often the change arrives. An activity's id comes from the commit position of its source transaction and the place of the change in it, so a second delivery inserts nothing, and only an inserted activity gets a sequence value and counts.
 
 ### Hand over
 
-After the commit the worker hands the changes to the API. A row that is no product (a membership, a tenant, a channel) goes alone and in commit order, because its listeners act on that one row. Product rows go as one message per audience, with a list of its rows. The API turns a list of one into a notification that carries the row's `stx`, so the tab that wrote it recognizes its own change and fetches nothing. Then the worker acknowledges the flush.
+After the commit the worker hands the changes to the API. A row that is no product (a membership, a tenant, a channel) goes alone and in commit order, because its listeners act on that one row. Product rows go as one message per audience, with a list of its rows. The API turns a list of one into a notification that carries the row's `stx`, so the tab that wrote it recognizes its own change and fetches nothing. For an app with product embeddings the worker then takes a deleted row out of the hosts that referenced it, and counts the uses it removes: that write is its own and comes back through the stream as no activity. Then the worker acknowledges the flush.
 
 ## Internal API channel
 
@@ -87,7 +87,7 @@ There is one way a failure is handled: the worker acknowledges nothing, forgets 
 
 | Failure | What the worker does |
 | --- | --- |
-| A flush or a change fails | Reads again. A failure that says nothing about the change (the connection, a lock, the API away) is read again for as long as it lasts. Five failures in a row that the change itself caused make the worker stuck: it reports unhealthy and rebuilds. |
+| A flush or a change fails | Reads again. A failure that says nothing about the change (the connection, a lock, the API away) is read again for as long as it lasts. Five failures in a row that the change itself caused make the worker stuck: it reports unhealthy and rebuilds. A position that keeps failing for ten minutes is reported unhealthy too, whatever the cause: a failure that passes never makes the worker stuck. |
 | The API is away | Records nothing. The stream is held, Postgres keeps the changes, and the worker reads on when the socket is back. |
 | Another worker holds the slot (a rolling deploy) | Retries until the slot is free, and reports degraded meanwhile. |
 | The WAL cannot help: the slot is gone or invalidated, the counters are empty, or the worker is stuck | A lost case: the worker rebuilds its books from the tables and every client refetches. See [Verify and rebuild](#verify-and-rebuild). |
@@ -124,7 +124,7 @@ What a lost case costs: rows changed while the slot was gone, or in a given-up b
 - **`REPLICA IDENTITY FULL` is mandatory:** a delete needs the old row. Publication column lists are therefore unavailable, and the worker strips large columns itself, so a consumer must tolerate their absence from the row data.
 - **Only one worker may read the slot.**
 - **A source transaction is held whole, up to 100,000 changes.** A larger one fails, the worker gets stuck on it and rebuilds: its rows are counted and get no activity. Write a backfill in smaller transactions.
-- **WAL retention is the recovery margin.** Postgres needs `wal_level=logical` and a `max_slot_wal_keep_size`: without that limit, a worker that is down keeps WAL until the disk is full.
+- **WAL retention is the recovery margin.** Postgres needs `wal_level=logical` and a `max_slot_wal_keep_size`: without that limit, a worker that is down keeps WAL until the disk is full. A managed provider may not offer the limit: [Deployment](../cella/DEPLOYMENT.md#overview) says what holds then.
 - **The worker's role needs `REPLICATION` and an effective RLS bypass** (it owns the tables and none forces row-level security, or it holds `BYPASSRLS`). Without the bypass a `seq` stamp changes zero rows. The worker reads nothing and reports unhealthy while either is missing.
 - **The worker cannot hold the API's rows.** A flush locks the product rows it stamps, and server-side timeouts on the worker's sessions make Postgres take those locks back from a worker that hangs or is cut off.
 

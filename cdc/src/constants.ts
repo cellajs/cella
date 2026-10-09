@@ -67,6 +67,11 @@ export const RESOURCE_LIMITS = {
   health: {
     /** How long the API may be away before the worker reports unhealthy: by then it is an outage of sync, not a restart. */
     apiAwayUnhealthyMs: 5 * 60e3,
+    /**
+     * How long the worker may read one position again before it reports unhealthy. A failure that passes (a busy
+     * database, a statement that timed out) never makes it stuck, however often it repeats: this is what shows a stall.
+     */
+    rereadUnhealthyMs: 10 * 60e3,
     /** Slot lag from which the worker reports degraded: it is behind, and the WAL still holds everything. */
     walLagDegradedBytes: 50 * 1024 * 1024,
     /** Slot lag that is logged as a warning. */

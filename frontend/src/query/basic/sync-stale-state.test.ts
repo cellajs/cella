@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { isSyncDeliveryTrusted, setSyncDeliveryTrusted, setSyncStreamHealthy, syncStaleTime } from './sync-stale-state';
+import { isSyncDeliveryTrusted, setSyncDeliveryTrusted, setSyncStreamHealthy, setSyncWorkerAway, syncStaleTime } from './sync-stale-state';
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 
@@ -9,10 +9,12 @@ describe('syncStaleTime freshness contract', () => {
   beforeEach(() => {
     setSyncStreamHealthy(true);
     setSyncDeliveryTrusted(true);
+    setSyncWorkerAway(false);
   });
   afterEach(() => {
     setSyncStreamHealthy(true);
     setSyncDeliveryTrusted(true);
+    setSyncWorkerAway(false);
   });
 
   it('is infinite while the stream is healthy and deliveries are trusted (catchup owns freshness)', () => {
@@ -34,6 +36,14 @@ describe('syncStaleTime freshness contract', () => {
     setSyncDeliveryTrusted(false);
     expect(isSyncDeliveryTrusted()).toBe(false);
     expect(syncStaleTime()).toBe(FIVE_MINUTES);
+  });
+
+  it("must not trust an open stream while the server's worker is away: it is healthy and brings nothing", () => {
+    setSyncWorkerAway(true);
+    expect(syncStaleTime()).toBe(FIVE_MINUTES);
+
+    setSyncWorkerAway(false);
+    expect(syncStaleTime()).toBe(Number.POSITIVE_INFINITY);
   });
 
   it('restores infinite freshness once the stream is healthy again and trust is regained', () => {

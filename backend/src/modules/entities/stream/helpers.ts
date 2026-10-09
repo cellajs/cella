@@ -36,20 +36,30 @@ export async function writeError(stream: SSEStreamingApi, payload: StreamErrorPa
 }
 
 /**
- * A `ping` event with empty data. EventSource hands a named event to client code and hides a comment line, so this is
- * how a client tells a live stream from a dead one. It also keeps the socket and any proxies from idling out.
+ * What a ping of the app stream says while no CDC worker has been reading for a minute. Any other ping is empty: live
+ * changes arrive as they happen.
  */
-async function writePing(stream: SSEStreamingApi): Promise<void> {
-  await stream.writeSSE({ event: 'ping', data: '' });
+export const WORKER_AWAY_PING = 'worker_away';
+
+/**
+ * A `ping` event. EventSource hands a named event to client code and hides a comment line, so this is how a client
+ * tells a live stream from a dead one. It also keeps the socket and any proxies from idling out. Its data is the one
+ * standing fact a stream has to tell, repeated with every ping so a client that missed it hears it at the next.
+ */
+async function writePing(stream: SSEStreamingApi, data: string): Promise<void> {
+  await stream.writeSSE({ event: 'ping', data });
 }
 
 /**
  * Sends a ping at once and then every 30 seconds, until the client aborts or the server closes the stream; `write`
  * swallows errors, so the flags are the only exit.
+ * @param stream - The stream to keep.
+ * @param pingData - Read for every ping; empty by default.
+ * @param intervalMs - The time between two pings.
  */
-export async function keepAlive(stream: SSEStreamingApi, intervalMs = 30000): Promise<void> {
+export async function keepAlive(stream: SSEStreamingApi, pingData: () => string = () => '', intervalMs = 30000): Promise<void> {
   while (!stream.closed && !stream.aborted) {
-    await writePing(stream);
+    await writePing(stream, pingData());
     await stream.sleep(intervalMs);
   }
 }

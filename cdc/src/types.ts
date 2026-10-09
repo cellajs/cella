@@ -39,5 +39,10 @@ export interface PendingEvent {
   index?: number;
   /** Id of the change's source transaction, from its BEGIN: it tells whether a recount already saw the change. */
   xid?: number;
+  /**
+   * On the delete of a channel: what the rows that went with it take off the counts of the channels that remain, per
+   * channel key. Their own deletes are no change the worker keeps, so this change carries their counts.
+   */
+  cascadeCounts?: Map<string, Record<string, number>>;
   result: ParseMessageResult;
 }

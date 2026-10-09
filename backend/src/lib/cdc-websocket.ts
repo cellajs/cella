@@ -1,7 +1,7 @@
 import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { z } from '@hono/zod-openapi';
-import { isProduct, isValidEventType } from 'shared';
+import { appConfig, isProduct, isValidEventType } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { type WebSocket, WebSocketServer } from 'ws';
 import { modeSecret } from '#/env';
@@ -87,6 +87,12 @@ export interface CdcWorkerHealth {
   generation: number;
 }
 
+/**
+ * How long no worker may read before clients are told. A restart, a deploy and a second read of a failed flush are
+ * shorter than this.
+ */
+const WORKER_AWAY_AFTER_MS = 60_000;
+
 /** The grades a health report may carry; one with another grade is unreadable. */
 const workerGrades: readonly unknown[] = ['healthy', 'degraded', 'unhealthy'] satisfies CdcWorkerHealth['status'][];
 
@@ -106,6 +112,11 @@ class CdcWebSocketServer {
   private _workerHealth: { health: CdcWorkerHealth | null; receivedAt: Date } | null = null;
   private _generation: number | null = null;
   private generationListeners: ((generation: number) => void)[] = [];
+  /**
+   * Since when no worker reads for this process: none is connected, or the one that is reports that it does not read
+   * or that it is unhealthy. Null while one reads. A process that just started has no worker yet.
+   */
+  private notReadingSince: number | null = Date.now();
 
   /** Completes the handshake of an upgrade the internal listener authenticated and takes the connection. */
   accept(request: IncomingMessage, socket: Duplex, head: Buffer): void {
@@ -120,8 +131,9 @@ class CdcWebSocketServer {
   private handleConnection(ws: WebSocket): void {
     const replaced = this.currentConnection;
     this.currentConnection = ws;
-    // A health report belongs to the connection it arrived on.
+    // A health report belongs to the connection it arrived on, and so does the word that its worker reads.
     this._workerHealth = null;
+    this.noteReading(false);
     this.resetIdleTimer();
 
     if (replaced) {
@@ -229,7 +241,24 @@ class CdcWebSocketServer {
     const payload = (message.payload ?? {}) as Partial<CdcWorkerHealth>;
     const readable = workerGrades.includes(payload.status) && Array.isArray(payload.reasons);
     this._workerHealth = { health: readable ? (payload as CdcWorkerHealth) : null, receivedAt: new Date() };
+    // A report this process cannot read says nothing of reading: it is taken as none, like the messages beside it.
+    this.noteReading(readable && payload.status !== 'unhealthy' && payload.details?.replication === 'active');
     this.noteGeneration(payload.generation);
+  }
+
+  /** Keeps since when no worker reads: the moment reading stopped, until it starts again. */
+  private noteReading(reading: boolean): void {
+    if (reading) this.notReadingSince = null;
+    else this.notReadingSince ??= Date.now();
+  }
+
+  /**
+   * Whether no CDC worker has been reading for a minute. Live changes then reach clients late, so the app stream tells
+   * them and they fall back to a stale time. An app that runs no worker has nothing to wait for and is never away.
+   */
+  isWorkerAway(): boolean {
+    if (!appConfig.services.cdc.enabled) return false;
+    return this.notReadingSince !== null && Date.now() - this.notReadingSince >= WORKER_AWAY_AFTER_MS;
   }
 
   /** Starts the idle time anew; a connection that sends no message for 90 seconds is closed. */
@@ -249,6 +278,7 @@ class CdcWebSocketServer {
     }
     this.currentConnection = null;
     this._workerHealth = null;
+    this.noteReading(false);
   }
 
   /** The worker's latest health report on the live connection; `health` is null when its shape could not be read. */

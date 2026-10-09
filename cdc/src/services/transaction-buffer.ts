@@ -8,13 +8,21 @@ import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent } from '../types';
 import { channelIdColumnKeys } from '../utils/channel-columns';
 import { commitTimeMs } from '../utils/commit-time';
+import { mergeDelta } from '../utils/compute-unified-deltas';
+import { getCountDeltas } from '../utils/update-counts';
 import { TransactionTooLargeError } from './failure';
+
+/** Prefix of the counter keys that count rows: what a cascaded delete takes off the channels above it. */
+const ENTITY_COUNT_PREFIX = 'e:c:';
 
 /**
  * Buffers the changes of one source transaction and suppresses cascaded deletes as they arrive. Tracking
  * deleted channel ids bounds memory to surviving changes regardless of cascade size; changes outside
  * a transaction pass through directly. A transaction leaves the buffer whole, at its COMMIT, however
  * large it is or long it takes to arrive: a part of one is never emitted.
+ *
+ * A suppressed delete is no activity, and it still counted: its row leaves the counts of every channel above the one
+ * that was deleted. Those counts are summed per channel as the deletes arrive and leave with the channel's own delete.
  */
 export class TransactionBuffer {
   private activeXid: number | null = null;
@@ -32,6 +40,9 @@ export class TransactionBuffer {
 
   /** Count of changes suppressed in the current transaction. */
   private suppressedCount = 0;
+
+  /** What the suppressed deletes of the current transaction take off the row counts, per channel key. */
+  private cascadeCounts = new Map<string, Record<string, number>>();
 
   private onSurvivingEvents: (events: PendingEvent[]) => Promise<void>;
 
@@ -83,6 +94,7 @@ export class TransactionBuffer {
     }
 
     if (this.isCascadedDelete(result)) {
+      this.countCascadedDelete(result);
       this.suppressedCount++;
       return;
     }
@@ -100,11 +112,16 @@ export class TransactionBuffer {
   /** Emits the surviving buffered changes; a second pass catches child deletes that preceded their parent. */
   async onCommit(): Promise<void> {
     // Children that preceded their parent delete in WAL order; the parent-first case is already gone.
-    const kept = this.pendingEvents.filter((event) => !this.isCascadedDelete(event.result));
+    const kept: PendingEvent[] = [];
+    for (const event of this.pendingEvents) {
+      if (this.isCascadedDelete(event.result)) this.countCascadedDelete(event.result);
+      else kept.push(event);
+    }
     const suppressedCount = this.suppressedCount + this.pendingEvents.length - kept.length;
     if (suppressedCount > 0) {
       log.info('Suppressed cascaded delete events', { suppressedCount, processedCount: kept.length, deletedChannelIds: [...this.deletedChannelIds] });
     }
+    this.attachCascadeCounts(kept);
     this.reset();
 
     // Deletes of embedded product A plus updates of its host B: the B updates are cascade noise.
@@ -123,6 +140,26 @@ export class TransactionBuffer {
     this.pendingEvents = [];
     this.deletedChannelIds.clear();
     this.suppressedCount = 0;
+    this.cascadeCounts = new Map();
+  }
+
+  /** Sums what a suppressed delete takes off the row counts. The row is dropped; only numbers per channel are kept. */
+  private countCascadedDelete({ tableMeta, activity, rowData, oldRowData }: ParseMessageResult): void {
+    for (const { channelKey, deltas } of getCountDeltas(tableMeta, activity, rowData, oldRowData ?? null)) {
+      const counts = Object.fromEntries(Object.entries(deltas).filter(([key]) => key.startsWith(ENTITY_COUNT_PREFIX)));
+      if (Object.keys(counts).length > 0) mergeDelta(this.cascadeCounts, channelKey, counts);
+    }
+  }
+
+  /**
+   * Hands the summed counts to the first channel delete that survives: recorded with it, once. Counts on a channel
+   * this transaction deleted are left out: its counter row is nobody's book any more.
+   */
+  private attachCascadeCounts(kept: PendingEvent[]): void {
+    for (const channelId of this.deletedChannelIds) this.cascadeCounts.delete(channelId);
+    if (this.cascadeCounts.size === 0) return;
+    const carrier = kept.find(({ result: { activity } }) => activity.action === 'delete' && activity.entityType && isChannel(activity.entityType));
+    if (carrier) carrier.cascadeCounts = this.cascadeCounts;
   }
 
   /** Whether a change is the delete of a row under a channel this transaction deleted, by the activity's channel id columns. */

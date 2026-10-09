@@ -2,6 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { streamSSE } from 'hono/streaming';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
+import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import '#/modules/entities/entities-listeners';
 import { entityRoutes } from '#/modules/entities/entities-routes';
 import { appCatchupOp, getLatestUserActivityId } from '#/modules/entities/operations/app-catchup';
@@ -12,7 +13,7 @@ import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 import { isSystemAccessAllowed } from '#/utils/system-access';
 import type { AppStreamSubscriber } from './helpers/dispatch-to-stream';
-import { keepAlive, streamSubscriberManager, writeOffset } from './stream';
+import { keepAlive, streamSubscriberManager, WORKER_AWAY_PING, writeOffset } from './stream';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -68,7 +69,8 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
       log.debug('App stream subscriber disconnected', { subscriberId: subscriber.id });
     });
 
-    await keepAlive(stream);
+    // Every ping says whether a CDC worker reads: without one, live changes are late and the client falls back to a stale time.
+    await keepAlive(stream, () => (cdcWebSocketServer.isWorkerAway() ? WORKER_AWAY_PING : ''));
     // biome-ignore lint/suspicious/noExplicitAny: streamSSE returns Response, not TypedResponse expected by OpenAPI handler
   }) as any;
 });

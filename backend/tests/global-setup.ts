@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
-import { testDatabaseUrl, testWorkerDatabase, withDatabase } from 'shared/test-db';
+import { cdcTestDatabase, testDatabaseUrl, testWorkerDatabase, withDatabase } from 'shared/test-db';
 import type { TestProject } from 'vitest/node';
 import { crossMark, startSpinner, succeedSpinner } from '#/utils/console';
 
@@ -77,10 +77,11 @@ export default async function globalSetup(project: TestProject) {
   `);
 
   // Backend test files run in parallel, each worker on its own database (tests/setup.ts); the shared one stays for the yjs
-  // and cdc integration tests. VITEST_POOL_ID runs from 1 to `maxWorkers`, which defaults to one less than the cores.
+  // integration tests. VITEST_POOL_ID runs from 1 to `maxWorkers`, which defaults to one less than the cores. The CDC
+  // worker's integration tests get one more: they drop the slot and empty the books of the database they run on.
   // Created once and then migrated in place, like the shared one.
   const workers = Number(project.config.maxWorkers || project.globalConfig.maxWorkers) || os.availableParallelism();
-  const workerDatabases = Array.from({ length: workers }, (_, i) => testWorkerDatabase(i + 1));
+  const workerDatabases = [...Array.from({ length: workers }, (_, i) => testWorkerDatabase(i + 1)), cdcTestDatabase];
   const { rows: existing } = await pool.query<{ datname: string }>('SELECT datname FROM pg_database WHERE datname = ANY($1)', [workerDatabases]);
   for (const database of workerDatabases) {
     if (!existing.some((row) => row.datname === database)) await pool.query(`CREATE DATABASE "${database}"`);

@@ -29,6 +29,13 @@ export const withDatabase = (url: string, database: string) => {
 const poolId = process.env.TEST_DB_PER_WORKER ? process.env.VITEST_POOL_ID : undefined;
 export const testDatabaseName = poolId ? testWorkerDatabase(poolId) : 'postgres';
 
+/**
+ * The database the CDC worker's integration tests own. They drop the slot, change the publication and empty the books,
+ * which no other suite should find done to the database it reads. The backend's global setup creates and migrates it.
+ */
+export const cdcTestDatabase = 'cdc_integration';
+export const testCdcDatabaseUrl = `postgres://postgres:postgres@0.0.0.0:${port}/${cdcTestDatabase}`;
+
 // URLs are derived from the required port and the standard dev role credentials (mirrors backend/compose.yaml).
 export const testDatabaseUrl = `postgres://postgres:postgres@0.0.0.0:${port}/${testDatabaseName}`;
 export const testRuntimeDatabaseUrl = `postgres://runtime_role:dev_password@0.0.0.0:${port}/${testDatabaseName}`;
