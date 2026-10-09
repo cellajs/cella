@@ -89,7 +89,7 @@ class ActivityBus {
       return;
     }
 
-    const span = startSyncSpan(syncSpanNames.activityBusReceive, eventAttrs(event), event.trace?.traceId);
+    const span = startSyncSpan(syncSpanNames.activityBusReceive, eventAttrs(event), event.trace);
 
     recordMessageReceived(event.entityType || 'unknown');
 

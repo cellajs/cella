@@ -69,7 +69,7 @@ interface SpanAttrs {
   [key: string]: string | number | boolean | null | undefined;
 }
 
-/** Runs `fn` in a CDC span and hands it W3C traceId/spanId for `_trace` propagation. */
+/** Runs `fn` in a CDC span and hands it that span's W3C context for `_trace`, which the API continues the trace from. */
 export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => Promise<T>): Promise<T> {
   return tracer.startActiveSpan(name, async (span) => {
     for (const [key, value] of Object.entries(attrs)) {
@@ -78,9 +78,11 @@ export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: Trac
       }
     }
     try {
+      const { traceId, spanId, traceFlags } = span.spanContext();
       const ctx: TraceContext = {
-        traceId: span.spanContext().traceId,
-        spanId: span.spanContext().spanId,
+        traceId,
+        spanId,
+        traceFlags,
         cdcTimestamp: Date.now(),
         lsn: (attrs.lsn as string) ?? undefined,
       };

@@ -1,3 +1,4 @@
+import { type Context, ROOT_CONTEXT, TraceFlags, trace } from '@opentelemetry/api';
 import type { EntityType } from '../../types.ts';
 
 export * from './span-names.ts';
@@ -29,8 +30,19 @@ export interface SpanEvent {
 export interface TraceContext {
   traceId: string;
   spanId: string;
+  /** W3C trace flags of the span, so a process that continues the trace keeps its sampling decision. */
+  traceFlags?: number;
   cdcTimestamp: number;
   lsn?: string;
+}
+
+/**
+ * The context of a span that ran in another process, for starting a span as its child: both then belong to one trace.
+ * A context that carries no flags counts as sampled.
+ */
+export function remoteParentContext(parent: Pick<TraceContext, 'traceId' | 'spanId' | 'traceFlags'>): Context {
+  const { traceId, spanId, traceFlags = TraceFlags.SAMPLED } = parent;
+  return trace.setSpanContext(ROOT_CONTEXT, { traceId, spanId, traceFlags, isRemote: true });
 }
 
 export interface SpanStoreOptions {

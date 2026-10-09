@@ -1,5 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
-import { activityAttrs, cdcAttrs, computeSpanStats, createSpanStore, eventAttrs, type SpanData } from './tracing.ts';
+import { context, propagation, trace } from '@opentelemetry/api';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { createOtelSDK } from '../otel.ts';
+import { collectingExporter } from '../testing/telemetry.ts';
+import { activityAttrs, cdcAttrs, computeSpanStats, createSpanStore, eventAttrs, remoteParentContext, type SpanData } from './tracing.ts';
 
 function makeSpan(overrides: Partial<SpanData> = {}): SpanData {
   return {
@@ -170,5 +174,44 @@ describe('attribute helpers', () => {
       'event.subjectId': 'x',
       'event.entityType': 'attachment',
     });
+  });
+});
+
+describe('remoteParentContext', () => {
+  afterEach(() => {
+    trace.disable();
+    context.disable();
+    propagation.disable();
+  });
+
+  const sender = { traceId: '0af7651916cd43dd8448eb211c80319c', spanId: 'b7ad6b7169203331' };
+
+  /** Spans exported after starting one span per given parent, each in the context `remoteParentContext` builds. */
+  const exportChildrenOf = async (...parents: Parameters<typeof remoteParentContext>[0][]) => {
+    const exported: ReadableSpan[] = [];
+    const otel = createOtelSDK({
+      serviceName: 'test-service',
+      traceExporter: collectingExporter(exported),
+      autoInstrumentations: false,
+      flushOnShutdown: true,
+    });
+    otel.start();
+    for (const parent of parents) trace.getTracer('test').startSpan('receive', {}, remoteParentContext(parent)).end();
+    await otel.shutdown();
+    return exported;
+  };
+
+  it("starts a span in the sender's trace, as a child of the sender's span", async () => {
+    const [span] = await exportChildrenOf(sender);
+
+    expect(span?.spanContext().traceId).toBe(sender.traceId);
+    expect(span?.parentSpanContext?.spanId).toBe(sender.spanId);
+  });
+
+  it('keeps the sampling decision of a sender that did not sample its span', async () => {
+    const exported = await exportChildrenOf({ ...sender, traceFlags: 0 }, { ...sender, traceFlags: 1 });
+
+    // Positive control: the sampled sender's child is exported, so the missing one was dropped by the flag.
+    expect(exported).toHaveLength(1);
   });
 });
