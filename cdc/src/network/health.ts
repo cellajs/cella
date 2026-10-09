@@ -63,7 +63,8 @@ export function getHealthResponse(): { response: HealthResponse; httpStatus: num
 
   // The slot no longer holds the WAL the worker needs, or nothing reads it while the worker believes it does.
   if (metrics.slotStatus === 'unreserved' || metrics.slotStatus === 'lost') status = 'unhealthy';
-  if (replStatus === 'active' && metrics.slotActive === false && status === 'healthy') status = 'degraded';
+  // Known only after the first poll of the slot: before it there is nothing to judge.
+  if (replStatus === 'active' && metrics.slotStatus !== null && metrics.slotActive === false && status === 'healthy') status = 'degraded';
 
   // Same saturation thresholds the yjs relay uses for its health status.
   const eventLoopLagMs = getEventLoopLagMs();

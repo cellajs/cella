@@ -73,14 +73,36 @@ There is one way a failure is handled: the worker confirms nothing, forgets what
 | API away | The WebSocket drops. Slot lag is checked every 10 seconds (1 GB warns, 2 GB unhealthy) | Nothing is consumed: a flush waits for the socket, the stream is held and the WAL keeps the changes. A new subscription waits for the socket too. The socket reconnects with a backoff of 1 to 5 seconds, and the worker reads on. A send the API did not take fails its flush. |
 | Slot held by another worker (rolling deploy) | PostgreSQL error `55006`, logged with the holding walsender | Retry the subscription 12 times at 500 ms, then every 5 seconds (the same cadence as any subscribe error). |
 | Unexpected data | Draft row, or product row without an organization | Drop the draft row (rate-limited warning). A product row without an organization fails its flush: see the first row. |
-| Slot dropped or `lost` | Unacknowledged changes gone | Operator recalculates counters. The activity history keeps a gap. A missing publication makes the worker drop and recreate its slot once, discarding unacknowledged WAL. |
+| The WAL cannot help: the slot is gone, invalidated or older than its publication, the counters are empty, or one position failed five reads | Checked before every subscription | A lost case: the worker rebuilds its books from the tables and every client refetches. See [Verify and rebuild](#verify-and-rebuild). |
+
+## Verify and rebuild
+
+The failure handling has three levels and no more. The core records a change once. Whatever fails is read again from the slot. And when the WAL cannot help, the books (the counters, the sequence counter, the frontiers) are rebuilt from the tables. The last level is one operation in two forms, run by the worker itself with writes going on (`src/pipeline/verify.ts`).
+
+It counts every counter from the tables in one `REPEATABLE READ` transaction and writes a logical message right after taking that snapshot. Until the message arrives in the stream, a transaction the stream delivers may already be in the count. Its transaction id, from BEGIN, says so (`src/services/fence.ts`).
+
+- **Verify** compares and runs beside the stream. What was stored at the snapshot, plus the plain counts (`e:c:`, `m:c:`) of the changes the count already saw, must equal the count. `sequence` and the frontiers may be ahead of the tables, never behind. Right books: nothing is written. Wrong books: each key is corrected by its difference. It runs once a day at 03:00 UTC, on `pnpm sync:verify`, and at the end of every bench scenario and pipeline test.
+- **Rebuild** replaces and runs between two subscriptions. The counters are written from the count, and until the marker arrives a transaction the count saw adds nothing to the plain counts. The fence is kept in `sync_state.fence`, so a restart changes nothing.
+
+A rebuild starts by itself in the lost cases:
+
+| Lost case | What the worker does first |
+| --- | --- |
+| No slot, or one the server invalidated, on a database with a history | Makes a new slot at the current position |
+| A slot that predates its publication | Drops it, once per worker lifetime; the next attempt makes a new one |
+| `channel_counters` is empty on a database with a history (the table is `UNLOGGED`: a crash or a failover empties it) | Nothing |
+| One position failed five reads in a row because of the change there | Moves the slot to the current position, which gives up everything it had not recorded. At most once in ten minutes |
+
+Every correction and every rebuild writes a row to `sync_incidents` (when, why, the positions given up, the keys that were wrong), logs an error and adds one to `sync_state.generation`. The worker's health push carries the generation; when it moves, the API ends every app stream with `resync`, and the catchup of each new connection brings the generation that makes the client refetch.
+
+What a lost case costs: rows changed in a gap or in a given-up backlog keep the `seq` they had and get no activity and no notification. Counts, sequence values and every client's data are right again afterwards.
 
 ## Operational constraints
 
 - **Adding a tracked table takes two changes:** the backend's entity or resource table map, then rerunning the CDC migration. Before every subscription the worker checks that the publication holds exactly the tables of its registry, that each has `REPLICA IDENTITY FULL` and that `wal_level` is `logical`. While that does not hold it reads nothing and reports unhealthy with what is wrong.
 - **`REPLICA IDENTITY FULL` is mandatory** (deletes need the old tuple), so publication column lists are unavailable and large columns are stripped in the worker.
 - **Only one worker may consume the slot.**
-- **A source transaction is held whole.** The worker buffers it until its commit and records it in one database transaction, so the largest transaction the app writes has to fit in the worker's memory.
+- **A source transaction is held whole, up to 100,000 changes.** The worker buffers it until its commit and records it in one database transaction, at about 2 KB a change. A larger one fails where it passes the limit and ends in a rebuild: its rows are counted, and get no activity. Write a backfill in smaller transactions.
 - **WAL retention is the recovery margin.** Needs `wal_level=logical`, slot/sender capacity, a `REPLICATION` role, and a `max_slot_wal_keep_size`: without one a worker that is down keeps WAL until the disk is full, and the worker warns about that at startup.
 - **The worker cannot hold the API's rows.** A flush locks the product rows it stamps. Every session of the worker's pool has a lock timeout of 10 seconds, a statement timeout of a minute and an idle-in-transaction timeout of 30 seconds, so the server takes those locks back from a worker that hangs or is cut off.
 - **A held stream stays connected.** While a flush holds the stream, the worker repeats its last confirmed position every 10 seconds, inside the server's `wal_sender_timeout`. The replication connection uses TCP keepalive, so a peer that is gone ends the read.
