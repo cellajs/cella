@@ -14,6 +14,7 @@ const meter = meterProvider.getMeter('app-sync');
 
 const cdcMessagesReceived = meter.createCounter('sync.cdc.messages_received', {
   description: 'Messages received from CDC Worker via WebSocket',
+  unit: '{message}',
 });
 
 // OTel tracer
@@ -42,5 +43,5 @@ export function startSyncSpan(name: string, attributes?: Record<string, string |
 // Metric recording
 
 export function recordMessageReceived(entityType: EntityType | 'unknown'): void {
-  cdcMessagesReceived.add(1, { entityType });
+  cdcMessagesReceived.add(1, { entity_type: entityType });
 }

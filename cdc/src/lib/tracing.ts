@@ -38,9 +38,7 @@ meter
   });
 
 meter
-  .createObservableGauge('cdc.ws.messages_sent', {
-    description: 'Total messages sent to backend via WebSocket',
-  })
+  .createObservableCounter('cdc.ws.messages_sent', { description: 'Total messages sent to backend via WebSocket', unit: '{message}' })
   .addCallback(async (result) => {
     const { wsClient } = await import('../network/websocket-client');
     result.observe(wsClient.messagesSent);
@@ -84,7 +82,7 @@ export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: Trac
         spanId,
         traceFlags,
         cdcTimestamp: Date.now(),
-        lsn: (attrs.lsn as string) ?? undefined,
+        lsn: (attrs['cdc.lsn'] as string) ?? undefined,
       };
       const result = await fn(ctx);
       span.setStatus({ code: SpanStatusCode.OK });

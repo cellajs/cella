@@ -17,7 +17,9 @@ import type { AppStreamNotification } from './types';
 export function handleAppStreamNotification(notification: AppStreamNotification): void {
   const { subjectId, action, stx, organizationId, tenantId, channelType, seq, _trace } = notification;
 
-  withSpanSync(syncSpanNames.messageProcess, { entityType: notification.productType, action, entityId: subjectId, _trace }, () => {
+  const spanAttrs = { 'sync.entity_type': notification.productType, 'sync.action': action, 'sync.entity_id': subjectId, _trace };
+
+  withSpanSync(syncSpanNames.messageProcess, spanAttrs, () => {
     // Checked before setOrgTenantId creates the entry: an org the sync store never saw means the SSE connection is not registered on its channel.
     const isUnknownOrg = !!organizationId && !syncStore.getState().orgs[organizationId];
 

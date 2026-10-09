@@ -3,11 +3,12 @@ import { otel } from '#/lib/tracing';
 
 const meter = otel.meterProvider.getMeter('app-lens');
 
-const transformDuration = meter.createHistogram('lens.transform.duration_ms', {
-  description: 'Duration of a doba lens transform (full chain) in milliseconds',
+const transformDuration = meter.createHistogram('lens.transform.duration', {
+  description: 'Duration of a doba lens transform (full chain)',
+  unit: 'ms',
 });
-const stepDuration = meter.createHistogram('lens.step.duration_ms', { description: 'Duration of a single lens migration step in milliseconds' });
-const warnings = meter.createCounter('lens.warnings', { description: 'Warnings emitted during lens transforms' });
+const stepDuration = meter.createHistogram('lens.step.duration', { description: 'Duration of a single lens migration step', unit: 'ms' });
+const warnings = meter.createCounter('lens.warnings', { description: 'Warnings emitted during lens transforms', unit: '{warning}' });
 
 const hooks: RegistryHooks<string> = {
   onTransform: (info) => transformDuration.record(info.durationMs, { from: info.from, to: info.to, ok: info.ok }),

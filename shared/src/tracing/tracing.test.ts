@@ -145,34 +145,34 @@ describe('computeSpanStats', () => {
 
 describe('attribute helpers', () => {
   it('cdcAttrs builds correct attributes', () => {
-    expect(cdcAttrs({ lsn: '0/1234' })).toEqual({ lsn: '0/1234', 'cdc.tag': 'unknown', 'cdc.table': 'unknown' });
+    expect(cdcAttrs({ lsn: '0/1234' })).toEqual({ 'cdc.lsn': '0/1234', 'cdc.tag': 'unknown', 'cdc.table': 'unknown' });
 
-    expect(cdcAttrs({ lsn: '0/5678', tag: 'INSERT', table: 'tasks' })).toEqual({ lsn: '0/5678', 'cdc.tag': 'INSERT', 'cdc.table': 'tasks' });
+    expect(cdcAttrs({ lsn: '0/5678', tag: 'INSERT', table: 'tasks' })).toEqual({ 'cdc.lsn': '0/5678', 'cdc.tag': 'INSERT', 'cdc.table': 'tasks' });
   });
 
   it('activityAttrs builds correct attributes', () => {
     expect(activityAttrs({})).toEqual({
       'activity.type': 'unknown',
       'activity.action': 'unknown',
-      'activity.subjectId': 'unknown',
-      'activity.entityType': null,
+      'activity.subject_id': 'unknown',
+      'activity.entity_type': null,
     });
 
     expect(activityAttrs({ type: 'entity', action: 'create', subjectId: 'abc', entityType: 'attachment' })).toEqual({
       'activity.type': 'entity',
       'activity.action': 'create',
-      'activity.subjectId': 'abc',
-      'activity.entityType': 'attachment',
+      'activity.subject_id': 'abc',
+      'activity.entity_type': 'attachment',
     });
   });
 
   it('eventAttrs builds correct attributes', () => {
-    expect(eventAttrs({ type: 'create' })).toEqual({ 'event.type': 'create', 'event.subjectId': null, 'event.entityType': null });
+    expect(eventAttrs({ type: 'create' })).toEqual({ 'event.type': 'create', 'event.subject_id': null, 'event.entity_type': null });
 
     expect(eventAttrs({ type: 'update', subjectId: 'x', entityType: 'attachment' })).toEqual({
       'event.type': 'update',
-      'event.subjectId': 'x',
-      'event.entityType': 'attachment',
+      'event.subject_id': 'x',
+      'event.entity_type': 'attachment',
     });
   });
 });

@@ -226,7 +226,7 @@ export class StreamManager {
     const isPermanentError = this.isPermanentError(error);
 
     console.error(`[${this.name}] Catchup failed:`, error);
-    reportCriticalError('realtime.catchup_failed', error, { stream: this.name, consecutiveFailures: this.consecutiveFailures });
+    reportCriticalError('realtime.catchup_failed', error, { stream: this.name, consecutive_failures: this.consecutiveFailures });
     this.useStore.getState().setState('error');
 
     // Resolve catchup promise on failure so paused mutations aren't stuck forever
