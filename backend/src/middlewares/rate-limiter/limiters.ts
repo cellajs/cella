@@ -111,9 +111,13 @@ export const mcpRequestLimiter = rateLimiter('limit', 'mcpRequest', ['actorId'],
   description: 'MCP requests per actor: 30 per second',
 });
 
-/** Backpressure for the read fan-out one SSE notification triggers; a 429 rides the client's invalidate-and-backoff. */
+/**
+ * Backpressure for the read fan-out one SSE notification triggers; a 429 rides the client's invalidate-and-backoff.
+ * Counted in process: every list and delta read passes here, and a transaction on each cost as much as the read.
+ */
 export const syncReadLimiter = rateLimiter('limit', 'syncRead', [['userId', 'ip']], {
   limits: { points: 5000, duration: 60 * 60, blockDuration: 60 * 5 },
+  countsInProcess: true,
   description: 'Sync reads per user: 5000 per hour, then blocked for 5 minutes',
 });
 

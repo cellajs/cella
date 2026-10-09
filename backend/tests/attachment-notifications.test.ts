@@ -5,7 +5,7 @@ import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { generateServerHLC } from '#/core/stx';
-import { getSeedDb } from '#/db/db';
+import { baseDb, getSeedDb } from '#/db/db';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
@@ -308,7 +308,11 @@ describe('Attachment mentions (template notification source)', async () => {
       expect((await putDescription(mentionsOf([member.id]), subjectId)).response.status).toBe(200);
 
       const renamed = updatedEvent(tenant.user.id, { subjectId, changedFields: ['name', 'updatedAt'] });
+      // A rename can notify no one on a source without a recipient rule, so the fan-out does not read the row at all.
+      const read = vi.spyOn(baseDb, 'transaction');
+      onTestFinished(() => read.mockRestore());
       expect(await fanOutNotifications(renamed)).toBe(false);
+      expect(read).not.toHaveBeenCalled();
       expect(await inboxOf(member.id, subjectId)).toEqual([]);
     });
 

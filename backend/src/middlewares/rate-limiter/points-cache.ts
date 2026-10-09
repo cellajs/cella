@@ -11,7 +11,7 @@ interface PointsEntry {
 /** Fraction of budget below which requests skip the DB entirely. */
 const FAST_PATH_THRESHOLD = 0.8;
 
-/** Capacity: one entry per unique (tenantId:userId) key. Every write renews the TTL, so eviction drops the least recently written. */
+/** Capacity: one entry per limiter and key. Every write renews the TTL, so eviction drops the least recently written. */
 const MAX_ENTRIES = 50_000;
 
 const WINDOW_MS = 60 * 60 * 1000;

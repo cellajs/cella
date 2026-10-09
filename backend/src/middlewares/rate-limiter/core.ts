@@ -38,9 +38,12 @@ async function openBucketSafely(store: ReturnType<typeof getRateLimiterInstance>
  * @param opts - Limits and middleware metadata.
  */
 export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateLimitKeyPart[], opts?: RateLimiterOpts): RateLimiterHandler => {
-  const { limits, functionName, name, description, getConsumePoints, getPointsBudget } = opts ?? {};
+  const { limits, functionName, name, description, getConsumePoints, getPointsBudget, countsInProcess } = opts ?? {};
   const config = { ...defaultOptions, ...limits };
   const keyPrefix = `${key}_${mode}`;
+  /** The in-process counter keeps one-hour windows, so only an hourly `limit` may use it. */
+  const fastPath = mode === 'limit' && (countsInProcess || getPointsBudget !== undefined);
+  if (fastPath && config.duration !== 60 * 60) throw new Error(`${keyPrefix}: counting in process needs a one-hour window`);
   const isFailMode = mode === 'fail' || mode === 'failseries';
   const store = getRateLimiterInstance({ ...config, keyPrefix, inMemoryBlock: mode === 'limit' });
   /** The buckets a reserved attempt counts in: the route's own and, behind a failure budget, the 24-hour one. */
@@ -81,8 +84,9 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
         const tenantBudget = getPointsBudget ? getPointsBudget(ctx) : null;
         const effectiveBudget = Math.min(tenantBudget !== null && tenantBudget > 0 ? tenantBudget : config.points, config.points);
 
-        // Fast path: an in-process counter skips the DB while the key is well under budget.
-        if (getPointsBudget && tryFastConsume(rateLimitKey, consumePoints, effectiveBudget) === 'allow') {
+        // Fast path: an in-process counter skips the DB while the key is well under budget. Counted per limiter.
+        const fastKey = `${keyPrefix}:${rateLimitKey}`;
+        if (fastPath && tryFastConsume(fastKey, consumePoints, effectiveBudget) === 'allow') {
           await next();
           return;
         }
@@ -95,22 +99,22 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
         if (limitState === null) await openBucketSafely(store, rateLimitKey, config.duration);
 
         // Settle unflushed fast-path consumes with this request's cost, or `syncFromDb` resets the counter to an undercount
-        const debt = getPointsBudget ? takeDebt(rateLimitKey) : 0;
+        const debt = fastPath ? takeDebt(fastKey) : 0;
 
         try {
           const consumeResult = await store.consume(rateLimitKey, consumePoints + debt);
-          if (getPointsBudget) syncFromDb(rateLimitKey, consumeResult.consumedPoints);
+          if (fastPath) syncFromDb(fastKey, consumeResult.consumedPoints);
           // The library only rejects at the static ceiling; the smaller per-tenant budget is enforced here
           if (consumeResult.consumedPoints > effectiveBudget) {
             return rateLimitError(ctx, consumeResult);
           }
         } catch (rlRejected) {
           if (rlRejected instanceof RateLimiterRes) {
-            if (getPointsBudget) syncFromDb(rateLimitKey, rlRejected.consumedPoints);
+            if (fastPath) syncFromDb(fastKey, rlRejected.consumedPoints);
             return rateLimitError(ctx, rlRejected);
           }
           // DB write failed: return the claimed debt so it is settled on a later request.
-          restoreDebt(rateLimitKey, debt);
+          restoreDebt(fastKey, debt);
           throw rlRejected;
         }
 
