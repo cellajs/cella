@@ -130,11 +130,11 @@ export const createLogger = ({
         error: serializeError,
         url: (url: unknown) => (typeof url === 'string' ? scrubUrl(url) : url),
       },
-      // Tag each line with the active OTel span so Maple joins logs to traces, including those
-      // started by the frontend's traceparent.
+      // Tag each line with the active OTel span so the sink joins logs to traces, including those started by the
+      // frontend's traceparent. The OTel transport links a record only when it finds all three keys.
       mixin() {
         const spanContext = trace.getActiveSpan()?.spanContext();
-        return spanContext?.traceId ? { trace_id: spanContext.traceId, span_id: spanContext.spanId } : {};
+        return spanContext?.traceId ? { trace_id: spanContext.traceId, span_id: spanContext.spanId, trace_flags: spanContext.traceFlags } : {};
       },
       formatters: {
         // Keep `level` numeric (10–60) when exporting to OTel so pino-opentelemetry-transport can

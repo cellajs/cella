@@ -1,7 +1,16 @@
 import { randomUUID } from 'node:crypto';
-import { describe, expect, it } from 'vitest';
+import { createRequire } from 'node:module';
+import { type Context, context, propagation, trace } from '@opentelemetry/api';
+import { afterEach, describe, expect, it } from 'vitest';
+import { createOtelSDK } from './otel.ts';
 import { createLog } from './pino.ts';
 import { collectingLogger, failedLookup } from './testing/telemetry.ts';
+
+type LogRecord = { attributes?: Record<string, unknown> };
+// The transport's own step from a log line's fields to the record it exports; it has no public entry.
+const { loadContext } = createRequire(import.meta.url)('pino-opentelemetry-transport/lib/otlp-logger-shim.js') as {
+  loadContext: (record: LogRecord) => LogRecord & { context: Context };
+};
 
 describe('createLogger', () => {
   it('must not leak a secret via a logged key or a logged url', () => {
@@ -56,6 +65,41 @@ describe('createLogger', () => {
     const [line] = parsed();
     expect(JSON.stringify(line)).not.toMatch(/facade_secret|code_secret/);
     expect(line?.msg).toBe('oauth callback failed');
+  });
+});
+
+describe('trace link on exported logs', () => {
+  afterEach(() => {
+    trace.disable();
+    context.disable();
+    propagation.disable();
+  });
+
+  it('links a line logged inside a span to that span once the transport has read it', async () => {
+    const otel = createOtelSDK({
+      serviceName: 'test-service',
+      spanProcessors: [{ onStart: () => {}, onEnd: () => {}, forceFlush: async () => {}, shutdown: async () => {} }],
+      autoInstrumentations: false,
+    });
+    otel.start();
+    const { logger, parsed } = collectingLogger([]);
+
+    const spanContext = trace.getTracer('test').startActiveSpan('work', (span) => {
+      logger.info({ msg: 'inside the span' });
+      span.end();
+      return span.spanContext();
+    });
+    logger.info({ msg: 'outside any span' });
+    await otel.shutdown();
+
+    const [inside = {}, outside = {}] = parsed();
+    const record = loadContext({ attributes: inside });
+    expect(trace.getSpanContext(record.context)).toMatchObject({ traceId: spanContext.traceId, spanId: spanContext.spanId });
+    // The ids move from the attributes into the record's own trace fields.
+    expect(record.attributes).not.toHaveProperty('trace_id');
+    // Positive control: a line outside a span carries no ids and gets no link.
+    expect(outside).not.toHaveProperty('trace_id');
+    expect(trace.getSpanContext(loadContext({ attributes: outside }).context)).toBeUndefined();
   });
 });
 
