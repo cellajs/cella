@@ -65,14 +65,21 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
   if (entityType) {
     const embedding = appConfig.productEmbeddings.find((e) => e.embeddedProduct === entityType);
     if (embedding) {
-      // Soft deletes arrive as updates; the host must drop its embedded copy, so hint a removal.
-      const isRemoval = event.action === 'delete' || first?.deletedAt != null;
+      // Every row of the message is named: a host learns of an embedded change by this hint and nothing else. A soft
+      // delete arrives as an update, and the host drops its copy of that row.
+      const update: string[] = [];
+      const remove: string[] = [];
+      for (const { rowData } of rows) {
+        if (typeof rowData.id !== 'string') continue;
+        if (event.action === 'delete' || rowData.deletedAt != null) remove.push(rowData.id);
+        else update.push(rowData.id);
+      }
       propagation = {
         embeddedProduct: embedding.embeddedProduct,
         hostProduct: embedding.hostProduct,
         hostColumn: embedding.hostColumn,
-        update: isRemoval ? [] : [event.subjectId!],
-        remove: isRemoval ? [event.subjectId!] : [],
+        update,
+        remove,
       };
     }
   }

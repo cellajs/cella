@@ -97,6 +97,8 @@ export function computeBatchUnifiedDeltas(events: PendingEvent[], h: EntityHiera
     for (const { channelKey, deltas } of countDeltas) {
       mergeDelta(countDeltasByChannelKey, channelKey, deltas);
     }
+    // The rows a channel delete took with it: their own deletes were suppressed, and this change carries their counts.
+    for (const [channelKey, deltas] of event.cascadeCounts ?? []) mergeDelta(countDeltasByChannelKey, channelKey, deltas);
   }
 
   return { orgSequenceGroups: Array.from(orgSequenceGroupMap.values()), countDeltasByChannelKey };

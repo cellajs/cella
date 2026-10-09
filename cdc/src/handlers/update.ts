@@ -50,7 +50,7 @@ export function handleUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpda
   if (!isSoftDeleteTransition(rowData, oldRowData) && isAlreadySoftDeleted(rowData, oldRowData)) return null;
 
   // CDC's own cleanup of an embedding column carries no user mutation.
-  if (isEmbeddingCleanupWrite(userChangedFields)) return null;
+  if (isEmbeddingCleanupWrite(tableMeta.type, userChangedFields)) return null;
 
   const activity = createActivity(tableMeta, rowData, 'update', { changedFields: userChangedFields });
 

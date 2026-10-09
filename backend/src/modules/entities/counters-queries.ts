@@ -153,6 +153,19 @@ function channelCounterSelects(): string[] {
     }
   }
 
+  // A channel below the organization is homed too, at its deepest ancestor: the worker counts it there as it does a
+  // product row, and the channel counts of the API read that key for every descendant type.
+  for (const channelType of hierarchy.channelTypes.filter((ct) => ct !== 'organization')) {
+    const homeExpr = deepestAncestorExpr(channelType, 't');
+    if (!homeExpr) continue;
+    selects.push(`
+      SELECT ${homeExpr}, jsonb_build_object('e:c:h:${channelType}', COUNT(*)::int), NOW()
+      FROM ${tbl(channelType)} t
+      WHERE ${homeExpr} IS NOT NULL${livePredicate(channelType, 't')}${publishedPredicate(channelType, 't')}
+      GROUP BY ${homeExpr}
+    `);
+  }
+
   // Home-only stamps: no fan-out to ancestors, and null update maxima are omitted from the JSON.
   for (const entityType of appConfig.productEntityTypes) {
     const tableName = tbl(entityType);

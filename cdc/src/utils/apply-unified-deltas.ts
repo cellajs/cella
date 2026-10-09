@@ -18,7 +18,7 @@ const STAMP_CHUNK_SIZE = 5000;
  * GREATEST(0, existing + delta) per key and max-merges `e:li:`/`e:lu:`/`e:f:` keys. The SQL shape is
  * fixed so PostgreSQL can cache the plan.
  */
-async function applyCounterDeltas(db: DeltaExecutor, channelKey: string, deltas: Record<string, number>): Promise<Record<string, number>> {
+export async function applyCounterDeltas(db: DeltaExecutor, channelKey: string, deltas: Record<string, number>): Promise<Record<string, number>> {
   if (Object.keys(deltas).length === 0) return {};
 
   const deltasJson = JSON.stringify(deltas);

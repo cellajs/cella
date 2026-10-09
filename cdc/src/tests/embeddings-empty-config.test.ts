@@ -57,7 +57,7 @@ it('with no embedding declared, every hook returns at once and without a databas
   await embeddingsAfterDispatch(productType, 'update', events);
 
   expect(suppressEmbeddingPropagation(events)).toBe(events);
-  expect(isEmbeddingCleanupWrite(['name'])).toBe(false);
+  expect(isEmbeddingCleanupWrite(productType, ['name'])).toBe(false);
   expect(touched).toEqual([]);
 });
 
