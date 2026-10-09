@@ -135,7 +135,7 @@ class Metrics {
     }
   }
 
-  private async pollLag(): Promise<void> {
+  async pollLag(): Promise<void> {
     try {
       const result = await cdcDb.execute<{ lag_bytes: string; active: boolean; wal_status: string }>(
         sql`SELECT active, wal_status, pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn)::text AS lag_bytes

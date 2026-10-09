@@ -144,7 +144,7 @@ What a lost case costs: rows changed while the slot was gone, or in a given-up b
 | `GET /health` on `CDC_HEALTH_PORT` | 204 |
 | `GET /health?depth=full` | JSON: `status`, `reasons`, the `replication` object (status, acknowledged position, lag in bytes and milliseconds, the failure the worker reads again from, setup problems), the socket, throughput. Answers 503 when unhealthy. |
 
-The worker grades itself once (`gradeWorker` in `src/network/health.ts`), for the endpoint and for the health push alike. The push carries `status`, `reasons`, `details` and the generation. It goes to the API every 15 seconds, when the socket opens and at every incident. The API's `/health?depth=full` passes it on as the `cdc` component and adds only what the worker cannot tell: no worker connected, or no report for 45 seconds. So a stuck worker and a failed setup check fail a deploy's smoke step. Thresholds: `RESOURCE_LIMITS.health` in `src/constants.ts`.
+The worker grades itself once (`gradeWorker` in `src/network/health.ts`), for the endpoint and for the health push alike. The push carries `status`, `reasons`, `details` and the generation. It goes to the API every 15 seconds, when the socket opens, when a subscription starts and at every incident. The API's `/health?depth=full` passes it on as the `cdc` component and adds only what the worker cannot tell: no worker connected, or no report for 45 seconds. So a stuck worker and a failed setup check fail a deploy's smoke step. Thresholds: `RESOURCE_LIMITS.health` in `src/constants.ts`.
 
 | Reason | `unhealthy` when | `degraded` when |
 | --- | --- | --- |
@@ -153,7 +153,7 @@ The worker grades itself once (`gradeWorker` in `src/network/health.ts`), for th
 | `api_away` | The API has been away for more than 5 minutes | The API is away for less |
 | `slot_lost` | The slot's `wal_status` is `lost` or `unreserved` | |
 | `wal_lag_critical`, `wal_lag_high` | Slot lag at 2 GB | Slot lag at 50 MB |
-| `event_loop_lag` | Event-loop lag at 1 second | Event-loop lag at 100 ms |
+| `event_loop_lag` | Mean event-loop delay over the last 30 seconds at 1 second | Mean delay at 100 ms |
 | `replication_stopped` | | No subscription while the API is reachable and the setup holds: between two reads, and while another worker still holds the slot during a deploy |
 | `reading_again` | | A failed flush is being read again, and the worker is not stuck |
 | `slot_inactive` | | The worker is subscribed and Postgres shows the slot as not read |

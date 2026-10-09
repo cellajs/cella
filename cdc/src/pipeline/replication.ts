@@ -6,7 +6,9 @@ import { CDC_SLOT_NAME, RESOURCE_LIMITS } from '../constants';
 import { env } from '../env';
 import { buildVerifiedSsl, cdcDb, stripSslParams } from '../lib/db';
 import { log } from '../lib/pino';
+import { pushHealth } from '../network/health-reporter';
 import { wsClient } from '../network/websocket-client';
+import { metrics } from '../services/cdc-metrics';
 import { replicationState } from '../services/replication-state';
 import { checkReplicationSetup } from '../services/setup-check';
 import { formatLsn, lsnToBigInt } from '../utils/lsn';
@@ -54,6 +56,15 @@ export function createReplicationService(): LogicalReplicationService {
   service.on('data', (lsn: string, message: unknown) =>
     replicationState.service === service ? handleDataMessage(lsn, message as Pgoutput.Message) : undefined,
   );
+
+  // The stream is open: the slot is read once more and the API hears at once that the worker reads. The push at
+  // connect came before any subscription, and the next one is up to 15 seconds away.
+  service.on('start', () => {
+    void metrics
+      .pollLag()
+      .then(pushHealth)
+      .catch(() => {});
+  });
 
   // The loop logs what ends a subscription, once. An emitter without a listener for `error` would throw it.
   service.on('error', (error: Error) => {
