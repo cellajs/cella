@@ -8,35 +8,40 @@ import { wsClient } from '../network/websocket-client';
 import { generateActivityId, sendBatchMessageToApi } from '../services/activity-service';
 
 describe('generateActivityId', () => {
-  it('zero-pads both LSN segments to a fixed 17-char width', () => {
-    expect(generateActivityId('0/16B3748')).toBe('00000000-016B3748');
-    expect(generateActivityId('0/16B3748')).toHaveLength(17);
-    expect(generateActivityId('1/0')).toBe('00000001-00000000');
+  const idOf = (commitLsn: string, index = 0) => generateActivityId({ lsn: '0/1', commitLsn, index });
+
+  it('joins the padded commit position and the padded index into a fixed 26-char id', () => {
+    expect(idOf('0/16B3748')).toBe('00000000-016B3748-00000000');
+    expect(idOf('0/16B3748', 12)).toBe('00000000-016B3748-00000012');
+    expect(idOf('1/0', 3)).toHaveLength(26);
   });
 
-  it('is deterministic (same LSN → same id) for idempotent replay', () => {
-    expect(generateActivityId('A/FF')).toBe(generateActivityId('A/FF'));
+  it('is the same on every delivery, for idempotent replay', () => {
+    expect(idOf('A/FF', 4)).toBe(idOf('A/FF', 4));
   });
 
-  it('sorts lexicographically in true commit order across digit-width changes', () => {
-    // "0/9F" commits before "0/100"; unpadded string compare would invert this.
-    const earlier = generateActivityId('0/9F');
-    const later = generateActivityId('0/100');
-    expect(earlier < later).toBe(true);
-  });
+  it('tells the changes of one transaction apart, also the rows of one WAL record, which share an LSN', () => {
+    const rows = [0, 1, 2, 11].map((index) => generateActivityId({ lsn: '0/50', commitLsn: '0/90', index }));
 
-  it('sorts correctly across a 32-bit segment rollover', () => {
-    const before = generateActivityId('0/FFFFFFFF');
-    const after = generateActivityId('1/00000000');
-    expect(before < after).toBe(true);
-  });
-
-  it('tells the changes of one WAL record apart, in their order and before the next record', () => {
-    const rows = [0, 1, 2, 11].map((ordinal) => generateActivityId('0/16B3748', ordinal));
-
-    expect(rows).toEqual(['00000000-016B3748', '00000000-016B3748-0001', '00000000-016B3748-0002', '00000000-016B3748-0011']);
+    expect(new Set(rows).size).toBe(4);
     expect([...rows].sort()).toEqual(rows);
-    expect(rows[3] < generateActivityId('0/16B3749')).toBe(true);
+  });
+
+  it('sorts in commit order, whatever the positions of the changes themselves', () => {
+    // A long transaction wrote first (0/10) and committed last (0/200); a short one wrote later and committed first.
+    const long = generateActivityId({ lsn: '0/10', commitLsn: '0/200', index: 0 });
+    const short = generateActivityId({ lsn: '0/50', commitLsn: '0/9F', index: 7 });
+
+    expect(short < long).toBe(true);
+  });
+
+  it('sorts correctly across digit-width changes and a 32-bit segment rollover', () => {
+    expect(idOf('0/9F') < idOf('0/100')).toBe(true);
+    expect(idOf('0/FFFFFFFF', 99) < idOf('1/00000000')).toBe(true);
+  });
+
+  it('takes the position of the change itself for an event outside a transaction', () => {
+    expect(generateActivityId({ lsn: '0/16B3748' })).toBe('00000000-016B3748-00000000');
   });
 });
 

@@ -7,7 +7,7 @@ import { buildVerifiedSsl, cdcDb, stripSslParams } from '../lib/db';
 import { log } from '../lib/pino';
 import { wsClient } from '../network/websocket-client';
 import { replicationState } from '../services/replication-state';
-import { acknowledgeIdlePosition, handleDataMessage, releaseHeldAck, resetBuffers } from './handle-message';
+import { acknowledgeIdlePosition, handleDataMessage, resetBuffers } from './handle-message';
 import { isStalePublicationError } from './replication-errors';
 
 const { reconnection, slotTakeover } = RESOURCE_LIMITS;
@@ -135,24 +135,19 @@ async function describeSlotHolder(): Promise<Record<string, unknown> | null> {
   }
 }
 
-/** Backpressure: replication acknowledgment pauses while the WebSocket is disconnected. */
+/**
+ * The worker hands every change to the API, so it consumes nothing while the API is away: a flush waits for the
+ * socket and the changes stay in the WAL. This only keeps the status that health reports.
+ */
 export function setupBackpressure(): void {
   wsClient.setCallbacks({
     onConnect: () => {
-      const wasPaused = replicationState.status === 'paused';
-      if (wasPaused) {
-        log.info('WebSocket reconnected - resuming replication acknowledgment');
-      } else {
-        log.info('WebSocket connected - resuming replication acknowledgment');
-      }
-      replicationState.markActive();
-      void releaseHeldAck();
+      log.info('API reachable: the worker reads on');
+      if (replicationState.status === 'paused') replicationState.markActive();
     },
     onDisconnect: () => {
-      if (!wsClient.inGracePeriod()) {
-        log.warn('WebSocket disconnected - pausing replication acknowledgment');
-      }
-      replicationState.markPaused();
+      if (!wsClient.inGracePeriod()) log.warn('API away: flushes wait and the WAL keeps the changes');
+      if (replicationState.status === 'active') replicationState.markPaused();
     },
   });
 }
@@ -167,12 +162,16 @@ export function setupBackpressure(): void {
 export async function subscribeWithReconnect(
   plugin: PgoutputPlugin,
   createService: () => LogicalReplicationService = createReplicationService,
-): Promise<never> {
+): Promise<void> {
   // Fast retries during a rolling-deploy slot handoff, then the normal cadence under sustained contention.
   let attempt = 0;
-  while (true) {
+  while (!replicationState.stopping) {
     let service: LogicalReplicationService | null = null;
     try {
+      // A subscription takes the slot: it waits for an API to hand the changes to.
+      if (!wsClient.isConnected()) replicationState.markPaused();
+      await wsClient.whenConnected();
+
       // Every attempt: dropping a database removes its slots, and no slot can be created while it is
       // unreachable. One catalog SELECT per attempt, and a no-op when another worker holds the slot.
       await ensureReplicationSlot();
@@ -182,16 +181,23 @@ export async function subscribeWithReconnect(
       replicationState.service = service;
 
       log.info('Subscribing to replication slot...');
+      replicationState.flushFailed = false;
       replicationState.status = wsClient.isConnected() ? 'active' : 'paused';
       await service.subscribe(plugin, CDC_SLOT_NAME);
+      replicationState.markStopped();
 
-      // The subscription ended without an error: a failed flush stopped it. The same events come next, so wait first.
-      if (replicationState.flushFailed) {
-        replicationState.flushFailed = false;
-        replicationState.markStopped();
-        await new Promise((resolve) => setTimeout(resolve, reconnection.retryDelayMs));
+      // The subscription ended without an error: a failed flush stopped it. The same events come next, so wait first:
+      // longer with every failure in a row.
+      if (replicationState.flushFailed && !replicationState.stopping) {
+        const { failure, rereadDelayMs, stuck } = replicationState;
+        log[stuck ? 'error' : 'warn'](stuck ? 'Stuck: the same position keeps failing, the WAL waits' : 'Reading again after a failed flush', {
+          ...failure,
+          rereadDelayMs,
+        });
+        await new Promise((resolve) => setTimeout(resolve, rereadDelayMs));
       }
     } catch (error) {
+      if (replicationState.stopping) break;
       // The stream of this attempt is over, but its service can still hold a connection and queued messages.
       await service?.stop().catch(() => {});
       attempt += 1;

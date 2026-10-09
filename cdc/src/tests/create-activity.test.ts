@@ -34,3 +34,25 @@ describe('createActivity actor', () => {
     expect(activity).toMatchObject({ resourceType: 'oauth_client', tenantId: null, userId: 'p-admin' });
   });
 });
+
+describe('createActivity channel ids', () => {
+  it('gives a membership activity the organization its row holds', () => {
+    const row = { id: 'm1', tenantId: 't1', channelType: 'organization', channelId: 'o1', organizationId: 'o1', userId: 'u1', role: 'member' };
+    const activity = createActivity(metaFor('memberships'), row, 'create');
+
+    // Without it the organization's membership signal never moves and the API has no stream to route the event to.
+    expect(activity).toMatchObject({ resourceType: 'membership', type: 'membership.created', organizationId: 'o1' });
+  });
+
+  it('gives a deleted membership its organization too, from the old row', () => {
+    const row = { id: 'm1', tenantId: 't1', channelType: 'organization', channelId: 'o1', organizationId: 'o1', userId: 'u1', role: 'member' };
+
+    expect(createActivity(metaFor('memberships'), row, 'delete')).toMatchObject({ type: 'membership.deleted', organizationId: 'o1' });
+  });
+
+  it('leaves the organization empty for a resource row that holds none', () => {
+    const activity = createActivity(metaFor('tenants'), { id: 't1', name: 'Tenant' }, 'create');
+
+    expect(activity.organizationId).toBeNull();
+  });
+});

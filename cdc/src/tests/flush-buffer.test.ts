@@ -169,8 +169,35 @@ describe('FlushBuffer', () => {
 
       expect(processFlush).toHaveBeenCalledOnce();
       expect(acknowledgeLsn).not.toHaveBeenCalled();
-      expect(onFailed).toHaveBeenCalledExactlyOnceWith(failure);
+      expect(onFailed).toHaveBeenCalledExactlyOnceWith(failure, '0/1');
       expect(buffer.size).toBe(0);
+    });
+
+    it('fails the same way for a message that never reached a flush, and once only', async () => {
+      const buffer = new FlushBuffer(processFlush, acknowledgeLsn, 10);
+      const onFailed = vi.fn();
+      buffer.onFailed = onFailed;
+      await buffer.enqueue(transaction(1));
+
+      const failure = new Error('unreadable message');
+      buffer.fail(failure, '0/7');
+      buffer.fail(new Error('a second one'), '0/8');
+      await vi.advanceTimersByTimeAsync(10);
+
+      expect(onFailed).toHaveBeenCalledExactlyOnceWith(failure, '0/7');
+      expect(processFlush).not.toHaveBeenCalled();
+      expect(acknowledgeLsn).not.toHaveBeenCalled();
+    });
+
+    it('reports every flush that was recorded and acknowledged', async () => {
+      const buffer = new FlushBuffer(processFlush, acknowledgeLsn, 0);
+      const onFlushed = vi.fn();
+      buffer.onFlushed = onFlushed;
+
+      await buffer.enqueue(transaction(1));
+      await buffer.enqueue(transaction(2));
+
+      expect(onFlushed).toHaveBeenCalledTimes(2);
     });
 
     it('takes no events until it is reset: they are read again from the acknowledged position', async () => {

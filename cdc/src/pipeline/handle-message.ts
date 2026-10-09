@@ -1,7 +1,6 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import { RESOURCE_LIMITS } from '../constants';
 import { log } from '../lib/pino';
-import { wsClient } from '../network/websocket-client';
 import { FlushBuffer } from '../services/flush-buffer';
 import { replicationState } from '../services/replication-state';
 import { TransactionBuffer } from '../services/transaction-buffer';
@@ -21,31 +20,35 @@ function isDmlMessage(msg: Pgoutput.Message): msg is DmlMessage {
 /**
  * Sends the standby status update and records it, so heartbeats can repeat the last flushed position. A service that
  * has stopped sends nothing, and then nothing is recorded: the position is still unconfirmed.
+ * @returns Whether the position was sent.
  */
-async function sendAck(lsn: string): Promise<void> {
-  if (!(await replicationState.service?.acknowledge(lsn))) return;
+async function acknowledgeLsn(lsn: string): Promise<boolean> {
+  // After a failure nothing more is confirmed on this subscription: a later position would pass the change that failed.
+  if (replicationState.flushFailed) return false;
+  if (!(await replicationState.service?.acknowledge(lsn))) return false;
   replicationState.lastAckedLsn = lsn;
-  replicationState.heldAckLsn = null;
-}
-
-/** Acknowledgment is held while the WebSocket is disconnected. */
-async function acknowledgeLsn(lsn: string): Promise<void> {
-  if (wsClient.isConnected()) {
-    await sendAck(lsn);
-  } else {
-    replicationState.heldAckLsn = lsn;
-    log.debug('Holding LSN acknowledgment - WebSocket disconnected', { lsn });
-  }
+  return true;
 }
 
 /** Accumulates events across transactions for micro-batching. */
-const flushBuffer = new FlushBuffer(processFlush, acknowledgeLsn, RESOURCE_LIMITS.buffers.flushWindowMs);
+const flushBuffer = new FlushBuffer(
+  processFlush,
+  async (lsn) => {
+    await acknowledgeLsn(lsn);
+  },
+  RESOURCE_LIMITS.buffers.flushWindowMs,
+);
 
-/** A failed flush ends the subscription: the next one starts at the slot's confirmed position and delivers its events again. */
-flushBuffer.onFailed = () => {
-  replicationState.flushFailed = true;
+/**
+ * The one way a failure is handled: the subscription ends without an acknowledgement, and the next one starts at the
+ * slot's confirmed position and delivers the same events again.
+ */
+flushBuffer.onFailed = (error, position) => {
+  replicationState.recordFailure(position, error);
   void replicationState.service?.stop();
 };
+
+flushBuffer.onFlushed = () => replicationState.clearFailure();
 
 /** Cascade suppression within a single transaction. */
 const txBuffer = new TransactionBuffer((events) => flushBuffer.enqueue(events));
@@ -53,30 +56,26 @@ const txBuffer = new TransactionBuffer((events) => flushBuffer.enqueue(events));
 /** Data messages whose handler has not returned yet. */
 let inFlightMessages = 0;
 
-/**
- * The LSN of the last change received and its position among the changes at that LSN. One WAL record can hold several
- * rows (a COPY writes a page of them at once), and each of those arrives with the record's LSN.
- */
-const lastChange = { lsn: '', ordinal: 0 };
+/** How many changes of the open transaction were received, kept or not: a change's index in its transaction. */
+let changesInTransaction = 0;
 
 /**
  * Confirms the latest keepalive position once every received message is applied and acknowledged.
  * Data acks stop at the last published row, so an idle worker would otherwise pin the slot while
  * unpublished WAL grows behind it. Transactions committed before a keepalive were streamed ahead of
- * it, so its position is safe whenever nothing is in flight or withheld.
+ * it, so its position is safe whenever nothing is in flight.
  * @returns true when the keepalive position was acknowledged.
  */
 export async function acknowledgeIdlePosition(): Promise<boolean> {
-  const { lastKeepaliveLsn, lastAckedLsn, heldAckLsn } = replicationState;
+  const { lastKeepaliveLsn, lastAckedLsn } = replicationState;
   const busy = inFlightMessages > 0 || txBuffer.isBuffering || !flushBuffer.isIdle;
-  if (!lastKeepaliveLsn || heldAckLsn || busy || !wsClient.isConnected()) return false;
+  if (!lastKeepaliveLsn || busy) return false;
 
   // The client reports lsn + 1 as flushed: one byte back confirms the keepalive position itself, never a byte of the next commit record.
   const position = lsnToBigInt(lastKeepaliveLsn) - 1n;
   if (position <= (lastAckedLsn ? lsnToBigInt(lastAckedLsn) : 0n)) return false;
 
-  await sendAck(formatLsn(position));
-  return true;
+  return acknowledgeLsn(formatLsn(position));
 }
 
 /**
@@ -91,16 +90,6 @@ const scheduleIdleCheck = (): void => {
 flushBuffer.onDrained = scheduleIdleCheck;
 
 /**
- * Sends the acknowledgment withheld while the WebSocket was down. Without it the slot stays pinned
- * until the next published change, and the idle check never runs past a held position.
- */
-export async function releaseHeldAck(): Promise<void> {
-  const { heldAckLsn } = replicationState;
-  if (heldAckLsn && wsClient.isConnected()) await sendAck(heldAckLsn);
-  await acknowledgeIdlePosition();
-}
-
-/**
  * Acknowledges a message the worker has nothing to do for, when no earlier event is still waiting: a position
  * confirmed past a buffered event would lose that event in a crash. The next flush or idle check covers it otherwise.
  */
@@ -113,6 +102,9 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
   inFlightMessages += 1;
   try {
     await applyDataMessage(lsn, msg);
+  } catch (error) {
+    // A message the worker cannot handle fails like a flush it cannot record: nothing past it is acknowledged.
+    flushBuffer.fail(error, lsn);
   } finally {
     inFlightMessages -= 1;
     if (inFlightMessages === 0) scheduleIdleCheck();
@@ -125,48 +117,38 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
   if (tag === 'begin') {
     const beginMsg = msg as Pgoutput.MessageBegin;
 
-    // How long ago the transaction committed is how far the worker is behind. Health reports it; every change is
-    // recorded the same way whatever the lag.
+    // How long ago the transaction committed is how far the worker is behind.
     const committedAt = commitTimeMs(beginMsg);
-    if (committedAt !== null) replicationState.updateLag(Date.now() - committedAt);
+    if (committedAt !== null) replicationState.lagMs = Date.now() - committedAt;
 
+    changesInTransaction = 0;
     txBuffer.onBegin(beginMsg);
     return;
   }
 
   if (tag === 'commit') {
-    try {
-      await txBuffer.onCommit();
-    } catch (error) {
-      log.error('Error processing transaction commit', { err: error });
-    }
+    await txBuffer.onCommit();
     return;
   }
 
   // Skips relation, origin, type and other non-DML messages.
   if (!isDmlMessage(msg)) return;
 
-  const tableName = msg.relation?.name;
+  // Counted for every change, kept or not, so a change has the same index on every delivery.
+  const index = changesInTransaction;
+  changesInTransaction += 1;
 
-  // Counted for every change, kept or not, so a change has the same ordinal on every delivery.
-  lastChange.ordinal = lsn === lastChange.lsn ? lastChange.ordinal + 1 : 0;
-  lastChange.lsn = lsn;
+  log.trace('CDC message received', { lsn, tag, table: msg.relation?.name });
 
-  try {
-    log.trace('CDC message received', { lsn, tag, table: tableName });
-
-    const parseResult = parseMessage(msg);
-    if (!parseResult) {
-      await acknowledgeSkipped(lsn);
-      return;
-    }
-
-    replicationState.markEvent();
-
-    await txBuffer.onEvent(lsn, parseResult, lastChange.ordinal);
-  } catch (error) {
-    log.error('Error processing CDC message - LSN NOT acknowledged', { err: error });
+  const parseResult = parseMessage(msg);
+  if (!parseResult) {
+    await acknowledgeSkipped(lsn);
+    return;
   }
+
+  replicationState.markEvent();
+
+  await txBuffer.onEvent(lsn, parseResult, index);
 }
 
 /** Called during graceful shutdown. */
@@ -182,6 +164,5 @@ export function resetBuffers(): void {
   txBuffer.reset();
   flushBuffer.reset();
   replicationState.lastKeepaliveLsn = null;
-  lastChange.lsn = '';
-  lastChange.ordinal = 0;
+  changesInTransaction = 0;
 }

@@ -1,10 +1,22 @@
 import type { LogicalReplicationService } from 'pg-logical-replication';
 import { RESOURCE_LIMITS } from '../constants';
-import { log } from '../lib/pino';
+import { isPassingError } from './failure';
 
-const { enterLagMs, exitLagMs, exitConsecutiveLive } = RESOURCE_LIMITS.catchup;
+const { delaysMs, stuckAfter } = RESOURCE_LIMITS.reread;
 
+/** `active`: reading the stream. `paused`: the API is away, so nothing is consumed. `stopped`: no subscription. */
 type ReplicationState = 'active' | 'paused' | 'stopped';
+
+/** The failure the worker is reading again from. */
+export interface ReplicationFailure {
+  /** The LSN the failure belongs to: the first event of the flush that failed. */
+  position: string;
+  /** Failures in a row at this position that the change itself caused. */
+  count: number;
+  error: string;
+  /** Whether the last failure said nothing about the change: a connection, a lock, the API being away. */
+  passing: boolean;
+}
 
 class ReplicationStateManager {
   private _replicationState: ReplicationState = 'stopped';
@@ -14,18 +26,16 @@ class ReplicationStateManager {
 
   /** Position of the latest keepalive: everything committed before it was already streamed to this worker. */
   lastKeepaliveLsn: string | null = null;
-  /** Latest position whose acknowledgment was withheld, until the next one that is sent. */
-  heldAckLsn: string | null = null;
   private _replicationPausedAt: Date | null = null;
 
-  // Catchup mode state
   /** Set when a flush failed: the subscription loop waits before it reads the same events again. */
   flushFailed = false;
+  /** Set at shutdown: the subscription loop ends with the subscription it holds. */
+  stopping = false;
 
-  private _catchingUp = false;
-  private _catchupStartedAt: number | null = null;
-  private _consecutiveLiveTxns = 0;
-  private _lastLagMs: number | null = null;
+  private _failure: ReplicationFailure | null = null;
+  private failuresInARow = 0;
+  private _lagMs: number | null = null;
   private _lastEventAt: Date | null = null;
 
   get status(): ReplicationState {
@@ -45,7 +55,7 @@ class ReplicationStateManager {
     this._lastLsn = lsn;
   }
 
-  /** Last LSN reported to Postgres as flushed. Heartbeats repeat it, so the slot never advances past data still buffered or held. */
+  /** Last LSN reported to Postgres as flushed. Heartbeats repeat it, so the slot never advances past data still buffered. */
   get lastAckedLsn(): string | null {
     return this._lastAckedLsn;
   }
@@ -62,46 +72,72 @@ class ReplicationStateManager {
     this._service = svc;
   }
 
-  /** Null while replication is not paused. */
+  /** Since when the API is away; null while it is reachable. */
   get replicationPausedAt(): Date | null {
     return this._replicationPausedAt;
   }
 
-  set replicationPausedAt(date: Date | null) {
-    this._replicationPausedAt = date;
-  }
-
-  /** WebSocket connected. */
+  /** The API is reachable. */
   markActive(): void {
     this._replicationState = 'active';
     this._replicationPausedAt = null;
   }
 
-  /** WebSocket disconnected. */
+  /** The API is away: flushes wait for it. */
   markPaused(): void {
     this._replicationState = 'paused';
-    this._replicationPausedAt = new Date();
+    this._replicationPausedAt ??= new Date();
   }
 
   markStopped(): void {
     this._replicationState = 'stopped';
   }
 
-  // ── Catchup mode ───────────────────────────────────────────────────────
-
-  /** True while the worker reads changes that committed a while ago. A status for health alone: it changes no processing. */
-  get catchingUp(): boolean {
-    return this._catchingUp;
+  /** The failure the worker is reading again from; null once a flush got past it. */
+  get failure(): ReplicationFailure | null {
+    return this._failure;
   }
 
-  /** Epoch ms, null when not catching up. */
-  get catchupStartedAt(): number | null {
-    return this._catchupStartedAt;
+  /**
+   * True when the same position failed `stuckAfter` times in a row because of the change itself. The worker keeps
+   * reading again, and the WAL waits behind it.
+   */
+  get stuck(): boolean {
+    return this._failure !== null && this._failure.count >= stuckAfter;
   }
 
-  /** Last measured WAL lag in ms. */
-  get lastLagMs(): number | null {
-    return this._lastLagMs;
+  /**
+   * Records a failed flush. Failures the change caused are counted per position; a passing one neither adds to that
+   * count nor clears it.
+   */
+  recordFailure(position: string, error: unknown): void {
+    this.flushFailed = true;
+    this.failuresInARow += 1;
+    const passing = isPassingError(error);
+    const message = error instanceof Error ? error.message : String(error);
+    const samePosition = this._failure?.position === position;
+    const before = samePosition ? (this._failure?.count ?? 0) : 0;
+    this._failure = { position, count: passing ? before : before + 1, error: message, passing };
+  }
+
+  /** A flush was recorded and acknowledged: whatever failed before is behind the worker. */
+  clearFailure(): void {
+    this._failure = null;
+    this.failuresInARow = 0;
+  }
+
+  /** How long to wait before the stream is read again after a failure: longer with every failure in a row. */
+  get rereadDelayMs(): number {
+    return delaysMs[Math.min(Math.max(this.failuresInARow, 1), delaysMs.length) - 1];
+  }
+
+  /** How long ago the transaction the worker read last committed; null before the first one. */
+  get lagMs(): number | null {
+    return this._lagMs;
+  }
+
+  set lagMs(lagMs: number | null) {
+    this._lagMs = lagMs;
   }
 
   /** Null when no DML change has been applied this run. */
@@ -114,60 +150,19 @@ class ReplicationStateManager {
     this._lastEventAt = new Date();
   }
 
-  /**
-   * Records how far behind the worker is, from the commit time of the transaction it reads, and sets or clears the
-   * catching-up status with hysteresis.
-   *
-   * @returns whether the worker counts as catching up after this update.
-   */
-  updateLag(lagMs: number): boolean {
-    this._lastLagMs = lagMs;
-
-    if (!this._catchingUp) {
-      if (lagMs > enterLagMs) {
-        this._catchingUp = true;
-        this._catchupStartedAt = Date.now();
-        this._consecutiveLiveTxns = 0;
-        log.info('Entering catchup mode: WAL lag exceeds threshold', { lagMs: Math.round(lagMs), thresholdMs: enterLagMs });
-      }
-      return this._catchingUp;
-    }
-
-    if (lagMs < exitLagMs) {
-      this._consecutiveLiveTxns++;
-      if (this._consecutiveLiveTxns >= exitConsecutiveLive) {
-        const duration = Date.now() - (this._catchupStartedAt ?? Date.now());
-        log.info('Exiting catchup mode: WAL lag below threshold', {
-          lagMs: Math.round(lagMs),
-          consecutiveLive: this._consecutiveLiveTxns,
-          catchupDurationMs: duration,
-        });
-        this._catchingUp = false;
-        this._catchupStartedAt = null;
-        this._consecutiveLiveTxns = 0;
-        return false;
-      }
-    } else {
-      // A lag spike restarts the consecutive-live count.
-      this._consecutiveLiveTxns = 0;
-    }
-
-    return this._catchingUp;
-  }
-
   /** Test helper. */
   reset(): void {
     this._replicationState = 'stopped';
     this._lastLsn = null;
     this._lastAckedLsn = null;
     this.lastKeepaliveLsn = null;
-    this.heldAckLsn = null;
     this._service = null;
     this._replicationPausedAt = null;
-    this._catchingUp = false;
-    this._catchupStartedAt = null;
-    this._consecutiveLiveTxns = 0;
-    this._lastLagMs = null;
+    this.flushFailed = false;
+    this.stopping = false;
+    this._failure = null;
+    this.failuresInARow = 0;
+    this._lagMs = null;
     this._lastEventAt = null;
   }
 }

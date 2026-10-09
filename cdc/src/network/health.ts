@@ -2,12 +2,12 @@ import process from 'node:process';
 import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { RESOURCE_LIMITS } from '../constants';
 import { type MetricsSnapshot, metrics } from '../services/cdc-metrics';
-import { circuitBreaker } from '../services/circuit-breaker';
-import { replicationState } from '../services/replication-state';
+import { type ReplicationFailure, replicationState } from '../services/replication-state';
 import { getRoleCapabilities, type RoleCapabilities } from '../services/role-capabilities';
 import { wsClient } from './websocket-client';
 
 const { unhealthyBytes } = RESOURCE_LIMITS.walLag;
+const { pauseUnhealthyMs } = RESOURCE_LIMITS.runtime;
 
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
 
@@ -22,13 +22,15 @@ interface HealthResponse {
     slotActive: boolean | null;
     slotStatus: string | null;
     lagBytes: number | null;
+    /** How long ago the transaction read last committed; null before the first one. */
+    lagMs: number | null;
     lastEventAt: string | null;
+    /** The failure the worker is reading again from, with `stuck` set once the change itself failed it too often. */
+    failure: (ReplicationFailure & { stuck: boolean }) | null;
     /** Null until the startup probe ran or when it failed. */
     role: RoleCapabilities | null;
   };
-  catchup: { active: boolean; startedAt: string | null; lagMs: number } | null;
   websocket: { connected: boolean; state: string; messagesSent: number; lastMessageAt: string | null };
-  circuitBreakers: Record<string, { state: string; failureCount: number; skippedCount: number }>;
   metrics: MetricsSnapshot;
 }
 
@@ -36,9 +38,16 @@ export function getHealthResponse(): { response: HealthResponse; httpStatus: num
   const replStatus = replicationState.status;
   const wsConnected = wsClient.isConnected();
 
+  const { failure, stuck, replicationPausedAt } = replicationState;
+
+  // Between two reads after a failed flush the subscription is down on purpose: that is degraded until it is stuck.
   let status: HealthStatus = 'healthy';
-  if (replStatus === 'stopped') status = 'unhealthy';
-  else if (replStatus === 'paused' || !wsConnected) status = 'degraded';
+  if (stuck) status = 'unhealthy';
+  else if (replStatus === 'stopped' && !failure) status = 'unhealthy';
+  else if (replStatus !== 'active' || failure || !wsConnected) status = 'degraded';
+
+  // Without the API nothing is consumed: after a while that is an outage of sync, not a restart.
+  if (replicationPausedAt && Date.now() - replicationPausedAt.getTime() > pauseUnhealthyMs) status = 'unhealthy';
 
   // Without an effective RLS bypass every seq stamp silently affects zero rows; without REPLICATION the slot cannot be opened.
   const role = getRoleCapabilities();
@@ -50,9 +59,9 @@ export function getHealthResponse(): { response: HealthResponse; httpStatus: num
     status = 'unhealthy';
   }
 
-  const circuitStatus = circuitBreaker.getStatus();
-  const hasOpenBreakers = Object.values(circuitStatus).some((s) => s.state !== 'closed');
-  if (hasOpenBreakers && status === 'healthy') status = 'degraded';
+  // The slot no longer holds the WAL the worker needs, or nothing reads it while the worker believes it does.
+  if (metrics.slotStatus === 'unreserved' || metrics.slotStatus === 'lost') status = 'unhealthy';
+  if (replStatus === 'active' && metrics.slotActive === false && status === 'healthy') status = 'degraded';
 
   // Same saturation thresholds the yjs relay uses for its health status.
   const eventLoopLagMs = getEventLoopLagMs();
@@ -70,23 +79,17 @@ export function getHealthResponse(): { response: HealthResponse; httpStatus: num
       slotActive: metrics.slotActive,
       slotStatus: metrics.slotStatus,
       lagBytes: metrics.lagBytes,
+      lagMs: replicationState.lagMs,
       lastEventAt: replicationState.lastEventAt?.toISOString() ?? null,
+      failure: failure ? { ...failure, stuck } : null,
       role,
     },
-    catchup: replicationState.catchingUp
-      ? {
-          active: true,
-          startedAt: replicationState.catchupStartedAt ? new Date(replicationState.catchupStartedAt).toISOString() : null,
-          lagMs: replicationState.lastLagMs ?? 0,
-        }
-      : null,
     websocket: {
       connected: wsConnected,
       state: wsClient.state,
       messagesSent: wsClient.messagesSent,
       lastMessageAt: wsClient.lastMessageAt?.toISOString() ?? null,
     },
-    circuitBreakers: circuitStatus,
     metrics: metrics.getSnapshot(),
   };
 

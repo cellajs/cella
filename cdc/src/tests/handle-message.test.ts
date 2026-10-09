@@ -52,14 +52,12 @@ describe('handleDataMessage: a worker that is behind', () => {
 
     await handleDataMessage('0/1', { tag: 'begin', xid: 7, commitLsn: '0/9', commitTime });
 
-    expect(replicationState.lastLagMs).toBeGreaterThanOrEqual(15_000);
-    expect(replicationState.lastLagMs).toBeLessThan(20_000);
-    expect(replicationState.catchingUp).toBe(true);
+    expect(replicationState.lagMs).toBeGreaterThanOrEqual(15_000);
+    expect(replicationState.lagMs).toBeLessThan(20_000);
   });
 
   it('records every change while it is behind, whatever the id of the row', async () => {
-    replicationState.updateLag(15_000);
-    expect(replicationState.catchingUp).toBe(true);
+    replicationState.lagMs = 15_000;
 
     // Ids as a seed script and a mock give them: such a row is a row like any other.
     await handleDataMessage('0/1', mockDmlMessage('insert', '00000000-1234-4abc-8def-123456789abc'));
@@ -104,7 +102,7 @@ describe('handleDataMessage: a message the parser drops', () => {
   });
 });
 
-describe('handleDataMessage: changes that share an LSN', () => {
+describe("handleDataMessage: a change's place in its transaction", () => {
   beforeEach(() => {
     replicationState.reset();
     resetBuffers();
@@ -116,35 +114,95 @@ describe('handleDataMessage: changes that share an LSN', () => {
     vi.useRealTimers();
   });
 
-  /** Every event handed to a flush, as its LSN and ordinal. */
-  const flushed = () =>
-    vi.mocked(processFlush).mock.calls.flatMap(([transactions]) => transactions.flat().map(({ lsn, ordinal }) => `${lsn}#${ordinal}`));
+  const begin = (commitLsn: string) => handleDataMessage(commitLsn, { tag: 'begin', xid: 7, commitLsn, commitTime: BigInt(0) });
+  const commit = (lsn: string) => handleDataMessage(lsn, { tag: 'commit' } as never);
 
-  it('tells the rows of one WAL record apart by their ordinal', async () => {
-    // A COPY writes a page of rows in one record: each arrives with that record's LSN.
+  /** Every event handed to a flush, as its transaction's commit position and its index there. */
+  const flushed = () =>
+    vi.mocked(processFlush).mock.calls.flatMap(([transactions]) => transactions.flat().map(({ commitLsn, index }) => `${commitLsn}#${index}`));
+
+  it('gives each change its transaction commit position and its index there', async () => {
+    await begin('0/90');
+    // A COPY writes a page of rows in one WAL record: each arrives with that record's LSN, and its own index.
     for (const id of ['usr-1', 'usr-2', 'usr-3']) await handleDataMessage('0/10', mockDmlMessage('insert', id));
+    await commit('0/90');
+    await begin('0/A0');
     await handleDataMessage('0/20', mockDmlMessage('insert', 'usr-4'));
+    await commit('0/A0');
     await vi.runAllTimersAsync();
 
-    expect(flushed()).toEqual(['0/10#0', '0/10#1', '0/10#2', '0/20#0']);
+    expect(flushed()).toEqual(['0/90#0', '0/90#1', '0/90#2', '0/A0#0']);
   });
 
-  it('counts a change it skips, so the next one has the same ordinal on every delivery', async () => {
+  it('counts a change it skips, so the next one has the same index on every delivery', async () => {
+    await begin('0/90');
     mocked.mockReturnValueOnce(null);
     await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-1'));
-    await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-2'));
+    await handleDataMessage('0/11', mockDmlMessage('insert', 'usr-2'));
+    await commit('0/90');
     await vi.runAllTimersAsync();
 
-    expect(flushed()).toEqual(['0/10#1']);
+    expect(flushed()).toEqual(['0/90#1']);
   });
 
   it('counts from the start again for a new subscription', async () => {
+    await begin('0/90');
     await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-1'));
-    // The stream starts over at the confirmed position and delivers the same change again.
+    // The stream starts over at the confirmed position and delivers the same transaction again.
     resetBuffers();
+    await begin('0/90');
     await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-1'));
+    await commit('0/90');
     await vi.runAllTimersAsync();
 
-    expect(flushed()).toEqual(['0/10#0']);
+    expect(flushed()).toEqual(['0/90#0']);
+  });
+});
+
+describe('handleDataMessage: a message it cannot handle', () => {
+  beforeEach(() => {
+    replicationState.reset();
+    resetBuffers();
+    vi.clearAllMocks();
+  });
+
+  const serviceWith = (acknowledge = vi.fn(async () => true)) => {
+    const stop = vi.fn(async () => {});
+    replicationState.service = { acknowledge, stop } as unknown as typeof replicationState.service;
+    return { acknowledge, stop };
+  };
+
+  it('fails the subscription at that position: the stream is read again, nothing is dropped', async () => {
+    const { stop } = serviceWith();
+    mocked.mockImplementationOnce(() => {
+      throw new Error('column "payload" has a value the parser cannot read');
+    });
+
+    await handleDataMessage('0/30', mockDmlMessage('insert', 'usr-1'));
+
+    expect(stop).toHaveBeenCalledTimes(1);
+    expect(replicationState.failure).toMatchObject({ position: '0/30', count: 1, passing: false });
+  });
+
+  it('must not confirm a later position via a message it skips after the failure', async () => {
+    const { acknowledge } = serviceWith();
+    mocked.mockImplementationOnce(() => {
+      throw new Error('unreadable');
+    });
+    await handleDataMessage('0/30', mockDmlMessage('insert', 'usr-1'));
+
+    // The service is still delivering what it had queued: a message with nothing to record would be confirmed at once.
+    mocked.mockReturnValueOnce(null);
+    await handleDataMessage('0/40', mockDmlMessage('insert', 'usr-2'));
+
+    expect(acknowledge).not.toHaveBeenCalled();
+  });
+
+  it('confirms a skipped message when nothing failed (positive control)', async () => {
+    const { acknowledge } = serviceWith();
+    mocked.mockReturnValueOnce(null);
+    await handleDataMessage('0/40', mockDmlMessage('insert', 'usr-2'));
+
+    expect(acknowledge).toHaveBeenCalledWith('0/40');
   });
 });

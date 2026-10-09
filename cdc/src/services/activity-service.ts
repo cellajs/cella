@@ -1,9 +1,8 @@
 import { hierarchy, isProduct } from 'shared';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
-import { log } from '../lib/pino';
 import type { TraceContext } from '../lib/tracing';
 import { wsClient } from '../network/websocket-client';
-import type { CdcRowData } from '../types';
+import type { CdcRowData, PendingEvent } from '../types';
 import { resolveChannelKey } from '../utils/compute-unified-deltas';
 import { pickPermissionRowData } from '../utils/permission-row-data';
 
@@ -29,19 +28,22 @@ export interface CdcOutboundMessage {
   _trace: TraceContext;
 }
 
-/**
- * Activity id of a change: its WAL position, the same on every delivery, which makes replay idempotent. Padding keeps
- * ids in WAL order under lexical comparison. Changes written by one WAL record (the rows of a COPY) share a position,
- * so every one after the first carries its ordinal.
- * @param lsn PostgreSQL WAL position of the change.
- * @param ordinal Position among the changes at that LSN.
- * @returns Zero-padded, dash-joined LSN, with the padded ordinal appended when it is not the first.
- */
-export function generateActivityId(lsn: string, ordinal = 0): string {
+const padLsn = (lsn: string): string | null => {
   const [hi, lo] = lsn.split('/');
-  if (lo === undefined) return lsn; // Not in LSN format.
-  const position = `${hi.padStart(8, '0')}-${lo.padStart(8, '0')}`;
-  return ordinal > 0 ? `${position}-${String(ordinal).padStart(4, '0')}` : position;
+  return lo === undefined ? null : `${hi.padStart(8, '0')}-${lo.padStart(8, '0')}`;
+};
+
+/**
+ * Activity id of a change: the commit position of its transaction and its index in that transaction. Both are the
+ * same on every delivery, which makes replay idempotent, no two changes share them, and padding keeps ids in commit
+ * order under lexical comparison. An event outside a transaction takes its own position.
+ * @param event - The change: its LSN, and its transaction's commit LSN and its index there when it has one.
+ * @returns Zero-padded, dash-joined commit LSN and index.
+ */
+export function generateActivityId({ lsn, commitLsn, index = 0 }: Pick<PendingEvent, 'lsn' | 'commitLsn' | 'index'>): string {
+  const position = padLsn(commitLsn ?? lsn);
+  if (position === null) return lsn; // Not in LSN format.
+  return `${position}-${String(index).padStart(8, '0')}`;
 }
 
 function buildActivityPayload(
@@ -56,18 +58,17 @@ function buildActivityPayload(
   return { activity, rowData, _trace: traceContext };
 }
 
+/** @returns false when the API did not take the message: the caller fails its flush, and the event is delivered again. */
 export function sendMessageToApi(
   activity: InsertActivityModel,
   rowData: CdcRowData,
   traceContext: TraceContext,
   seq?: number,
   movedFrom?: CdcRowData | null,
-): void {
+): boolean {
   const payload = buildActivityPayload(activity, rowData, traceContext, seq);
   if (movedFrom) payload.movedFrom = movedFrom;
-  if (!wsClient.send(payload)) {
-    log.warn('Failed to send message to API');
-  }
+  return wsClient.send(payload);
 }
 
 /** Payload shape for a batch event (persist-only, no individual WS send). */
@@ -92,8 +93,8 @@ function batchPathKey({ activity, rowData }: BatchEvent): string {
  * from the shared org sequence, so a group's `seq..batchUntilSeq` range may interleave with other
  * groups: `count` and the per-row seqs in `batchRows` are authoritative, range arithmetic is not.
  */
-export function sendBatchMessageToApi(events: BatchEvent[], traceContext: TraceContext): void {
-  if (events.length === 0) return;
+export function sendBatchMessageToApi(events: BatchEvent[], traceContext: TraceContext): boolean {
+  if (events.length === 0) return true;
 
   const groups = new Map<string, BatchEvent[]>();
   for (const event of events) {
@@ -103,13 +104,15 @@ export function sendBatchMessageToApi(events: BatchEvent[], traceContext: TraceC
     else groups.set(key, [event]);
   }
 
+  let sent = true;
   for (const group of groups.values()) {
-    sendBatchGroupToApi(group, traceContext);
+    if (!sendBatchGroupToApi(group, traceContext)) sent = false;
   }
+  return sent;
 }
 
 /** Send one per-path batch group as a single message, using the first event as representative. */
-function sendBatchGroupToApi(events: BatchEvent[], traceContext: TraceContext): void {
+function sendBatchGroupToApi(events: BatchEvent[], traceContext: TraceContext): boolean {
   const first = events[0];
 
   // The min/max range brackets this group's rows but may contain other groups' values in between.
@@ -130,7 +133,5 @@ function sendBatchGroupToApi(events: BatchEvent[], traceContext: TraceContext): 
   // The backend invalidates each row's detail-cache entry from batchRows (see cdc-websocket handleMessage).
   const payload: CdcOutboundMessage = { ...base, activity, batchRows };
 
-  if (!wsClient.send(payload)) {
-    log.warn('Failed to send batch message to API', { batchSize: events.length });
-  }
+  return wsClient.send(payload);
 }

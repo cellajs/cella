@@ -27,9 +27,11 @@ export async function startCdcWorker(): Promise<void> {
 
 export async function stopCdcWorker(): Promise<void> {
   log.info('CDC worker stopping...');
+  replicationState.stopping = true;
   stopHealthReporter();
   metrics.stop();
-  await drainBuffers();
+  // What is buffered is recorded when the API can take it; without the API it stays in the WAL for the next worker.
+  if (wsClient.isConnected()) await drainBuffers();
   wsClient.close();
   await replicationState.service?.stop();
   replicationState.markStopped();

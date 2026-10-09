@@ -20,9 +20,11 @@ buffer transaction → suppress cascade noise
         ▼
 micro-batch whole transactions, in commit order
         ▼
+wait for the API: without it nothing is consumed
+        ▼
 one database transaction per flush: activities, sequences, counters, row stamps
         ▼
-notify API → acknowledge the last event of the flush
+hand to the API → acknowledge the last event of the flush
 ```
 
 The API receives the messages on `/internal/cdc` of its internal listener, publishes them to its ActivityBus, and fans them out over SSE. Clients order by `seq`, not arrival.
@@ -45,9 +47,9 @@ A flush takes whole source transactions in commit order, up to `flushMaxEvents` 
 
 ### Persist, stamp, and publish
 
-A flush is recorded in one database transaction (`recordFlush` in `src/pipeline/process-events.ts`): insert the activities, reserve sequence values and apply counter deltas, then stamp `seq` back onto the rows. An activity's key is its id plus its commit time. The id is the LSN of the change; the rows one WAL record holds (a `COPY` writes a page of them at once) share an LSN, so each after the first also carries its ordinal. Both are the same on every delivery, so an event that is delivered a second time inserts nothing. Only events whose activity was inserted by this transaction get a sequence value and count: recording happens once per event however often it arrives. A row changed twice in one flush is stamped once, with its last value. Statements run in a fixed order (counter rows by key, product rows by id) and in bounded chunks.
+A flush is recorded in one database transaction (`recordFlush` in `src/pipeline/process-events.ts`): insert the activities, reserve sequence values and apply counter deltas, then stamp `seq` back onto the rows. An activity's key is its id plus its commit time. The id is the commit position of its transaction and the index of the change in that transaction, so ids are unique, also for the rows one WAL record holds (a `COPY` writes a page of them at once), and sort in commit order. Both parts of the key are the same on every delivery, so an event that is delivered a second time inserts nothing. Only events whose activity was inserted by this transaction get a sequence value and count: recording happens once per event however often it arrives. A row changed twice in one flush is stamped once, with its last value. Statements run in a fixed order (counter rows by key, product rows by id) and in bounded chunks.
 
-After the commit, per type and action (`attachment:update`): mirror each changed channel's path onto `channel_counters` (computed from the row's id columns, since the generated `path` column is not in the row image), publish the WebSocket message, then clean up embedded references. These steps repeat for a redelivered event, and each is safe to repeat. The worker then acknowledges the last event of the flush.
+After the commit: mirror each changed channel's path onto `channel_counters` (computed from the row's id columns, since the generated `path` column is not in the row image), hand the changes to the API, then clean up embedded references. A row that is no product (a membership, a tenant, a channel) goes to the API alone and in commit order, because its listeners act on that one row and carry its channel ids. Product rows go per type and action (`attachment:update`), one message per audience. These steps repeat for a redelivered event, and each is safe to repeat. The worker then acknowledges the last event of the flush.
 
 ### Sequences and counters
 
@@ -61,13 +63,14 @@ Data messages carry the activity, compacted row data, the previous location of r
 
 ## Failure and recovery
 
-The slot advances only after a flush committed and is the only durable buffer, so a crash redelivers unacknowledged changes. A message the worker has nothing to do for is acknowledged only while nothing earlier is buffered. An idle worker (nothing buffered, no acknowledgement held) also confirms the server's keepalive position, so WAL without published changes does not pile up behind the slot. Every subscription starts at the slot's confirmed position with empty buffers. Delivery is **at least once**, recording is **once**: a redelivered event changes no activity, counter or sequence, and its WebSocket message is sent again with the sequence value the row already holds (consumers deduplicate by activity ID).
+The slot advances only after a flush committed and is the only durable buffer, so a crash redelivers unacknowledged changes. A message the worker has nothing to do for is acknowledged only while nothing earlier is buffered. An idle worker (nothing buffered) also confirms the server's keepalive position, so WAL without published changes does not pile up behind the slot. Every subscription starts at the slot's confirmed position with empty buffers. Delivery is **at least once**, recording is **once**: a redelivered event changes no activity, counter or sequence, and its WebSocket message is sent again with the sequence value the row already holds (consumers deduplicate by activity ID).
+
+There is one way a failure is handled: the worker confirms nothing, forgets what it holds and reads again from the slot's confirmed position. Nothing is retried in place and nothing is left out to keep going.
 
 | Failure | Detection | Recovery |
 | --- | --- | --- |
-| A flush cannot be recorded | Error in its transaction | Passing errors (deadlock, lost connection) repeat the transaction three times. Then the flush is tried one source transaction at a time. The one that still fails stops the subscription without an acknowledgement: after 5 seconds the worker reads again from the confirmed position. A failure that is not a passing error counts against the tables of that transaction: three open a per-table circuit for 60 seconds, then half-open, and events of a table with an open circuit are left out. |
-| API WebSocket unavailable | Connection drop. Slot lag is checked every 10 seconds (1 GB warns, 2 GB unhealthy) | Hold data acknowledgements so WAL stays behind the slot. Reconnect with exponential backoff, 1 to 30 seconds, then send the held acknowledgement. |
-| Worker more than 10 seconds behind | Age of the commit time of the transaction being read | Health reports it as catching up, until three transactions in a row are under 2 seconds old. Processing is the same: every change is recorded, whatever the lag. |
+| A flush or a message fails, whatever the cause | An error in the flush's transaction, in a send to the API, or in parsing a change | The subscription ends without an acknowledgement and the worker reads again, after 0.5, 2, 5, 15 and then 30 seconds. A failure of the connection, a lock or the API (`isPassingError`) is read again for as long as it lasts. Five failures in a row at one position that the change itself caused make the worker `stuck`: it keeps reading again, reports unhealthy with the position and the error, and the WAL waits. |
+| API away | The WebSocket drops. Slot lag is checked every 10 seconds (1 GB warns, 2 GB unhealthy) | Nothing is consumed: a flush waits for the socket, the stream is held and the WAL keeps the changes. A new subscription waits for the socket too. The socket reconnects with a backoff of 1 to 5 seconds, and the worker reads on. A send the API did not take fails its flush. |
 | Slot held by another worker (rolling deploy) | PostgreSQL error `55006`, logged with the holding walsender | Retry the subscription 12 times at 500 ms, then every 5 seconds (the same cadence as any subscribe error). |
 | Unexpected data | Draft row, or product row without an organization | Drop the draft row (rate-limited warning). A product row without an organization fails its flush: see the first row. |
 | Slot dropped or `lost` | Unacknowledged changes gone | Operator recalculates counters. The activity history keeps a gap. A missing publication makes the worker drop and recreate its slot once, discarding unacknowledged WAL. |
@@ -85,7 +88,7 @@ The slot advances only after a flush committed and is the only durable buffer, s
 | Endpoint | Response |
 | --- | --- |
 | `GET /health` on `CDC_HEALTH_PORT` | 204 |
-| `GET /health?depth=full` | JSON snapshot. Reports `degraded` when acknowledgements pause, the WebSocket is down, a circuit is open, or event-loop lag passes 100 ms. Reports `unhealthy` when replication stops, slot lag hits 2 GB, or event-loop lag passes 1 second. A smaller status payload also goes to the backend every 15 seconds. |
+| `GET /health?depth=full` | JSON snapshot, with the lag in milliseconds and the failure the worker reads again from. Reports `degraded` when the API is away, a failed flush is being read again, or event-loop lag passes 100 ms. Reports `unhealthy` when the worker is stuck at one position, the API has been away for 5 minutes, the slot's `wal_status` is `unreserved` or `lost`, replication stopped, slot lag hits 2 GB, or event-loop lag passes 1 second. A smaller status payload also goes to the backend every 15 seconds. |
 
 Environment, validated in `src/env.ts` (loads the backend's `.env`):
 

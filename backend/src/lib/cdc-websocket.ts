@@ -82,8 +82,10 @@ export interface CdcWorkerHealth {
   lagBytes?: number | null;
   /** ISO timestamp of the last applied DML change. */
   lastEventAt?: string | null;
-  /** Whether the worker is currently replaying backlogged WAL. */
-  catchingUp?: boolean;
+  /** How long ago the transaction the worker read last committed, in milliseconds. */
+  lagMs?: number | null;
+  /** Whether the worker keeps failing at one position because of the change there. */
+  stuck?: boolean;
   /** Whether the worker's database role effectively bypasses RLS on every RLS-enabled table (owner of never-forced tables, BYPASSRLS, or superuser); null until probed. */
   rlsBypass?: boolean | null;
   /** Whether the worker's database role may open a replication slot; null until probed. */

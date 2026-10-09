@@ -7,12 +7,17 @@ export const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
 export const RESOURCE_LIMITS = {
   // Runtime monitoring thresholds
   runtime: {
-    /** How long replication may stay paused before health reports unhealthy. */
+    /** How long the API may be away, with nothing consumed, before health reports unhealthy. */
     pauseUnhealthyMs: 5 * 60e3,
   },
 
-  // Retry configuration for transient errors
-  retry: { maxAttempts: 3, initialDelayMs: 100, maxDelayMs: 5000, backoffMultiplier: 2 },
+  // Reading again after a failed flush
+  reread: {
+    /** The wait before each read after a failure, by how many failed in a row; the last one repeats. */
+    delaysMs: [500, 2000, 5000, 15_000, 30_000],
+    /** Failures in a row at one position, caused by the change itself, after which the worker counts as stuck there. */
+    stuckAfter: 5,
+  },
 
   // Reconnection configuration
   reconnection: {
@@ -26,14 +31,6 @@ export const RESOURCE_LIMITS = {
     maxAttempts: 12,
     /** Sized for a sub-second takeover. */
     retryDelayMs: 500,
-  },
-
-  // When health reports the worker as catching up: by the age of the commits it reads
-  catchup: {
-    enterLagMs: 10_000,
-    exitLagMs: 2_000,
-    /** Consecutive transactions under the exit lag before the status clears. */
-    exitConsecutiveLive: 3,
   },
 
   // Buffer safety caps
@@ -52,17 +49,3 @@ export const RESOURCE_LIMITS = {
     unhealthyBytes: 2 * 1024 * 1024 * 1024, // 2 GB
   },
 } as const;
-
-/** PostgreSQL error codes that indicate transient failures and should trigger retry. */
-export const TRANSIENT_ERROR_CODES = new Set([
-  '40001', // serialization_failure
-  '40P01', // deadlock_detected
-  '53000', // insufficient_resources
-  '53100', // disk_full
-  '53200', // out_of_memory
-  '53300', // too_many_connections
-  '57P03', // cannot_connect_now
-  '08000', // connection_exception
-  '08003', // connection_does_not_exist
-  '08006', // connection_failure
-]);

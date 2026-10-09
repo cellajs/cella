@@ -10,7 +10,14 @@ vi.mock('../lib/db', () => ({
 }));
 
 vi.mock('../network/websocket-client', () => ({
-  wsClient: { isConnected: () => true, inGracePeriod: () => false, setCallbacks: vi.fn(), connect: vi.fn(), close: vi.fn() },
+  wsClient: {
+    isConnected: () => true,
+    whenConnected: async () => {},
+    inGracePeriod: () => false,
+    setCallbacks: vi.fn(),
+    connect: vi.fn(),
+    close: vi.fn(),
+  },
 }));
 
 import { RESOURCE_LIMITS } from '../constants';
