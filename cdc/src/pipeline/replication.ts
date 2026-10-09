@@ -10,6 +10,7 @@ import { replicationState } from '../services/replication-state';
 import { checkReplicationSetup } from '../services/setup-check';
 import { acknowledgeIdlePosition, handleDataMessage, resetBuffers } from './handle-message';
 import { isStalePublicationError } from './replication-errors';
+import { clearRebuildRequest, countersAreLost, hasHistory, rebuildAllowed, rebuildBooks } from './verify';
 
 const { reconnection, runtime, slotTakeover } = RESOURCE_LIMITS;
 
@@ -79,41 +80,55 @@ export function createReplicationService(): LogicalReplicationService {
 
 // Slot management
 
-export async function ensureReplicationSlot(): Promise<void> {
+/**
+ * Makes sure the slot exists and still holds its WAL. A slot the server invalidated (it passed
+ * `max_slot_wal_keep_size` while nothing read it) cannot be read again: it is dropped and made anew.
+ * @returns `created` when a slot had to be made. On a database with a history that is a lost case: what was written
+ *   since the old slot's position is in no stream.
+ */
+export async function ensureReplicationSlot(): Promise<'present' | 'created' | 'unknown'> {
   try {
-    const slotCheck = await cdcDb.execute(sql`SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`);
-    if (slotCheck.rows.length === 0) {
+    const slot = (
+      await cdcDb.execute<{ wal_status: string | null }>(sql`SELECT wal_status FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`)
+    ).rows[0];
+    if (slot && slot.wal_status !== 'lost') return 'present';
+    if (slot) {
+      log.error(`Replication slot '${CDC_SLOT_NAME}' was invalidated: the server removed WAL it still needed`);
+      await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})`);
+    } else {
       log.info(`Replication slot '${CDC_SLOT_NAME}' not found, creating...`);
-      await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
-      log.info(`Replication slot '${CDC_SLOT_NAME}' created`);
     }
+    await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
+    log.info(`Replication slot '${CDC_SLOT_NAME}' created`);
+    return 'created';
   } catch (error) {
     log.warn('Could not verify/create replication slot', { err: error, slotName: CDC_SLOT_NAME });
+    return 'unknown';
   }
 }
 
-/** One stale-slot recovery per worker lifetime, so the retry loop cannot repeatedly discard WAL. */
-let slotRecreationAttempted = false;
+/** One stale-slot drop per worker lifetime, so the retry loop cannot give up WAL again and again. */
+let slotDropAttempted = false;
 
 /**
- * Recreates a slot whose WAL start predates its publication, after terminating its sender; the sync
- * sequence recovers the skipped WAL. Runs once per worker and only once the publication is confirmed
- * to exist, which distinguishes a stale slot from a missing publication.
+ * Drops a slot whose WAL start predates its publication, after terminating its sender. Decoding can never proceed
+ * from it, so what it held is lost: the next attempt makes a new slot and rebuilds the books. Runs once per worker
+ * and only once the publication is confirmed to exist, which tells a stale slot from a missing publication.
  */
-async function recreateReplicationSlot(): Promise<void> {
-  if (slotRecreationAttempted) {
-    log.warn(`Skipping slot recreation for '${CDC_SLOT_NAME}': already attempted once this worker lifetime`);
+async function dropStaleReplicationSlot(): Promise<void> {
+  if (slotDropAttempted) {
+    log.warn(`Not dropping slot '${CDC_SLOT_NAME}' again: already done once this worker lifetime`);
     return;
   }
   try {
     const publicationCheck = await cdcDb.execute(sql`SELECT 1 FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`);
     if (publicationCheck.rows.length === 0) {
-      log.warn(`Publication '${CDC_PUBLICATION_NAME}' does not exist; not recreating slot '${CDC_SLOT_NAME}'. Backing off until it appears.`);
+      log.warn(`Publication '${CDC_PUBLICATION_NAME}' does not exist; not dropping slot '${CDC_SLOT_NAME}'. Backing off until it appears.`);
       return;
     }
 
-    slotRecreationAttempted = true;
-    log.warn(`Recreating replication slot '${CDC_SLOT_NAME}' to clear a stale start position`);
+    slotDropAttempted = true;
+    log.error(`Dropping replication slot '${CDC_SLOT_NAME}': it predates its publication and cannot be read`);
     await cdcDb.execute(sql`
       SELECT pg_terminate_backend(active_pid) FROM pg_replication_slots
       WHERE slot_name = ${CDC_SLOT_NAME} AND active_pid IS NOT NULL
@@ -122,10 +137,8 @@ async function recreateReplicationSlot(): Promise<void> {
       SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})
       WHERE EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME})
     `);
-    await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
-    log.info(`Replication slot '${CDC_SLOT_NAME}' recreated at current WAL position`);
   } catch (error) {
-    log.warn('Could not recreate replication slot', { err: error, slotName: CDC_SLOT_NAME });
+    log.warn('Could not drop the stale replication slot', { err: error, slotName: CDC_SLOT_NAME });
   }
 }
 
@@ -166,6 +179,31 @@ export function setupBackpressure(): void {
 
 // Subscription loop
 
+/** The steps of a subscription attempt that reach outside the loop, so a test can stand in for them. */
+interface SubscriptionSteps {
+  createService: () => LogicalReplicationService;
+  checkSetup: () => Promise<string[]>;
+  settle: (slotCreated: boolean) => Promise<void>;
+}
+
+/**
+ * The lost cases, handled between two subscriptions: the WAL cannot bring the books back, so they are rebuilt from the
+ * tables and every client refetches. A slot that had to be made on a database with a history, counters that are gone
+ * (an unlogged table is emptied by a crash or a failover), a change that failed every read, or a rebuild on request.
+ */
+export async function settleLostCases(slotCreated: boolean): Promise<void> {
+  if (slotCreated && (await hasHistory())) return rebuildBooks('lost_slot');
+  if (await countersAreLost()) return rebuildBooks('lost_counters');
+
+  const { failure, stuck } = replicationState;
+  if (stuck && failure && rebuildAllowed()) return rebuildBooks('stuck', { position: failure.position, error: failure.error });
+
+  if (replicationState.rebuildRequested) {
+    await rebuildBooks('requested');
+    await clearRebuildRequest();
+  }
+}
+
 /**
  * Subscribes for as long as the worker runs. Every subscription is a new service with empty buffers, so it starts at
  * the slot's confirmed position: whatever an earlier subscription had received without acknowledging is delivered
@@ -173,8 +211,7 @@ export function setupBackpressure(): void {
  */
 export async function subscribeWithReconnect(
   plugin: PgoutputPlugin,
-  createService: () => LogicalReplicationService = createReplicationService,
-  checkSetup: () => Promise<string[]> = checkReplicationSetup,
+  { createService = createReplicationService, checkSetup = checkReplicationSetup, settle = settleLostCases }: Partial<SubscriptionSteps> = {},
 ): Promise<void> {
   // Fast retries during a rolling-deploy slot handoff, then the normal cadence under sustained contention.
   let attempt = 0;
@@ -187,12 +224,14 @@ export async function subscribeWithReconnect(
 
       // Every attempt: dropping a database removes its slots, and no slot can be created while it is
       // unreachable. One catalog SELECT per attempt, and a no-op when another worker holds the slot.
-      await ensureReplicationSlot();
+      const slot = await ensureReplicationSlot();
 
       // A stream from a setup that does not match the worker would drop or misread changes without a sign.
       replicationState.setupProblems = await checkSetup();
       if (replicationState.setupProblems.length)
         throw new Error(`Replication setup does not match the worker: ${replicationState.setupProblems.join('; ')}`);
+
+      await settle(slot === 'created');
 
       resetBuffers();
       service = createService();
@@ -228,11 +267,8 @@ export async function subscribeWithReconnect(
         ...(slotHolder && { slotHolder }),
       });
       replicationState.markStopped();
-      // Reposition a slot whose start predates its publication so decoding can proceed.
-      if (isStalePublicationError(error)) {
-        log.warn(`Slot '${CDC_SLOT_NAME}' predates publication '${CDC_PUBLICATION_NAME}', recreating to self-heal`);
-        await recreateReplicationSlot();
-      }
+      // A slot whose start predates its publication can never be read: it goes, and the next attempt handles the loss.
+      if (isStalePublicationError(error)) await dropStaleReplicationSlot();
       await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
     }
   }

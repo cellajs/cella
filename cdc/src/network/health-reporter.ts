@@ -20,6 +20,7 @@ function push(): void {
       lagBytes: metrics.lagBytes,
       lastEventAt: replicationState.lastEventAt?.toISOString() ?? null,
       lagMs: replicationState.lagMs,
+      generation: replicationState.generation,
       stuck: replicationState.stuck,
       rlsBypass: role?.rlsBypass ?? null,
       roleReplication: role?.replication ?? null,

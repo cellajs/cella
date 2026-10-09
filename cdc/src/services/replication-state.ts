@@ -28,6 +28,11 @@ class ReplicationStateManager {
   lastKeepaliveLsn: string | null = null;
   private _replicationPausedAt: Date | null = null;
 
+  /** Generation of the books, from `sync_state`: health reports it, and the API tells clients when it moved. */
+  generation = 1;
+  /** Set when a rebuild was asked for: the subscription loop runs it between two subscriptions. */
+  rebuildRequested = false;
+
   /** What the last setup check found wrong; while it is not empty the worker does not read. */
   setupProblems: string[] = [];
 
@@ -161,6 +166,8 @@ class ReplicationStateManager {
     this.lastKeepaliveLsn = null;
     this._service = null;
     this._replicationPausedAt = null;
+    this.generation = 1;
+    this.rebuildRequested = false;
     this.setupProblems = [];
     this.flushFailed = false;
     this.stopping = false;

@@ -1,6 +1,7 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import { RESOURCE_LIMITS } from '../constants';
 import { log } from '../lib/pino';
+import { fence } from '../services/fence';
 import { FlushBuffer } from '../services/flush-buffer';
 import { replicationState } from '../services/replication-state';
 import { TransactionBuffer } from '../services/transaction-buffer';
@@ -52,6 +53,9 @@ flushBuffer.onFlushed = () => replicationState.clearFailure();
 
 /** Cascade suppression within a single transaction. */
 const txBuffer = new TransactionBuffer((events) => flushBuffer.enqueue(events));
+
+/** Prefix of the logical message a count from the tables writes right after its snapshot. */
+export const FENCE_MARKER_PREFIX = 'sync-fence';
 
 /** Data messages whose handler has not returned yet. */
 let inFlightMessages = 0;
@@ -131,6 +135,18 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
     return;
   }
 
+  if (tag === 'message') {
+    const { prefix, content } = msg as Pgoutput.MessageMessage;
+    if (prefix === FENCE_MARKER_PREFIX) {
+      // The marker was written right after a count's snapshot. Once everything before it is recorded, the stream has
+      // passed that snapshot.
+      await flushBuffer.flush();
+      if (!replicationState.flushFailed) fence.markerArrived(new TextDecoder().decode(content));
+    }
+    await acknowledgeSkipped(lsn);
+    return;
+  }
+
   // Skips relation, origin, type and other non-DML messages.
   if (!isDmlMessage(msg)) return;
 
@@ -149,6 +165,14 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
   replicationState.markEvent();
 
   await txBuffer.onEvent(lsn, parseResult, index);
+}
+
+/**
+ * Runs `fn` exactly between two flushes: what it reads holds every flush before it and none after it, and the next
+ * flush waits until it resolved.
+ */
+export function runBetweenFlushes<T>(fn: () => Promise<T>): Promise<T> {
+  return flushBuffer.exclusive(fn);
 }
 
 /** Called during graceful shutdown. */

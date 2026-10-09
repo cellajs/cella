@@ -113,6 +113,25 @@ export class FlushBuffer {
   }
 
   /**
+   * Runs `fn` while no flush is in progress and holds the next flush until it resolved: what `fn` reads sits exactly
+   * between two flushes. Events keep arriving meanwhile and are flushed after it.
+   */
+  async exclusive<T>(fn: () => Promise<T>): Promise<T> {
+    while (this.flushing) await this.flushing;
+    const run = fn();
+    this.flushing = run
+      .then(
+        () => {},
+        () => {},
+      )
+      .finally(() => {
+        this.flushing = null;
+        if (this.pendingCount > 0) void this.flush();
+      });
+    return run;
+  }
+
+  /**
    * Closes the buffer on a failure: of a flush, or of a message that could not be handled before it reached one. What
    * is pending is dropped, because the stream is read again from the last acknowledged position.
    * @param error - What failed.

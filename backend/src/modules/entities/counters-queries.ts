@@ -31,21 +31,35 @@ const membershipPairs = (alias: string, fk: string, ctxType: string, ctxRoles: r
   countPair('m:c:pending', 'inactive_memberships im', `im.${fk} = ${alias}.id AND im.channel_type = '${ctxType}' AND im.rejected_at IS NULL`),
 ];
 
-/** Upsert a SELECT into channel_counters with JSONB || merge */
+/** Keys that only move forward: the sequence counter and every frontier. A recount never sets them back. */
+const forwardOnlyKey = (alias: string) => `(${alias} = 'sequence' OR ${alias} LIKE 'e:f:%')`;
+
+/**
+ * Upsert a SELECT into channel_counters with JSONB || merge. A forward-only key keeps the higher of the stored and the
+ * counted value: the worker may have handed out sequence values the count's snapshot does not see yet.
+ */
 const upsertChannelCounters = (db: DbOrTx, selectSql: string) =>
   db.execute(
     sql.raw(`
     INSERT INTO channel_counters (channel_key, counts, updated_at)
     ${selectSql}
     ON CONFLICT (channel_key) DO UPDATE SET
-      counts = channel_counters.counts || EXCLUDED.counts,
+      counts = channel_counters.counts || EXCLUDED.counts || (
+        SELECT COALESCE(jsonb_object_agg(k, GREATEST((channel_counters.counts->>k)::bigint, (EXCLUDED.counts->>k)::bigint)), '{}'::jsonb)
+        FROM jsonb_object_keys(EXCLUDED.counts) k
+        WHERE ${forwardOnlyKey('k')} AND channel_counters.counts ? k
+      ),
       updated_at = NOW()
   `),
   );
 
-/** Rebuilds counters from database state, for seeding or repair. */
-export const recalculateCounters = async (ctx: DbContext) => {
-  const { db } = ctx.var;
+/**
+ * Every SELECT that yields `(channel_key, counts)` rows of the channel counters as counted from the tables, in the
+ * order they merge. The one body for the seed's rebuild and for the CDC worker's verify and rebuild, so the two can
+ * never count differently.
+ */
+function channelCounterSelects(): string[] {
+  const selects: string[] = [];
   // ── Phase 1: Organization-level counters ──────────────────────────────
   const orgPairs = [
     ...membershipPairs('o', 'organization_id', 'organization', roles.all),
@@ -60,13 +74,10 @@ export const recalculateCounters = async (ctx: DbContext) => {
       ),
   ].join(', ');
 
-  await upsertChannelCounters(
-    db,
-    `
+  selects.push(`
     SELECT o.id, jsonb_build_object(${orgPairs}), NOW()
     FROM organizations o
-  `,
-  );
+  `);
 
   // ── Phase 2: Sub-org context counters (e.g. project-level) ────────────
   // Every descendant counts on every ancestor level it has a non-null FK for, as in getEntityDeltas.
@@ -84,25 +95,19 @@ export const recalculateCounters = async (ctx: DbContext) => {
       ),
     ].join(', ');
 
-    await upsertChannelCounters(
-      db,
-      `
+    selects.push(`
       SELECT ctx.id, jsonb_build_object(${allPairs}), NOW()
       FROM ${tbl(ctxType)} ctx
-    `,
-    );
+    `);
   }
 
   // Rebuilt from the maximum stamped sequence; tombstones stay part of the frontier, as in CDC.
   const sequenceMaxes = appConfig.productEntityTypes.map((et) => `COALESCE((SELECT MAX(t.seq) FROM ${tbl(et)} t WHERE t.organization_id = o.id), 0)`);
   if (sequenceMaxes.length > 0) {
-    await upsertChannelCounters(
-      db,
-      `
+    selects.push(`
       SELECT o.id, jsonb_build_object('sequence', GREATEST(${sequenceMaxes.join(', ')})), NOW()
       FROM organizations o
-    `,
-    );
+    `);
   }
 
   for (const entityType of appConfig.productEntityTypes) {
@@ -112,53 +117,41 @@ export const recalculateCounters = async (ctx: DbContext) => {
     const frontierPredicate = publishedPredicate(entityType, 't');
 
     // Org node: every stamped countable row rolls up to its organization.
-    await upsertChannelCounters(
-      db,
-      `
+    selects.push(`
       SELECT t.organization_id, jsonb_build_object('${frontierKey}', COALESCE(MAX(t.seq), 0)), NOW()
       FROM ${tableName} t
       WHERE t.organization_id IS NOT NULL${frontierPredicate}
       GROUP BY t.organization_id
-    `,
-    );
+    `);
 
     // Every sub-organization ancestor level with a FK column, matching CDC's frontierNodeKeys.
     for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
       if (ancestor === 'organization') continue;
       const col = entityIdColumnName(ancestor);
-      await upsertChannelCounters(
-        db,
-        `
+      selects.push(`
         SELECT t.${col}, jsonb_build_object('${frontierKey}', COALESCE(MAX(t.seq), 0)), NOW()
         FROM ${tableName} t
         WHERE t.${col} IS NOT NULL${frontierPredicate}
         GROUP BY t.${col}
-      `,
-      );
+      `);
     }
 
     // Self family, home node only: e:f:h:{type} = MAX(seq) of homed rows (drafts excluded,
     // tombstones included); e:c:h:{type} = COUNT of live and published homed rows.
     const homeExpr = deepestAncestorExpr(entityType, 't');
     if (homeExpr) {
-      await upsertChannelCounters(
-        db,
-        `
+      selects.push(`
         SELECT ${homeExpr}, jsonb_build_object('e:f:h:${entityType}', COALESCE(MAX(t.seq), 0)), NOW()
         FROM ${tableName} t
         WHERE ${homeExpr} IS NOT NULL${frontierPredicate}
         GROUP BY ${homeExpr}
-      `,
-      );
-      await upsertChannelCounters(
-        db,
-        `
+      `);
+      selects.push(`
         SELECT ${homeExpr}, jsonb_build_object('e:c:h:${entityType}', COUNT(*)::int), NOW()
         FROM ${tableName} t
         WHERE ${homeExpr} IS NOT NULL${livePredicate(entityType, 't')}${publishedPredicate(entityType, 't')}
         GROUP BY ${homeExpr}
-      `,
-      );
+      `);
     }
   }
 
@@ -170,9 +163,7 @@ export const recalculateCounters = async (ctx: DbContext) => {
     // COALESCE mirrors CDC's e:li:h: stamp source (publishedAt ?? createdAt).
     const liSource = 'publishedAt' in getColumns(getEntityTable(entityType)) ? 'COALESCE(t.published_at, t.created_at)' : 't.created_at';
 
-    await upsertChannelCounters(
-      db,
-      `
+    selects.push(`
       SELECT ${ctxExpr}, jsonb_strip_nulls(jsonb_build_object(
         'e:li:h:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(${liSource})) * 1000)::bigint,
         'e:lu:h:${entityType}', FLOOR(EXTRACT(EPOCH FROM MAX(t.updated_at)) * 1000)::bigint
@@ -180,9 +171,63 @@ export const recalculateCounters = async (ctx: DbContext) => {
       FROM ${tableName} t
       WHERE ${ctxExpr} IS NOT NULL${livePredicate(entityType, 't')}${publishedPredicate(entityType, 't')}
       GROUP BY ${ctxExpr}
-    `,
-    );
+    `);
   }
+
+  // 4b: Array-ref counters into channel_counters, e.g. label usage from tasks.labels[].
+  for (const ref of appConfig.productEmbeddings) {
+    // Hydrated single-reference embeddings have no array column to unnest.
+    if (!(ref.hostColumn in getColumns(getEntityTable(ref.hostProduct as EntityType)))) continue;
+    const hostType = ref.hostProduct as EntityType;
+    const src = tbl(hostType);
+    const embedded = tbl(ref.embeddedProduct as EntityType);
+    const key = `e:c:${ref.hostProduct}`;
+
+    // Driven from the embedded table, not the reference set: a row whose last host dropped it must be
+    // written back to 0, and GROUP BY alone would leave its previous count standing.
+    selects.push(`
+      SELECT e.id::text, jsonb_build_object('${key}', COALESCE(u.ref_count, 0)::int), NOW()
+      FROM ${embedded} e
+      LEFT JOIN (
+        SELECT target_id, COUNT(*)::int AS ref_count
+        FROM ${src} h, unnest(h.${ref.hostColumn}) AS target_id
+        WHERE TRUE${livePredicate(hostType, 'h')}${publishedPredicate(hostType, 'h')}
+        GROUP BY target_id
+      -- Host id arrays may be text[] or uuid[], so both sides compare as text.
+      ) u ON u.target_id::text = e.id::text
+    `);
+  }
+
+  return selects;
+}
+
+/** Whether a counter key only moves forward (the sequence counter, a frontier), where the others are plain counts. */
+export const isForwardOnlyCounterKey = (key: string): boolean => key === 'sequence' || key.startsWith('e:f:');
+
+/**
+ * The channel counters as counted from the tables, without writing them. Run it in a REPEATABLE READ transaction to
+ * count at one snapshot.
+ * @param ctx - Carries the connection or transaction to count on.
+ * @returns Counter keys and values per channel key.
+ */
+export const computeChannelCounters = async (ctx: DbContext): Promise<Map<string, Record<string, number>>> => {
+  const counted = new Map<string, Record<string, number>>();
+  for (const select of channelCounterSelects()) {
+    const result = await ctx.var.db.execute<{ channel_key: string | null; counts: Record<string, number> }>(
+      sql.raw(`SELECT q.channel_key::text AS channel_key, q.counts FROM (${select}) AS q(channel_key, counts, updated_at)`),
+    );
+    for (const { channel_key: channelKey, counts } of result.rows) {
+      if (channelKey === null) continue;
+      counted.set(channelKey, { ...counted.get(channelKey), ...counts });
+    }
+  }
+  return counted;
+};
+
+/** Rebuilds counters from database state, for seeding or repair. */
+export const recalculateCounters = async (ctx: DbContext) => {
+  const { db } = ctx.var;
+  for (const select of channelCounterSelects()) await upsertChannelCounters(db, select);
 
   // Canonical channel paths let catchup verify ancestry; CDC keeps them, this copies the ones that differ.
   for (const channelType of hierarchy.channelTypes) {
@@ -207,33 +252,6 @@ export const recalculateCounters = async (ctx: DbContext) => {
       view_count = EXCLUDED.view_count
   `),
   );
-
-  // 4b: Array-ref counters into channel_counters, e.g. label usage from tasks.labels[].
-  for (const ref of appConfig.productEmbeddings) {
-    // Hydrated single-reference embeddings have no array column to unnest.
-    if (!(ref.hostColumn in getColumns(getEntityTable(ref.hostProduct as EntityType)))) continue;
-    const hostType = ref.hostProduct as EntityType;
-    const src = tbl(hostType);
-    const embedded = tbl(ref.embeddedProduct as EntityType);
-    const key = `e:c:${ref.hostProduct}`;
-
-    // Driven from the embedded table, not the reference set: a row whose last host dropped it must be
-    // written back to 0, and GROUP BY alone would leave its previous count standing.
-    await upsertChannelCounters(
-      db,
-      `
-      SELECT e.id::text, jsonb_build_object('${key}', COALESCE(u.ref_count, 0)::int), NOW()
-      FROM ${embedded} e
-      LEFT JOIN (
-        SELECT target_id, COUNT(*)::int AS ref_count
-        FROM ${src} h, unnest(h.${ref.hostColumn}) AS target_id
-        WHERE TRUE${livePredicate(hostType, 'h')}${publishedPredicate(hostType, 'h')}
-        GROUP BY target_id
-      -- Host id arrays may be text[] or uuid[], so both sides compare as text.
-      ) u ON u.target_id::text = e.id::text
-    `,
-    );
-  }
 
   const [{ channelRows }] = await db.select({ channelRows: sql<number>`count(*)`.mapWith(Number) }).from(channelCountersTable);
   const [{ productRows }] = await db.select({ productRows: sql<number>`count(*)`.mapWith(Number) }).from(productCountersTable);

@@ -21,6 +21,20 @@ export const RESOURCE_LIMITS = {
     stuckAfter: 5,
   },
 
+  // Checking the books against the tables, and rebuilding them when they are lost
+  books: {
+    /** Statement timeout of a count from the tables, which reads every counted table once. */
+    countTimeoutMs: 10 * 60e3,
+    /** How long a verify waits for the stream to reach its snapshot before it gives up. */
+    passTimeoutMs: 5 * 60e3,
+    /** At most one rebuild for a stuck worker in this time: a fault that repeats costs one refetch per interval. */
+    rebuildIntervalMs: 10 * 60e3,
+    /** The hour (UTC) of the daily verify. */
+    verifyHourUtc: 3,
+    /** How often the worker looks for a verify or a rebuild that was asked for. */
+    requestPollMs: 5000,
+  },
+
   // Server-side limits for every session of the worker's pool
   database: { lockMs: 10_000, statementMs: 60_000, idleInTransactionMs: 30_000 },
 

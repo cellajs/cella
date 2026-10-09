@@ -37,5 +37,7 @@ export interface PendingEvent {
   commitLsn?: string | null;
   /** Index of the change in its transaction, counted over every change received, kept or not. */
   index?: number;
+  /** Id of the event's transaction, from its BEGIN: it tells whether a count from the tables already saw the change. */
+  xid?: number;
   result: ParseMessageResult;
 }

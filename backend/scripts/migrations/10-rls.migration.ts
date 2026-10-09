@@ -60,7 +60,8 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
     'tenants',
     ...appFullCrudTables,
   ];
-  const readOnlyTables = ['system_roles', 'activities', ...appReadOnlyTables];
+  // The CDC worker owns the sync state and its incident log; the API only reads them.
+  const readOnlyTables = ['system_roles', 'activities', 'sync_state', 'sync_incidents', ...appReadOnlyTables];
 
   return { rlsTables, fullCrudTables, readOnlyTables };
 }

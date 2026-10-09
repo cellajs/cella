@@ -83,7 +83,7 @@ export class TransactionBuffer {
       return;
     }
 
-    this.pendingEvents.push({ lsn, commitLsn: this.commitLsn, index, result });
+    this.pendingEvents.push({ lsn, commitLsn: this.commitLsn, index, xid: this.activeXid, result });
   }
 
   /** Emits the surviving buffered events; a second pass catches child deletes that preceded their parent. */

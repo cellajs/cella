@@ -51,7 +51,7 @@ export async function startCdcPipeline(): Promise<CdcPipelineHarness> {
   wsClient.connect();
   replicationState.status = 'active';
 
-  const plugin = new PgoutputPlugin({ protoVersion: 1, publicationNames: [CDC_PUBLICATION_NAME] });
+  const plugin = new PgoutputPlugin({ protoVersion: 1, publicationNames: [CDC_PUBLICATION_NAME], messages: true });
   // subscribe() stays pending while streaming; it resolves on service.stop().
   service.subscribe(plugin, CDC_SLOT_NAME).catch(() => {});
 

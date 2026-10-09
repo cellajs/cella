@@ -9,6 +9,7 @@ import { wsClient } from '../network/websocket-client';
 import { type BatchEvent, generateActivityId, sendBatchMessageToApi, sendMessageToApi } from '../services/activity-service';
 import { metrics } from '../services/cdc-metrics';
 import { ApiUnreachableError } from '../services/failure';
+import { addCounts, type CounterDeltas, fence, plainCounts } from '../services/fence';
 import { replicationState } from '../services/replication-state';
 import type { CdcRowData, PendingEvent } from '../types';
 import { applyBatchUnifiedDeltas } from '../utils/apply-unified-deltas';
@@ -64,6 +65,7 @@ const isStampedEvent = ({ event }: PreparedEvent): boolean => {
  * its row keeps the seq it got the first time, read back here for the notification.
  */
 async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
+  let counted: CounterDeltas = new Map();
   await cdcDb.transaction(async (tx) => {
     const insertedIds = new Set<string>();
     for (let offset = 0; offset < prepared.length; offset += ACTIVITY_CHUNK_SIZE) {
@@ -73,7 +75,17 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
     }
 
     const fresh = prepared.filter((item) => insertedIds.has(item.activityWithId.id));
-    if (fresh.length > 0) await applyBatchUnifiedDeltas(computeBatchUnifiedDeltas(fresh.map((item) => item.event)), tx);
+    if (fresh.length > 0) {
+      const plan = computeBatchUnifiedDeltas(fresh.map((item) => item.event));
+      // A count from the tables that is still being caught up with already saw some of these transactions.
+      const seen = fresh.filter((item) => fence.sawTransaction(item.event.xid));
+      if (seen.length > 0) {
+        counted = plainCounts(computeBatchUnifiedDeltas(seen.map((item) => item.event)).countDeltasByChannelKey);
+        // A rebuild wrote the count itself: what it saw is not counted a second time. A verify only compares.
+        if (fence.mode === 'rebuild') addCounts(plan.countDeltasByChannelKey, counted, -1);
+      }
+      await applyBatchUnifiedDeltas(plan, tx);
+    }
 
     const replayed = prepared.filter((item) => !insertedIds.has(item.activityWithId.id) && isStampedEvent(item));
     for (const [tableName, items] of groupBy(replayed, (item) => item.event.result.activity.tableName)) {
@@ -90,6 +102,8 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
       for (const item of items) item.rowData.seq = seqById.get(item.rowData.id) ?? item.rowData.seq;
     }
   });
+  // Only what the transaction committed counts towards the comparison.
+  fence.addCounted(counted);
 }
 
 // Sync dispatch
