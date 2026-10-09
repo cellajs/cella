@@ -64,17 +64,27 @@ class FakeLocks {
 }
 
 class FakeBroadcastChannel {
+  /** The channel the coordinator opened: it opens one and keeps it. */
+  static opened: FakeBroadcastChannel | null = null;
   onmessage: ((event: MessageEvent) => void) | null = null;
-  constructor(public name: string) {}
-  postMessage(): void {}
+  posted: unknown[] = [];
+  constructor(public name: string) {
+    FakeBroadcastChannel.opened = this;
+  }
+  postMessage(message: unknown): void {
+    this.posted.push(message);
+  }
   close(): void {}
 }
+
+/** What another tab posted, as this tab receives it. */
+const receive = (message: unknown) => FakeBroadcastChannel.opened?.onmessage?.({ data: message } as MessageEvent);
 
 const fakeLocks = new FakeLocks();
 vi.stubGlobal('navigator', { locks: fakeLocks });
 vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel);
 
-const { initTabCoordinator, releaseTabLeadership, isLeader } = await import('./tab-coordinator');
+const { broadcastSyncGeneration, initTabCoordinator, isLeader, onSyncGeneration, releaseTabLeadership } = await import('./tab-coordinator');
 
 /** Flush microtasks + timers so lock grants and promotions settle. */
 const tick = () => new Promise((r) => setTimeout(r, 0));
@@ -136,5 +146,40 @@ describe('tab coordinator leadership', () => {
     // The follower must take over so the SSE stream stays alive for every tab.
     expect(isLeader()).toBe(true);
     expect(fakeLocks.isHeld('tab-leader')).toBe(true);
+  });
+});
+
+describe('another generation of the sync books, between tabs', () => {
+  it('reaches a follower, which runs no catchup of its own', async () => {
+    fakeLocks.request('tab-leader', () => new Promise<void>(() => {}));
+    await initTabCoordinator();
+    const heard: number[] = [];
+    const stop = onSyncGeneration((generation) => heard.push(generation));
+
+    receive({ type: 'sync-generation', generation: 7 });
+    stop();
+    receive({ type: 'sync-generation', generation: 8 });
+
+    expect(heard).toEqual([7]);
+  });
+
+  it('is not acted on by the leader: its own catchup brought it', async () => {
+    await initTabCoordinator();
+    const heard: number[] = [];
+    const stop = onSyncGeneration((generation) => heard.push(generation));
+
+    receive({ type: 'sync-generation', generation: 7 });
+    stop();
+
+    expect(isLeader()).toBe(true);
+    expect(heard).toEqual([]);
+  });
+
+  it('is posted to the other tabs by the leader', async () => {
+    await initTabCoordinator();
+
+    broadcastSyncGeneration(7);
+
+    expect(FakeBroadcastChannel.opened?.posted).toContainEqual({ type: 'sync-generation', generation: 7 });
   });
 });

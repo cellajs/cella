@@ -35,6 +35,7 @@ describe('declareViewsFromMemberships (template equivalence)', () => {
     queryClient.setQueryData(['me', 'memberships'], { items: [orgMembership('org-1', 'admin'), orgMembership('org-2', 'member')] });
     syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 7);
+    syncStore.getState().setOrgTenantId('org-2', 'tenant-1');
 
     const before = syncStore.getState().getCatchupViews(['attachment']);
     declareViewsFromMemberships();
@@ -65,5 +66,32 @@ describe('declareViewsFromMemberships (template equivalence)', () => {
     registerEntityQueryKeys('attachment', createEntityKeys('attachment'));
     expect(() => declareViewsFromMemberships()).not.toThrow();
     expect(syncStore.getState().views).toEqual({});
+    expect(syncStore.getState().orgs).toEqual({});
+  });
+
+  it('gives an organization the store has not seen its entry, so a first catchup declares its view', () => {
+    registerEntityQueryKeys('attachment', createEntityKeys('attachment'));
+    queryClient.setQueryData(['me', 'memberships'], { items: [orgMembership('org-1', 'admin'), orgMembership('org-2', 'member')] });
+    // A fresh client: nothing stored, so a request built now would declare no view at all.
+    expect(syncStore.getState().getCatchupViews(['attachment'])).toEqual([]);
+
+    declareViewsFromMemberships();
+
+    expect(syncStore.getState().getOrgTenantId('org-2')).toBe('tenant-1');
+    expect(syncStore.getState().getCatchupViews(['attachment'])).toEqual([
+      expect.objectContaining({ key: 'org-1:attachment', organizationId: 'org-1', cursor: 0 }),
+      expect.objectContaining({ key: 'org-2:attachment', organizationId: 'org-2', cursor: 0 }),
+    ]);
+  });
+
+  it('must not put the cursor of a known organization back', () => {
+    registerEntityQueryKeys('attachment', createEntityKeys('attachment'));
+    queryClient.setQueryData(['me', 'memberships'], { items: [orgMembership('org-1', 'admin')] });
+    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 7);
+
+    declareViewsFromMemberships();
+
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(7);
   });
 });

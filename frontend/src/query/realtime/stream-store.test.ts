@@ -11,7 +11,7 @@ vi.mock('~/query/realtime/sync-store', () => ({
 }));
 vi.mock('./app-stream-handler', () => ({ handleAppStreamNotification: vi.fn() }));
 vi.mock('./view-declaration', () => ({ declareViewsFromMemberships: vi.fn() }));
-vi.mock('./catchup-processor', () => ({ catchupEntityTypes: () => [], processAppCatchup: vi.fn() }));
+vi.mock('./catchup-processor', () => ({ adoptGenerationFromLeader: vi.fn(), catchupEntityTypes: () => [], processAppCatchup: vi.fn() }));
 // Controllable leader state so tests can drive the follower -> leader promotion transition.
 const leaderControl = vi.hoisted(() => {
   const state = { isLeader: true };
@@ -40,6 +40,7 @@ vi.mock('./tab-coordinator', () => ({
   initTabCoordinator: vi.fn(() => Promise.resolve()),
   isLeader: () => leaderControl.isLeader(),
   onNotification: vi.fn(() => () => {}),
+  onSyncGeneration: vi.fn(() => () => {}),
   tabCoordinatorStore: { getState: () => leaderControl.getState(), subscribe: leaderControl.subscribe },
 }));
 vi.mock('sdk', () => ({ postAppCatchup: vi.fn() }));

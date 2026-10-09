@@ -59,5 +59,9 @@ export function declareViewsFromMemberships(): void {
     for (const orgId of Object.keys(syncStore.getState().orgs)) {
       if (!memberOrgIds.has(orgId)) store.removeOrg(orgId);
     }
+    // An organization the store has not seen gets its entry here, so the catchup that follows declares its views and stores their baselines on a client's first connection.
+    for (const { organizationId, tenantId } of memberships) {
+      if (!syncStore.getState().orgs[organizationId]) store.setOrgTenantId(organizationId, tenantId);
+    }
   }
 }

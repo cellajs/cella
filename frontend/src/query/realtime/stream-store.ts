@@ -7,8 +7,8 @@ import { reportCriticalError } from '~/lib/tracing';
 import { setSyncStreamHealthy } from '~/query/basic/sync-stale-state';
 import { type CatchupViewRequest, syncStore } from '~/query/realtime/sync-store';
 import { handleAppStreamNotification } from './app-stream-handler';
-import { catchupEntityTypes, processAppCatchup } from './catchup-processor';
-import { broadcastNotification, initTabCoordinator, isLeader, onNotification, tabCoordinatorStore } from './tab-coordinator';
+import { adoptGenerationFromLeader, catchupEntityTypes, processAppCatchup } from './catchup-processor';
+import { broadcastNotification, initTabCoordinator, isLeader, onNotification, onSyncGeneration, tabCoordinatorStore } from './tab-coordinator';
 import type { AppStreamNotification, StreamState } from './types';
 import { declareViewsFromMemberships } from './view-declaration';
 
@@ -542,6 +542,9 @@ export const appStreamManager = new StreamManager('AppStream', {
 
 // Mirrors stream health into the basic layer without a circular import: catch-up reconciles every connection, so only errors enable time-based freshness.
 appStreamManager.useStore.subscribe((s) => setSyncStreamHealthy(s.state !== 'error'));
+
+// Only the leader runs catchup, so a follower learns from it that the server's sync books moved to another generation.
+onSyncGeneration(adoptGenerationFromLeader);
 
 /** Resolves on the first catchup after page load, or on its failure. Safe to call before any stream connects. */
 export function waitForActiveCatchup(): Promise<void> {

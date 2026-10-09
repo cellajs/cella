@@ -43,6 +43,13 @@ vi.mock('./propagation', async (importOriginal) => {
   };
 });
 
+// The real coordinator, with what the leader posts to the other tabs observed.
+const broadcastSyncGenerationSpy = vi.fn();
+vi.mock('./tab-coordinator', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./tab-coordinator')>();
+  return { ...actual, broadcastSyncGeneration: (generation: number) => broadcastSyncGenerationSpy(generation) };
+});
+
 vi.mock('./membership-ops', () => ({
   invalidateChannelList: vi.fn(),
   invalidateMemberQueries: vi.fn(),
@@ -72,7 +79,7 @@ const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-reg
 const { queryClient } = await import('~/query/query-client');
 const { syncStore } = await import('~/query/realtime/sync-store');
 const { flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');
-const { processAppCatchup } = await import('./catchup-processor');
+const { adoptGenerationFromLeader, processAppCatchup } = await import('./catchup-processor');
 
 // The real fetch prioritizer holds module state (dirty map, timer), cleared between tests.
 afterEach(() => resetFetchPrioritizer());
@@ -207,6 +214,20 @@ describe('catchup processor (view-driven)', () => {
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(42);
   });
 
+  it('a first connection refetches a list that was read before its stream was live, and stores the frontier', async () => {
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    // The route loader was first: its rows are from before the subscription, so the frontier cannot vouch for them.
+    queryClient.setQueryData(keys.list.org('org-1'), { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'loaded' }], total: 1 });
+
+    await processAppCatchup(okViewResponse(42), true);
+
+    expect(deltaFetch).not.toHaveBeenCalled();
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(42);
+    expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
+  });
+
   it('a caught-up view (frontier <= cursor) neither fetches nor invalidates the cached list', async () => {
     // Reload contract: a cursor at the frontier confirms the warm cache without refetching. A fresh org avoids count-drift comparison in the module-level tracker.
     const keys = createEntityKeys<Record<string, never>>('attachment');
@@ -332,6 +353,54 @@ describe('catchup after the server rebuilt its sync books', () => {
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
     expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(keys.detail.byId('attachment-1'))?.isInvalidated).toBe(true);
+  });
+
+  it('tells the other tabs, which run no catchup, and only when the generation moved', async () => {
+    vi.useFakeTimers();
+    registerEntityQueryKeys(
+      'attachment',
+      createEntityKeys<Record<string, never>>('attachment'),
+      vi.fn(async () => ({ items: [], total: 0 })),
+    );
+
+    // A first catchup has nothing to distrust, and the same generation says nothing new.
+    await processAppCatchup({ ...okViewResponse(12), generation: 1 });
+    await processAppCatchup({ ...okViewResponse(12), generation: 1 });
+    expect(broadcastSyncGenerationSpy).not.toHaveBeenCalled();
+
+    await processAppCatchup({ ...okViewResponse(12), generation: 2 });
+    expect(broadcastSyncGenerationSpy).toHaveBeenCalledExactlyOnceWith(2);
+  });
+
+  it('a follower takes the generation from the leader: its cursors go back and what it has cached is refetched', async () => {
+    vi.useFakeTimers();
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    registerEntityQueryKeys(
+      'attachment',
+      keys,
+      vi.fn(async () => ({ items: [], total: 0 })),
+    );
+    syncStore.getState().adoptGeneration(1);
+    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 40);
+    cached(keys);
+
+    // The generation it holds: nothing to do.
+    adoptGenerationFromLeader(1);
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(false);
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(40);
+
+    adoptGenerationFromLeader(2);
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    expect(syncStore.getState().generation).toBe(2);
+    // The catchup it runs once it leads starts from no cursor.
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(0);
+    expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(keys.detail.byId('attachment-1'))?.isInvalidated).toBe(true);
+    // A follower passes nothing on: the leader told every tab.
+    expect(broadcastSyncGenerationSpy).not.toHaveBeenCalled();
   });
 
   it('fetches the range as always while the generation is the one it holds (positive control)', async () => {
