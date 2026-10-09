@@ -102,6 +102,36 @@ describe('sendBatchMessageToApi', () => {
     expect(orgB?.batchRows.map((row) => row.seq)).toEqual([5, 6, 7]);
   });
 
+  it('sends a group of one row as a single-row message, so the tab that wrote it knows its own write', () => {
+    const stx = { mutationId: 'mut-1', sourceId: 'tab-a', fieldTimestamps: {} };
+    const inOrg = (org: string, seq: number): ReturnType<typeof mockBatchEvent> => {
+      const event = mockBatchEvent(seq, `entity-${org}-${seq}`);
+      return { ...event, rowData: { ...event.rowData, organizationId: org, stx, name: 'renamed' } };
+    };
+    // One flush, two organizations: org-a has one edit, org-b two.
+    sendBatchMessageToApi([inOrg('org-a', 10), inOrg('org-b', 5), inOrg('org-b', 6)], { traceId: 'test', spanId: 'test' } as never);
+
+    const payloads = vi.mocked(wsClient.send).mock.calls.map(
+      (call) =>
+        call[0] as never as {
+          activity: { seq?: number; batchUntilSeq?: number; count?: number };
+          rowData: Record<string, unknown>;
+          batchRows?: unknown[];
+        },
+    );
+    const alone = payloads.find((p) => p.rowData.organizationId === 'org-a');
+    const together = payloads.find((p) => p.rowData.organizationId === 'org-b');
+
+    // No range and no batch rows: the API builds a notification for this one row, with its stx.
+    expect(alone?.activity.seq).toBe(10);
+    expect(alone?.activity.batchUntilSeq).toBeUndefined();
+    expect(alone?.batchRows).toBeUndefined();
+    expect(alone?.rowData).toMatchObject({ name: 'renamed', stx });
+    // Positive control: two rows for one audience stay a batch.
+    expect(together?.activity).toMatchObject({ seq: 5, batchUntilSeq: 6, count: 2 });
+    expect(together?.batchRows).toHaveLength(2);
+  });
+
   it('slims batch rows to permission-relevant fields only', () => {
     const event = mockBatchEvent(10);
     const second = mockBatchEvent(11);
