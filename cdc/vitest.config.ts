@@ -21,7 +21,8 @@ export default defineProject({
     testTimeout: 10000,
     include: ['src/**/*.test.ts'],
     exclude: excludePatterns,
-    fileParallelism: true,
+    // The integration files share one database, and one of them runs the real pipeline on it: it would record the rows another file writes.
+    fileParallelism: testMode === 'core',
     env: {
       NODE_ENV: 'test',
       DATABASE_CDC_URL: testDatabaseUrl,

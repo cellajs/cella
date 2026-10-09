@@ -30,6 +30,14 @@ describe('generateActivityId', () => {
     const after = generateActivityId('1/00000000');
     expect(before < after).toBe(true);
   });
+
+  it('tells the changes of one WAL record apart, in their order and before the next record', () => {
+    const rows = [0, 1, 2, 11].map((ordinal) => generateActivityId('0/16B3748', ordinal));
+
+    expect(rows).toEqual(['00000000-016B3748', '00000000-016B3748-0001', '00000000-016B3748-0002', '00000000-016B3748-0011']);
+    expect([...rows].sort()).toEqual(rows);
+    expect(rows[3] < generateActivityId('0/16B3749')).toBe(true);
+  });
 });
 
 describe('sendBatchMessageToApi', () => {

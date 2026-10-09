@@ -19,9 +19,11 @@ class ReplicationStateManager {
   private _replicationPausedAt: Date | null = null;
 
   // Catchup mode state
+  /** Set when a flush failed: the subscription loop waits before it reads the same events again. */
+  flushFailed = false;
+
   private _catchingUp = false;
   private _catchupStartedAt: number | null = null;
-  private _catchupEventsProcessed = 0;
   private _consecutiveLiveTxns = 0;
   private _lastLagMs: number | null = null;
   private _lastEventAt: Date | null = null;
@@ -87,7 +89,7 @@ class ReplicationStateManager {
 
   // ── Catchup mode ───────────────────────────────────────────────────────
 
-  /** True while the worker is replaying old WAL events. */
+  /** True while the worker reads changes that committed a while ago. A status for health alone: it changes no processing. */
   get catchingUp(): boolean {
     return this._catchingUp;
   }
@@ -95,10 +97,6 @@ class ReplicationStateManager {
   /** Epoch ms, null when not catching up. */
   get catchupStartedAt(): number | null {
     return this._catchupStartedAt;
-  }
-
-  get catchupEventsProcessed(): number {
-    return this._catchupEventsProcessed;
   }
 
   /** Last measured WAL lag in ms. */
@@ -116,14 +114,11 @@ class ReplicationStateManager {
     this._lastEventAt = new Date();
   }
 
-  incrementCatchupEvents(count = 1): void {
-    this._catchupEventsProcessed += count;
-  }
-
   /**
-   * Records WAL lag from a BEGIN message's commitTime and enters or exits catchup mode with hysteresis.
+   * Records how far behind the worker is, from the commit time of the transaction it reads, and sets or clears the
+   * catching-up status with hysteresis.
    *
-   * @returns whether catchup mode is active after this update.
+   * @returns whether the worker counts as catching up after this update.
    */
   updateLag(lagMs: number): boolean {
     this._lastLagMs = lagMs;
@@ -132,7 +127,6 @@ class ReplicationStateManager {
       if (lagMs > enterLagMs) {
         this._catchingUp = true;
         this._catchupStartedAt = Date.now();
-        this._catchupEventsProcessed = 0;
         this._consecutiveLiveTxns = 0;
         log.info('Entering catchup mode: WAL lag exceeds threshold', { lagMs: Math.round(lagMs), thresholdMs: enterLagMs });
       }
@@ -147,9 +141,10 @@ class ReplicationStateManager {
           lagMs: Math.round(lagMs),
           consecutiveLive: this._consecutiveLiveTxns,
           catchupDurationMs: duration,
-          eventsProcessed: this._catchupEventsProcessed,
         });
         this._catchingUp = false;
+        this._catchupStartedAt = null;
+        this._consecutiveLiveTxns = 0;
         return false;
       }
     } else {
@@ -158,13 +153,6 @@ class ReplicationStateManager {
     }
 
     return this._catchingUp;
-  }
-
-  /** Called once post-catchup recovery completes. */
-  resetCatchup(): void {
-    this._catchupStartedAt = null;
-    this._catchupEventsProcessed = 0;
-    this._consecutiveLiveTxns = 0;
   }
 
   /** Test helper. */
@@ -178,7 +166,6 @@ class ReplicationStateManager {
     this._replicationPausedAt = null;
     this._catchingUp = false;
     this._catchupStartedAt = null;
-    this._catchupEventsProcessed = 0;
     this._consecutiveLiveTxns = 0;
     this._lastLagMs = null;
     this._lastEventAt = null;

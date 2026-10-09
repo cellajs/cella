@@ -48,13 +48,13 @@ Reconnect uses the same path: cursor `3` and frontier `7` become `seqCursor=4,7`
 
 ### Ordering
 
-The CDC worker consumes PostgreSQL logical replication, preserves transaction boundaries so cascaded child deletes can be suppressed, then micro-batches committed events by type and action. Product batches are split by `(path, entityType)`, one audience per notification.
+The CDC worker consumes PostgreSQL logical replication, preserves transaction boundaries so cascaded child deletes can be suppressed, then records committed transactions in commit order, several per database transaction, and notifies per type and action. Product batches are split by `(path, entityType)`, one audience per notification.
 
 Commit order is sequence order across product types.
 
 ### Counters
 
-Per organization batch, the worker reserves a contiguous sequence range, stamps product rows in WAL order, and updates `channel_counters`. Keys are `sequence`, `membership`, or `<e|m>:<metric>:[h:]<type|role>`, where `e` holds entity metrics keyed by product or channel type, `m` holds membership metrics keyed by role, and `h` marks a home-only summary rather than the subtree aggregate.
+In the same database transaction that records a batch of changes, the worker reserves a contiguous sequence range per organization, stamps product rows in commit order, and updates `channel_counters`. A change that is delivered again changes none of them. Keys are `sequence`, `membership`, or `<e|m>:<metric>:[h:]<type|role>`, where `e` holds entity metrics keyed by product or channel type, `m` holds membership metrics keyed by role, and `h` marks a home-only summary rather than the subtree aggregate.
 
 | Key | Scope | Meaning |
 | --- | --- | --- |

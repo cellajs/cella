@@ -7,16 +7,13 @@ import { metrics } from '../services/cdc-metrics';
 import { replicationState } from '../services/replication-state';
 import { probeRoleCapabilities } from '../services/role-capabilities';
 import { drainBuffers } from './handle-message';
-import { createReplicationService, setupBackpressure, subscribeWithReconnect } from './replication';
+import { setupBackpressure, subscribeWithReconnect } from './replication';
 
 /** Start and stop for the CDC worker; pipeline stages are documented in @see cdc/README.md */
 export async function startCdcWorker(): Promise<void> {
   log.info('CDC worker starting...', { publicationName: CDC_PUBLICATION_NAME, slotName: CDC_SLOT_NAME });
 
   await probeRoleCapabilities();
-
-  const service = createReplicationService();
-  replicationState.service = service;
 
   const plugin = new PgoutputPlugin({ protoVersion: 1, publicationNames: [CDC_PUBLICATION_NAME] });
 
@@ -25,7 +22,7 @@ export async function startCdcWorker(): Promise<void> {
   startHealthReporter();
   metrics.startLagPolling();
 
-  await subscribeWithReconnect(service, plugin);
+  await subscribeWithReconnect(plugin);
 }
 
 export async function stopCdcWorker(): Promise<void> {

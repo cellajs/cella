@@ -30,15 +30,18 @@ export interface CdcOutboundMessage {
 }
 
 /**
- * Fixed-width activity id: padding preserves commit order under lexical cursor comparisons and makes
- * replay idempotent.
- * @param lsn PostgreSQL WAL position.
- * @returns Zero-padded, dash-joined LSN.
+ * Activity id of a change: its WAL position, the same on every delivery, which makes replay idempotent. Padding keeps
+ * ids in WAL order under lexical comparison. Changes written by one WAL record (the rows of a COPY) share a position,
+ * so every one after the first carries its ordinal.
+ * @param lsn PostgreSQL WAL position of the change.
+ * @param ordinal Position among the changes at that LSN.
+ * @returns Zero-padded, dash-joined LSN, with the padded ordinal appended when it is not the first.
  */
-export function generateActivityId(lsn: string): string {
+export function generateActivityId(lsn: string, ordinal = 0): string {
   const [hi, lo] = lsn.split('/');
   if (lo === undefined) return lsn; // Not in LSN format.
-  return `${hi.padStart(8, '0')}-${lo.padStart(8, '0')}`;
+  const position = `${hi.padStart(8, '0')}-${lo.padStart(8, '0')}`;
+  return ordinal > 0 ? `${position}-${String(ordinal).padStart(4, '0')}` : position;
 }
 
 function buildActivityPayload(

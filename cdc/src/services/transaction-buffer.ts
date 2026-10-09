@@ -1,11 +1,11 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import type { ChannelIdColumns } from 'shared';
 import { appConfig, isChannel } from 'shared';
-import { RESOURCE_LIMITS } from '../constants';
 import { log } from '../lib/pino';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import type { PendingEvent } from '../types';
 import { channelIdColumnKeys } from '../utils/channel-columns';
+import { commitTimeMs } from '../utils/commit-time';
 
 /** Reverse lookup: hostProduct to the products embedded into it. */
 const embeddedByHostProduct = new Map<string, Set<string>>();
@@ -15,17 +15,20 @@ for (const { embeddedProduct, hostProduct } of appConfig.productEmbeddings) {
   embeddedByHostProduct.set(hostProduct, embedded);
 }
 
-const { transactionTimeoutMs } = RESOURCE_LIMITS.buffers;
-
 /**
  * Buffers CDC events per transaction and suppresses cascaded deletes as they arrive. Tracking
  * deleted channel ids bounds memory to surviving events regardless of cascade size; events outside
- * a transaction pass through directly.
+ * a transaction pass through directly. A transaction leaves the buffer whole, at its COMMIT, however
+ * large it is or long it takes to arrive: a part of one is never emitted.
  */
 export class TransactionBuffer {
   private activeXid: number | null = null;
+  /**
+   * When the transaction being buffered committed. Its activities take this as `createdAt`: the activities key is
+   * (id, createdAt), so an event delivered twice has to carry the same time both times to be recorded once.
+   */
+  private commitTime: string | null = null;
   private pendingEvents: PendingEvent[] = [];
-  private timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
   /** Channel entity IDs deleted in the current transaction (streaming suppression). */
   private deletedChannelIds = new Set<string>();
@@ -40,31 +43,33 @@ export class TransactionBuffer {
   }
 
   onBegin(msg: Pgoutput.MessageBegin): void {
-    // An active transaction here means a lost COMMIT: flush it before starting the new one.
+    // A stream sends BEGIN and COMMIT in pairs and every subscription starts with `reset`, so an open transaction
+    // here is one whose COMMIT never came. It was not acknowledged: its events go, and the slot delivers it again.
     if (this.activeXid !== null) {
-      log.warn('BEGIN received while transaction active, flushing previous', {
+      log.warn('BEGIN received while a transaction is open: dropping its events', {
         prevXid: this.activeXid,
         newXid: msg.xid,
         pendingCount: this.pendingEvents.length,
       });
-      this.flushAll();
     }
 
     this.activeXid = msg.xid;
+    const committedAt = commitTimeMs(msg);
+    this.commitTime = committedAt === null ? null : new Date(committedAt).toISOString();
     this.pendingEvents = [];
     this.deletedChannelIds.clear();
     this.suppressedCount = 0;
-    this.startTimeout();
   }
 
   /** Drops cascaded child deletes inline once the parent channel entity delete has been seen. */
-  async onEvent(lsn: string, result: ParseMessageResult): Promise<void> {
+  async onEvent(lsn: string, result: ParseMessageResult, ordinal = 0): Promise<void> {
     if (this.activeXid === null) {
-      await this.onSurvivingEvents([{ lsn, result }]);
+      await this.onSurvivingEvents([{ lsn, ordinal, result }]);
       return;
     }
 
     const { activity } = result;
+    if (this.commitTime) activity.createdAt = this.commitTime;
 
     if (activity.action === 'delete' && activity.entityType && isChannel(activity.entityType) && activity.subjectId) {
       this.deletedChannelIds.add(activity.subjectId);
@@ -75,13 +80,11 @@ export class TransactionBuffer {
       return;
     }
 
-    this.pendingEvents.push({ lsn, result });
+    this.pendingEvents.push({ lsn, ordinal, result });
   }
 
   /** Emits the surviving buffered events; a second pass catches child deletes that preceded their parent. */
   async onCommit(): Promise<void> {
-    this.clearTimeout();
-
     let events = this.pendingEvents;
     let suppressedCount = this.suppressedCount;
     const deletedChannelIds = this.deletedChannelIds.size > 0 ? [...this.deletedChannelIds] : null;
@@ -141,6 +144,19 @@ export class TransactionBuffer {
     return this.activeXid !== null;
   }
 
+  /** Whether the transaction being buffered holds events that are not flushed yet. */
+  get hasPendingEvents(): boolean {
+    return this.pendingEvents.length > 0;
+  }
+
+  /** Forgets the transaction being buffered: the replication stream starts over and delivers it again. */
+  reset(): void {
+    this.activeXid = null;
+    this.pendingEvents = [];
+    this.deletedChannelIds.clear();
+    this.suppressedCount = 0;
+  }
+
   private isCascadedDelete(result: ParseMessageResult): boolean {
     return this.isCascadedDeleteByIds(result, this.deletedChannelIds);
   }
@@ -197,34 +213,5 @@ export class TransactionBuffer {
     }
 
     return kept;
-  }
-
-  /** Fallback: emits every pending event without cascade filtering. */
-  private async flushAll(): Promise<void> {
-    this.clearTimeout();
-    const events = this.pendingEvents;
-    this.activeXid = null;
-    this.pendingEvents = [];
-
-    if (events.length > 0) {
-      await this.onSurvivingEvents(events);
-    }
-  }
-
-  private startTimeout(): void {
-    this.clearTimeout();
-    this.timeoutHandle = setTimeout(() => {
-      if (this.activeXid !== null) {
-        log.warn('Transaction buffer timeout, flushing without filtering', { xid: this.activeXid, count: this.pendingEvents.length });
-        this.flushAll();
-      }
-    }, transactionTimeoutMs);
-  }
-
-  private clearTimeout(): void {
-    if (this.timeoutHandle) {
-      clearTimeout(this.timeoutHandle);
-      this.timeoutHandle = null;
-    }
   }
 }

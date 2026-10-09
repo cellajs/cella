@@ -153,7 +153,7 @@ class CdcWebSocketServer {
     try {
       const parsed = JSON.parse(data);
 
-      // Handle CDC control messages (e.g. catchup_complete) before schema validation
+      // Handle CDC control messages (health, lag alerts) before schema validation
       if (parsed?._control) {
         this.handleControlMessage(parsed);
         return;
@@ -214,19 +214,8 @@ class CdcWebSocketServer {
     }
   }
 
-  /** Handle CDC lifecycle signals such as catchup completion, sent outside the activity stream. */
+  /** Handle CDC signals sent outside the activity stream: health reports and WAL lag alerts. */
   private handleControlMessage(message: { _control: string; [key: string]: unknown }): void {
-    if (message._control === 'catchup_complete') {
-      const eventsProcessed = message.eventsProcessed ?? 0;
-      const catchupDurationMs = message.catchupDurationMs ?? 0;
-
-      // Clear entity caches after counter recalculation.
-      productCache.clear();
-
-      log.info('CDC catchup complete: entity caches cleared', { eventsProcessed, catchupDurationMs });
-      return;
-    }
-
     if (message._control === 'health') {
       const payload = message.payload as CdcWorkerHealth | undefined;
       if (payload?.replicationStatus) {

@@ -43,6 +43,50 @@ describe('TransactionBuffer', () => {
     expect(processedEvents).toHaveLength(2);
   });
 
+  it('keeps a transaction whole however long it takes to arrive', async () => {
+    vi.useFakeTimers();
+    try {
+      buffer.onBegin({ tag: 'begin', xid: 2, commitLsn: null, commitTime: BigInt(0) });
+      await buffer.onEvent('0/1', mockParseResult({ action: 'create', entityType: 'attachment' }));
+      // A million-row transaction takes minutes to stream.
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+      await buffer.onEvent('0/2', mockParseResult({ action: 'create', entityType: 'attachment' }));
+
+      expect(onSurvivingEvents).not.toHaveBeenCalled();
+
+      await buffer.onCommit();
+
+      expect(onSurvivingEvents).toHaveBeenCalledTimes(1);
+      expect(processedEvents.map((event) => event.lsn)).toEqual(['0/1', '0/2']);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('emits no part of a transaction whose COMMIT never came', async () => {
+    buffer.onBegin({ tag: 'begin', xid: 3, commitLsn: null, commitTime: BigInt(0) });
+    await buffer.onEvent('0/1', mockParseResult({ action: 'create', entityType: 'attachment' }));
+
+    buffer.onBegin({ tag: 'begin', xid: 4, commitLsn: null, commitTime: BigInt(0) });
+    await buffer.onEvent('0/5', mockParseResult({ action: 'create', entityType: 'attachment' }));
+    await buffer.onCommit();
+
+    expect(processedEvents.map((event) => event.lsn)).toEqual(['0/5']);
+  });
+
+  it('gives each event its transaction commit time, the same on every delivery', async () => {
+    // As the replication client reports it: microseconds since the Unix epoch.
+    const commitTime = BigInt(Date.parse('2026-10-09T00:00:00.123Z')) * 1000n;
+
+    for (const xid of [7, 8]) {
+      buffer.onBegin({ tag: 'begin', xid, commitLsn: null, commitTime });
+      await buffer.onEvent('0/1', mockParseResult({ action: 'create', entityType: 'attachment' }));
+      await buffer.onCommit();
+    }
+
+    expect(processedEvents.map((event) => event.result.activity.createdAt)).toEqual(['2026-10-09T00:00:00.123Z', '2026-10-09T00:00:00.123Z']);
+  });
+
   it('suppresses cascaded child deletes when the parent channel entity is deleted', async () => {
     buffer.onBegin({ tag: 'begin', xid: 42, commitLsn: null, commitTime: BigInt(0) });
 

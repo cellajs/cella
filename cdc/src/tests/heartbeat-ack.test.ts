@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { acknowledge, ws } = vi.hoisted(() => ({
-  acknowledge: vi.fn(async (_lsn: string) => {}),
+  acknowledge: vi.fn(async (_lsn: string) => true),
   ws: { connected: false },
 }));
 
@@ -23,6 +23,7 @@ const { createReplicationService } = await import('../pipeline/replication');
 const { replicationState } = await import('../services/replication-state');
 
 const { handleDataMessage, releaseHeldAck } = await import('../pipeline/handle-message');
+const { dmlMessage } = await import('./factories');
 
 // Two ticks: the heartbeat handler defers its reply by one.
 const settle = async () => {
@@ -100,6 +101,48 @@ describe('replication heartbeat acknowledgement', () => {
       await settle();
 
       expect(acknowledge).toHaveBeenLastCalledWith('0/1EF');
+    });
+
+    it('must not confirm a keepalive past messages of the same socket read that still wait for their handler', async () => {
+      const service = connect();
+      replicationState.lastAckedLsn = '0/AB';
+      // One socket read, as the client parses it: a commit with nothing to record, a whole transaction, a keepalive.
+      // The keepalive is announced at once; the data messages reach their handlers one after another, with no turn
+      // of the event loop between them.
+      service.emit('heartbeat', '0/1F0', Date.now(), false);
+      await handleDataMessage('0/B0', { tag: 'commit' } as never);
+      await handleDataMessage('0/C0', { tag: 'begin', xid: 9 } as never);
+      await handleDataMessage('0/D0', dmlMessage('insert', 'attachments', { id: 'att-1' }));
+      await handleDataMessage('0/E0', { tag: 'commit' } as never);
+      await settle();
+
+      // The transaction waits for its flush: 0/1EF would confirm past it, and a crash now would lose it.
+      expect(acknowledge).not.toHaveBeenCalledWith('0/1EF');
+    });
+
+    it('forgets the keepalive position of a stream that ended', async () => {
+      const { resetBuffers } = await import('../pipeline/handle-message');
+      connect();
+      replicationState.lastAckedLsn = '0/AB';
+      replicationState.lastKeepaliveLsn = '0/1F0';
+
+      // A new subscription reads again from the confirmed position: the first thing it delivers has nothing to record.
+      resetBuffers();
+      await handleDataMessage('0/B0', { tag: 'commit' } as never);
+      await settle();
+
+      expect(acknowledge).not.toHaveBeenCalled();
+    });
+
+    it('records no position a stopped service did not send', async () => {
+      connect();
+      replicationState.lastAckedLsn = '0/AB';
+      replicationState.heldAckLsn = '0/C0';
+      acknowledge.mockResolvedValueOnce(false);
+      await releaseHeldAck();
+
+      expect(replicationState.lastAckedLsn).toBe('0/AB');
+      expect(replicationState.heldAckLsn).toBe('0/C0');
     });
 
     it('stays put after a withheld acknowledgment', async () => {

@@ -17,7 +17,7 @@ import { mockMany, setMockContext } from '#/mocks';
 import { defaultAdminUser } from '../fixtures';
 import { toBatches } from './seed-volume';
 
-// Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix (CDC worker skips these on catch-up)
+// Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix
 setMockContext('script');
 
 // Seed scripts use admin connection for privileged operations
