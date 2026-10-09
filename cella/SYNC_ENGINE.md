@@ -114,11 +114,11 @@ Only the user's own membership changes are streamed: a create or delete invalida
 | Delete-style removal | `action: 'delete'` | Mark the detail stale and invalidate scoped lists. No sync-visible row remains to fetch. |
 | Move-out | `action: 'moveOut'` | Remove the row from caches and unseen tracking immediately |
 
-A single-row, non-delete notification carrying this tab's `stx.sourceId` is an echo: the tab patches only `stx`. A batch is fetched whoever wrote it.
+A single-row, non-delete notification carrying this tab's `stx.sourceId` is an echo: the tab patches only `stx`. A batch is fetched whoever wrote it. The worker batches per audience and sends an audience's single row as a single-row notification, so an edit stays an echo when other organizations' edits share its flush.
 
 ### Catchup
 
-Catchup runs on every connection before the stream goes live: the client opens SSE, waits for the server's `offset` marker, then posts its cursor and declared views. The server answers each view with a status, and for `ok` views the newest frontier and count. A view without a cursor (an organization the client has not synced before) stores the frontier as its baseline and refetches what it has cached of that organization; route loaders own initial data. A fresh client learns its organizations from the first answer and stores their baselines on the next connection. A view behind its frontier hands the gap to the fetch prioritizer; its cursor advances when the gap is ingested, when nothing of it is cached, or when the fetch gives up to an invalidation.
+Catchup runs on every connection before the stream goes live: the client opens SSE, waits for the server's `offset` marker, then posts its cursor and declared views. The server answers each view with a status, and for `ok` views the newest frontier and count. The client declares a view for every organization the user is a member of. A view without a cursor (a first connection, an organization joined since) stores the frontier as its baseline and refetches what it has cached of that organization: rows read before the stream was live are not vouched for by the frontier. Route loaders own initial data. A view behind its frontier hands the gap to the fetch prioritizer; its cursor advances when the gap is ingested, when nothing of it is cached, or when the fetch gives up to an invalidation.
 
 ### Fetch prioritization
 
@@ -209,7 +209,7 @@ A client that missed notifications while the books stayed right is repaired by i
 
 ### Rebuilt books
 
-The counters, the sequence counter and the frontiers are the CDC worker's books. It checks them against the tables once a day and rebuilds them when the replication stream cannot bring them back: [CDC worker](../cdc/README.md#verify-and-rebuild). Whenever it corrected or rebuilt them it adds one to a generation. The catchup answer carries that generation. A client that holds another one puts its view cursors back at 0 (the stream cursor stays), takes the frontiers of that catchup as new baselines, refetches the lists on screen at once and, after a random delay of up to ten seconds, everything else it has cached of the synced types; member queries of every organization are invalidated as well. Open streams hear of it through the worker's health push: the API ends them with `resync`, and each leader tab reconnects after its backoff of a few seconds. A follower tab is not refetched; it keeps what it had until a reload or until it leads.
+The counters, the sequence counter and the frontiers are the CDC worker's books. It checks them against the tables once a day and rebuilds them when the replication stream cannot bring them back: [CDC worker](../cdc/README.md#verify-and-rebuild). Whenever it corrected or rebuilt them it moves a generation on: a number that grows and is never below the clock in minutes, so a database restored from a backup cannot hand out one a client already holds. The catchup answer carries that generation. A client that holds another one puts its view cursors back at 0 (the stream cursor stays), takes the frontiers of that catchup as new baselines, refetches the lists on screen at once and, after a random delay of up to ten seconds, everything else it has cached of the synced types; member queries of every organization are invalidated as well. Open streams hear of it through the worker's health push: the API ends them with `resync`, and each leader tab reconnects after its backoff of a few seconds. The leader tells its follower tabs, which run no catchup: each puts its cursors back and refetches the same way.
 
 ### One API process
 
@@ -221,7 +221,7 @@ Old tabs and old queued writes survive a wire-shape deploy through lenses: [Sche
 
 ### Multiple tabs
 
-The first tab to acquire the Web Lock becomes leader, owns SSE, and forwards notifications through BroadcastChannel. A follower is promoted when the leader closes. All tabs can mutate. Each tab keeps its own paused-mutation queue.
+The first tab to acquire the Web Lock becomes leader, owns SSE, and forwards notifications and a new generation of the sync books through BroadcastChannel. A follower is promoted when the leader closes. All tabs can mutate. Each tab keeps its own paused-mutation queue.
 
 ### Yjs
 

@@ -5,7 +5,7 @@ clientCacheBump: false
 
 # The CDC worker keeps a sync state and an incident log
 
-Run `pnpm generate` and apply the migration: it creates `sync_state` and `sync_incidents`, which the CDC worker reads and writes from its first start, and the side-effect migrations make `channel_counters` a logged table again. Set `max_slot_wal_keep_size` on your database. Health consumers: the worker's report lost `catchup` and `circuitBreakers` and gained `replication.lagMs`, `replication.failure` and `replication.setupProblems`; the API's `cdc` component lost `catchingUp`, gained `lagMs` and `stuck`, and has the reason `worker_stuck`. The SSE stream has the error code `resync`, the catchup response the field `generation`.
+Run `pnpm generate` and apply the migration: it creates `sync_state` and `sync_incidents`, which the CDC worker reads and writes from its first start, and the side-effect migrations make `channel_counters` a logged table again. Set `max_slot_wal_keep_size` on your database. Health consumers: the worker's report lost `catchup` and `circuitBreakers` and gained `replication.lagMs`, `replication.failure` and `replication.setupProblems`; the API's `cdc` component lost `catchingUp`, gained `lagMs`, `stuck`, `failure` and `setupProblems`, and is `unhealthy` with the reason `worker_stuck` or `setup_problems`. The SSE stream has the error code `resync`, the catchup response the field `generation`.
 
 ## What & why
 
@@ -23,7 +23,7 @@ No script: manual.
 
 1. Run `pnpm generate`, review the migration that creates `sync_state` and `sync_incidents`, and apply it with the side-effect migrations before the new worker starts.
 2. Set `max_slot_wal_keep_size` on the database (the template's `backend/compose.yaml` uses `2GB`): the worker warns before every subscription while it is unlimited.
-3. Replace `catchup` and `circuitBreakers` in anything that reads the worker's health with `replication.lagMs` and `replication.failure`, and `catchingUp` in anything that reads the API's `cdc` component with `lagMs` and `stuck`.
+3. Replace `catchup` and `circuitBreakers` in anything that reads the worker's health with `replication.lagMs` and `replication.failure`, and `catchingUp` in anything that reads the API's `cdc` component with `lagMs` and `stuck`. A stuck worker or a failed setup check makes that component `unhealthy`, which fails the deploy's smoke step.
 4. If your code builds or parses activity ids, expect `<commit position>-<8 digit index>` for new rows.
 5. After adding a tracked table, run the migrations before the worker: it reads nothing until the publication matches its registry.
 
