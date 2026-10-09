@@ -48,5 +48,6 @@ export function fetchMemberships(): Promise<unknown> {
 
 /** Called after membership updates, since a role change alters permissions. */
 export function refreshMe(): void {
-  getAndSetMe();
+  // Best effort: a failed read leaves the user as it was, and the next membership change reads again.
+  getAndSetMe().catch((error) => console.debug('[MembershipOps] Could not refresh the user:', error));
 }

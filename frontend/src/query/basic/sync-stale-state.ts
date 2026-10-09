@@ -1,5 +1,5 @@
 /**
- * Mutable staleness state for sync-managed queries: two trust flags the realtime stream sets, and
+ * Mutable staleness state for sync-managed queries: three facts the realtime stream sets, and
  * the staleTime they resolve to. Module-level, so the realtime modules can set it without a store.
  */
 
@@ -25,5 +25,16 @@ export const setSyncDeliveryTrusted = (trusted: boolean): void => {
 };
 export const isSyncDeliveryTrusted = (): boolean => syncDeliveryTrusted;
 
-/** For product entity queries covered by the catchup pipeline: Infinity while the stream is healthy and deliveries reconcile, otherwise the 5 minute fallback. */
-export const syncStaleTime = () => (syncStreamHealthy && syncDeliveryTrusted ? syncTrustedStaleTime : syncFallbackStaleTime);
+// True while the server says no CDC worker reads: the stream is open and brings nothing, so changes of others arrive only when the worker reads on.
+let syncWorkerAway = false;
+
+/** Called with what the stream's keepalive says of the server's CDC worker. */
+export const setSyncWorkerAway = (away: boolean): void => {
+  syncWorkerAway = away;
+};
+
+/**
+ * For product entity queries covered by the catchup pipeline: Infinity while the stream is healthy, deliveries reconcile
+ * and the server's worker reads, otherwise the 5 minute fallback.
+ */
+export const syncStaleTime = () => (syncStreamHealthy && syncDeliveryTrusted && !syncWorkerAway ? syncTrustedStaleTime : syncFallbackStaleTime);

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('shared', () => ({ appConfig: { backendUrl: 'http://api.test', slug: 'test' } }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
 vi.mock('~/lib/tracing', () => ({ reportCriticalError: vi.fn() }));
-vi.mock('~/query/basic/sync-stale-state', () => ({ setSyncStreamHealthy: vi.fn() }));
+vi.mock('~/query/basic/sync-stale-state', () => ({ setSyncStreamHealthy: vi.fn(), setSyncWorkerAway: vi.fn() }));
 // The stream cursor of this tab's sync store: settable, and its writes observed.
 const syncControl = vi.hoisted(() => ({ cursor: null as string | null, setCursor: vi.fn() }));
 vi.mock('~/query/realtime/sync-store', () => ({
@@ -20,7 +20,16 @@ const leaderControl = vi.hoisted(() => {
   const state = { isLeader: true };
   const subscribers = new Set<(s: { isLeader: boolean }, p: { isLeader: boolean }) => void>();
   const catchupHandlers = new Set<(response: PostAppCatchupResponse, baselineOnly: boolean) => void>();
+  const healthHandlers = new Set<(health: { streamHealthy: boolean; workerAway: boolean }) => void>();
   return {
+    onSyncHealth: (fn: (health: { streamHealthy: boolean; workerAway: boolean }) => void) => {
+      healthHandlers.add(fn);
+      return () => healthHandlers.delete(fn);
+    },
+    /** The health of the leader's stream, as the coordinator hands it to this tab. */
+    receiveSyncHealth: (health: { streamHealthy: boolean; workerAway: boolean }) => {
+      for (const fn of healthHandlers) fn(health);
+    },
     isLeader: () => state.isLeader,
     getState: () => ({ isLeader: state.isLeader }),
     subscribe: (fn: (s: { isLeader: boolean }, p: { isLeader: boolean }) => void) => {
@@ -51,6 +60,8 @@ const leaderControl = vi.hoisted(() => {
 vi.mock('./tab-coordinator', () => ({
   broadcastCatchup: vi.fn(),
   broadcastNotification: vi.fn(),
+  broadcastSyncHealth: vi.fn(),
+  onSyncHealth: leaderControl.onSyncHealth,
   initTabCoordinator: vi.fn(() => Promise.resolve()),
   isLeader: () => leaderControl.isLeader(),
   onCatchup: leaderControl.onCatchup,
@@ -103,7 +114,8 @@ vi.stubGlobal('document', { addEventListener: vi.fn(), removeEventListener: vi.f
 
 const { postAppCatchup } = await import('sdk');
 const { processAppCatchup } = await import('./catchup-processor');
-const { broadcastCatchup, broadcastNotification } = await import('./tab-coordinator');
+const { broadcastCatchup, broadcastNotification, broadcastSyncHealth } = await import('./tab-coordinator');
+const { setSyncStreamHealthy, setSyncWorkerAway } = await import('~/query/basic/sync-stale-state');
 const { StreamManager, appStreamManager } = await import('./stream-store');
 
 /** Flush pending microtasks so awaited catchup continuations run. */
@@ -545,5 +557,80 @@ describe('StreamManager notifications to follower tabs', () => {
     expect(broadcastNotification).toHaveBeenLastCalledWith({ id: 'b1' }, 'user');
     expect(h.order).toEqual(['catchup-start', 'catchup-done', 'process:a1', 'process:b1']);
     h.manager.disconnect();
+  });
+});
+
+describe('the health of live delivery', () => {
+  afterEach(() => appStreamManager.disconnect());
+
+  /** The app stream of a leader tab, open and past its catchup. */
+  const connectLive = async () => {
+    vi.mocked(postAppCatchup).mockResolvedValueOnce({ cursor: 'c1', changes: {}, generation: 1 });
+    await appStreamManager.connect();
+    const stream = FakeEventSource.instances.at(-1) as FakeEventSource;
+    stream.emit('offset', '1');
+    await tick();
+    return stream;
+  };
+
+  it("takes from a ping that the server's worker is away, and from a later one that it is back", async () => {
+    const stream = await connectLive();
+
+    stream.emit('ping', 'worker_away');
+    expect(setSyncWorkerAway).toHaveBeenLastCalledWith(true);
+    expect(broadcastSyncHealth).toHaveBeenLastCalledWith({ streamHealthy: true, workerAway: true });
+
+    stream.emit('ping', '');
+    expect(setSyncWorkerAway).toHaveBeenLastCalledWith(false);
+    expect(broadcastSyncHealth).toHaveBeenLastCalledWith({ streamHealthy: true, workerAway: false });
+  });
+
+  it('tells the follower tabs when it changes, not with every ping', async () => {
+    const stream = await connectLive();
+    vi.mocked(broadcastSyncHealth).mockClear();
+
+    stream.emit('ping', 'worker_away');
+    stream.emit('ping', 'worker_away');
+    stream.emit('ping', 'worker_away');
+    expect(broadcastSyncHealth).toHaveBeenCalledTimes(1);
+
+    stream.emit('ping', '');
+    expect(broadcastSyncHealth).toHaveBeenCalledTimes(2);
+  });
+
+  it('tells the follower tabs that the stream failed', async () => {
+    const stream = await connectLive();
+
+    stream.emitServerError('internal');
+
+    expect(setSyncStreamHealthy).toHaveBeenLastCalledWith(false);
+    expect(broadcastSyncHealth).toHaveBeenLastCalledWith({ streamHealthy: false, workerAway: false });
+  });
+
+  it("must not take a follower's own store for the health of a stream: it has none, and takes the leader's word", async () => {
+    leaderControl.setLeader(false);
+    await appStreamManager.connect();
+    expect(appStreamManager.useStore.getState().state).toBe('live');
+    expect(setSyncStreamHealthy).not.toHaveBeenCalled();
+
+    leaderControl.receiveSyncHealth({ streamHealthy: false, workerAway: true });
+
+    expect(setSyncStreamHealthy).toHaveBeenLastCalledWith(false);
+    expect(setSyncWorkerAway).toHaveBeenLastCalledWith(true);
+    expect(broadcastSyncHealth).not.toHaveBeenCalled();
+  });
+
+  it('says what its own stream shows once a follower leads, whatever it last heard', async () => {
+    leaderControl.setLeader(false);
+    await appStreamManager.connect();
+    leaderControl.receiveSyncHealth({ streamHealthy: false, workerAway: true });
+
+    leaderControl.setLeader(true);
+    await tick();
+    FakeEventSource.instances.at(-1)?.emit('ping', '');
+
+    expect(setSyncStreamHealthy).toHaveBeenLastCalledWith(true);
+    expect(setSyncWorkerAway).toHaveBeenLastCalledWith(false);
+    expect(broadcastSyncHealth).toHaveBeenLastCalledWith({ streamHealthy: true, workerAway: false });
   });
 });

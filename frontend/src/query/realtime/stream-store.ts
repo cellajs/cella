@@ -4,17 +4,20 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { isDebugMode } from '~/env';
 import { reportCriticalError } from '~/lib/tracing';
-import { setSyncStreamHealthy } from '~/query/basic/sync-stale-state';
+import { setSyncStreamHealthy, setSyncWorkerAway } from '~/query/basic/sync-stale-state';
 import { type CatchupViewRequest, syncStore } from '~/query/realtime/sync-store';
 import { handleAppStreamNotification } from './app-stream-handler';
 import { catchupEntityTypes, processAppCatchup } from './catchup-processor';
 import {
   broadcastCatchup,
   broadcastNotification,
+  broadcastSyncHealth,
   initTabCoordinator,
   isLeader,
   onCatchup,
   onNotification,
+  onSyncHealth,
+  type SyncHealth,
   tabCoordinatorStore,
 } from './tab-coordinator';
 import type { AppStreamNotification, StreamState } from './types';
@@ -30,6 +33,7 @@ const MIN_UPTIME_MS = 10_000; // Connection must stay up 10s before backoff rese
 const HEALTH_URL = `${appConfig.backendUrl}/auth/health`;
 const NOTIFICATION_BUFFER_CAP = 500; // Buffered live notifications while catchup runs; overflow retries catchup once
 const STREAM_SILENCE_MS = 75_000; // 2.5 keepalive intervals of the server (30s each) without any event: the open stream is dead
+const WORKER_AWAY_PING = 'worker_away'; // What a ping of the app stream carries while the server's CDC worker has not been reading for a minute
 
 interface StreamConfig {
   endpoint: string;
@@ -40,6 +44,8 @@ interface StreamConfig {
   processLeaderCatchup: (response: PostAppCatchupResponse, baselineOnly: boolean) => Promise<void>;
   /** Process a single live SSE notification. */
   processNotification: (notification: unknown) => void;
+  /** Called with the data of every keepalive: empty, or the standing fact the server repeats with each one. */
+  onPing?: (data: string) => void;
 }
 
 interface StreamStoreState {
@@ -350,8 +356,11 @@ export class StreamManager {
       void this.runCatchupCycle(signal, eventSource);
     });
 
-    // The server's keepalive carries no data: it only shows that the stream is alive.
-    eventSource.addEventListener('ping', noteActivity);
+    // The server's keepalive shows that the stream is alive, and carries the one standing fact the server has to tell.
+    eventSource.addEventListener('ping', (e) => {
+      noteActivity();
+      this.config.onPing?.(typeof e.data === 'string' ? e.data : '');
+    });
 
     // Server-sent error event with a typed payload; the bare transport Event goes to `onerror`.
     eventSource.addEventListener('error', (e) => {
@@ -608,10 +617,42 @@ export const appStreamManager = new StreamManager('AppStream', {
   },
   processLeaderCatchup: processAppCatchup,
   processNotification: (notification) => handleAppStreamNotification(notification as AppStreamNotification),
+  onPing: (data) => {
+    workerAway = data === WORKER_AWAY_PING;
+    publishSyncHealth();
+  },
 });
 
-// Mirrors stream health into the basic layer without a circular import: catch-up reconciles every connection, so only errors enable time-based freshness.
-appStreamManager.useStore.subscribe((s) => setSyncStreamHealthy(s.state !== 'error'));
+/** What the app stream last said of the server's CDC worker. A stream that is down says nothing new, and the first ping of the next one does. */
+let workerAway = false;
+let publishedHealth: SyncHealth | null = null;
+
+/** Mirrors the health of live delivery into the basic layer without a circular import: either fact enables time-based freshness. */
+const applySyncHealth = (health: SyncHealth): void => {
+  setSyncStreamHealthy(health.streamHealthy);
+  setSyncWorkerAway(health.workerAway);
+};
+
+/**
+ * Takes the health of live delivery from this tab's own stream, and tells the follower tabs when it changed. Catch-up
+ * reconciles every connection, so of the stream only a hard error counts. A follower has no stream to judge by.
+ */
+function publishSyncHealth(): void {
+  if (!isLeader()) return;
+  const health: SyncHealth = { streamHealthy: appStreamManager.useStore.getState().state !== 'error', workerAway };
+  if (publishedHealth?.streamHealthy === health.streamHealthy && publishedHealth.workerAway === health.workerAway) return;
+  publishedHealth = health;
+  applySyncHealth(health);
+  broadcastSyncHealth(health);
+}
+
+appStreamManager.useStore.subscribe(publishSyncHealth);
+// A follower takes the leader's word. Once it leads, its own stream connects and says, whatever it last heard.
+onSyncHealth((health) => {
+  if (isLeader()) return;
+  publishedHealth = null;
+  applySyncHealth(health);
+});
 
 /** Resolves on the first catchup after page load, or on its failure. Safe to call before any stream connects. */
 export function waitForActiveCatchup(): Promise<void> {
