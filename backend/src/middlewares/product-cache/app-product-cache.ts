@@ -55,18 +55,12 @@ export const productCache = {
     return cache.get(key);
   },
 
-  invalidateProduct(entityType: EntityType, entityId: string): boolean {
+  /** A CDC message says the row changed: its entry goes, and a read that is in flight is not stored. */
+  invalidateProduct(entityType: EntityType, entityId: string): void {
     const key = productKey(entityType, entityId);
-    const existed = cache.has(key);
     // Also without an entry: a read in flight would store the row it read before this change.
     holdOff(key, performance.now());
-
-    if (existed) {
-      cache.delete(key);
-      return true;
-    }
-
-    return false;
+    cache.delete(key);
   },
 
   /**

@@ -12,7 +12,6 @@ import { startGeoipRefresh } from '#/lib/geoip';
 import { serveApi, serveInternal } from '#/lib/listeners';
 import { stopPgBoss } from '#/lib/pg-boss';
 import { otel } from '#/lib/tracing';
-import { registerCacheInvalidation } from '#/middlewares/product-cache/cache-invalidation';
 import { baseApp as app } from '#/routes';
 import { timestamp } from '#/utils/console';
 import { env } from './env';
@@ -58,8 +57,6 @@ const main = async () => {
   } else {
     console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false: skipping migrations (run as MODE=migrate)`);
   }
-
-  registerCacheInvalidation();
 
   // Per process, not a scheduled job: every replica keeps its own GeoIP copy current.
   stops.push(startGeoipRefresh());

@@ -1,7 +1,7 @@
 import type { SSEStreamingApi } from 'hono/streaming';
 import type { EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
-import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
+import { type ActivityEvent, type ActivityRow, activityBus } from '#/lib/activity-bus';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
@@ -37,7 +37,6 @@ const fakeSubscriber = (userId: string) => {
     isSystemAdmin: false,
     systemAccessAllowed: false,
     memberships: [membership(memberRole, userId)],
-    cursor: null,
   };
   streamSubscriberManager.register(subscriber, [`user:${userId}`]);
   return { subscriber, sent, isClosed: () => closed };
@@ -56,9 +55,7 @@ const membershipEvent = (action: 'create' | 'delete', userId: string): ActivityE
     tenantId: 'tenant-1',
     organizationId: ORG,
     rowData: { id: `mem-${ORG}-${userId}`, userId, channelType: 'organization', channelId: ORG, organizationId: ORG, role: memberRole },
-    seq: null,
-    batchUntilSeq: null,
-    propagation: null,
+    rows: null,
     trace: null,
     stx: null,
   }) as unknown as ActivityEvent;
@@ -68,7 +65,7 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 /** Sends a status payload the way the worker's socket delivers one. */
 const workerReports = (generation: number) =>
   (cdcWebSocketServer as unknown as { handleMessage: (data: string) => void }).handleMessage(
-    JSON.stringify({ _control: 'health', payload: { replicationStatus: 'active', lastLsn: null, messagesSent: 0, generation } }),
+    JSON.stringify({ _control: 'health', payload: { status: 'healthy', reasons: [], details: { replication: 'active' }, generation } }),
   );
 
 afterEach(() => {
@@ -99,6 +96,48 @@ describe('entities listeners: a membership change on open streams', () => {
     await settle();
 
     expect(joiner.subscriber.memberships).toHaveLength(1);
+  });
+});
+
+describe('entities listeners: a product change on open streams', () => {
+  const row = (id: string, extra: Record<string, unknown> = {}) => ({ id, organizationId: ORG, createdBy: 'author-user', ...extra });
+
+  /** A product update as the socket hands it to the bus: the activity of its first row, and its rows. */
+  const updateEvent = (rows: ActivityRow[]): ActivityEvent =>
+    ({
+      id: 'activity-update',
+      type: 'attachment.updated',
+      action: 'update',
+      entityType: 'attachment',
+      resourceType: null,
+      tableName: 'attachments',
+      subjectId: rows[0].rowData.id,
+      tenantId: 'tenant-1',
+      organizationId: ORG,
+      rowData: null,
+      rows,
+      trace: null,
+      stx: null,
+    }) as unknown as ActivityEvent;
+
+  it('tells a reader the update, and the loss of each row a move took out of its reach', async () => {
+    const reader = fakeSubscriber('reader-user');
+    // Read by the role alone, whatever the app grants a member: the difference below comes from the draft veto.
+    reader.subscriber.memberships = [membership('admin', 'reader-user')];
+
+    activityBus.emit(
+      updateEvent([
+        { seq: 4, rowData: row('att-kept') },
+        // Moved to where nobody reads it: an unpublished draft.
+        { seq: 6, rowData: row('att-lost', { publishedAt: null }), movedFrom: row('att-lost', { publishedAt: '2026-07-01T00:00:00Z' }) },
+      ]),
+    );
+    await settle();
+
+    expect(reader.sent.map((message) => JSON.parse(message.data))).toEqual([
+      expect.objectContaining({ action: 'update', subjectId: 'att-kept', seq: 4, batchUntilSeq: 6, count: 2 }),
+      expect.objectContaining({ action: 'moveOut', subjectId: 'att-lost', path: ORG, batchUntilSeq: null, count: 1 }),
+    ]);
   });
 });
 

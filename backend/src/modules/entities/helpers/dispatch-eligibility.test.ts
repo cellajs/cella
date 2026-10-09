@@ -1,6 +1,6 @@
 import { appConfig, type EntityRole } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { canReceiveProductEvent, rowReadDecisions, rowScopedEvent, type SubscriberAccess } from '#/modules/entities/helpers/dispatch-to-stream';
+import { canReceiveProductEvent, rowReadDecisions, type SubscriberAccess } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { memberRole } from '../../../../tests/fixtures';
@@ -36,7 +36,8 @@ const attachmentRow = (id: string, organizationId: string, extra: Record<string,
   ...extra,
 });
 
-const attachmentEvent = (organizationId: string, overrides: Record<string, unknown>): AppStreamProductEvent =>
+/** A product event as the bus delivers it: the activity of its first row, and its rows with their permission fields. */
+const attachmentEvent = (organizationId: string, rows: Record<string, unknown>[]): AppStreamProductEvent =>
   ({
     id: 'activity-eligibility',
     type: 'attachment.created',
@@ -44,33 +45,26 @@ const attachmentEvent = (organizationId: string, overrides: Record<string, unkno
     entityType: 'attachment',
     resourceType: null,
     tableName: 'attachments',
-    subjectId: 'attachment-1',
+    subjectId: rows[0].id,
     tenantId: 'tenant-1',
     organizationId,
     ...nullAncestorScopes,
     rowData: null,
-    seq: 1,
-    batchUntilSeq: null,
-    propagation: null,
+    rows: rows.map((rowData, index) => ({ seq: index + 1, rowData })),
     trace: null,
     stx: null,
-    ...overrides,
   }) as unknown as AppStreamProductEvent;
 
-const scopedRows = (event: AppStreamProductEvent): AppStreamProductEvent[] => {
-  const rows = event.batchRows?.length ? event.batchRows : [{ rowData: event.rowData as Record<string, unknown> }];
-  return rows.map(({ rowData }) => (rowData === event.rowData ? event : rowScopedEvent(event, rowData)));
-};
-
-/** The dispatch any-of composition over batch rows, order-preserving, as selectEligible does. */
+/** The dispatch any-of composition over an event's rows, order-preserving, as selectEligible does. */
 const batchDecisions = (subscribers: SubscriberAccess[], event: AppStreamProductEvent): boolean[] => {
   const results = subscribers.map(() => false);
   let undecided = subscribers.map((_, index) => index);
-  for (const scopedEvent of scopedRows(event)) {
+  for (const { rowData } of event.rows) {
     if (undecided.length === 0) break;
     const decisions = rowReadDecisions(
       undecided.map((index) => subscribers[index]),
-      scopedEvent,
+      event,
+      rowData,
     );
     undecided = undecided.filter((subscriberIndex, position) => {
       if (decisions[position]) {
@@ -85,12 +79,12 @@ const batchDecisions = (subscribers: SubscriberAccess[], event: AppStreamProduct
 
 /** The per-subscriber evaluation: independent batch-of-1 checks, no cross-subscriber sharing. */
 const singleDecision = (subscriber: SubscriberAccess, event: AppStreamProductEvent): boolean =>
-  scopedRows(event).some((scopedEvent) => canReceiveProductEvent(subscriber, scopedEvent));
+  event.rows.some(({ rowData }) => canReceiveProductEvent(subscriber, event, rowData));
 
 describe('dispatch batch eligibility: deterministic splits', () => {
   it('a malformed membership denies its holder without poisoning others in the SAME batch call', () => {
     // Org members hold read:'own': the row must be authored by the reader to be readable.
-    const event = attachmentEvent(ORGS[0], { rowData: attachmentRow('att-1', ORGS[0], { createdBy: 'user-1' }) });
+    const event = attachmentEvent(ORGS[0], [attachmentRow('att-1', ORGS[0], { createdBy: 'user-1' })]);
 
     const clean: SubscriberAccess = { userId: 'user-1', isSystemAdmin: false, memberships: [membership(ORGS[0], memberRole, 'user-1')] };
     // A granting membership plus a malformed one: the engine fail-closes just this access.
@@ -107,7 +101,7 @@ describe('dispatch batch eligibility: deterministic splits', () => {
   });
 
   it('system admin and memberless subscriber resolve differently in one batch', () => {
-    const event = attachmentEvent(ORGS[0], { rowData: attachmentRow('att-2', ORGS[0]) });
+    const event = attachmentEvent(ORGS[0], [attachmentRow('att-2', ORGS[0])]);
 
     const admin: SubscriberAccess = { userId: 'user-1', isSystemAdmin: true, memberships: [] };
     const nobody: SubscriberAccess = { userId: 'user-2', isSystemAdmin: false, memberships: [] };
@@ -143,10 +137,7 @@ describe('dispatch batch eligibility: randomized parity sweep', () => {
           ...(random() < 0.15 ? { publishedAt: null } : random() < 0.3 ? { publishedAt: '2026-07-01T00:00:00Z' } : {}),
         }),
       );
-      const event = attachmentEvent(eventOrg, {
-        rowData: rows[0],
-        ...(rowCount > 1 && { batchUntilSeq: rowCount, batchRows: rows.map((rowData, i) => ({ seq: i + 1, rowData })) }),
-      });
+      const event = attachmentEvent(eventOrg, rows);
 
       const subscribers: SubscriberAccess[] = Array.from({ length: 60 }, () => {
         const userId = pick(USERS);

@@ -609,13 +609,16 @@ const rowChannelColumns = (row: ParityRow): Record<string, unknown> => ({
   ...(homeIdKey ? { [homeIdKey]: row.homeChannelId } : {}),
 });
 
+/** The permission fields of a row, as a product event carries them. */
+const dispatchRow = (row: ParityRow): Record<string, unknown> => ({
+  id: row.id,
+  createdBy: row.createdBy,
+  publicAt: row.publicAt,
+  ...rowChannelColumns(row),
+});
+
 const dispatchEvent = (row: ParityRow): AppStreamProductEvent =>
-  ({
-    entityType: 'attachment',
-    subjectId: row.id,
-    ...rowChannelColumns(row),
-    rowData: { id: row.id, createdBy: row.createdBy, publicAt: row.publicAt, ...rowChannelColumns(row) },
-  }) as unknown as AppStreamProductEvent;
+  ({ entityType: 'attachment', subjectId: row.id, ...rowChannelColumns(row) }) as unknown as AppStreamProductEvent;
 
 describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real app config', () => {
   it('agrees on every row for random membership sets and actors', async () => {
@@ -638,7 +641,7 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
         // Same subject shape dispatch builds: ancestor scope + the row itself
         const subject = rowSubject(row);
         const engineAllowed = checkAccess({ actorId: userId, isSystemAdmin, memberships, scopes: null }, 'read', subject).allowed;
-        const dispatchAllowed = canReceiveProductEvent({ userId, isSystemAdmin, memberships }, dispatchEvent(row));
+        const dispatchAllowed = canReceiveProductEvent({ userId, isSystemAdmin, memberships }, dispatchEvent(row), dispatchRow(row));
 
         expect(dispatchAllowed, `${label} → row ${row.id} dispatch-vs-engine`).toBe(engineAllowed);
         expect(fromSql.has(row.id), `${label} → row ${row.id} sql-vs-engine`).toBe(engineAllowed);
@@ -658,15 +661,14 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
         .join(', ')}; user: ${userId}; sysadmin: ${isSystemAdmin})`;
 
       for (const row of ROWS) {
-        const draftEvent = dispatchEvent(row);
-        const rowData = draftEvent.rowData as Record<string, unknown>;
-        rowData.publishedAt = null;
-        const publishedEvent = { ...draftEvent, rowData: { ...rowData, publishedAt: PUBLIC_AT } };
+        const event = dispatchEvent(row);
+        const draft = { ...dispatchRow(row), publishedAt: null };
+        const published = { ...draft, publishedAt: PUBLIC_AT };
 
         const engineAllowed = checkAccess({ actorId: userId, isSystemAdmin, memberships, scopes: null }, 'read', rowSubject(row)).allowed;
         // A published row dispatches exactly like the engine decides; the same row as a draft never dispatches.
-        expect(canReceiveProductEvent(subscriber, publishedEvent), `${label} → row ${row.id} published`).toBe(engineAllowed);
-        expect(canReceiveProductEvent(subscriber, draftEvent), `${label} → row ${row.id} draft`).toBe(false);
+        expect(canReceiveProductEvent(subscriber, event, published), `${label} → row ${row.id} published`).toBe(engineAllowed);
+        expect(canReceiveProductEvent(subscriber, event, draft), `${label} → row ${row.id} draft`).toBe(false);
       }
     }
   });

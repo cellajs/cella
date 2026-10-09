@@ -70,4 +70,35 @@ describe('Health endpoint', () => {
     expect(cdc.details).toHaveProperty('parseErrors');
     expect(['healthy', 'degraded', 'unhealthy']).toContain(cdc.status);
   });
+
+  it("GET /health?depth=full passes the CDC worker's own grade, reasons and details on", async () => {
+    const { cdcWebSocketServer } = await import('#/lib/cdc-websocket');
+    const handlers: Record<string, (data: Buffer) => void> = {};
+    const socket = {
+      on: (event: string, handler: (data: Buffer) => void) => {
+        handlers[event] = handler;
+      },
+      close: () => {},
+    };
+    // A test double and a private entry: `accept` needs a real HTTP upgrade to get here.
+    (cdcWebSocketServer as unknown as { handleConnection: (ws: typeof socket) => void }).handleConnection(socket);
+    const payload = {
+      status: 'degraded',
+      reasons: ['reading_again', 'wal_lag_high'],
+      details: { replication: 'stopped', lagBytes: 5 },
+      generation: 1,
+    };
+    handlers.message(Buffer.from(JSON.stringify({ _control: 'health', payload })));
+
+    try {
+      const res = await fetchHealth('?depth=full');
+      const cdc = ((await res.json()) as Record<string, any>).components.cdc;
+
+      expect(cdc).toMatchObject({ status: 'degraded', checkedVia: 'push', reason: 'reading_again,wal_lag_high' });
+      expect(cdc.details).toMatchObject({ wsConnected: true, replication: 'stopped', lagBytes: 5, parseErrors: 0 });
+      expect(cdc.ageMs).toBeGreaterThanOrEqual(0);
+    } finally {
+      cdcWebSocketServer.close();
+    }
+  });
 });

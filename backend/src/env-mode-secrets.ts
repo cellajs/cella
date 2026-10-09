@@ -1,5 +1,5 @@
 /** The process modes (`MODE`) the backend image runs as. */
-export const processModes = ['api', 'mcp', 'oauth', 'cdc', 'jobs', 'migrate'] as const;
+export const processModes = ['api', 'mcp', 'oauth', 'jobs', 'migrate'] as const;
 
 export type ProcessMode = (typeof processModes)[number];
 

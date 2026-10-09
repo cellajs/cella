@@ -6,4 +6,4 @@ export {
   writeOffset,
 } from './helpers';
 export { streamSubscriberManager } from './subscriber-manager';
-export type { BaseStreamSubscriber, CursoredSubscriber, DispatcherConfig } from './types';
+export type { BaseStreamSubscriber, DispatcherConfig } from './types';
