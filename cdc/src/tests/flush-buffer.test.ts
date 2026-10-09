@@ -160,6 +160,40 @@ describe('FlushBuffer', () => {
     });
   });
 
+  describe('a run between two flushes', () => {
+    it('must not wait until no change is pending: it takes the gap after the flush in flight, and the next flush waits for it', async () => {
+      const held = heldFlushes(flushes);
+      const buffer = new FlushBuffer(held.processFlush, acknowledge, 10);
+
+      await buffer.enqueue(transaction(1));
+      await vi.advanceTimersByTimeAsync(10);
+      // Changes keep arriving while the first flush records, before and after the run is asked for.
+      await buffer.enqueue(transaction(2));
+      let flushesBefore = -1;
+      let release: () => void = () => {};
+      const run = buffer.exclusive(
+        () =>
+          new Promise<void>((resolve) => {
+            flushesBefore = flushes.length;
+            release = resolve;
+          }),
+      );
+      await buffer.enqueue(transaction(3));
+
+      held.releases[0]();
+      await vi.advanceTimersByTimeAsync(10);
+      expect(flushesBefore).toBe(1);
+      expect(flushes).toHaveLength(1);
+      expect(buffer.isIdle).toBe(false);
+
+      release();
+      await run;
+      await vi.advanceTimersByTimeAsync(0);
+      // What arrived meanwhile is flushed right after it, in commit order.
+      expect(lsnsOf(flushes[1])).toEqual([['0/2'], ['0/3']]);
+    });
+  });
+
   describe('a flush that fails', () => {
     it('acknowledges nothing, drops what is pending and reports the failure once', async () => {
       const held = heldFlushes(flushes);

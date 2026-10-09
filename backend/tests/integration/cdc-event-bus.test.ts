@@ -14,6 +14,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { mockUser } from '#/modules/user/user-mocks';
 import { insertUsers } from '#/modules/user/user-queries';
+import { memberRole } from '../fixtures';
 import { cleanupEntityHierarchy, seedAttachmentHome } from '../hierarchy-helpers';
 import { clearDatabase, startInProcessCdcWorker, waitFor, waitForEvent } from './test-utils';
 
@@ -80,7 +81,8 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
 
   it('must not hand two memberships removed in one transaction to the API as one event', async () => {
     const members = await insertUsers({ var: { db } }, { users: [mockUser(), mockUser()] });
-    const memberships = members.map((member) => mockChannelMembership('organization', testOrg, member));
+    // Members, whatever role the mock draws: the database refuses a delete that takes the organization's last admin.
+    const memberships = members.map((member) => ({ ...mockChannelMembership('organization', testOrg, member), role: memberRole }));
     await db.insert(membershipsTable).values(memberships);
     const membershipIds = memberships.map((membership) => membership.id as string);
     const signalBefore = async () => (await readCounts()).membership ?? 0;

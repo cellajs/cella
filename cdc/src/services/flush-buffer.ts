@@ -16,8 +16,13 @@ export class FlushBuffer {
   private pending: PendingEvent[][] = [];
   private pendingCount = 0;
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
-  /** The flush in progress: a second caller waits for it and then takes what is still pending. */
-  private flushing: Promise<void> | null = null;
+  /**
+   * Settles when the last flush or run that was asked for has ended. Each takes its turn after the one asked for
+   * before it, so a run between two flushes gets the next gap, also while changes keep arriving.
+   */
+  private turn: Promise<void> = Promise.resolve();
+  /** Flushes and runs that are in progress or wait for their turn. */
+  private turns = 0;
   private closedByFailure = false;
 
   private processFlush: (transactions: PendingEvent[][]) => Promise<void>;
@@ -73,57 +78,60 @@ export class FlushBuffer {
     }
   }
 
-  /** Flushes until nothing is pending. */
+  /**
+   * Flushes what is pending: resolves once every change that was pending at the call is recorded. What arrives
+   * meanwhile goes into a flush of its own, which starts right after whatever waits for the gap between the two.
+   */
   async flush(): Promise<void> {
     this.clearTimer();
-    while (this.flushing) await this.flushing;
-    if (this.pendingCount === 0 || this.closedByFailure) return;
-
-    this.flushing = this.drainPending().finally(() => {
-      this.flushing = null;
-    });
-    await this.flushing;
+    await this.inTurn(() => this.flushPending());
   }
 
-  private async drainPending(): Promise<void> {
-    while (this.pendingCount > 0) {
-      const transactions = this.pending;
-      const events = this.pendingCount;
-      this.pending = [];
-      this.pendingCount = 0;
+  private async flushPending(): Promise<void> {
+    if (this.pendingCount === 0 || this.closedByFailure) return;
 
-      try {
-        await this.processFlush(transactions);
-      } catch (error) {
-        this.fail(error, transactions[0][0].lsn, events);
-        return;
-      }
+    const transactions = this.pending;
+    const events = this.pendingCount;
+    this.pending = [];
+    this.pendingCount = 0;
 
-      // The commit of the last source transaction: everything up to it is recorded. A change's own position lies
-      // before that commit, and would leave its transaction to be delivered again.
-      const last = transactions[transactions.length - 1].at(-1) as PendingEvent;
-      await this.acknowledge(last.commitLsn ?? last.lsn);
+    try {
+      await this.processFlush(transactions);
+    } catch (error) {
+      this.fail(error, transactions[0][0].lsn, events);
+      return;
     }
 
-    this.onDrained?.();
+    // The commit of the last source transaction: everything up to it is recorded. A change's own position lies
+    // before that commit, and would leave its transaction to be delivered again.
+    const last = transactions[transactions.length - 1].at(-1) as PendingEvent;
+    await this.acknowledge(last.commitLsn ?? last.lsn);
+
+    if (this.pendingCount > 0) void this.flush();
+    else this.onDrained?.();
   }
 
   /**
    * Runs `fn` while no flush is in progress and holds the next flush until it resolved: what `fn` reads sits exactly
-   * between two flushes. Changes keep arriving meanwhile and are flushed after it.
+   * between two flushes. It takes the gap after the flush in progress, however many changes are pending by then.
+   * Changes keep arriving meanwhile and are flushed after it.
    */
   async exclusive<T>(fn: () => Promise<T>): Promise<T> {
-    while (this.flushing) await this.flushing;
-    const run = fn();
-    this.flushing = run
-      .then(
-        () => {},
-        () => {},
-      )
-      .finally(() => {
-        this.flushing = null;
-        if (this.pendingCount > 0) void this.flush();
-      });
+    try {
+      return await this.inTurn(fn);
+    } finally {
+      if (this.pendingCount > 0) void this.flush();
+    }
+  }
+
+  /** Runs `task` once every flush and run that was asked for before it has ended, whatever their outcome. */
+  private inTurn<T>(task: () => Promise<T>): Promise<T> {
+    this.turns += 1;
+    const run = this.turn.then(task);
+    const ended = () => {
+      this.turns -= 1;
+    };
+    this.turn = run.then(ended, ended);
     return run;
   }
 
@@ -149,7 +157,7 @@ export class FlushBuffer {
    */
   async reset(): Promise<void> {
     this.dropPending();
-    while (this.flushing) await this.flushing;
+    while (this.turns > 0) await this.turn;
     this.dropPending();
     this.closedByFailure = false;
   }
@@ -161,7 +169,7 @@ export class FlushBuffer {
 
   /** True when nothing is buffered and no flush is in flight. */
   get isIdle(): boolean {
-    return this.pendingCount === 0 && !this.flushing;
+    return this.pendingCount === 0 && this.turns === 0;
   }
 
   private dropPending(): void {
