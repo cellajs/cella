@@ -107,7 +107,7 @@ export async function impersonationSetBy(response: Response, admin: TestSession)
 
 export interface OpenStream {
   sessionId: string;
-  /** The server-sent events so far, in arrival order; comment lines (pings) are left out. */
+  /** The server-sent events so far, in arrival order, the keepalive `ping` events included. */
   events: { event: string; data: string }[];
   /** True once the server ended the response. */
   ended: () => boolean;

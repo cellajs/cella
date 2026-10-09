@@ -135,7 +135,18 @@ const viteConfig = {
     // service prefixes to their local ports. Services serve under their own prefix
     // (backend self-mounts /api, yjs strips /yjs), so no path rewrite here.
     proxy: {
-      '/api': { target: `http://localhost:${appConfig.devPorts.api}` },
+      '/api': {
+        target: `http://localhost:${appConfig.devPorts.api}`,
+        // The proxy ends the browser's response only when the upstream one ends: a stream cut off by a stopping API closes without
+        // ending, so its browser side is destroyed here. A complete response has ended before it closes and is left alone.
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes, _req, res) => {
+            proxyRes.on('close', () => {
+              if (!proxyRes.complete) res.destroy();
+            });
+          });
+        },
+      },
       '/yjs': { target: `ws://localhost:${appConfig.devPorts.yjs}`, ws: true },
       '/mcp': { target: `http://localhost:${appConfig.devPorts.mcp}` },
       '/oauth': { target: `http://localhost:${appConfig.devPorts.oauth}` },
