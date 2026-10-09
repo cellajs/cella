@@ -127,7 +127,20 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
     <BaseCarousel
       isDialog={isDialog}
       opts={{ duration: 20, loop: true, startIndex: startIndexRef.current ?? 0, watchDrag }}
-      plugins={isDialog ? [] : [Autoplay({ delay: 4000, stopOnInteraction: !!reducedMotion, stopOnMouseEnter: true, playOnInit: !reducedMotion })]}
+      plugins={
+        isDialog
+          ? []
+          : [
+              Autoplay({
+                delay: 4000,
+                stopOnInteraction: !!reducedMotion,
+                stopOnMouseEnter: true,
+                playOnInit: !reducedMotion,
+                // The arrows and dots sit beside Embla's viewport: hover is read on the carousel around all three
+                rootNode: (viewport) => viewport.parentElement,
+              }),
+            ]
+      }
       className="group size-full"
       setApi={handleSetApi}
     >
