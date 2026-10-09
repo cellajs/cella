@@ -61,27 +61,21 @@
       "kind": "middleware",
       "values": {
         "spamLimiter": { "name": "spam", "description": "Emails sent per user, per IP when anonymous: 10 per hour" },
-        "emailEnumLimiter": { "name": "emailEnum", "description": "Address lookups per IP, hits included: 30 per hour, then blocked for 30 minutes" },
-        "presignedUrlLimiter": { "name": "presignedUrl", "description": "File links per user: 2000 per hour, then blocked for 15 minutes" },
+        "emailEnumLimiter": { "name": "emailEnum", "description": "Address lookups per IP, hits included: 30 per hour" },
+        "presignedUrlLimiter": { "name": "presignedUrl", "description": "File link requests per user: 2000 per hour" },
         "totpVerificationLimiter": { "name": "totpVerification", "description": "Failed TOTP codes per IP: 5 per hour, then blocked for 30 minutes" },
         "stepUpLimiter": { "name": "stepUp", "description": "Failed step-up checks per account: 5 per hour, then blocked for 30 minutes" },
         "magicLinkLimiter": { "name": "magicLink", "description": "Magic link emails per address: 2 per 30 minutes" },
-        "passkeyChallengeLimiter": {
-          "name": "passkeyChallenge",
-          "description": "Passkey challenges per IP: 30 per hour, then blocked for 5 minutes"
-        },
+        "passkeyChallengeLimiter": { "name": "passkeyChallenge", "description": "Passkey challenges per IP: 30 per 5 minutes" },
         "clientMetadataFetchLimiter": {
           "name": "clientMetadataFetch",
           "description": "Client metadata fetches per IP: 60 per minute, then blocked for 1 minute"
         },
         "serviceBurstLimiter": { "name": "serviceBurst", "description": "Requests per actor with an API key or access token: 30 per second" },
         "mcpRequestLimiter": { "name": "mcpRequest", "description": "MCP requests per actor: 30 per second" },
-        "syncReadLimiter": { "name": "syncRead", "description": "Sync reads per user: 5000 per hour, then blocked for 5 minutes" },
-        "streamConnectLimiter": {
-          "name": "streamConnect",
-          "description": "Live update stream connections per user: 240 per hour, then blocked for 5 minutes"
-        },
-        "yjsHttpLimiter": { "name": "yjsHttp", "description": "Yjs pulls and pushes per user: 7200 per hour, then blocked for 1 minute" },
+        "syncReadLimiter": { "name": "syncRead", "description": "Sync reads per user: 1000 per 5 minutes" },
+        "streamConnectLimiter": { "name": "streamConnect", "description": "Live update stream connections per user: 60 per 5 minutes" },
+        "yjsHttpLimiter": { "name": "yjsHttp", "description": "Yjs pulls and pushes per user: 600 per minute" },
         "pointsLimiter": {
           "name": "points",
           "description": "API points per actor in a tenant: 1 per request, 1 per item on bulk routes, up to the tenant hourly budget"

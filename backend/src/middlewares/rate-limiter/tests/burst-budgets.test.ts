@@ -23,7 +23,12 @@ type Answer = 200 | 204 | 302 | 400 | 401;
  * A route behind a fresh limiter whose handler counts its runs and answers with `status`, or 401 at once for a request
  * sent with `failFast`. While held, a request stays in the handler until `release`.
  */
-function guardedRoute(mode: RateLimitMode, status: Answer, limits: typeof budget = budget, opts: Pick<RateLimiterOpts, 'getPointsBudget'> = {}) {
+function guardedRoute(
+  mode: RateLimitMode,
+  status: Answer,
+  limits: typeof budget = budget,
+  opts: Pick<RateLimiterOpts, 'getPointsBudget' | 'countsInProcess'> = {},
+) {
   const limiter = rateLimiter(mode, `burst_${nanoid(8)}`, ['ip'], { limits, ...opts });
   const app = new Hono<Env>();
   app.onError(appErrorHandler);
@@ -192,7 +197,7 @@ describe('send budgets under a parallel burst', () => {
 
 /**
  * A limiter with a tenant budget counts in process while a key is under 80% of it and in the database past that. The
- * static ceiling must hold across both: for every request sent after the bucket is spent, and in every hour.
+ * static ceiling must hold across both: for every request sent after the bucket is spent, and in every window.
  */
 describe('a points budget at the static ceiling', () => {
   it('must not accept requests past the static ceiling via the in-process counter', async () => {
@@ -207,7 +212,7 @@ describe('a points budget at the static ceiling', () => {
     expect(route.reached()).toBe(10);
   });
 
-  describe('across hours', () => {
+  describe('across windows', () => {
     const minutes = (count: number) => count * 60 * 1000;
     let start = 0;
 
@@ -254,6 +259,34 @@ describe('a points budget at the static ceiling', () => {
       // Nine requests an hour for three hours: the row opens late in each hour and must end with it.
       let accepted = 0;
       for (let request = 0; request < 27; request++) accepted += await acceptedAt(route, ip, (request * 60) / 9, 1);
+
+      expect(accepted).toBe(27);
+    });
+
+    /** The sync-read limiter's shape, scaled down: a pace in a five-minute window with no block, counted in process. */
+    const pacedRoute = () => guardedRoute('limit', 200, { points: 10, duration: 60 * 5, blockDuration: 0 }, { countsInProcess: true });
+
+    it('must not accept more than a pace allows in its window via a budget handed out again inside it', async () => {
+      const route = pacedRoute();
+      const ip = randomIp();
+
+      expect(await acceptedAt(route, ip, 0, 12)).toBe(10);
+      // Spent at the window's start: no block ends inside it, so nothing passes until it is over.
+      expect(await acceptedAt(route, ip, 1, 12)).toBe(0);
+      expect(await acceptedAt(route, ip, 4.9, 12)).toBe(0);
+
+      // Positive control: the next window brings the budget back, an hour or a block never asked for.
+      expect(await acceptedAt(route, ip, 5.1, 12)).toBe(10);
+      expect(await acceptedAt(route, ip, 9, 12)).toBe(0);
+    });
+
+    it('serves a client that stays under a pace in every window (positive control)', async () => {
+      const route = pacedRoute();
+      const ip = randomIp();
+
+      // Nine requests per five minutes for three windows: the row opens late in each and must end with it.
+      let accepted = 0;
+      for (let request = 0; request < 27; request++) accepted += await acceptedAt(route, ip, (request * 5) / 9, 1);
 
       expect(accepted).toBe(27);
     });

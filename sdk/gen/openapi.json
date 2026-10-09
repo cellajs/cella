@@ -78,11 +78,11 @@
           },
           "emailEnumLimiter": {
             "name": "emailEnum",
-            "description": "Address lookups per IP, hits included: 30 per hour, then blocked for 30 minutes"
+            "description": "Address lookups per IP, hits included: 30 per hour"
           },
           "presignedUrlLimiter": {
             "name": "presignedUrl",
-            "description": "File links per user: 2000 per hour, then blocked for 15 minutes"
+            "description": "File link requests per user: 2000 per hour"
           },
           "totpVerificationLimiter": {
             "name": "totpVerification",
@@ -98,7 +98,7 @@
           },
           "passkeyChallengeLimiter": {
             "name": "passkeyChallenge",
-            "description": "Passkey challenges per IP: 30 per hour, then blocked for 5 minutes"
+            "description": "Passkey challenges per IP: 30 per 5 minutes"
           },
           "clientMetadataFetchLimiter": {
             "name": "clientMetadataFetch",
@@ -114,15 +114,15 @@
           },
           "syncReadLimiter": {
             "name": "syncRead",
-            "description": "Sync reads per user: 5000 per hour, then blocked for 5 minutes"
+            "description": "Sync reads per user: 1000 per 5 minutes"
           },
           "streamConnectLimiter": {
             "name": "streamConnect",
-            "description": "Live update stream connections per user: 240 per hour, then blocked for 5 minutes"
+            "description": "Live update stream connections per user: 60 per 5 minutes"
           },
           "yjsHttpLimiter": {
             "name": "yjsHttp",
-            "description": "Yjs pulls and pushes per user: 7200 per hour, then blocked for 1 minute"
+            "description": "Yjs pulls and pushes per user: 600 per minute"
           },
           "pointsLimiter": {
             "name": "points",

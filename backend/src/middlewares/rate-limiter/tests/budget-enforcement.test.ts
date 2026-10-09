@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { memoryStores } from './memory-stores';
@@ -68,31 +68,67 @@ describe('points budget enforcement (end to end)', () => {
     expect(state?.consumedPoints).toBe(90);
   });
 
-  it('enforces a limit counted in process exactly, without a tenant budget', async () => {
-    const limiter = rateLimiter('limit', 'reads', ['tenantId'], {
-      limits: { points: 100, duration: 60 * 60, blockDuration: 60 * 5 },
-      countsInProcess: true,
+  describe('a pace counted in process, without a tenant budget', () => {
+    /** The sync-read limiter's shape, scaled down: a five-minute window, no block, counted in process. */
+    function buildPacedApp(key: string) {
+      const limiter = rateLimiter('limit', key, ['tenantId'], {
+        limits: { points: 100, duration: 60 * 5, blockDuration: 0 },
+        countsInProcess: true,
+      });
+      const app = new Hono<Env>();
+      app.onError((err, c) => (err instanceof AppError ? c.json({ error: err.type }, err.status as 429) : c.json({ error: 'internal' }, 500)));
+      app.use(async (c, next) => {
+        c.set('tenantId', 't1');
+        await next();
+      });
+      app.post('/t', limiter, (c) => c.json({ ok: true }, 200));
+      return app;
+    }
+
+    afterEach(() => {
+      vi.useRealTimers();
     });
-    const app = new Hono<Env>();
-    app.onError((err, c) => (err instanceof AppError ? c.json({ error: err.type }, err.status as 429) : c.json({ error: 'internal' }, 500)));
-    app.use(async (c, next) => {
-      c.set('tenantId', 't1');
-      await next();
+
+    it('enforces the limit exactly', async () => {
+      const app = buildPacedApp('reads');
+
+      const { allowed, blocked } = await hammer(app, 130);
+
+      expect(allowed).toBe(100);
+      expect(blocked).toBe(30);
+      // The first 79 requests never reached the store; the 80th settled them with its own.
+      expect((await memoryStores.get('reads_limit')!.get('tenantId:t1'))?.consumedPoints).toBeGreaterThanOrEqual(100);
     });
-    app.post('/t', limiter, (c) => c.json({ ok: true }, 200));
 
-    const { allowed, blocked } = await hammer(app, 130);
+    it('must not hand out a second budget inside the window', async () => {
+      vi.useFakeTimers();
+      const start = Date.now();
+      const app = buildPacedApp('paced');
 
-    expect(allowed).toBe(100);
-    expect(blocked).toBe(30);
-    // The first 79 requests never reached the store; the 80th settled them with its own.
-    expect((await memoryStores.get('reads_limit')!.get('tenantId:t1'))?.consumedPoints).toBeGreaterThanOrEqual(100);
-  });
+      expect((await hammer(app, 130)).allowed).toBe(100);
 
-  it('refuses in-process counting for a window other than one hour', () => {
-    expect(() =>
-      rateLimiter('limit', 'minute', ['tenantId'], { limits: { points: 10, duration: 60, blockDuration: 0 }, countsInProcess: true }),
-    ).toThrow('one-hour window');
+      // Spent in the window's first second: nothing more until the window ends.
+      for (const minute of [1, 3, 4.9]) {
+        vi.setSystemTime(start + minute * 60 * 1000);
+        expect((await hammer(app, 20)).allowed, `minute ${minute}`).toBe(0);
+      }
+    });
+
+    it('brings the budget back when the window ends (positive control)', async () => {
+      vi.useFakeTimers();
+      const app = buildPacedApp('restart');
+
+      expect((await hammer(app, 130)).allowed).toBe(100);
+
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000 + 1000);
+      expect((await hammer(app, 130)).allowed).toBe(100);
+    });
+
+    it('refuses in-process counting for a window longer than an hour, which the counter would drop an idle key inside', () => {
+      const daily = { points: 10, duration: 60 * 60 * 24, blockDuration: 0 };
+      expect(() => rateLimiter('limit', 'daily', ['tenantId'], { limits: daily, countsInProcess: true })).toThrow('at most an hour');
+      expect(() => rateLimiter('limit', 'dailyBudget', ['tenantId'], { limits: daily, getPointsBudget: () => 5 })).toThrow('at most an hour');
+    });
   });
 
   it('clamps tenant budgets to the static ceiling', async () => {
@@ -144,5 +180,22 @@ describe('points budget enforcement (end to end)', () => {
     expect(getRetryAfter(0)).toBe('1');
     expect(getRetryAfter(400)).toBe('1');
     expect(getRetryAfter(1500)).toBe('2');
+  });
+});
+
+/**
+ * The store replaces what is left of a `limit` window with its block. A block shorter than the window therefore ends
+ * inside it and hands out a whole budget again: 100 an hour with a five-minute block accepts 400 in that hour.
+ */
+describe('the windows of the limit limiters', () => {
+  it('must not hand out a second budget inside a window via a block shorter than it', async () => {
+    const limiters = await import('#/middlewares/rate-limiter/limiters');
+    const limits = Object.entries(limiters).flatMap(([name, limiter]) =>
+      'keyPrefix' in limiter && limiter.keyPrefix.endsWith('_limit') ? [{ name, ...limiter.buckets[0].limits }] : [],
+    );
+
+    // Every route limiter that counts each request is read (positive control).
+    expect(limits.map(({ name }) => name)).toEqual(expect.arrayContaining(['emailEnumLimiter', 'syncReadLimiter', 'yjsHttpLimiter']));
+    expect(limits.filter(({ duration, blockDuration }) => blockDuration > 0 && blockDuration < duration)).toEqual([]);
   });
 });

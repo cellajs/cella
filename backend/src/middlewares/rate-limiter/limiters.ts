@@ -20,10 +20,11 @@ export const spamLimiter = rateLimiter('success', 'spam', [['userId', 'ip']], {
 /**
  * Address lookups per IP. check-email answers truthfully only a browser that signed in to the address before, so every
  * lookup counts, hits included: this bounds guessing on a shared browser. Past it, sign-in goes on without lookups.
+ * A budget: it holds for the hour.
  */
 export const emailEnumLimiter = rateLimiter('limit', 'emailEnum', ['ip'], {
-  limits: { points: 30, duration: 60 * 60, blockDuration: 60 * 30 },
-  description: 'Address lookups per IP, hits included: 30 per hour, then blocked for 30 minutes',
+  limits: { points: 30, duration: 60 * 60, blockDuration: 0 },
+  description: 'Address lookups per IP, hits included: 30 per hour',
 });
 
 export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>
@@ -34,9 +35,10 @@ export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>
     description: 'Failed link, callback and passkey sign-ins per IP: 10 per hour, then blocked for 30 minutes',
   });
 
+/** A budget, as API points are: it holds for the hour. One request signs up to 50 files, and the client keeps the links it got. */
 export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', [['userId', 'ip']], {
-  limits: { points: 2000, duration: 60 * 60, blockDuration: 60 * 15 },
-  description: 'File links per user: 2000 per hour, then blocked for 15 minutes',
+  limits: { points: 2000, duration: 60 * 60, blockDuration: 0 },
+  description: 'File link requests per user: 2000 per hour',
 });
 
 /** Keyed by IP, across accounts. Each account also has its own budget, with a lockout mail, in `verifyTotp`. */
@@ -60,10 +62,13 @@ export const magicLinkLimiter = rateLimiter('limit', 'magicLink', ['email'], {
   description: 'Magic link emails per address: 2 per 30 minutes',
 });
 
-/** Generation uses a flat limit because it has no failure signal; verification has the brute-force limiter. */
+/**
+ * Generation uses a flat limit because it has no failure signal; verification has the brute-force limiter. A pace, in a
+ * short window: the key is an IP many people may share, and a challenge costs one row that expires.
+ */
 export const passkeyChallengeLimiter = rateLimiter('limit', 'passkeyChallenge', ['ip'], {
-  limits: { points: 30, duration: 60 * 60, blockDuration: 60 * 5 },
-  description: 'Passkey challenges per IP: 30 per hour, then blocked for 5 minutes',
+  limits: { points: 30, duration: 60 * 5, blockDuration: 0 },
+  description: 'Passkey challenges per IP: 30 per 5 minutes',
 });
 
 /**
@@ -113,27 +118,33 @@ export const mcpRequestLimiter = rateLimiter('limit', 'mcpRequest', ['actorId'],
 
 /**
  * Backpressure for the read fan-out one SSE notification triggers; a 429 rides the client's invalidate-and-backoff.
+ * A pace, in a short window: a client catching up reads once per product type and organization, and one watching a
+ * busy scope reads at each notification, so a spent key has to be back within minutes.
  * Counted in process: every list and delta read passes here, and a transaction on each cost as much as the read.
  */
 export const syncReadLimiter = rateLimiter('limit', 'syncRead', [['userId', 'ip']], {
-  limits: { points: 5000, duration: 60 * 60, blockDuration: 60 * 5 },
+  limits: { points: 1000, duration: 60 * 5, blockDuration: 0 },
   countsInProcess: true,
-  description: 'Sync reads per user: 5000 per hour, then blocked for 5 minutes',
-});
-
-/** Bounds stream connection attempts per user. The client's 5-30s reconnect backoff stays far below this. */
-export const streamConnectLimiter = rateLimiter('limit', 'streamConnect', [['userId', 'ip']], {
-  limits: { points: 240, duration: 60 * 60, blockDuration: 60 * 5 },
-  description: 'Live update stream connections per user: 240 per hour, then blocked for 5 minutes',
+  description: 'Sync reads per user: 1000 per 5 minutes',
 });
 
 /**
- * Yjs over HTTP per user, pulls and pushes together, in place of API points: a socket costs none, and an editing tab
- * pulls every 10 seconds and pushes at most every 2. A client backs off on the 429.
+ * Bounds stream connection attempts per user, as a pace in a short window. A browser whose stream keeps dropping
+ * reconnects about 20 times in 5 minutes at most (10 seconds up, 5 to 7 back off), and a user may have several.
+ */
+export const streamConnectLimiter = rateLimiter('limit', 'streamConnect', [['userId', 'ip']], {
+  limits: { points: 60, duration: 60 * 5, blockDuration: 0 },
+  description: 'Live update stream connections per user: 60 per 5 minutes',
+});
+
+/**
+ * Yjs over HTTP per user, pulls and pushes together, in place of API points: a socket costs none. A pace, in a window
+ * as long as the client's longest backoff. An editing tab pulls every 10 seconds and posts one update at a time, the
+ * next as soon as the last is answered while edits keep coming: up to one per keystroke on a slow connection.
  */
 export const yjsHttpLimiter = rateLimiter('limit', 'yjsHttp', [['userId', 'ip']], {
-  limits: { points: 7200, duration: 60 * 60, blockDuration: 60 },
-  description: 'Yjs pulls and pushes per user: 7200 per hour, then blocked for 1 minute',
+  limits: { points: 600, duration: 60, blockDuration: 0 },
+  description: 'Yjs pulls and pushes per user: 600 per minute',
 });
 
 /** Cost = length of the request body array. Attach to routes taking `{ ids: [...] }` or a top-level array body. */

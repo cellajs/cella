@@ -118,17 +118,17 @@ The OAuth face keeps a session of its own in the browser and answers a client wi
 
 ## Rate limits
 
-Routes declare their limiter in `xRateLimiter`, which appears in OpenAPI. The shared limiter can key counts by IP (an IPv6 client counts by `/64`), email, user, actor, or tenant; an IP or address enters the key as a keyed pseudonym (`PII_HASH_SECRET`), so `rate_limits` holds neither in the clear. `limit` counts every request. `success`, `fail`, and `failseries` reserve an attempt before the handler and return it unless the outcome counts, so parallel requests cannot exceed the budget; a `failseries` ends with a success. Failure budgets also count in a 24-hour bucket, where 100 failures block for three hours. Counts live in `rate_limits` and are shared across processes; if PostgreSQL is unavailable, the limiter falls back to process memory. A refusal returns `429 too_many_requests` with `Retry-After`. Work without an incoming request can charge a limiter directly through `chargeLimiter`.
+Routes declare their limiter in `xRateLimiter`, which appears in OpenAPI. The shared limiter can key counts by IP (an IPv6 client counts by `/64`), email, user, actor, or tenant; an IP or address enters the key as a keyed pseudonym (`PII_HASH_SECRET`), so `rate_limits` holds neither in the clear. `limit` counts every request and refuses a spent key until its window ends: an hour where the limit is a budget, minutes where it paces a route whose client retries. `success`, `fail`, and `failseries` reserve an attempt before the handler and return it unless the outcome counts, so parallel requests cannot exceed the budget; a `failseries` ends with a success. Failure budgets also count in a 24-hour bucket, where 100 failures block for three hours. Counts live in `rate_limits` and are shared across processes; if PostgreSQL is unavailable, the limiter falls back to process memory. A refusal returns `429 too_many_requests` with `Retry-After`. Work without an incoming request can charge a limiter directly through `chargeLimiter`.
 
 | Limiter | Counts | Budget |
 | --- | --- | --- |
 | `magicLinkLimiter` | Magic links per address | 2 per 30 minutes |
-| `emailEnumLimiter` | Address lookups per IP, hits included | 30 per hour, then 30 minutes blocked |
+| `emailEnumLimiter` | Address lookups per IP, hits included | 30 per hour |
 | `spamLimiter` | Mails sent per user, per IP when anonymous | 10 per hour |
 | `tokenLimiter` | Failed link, callback and passkey sign-ins per IP; a success ends the series | 10, then 30 minutes blocked |
 | `totpVerificationLimiter` | Failed TOTP codes per IP; a code that verifies ends the series | 5 per hour, then 30 minutes blocked |
 | The TOTP account budget | Failed TOTP codes per account, whatever the IP | 5 per hour, then 30 minutes locked and a mail |
 | `stepUpLimiter` | Failed second-factor checks on step-up, per account | 5 per hour, then 30 minutes blocked |
-| `passkeyChallengeLimiter` | Passkey challenges per IP | 30 per hour |
+| `passkeyChallengeLimiter` | Passkey challenges per IP | 30 per 5 minutes |
 
 Machine-facing rate limits: [Interoperability](./INTEROPERABILITY.md#quotas-and-limits).
