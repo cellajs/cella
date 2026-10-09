@@ -28,19 +28,23 @@ function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props
 
   const avatarBackground = numberToColorClass(id);
   const [initial, secondInitial] = getInitials(name);
+  const isUser = type === 'user';
 
   return (
     <Avatar {...props} data-type={type} className={cn('overflow-hidden rounded-md data-[type=user]:rounded-full', className)}>
       {url && <AvatarImage src={url} alt={name ?? ''} draggable={false} />}
-      {/* The fallback is the container: letters scale with the avatar, and the second one shows when it is wider than size-6 */}
+      {/* The fallback is the container: the letter scales with the avatar. A user gets a second one, both smaller, when it is wider than size-6 */}
       <AvatarFallback className={cn('@container', avatarBackground)}>
         <span className="sr-only">{name}</span>
         <div
           aria-hidden
-          className="flex h-full items-center justify-center font-semibold @min-[calc(1.5rem+1px)]:text-[40cqi] text-[50cqi] text-black leading-none more-contrast:opacity-85 opacity-50"
+          className={cn(
+            'flex h-full items-center justify-center font-semibold text-[50cqi] text-black leading-none more-contrast:opacity-85 opacity-50',
+            isUser && '@min-[calc(1.5rem+1px)]:text-[40cqi]',
+          )}
         >
           {initial ?? '-'}
-          {secondInitial && <span className="@min-[calc(1.5rem+1px)]:inline hidden">{secondInitial}</span>}
+          {isUser && secondInitial && <span className="@min-[calc(1.5rem+1px)]:inline hidden">{secondInitial}</span>}
         </div>
       </AvatarFallback>
     </Avatar>
