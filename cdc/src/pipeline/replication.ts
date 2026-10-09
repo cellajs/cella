@@ -7,10 +7,11 @@ import { buildVerifiedSsl, cdcDb, stripSslParams } from '../lib/db';
 import { log } from '../lib/pino';
 import { wsClient } from '../network/websocket-client';
 import { replicationState } from '../services/replication-state';
+import { checkReplicationSetup } from '../services/setup-check';
 import { acknowledgeIdlePosition, handleDataMessage, resetBuffers } from './handle-message';
 import { isStalePublicationError } from './replication-errors';
 
-const { reconnection, slotTakeover } = RESOURCE_LIMITS;
+const { reconnection, runtime, slotTakeover } = RESOURCE_LIMITS;
 
 // Replication service setup
 
@@ -34,6 +35,9 @@ export function createReplicationService(): LogicalReplicationService {
       application_name: `${appConfig.slug}-cdc-worker`,
       // Verified TLS, matching the query connection; certificate identity is pinned to the dialed host in production.
       ssl: buildVerifiedSsl(env.DATABASE_CDC_URL),
+      // A peer that is gone without a word is noticed by the probes, and the read fails like any other.
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 30_000,
     },
     { acknowledge: { auto: false, timeoutSeconds: 0 }, flowControl: { enabled: true } },
   );
@@ -61,6 +65,14 @@ export function createReplicationService(): LogicalReplicationService {
       if (!advanced && shouldRespond) await service.acknowledge(replicationState.lastAckedLsn ?? '0/00000000');
     });
   });
+
+  // The server drops a sender it has not heard from for `wal_sender_timeout`. While a flush holds the stream nothing
+  // else is sent, so the last confirmed position is repeated on a timer. It confirms nothing new.
+  const statusTimer = setInterval(() => {
+    if (replicationState.service !== service) return clearInterval(statusTimer);
+    void service.acknowledge(replicationState.lastAckedLsn ?? '0/00000000').catch(() => {});
+  }, runtime.statusIntervalMs);
+  statusTimer.unref?.();
 
   return service;
 }
@@ -162,6 +174,7 @@ export function setupBackpressure(): void {
 export async function subscribeWithReconnect(
   plugin: PgoutputPlugin,
   createService: () => LogicalReplicationService = createReplicationService,
+  checkSetup: () => Promise<string[]> = checkReplicationSetup,
 ): Promise<void> {
   // Fast retries during a rolling-deploy slot handoff, then the normal cadence under sustained contention.
   let attempt = 0;
@@ -175,6 +188,11 @@ export async function subscribeWithReconnect(
       // Every attempt: dropping a database removes its slots, and no slot can be created while it is
       // unreachable. One catalog SELECT per attempt, and a no-op when another worker holds the slot.
       await ensureReplicationSlot();
+
+      // A stream from a setup that does not match the worker would drop or misread changes without a sign.
+      replicationState.setupProblems = await checkSetup();
+      if (replicationState.setupProblems.length)
+        throw new Error(`Replication setup does not match the worker: ${replicationState.setupProblems.join('; ')}`);
 
       resetBuffers();
       service = createService();

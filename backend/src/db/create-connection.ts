@@ -16,6 +16,8 @@ export type DbOrTx = DB | Tx;
 export interface SessionTimeouts {
   lockMs: number;
   statementMs: number;
+  /** `idle_in_transaction_session_timeout`: ends a session that holds a transaction, and its locks, without a statement. Absent = no limit. */
+  idleInTransactionMs?: number;
 }
 
 interface CreatePgConnectionOptions {
@@ -54,6 +56,7 @@ export const createPgConnection = (
       keepAliveInitialDelayMillis: KEEP_ALIVE_IDLE_MS,
       // Sent as startup parameters, so the server enforces them even after the client is gone.
       ...(sessionTimeouts ? { lock_timeout: sessionTimeouts.lockMs, statement_timeout: sessionTimeouts.statementMs } : {}),
+      ...(sessionTimeouts?.idleInTransactionMs ? { idle_in_transaction_session_timeout: sessionTimeouts.idleInTransactionMs } : {}),
     },
     logger: debug && appConfig.mode === 'development',
   });

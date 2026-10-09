@@ -77,11 +77,13 @@ There is one way a failure is handled: the worker confirms nothing, forgets what
 
 ## Operational constraints
 
-- **Adding a tracked table takes two changes:** the backend's entity or resource table map, then rerunning the CDC migration. Missing either drops events.
+- **Adding a tracked table takes two changes:** the backend's entity or resource table map, then rerunning the CDC migration. Before every subscription the worker checks that the publication holds exactly the tables of its registry, that each has `REPLICA IDENTITY FULL` and that `wal_level` is `logical`. While that does not hold it reads nothing and reports unhealthy with what is wrong.
 - **`REPLICA IDENTITY FULL` is mandatory** (deletes need the old tuple), so publication column lists are unavailable and large columns are stripped in the worker.
 - **Only one worker may consume the slot.**
 - **A source transaction is held whole.** The worker buffers it until its commit and records it in one database transaction, so the largest transaction the app writes has to fit in the worker's memory.
-- **WAL retention is the recovery margin.** Needs `wal_level=logical`, slot/sender capacity, a suitable `max_slot_wal_keep_size`, and a `REPLICATION` role.
+- **WAL retention is the recovery margin.** Needs `wal_level=logical`, slot/sender capacity, a `REPLICATION` role, and a `max_slot_wal_keep_size`: without one a worker that is down keeps WAL until the disk is full, and the worker warns about that at startup.
+- **The worker cannot hold the API's rows.** A flush locks the product rows it stamps. Every session of the worker's pool has a lock timeout of 10 seconds, a statement timeout of a minute and an idle-in-transaction timeout of 30 seconds, so the server takes those locks back from a worker that hangs or is cut off.
+- **A held stream stays connected.** While a flush holds the stream, the worker repeats its last confirmed position every 10 seconds, inside the server's `wal_sender_timeout`. The replication connection uses TCP keepalive, so a peer that is gone ends the read.
 
 ## Health and configuration
 

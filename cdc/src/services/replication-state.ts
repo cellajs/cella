@@ -28,6 +28,9 @@ class ReplicationStateManager {
   lastKeepaliveLsn: string | null = null;
   private _replicationPausedAt: Date | null = null;
 
+  /** What the last setup check found wrong; while it is not empty the worker does not read. */
+  setupProblems: string[] = [];
+
   /** Set when a flush failed: the subscription loop waits before it reads the same events again. */
   flushFailed = false;
   /** Set at shutdown: the subscription loop ends with the subscription it holds. */
@@ -158,6 +161,7 @@ class ReplicationStateManager {
     this.lastKeepaliveLsn = null;
     this._service = null;
     this._replicationPausedAt = null;
+    this.setupProblems = [];
     this.flushFailed = false;
     this.stopping = false;
     this._failure = null;

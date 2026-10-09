@@ -9,6 +9,8 @@ export const RESOURCE_LIMITS = {
   runtime: {
     /** How long the API may be away, with nothing consumed, before health reports unhealthy. */
     pauseUnhealthyMs: 5 * 60e3,
+    /** How often the last confirmed position is sent again: well inside the server's `wal_sender_timeout` of a minute. */
+    statusIntervalMs: 10_000,
   },
 
   // Reading again after a failed flush
@@ -18,6 +20,9 @@ export const RESOURCE_LIMITS = {
     /** Failures in a row at one position, caused by the change itself, after which the worker counts as stuck there. */
     stuckAfter: 5,
   },
+
+  // Server-side limits for every session of the worker's pool
+  database: { lockMs: 10_000, statementMs: 60_000, idleInTransactionMs: 30_000 },
 
   // Reconnection configuration
   reconnection: {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { acknowledge, ws } = vi.hoisted(() => ({
   acknowledge: vi.fn(async (_lsn: string) => true),
@@ -162,5 +162,43 @@ describe('replication heartbeat acknowledgement', () => {
 
       expect(acknowledge).toHaveBeenCalledWith('0/1EF');
     });
+  });
+});
+
+describe('replication status timer', () => {
+  beforeEach(() => {
+    replicationState.reset();
+    resetBuffers();
+    acknowledge.mockClear();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('repeats the last confirmed position while a flush holds the stream, so the server keeps the connection', async () => {
+    const service = createReplicationService();
+    replicationState.service = service;
+    replicationState.lastAckedLsn = '0/AB';
+    // A transaction is open and nothing is read: without the timer the server would hear nothing for as long as that lasts.
+    await handleDataMessage('0/100', { tag: 'begin', xid: 7 } as never);
+
+    await vi.advanceTimersByTimeAsync(35_000);
+
+    expect(acknowledge.mock.calls.map(([lsn]) => lsn)).toEqual(['0/AB', '0/AB', '0/AB']);
+  });
+
+  it('must not go on for a service that was replaced', async () => {
+    const old = createReplicationService();
+    replicationState.service = old;
+    replicationState.lastAckedLsn = '0/AB';
+    replicationState.service = createReplicationService();
+    acknowledge.mockClear();
+
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    // One update, from the service that holds the subscription now.
+    expect(acknowledge).toHaveBeenCalledTimes(1);
   });
 });

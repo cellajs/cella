@@ -27,6 +27,8 @@ interface HealthResponse {
     lastEventAt: string | null;
     /** The failure the worker is reading again from, with `stuck` set once the change itself failed it too often. */
     failure: (ReplicationFailure & { stuck: boolean }) | null;
+    /** What the setup check found wrong: the worker does not read while this is not empty. */
+    setupProblems: string[];
     /** Null until the startup probe ran or when it failed. */
     role: RoleCapabilities | null;
   };
@@ -82,6 +84,7 @@ export function getHealthResponse(): { response: HealthResponse; httpStatus: num
       lagMs: replicationState.lagMs,
       lastEventAt: replicationState.lastEventAt?.toISOString() ?? null,
       failure: failure ? { ...failure, stuck } : null,
+      setupProblems: replicationState.setupProblems,
       role,
     },
     websocket: {
