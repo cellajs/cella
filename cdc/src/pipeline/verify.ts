@@ -254,7 +254,7 @@ export async function restoreBooksState(): Promise<void> {
   }
 }
 
-/** Whether the counters are gone while the database has a history: an unlogged table is emptied by a crash or a failover. */
+/** Whether the counters are gone while the database has a history: a truncate or a partial restore emptied the table. */
 export async function countersAreLost(): Promise<boolean> {
   const result = await cdcDb.execute<{ counters: boolean; history: boolean }>(
     sql`SELECT EXISTS (SELECT 1 FROM ${channelCountersTable}) AS counters, EXISTS (SELECT 1 FROM activities) AS history`,

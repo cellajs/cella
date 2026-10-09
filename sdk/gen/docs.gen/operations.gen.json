@@ -2057,7 +2057,7 @@
     "path": "/{tenantId}/{organizationId}/attachments/{id}",
     "tags": ["attachments"],
     "summary": "Get attachment",
-    "description": "Returns a single attachment by ID. Served from the CDC-invalidated entity detail cache.",
+    "description": "Returns a single attachment by ID. Served from the entity detail cache, which every write to the row drops.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,

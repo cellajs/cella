@@ -209,13 +209,13 @@
                   "frontiers": {
                     "type": "object",
                     "required": false,
-                    "description": "Per-entityType newest sequence position over the view prefixes (subtree: f:{type}; self: fs:{type})",
+                    "description": "Per-entityType newest sequence position over the view prefixes (subtree: e:f:{type}; self: e:f:h:{type})",
                     "additionalProperties": { "type": "integer", "required": false }
                   },
                   "counts": {
                     "type": "object",
                     "required": false,
-                    "description": "Per-entityType live row counts summed over the view prefixes (subtree: e:{type}; self: es:{type})",
+                    "description": "Per-entityType live row counts summed over the view prefixes (subtree: e:c:{type}; self: e:c:h:{type})",
                     "additionalProperties": { "type": "integer", "required": false }
                   }
                 }
@@ -293,7 +293,7 @@
           "cursor": {
             "type": "string",
             "required": false,
-            "description": "Last activity cursor received by the client (LSN-based). Omit on first sync."
+            "description": "Id of the last activity the client received (its commit position and index). Omit on first sync."
           },
           "views": {
             "type": "array",

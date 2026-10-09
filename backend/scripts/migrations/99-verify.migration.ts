@@ -13,7 +13,7 @@ import { CDC_PUBLICATION_NAME } from '../../../cdc/src/constants';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 import { MAINTENANCE_PROCEDURE, partitionConfigs } from './10-partitions.migration';
 import { classifyRlsTables } from './10-rls.migration';
-import { unloggedTables } from './10-unlogged.migration';
+import { loggedAgainTables, unloggedTables } from './10-unlogged.migration';
 
 const PRIVILEGES = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'] as const;
 
@@ -120,12 +120,16 @@ async function run(): Promise<SideEffectBlock> {
     ...readOnlyTables.flatMap((t) => PRIVILEGES.map((priv) => grantCheck(t, priv, priv === 'SELECT'))),
   ].join('\n');
 
-  const unloggedChecks = unloggedTables
-    .map(
+  const unloggedChecks = [
+    ...unloggedTables.map(
       (t) => `  IF (SELECT relpersistence FROM pg_class WHERE ${inPublic(t)}) IS DISTINCT FROM 'u' THEN
     missing := array_append(missing, 'unlogged:${t}'); END IF;`,
-    )
-    .join('\n');
+    ),
+    ...loggedAgainTables.map(
+      (t) => `  IF (SELECT relpersistence FROM pg_class WHERE ${inPublic(t)}) IS DISTINCT FROM 'p' THEN
+    missing := array_append(missing, 'logged:${t}'); END IF;`,
+    ),
+  ].join('\n');
 
   const migrationSql = `-- Side-effect verification
 -- Asserts the end state of every previous block. A failed assertion aborts (and rolls
@@ -198,7 +202,7 @@ END $$;
     title: 'Verify, assert end state of all side-effect blocks',
     sql: migrationSql,
     notes: [
-      `asserts: ${expectedTriggers.length} triggers, ${functionNames.length} functions, ${partitionConfigs.length} partitioned tables, ${ownedTables.length} owners, ${rlsTables.length} RLS tables (enabled, not forced), ${rlsTables.length * policyCount} policies, ${crudTables.length} CRUD + ${readOnlyTables.length} read-only grant sets, ${unloggedTables.length} unlogged, 1 publication, runtime_role not BYPASSRLS`,
+      `asserts: ${expectedTriggers.length} triggers, ${functionNames.length} functions, ${partitionConfigs.length} partitioned tables, ${ownedTables.length} owners, ${rlsTables.length} RLS tables (enabled, not forced), ${rlsTables.length * policyCount} policies, ${crudTables.length} CRUD + ${readOnlyTables.length} read-only grant sets, ${unloggedTables.length} unlogged, ${loggedAgainTables.length} logged again, 1 publication, runtime_role not BYPASSRLS`,
     ],
   };
 }
