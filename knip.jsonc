@@ -9,8 +9,9 @@
       "entry": ["cella/cella.config.ts", "cella/skills/**/*.mjs", "cella/migrations/*/*.ts"],
       // Git hooks run lefthook; migration READMEs run their codemods with `pnpm exec tsx` from the root.
       "ignoreDependencies": ["@evilmartians/lefthook", "tsx"],
-      // `pnpm -C a11y stack` runs the a11y workspace's script of that name.
-      "ignoreBinaries": ["stack"]
+      // `pnpm -C a11y stack` runs the a11y workspace's script of that name. `cwebp` is the system WebP encoder the
+      // screenshots driver calls, installed with `brew install webp`.
+      "ignoreBinaries": ["stack", "cwebp"]
     },
     "a11y": {
       // `openState` is the starting point of a hand-written script that checks a fix in the running app; the audit never imports it.
