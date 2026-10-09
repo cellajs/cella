@@ -11,7 +11,7 @@ let currentMockContext: MockContext = 'example';
 /**
  * ID prefix per context:
  * - 'example': none (OpenAPI examples)
- * - 'script': 'gen-' (seed scripts, CDC filtering)
+ * - 'script': 'gen-' (seed scripts)
  * - 'loadtest': 'lt-' (load-test data, never collides with real/seed data)
  */
 export const setMockContext = (context: MockContext) => {

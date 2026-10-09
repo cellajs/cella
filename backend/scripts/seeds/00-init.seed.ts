@@ -12,7 +12,7 @@ import { defaultAdminUser } from '../fixtures';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { checkMark, durationSuffix } from '#/utils/console';
 
-// Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix (CDC worker skips these on catch-up)
+// Set mock context for seed script - UUIDs get '00000000-' prefix, nanoids get 'gen-' prefix
 setMockContext('script');
 
 const isProduction = appConfig.mode === 'production';
