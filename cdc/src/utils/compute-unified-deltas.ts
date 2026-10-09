@@ -1,8 +1,9 @@
 import type { ActivityAction, EntityHierarchy } from 'shared';
 import { hierarchy } from 'shared';
+import { isMaxMergeKey } from '#/modules/entities/counter-keys';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData, PendingEvent, TableMeta } from '../types';
-import { getCountDeltas, isMaxMergeKey } from './update-counts';
+import { getCountDeltas } from './update-counts';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,7 +50,7 @@ export function frontierNodeKeys(entityType: string, rowData: CdcRowData, organi
   return nodes;
 }
 
-/** Sums matching keys; max-merge keys keep the max, since stamps and frontiers must never sum. */
+/** Merges deltas into those of a channel key: a count adds up, a stamp or a frontier keeps the highest value. */
 export function mergeDelta(map: Map<string, Record<string, number>>, channelKey: string, deltas: Record<string, number>): void {
   const existing = map.get(channelKey);
   if (existing) {
@@ -61,7 +62,8 @@ export function mergeDelta(map: Map<string, Record<string, number>>, channelKey:
   }
 }
 
-function isStampable(tableMeta: TableMeta, action: ActivityAction, h: EntityHierarchy): boolean {
+/** Whether a change gets a sequence value: the create or the update of a product row. */
+export function isStampable(tableMeta: TableMeta, action: ActivityAction, h: EntityHierarchy): boolean {
   return tableMeta.kind === 'entity' && h.isProduct(tableMeta.type) && (action === 'create' || action === 'update');
 }
 

@@ -28,10 +28,6 @@ export function startSpinner(message: string): Ora {
   return activeSpinner;
 }
 
-export function updateSpinner(message: string): void {
-  if (activeSpinner) activeSpinner.text = message;
-}
-
 /** Ends the spinner with the message, or its running text, plus the time since it started. */
 function closeSpinner(method: 'succeed' | 'fail' | 'warn', message?: string): void {
   if (!activeSpinner) return;

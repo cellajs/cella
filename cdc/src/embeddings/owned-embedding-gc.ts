@@ -5,7 +5,7 @@ import { getEntityTable } from '#/tables';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
-import { isSoftDeleteTransition } from './is-soft-delete-transition';
+import { isSoftDeleteTransition } from '../utils/is-soft-delete-transition';
 import { stripChangedFieldsStx } from './strip-changed-fields';
 
 /** Columns the GC writes on an embedded row, beyond the scope and id columns. */
@@ -87,7 +87,8 @@ interface ScopeCandidates {
  * of a registered owned-embedding host. Candidates are ids observed leaving a host array (a
  * soft-deleted host surrenders its whole array), and a candidate is soft-deleted only when no live
  * host row in the same organization still references it, so rows never referenced stay exempt. The
- * soft-delete is a plain product UPDATE and flows through the normal pipeline.
+ * soft-delete is a plain product UPDATE and flows through the normal pipeline. A query that fails rejects,
+ * and with it the flush: its changes are read again, and the collection runs again with them.
  */
 export async function gcOwnedEmbeddedRows(
   hostProductType: ProductEntityType,
@@ -134,40 +135,35 @@ export async function gcOwnedEmbeddedRows(
     await Promise.all(
       [...byScope].map(async ([scopeId, { ids, actorId }]) => {
         const candidates = [...ids];
-        try {
-          // WAL events arrive post-commit, so a candidate still present in a live host row survives.
-          const referencedRows = await cdcDb
-            .selectDistinct({ id: sql<string>`referenced.id` })
-            .from(sql`${hostTable}, unnest(${hostColumn}) AS referenced(id)`)
-            .where(
-              and(
-                sql`${hostScopeColumn} = ${scopeId}`,
-                isNull((getColumns(hostTable) as Record<string, AnyPgColumn>).deletedAt),
-                sql`referenced.id = ANY(${candidates})`,
-              ),
-            );
-          const referenced = new Set(referencedRows.map((row) => row.id));
-          const orphanIds = candidates.filter((id) => !referenced.has(id));
-          if (orphanIds.length === 0) return;
+        // WAL events arrive post-commit, so a candidate still present in a live host row survives.
+        const referencedRows = await cdcDb
+          .selectDistinct({ id: sql<string>`referenced.id` })
+          .from(sql`${hostTable}, unnest(${hostColumn}) AS referenced(id)`)
+          .where(
+            and(
+              sql`${hostScopeColumn} = ${scopeId}`,
+              isNull((getColumns(hostTable) as Record<string, AnyPgColumn>).deletedAt),
+              sql`referenced.id IN ${candidates}`,
+            ),
+          );
+        const referenced = new Set(referencedRows.map((row) => row.id));
+        const orphanIds = candidates.filter((id) => !referenced.has(id));
+        if (orphanIds.length === 0) return;
 
-          const now = new Date().toISOString();
-          const deleted = await cdcDb
-            .update(embeddedTable)
-            .set({
-              deletedAt: now,
-              deletedBy: actorId,
-              updatedAt: now,
-              updatedBy: actorId,
-              stx: stripChangedFieldsStx(),
-            })
-            .where(and(inArray(embeddedColumns.id, orphanIds), eq(embeddedScopeColumn, scopeId), isNull(embeddedColumns.deletedAt)))
-            .returning({ id: embeddedColumns.id });
+        const now = new Date().toISOString();
+        const deleted = await cdcDb
+          .update(embeddedTable)
+          .set({
+            deletedAt: now,
+            deletedBy: actorId,
+            updatedAt: now,
+            updatedBy: actorId,
+            stx: stripChangedFieldsStx(),
+          })
+          .where(and(inArray(embeddedColumns.id, orphanIds), eq(embeddedScopeColumn, scopeId), isNull(embeddedColumns.deletedAt)))
+          .returning({ id: embeddedColumns.id });
 
-          if (deleted.length > 0) log.info('Owned embedded rows garbage-collected', { embeddedProduct, scopeId, count: deleted.length });
-        } catch (err) {
-          // The flush pipeline acks the WAL position regardless: a failed GC batch leaks, never wrongly deletes.
-          log.error('gcOwnedEmbeddedRows failed; candidates leaked', { embeddedProduct, scopeId, candidates, err });
-        }
+        if (deleted.length > 0) log.info('Owned embedded rows garbage-collected', { embeddedProduct, scopeId, count: deleted.length });
       }),
     );
   }

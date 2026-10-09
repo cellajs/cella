@@ -14,20 +14,13 @@ export class TransactionTooLargeError extends Error {
   }
 }
 
-/** SQLSTATE classes and codes of a server that is busy, restarting or out of reach, and of a lock or a snapshot lost to another session. */
+/** SQLSTATE classes and codes of a Postgres that is busy, restarting or out of reach, and of a lock or a snapshot lost to another session. */
 const passingSqlstates = ['08', '53', '57P', '57014', '40001', '40P01', '55P03', '25P03'];
 
 const networkCodes = new Set(['ECONNREFUSED', 'ECONNRESET', 'EPIPE', 'ETIMEDOUT', 'ENOTFOUND', 'EAI_AGAIN', 'EHOSTUNREACH']);
 
-/** What the database driver says when it has no code to give. */
-const connectionPhrases = [
-  'connection terminated',
-  'connection refused',
-  'connection reset',
-  'could not connect',
-  'too many clients',
-  'timeout exceeded when trying to connect',
-];
+/** What the database driver says when it has no code to give: a connection it lost, and a pool that got none in time. */
+const connectionPhrases = ['connection terminated', 'timeout exceeded when trying to connect'];
 
 function hasErrorCode(value: unknown): value is { code: string } {
   return typeof value === 'object' && value !== null && 'code' in value && typeof (value as { code: unknown }).code === 'string';
@@ -43,7 +36,7 @@ function getErrorCode(error: unknown): string | null {
 }
 
 /**
- * Whether a failure says nothing about the change itself: the connection, the server's resources, a lock lost to
+ * Whether a failure says nothing about the change itself: the connection, the resources of Postgres, a lock lost to
  * another session, or the API being away. The worker reads again after such a failure for as long as it lasts. Any
  * other failure means the database refused the change or the worker could not handle it.
  * @param error - What a flush or a message handler threw.

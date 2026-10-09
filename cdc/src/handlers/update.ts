@@ -1,15 +1,14 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import { appConfig, hierarchy, isChannel, isProduct } from 'shared';
+import { hierarchy, isChannel, isProduct } from 'shared';
+import { isEmbeddingCleanupWrite } from '../embeddings';
 import type { ParseMessageResult } from '../pipeline/parse-message';
 import { createActivity } from '../services/create-activity';
 import type { TableMeta } from '../types';
-import { convertRowKeys, extractRowData, getChangedFields } from '../utils';
 import { compactRowData } from '../utils/compact-row-data';
+import { convertRowKeys } from '../utils/convert-row-keys';
+import { getChangedFields } from '../utils/get-changed-fields';
 import { isSoftDeleteTransition } from '../utils/is-soft-delete-transition';
 import { pickPermissionRowData } from '../utils/permission-row-data';
-
-/** Columns holding embedded entity id arrays, e.g. `task.labels`. */
-const embeddingColumns: Set<string> = new Set(appConfig.productEmbeddings.map((e) => e.hostColumn));
 
 /** A row's location path from its ancestor id columns; null for non-hierarchy rows. */
 const rowLocationPath = (entityType: string, row: Record<string, unknown>): string | null => {
@@ -33,10 +32,8 @@ function isAlreadySoftDeleted(rowData: Record<string, unknown>, oldRowData: Reco
 }
 
 export function handleUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpdate): ParseMessageResult | null {
-  const oldRow = extractRowData(message.old);
-  const rowData = convertRowKeys(extractRowData(message.new), tableMeta.columnNameMap);
-  const hasOldRow = oldRow && Object.keys(oldRow).length > 0;
-  const oldRowData = hasOldRow ? convertRowKeys(oldRow, tableMeta.columnNameMap) : null;
+  const rowData = convertRowKeys(message.new ?? {}, tableMeta.columnNameMap);
+  const oldRowData = message.old && Object.keys(message.old).length > 0 ? convertRowKeys(message.old, tableMeta.columnNameMap) : null;
 
   // Product updates carry changedFields in stx; everything else falls back to a WAL row diff.
   const changedFields = getStxChangedFields(rowData) ?? (oldRowData ? getChangedFields(oldRowData, rowData) : null);
@@ -52,10 +49,8 @@ export function handleUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpda
 
   if (!isSoftDeleteTransition(rowData, oldRowData) && isAlreadySoftDeleted(rowData, oldRowData)) return null;
 
-  // User edits always include 'updatedAt', so an embedding-column-only change is CDC's own cleanup.
-  if (userChangedFields && !userChangedFields.includes('updatedAt') && userChangedFields.every((k) => embeddingColumns.has(k))) {
-    return null;
-  }
+  // CDC's own cleanup of an embedding column carries no user mutation.
+  if (isEmbeddingCleanupWrite(userChangedFields)) return null;
 
   const activity = createActivity(tableMeta, rowData, 'update', { changedFields: userChangedFields });
 

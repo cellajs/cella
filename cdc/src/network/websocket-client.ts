@@ -10,46 +10,35 @@ const MAX_RECONNECT_DELAY_MS = 5_000;
 
 const BASE_RECONNECT_DELAY_MS = 1_000;
 
-const PING_INTERVAL_MS = 30_000;
-
-/** Grace period in ms during which dev reconnects are not logged. */
-const DEV_RECONNECT_GRACE_MS = 10_000;
-
 type WebSocketState = 'connecting' | 'open' | 'closed' | 'reconnecting';
 
-interface WebSocketClientCallbacks {
-  onConnect?: () => void;
-  onDisconnect?: () => void;
-}
-
 /**
- * Server-to-server channel from the CDC worker to the backend `/internal/cdc` endpoint, carrying full
+ * Server-to-server channel from the CDC worker to the API's `/internal/cdc` endpoint, carrying full
  * entity row data. The listener admits private-network and loopback peers only and the route checks the
- * shared secret, so it is never reachable from external networks or browser clients. Reconnects with backoff + jitter.
+ * shared secret, so it is never reachable from external networks or browser clients. Connects again with
+ * a backoff and jitter. The worker's health push is its traffic: the API closes a socket it hears nothing
+ * from for 90 seconds.
  */
 class WebSocketClient {
   private ws: WebSocket | null = null;
   private url: string;
   private reconnectAttempt = 0;
   private reconnectTimeout: NodeJS.Timeout | null = null;
-  private pingInterval: NodeJS.Timeout | null = null;
-  private callbacks: WebSocketClientCallbacks = {};
   /** Flushes waiting for the socket: resolved when it opens, rejected when the client is closed for good. */
   private waiters: { resolve: () => void; reject: (error: Error) => void }[] = [];
 
   private _state: WebSocketState = 'closed';
   private _lastMessageAt: Date | null = null;
   private _messagesSent = 0;
-  private _disconnectedAt: Date | null = null;
+  private _apiAwaySince: Date | null = null;
   /** Set by `close()`: the worker is shutting down. */
   private closedForGood = false;
 
+  /** Called each time a connection opens, before the flushes that waited for it go on. */
+  onOpen: (() => void) | null = null;
+
   constructor(url: string) {
     this.url = url;
-  }
-
-  setCallbacks(callbacks: WebSocketClientCallbacks): void {
-    this.callbacks = callbacks;
   }
 
   connect(): void {
@@ -62,63 +51,43 @@ class WebSocketClient {
 
     const headers: Record<string, string> = { 'x-cdc-secret': env.CDC_SECRET };
 
-    if (!this.inGracePeriod()) {
-      log.info('CDC WebSocket connecting...', { url: this.url, attempt: this.reconnectAttempt + 1 });
-    }
+    log.debug('Connecting to the API', { url: this.url, attempt: this.reconnectAttempt + 1 });
 
     this.ws = new WebSocket(this.url, { headers });
 
     this.ws.on('open', () => {
       this._state = 'open';
-      this._disconnectedAt = null;
+      this._apiAwaySince = null;
       this.reconnectAttempt = 0;
 
-      log.info('CDC WebSocket connected');
+      // The boot smoke of the `verify` skill looks for the second half of this line in the log.
+      log.info('API reachable');
 
-      this.startPingInterval();
-
-      this.callbacks.onConnect?.();
+      this.onOpen?.();
       for (const waiter of this.waiters.splice(0)) waiter.resolve();
     });
 
     this.ws.on('close', (code, reason) => {
-      if (!this.inGracePeriod()) {
-        log.info('CDC WebSocket closed', { code, reason: reason.toString() });
-      }
+      log.debug('Socket to the API closed', { code, reason: reason.toString() });
       this.handleDisconnect();
     });
 
     this.ws.on('error', (error) => {
-      if (!this.inGracePeriod()) {
-        log.warn('CDC WebSocket error', { err: error });
-      }
       // No handleDisconnect here: a 'close' event always follows.
-    });
-
-    this.ws.on('pong', () => {
-      log.trace('CDC WebSocket pong received');
+      log.debug('Socket to the API failed', { err: error });
     });
   }
 
-  /** @returns false when not connected or serialization failed. */
-  send(data: unknown): boolean {
-    if (!this.isConnected()) {
-      if (!this.inGracePeriod()) {
-        log.warn('CDC WebSocket not connected, cannot send message');
-      }
-      return false;
-    }
-
-    try {
-      const message = JSON.stringify(data);
-      this.ws?.send(message);
-      this._messagesSent++;
-      this._lastMessageAt = new Date();
-      return true;
-    } catch (error) {
-      log.error('CDC WebSocket send error', { err: error });
-      return false;
-    }
+  /**
+   * Sends one message to the API.
+   * @throws `ApiUnreachableError` when no connection is open: a passing failure. Data that cannot be serialized
+   *   throws the serializer's own error, which counts against the change.
+   */
+  send(data: unknown): void {
+    if (!this.isConnected()) throw new ApiUnreachableError();
+    this.ws?.send(JSON.stringify(data));
+    this._messagesSent++;
+    this._lastMessageAt = new Date();
   }
 
   isConnected(): boolean {
@@ -147,22 +116,17 @@ class WebSocketClient {
     return this._messagesSent;
   }
 
-  /** @returns null while connected. */
-  getDisconnectedDuration(): number | null {
-    if (!this._disconnectedAt) return null;
-    return Date.now() - this._disconnectedAt.getTime();
-  }
-
-  /** Development only: suppresses reconnect logging for the first seconds after a disconnect. */
-  inGracePeriod(): boolean {
-    if (env.NODE_ENV !== 'development') return false;
-    const duration = this.getDisconnectedDuration();
-    return duration !== null && duration < DEV_RECONNECT_GRACE_MS;
+  /**
+   * Since when the API is away: from the moment an open connection closed, or from the first attempt that failed
+   * when none was open yet. Null while a connection is open, and before the first attempt ended.
+   */
+  get apiAwaySince(): Date | null {
+    return this._apiAwaySince;
   }
 
   close(): void {
     this.closedForGood = true;
-    this.cleanup();
+    this.clearReconnect();
     this.ws?.close();
     this.ws = null;
     this._state = 'closed';
@@ -170,20 +134,16 @@ class WebSocketClient {
   }
 
   private handleDisconnect(): void {
-    this.cleanup();
-    // A deliberate close also fires this event: nothing reconnects after it.
+    this.clearReconnect();
+    // A deliberate close also fires this event: nothing connects again after it.
     if (this.closedForGood) return;
 
-    const wasConnected = this._state === 'open';
     this._state = 'reconnecting';
 
-    // Only the initial disconnect stamps disconnectedAt; reconnect failures keep the original.
-    if (!this._disconnectedAt) {
-      this._disconnectedAt = new Date();
-    }
-
-    if (wasConnected) {
-      this.callbacks.onDisconnect?.();
+    // Attempts that fail during an outage keep its first moment.
+    if (!this._apiAwaySince) {
+      this._apiAwaySince = new Date();
+      log.warn('API away: flushes wait and the WAL keeps the changes');
     }
 
     this.scheduleReconnect();
@@ -201,9 +161,7 @@ class WebSocketClient {
 
     this.reconnectAttempt++;
 
-    if (!this.inGracePeriod()) {
-      log.info('CDC WebSocket scheduling reconnect', { attempt: this.reconnectAttempt, delayMs: delay });
-    }
+    log.debug('Next attempt to connect to the API scheduled', { attempt: this.reconnectAttempt, delayMs: delay });
 
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
@@ -211,23 +169,10 @@ class WebSocketClient {
     }, delay);
   }
 
-  private startPingInterval(): void {
-    if (this.pingInterval) clearInterval(this.pingInterval);
-    this.pingInterval = setInterval(() => {
-      if (this.ws?.readyState === WS_OPEN) {
-        this.ws.ping();
-      }
-    }, PING_INTERVAL_MS);
-  }
-
-  private cleanup(): void {
+  private clearReconnect(): void {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
-    }
-    if (this.pingInterval) {
-      clearInterval(this.pingInterval);
-      this.pingInterval = null;
     }
   }
 }
@@ -236,4 +181,5 @@ class WebSocketClient {
 const cdcSocketUrl = new URL('/internal/cdc', env.BACKEND_INTERNAL_URL);
 cdcSocketUrl.protocol = cdcSocketUrl.protocol === 'https:' ? 'wss:' : 'ws:';
 
+/** The worker's one socket to the API. It also keeps the one fact "the API is away", as `apiAwaySince`. */
 export const wsClient = new WebSocketClient(cdcSocketUrl.href);

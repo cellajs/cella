@@ -55,7 +55,6 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
       isSystemAdmin,
       systemAccessAllowed: isSystemAccessAllowed(ctx),
       memberships,
-      cursor,
     };
 
     // The user channel carries self-membership events regardless of org registration, so a

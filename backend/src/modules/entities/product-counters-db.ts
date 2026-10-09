@@ -7,6 +7,3 @@ export const productCountersTable = snakeCase.table('product_counters', {
   productType: varchar({ enum: appConfig.productEntityTypes }).notNull(),
   viewCount: integer().notNull().default(0),
 });
-
-export type ProductCounterModel = typeof productCountersTable.$inferSelect;
-export type InsertProductCounterModel = typeof productCountersTable.$inferInsert;

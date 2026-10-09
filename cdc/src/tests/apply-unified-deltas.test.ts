@@ -22,8 +22,8 @@ const db = {
   }),
 } as unknown as DeltaExecutor;
 
-const { applyBatchUnifiedDeltas, sumInto } = await import('../utils/apply-unified-deltas');
-const { frontierNodeKeys } = await import('../utils/compute-unified-deltas');
+const { applyBatchUnifiedDeltas } = await import('../utils/apply-unified-deltas');
+const { frontierNodeKeys, mergeDelta } = await import('../utils/compute-unified-deltas');
 
 // Synthetic two-level hierarchy: org > project > task (cella's own config has no sub-org product)
 const roles = createRoleRegistry(['admin', 'member'] as const);
@@ -147,34 +147,49 @@ describe('frontierNodeKeys', () => {
   });
 });
 
-describe('sumInto', () => {
-  it('sums plain delta keys on collision', () => {
-    const target = { sequence: 2, 'e:c:task': 1 };
-    sumInto(target, { 'e:c:task': 2, 'm:c:admin': 1 });
-    expect(target).toEqual({ sequence: 2, 'e:c:task': 3, 'm:c:admin': 1 });
+describe('mergeDelta', () => {
+  /** Merges `deltas` into what channel `org-1` holds, and returns the result. */
+  const merged = (held: Record<string, number>, ...deltas: Record<string, number>[]) => {
+    const map = new Map([['org-1', held]]);
+    for (const delta of deltas) mergeDelta(map, 'org-1', delta);
+    return map.get('org-1');
+  };
+
+  it('adds a count to the one a channel already holds', () => {
+    expect(merged({ membership: 2, 'e:c:task': 1 }, { 'e:c:task': 2, 'm:c:admin': 1 })).toEqual({ membership: 2, 'e:c:task': 3, 'm:c:admin': 1 });
   });
 
-  it('max-merges li:/lu: keys instead of summing (timestamps must not add up)', () => {
-    const target = { 'e:li:h:task': 1_751_000_000_000, 'e:lu:h:task': 1_751_000_000_000 };
-    sumInto(target, { 'e:li:h:task': 1_750_000_000_000, 'e:lu:h:task': 1_750_000_000_000 });
-    expect(target['e:li:h:task']).toBe(1_751_000_000_000);
-    expect(target['e:lu:h:task']).toBe(1_751_000_000_000);
-    sumInto(target, { 'e:li:h:task': 1_752_000_000_000, 'e:lu:h:task': 1_753_000_000_000 });
-    expect(target['e:li:h:task']).toBe(1_752_000_000_000);
-    expect(target['e:lu:h:task']).toBe(1_753_000_000_000);
+  it('must not add up activity stamps: the later one stays', () => {
+    const held = { 'e:li:h:task': 1_751_000_000_000, 'e:lu:h:task': 1_751_000_000_000 };
+
+    expect(merged({ ...held }, { 'e:li:h:task': 1_750_000_000_000, 'e:lu:h:task': 1_750_000_000_000 })).toEqual(held);
+    expect(merged({ ...held }, { 'e:li:h:task': 1_752_000_000_000, 'e:lu:h:task': 1_753_000_000_000 })).toEqual({
+      'e:li:h:task': 1_752_000_000_000,
+      'e:lu:h:task': 1_753_000_000_000,
+    });
   });
 
-  it('max-merges f: keys (frontiers only move forward)', () => {
-    const target = { 'e:f:task': 40 };
-    sumInto(target, { 'e:f:task': 35 });
-    expect(target['e:f:task']).toBe(40);
-    sumInto(target, { 'e:f:task': 41 });
-    expect(target['e:f:task']).toBe(41);
+  it('must not add up frontiers or set one back: the highest stays', () => {
+    expect(merged({ 'e:f:task': 40 }, { 'e:f:task': 35 })).toEqual({ 'e:f:task': 40 });
+    expect(merged({ 'e:f:task': 40 }, { 'e:f:task': 35 }, { 'e:f:task': 41 })).toEqual({ 'e:f:task': 41 });
   });
 
-  it('max-merge keys pass through unchanged when absent from target', () => {
-    const target: Record<string, number> = { sequence: 1 };
-    sumInto(target, { 'e:li:h:task': 1_751_000_000_000, 'e:f:task': 7, 'e:c:task': 1 });
-    expect(target).toEqual({ sequence: 1, 'e:li:h:task': 1_751_000_000_000, 'e:f:task': 7, 'e:c:task': 1 });
+  it('takes a key the channel does not hold yet as it is', () => {
+    expect(merged({ membership: 1 }, { 'e:li:h:task': 1_751_000_000_000, 'e:f:task': 7, 'e:c:task': 1 })).toEqual({
+      membership: 1,
+      'e:li:h:task': 1_751_000_000_000,
+      'e:f:task': 7,
+      'e:c:task': 1,
+    });
+  });
+
+  it('starts a channel it has no deltas for with a copy, so the caller keeps its own object', () => {
+    const map = new Map<string, Record<string, number>>();
+    const first = { 'e:c:task': 1 };
+    mergeDelta(map, 'org-1', first);
+    mergeDelta(map, 'org-1', { 'e:c:task': 1 });
+
+    expect(map.get('org-1')).toEqual({ 'e:c:task': 2 });
+    expect(first).toEqual({ 'e:c:task': 1 });
   });
 });

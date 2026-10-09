@@ -3,100 +3,124 @@ import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { RESOURCE_LIMITS } from '../constants';
 import { type MetricsSnapshot, metrics } from '../services/cdc-metrics';
 import { type ReplicationFailure, replicationState } from '../services/replication-state';
-import { getRoleCapabilities, type RoleCapabilities } from '../services/role-capabilities';
+import { type ReplicationStatus, replicationStatus } from '../services/replication-status';
 import { wsClient } from './websocket-client';
 
-const { unhealthyBytes } = RESOURCE_LIMITS.walLag;
-const { pauseUnhealthyMs } = RESOURCE_LIMITS.runtime;
+const limits = RESOURCE_LIMITS.health;
 
-export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
+/** What a person needs beside the grade, to see why the worker reports it. */
+type WorkerHealthDetails = {
+  replication: ReplicationStatus;
+  lastAckedLsn: string | null;
+  apiAwaySince: string | null;
+  /** Whether Postgres reports the slot as read; null until the first poll of the slot. */
+  slotActive: boolean | null;
+  slotStatus: string | null;
+  lagBytes: number | null;
+  /** How long ago the source transaction read last committed; null before the first one. */
+  lagMs: number | null;
+  lastEventAt: string | null;
+  /** The failure the worker is reading again from. */
+  failure: ReplicationFailure | null;
+  /** What the setup check found wrong: the worker does not read while this is not empty. */
+  setupProblems: string[];
+  messagesSent: number;
+  eventLoopLagMs: number;
+};
+
+/** The worker's health as the worker itself grades it: the one grade the endpoint answers and the API is pushed. */
+export interface WorkerGrade {
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  /** Why the status is not healthy, one identifier per rule that holds; the rules that make it unhealthy come first. */
+  reasons: string[];
+  details: WorkerHealthDetails;
+}
 
 interface HealthResponse {
-  status: HealthStatus;
+  status: WorkerGrade['status'];
+  reasons: string[];
   uptime: number;
   eventLoopLagMs: number;
-  replication: {
-    status: string;
-    lastLsn: string | null;
-    pausedAt: string | null;
-    slotActive: boolean | null;
-    slotStatus: string | null;
-    lagBytes: number | null;
-    /** How long ago the transaction read last committed; null before the first one. */
-    lagMs: number | null;
-    lastEventAt: string | null;
-    /** The failure the worker is reading again from, with `stuck` set once the change itself failed it too often. */
-    failure: (ReplicationFailure & { stuck: boolean }) | null;
-    /** What the setup check found wrong: the worker does not read while this is not empty. */
-    setupProblems: string[];
-    /** Null until the startup probe ran or when it failed. */
-    role: RoleCapabilities | null;
-  };
+  replication: { status: ReplicationStatus } & Omit<WorkerHealthDetails, 'replication' | 'messagesSent' | 'eventLoopLagMs'>;
   websocket: { connected: boolean; state: string; messagesSent: number; lastMessageAt: string | null };
   metrics: MetricsSnapshot;
 }
 
-export function getHealthResponse(): { response: HealthResponse; httpStatus: number } {
-  const replStatus = replicationState.status;
-  const wsConnected = wsClient.isConnected();
+/** The reasons whose rule holds, in the order given. */
+const holding = (rules: [holds: boolean, reason: string][]): string[] => rules.filter(([holds]) => holds).map(([, reason]) => reason);
 
-  const { failure, stuck, replicationPausedAt } = replicationState;
-
-  // Between two reads after a failed flush the subscription is down on purpose: that is degraded until it is stuck.
-  let status: HealthStatus = 'healthy';
-  if (stuck) status = 'unhealthy';
-  else if (replStatus === 'stopped' && !failure) status = 'unhealthy';
-  else if (replStatus !== 'active' || failure || !wsConnected) status = 'degraded';
-
-  // Without the API nothing is consumed: after a while that is an outage of sync, not a restart.
-  if (replicationPausedAt && Date.now() - replicationPausedAt.getTime() > pauseUnhealthyMs) status = 'unhealthy';
-
-  // Without an effective RLS bypass every seq stamp silently affects zero rows; without REPLICATION the slot cannot be opened.
-  const role = getRoleCapabilities();
-  if (role && (!role.rlsBypass || !role.replication)) status = 'unhealthy';
-
-  // WAL lag threshold for unhealthy status.
-  const lagBytes = metrics.lagBytes;
-  if (lagBytes !== null && lagBytes >= unhealthyBytes && status !== 'unhealthy') {
-    status = 'unhealthy';
-  }
-
-  // The slot no longer holds the WAL the worker needs, or nothing reads it while the worker believes it does.
-  if (metrics.slotStatus === 'unreserved' || metrics.slotStatus === 'lost') status = 'unhealthy';
-  // Known only after the first poll of the slot: before it there is nothing to judge.
-  if (replStatus === 'active' && metrics.slotStatus !== null && metrics.slotActive === false && status === 'healthy') status = 'degraded';
-
-  // Same saturation thresholds the yjs relay uses for its health status.
+/**
+ * Grades the worker, for its own endpoint and for the push to the API alike, so the two never disagree. Unhealthy is
+ * what needs a person or fails a deploy; degraded passes by itself: the API coming back, the next read, another worker
+ * handing the slot over during a deploy.
+ */
+export function gradeWorker(): WorkerGrade {
+  const { failure, stuck, setupProblems, subscribed } = replicationState;
+  const { lagBytes, slotActive, slotStatus } = metrics;
+  const apiAwayMs = wsClient.apiAwaySince ? Date.now() - wsClient.apiAwaySince.getTime() : null;
   const eventLoopLagMs = getEventLoopLagMs();
-  if (eventLoopLagMs >= 1000) status = 'unhealthy';
-  else if (eventLoopLagMs >= 100 && status === 'healthy') status = 'degraded';
+
+  const unhealthy = holding([
+    [stuck, 'worker_stuck'],
+    [setupProblems.length > 0, 'setup_problems'],
+    // Without the API nothing is recorded: after a while that is an outage of sync, not a restart.
+    [apiAwayMs !== null && apiAwayMs > limits.apiAwayUnhealthyMs, 'api_away'],
+    // The slot does not hold the WAL the worker needs any more, or is about to lose it.
+    [slotStatus === 'lost' || slotStatus === 'unreserved', 'slot_lost'],
+    [lagBytes !== null && lagBytes >= limits.walLagUnhealthyBytes, 'wal_lag_critical'],
+    [eventLoopLagMs >= limits.eventLoopLagUnhealthyMs, 'event_loop_lag'],
+  ]);
+
+  const degraded = holding([
+    [apiAwayMs !== null, 'api_away'],
+    // Between two reads, and while another worker still holds the slot during a deploy.
+    [!subscribed && apiAwayMs === null && setupProblems.length === 0, 'replication_stopped'],
+    [failure !== null && !stuck, 'reading_again'],
+    // Known only after the first poll of the slot: before it there is nothing to judge.
+    [subscribed && slotStatus !== null && slotActive === false, 'slot_inactive'],
+    [lagBytes !== null && lagBytes >= limits.walLagDegradedBytes && lagBytes < limits.walLagUnhealthyBytes, 'wal_lag_high'],
+    [eventLoopLagMs >= limits.eventLoopLagDegradedMs, 'event_loop_lag'],
+  ]);
+
+  return {
+    status: unhealthy.length > 0 ? 'unhealthy' : degraded.length > 0 ? 'degraded' : 'healthy',
+    reasons: [...new Set([...unhealthy, ...degraded])],
+    details: {
+      replication: replicationStatus(),
+      lastAckedLsn: replicationState.lastAckedLsn,
+      apiAwaySince: wsClient.apiAwaySince?.toISOString() ?? null,
+      slotActive,
+      slotStatus,
+      lagBytes,
+      lagMs: replicationState.lagMs,
+      lastEventAt: replicationState.lastEventAt?.toISOString() ?? null,
+      failure,
+      setupProblems,
+      messagesSent: wsClient.messagesSent,
+      eventLoopLagMs,
+    },
+  };
+}
+
+/** The body of `GET /health?depth=full`: the grade, with what only the endpoint shows. Answers 503 when unhealthy. */
+export function getHealthResponse(): { response: HealthResponse; httpStatus: number } {
+  const { status, reasons, details } = gradeWorker();
+  const { replication, messagesSent, eventLoopLagMs, ...rest } = details;
 
   const response: HealthResponse = {
     status,
+    reasons,
     uptime: Math.floor(process.uptime()),
     eventLoopLagMs,
-    replication: {
-      status: replStatus,
-      lastLsn: replicationState.lastLsn,
-      pausedAt: replicationState.replicationPausedAt?.toISOString() ?? null,
-      slotActive: metrics.slotActive,
-      slotStatus: metrics.slotStatus,
-      lagBytes: metrics.lagBytes,
-      lagMs: replicationState.lagMs,
-      lastEventAt: replicationState.lastEventAt?.toISOString() ?? null,
-      failure: failure ? { ...failure, stuck } : null,
-      setupProblems: replicationState.setupProblems,
-      role,
-    },
+    replication: { status: replication, ...rest },
     websocket: {
-      connected: wsConnected,
+      connected: wsClient.isConnected(),
       state: wsClient.state,
-      messagesSent: wsClient.messagesSent,
+      messagesSent,
       lastMessageAt: wsClient.lastMessageAt?.toISOString() ?? null,
     },
     metrics: metrics.getSnapshot(),
   };
 
-  const httpStatus = status === 'unhealthy' ? 503 : 200;
-  return { response, httpStatus };
+  return { response, httpStatus: status === 'unhealthy' ? 503 : 200 };
 }

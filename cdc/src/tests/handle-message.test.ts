@@ -25,11 +25,8 @@ vi.mock('../pipeline/parse-message', () => ({
   })),
 }));
 
-vi.mock('../network/websocket-client', () => ({
-  wsClient: { isConnected: vi.fn(() => true), connect: vi.fn(), send: vi.fn(() => true), setCallbacks: vi.fn() },
-}));
-
 import { handleDataMessage, resetBuffers } from '../pipeline/handle-message';
+import { fence } from '../services/fence';
 import { replicationState } from '../services/replication-state';
 import { dmlMessage } from './factories';
 
@@ -39,13 +36,23 @@ const { processFlush } = await import('../pipeline/process-events');
 
 const mockDmlMessage = (tag: 'insert' | 'update' | 'delete', id: string) => dmlMessage(tag, 'tasks', { id });
 
-describe('handleDataMessage: a worker that is behind', () => {
-  beforeEach(() => {
-    replicationState.reset();
-    resetBuffers();
-    vi.clearAllMocks();
-  });
+const begin = (commitLsn: string) => handleDataMessage(commitLsn, { tag: 'begin', xid: 7, commitLsn, commitTime: BigInt(0) });
+const commit = (lsn: string) => handleDataMessage(lsn, { tag: 'commit' } as never);
 
+/** A service that takes every acknowledgement, as an open subscription does. */
+const serviceWith = (acknowledge = vi.fn(async () => true)) => {
+  const stop = vi.fn(async () => {});
+  replicationState.service = { acknowledge, stop } as unknown as typeof replicationState.service;
+  return { acknowledge, stop };
+};
+
+beforeEach(async () => {
+  replicationState.reset();
+  await resetBuffers();
+  vi.clearAllMocks();
+});
+
+describe('handleDataMessage: a worker that is behind', () => {
   it('measures how far it is behind from the commit time of the transaction it reads', async () => {
     // As the replication client reports it: microseconds since the Unix epoch.
     const commitTime = BigInt(Date.now() - 15_000) * 1000n;
@@ -55,58 +62,25 @@ describe('handleDataMessage: a worker that is behind', () => {
     expect(replicationState.lagMs).toBeGreaterThanOrEqual(15_000);
     expect(replicationState.lagMs).toBeLessThan(20_000);
   });
-
-  it('records every change while it is behind, whatever the id of the row', async () => {
-    replicationState.lagMs = 15_000;
-
-    // Ids as a seed script and a mock give them: such a row is a row like any other.
-    await handleDataMessage('0/1', mockDmlMessage('insert', '00000000-1234-4abc-8def-123456789abc'));
-    await handleDataMessage('0/2', mockDmlMessage('insert', 'gen-abc123'));
-    await handleDataMessage('0/3', mockDmlMessage('update', 'gen-abc123'));
-    await handleDataMessage('0/4', mockDmlMessage('delete', 'gen-abc123'));
-
-    expect(mocked).toHaveBeenCalledTimes(4);
-  });
 });
 
-describe('handleDataMessage: a message the parser drops', () => {
-  beforeEach(() => {
-    replicationState.reset();
-    resetBuffers();
-    vi.clearAllMocks();
-  });
+describe('handleDataMessage: a change the parser drops', () => {
+  it('acknowledges nothing for it: the idle acknowledgement moves the slot past it', async () => {
+    const { acknowledge } = serviceWith();
 
-  it('acknowledges it at once when nothing earlier is buffered, for heartbeat replies', async () => {
-    const acknowledge = vi.fn(async () => true);
-    replicationState.service = { acknowledge } as unknown as typeof replicationState.service;
-
+    await begin('0/90');
     mocked.mockReturnValueOnce(null);
     await handleDataMessage('0/7', mockDmlMessage('insert', 'usr-1'));
 
-    expect(acknowledge).toHaveBeenCalledWith('0/7');
-    expect(replicationState.lastAckedLsn).toBe('0/7');
-  });
-
-  it('leaves it unacknowledged while an earlier event waits for its flush', async () => {
-    const acknowledge = vi.fn(async () => true);
-    replicationState.service = { acknowledge } as unknown as typeof replicationState.service;
-
-    // An event outside a transaction goes straight to the flush buffer, where it waits for the window to end.
-    await handleDataMessage('0/5', mockDmlMessage('update', 'usr-1'));
-    mocked.mockReturnValueOnce(null);
-    await handleDataMessage('0/7', mockDmlMessage('insert', 'usr-2'));
-
-    // Confirming 0/7 here would lose the event at 0/5 in a crash: the flush acknowledges past both.
+    // A position inside a source transaction acknowledges nothing a slot can use.
     expect(acknowledge).not.toHaveBeenCalled();
     expect(replicationState.lastAckedLsn).toBeNull();
+    expect(processFlush).not.toHaveBeenCalled();
   });
 });
 
-describe("handleDataMessage: a change's place in its transaction", () => {
+describe('handleDataMessage: what a flush acknowledges', () => {
   beforeEach(() => {
-    replicationState.reset();
-    resetBuffers();
-    vi.clearAllMocks();
     vi.useFakeTimers();
   });
 
@@ -114,10 +88,63 @@ describe("handleDataMessage: a change's place in its transaction", () => {
     vi.useRealTimers();
   });
 
-  const begin = (commitLsn: string) => handleDataMessage(commitLsn, { tag: 'begin', xid: 7, commitLsn, commitTime: BigInt(0) });
-  const commit = (lsn: string) => handleDataMessage(lsn, { tag: 'commit' } as never);
+  it('acknowledges the commit position of the last source transaction of a flush', async () => {
+    const { acknowledge } = serviceWith();
 
-  /** Every event handed to a flush, as its transaction's commit position and its index there. */
+    await begin('0/90');
+    await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-1'));
+    await commit('0/98');
+    await begin('0/A0');
+    await handleDataMessage('0/20', mockDmlMessage('insert', 'usr-2'));
+    await commit('0/A8');
+    await vi.runAllTimersAsync();
+
+    // One flush of two source transactions. 0/20, its last change, lies before the second commit.
+    expect(processFlush).toHaveBeenCalledOnce();
+    expect(acknowledge.mock.calls).toEqual([['0/A0']]);
+    expect(replicationState.lastAckedLsn).toBe('0/A0');
+  });
+
+  it('must not move the acknowledged position backwards from one flush to the next', async () => {
+    const { acknowledge } = serviceWith();
+
+    // A long transaction wrote first and committed last: its changes lie before the commit of the short one.
+    await begin('0/90');
+    await handleDataMessage('0/50', mockDmlMessage('insert', 'usr-1'));
+    await commit('0/98');
+    await vi.runAllTimersAsync();
+    await begin('0/200');
+    await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-2'));
+    await commit('0/208');
+    await vi.runAllTimersAsync();
+
+    // By the positions of the changes the second acknowledgement would be 0/10, behind the first.
+    expect(acknowledge.mock.calls).toEqual([['0/90'], ['0/200']]);
+  });
+
+  it('forgets the failure it was reading again from once a flush is recorded', async () => {
+    serviceWith();
+    replicationState.recordFailure('0/10', new Error('refused'));
+
+    await begin('0/90');
+    await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-1'));
+    await commit('0/98');
+    await vi.runAllTimersAsync();
+
+    expect(replicationState.failure).toBeNull();
+  });
+});
+
+describe("handleDataMessage: a change's place in its transaction", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Every change handed to a flush, as its transaction's commit position and its index there. */
   const flushed = () =>
     vi.mocked(processFlush).mock.calls.flatMap(([transactions]) => transactions.flat().map(({ commitLsn, index }) => `${commitLsn}#${index}`));
 
@@ -148,8 +175,8 @@ describe("handleDataMessage: a change's place in its transaction", () => {
   it('counts from the start again for a new subscription', async () => {
     await begin('0/90');
     await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-1'));
-    // The stream starts over at the confirmed position and delivers the same transaction again.
-    resetBuffers();
+    // The stream starts over at the acknowledged position and delivers the same transaction again.
+    await resetBuffers();
     await begin('0/90');
     await handleDataMessage('0/10', mockDmlMessage('insert', 'usr-1'));
     await commit('0/90');
@@ -159,19 +186,59 @@ describe("handleDataMessage: a change's place in its transaction", () => {
   });
 });
 
-describe('handleDataMessage: a message it cannot handle', () => {
-  beforeEach(() => {
-    replicationState.reset();
-    resetBuffers();
-    vi.clearAllMocks();
+describe('handleDataMessage: the marker of a recount', () => {
+  const marker = (content: string) =>
+    handleDataMessage('0/C0', { tag: 'message', prefix: 'sync-fence', content: new TextEncoder().encode(content) } as never);
+
+  afterEach(() => {
+    fence.close();
   });
 
-  const serviceWith = (acknowledge = vi.fn(async () => true)) => {
-    const stop = vi.fn(async () => {});
-    replicationState.service = { acknowledge, stop } as unknown as typeof replicationState.service;
-    return { acknowledge, stop };
-  };
+  it('flushes what came before it, then tells the fence the stream has passed', async () => {
+    serviceWith();
+    fence.open('verify', '100:100:', 'marker-1');
+    let passed = false;
+    void fence.whenPassed().then((streamPassed) => {
+      passed = streamPassed;
+    });
 
+    // A change outside a transaction goes straight to the flush buffer, where it waits for the window to end.
+    await handleDataMessage('0/B0', mockDmlMessage('update', 'usr-1'));
+    await marker('marker-1');
+    await Promise.resolve();
+
+    expect(processFlush).toHaveBeenCalledOnce();
+    expect(passed).toBe(true);
+  });
+
+  it('must not tell the fence when the subscription ended while it flushed: what was pending is read again', async () => {
+    serviceWith();
+    fence.open('verify', '100:100:', 'marker-1');
+    let passed = false;
+    void fence.whenPassed().then((streamPassed) => {
+      passed = streamPassed;
+    });
+    let release: () => void = () => {};
+    vi.mocked(processFlush).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+    );
+
+    await handleDataMessage('0/B0', mockDmlMessage('update', 'usr-1'));
+    const handled = marker('marker-1');
+    // The loop starts the next subscription: the flush in flight is waited for.
+    const reset = resetBuffers();
+    release();
+    await Promise.all([handled, reset]);
+    await Promise.resolve();
+
+    expect(passed).toBe(false);
+  });
+});
+
+describe('handleDataMessage: a message it cannot handle', () => {
   it('fails the subscription at that position: the stream is read again, nothing is dropped', async () => {
     const { stop } = serviceWith();
     mocked.mockImplementationOnce(() => {
@@ -184,25 +251,25 @@ describe('handleDataMessage: a message it cannot handle', () => {
     expect(replicationState.failure).toMatchObject({ position: '0/30', count: 1, passing: false });
   });
 
-  it('must not confirm a later position via a message it skips after the failure', async () => {
-    const { acknowledge } = serviceWith();
-    mocked.mockImplementationOnce(() => {
-      throw new Error('unreadable');
-    });
-    await handleDataMessage('0/30', mockDmlMessage('insert', 'usr-1'));
+  it('must not acknowledge a later position after the failure, for a flush of what the service still delivers', async () => {
+    vi.useFakeTimers();
+    try {
+      const { acknowledge } = serviceWith();
+      mocked.mockImplementationOnce(() => {
+        throw new Error('unreadable');
+      });
+      await handleDataMessage('0/30', mockDmlMessage('insert', 'usr-1'));
 
-    // The service is still delivering what it had queued: a message with nothing to record would be confirmed at once.
-    mocked.mockReturnValueOnce(null);
-    await handleDataMessage('0/40', mockDmlMessage('insert', 'usr-2'));
+      // The service is still delivering what it had queued: none of it is taken, flushed or acknowledged.
+      await begin('0/90');
+      await handleDataMessage('0/40', mockDmlMessage('insert', 'usr-2'));
+      await commit('0/98');
+      await vi.runAllTimersAsync();
 
-    expect(acknowledge).not.toHaveBeenCalled();
-  });
-
-  it('confirms a skipped message when nothing failed (positive control)', async () => {
-    const { acknowledge } = serviceWith();
-    mocked.mockReturnValueOnce(null);
-    await handleDataMessage('0/40', mockDmlMessage('insert', 'usr-2'));
-
-    expect(acknowledge).toHaveBeenCalledWith('0/40');
+      expect(processFlush).not.toHaveBeenCalled();
+      expect(acknowledge).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

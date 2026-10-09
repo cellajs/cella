@@ -1,12 +1,15 @@
 import type { Pgoutput } from 'pg-logical-replication';
 import { isProduct, isUnpublishedDraft } from 'shared';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
-import { handleDelete, handleInsert, handleUpdate } from '../handlers';
+import { handleUpdate } from '../handlers/update';
 import { log } from '../lib/pino';
+import { createActivity } from '../services/create-activity';
 import { tableRegistry } from '../table-registry';
-import type { CdcRowData, TableMeta } from '../types';
+import type { CdcRowData, RowData, TableMeta } from '../types';
+import { compactRowData } from '../utils/compact-row-data';
+import { convertRowKeys } from '../utils/convert-row-keys';
 
-/** Activity without id, assigned later from WAL LSN in prepareActivity. */
+/** An activity before it has its id, which a flush derives from the commit position of its source transaction. */
 export type ActivityWithoutId = Omit<InsertActivityModel, 'id'>;
 
 /** Reparented products carry the old row's permission fields so dispatch can drop subscribers who lost access. */
@@ -40,6 +43,12 @@ function isFilteredDraftEvent(result: ParseMessageResult): boolean {
   return true;
 }
 
+/** A create or a delete: the whole row is the change. An insert carries the new row, a delete the row as it was. */
+function handleWholeRow(tableMeta: TableMeta, row: RowData | null, action: 'create' | 'delete'): ParseMessageResult {
+  const rowData = convertRowKeys(row ?? {}, tableMeta.columnNameMap);
+  return { activity: createActivity(tableMeta, rowData, action), rowData: compactRowData(tableMeta, rowData), oldRowData: null, tableMeta };
+}
+
 /** @returns null for untracked tables, non-DML messages, and filtered draft events. */
 export function parseMessage(message: Pgoutput.Message): ParseMessageResult | null {
   const { tag } = message;
@@ -53,11 +62,11 @@ export function parseMessage(message: Pgoutput.Message): ParseMessageResult | nu
   const result = (() => {
     switch (tag) {
       case 'insert':
-        return handleInsert(tableMeta, message);
+        return handleWholeRow(tableMeta, message.new, 'create');
       case 'update':
         return handleUpdate(tableMeta, message);
       case 'delete':
-        return handleDelete(tableMeta, message);
+        return handleWholeRow(tableMeta, message.old, 'delete');
     }
   })();
 

@@ -91,17 +91,17 @@ describe('recalculateCounters (sequence + frontier)', async () => {
     await clearSecurityTestData();
   });
 
+  const readCounts = async (channelKey: string) => {
+    const [counterRow] = await db
+      .select({ counts: channelCountersTable.counts, path: channelCountersTable.path })
+      .from(channelCountersTable)
+      .where(sql`channel_key = ${channelKey}`);
+    return counterRow;
+  };
+
   it('rebuilds sequence, subtree and self-family counters from row state', async () => {
     // Recalculation is an admin path (seed and CDC recovery): it reads every RLS table without tenant context.
     await recalculateCounters({ var: { db: seedDb } });
-
-    const readCounts = async (channelKey: string) => {
-      const [counterRow] = await db
-        .select({ counts: channelCountersTable.counts, path: channelCountersTable.path })
-        .from(channelCountersTable)
-        .where(sql`channel_key = ${channelKey}`);
-      return counterRow;
-    };
 
     const orgRow = await readCounts(tenant.organization.id);
     const orgCounts = orgRow.counts as Record<string, number>;
@@ -153,5 +153,26 @@ describe('recalculateCounters (sequence + frontier)', async () => {
     expect(counts[`e:f:${PRODUCT}`]).toBe(60);
     // Positive control: a plain count is replaced by what the tables hold.
     expect(counts[`e:c:${PRODUCT}`]).toBe(2);
+  });
+
+  it('must not leave the count of a home standing whose rows are all gone, nor take back a sequence value or a frontier', async () => {
+    await recalculateCounters({ var: { db: seedDb } });
+    const orgBefore = (await readCounts(tenant.organization.id)).counts;
+    const homeBefore = (await readCounts(homeChannelId())).counts;
+    expect(homeBefore[`e:c:h:${PRODUCT}`]).toBe(2);
+    expect(orgBefore.sequence).toBeGreaterThanOrEqual(47);
+
+    // Every row of the home goes: the recount has no row to count for it any more, and yields nothing for its home count.
+    await seedDb.execute(sql`DELETE FROM attachments WHERE organization_id = ${tenant.organization.id}`);
+    await recalculateCounters({ var: { db: seedDb } });
+
+    const org = (await readCounts(tenant.organization.id)).counts;
+    const home = (await readCounts(homeChannelId())).counts;
+    expect(home[`e:c:h:${PRODUCT}`]).toBe(0);
+    expect(org[`e:c:${PRODUCT}`]).toBe(0);
+    // The values that were handed out stay handed out: a client holds them as its cursor.
+    expect(org.sequence).toBe(orgBefore.sequence);
+    expect(org[`e:f:${PRODUCT}`]).toBe(orgBefore[`e:f:${PRODUCT}`]);
+    expect(home[`e:f:h:${PRODUCT}`]).toBe(homeBefore[`e:f:h:${PRODUCT}`]);
   });
 });

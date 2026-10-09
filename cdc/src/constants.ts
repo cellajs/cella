@@ -5,11 +5,9 @@ export const CDC_PUBLICATION_NAME = 'cdc_pub';
 export const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
 
 export const RESOURCE_LIMITS = {
-  // Runtime monitoring thresholds
+  // The replication connection
   runtime: {
-    /** How long the API may be away, with nothing consumed, before health reports unhealthy. */
-    pauseUnhealthyMs: 5 * 60e3,
-    /** How often the last confirmed position is sent again: well inside the server's `wal_sender_timeout` of a minute. */
+    /** How often the last acknowledged position is sent again: well inside Postgres's `wal_sender_timeout` of a minute. */
     statusIntervalMs: 10_000,
   },
 
@@ -21,56 +19,63 @@ export const RESOURCE_LIMITS = {
     stuckAfter: 5,
   },
 
-  // Checking the books against the tables, and rebuilding them when they are lost
+  // Checking the books against the tables, and rebuilding them when they are wrong or lost
   books: {
-    /** Statement timeout of a count from the tables, which reads every counted table once. */
+    /** Statement timeout of a rebuild's recount, which reads every counted table once while the flushes wait. */
     countTimeoutMs: 10 * 60e3,
-    /** How long a verify waits for the stream to reach its snapshot before it gives up. */
-    passTimeoutMs: 5 * 60e3,
+    /** The one limit of a verify: on every statement of its recount, and on its wait for the stream to pass its snapshot. */
+    verifyTimeoutMs: 5 * 60e3,
     /** At most one rebuild for a stuck worker in this time: a fault that repeats costs one refetch per interval. */
     rebuildIntervalMs: 10 * 60e3,
-    /** The hour (UTC) of the daily verify. */
+    /** The hour (UTC) at which the worker asks itself for the daily verify. */
     verifyHourUtc: 3,
     /** How often the worker looks for a verify or a rebuild that was asked for. */
     requestPollMs: 5000,
   },
 
-  // Server-side limits for every session of the worker's pool
+  // Limits Postgres applies to every session of the worker's pool
   database: { lockMs: 10_000, statementMs: 60_000, idleInTransactionMs: 30_000 },
 
-  // Reconnection configuration
+  // Subscribing again after a subscribe error
   reconnection: {
-    /** Between replication subscription attempts. */
+    /** Between two subscription attempts. */
     retryDelayMs: 5000,
   },
 
-  // Fast retries while a rolling deployment hands off the singleton slot.
+  // The first attempts after a subscribe error come sooner: a rolling deployment hands the slot over within a second.
   slotTakeover: {
-    /** Number of fast retries that make up the handoff window. */
+    /** How many attempts come at the short delay. */
     maxAttempts: 12,
-    /** Sized for a sub-second takeover. */
     retryDelayMs: 500,
   },
 
-  // Buffer safety caps
+  // What the worker holds in memory
   buffers: {
-    /** Micro-batching fallback deadline for low-traffic periods; 0 disables batching. */
+    /** A flush starts this long after the first change is pending, when fewer than `flushBatchSize` arrive meanwhile. */
     flushWindowMs: 50,
-    /** Primary flush trigger under load; the replication stream is held while this many events are pending. */
+    /** A flush starts at once when this many changes are pending, and the stream is held until they are flushed. */
     flushBatchSize: 100,
-    /** One flush, and so one database transaction, takes whole source transactions up to this many events; a larger source transaction goes alone. */
-    flushMaxEvents: 2000,
     /**
      * The largest source transaction the worker holds: it buffers a transaction whole until its commit, at about 2 KB
-     * an event (measured: 225 MB for 100,000 attachment rows). A larger one fails where it passes this, like any change
+     * a change (measured: 225 MB for 100,000 attachment rows). A larger one fails where it passes this, like any change
      * the worker cannot process, and ends in a rebuild.
      */
     maxTransactionEvents: 100_000,
   },
 
-  // WAL lag thresholds for backpressure
-  walLag: {
-    warnBytes: 1 * 1024 * 1024 * 1024, // 1 GB
-    unhealthyBytes: 2 * 1024 * 1024 * 1024, // 2 GB
+  // What health grades the worker by
+  health: {
+    /** How long the API may be away before the worker reports unhealthy: by then it is an outage of sync, not a restart. */
+    apiAwayUnhealthyMs: 5 * 60e3,
+    /** Slot lag from which the worker reports degraded: it is behind, and the WAL still holds everything. */
+    walLagDegradedBytes: 50 * 1024 * 1024,
+    /** Slot lag that is logged as a warning. */
+    walLagWarnBytes: 1 * 1024 * 1024 * 1024,
+    /** Slot lag from which the worker reports unhealthy, and logs an error. */
+    walLagUnhealthyBytes: 2 * 1024 * 1024 * 1024,
+    /** Event-loop lag from which the worker reports degraded, the threshold the yjs relay uses too. */
+    eventLoopLagDegradedMs: 100,
+    /** Event-loop lag from which the worker reports unhealthy. */
+    eventLoopLagUnhealthyMs: 1000,
   },
 } as const;

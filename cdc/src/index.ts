@@ -8,9 +8,7 @@ import { otel } from './lib/tracing';
 import { getHealthResponse } from './network/health';
 import { startCdcWorker, stopCdcWorker } from './pipeline/worker';
 
-export { startCdcWorker, stopCdcWorker };
-
-/** Entrypoint for both the `cdc` package (split deploy) and the backend `MODE=cdc` shim. */
+/** Entrypoint of the worker: as its own process (`cdc-worker.ts`), and for the backend, which runs it inside the API process in `singleVM` mode. */
 export async function runCdcWorker(): Promise<void> {
   if (env.NODE_ENV === 'development') {
     await waitForBackend();

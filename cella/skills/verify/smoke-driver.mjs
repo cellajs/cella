@@ -85,16 +85,25 @@ try {
   }
   check('the frontend and the API answer', true, { base, api, ms: Date.now() - t0 });
 
-  if (START) {
-    // The CDC worker logs this line once it holds the backend's internal socket; before that no change reaches another tab
-    const cdcDeadline = Date.now() + 60_000;
-    let connected = false;
-    while (!connected && Date.now() < cdcDeadline) {
-      connected = readFileSync(logPath, 'utf8').includes('CDC WebSocket connected');
-      if (!connected) await sleep(2000);
-    }
-    check('the CDC worker connected to the backend', connected, { log: logPath });
+  // The API passes on what the CDC worker reports about itself. Connected is not enough: a worker kept from reading by
+  // its setup check, or stuck at one change, is connected too, and then no change reaches another tab.
+  const cdcDeadline = Date.now() + 60_000;
+  let cdc = null;
+  while (Date.now() < cdcDeadline) {
+    cdc = await fetch(`${api}/health?depth=full`).then(
+      async (response) => (await response.json()).components?.cdc ?? null,
+      () => null,
+    );
+    if (cdc?.status === 'healthy' && cdc.details?.replication === 'active') break;
+    await sleep(2000);
   }
+  check('the CDC worker is connected and reads the replication stream', cdc?.status === 'healthy' && cdc.details?.replication === 'active', {
+    status: cdc?.status ?? 'no answer',
+    reason: cdc?.reason,
+    replication: cdc?.details?.replication,
+    setupProblems: cdc?.details?.setupProblems,
+    failure: cdc?.details?.failure,
+  });
 
   const cookie = `${session.cookie.name}=${session.cookie.value}`;
   const call = async (path, init) => {

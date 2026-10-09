@@ -21,11 +21,7 @@ export interface StreamErrorPayload {
   message: string;
 }
 
-export async function writeChange(stream: SSEStreamingApi, id: string, data: unknown): Promise<void> {
-  await stream.writeSSE({ event: 'change', id, data: JSON.stringify(data) });
-}
-
-export async function writeChangeRaw(stream: SSEStreamingApi, id: string, serializedData: string): Promise<void> {
+export async function writeChange(stream: SSEStreamingApi, id: string, serializedData: string): Promise<void> {
   await stream.writeSSE({ event: 'change', id, data: serializedData });
 }
 
@@ -40,17 +36,20 @@ export async function writeError(stream: SSEStreamingApi, payload: StreamErrorPa
 }
 
 /**
- * A comment line: per the SSE spec, lines starting with `:` are ignored by EventSource, so this
- * keeps the socket and any proxies from idling out without firing a client event.
+ * A `ping` event with empty data. EventSource hands a named event to client code and hides a comment line, so this is
+ * how a client tells a live stream from a dead one. It also keeps the socket and any proxies from idling out.
  */
-async function writeHeartbeat(stream: SSEStreamingApi): Promise<void> {
-  await stream.write(': ping\n\n');
+async function writePing(stream: SSEStreamingApi): Promise<void> {
+  await stream.writeSSE({ event: 'ping', data: '' });
 }
 
-/** Runs until the client aborts or the server closes the stream; `write` swallows errors, so the flags are the only exit. */
+/**
+ * Sends a ping at once and then every 30 seconds, until the client aborts or the server closes the stream; `write`
+ * swallows errors, so the flags are the only exit.
+ */
 export async function keepAlive(stream: SSEStreamingApi, intervalMs = 30000): Promise<void> {
   while (!stream.closed && !stream.aborted) {
-    await writeHeartbeat(stream);
+    await writePing(stream);
     await stream.sleep(intervalMs);
   }
 }

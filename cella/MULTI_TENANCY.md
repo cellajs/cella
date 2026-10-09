@@ -100,10 +100,10 @@ A deferred membership trigger also rejects a change that would leave an organiza
 the application needs, and refuse to run when either role is missing. The bypass never depends on the
 `BYPASSRLS` attribute: managed providers such as Scaleway cannot grant it, so ownership of never-forced
 tables is the one bypass that works everywhere, and the dev and test roles are created without the
-attribute to mirror that. The CDC worker probes its effective capabilities at startup: an RLS table it
-cannot bypass (forced, or owned by another role) or a missing `REPLICATION` is logged as an error and
-marks the CDC health component unhealthy, since seq stamping would silently affect zero rows or the
-replication slot could not open. Only the admin connection can write `system_roles`. An application
+attribute to mirror that. The CDC worker checks its effective capabilities before every subscription:
+with an RLS table it cannot bypass (forced, or owned by another role) or without `REPLICATION` it reads
+nothing and reports unhealthy with the reason `setup_problems`, since a seq stamp would change zero rows
+or the replication slot could not open. Only the admin connection can write `system_roles`. An application
 system administrator is not `admin_role`; their requests use the runtime connection and normal
 request scope.
 

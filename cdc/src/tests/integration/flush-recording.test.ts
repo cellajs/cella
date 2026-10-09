@@ -12,6 +12,7 @@ import { cdcDb } from '../../lib/db';
 import { wsClient } from '../../network/websocket-client';
 import { parseMessage } from '../../pipeline/parse-message';
 import { processFlush } from '../../pipeline/process-events';
+import { ApiUnreachableError } from '../../services/failure';
 import type { PendingEvent } from '../../types';
 import { dmlMessage } from '../factories';
 
@@ -38,8 +39,8 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
   const attachmentIds: string[] = [];
   let lsnCounter = 0x1000;
   const committedAt = new Map<string, string>();
-  /** What the worker sent to the API, as activity payloads. */
-  let dispatched: { subjectId: string | null; seq?: number; batchRows?: { seq?: number; rowData: { id: string } }[] }[] = [];
+  /** What the worker sent to the API: the subject of each message, and the sequence value of each of its rows. */
+  let dispatched: { subjectId: string | null; seqs: (number | undefined)[] }[] = [];
 
   beforeAll(async () => {
     await cdcDb.execute(sql`INSERT INTO tenants (id, name) VALUES (${tenantId}, ${`flush-${tenantId}`})`);
@@ -54,9 +55,8 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
   beforeEach(() => {
     dispatched = [];
     vi.mocked(wsClient.send).mockImplementation((payload: unknown) => {
-      const { activity, batchRows } = payload as { activity?: { subjectId: string | null; seq?: number }; batchRows?: never };
-      if (activity) dispatched.push({ subjectId: activity.subjectId, seq: activity.seq, batchRows });
-      return true;
+      const { activity, rows = [] } = payload as { activity?: { subjectId: string | null }; rows?: { seq?: number }[] };
+      if (activity) dispatched.push({ subjectId: activity.subjectId, seqs: rows.map((row) => row.seq) });
     });
   });
 
@@ -129,10 +129,10 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
     expect(recorded.sequence).toBe((before.sequence ?? 0) + 2);
     // Commit order is sequence order.
     expect(await seqOf(second)).toBe((await seqOf(first)) + 1);
-    const notified = dispatched.flatMap((message) => message.batchRows?.map((row) => row.seq) ?? [message.seq]);
+    const notified = dispatched.flatMap((message) => message.seqs);
     expect(notified).toEqual([recorded.sequence - 1, recorded.sequence]);
 
-    // The same events again, as after a restart that read from an unconfirmed position.
+    // The same events again, as after a restart that read from an unacknowledged position.
     dispatched = [];
     await processFlush(await delivery());
 
@@ -140,10 +140,7 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
     expect(await counts()).toEqual(recorded);
     expect(await seqOf(second)).toBe(recorded.sequence);
     // The API is told again, with the positions the rows already hold: a notification is safe to repeat.
-    expect(dispatched.flatMap((message) => message.batchRows?.map((row) => row.seq) ?? [message.seq])).toEqual([
-      recorded.sequence - 1,
-      recorded.sequence,
-    ]);
+    expect(dispatched.flatMap((message) => message.seqs)).toEqual([recorded.sequence - 1, recorded.sequence]);
   });
 
   it('records every row of one WAL record, which share an LSN', async () => {
@@ -224,14 +221,16 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
     const id = await insertAttachment();
     const event = await eventFor('insert', id, nextLsn());
     const before = await counts();
-    vi.mocked(wsClient.send).mockReturnValueOnce(false);
+    vi.mocked(wsClient.send).mockImplementationOnce(() => {
+      throw new ApiUnreachableError();
+    });
 
     await expect(processFlush([[event]])).rejects.toThrow('The API is not reachable');
 
     const recorded = await counts();
     expect(await activitiesOf([id])).toBe(1);
 
-    // The stream is read again from the unconfirmed position: recorded once, handed over now.
+    // The stream is read again from the unacknowledged position: recorded once, handed over now.
     await processFlush([[event]]);
 
     expect(await counts()).toEqual(recorded);
@@ -254,19 +253,19 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
       // One flush: the first tenant is updated, then the second is created and updated. Sent per type and action,
       // the second tenant's update would reach the API before its create.
       const events = [await tenantEvent('update', firstTenant), await tenantEvent('insert', secondTenant), await tenantEvent('update', secondTenant)];
-      const sent: { type: string; subjectId: string | null; batch: boolean }[] = [];
+      const sent: { type: string; subjectId: string | null; rowId: unknown }[] = [];
       vi.mocked(wsClient.send).mockImplementation((payload: unknown) => {
-        const { activity, batchRows } = payload as { activity: { type: string; subjectId: string | null }; batchRows?: unknown[] };
-        sent.push({ type: activity.type, subjectId: activity.subjectId, batch: Boolean(batchRows) });
-        return true;
+        const { activity, rowData } = payload as { activity: { type: string; subjectId: string | null }; rowData?: { id: string } };
+        sent.push({ type: activity.type, subjectId: activity.subjectId, rowId: rowData?.id });
       });
 
       await processFlush(events.map((event) => [event]));
 
+      // Each message carries its one whole row.
       expect(sent).toEqual([
-        { type: 'tenant.updated', subjectId: firstTenant, batch: false },
-        { type: 'tenant.created', subjectId: secondTenant, batch: false },
-        { type: 'tenant.updated', subjectId: secondTenant, batch: false },
+        { type: 'tenant.updated', subjectId: firstTenant, rowId: firstTenant },
+        { type: 'tenant.created', subjectId: secondTenant, rowId: secondTenant },
+        { type: 'tenant.updated', subjectId: secondTenant, rowId: secondTenant },
       ]);
     } finally {
       await cdcDb.execute(sql`DELETE FROM activities WHERE subject_id IN (${firstTenant}, ${secondTenant})`);

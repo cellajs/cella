@@ -1,7 +1,6 @@
 import { actionToVerb } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { convertRowKeys } from '../utils/convert-row-keys';
-import { extractRowData } from '../utils/extract-row-data';
 import { extractStxData } from '../utils/extract-stx-data';
 import { getChangedFields } from '../utils/get-changed-fields';
 import { snakeToCamel } from '../utils/snake-to-camel';
@@ -84,18 +83,6 @@ describe('getChangedFields', () => {
     const oldRow = { id: '1', name: 'old', email: 'old@b.com', status: 'active' };
     const newRow = { id: '1', name: 'new', email: 'new@b.com', status: 'active' };
     expect(getChangedFields(oldRow, newRow)).toEqual(['name', 'email']);
-  });
-});
-
-describe('extractRowData', () => {
-  it('should return object rows directly', () => {
-    const row = { id: '1', name: 'test' };
-    expect(extractRowData(row)).toEqual({ id: '1', name: 'test' });
-  });
-
-  it('should return empty object for null/undefined', () => {
-    expect(extractRowData(null as any)).toEqual({});
-    expect(extractRowData(undefined as any)).toEqual({});
   });
 });
 

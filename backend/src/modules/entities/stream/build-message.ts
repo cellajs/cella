@@ -33,7 +33,13 @@ export function isMembershipEvent(event: AppStreamEvent): event is AppStreamMemb
   return appNotificationKind(event) === 'membership';
 }
 
-/** No entity data. Product events carry `stx` and `seq`; membership events leave both null. */
+/**
+ * The notification of an event, with no entity data. A product event with one row carries that row's `seq` and the
+ * activity's `stx`; one with more rows carries the range of their sequence values and their number. A membership event
+ * leaves all of these null.
+ * @param event - The event to tell subscribers about.
+ * @returns What every eligible subscriber receives.
+ */
 export function buildStreamNotification(event: ActivityEvent): StreamNotification {
   const { entityType } = event;
   const isProductEvent = isProduct(entityType);
@@ -49,16 +55,18 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
 
   const stx = (isProductEvent && event.stx) || null;
 
-  // Message groups are per path, so the representative row's path speaks for the whole batch.
-  const rowData = event.rowData as Record<string, unknown> | null;
+  // A message is the rows of one audience, so the first row's path speaks for all of them.
+  const rows = event.rows ?? [];
+  const first = rows[0]?.rowData ?? null;
+  const seqs = rows.flatMap(({ seq }) => (seq === undefined ? [] : [seq]));
+  const several = rows.length > 1;
 
-  // Batch events arrive with the hint pre-set by CDC; single-entity events derive it from config.
-  let propagation = event.propagation;
-  if (!propagation && entityType) {
+  let propagation: StreamNotification['propagation'] = null;
+  if (entityType) {
     const embedding = appConfig.productEmbeddings.find((e) => e.embeddedProduct === entityType);
     if (embedding) {
       // Soft deletes arrive as updates; the host must drop its embedded copy, so hint a removal.
-      const isRemoval = event.action === 'delete' || rowData?.deletedAt != null;
+      const isRemoval = event.action === 'delete' || first?.deletedAt != null;
       propagation = {
         embeddedProduct: embedding.embeddedProduct,
         hostProduct: embedding.hostProduct,
@@ -68,7 +76,7 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
       };
     }
   }
-  const path = isProductEvent && rowData && entityType ? hierarchy.computeProductPath(entityType, rowData) : null;
+  const path = isProductEvent && first && entityType ? hierarchy.computeProductPath(entityType, first) : null;
 
   return {
     // Product entities take the seq sync path; everything else here is a membership change.
@@ -82,10 +90,11 @@ export function buildStreamNotification(event: ActivityEvent): StreamNotificatio
     channelType,
     path,
     channelId,
-    seq: isProductEvent ? (event.seq ?? null) : null,
+    // Sequence values of one audience need not be contiguous: the range brackets them and `count` says how many rows it holds.
+    seq: seqs.length > 0 ? Math.min(...seqs) : null,
     stx,
-    batchUntilSeq: event.batchUntilSeq ?? null,
-    count: isProductEvent ? (event.count ?? null) : null,
+    batchUntilSeq: several && seqs.length > 0 ? Math.max(...seqs) : null,
+    count: several ? rows.length : null,
     spreadWindow: isProductEvent ? computeSpreadWindow(event.organizationId) : null,
     propagation,
   };

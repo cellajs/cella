@@ -11,7 +11,6 @@ import { attachPendingPropagation, enqueueCatchupRange, flushChannelViewNow, res
 import * as membershipOps from './membership-ops';
 import { invalidateEmbeddedForHost, propagateEmbeddings } from './propagation';
 import { getSyncTier, getTenantIdForOrg } from './sync-priority';
-import { broadcastSyncGeneration } from './tab-coordinator';
 
 /** Every client learns of a new generation at about the same moment: each waits a random part of this before it refetches. */
 const GENERATION_REFETCH_SPREAD_MS = 10_000;
@@ -21,14 +20,6 @@ function refetchSyncedQueries(): void {
   setTimeout(() => {
     for (const entityType of getRegisteredProductEntityTypes()) cacheOps.invalidateEntityQueries(getEntityQueryKeys(entityType));
   }, Math.random() * GENERATION_REFETCH_SPREAD_MS);
-}
-
-/** A follower tab runs no catchup: it takes a new generation from the leader and holds the same doubt about its cursors and cached rows. */
-export function adoptGenerationFromLeader(generation: number): void {
-  const syncState = syncStore.getState();
-  const moved = syncState.generation !== generation;
-  syncState.adoptGeneration(generation);
-  if (moved) refetchSyncedQueries();
 }
 
 /**
@@ -41,10 +32,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
 
   // Another generation: the server corrected or rebuilt its sync books, and no cursor of before says anything about
   // them. Cursors are back at 0, so the views below store their frontiers as baselines.
-  if (syncState.adoptGeneration(response.generation)) {
-    refetchSyncedQueries();
-    if (response.generation !== undefined) broadcastSyncGeneration(response.generation);
-  }
+  if (syncState.adoptGeneration(response.generation)) refetchSyncedQueries();
   let hadGap = false; // any view still behind the server frontier this cycle
 
   // ── Views: product entity sync per (org, entityType) ──────────────────────

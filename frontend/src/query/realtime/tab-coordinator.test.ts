@@ -1,3 +1,4 @@
+import type { PostAppCatchupResponse } from 'sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('shared/schema-evolution', () => ({ currentSchemaVersion: 1 }));
@@ -84,7 +85,7 @@ const fakeLocks = new FakeLocks();
 vi.stubGlobal('navigator', { locks: fakeLocks });
 vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel);
 
-const { broadcastSyncGeneration, initTabCoordinator, isLeader, onSyncGeneration, releaseTabLeadership } = await import('./tab-coordinator');
+const { broadcastCatchup, initTabCoordinator, isLeader, onCatchup, releaseTabLeadership } = await import('./tab-coordinator');
 
 /** Flush microtasks + timers so lock grants and promotions settle. */
 const tick = () => new Promise((r) => setTimeout(r, 0));
@@ -149,26 +150,28 @@ describe('tab coordinator leadership', () => {
   });
 });
 
-describe('another generation of the sync books, between tabs', () => {
-  it('reaches a follower, which runs no catchup of its own', async () => {
+describe('a catchup answer, between tabs', () => {
+  const answer: PostAppCatchupResponse = { cursor: 'c9', changes: {}, generation: 7 };
+
+  it('reaches a follower, which sends no catchup request of its own', async () => {
     fakeLocks.request('tab-leader', () => new Promise<void>(() => {}));
     await initTabCoordinator();
-    const heard: number[] = [];
-    const stop = onSyncGeneration((generation) => heard.push(generation));
+    const heard: Array<[PostAppCatchupResponse, boolean]> = [];
+    const stop = onCatchup((response, baselineOnly) => heard.push([response, baselineOnly]));
 
-    receive({ type: 'sync-generation', generation: 7 });
+    receive({ type: 'catchup', response: answer, baselineOnly: false });
     stop();
-    receive({ type: 'sync-generation', generation: 8 });
+    receive({ type: 'catchup', response: answer, baselineOnly: true });
 
-    expect(heard).toEqual([7]);
+    expect(heard).toEqual([[answer, false]]);
   });
 
-  it('is not acted on by the leader: its own catchup brought it', async () => {
+  it('is not acted on by the leader: it processed the answer to its own request', async () => {
     await initTabCoordinator();
-    const heard: number[] = [];
-    const stop = onSyncGeneration((generation) => heard.push(generation));
+    const heard: Array<[PostAppCatchupResponse, boolean]> = [];
+    const stop = onCatchup((response, baselineOnly) => heard.push([response, baselineOnly]));
 
-    receive({ type: 'sync-generation', generation: 7 });
+    receive({ type: 'catchup', response: answer, baselineOnly: false });
     stop();
 
     expect(isLeader()).toBe(true);
@@ -178,8 +181,8 @@ describe('another generation of the sync books, between tabs', () => {
   it('is posted to the other tabs by the leader', async () => {
     await initTabCoordinator();
 
-    broadcastSyncGeneration(7);
+    broadcastCatchup(answer, true);
 
-    expect(FakeBroadcastChannel.opened?.posted).toContainEqual({ type: 'sync-generation', generation: 7 });
+    expect(FakeBroadcastChannel.opened?.posted).toContainEqual({ type: 'catchup', response: answer, baselineOnly: true });
   });
 });

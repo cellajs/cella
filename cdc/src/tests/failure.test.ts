@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { RESOURCE_LIMITS } from '../constants';
 import { ApiUnreachableError, isPassingError, TransactionTooLargeError } from '../services/failure';
 import { replicationState } from '../services/replication-state';
@@ -14,13 +14,15 @@ describe('isPassingError', () => {
     ['a deadlock', pgError('40P01')],
     ['a serialization failure', pgError('40001')],
     ['a lost connection', pgError('08006')],
-    ['a server that is starting', pgError('57P03')],
-    ['a server out of connections', pgError('53300')],
+    ['a Postgres that is starting', pgError('57P03')],
+    ['a Postgres out of connections', pgError('53300', 'sorry, too many clients already')],
     ['a lock it did not get in time', pgError('55P03')],
     ['a cancelled statement', pgError('57014')],
     ['a code inside a wrapped error', wrapped('40P01')],
     ['a refused socket', Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' })],
     ['a connection the driver lost without a code', new Error('Connection terminated unexpectedly')],
+    ['a pool that got no connection in time, which has no code either', new Error('timeout exceeded when trying to connect')],
+    ['that pool error inside a wrapped one', new Error('Failed query', { cause: new Error('timeout exceeded when trying to connect') })],
     ['the API being away', new ApiUnreachableError()],
   ])('reads again for as long as it takes after %s', (_label, error) => {
     expect(isPassingError(error)).toBe(true);
@@ -36,6 +38,9 @@ describe('isPassingError', () => {
     ['a refusal whose message mentions a timeout', pgError('23514', 'check "timeout_positive" violated')],
     ['a worker error whose message mentions a timeout', new Error('row has no timeout column')],
     ['a transaction too large to hold', new TransactionTooLargeError(100_000, 7)],
+    // Without a code only the two messages of the driver count: a phrase about a connection in any other error does not.
+    ['a worker error whose message mentions a refused connection', new Error('row 7: connection refused by policy')],
+    ['a value that cannot be serialized', new TypeError('Do not know how to serialize a BigInt')],
   ])('counts %s against the change', (_label, error) => {
     expect(isPassingError(error)).toBe(false);
   });
@@ -90,44 +95,5 @@ describe('replicationState: the failure the worker reads again from', () => {
     }
 
     expect(waits).toEqual([...delaysMs, delaysMs.at(-1), delaysMs.at(-1)]);
-  });
-});
-
-describe('replicationState: since when the API is away', () => {
-  beforeEach(() => {
-    replicationState.reset();
-  });
-
-  it('must not keep the stamp when the API returns between two reads, while no subscription is open', () => {
-    replicationState.status = 'active';
-    replicationState.markApiAway();
-    expect(replicationState.status).toBe('paused');
-    expect(replicationState.replicationPausedAt).not.toBeNull();
-
-    // The flush that waited for the API failed, and the subscription ended: the worker waits before it reads again.
-    replicationState.markStopped();
-    replicationState.markApiBack();
-
-    // A stamp left here would turn health unhealthy five minutes later, with the API long back.
-    expect(replicationState.replicationPausedAt).toBeNull();
-    expect(replicationState.status).toBe('stopped');
-  });
-
-  it('reads on when the API returns during a subscription, and keeps the first moment of an outage', () => {
-    vi.useFakeTimers();
-    try {
-      replicationState.status = 'active';
-      replicationState.markApiAway();
-      const since = replicationState.replicationPausedAt;
-      vi.advanceTimersByTime(30_000);
-      replicationState.markApiAway();
-      expect(replicationState.replicationPausedAt).toBe(since);
-
-      replicationState.markApiBack();
-      expect(replicationState.status).toBe('active');
-      expect(replicationState.replicationPausedAt).toBeNull();
-    } finally {
-      vi.useRealTimers();
-    }
   });
 });

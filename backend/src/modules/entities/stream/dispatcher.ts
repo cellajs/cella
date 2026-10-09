@@ -3,12 +3,12 @@ import { log } from '#/utils/logger';
 import { buildStreamNotification } from './build-message';
 import { sendNotificationToSubscriber } from './send-to-subscriber';
 import { streamSubscriberManager } from './subscriber-manager';
-import type { CursoredSubscriber, DispatcherConfig } from './types';
+import type { BaseStreamSubscriber, DispatcherConfig } from './types';
 
-export function createStreamDispatcher<T extends CursoredSubscriber, E extends ActivityEvent = ActivityEvent>(
+export function createStreamDispatcher<T extends BaseStreamSubscriber, E extends ActivityEvent = ActivityEvent>(
   config: DispatcherConfig<T, E>,
 ): (event: E) => Promise<void> {
-  const { getChannel, selectEligible, transformNotification } = config;
+  const { getChannel, selectEligible } = config;
 
   return async (event: E): Promise<void> => {
     const channel = getChannel(event);
@@ -24,16 +24,15 @@ export function createStreamDispatcher<T extends CursoredSubscriber, E extends A
       subjectId: event.subjectId,
       channel,
       subscriberCount: eligible.length,
-      hasRowData: !!event.rowData,
     });
 
+    // Every eligible subscriber receives the same notification, so it is serialized once.
     const notification = buildStreamNotification(event);
-    // Pre-serialize when no per-subscriber transform is needed.
-    const preSerialized = !transformNotification ? JSON.stringify(notification) : undefined;
+    const preSerialized = JSON.stringify(notification);
 
     await Promise.allSettled(
       eligible.map((subscriber) =>
-        sendNotificationToSubscriber(subscriber, event, notification, transformNotification, preSerialized).catch((error) => {
+        sendNotificationToSubscriber(subscriber, event, preSerialized).catch((error) => {
           log.error('Failed to dispatch stream event', { subscriberId: subscriber.id, activityId: event.id, channel, error });
         }),
       ),

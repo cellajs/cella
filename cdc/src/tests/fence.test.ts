@@ -60,8 +60,8 @@ describe('fence', () => {
   it('adds up what the count already saw, and is passed when its own marker arrives', async () => {
     fence.open('verify', '100:110:', 'marker-1');
     let passed = false;
-    void fence.whenPassed().then(() => {
-      passed = true;
+    void fence.whenPassed().then((streamPassed) => {
+      passed = streamPassed;
     });
 
     expect(fence.sawTransaction(101)).toBe(true);
@@ -79,6 +79,33 @@ describe('fence', () => {
     await Promise.resolve();
     expect(passed).toBe(true);
     expect(fence.close()).toEqual(counters({ org: { 'e:c:attachment': 1, 'm:c:total': 1 } }));
+  });
+
+  it('must not keep a verify waiting whose fence a rebuild took over: it learns that the stream did not pass it', async () => {
+    fence.open('verify', '100:110:', 'marker-of-the-verify');
+    const verifyPassed = fence.whenPassed();
+
+    fence.open('rebuild', '120:130:', 'marker-of-the-rebuild');
+
+    expect(await verifyPassed).toBe(false);
+    expect(fence.marker).toBe('marker-of-the-rebuild');
+    // The verify's marker still arrives in the stream: it is not the open fence's, and passes nothing.
+    fence.markerArrived('marker-of-the-verify');
+    const rebuildPassed = fence.whenPassed();
+    fence.markerArrived('marker-of-the-rebuild');
+    expect(await rebuildPassed).toBe(true);
+    fence.close();
+  });
+
+  it('tells whoever waits that a fence was closed before the stream passed it', async () => {
+    fence.open('verify', '100:110:', 'marker-1');
+    const passed = fence.whenPassed();
+
+    fence.close();
+
+    expect(await passed).toBe(false);
+    expect(fence.marker).toBeNull();
+    expect(await fence.whenPassed()).toBe(false);
   });
 });
 

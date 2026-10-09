@@ -182,9 +182,10 @@ export const findLatestUserActivityId = async (ctx: DbContext, { organizationIds
 };
 
 /**
- * The generation of the sync books. The CDC worker adds one whenever it corrected or rebuilt them, and a client that
- * holds another one refetches.
- * @returns The generation, 1 on a database the worker never had to touch.
+ * The generation of the sync books. The CDC worker moves it on whenever it rebuilt them, and a client that holds
+ * another one refetches.
+ * @param ctx - Carries the connection to read on.
+ * @returns The generation, 1 on a database whose books were never rebuilt.
  */
 export const findSyncGeneration = async (ctx: DbContext): Promise<number> => {
   const [state] = await ctx.var.db.select({ generation: syncStateTable.generation }).from(syncStateTable).limit(1);

@@ -2,7 +2,7 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { activityBus } from '#/lib/activity-bus';
+import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
@@ -104,6 +104,43 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     expect(removed.map((event) => event.userId).sort()).toEqual(members.map((member) => member.id).sort());
     expect(removed.every((event) => event.organizationId === testOrg.id)).toBe(true);
     await waitFor(async () => (await signalBefore()) >= before + 2, 15_000, 'membership signal moved for both');
+  });
+
+  it('hands a created attachment to the API as a list of one row, with its permission fields, its seq and no content', async () => {
+    const attachmentId = crypto.randomUUID();
+    const attachment = buildInsertableProduct(
+      'attachment',
+      {
+        id: attachmentId,
+        tenantId: testOrg.tenantId,
+        ...plan.channelIdColumns,
+        createdBy: testUser.id,
+        updatedBy: testUser.id,
+        seq: 0,
+        name: 'cdc-rows-test-name',
+      },
+      'cdc-rows-test-attachment',
+    );
+    const created: ActivityEvent[] = [];
+    const listener = (event: ActivityEvent) => void (event.subjectId === attachmentId && created.push(event));
+    activityBus.on('attachment.created', listener);
+
+    await db.insert(attachmentsTable).values(attachment as never);
+    await waitFor(() => created.length >= 1, 15_000, 'the event of the created attachment');
+    activityBus.off('attachment.created', listener);
+
+    const [stored] = await db.select({ seq: attachmentsTable.seq }).from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId));
+    const [event] = created;
+    // One row, with the seq the worker stamped on it: the API gives its notification that seq and no range.
+    expect(event.rows).toHaveLength(1);
+    expect(event.rows?.[0].seq).toBe(stored.seq);
+    expect(stored.seq).toBeGreaterThan(0);
+    // What decides who may read the row travels; its name and its file do not, and no whole row comes beside the list.
+    expect(event.rows?.[0].rowData).toMatchObject({ id: attachmentId, createdBy: testUser.id, ...plan.channelIdColumns });
+    expect(event.rows?.[0].rowData).not.toHaveProperty('name');
+    expect(JSON.stringify(event)).not.toContain('cdc-rows-test-name');
+    expect(event.rowData).toBeNull();
+    expect(event.organizationId).toBe(testOrg.id);
   });
 
   it("must not leave a runtime-created organization's counters row without its path", async () => {

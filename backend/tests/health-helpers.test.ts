@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import type { CdcWorkerHealth } from '#/lib/cdc-websocket';
 import {
-  CDC_LAG_BYTES_DEGRADED,
   type CdcSocketSnapshot,
+  type CdcWorkerReport,
   gradeEventLoop,
   mapApiComponent,
   mapCdcComponent,
@@ -15,18 +16,9 @@ import {
 
 const connectedSocket: CdcSocketSnapshot = { cdcConnected: true, lastMessageAt: null, messagesReceived: 10, parseErrors: 0 };
 
-function worker(overrides: Record<string, unknown> = {}) {
-  return {
-    replicationStatus: 'active',
-    lastLsn: '0/1',
-    messagesSent: 5,
-    slotActive: true,
-    lagBytes: 0,
-    lastEventAt: new Date().toISOString(),
-    receivedAt: new Date().toISOString(),
-    ageMs: 1000,
-    ...overrides,
-  };
+/** A report the worker pushed a second ago, with its own grade. */
+function report(health: Partial<CdcWorkerHealth> = {}, ageMs = 1000): CdcWorkerReport {
+  return { health: { status: 'healthy', reasons: [], details: {}, generation: 1, ...health }, ageMs };
 }
 
 describe('worstStatus', () => {
@@ -84,83 +76,82 @@ describe('mapDatabaseComponent', () => {
 
 describe('mapCdcComponent', () => {
   it('is unhealthy when the worker socket is disconnected', () => {
-    const c = mapCdcComponent({ ...connectedSocket, cdcConnected: false }, null);
-    expect(c.status).toBe('unhealthy');
-    expect(c.reason).toBe('worker_disconnected');
-    expect(c.details).toMatchObject({ wsConnected: false });
+    const c = mapCdcComponent({ ...connectedSocket, cdcConnected: false, lastMessageAt: '2026-10-09T10:00:00.000Z' }, null);
+
+    expect(c).toEqual({
+      status: 'unhealthy',
+      checkedVia: 'push',
+      ageMs: null,
+      reason: 'worker_disconnected',
+      details: { wsConnected: false, lastMessageAt: '2026-10-09T10:00:00.000Z', messages: 10, parseErrors: 0 },
+    });
   });
 
-  it('is healthy when active, slot active, and lag is low', () => {
-    const c = mapCdcComponent(connectedSocket, worker());
-    expect(c.status).toBe('healthy');
-    expect(c.reason).toBeUndefined();
-    expect(c.details).toMatchObject({ wsConnected: true, replication: 'active', slotActive: true });
+  it('degrades while a connected worker has not reported yet', () => {
+    const c = mapCdcComponent(connectedSocket, null);
+
+    expect(c).toMatchObject({ status: 'degraded', ageMs: null, reason: 'worker_report_stale' });
+    expect(c.details).toEqual({ wsConnected: true, messages: 10, parseErrors: 0 });
   });
 
-  it('degrades on a stale worker report', () => {
-    const c = mapCdcComponent(connectedSocket, worker({ ageMs: WORKER_HEALTH_STALE_MS + 1 }));
-    expect(c.status).toBe('degraded');
-    expect(c.reason).toContain('worker_report_stale');
+  it('degrades on a report older than 45 seconds, and still shows what it said', () => {
+    const fresh = mapCdcComponent(connectedSocket, report({ details: { lagBytes: 12 } }, WORKER_HEALTH_STALE_MS));
+    const stale = mapCdcComponent(connectedSocket, report({ details: { lagBytes: 12 } }, WORKER_HEALTH_STALE_MS + 1));
+
+    expect(fresh.status).toBe('healthy');
+    expect(fresh.reason).toBeUndefined();
+    expect(stale).toMatchObject({ status: 'degraded', reason: 'worker_report_stale', ageMs: WORKER_HEALTH_STALE_MS + 1 });
+    expect(stale.details).toMatchObject({ lagBytes: 12 });
   });
 
-  it('degrades when replication is not active', () => {
-    const c = mapCdcComponent(connectedSocket, worker({ replicationStatus: 'paused' }));
-    expect(c.status).toBe('degraded');
-    expect(c.reason).toContain('replication_paused');
+  it('must not grade a stale report better than the worker did', () => {
+    const c = mapCdcComponent(connectedSocket, report({ status: 'unhealthy', reasons: ['worker_stuck'] }, WORKER_HEALTH_STALE_MS + 1));
+
+    expect(c).toMatchObject({ status: 'unhealthy', reason: 'worker_report_stale,worker_stuck' });
   });
 
-  it('degrades when the slot is inactive', () => {
-    const c = mapCdcComponent(connectedSocket, worker({ slotActive: false }));
-    expect(c.status).toBe('degraded');
-    expect(c.reason).toContain('slot_inactive');
+  it('degrades on a report it cannot read, as a worker of another release sends during a deploy', () => {
+    const c = mapCdcComponent(connectedSocket, { health: null, ageMs: 1000 });
+
+    expect(c).toMatchObject({ status: 'degraded', ageMs: 1000, reason: 'worker_report_unreadable' });
+    expect(c.details).toEqual({ wsConnected: true, messages: 10, parseErrors: 0 });
   });
 
-  it('degrades when WAL lag is high', () => {
-    const c = mapCdcComponent(connectedSocket, worker({ lagBytes: CDC_LAG_BYTES_DEGRADED + 1 }));
-    expect(c.status).toBe('degraded');
-    expect(c.reason).toContain('wal_lag_high');
+  it("passes a healthy report on with the worker's details beside the API's own counts", () => {
+    const details = { replication: 'active', lastLsn: '0/1', lagBytes: 0, messages: 999 };
+    const c = mapCdcComponent(connectedSocket, report({ details }));
+
+    expect(c).toEqual({
+      status: 'healthy',
+      checkedVia: 'push',
+      ageMs: 1000,
+      reason: undefined,
+      // What the API counted itself is not the worker's to report.
+      details: { wsConnected: true, replication: 'active', lastLsn: '0/1', lagBytes: 0, messages: 10, parseErrors: 0 },
+    });
   });
 
-  it('is unhealthy when the worker role cannot bypass RLS or lacks REPLICATION', () => {
-    const noBypass = mapCdcComponent(connectedSocket, worker({ rlsBypass: false, roleReplication: true }));
-    expect(noBypass.status).toBe('unhealthy');
-    expect(noBypass.reason).toContain('rls_bypass_missing');
+  it("passes a degraded report on with both of the worker's reasons", () => {
+    const c = mapCdcComponent(connectedSocket, report({ status: 'degraded', reasons: ['reading_again', 'wal_lag_high'] }));
 
-    const noReplication = mapCdcComponent(connectedSocket, worker({ rlsBypass: true, roleReplication: false }));
-    expect(noReplication.status).toBe('unhealthy');
-    expect(noReplication.reason).toContain('role_missing_replication');
+    expect(c).toMatchObject({ status: 'degraded', reason: 'reading_again,wal_lag_high' });
   });
 
-  it('is unhealthy when the worker is stuck at one change, and shows the failure', () => {
+  it('passes an unhealthy report of a stuck worker on, with the failure it reads again from', () => {
     const failure = { position: '0/50', count: 5, error: 'null value in column "organization_id"', passing: false };
-    const c = mapCdcComponent(connectedSocket, worker({ replicationStatus: 'stopped', stuck: true, failure }));
+    const c = mapCdcComponent(connectedSocket, report({ status: 'unhealthy', reasons: ['worker_stuck'], details: { failure } }));
 
     // A deploy that ends on a stuck worker must fail its smoke step, not warn: nothing is read until the rebuild.
-    expect(c.status).toBe('unhealthy');
-    expect(c.reason).toContain('worker_stuck');
+    expect(c).toMatchObject({ status: 'unhealthy', reason: 'worker_stuck' });
     expect(c.details?.failure).toEqual(failure);
   });
 
-  it('is unhealthy while the setup check keeps the worker from reading, and names what is wrong', () => {
-    const setupProblems = ["publication 'cdc_pub' lacks tracked tables: attachments"];
-    const c = mapCdcComponent(connectedSocket, worker({ replicationStatus: 'stopped', setupProblems }));
+  it("must not grade the worker's facts a second time: the grade is the worker's alone", () => {
+    const details = { replication: 'stopped', slotActive: false, lagBytes: 2 ** 40, setupProblems: ['publication lacks a table'], stuck: true };
+    const c = mapCdcComponent(connectedSocket, report({ details }));
 
-    expect(c.status).toBe('unhealthy');
-    expect(c.reason).toContain('setup_problems');
-    expect(c.details?.setupProblems).toEqual(setupProblems);
-  });
-
-  it('only degrades while a failed flush is read again (positive control)', () => {
-    const failure = { position: '0/50', count: 1, error: 'refused', passing: false };
-    const c = mapCdcComponent(connectedSocket, worker({ replicationStatus: 'stopped', stuck: false, failure, setupProblems: [] }));
-
-    expect(c.status).toBe('degraded');
-    expect(c.reason).toBe('replication_stopped');
-  });
-
-  it('treats unprobed role flags (null) as unknown, not missing', () => {
-    const c = mapCdcComponent(connectedSocket, worker({ rlsBypass: null, roleReplication: null }));
     expect(c.status).toBe('healthy');
+    expect(c.reason).toBeUndefined();
   });
 });
 

@@ -1,13 +1,14 @@
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 /** Regenerable tables converted to UNLOGGED; shared with the verification block. */
-export const unloggedTables = ['rate_limits', 'product_counters'];
+export const unloggedTables = ['rate_limits'];
 
 /**
  * Tables that were UNLOGGED once and are logged again, so a database made before the change is converted. The sync
- * engine's sequence counter and frontiers live in `channel_counters`: a crash must not empty them.
+ * engine's sequence counter and frontiers live in `channel_counters`, and nothing recounts `product_counters` by
+ * itself: a crash must not empty either.
  */
-export const loggedAgainTables = ['channel_counters'];
+export const loggedAgainTables = ['channel_counters', 'product_counters'];
 
 async function run(): Promise<SideEffectBlock> {
   const alterStatements = [

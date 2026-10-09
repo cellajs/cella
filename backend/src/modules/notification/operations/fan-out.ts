@@ -40,14 +40,14 @@ export async function fanOutNotifications(event: ActivityEvent): Promise<boolean
   const { organizationId, tenantId, id: activityId } = event;
   if (!organizationId || !tenantId || !activityId) return false;
 
-  const subjectIds = collectSubjectIds(event);
+  const subjectIds = (event.rows ?? []).flatMap(({ rowData }) => (typeof rowData.id === 'string' ? [rowData.id] : []));
   if (subjectIds.length === 0) return false;
 
   const readsMentions = source.declaration.mentionable !== false && mayAddMentions(event);
   // Mentions and the source's recipient rule are the only ways a row notifies anyone: with neither, nothing to read.
   if (!readsMentions && !source.declaration.resolveRecipients) return false;
 
-  // Batch events carry only permission columns, never the body, so the rows are re-read.
+  // An event carries only the permission columns of its rows, never the body, so the rows are re-read.
   const rows = await tenantReadById(tenantId, (tx) => loadSubjectRows(source, tx, subjectIds, { body: readsMentions }));
 
   let mailable = false;
@@ -63,23 +63,15 @@ export async function fanOutNotifications(event: ActivityEvent): Promise<boolean
 
 /**
  * Whether the event can add mentions: a create, or an update whose changed fields include the
- * body. A batch carries its first row's changed fields only and a missing list says nothing, so
- * both count as a body change; users told before are skipped either way.
+ * body. The changed fields are those of the event's first row and a missing list says nothing, so
+ * an event of several rows and one without a list both count as a body change; users told before
+ * are skipped either way.
  */
 function mayAddMentions(event: ActivityEvent): boolean {
   if (event.action === 'create') return true;
   if (event.action !== 'update') return false;
-  if (!event.changedFields || (event.batchRows?.length ?? 0) > 1) return true;
+  if (!event.changedFields || (event.rows?.length ?? 0) > 1) return true;
   return event.changedFields.includes('description');
-}
-
-/** Single events name one subject; batches list theirs in `batchRows`. */
-function collectSubjectIds(event: ActivityEvent): string[] {
-  if (event.batchRows?.length) {
-    const ids = event.batchRows.map((batchRow) => (batchRow.rowData as { id?: unknown })?.id).filter((id): id is string => typeof id === 'string');
-    if (ids.length) return ids;
-  }
-  return event.subjectId ? [event.subjectId] : [];
 }
 
 /** Writes one row's notifications; true when one is mailable (a redelivered one too, so its email pass reruns). */

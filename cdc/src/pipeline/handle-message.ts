@@ -5,12 +5,9 @@ import { fence } from '../services/fence';
 import { FlushBuffer } from '../services/flush-buffer';
 import { replicationState } from '../services/replication-state';
 import { TransactionBuffer } from '../services/transaction-buffer';
-import { commitTimeMs } from '../utils/commit-time';
 import { formatLsn, lsnToBigInt } from '../utils/lsn';
 import { parseMessage } from './parse-message';
 import { processFlush } from './process-events';
-
-// Message helpers
 
 type DmlMessage = Pgoutput.MessageInsert | Pgoutput.MessageUpdate | Pgoutput.MessageDelete;
 
@@ -19,42 +16,42 @@ function isDmlMessage(msg: Pgoutput.Message): msg is DmlMessage {
 }
 
 /**
- * Sends the standby status update and records it, so heartbeats can repeat the last flushed position. A service that
- * has stopped sends nothing, and then nothing is recorded: the position is still unconfirmed.
+ * Acknowledges a position to the slot and keeps it, so the status timer can repeat it. A service that has stopped
+ * sends nothing, and then nothing is kept: the position is still unacknowledged.
  * @returns Whether the position was sent.
  */
 async function acknowledgeLsn(lsn: string): Promise<boolean> {
-  // After a failure nothing more is confirmed on this subscription: a later position would pass the change that failed.
-  if (replicationState.flushFailed) return false;
+  // After a failure nothing more is acknowledged on this subscription: a later position would pass the change that failed.
+  if (flushBuffer.failed) return false;
   if (!(await replicationState.service?.acknowledge(lsn))) return false;
   replicationState.lastAckedLsn = lsn;
   return true;
 }
 
-/** Accumulates events across transactions for micro-batching. */
+/** Collects the changes of committed source transactions into flushes. */
 const flushBuffer = new FlushBuffer(
   processFlush,
-  async (lsn) => {
-    await acknowledgeLsn(lsn);
+  async (position) => {
+    await acknowledgeLsn(position);
+    // The flush is recorded: whatever failed before is behind the worker.
+    replicationState.clearFailure();
   },
   RESOURCE_LIMITS.buffers.flushWindowMs,
 );
 
 /**
  * The one way a failure is handled: the subscription ends without an acknowledgement, and the next one starts at the
- * slot's confirmed position and delivers the same events again.
+ * slot's acknowledged position and delivers the same changes again.
  */
 flushBuffer.onFailed = (error, position) => {
   replicationState.recordFailure(position, error);
   void replicationState.service?.stop();
 };
 
-flushBuffer.onFlushed = () => replicationState.clearFailure();
-
-/** Cascade suppression within a single transaction. */
+/** Holds a source transaction until its commit and suppresses what a cascade wrote. */
 const txBuffer = new TransactionBuffer((events) => flushBuffer.enqueue(events));
 
-/** Prefix of the logical message a count from the tables writes right after its snapshot. */
+/** Prefix of the logical message a recount writes right after its snapshot: the marker. */
 export const FENCE_MARKER_PREFIX = 'sync-fence';
 
 /** Data messages whose handler has not returned yet. */
@@ -63,19 +60,23 @@ let inFlightMessages = 0;
 /** How many changes of the open transaction were received, kept or not: a change's index in its transaction. */
 let changesInTransaction = 0;
 
+/** Counts the subscriptions, so a handler that outlives its own can tell. */
+let subscriptionCount = 0;
+
 /**
- * Confirms the latest keepalive position once every received message is applied and acknowledged.
- * Data acks stop at the last published row, so an idle worker would otherwise pin the slot while
- * unpublished WAL grows behind it. Transactions committed before a keepalive were streamed ahead of
- * it, so its position is safe whenever nothing is in flight.
+ * Acknowledges the latest keepalive position once every received message is recorded and acknowledged. A flush
+ * acknowledges the commit of its last source transaction, so an idle worker would hold the slot there while WAL
+ * without changes of tracked tables grows behind it: a marker, a transaction whose rows the worker drops. Source
+ * transactions committed before a keepalive were streamed ahead of it, so its position is safe whenever nothing is
+ * in flight.
  * @returns true when the keepalive position was acknowledged.
  */
-export async function acknowledgeIdlePosition(): Promise<boolean> {
+async function acknowledgeIdlePosition(): Promise<boolean> {
   const { lastKeepaliveLsn, lastAckedLsn } = replicationState;
   const busy = inFlightMessages > 0 || txBuffer.isBuffering || !flushBuffer.isIdle;
   if (!lastKeepaliveLsn || busy) return false;
 
-  // The client reports lsn + 1 as flushed: one byte back confirms the keepalive position itself, never a byte of the next commit record.
+  // The client reports lsn + 1 as flushed: one byte back acknowledges the keepalive position itself, never a byte of the next commit record.
   const position = lsnToBigInt(lastKeepaliveLsn) - 1n;
   if (position <= (lastAckedLsn ? lsnToBigInt(lastAckedLsn) : 0n)) return false;
 
@@ -87,24 +88,19 @@ export async function acknowledgeIdlePosition(): Promise<boolean> {
  * queues its data messages, so right after one handler returns the next messages can still wait in that queue while
  * the worker looks idle. They all reach their handlers before a callback of the check phase runs.
  */
-const scheduleIdleCheck = (): void => {
+export const scheduleIdleCheck = (): void => {
   setImmediate(() => void acknowledgeIdlePosition());
 };
 
 flushBuffer.onDrained = scheduleIdleCheck;
 
-/**
- * Acknowledges a message the worker has nothing to do for, when no earlier event is still waiting: a position
- * confirmed past a buffered event would lose that event in a crash. The next flush or idle check covers it otherwise.
- */
-async function acknowledgeSkipped(lsn: string): Promise<void> {
-  if (flushBuffer.isIdle && !txBuffer.hasPendingEvents) await acknowledgeLsn(lsn);
-}
+/** Whether the subscription ended on a failure: the loop then waits before it reads the same changes again. */
+export const flushHasFailed = (): boolean => flushBuffer.failed;
 
-/** Buffers events between BEGIN and COMMIT, suppressing child deletes cascaded from a channel delete. */
+/** Buffers the changes of a source transaction between its BEGIN and COMMIT, and hands the survivors to a flush. */
 export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Promise<void> {
   // After a failure this subscription is over: what the service still delivers is read again by the next one.
-  if (replicationState.flushFailed) return;
+  if (flushBuffer.failed) return;
   inFlightMessages += 1;
   try {
     await applyDataMessage(lsn, msg);
@@ -121,14 +117,10 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
   const { tag } = msg;
 
   if (tag === 'begin') {
-    const beginMsg = msg as Pgoutput.MessageBegin;
-
-    // How long ago the transaction committed is how far the worker is behind.
-    const committedAt = commitTimeMs(beginMsg);
-    if (committedAt !== null) replicationState.lagMs = Date.now() - committedAt;
-
     changesInTransaction = 0;
-    txBuffer.onBegin(beginMsg);
+    const committedAt = txBuffer.onBegin(msg as Pgoutput.MessageBegin);
+    // How long ago the source transaction committed is how far the worker is behind.
+    if (committedAt !== null) replicationState.lagMs = Date.now() - committedAt;
     return;
   }
 
@@ -139,13 +131,12 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
 
   if (tag === 'message') {
     const { prefix, content } = msg as Pgoutput.MessageMessage;
-    if (prefix === FENCE_MARKER_PREFIX) {
-      // The marker was written right after a count's snapshot. Once everything before it is recorded, the stream has
-      // passed that snapshot.
-      await flushBuffer.flush();
-      if (!replicationState.flushFailed) fence.markerArrived(new TextDecoder().decode(content));
-    }
-    await acknowledgeSkipped(lsn);
+    if (prefix !== FENCE_MARKER_PREFIX) return;
+    // The marker was written right after a recount's snapshot. Once everything before it is recorded, the stream has
+    // passed that snapshot. A subscription that ended meanwhile dropped what was pending: its marker is read again.
+    const subscription = subscriptionCount;
+    await flushBuffer.flush();
+    if (!flushBuffer.failed && subscription === subscriptionCount) fence.markerArrived(new TextDecoder().decode(content));
     return;
   }
 
@@ -158,13 +149,11 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
 
   log.trace('CDC message received', { lsn, tag, table: msg.relation?.name });
 
+  // A change the parser drops leaves nothing to record. The idle acknowledgement moves the slot past it.
   const parseResult = parseMessage(msg);
-  if (!parseResult) {
-    await acknowledgeSkipped(lsn);
-    return;
-  }
+  if (!parseResult) return;
 
-  replicationState.markEvent();
+  replicationState.lastEventAt = new Date();
 
   await txBuffer.onEvent(lsn, parseResult, index);
 }
@@ -177,18 +166,20 @@ export function runBetweenFlushes<T>(fn: () => Promise<T>): Promise<T> {
   return flushBuffer.exclusive(fn);
 }
 
-/** Called during graceful shutdown. */
+/** At shutdown: records what is pending while the subscription can still acknowledge it. */
 export async function drainBuffers(): Promise<void> {
-  await flushBuffer.drain();
+  await flushBuffer.flush();
 }
 
 /**
- * Before every subscription: what was buffered is delivered again from the slot's confirmed position. The keepalive
- * position goes too: it belongs to the stream that ended, and can lie past what that stream never recorded.
+ * Before every subscription: what was buffered is delivered again from the slot's acknowledged position. Resolves
+ * once the flush in flight has ended, so nothing of the subscription that ended is recorded beside what follows. The
+ * keepalive position goes too: it belongs to the stream that ended, and can lie past what that stream never recorded.
  */
-export function resetBuffers(): void {
+export async function resetBuffers(): Promise<void> {
+  subscriptionCount += 1;
   txBuffer.reset();
-  flushBuffer.reset();
+  await flushBuffer.reset();
   replicationState.lastKeepaliveLsn = null;
   changesInTransaction = 0;
 }

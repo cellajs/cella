@@ -2,7 +2,7 @@ import type { Pgoutput } from 'pg-logical-replication';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { mockActivity } from '../../../backend/src/modules/activities/activities-mocks';
 import type { ParseMessageResult } from '../pipeline/parse-message';
-import type { BatchEvent } from '../services/activity-service';
+import type { ProductRow } from '../services/activity-service';
 import type { PendingEvent, TableMeta } from '../types';
 
 /**
@@ -29,7 +29,7 @@ export const tableMetaOf = (kind: TableMeta['kind'], type: string): TableMeta =>
 const DEFAULT_ENTITY: NonNullable<InsertActivityModel['entityType']> = 'attachment';
 const DEFAULT_TABLE = 'attachments';
 
-/** The seeded mock is the same on every call, and reseeding faker per call made a 50,000-event test take 11s, so it is built once. */
+/** The seeded mock is the same on every call, and reseeding faker for each one is slow in a test of many changes, so it is built once. */
 let cdcActivityDefaults: InsertActivityModel | undefined;
 
 /** Activity with explicit test-friendly defaults, based on the backend mockActivity shape. */
@@ -124,8 +124,8 @@ export function mockPendingEvent(overrides: {
   return { lsn: overrides.lsn, result: mockParseResult(overrides) };
 }
 
-/** BatchEvent fixture. */
-export function mockBatchEvent(seq: number, subjectId = `entity-${seq}`): BatchEvent {
+/** A recorded attachment row as its message is built from it; `extra` adds columns to the row. */
+export function mockProductRow(seq: number, extra: Record<string, unknown> = {}, subjectId = `entity-${seq}`): ProductRow {
   const activity = mockCdcActivity({ subjectId });
-  return { activity: { ...activity, id: `act-${seq}` } as InsertActivityModel & { id: string }, rowData: { id: subjectId, seq }, seq };
+  return { activity: { ...activity, id: `act-${seq}` } as InsertActivityModel & { id: string }, rowData: { id: subjectId, seq, ...extra }, seq };
 }

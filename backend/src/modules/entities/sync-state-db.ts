@@ -1,51 +1,50 @@
 import { integer, jsonb, snakeCase, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { maxLength } from '#/db/utils/constraints';
 
-/** A correction the CDC worker made to one counter key. */
+/** The id of the one row of `sync_state`. */
+export const syncStateId = 'sync';
+
+/** One counter key on which a verify found the books to differ from the tables. */
 export interface SyncCorrection {
   channelKey: string;
   key: string;
-  /** What the counter held, with the changes the count already saw added. */
+  /** What the counter held, with the changes the recount already saw added. */
   stored: number;
-  /** What counting from the tables gave. */
+  /** What the recount from the tables gave. */
   counted: number;
 }
 
-/** The snapshot a recount was taken at, kept until the stream has passed it: changes it already saw are not counted twice. */
+/** The fence of a rebuild the stream has not passed yet. A worker that finds one at its start was interrupted inside it, and rebuilds again. */
 export interface SyncFence {
-  mode: 'verify' | 'rebuild';
-  /** `pg_current_snapshot()` of the recount, as text. */
-  snapshot: string;
-  /** Content of the logical message written right after the snapshot: the stream has passed the recount when it arrives. */
+  /** Content of the logical message written right after the rebuild's snapshot: the stream has passed the rebuild when it arrives. */
   marker: string;
-  /** WAL position of that message. A slot that has confirmed it is past the recount, also when the worker died before forgetting the fence. */
-  markerLsn?: string;
 }
 
 /**
  * The one row that says which generation of the books clients may trust. The CDC worker moves it on whenever it
- * corrected or rebuilt them, and a client that holds another generation refetches. A generation only tells two states
- * of the books apart: it grows, never below the clock in minutes, and counts nothing. Also the worker's mailbox for a
- * verify or a rebuild on request, and where a rebuild keeps its fence across a restart.
+ * rebuilt them, and a client that holds another generation refetches. A generation only tells two states of the books
+ * apart: it grows, never below the clock in minutes, and counts nothing. Also the worker's mailbox for a verify or a
+ * rebuild on request, and where a rebuild keeps its marker until the stream has passed it.
  */
 export const syncStateTable = snakeCase.table('sync_state', {
-  id: varchar({ length: maxLength.field }).primaryKey().default('sync'),
+  id: varchar({ length: maxLength.field }).primaryKey().default(syncStateId),
   generation: integer().notNull().default(1),
   requested: varchar({ enum: ['verify', 'rebuild'] }),
-  requestedAt: timestamp({ mode: 'string' }),
   verifiedAt: timestamp({ mode: 'string' }),
   rebuiltAt: timestamp({ mode: 'string' }),
   fence: jsonb().$type<SyncFence>(),
 });
 
-/** One row for every time the worker found the books wrong or had to rebuild them, so a rare failure leaves a record. */
+/** One row for every time the worker rebuilt the books from the tables, so a rare failure leaves a record. */
 export const syncIncidentsTable = snakeCase.table('sync_incidents', {
   id: uuid().primaryKey().defaultRandom(),
   createdAt: timestamp({ mode: 'string' }).notNull().defaultNow(),
-  /** `verify_corrected`: a verify found differences. `rebuild`: the books were replaced by a count from the tables. */
-  kind: varchar({ enum: ['verify_corrected', 'rebuild'] }).notNull(),
-  /** `lost_slot`: the replication slot was gone. `lost_counters`: `channel_counters` was empty. `stuck`: a change failed every read. */
-  reason: varchar({ enum: ['scheduled', 'requested', 'lost_slot', 'lost_counters', 'stuck'] }).notNull(),
+  /**
+   * `requested`: somebody asked for it. `lost_slot`: the replication slot was gone. `lost_counters`: `channel_counters`
+   * was empty. `stuck`: a change failed every read. `wrong_books`: a verify found the differences in `corrections`.
+   * `interrupted`: the worker restarted before the stream had passed a rebuild.
+   */
+  reason: varchar({ enum: ['requested', 'lost_slot', 'lost_counters', 'stuck', 'wrong_books', 'interrupted'] }).notNull(),
   /** WAL positions the worker gave up between, for a rebuild that skipped a backlog. */
   positionFrom: varchar({ length: maxLength.field }),
   positionTo: varchar({ length: maxLength.field }),
@@ -53,6 +52,3 @@ export const syncIncidentsTable = snakeCase.table('sync_incidents', {
   corrections: jsonb().$type<SyncCorrection[]>().notNull().default([]),
   generation: integer().notNull(),
 });
-
-export type SyncStateModel = typeof syncStateTable.$inferSelect;
-export type SyncIncidentModel = typeof syncIncidentsTable.$inferSelect;

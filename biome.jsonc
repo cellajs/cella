@@ -331,9 +331,9 @@
       }
     },
     {
-      // The MODE=cdc shim is the one sanctioned place backend boots the CDC
-      // worker (single backend image, split deploy via MODE). It mirrors mcp/.
-      "includes": ["backend/src/main.cdc.ts", "backend/src/main.api.ts"],
+      // The API entry is the one sanctioned place the backend boots the CDC
+      // worker: in single-VM mode it runs inside the API process.
+      "includes": ["backend/src/main.api.ts"],
       "linter": {
         "rules": {
           "style": {

@@ -70,9 +70,8 @@ export function mapDatabaseComponent(connected: boolean, latencyMs: number | nul
 
 /** Worker reports are considered stale (and therefore degrading) after this long without an update. */
 export const WORKER_HEALTH_STALE_MS = 45_000;
-/** WAL replication lag (bytes) above which the CDC component degrades. */
-export const CDC_LAG_BYTES_DEGRADED = 50 * 1024 * 1024;
 
+/** The worker socket as the API holds it. */
 export interface CdcSocketSnapshot {
   cdcConnected: boolean;
   lastMessageAt: string | null;
@@ -80,89 +79,41 @@ export interface CdcSocketSnapshot {
   parseErrors: number;
 }
 
-type CdcWorkerReport = CdcWorkerHealth & { receivedAt: string; ageMs: number };
+/** The worker's latest health push and its age; `health` is null when the push had a shape the API cannot read. */
+export interface CdcWorkerReport {
+  health: CdcWorkerHealth | null;
+  ageMs: number;
+}
 
-/** A live socket does not prove the data plane is healthy: WAL liveness comes only from the worker's pushed fields. */
+/**
+ * The `cdc` component. The worker grades itself, and the API passes that grade and its reasons on unchanged. The API
+ * adds only what the worker cannot tell: no socket (`worker_disconnected`), no report within 45 seconds
+ * (`worker_report_stale`), or one it cannot read (`worker_report_unreadable`). The last two degrade at least, and a
+ * stale report still shows what it said.
+ * @param socket - The worker socket as the API holds it.
+ * @param worker - The worker's latest report, or null when none arrived on this connection.
+ * @returns The component for the health response.
+ */
 export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerReport | null): HealthComponent {
+  const counts = { messages: socket.messagesReceived, parseErrors: socket.parseErrors };
+  const ageMs = worker?.ageMs ?? null;
+
   if (!socket.cdcConnected) {
-    return {
-      status: 'unhealthy',
-      checkedVia: 'push',
-      ageMs: worker?.ageMs ?? null,
-      reason: 'worker_disconnected',
-      details: {
-        wsConnected: false,
-        lastMessageAt: socket.lastMessageAt,
-        messages: socket.messagesReceived,
-        parseErrors: socket.parseErrors,
-      },
-    };
+    const details = { wsConnected: false, lastMessageAt: socket.lastMessageAt, ...counts };
+    return { status: 'unhealthy', checkedVia: 'push', ageMs, reason: 'worker_disconnected', details };
   }
 
-  const replication = worker?.replicationStatus ?? 'unknown';
-  const slotActive = worker?.slotActive ?? null;
-  const lagBytes = worker?.lagBytes ?? null;
+  const health = worker?.health ?? null;
   const stale = !worker || worker.ageMs > WORKER_HEALTH_STALE_MS;
-
-  let status: HealthStatus = 'healthy';
-  const reasons: string[] = [];
-  if (stale) {
-    status = worstStatus(status, 'degraded');
-    reasons.push('worker_report_stale');
-  }
-  if (replication !== 'active') {
-    status = worstStatus(status, 'degraded');
-    reasons.push(`replication_${replication}`);
-  }
-  if (slotActive === false) {
-    status = worstStatus(status, 'degraded');
-    reasons.push('slot_inactive');
-  }
-  // Stuck takes five failures at one position that the change itself caused, and a failed setup check lasts until someone repairs the publication: live sync is down, not slow.
-  if (worker?.stuck) {
-    status = worstStatus(status, 'unhealthy');
-    reasons.push('worker_stuck');
-  }
-  if (worker?.setupProblems?.length) {
-    status = worstStatus(status, 'unhealthy');
-    reasons.push('setup_problems');
-  }
-  if (lagBytes !== null && lagBytes > CDC_LAG_BYTES_DEGRADED) {
-    status = worstStatus(status, 'degraded');
-    reasons.push('wal_lag_high');
-  }
-  // A role that RLS filters (a forced or foreign-owned table) stamps seq into zero rows, and one without REPLICATION cannot hold the slot: the data plane is down, not merely slow.
-  if (worker?.rlsBypass === false) {
-    status = worstStatus(status, 'unhealthy');
-    reasons.push('rls_bypass_missing');
-  }
-  if (worker?.roleReplication === false) {
-    status = worstStatus(status, 'unhealthy');
-    reasons.push('role_missing_replication');
-  }
+  const ownReason = stale ? 'worker_report_stale' : health ? null : 'worker_report_unreadable';
+  const reasons = [...(ownReason ? [ownReason] : []), ...(health?.reasons ?? [])];
 
   return {
-    status,
+    status: worstStatus(health?.status ?? 'degraded', ownReason ? 'degraded' : 'healthy'),
     checkedVia: 'push',
-    ageMs: worker?.ageMs ?? null,
+    ageMs,
     reason: reasons.length ? reasons.join(',') : undefined,
-    details: {
-      wsConnected: true,
-      replication,
-      slotActive,
-      lagBytes,
-      lastLsn: worker?.lastLsn ?? null,
-      lastEventAt: worker?.lastEventAt ?? null,
-      lagMs: worker?.lagMs ?? null,
-      stuck: worker?.stuck ?? null,
-      failure: worker?.failure ?? null,
-      setupProblems: worker?.setupProblems ?? [],
-      rlsBypass: worker?.rlsBypass ?? null,
-      roleReplication: worker?.roleReplication ?? null,
-      messages: socket.messagesReceived,
-      messagesSent: worker?.messagesSent ?? null,
-      parseErrors: socket.parseErrors,
-    },
+    details: { wsConnected: true, ...health?.details, ...counts },
   };
 }
 

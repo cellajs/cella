@@ -39,28 +39,11 @@ async function checkDatabase(): Promise<{ connected: boolean; latencyMs: number 
   }
 }
 
-/** Build the CDC component from the backend-side socket snapshot + the worker's pushed self-report. */
+/** The CDC component: the worker socket as this process holds it, and the grade the worker pushed over it. */
 function buildCdcComponent(): HealthComponent {
-  const socket = cdcWebSocketServer.getHealthStatus();
   const report = cdcWebSocketServer.getWorkerHealth();
-  const worker = report
-    ? {
-        ...report.payload,
-        receivedAt: report.receivedAt.toISOString(),
-        ageMs: Date.now() - report.receivedAt.getTime(),
-      }
-    : null;
-  const component = mapCdcComponent(
-    {
-      cdcConnected: socket.cdcConnected,
-      lastMessageAt: socket.lastMessageAt,
-      messagesReceived: socket.messagesReceived,
-      parseErrors: socket.parseErrors,
-    },
-    worker,
-  );
-  const lagAlert = cdcWebSocketServer.getLastLagAlert();
-  return lagAlert ? { ...component, details: { ...component.details, lagAlert } } : component;
+  const worker = report && { health: report.health, ageMs: Date.now() - report.receivedAt.getTime() };
+  return mapCdcComponent(cdcWebSocketServer.getHealthStatus(), worker);
 }
 
 /** Build the mcp worker's own component (self-check) when this process IS the mcp worker. */
