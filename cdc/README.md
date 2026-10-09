@@ -124,5 +124,6 @@ Environment, validated in `src/env.ts` (loads the backend's `.env`):
 | `CDC_SECRET` | Internal-channel shared secret, minimum 16 characters |
 | `CDC_HEALTH_PORT` | Health server port, default 4001 |
 | `MAPLE_SECRET_INGEST_KEY` | Optional telemetry ingest key |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Optional OTLP base URL for telemetry; wins over the ingest key |
 | `NODE_ENV`, `PINO_LOG_LEVEL`, `DEBUG` | Runtime mode and logging. `DEBUG` also prints every query, with its values, in the `development` app mode only |
 
