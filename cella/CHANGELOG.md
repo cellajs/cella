@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.18.0](https://github.com/cellajs/cella/compare/0.17.0...0.18.0) (2026-10-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **errors:** one toast per failure, and an app adds its own error types ([#1334](https://github.com/cellajs/cella/issues/1334))
+* **errors:** error toasts say what happened, and each failure answers with its own type ([#1331](https://github.com/cellajs/cella/issues/1331))
+
+### 🎉 New features
+
+* **bench:** each scenario checks what the stack did with its load ([#1337](https://github.com/cellajs/cella/issues/1337)) ([31a8ff7](https://github.com/cellajs/cella/commit/31a8ff76976f4bf93817a3998ce301cea5638756))
+* **errors:** error toasts say what happened, and each failure answers with its own type ([#1331](https://github.com/cellajs/cella/issues/1331)) ([08bd6e2](https://github.com/cellajs/cella/commit/08bd6e289d2aa19477bf6cfb33d612544df17d63))
+* **skills:** the marketing screenshots are lossless WebP, re-shot from a clean database ([#1341](https://github.com/cellajs/cella/issues/1341)) ([44a508a](https://github.com/cellajs/cella/commit/44a508ad2969d53d62fa81c774c95462b60e1e09))
+* **sync:** one failure path for the CDC worker, and books it verifies and rebuilds by itself ([#1342](https://github.com/cellajs/cella/issues/1342)) ([5856fd6](https://github.com/cellajs/cella/commit/5856fd618e713cadd9bf85ac9cd9349b81115447))
+
+
+### 🐞 Bug fixes
+
+* **auth:** the points ceiling holds, a guard cache stores no stale row, last-seen is bounded ([#1340](https://github.com/cellajs/cella/issues/1340)) ([077220f](https://github.com/cellajs/cella/commit/077220f26ca0f2808a1c1eaf6325c0406f7d1060))
+* **backend:** requests under /api and /mcp are answered on Node 26.11 ([#1343](https://github.com/cellajs/cella/issues/1343)) ([b6c52f4](https://github.com/cellajs/cella/commit/b6c52f41083702419c92c4bece398efb9177abbe))
+* **bench:** a run fails when the stack rejects its requests ([#1336](https://github.com/cellajs/cella/issues/1336)) ([8956e28](https://github.com/cellajs/cella/commit/8956e286a64bb09867fe2aa3da0ac79685ae6f8b))
+* **cdc:** a flush is recorded in one transaction, in commit order, once per event ([#1339](https://github.com/cellajs/cella/issues/1339)) ([b758e72](https://github.com/cellajs/cella/commit/b758e727eb4dfb72a758688ade30aadc827a917c))
+* **cdc:** a verify or rebuild starts while changes keep arriving, plus two release-test fixes ([#1352](https://github.com/cellajs/cella/issues/1352)) ([fa2f678](https://github.com/cellajs/cella/commit/fa2f67887e14d1d80fd413b0e37f9f9978d2c97c))
+* **errors:** one toast per failure, and an app adds its own error types ([#1334](https://github.com/cellajs/cella/issues/1334)) ([78c56c6](https://github.com/cellajs/cella/commit/78c56c65c9a6b9d852ad1b131e730e575e04459f))
+* **otel:** logs link to their trace, export goes to any OTLP endpoint, names follow the conventions ([#1344](https://github.com/cellajs/cella/issues/1344)) ([567f42f](https://github.com/cellajs/cella/commit/567f42f8b8ce9c40d6d73ab8d69c92fe0448d1d9))
+* **rate-limit:** a limit holds its window, with no block that ends inside it ([#1345](https://github.com/cellajs/cella/issues/1345)) ([58c07c5](https://github.com/cellajs/cella/commit/58c07c5df018ab09c45f4c31b35f546d7b53d7eb))
+* **sync:** counts hold on a deep hierarchy, and clients fall back while no worker reads ([#1351](https://github.com/cellajs/cella/issues/1351)) ([0e48208](https://github.com/cellajs/cella/commit/0e48208c16cde72c5d31b45f336b1106c6ab1ec3))
+* **sync:** overlapping edits keep their timestamps, list reads stop writing to the database ([#1338](https://github.com/cellajs/cella/issues/1338)) ([385b7a7](https://github.com/cellajs/cella/commit/385b7a7c261702b480948aa904e9235edcca8785))
+* **sync:** recovery holds across a crash, a restore and a second tab; channel_counters is logged ([#1347](https://github.com/cellajs/cella/issues/1347)) ([27f8cb2](https://github.com/cellajs/cella/commit/27f8cb2d2e9818c5f768dec57e0e2ecb7c14c6ff))
+* **ui:** only a user's avatar shows two initials ([#1348](https://github.com/cellajs/cella/issues/1348)) ([8012501](https://github.com/cellajs/cella/commit/8012501679804858dccffc0c5228c60c6931d10c))
+
+
+### 🔧 Small improvements
+
+* **sync:** the CDC worker does each job one way, plus the fixes the runs found ([#1349](https://github.com/cellajs/cella/issues/1349)) ([56bac60](https://github.com/cellajs/cella/commit/56bac6088774a3290cfbf224acb86ea7cb2db37f))
+
+
+### 📖 Documentation
+
+* **agents:** a PR that grows the codebase says where its lines went ([#1332](https://github.com/cellajs/cella/issues/1332)) ([29bd2ce](https://github.com/cellajs/cella/commit/29bd2cebe21ef0c57468790af45072c4dffb592b))
+
+
+### 🧹 Chores
+
+* a deps update, and a tuning pass over closed sign-up and the sync diagram ([#1335](https://github.com/cellajs/cella/issues/1335)) ([2a9c354](https://github.com/cellajs/cella/commit/2a9c354bb21bfa6a3e2ad601f4d2882df3bfa072))
+* a tuning pass over auth, API keys, member tables and page chrome ([#1333](https://github.com/cellajs/cella/issues/1333)) ([73ed131](https://github.com/cellajs/cella/commit/73ed13173ceee1a897aed104691aedbd3985a9c7))
+* a tuning pass over the morph entrance, feature tiles and the passkey button ([#1330](https://github.com/cellajs/cella/issues/1330)) ([6e9da11](https://github.com/cellajs/cella/commit/6e9da1172c633761b0606c16569690f3d26607c4))
+* **docs:** a README explains concepts and behaviour, mechanism stays at its declaration ([#1350](https://github.com/cellajs/cella/issues/1350)) ([0e0e1f1](https://github.com/cellajs/cella/commit/0e0e1f1d3f9bb90bfb26353e95255bda5df798b3))
+* remove code nothing runs, and gate the export surface ([#1328](https://github.com/cellajs/cella/issues/1328)) ([1c21d65](https://github.com/cellajs/cella/commit/1c21d657d3cbc7bc7f381dbf046656e1b7e3b469))
+
 ## [0.17.0](https://github.com/cellajs/cella/compare/0.16.0...0.17.0) (2026-10-05)
 
 
