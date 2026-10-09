@@ -196,11 +196,11 @@ The REST API and the database work whatever the CDC worker does: a write commits
 
 Sync is a layer on an ordinary REST app, so losing the stream costs live updates and nothing else. Every read and write goes through the API with or without it, and a write updates the cache of the tab that made it from the row the API returns.
 
-While its stream is down, a client:
+A stream counts as down when it errors, when the server ends it, and when nothing arrived on it for 75 seconds: the server sends a `ping` event every 30, so a connection that is open and dead (a proxy, a lost path) is noticed. While its stream is down, a client:
 
 1. Stops trusting its synced queries. They get a five-minute stale time and refetch as stale queries do: a list when it is opened, everything on screen when the browser comes back online ([Freshness](#freshness)).
 2. Reconnects after 5 seconds, doubling to 30, with up to 2 seconds of jitter. Three failures in a row stop that for a minute; after it, the leader tab reconnects when it becomes visible and the API answers a health check.
-3. Runs catchup on the new connection, fetches what its cursors miss and trusts its queries again ([Catchup](#catchup)).
+3. Runs catchup on the new connection, fetches what its cursors miss and trusts its queries again ([Catchup](#catchup)). The leader tab passes the answer to its follower tabs, and each fetches its own gap.
 
 One fetch can fall back as well. A notified range whose fetch keeps failing is given up after three tries and its lists are invalidated, so the next read is a plain list request. A fetch that returns fewer rows than announced does the same, keeps the cursor where it was and puts synced queries on the stale time until a clean catchup.
 
@@ -214,17 +214,18 @@ A client that missed notifications while the books stayed right is repaired by i
 | --- | --- | --- | --- |
 | A client's stream is down (network, a proxy, three failed connections) | The app works as a REST app: own writes work, lists refetch when opened once five minutes old | Reconnect and catchup ([REST fallback](#rest-fallback)) | Nothing |
 | The worker is down, or reading again after a failure | Own writes work; other users' changes arrive late and in order | The worker reads on from the slot | Nothing |
-| The API restarts, or dies after taking a message from the worker | Streams drop and reconnect | The client's catchup compares its cursors with the frontiers and fetches the gap | Nothing durable. Mentions and push notifications of that moment |
+| The API restarts, or dies after taking a message from the worker | Streams drop and reconnect, at the latest after 75 seconds of silence | The client's catchup compares its cursors with the frontiers and fetches the gap, in every tab | Nothing durable. Mentions and push notifications of that moment |
 | A deploy overlap (`singleVM`) | Clients on the new API hear nothing until the slot moves | Their next notification or reconnect fetches the gap | Nothing |
 | A notification is lost inside the API while the stream stays open | That client lags until its next reconnect | The next catchup | Nothing durable |
 | The replication slot is gone or invalidated | Live updates stop until the worker restarts; then every client refetches once | A new slot and a rebuild; the generation moves | Activities and notifications of the rows changed while the slot was gone |
 | `channel_counters` is emptied (a truncate, a partial restore) | Every client refetches once | A rebuild from the tables | Nothing |
+| The daily check finds a counter wrong, or the worker restarts in the middle of a rebuild | Every client refetches once | A rebuild from the tables | Nothing |
 | One change can never be processed (a parse error, a transaction over 100,000 changes) | Live updates pause about a minute; then every client refetches once | After five reads the slot moves past the backlog and the books are rebuilt | Activities and notifications of that backlog |
 | The database is restored from a backup | As a lost slot | A new slot and a rebuild | Everything after the backup, as with any restore |
 
 ### Rebuilt books
 
-The counters, the sequence counter and the frontiers are the CDC worker's books. It checks them against the tables once a day and rebuilds them when the replication stream cannot bring them back: [CDC worker](../cdc/README.md#verify-and-rebuild). Whenever it corrected or rebuilt them it moves a generation on: a number that grows and is never below the clock in minutes, so a database restored from a backup cannot hand out one a client already holds. The catchup answer carries that generation. A client that holds another one puts its view cursors back at 0 (the stream cursor stays), takes the frontiers of that catchup as new baselines, refetches the lists on screen at once and, after a random delay of up to ten seconds, everything else it has cached of the synced types; member queries of every organization are invalidated as well. Open streams hear of it through the worker's health push: the API ends them with `resync`, and each leader tab reconnects after its backoff of a few seconds. The leader tells its follower tabs, which run no catchup: each puts its cursors back and refetches the same way.
+The counters, the sequence counter and the frontiers are the CDC worker's books. It checks them against the tables once a day, and rebuilds them when that check finds them wrong or when the replication stream cannot bring them back: [CDC worker](../cdc/README.md#verify-and-rebuild). Whenever it rebuilt them it moves a generation on: a number that grows and is never below the clock in minutes, so a database restored from a backup cannot hand out one a client already holds. The catchup answer carries that generation. A client that holds another one puts its view cursors back at 0 (the stream cursor stays), takes the frontiers of that catchup as new baselines, refetches the lists on screen at once and, after a random delay of up to ten seconds, everything else it has cached of the synced types; member queries of every organization are invalidated as well. Open streams hear of it through the worker's health push: the API ends them with `resync`, and each leader tab reconnects after its backoff of a few seconds. The leader passes every catchup answer to its follower tabs, so each puts its cursors back and refetches the same way.
 
 ### One API process
 
@@ -236,7 +237,7 @@ Old tabs and old queued writes survive a wire-shape deploy through lenses: [Sche
 
 ### Multiple tabs
 
-The first tab to acquire the Web Lock becomes leader, owns SSE, and forwards notifications and a new generation of the sync books through BroadcastChannel. A follower is promoted when the leader closes. All tabs can mutate. Each tab keeps its own paused-mutation queue.
+The first tab to acquire the Web Lock becomes leader, owns SSE and runs catchup. It forwards each notification and each catchup answer through BroadcastChannel, and a follower processes both against its own cursors and its own cache, so it fills the same gaps the leader does. A follower runs no catchup of its own; its paused writes are released as soon as it listens. A follower is promoted when the leader closes. All tabs can mutate. Each tab keeps its own paused-mutation queue.
 
 ### Yjs
 
@@ -252,7 +253,7 @@ An app that shows a description in place, a static view that turns into the edit
 
 ### SSE wire
 
-Events: `offset` (the server's newest activity id, once after connect: the signal to post the catchup), `change` (one `StreamNotification`), `error` (typed payload). The server ends a stream with `unauthorized` when the session behind it ended for good (sign-out, revoked from another session, evicted, expired, MFA turned on elsewhere, the account deleted, an impersonation that ended); the client then opens a 60-second circuit and reconnects after a visibility change that finds the API healthy (`forbidden` and `tenant_revoked` are reserved codes it treats the same way). `session_replaced` means the browser holds a newer session (a sign-in from the same browser, turning MFA on, stopping an impersonation), `access_changed` that the stream's system-admin reads changed, and `resync` that the server's sync books moved to another generation (a correction or a rebuild); the client reconnects on all three. The server checks every open stream's session again once a minute, which also catches endings on another instance.
+Events: `offset` (the server's newest activity id, once after connect: the signal to post the catchup), `change` (one `StreamNotification`), `ping` (empty, every 30 seconds: a client that hears nothing for 75 reconnects), `error` (typed payload). The server ends a stream with `unauthorized` when the session behind it ended for good (sign-out, revoked from another session, evicted, expired, MFA turned on elsewhere, the account deleted, an impersonation that ended); the client then opens a 60-second circuit and reconnects after a visibility change that finds the API healthy (`forbidden` and `tenant_revoked` are reserved codes it treats the same way). `session_replaced` means the browser holds a newer session (a sign-in from the same browser, turning MFA on, stopping an impersonation), `access_changed` that the stream's system-admin reads changed, and `resync` that the server's sync books moved to another generation (a correction or a rebuild); the client reconnects on all three. The server checks every open stream's session again once a minute, which also catches endings on another instance.
 
 ```typescript
 interface StreamNotification {

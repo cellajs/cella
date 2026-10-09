@@ -19,7 +19,7 @@ Child-side host FKs for product-to-product ownership (a nullable `<host>Id` colu
 `appConfig.productEmbeddings` with `lifecycle: 'owned'` (a child-side FK is invisible to sync
 views, CDC cleanup, propagation hints, counters, client cache patching). The template ships the
 machinery: the `lifecycle: 'shared' | 'owned'` discriminant (`shared/src/config-builder/types.ts`),
-the CDC owned-embedding GC (`cdc/src/utils/owned-embedding-gc.ts`, dispatched in
+the CDC owned-embedding GC (`cdc/src/embeddings/owned-embedding-gc.ts`, dispatched in
 `cdc/src/pipeline/process-events.ts`), `withAttachmentRef` (`shared/utils/blocknote-schema-configs`,
 see `20260723T1705-media-attachment-ref`), `shared/utils/derive-description-core`, and id-array
 patching in `frontend/src/query/realtime/propagation.ts`. An `owned` entry activates the GC.
