@@ -174,7 +174,10 @@ export function createTelemetry(opts: TelemetryOptions): Telemetry {
   };
 }
 
-/** OTLP endpoint and headers from the environment: explicit OTLP vars win, and an app-configured sink ingest key implies that sink's endpoint. */
+/**
+ * OTLP endpoint and headers from the environment: explicit OTLP vars win, and an app-configured sink ingest key implies that sink's endpoint.
+ * `OTEL_EXPORTER_OTLP_ENDPOINT` is the base URL the OTel SDKs read (`https://collector:4318`), so its signals live under `/v1`.
+ */
 export function otlpConfigFromEnv(env: NodeJS.ProcessEnv = process.env): { endpoint: string; headers: Record<string, string> } | undefined {
   const explicit = env.OTEL_EXPORTER_OTLP_ENDPOINT;
   if (explicit) {
@@ -183,7 +186,7 @@ export function otlpConfigFromEnv(env: NodeJS.ProcessEnv = process.env): { endpo
       const eq = pair.indexOf('=');
       if (eq > 0) headers[pair.slice(0, eq).trim()] = pair.slice(eq + 1).trim();
     }
-    return { endpoint: explicit.replace(/\/$/, ''), headers };
+    return { endpoint: `${explicit.replace(/\/$/, '')}/v1`, headers };
   }
   const sinkKey = env[telemetrySink.keyEnvVar];
   if (sinkKey) return { endpoint: telemetrySink.endpoint, headers: { [telemetrySink.keyHeader]: sinkKey } };
