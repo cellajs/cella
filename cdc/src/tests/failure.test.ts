@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RESOURCE_LIMITS } from '../constants';
 import { ApiUnreachableError, isPassingError, TransactionTooLargeError } from '../services/failure';
 import { replicationState } from '../services/replication-state';
@@ -90,5 +90,44 @@ describe('replicationState: the failure the worker reads again from', () => {
     }
 
     expect(waits).toEqual([...delaysMs, delaysMs.at(-1), delaysMs.at(-1)]);
+  });
+});
+
+describe('replicationState: since when the API is away', () => {
+  beforeEach(() => {
+    replicationState.reset();
+  });
+
+  it('must not keep the stamp when the API returns between two reads, while no subscription is open', () => {
+    replicationState.status = 'active';
+    replicationState.markApiAway();
+    expect(replicationState.status).toBe('paused');
+    expect(replicationState.replicationPausedAt).not.toBeNull();
+
+    // The flush that waited for the API failed, and the subscription ended: the worker waits before it reads again.
+    replicationState.markStopped();
+    replicationState.markApiBack();
+
+    // A stamp left here would turn health unhealthy five minutes later, with the API long back.
+    expect(replicationState.replicationPausedAt).toBeNull();
+    expect(replicationState.status).toBe('stopped');
+  });
+
+  it('reads on when the API returns during a subscription, and keeps the first moment of an outage', () => {
+    vi.useFakeTimers();
+    try {
+      replicationState.status = 'active';
+      replicationState.markApiAway();
+      const since = replicationState.replicationPausedAt;
+      vi.advanceTimersByTime(30_000);
+      replicationState.markApiAway();
+      expect(replicationState.replicationPausedAt).toBe(since);
+
+      replicationState.markApiBack();
+      expect(replicationState.status).toBe('active');
+      expect(replicationState.replicationPausedAt).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

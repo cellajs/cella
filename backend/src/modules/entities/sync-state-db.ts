@@ -18,12 +18,15 @@ export interface SyncFence {
   snapshot: string;
   /** Content of the logical message written right after the snapshot: the stream has passed the recount when it arrives. */
   marker: string;
+  /** WAL position of that message. A slot that has confirmed it is past the recount, also when the worker died before forgetting the fence. */
+  markerLsn?: string;
 }
 
 /**
- * The one row that says which generation of the books clients may trust. The CDC worker adds one whenever it corrected
- * or rebuilt them, and a client that holds another generation refetches. Also the worker's mailbox for a verify or a
- * rebuild on request, and where a rebuild keeps its fence across a restart.
+ * The one row that says which generation of the books clients may trust. The CDC worker moves it on whenever it
+ * corrected or rebuilt them, and a client that holds another generation refetches. A generation only tells two states
+ * of the books apart: it grows, never below the clock in minutes, and counts nothing. Also the worker's mailbox for a
+ * verify or a rebuild on request, and where a rebuild keeps its fence across a restart.
  */
 export const syncStateTable = snakeCase.table('sync_state', {
   id: varchar({ length: maxLength.field }).primaryKey().default('sync'),

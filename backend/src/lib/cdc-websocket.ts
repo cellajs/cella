@@ -90,6 +90,10 @@ export interface CdcWorkerHealth {
   generation?: number;
   /** Whether the worker keeps failing at one position because of the change there. */
   stuck?: boolean;
+  /** The failure the worker reads again from: its position, how often the change itself failed there, and the error. */
+  failure?: { position: string; count: number; error: string; passing: boolean } | null;
+  /** What the worker's setup check found wrong; while it is not empty the worker reads nothing. */
+  setupProblems?: string[];
   /** Whether the worker's database role effectively bypasses RLS on every RLS-enabled table (owner of never-forced tables, BYPASSRLS, or superuser); null until probed. */
   rlsBypass?: boolean | null;
   /** Whether the worker's database role may open a replication slot; null until probed. */

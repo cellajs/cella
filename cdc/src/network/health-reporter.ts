@@ -23,6 +23,8 @@ export function pushHealth(): void {
       lagMs: replicationState.lagMs,
       generation: replicationState.generation,
       stuck: replicationState.stuck,
+      failure: replicationState.failure,
+      setupProblems: replicationState.setupProblems,
       rlsBypass: role?.rlsBypass ?? null,
       roleReplication: role?.replication ?? null,
     },
