@@ -49,9 +49,9 @@ Three principles ([infra/README.md](../infra/README.md#core-philosophy)): **crea
 ```
 
 - **Load balancer:** the only public entrypoint. Backend, yjs, mcp and oauth share the app origin via registry-declared `pathPrefix` values (`/api`, `/yjs`, `/mcp`, `/oauth`). The LB never rewrites paths. `cdc` and `jobs` never take an LB route. The backend's internal listener (`internalPort`: the CDC socket and the Yjs relay's materialize route) is reached only through a private, ACL-guarded LB frontend that admits the private network; no public pool forwards to it. The API has no CORS middleware and serves browser requests from the app origin.
-- **VMs:** public IP for egress only (image pulls). All inbound is dropped, including SSH. Every service gets its own VM unless `singleVM` co-hosts the workers and the frontend Caddy container on the backend VM.
+- **VMs:** public IP for egress only (image pulls). All inbound is dropped, including SSH. Every service gets its own VM unless `singleVM` co-hosts the workers and the frontend Caddy container on the backend VM. One VM per service and generation: the API is never replicated ([Scaling](./ARCHITECTURE.md#scaling)).
 - **Frontend VM:** Caddy adds security headers/CSP and the SPA deep-link fallback.
-- **Database:** private-network only. A break-glass toggle can expose it temporarily ([Changing infrastructure](#changing-infrastructure)).
+- **Database:** private-network only. A break-glass toggle can expose it temporarily ([Changing infrastructure](#changing-infrastructure)). The infra turns on logical replication; set `max_slot_wal_keep_size` on the instance yourself (the template's compose uses `2GB`): it bounds the WAL a stopped CDC worker holds, and the worker warns while it is unlimited. A slot the limit invalidates ends in a rebuild of the sync books ([CDC worker](../cdc/README.md#verify-and-rebuild)).
 - **Buckets:** outside the VPC. Browsers read the public upload bucket directly and use presigned URLs for the private one.
 
 ## Deploy flow
@@ -126,7 +126,7 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 | Strategy | When | Behavior | Downtime |
 | --- | --- | --- | --- |
 | **start-first** | backend, frontend, yjs, mcp (LB-backed) | Pulumi provisions the pending generation (`vm-<svc>-<genId>`) next to the active one. [tasks/cutover.ts](../infra/tasks/cutover.ts) reconciles the live LB server list with idempotent `SetBackendServers` calls: expand to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, drain. It always issues the corrective call, so an empty or stale pool is repaired. A failed gate hands the pool back to `[old]` and leaves the follower pools on the old generation. | None (LB overlap). |
-| **stop-first** | cdc (holds one Postgres replication slot), jobs (the one cron scheduler) | Pulumi provisions only the new generation, replacing the old in the same `up`. The new worker takes the slot the old one releases on drain (lossless: the slot retains the WAL position). | Worker gap during replacement. |
+| **stop-first** | cdc (holds one Postgres replication slot), jobs (the one cron scheduler) | Pulumi provisions only the new generation, replacing the old in the same `up`. The new worker takes the slot the old one releases on drain (lossless: the slot retains the WAL position, within `max_slot_wal_keep_size`). | Worker gap during replacement. |
 | **singleton host** (`singleVM`) | the backend VM when it runs a stop-first worker in-process | start-first with LB overlap: the old VM serves until the new one passes its gate. PostgreSQL lets one session hold the replication slot and pg-boss claims each cron period once, so the new process's cdc and jobs wait until the old VM is gone; the rollout reaps it right after promotion, `--defer-reap` or not ([tasks/rollout-plans.ts](../infra/tasks/rollout-plans.ts) marks the plan `singletonHost`). | None for HTTP. Realtime events pause from cutover until the slot moves (the reap plus up to a minute); activities are still written. |
 
 ### Runtime secret delivery
@@ -303,7 +303,7 @@ cd /opt/app
 docker compose --profile backend run --rm backend-release
 ```
 
-Verify: `curl https://<your-app>/api/health?depth=full` reports every component `healthy`.
+Verify: `curl https://<your-app>/api/health?depth=full` reports every component `healthy`. A recreated or restored database has no replication slot: the CDC worker makes one, rebuilds its sync books and every connected client refetches (a `sync_incidents` row with reason `lost_slot`).
 
 - **Nothing but you stops this.** Scaleway's API deletes a live database with connected clients and an active replication slot. The typed `<database>@<instance>` confirmation is the only guard.
 - **Re-granting is mandatory, and the task owns it.** Deleting a database drops its Scaleway privileges. Neither a recreate nor a backup restore brings them back (`pg_dump` carries table ACLs, not database-level ones), so without it `CONNECT` is absent and the app reports `database_unreachable`.

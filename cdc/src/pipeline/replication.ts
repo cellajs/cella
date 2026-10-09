@@ -189,7 +189,7 @@ interface SubscriptionSteps {
 /**
  * The lost cases, handled between two subscriptions: the WAL cannot bring the books back, so they are rebuilt from the
  * tables and every client refetches. A slot that had to be made on a database with a history, counters that are gone
- * (an unlogged table is emptied by a crash or a failover), a change that failed every read, or a rebuild on request.
+ * (a truncate, a partial restore), a change that failed every read, or a rebuild on request.
  */
 export async function settleLostCases(slotCreated: boolean): Promise<void> {
   if (slotCreated && (await hasHistory())) return rebuildBooks('lost_slot');

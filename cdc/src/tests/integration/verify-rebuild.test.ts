@@ -201,7 +201,7 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
     await stopReading();
     // Committed, and still ahead in the stream: the next subscription delivers them.
     const unread = [await insertAttachment(), await insertAttachment()];
-    // What a crash or a failover does to an unlogged table.
+    // What a truncate or a partial restore does to the table.
     await cdcDb.execute(sql`TRUNCATE channel_counters`);
     const before = await generation();
 
