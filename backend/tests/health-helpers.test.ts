@@ -23,7 +23,6 @@ function worker(overrides: Record<string, unknown> = {}) {
     slotActive: true,
     lagBytes: 0,
     lastEventAt: new Date().toISOString(),
-    catchingUp: false,
     receivedAt: new Date().toISOString(),
     ageMs: 1000,
     ...overrides,
@@ -130,6 +129,33 @@ describe('mapCdcComponent', () => {
     const noReplication = mapCdcComponent(connectedSocket, worker({ rlsBypass: true, roleReplication: false }));
     expect(noReplication.status).toBe('unhealthy');
     expect(noReplication.reason).toContain('role_missing_replication');
+  });
+
+  it('is unhealthy when the worker is stuck at one change, and shows the failure', () => {
+    const failure = { position: '0/50', count: 5, error: 'null value in column "organization_id"', passing: false };
+    const c = mapCdcComponent(connectedSocket, worker({ replicationStatus: 'stopped', stuck: true, failure }));
+
+    // A deploy that ends on a stuck worker must fail its smoke step, not warn: nothing is read until the rebuild.
+    expect(c.status).toBe('unhealthy');
+    expect(c.reason).toContain('worker_stuck');
+    expect(c.details?.failure).toEqual(failure);
+  });
+
+  it('is unhealthy while the setup check keeps the worker from reading, and names what is wrong', () => {
+    const setupProblems = ["publication 'cdc_pub' lacks tracked tables: attachments"];
+    const c = mapCdcComponent(connectedSocket, worker({ replicationStatus: 'stopped', setupProblems }));
+
+    expect(c.status).toBe('unhealthy');
+    expect(c.reason).toContain('setup_problems');
+    expect(c.details?.setupProblems).toEqual(setupProblems);
+  });
+
+  it('only degrades while a failed flush is read again (positive control)', () => {
+    const failure = { position: '0/50', count: 1, error: 'refused', passing: false };
+    const c = mapCdcComponent(connectedSocket, worker({ replicationStatus: 'stopped', stuck: false, failure, setupProblems: [] }));
+
+    expect(c.status).toBe('degraded');
+    expect(c.reason).toBe('replication_stopped');
   });
 
   it('treats unprobed role flags (null) as unknown, not missing', () => {

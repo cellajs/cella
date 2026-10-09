@@ -9,6 +9,7 @@ const leaderLockName = 'tab-leader';
 
 type BroadcastMessage =
   | { type: 'stream-notification'; notification: AppStreamNotification; organizationId: string }
+  | { type: 'sync-generation'; generation: number }
   | { type: 'schema-version'; version: number };
 
 interface TabCoordinatorState {
@@ -32,6 +33,7 @@ export const tabCoordinatorStore = createStore<TabCoordinatorState>((set) => ({
 let broadcastChannel: BroadcastChannel | null = null;
 let lockController: AbortController | null = null;
 const notificationHandlers: Set<(notification: AppStreamNotification, organizationId: string) => void> = new Set();
+const generationHandlers: Set<(generation: number) => void> = new Set();
 let initPromise: Promise<void> | null = null;
 
 const isWebLocksAvailable = (): boolean => {
@@ -192,6 +194,23 @@ const handleBroadcastMessage = (event: MessageEvent<BroadcastMessage>): void => 
       handler(message.notification, message.organizationId);
     }
   }
+
+  if (message.type === 'sync-generation' && !store.isLeader) {
+    for (const handler of generationHandlers) handler(message.generation);
+  }
+};
+
+/** Called by the leader when its catchup brought another generation of the server's sync books: followers run no catchup. */
+export const broadcastSyncGeneration = (generation: number): void => {
+  broadcastChannel?.postMessage({ type: 'sync-generation', generation } satisfies BroadcastMessage);
+};
+
+/** Followers register here to hear of a generation the leader adopted. */
+export const onSyncGeneration = (handler: (generation: number) => void): (() => void) => {
+  generationHandlers.add(handler);
+  return () => {
+    generationHandlers.delete(handler);
+  };
 };
 
 /** Called by the leader for each SSE notification it receives. */

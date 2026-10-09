@@ -65,7 +65,7 @@ class Metrics {
     return bucket;
   }
 
-  /** Record one recorded and dispatched set of events (a flush, or one source transaction of it). */
+  /** Record one recorded and dispatched flush. */
   recordProcessing(eventCount: number, durationMs: number): void {
     const b = this.currentBucket();
     b.eventCount += eventCount;
@@ -78,7 +78,7 @@ class Metrics {
     const b = this.currentBucket();
     b.flushCount++;
     b.flushDurations.push(durationMs);
-    // eventCount is tracked per group in recordProcessing.
+    // eventCount is tracked in recordProcessing.
   }
 
   /** Snapshot for health endpoint. */

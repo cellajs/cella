@@ -68,6 +68,8 @@ describe.skipIf(!READY)("The worker's database sessions (integration)", () => {
       max: 1,
       sessionTimeouts: { lockMs: 10_000, statementMs: 60_000, idleInTransactionMs: 300 },
     });
+    // The server ends this session on purpose, which the checked-out client reports as an error event: the expected outcome here.
+    if ('idleCount' in hanging.$client) hanging.$client.on('connect', (client) => client.on('error', () => {}));
     const tenantId = nanoidTenant();
     await cdcDb.execute(sql`INSERT INTO tenants (id, name) VALUES (${tenantId}, 'lock-probe')`);
 

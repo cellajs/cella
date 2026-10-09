@@ -92,6 +92,8 @@ function batchPathKey({ activity, rowData }: BatchEvent): string {
  * Splits into one message per (path, entityType) group so each describes a single audience. Seqs come
  * from the shared org sequence, so a group's `seq..batchUntilSeq` range may interleave with other
  * groups: `count` and the per-row seqs in `batchRows` are authoritative, range arithmetic is not.
+ * A group of one row goes as a single-row message: its notification carries the row's `stx`, so the
+ * tab that wrote it recognizes its own write and fetches nothing.
  */
 export function sendBatchMessageToApi(events: BatchEvent[], traceContext: TraceContext): boolean {
   if (events.length === 0) return true;
@@ -106,7 +108,12 @@ export function sendBatchMessageToApi(events: BatchEvent[], traceContext: TraceC
 
   let sent = true;
   for (const group of groups.values()) {
-    if (!sendBatchGroupToApi(group, traceContext)) sent = false;
+    const [only] = group;
+    const taken =
+      group.length === 1
+        ? sendMessageToApi(only.activity, only.rowData, traceContext, only.seq, only.movedFrom)
+        : sendBatchGroupToApi(group, traceContext);
+    if (!taken) sent = false;
   }
   return sent;
 }

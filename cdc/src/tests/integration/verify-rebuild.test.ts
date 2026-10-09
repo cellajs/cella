@@ -188,20 +188,36 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
     const after = await counts();
     expect(after['e:c:attachment']).toBe(live);
     expect(after.sequence).toBe(highest);
-    // Clients are told: the next generation, and a record of what was wrong.
-    expect(await generation()).toBe(before + 1);
-    expect(await lastIncident()).toMatchObject({ kind: 'verify_corrected', reason: 'requested', generation: before + 1 });
+    // Clients are told: another generation, and a record of what was wrong.
+    const corrected = await generation();
+    expect(corrected).toBeGreaterThan(before);
+    expect(await lastIncident()).toMatchObject({ kind: 'verify_corrected', reason: 'requested', generation: corrected });
 
     // Positive control: right books again.
     expect(await verifyBooks('requested')).toEqual([]);
-    expect(await generation()).toBe(before + 1);
+    expect(await generation()).toBe(corrected);
+  }, 60_000);
+
+  it('must not hand out a generation again after a backup took the counter back', async () => {
+    const live = await liveAttachments();
+    // A client holds a generation from minutes ago; the restored database holds the small number of its backup.
+    const held = Math.floor(Date.now() / 60_000) - 5;
+    await cdcDb.update(syncStateTable).set({ generation: 3 }).where(eq(syncStateTable.id, 'sync'));
+    await cdcDb.execute(sql`
+      UPDATE channel_counters SET counts = counts || ${JSON.stringify({ 'e:c:attachment': live + 1 })}::jsonb WHERE channel_key = ${organizationId}
+    `);
+
+    await verifyBooks('requested');
+
+    // One more than the backup's would be 4, a number a client may hold from before: the clock keeps it past them all.
+    expect(await generation()).toBeGreaterThan(held);
   }, 60_000);
 
   it('rebuilds lost counters from the tables, and must not count a change twice that the count already saw', async () => {
     await stopReading();
     // Committed, and still ahead in the stream: the next subscription delivers them.
     const unread = [await insertAttachment(), await insertAttachment()];
-    // What a crash or a failover does to an unlogged table.
+    // What a truncate or a partial restore does to the table.
     await cdcDb.execute(sql`TRUNCATE channel_counters`);
     const before = await generation();
 
@@ -210,8 +226,8 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
     const live = await liveAttachments();
     expect((await counts())['e:c:attachment']).toBe(live);
     expect((await counts()).sequence).toBe(await highestSeq());
-    expect(await generation()).toBe(before + 1);
-    expect(await lastIncident()).toMatchObject({ kind: 'rebuild', reason: 'lost_counters' });
+    expect(await generation()).toBeGreaterThan(before);
+    expect(await lastIncident()).toMatchObject({ kind: 'rebuild', reason: 'lost_counters', generation: await generation() });
 
     await readAgain();
     await recorded(unread);
@@ -264,6 +280,30 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
     expect(fence.mode).toBe('rebuild');
     await readAgain();
     await waitFor(() => fence.mode === null, 20_000, 'the stream passed the rebuild');
+  }, 60_000);
+
+  it('must not wait for a marker the slot has confirmed: a worker that died before forgetting its fence forgets it at its start', async () => {
+    await stopReading();
+    await rebuildBooks('requested');
+    const [{ fence: kept }] = await cdcDb.select().from(syncStateTable).where(eq(syncStateTable.id, 'sync'));
+    await readAgain();
+    await waitFor(() => fence.mode === null, 20_000, 'the stream passed the rebuild');
+    const slotPast = async () =>
+      (
+        await cdcDb.execute(
+          sql`SELECT confirmed_flush_lsn >= ${kept?.markerLsn}::pg_lsn AS past FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
+        )
+      ).rows[0]?.past === true;
+    await waitFor(slotPast, 20_000, 'the slot confirmed the marker');
+
+    // The process ended between acknowledging the marker and forgetting the fence: the marker never arrives again.
+    await cdcDb.update(syncStateTable).set({ fence: kept }).where(eq(syncStateTable.id, 'sync'));
+    await restoreBooksState();
+
+    expect(fence.mode).toBeNull();
+    expect((await cdcDb.select().from(syncStateTable).where(eq(syncStateTable.id, 'sync')))[0].fence).toBeNull();
+    // A fence left open would keep every verify from running.
+    expect(await verifyBooks('requested')).toEqual([]);
   }, 60_000);
 
   describe('the lost cases, between two subscriptions', () => {
@@ -324,6 +364,76 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
 
       expect(await incidentsSince(since)).toEqual(['rebuild:stuck']);
       expect(replicationState.failure).toBeNull();
+      await readAgain();
+      await waitFor(() => fence.mode === null, 20_000, 'the stream passed the rebuild');
+    }, 60_000);
+
+    const syncState = async () => (await cdcDb.select().from(syncStateTable).where(eq(syncStateTable.id, 'sync')))[0];
+    /** Runs `fn` while no incident can be written, as a worker that dies before its rebuild commits. */
+    const withoutIncidents = async (fn: () => Promise<void>) => {
+      await cdcDb.execute(sql`ALTER TABLE sync_incidents RENAME TO sync_incidents_away`);
+      try {
+        await fn();
+      } finally {
+        await cdcDb.execute(sql`ALTER TABLE sync_incidents_away RENAME TO sync_incidents`);
+      }
+    };
+
+    it('must not replace the books without their incident and their generation: a rebuild is one transaction', async () => {
+      await stopReading();
+      const before = await generation();
+      const since = await dbNow();
+      // A count no table gives, so a rebuild that committed would show.
+      await cdcDb.execute(sql`
+        UPDATE channel_counters SET counts = counts || ${JSON.stringify({ 'e:c:attachment': 9999 })}::jsonb WHERE channel_key = ${organizationId}
+      `);
+
+      await withoutIncidents(() => expect(rebuildBooks('requested')).rejects.toThrow());
+
+      expect((await counts())['e:c:attachment']).toBe(9999);
+      expect(await generation()).toBe(before);
+      expect((await syncState()).fence).toBeNull();
+      expect(fence.mode).toBeNull();
+
+      // Positive control: the same rebuild with its incident.
+      await rebuildBooks('requested');
+      expect((await counts())['e:c:attachment']).toBe(await liveAttachments());
+      expect(await generation()).toBeGreaterThan(before);
+      expect(await incidentsSince(since)).toEqual(['rebuild:requested']);
+    }, 60_000);
+
+    it('rebuilds at its next start when the worker died after giving up a backlog', async () => {
+      const backlog = [await insertAttachment(), await insertAttachment()];
+
+      // The slot moves, and the rebuild that should follow does not commit.
+      await withoutIncidents(() => expect(rebuildBooks('stuck', { position: '0/AB', error: 'refused' })).rejects.toThrow());
+      expect((await syncState()).requested).toBe('rebuild');
+
+      // The next start knows nothing of the failure: only the request says a rebuild is owed.
+      replicationState.clearFailure();
+      const since = await dbNow();
+      await settleLostCases(false);
+
+      expect(await incidentsSince(since)).toEqual(['rebuild:requested']);
+      expect((await syncState()).requested).toBeNull();
+      expect((await counts())['e:c:attachment']).toBe(await liveAttachments());
+      expect(await recordedFor(backlog)).toBe(0);
+    }, 60_000);
+
+    it('answers a request with the rebuild a lost case starts: one rebuild, not two', async () => {
+      await cdcDb.update(syncStateTable).set({ requested: 'rebuild' }).where(eq(syncStateTable.id, 'sync'));
+      replicationState.rebuildRequested = true;
+      await cdcDb.execute(sql`TRUNCATE channel_counters`);
+      const since = await dbNow();
+
+      await settleLostCases(false);
+      // The subscription after it.
+      await settleLostCases(false);
+
+      expect(await incidentsSince(since)).toEqual(['rebuild:lost_counters']);
+      expect((await syncState()).requested).toBeNull();
+      expect(replicationState.rebuildRequested).toBe(false);
+
       await readAgain();
       await waitFor(() => fence.mode === null, 20_000, 'the stream passed the rebuild');
     }, 60_000);

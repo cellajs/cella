@@ -10,7 +10,7 @@ import { replicationState } from '../services/replication-state';
 import { checkReplicationSetup } from '../services/setup-check';
 import { acknowledgeIdlePosition, handleDataMessage, resetBuffers } from './handle-message';
 import { isStalePublicationError } from './replication-errors';
-import { clearRebuildRequest, countersAreLost, hasHistory, rebuildAllowed, rebuildBooks } from './verify';
+import { countersAreLost, hasHistory, rebuildAllowed, rebuildBooks, rebuildIsRequested } from './verify';
 
 const { reconnection, runtime, slotTakeover } = RESOURCE_LIMITS;
 
@@ -168,11 +168,11 @@ export function setupBackpressure(): void {
   wsClient.setCallbacks({
     onConnect: () => {
       log.info('API reachable: the worker reads on');
-      if (replicationState.status === 'paused') replicationState.markActive();
+      replicationState.markApiBack();
     },
     onDisconnect: () => {
       if (!wsClient.inGracePeriod()) log.warn('API away: flushes wait and the WAL keeps the changes');
-      if (replicationState.status === 'active') replicationState.markPaused();
+      replicationState.markApiAway();
     },
   });
 }
@@ -189,7 +189,7 @@ interface SubscriptionSteps {
 /**
  * The lost cases, handled between two subscriptions: the WAL cannot bring the books back, so they are rebuilt from the
  * tables and every client refetches. A slot that had to be made on a database with a history, counters that are gone
- * (an unlogged table is emptied by a crash or a failover), a change that failed every read, or a rebuild on request.
+ * (a truncate, a partial restore), a change that failed every read, or a rebuild on request.
  */
 export async function settleLostCases(slotCreated: boolean): Promise<void> {
   if (slotCreated && (await hasHistory())) return rebuildBooks('lost_slot');
@@ -198,10 +198,9 @@ export async function settleLostCases(slotCreated: boolean): Promise<void> {
   const { failure, stuck } = replicationState;
   if (stuck && failure && rebuildAllowed()) return rebuildBooks('stuck', { position: failure.position, error: failure.error });
 
-  if (replicationState.rebuildRequested) {
-    await rebuildBooks('requested');
-    await clearRebuildRequest();
-  }
+  // Read from the database, not from memory: a rebuild above answers a request too, and a worker that died after
+  // giving up a backlog finds its own request here at its next start.
+  if (await rebuildIsRequested()) return rebuildBooks('requested');
 }
 
 /**

@@ -12,7 +12,7 @@ Use when a live-sync symptom needs runtime evidence ("create doesn't show up in 
 
 ## Preconditions
 
-- Dev stack running in the checkout under test. The driver reads that checkout's URL and cookie name, and a linked git worktree runs on ports of its own (launch rules: the `verify` skill). If starting it yourself, capture stdout (pino writes no file; backend errors are there): `pnpm dev > <scratch>/dev-stack.log 2>&1` (background). The log must show `CDC WebSocket connected`.
+- Dev stack running in the checkout under test. The driver reads that checkout's URL and cookie name, and a linked git worktree runs on ports of its own (launch rules: the `verify` skill). If starting it yourself, capture stdout (pino writes no file; backend errors are there): `pnpm dev > <scratch>/dev-stack.log 2>&1` (background). The log must show `CDC WebSocket connected`, and the worker's `/health?depth=full` (port `devPorts.cdcHealth`) must show `replication.status: "active"` with empty `setupProblems` and a null `failure`.
 - The description experiment needs the relay (`appConfig.services.yjs.enabled`, on by default).
 - Postgres probes: `psql <DATABASE_ADMIN_URL from backend/.env>` (e.g. a row's `seq`, `deleted_at` or `description` after an action).
 - Never act in the org a human is testing in (watch the request log for their active org); pick another seeded org.
@@ -59,7 +59,7 @@ A relay change in a worktree runs beside the main stack, with no stack of its ow
 | `[CacheOps] Delta fetch: … patched N entities (seqCursor=a,b)` + network `GET …?seqCursor=a,b` | prioritizer flushed and fetched |
 | delta response `items` (id, name, `deletedAt`, seq) | payload truth; soft-delete tombstones DO ride the delta (backend drops the `deletedAt` filter under `seqCursor`) |
 
-Decision rule: **no console notification line** → SSE/leader/broadcast layer; **notification but no fetch** → fetch prioritizer/cursor (check the org and view seqs in `syncStore`, `frontend/src/query/realtime/sync-store.ts`); **fetch contains the row but UI unchanged** → cache-patch layer (`fetchRangeAndPatch` in `frontend/src/query/realtime/cache-ops.ts`).
+Decision rule: **no console notification line and the worker's health shows `setupProblems` or a `failure`** → the worker (read its log), not the client; **no console notification line otherwise** → SSE/leader/broadcast layer; **notification but no fetch** → fetch prioritizer/cursor (check the org and view seqs in `syncStore`, `frontend/src/query/realtime/sync-store.ts`); **fetch contains the row but UI unchanged** → cache-patch layer (`fetchRangeAndPatch` in `frontend/src/query/realtime/cache-ops.ts`).
 
 Leader semantics: the first tab takes the Web Lock and owns the SSE connection, the others listen to its broadcasts; both process notifications independently. `Became leader, reconnecting...` follows whenever a tab gains leadership with no open stream: at startup, or when the leader tab closed. A tab on the org route is in the viewing tier (`viewing=true`, fetches at once); hidden tabs get ~1s timer throttling from chromium, so use generous assert windows.
 

@@ -18,12 +18,15 @@ export interface SyncFence {
   snapshot: string;
   /** Content of the logical message written right after the snapshot: the stream has passed the recount when it arrives. */
   marker: string;
+  /** WAL position of that message. A slot that has confirmed it is past the recount, also when the worker died before forgetting the fence. */
+  markerLsn?: string;
 }
 
 /**
- * The one row that says which generation of the books clients may trust. The CDC worker adds one whenever it corrected
- * or rebuilt them, and a client that holds another generation refetches. Also the worker's mailbox for a verify or a
- * rebuild on request, and where a rebuild keeps its fence across a restart.
+ * The one row that says which generation of the books clients may trust. The CDC worker moves it on whenever it
+ * corrected or rebuilt them, and a client that holds another generation refetches. A generation only tells two states
+ * of the books apart: it grows, never below the clock in minutes, and counts nothing. Also the worker's mailbox for a
+ * verify or a rebuild on request, and where a rebuild keeps its fence across a restart.
  */
 export const syncStateTable = snakeCase.table('sync_state', {
   id: varchar({ length: maxLength.field }).primaryKey().default('sync'),
@@ -41,7 +44,7 @@ export const syncIncidentsTable = snakeCase.table('sync_incidents', {
   createdAt: timestamp({ mode: 'string' }).notNull().defaultNow(),
   /** `verify_corrected`: a verify found differences. `rebuild`: the books were replaced by a count from the tables. */
   kind: varchar({ enum: ['verify_corrected', 'rebuild'] }).notNull(),
-  /** `lost_slot`: the replication slot was gone. `lost_counters`: the unlogged counters were emptied. `stuck`: a change failed every read. */
+  /** `lost_slot`: the replication slot was gone. `lost_counters`: `channel_counters` was empty. `stuck`: a change failed every read. */
   reason: varchar({ enum: ['scheduled', 'requested', 'lost_slot', 'lost_counters', 'stuck'] }).notNull(),
   /** WAL positions the worker gave up between, for a rebuild that skipped a backlog. */
   positionFrom: varchar({ length: maxLength.field }),

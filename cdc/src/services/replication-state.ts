@@ -85,13 +85,19 @@ class ReplicationStateManager {
     return this._replicationPausedAt;
   }
 
-  /** The API is reachable. */
-  markActive(): void {
-    this._replicationState = 'active';
+  /** The API is reachable again, whatever the subscription is doing: between two reads the status is `stopped`. */
+  markApiBack(): void {
     this._replicationPausedAt = null;
+    if (this._replicationState === 'paused') this._replicationState = 'active';
   }
 
-  /** The API is away: flushes wait for it. */
+  /** The API went away: flushes wait for it. A subscription that is reading shows as `paused`. */
+  markApiAway(): void {
+    this._replicationPausedAt ??= new Date();
+    if (this._replicationState === 'active') this._replicationState = 'paused';
+  }
+
+  /** A new subscription waits for the API before it takes the slot. */
   markPaused(): void {
     this._replicationState = 'paused';
     this._replicationPausedAt ??= new Date();

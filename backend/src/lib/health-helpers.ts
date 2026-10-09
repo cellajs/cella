@@ -118,9 +118,14 @@ export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerRepo
     status = worstStatus(status, 'degraded');
     reasons.push('slot_inactive');
   }
+  // Stuck takes five failures at one position that the change itself caused, and a failed setup check lasts until someone repairs the publication: live sync is down, not slow.
   if (worker?.stuck) {
-    status = worstStatus(status, 'degraded');
+    status = worstStatus(status, 'unhealthy');
     reasons.push('worker_stuck');
+  }
+  if (worker?.setupProblems?.length) {
+    status = worstStatus(status, 'unhealthy');
+    reasons.push('setup_problems');
   }
   if (lagBytes !== null && lagBytes > CDC_LAG_BYTES_DEGRADED) {
     status = worstStatus(status, 'degraded');
@@ -150,6 +155,8 @@ export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerRepo
       lastEventAt: worker?.lastEventAt ?? null,
       lagMs: worker?.lagMs ?? null,
       stuck: worker?.stuck ?? null,
+      failure: worker?.failure ?? null,
+      setupProblems: worker?.setupProblems ?? [],
       rlsBypass: worker?.rlsBypass ?? null,
       roleReplication: worker?.roleReplication ?? null,
       messages: socket.messagesReceived,

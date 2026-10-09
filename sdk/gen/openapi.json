@@ -5467,8 +5467,8 @@
                 "properties": {
                   "cursor": {
                     "type": "string",
-                    "description": "Last activity cursor received by the client (LSN-based). Omit on first sync.",
-                    "example": "0-16B3748"
+                    "description": "Id of the last activity the client received (its commit position and index). Omit on first sync.",
+                    "example": "00000000-016B3748-00000001"
                   },
                   "views": {
                     "type": "array",
@@ -5612,14 +5612,14 @@
                             "additionalProperties": {
                               "type": "integer"
                             },
-                            "description": "Per-entityType newest sequence position over the view prefixes (subtree: f:{type}; self: fs:{type})"
+                            "description": "Per-entityType newest sequence position over the view prefixes (subtree: e:f:{type}; self: e:f:h:{type})"
                           },
                           "counts": {
                             "type": "object",
                             "additionalProperties": {
                               "type": "integer"
                             },
-                            "description": "Per-entityType live row counts summed over the view prefixes (subtree: e:{type}; self: es:{type})"
+                            "description": "Per-entityType live row counts summed over the view prefixes (subtree: e:c:{type}; self: e:c:h:{type})"
                           }
                         },
                         "required": ["key", "status"]
@@ -11714,7 +11714,7 @@
         "operationId": "getAttachment",
         "tags": ["attachments", "cella", "product"],
         "summary": "Get attachment",
-        "description": "Returns a single attachment by ID. Served from the CDC-invalidated entity detail cache.",
+        "description": "Returns a single attachment by ID. Served from the entity detail cache, which every write to the row drops.",
         "x-tool": {
           "description": "Read one attachment: its metadata and the description as text.",
           "approvalRequired": false,
