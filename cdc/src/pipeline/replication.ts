@@ -40,7 +40,11 @@ export function createReplicationService(): LogicalReplicationService {
 
   // The handler's promise is returned: with flow control on, the service reads the next message only once it resolved,
   // so a worker that is behind holds the stream where it is.
-  service.on('data', (lsn: string, message: unknown) => handleDataMessage(lsn, message as Pgoutput.Message));
+  // A service that was replaced can still hold queued messages. They belong to a stream that is read again, so they
+  // are left alone.
+  service.on('data', (lsn: string, message: unknown) =>
+    replicationState.service === service ? handleDataMessage(lsn, message as Pgoutput.Message) : undefined,
+  );
 
   service.on('error', (error: Error) => {
     log.error('CDC replication error', { err: error });
@@ -167,13 +171,14 @@ export async function subscribeWithReconnect(
   // Fast retries during a rolling-deploy slot handoff, then the normal cadence under sustained contention.
   let attempt = 0;
   while (true) {
+    let service: LogicalReplicationService | null = null;
     try {
       // Every attempt: dropping a database removes its slots, and no slot can be created while it is
       // unreachable. One catalog SELECT per attempt, and a no-op when another worker holds the slot.
       await ensureReplicationSlot();
 
       resetBuffers();
-      const service = createService();
+      service = createService();
       replicationState.service = service;
 
       log.info('Subscribing to replication slot...');
@@ -187,6 +192,8 @@ export async function subscribeWithReconnect(
         await new Promise((resolve) => setTimeout(resolve, reconnection.retryDelayMs));
       }
     } catch (error) {
+      // The stream of this attempt is over, but its service can still hold a connection and queued messages.
+      await service?.stop().catch(() => {});
       attempt += 1;
       const inHandoffWindow = attempt <= slotTakeover.maxAttempts;
       const retryDelayMs = inHandoffWindow ? slotTakeover.retryDelayMs : reconnection.retryDelayMs;

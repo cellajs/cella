@@ -42,6 +42,9 @@ function groupBy<T>(items: T[], keyOf: (item: T) => string): Map<string, T[]> {
 /** Rows per activity insert: a row binds about twenty parameters, and one statement takes 65,535 at most. */
 const ACTIVITY_CHUNK_SIZE = 1000;
 
+/** Row ids per read of the seq a redelivered event's row already holds: one parameter each. */
+const READ_BACK_CHUNK_SIZE = 5000;
+
 function prepareEvent(event: PendingEvent): PreparedEvent {
   const { lsn, ordinal, result } = event;
   const activityWithId = { ...result.activity, id: generateActivityId(lsn, ordinal) };
@@ -74,12 +77,16 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
 
     const replayed = prepared.filter((item) => !insertedIds.has(item.activityWithId.id) && isStampedEvent(item));
     for (const [tableName, items] of groupBy(replayed, (item) => item.event.result.activity.tableName)) {
-      const idList = sql.join(
-        items.map((item) => sql`${item.rowData.id}::uuid`),
-        sql`, `,
-      );
-      const stored = await tx.execute<{ id: string; seq: string }>(sql`SELECT id, seq FROM ${sql.identifier(tableName)} WHERE id IN (${idList})`);
-      const seqById = new Map(stored.rows.map((row) => [row.id, Number(row.seq)]));
+      const seqById = new Map<string, number>();
+      const ids = [...new Set(items.map((item) => item.rowData.id))];
+      for (let offset = 0; offset < ids.length; offset += READ_BACK_CHUNK_SIZE) {
+        const idList = sql.join(
+          ids.slice(offset, offset + READ_BACK_CHUNK_SIZE).map((id) => sql`${id}::uuid`),
+          sql`, `,
+        );
+        const stored = await tx.execute<{ id: string; seq: string }>(sql`SELECT id, seq FROM ${sql.identifier(tableName)} WHERE id IN (${idList})`);
+        for (const row of stored.rows) seqById.set(row.id, Number(row.seq));
+      }
       for (const item of items) item.rowData.seq = seqById.get(item.rowData.id) ?? item.rowData.seq;
     }
   });

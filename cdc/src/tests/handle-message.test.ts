@@ -79,7 +79,7 @@ describe('handleDataMessage: a message the parser drops', () => {
   });
 
   it('acknowledges it at once when nothing earlier is buffered, for heartbeat replies', async () => {
-    const acknowledge = vi.fn(async () => {});
+    const acknowledge = vi.fn(async () => true);
     replicationState.service = { acknowledge } as unknown as typeof replicationState.service;
 
     mocked.mockReturnValueOnce(null);
@@ -90,7 +90,7 @@ describe('handleDataMessage: a message the parser drops', () => {
   });
 
   it('leaves it unacknowledged while an earlier event waits for its flush', async () => {
-    const acknowledge = vi.fn(async () => {});
+    const acknowledge = vi.fn(async () => true);
     replicationState.service = { acknowledge } as unknown as typeof replicationState.service;
 
     // An event outside a transaction goes straight to the flush buffer, where it waits for the window to end.

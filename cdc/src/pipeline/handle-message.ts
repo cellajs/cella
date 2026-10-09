@@ -18,9 +18,12 @@ function isDmlMessage(msg: Pgoutput.Message): msg is DmlMessage {
   return msg.tag === 'insert' || msg.tag === 'update' || msg.tag === 'delete';
 }
 
-/** Sends the standby status update and records it, so heartbeats can repeat the last flushed position. */
+/**
+ * Sends the standby status update and records it, so heartbeats can repeat the last flushed position. A service that
+ * has stopped sends nothing, and then nothing is recorded: the position is still unconfirmed.
+ */
 async function sendAck(lsn: string): Promise<void> {
-  await replicationState.service?.acknowledge(lsn);
+  if (!(await replicationState.service?.acknowledge(lsn))) return;
   replicationState.lastAckedLsn = lsn;
   replicationState.heldAckLsn = null;
 }
@@ -76,7 +79,16 @@ export async function acknowledgeIdlePosition(): Promise<boolean> {
   return true;
 }
 
-flushBuffer.onDrained = () => void acknowledgeIdlePosition();
+/**
+ * Runs the idle check once the current turn is over. The replication client parses a whole socket read at once and
+ * queues its data messages, so right after one handler returns the next messages can still wait in that queue while
+ * the worker looks idle. They all reach their handlers before a callback of the check phase runs.
+ */
+const scheduleIdleCheck = (): void => {
+  setImmediate(() => void acknowledgeIdlePosition());
+};
+
+flushBuffer.onDrained = scheduleIdleCheck;
 
 /**
  * Sends the acknowledgment withheld while the WebSocket was down. Without it the slot stays pinned
@@ -103,7 +115,7 @@ export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Pro
     await applyDataMessage(lsn, msg);
   } finally {
     inFlightMessages -= 1;
-    if (inFlightMessages === 0) void acknowledgeIdlePosition();
+    if (inFlightMessages === 0) scheduleIdleCheck();
   }
 }
 
@@ -162,10 +174,14 @@ export async function drainBuffers(): Promise<void> {
   await flushBuffer.drain();
 }
 
-/** Before every subscription: what was buffered is delivered again from the slot's confirmed position. */
+/**
+ * Before every subscription: what was buffered is delivered again from the slot's confirmed position. The keepalive
+ * position goes too: it belongs to the stream that ended, and can lie past what that stream never recorded.
+ */
 export function resetBuffers(): void {
   txBuffer.reset();
   flushBuffer.reset();
+  replicationState.lastKeepaliveLsn = null;
   lastChange.lsn = '';
   lastChange.ordinal = 0;
 }

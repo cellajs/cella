@@ -27,6 +27,7 @@ function makeService(failures: number): LogicalReplicationService {
       if (calls <= failures) return Promise.reject(Object.assign(new Error('replication slot "cdc_slot" does not exist'), { code: '42704' }));
       return new Promise(() => {}); // never resolves: subscribed and streaming
     }),
+    stop: vi.fn(async () => {}),
   } as unknown as LogicalReplicationService;
 }
 
@@ -40,6 +41,16 @@ describe('subscribeWithReconnect: replication slot lifecycle', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it('stops the service of an attempt that failed before the next one starts', async () => {
+    execute.mockResolvedValue({ rows: [{ exists: 1 }] });
+    const service = makeService(1);
+    void subscribeWithReconnect(plugin, () => service);
+    await vi.advanceTimersByTimeAsync(slotTakeover.retryDelayMs + 10);
+
+    expect(service.stop).toHaveBeenCalledTimes(1);
+    expect(service.subscribe).toHaveBeenCalledTimes(2);
   });
 
   it('re-ensures the slot before every subscribe attempt', async () => {
@@ -105,6 +116,7 @@ function makeStaleService(failures: number): LogicalReplicationService {
       if (calls <= failures) return Promise.reject(Object.assign(new Error('publication "cdc_pub" does not exist'), { code: '42704' }));
       return new Promise(() => {}); // never resolves: subscribed and streaming
     }),
+    stop: vi.fn(async () => {}),
   } as unknown as LogicalReplicationService;
 }
 
