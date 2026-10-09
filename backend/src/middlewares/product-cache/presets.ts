@@ -10,7 +10,8 @@ import { productCache as productCacheStore } from './app-product-cache';
 
 /**
  * Detail cache keyed by `entityType:{id}` from the request path, with no cache token. A hit re-authorizes the caller
- * against the cached row; a miss runs the handler once (coalesced) and caches it. CDC invalidates by entity id.
+ * against the cached row; a miss runs the handler once (coalesced) and caches it. A write in this process drops the
+ * row's entry itself (through the mutation bus), and CDC invalidates by entity id for every other writer.
  */
 export const productCache = (entityType: ProductEntityType): MiddlewareHandler<Env> =>
   xMiddleware(
@@ -48,9 +49,10 @@ export const productCache = (entityType: ProductEntityType): MiddlewareHandler<E
 
       ctx.header('X-Cache', 'MISS');
       await coalesce(key, async () => {
+        const readStartedAt = performance.now();
         await next();
         const entityData = ctx.get('productCacheData');
-        if (entityData) productCacheStore.set(key, entityData);
+        if (entityData) productCacheStore.set(key, entityData, readStartedAt);
       });
       return;
     },

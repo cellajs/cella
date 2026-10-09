@@ -103,6 +103,8 @@ async function acknowledgeSkipped(lsn: string): Promise<void> {
 
 /** Buffers events between BEGIN and COMMIT, suppressing child deletes cascaded from a channel delete. */
 export async function handleDataMessage(lsn: string, msg: Pgoutput.Message): Promise<void> {
+  // After a failure this subscription is over: what the service still delivers is read again by the next one.
+  if (replicationState.flushFailed) return;
   inFlightMessages += 1;
   try {
     await applyDataMessage(lsn, msg);

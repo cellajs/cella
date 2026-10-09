@@ -6,6 +6,14 @@ export class ApiUnreachableError extends Error {
   }
 }
 
+/** A source transaction holds more changes than the worker buffers. Reading it again cannot help: the change is the cause. */
+export class TransactionTooLargeError extends Error {
+  constructor(events: number, xid: number | null) {
+    super(`Transaction ${xid ?? ''} holds more than ${events} changes: the worker buffers a transaction whole and stops here`);
+    this.name = 'TransactionTooLargeError';
+  }
+}
+
 /** SQLSTATE classes and codes of a server that is busy, restarting or out of reach, and of a lock or a snapshot lost to another session. */
 const passingSqlstates = ['08', '53', '57P', '57014', '40001', '40P01', '55P03', '25P03'];
 

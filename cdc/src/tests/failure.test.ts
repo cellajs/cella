@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { RESOURCE_LIMITS } from '../constants';
-import { ApiUnreachableError, isPassingError } from '../services/failure';
+import { ApiUnreachableError, isPassingError, TransactionTooLargeError } from '../services/failure';
 import { replicationState } from '../services/replication-state';
 
 const { delaysMs, stuckAfter } = RESOURCE_LIMITS.reread;
@@ -35,6 +35,7 @@ describe('isPassingError', () => {
     // A message that merely mentions a timeout is no connection trouble: the code decides.
     ['a refusal whose message mentions a timeout', pgError('23514', 'check "timeout_positive" violated')],
     ['a worker error whose message mentions a timeout', new Error('row has no timeout column')],
+    ['a transaction too large to hold', new TransactionTooLargeError(100_000, 7)],
   ])('counts %s against the change', (_label, error) => {
     expect(isPassingError(error)).toBe(false);
   });

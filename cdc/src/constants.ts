@@ -60,6 +60,12 @@ export const RESOURCE_LIMITS = {
     flushBatchSize: 100,
     /** One flush, and so one database transaction, takes whole source transactions up to this many events; a larger source transaction goes alone. */
     flushMaxEvents: 2000,
+    /**
+     * The largest source transaction the worker holds: it buffers a transaction whole until its commit, at about 2 KB
+     * an event (measured: 225 MB for 100,000 attachment rows). A larger one fails where it passes this, like any change
+     * the worker cannot process, and ends in a rebuild.
+     */
+    maxTransactionEvents: 100_000,
   },
 
   // WAL lag thresholds for backpressure
