@@ -54,9 +54,9 @@ export interface RateLimiterOpts {
   /** Tenant budget clamped to the static `limits.points` ceiling; 0 means no tenant limit and uses that ceiling. */
   getPointsBudget?: (ctx: Context<Env>) => number;
   /**
-   * For an hourly `limit` on a route called too often to pay a database transaction per request: requests count in
-   * process while the key is under 80% of its budget and reach the database past that. A limiter with a tenant budget
-   * counts this way too.
+   * For a `limit` of at most an hour on a route called too often to pay a database transaction per request: requests
+   * count in process while the key is under 80% of its budget and reach the database past that. A limiter with a
+   * tenant budget counts this way too.
    */
   countsInProcess?: boolean;
 }

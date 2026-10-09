@@ -126,26 +126,28 @@ describe('brute-force budgets', async () => {
     expect(other.response.status).toBe(200);
   });
 
-  it('must not resume looking up addresses via check-email when the window ends inside the block', async () => {
+  it('must not resume looking up addresses via check-email inside the hour, when a block shorter than it would end', async () => {
     const ip = randomIp();
     const known = await createTestUser(`blocked-${nanoid(6)}@security-test.com`.toLowerCase());
     const lookup = async () => (await call(checkEmail, { body: { email: known.email }, headers: fromIp(ip) })).response.status;
     const minutes = (count: number) => count * 60 * 1000;
 
-    // Only the clock moves: 30 lookups an hour, then a 30-minute block from the lookup past the budget.
+    // Only the clock moves: 30 lookups an hour, and the lookup past the budget starts no block that ends before the hour.
     vi.useFakeTimers({ toFake: ['Date'] });
     try {
       const start = Date.now();
       for (let attempt = 0; attempt < 30; attempt++) expect(await lookup()).toBe(200);
 
-      // Past the budget late in the window: the block runs from here, beyond the window's end.
-      vi.setSystemTime(start + minutes(50));
+      vi.setSystemTime(start + minutes(1));
       expect(await lookup()).toBe(429);
-      vi.setSystemTime(start + minutes(65));
+      // A 30-minute block from that lookup would have ended here, with a second budget of 30 for the same hour.
+      vi.setSystemTime(start + minutes(35));
+      expect(await lookup()).toBe(429);
+      vi.setSystemTime(start + minutes(59));
       expect(await lookup()).toBe(429);
 
-      // Lookups resume once the block ends (positive control).
-      vi.setSystemTime(start + minutes(81));
+      // Lookups resume with the next hour (positive control).
+      vi.setSystemTime(start + minutes(61));
       expect(await lookup()).toBe(200);
     } finally {
       vi.useRealTimers();

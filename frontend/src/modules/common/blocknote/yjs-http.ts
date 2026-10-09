@@ -25,7 +25,7 @@ const HTTP_PUSH_MAX_WAIT_MS = 2_000;
 export const HTTP_CHUNK_BYTES = 512 * 1024;
 /** Focus, or the tab turning visible, pulls at most this often. */
 const HTTP_PULL_GAP_MS = 2_000;
-/** A failed request is retried after 1 s, doubling up to the minute the routes' limiter blocks a caller for. */
+/** A failed request is retried after 1 s, doubling up to the minute the routes' limiter counts a caller in. */
 const HTTP_RETRY_MS = 1_000;
 const HTTP_RETRY_MAX_MS = 60_000;
 

@@ -160,7 +160,7 @@ describe('rate limit status', () => {
   });
 
   it('reports a limit budget at its points as limited, reading only the bucket it counts in', async () => {
-    const route = guardedRoute('limit', json(200), { points: 3, duration: 60 * 60, blockDuration: 60 });
+    const route = guardedRoute('limit', json(200), { points: 3, duration: 60 * 60, blockDuration: 0 });
     const ip = randomIp();
     for (let attempt = 0; attempt < 3; attempt++) expect((await route.attempt(ip)).status).toBe(200);
 
