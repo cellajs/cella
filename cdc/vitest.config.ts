@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { defineProject } from 'vitest/config';
-import { testDatabaseUrl } from 'shared/test-db';
+import { testCdcDatabaseUrl } from 'shared/test-db';
 
 const testMode = process.env.TEST_MODE || 'core';
 
@@ -25,7 +25,9 @@ export default defineProject({
     fileParallelism: testMode === 'core',
     env: {
       NODE_ENV: 'test',
-      DATABASE_CDC_URL: testDatabaseUrl,
+      // A database and a slot of the suite's own: slot names are one namespace for the whole server, and the suite drops its slot.
+      DATABASE_CDC_URL: testCdcDatabaseUrl,
+      CDC_SLOT_NAME: 'cdc_slot_integration',
       CDC_SECRET: 'test-cdc-secret-min16chars',
       // Backpressure integration test points the worker's WS client at a local stub server.
       BACKEND_INTERNAL_URL: 'http://127.0.0.1:4788',

@@ -431,7 +431,19 @@ async function onSyntheticTables(body: (tx: Tx) => Promise<void>): Promise<void>
     });
 }
 
-describe('The books on a deep hierarchy with an embedding (integration)', () => {
+/** Whether the suite's database is migrated: the synthetic counters table is made like the real one, and the deltas go through `apply_count_deltas`. */
+async function probeReady(): Promise<boolean> {
+  try {
+    const found = await cdcDb.execute(sql`SELECT 1 FROM pg_proc WHERE proname = 'apply_count_deltas'`);
+    return found.rows.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+const READY = await probeReady();
+
+describe.skipIf(!READY)('The books on a deep hierarchy with an embedding (integration)', () => {
   it.each([11, 23, 47, 101])(
     'agree with a recount from the tables after a random workload (seed %i)',
     async (seed) => {

@@ -65,6 +65,8 @@ export function gradeWorker(): WorkerGrade {
     [setupProblems.length > 0, 'setup_problems'],
     // Without the API nothing is recorded: after a while that is an outage of sync, not a restart.
     [apiAwayMs !== null && apiAwayMs > limits.apiAwayUnhealthyMs, 'api_away'],
+    // No progress for this long is a stall, also when every failure was one that passes.
+    [failure !== null && Date.now() - Date.parse(failure.since) > limits.rereadUnhealthyMs, 'reading_again'],
     // The slot does not hold the WAL the worker needs any more, or is about to lose it.
     [slotStatus === 'lost' || slotStatus === 'unreserved', 'slot_lost'],
     [lagBytes !== null && lagBytes >= limits.walLagUnhealthyBytes, 'wal_lag_critical'],
