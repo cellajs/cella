@@ -94,8 +94,9 @@ The driver and this file come from the template; `shots-config.mjs` is pinned to
 your output paths through a sync. The driver reads the app's own URL, ports and slug at runtime, so an app with its own
 slug and a linked worktree both work with no configuration.
 
-cella's About page also shows **raak** on a phone (`showcases/raak-*.png`). Those are another product's pixels: run this
-skill inside the raak checkout against raak's own shot list, then copy the four files into cella.
+cella's About page also shows **raak** on a phone (`showcases/raak-*.webp`). Those are another product's pixels: run
+this skill inside the raak checkout, whose shot list writes the four files to its gitignored `.temp/showcases/`
+(`showcase-board` and `showcase-task`), then copy them into cella.
 
 ## Gotchas
 
