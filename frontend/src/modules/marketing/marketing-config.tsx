@@ -322,12 +322,12 @@ export const showcaseItems: ShowcaseItem[] = [
     cellaLoc: 142000,
     totalLoc: 162000,
     lightItems: [
-      { id: nanoid(), url: '/static/marketing/showcases/raak-1.png', contentType: 'image/png' },
-      { id: nanoid(), url: '/static/marketing/showcases/raak-2.png', contentType: 'image/png' },
+      { id: nanoid(), url: '/static/marketing/showcases/raak-1.webp', contentType: 'image/webp' },
+      { id: nanoid(), url: '/static/marketing/showcases/raak-2.webp', contentType: 'image/webp' },
     ],
     darkItems: [
-      { id: nanoid(), url: '/static/marketing/showcases/raak-1-dark.png', contentType: 'image/png' },
-      { id: nanoid(), url: '/static/marketing/showcases/raak-2-dark.png', contentType: 'image/png' },
+      { id: nanoid(), url: '/static/marketing/showcases/raak-1-dark.webp', contentType: 'image/webp' },
+      { id: nanoid(), url: '/static/marketing/showcases/raak-2-dark.webp', contentType: 'image/webp' },
     ],
   },
 ];
