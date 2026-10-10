@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.1](https://github.com/cellajs/cella/compare/0.18.0...0.18.1) (2026-10-10)
+
+
+### 🧹 Chores
+
+* **marketing:** the raak showcase on the About page is re-shot as WebP, plus sync page tuning ([#1353](https://github.com/cellajs/cella/issues/1353)) ([4397096](https://github.com/cellajs/cella/commit/439709637fc3972b54e85a4386dc2cf107977831))
+* **marketing:** the VM in the sync diagram holds three workers, and the pills center on a phone ([#1354](https://github.com/cellajs/cella/issues/1354)) ([34e6037](https://github.com/cellajs/cella/commit/34e6037224fd52972bfb2ca04927f9a67deb9a34))
+
 ## [0.18.0](https://github.com/cellajs/cella/compare/0.17.0...0.18.0) (2026-10-09)
 
 
