@@ -24,22 +24,22 @@ export function SyncEnginePage() {
           />
         </p>
 
-        <p className="mx-auto mb-2 max-w-3xl rounded-full bg-accent/50 px-4 py-2 font-semibold text-foreground leading-normal sm:text-center">
+        <p className="mx-auto mb-2 max-w-3xl rounded-full bg-accent/50 px-4 py-2 text-center font-semibold text-foreground leading-normal">
           <Trans t={t} i18nKey="about:cella_approach_point_1" />
         </p>
-        <p className="mx-auto mb-2 max-w-3xl rounded-full bg-accent/50 px-4 py-2 font-semibold text-foreground leading-normal sm:text-center">
+        <p className="mx-auto mb-2 max-w-3xl rounded-full bg-accent/50 px-4 py-2 text-center font-semibold text-foreground leading-normal">
           <Trans t={t} i18nKey="about:cella_approach_point_2" />
         </p>
-        <p className="mx-auto max-w-3xl rounded-full bg-accent/50 px-4 py-2 font-semibold text-foreground leading-normal sm:text-center">
+        <p className="mx-auto max-w-3xl rounded-full bg-accent/50 px-4 py-2 text-center font-semibold text-foreground leading-normal">
           <Trans t={t} i18nKey="about:cella_approach_point_3" />
         </p>
       </AboutSection>
 
       <AboutSection title="about:how.title" text="about:how.text" alternate>
-        <p className="mx-auto -mt-8 max-w-3xl rounded-full bg-accent/50 px-4 py-2 font-semibold text-foreground leading-normal sm:text-center">
+        <p className="mx-auto -mt-8 max-w-3xl rounded-full bg-accent/50 px-4 py-2 text-center font-semibold text-foreground leading-normal">
           {t('about:how.concept_1')}
         </p>
-        <p className="mx-auto mt-2 mb-10 max-w-3xl rounded-full bg-accent/50 px-4 py-2 font-semibold text-foreground leading-normal sm:text-center">
+        <p className="mx-auto mt-2 mb-10 max-w-3xl rounded-full bg-accent/50 px-4 py-2 text-center font-semibold text-foreground leading-normal">
           {t('about:how.concept_2')}
         </p>
         <SyncDiagram />
