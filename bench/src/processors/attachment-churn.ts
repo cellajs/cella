@@ -1,4 +1,6 @@
+import { hierarchy } from 'shared';
 import { uuidv7 } from 'uuidv7';
+import { benchAttachmentHome } from '../seeds/attachment-home';
 import { attachmentId } from '../seeds/ids';
 
 export { authenticate } from './auth';
@@ -17,6 +19,12 @@ interface BatchResponse {
   rejectedIds?: string[];
 }
 
+/** The placement field of a create body: the deepest home id alone, since the server reads the chain above it off that channel. None for an attachment in the organization. */
+function createHomeField(index: number): Record<string, string> {
+  const [home] = hierarchy.resolveNonNullAncestors('attachment', benchAttachmentHome(index));
+  return home ? { [home.idColumn]: home.id } : {};
+}
+
 /** Builds one batch of new attachments and the request that deletes them again. The files themselves never exist: an empty key names no stored object. */
 export function buildChurnBatch(context: { vars: Record<string, unknown> }, _events: unknown, done: () => void) {
   const first = FIRST_CHURN_INDEX + Math.floor(Math.random() * 0xffffffff) * BATCH_SIZE;
@@ -30,6 +38,7 @@ export function buildChurnBatch(context: { vars: Record<string, unknown> }, _eve
     contentType: 'application/pdf',
     size: '1024',
     keys: { original: '' },
+    ...createHomeField(first + i),
     stx,
   }));
   context.vars.deletePayload = { ids, stx: { mutationId: uuidv7(), sourceId: stx.sourceId } };

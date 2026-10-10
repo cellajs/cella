@@ -8,7 +8,7 @@ import { defaultHeaders } from '../fixtures';
 import { createSystemAdminUser, createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData } from './helpers';
+import { clearSecurityTestData, createOrgUser } from './helpers';
 
 // Every sign-in method on, so a route's config switch lets the request through to the guard under test.
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'oauth', 'magic', 'sso'], enabledOAuthProviders: ['github', 'google', 'microsoft'] });
@@ -19,6 +19,10 @@ interface Operation {
   path: string;
   guards: string[];
   enabledBy?: ConfigSwitch;
+  /** The names of its path and query parameters. */
+  parameters: string[];
+  /** Answers with an event stream, which stays open. */
+  streams: boolean;
 }
 
 const httpMethods = ['get', 'post', 'put', 'patch', 'delete'] as const;
@@ -37,6 +41,8 @@ const operationsOf = (app: OpenAPIHono<Env>): Operation[] => {
           path,
           guards: (operation['x-guard'] as string[] | undefined) ?? [],
           enabledBy: operation['x-enabled-by'] as ConfigSwitch | undefined,
+          parameters: (operation.parameters ?? []).flatMap((parameter) => ('name' in parameter ? [parameter.name] : [])),
+          streams: Object.values(operation.responses ?? {}).some((response) => 'content' in response && !!response.content?.['text/event-stream']),
         },
       ];
     }),
@@ -112,5 +118,27 @@ describe('Route guards', async () => {
       const { status } = await request(operation, sysAdmin.sessionCookie);
       expect(status, nameOf(operation)).not.toBe(403);
     }
+  });
+
+  it('must not list or read by another user without the guard that relates the caller to that user', () => {
+    const relatable = operations.filter(({ parameters }) => parameters.includes('relatableUserId'));
+    expect(relatable.map(({ operationId }) => operationId)).toEqual(expect.arrayContaining(['getUser', 'getOrganizations']));
+    for (const operation of relatable) expect(operation.guards, nameOf(operation)).toContain('relatableGuard');
+  });
+
+  it('must not answer an organization member with a server error, whatever the ids name', async () => {
+    // A route that reads a scope its guard chain never set fails here before it reads a row: its guards let the member
+    // in, and the ids beyond the tenant and the organization name nothing. An open stream is left out.
+    const swept = nonPublic.filter(({ streams }) => !streams);
+    let reached = 0;
+    for (const [index, operation] of swept.entries()) {
+      // A member per route: one of them deletes the account it is called with.
+      const member = await createOrgUser(call, tenant.id, tenant.organizationId, `route-guards-member-${index}`);
+      const { status } = await request(operation, member.sessionCookie);
+      expect(status, nameOf(operation)).toBeLessThan(500);
+      if (status !== 401) reached++;
+    }
+    // The sweep ran signed in: a session passes every guard chain but the ones that take a token or a key alone.
+    expect(reached).toBeGreaterThan(swept.length / 2);
   });
 });

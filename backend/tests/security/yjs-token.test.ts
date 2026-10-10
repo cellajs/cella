@@ -1,5 +1,6 @@
 import { getYjsToken } from 'sdk';
 import { appConfig } from 'shared';
+import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { testYjsTokenPublicKey } from 'shared/testing/yjs-token-keys';
 import { generateId } from 'shared/utils/entity-id';
 import { verifyYjsToken, yjsTokenVerifyKey } from 'shared/utils/yjs-token';
@@ -10,7 +11,7 @@ import { adminRole, defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { assumeMemberAttachmentPolicy, clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
+import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 import { paragraph, seedAttachment } from './yjs-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });

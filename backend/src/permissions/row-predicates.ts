@@ -1,6 +1,15 @@
 import { and, eq, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
-import { appConfig, type ChannelEntityType, type PredicateActor, type RowConditionName } from 'shared';
+import {
+  appConfig,
+  hierarchy as appHierarchy,
+  type ChannelEntityType,
+  type EntityHierarchy,
+  entityIdColumnKey,
+  type PredicateActor,
+  type ProductEntityType,
+  type RowConditionName,
+} from 'shared';
 import type { CollectionReadFilter } from './collection-scope';
 
 /** A never-matching predicate: the SQL analogue of a check-form returning `false`. */
@@ -35,8 +44,16 @@ export type CollectionReadWhere =
   | { kind: 'where'; where: SQL };
 
 /**
+ * The column a collection read compares its home grants with: the id column of the product's declared parent, the
+ * level the scope resolver collects `homeChannelIds` at, whether or not that ancestor is nullable. The organization
+ * column for a product that lives in the organization.
+ */
+export const homeChannelColumn = (table: AnyPgTable, entityType: ProductEntityType, hierarchy: EntityHierarchy = appHierarchy): PgColumn =>
+  resolveColumn(table, entityIdColumnKey(hierarchy.getParent(entityType) ?? 'organization'), `${entityType} home scope`);
+
+/**
  * OR-combines the resolved collection scopes: intermediate grants filter by their own denormalized
- * ancestor id column, home grants by `homeChannelColumn`.
+ * ancestor id column, home grants by `homeChannelColumn`, which is {@link homeChannelColumn} of the table.
  */
 export const buildCollectionReadWhere = (
   filter: CollectionReadFilter,

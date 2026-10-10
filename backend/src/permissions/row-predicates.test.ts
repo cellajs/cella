@@ -25,7 +25,7 @@ import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { checkAccess } from './check-access';
 import { resolveCollectionReadFilter, resolveCollectionReadFilterForPolicies } from './collection-scope';
-import { buildCollectionReadWhere } from './row-predicates';
+import { buildCollectionReadWhere, homeChannelColumn as productHomeColumn } from './row-predicates';
 
 const seedDb = getSeedDb();
 
@@ -442,7 +442,7 @@ const deepSqlReadableIds = async (scenario: DeepScenario, elevatedGrants?: Reado
     elevatedGrants,
     ...deepOverrides,
   });
-  const where = buildCollectionReadWhere(filter, deepParityTable, deepParityTable.projectId, deepActor(scenario));
+  const where = buildCollectionReadWhere(filter, deepParityTable, productHomeColumn(deepParityTable, DEEP_ITEM, deepHierarchy), deepActor(scenario));
 
   if (where.kind === 'none') return new Set();
   const query = seedDb.select({ id: deepParityTable.id }).from(deepParityTable);
@@ -501,7 +501,7 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
         ...deepOverrides,
         requested,
       });
-      const where = buildCollectionReadWhere(filter, deepParityTable, deepParityTable.projectId, sysadmin);
+      const where = buildCollectionReadWhere(filter, deepParityTable, productHomeColumn(deepParityTable, DEEP_ITEM, deepHierarchy), sysadmin);
       if (where.kind === 'none') return new Set<string>();
       const query = seedDb.select({ id: deepParityTable.id }).from(deepParityTable);
       const rows = where.kind === 'all' ? await query : await query.where(where.where);

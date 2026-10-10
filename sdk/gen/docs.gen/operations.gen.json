@@ -856,7 +856,7 @@
     "path": "/entities/{tenantId}/check-slug",
     "tags": ["entities"],
     "summary": "Check slug availability",
-    "description": "Checks whether a given slug is available within a tenant for the specified entity type.\n      Primarily used to prevent slug collisions before creating or updating an entity.",
+    "description": "Checks whether a given slug is available for the specified entity type. A slug is unique across all tenants.\n      Primarily used to prevent slug collisions before creating or updating an entity.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,

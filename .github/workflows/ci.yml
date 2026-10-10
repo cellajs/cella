@@ -210,6 +210,11 @@ jobs:
       - name: Run sign-in tests as a new app
         run: pnpm template:check --tests
 
+      # The core suites again with a config shaped like an app's: listed surfaces, another feature flag, a stricter
+      # member policy. A template test that leans on the template's own values fails here and not in an app's sync.
+      - name: Run core tests with an app-shaped config
+        run: pnpm app-shape:check
+
   # The production images are otherwise built for the first time by the release deploy
   # (0.11.0 failed there on a Node 26 base image without corepack). Build the shared base
   # stage here whenever its inputs change: the Dockerfile, or the package manager pin.
@@ -390,6 +395,12 @@ jobs:
           if [ "$BREAKING" -eq 0 ]; then
             echo "✅ No breaking OpenAPI changes."
             exit 0
+          fi
+          # 1 is oasdiff's verdict on the spec. Any other code means it never gave one: Docker answers 125 when the
+          # image pull fails (a registry rate limit), oasdiff 100 and up when it cannot read a spec.
+          if [ "$BREAKING" -ne 1 ]; then
+            echo "::error::oasdiff did not run (exit $BREAKING), so the gate has no verdict on the spec. Rerun the job."
+            exit 1
           fi
 
           # Breaking change present → require a clientCacheVersion bump in the same PR.

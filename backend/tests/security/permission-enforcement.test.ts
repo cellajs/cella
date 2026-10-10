@@ -8,6 +8,7 @@ import {
   resendPendingInvitation,
   updateOrganization,
 } from 'sdk';
+import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -22,7 +23,7 @@ import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { assumeMemberAttachmentPolicy, clearSecurityTestData, createOrgUser } from './helpers';
+import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 

@@ -4,7 +4,11 @@ import { isArrayDelta, mergeArrayDeltas } from './array-delta';
 import { canCoalesce, isQueued } from './mutation-queue';
 
 type OpsVariables = { id?: string; ops?: Record<string, unknown>; stx?: StxBase };
-type CreateVariables = { id?: string; data?: Array<Record<string, unknown> | undefined> };
+type CreateRow = Record<string, unknown> | undefined;
+/** A queued create as these helpers read it: one row at the top level, or under `data` as one row or a list. */
+type CreateVariables = { id?: string; data?: CreateRow | CreateRow[] };
+
+const rowsOf = (data: CreateVariables['data']): CreateRow[] => (Array.isArray(data) ? data : data ? [data] : []);
 
 // Merge two ops objects: scalar fields are overwritten by `newer`; AWSet deltas are merged via mergeArrayDeltas.
 function mergeOps<TOps extends object>(older: Record<string, unknown>, newer: TOps): Record<string, unknown> & TOps {
@@ -79,17 +83,16 @@ export function removePausedCreates(queryClient: QueryClient, createMutationKey:
       continue;
     }
 
-    if (Array.isArray(variables.data)) {
-      const kept: typeof variables.data = [];
-      for (const row of variables.data) {
-        const rowId = row && typeof row.id === 'string' ? row.id : undefined;
-        if (rowId && idSet.has(rowId)) cancelled.push(rowId);
-        else kept.push(row);
-      }
-      if (kept.length === variables.data.length) continue;
-      if (kept.length === 0) mutationCache.remove(mutation);
-      else variables.data = kept;
+    const rows = rowsOf(variables.data);
+    const kept: CreateRow[] = [];
+    for (const row of rows) {
+      const rowId = row && typeof row.id === 'string' ? row.id : undefined;
+      if (rowId && idSet.has(rowId)) cancelled.push(rowId);
+      else kept.push(row);
     }
+    if (kept.length === rows.length) continue;
+    if (kept.length === 0) mutationCache.remove(mutation);
+    else variables.data = kept;
   }
 
   return cancelled;
@@ -114,7 +117,7 @@ export function squashIntoPendingCreate<TOps extends object>(
     const variables = mutation.state.variables as CreateVariables | undefined;
     if (!variables) continue;
 
-    const target = variables.id === entityId ? (variables as Record<string, unknown>) : variables.data?.find((row) => row?.id === entityId);
+    const target = variables.id === entityId ? (variables as Record<string, unknown>) : rowsOf(variables.data).find((row) => row?.id === entityId);
     if (!target) continue;
 
     Object.assign(target, ops);

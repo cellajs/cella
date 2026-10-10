@@ -12,7 +12,7 @@ import { findAddressGovernance } from '#/modules/connections/connections-queries
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug-from-email';
+import { slugFromEmail } from '#/utils/slug';
 import { magicLinkEmail } from '../../../../../emails';
 
 interface SendMagicLinkOpts {

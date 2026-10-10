@@ -4,6 +4,7 @@ import pg from 'pg';
 import { hierarchy } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createPgConnection, type Tx } from '#/db/create-connection';
 import type { DocScope } from '../../constants';
@@ -37,6 +38,8 @@ function requested(overrides: Partial<DocScope>): DocScope {
 // against Postgres, covering cross-tenant isolation. Cross-organization isolation within one tenant
 // is not representable: 1 tenant = 1 organization (organizations_tenant_id_key).
 describe('Local entity authorization (authorizeDoc)', () => {
+  assumeMemberAttachmentPolicy({ read: 1, update: 'own', delete: 'own' });
+
   let admin: pg.Client;
 
   beforeAll(async () => {

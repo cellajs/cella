@@ -56,6 +56,8 @@ interface TableBarShellProps<TRow extends Record<string, unknown>> extends Retur
   /** Filter controls next to the search. */
   filters?: ReactNode;
   export?: { filename: string; fetchRows: (limit: number, offset: number) => Promise<TRow[]>; selectedRows?: TRow[] };
+  /** Controls of the page's own, such as a view toggle, before the focus view toggle. */
+  controls?: ReactNode;
   /** Shows the focus view toggle. Defaults to true. */
   focusView?: boolean;
   selection?: { count: number; onClear: () => void; children: ReactNode };
@@ -88,6 +90,7 @@ export function TableBarShell<TRow extends Record<string, unknown>>(props: Table
 
         <ColumnsView className="max-lg:hidden" columns={columns} setColumns={props.setColumns} />
         {props.export && <Export className="max-lg:hidden" columns={columns} {...props.export} />}
+        {props.controls}
         {focusView && <FocusView iconOnly />}
       </TableBarContainer>
 

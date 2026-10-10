@@ -1,5 +1,4 @@
 import { desc, eq, inArray, sql } from 'drizzle-orm';
-import { appConfig, hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoidTenant } from 'shared/utils/nanoid';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -18,7 +17,7 @@ import { answerBooksRequests, rebuildBooks, restoreBooksState, startBooksSchedul
 import { fence } from '../../services/fence';
 import { replicationState } from '../../services/replication-state';
 import { lsnToBigInt } from '../../utils/lsn';
-import { type CdcPipelineHarness, startCdcPipeline, waitFor } from './pipeline-harness';
+import { type AttachmentHome, type CdcPipelineHarness, seedAttachmentHome, startCdcPipeline, waitFor } from './pipeline-harness';
 
 const WS_PORT = Number(new URL(process.env.BACKEND_INTERNAL_URL ?? 'http://127.0.0.1:4788').port || 4788);
 
@@ -47,6 +46,8 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
   const smallTenantId = nanoidTenant();
   const smallOrganizationId = generateId();
   const attachmentIds: string[] = [];
+  /** Per organization, where its attachments live. */
+  const homes: Record<string, AttachmentHome> = {};
   let startedAt = '';
   let WebSocketServer: any;
   let wss: any = null;
@@ -63,7 +64,7 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
         id,
         tenantId: inOrganization === organizationId ? tenantId : smallTenantId,
         organizationId: inOrganization,
-        ...Object.fromEntries(hierarchy.getNullableAncestors('attachment').map((type) => [appConfig.entityIdColumnKeys[type], null])),
+        ...homes[inOrganization].columns,
         createdBy: null,
         updatedBy: null,
         deletedBy: null,
@@ -180,6 +181,8 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
       { ...mockOrganization(), id: organizationId, tenantId, slug: `verify-${tenantId}`, createdBy: null },
       { ...mockOrganization(), id: smallOrganizationId, tenantId: smallTenantId, slug: `verify-${smallTenantId}`, createdBy: null },
     ]);
+    homes[organizationId] = await seedAttachmentHome({ id: organizationId, tenantId });
+    homes[smallOrganizationId] = await seedAttachmentHome({ id: smallOrganizationId, tenantId: smallTenantId });
     // Other suites leave rows and counters of their own: the books start from what the tables hold.
     await recalculateCounters({ var: { db: cdcDb } });
     await cdcDb.update(syncStateTable).set({ fence: null, requested: null }).where(eq(syncStateTable.id, 'sync'));
@@ -200,6 +203,7 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
       await cdcDb.delete(activitiesTable).where(inArray(activitiesTable.subjectId, attachmentIds));
       await cdcDb.delete(attachmentsTable).where(inArray(attachmentsTable.id, attachmentIds));
     }
+    for (const home of Object.values(homes)) await home.remove();
     await cdcDb.execute(sql`DELETE FROM activities WHERE subject_id IN (${organizationId}, ${smallOrganizationId}, ${tenantId}, ${smallTenantId})`);
     await cdcDb.execute(sql`DELETE FROM channel_counters WHERE channel_key IN (${organizationId}, ${smallOrganizationId})`);
     await cdcDb.delete(organizationsTable).where(inArray(organizationsTable.id, [organizationId, smallOrganizationId]));

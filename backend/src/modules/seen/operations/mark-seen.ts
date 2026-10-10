@@ -8,7 +8,7 @@ import { draftVisibleRowsPredicate } from '#/db/utils/published-predicate';
 import { findSeenCandidates, insertSeenBy, seenRecencySql } from '#/modules/seen/seen-queries';
 import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
-import { buildCollectionReadWhere } from '#/permissions/row-predicates';
+import { buildCollectionReadWhere, homeChannelColumn } from '#/permissions/row-predicates';
 import { getEntityTable } from '#/tables';
 import { log } from '#/utils/logger';
 
@@ -26,17 +26,6 @@ export function isTrackedProductType(productType: string): productType is SeenTr
 
 /** Context types that group unseen counts: every possible home channel of a tracked row. */
 export const groupingChannelTypes = new Set(trackedProductTypes.flatMap((t) => hierarchy.possibleHomeChannels(t)));
-
-/** Sub-context column for the read predicate: the parent-level id column, org fallback. */
-export const homeChannelColumn = (productType: SeenTrackedProductType): PgColumn => {
-  const table = getEntityTable(productType);
-  const columns = getColumns(table) as Record<string, PgColumn | undefined>;
-  const parent = hierarchy.getParent(productType);
-  const parentColumn = parent ? columns[appConfig.entityIdColumnKeys[parent as keyof typeof appConfig.entityIdColumnKeys]] : undefined;
-  const column = parentColumn ?? columns.organizationId;
-  if (!column) throw new Error(`[Seen] No sub-context column for "${productType}"`);
-  return column;
-};
 
 /**
  * Records the rows the user newly saw and bumps their view counts; returns how many were new. Only rows the user may
@@ -62,7 +51,7 @@ export async function markSeenOp(ctx: UserContext, entityIds: string[], productT
 
   const actor = actorFrom(ctx);
   const readFilter = resolveCollectionReadFilter(ctx.var.memberships, productType, organization.id, actor);
-  const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, homeChannelColumn(productType), actor);
+  const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, homeChannelColumn(entityTable, productType), actor);
   if (scopeWhere.kind === 'none') return { newCount: 0 };
 
   const filters: SQL[] = [inArray(orgTable.id, entityIds), eq(orgTable.organizationId, organization.id), gt(seenRecencySql(orgTable), windowCutoff)];

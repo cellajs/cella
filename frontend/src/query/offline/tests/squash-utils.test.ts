@@ -200,6 +200,15 @@ describe('squashIntoPendingCreate', () => {
     expect('name' in variables).toBe(false);
   });
 
+  it('coalesces fields into the row of a paused one-row create (data as one object)', () => {
+    const variables = { tenantId: 't1', organizationId: 'o1', data: { id: 'entity-1', name: 'One' } };
+    queuePausedMutation(queryClient, createKey, variables);
+
+    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'Renamed' })).toBe(true);
+    expect(variables.data).toEqual({ id: 'entity-1', name: 'Renamed' });
+    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-2', { name: 'Other' })).toBe(false);
+  });
+
   it('falls through (false) for array-delta ops: creates carry full arrays, deltas are relative', () => {
     const variables = { id: 'entity-1', labels: ['a'] };
     queuePausedMutation(queryClient, createKey, variables);
@@ -282,6 +291,13 @@ describe('removePausedCreates', () => {
     expect(cancelled).toEqual(['entity-2']);
     expect(variables.data).toEqual([{ id: 'entity-1', name: 'Keep' }]);
     expect(queryClient.getMutationCache().findAll({ mutationKey: createKey })).toHaveLength(1);
+  });
+
+  it('cancels a paused one-row create (data as one object)', () => {
+    queuePausedMutation(queryClient, createKey, { organizationId: 'o1', data: { id: 'a', name: 'A' } });
+
+    expect(removePausedCreates(queryClient, createKey, ['a'])).toEqual(['a']);
+    expect(queryClient.getMutationCache().findAll({ mutationKey: createKey })).toHaveLength(0);
   });
 
   it('drops the whole batch create when every row is cancelled', () => {

@@ -73,6 +73,8 @@ export default defineConfig({
       'frontend/src/modules/marketing/marketing-config.tsx',
       // The pages and states the accessibility audit covers
       'a11y/scope-config.ts',
+      // Where bench attachments live below the organization
+      'bench/src/seeds/attachment-home.ts',
       // The pages and states the marketing screenshots show
       'cella/skills/screenshots/shots-config.mjs',
       'frontend/src/modules/home/home-page.tsx',

@@ -1,8 +1,7 @@
 import { faker } from '@faker-js/faker';
-import { UniqueEnforcer } from 'enforce-unique';
 import { appConfig, type SystemRole } from 'shared';
 import slugify from 'slugify';
-import { mockPaginated, mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
+import { mockPaginated, mockPastIsoDate, mockUniqueEnforcer, mockUuid, withFakerSeed } from '#/mocks';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import type { InsertEmailModel } from '#/modules/user/emails-db';
 import type { UserWithActivity } from '#/modules/user/helpers/select';
@@ -10,14 +9,8 @@ import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
 
 type MockUserOptions = { email?: string; enforceUnique?: boolean };
 
-const userSlug = new UniqueEnforcer();
-const userEmail = new UniqueEnforcer();
-
-/** Call when clearing the database in tests. */
-export const resetUserMockEnforcers = () => {
-  userSlug.reset();
-  userEmail.reset();
-};
+const userSlug = mockUniqueEnforcer();
+const userEmail = mockUniqueEnforcer();
 
 const generateUser = ({ email: emailOverride, enforceUnique = false }: MockUserOptions = {}): UserModel => {
   const firstAndLastName = { firstName: faker.person.firstName(), lastName: faker.person.lastName() };

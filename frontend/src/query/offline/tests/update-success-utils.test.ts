@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { syncEntityToCache } from '../update-success-utils';
+import { mergeServerResponse, syncEntityToCache } from '../update-success-utils';
 
 // Mock cacheUpdate so we can verify it's called
 vi.mock('~/query/basic/cache-mutations', () => ({ cacheUpdate: vi.fn() }));
@@ -80,5 +80,42 @@ describe('syncEntityToCache', () => {
     expect(queryClient.getQueryData(detailKey)).toBeUndefined();
     // But list cache update is still called
     expect(cacheUpdate).toHaveBeenCalledWith(listKey, [entity]);
+  });
+});
+
+describe('mergeServerResponse', () => {
+  const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: {} };
+  const cached = { id: 'e1', name: 'Typed meanwhile', description: 'old', keywords: 'old', stx, updatedAt: '2026-01-01', updatedBy: 'u1' };
+  const serverEntity = { id: 'e1', name: 'Server name', description: 'new', keywords: 'new words', stx, updatedAt: '2026-01-02', updatedBy: 'u2' };
+
+  it('takes the mutated keys and the stamps, and keeps a concurrent edit of another field', () => {
+    const merged = mergeServerResponse({ cached, serverEntity, mutatedKeys: ['description'] });
+    expect(merged).toEqual({ ...cached, description: 'new', updatedAt: '2026-01-02', updatedBy: 'u2' });
+  });
+
+  it('takes the columns the server derived from a mutated key', () => {
+    const merged = mergeServerResponse({
+      cached,
+      serverEntity,
+      mutatedKeys: ['description'],
+      derivedKeys: { description: ['keywords'], name: ['slug'] },
+    });
+    expect(merged.keywords).toBe('new words');
+    expect(merged.name).toBe('Typed meanwhile');
+  });
+
+  it('leaves a skipped key alone, derived or mutated', () => {
+    const merged = mergeServerResponse({
+      cached,
+      serverEntity,
+      mutatedKeys: ['description'],
+      derivedKeys: { description: ['keywords'] },
+      skipKeys: ['keywords'],
+    });
+    expect(merged.keywords).toBe('old');
+  });
+
+  it('returns the server entity when nothing is cached', () => {
+    expect(mergeServerResponse({ serverEntity, mutatedKeys: [] })).toBe(serverEntity);
   });
 });

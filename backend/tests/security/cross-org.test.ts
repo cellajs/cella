@@ -18,6 +18,7 @@ import {
   updateOrganization,
 } from 'sdk';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateServerHLC } from '#/core/stx';
@@ -34,7 +35,7 @@ import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { assumeMemberAttachmentPolicy, clearSecurityTestData, createOrgUser, createSecondOrg, createTestTenant, type TestTenant } from './helpers';
+import { clearSecurityTestData, createOrgUser, createSecondOrg, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 

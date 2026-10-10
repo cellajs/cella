@@ -95,7 +95,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
           {children}
 
           {!children && (
-            <Button type="reset" variant="secondary" className={form.isDirty ? '' : 'invisible'} aria-label="Cancel" onClick={() => form.reset()}>
+            <Button type="reset" variant="secondary" className={form.isDirty ? '' : 'invisible'} onClick={() => form.reset()}>
               {t('c:cancel')}
             </Button>
           )}

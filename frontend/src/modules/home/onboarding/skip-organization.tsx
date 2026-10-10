@@ -23,10 +23,10 @@ export function SkipOrganization({ setOnboardingState }: SkipOrganizationProps) 
 
   return (
     <div className="flex gap-2 sm:flex-row">
-      <Button type="submit" variant="destructive" onClick={onDelete} aria-label="Skip">
+      <Button type="submit" variant="destructive" onClick={onDelete}>
         {t('c:skip')}
       </Button>
-      <Button type="reset" variant="secondary" aria-label="Cancel" onClick={onCancel}>
+      <Button type="reset" variant="secondary" onClick={onCancel}>
         {t('c:cancel')}
       </Button>
     </div>
