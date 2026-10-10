@@ -110,7 +110,6 @@ const vmWorkers = [
   { key: 'api', label: 'API' },
   { key: 'yjs', label: 'Yjs' },
   { key: 'cdc', label: 'CDC' },
-  { key: 'jobs', label: 'Jobs' },
 ] as const;
 
 type Fold = { nodes: NodeKey[]; edges: string[] };
@@ -133,9 +132,9 @@ const buildTimeline = (lead: number, foldAt = 0) => {
   const T_YJS_PERSIST = T_WS_YJS + ANIM.draw + ANIM.gap;
   const T_YJS_SAVE = T_YJS_PERSIST + ANIM.sqlDraw + ANIM.gap;
 
-  // The VM timeline: fold, widen, then draw the two connections to the VM, and last the jobs worker.
+  // The VM timeline: fold, widen, then draw the two connections to the VM.
   const T_VM_DRAW = foldAt + FOLD.morph + ANIM.gap;
-  const vmAt = { fold: foldAt, workers: foldAt + FOLD.swap, jobs: T_VM_DRAW + ANIM.gap + ANIM.draw + ANIM.gap / 2 };
+  const vmAt = { fold: foldAt, workers: foldAt + FOLD.swap };
 
   const nodeDelay: Record<SyncMode, Partial<Record<NodeKey, number>>> = {
     rest: { database: 0, api: 0, client: 0 },
@@ -652,7 +651,7 @@ export function SyncDiagram() {
                     }}
                     className={cn(
                       'absolute top-1/2 left-0 -translate-y-1/2 rounded-xl border bg-background shadow-sm transition-[width,height,border-color] ease-in-out motion-reduce:transition-none',
-                      isVm ? 'h-14 w-32 border-foreground/40 sm:h-18 sm:w-44 md:h-20 md:w-52' : 'size-11 sm:size-14 md:size-16',
+                      isVm ? 'h-14 w-28 border-foreground/40 sm:h-18 sm:w-36 md:h-20 md:w-42' : 'size-11 sm:size-14 md:size-16',
                     )}
                     style={{ transitionDuration: `${FOLD.morph}s`, transitionDelay: `${isVm ? vmAt.fold : 0}s` }}
                   >
@@ -666,14 +665,14 @@ export function SyncDiagram() {
                     </motion.div>
                     <div
                       aria-hidden={!isVm}
-                      className="absolute inset-0 flex items-center justify-center gap-1 overflow-hidden rounded-xl sm:gap-2.5 md:gap-3"
+                      className="absolute inset-0 flex items-center justify-center gap-2 overflow-hidden rounded-xl sm:gap-2.5 md:gap-3"
                     >
                       {vmWorkers.map((worker) => (
                         <motion.div
                           key={worker.key}
                           initial={false}
                           animate={{ opacity: isVm ? 1 : 0 }}
-                          transition={isVm ? { delay: worker.key === 'jobs' ? vmAt.jobs : vmAt.workers, duration: FOLD.fade } : { duration: 0.2 }}
+                          transition={isVm ? { delay: vmAt.workers, duration: FOLD.fade } : { duration: 0.2 }}
                           className="flex flex-col items-center gap-1"
                         >
                           <div className="flex size-6 items-center justify-center rounded-md border sm:size-7 md:size-8">

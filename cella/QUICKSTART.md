@@ -14,7 +14,7 @@ pnpm create @cellajs/cella my-app
 
 ```bash
 pnpm install
-pnpm generate   # generate db migrations, openapi & sdk
+pnpm generate   # write your app's first db migration
 pnpm docker     # start postgres and supporting services
 pnpm seed       # seed test data
 pnpm dev
