@@ -1,11 +1,11 @@
-import type { PgColumn } from 'drizzle-orm/pg-core';
-import { type ChannelEntityType, type EntityHierarchy, entityIdColumnName, hierarchy, type ProductEntityType } from 'shared';
+import { PgDialect, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { type ChannelEntityType, type EntityHierarchy, entityIdColumnName, hierarchy, type PredicateActor, type ProductEntityType } from 'shared';
 import { makeDeepHierarchy } from 'shared/testing/deep-fixture';
 import { describe, expect, it } from 'vitest';
 import type { OrgContext } from '#/core/context';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { placementFieldsSchema, resolvePlacement, validatePlacement } from '#/permissions/product-placement';
-import { homeChannelColumn } from '#/permissions/row-predicates';
+import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import type { EntityModel } from '#/tables';
 
 // The deep fixture's product and hierarchy are typed apart from the app's config, as its other suites cast them.
@@ -89,11 +89,18 @@ describe('resolvePlacement', () => {
     expect(columns).toEqual({ projectId: uuid(4), courseSectionId: null, courseId: uuid(1) });
   });
 
-  it('takes nothing above the home from the client', async () => {
+  it('reads the chain above the home off the home row, one lookup per row', async () => {
     seen.length = 0;
-    const { columns } = await resolvePlacement(ctx, ITEM, { projectId: uuid(3), courseId: uuid(9) }, { hierarchy: anyDepth, resolveHome });
+    const { columns } = await resolvePlacement(ctx, ITEM, { projectId: uuid(3) }, { hierarchy: anyDepth, resolveHome });
     expect(columns).toEqual({ projectId: uuid(3), courseSectionId: uuid(2), courseId: uuid(1) });
     expect(seen).toEqual([[uuid(3), 'project']]);
+  });
+
+  it('refuses what the schema check refuses, so a strict column never holds a null', async () => {
+    await expect(resolvePlacement(ctx, ITEM, {}, { hierarchy: strict, resolveHome })).rejects.toMatchObject({ status: 400, type: 'invalid_request' });
+    await expect(resolvePlacement(ctx, ITEM, {}, { hierarchy: anyDepth, requireChannel: true, resolveHome })).rejects.toMatchObject({ status: 400 });
+    const twoIds = { courseId: uuid(1), courseSectionId: uuid(2) };
+    await expect(resolvePlacement(ctx, ITEM, twoIds, { hierarchy: anyDepth, resolveHome })).rejects.toMatchObject({ status: 400 });
   });
 
   it('homes a row without an id in the organization: every column null, no lookup', async () => {
@@ -104,18 +111,29 @@ describe('resolvePlacement', () => {
   });
 });
 
-describe('homeChannelColumn', () => {
-  const column = (name: string) => ({ name }) as unknown as PgColumn;
-  const table = { organizationId: column('organization_id'), courseId: column('course_id'), projectId: column('project_id') } as never;
+describe('the home column of a collection read', () => {
+  const table = pgTable('test_home_column_rows', {
+    organizationId: varchar('organization_id'),
+    courseId: varchar('course_id'),
+    courseSectionId: varchar('course_section_id'),
+    projectId: varchar('project_id'),
+  });
+  const actor: PredicateActor = { actorId: 'u1', isSystemAdmin: false, scopes: null };
+  const homeGrants = { homeChannelIds: ['p1'], conditionalScopes: [] };
+  const compiled = (entityType: ProductEntityType, hierarchy?: EntityHierarchy) => {
+    const where = buildCollectionReadWhere(homeGrants, table, entityType, actor, hierarchy);
+    return where.kind === 'where' ? new PgDialect().sqlToQuery(where.where).sql : where.kind;
+  };
 
   it('is the declared parent column, whether or not that ancestor is nullable', () => {
-    // The scope resolver collects home grants at the parent level in both hierarchies, so the column must match there.
-    expect(homeChannelColumn(table, ITEM, anyDepth).name).toBe('project_id');
-    expect(homeChannelColumn(table, ITEM, strict).name).toBe('project_id');
+    // The scope resolver collects home grants at the parent level in both hierarchies, so the predicate compares there.
+    expect(compiled(ITEM, anyDepth)).toContain('"project_id" in');
+    expect(compiled(ITEM, strict)).toContain('"project_id" in');
   });
 
   it('is the parent column of the app attachment table', () => {
     const parent: string = hierarchy.getParent('attachment') ?? 'organization';
-    expect(homeChannelColumn(attachmentsTable, 'attachment').name).toBe(entityIdColumnName(parent));
+    const where = buildCollectionReadWhere(homeGrants, attachmentsTable, 'attachment', actor);
+    expect(where.kind === 'where' && new PgDialect().sqlToQuery(where.where).sql).toContain(`"${entityIdColumnName(parent)}" in`);
   });
 });

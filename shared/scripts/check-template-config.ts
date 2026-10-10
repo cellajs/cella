@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { repoRoot } from './repo-files.ts';
+import { repoRoot, withRestoredPaths } from './repo-files.ts';
 
 const configDir = join(repoRoot, 'shared/config');
 const templatePath = join(configDir, 'config.template.ts');
@@ -19,59 +19,56 @@ const modes = ['development', 'tunnel', 'staging', 'production', 'test'];
 const suites = ['tests/sign-in', 'tests/connections.test.ts', 'tests/sso-federation-client.test.ts'];
 
 const run = (command: string, args: string[]) => execFileSync(command, args, { cwd: repoRoot, stdio: 'inherit' });
-const git = (args: string[]) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
 
 if (!existsSync(templatePath)) {
   console.info('No shared/config/config.template.ts: this app typechecks with its own config.');
   process.exit(0);
 }
-if (git(['status', '--porcelain', '--', ...swappedPaths]).trim()) {
-  console.error(`Commit the changes under ${swappedPaths.join(' and ')} first: the check restores both from git.`);
-  process.exit(1);
-}
-
-const backupDir = mkdtempSync(join(tmpdir(), 'template-config-'));
-const hadSpecFile = specFiles.map((file) => existsSync(join(repoRoot, file)));
-specFiles.forEach((file, index) => {
-  if (hadSpecFile[index]) copyFileSync(join(repoRoot, file), join(backupDir, String(index)));
-});
 
 let failed = false;
-try {
-  // The scaffolder's two tokens, with values the config builder accepts.
-  const template = readFileSync(templatePath, 'utf8')
-    .replaceAll('__project_name__', 'Template Check')
-    .replaceAll('__project_slug__', 'template-check');
-  writeFileSync(join(configDir, 'config.default.ts'), template);
-
-  // The mode configs point the default's federation at its test issuer. A new app's mode configs name none.
-  for (const mode of modes) {
-    const path = join(configDir, `config.${mode}.ts`);
-    const source = readFileSync(path, 'utf8').replace(/\n {2}federations: \{\n[\s\S]*?\n {2}\},?\n/, '\n');
-    if (source.includes('federations')) throw new Error(`config.${mode}.ts still names a federation after the swap: adjust ${import.meta.filename}.`);
-    writeFileSync(path, source);
-  }
-
-  // `--force`: the generator's fingerprint covers backend/src only, so a config change alone reuses the cached spec.
-  run('pnpm', ['--filter', 'backend', 'generate:openapi', '--force']);
-  run('pnpm', ['--filter', 'sdk', 'generate:sdk']);
-  run('pnpm', ['ts']);
-  if (process.argv.includes('--tests')) {
-    run('pnpm', ['docker:test']);
-    run('pnpm', ['--filter', 'backend', 'exec', 'cross-env', 'TEST_MODE=core', 'vitest', 'run', ...suites]);
-  }
-} catch (error) {
-  failed = true;
-  // A failed command has printed its own output; anything else is this script's.
-  if (!(error instanceof Error && 'status' in error)) console.error(error);
-} finally {
-  git(['checkout', '--', ...swappedPaths]);
+withRestoredPaths(swappedPaths, () => {
+  const backupDir = mkdtempSync(join(tmpdir(), 'template-config-'));
+  const hadSpecFile = specFiles.map((file) => existsSync(join(repoRoot, file)));
   specFiles.forEach((file, index) => {
-    if (hadSpecFile[index]) copyFileSync(join(backupDir, String(index)), join(repoRoot, file));
-    else rmSync(join(repoRoot, file), { force: true });
+    if (hadSpecFile[index]) copyFileSync(join(repoRoot, file), join(backupDir, String(index)));
   });
-  rmSync(backupDir, { recursive: true, force: true });
-}
+
+  try {
+    // The scaffolder's two tokens, with values the config builder accepts.
+    const template = readFileSync(templatePath, 'utf8')
+      .replaceAll('__project_name__', 'Template Check')
+      .replaceAll('__project_slug__', 'template-check');
+    writeFileSync(join(configDir, 'config.default.ts'), template);
+
+    // The mode configs point the default's federation at its test issuer. A new app's mode configs name none.
+    for (const mode of modes) {
+      const path = join(configDir, `config.${mode}.ts`);
+      const source = readFileSync(path, 'utf8').replace(/\n {2}federations: \{\n[\s\S]*?\n {2}\},?\n/, '\n');
+      if (source.includes('federations'))
+        throw new Error(`config.${mode}.ts still names a federation after the swap: adjust ${import.meta.filename}.`);
+      writeFileSync(path, source);
+    }
+
+    // `--force`: the generator's fingerprint covers backend/src only, so a config change alone reuses the cached spec.
+    run('pnpm', ['--filter', 'backend', 'generate:openapi', '--force']);
+    run('pnpm', ['--filter', 'sdk', 'generate:sdk']);
+    run('pnpm', ['ts']);
+    if (process.argv.includes('--tests')) {
+      run('pnpm', ['docker:test']);
+      run('pnpm', ['--filter', 'backend', 'exec', 'cross-env', 'TEST_MODE=core', 'vitest', 'run', ...suites]);
+    }
+  } catch (error) {
+    failed = true;
+    // A failed command has printed its own output; anything else is this script's.
+    if (!(error instanceof Error && 'status' in error)) console.error(error);
+  } finally {
+    specFiles.forEach((file, index) => {
+      if (hadSpecFile[index]) copyFileSync(join(backupDir, String(index)), join(repoRoot, file));
+      else rmSync(join(repoRoot, file), { force: true });
+    });
+    rmSync(backupDir, { recursive: true, force: true });
+  }
+});
 
 if (failed) {
   console.error('\nThe repo does not typecheck or pass as a new app: see the output above. Usual cause: code that reads a');

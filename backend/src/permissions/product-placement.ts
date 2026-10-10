@@ -11,6 +11,7 @@ import {
   type ProductEntityType,
 } from 'shared';
 import type { OrgContext } from '#/core/context';
+import { AppError } from '#/core/error';
 import { resolveChannelInScope } from '#/permissions/get-valid-channel';
 import { validUuidSchema } from '#/schemas';
 import type { EntityModel } from '#/tables';
@@ -97,6 +98,8 @@ export const validatePlacement = (
 };
 
 interface ResolvePlacementOptions extends HierarchyOption {
+  /** Refuses a row without a home id where the hierarchy would let it live in the organization. */
+  requireChannel?: boolean;
   /**
    * Looks the home channel up. The default checks existence and request scope and no permission, since the create
    * check on the placed row decides whether the actor may write there; pass a lookup with a read check for a product
@@ -109,17 +112,21 @@ interface ResolvePlacementOptions extends HierarchyOption {
  * The ancestor columns of a row being created or moved, and the channel it lives in: the home id of `input`, resolved
  * to a channel row, plus that row's own ancestor ids. Nothing above the home comes from the client. Every other
  * ancestor column below the organization is null, and without an id the row lives in the organization (`home` is
- * null), which {@link validatePlacement} lets through only where the hierarchy allows it.
+ * null) where the hierarchy allows it.
  *
  * A move resolves the new home the same way; run the create check on the row with the new columns before writing them.
- * @throws AppError 404 `not_found` for a home that does not exist in the request scope.
+ * @throws AppError 400 `invalid_request` for an input {@link validatePlacement} refuses, so the columns hold what
+ * their type says without the schema check; 404 `not_found` for a home that does not exist in the request scope.
  */
 export const resolvePlacement = async <T extends ProductEntityType>(
   ctx: OrgContext,
   entityType: T,
   input: Record<string, unknown>,
-  { hierarchy = appHierarchy, resolveHome = resolveChannelInScope }: ResolvePlacementOptions = {},
+  { hierarchy = appHierarchy, requireChannel, resolveHome = resolveChannelInScope }: ResolvePlacementOptions = {},
 ): Promise<{ columns: ResolvedPlacement<T>; home: PlacementHome | null }> => {
+  const issue = validatePlacement(entityType, input, { hierarchy, requireChannel });
+  if (issue) throw new AppError(400, 'invalid_request', 'warn', { entityType, meta: { reason: 'placement', field: String(issue.path[0]) } });
+
   const ancestors = hierarchy.getOrderedAncestors(entityType).filter((type) => type !== 'organization');
   const stamped: Record<string, string | null> = Object.fromEntries(ancestors.map((type) => [entityIdColumnKey(type), null]));
   // Cast: the columns are built per hierarchy level at runtime, which the mapped type cannot follow.

@@ -6,7 +6,7 @@ import { groupingChannelTypes, seenWindowMs, trackedProductTypes } from '#/modul
 import { findUnseenCountsByUser } from '#/modules/seen/seen-queries';
 import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
-import { buildCollectionReadWhere, homeChannelColumn } from '#/permissions/row-predicates';
+import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getEntityTable } from '#/tables';
 
 export async function getUnseenCountsOp(ctx: UserContext) {
@@ -46,7 +46,7 @@ export async function getUnseenCountsOp(ctx: UserContext) {
     for (const productType of trackedProductTypes) {
       const readFilter = resolveCollectionReadFilter(memberships, productType, organizationId, actor);
       const entityTable = getEntityTable(productType);
-      const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, homeChannelColumn(entityTable, productType), actor);
+      const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, productType, actor);
       if (scopeWhere.kind === 'none') continue;
       readableTypes.push(productType);
       if (scopeWhere.kind === 'where') scopeWhereByType[productType] = scopeWhere.where;

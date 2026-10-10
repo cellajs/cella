@@ -10,7 +10,7 @@ import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-
 import { coalesceAuditUsers } from '#/modules/user/helpers/audit-user';
 import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
-import { buildCollectionReadWhere, homeChannelColumn } from '#/permissions/row-predicates';
+import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 
 type GetAttachmentsInput = z.infer<typeof attachmentListQuerySchema>;
 
@@ -20,7 +20,7 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
 
   const actor = actorFrom(ctx);
   const readFilter = resolveCollectionReadFilter(ctx.var.actor.bindings, 'attachment', organizationId, actor);
-  const scopeWhere = buildCollectionReadWhere(readFilter, attachmentsTable, homeChannelColumn(attachmentsTable, 'attachment'), actor);
+  const scopeWhere = buildCollectionReadWhere(readFilter, attachmentsTable, 'attachment', actor);
 
   if (scopeWhere.kind === 'none') {
     return { items: [], total: 0 };

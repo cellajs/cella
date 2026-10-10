@@ -6,7 +6,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { repoRoot } from './repo-files.ts';
+import { repoRoot, withRestoredPaths } from './repo-files.ts';
 
 const configDir = join(repoRoot, 'shared/config');
 /** Restored from git afterwards, so it must be clean before the swap. */
@@ -30,19 +30,13 @@ const edits: { files: string[]; from: string; to: string }[] = [
   },
 ];
 
-const git = (args: string[]) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
-
 if (!existsSync(join(configDir, 'config.template.ts'))) {
   console.info('No shared/config/config.template.ts: this app runs its suites with its own config.');
   process.exit(0);
 }
-if (git(['status', '--porcelain', '--', swappedPath]).trim()) {
-  console.error(`Commit the changes under ${swappedPath} first: the check restores it from git.`);
-  process.exit(1);
-}
 
-let failed = false;
-try {
+let suiteFailed = false;
+withRestoredPaths([swappedPath], () => {
   for (const { files, from, to } of edits) {
     for (const file of files) {
       const path = join(configDir, file);
@@ -52,20 +46,19 @@ try {
     }
   }
   execFileSync('pnpm', ['docker:test'], { cwd: repoRoot, stdio: 'inherit' });
-  // The bench smoke test is left out: with a dev stack up it would start a bench run.
-  execFileSync('pnpm', ['exec', 'cross-env', 'TEST_MODE=core', 'vitest', 'run', '--silent=passed-only', '--exclude', '**/all-scenarios.test.ts'], {
-    cwd: repoRoot,
-    stdio: 'inherit',
-  });
-} catch (error) {
-  failed = true;
-  // A failed command has printed its own output; anything else is this script's.
-  if (!(error instanceof Error && 'status' in error)) console.error(error);
-} finally {
-  git(['checkout', '--', swappedPath]);
-}
+  try {
+    // The bench smoke test is left out: with a dev stack up it would start a bench run.
+    execFileSync('pnpm', ['exec', 'cross-env', 'TEST_MODE=core', 'vitest', 'run', '--silent=passed-only', '--exclude', '**/all-scenarios.test.ts'], {
+      cwd: repoRoot,
+      stdio: 'inherit',
+    });
+  } catch {
+    // The run has printed its failures.
+    suiteFailed = true;
+  }
+});
 
-if (failed) {
+if (suiteFailed) {
   console.error('\nA suite passes on the template config and fails on an app-shaped one: see the output above. Usual cause: a');
   console.error('test that reads `appConfig` or the policy matrix and assumes the value the template ships. State the value');
   console.error('the test needs (`assumeNoSurfaces`, `assumeMemberAttachmentPolicy`, a `beforeEach` that sets the flag).');

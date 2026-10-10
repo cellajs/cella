@@ -17,13 +17,15 @@ export function assumeNoSurfaces() {
   });
 }
 
-/** Lists one surface while `run` executes, in a file that called {@link assumeNoSurfaces}. */
+/** Lists one surface while `run` executes, and puts back what the slot held before. */
 export function withSurface(slot: string, ids: readonly string[], run: () => void) {
   const surfaces = appConfig.surfaces as Surfaces;
+  const previous = surfaces[slot];
   surfaces[slot] = ids;
   try {
     run();
   } finally {
-    delete surfaces[slot];
+    if (previous) surfaces[slot] = previous;
+    else delete surfaces[slot];
   }
 }

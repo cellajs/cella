@@ -8,7 +8,7 @@ import { draftVisibleRowsPredicate } from '#/db/utils/published-predicate';
 import { findSeenCandidates, insertSeenBy, seenRecencySql } from '#/modules/seen/seen-queries';
 import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
-import { buildCollectionReadWhere, homeChannelColumn } from '#/permissions/row-predicates';
+import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getEntityTable } from '#/tables';
 import { log } from '#/utils/logger';
 
@@ -51,7 +51,7 @@ export async function markSeenOp(ctx: UserContext, entityIds: string[], productT
 
   const actor = actorFrom(ctx);
   const readFilter = resolveCollectionReadFilter(ctx.var.memberships, productType, organization.id, actor);
-  const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, homeChannelColumn(entityTable, productType), actor);
+  const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, productType, actor);
   if (scopeWhere.kind === 'none') return { newCount: 0 };
 
   const filters: SQL[] = [inArray(orgTable.id, entityIds), eq(orgTable.organizationId, organization.id), gt(seenRecencySql(orgTable), windowCutoff)];

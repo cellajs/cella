@@ -128,7 +128,8 @@ describe('Route guards', async () => {
 
   it('must not answer an organization member with a server error, whatever the ids name', async () => {
     // A route that reads a scope its guard chain never set fails here before it reads a row: its guards let the member
-    // in, and the ids beyond the tenant and the organization name nothing. An open stream is left out.
+    // in, and the ids beyond the tenant and the organization name nothing. This reaches the handler of a read and of a
+    // write that takes no body; a write that validates its body stops at 400 before it. An open stream is left out.
     const swept = nonPublic.filter(({ streams }) => !streams);
     let reached = 0;
     for (const [index, operation] of swept.entries()) {
