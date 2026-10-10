@@ -98,4 +98,19 @@ describe('Attachment seq reads', async () => {
     // Regression guard: "20,40" must not join the OR'd search group as (seq >= 20 OR seq <= 40).
     expect(result.items.map((a) => a.seq)).toEqual([20, 30, 40]);
   });
+
+  it('B5: channelId narrows to the rows homed at or below that channel', async () => {
+    const live = [10, 20, 40, 50];
+    const seqs = async (channelId: string) =>
+      (await listAttachments({ channelId, limit: '100', sort: 'createdAt' })).items.map((a) => a.seq).sort((a, b) => a - b);
+
+    // The organization covers every row, and so does each channel between it and the rows' home.
+    expect(await seqs(tenant.organization.id)).toEqual(live);
+    for (const channelId of Object.values(plan.channelIdColumns)) expect(await seqs(channelId)).toEqual(live);
+
+    // A channel no row lives under is an empty page, not a refusal.
+    const elsewhere = await listAttachments({ channelId: generateId(), limit: '100' });
+    expect(elsewhere.status).toBe(200);
+    expect(elsewhere.items).toEqual([]);
+  });
 });

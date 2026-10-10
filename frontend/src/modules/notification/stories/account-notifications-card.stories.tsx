@@ -19,6 +19,13 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const MentionEmailOnly: Story = {
+  beforeEach: () => {
+    const { commentEmail } = appConfig.has;
+    appConfig.has.commentEmail = false;
+    return () => {
+      appConfig.has.commentEmail = commentEmail;
+    };
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 

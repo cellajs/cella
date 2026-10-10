@@ -244,7 +244,7 @@ export interface CollectionReadScopeInput {
 
 /**
  * Scope filter for a product collection read, bound to the app's policies and public read grants.
- * @throws AppError 403 `forbidden` when a requested id is outside the caller's readable scope.
+ * @throws AppError 404 `not_found` when a requested home channel is outside the caller's readable scope.
  */
 export const resolveCollectionReadFilter = (
   memberships: ActorBinding[],

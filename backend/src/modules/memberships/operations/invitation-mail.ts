@@ -3,7 +3,7 @@ import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import { findAccountLanguages } from '#/modules/memberships/memberships-queries';
-import { slugFromEmail } from '#/utils/slug-from-email';
+import { slugFromEmail } from '#/utils/slug';
 import { memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail, systemInviteEmail } from '../../../../emails';
 
 export interface InvitedAddress {

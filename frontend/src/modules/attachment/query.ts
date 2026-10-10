@@ -46,7 +46,7 @@ const keys = {
     filtered: (organizationId: string, filters: AttachmentFilters) => ['attachment', 'list', organizationId, filters] as const,
   },
 };
-// Placement seam: a narrowed delta fetch names the covering home channel; org-wide passes none.
+// A narrowed delta fetch names the channel that covers the due views; org-wide passes none.
 registerEntityQueryKeys('attachment', keys, (organizationId, tenantId, seqCursor, channelId) => {
   return getAttachments({
     path: { tenantId: tenantId!, organizationId: organizationId! },
@@ -55,8 +55,11 @@ registerEntityQueryKeys('attachment', keys, (organizationId, tenantId, seqCursor
 });
 export const attachmentQueryKeys = keys;
 
-// `keywords` is derived from the description, so it follows the description's stamp.
-registerYjsOwnedFields('attachment', ['description', 'keywords']);
+/** The columns `update-attachment.ts` stores from a description. */
+const descriptionDerivedKeys = ['keywords'];
+
+// A derived column follows the description's stamp.
+registerYjsOwnedFields('attachment', ['description', ...descriptionDerivedKeys]);
 // The derivation `update-attachment.ts` runs on every description write.
 registerDescriptionDerivation('attachment', (description) => ({ keywords: deriveDocument(description).keywords }));
 
@@ -179,6 +182,8 @@ const attachmentUpdateOptions = (
     return { previousAttachment };
   },
   onError: (error, variables, context) => {
+    // Deleted while the update was under way: nothing to report, and a rollback would put the row back in the cache.
+    if (context?.previousAttachment && !findAttachmentInCache(context.previousAttachment.id)) return;
     handleError('update', error);
     if (context?.previousAttachment) {
       cacheUpdate(keys.list.org(variables.organizationId), [context.previousAttachment]);
@@ -190,7 +195,12 @@ const attachmentUpdateOptions = (
     const detailKey = keys.detail.byId(updatedAttachment.id);
     const cached = findAttachmentInCache(updatedAttachment.id);
     const mutatedKeys = variables.ops ? Object.keys(variables.ops) : [];
-    const merged = mergeServerResponse({ cached, serverEntity: updatedAttachment, mutatedKeys });
+    const merged = mergeServerResponse({
+      cached,
+      serverEntity: updatedAttachment,
+      mutatedKeys,
+      derivedKeys: { description: descriptionDerivedKeys },
+    });
     syncEntityToCache({ entity: merged, listKey: orgKey, detailKey, queryClient });
   },
   onSettled: (_data, error, variables) => {

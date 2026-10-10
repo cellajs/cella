@@ -6,7 +6,7 @@ import type { QueryOrgContext } from '~/query/types';
 
 type CreateAttachmentItem = CreateAttachmentsData['body'][number];
 /**
- * Placement seam: id keys of the sub-organization ancestors an app homes attachments under (none in
+ * Id keys of the sub-organization ancestors an app homes attachments under (none in
  * cella). Cached rows carry them nullable, so creates accept them as-is and omit null (org-homed)
  * from the wire body; optimistic `Attachment` rows thus remain valid create input.
  */

@@ -1,5 +1,4 @@
 import { faker } from '@faker-js/faker';
-import { UniqueEnforcer } from 'enforce-unique';
 import { appConfig, type Language } from 'shared';
 import {
   generateMockChannelCounts,
@@ -8,6 +7,7 @@ import {
   mockPaginated,
   mockPastIsoDate,
   mockTenantId,
+  mockUniqueEnforcer,
   mockUuid,
   withFakerSeed,
 } from '#/mocks';
@@ -15,12 +15,7 @@ import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import type { InsertOrganizationModel, OrganizationModel } from '#/modules/organization/organization-db';
 
-const organizationName = new UniqueEnforcer();
-
-/** Call when clearing the database in tests. */
-export const resetOrganizationMockEnforcers = () => {
-  organizationName.reset();
-};
+const organizationName = mockUniqueEnforcer();
 
 /** Base organization fields shared between insert and response mocks. */
 const generateOrganizationBase = (id: string, tenantId: string, name: string, createdAt: string) => {

@@ -27,17 +27,6 @@ export function isTrackedProductType(productType: string): productType is SeenTr
 /** Context types that group unseen counts: every possible home channel of a tracked row. */
 export const groupingChannelTypes = new Set(trackedProductTypes.flatMap((t) => hierarchy.possibleHomeChannels(t)));
 
-/** Sub-context column for the read predicate: the parent-level id column, org fallback. */
-export const homeChannelColumn = (productType: SeenTrackedProductType): PgColumn => {
-  const table = getEntityTable(productType);
-  const columns = getColumns(table) as Record<string, PgColumn | undefined>;
-  const parent = hierarchy.getParent(productType);
-  const parentColumn = parent ? columns[appConfig.entityIdColumnKeys[parent as keyof typeof appConfig.entityIdColumnKeys]] : undefined;
-  const column = parentColumn ?? columns.organizationId;
-  if (!column) throw new Error(`[Seen] No sub-context column for "${productType}"`);
-  return column;
-};
-
 /**
  * Records the rows the user newly saw and bumps their view counts; returns how many were new. Only rows the user may
  * read count, by the unseen counts' read scope, live rows only and drafts for their author, so the count never
@@ -62,7 +51,7 @@ export async function markSeenOp(ctx: UserContext, entityIds: string[], productT
 
   const actor = actorFrom(ctx);
   const readFilter = resolveCollectionReadFilter(ctx.var.memberships, productType, organization.id, actor);
-  const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, homeChannelColumn(productType), actor);
+  const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, productType, actor);
   if (scopeWhere.kind === 'none') return { newCount: 0 };
 
   const filters: SQL[] = [inArray(orgTable.id, entityIds), eq(orgTable.organizationId, organization.id), gt(seenRecencySql(orgTable), windowCutoff)];

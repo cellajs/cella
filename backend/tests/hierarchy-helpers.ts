@@ -50,7 +50,7 @@ export async function cleanupEntityHierarchy(db: ExecutableDb, ...plans: TestEnt
 /**
  * Seeds, on the admin connection, the channels between an organization and where its attachments live, and returns
  * the plan: none in the template, whose attachments live in the organization itself. Rows home at the deepest strict
- * ancestor, as `attachment-placement.ts` homes them, so the plan leaves the nullable ancestor columns unset.
+ * ancestor, the one place every app's hierarchy allows, so the plan leaves the nullable ancestor columns unset.
  */
 export async function seedAttachmentHome(org: { id: string; tenantId: string }, createdBy: string) {
   const plan = buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId: org.id, makeChannelId: () => generateId() });

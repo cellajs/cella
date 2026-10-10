@@ -1,5 +1,6 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { createAttachments, type GetNotificationsResponse, getNotifications } from 'sdk';
+import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -14,7 +15,7 @@ import { adminDb, mailsTo } from '../helpers';
 import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { assumeMemberAttachmentPolicy, clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
+import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 

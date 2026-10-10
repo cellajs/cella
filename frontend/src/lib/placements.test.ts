@@ -1,5 +1,5 @@
-import { appConfig } from 'shared';
 import { getModules } from 'shared/module-registry';
+import { assumeNoSurfaces, withSurface } from 'shared/testing/surfaces';
 import { describe, expect, it } from 'vitest';
 import type { TKey } from '~/lib/i18n-locales';
 import { defineFrontendModule } from '~/lib/module';
@@ -7,6 +7,8 @@ import { assertSurfaceIds, getTools, isPlacementHidden, orderBySlotConfig, resol
 
 // Fixtures use synthetic labels that are not real translation keys.
 const key = (s: string) => s as TKey;
+
+assumeNoSurfaces();
 
 describe('tool registry', () => {
   it('indexes module tools by slot, sorted on order with a default of 50', () => {
@@ -87,20 +89,6 @@ describe('orderBySlotConfig', () => {
 
 const slot = 'organization.settings' as const;
 
-/** cella lists no surfaces, so each test states the list it needs and puts the config back. */
-function withSurface(ids: readonly string[] | undefined, run: () => void) {
-  const surfaces = appConfig.surfaces as Record<string, readonly string[] | undefined>;
-  const previous = surfaces[slot];
-  if (ids) surfaces[slot] = ids;
-  else delete surfaces[slot];
-  try {
-    run();
-  } finally {
-    if (previous) surfaces[slot] = previous;
-    else delete surfaces[slot];
-  }
-}
-
 describe('isPlacementHidden', () => {
   const item = { id: 'extra', label: key('c:extra'), order: 50 };
 
@@ -112,7 +100,7 @@ describe('isPlacementHidden', () => {
   });
 
   it('hides an id the app left out of the surface list, locked included', () => {
-    withSurface(['general'], () => {
+    withSurface(slot, ['general'], () => {
       expect(isPlacementHidden(slot, item, {})).toBe(true);
       expect(isPlacementHidden(slot, { ...item, locked: true }, {})).toBe(true);
       expect(isPlacementHidden(slot, { id: 'general', label: key('c:general'), order: 10 }, {})).toBe(false);
@@ -145,14 +133,14 @@ describe('resolvePlacementList', () => {
   });
 
   it('a listed surface decides which placements exist and their order, declared order ignored', () => {
-    withSurface(['danger', 'general'], () => {
+    withSurface(slot, ['danger', 'general'], () => {
       const resolved = resolvePlacementList(slot, items, { grants: ['delete'], pairs: ['organization.admin'] });
       expect(resolved.map((i) => i.id)).toEqual(['danger', 'general']);
     });
   });
 
   it('the channel stored order still reorders within a listed surface', () => {
-    withSurface(['danger', 'general', 'extra'], () => {
+    withSurface(slot, ['danger', 'general', 'extra'], () => {
       const resolved = resolvePlacementList(slot, items, { grants: ['delete'], slotConfig: { order: ['extra'] } });
       expect(resolved.map((i) => i.id)).toEqual(['extra', 'danger', 'general']);
     });
@@ -161,7 +149,7 @@ describe('resolvePlacementList', () => {
 
 describe('assertSurfaceIds', () => {
   it('throws for an id the surface has no placement for, and passes once it does', () => {
-    withSurface(['general', 'ghost'], () => {
+    withSurface(slot, ['general', 'ghost'], () => {
       expect(() => assertSurfaceIds(() => ['general'])).toThrowError(/lists 'ghost', which is no placement/);
       expect(() => assertSurfaceIds(() => ['general', 'ghost'])).not.toThrow();
     });

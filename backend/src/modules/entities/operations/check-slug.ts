@@ -2,7 +2,8 @@ import type { ChannelEntityType } from 'shared';
 import type { DbContext } from '#/core/context';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 
-type EntityTypeWithSlug = ChannelEntityType | 'user';
+/** The entity types whose rows carry a slug. */
+export type EntityTypeWithSlug = ChannelEntityType | 'user';
 
 export const checkSlugAvailable = async (ctx: DbContext, slug: string, entityType: EntityTypeWithSlug) => {
   const result = await resolveEntity(ctx, { entityType, identifier: slug, bySlug: true });

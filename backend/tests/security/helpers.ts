@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { generatePasskeyChallenge, signInWithPasskey } from 'sdk';
-import { type EntityActionPermissions, type EntityRole, getEntityPolicies, getPolicyPermissions, policyMatrix } from 'shared';
-import { afterEach, beforeEach, expect } from 'vitest';
+import type { EntityRole } from 'shared';
+import { expect } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
@@ -115,18 +115,4 @@ export async function passkeySignIn(assertion: PasskeyAssertion, cookie: string,
   const call = await createAppClient();
   const headers = cookie ? { ...defaultHeaders, Cookie: cookie } : defaultHeaders;
   return call(signInWithPasskey, { body: { type, assertion }, headers });
-}
-
-/** A suite calls this at its top to declare the organization member's attachment policy its assertions assume. */
-export function assumeMemberAttachmentPolicy(permissions: Partial<EntityActionPermissions>) {
-  const policy = getPolicyPermissions(getEntityPolicies('attachment', policyMatrix), 'organization', memberRole);
-  let configured: EntityActionPermissions | undefined;
-  beforeEach(() => {
-    if (!policy) return;
-    configured = { ...policy };
-    Object.assign(policy, permissions);
-  });
-  afterEach(() => {
-    if (policy && configured) Object.assign(policy, configured);
-  });
 }

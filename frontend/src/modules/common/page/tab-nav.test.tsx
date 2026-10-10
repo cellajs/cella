@@ -8,13 +8,15 @@ const fakeRoute = (over: Record<string, unknown>) => ({ children: [], options: {
 const routesById: Record<string, unknown> = {};
 vi.mock('~/routes/-router-instance', () => ({ getRouter: () => ({ routesById }) }));
 
-import { appConfig } from 'shared';
+import { assumeNoSurfaces, withSurface } from 'shared/testing/surfaces';
 import type { TKey } from '~/lib/i18n-locales';
 import { defineFrontendModule } from '~/lib/module';
-import { type GuardNavTabsOptions, guardNavTabs, resolveNavTabs } from '~/modules/common/page/tab-nav';
+import { assertSurfaces, type GuardNavTabsOptions, guardNavTabs, resolveNavTabs } from '~/modules/common/page/tab-nav';
 
 // Fixtures use synthetic labels that are not real translation keys.
 const key = (s: string) => s as TKey;
+
+assumeNoSurfaces();
 
 // Tools register once (the registry is process-global); tests re-seed only the routes.
 defineFrontendModule({
@@ -28,19 +30,6 @@ defineFrontendModule({
     { slot: 'system.tabs', id: 'audit', label: key('c:audit'), order: 5, render: () => null },
   ],
 });
-
-/** cella lists no surfaces, so a test that needs one states it and puts the config back. */
-function withSurface(slot: string, ids: readonly string[], run: () => void) {
-  const surfaces = appConfig.surfaces as Record<string, readonly string[] | undefined>;
-  const previous = surfaces[slot];
-  surfaces[slot] = ids;
-  try {
-    run();
-  } finally {
-    if (previous) surfaces[slot] = previous;
-    else delete surfaces[slot];
-  }
-}
 
 /** Builds a parent layout route with two route-file tab children plus a `$tool` host child. */
 function seedRoutes(id: string, tabsSlot: string) {
@@ -103,6 +92,34 @@ describe('resolveNavTabs merges route-file and registry tabs', () => {
     seedRoutes('/system', 'system.tabs');
     // settings (requires update) drops without a grant; the registry system tab still appears
     expect(resolveNavTabs('/system').map((tab) => tab.id)).toEqual(['audit', 'members']);
+  });
+});
+
+describe('assertSurfaces checks the route tree at startup', () => {
+  beforeEach(() => {
+    for (const key of Object.keys(routesById)) delete routesById[key];
+  });
+
+  it('passes a tabbed layout that names its slot, and a listed surface whose ids are all placements', () => {
+    seedRoutes('/org', 'organization.tabs');
+    expect(() => assertSurfaces()).not.toThrow();
+    withSurface('organization.tabs', ['reports', 'members', 'settings'], () => expect(() => assertSurfaces()).not.toThrow());
+  });
+
+  it('throws for a layout with tab routes and no tabsSlot, which would render an empty bar', () => {
+    const members = fakeRoute({
+      path: 'members',
+      fullPath: '/org/members',
+      options: { staticData: { navTab: { id: 'members', label: key('c:members') } } },
+    });
+    routesById['/org'] = fakeRoute({ children: [members] });
+    expect(resolveNavTabs('/org')).toEqual([]);
+    expect(() => assertSurfaces()).toThrowError(/'\/org' has child routes with a navTab and declares no staticData.tabsSlot/);
+  });
+
+  it('throws for a listed id that is neither a route tab nor a tool of the surface', () => {
+    seedRoutes('/org', 'organization.tabs');
+    withSurface('organization.tabs', ['members', 'ghost'], () => expect(() => assertSurfaces()).toThrowError(/lists 'ghost'/));
   });
 });
 

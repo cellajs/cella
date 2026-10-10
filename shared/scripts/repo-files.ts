@@ -18,6 +18,30 @@ export interface Finding {
   review?: boolean;
 }
 
+/**
+ * Runs `run`, which may rewrite files under `paths`, and restores those paths from git afterwards: also when `run`
+ * throws, and when the process is interrupted while a command of `run` is under way. Exits 1 without running when
+ * a path holds uncommitted changes, since the restore would discard them.
+ */
+export function withRestoredPaths(paths: string[], run: () => void): void {
+  const git = (args: string[]) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8' });
+  if (git(['status', '--porcelain', '--', ...paths]).trim()) {
+    console.error(`Commit the changes under ${paths.join(' and ')} first: the check restores them from git.`);
+    process.exit(1);
+  }
+  // With a handler set, an interrupt ends the running command and its error reaches the `finally` below.
+  const interrupted = () => process.exit(130);
+  process.once('SIGINT', interrupted);
+  process.once('SIGTERM', interrupted);
+  try {
+    run();
+  } finally {
+    git(['checkout', '--', ...paths]);
+    process.off('SIGINT', interrupted);
+    process.off('SIGTERM', interrupted);
+  }
+}
+
 /** Repo-relative files git tracks, plus untracked ones it does not ignore, that exist on disk, in `git ls-files` order. */
 export function repoFiles(root = repoRoot): string[] {
   return execFileSync('git', ['ls-files', '-co', '--exclude-standard'], { cwd: root, encoding: 'utf8' })

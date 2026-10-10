@@ -49,6 +49,7 @@ Requirements:
 | `pnpm test:full:verbose` | Same, plus passing test output |
 | `pnpm test:core` | Skips integration tests (backend, yjs, cdc). Rarely needed (`test:core:verbose` for full output) |
 | `pnpm test:storybook` | Storybook component tests in headless Chromium. Not part of `pnpm test` ([see below](#storybook)) |
+| `pnpm app-shape:check` | The core suites again with a config shaped like an app's: listed surfaces, another feature flag, a stricter member policy. Runs on the release PR |
 | `pnpm story` | Interactive Storybook dev server. Runs no tests. |
 
 The `TEST_MODE` env var selects `core` or `full`. In `core` mode the per-package vitest configs exclude `tests/integration/**`. A test can self-gate with `describe.skipIf(process.env.TEST_MODE !== 'full')`.
@@ -78,6 +79,10 @@ A branch that adds migrations runs its suite against a throwaway database (`DB_T
 Coverage excludes `*.test.ts`, `tests/**` and mocks, so placement does not change coverage numbers.
 
 **Backend specifics.** Test env vars (secrets, `DATABASE_URL`, `NODE_ENV=test`) are preset in [backend/vitest.config.ts](../backend/vitest.config.ts). Do not load `.env` in tests. Backend test files run in parallel, each vitest worker on its own database (`backend_worker_<n>` in the test container), so files never see each other's rows. [backend/tests/global-setup.ts](../backend/tests/global-setup.ts) creates these once and migrates them with the shared database the yjs and cdc tests use. Tests that open their own connection take the URL from `shared/test-db`, which points at the worker's database. Never assume an empty database: a worker's database keeps the rows of earlier files and runs. Clean up with `clearDatabase()`: it deletes the rows, since `TRUNCATE` costs ~400ms a call. Server-wide views (`pg_stat_activity`, `pg_locks`) show every worker, so a query on them filters on `datname = current_database()`. Use the `#/` import alias as in source.
+
+**App config.** A template test also runs in every app, on that app's hierarchy, surfaces, feature flags and policies. A test that needs a particular value states it and puts the app's back: `assumeMemberAttachmentPolicy` (`shared/testing/member-policy`) for what a member may do with an attachment, `assumeNoSurfaces` and `withSurface` (`shared/testing/surfaces`) for `appConfig.surfaces`, a `beforeEach` that sets the flag for `appConfig.has`. A fixture row carries every ancestor column the app's hierarchy gives the product (`buildTestEntityHierarchyPlan`, `seedAttachmentHome`), never the organization alone. `pnpm app-shape:check` runs the core suites under such a config.
+
+**Every route.** `backend/tests/security/route-guards.test.ts` reads its table from the API document, an app's routes included: no route without `publicGuard` answers a request without a session, no route behind `sysAdminGuard` answers a user without the system role, a route with a `relatableUserId` parameter runs `relatableGuard`, and no route answers an organization member with a server error for ids that name nothing (a write that validates its body stops at 400 before its handler, so this covers reads and body-less writes). A rule that holds for every route goes there; an app tests its own entities in files named `*-app.test.ts`, with the helpers in `backend/tests/security/helpers.ts`.
 
 **New packages.** Register a new workspace package with tests in the root [vitest.config.ts](../vitest.config.ts): add it to `projects` and the `coverage.include` globs.
 

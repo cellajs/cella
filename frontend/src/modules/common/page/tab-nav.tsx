@@ -42,15 +42,23 @@ function getTabsSlot(parentRouteId: string): Slot | undefined {
 export type NavCandidate = PlacementDescriptor & { order: number; path: PageTab['path']; params: PageTab['params'] };
 
 /**
- * Startup check on `appConfig.surfaces`: an id that names no placement of its surface would hide a
- * tab or section in silence. Called once the router exists, so route-declared tabs count. Throws
- * outside production, where a hard crash over one misspelled id would be the worse failure.
+ * Startup check on the tab bars and on `appConfig.surfaces`: a layout whose child routes declare
+ * `navTab` while it names no `tabsSlot` renders an empty bar, and a listed id that names no
+ * placement of its surface would hide a tab or section, both without an error. Called once the
+ * router exists, so route-declared tabs count. Throws outside production, where a hard crash over
+ * one misspelled id would be the worse failure.
  */
 export function assertSurfaces(): void {
   const routesById = getRouter().routesById as unknown as Record<string, AnyRoute>;
   const parentRouteIdForSlot = (slot: Slot) => Object.keys(routesById).find((routeId) => routesById[routeId].options?.staticData?.tabsSlot === slot);
 
   try {
+    for (const [routeId, route] of Object.entries(routesById)) {
+      if (route.options?.staticData?.tabsSlot) continue;
+      if (getChildRoutes(route).some((child) => child.options?.staticData?.navTab)) {
+        throw new Error(`Route '${routeId}' has child routes with a navTab and declares no staticData.tabsSlot, so its tab bar stays empty`);
+      }
+    }
     assertSurfaceIds((slot) => {
       const parentRouteId = parentRouteIdForSlot(slot);
       const tabIds = parentRouteId ? getNavTabCandidates(parentRouteId).map((tab) => tab.id) : [];
