@@ -33,6 +33,14 @@ services:
     restart: always
     volumes:
       - pg_data:/var/lib/postgresql/data
+    # `up --wait` returns once this passes. Over TCP: on a new volume the image's init server answers on the socket
+    # only, before the real server accepts connections.
+    healthcheck: &db_ready
+      test: ["CMD-SHELL", "pg_isready -U postgres -h 127.0.0.1"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 5s
 
   db_test:
     container_name: ${PROJECT_SLUG}_db_test
@@ -63,12 +71,7 @@ services:
       - test
     volumes:
       - pg_test_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 2s
-      timeout: 5s
-      retries: 15
-      start_period: 5s
+    healthcheck: *db_ready
 
   # Seeded database of the accessibility audit (`pnpm a11y:run`), apart from the dev database so a run never touches it.
   db_a11y:
@@ -81,9 +84,3 @@ services:
       - a11y
     volumes:
       - pg_a11y_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 2s
-      timeout: 5s
-      retries: 15
-      start_period: 5s
