@@ -1,9 +1,8 @@
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { extractPgError } from '#/lib/error';
-import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
+import { generateUniqueSlugs } from '#/modules/entities/operations/generate-unique-slugs';
 import type { EmailProof } from '#/modules/user/emails-db';
 import { claimEmailForUser } from '#/modules/user/operations/claim-email';
 import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
@@ -32,7 +31,7 @@ interface HandleCreateUserProps {
  * Throws 409 `email_exists` when the address is taken.
  */
 export const handleCreateUser = async (ctx: DbContext, { newUser, via }: HandleCreateUserProps): Promise<UserModel> => {
-  const slugAvailable = await checkSlugAvailable(ctx, newUser.slug, 'user');
+  const [slug] = await generateUniqueSlugs(ctx, [newUser.slug], 'user');
 
   try {
     const normalizedEmail = newUser.email.toLowerCase().trim();
@@ -40,7 +39,7 @@ export const handleCreateUser = async (ctx: DbContext, { newUser, via }: HandleC
     const [user] = await insertUsers(ctx, {
       users: [
         {
-          slug: slugAvailable ? newUser.slug : `${newUser.slug}-${nanoid(5)}`,
+          slug,
           firstName: newUser.firstName,
           // Providers assert an empty string for a missing family name; the column holds null for "none".
           lastName: newUser.lastName || null,

@@ -1,5 +1,5 @@
 import type { SSEStreamingApi } from 'hono/streaming';
-import type { EntityRole } from 'shared';
+import { appConfig, type EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { type ActivityEvent, type ActivityRow, activityBus } from '#/lib/activity-bus';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
@@ -100,7 +100,17 @@ describe('entities listeners: a membership change on open streams', () => {
 });
 
 describe('entities listeners: a product change on open streams', () => {
-  const row = (id: string, extra: Record<string, unknown> = {}) => ({ id, organizationId: ORG, createdBy: 'author-user', ...extra });
+  // A row names every ancestor its product can have, null where it has none: an app may home the product below the organization.
+  const noDeeperAncestors = Object.fromEntries(
+    appConfig.channelEntityTypes.filter((type) => type !== 'organization').map((type) => [appConfig.entityIdColumnKeys[type], null]),
+  );
+  const row = (id: string, extra: Record<string, unknown> = {}) => ({
+    id,
+    organizationId: ORG,
+    ...noDeeperAncestors,
+    createdBy: 'author-user',
+    ...extra,
+  });
 
   /** A product update as the socket hands it to the bus: the activity of its first row, and its rows. */
   const updateEvent = (rows: ActivityRow[]): ActivityEvent =>

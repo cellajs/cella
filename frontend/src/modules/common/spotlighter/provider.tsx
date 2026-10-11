@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect } from 'react';
 import { useSpotlighter } from '~/modules/common/spotlighter/use-spotlighter';
+import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
 const closeTop = () => {
   const { stack } = useSpotlighter.getState();
@@ -14,8 +15,8 @@ export function Spotlighter() {
   useEffect(() => {
     if (!hasActive) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      // Leave Esc to whatever is layered on top (dropdowns, dialogs, the editor's own handling)
-      if (event.key === 'Escape' && !event.defaultPrevented) closeTop();
+      // Leave Esc to whatever is layered on top (dropdowns, dialogs, the editor's own handling, an open tooltip or hover card)
+      if (event.key === 'Escape' && !event.defaultPrevented && !isHoverContentOpen()) closeTop();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);

@@ -3,8 +3,8 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
 import { createInsertSchema, createSelectSchema, describeFields } from '#/db/utils/drizzle-schema';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { attachmentPlacementFieldsSchema, validateAttachmentPlacement } from '#/modules/attachment/attachment-placement';
 import { productViewCountSchema } from '#/modules/entities/entities-schema';
+import { placementFieldsSchema, validatePlacement } from '#/permissions/product-placement';
 import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
 import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
 import { mockAttachmentResponse } from './attachment-mocks';
@@ -66,8 +66,8 @@ const attachmentCreateBodySchema = attachmentInsertSchema
     // The column defaults to {}, making `keys` optional on the generated insert schema; a create
     // must carry at least the original key.
     keys: attachmentKeysSchema,
-    // Placement seam: apps exposing channel placement add their deepest-home-id fields here.
-    ...attachmentPlacementFieldsSchema,
+    // The home id of a row that lives in a channel; none while attachments live in the organization.
+    ...placementFieldsSchema('attachment'),
   });
 
 export const attachmentContract = evolutionContract.product('attachment', {
@@ -84,10 +84,10 @@ export const attachmentCreateManyStxBodySchema = attachmentContract.createItemSc
   .array()
   .min(1)
   .max(50)
-  // Placement seam: per-item validation (e.g. ambiguous home ids); a no-op with no placement fields.
+  // One home id per item, where the hierarchy gives attachments a channel to live in.
   .superRefine((items, ctx) => {
     items.forEach((item, index) => {
-      const issue = validateAttachmentPlacement(item);
+      const issue = validatePlacement('attachment', item);
       if (issue) ctx.addIssue({ code: 'custom', path: [index, ...issue.path], message: issue.message });
     });
   });
@@ -100,8 +100,7 @@ const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'crea
 
 export const attachmentListQuerySchema = paginationQuerySchema.extend({
   sort: attachmentSortKeys.default('createdAt').optional(),
-  // Placement seam: narrow to rows homed at one channel (resolved by `resolveAttachmentHomeScope`);
-  // omitted or the organization itself reads org-wide.
+  // Narrows the list to the rows homed at or below one channel; omitted or the organization itself reads org-wide.
   channelId: validUuidSchema.optional(),
 });
 

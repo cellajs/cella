@@ -13,7 +13,7 @@ export async function persistAttachments(
   }: {
     tenantId: string;
     organizationId: string;
-    /** Placement seam: the deepest home channel id only (ancestors are server-derived); omitted = org-homed. Apps expose their placement fields via the backend seam. */
+    /** The deepest home channel id only (ancestors are server-derived); omitted = org-homed. The fields a create accepts follow the hierarchy (`placementFieldsSchema`). */
     placement?: Record<string, string | null | undefined>;
   },
 ): Promise<void> {

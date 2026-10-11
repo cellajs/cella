@@ -1,4 +1,4 @@
-import { slugFromEmail } from '#/utils/slug-from-email';
+import { slugFromEmail } from '#/utils/slug';
 import type { SsoClaims } from './federation-client';
 import type { Federation } from './federations';
 

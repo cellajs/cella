@@ -32,7 +32,7 @@ export function AttachmentsTableBar({
 }: AttachmentsTableBarProps) {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
-  // Placement seam: a sub-organization channel homes its uploads on itself; the organization row is the
+  // A sub-organization channel homes its uploads on itself; the organization row is the
   // org. Publication is row-local, so the channel's `publicAt` is only the default a new row starts with.
   const isOrganization = channel.entityType === 'organization';
   const organizationId = !isOrganization && 'organizationId' in channel ? String(channel.organizationId) : channel.id;

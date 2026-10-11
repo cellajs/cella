@@ -70,10 +70,10 @@ export const attachmentsSeed = async () => {
     return;
   }
 
-  // Placement seam: apps home the seeded rows on their own channels, or return none to skip.
+  // App-owned: an app homes the seeded rows in its own channels, or returns none to skip.
   const placements = await seedAttachmentPlacements(db, organizations);
   if (!placements.length) {
-    warnSpinner('No attachment placements from the placement seam → skip seeding');
+    warnSpinner('No attachment placements from seedAttachmentPlacements → skip seeding');
     return;
   }
 

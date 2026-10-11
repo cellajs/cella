@@ -1,5 +1,4 @@
 import { eq, inArray, sql } from 'drizzle-orm';
-import { appConfig, hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoidTenant } from 'shared/utils/nanoid';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,6 +14,7 @@ import { processFlush } from '../../pipeline/process-events';
 import { ApiUnreachableError } from '../../services/failure';
 import type { PendingEvent } from '../../types';
 import { dmlMessage } from '../factories';
+import { type AttachmentHome, seedAttachmentHome } from './pipeline-harness';
 
 /** Whether the configured database holds the migrated schema these tests write to. */
 async function probeReady(): Promise<boolean> {
@@ -37,6 +37,7 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
   const tenantId = nanoidTenant();
   const organizationId = generateId();
   const attachmentIds: string[] = [];
+  let home: AttachmentHome;
   let lsnCounter = 0x1000;
   const committedAt = new Map<string, string>();
   /** What the worker sent to the API: the subject of each message, and the sequence value of each of its rows. */
@@ -47,6 +48,7 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
     await cdcDb
       .insert(organizationsTable)
       .values({ ...mockOrganization(), id: organizationId, tenantId, slug: `flush-${tenantId}`, createdBy: null });
+    home = await seedAttachmentHome({ id: organizationId, tenantId });
     // No API in this test: the socket counts as open, and what the worker sends is collected.
     vi.spyOn(wsClient, 'whenConnected').mockResolvedValue();
     vi.spyOn(wsClient, 'send');
@@ -66,6 +68,7 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
       await cdcDb.delete(activitiesTable).where(inArray(activitiesTable.subjectId, attachmentIds));
       await cdcDb.delete(attachmentsTable).where(inArray(attachmentsTable.id, attachmentIds));
     }
+    await home.remove();
     await cdcDb.execute(sql`DELETE FROM channel_counters WHERE channel_key = ${organizationId}`);
     await cdcDb.delete(organizationsTable).where(eq(organizationsTable.id, organizationId));
     await cdcDb.execute(sql`DELETE FROM tenants WHERE id = ${tenantId}`);
@@ -82,7 +85,7 @@ describe.skipIf(!READY)('Recording a flush (integration)', () => {
       id,
       tenantId,
       organizationId,
-      ...Object.fromEntries(hierarchy.getNullableAncestors('attachment').map((type) => [appConfig.entityIdColumnKeys[type], null])),
+      ...home.columns,
       createdBy: null,
       updatedBy: null,
       deletedBy: null,

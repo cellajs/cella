@@ -3,6 +3,7 @@ import type { InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import { mockAttachment } from '#/modules/attachment/attachment-mocks';
 import { registerBenchSeed } from '../registry';
 import { TOTAL_ATTACHMENTS } from './attachment-constants';
+import { attachmentSeedOrder, benchAttachmentHome } from './attachment-home';
 import { attachmentId, CORE_ID_VARIANTS, ORG_ID, TENANT_ID, userId } from './ids';
 
 /**
@@ -21,15 +22,16 @@ export const loadtestAttachment = (index: number): InsertAttachmentModel => ({
   bucketName: 'attachments',
   keys: { original: `uploads/xbench/${attachmentId(index)}/xbench-file-${index}.pdf` },
   organizationId: ORG_ID,
-  // Org-homed: the mock invents ids for every ancestor, and nullable ones would reference no seeded channel.
+  // The mock invents ids for every ancestor, and those reference no seeded channel: a nullable one is null unless the app's home names it.
   ...Object.fromEntries(hierarchy.getNullableAncestors('attachment').map((type) => [appConfig.entityIdColumnKeys[type], null])),
+  ...benchAttachmentHome(index),
   createdBy: userId(index % 100),
   updatedBy: userId(index % 100),
 });
 
 registerBenchSeed({
   table: 'attachments',
-  order: 100,
+  order: attachmentSeedOrder,
   idVariant: CORE_ID_VARIANTS.attachment,
   rows: ({ now }) => Array.from({ length: TOTAL_ATTACHMENTS }, (_, i) => ({ ...loadtestAttachment(i), createdAt: now, seq: 0 })),
 });

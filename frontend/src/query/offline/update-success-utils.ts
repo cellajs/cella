@@ -10,13 +10,15 @@ export function mergeServerResponse<T extends { id: string; stx?: unknown; updat
   cached?: T;
   serverEntity: T;
   mutatedKeys: string[];
+  /** Per mutated key, the columns the server stamps when it lands (a body's keywords, a flag's actor): taken from the response with it. */
+  derivedKeys?: Record<string, readonly string[]>;
   skipKeys?: string[];
 }): T {
-  const { cached, serverEntity, mutatedKeys, skipKeys } = opts;
+  const { cached, serverEntity, mutatedKeys, derivedKeys = {}, skipKeys } = opts;
   if (!cached) return serverEntity;
 
   const serverUpdates: Record<string, unknown> = {};
-  for (const key of mutatedKeys) {
+  for (const key of [...mutatedKeys, ...mutatedKeys.flatMap((mutated) => derivedKeys[mutated] ?? [])]) {
     if (skipKeys?.includes(key)) continue;
     serverUpdates[key] = (serverEntity as Record<string, unknown>)[key];
   }

@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { markSeen } from 'sdk';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildInsertableProduct } from '#/mocks';
@@ -13,7 +14,7 @@ import { adminDb, createTestOrganization } from '../helpers';
 import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { assumeMemberAttachmentPolicy, clearSecurityTestData, createOrgUser } from './helpers';
+import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 

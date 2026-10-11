@@ -6,7 +6,6 @@ import { buildStx } from '#/core/stx';
 import { tenantContext } from '#/db/tenant-context';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { attachmentsTable, type InsertAttachmentModel } from '#/modules/attachment/attachment-db';
-import { resolveAttachmentPlacement } from '#/modules/attachment/attachment-placement';
 import { insertAttachments } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
 import { namesOwnStorage } from '#/modules/attachment/helpers/storage-key';
@@ -14,6 +13,7 @@ import { getOrganizationEntityCount } from '#/modules/entities/entities-queries'
 import { withAuditUsers } from '#/modules/user/operations/with-audit-users';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { canCreateEntity } from '#/permissions/can-create';
+import { resolvePlacement } from '#/permissions/product-placement';
 import { checkIdempotency } from '#/utils/idempotency';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
@@ -50,8 +50,8 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
     }
     attachmentContract.assertBlockFields(att, organization.id);
 
-    // Placement seam: ancestor columns derived server-side; the org-homed default stamps none.
-    const placement = await resolveAttachmentPlacement(ctx, att);
+    // The ancestor columns come from the home channel's own row; a row in the organization carries none.
+    const { columns: placement } = await resolvePlacement(ctx, 'attachment', att);
 
     const attachment = {
       ...att,

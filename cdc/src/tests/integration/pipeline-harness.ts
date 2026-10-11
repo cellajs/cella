@@ -1,6 +1,9 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { sql } from 'drizzle-orm';
 import { PgoutputPlugin } from 'pg-logical-replication';
+import { appConfig, hierarchy } from 'shared';
+import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { generateId } from 'shared/utils/entity-id';
 import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../constants';
 import { cdcDb } from '../../lib/db';
 import { wsClient } from '../../network/websocket-client';
@@ -22,6 +25,60 @@ export async function waitFor(predicate: () => boolean | Promise<boolean>, timeo
 export async function slotActive(): Promise<boolean> {
   const res = await cdcDb.execute<{ active: boolean }>(sql`SELECT active FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`);
   return res.rows[0]?.active ?? false;
+}
+
+/** Where the attachments of one organization live in a test. */
+export interface AttachmentHome {
+  /** Every ancestor column of an attachment below the organization: the id of a seeded channel, null where the ancestor is optional. */
+  columns: Record<string, string | null>;
+  /** Removes the seeded channels with their activities and counters, once the attachments in them are gone. */
+  remove(): Promise<void>;
+}
+
+/**
+ * Seeds the channels between an organization and where its attachments live: none in the template, whose attachments
+ * live in the organization itself. An app that homes them deeper has a foreign key on that channel, so a row needs one
+ * that exists. Call it before the books are counted and the pipeline starts: they then start from these channels.
+ */
+export async function seedAttachmentHome(organization: { id: string; tenantId: string }): Promise<AttachmentHome> {
+  const plan = buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId: organization.id, makeChannelId: () => generateId() });
+  const channelIds = sql.join(
+    plan.seedChannelRows.map((row) => sql`${row.id}`),
+    sql`, `,
+  );
+
+  for (const row of plan.seedChannelRows) {
+    const ancestorNames = sql.join(
+      row.ancestorColumns.map((column) => sql.identifier(column.columnName)),
+      sql`, `,
+    );
+    const ancestorValues = sql.join(
+      row.ancestorColumns.map((column) => sql`${column.id}`),
+      sql`, `,
+    );
+    await cdcDb.execute(sql`
+      INSERT INTO ${sql.identifier(row.tableName)} (id, tenant_id, entity_type, name, slug, ${ancestorNames})
+      VALUES (${row.id}, ${organization.tenantId}, ${row.channelType}, ${`home ${row.channelType}`}, ${`home-${row.id}`}, ${ancestorValues})
+    `);
+  }
+
+  const nullable = new Set<string>(hierarchy.getNullableAncestors('attachment'));
+  const columns = Object.fromEntries(
+    plan.sqlChannelColumns
+      .filter(({ channelType }) => channelType !== 'organization')
+      .map(({ channelType, id }) => [appConfig.entityIdColumnKeys[channelType], nullable.has(channelType) ? null : id]),
+  );
+
+  const remove = async () => {
+    if (plan.seedChannelRows.length === 0) return;
+    await cdcDb.execute(sql`DELETE FROM activities WHERE subject_id IN (${channelIds})`);
+    await cdcDb.execute(sql`DELETE FROM channel_counters WHERE channel_key IN (${channelIds})`);
+    // Children before parents.
+    for (const row of [...plan.seedChannelRows].reverse())
+      await cdcDb.execute(sql`DELETE FROM ${sql.identifier(row.tableName)} WHERE id = ${row.id}`);
+  };
+
+  return { columns, remove };
 }
 
 export interface CdcPipelineHarness {

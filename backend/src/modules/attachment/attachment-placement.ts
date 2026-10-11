@@ -1,123 +1,18 @@
-import type { z } from '@hono/zod-openapi';
-import {
-  type AncestorChannelType,
-  appConfig,
-  type ChannelEntityType,
-  type EntityIdColumns,
-  type EntityType,
-  hierarchy,
-  type NullableAncestorType,
-} from 'shared';
-import type { OrgContext } from '#/core/context';
-import { AppError } from '#/core/error';
 import type { DB } from '#/db/db';
-import type { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { resolveChannelInScope } from '#/permissions/get-valid-channel';
-import { validUuidSchema } from '#/schemas';
-
-const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors('attachment'));
-/** Sub-organization ancestors an attachment can home at, deepest first; none in cella. */
-// Compared as string so cella's organization-only chain does not infer a `never[]` predicate.
-const placementAncestors = hierarchy.getOrderedAncestors('attachment').filter((type) => (type as string) !== 'organization');
-const placementKey = (type: string) => appConfig.entityIdColumnKeys[type as ChannelEntityType];
-
-/**
- * Create-body placement fields, spread into the create-item schema. This file is the attachment
- * placement seam (pinned; apps own their fill), with defaults derived from the hierarchy: the
- * client sends the deepest home id only (required when that home is a strict ancestor, optional
- * when nullable), the chain above it is read off the resolved row, and every other sub-organization
- * ancestor column is null. cella has no sub-organization ancestors, so its rows are org-homed.
- */
-export const attachmentPlacementFieldsSchema = Object.fromEntries(
-  placementAncestors.map((type) => [placementKey(type), nullableAncestors.has(type) ? validUuidSchema.optional() : validUuidSchema]),
-) as Record<string, z.ZodType<string | undefined>>;
-
-/** A create-body item as the placement seam sees it; apps narrow to their placement fields. */
-export type AttachmentPlacementInput = Record<string, unknown>;
-
-type SubOrgAncestor = Exclude<AncestorChannelType<'attachment'>, 'organization'>;
-
-/**
- * Ancestor id columns to stamp on the inserted row, typed like the table columns: strict ancestors
- * are `string`, nullable ones `string | null`; empty for org-homed rows.
- */
-export type ResolvedAttachmentPlacement = EntityIdColumns<Exclude<SubOrgAncestor, NullableAncestorType<'attachment'>> & EntityType, string> &
-  EntityIdColumns<Extract<SubOrgAncestor, NullableAncestorType<'attachment'>> & EntityType, string | null>;
-
-const providedHome = (item: AttachmentPlacementInput) =>
-  placementAncestors.filter((type) => typeof item[placementKey(type)] === 'string' && item[placementKey(type)]);
-
-/** Per-item create-body validation, anchored at the returned path relative to the item: one home id at most. */
-export const validateAttachmentPlacement = (item: AttachmentPlacementInput): { path: (string | number)[]; message: string } | null => {
-  const provided = providedHome(item);
-  if (provided.length <= 1) return null;
-  return {
-    path: [placementKey(provided[0])],
-    message: 'Ambiguous placement: send only the deepest home id (its ancestors are derived server-side)',
-  };
-};
-
-/**
- * Ancestor columns for one create-body item: the deepest provided id, resolved to a channel row in
- * the request scope, plus that row's own ancestor ids; never client input above the home. No id
- * means org-homed, which the fields schema only allows when no strict ancestor exists.
- */
-export const resolveAttachmentPlacement = async (ctx: OrgContext, input: AttachmentPlacementInput): Promise<ResolvedAttachmentPlacement> => {
-  const columns: Record<string, string | null> = Object.fromEntries(placementAncestors.map((type) => [placementKey(type), null]));
-  const home = providedHome(input)[0];
-  if (!home) return columns as ResolvedAttachmentPlacement;
-
-  // Placement resolves where the row lives; `canCreateEntity` on the placed row decides whether the
-  // actor may create there. No separate read check on the home, so no scope beyond `attachment:write`.
-  const entity = await resolveChannelInScope(ctx, input[placementKey(home)] as string, home);
-  const row = entity as Record<string, unknown>;
-  columns[placementKey(home)] = entity.id;
-  for (const ancestor of hierarchy.getOrderedAncestors(home)) {
-    if (ancestor === 'organization') break;
-    const id = row[placementKey(ancestor)];
-    columns[placementKey(ancestor)] = typeof id === 'string' ? id : null;
-  }
-  return columns as ResolvedAttachmentPlacement;
-};
-
-/**
- * The channel type attachments home at: the deepest strict ancestor, else the organization. Apps
- * with nullable placement (rows home at any depth) keep the organization here and read org-wide.
- */
-const homeChannelType = hierarchy.getOrderedAncestors('attachment').find((type) => !nullableAncestors.has(type)) ?? 'organization';
-
-/** Column holding a row's home channel id: list reads compile the caller's grant scope against it. */
-export const attachmentHomeColumnKey = appConfig.entityIdColumnKeys[homeChannelType] as keyof typeof attachmentsTable.$inferSelect;
-
-/**
- * Home channel a list or delta read narrows to, from the `channelId` query param; undefined reads
- * org-wide. The organization itself (or no id) is org-wide; any other id must be a channel of the
- * home type inside the request scope. With the organization as home there is no narrower channel, so
- * other ids are unknown.
- */
-export const resolveAttachmentHomeScope = async (ctx: OrgContext, channelId: string | undefined): Promise<string | undefined> => {
-  if (!channelId || channelId === ctx.var.organization.id) return undefined;
-  // Compared as string so cella's organization-only hierarchy does not narrow `homeChannelType` to never.
-  if ((homeChannelType as string) === 'organization') {
-    throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
-  }
-  // Existence and scope only: the collection read filter narrows the list to the rows the caller's
-  // grants allow, so a home the caller cannot read yields an empty page, never a 403.
-  const entity = await resolveChannelInScope(ctx, channelId, homeChannelType);
-  return entity.id;
-};
+import type { ResolvedPlacement } from '#/permissions/product-placement';
 
 /** One seed batch: the organization it belongs to and the ancestor columns its rows carry. */
 export interface AttachmentSeedPlacement {
   organizationId: string;
   tenantId: string;
-  placement: ResolvedAttachmentPlacement;
+  placement: ResolvedPlacement<'attachment'>;
 }
 
 /**
- * Where the attachment seed homes its rows: one org-homed batch per organization by default. Apps
- * return one batch per home channel, or an empty list to skip attachment seeding altogether
- * (e.g. when their dev bucket carries no `seed/` objects).
+ * Where the attachment seed homes its rows (app-owned): one batch per organization by default, its rows in the
+ * organization itself. An app whose attachments live in a channel returns one batch per home channel, or an empty
+ * list to skip attachment seeding altogether (e.g. when its dev bucket carries no `seed/` objects). Creates and
+ * list reads place rows by the hierarchy alone, in `#/permissions/product-placement`.
  */
 export const seedAttachmentPlacements = async (_db: DB, organizations: { id: string; tenantId: string }[]): Promise<AttachmentSeedPlacement[]> =>
-  organizations.map((org) => ({ organizationId: org.id, tenantId: org.tenantId, placement: {} as ResolvedAttachmentPlacement }));
+  organizations.map((org) => ({ organizationId: org.id, tenantId: org.tenantId, placement: {} as ResolvedPlacement<'attachment'> }));

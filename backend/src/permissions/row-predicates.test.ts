@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { type PgColumn, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, varchar } from 'drizzle-orm/pg-core';
 import {
   appConfig,
   type ChannelEntityType,
@@ -64,8 +64,6 @@ const parityTable = pgTable(
   'test_permission_parity_rows',
   homeIdKey && homeColumnName ? { ...baseColumns, [homeIdKey]: varchar(homeColumnName).notNull() } : baseColumns,
 );
-// The home-channel column passed to `buildCollectionReadWhere`; never referenced on an org-only app, where `id` stands in.
-const homeChannelColumn = (homeIdKey ? (parityTable as unknown as Record<string, PgColumn>)[homeIdKey] : parityTable.id) as PgColumn;
 
 const USERS = ['u1', 'u2'] as const;
 
@@ -212,7 +210,7 @@ const sqlReadableIds = async (scenario: Scenario): Promise<Set<string>> => {
     actor: scenarioActor(scenario),
     publicGrants: scenario.publicGrants,
   });
-  const where = buildCollectionReadWhere(filter, parityTable, homeChannelColumn, scenarioActor(scenario));
+  const where = buildCollectionReadWhere(filter, parityTable, 'attachment', scenarioActor(scenario));
 
   if (where.kind === 'none') return new Set();
   const query = seedDb.select({ id: parityTable.id }).from(parityTable);
@@ -316,7 +314,7 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
           continue;
         }
 
-        const where = buildCollectionReadWhere(filter, parityTable, homeChannelColumn, scenarioActor(scenario));
+        const where = buildCollectionReadWhere(filter, parityTable, 'attachment', scenarioActor(scenario));
         const fromSqlAll =
           where.kind === 'none'
             ? new Set<string>()
@@ -442,7 +440,7 @@ const deepSqlReadableIds = async (scenario: DeepScenario, elevatedGrants?: Reado
     elevatedGrants,
     ...deepOverrides,
   });
-  const where = buildCollectionReadWhere(filter, deepParityTable, deepParityTable.projectId, deepActor(scenario));
+  const where = buildCollectionReadWhere(filter, deepParityTable, DEEP_ITEM, deepActor(scenario), deepHierarchy);
 
   if (where.kind === 'none') return new Set();
   const query = seedDb.select({ id: deepParityTable.id }).from(deepParityTable);
@@ -501,7 +499,7 @@ describe('deep-chain parity: intermediate ancestor grants agree between engine a
         ...deepOverrides,
         requested,
       });
-      const where = buildCollectionReadWhere(filter, deepParityTable, deepParityTable.projectId, sysadmin);
+      const where = buildCollectionReadWhere(filter, deepParityTable, DEEP_ITEM, sysadmin, deepHierarchy);
       if (where.kind === 'none') return new Set<string>();
       const query = seedDb.select({ id: deepParityTable.id }).from(deepParityTable);
       const rows = where.kind === 'all' ? await query : await query.where(where.where);
@@ -633,7 +631,7 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
       const actor: PredicateActor = { actorId: userId, isSystemAdmin, scopes: null };
 
       const filter = resolveCollectionReadFilter(memberships, 'attachment', ROOT_ID, actor);
-      const where = buildCollectionReadWhere(filter, parityTable, homeChannelColumn, actor);
+      const where = buildCollectionReadWhere(filter, parityTable, 'attachment', actor);
       const query = seedDb.select({ id: parityTable.id }).from(parityTable);
       const fromSql = new Set(where.kind === 'none' ? [] : (where.kind === 'all' ? await query : await query.where(where.where)).map((r) => r.id));
 

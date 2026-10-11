@@ -103,7 +103,7 @@ Every check takes an `Access` from `accessFrom(ctx)`. Never assemble one by hand
 - Per entity: **insert mocks** (`mockUser()` → `Insert*Model`) and **response mocks** (`mockUserResponse()`, deterministic via `withFakerSeed`).
 - OpenAPI examples: pass `mockXResponse()` to `.openapi('Name', { example })` and route `example:`.
 - Seeding (`backend/scripts/seeds/`): `setMockContext('script')` + `mockMany(mockEntity, count)`.
-- Tests: insert mocks via `backend/tests/helpers.ts`. Call `resetXMockEnforcers()` in cleanup (`backend/tests/test-utils.ts`).
+- Tests: insert mocks via `backend/tests/helpers.ts`. A mock that generates a unique value takes its enforcer from `mockUniqueEnforcer()` (`mock-unique.ts`), which `clearDatabase` resets (`backend/tests/test-utils.ts`).
 - Utils: `mockMany()`, `mockPaginated()`, `mockTimestamps()`, `mockPastIsoDate()`, `generateMockChannelIdColumns()` (all configured context columns) / `generateMockEntityChannelIdColumns()` (one product entity's columns).
 
 ## Sync engine

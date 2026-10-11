@@ -435,7 +435,7 @@ async function runScenario(name: string, { short, quiet }: { short: boolean; qui
   let current: BaselineMetrics | null = null;
   let baseline: BaselineMetrics | null = null;
 
-  if (!short && !failure) {
+  if (!short && exitCode === 0) {
     current = extractMetrics(reportPath, name);
     if (current) {
       baseline = loadBaseline(name);

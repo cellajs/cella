@@ -38,7 +38,7 @@ export const attachmentsTable = snakeCase.table(
     index('attachments_created_by_index').on(table.createdBy),
     index('attachments_updated_by_index').on(table.updatedBy),
     index('attachments_group_id_index').on(table.groupId),
-    // Placement seam: an index per sub-organization ancestor column; none for org-homed rows.
+    // An index per sub-organization ancestor column; none for org-homed rows.
     ...channelRelationIndexes('attachments', table, 'attachment'),
     organizationForeignKey(table),
     tenantSelectPolicy('attachments', table),

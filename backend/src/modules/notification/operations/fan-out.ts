@@ -63,7 +63,9 @@ export async function fanOutNotifications(event: ActivityEvent): Promise<boolean
 
 /**
  * Whether the event can add mentions: a create, or an update whose changed fields include the
- * body. The changed fields are those of the event's first row and a missing list says nothing, so
+ * body. Publishing a draft arrives as a create (replication emits an insert for a row that enters
+ * the publication), so a mention written in a draft notifies at publish.
+ * The changed fields are those of the event's first row and a missing list says nothing, so
  * an event of several rows and one without a list both count as a body change; users told before
  * are skipped either way.
  */

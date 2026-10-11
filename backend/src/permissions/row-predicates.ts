@@ -1,6 +1,15 @@
 import { and, eq, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
-import { appConfig, type ChannelEntityType, type PredicateActor, type RowConditionName } from 'shared';
+import {
+  appConfig,
+  hierarchy as appHierarchy,
+  type ChannelEntityType,
+  type EntityHierarchy,
+  entityIdColumnKey,
+  type PredicateActor,
+  type ProductEntityType,
+  type RowConditionName,
+} from 'shared';
 import type { CollectionReadFilter } from './collection-scope';
 
 /** A never-matching predicate: the SQL analogue of a check-form returning `false`. */
@@ -35,17 +44,25 @@ export type CollectionReadWhere =
   | { kind: 'where'; where: SQL };
 
 /**
- * OR-combines the resolved collection scopes: intermediate grants filter by their own denormalized
- * ancestor id column, home grants by `homeChannelColumn`.
+ * OR-combines the resolved collection scopes into the predicate of a product list. Intermediate grants filter by
+ * their own denormalized ancestor id column. Home grants filter by the id column of the product's declared parent,
+ * the level the scope resolver collects `homeChannelIds` at whether or not that ancestor is nullable; for a product
+ * that lives in the organization that is the organization column.
+ * @param entityType - The product the filter was resolved for; its table is `table`.
+ * @param hierarchy - Another hierarchy than the app's, for the parity tests on a synthetic one.
  */
 export const buildCollectionReadWhere = (
   filter: CollectionReadFilter,
   table: AnyPgTable,
-  homeChannelColumn: PgColumn,
+  entityType: ProductEntityType,
   actor: PredicateActor,
+  hierarchy: EntityHierarchy = appHierarchy,
 ): CollectionReadWhere => {
   // Org-wide unconditional read (conditional scopes are subsumed and already dropped).
   if (filter.homeChannelIds === undefined) return { kind: 'all' };
+
+  const homeChannelColumn = () =>
+    resolveColumn(table, entityIdColumnKey(hierarchy.getParent(entityType) ?? 'organization'), `${entityType} home scope`);
 
   /** The id column a scope entry filters by: `appConfig.entityIdColumnKeys`, falling back to the `${channelType}Id` convention. */
   const scopeColumn = (channelType: ChannelEntityType | undefined): PgColumn =>
@@ -55,12 +72,12 @@ export const buildCollectionReadWhere = (
           (appConfig.entityIdColumnKeys as Partial<Record<string, string>>)[channelType] ?? `${channelType}Id`,
           `${channelType} scope`,
         )
-      : homeChannelColumn;
+      : homeChannelColumn();
 
   const clauses: SQL[] = [];
 
   if (filter.homeChannelIds.length > 0) {
-    clauses.push(inArray(homeChannelColumn, filter.homeChannelIds));
+    clauses.push(inArray(homeChannelColumn(), filter.homeChannelIds));
   }
 
   for (const { channelType, channelIds } of filter.intermediateScopes ?? []) {

@@ -1,5 +1,4 @@
 import { eq, inArray, sql } from 'drizzle-orm';
-import { appConfig, hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoidTenant } from 'shared/utils/nanoid';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -15,7 +14,7 @@ import { wsClient } from '../../network/websocket-client';
 import { ApiUnreachableError } from '../../services/failure';
 import { replicationState } from '../../services/replication-state';
 import { replicationStatus } from '../../services/replication-status';
-import { type CdcPipelineHarness, slotActive, startCdcPipeline, waitFor } from './pipeline-harness';
+import { type AttachmentHome, type CdcPipelineHarness, seedAttachmentHome, slotActive, startCdcPipeline, waitFor } from './pipeline-harness';
 
 const WS_PORT = Number(new URL(process.env.BACKEND_INTERNAL_URL ?? 'http://127.0.0.1:4788').port || 4788);
 
@@ -76,6 +75,7 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
   /** Every tenant and attachment this suite wrote, for the cleanup. */
   const tenantIds: string[] = [organizationTenantId];
   const attachmentIds: string[] = [];
+  let home: AttachmentHome;
   /** Tenants written while the stub was down. */
   const burstIds: string[] = [];
 
@@ -126,7 +126,7 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
       id,
       tenantId: organizationTenantId,
       organizationId,
-      ...Object.fromEntries(hierarchy.getNullableAncestors('attachment').map((type) => [appConfig.entityIdColumnKeys[type], null])),
+      ...home.columns,
       createdBy: null,
       updatedBy: null,
       deletedBy: null,
@@ -150,6 +150,7 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
     await cdcDb
       .insert(organizationsTable)
       .values({ ...mockOrganization(), id: organizationId, tenantId: organizationTenantId, slug: `bp-${organizationTenantId}`, createdBy: null });
+    home = await seedAttachmentHome({ id: organizationId, tenantId: organizationTenantId });
     await recalculateCounters({ var: { db: cdcDb } });
 
     harness = await startCdcPipeline();
@@ -162,6 +163,7 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
     const subjects = [...tenantIds, ...attachmentIds, organizationId];
     await cdcDb.delete(activitiesTable).where(inArray(activitiesTable.subjectId, subjects));
     if (attachmentIds.length) await cdcDb.delete(attachmentsTable).where(inArray(attachmentsTable.id, attachmentIds));
+    await home.remove();
     await cdcDb.execute(sql`DELETE FROM channel_counters WHERE channel_key = ${organizationId}`);
     await cdcDb.delete(organizationsTable).where(eq(organizationsTable.id, organizationId));
     await cdcDb.execute(

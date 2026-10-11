@@ -22,3 +22,7 @@ Copy `attachment.bench.ts` (the reference) to `seeds/<name>.bench.ts`, point it 
 - pick an `order` of 100 or higher (core seeds use under 100), after anything you FK-reference (e.g. `task.bench.ts` after `project.bench.ts`)
 - claim an unused `idVariant` in the `b*` band, or set an explicit `cleanupWhere` when rows have no id
 - import id/relation helpers from `./ids`
+
+## Attachment home
+
+The template's attachments live in the organization. An app that homes them in a channel says where in `attachment-home.ts` (app-owned): `benchAttachmentHome(index)` returns the seeded channel per ancestor id column, and `attachmentSeedOrder` places the attachment seed after those channels. The seed and the scenarios that create attachments both read it, and `attachment-home.test.ts` fails while a required ancestor is missing.

@@ -4,7 +4,7 @@ import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-ac
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { handleMembershipInvitationOp } from '#/modules/memberships/operations/handle-membership-invitation';
 import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug-from-email';
+import { slugFromEmail } from '#/utils/slug';
 
 /** Accepts the membership invitation behind a validated single-use token as the signed-in user, whatever address it was sent to. */
 export async function acceptInvitationTokenOp(ctx: UserContext, tokenRecord: TokenRecord) {

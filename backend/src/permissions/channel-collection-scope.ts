@@ -123,9 +123,17 @@ export interface ChannelListReadColumns {
 /**
  * Compile a resolved channel read scope into the list query's predicate: own-membership rows ∪
  * org-wide rows ∪ ancestor-scoped rows (published-only for read-only grants). 'none' cannot occur:
- * own membership rows are always in scope. Consumer contract: keep role/archived filters in the
- * membership join ON (never WHERE), map the nested membership only when its id is non-NULL, and
- * expect membership-sourced sort columns NULL for discovery rows (ASC puts NULLs last, members first).
+ * own membership rows are always in scope.
+ *
+ * Consumer contract, as `backend/tests/channel-discovery.test.ts` wires it:
+ * - LEFT JOIN the memberships on the caller's own key alone (channel, type, user). A filter on the membership, such
+ *   as a role, makes it a list of memberships: skip the scope and INNER JOIN.
+ * - AND the predicate with the organization the scope was resolved for: its membership and published branches name
+ *   no organization.
+ * - `excludeArchived` goes in WHERE through {@link excludeArchivedWhere}; in ON it would turn an archived channel
+ *   into a discovery row.
+ * - Map the nested membership only when its id is non-NULL, and expect membership-sourced sort columns NULL for
+ *   discovery rows (ASC puts NULLs last, members first).
  */
 export const buildChannelListReadWhere = (scope: ChannelCollectionReadScope, columns: ChannelListReadColumns): CollectionReadWhere => {
   if (scope.orgWide === 'all') return { kind: 'all' };

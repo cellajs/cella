@@ -3,8 +3,7 @@ import type { Context, Next } from 'hono';
 import { appConfig } from 'shared';
 import { vi } from 'vitest';
 import { getAdminDb } from '#/db/db';
-import { resetOrganizationMockEnforcers } from '#/modules/organization/organization-mocks';
-import { resetUserMockEnforcers } from '#/modules/user/user-mocks';
+import { resetMockEnforcers } from '#/mocks/mock-unique';
 import { overrideConfig } from './fixtures';
 
 type AuthStrategy = 'passkey' | 'oauth' | 'totp' | 'magic' | 'sso';
@@ -14,8 +13,7 @@ type ConfigOverride = { enabledAuthStrategies?: AuthStrategy[]; enabledOAuthProv
 
 /** Empties the auth tables and everything that references them, plus a mock-enforcer reset so unique values do not conflict across tests. */
 export async function clearDatabase() {
-  resetUserMockEnforcers();
-  resetOrganizationMockEnforcers();
+  resetMockEnforcers();
 
   await emptyTables([
     'sessions',

@@ -4,6 +4,7 @@ import pg from 'pg';
 import { hierarchy } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { DocScope } from '../../constants';
 import { buildSyncUpdate, createSignedToken, mapUpdate, openSocket, readMap, startRelayServer, until } from '../helpers';
@@ -64,6 +65,8 @@ async function stored(): Promise<Record<string, unknown>> {
 }
 
 describe('revoking access reaches open sockets', () => {
+  assumeMemberAttachmentPolicy({ read: 1, update: 'own', delete: 'own' });
+
   it('must not write through the relay via a socket whose membership was removed', async () => {
     // Positive control: the member edits their own attachment through the relay.
     const first = await open(2000);

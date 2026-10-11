@@ -5,7 +5,7 @@ import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { handleCreateUser } from '#/modules/user/operations/create-account';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug-from-email';
+import { slugFromEmail } from '#/utils/slug';
 
 /**
  * The account a sign-up link signs in to, settled in the transaction that redeems it: the account that holds the
