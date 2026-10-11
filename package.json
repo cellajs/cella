@@ -21,7 +21,7 @@
     "access": "public"
   },
   "scripts": {
-    "docker": "pnpm --filter backend docker:up --detach",
+    "docker": "pnpm --filter backend docker:up --detach --wait",
     "docker:test": "docker compose -f backend/compose.yaml --profile test up -d --wait db_test",
     "docker:test:down": "docker compose -f backend/compose.yaml --profile test down db_test",
     "docker:test:reset": "docker compose -f backend/compose.yaml --profile test down -v db_test",

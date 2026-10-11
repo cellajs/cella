@@ -49,7 +49,9 @@ export default defineConfig({
       // The app's own error types; the template ships both files empty
       'locales/en/appError.json',
       'locales/nl/appError.json',
+      // Release state is the app's own: create-cella resets the version and moves the changelog to the app's root
       '.github/release-please-manifest.json',
+      '.github/release-please-config.json',
       // Accessibility results are about one product: each app's audit (`pnpm a11y`) writes its own ledger.
       'json/accessibility-conformance.json',
     ],
