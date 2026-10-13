@@ -38,7 +38,8 @@ No script: manual.
 7. A test that forces a server error with a NUL in a written value: call `failRequestInserts()` from `backend/tests/security/helpers` and post a request whose message starts with `failing:`.
 8. `Math.max(0, ...)` around the count handed to `takeWithRestriction`, and an inner join on `users` in a `resolveRecipients` read, are redundant: the helper clamps, and the fan-out leaves out a candidate that names no user.
 9. A create `onSuccess` that replaces detail-cache copies by hand: delete the call. `insertEntitiesIntoHome` puts the stored row over a cached detail.
-10. Run `pnpm test:core`. `route-guards.test.ts` now fails for a route that answers a NUL character in a path parameter with a 5xx: a guard or handler that writes a path id into a header percent-encodes it.
+10. A test that copies `callHook` to run a mutation hook: import it, with `goOffline`, `goOnline`, `mutationsOf` and `resetMutationHooks`, from `~/query/tests/mutation-hooks-kit`.
+11. Run `pnpm test:core`. `route-guards.test.ts` now fails for a route that answers a NUL character in a path parameter with a 5xx: a guard or handler that writes a path id into a header percent-encodes it.
 
 ## Verify
 

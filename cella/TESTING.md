@@ -88,6 +88,8 @@ Coverage excludes `*.test.ts`, `tests/**` and mocks, so placement does not chang
 
 ## Storybook
 
+A product module's mutation hooks are tested under the app's own query client with `frontend/src/query/tests/mutation-hooks-kit.ts`: `callHook` runs a hook, `goOffline` and `goOnline` queue and replay its mutations, and the test mocks `sdk` with spies (`attachment-mutation-hooks.test.ts`).
+
 Frontend components are also tested through stories, using Vitest browser mode with Playwright (`@storybook/addon-vitest`).
 
 ```bash
