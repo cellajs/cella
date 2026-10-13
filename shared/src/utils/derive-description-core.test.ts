@@ -130,6 +130,11 @@ describe('deriveDocument', () => {
     expect(deriveDocument(html)).toMatchObject({ name: '', keywords: '', attachments: [], mentions: [alice] });
   });
 
+  it('reads a mention id written in upper case as the id the database stores', () => {
+    const stored = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+    expect(deriveDocument(JSON.stringify([{ type: 'paragraph', content: [mention(stored.toUpperCase())] }])).mentions).toEqual([stored]);
+  });
+
   it('ignores mention ids that are not UUIDs, so a hand-written node or attribute names no recipient', () => {
     expect(deriveDocument('<span data-mention-id="not-a-uuid">@ X</span>').mentions).toEqual([]);
     expect(deriveDocument(JSON.stringify([{ type: 'paragraph', content: [mention('not-a-uuid')] }])).mentions).toEqual([]);

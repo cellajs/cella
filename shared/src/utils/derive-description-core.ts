@@ -124,8 +124,8 @@ const collectMentionNodes = (node: unknown, into: Set<string>): void => {
 
   if (node.type === 'mention' && isRecord(node.props)) {
     const id = node.props.id;
-    // Ids are UUIDs; anything else is a malformed or hand-written payload and is dropped.
-    if (typeof id === 'string' && isUuid(id)) into.add(id);
+    // Ids are UUIDs, kept in the case the database stores; anything else is a malformed or hand-written payload and is dropped.
+    if (typeof id === 'string' && isUuid(id)) into.add(id.toLowerCase());
   }
 
   for (const value of Object.values(node)) {

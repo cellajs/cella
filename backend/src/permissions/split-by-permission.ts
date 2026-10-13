@@ -55,10 +55,15 @@ export const splitByPermission = async (
   const actions = action === 'read' ? [action] : (['read', action] as const);
   const decisions = actions.map((asked) => checkAccessBatch(access, asked, subjects).results);
 
+  // A uuid column matches an id in any letter case, so a requested id is compared in the case the row stores.
   const allowed = new Set(entities.map((entity) => entity.id).filter((id) => decisions.every((results) => results.get(id)?.allowed)));
-  const requested = [...new Set(ids)];
-  const allowedIds = requested.filter((id) => allowed.has(id));
-  const rejectedIds = requested.filter((id) => !allowed.has(id));
+  const allowedIds: string[] = [];
+  const rejectedIds: string[] = [];
+  for (const id of new Set(ids)) {
+    const stored = id.toLowerCase();
+    if (!allowed.has(stored)) rejectedIds.push(id);
+    else if (!allowedIds.includes(stored)) allowedIds.push(stored);
+  }
 
   if (!allowedIds.length) throw new AppError(403, 'forbidden', 'warn', { entityType });
 

@@ -81,6 +81,12 @@ describe('getValidChannel request scope', () => {
     }
   });
 
+  it('reads a published channel on a context without an actor, as a public route has', async () => {
+    vi.mocked(resolveEntity).mockResolvedValue(organization as never);
+    const anonymous = { var: { db: {}, tenantId: TENANT } } as unknown as UserContext;
+    await expect(getValidChannel(anonymous, ORG, 'organization', 'read')).resolves.toEqual({ entity: organization, membership: null });
+  });
+
   it('returns a draft to a member of the channel itself', async () => {
     const draft = { ...organization, publishedAt: null };
     vi.mocked(resolveEntity).mockResolvedValue(draft as never);

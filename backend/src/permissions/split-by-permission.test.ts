@@ -53,6 +53,15 @@ describe('splitByPermission', () => {
     expect(split).toEqual({ allowedIds: ['own'], rejectedIds: ['denied', 'missing', 'foreign'] });
   });
 
+  it('acts on a row named in another letter case, as the single read does, under the id the row has', async () => {
+    const stored = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+    vi.mocked(resolveEntities).mockResolvedValue([row(stored)] as never);
+
+    const split = await splitByPermission(caller, 'delete', 'attachment', [stored.toUpperCase(), stored, 'missing']);
+
+    expect(split).toEqual({ allowedIds: [stored], rejectedIds: ['missing'] });
+  });
+
   it("must not act on another author's draft via a grant on its home, as the single read answers it as missing", async () => {
     const drafts = [row('own-draft', { publishedAt: null }), row('their-draft', { publishedAt: null, createdBy: 'user-2' })];
     vi.mocked(resolveEntities).mockResolvedValue(drafts as never);

@@ -66,7 +66,8 @@ export const getValidChannel = async <T extends ChannelEntityType, C extends Act
   const subject = buildSubjectFromEntity(entityType, entity);
   const access = accessFrom(ctx);
   const read = checkAccess(access, 'read', subject);
-  if (!read.allowed || !draftChannelVisibleTo(entityType, entity, ctx.var.actor.bindings, actorFrom(ctx))) {
+  // A context without an actor (a public route) is anonymous here, as it is to `accessFrom`: it holds no grant.
+  if (!read.allowed || !draftChannelVisibleTo(entityType, entity, ctx.var.actor?.bindings ?? [], actorFrom(ctx))) {
     throw new AppError(404, 'not_found', 'warn', { entityType });
   }
 
