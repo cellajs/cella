@@ -21,14 +21,13 @@ import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { generateServerHLC } from '#/core/stx';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { mockStxBase } from '#/schemas/sync-transaction-mocks';
+import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { adminDb, expectRefusal } from '../helpers';
 import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
@@ -39,7 +38,7 @@ import { clearSecurityTestData, createOrgUser, createSecondOrg, createTestTenant
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-const renameStx = () => ({ ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { name: generateServerHLC('test-client') } });
+const renameStx = () => mockStxFor('name');
 
 type Session = { sessionCookie: string };
 const notFound = { status: 404, type: 'not_found' };

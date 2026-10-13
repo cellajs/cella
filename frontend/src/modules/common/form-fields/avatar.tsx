@@ -35,6 +35,8 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
 
   const openUploadDialog = () => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    // A user has a profile picture, any other entity a logo.
+    const image = type && type !== 'user' ? t('c:resource_logo', { resource: t(type) }) : t('c:profile_picture');
     createUpload({
       id: 'upload-image',
       personalUpload: true,
@@ -47,7 +49,7 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
           removeUpload();
         },
       },
-      title: t('c:upload_item', { item: t('c:profile_picture').toLowerCase() }),
+      title: t('c:upload_item', { item: image.toLowerCase() }),
     });
   };
 

@@ -934,7 +934,7 @@ export const zCheckSlugBody = z.object({
     .string()
     .min(2)
     .max(255)
-    .regex(/^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/),
+    .regex(/^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$/),
   entityType: z.enum(['organization']),
 });
 
@@ -1036,7 +1036,7 @@ export const zUpdateMeBody = z.object({
     .string()
     .min(2)
     .max(255)
-    .regex(/^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/)
+    .regex(/^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$/)
     .optional(),
   userFlags: z
     .object({
@@ -1379,7 +1379,7 @@ export const zUpdateUserBody = z.object({
     .string()
     .min(2)
     .max(255)
-    .regex(/^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/)
+    .regex(/^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$/)
     .optional(),
 });
 
@@ -1659,7 +1659,7 @@ export const zCreateOrganizationsBody = z
         .string()
         .min(2)
         .max(255)
-        .regex(/^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/),
+        .regex(/^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$/),
     }),
   )
   .min(1)
@@ -1758,7 +1758,7 @@ export const zUpdateOrganizationBody = z.object({
     .string()
     .min(2)
     .max(255)
-    .regex(/^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/)
+    .regex(/^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$/)
     .optional(),
   name: z
     .string()

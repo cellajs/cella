@@ -1,9 +1,10 @@
 import { type AnyColumn, and, count, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
-import { type ChannelEntityType, hierarchy, isProduct, roles, type EntityType as SharedEntityType } from 'shared';
+import { type ChannelEntityType, hierarchy, isProduct, type ProductEntityType, roles, type EntityType as SharedEntityType } from 'shared';
 import type z from 'zod';
-import type { DbContext } from '#/core/context';
+import type { ActorContext, DbContext } from '#/core/context';
 import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
-import { hasPublishedAt } from '#/db/utils/published-predicate';
+import { draftVisibleRowsPredicate, hasPublishedAt } from '#/db/utils/published-predicate';
+import { requestScope } from '#/db/utils/request-scope';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
@@ -250,6 +251,32 @@ export async function resolveEntities<T extends EntityType>(
     .where(condition);
   return entities as Array<EntityModel<T>>;
 }
+
+interface FilterExistingProductIdsOpts {
+  entityType: ProductEntityType;
+  ids: string[];
+}
+
+/**
+ * Out of `ids`, the ones that name a live row of `entityType` in the request's tenant and organization, in the order
+ * given: what a host row may store in an id array column (`appConfig.productEmbeddings`). An unknown, deleted or
+ * out-of-scope id is left out, and so is a draft that does not show to the caller, so a host names no row its
+ * organization does not hold. Runs on the connection it is handed: a host write calls it inside its tenant transaction.
+ */
+export const filterExistingProductIds = async (ctx: ActorContext, { entityType, ids }: FilterExistingProductIdsOpts) => {
+  if (ids.length === 0) return [];
+  const { tenantId, organizationId } = requestScope(ctx, entityType);
+  const table = getEntityTable(entityType);
+  const drafts = draftVisibleRowsPredicate(table, ctx.var.actor.id);
+
+  const result = await ctx.var.db.execute<{ id: string }>(sql`
+    SELECT id FROM ${table}
+    WHERE id IN (${sql.join(ids, sql`, `)}) AND tenant_id = ${tenantId} AND organization_id = ${organizationId}
+      AND deleted_at IS NULL${drafts ? sql` AND ${drafts}` : sql``}
+  `);
+  const found = new Set(result.rows.map((row) => row.id));
+  return ids.filter((id) => found.has(id));
+};
 
 /** Drafts are outside the sync engine, so their seq bumps must not yield ids to sync back. */
 const publishedSqlFilter = (table: ResolvableTable) => (hasPublishedAt(table) ? sql.raw(' AND published_at IS NOT NULL') : sql.raw(''));

@@ -5,7 +5,7 @@ import type { ChannelSlot } from 'shared/placements';
 import type { SlotToolsConfig, ToolsConfig } from 'shared/tools-config';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
-import { orderBySlotConfig } from '~/lib/placements';
+import { arrangePlacements } from '~/lib/placements';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { reorderColumn } from '~/modules/common/data-table/reorder-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -80,7 +80,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
     order,
     locked,
   }));
-  const rows = orderBySlotConfig(candidates, draftOrder ? { order: draftOrder } : slotConfig).map((tab) => ({
+  const rows = arrangePlacements(slot, candidates, draftOrder ? { order: draftOrder } : slotConfig).map((tab) => ({
     ...tab,
     name: t(tab.label, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' }),
     description: tab.description ? t(tab.description, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' }) : undefined,

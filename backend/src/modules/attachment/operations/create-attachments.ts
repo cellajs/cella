@@ -30,7 +30,8 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
 
   const batchStxId = input[0].stx.mutationId;
   const existing = await checkIdempotency(ctx, attachmentsTable, batchStxId);
-  if (existing) return { data: await withAuditUsers(ctx, existing), rejectedIds: [] as string[] };
+  // A replay of a mutation that already created its rows: the caller gets them back, and `replayed` tells the handler this request created none.
+  if (existing) return { data: await withAuditUsers(ctx, existing), rejectedIds: [] as string[], replayed: true };
 
   const currentAttachments = await getOrganizationEntityCount(ctx, { organizationId: organization.id, entityType: 'attachment' });
 
@@ -83,5 +84,5 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
 
   const attachmentResponses = await withAuditUsers(ctx, createdAttachments);
 
-  return { data: attachmentResponses, rejectedIds: [] as string[] };
+  return { data: attachmentResponses, rejectedIds: [] as string[], replayed: false };
 }

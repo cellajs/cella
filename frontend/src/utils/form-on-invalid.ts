@@ -58,7 +58,11 @@ const resolveFieldLabel = (fieldName: string): string => {
   return translated !== key && translated !== `c:${key}` ? translated : fieldName;
 };
 
+/** Rule types whose author writes the message (a zod refinement, a `validate` rule): shown as written. */
+const authoredRuleTypes = ['custom', 'validate'];
+
 const resolveErrorMessage = (type?: string, message?: ValidateResult): string => {
-  const fallback = typeof message === 'string' ? message : 'Unknown';
-  return type ? t(`error:form.${type}`, fallback) : fallback;
+  const own = typeof message === 'string' && message ? message : undefined;
+  if (own && (!type || authoredRuleTypes.includes(type))) return own;
+  return type ? t(`error:form.${type}`, own ?? 'Unknown') : 'Unknown';
 };

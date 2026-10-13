@@ -64,6 +64,8 @@ export function SlugFormField<TFieldValues extends FieldValues>({
 
   const { mutate: checkAvailability } = useMutation<CheckSlugResponse, ApiError, NonNullable<CheckSlugData['body']>>({
     mutationKey: [name],
+    // A taken slug shows on the field; the check runs while the user types, so it never toasts.
+    meta: { suppressGlobalErrorToast: true },
     mutationFn: async (body) => {
       if (!tenantId) return;
       return await checkSlug({ path: { tenantId }, body });
@@ -82,7 +84,7 @@ export function SlugFormField<TFieldValues extends FieldValues>({
     },
   });
 
-  // Same shape as validSlugSchema on the backend and the generated client zod.
+  // The form a slug is stored in. The API also takes upper case, which it lowers.
   const isValidSlug = (value: string) => {
     if (!value || value.trim().length < 2) return false;
     return /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/.test(value);

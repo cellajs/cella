@@ -9,10 +9,12 @@ import { sideEffectProducers } from './scripts-discovery';
  *      cannot express (RLS grants, triggers, functions, publications, partitioning, …).
  *
  * The collector runs second so its folder sorts (and applies) after the schema changes. Extra arguments go to
- * drizzle-kit: `pnpm generate -- --hints '<json-array>'` answers its rename-or-create question off a terminal.
+ * drizzle-kit: `pnpm generate --hints '<json-array>'` answers its rename-or-create question off a terminal.
  */
 async function generate(): Promise<void> {
-  await runDrizzleGenerate(process.argv.slice(2));
+  // pnpm 11 hands the `--` of `pnpm generate -- --hints ...` on to the script, and drizzle-kit refuses it as an option.
+  const args = process.argv.slice(2);
+  await runDrizzleGenerate(args[0] === '--' ? args.slice(1) : args);
   await generateSideEffects(sideEffectProducers);
 }
 

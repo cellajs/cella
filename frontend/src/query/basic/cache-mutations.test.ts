@@ -1,4 +1,4 @@
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryObserver } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 import { removeDetailQueriesById } from '~/query/basic/cache-mutations';
 
@@ -20,6 +20,22 @@ describe('removeDetailQueriesById', () => {
     expect(client.getQueryData(['attachment', 'detail', 'keep'])).toBe('other detail');
     expect(client.getQueryData(['attachment', 'list'])).toBe('list');
     expect(client.getQueryData(['user', 'detail', 'remove'])).toBe('other entity');
+  });
+
+  it('leaves a detail a page still shows until the page lets go of it, so the deleted row is not fetched again', () => {
+    const client = new QueryClient();
+    const key = ['organization', 'detail', 'org-1'];
+    const fetchDetail = vi.fn(async () => 'fetched again');
+    client.setQueryData(key, 'detail');
+    // The settings page of the organization it just deleted: still mounted while the delete settles.
+    const leavePage = new QueryObserver(client, { queryKey: key, queryFn: fetchDetail, staleTime: Number.POSITIVE_INFINITY }).subscribe(() => {});
+
+    removeDetailQueriesById(client, ['organization', 'detail'], ['org-1']);
+    expect(client.getQueryData(key)).toBe('detail');
+
+    leavePage();
+    expect(client.getQueryData(key)).toBeUndefined();
+    expect(fetchDetail).not.toHaveBeenCalled();
   });
 
   it('does not scan or remove queries for an empty ID set', () => {

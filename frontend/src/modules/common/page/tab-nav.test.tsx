@@ -172,6 +172,13 @@ describe('guardNavTabs forwards bare-parent and disabled-tab navigations in befo
     expect(options?.to).toBe('/org/$tool');
   });
 
+  it('leaves behind the search of a tab it forwards off: its sort and filters mean nothing to the landing tab', () => {
+    const membersMatch: Match = { routeId: '/org/members', fullPath: '/org/members', params: {} };
+    const options = runGuard([parentMatch, membersMatch], { slotConfig: { hidden: ['members'] } });
+    expect(options?.search).toEqual({});
+    expect(options).toMatchObject({ replace: true, hash: true });
+  });
+
   it('forwards off a registry tab hidden by stored arrangement, matched on the $tool param', () => {
     const toolMatch: Match = { routeId: '/org/$tool', fullPath: '/org/$tool', params: { tool: 'reports' } };
     expect(runGuard([parentMatch, toolMatch])).toBeUndefined();

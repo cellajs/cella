@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Attachment } from 'sdk';
 import { useAttachmentDeleteMutation } from '~/modules/attachment/query';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
@@ -15,23 +14,15 @@ interface Props {
 export function DeleteAttachments({ attachments, callback, dialog: isDialog, onCancel }: Props) {
   const removeDialog = useDialoger((state) => state.remove);
   // All attachments belong to one organization, so the first one carries the ids.
-  const deleteAttachments = useAttachmentDeleteMutation(attachments[0].tenantId, attachments[0].organizationId);
+  const { mutate: deleteAttachments, isPending } = useAttachmentDeleteMutation(attachments[0].tenantId, attachments[0].organizationId);
 
-  const [isPending, setIsPending] = React.useState(false);
-
-  const onDelete = async () => {
-    setIsPending(true);
-    try {
-      await deleteAttachments.mutateAsync(attachments);
-      callback?.({ data: attachments, status: 'success' });
-    } catch (error) {
-      if (error instanceof Error) callback?.({ status: 'fail', error });
-    } finally {
-      callback?.({ status: 'settle' });
-      if (isDialog) removeDialog();
-      setIsPending(false);
-    }
+  // The delete is optimistic and queues offline, so the form does not wait for the server: the rows leave the list at
+  // once, and a refusal puts them back with a toast.
+  const onDelete = () => {
+    deleteAttachments(attachments);
+    if (isDialog) removeDialog();
+    callback?.({ data: attachments, status: 'success' });
   };
 
-  return <DeleteForm onDelete={onDelete} onCancel={onCancel ?? (() => removeDialog())} pending={isPending} />;
+  return <DeleteForm allowOfflineDelete onDelete={onDelete} onCancel={onCancel ?? (() => removeDialog())} pending={isPending} />;
 }

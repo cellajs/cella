@@ -8,7 +8,6 @@ import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
 import type { ActorContext } from '#/core/context';
-import { generateServerHLC } from '#/core/stx';
 import { baseDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { updateAttachmentOp } from '#/modules/attachment/operations/update-attachment';
@@ -20,7 +19,7 @@ import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
 import { appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
-import { mockStxBase } from '#/schemas/sync-transaction-mocks';
+import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from './fixtures';
 import { adminDb, expectRefusal } from './helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
@@ -128,7 +127,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
       path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id: entityId },
       body: {
         ops: { description: written },
-        stx: { ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { description: generateServerHLC('test-client') } },
+        stx: mockStxFor('description'),
       },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
@@ -139,7 +138,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
       path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id: entityId },
       body: {
         ops: { name },
-        stx: { ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { name: generateServerHLC('test-client') } },
+        stx: mockStxFor('name'),
       },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
@@ -343,7 +342,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
     await updateAttachmentOp(
       await toolContext(),
       attachment.id,
-      { ops: { description: description(block('a', 'written by a tool')) }, stx: { ...mockStxBase(`stx:${generateId()}`) } },
+      { ops: { description: description(block('a', 'written by a tool')) }, stx: mockStxFor() },
       { serverOrigin: true },
     );
     const after = await stored(attachment.id);

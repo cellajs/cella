@@ -4,12 +4,11 @@ import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { generateServerHLC } from '#/core/stx';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
-import { mockStxBase } from '#/schemas/sync-transaction-mocks';
+import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from '../fixtures';
 import { adminDb, expectRefusal } from '../helpers';
 import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from '../hierarchy-helpers';
@@ -61,7 +60,7 @@ describe('Block media references', async () => {
       path: { tenantId: owner.tenantId, organizationId: owner.organization.id, id: attachmentId },
       body: {
         ops: { description },
-        stx: { ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { description: generateServerHLC('test') } },
+        stx: mockStxFor('description'),
       },
       headers: { ...defaultHeaders, Cookie: owner.sessionCookie },
     });

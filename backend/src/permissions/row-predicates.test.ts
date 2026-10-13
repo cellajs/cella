@@ -4,6 +4,7 @@ import {
   appConfig,
   type ChannelEntityType,
   computeCan,
+  type EntityRole,
   getAllDecisions,
   hierarchy,
   type PolicyCellInput,
@@ -23,6 +24,7 @@ import { getSeedDb } from '#/db/db';
 import { canReceiveProductEvent } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import { checkAccess } from './check-access';
 import { resolveCollectionReadFilter, resolveCollectionReadFilterForPolicies } from './collection-scope';
 import { buildCollectionReadWhere } from './row-predicates';
@@ -134,15 +136,14 @@ interface Scenario {
 const scenarioActor = (scenario: Scenario): PredicateActor =>
   scenario.userId === undefined ? { anonymous: true } : { actorId: scenario.userId, isSystemAdmin: scenario.isSystemAdmin, scopes: null };
 
-const membership = (channelType: ChannelEntityType, channelId: string, role: string): MembershipBaseModel =>
-  ({
-    id: `mem-${channelType}-${channelId}-${role}`,
-    userId: 'actor',
+const membership = (channelType: ChannelEntityType, channelId: string, role: EntityRole): MembershipBaseModel =>
+  mockMembershipBase(`mem-${channelType}-${channelId}-${role}`, {
     channelType,
     channelId,
-    organizationId: ROOT_ID,
+    userId: 'actor',
     role,
-  }) as unknown as MembershipBaseModel;
+    channelIds: { organizationId: ROOT_ID },
+  });
 
 /** A public read grant on `attachment`, in ~30% of scenarios. */
 const randomPublicGrants = (random: () => number): PublicReadGrants => (random() < 0.3 ? { attachment: true } : {});

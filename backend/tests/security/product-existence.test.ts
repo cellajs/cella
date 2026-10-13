@@ -2,8 +2,7 @@ import { createAttachments } from 'sdk';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { generateServerHLC } from '#/core/stx';
-import { mockStxBase } from '#/schemas/sync-transaction-mocks';
+import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, type ErrorResponse, expectRefusal, refusalOf } from '../helpers';
 import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
@@ -40,7 +39,7 @@ describe('Product existence (getValidProduct)', async () => {
   };
 
   const rename = async (id: string, headers: Record<string, string>) => {
-    const stx = { ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { name: generateServerHLC('test-client') } };
+    const stx = mockStxFor('name');
     const response = await baseApp.request(attachmentUrl(id), {
       method: 'PUT',
       headers,

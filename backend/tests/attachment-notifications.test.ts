@@ -4,7 +4,6 @@ import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
-import { generateServerHLC } from '#/core/stx';
 import { baseDb, getSeedDb } from '#/db/db';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import { buildInsertableProduct } from '#/mocks';
@@ -18,7 +17,7 @@ import { sendPendingInstantEmails } from '#/modules/notification/operations/send
 import { sendNotificationPush } from '#/modules/push/push-sender';
 import { emailsTable } from '#/modules/user/emails-db';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
-import { mockStxBase } from '#/schemas/sync-transaction-mocks';
+import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createOrganizationAdminUser, createTestUser, mailsTo } from './helpers';
 import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
@@ -62,7 +61,7 @@ const paragraphWithText = (text: string) => ({
   children: [],
 });
 
-const updateStx = () => ({ ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { description: generateServerHLC('test-client') } });
+const updateStx = () => mockStxFor('description');
 
 const nullAncestorScopes = Object.fromEntries(
   appConfig.channelEntityTypes

@@ -4,6 +4,7 @@ import { type CloudFileVariant, getCloudUrl, getPrivateFileUrlById, getPublicFil
 import type { BlobVariant } from '~/modules/attachment/offline/attachments-db';
 import { downloadService } from '~/modules/attachment/offline/download-service';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
+import { PresignRejectedError } from '~/modules/attachment/presign-batch';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 
 interface ResolvedUrl {
@@ -81,5 +82,9 @@ export async function resolveBlockNoteFileRef(ref: string, ctx: RefContext = {})
     return '';
   }
 
-  return getPrivateFileUrlById(media.id, variant, tenantId, organizationId);
+  // A row that is gone or denied renders nothing, as an invalid reference does; a failed request stays an error.
+  return getPrivateFileUrlById(media.id, variant, tenantId, organizationId).catch((error) => {
+    if (error instanceof PresignRejectedError) return '';
+    throw error;
+  });
 }

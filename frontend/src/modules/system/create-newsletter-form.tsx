@@ -15,8 +15,8 @@ import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { blocknoteFieldIsDirty } from '~/modules/common/blocknote/helpers/blocknote-field-is-dirty';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
-import type { BlockNoteContentFormField as BlockNoteContentFormFieldType } from '~/modules/common/form-fields/blocknote';
 import { InputFormField } from '~/modules/common/form-fields/input';
+import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SelectRoles } from '~/modules/common/form-fields/select-roles';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -25,12 +25,6 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import type { MutationData } from '~/query/types';
-import { lazyNamed } from '~/utils/lazy-named';
-
-const BlockNoteContentFormField = lazyNamed(
-  () => import('~/modules/common/form-fields/blocknote'),
-  'BlockNoteContentFormField',
-) as unknown as typeof BlockNoteContentFormFieldType;
 
 const formSchema = zSendNewsletterBody;
 
@@ -105,7 +99,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
           required
         />
 
-        <BlockNoteContentFormField
+        <LazyBlockNoteContentFormField
           control={form.control}
           name="content"
           label={t('c:message')}

@@ -1,5 +1,4 @@
 import { onlineManager, useQuery } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
 import { CopyCheckIcon, CopyIcon, KeyRoundIcon, UnplugIcon } from 'lucide-react';
 import type { MouseEvent, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +16,7 @@ import { apiKeysQueryOptions, useRevokeApiKeyMutation } from '~/modules/service-
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
+import { useOpenUserSheet } from '~/modules/user/use-open-user-sheet';
 import type { QueryOrgContext } from '~/query/types';
 import { dateShort } from '~/utils/date-short';
 
@@ -193,14 +193,8 @@ interface KeyDetailsProps {
 /** Who created a key and when, and when its service account was last used. */
 function KeyDetails({ apiKey, lastSeenAt }: KeyDetailsProps) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const openProfile = useOpenUserSheet();
   const { createdBy } = apiKey;
-
-  // The profile sheet opens from the search param, as it does from a members table row.
-  const openProfile = (userId: string) => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
-    navigate({ to: '.', replace: false, resetScroll: false, search: (prev) => ({ ...prev, userSheetId: userId }) });
-  };
 
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground text-xs sm:text-sm md:gap-x-5">

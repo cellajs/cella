@@ -1,10 +1,8 @@
 import { onlineManager } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
 import { useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { UserMinimalBase } from 'sdk';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { useOpenUserSheet } from '~/modules/user/use-open-user-sheet';
 import { cn } from '~/utils/cn';
 import { Button } from '../ui/button';
 
@@ -20,8 +18,7 @@ interface BaseProps {
 const compactUserNameClass = 'in-data-[is-compact=true]:sr-only';
 
 export function UserCell({ user, tabIndex, compactable, className, readOnly }: BaseProps & { user: UserMinimalBase }) {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+  const openUserSheet = useOpenUserSheet();
   const cellRef = useRef<HTMLButtonElement | null>(null);
 
   // While compacted the name is visually hidden, so the compact-scoped table tooltip shows it.
@@ -46,14 +43,10 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: B
       draggable={false}
       {...compactTooltip}
       onClick={(e) => {
-        if (!onlineManager.isOnline()) {
-          e.preventDefault();
-          return toaster.warning(t('c:action.offline.text'));
-        }
-        if (e.metaKey || e.ctrlKey) return;
+        // Offline the opener only toasts, so the click must not fall through either.
+        if (onlineManager.isOnline() && (e.metaKey || e.ctrlKey)) return;
         e.preventDefault();
-
-        navigate({ to: '.', replace: false, resetScroll: false, search: (prev) => ({ ...prev, userSheetId: user.id }) });
+        openUserSheet(user.id);
       }}
     >
       <EntityAvatar type="user" className="group-active/cell-button:press size-8" id={user.id} name={user.name} url={user.thumbnailUrl} />

@@ -23,10 +23,25 @@ export function cacheRemove(queryKey: QueryKey, items: ItemData[]) {
   mutateMatchingQueries(queryKey, items, 'remove');
 }
 
+/**
+ * Drops the detail queries of deleted rows. One a page still shows goes when that page lets go of it: removed under its
+ * observer it would be fetched again at once, for a row that no longer exists.
+ */
 export function removeDetailQueriesById(client: QueryClient, detailBase: QueryKey, ids: Iterable<string | number>) {
   const idsToRemove = new Set(ids);
   if (idsToRemove.size === 0) return;
 
   const idIndex = detailBase.length;
-  client.removeQueries({ queryKey: detailBase, predicate: ({ queryKey }) => idsToRemove.has(queryKey[idIndex] as string | number) });
+  const cache = client.getQueryCache();
+  for (const query of cache.findAll({ queryKey: detailBase, predicate: ({ queryKey }) => idsToRemove.has(queryKey[idIndex] as string | number) })) {
+    if (query.getObserversCount() === 0) {
+      cache.remove(query);
+      continue;
+    }
+    const unsubscribe = cache.subscribe((event) => {
+      if (event.query !== query || event.type !== 'observerRemoved' || query.getObserversCount() > 0) return;
+      unsubscribe();
+      cache.remove(query);
+    });
+  }
 }

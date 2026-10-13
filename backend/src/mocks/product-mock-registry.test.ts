@@ -18,6 +18,18 @@ describe('product mock registry', () => {
         expect(productMocksByType[entityType]).toBeTypeOf('function');
       });
 
+      it('passes the key on to the mock: the same key gives the same row, another key another row', () => {
+        const mock = productMocksByType[entityType];
+        expect(mock('registry:a')).toEqual(mock('registry:a'));
+        expect(mock('registry:a').id).not.toBe(mock('registry:b').id);
+        expect(buildInsertableProduct(entityType, {}, 'registry:a').id).toBe(mock('registry:a').id);
+      });
+
+      it('gives the row a select returns: every column of the table and no other key', () => {
+        const columns = Object.keys(getTableColumns(getEntityTable(entityType)));
+        expect(Object.keys(productMocksByType[entityType]()).sort()).toEqual(columns.sort());
+      });
+
       it('builds an insert-ready row: generated columns dropped, overrides applied', () => {
         const row = buildInsertableProduct(entityType, { id: 'override-id' });
         expect(row.id).toBe('override-id');

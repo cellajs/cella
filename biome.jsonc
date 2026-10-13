@@ -6,6 +6,9 @@
     "useIgnoreFile": true
   },
   "files": {
+    // The SDK generator writes sdk/gen/openapi.json unformatted, and an app's document passes Biome's 1 MiB default. Above
+    // it Biome skips the file with a warning: it is never formatted, and `biome check --error-on-warnings` fails.
+    "maxSize": 2097152,
     "includes": [
       "backend/src/**",
       "backend/tests/**",

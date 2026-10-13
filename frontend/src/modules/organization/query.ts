@@ -20,6 +20,7 @@ import { cacheCreate, cacheRemove, cacheUpdate, removeDetailQueriesById } from '
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
+import { defaultOrderFor } from '~/query/basic/get-query-key-sort-order';
 import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import { preserveIncluded } from '~/query/basic/preserve-included';
@@ -59,8 +60,7 @@ type OrganizationsListParams = OrganizationsQuery & { limit?: number };
 const withDefaults = ({
   q = organizationsSearchDefaults.q,
   sort = organizationsSearchDefaults.sort,
-  // displayOrder reads ascending; every other column defaults to descending
-  order = sort === 'displayOrder' ? 'asc' : 'desc',
+  order = defaultOrderFor(sort),
   relatableUserId,
   excludeArchived,
   role,
