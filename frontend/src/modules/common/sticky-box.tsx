@@ -43,9 +43,15 @@ type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
 const STACK_VARS = ['--sticky-stack-nav', '--sticky-stack-top'] as const;
 
 /** Offset (px) the stack variables add to the bar's pin line, leaving out the one it publishes itself. */
-function stackOffset(bar: HTMLElement, publishVar?: string) {
+export function stackOffset(bar: HTMLElement, publishVar?: string) {
   const barStyles = getComputedStyle(bar);
   return Math.max(...STACK_VARS.filter((v) => v !== publishVar).map((v) => Number.parseFloat(barStyles.getPropertyValue(v)) || 0));
+}
+
+/** The same offset as a CSS length, so an element that pins with it follows the variables without a rerender. */
+export function stackOffsetCss(publishVar?: string) {
+  const consumedVars = STACK_VARS.filter((v) => v !== publishVar).map((v) => `var(${v}, 0px)`);
+  return consumedVars.length > 1 ? `max(${consumedVars.join(', ')})` : (consumedVars[0] ?? '0px');
 }
 
 /**
@@ -200,9 +206,7 @@ export function StickyBox({
   }
 
   // `top` must never transition: it would interpolate the stuck/released switch and park at stale offsets
-  const consumedVars = STACK_VARS.filter((v) => v !== publishVar).map((v) => `var(${v}, 0px)`);
-  const stackExpr = consumedVars.length > 1 ? `max(${consumedVars.join(', ')})` : (consumedVars[0] ?? '0px');
-  const barStyle: React.CSSProperties = { ...style, position: 'sticky', top: `calc(${stackExpr} + ${offsetTop}px)` };
+  const barStyle: React.CSSProperties = { ...style, position: 'sticky', top: `calc(${stackOffsetCss(publishVar)} + ${offsetTop}px)` };
   if (clampedTop !== null) {
     barStyle.position = 'relative';
     barStyle.top = clampedTop;

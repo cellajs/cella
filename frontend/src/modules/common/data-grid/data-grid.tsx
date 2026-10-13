@@ -146,7 +146,7 @@ export interface DataGridProps<R, SR = unknown, K extends Key = Key> extends Sha
   enableVirtualization?: Maybe<boolean>;
   /** Overrides enableVirtualization for rows when set. */
   enableRowVirtualization?: Maybe<boolean>;
-  /** Pin header rows to viewport top when the grid scrolls out of view. Opt-in. @default false */
+  /** Pin header rows below the sticky stack while a window-scrolled grid passes the top of the viewport. @default true from the `sm` breakpoint up */
   enableStickyHeader?: Maybe<boolean>;
   /** Vertical auto-scroll of the viewport during pragmatic-dnd drag. Opt-in; only for row-drag tables. @default false */
   enableDragAutoScroll?: Maybe<boolean>;
@@ -302,7 +302,6 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const noRowsFallback = renderers?.noRowsFallback;
   const enableVirtualization = rawEnableVirtualization ?? true;
   const enableRowVirtualization = rawEnableRowVirtualization ?? enableVirtualization;
-  const enableStickyHeader = rawEnableStickyHeader ?? false;
   const enableDragAutoScroll = rawEnableDragAutoScroll ?? false;
   const cellSelectionMode: CellSelectionMode = rawCellSelectionMode ?? 'cell';
   const rowSelectionMode: RowSelectionMode = rawRowSelectionMode ?? 'none';
@@ -317,6 +316,9 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   // Disable row selection on the smallest breakpoint (xs) where checkboxes are hidden
   const effectiveSelectedRows = isMobileBreakpoint ? undefined : selectedRows;
   const effectiveOnSelectedRowsChange = isMobileBreakpoint ? undefined : onSelectedRowsChange;
+
+  // On the smallest breakpoint (xs) the header is not pinned by default: it takes a row of a short screen. An explicit value wins.
+  const enableStickyHeader = (rawEnableStickyHeader ?? !isMobileBreakpoint) && !hideHeader;
 
   // states
   const [columnWidthsInternal, setColumnWidthsInternal] = useState((): ColumnWidths => columnWidthsRaw ?? new Map());
