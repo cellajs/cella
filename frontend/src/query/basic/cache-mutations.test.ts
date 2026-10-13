@@ -38,6 +38,19 @@ describe('removeDetailQueriesById', () => {
     expect(fetchDetail).not.toHaveBeenCalled();
   });
 
+  it('stops waiting for a shown detail that something else removed first, such as a sign-out that clears the cache', () => {
+    const client = new QueryClient();
+    const key = ['organization', 'detail', 'org-1'];
+    client.setQueryData(key, 'detail');
+    new QueryObserver(client, { queryKey: key, queryFn: async () => 'detail', staleTime: Number.POSITIVE_INFINITY }).subscribe(() => {});
+
+    removeDetailQueriesById(client, ['organization', 'detail'], ['org-1']);
+    expect(client.getQueryCache().hasListeners()).toBe(true);
+
+    client.clear();
+    expect(client.getQueryCache().hasListeners()).toBe(false);
+  });
+
   it('does not scan or remove queries for an empty ID set', () => {
     const client = new QueryClient();
     client.setQueryData(['attachment', 'detail', 'keep'], 'detail');

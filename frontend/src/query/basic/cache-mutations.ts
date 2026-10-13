@@ -39,7 +39,10 @@ export function removeDetailQueriesById(client: QueryClient, detailBase: QueryKe
       continue;
     }
     const unsubscribe = cache.subscribe((event) => {
-      if (event.query !== query || event.type !== 'observerRemoved' || query.getObserversCount() > 0) return;
+      if (event.query !== query) return;
+      // Gone by another hand, such as a sign-out that clears the cache: nothing left to wait for.
+      if (event.type === 'removed') return unsubscribe();
+      if (event.type !== 'observerRemoved' || query.getObserversCount() > 0) return;
       unsubscribe();
       cache.remove(query);
     });
