@@ -111,6 +111,9 @@ const keywordsBudget = 900;
 
 const emptySummary = () => ({ summary: '', summaryLength: 0 });
 
+/** Postgres takes a NUL character in no text value. The stored body escapes one; a column derived from it leaves it out. */
+const withoutNul = (text: string) => text.replaceAll('\u0000', '');
+
 /** Walks any parsed JSON, collecting `{ type: 'mention', props: { id } }` nodes at any depth. */
 const collectMentionNodes = (node: unknown, into: Set<string>): void => {
   if (Array.isArray(node)) {
@@ -159,12 +162,12 @@ export const deriveDocument = (description: string | null | undefined): DerivedD
 
   // The title rule of `titleFromDocument`: block 0's inline text, empty for a block without any (an image).
   const name = attempt(
-    () => getInlineTextFromBlock(blocks[0]),
+    () => withoutNul(getInlineTextFromBlock(blocks[0])),
     () => '',
   );
   const keywords = attempt(
     () =>
-      getSearchableTextFromBlocks(blocks as Block[])
+      withoutNul(getSearchableTextFromBlocks(blocks as Block[]))
         .replace(/\s+/g, ' ')
         .trim()
         .slice(0, keywordsBudget),

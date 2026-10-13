@@ -3,8 +3,9 @@ import type { ActorBinding, ActorContext, DbContext, Env } from '#/core/context'
 import { AppError } from '#/core/error';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { checkAccess } from '#/permissions';
-import { accessFrom, type BindingOf } from '#/permissions/access';
+import { accessFrom, actorFrom, type BindingOf } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
+import { draftChannelVisibleTo } from '#/permissions/channel-collection-scope';
 import type { EntityModel } from '#/tables';
 
 /** `membership` is the grant that allowed the action: a membership row for a user, a stored binding for a service. */
@@ -46,9 +47,10 @@ export const resolveChannelInScope = async <T extends ChannelEntityType>(
 /**
  * Checks whether the user may perform `action` on a channel entity, resolved by ID (or slug when
  * `bySlug`); throws 404 when it is not found or the caller may not read it, 403 when the caller
- * reads it but may not perform `action` (the refusal rules in PERMISSIONS.md). `membership` may be
- * `null` while allowed: system admins and admins of a higher-level entity (`permissions-config`)
- * pass without one.
+ * reads it but may not perform `action` (the refusal rules in PERMISSIONS.md). A draft reads as
+ * missing to a caller the lists hide it from (`draftChannelVisibleTo`), whatever the action.
+ * `membership` may be `null` while allowed: system admins and admins of a higher-level entity
+ * (`permissions-config`) pass without one.
  * @param ctx - Context with memberships and isSystemAdmin set by the guard chain.
  */
 export const getValidChannel = async <T extends ChannelEntityType, C extends ActorContext>(
@@ -64,7 +66,9 @@ export const getValidChannel = async <T extends ChannelEntityType, C extends Act
   const subject = buildSubjectFromEntity(entityType, entity);
   const access = accessFrom(ctx);
   const read = checkAccess(access, 'read', subject);
-  if (!read.allowed) throw new AppError(404, 'not_found', 'warn', { entityType });
+  if (!read.allowed || !draftChannelVisibleTo(entityType, entity, ctx.var.actor.bindings, actorFrom(ctx))) {
+    throw new AppError(404, 'not_found', 'warn', { entityType });
+  }
 
   const { allowed, membership } = action === 'read' ? read : checkAccess(access, action, subject);
   if (!allowed) throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });

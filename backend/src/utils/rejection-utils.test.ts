@@ -15,6 +15,13 @@ describe('rejection utils', () => {
     });
   });
 
+  it('takes nothing when the restriction is below zero', () => {
+    const limited = takeWithRestriction(items, -2, 'org_limit_reached');
+
+    expect(limited.items).toEqual([]);
+    expect(limited.rejectionState.rejectedIds).toEqual(['a', 'b', 'c']);
+  });
+
   // The client reads the reason keys to pick its error, so a reason without ids must not appear.
   it('adds no reason when nothing is rejected for it', () => {
     const filtered = filterWithRejection(items, () => false, 'slug_exists');

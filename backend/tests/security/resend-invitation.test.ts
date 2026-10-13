@@ -231,6 +231,9 @@ describe('Resend a pending invitation from the pending list', async () => {
     expect(tokens).toHaveLength(1);
     expect(tokens[0].id).not.toBe(token.id);
     expect(tokens[0].secret).toBe(hashToken(mailedRawToken()));
+    // The resend is the invitation's last mail: a dispatch of held invitations leaves it alone.
+    const [resent] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, path.id));
+    expect(resent.remindedAt).not.toBeNull();
   });
 
   it('must not re-mint a rejected invitation via the pending list', async () => {

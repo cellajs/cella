@@ -3,7 +3,11 @@ import { deepEntityTypes, deepHierarchy, deepOverrides } from 'shared/testing/de
 import { configurePolicyMatrix } from 'shared/testing/policies';
 import { describe, expect, it } from 'vitest';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import { type ChannelCollectionReadScope, resolveChannelCollectionReadScopeForPolicies } from '#/permissions/channel-collection-scope';
+import {
+  type ChannelCollectionReadScope,
+  draftChannelVisibleToForPolicies,
+  resolveChannelCollectionReadScopeForPolicies,
+} from '#/permissions/channel-collection-scope';
 
 const ORG_ID = 'org-1';
 
@@ -78,5 +82,56 @@ describe('resolveChannelCollectionReadScope', () => {
   it('managed ids subsume the published-only slice for the same id', () => {
     const scope = resolve([membership('course', 'course-1', 'staff'), membership('course', 'course-1', 'student')]);
     expect(scope.ancestorScopes).toEqual([{ channelType: 'course', managedIds: ['course-1'], publishedIds: [] }]);
+  });
+});
+
+describe('draftChannelVisibleTo', () => {
+  const project = (publishedAt: string | null) => ({
+    id: 'project-1',
+    publishedAt,
+    organizationId: ORG_ID,
+    courseId: 'course-1',
+    courseSectionId: 'section-1',
+  });
+
+  const shows = (memberships: MembershipBaseModel[], publishedAt: string | null = null, asActor: PredicateActor = actor) =>
+    draftChannelVisibleToForPolicies({
+      policies,
+      memberships,
+      channelType: 'project' as ChannelEntityType,
+      channel: project(publishedAt),
+      actor: asActor,
+      hierarchy: deepHierarchy as unknown as EntityHierarchy,
+    });
+
+  it('shows a published channel whatever the grant: the read check is the caller', () => {
+    expect(shows([], '2026-01-01T00:00:00.000Z')).toBe(true);
+  });
+
+  it('shows a draft to a member of the channel itself, in any role', () => {
+    expect(shows([membership('project', 'project-1', 'member')])).toBe(true);
+    expect(shows([membership('project', 'project-2', 'owner')])).toBe(false);
+  });
+
+  it('shows a draft to a grant above it that also holds update on the type, and to no read-only grant', () => {
+    expect(shows([membership('organization', ORG_ID, 'admin')])).toBe(true);
+    expect(shows([membership('course', 'course-1', 'staff')])).toBe(true);
+    expect(shows([membership('course', 'course-2', 'staff')])).toBe(false);
+    expect(shows([membership('organization', ORG_ID, 'member')])).toBe(false);
+    expect(shows([membership('courseSection', 'section-1', 'student')])).toBe(false);
+  });
+
+  it('shows a draft to a system admin and to no one without a grant', () => {
+    expect(shows([], null, { actorId: 'admin', isSystemAdmin: true, scopes: null })).toBe(true);
+    expect(shows([])).toBe(false);
+    expect(shows([], null, { anonymous: true })).toBe(false);
+  });
+
+  it('shows a draft organization to its own members alone', () => {
+    const organization = { id: ORG_ID, publishedAt: null };
+    const showsOrganization = (memberships: MembershipBaseModel[]) =>
+      draftChannelVisibleToForPolicies({ policies, memberships, channelType: 'organization', channel: organization, actor });
+    expect(showsOrganization([membership('organization', ORG_ID, 'member')])).toBe(true);
+    expect(showsOrganization([membership('organization', 'org-2', 'admin')])).toBe(false);
   });
 });

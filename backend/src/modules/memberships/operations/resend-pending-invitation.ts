@@ -4,7 +4,7 @@ import { AppError } from '#/core/error';
 import { resendInvitationEmail } from '#/modules/auth/invitations/operations/resend-invitation';
 import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
 import type { InactiveMembershipModel } from '#/modules/memberships/inactive-memberships-db';
-import { findInactiveMembershipById } from '#/modules/memberships/memberships-queries';
+import { findInactiveMembershipById, stampInactiveMembershipsReminded } from '#/modules/memberships/memberships-queries';
 import { sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
 import { findUserById } from '#/modules/user/user-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
@@ -43,5 +43,6 @@ async function remindInvitee(ctx: UserContext, invitation: InactiveMembershipMod
     organization: ctx.var.organization,
     invited: [{ email: invitation.email, userId: invitation.userId }],
   });
+  await stampInactiveMembershipsReminded(ctx, { ids: [invitation.id], remindedAt: new Date().toISOString() });
   log.info('Membership invitation has been resent', { inactiveMembershipId: invitation.id });
 }

@@ -6,7 +6,7 @@ import { getValidChannel, resolveChannelInScope } from '#/permissions/get-valid-
 
 vi.mock('#/modules/entities/entities-queries', () => ({ resolveEntity: vi.fn() }));
 vi.mock('#/permissions', () => ({ checkAccess: vi.fn() }));
-vi.mock('#/permissions/access', () => ({ accessFrom: vi.fn(() => ({})) }));
+vi.mock('#/permissions/access', () => ({ accessFrom: vi.fn(() => ({})), actorFrom: vi.fn(() => ({ actorId: 'user-1', scopes: null })) }));
 vi.mock('#/permissions/build-subject', () => ({ buildSubjectFromEntity: vi.fn(() => ({})) }));
 
 const TENANT = 'tenant-a';
@@ -14,8 +14,8 @@ const ORG = 'org-a';
 
 /** Scope check unit: the entity lookup and permission engine are mocked, so only the tenant/organization comparison is under test. */
 describe('getValidChannel request scope', () => {
-  const ctx = (scope: Partial<{ tenantId: string; organizationId: string }> = {}) =>
-    ({ var: { db: {}, userId: 'user-1', ...scope } }) as unknown as UserContext;
+  const ctx = (scope: Partial<{ tenantId: string; organizationId: string }> = {}, bindings: unknown[] = []) =>
+    ({ var: { db: {}, userId: 'user-1', actor: { id: 'user-1', bindings, scopes: null }, ...scope } }) as unknown as UserContext;
 
   const organization = { id: ORG, entityType: 'organization', tenantId: TENANT };
 
@@ -72,6 +72,20 @@ describe('getValidChannel request scope', () => {
       type: 'forbidden',
       meta: { action: 'update' },
     });
+  });
+
+  it('reads a draft the caller is no member of as 404, whatever the action asked and the engine allows', async () => {
+    vi.mocked(resolveEntity).mockResolvedValue({ ...organization, publishedAt: null } as never);
+    for (const action of ['read', 'update', 'delete'] as const) {
+      await expect(getValidChannel(ctx({ tenantId: TENANT }), ORG, 'organization', action)).rejects.toMatchObject({ status: 404, type: 'not_found' });
+    }
+  });
+
+  it('returns a draft to a member of the channel itself', async () => {
+    const draft = { ...organization, publishedAt: null };
+    vi.mocked(resolveEntity).mockResolvedValue(draft as never);
+    const member = ctx({ tenantId: TENANT }, [{ channelType: 'organization', channelId: ORG, organizationId: ORG, role: 'member' }]);
+    await expect(getValidChannel(member, ORG, 'organization', 'read')).resolves.toEqual({ entity: draft, membership: null });
   });
 
   it('resolveChannelInScope returns the row in scope without consulting the engine', async () => {

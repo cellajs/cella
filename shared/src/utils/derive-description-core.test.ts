@@ -83,6 +83,12 @@ describe('deriveDocument', () => {
     expect(derived.keywords.match(/Sprint retro/g)).toHaveLength(1);
   });
 
+  it('leaves a NUL character out of the title and the search text, which a text column cannot hold', () => {
+    const derived = deriveDocument(JSON.stringify([paragraph('Ti\u0000tle'), paragraph('bo\u0000dy')]));
+    expect(derived.name).toBe('Title');
+    expect(derived.keywords).toBe('Title body');
+  });
+
   it('caps the search text at 900 characters', () => {
     expect(deriveDocument(JSON.stringify([paragraph('x '.repeat(2000))])).keywords).toHaveLength(900);
   });
