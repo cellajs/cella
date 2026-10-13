@@ -5,7 +5,7 @@ import { principalNames } from '../../lib/scaleway/principals';
 import { checkMark, crossMark, pc } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { DEFAULT_PREFIX, main as geoipRefresh, monthOf } from '../../tasks/geoip-refresh';
-import { confirmOrDefault, endAction, type InfraContext } from '../shared';
+import { confirmOrDefault, endAction, type InfraContext, resolveVerifiedPassphrase } from '../shared';
 
 /**
  * "Refresh GeoIP data": publish this month's DB-IP Lite databases to the `geoip/` prefix of the public bucket. Running
@@ -28,6 +28,9 @@ export async function runGeoipRefresh(context: InfraContext): Promise<void> {
     );
     endAction(1);
   }
+
+  // The admin application key sits on disk, so it must not be enough to publish: a person supplies the operator key or the passphrase first.
+  await resolveVerifiedPassphrase(context.stackYaml);
 
   const force = await confirmOrDefault({ message: 'Publish even when this month is already in the bucket?', default: false });
 

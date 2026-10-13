@@ -1,7 +1,5 @@
 import { input } from '@inquirer/prompts';
 import { deriveInfra } from '../../lib/naming';
-import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
-import { principalNames } from '../../lib/scaleway/principals';
 import { createRdbClient, waitForBackupReady } from '../../lib/scaleway/scaleway-rdb';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
@@ -14,7 +12,8 @@ import {
   serialConsoleSteps,
 } from '../../tasks/reset-database';
 import { endAction, endsAction, type InfraContext } from '../shared';
-import { acquireOwnerKey, printRevokeReminder } from './owner-key';
+import { acquirePrivilegedKey } from './operator-unlock';
+import { printRevokeReminder } from './owner-key';
 
 /** Roles Pulumi provisions on the instance (`resources/stores/postgres-managed.ts`). Both must be re-granted. */
 const ROLES = ['admin_role', 'runtime_role'] as const;
@@ -42,7 +41,7 @@ function describeTarget(target: ResetTarget, region: string): string {
 
 /**
  * "Reset database": delete + recreate this app's logical database over the Scaleway API with the
- * Owner API key, then re-grant both roles. The same-name recreate preserves Pulumi state without
+ * operator key, then re-grant both roles. The same-name recreate preserves Pulumi state without
  * exposing the database.
  */
 export async function runResetDatabase(context: InfraContext): Promise<void> {
@@ -59,14 +58,8 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
   console.info(pc.dim('\nReset database: delete + recreate the logical database, then re-grant roles.'));
   console.info(pc.dim('Pre-production use, or with services quiesced: this is a hard outage.\n'));
 
-  // A privileged write, so the same key flow as Apply: the Owner API key from SCW_OWNER_* or a prompt, validated first.
-  const ownerKey = await acquireOwnerKey({
-    identity: resolveOperatorIdentity(),
-    names: principalNames(appConfig.slug, context.environment),
-    projectId: context.projectId,
-    slug: appConfig.slug,
-    mode: context.environment,
-  });
+  // A privileged write, so the same key flow as Apply: a key minted from the operator key, asked once per session.
+  const ownerKey = await acquirePrivilegedKey(context);
   const client = createRdbClient({ secretKey: ownerKey.secretKey, region });
   const expiresAt = new Date(Date.now() + BACKUP_RETENTION_DAYS * 86_400_000).toISOString();
 

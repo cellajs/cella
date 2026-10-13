@@ -9,13 +9,19 @@ vi.mock('../lib/stack/pulumi-passphrase', () => ({
 }));
 
 const { resolveVerifiedPassphrase } = await import('./shared');
-const { forgetSession } = await import('./session');
+const { forgetSession, setPassphraseCustody } = await import('./session');
 
 const stack = (passphrase: string) => `encryptionsalt: v1:abc\n# passphrase=${passphrase}\n`;
+const custody = (stored: string | undefined, canStore = true) => {
+  const read = vi.fn(async () => stored);
+  const store = vi.fn(async () => canStore);
+  setPassphraseCustody({ read, store });
+  return { read, store };
+};
 
 beforeEach(() => {
-  vi.stubEnv('PULUMI_CONFIG_PASSPHRASE', undefined);
   vi.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(console, 'info').mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -56,15 +62,65 @@ describe('resolveVerifiedPassphrase in one run of the CLI', () => {
     expect(maskedSecret).toHaveBeenCalledTimes(2);
   });
 
-  it('takes a matching passphrase from the environment without asking or remembering it', async () => {
+  it('must not take the passphrase from the environment: a value on disk would run the CLI with nobody at the prompt', async () => {
     vi.stubEnv('PULUMI_CONFIG_PASSPHRASE', 'first');
+    maskedSecret.mockResolvedValue('first');
+
+    await resolveVerifiedPassphrase(stack('first'));
+
+    expect(maskedSecret).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('resolveVerifiedPassphrase with the passphrase in Secret Manager', () => {
+  it('fetches it, so nobody types it, and reads Secret Manager once per run', async () => {
+    const { read } = custody('first');
 
     await expect(resolveVerifiedPassphrase(stack('first'))).resolves.toBe('first');
-    expect(maskedSecret).not.toHaveBeenCalled();
+    await expect(resolveVerifiedPassphrase(stack('first'))).resolves.toBe('first');
 
-    vi.stubEnv('PULUMI_CONFIG_PASSPHRASE', undefined);
+    expect(maskedSecret).not.toHaveBeenCalled();
+    expect(read).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks once on a stack that stored none yet, and stores what was typed', async () => {
+    const { store } = custody(undefined);
     maskedSecret.mockResolvedValue('first');
-    await resolveVerifiedPassphrase(stack('first'));
+
+    await expect(resolveVerifiedPassphrase(stack('first'))).resolves.toBe('first');
+
+    expect(store).toHaveBeenCalledWith('first');
+  });
+
+  it('must not use a stored passphrase that does not open the stack: it asks, and stores the one that does', async () => {
+    const { store } = custody('stale');
+    maskedSecret.mockResolvedValue('first');
+
+    await expect(resolveVerifiedPassphrase(stack('first'))).resolves.toBe('first');
+
     expect(maskedSecret).toHaveBeenCalledTimes(1);
+    expect(store).toHaveBeenCalledWith('first');
+  });
+
+  it('must not store a passphrase the stack refused', async () => {
+    const { store } = custody(undefined);
+    maskedSecret.mockResolvedValueOnce('wrong').mockResolvedValueOnce('first');
+
+    await resolveVerifiedPassphrase(stack('first'));
+
+    expect(store).toHaveBeenCalledTimes(1);
+    expect(store).toHaveBeenCalledWith('first');
+  });
+
+  it('fetches again after a rotation made the remembered passphrase stale', async () => {
+    const first = custody('old');
+    await resolveVerifiedPassphrase(stack('old'));
+    const second = custody('new');
+
+    await expect(resolveVerifiedPassphrase(stack('new'))).resolves.toBe('new');
+
+    expect(first.read).toHaveBeenCalledTimes(1);
+    expect(second.read).toHaveBeenCalledTimes(1);
+    expect(maskedSecret).not.toHaveBeenCalled();
   });
 });

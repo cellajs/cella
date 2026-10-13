@@ -22,6 +22,7 @@ import { writeEnvVar } from '../../lib/utils/env-file';
 import { LEGACY_ADMIN_KEY_NAMES, writeModeEnvValues } from '../../lib/utils/env-files';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
+import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { provisionManagedKey } from '../../tasks/provision-managed-key';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { setupAdminApp } from '../../tasks/setup-admin-app';
@@ -43,7 +44,8 @@ import {
   resolveOrCreatePassphrase,
   stackNameFor,
 } from '../shared';
-import { OWNER_KEY_HINT } from './owner-key';
+import { acquireOperatorKey, operatorLock } from './operator-unlock';
+import { OWNER_KEY_HINT, type OwnerKey } from './owner-key';
 
 /** An optional masked value: empty when the prompt cannot run (no terminal), while a Ctrl-C at it still leaves the wizard. */
 async function optionalSecret(message: string): Promise<string> {
@@ -422,15 +424,38 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: B
   }
 }
 
-/** Set up or resume a stack: Owner API key, project, identities, CI key, state backend, and base infrastructure. */
-export async function runSetup(context: InfraContext, mode: Extract<CliMode, 'resume' | 'rotate-keys'>): Promise<void> {
-  const needsCiKey = mode === 'rotate-keys' || !context.hasCiKey;
-  const { passphrase: pulumiPassphrase, generated: passphraseGenerated } = await resolveOrCreatePassphrase(context.stackYaml);
+/** A setup run can include the first `pulumi up` and a first deploy, so its minted key lives longer than an action's half hour. */
+const SETUP_KEY_TTL_MS = 3 * 60 * 60_000;
 
-  // Provider authentication and all IAM / Secret Manager work use the Owner API key (SCW_OWNER_*, else a prompt) through SCW_* env (childEnv below), never stack config.
+/**
+ * Set up or resume a stack: key, project, identities, CI key, state backend, and base infrastructure. A first setup, and a stack that has no
+ * operator application yet, run on the Owner API key typed at the prompt. Every other run takes a key minted from the operator key, which is
+ * revoked on every way out.
+ */
+export async function runSetup(context: InfraContext, mode: Extract<CliMode, 'resume' | 'rotate-keys'>): Promise<void> {
+  const hasOperator = context.state !== 'fresh' && (await operatorLock(context)).state !== 'absent';
+  const operatorKey = hasOperator ? await acquireOperatorKey(context, { ttlMs: SETUP_KEY_TTL_MS }) : undefined;
+  try {
+    await runSetupWith(context, mode, operatorKey);
+  } finally {
+    await operatorKey?.release();
+  }
+}
+
+async function runSetupWith(
+  context: InfraContext,
+  mode: Extract<CliMode, 'resume' | 'rotate-keys'>,
+  operatorKey: OwnerKey | undefined,
+): Promise<void> {
+  const needsCiKey = mode === 'rotate-keys' || !context.hasCiKey;
+
+  // Provider authentication and all IAM / Secret Manager work use this key through SCW_* env (childEnv below), never stack config.
   const identity = resolveOperatorIdentity();
-  const ownerKeyPasted = !identity.owner;
-  const { accessKey: scwAccessKey, secretKey: scwSecretKey } = await keyPairOrPrompt(identity.owner, 'Scaleway Owner API key', OWNER_KEY_HINT);
+  const ownerKeyPasted = !operatorKey;
+  const { accessKey: scwAccessKey, secretKey: scwSecretKey } =
+    operatorKey ?? (await keyPairOrPrompt(undefined, 'Scaleway Owner API key', OWNER_KEY_HINT));
+  // After the key: an unlocked session fetches the passphrase, so nobody types it.
+  const { passphrase: pulumiPassphrase, generated: passphraseGenerated } = await resolveOrCreatePassphrase(context.stackYaml);
   const scwProjectId =
     context.projectId || (await ensureProjectId({ slug: context.appConfig.slug, accessKey: scwAccessKey, secretKey: scwSecretKey }));
 
@@ -538,6 +563,18 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   // Only a fresh/rotate run touches the admin app; a Resume leaves it alone and reports nothing about it (`infra status` resolves it from IAM).
   const adminAppId = needsCiKey ? await ensureAdminApp(ctx) : '';
 
+  // The passphrase goes into Secret Manager beside the admin key, so later runs fetch it with the operator key and nobody types it.
+  await storeCustodiedPassphrase({
+    secretKey: scwSecretKey,
+    region: appConfig.s3.region,
+    projectId: scwProjectId,
+    slug: appConfig.slug,
+    mode: context.environment,
+    passphrase: pulumiPassphrase,
+  }).catch((error) =>
+    console.warn(`${warningMark} Could not store the passphrase in Secret Manager (${errorMessage(error)}); it is asked once on the next run.`),
+  );
+
   // Identity ids come from the IAM API, so stack config only needs a non-secret bootstrap marker.
   const bootstrapComplete = context.hasCiKey || !!ciKey.accessKey;
   if (bootstrapComplete) {
@@ -610,13 +647,13 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         ),
       );
     }
-    // Revoking the key is the last call because a key may delete itself. Only a key typed at the prompt is offered: one from SCW_OWNER_* is the operator's durable key.
+    // Revoking the key is the last call because a key may delete itself. Only an Owner API key typed at the prompt is offered: a key minted from the operator key is revoked by the caller.
     const revokeNow = !ownerKeyPasted
       ? false
       : autoAcceptDefaults()
         ? true
         : await confirm({
-            message: `Revoke the Owner API key you pasted (${scwAccessKey}) now? Nothing else needs it; day-2 privileged actions take one from SCW_OWNER_* or ask again.`,
+            message: `Revoke the Owner API key you pasted (${scwAccessKey}) now? Nothing else needs it: day-2 privileged actions run on the operator key.`,
             default: true,
           });
     if (revokeNow) {
@@ -633,5 +670,10 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         `\n${pc.dim('Reminder:')} revoke the Owner API key you pasted (${scwAccessKey}) if it was created for this setup: console → IAM → API keys.`,
       );
     }
+  }
+  if (!operatorKey) {
+    console.info(
+      `\n${pc.dim('Next:')} ${pc.cyan(actionCommand('operator-key'))} ${pc.dim('creates the operator key for day-to-day work, which Scaleway accepts from your dedicated IP address only.')}`,
+    );
   }
 }

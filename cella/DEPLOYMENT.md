@@ -92,17 +92,17 @@ Scaleway API keys descend in privilege, each in a different store, each minting 
 
 | Key | Permissions | Lifetime | Where stored |
 | --- | --- | --- | --- |
-| **Owner API key** (your own key as organization Owner, **or** an application holding ProjectManager + IAMManager) | Everything: required for any `pulumi up` that touches privileged resources (DB, VPC, private network, IAM policies), and for setup, teardown and runtime secrets. The CLI checks the bearer before using one: an application the engine created is refused by name. | Your durable key stays in the OS keychain or password manager; a privileged run never drives Pulumi with it but mints a 30-minute key from it and revokes that at the end. A short-lived key you paste is used as it is, and you revoke it afterwards. | `SCW_OWNER_ACCESS_KEY` / `SCW_OWNER_SECRET_KEY` in `infra/.env.<mode>` as a `keychain:` or `op:` reference; without it the CLI prompts. |
-| **Operator application key** (`<slug>-<mode>-operator`) | Everything in the app project plus IAM write, like an Owner API key for this stack, but Scaleway accepts it **from your dedicated IP address only**: every rule of its policy carries that condition. An Owner API key cannot be held to an address, so this is the key for day-to-day privileged work. | Long-lived. Created and replaced by `pnpm infra operator-key` with your Owner API key ([Operator key](#operator-key)). | Your password manager only: shown once, stored nowhere by the CLI. Paste it wherever the CLI asks for the Owner API key. |
+| **Owner API key** (your own key as organization Owner) | Everything, from every address: Scaleway holds an Owner to no policy condition. The CLI asks for one in three places only: a first setup, **Set up operator key**, and any privileged action on a stack that has no operator key yet. | Create one for the occasion in the console and revoke it afterwards; the setup offers to revoke it as its last call. Keep the Owner account for recovery, with MFA. | Nowhere on the machine. The CLI takes it at the prompt and never reads `SCW_OWNER_*` from a file or the environment. |
+| **Operator application key** (`<slug>-<mode>-operator`) | Everything in the app project plus IAM write and read, like an Owner API key for this stack, but Scaleway accepts it **from your dedicated IP address only**: every rule of its policy carries that condition. The key for day-to-day privileged work. | Long-lived. Created and replaced by `pnpm infra operator-key` with your Owner API key ([Operator key](#operator-key)). An action never runs on it directly: it mints a 30-minute key of the same application and revokes that at its end. | Your password manager only: shown once, stored nowhere by the CLI. You paste its secret key once per run of the CLI, which keeps it in memory until you quit. |
 | **CI deploy application key** (`<slug>-<mode>-ci-deploy`) | Write on compute / LB / private networks / edge / secrets / object storage / registry / DNS. **Read-only** on VPC and RDB (privileged resources). Project-scoped. | Long-lived. Rotate via the CLI **Rotate keys** action ([Key rotation](#key-rotation)) | The stack's GitHub Environment (`staging` or `production`) secrets `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`, the names the Scaleway provider reads. |
-| **Admin application key** (`<slug>-<mode>-admin`) | Read-only on every project resource, object storage full access, IAM read; admitted to the state bucket. The day-2 key for status, previewing changes, and the state side of applying them. | Long-lived. Created by the CLI **Rotate keys** action; custody copy at `/<slug>-<mode>/engine/admin-key`. | `infra/.env.<mode>` as `SCW_ADMIN_ACCESS_KEY` / `SCW_ADMIN_SECRET_KEY` (0600, never committed): setup writes it on the machine that ran it; anywhere else, `pnpm infra fetch-admin-key` reads it from Secret Manager with your Owner API key. |
+| **Admin application key** (`<slug>-<mode>-admin`) | Read-only on every project resource, object storage full access, IAM read; admitted to the state bucket. The day-2 key for status, the plan of a change, and the state side of applying it. | Long-lived. Created by the CLI **Rotate keys** action; custody copy at `/<slug>-<mode>/engine/admin-key`. | `infra/.env.<mode>` as `SCW_ADMIN_ACCESS_KEY` / `SCW_ADMIN_SECRET_KEY` (0600, never committed): setup writes it on the machine that ran it; anywhere else, `pnpm infra fetch-admin-key` reads it from Secret Manager with your operator key. |
 | **Boot + service application keys** (`<slug>-<mode>-boot`, `<slug>-<mode>-vm-<service>`) | Boot key: registry pull + boot-diag write + handoff-only secret read. Service key: path-conditioned secret read (its own folder plus the shared folder of each secret it consumes). The backend additionally gets granular S3 object sets. | Minted per deploy by the CI key. Superseded keys are pruned on the next mint | Boot key baked into VM cloud-init. Each service key is delivered via a single-access handoff bundle in Secret Manager. Not in stack config. |
 
-The **Pulumi passphrase** sits outside the chain: it encrypts the stack's secret outputs in the state bucket ([Passphrase rotation](#passphrase-rotation)). `pnpm infra store-passphrase` moves this machine's copy into the OS keychain and leaves `keychain:<slug>-<mode>/PULUMI_CONFIG_PASSPHRASE` in the env file; the password-manager copy stays the durable one.
+The **Pulumi passphrase** sits outside the chain: it encrypts the stack's secret outputs in the state bucket ([Passphrase rotation](#passphrase-rotation)). Nobody types it: it is stored in Secret Manager at `/<slug>-<mode>/engine/pulumi-passphrase`, beside the admin key and outside every VM's reach, and the CLI reads it with the operator key your session is unlocked with. CI keeps its own copy as a GitHub Environment secret. A stack set up before this copy existed asks for the passphrase once, at the first unlocked action, and stores it.
 
-On an operator machine `infra/.env.<mode>` therefore holds the admin application key, the passphrase and, optionally, the Owner API key, as values or as `keychain:` / `op:` references the CLI resolves on load ([env-files.ts](../infra/lib/utils/env-files.ts)). The provider's own `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` names are never read from the file: until 0.12 they meant the admin application key there, and the CLI still reads them as `SCW_ADMIN_*` with a rename warning, while in the process environment they keep meaning the key the process was started with (a CI runner). `SCW_STATE_*` and `SCW_BOOTSTRAP_*` are read the same way for one release. On start the CLI prints which principal the admin application key belongs to, whether the stack is locked, and what is live, so a CI key in the admin slot is visible before any action.
+On an operator machine `infra/.env.<mode>` therefore holds the admin application key and nothing a change needs: the CLI reads neither a privileged key nor the passphrase from a file or the environment, as a reference or as a value, and names what it found there. That is deliberate. A value on disk would let a script on the machine change infrastructure with nobody at the terminal ([env-files.ts](../infra/lib/utils/env-files.ts)). The provider's own `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` names are never read from the file: until 0.12 they meant the admin application key there, and the CLI still reads them as `SCW_ADMIN_*` with a rename warning, while in the process environment they keep meaning the key the process was started with (a CI runner). `SCW_STATE_*` is read the same way for one release. On start the CLI prints which principal the admin application key belongs to, whether the stack is locked, what is live, and whether Scaleway takes the operator key from this machine's address.
 
-A passphrase or Owner API key the file does not hold is asked at the prompt, once per run of the CLI: a menu session keeps what you typed in memory until you quit and writes it nowhere. Each action still verifies the passphrase against the stack and validates the key again.
+Every action that changes something starts from a secret you supply in that run: the operator key's secret key, asked once per run of the CLI and kept in memory until you quit. That holds for the actions that otherwise need only the admin application key, such as removing a stack lock. Each action still verifies the passphrase against the stack and mints its own key.
 
 ## CI deploys
 
@@ -158,15 +158,15 @@ All tunable infra config lives in committed, type-checked files under [config/](
 
 Most config changes ship through a normal CI deploy, including toggling `appConfig.services.<slug>.enabled`. **Privileged** resources (database, VPC, the VM IAM principals and policies) can only be mutated with your Owner API key: `pnpm infra` → **Review & apply changes** (or `pnpm infra apply`), which:
 
-1. Shows the plan (`pulumi preview --diff --refresh`) with the Pulumi passphrase and your admin application key from `infra/.env.<mode>`, then asks once whether to apply it. Nothing is locked or changed up to here, so answering no is a read-only look. The plan reads live state first, so drift made outside Pulumi shows up; a CI deploy applies the same diff except the VM policy rules. A registry service whose IAM application does not exist yet is planned with an application id that is known after the apply, under a warning that names the application.
-2. On a yes, reads the Owner API key: `SCW_OWNER_ACCESS_KEY` / `SCW_OWNER_SECRET_KEY` when set ([API keys](#credentials)), else a prompt ([Your Owner API key](#2-your-owner-api-key)). The bearer is checked first: an organization Owner, or a principal holding IAMManager; a CI, admin, boot or VM key is refused by name. A durable key mints a 30-minute key for the run. The run's key reaches the Scaleway provider via `SCW_*` env and is never written to stack config; the state side (login, lock, `up`) uses your admin application key.
+1. Asks for the operator key's secret key, unless this run already has it, and fetches the passphrase with it. Then shows the plan (`pulumi preview --diff --refresh`) with your admin application key from `infra/.env.<mode>` and asks once whether to apply it. Nothing is locked or changed up to here, so answering no is a read-only look. The plan reads live state first, so drift made outside Pulumi shows up; a CI deploy applies the same diff except the VM policy rules. A registry service whose IAM application does not exist yet is planned with an application id that is known after the apply, under a warning that names the application.
+2. On a yes, mints a 30-minute key of the operator application from the operator key ([Operator key](#operator-key)) and waits until Scaleway accepts it. That key reaches the Scaleway provider via `SCW_*` env and is never written to stack config; the state side (login, lock, `up`) uses your admin application key. A stack without an operator application takes an Owner API key at the prompt here, checked first: an organization Owner, or a principal holding IAMManager; a CI, admin, boot or VM key is refused by name.
 3. Takes the stack lease (renewed while the run lasts, released on Ctrl-C; a lock left by a dead run lapses within minutes and the CLI waits for that), creates any missing VM IAM application (`<slug>-<mode>-vm-<service>`, `<slug>-<mode>-boot`) for the service registry, and reconciles the rollout pointers from live state.
 4. Checks that the Pulumi state and the rollout pointers are the ones the plan was made on. When a deploy landed in between, or step 3 corrected a pointer, it shows the plan as it stands now and asks again.
 5. Runs `pulumi up --refresh`, so the `up` corrects the same drift the plan showed, without setting `bootstrap:computeDeferred`: the running VMs and LB stay in place. This run also reconciles the VM policy rules, which a CI deploy leaves untouched.
 6. Verifies the result live: every VM, boot and CI principal holds exactly the declared grant, with the exact secret condition and project scope, and the declared database privileges exist. Pulumi reporting an update is not proof (one update was recorded in state while Scaleway kept the old rule), so a mismatch fails the run. `pnpm infra --debug-provider` keeps the engine and provider log of the `up` under `infra/.debug/` for such a case.
 7. Revokes the minted key, or reminds you to revoke a pasted one.
 
-On a machine without the admin application key, the Owner API key and the lock come first, then the plan and the question.
+On a machine without the admin application key, the privileged key and the lock come first, then the plan and the question.
 
 `pnpm infra preview` is step 1 without the question: for a script, or a look that must never reach an apply. The organization id comes from `SCW_ORGANIZATION_ID` in `backend/.env`.
 
@@ -199,7 +199,7 @@ VM IAM principals and policies follow the **service registry** ([config/services
 
 1. Easiest: as an organization Owner, generate an [API key for your user](https://console.scaleway.com/iam/users) (User menu → API keys → Generate). Give it an expiry when it is only for this setup.
 2. Stricter: create an Application in [IAM → Applications](https://console.scaleway.com/iam/applications) with **ProjectManager + IAMManager** on the organization, and generate an API key for it.
-3. Keep access key, secret key, project ID, and organization ID in your password manager. For day-2 runs, put the pair in `infra/.env.<mode>` as `SCW_OWNER_ACCESS_KEY` / `SCW_OWNER_SECRET_KEY` (a `keychain:` or `op:` reference): every privileged run then mints its own 30-minute key from it.
+3. Keep project ID and organization ID in your password manager. The key itself is for this setup only: the wizard offers to revoke it at its end, and day-2 work runs on the operator key ([Operator key](#operator-key)).
 
 ### 3. Run the infra CLI
 
@@ -214,7 +214,7 @@ pnpm infra
 5. Configures GitHub (if `gh` is authenticated).
 6. Optionally runs the first `pulumi up` (registry, DB, and network, but no compute yet).
 7. Offers the **first deploy** (the CI command with `--build`, using the new CI deploy key). Accepting ends with a live app. Declining leaves it to CI (step 4).
-8. Offers to **revoke the key you pasted** as its last call (a key from `SCW_OWNER_*` is yours to keep).
+8. Offers to **revoke the key you pasted** as its last call, and names the action that creates the operator key.
 
 ### 4. Commit and push
 
@@ -238,7 +238,7 @@ If you pasted a key created for this setup, revoke it now. The wizard's final st
 1. Delete the key at [IAM → API Keys](https://console.scaleway.com/iam/api-keys).
 2. Optionally delete the temporary application.
 
-A key you keep in `SCW_OWNER_*` stays: privileged runs mint short-lived keys from it.
+Day-2 privileged runs take the operator key, never this one.
 
 ### 6. Sign in as the first admin
 
@@ -278,7 +278,7 @@ docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com backend
 
 **Alternative: break-glass from your laptop.** Briefly exposes the DB (ACL-locked to your IP), so prefer the serial console. Both flows serve any operator task against the live database. For staging, **Open public DB access** → **Seed database** (`pnpm infra db-seed`) opens, seeds, and closes in one go (never on production).
 
-1. Expose the DB (needs your Owner API key). The ACL defaults to `<your.ip>/32` (IPv4 only, open ranges refused) and the admin connection string is printed:
+1. Expose the DB (needs your operator key). The ACL defaults to `<your.ip>/32` (IPv4 only, open ranges refused) and the admin connection string is printed:
 
    The CLI refuses native IPv6 and `/0` entries. Entries wider than `/24` require
    `infra:dbPublicAclAllowWide=true`, and all entries together may cover at most half of IPv4.
@@ -302,7 +302,7 @@ docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com backend
 
 ### Reset the database
 
-Rebuilds the app's logical database from migrations plus the admin seed. **Pre-production only, or with services deliberately quiesced: a hard outage.** `pnpm infra` → **Reset database** takes a backup (aborting unless it reports ready), deletes and recreates the logical database over the Scaleway API with your Owner API key, and re-grants both roles. It never exposes the database and never runs `pulumi up`. Then, on the serial console, re-run the migrate companion, which also seeds the admin from the `ADMIN_EMAIL` runtime secret while the users table is empty ([main.migrate.ts](../backend/src/main.migrate.ts)):
+Rebuilds the app's logical database from migrations plus the admin seed. **Pre-production only, or with services deliberately quiesced: a hard outage.** `pnpm infra` → **Reset database** takes a backup (aborting unless it reports ready), deletes and recreates the logical database over the Scaleway API with your operator key, and re-grants both roles. It never exposes the database and never runs `pulumi up`. Then, on the serial console, re-run the migrate companion, which also seeds the admin from the `ADMIN_EMAIL` runtime secret while the users table is empty ([main.migrate.ts](../backend/src/main.migrate.ts)):
 
 ```bash
 cd /opt/app
@@ -317,12 +317,12 @@ Verify: `curl https://<your-app>/api/health?depth=full` reports every component 
 
 ### Key rotation
 
-1. Have your Owner API key at hand (`SCW_OWNER_*`, or a key to paste).
+1. Have your operator key at hand.
 2. `pnpm infra` → **Rotate keys & secrets** → **Rotate keys**: mints a fresh `<slug>-<mode>-ci-deploy` key and, if `gh` is authenticated, pushes it to the stack's GitHub Environment as `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`. It also recreates the admin application key and rewrites `infra/.env.<mode>`. Neither key is written to stack config.
 3. The next CI deploy uses the new key. No commit is needed. VM-side keys need no rotation: every deploy mints fresh ones.
 4. Revoke a pasted key in the Scaleway console.
 
-To put the admin application key on another operator machine, run `pnpm infra fetch-admin-key` there with your Owner API key (in the menu: **Repair stack**): it reads the custodied pair, confirms it belongs to the admin application, and writes `infra/.env.<mode>` (`SCW_ADMIN_*`).
+To put the admin application key on another operator machine, run `pnpm infra fetch-admin-key` there with your operator key (in the menu: **Repair stack**): it reads the custodied pair, confirms it belongs to the admin application, and writes `infra/.env.<mode>` (`SCW_ADMIN_*`).
 
 ### Operator key
 
@@ -335,7 +335,11 @@ To put the admin application key on another operator machine, run `pnpm infra fe
 
 From another address Scaleway refuses the key: IAM, Secret Manager and Object Storage answer with an error, while the database and Instances APIs answer a list with nothing in it. A stack that looks empty from a new address is therefore the address, not the stack.
 
-Running the action again replaces the policy and every earlier key, which is also how the address is changed. It needs your Owner API key each time: the operator application's own key cannot replace its own policy. Keep the Owner account for this and for recovery, with MFA and no API key lying around.
+Running the action again replaces the policy and every earlier key. It needs your Owner API key each time: the operator application's own key cannot replace its own policy. Keep the Owner account for this and for recovery, with MFA and no API key lying around.
+
+**Change dedicated IP** in the same row (`pnpm infra operator-address`) moves the address with the operator key itself: it replaces the policy's rules in place, so the key keeps its rights throughout. It has to run from an address the policy still names. When that address is already lost, the Owner sets the new one with **Set up operator key**. Scaleway applies a policy change within a few minutes, one API after the other, so an address that was removed can still work for a short while.
+
+**How a session is unlocked.** The first action that changes something, or that needs the passphrase, asks for the operator key's secret key. The CLI proves it by looking up the operator application with it, keeps it in memory until you quit, and gives every action its own 30-minute key of the operator application, revoked when the action ends. When Scaleway refuses the key, the CLI says why: a secret key Scaleway does not know, or an address off the list, with this machine's address beside the ones the policy names.
 
 ### Passphrase rotation
 
@@ -350,7 +354,7 @@ Running the action again replaces the policy and every earlier key, which is als
 
 ### Teardown
 
-`pnpm infra` → **Tear down stack** deletes every resource to stop billing: it takes your Owner API key the way Review & apply changes does ([API keys](#credentials)), requires typing `<slug>-<mode>`, runs `pulumi destroy --refresh` under the stack lock, then optionally deletes the stack's IAM principals. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket, operator secret values, and GitHub Environment secrets.
+`pnpm infra` → **Tear down stack** deletes every resource to stop billing: it takes your operator key the way Review & apply changes does ([API keys](#credentials)), requires typing `<slug>-<mode>`, runs `pulumi destroy --refresh` under the stack lock, then optionally deletes the stack's IAM principals. A run under the operator key keeps the operator application and the group, as deleting them would revoke the key it runs on: delete both in the console afterwards. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket, operator secret values, and GitHub Environment secrets.
 
 > **Clean slate** below is not a teardown: it resets stack tracking to set up a still-running stack again. Live resources stay.
 

@@ -2,18 +2,17 @@ import { confirm, input } from '@inquirer/prompts';
 import { parseAclInput } from '../../lib/db-exposure-acl';
 import { deriveInfra } from '../../lib/naming';
 import { actionLabel } from '../../lib/operator-actions';
-import { IAM_BASE } from '../../lib/scaleway/iam-client';
 import { ipAllowed } from '../../lib/scaleway/ip-lock';
-import { classifyPrincipal, describeKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { classifyPrincipal, describeKey } from '../../lib/scaleway/operator-identity';
 import { principalNames } from '../../lib/scaleway/principals';
 import type { ScopedKeyResult } from '../../lib/scaleway/scaleway-iam';
-import { scwFetch } from '../../lib/scaleway/scw-fetch';
 import { checkMark, crossMark, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { pollUntil } from '../../lib/utils/retry';
 import { setupOperatorApp } from '../../tasks/setup-operator-app';
+import { forgetOperatorLock } from '../session';
 import { endAction, type InfraContext } from '../shared';
-import { detectPublicIp } from './db-exposure';
+import { keyAccepted, publicAddress } from './operator-unlock';
 import { acquireOwnerKey, printRevokeReminder } from './owner-key';
 
 /** How long the new key is tried from this machine. Scaleway applies a policy within about a minute, and single APIs follow later still. */
@@ -27,14 +26,6 @@ const ACCEPT_INTERVAL_MS = 5_000;
 export function acceptanceVerdict(opts: { addressInList: boolean | undefined; accepted: boolean }): 'accepted' | 'not-yet' | 'cannot-check' {
   if (opts.addressInList === false) return 'cannot-check';
   return opts.accepted ? 'accepted' : 'not-yet';
-}
-
-/** One IAM read with the key: true when Scaleway accepts it from this address. */
-async function keyAccepted(secretKey: string, organizationId: string): Promise<true | undefined> {
-  return scwFetch({ secretKey }, 'GET', `${IAM_BASE}/applications?organization_id=${organizationId}&page_size=1`).then(
-    () => true as const,
-    () => undefined,
-  );
 }
 
 /** Show the key once and hold until the operator confirms it is stored: nothing else keeps it, and Scaleway shows a secret key only at creation. */
@@ -63,7 +54,7 @@ export async function runOperatorKey(context: InfraContext): Promise<void> {
     ),
   );
 
-  const detected = await detectPublicIp();
+  const detected = await publicAddress();
   if (detected) console.info(`This machine reaches the internet as ${pc.cyan(detected)}.`);
   else console.warn(`${warningMark} Could not detect this machine's public address: enter the dedicated address yourself.`);
 
@@ -94,7 +85,7 @@ export async function runOperatorKey(context: InfraContext): Promise<void> {
     return;
   }
 
-  const ownerKey = await acquireOwnerKey({ identity: resolveOperatorIdentity(), names, projectId, slug: appConfig.slug, mode });
+  const ownerKey = await acquireOwnerKey({ names, projectId, slug: appConfig.slug, mode });
   try {
     // The run deletes the operator policy before it writes the new one, so the operator application's own key would lose its rights in between.
     const bearer = await describeKey(ownerKey).catch(() => undefined);
@@ -121,6 +112,7 @@ export async function runOperatorKey(context: InfraContext): Promise<void> {
       endAction(1);
     }
 
+    forgetOperatorLock();
     await confirmKeyStored(names.operator, key);
 
     const accepted =
@@ -142,7 +134,7 @@ export async function runOperatorKey(context: InfraContext): Promise<void> {
       console.info(pc.dim('Not checked from here: this address is outside the list. Use the key from the dedicated address.'));
     }
     console.info(
-      `\n  ${pc.bold('Use it wherever the CLI asks for the Owner API key.')} ${pc.dim('From another address Scaleway answers as if the stack held nothing.')}`,
+      `\n  ${pc.bold('From now on the CLI asks for its secret key, once per session.')} ${pc.dim('From another address Scaleway refuses it.')}`,
     );
   } finally {
     await ownerKey.release();

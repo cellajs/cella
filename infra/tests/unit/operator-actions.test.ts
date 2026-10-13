@@ -31,6 +31,7 @@ const RETIRED_LABELS = [
   'Public DB access: OPEN',
   'Apply infra change',
   'Apply changes',
+  'Store passphrase in keychain',
   'Manage keys & secrets',
   'Manage database',
   'Stack setup →',
@@ -62,10 +63,11 @@ describe('operator action table', () => {
   });
 
   it('ends every description with the key the action runs with', () => {
-    expect(actionDescription('apply')).toMatch(/Needs your Owner API key\.$/);
+    expect(actionDescription('apply')).toMatch(/Needs your operator key\.$/);
+    expect(actionDescription('operator-key')).toMatch(/Needs your Owner API key\.$/);
     expect(actionDescription('preview')).toMatch(/Uses the admin application key\.$/);
     expect(actionDescription('status')).toMatch(/Works without a Scaleway key\.$/);
-    expect(actionDescription('db-close', 'Delete the stray endpoint.')).toBe('Delete the stray endpoint. Needs your Owner API key.');
+    expect(actionDescription('db-close', 'Delete the stray endpoint.')).toBe('Delete the stray endpoint. Needs your operator key.');
   });
 });
 
@@ -86,13 +88,10 @@ describe('menu rows', () => {
     for (const id of rowIds) expect(Object.keys(MENU_GROUPS)).toContain(menuRow(id).group);
   });
 
-  it('leaves three actions without a row: the plan without its question, and the two background actions', () => {
+  it('leaves two actions without a row: the plan without its question, and the GeoIP refresh a workflow already runs', () => {
     const listed = new Set(rowIds.flatMap((id) => [...menuRow(id).actions]));
     const commandOnly = ids.filter((id) => !listed.has(id)).sort();
-    expect(commandOnly).toHaveLength(3);
-    expect(commandOnly[0]).toBe('geoip-refresh');
-    expect(commandOnly[1]).toBe('preview');
-    expect(commandOnly[2]).toBe('store-passphrase');
+    expect(commandOnly).toEqual(['geoip-refresh', 'preview']);
   });
 
   it('says where an action is found: the row, the pick inside a row, or the command', () => {

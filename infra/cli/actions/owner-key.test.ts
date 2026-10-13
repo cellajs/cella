@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { OperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { principalNames } from '../../lib/scaleway/principals';
 
 const keyPairOrPrompt = vi.fn();
@@ -19,13 +18,11 @@ const { acquireOwnerKey } = await import('./owner-key');
 const { forgetSession, rememberedOwnerKey } = await import('../session');
 
 const typed = { accessKey: 'SCWTYPED', secretKey: 'typed-secret' };
-const fromEnv = { accessKey: 'SCWENV', secretKey: 'env-secret', source: 'SCW_OWNER_*' };
 /** An application key: used as it is, so no key is minted and nothing else calls Scaleway. */
 const application = { desc: { accessKey: 'SCWTYPED', bearer: 'application', bearerId: 'app-1', bearerName: 'operator' }, role: 'application' };
 
-const acquire = (identity: Partial<OperatorIdentity> = {}) =>
+const acquire = () =>
   acquireOwnerKey({
-    identity: { warnings: [], ...identity } as OperatorIdentity,
     names: principalNames('cella', 'production'),
     projectId: 'project-1',
     slug: 'cella',
@@ -71,13 +68,6 @@ describe('acquireOwnerKey in one run of the CLI', () => {
 
     await expect(acquire()).rejects.toMatchObject({ name: 'ActionEnded' });
 
-    expect(rememberedOwnerKey()).toBeUndefined();
-  });
-
-  it('leaves a key from the environment where it is: it is neither remembered nor counted as pasted', async () => {
-    const key = await acquire({ owner: fromEnv } as Partial<OperatorIdentity>);
-
-    expect(key.pasted).toBe(false);
     expect(rememberedOwnerKey()).toBeUndefined();
   });
 });

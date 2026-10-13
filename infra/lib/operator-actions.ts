@@ -1,5 +1,5 @@
 /** The Scaleway key an operator action runs with. */
-export type KeyTier = 'none' | 'admin' | 'owner';
+export type KeyTier = 'none' | 'admin' | 'operator' | 'owner';
 
 export interface OperatorAction {
   /** The one name of the action: its menu entry, every prompt and hint that points at it, and the docs. */
@@ -27,18 +27,18 @@ export const OPERATOR_ACTIONS = {
   },
   apply: {
     label: 'Review & apply changes',
-    key: 'owner',
+    key: 'operator',
     description:
       'See what differs between the code and the live stack, then apply it on your yes: database, VPC, IAM principals and policies. Answer no to only look.',
   },
   'rotate-keys': {
     label: 'Rotate keys',
-    key: 'owner',
+    key: 'operator',
     description: 'Replace the CI deploy key and the admin application key with fresh ones (the admin key is rewritten in infra/.env.<mode>).',
   },
   'rotate-passphrase': {
     label: 'Rotate passphrase',
-    key: 'admin',
+    key: 'operator',
     description: 'Re-encrypt stack state with a new Pulumi passphrase and sync it.',
   },
   'operator-key': {
@@ -46,59 +46,59 @@ export const OPERATOR_ACTIONS = {
     key: 'owner',
     description: 'Create the operator application and a fresh key that works from your dedicated IP address only. Replaces an earlier operator key.',
   },
+  'operator-address': {
+    label: 'Change dedicated IP',
+    key: 'operator',
+    description: 'Change the address the operator key works from, from the current dedicated address.',
+  },
   secrets: {
     label: 'Manage runtime secrets',
-    key: 'owner',
+    key: 'operator',
     description: 'List, set, rotate, or delete the runtime secrets, and mint managed keys.',
   },
   'db-open': {
     label: 'Open public DB access',
-    key: 'owner',
+    key: 'operator',
     description: 'Open a temporary DB endpoint locked to your IP and print the admin connection string (close it after).',
   },
   'db-seed': {
     label: 'Seed database',
-    key: 'owner',
+    key: 'operator',
     description: 'Open the endpoint to your IP, run the backend seeds, and close it again. Never on production.',
   },
   'db-close': {
     label: 'Close public DB access',
-    key: 'owner',
+    key: 'operator',
     description: 'Close the temporary public DB endpoint.',
   },
   'db-reset': {
     label: 'Reset database',
-    key: 'owner',
+    key: 'operator',
     description: 'DESTRUCTIVE: wipe and rebuild the database empty (backup first).',
   },
   unlock: {
     label: 'Unlock stack',
-    key: 'admin',
+    key: 'operator',
     description: 'Clear a stale stack lock and review the operations an interrupted run left in the Pulumi state.',
   },
   resume: {
     label: 'Resume setup',
-    key: 'owner',
+    key: 'operator',
     description: 'Re-sync config and GitHub secrets, and self-heal missing keys.',
   },
   'fetch-admin-key': {
     label: 'Fetch admin application key',
-    key: 'owner',
+    key: 'operator',
     description: 'Put the admin application key in infra/.env.<mode> on this machine.',
-  },
-  'store-passphrase': {
-    label: 'Store passphrase in keychain',
-    key: 'none',
-    description: 'Keep the Pulumi passphrase in the OS keychain; the env file keeps a reference.',
   },
   'geoip-refresh': {
     label: 'Refresh GeoIP data',
-    key: 'admin',
+    key: 'operator',
     description: "Publish this month's DB-IP databases to the public bucket; API processes pick them up within a day.",
   },
   teardown: {
     label: 'Tear down stack',
-    key: 'owner',
+    key: 'operator',
     description: 'DESTRUCTIVE: destroy every stack resource, then optionally delete the IAM principals.',
   },
 } as const satisfies Record<string, OperatorAction>;
@@ -130,7 +130,7 @@ export interface MenuRow {
 
 /**
  * The rows of the `pnpm infra` menu, in menu order. `db-open` and `db-close` share one place: the menu lists the one that applies.
- * An action no row lists (`preview`, `geoip-refresh`, `store-passphrase`) runs only by its command.
+ * An action no row lists (`preview`, `geoip-refresh`) runs only by its command.
  */
 export const MENU_ROWS = {
   status: {
@@ -144,42 +144,42 @@ export const MENU_ROWS = {
     group: 'observe',
     label: OPERATOR_ACTIONS.apply.label,
     actions: ['apply'],
-    hint: 'admin key to review · Owner key to apply',
+    hint: 'operator key',
     description: OPERATOR_ACTIONS.apply.description,
   },
   rotate: {
     group: 'change',
     label: 'Rotate keys & secrets',
-    actions: ['rotate-keys', 'rotate-passphrase', 'operator-key'],
+    actions: ['rotate-keys', 'rotate-passphrase', 'operator-key', 'operator-address'],
     hint: 'CI key, admin key, passphrase, operator key',
-    description: 'Replace the CI deploy key and the admin application key, re-encrypt the stack with a new passphrase, or set up the operator key.',
+    description: 'Replace the CI deploy key and the admin application key, re-encrypt the stack, or set up the operator key and its dedicated IP.',
   },
   secrets: {
     group: 'change',
     label: OPERATOR_ACTIONS.secrets.label,
     actions: ['secrets'],
-    hint: 'Owner key',
+    hint: 'operator key',
     description: `${OPERATOR_ACTIONS.secrets.description} A new value takes effect at the next deploy.`,
   },
   'db-open': {
     group: 'database',
     label: OPERATOR_ACTIONS['db-open'].label,
     actions: ['db-open', 'db-seed'],
-    hint: 'Owner key · temporary, locked to your IP',
+    hint: 'operator key · temporary, locked to your IP',
     description: 'Open a temporary DB endpoint locked to your IP: to connect yourself, or to run the backend seeds and close it again.',
   },
   'db-close': {
     group: 'database',
     label: OPERATOR_ACTIONS['db-close'].label,
     actions: ['db-close'],
-    hint: 'Owner key',
+    hint: 'operator key',
     description: OPERATOR_ACTIONS['db-close'].description,
   },
   'db-reset': {
     group: 'database',
     label: OPERATOR_ACTIONS['db-reset'].label,
     actions: ['db-reset'],
-    hint: 'Owner key · DESTRUCTIVE',
+    hint: 'operator key · DESTRUCTIVE',
     description: OPERATOR_ACTIONS['db-reset'].description,
   },
   repair: {
@@ -193,7 +193,7 @@ export const MENU_ROWS = {
     group: 'rare',
     label: OPERATOR_ACTIONS.teardown.label,
     actions: ['teardown'],
-    hint: 'Owner key · DESTRUCTIVE',
+    hint: 'operator key · DESTRUCTIVE',
     description: OPERATOR_ACTIONS.teardown.description,
   },
 } as const satisfies Record<string, MenuRow>;
@@ -239,10 +239,11 @@ export function menuPath(id: OperatorActionId): string {
 const KEY_SENTENCES = {
   none: 'Works without a Scaleway key.',
   admin: 'Uses the admin application key.',
+  operator: 'Needs your operator key.',
   owner: 'Needs your Owner API key.',
 } as const satisfies Record<KeyTier, string>;
 
-const KEY_HINTS = { none: 'no key', admin: 'admin key', owner: 'Owner key' } as const satisfies Record<KeyTier, string>;
+const KEY_HINTS = { none: 'no key', admin: 'admin key', operator: 'operator key', owner: 'Owner key' } as const satisfies Record<KeyTier, string>;
 
 /** The description of an action in a pick: what it does, then the key it runs with. `what` replaces the table's sentence for an entry that depends on live state. */
 export function actionDescription(id: OperatorActionId, what?: string): string {

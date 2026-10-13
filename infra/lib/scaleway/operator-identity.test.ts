@@ -36,17 +36,20 @@ describe('envKeyPair', () => {
 });
 
 describe('resolveOperatorIdentity', () => {
-  it('reads the admin application key from SCW_ADMIN_* and the Owner API key from SCW_OWNER_*', () => {
-    const id = resolveOperatorIdentity({
-      SCW_ADMIN_ACCESS_KEY: 'SCWADMIN',
-      SCW_ADMIN_SECRET_KEY: 's',
-      SCW_OWNER_ACCESS_KEY: 'SCWOWNER',
-      SCW_OWNER_SECRET_KEY: 'o',
-    });
+  it('reads the admin application key from SCW_ADMIN_*', () => {
+    const id = resolveOperatorIdentity({ SCW_ADMIN_ACCESS_KEY: 'SCWADMIN', SCW_ADMIN_SECRET_KEY: 's' });
     expect(id.admin).toEqual({ accessKey: 'SCWADMIN', secretKey: 's', source: 'SCW_ADMIN_*' });
-    expect(id.owner).toEqual({ accessKey: 'SCWOWNER', secretKey: 'o', source: 'SCW_OWNER_*' });
     expect(id.ambient).toBeUndefined();
     expect(id.warnings).toEqual([]);
+  });
+  it('must not read a privileged key from the environment: an Owner API key there is no part of the identity', () => {
+    const id = resolveOperatorIdentity({
+      SCW_OWNER_ACCESS_KEY: 'SCWOWNER',
+      SCW_OWNER_SECRET_KEY: 'o',
+      SCW_BOOTSTRAP_ACCESS_KEY: 'SCWB',
+      SCW_BOOTSTRAP_SECRET_KEY: 'b',
+    });
+    expect(id).toEqual({ admin: undefined, ambient: undefined, warnings: [] });
   });
   it("keeps the process's SCW_* pair apart as ambient, never as the admin key", () => {
     const id = resolveOperatorIdentity({ SCW_ACCESS_KEY: 'SCWCI', SCW_SECRET_KEY: 'c' });
@@ -70,33 +73,6 @@ describe('resolveOperatorIdentity', () => {
     });
     expect(both.admin?.accessKey).toBe('SCWADMIN');
     expect(both.warnings[0]).toMatch(/ignored because SCW_ADMIN_\* is set/);
-  });
-  it('reads a deprecated SCW_BOOTSTRAP_* pair as the Owner API key, honouring the SCW_BOOTSTRAP_KEY misspelling', () => {
-    expect(resolveOperatorIdentity({ SCW_BOOTSTRAP_ACCESS_KEY: 'SCWB', SCW_BOOTSTRAP_SECRET_KEY: 'b' }).owner).toEqual({
-      accessKey: 'SCWB',
-      secretKey: 'b',
-      source: 'SCW_BOOTSTRAP_*',
-    });
-    const alias = resolveOperatorIdentity({ SCW_BOOTSTRAP_KEY: 'SCWB', SCW_BOOTSTRAP_SECRET_KEY: 'b' });
-    expect(alias.owner?.accessKey).toBe('SCWB');
-    expect(alias.warnings[0]).toMatch(/read as SCW_OWNER_ACCESS_KEY/);
-    const both = resolveOperatorIdentity({
-      SCW_OWNER_ACCESS_KEY: 'SCWO',
-      SCW_OWNER_SECRET_KEY: 'o',
-      SCW_BOOTSTRAP_ACCESS_KEY: 'SCWB',
-      SCW_BOOTSTRAP_SECRET_KEY: 'b',
-    });
-    expect(both.owner?.accessKey).toBe('SCWO');
-    expect(both.warnings[0]).toMatch(/SCW_BOOTSTRAP_\* is ignored/);
-  });
-  it('warns when the Owner API key slot holds the admin application key', () => {
-    const id = resolveOperatorIdentity({
-      SCW_ADMIN_ACCESS_KEY: 'SCWX',
-      SCW_ADMIN_SECRET_KEY: 's',
-      SCW_OWNER_ACCESS_KEY: 'SCWX',
-      SCW_OWNER_SECRET_KEY: 's',
-    });
-    expect(id.warnings[0]).toMatch(/same key as SCW_ADMIN_\*/);
   });
 });
 
