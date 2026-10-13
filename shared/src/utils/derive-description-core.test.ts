@@ -83,6 +83,12 @@ describe('deriveDocument', () => {
     expect(derived.keywords.match(/Sprint retro/g)).toHaveLength(1);
   });
 
+  it('leaves a NUL character out of the title and the search text, which a text column cannot hold', () => {
+    const derived = deriveDocument(JSON.stringify([paragraph('Ti\u0000tle'), paragraph('bo\u0000dy')]));
+    expect(derived.name).toBe('Title');
+    expect(derived.keywords).toBe('Title body');
+  });
+
   it('caps the search text at 900 characters', () => {
     expect(deriveDocument(JSON.stringify([paragraph('x '.repeat(2000))])).keywords).toHaveLength(900);
   });
@@ -122,6 +128,11 @@ describe('deriveDocument', () => {
   it('reads mentions from the spans of an HTML body, which has no blocks', () => {
     const html = `<p>Hi <span data-mention-id="${alice}">@ Alice</span> and <span data-mention-id="${alice}">@ A</span></p>`;
     expect(deriveDocument(html)).toMatchObject({ name: '', keywords: '', attachments: [], mentions: [alice] });
+  });
+
+  it('reads a mention id written in upper case as the id the database stores', () => {
+    const stored = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+    expect(deriveDocument(JSON.stringify([{ type: 'paragraph', content: [mention(stored.toUpperCase())] }])).mentions).toEqual([stored]);
   });
 
   it('ignores mention ids that are not UUIDs, so a hand-written node or attribute names no recipient', () => {

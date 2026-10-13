@@ -2,7 +2,7 @@ import type { DbContext } from '#/core/context';
 import { issueToken, type NewToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findInvitationToken, type TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { findPendingInactiveMembership } from '#/modules/memberships/memberships-queries';
+import { findPendingInactiveMembership, stampInactiveMembershipsReminded } from '#/modules/memberships/memberships-queries';
 import { sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
 import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
@@ -73,6 +73,7 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: TokenRecor
       organization: 'defaultLanguage' in entity ? entity : null,
       invited,
     });
+    await stampInactiveMembershipsReminded(ctx, { ids: [invitation.id], remindedAt: new Date().toISOString() });
     log.info('Membership invitation has been resent', { inactiveMembershipId: invitation.id, tokenId });
   } else {
     await sendInvitationMails(ctx, { sender: sender ?? { name: 'System' }, invited });

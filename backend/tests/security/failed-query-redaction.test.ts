@@ -4,6 +4,7 @@ import { createOtelSDK } from 'shared/otel';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { toClientError } from '#/lib/error';
 import { collectingExporter, defaultHeaders, type ExportedSpan } from '../fixtures';
+import { failedInsertReason, failRequestInserts } from './helpers';
 
 // The backend's event log (`baseLog`, which `log` and `toClientError` write through), built the way the app builds it
 // but writing its lines here.
@@ -30,22 +31,23 @@ describe('failed queries in telemetry', () => {
   const exported: ExportedSpan[] = [];
   // Built at run time: the test proves this value never leaves the process.
   const secret = `leak_${nanoid(24)}`;
-  const reason = 'invalid byte sequence for encoding "UTF8": 0x00';
   let status = 0;
 
   beforeAll(async () => {
+    const undoFailingInserts = await failRequestInserts();
     const otel = createOtelSDK({ serviceName: 'test-api', traceExporter: collectingExporter(exported), autoInstrumentations: false });
     otel.start();
     const { baseApp } = await import('#/routes');
 
-    // Postgres refuses a NUL in a text value, so the insert of this contact request fails with its values bound.
+    // Postgres refuses the insert of this contact request, so the query fails with its values bound.
     const response = await baseApp.request('/requests', {
       method: 'POST',
       headers: defaultHeaders,
-      body: JSON.stringify({ email: `${nanoid(8)}@example.test`, type: 'contact', message: `${secret}\u0000` }),
+      body: JSON.stringify({ email: `${nanoid(8)}@example.test`, type: 'contact', message: `failing:${secret}` }),
     });
     status = response.status;
     await otel.shutdown();
+    await undoFailingInserts();
   });
 
   afterAll(() => {
@@ -61,7 +63,7 @@ describe('failed queries in telemetry', () => {
       .map((line) => JSON.parse(line) as { msg?: string; err?: { type?: string; message?: string } })
       .find((line) => line.err?.type === 'DrizzleQueryError');
     expect(errorLine?.msg).toBe('DrizzleQueryError: server_error');
-    expect(errorLine?.err?.message).toBe(reason);
+    expect(errorLine?.err?.message).toBe(failedInsertReason);
   });
 
   it('must not export a request value via a failed query', () => {
@@ -70,8 +72,8 @@ describe('failed queries in telemetry', () => {
 
     // Positive control: the request span recorded the exception with the database's reason.
     const exception = exported.flatMap((span) => span.events).find((event) => event.attributes?.['exception.type'] === 'DrizzleQueryError');
-    expect(exception?.attributes?.['exception.message']).toBe(reason);
-    expect(exception?.attributes?.['exception.stacktrace']).toMatch(/^DrizzleQueryError: invalid byte sequence/);
+    expect(exception?.attributes?.['exception.message']).toBe(failedInsertReason);
+    expect(exception?.attributes?.['exception.stacktrace']).toMatch(/^DrizzleQueryError: insert refused/);
   });
 });
 

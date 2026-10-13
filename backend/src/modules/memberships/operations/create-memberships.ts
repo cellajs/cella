@@ -199,11 +199,10 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
       invited: [...existingUsersToActivate, ...reminders, ...newUsers],
       added: existingUsersToDirectAdd,
     });
-  }
 
-  // Track reminder dispatch for the 7-day throttle
-  if (!deferDispatch && remindedInactiveMembershipIds.length > 0) {
-    await stampInactiveMembershipsReminded(ctx, { ids: remindedInactiveMembershipIds, remindedAt: new Date().toISOString() });
+    // A first mail stamps as a reminder does: the 7-day throttle reads the stamp, and a held invitation is one without it.
+    const mailedIds = [...insertedInactiveMemberships.map((invitation) => invitation.id), ...remindedInactiveMembershipIds];
+    await stampInactiveMembershipsReminded(ctx, { ids: mailedIds, remindedAt: new Date().toISOString() });
   }
 
   const invitesSentCount = insertedInactiveMemberships.length;

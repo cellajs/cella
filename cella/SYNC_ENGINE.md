@@ -59,7 +59,7 @@ Product tables that opt into drafts use a PostgreSQL publication row filter:
 - Draft creates, edits, and deletes never reach the worker.
 - Soft-deleting a published row flows as an update tombstone.
 
-Channels tables also have a `publishedAt` but it means something else entirely: it marks a channel to indicate invites are recorded but held until publish. So it doesn't have the filtering that product tables have.
+A channel table has `publishedAt` too, with another meaning and no publication filter. A draft channel records invitations and holds their mail until publish, and it shows only to its own members and to a caller who manages it from above, in a list and by id ([Permissions](./PERMISSIONS.md#enforcement-paths)).
 
 ### Moves
 

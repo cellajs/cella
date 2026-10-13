@@ -1,8 +1,8 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { generatePasskeyChallenge, signInWithPasskey } from 'sdk';
 import type { EntityRole } from 'shared';
 import { expect } from 'vitest';
-import { baseDb as db } from '#/db/db';
+import { baseDb as db, getAdminDb } from '#/db/db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession, setCookiePair } from '../helpers';
@@ -72,6 +72,31 @@ export async function clearSecurityTestData() {
     'oidc_payloads',
     'oauth_clients',
   ]);
+}
+
+/** What Postgres answers for the insert {@link failRequestInserts} refuses. */
+export const failedInsertReason = 'insert refused by a test trigger';
+
+/**
+ * Makes Postgres refuse the insert of a public request whose message starts with `failing:`, for a reason no caller
+ * caused: the failed query a server error test needs, with the request's values bound to it. Resolves to the undo.
+ */
+export async function failRequestInserts() {
+  const adminDb = getAdminDb('test trigger');
+  await adminDb.execute(
+    sql.raw(`
+      CREATE OR REPLACE FUNCTION test_fail_request_insert() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN RAISE EXCEPTION '${failedInsertReason}'; END $$;
+      DROP TRIGGER IF EXISTS test_fail_request_insert ON requests;
+      CREATE TRIGGER test_fail_request_insert BEFORE INSERT ON requests
+        FOR EACH ROW WHEN (NEW.message LIKE 'failing:%') EXECUTE FUNCTION test_fail_request_insert();
+    `),
+  );
+  return async () => {
+    await adminDb.execute(
+      sql.raw('DROP TRIGGER IF EXISTS test_fail_request_insert ON requests; DROP FUNCTION IF EXISTS test_fail_request_insert();'),
+    );
+  };
 }
 
 /**

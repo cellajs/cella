@@ -28,6 +28,7 @@ export const inactiveMembershipsTable = snakeCase.table(
       .$type<UserId>(),
     role: varchar({ enum: roleEnum }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
     rejectedAt: timestamp({ mode: 'string' }),
+    /** When the invitation's mail last went out. Null while it is held: made in a draft channel and never mailed. */
     remindedAt: timestamp({ mode: 'string' }),
     createdBy: uuid()
       .notNull()

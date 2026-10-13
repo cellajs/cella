@@ -157,22 +157,25 @@ async function fanOutRow(
 
 /**
  * Keep only recipients who may read the row, then drop muted-type candidates whose home membership is muted.
- * Fails closed: an unknown user drops the whole set, as a doctored id must never notify anyone.
+ * A candidate that names no user is left out alone: a public row reads for any id, and the inbox holds users only.
  */
 async function filterByReadAccess(entityType: ProductEntityType, row: NotificationSubjectRow, candidates: Candidate[]): Promise<Candidate[]> {
   const accessByUser = await getUserAccess(dbCtx, { userIds: candidates.map((candidate) => candidate.userId) });
-  const accesses = candidates.map((candidate) => accessByUser.get(candidate.userId)).filter((access) => access !== undefined);
-  if (accesses.length !== candidates.length) return [];
+  const known = candidates.flatMap((candidate) => {
+    const access = accessByUser.get(candidate.userId);
+    return access ? [{ candidate, access }] : [];
+  });
 
+  const accesses = known.map(({ access }) => access);
   const decisions = checkAccessFanout(accesses, 'read', buildSubjectFromEntity(entityType, row), { onInvalidMembership: 'deny' });
   const { id: channelId } = resolveChannel(entityType, row);
 
-  return candidates.filter((candidate, index) => {
-    if (!decisions[index]?.allowed) return false;
-    if (!mutedTypes.has(candidate.type)) return true;
+  return known.flatMap(({ candidate, access }, index) => {
+    if (!decisions[index]?.allowed) return [];
+    if (!mutedTypes.has(candidate.type)) return [candidate];
 
-    const muted = accesses[index].memberships.some((membership) => membership.channelId === channelId && membership.muted);
-    return !muted;
+    const muted = access.memberships.some((membership) => membership.channelId === channelId && membership.muted);
+    return muted ? [] : [candidate];
   });
 }
 

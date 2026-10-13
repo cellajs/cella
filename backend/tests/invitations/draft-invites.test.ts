@@ -81,7 +81,7 @@ describe('Draft context invite deferral', async () => {
     const [row] = await getInactiveRows(organization.id);
     expect(row).toBeDefined();
     expect(row.role).toBe('admin');
-    expect(row.remindedAt).toBeNull(); // initial invite email is not a reminder stamp
+    expect(row.remindedAt).not.toBeNull(); // the mail went out, so the invitation is not held
     expect(mailer.prepareEmails).toHaveBeenCalledOnce();
   });
 
@@ -106,7 +106,7 @@ describe('Draft context invite deferral', async () => {
     expect((after.data as { items: unknown[] }).items).toHaveLength(1);
   });
 
-  it('dispatch rotates tokens, stamps remindedAt, and honors the 7-day throttle', async () => {
+  it('dispatch rotates tokens, stamps remindedAt, and sends a held invitation once', async () => {
     const { organization, admin, sessionCookie } = await createDraftOrgWorld();
 
     await invite(organization, ['deferred@example.com'], memberRole, sessionCookie);
@@ -127,12 +127,42 @@ describe('Draft context invite deferral', async () => {
     // The dispatched mail carries the rotated token's link.
     expect(rotated.secret).toBe(hashToken(mailedLink('inviteLink').token));
 
-    // Second dispatch inside the throttle window: no re-send, no token churn
+    // Second dispatch: the invitation is no longer held, so no re-send and no token churn
     const second = await dispatchDeferredInvites(ctx, { channelIds: [organization.id] });
     expect(second.dispatched).toBe(0);
     const [afterSecond] = await getInactiveRows(organization.id);
     expect(afterSecond.remindedAt).toBe(afterRow.remindedAt);
     expect((await linksOf(afterSecond.id)).map((link) => link.id)).toEqual([rotated.id]);
+  });
+
+  it('dispatches the held invitations alone: one mailed when it was made keeps its link', async () => {
+    const { organization, admin, sessionCookie } = await createDraftOrgWorld();
+
+    // The most privileged role is mailed on a draft; the member invitation is held.
+    await invite(organization, ['co-admin@example.com'], adminRole, sessionCookie);
+    await invite(organization, ['held@example.com'], memberRole, sessionCookie);
+    const mailed = (await getInactiveRows(organization.id)).find((row) => row.email === 'co-admin@example.com')!;
+    const [mailedLink] = await linksOf(mailed.id);
+
+    const { dispatched } = await dispatchDeferredInvites(publisherContext(admin), { channelIds: [organization.id] });
+    expect(dispatched).toBe(1);
+    expect(mailsTo('co-admin@example.com')).toHaveLength(1);
+    expect(mailsTo('held@example.com')).toHaveLength(1);
+    expect((await linksOf(mailed.id)).map((link) => link.id)).toEqual([mailedLink.id]);
+  });
+
+  it('dispatches nothing for a published context whose invitations were mailed when they were made', async () => {
+    const organization = await createTestOrganization();
+    const admin = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
+    await invite(organization, ['mailed@example.com'], memberRole, await createTestSession(admin));
+    const [mailed] = await getInactiveRows(organization.id);
+    const [mailedLink] = await linksOf(mailed.id);
+
+    // A publish flow that runs again hands over a context it published before.
+    const { dispatched } = await dispatchDeferredInvites(publisherContext(admin), { channelIds: [organization.id] });
+    expect(dispatched).toBe(0);
+    expect(mailsTo('mailed@example.com')).toHaveLength(1);
+    expect((await linksOf(mailed.id)).map((link) => link.id)).toEqual([mailedLink.id]);
   });
 
   it('lists a dispatched invite once: rotating its link retires the old one', async () => {
@@ -165,12 +195,13 @@ describe('Draft context invite deferral', async () => {
 
     await invite(organization, [invitee.email], memberRole, sessionCookie);
     const [initial] = await getInactiveRows(organization.id);
-    expect(initial.remindedAt).toBeNull(); // initial invite email is not a reminder
+    expect(initial.remindedAt).not.toBeNull(); // the first mail stamps as a reminder does
 
-    // The pending invite was dispatched at creation, so an immediate re-invite sends no reminder.
+    // The pending invite was mailed at creation, so an immediate re-invite sends no reminder.
     await invite(organization, [invitee.email], memberRole, sessionCookie);
     const [afterEarlyReinvite] = await getInactiveRows(organization.id);
-    expect(afterEarlyReinvite.remindedAt).toBeNull();
+    expect(afterEarlyReinvite.remindedAt).toBe(initial.remindedAt);
+    expect(mailsTo(invitee.email)).toHaveLength(1);
 
     // The throttle check reads remindedAt, not the immutable createdAt.
     const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();

@@ -223,7 +223,8 @@ interface GetUserAccessOpts {
 }
 
 /**
- * Build permission `Access` objects for arbitrary users, connected or not.
+ * Build permission `Access` objects for arbitrary users, connected or not. An id that names no user gets none: a
+ * mention is written by a client, and an author can be a service account, which has no inbox.
  *
  * `actorFrom`/`accessFrom` read the request context, so they only ever describe the caller, and
  * stream fan-out only sees users with an open SSE connection. Notifications must decide what an
@@ -239,7 +240,8 @@ export async function getUserAccess(ctx: DbContext, { userIds }: GetUserAccessOp
 
   const unique = [...new Set(userIds)];
 
-  const [memberships, systemAdmins] = await Promise.all([
+  const [users, memberships, systemAdmins] = await Promise.all([
+    ctx.var.db.select({ id: usersTable.id }).from(usersTable).where(inArray(usersTable.id, unique)),
     ctx.var.db.select().from(membershipsTable).where(inArray(membershipsTable.userId, unique)),
     ctx.var.db.select({ userId: systemRolesTable.userId }).from(systemRolesTable).where(eq(systemRolesTable.role, 'admin')),
   ]);
@@ -253,7 +255,7 @@ export async function getUserAccess(ctx: DbContext, { userIds }: GetUserAccessOp
     byUser.set(membership.userId, list);
   }
 
-  for (const userId of unique) {
+  for (const { id: userId } of users) {
     result.set(userId, {
       // An offline user is read as a session would be: unmasked.
       scopes: null,

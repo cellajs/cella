@@ -139,7 +139,7 @@ interface StampInactiveMembershipsRemindedOpts {
   remindedAt: string;
 }
 
-/** Stamp remindedAt (last email dispatch) on inactive memberships. */
+/** Stamps `remindedAt` on the invitations whose mail just went out: a first mail, a reminder, a resend or a dispatch. */
 export const stampInactiveMembershipsReminded = async (ctx: DbContext, { ids, remindedAt }: StampInactiveMembershipsRemindedOpts) => {
   const { db } = ctx.var;
   if (!ids.length) return;

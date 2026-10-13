@@ -12,31 +12,29 @@ interface DispatchDeferredInvitesOpts {
 }
 
 /**
- * Sends invites held while their context was unpublished and stamps `remindedAt`. An invitation no account holds yet
- * goes by link: its token is rotated (fresh secret and expiry) because raw tokens are unrecoverable. One an account
- * holds, including an invitee who signed up while it was held, is answered in-app and gets no link. The throttle skips
- * rows emailed in the last seven days.
+ * Sends the invitations held while their context was unpublished: the ones whose mail never went out, which carry no
+ * `remindedAt`. One mailed when it was made, or dispatched before, is left alone, so a publish flow may hand over a
+ * context again. An invitation no account holds yet goes by link: its token is rotated (fresh secret and expiry)
+ * because raw tokens are unrecoverable. One an account holds, including an invitee who signed up while it was held, is
+ * answered in-app and gets no link.
  */
 export async function dispatchDeferredInvites(ctx: UserContext, { channelIds }: DispatchDeferredInvitesOpts) {
   const user = ctx.var.user;
 
   const pendingRows = await findPendingInactiveMembershipsByChannels(ctx, { channelIds });
-
-  // 7-day throttle on last dispatch; deferred rows have remindedAt null → always due
-  const throttleBefore = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const dueRows = pendingRows.filter((row) => !row.remindedAt || new Date(row.remindedAt) < throttleBefore);
-  if (!dueRows.length) return { dispatched: 0 };
+  const heldRows = pendingRows.filter((row) => !row.remindedAt);
+  if (!heldRows.length) return { dispatched: 0 };
 
   // Group per context+role: each email batch shares entityName + role static props
-  const groups = new Map<string, typeof dueRows>();
-  for (const row of dueRows) {
+  const groups = new Map<string, typeof heldRows>();
+  for (const row of heldRows) {
     const key = `${row.channelType}:${row.channelId}:${row.role}`;
     const group = groups.get(key) ?? [];
     group.push(row);
     groups.set(key, group);
   }
 
-  const dispatchedIds: string[] = [];
+  let dispatched = 0;
 
   for (const group of groups.values()) {
     const { channelType, channelId, role } = group[0];
@@ -58,7 +56,6 @@ export async function dispatchDeferredInvites(ctx: UserContext, { channelIds }: 
       } else {
         invited.push({ email: row.email, userId: row.userId });
       }
-      dispatchedIds.push(row.id);
     }
 
     await sendInvitationMails(ctx, {
@@ -67,11 +64,13 @@ export async function dispatchDeferredInvites(ctx: UserContext, { channelIds }: 
       organization: ctx.var.organization,
       invited,
     });
+
+    // Stamped per group: a later group that fails leaves this one mailed once.
+    await stampInactiveMembershipsReminded(ctx, { ids: group.map((row) => row.id), remindedAt: new Date().toISOString() });
+    dispatched += group.length;
   }
 
-  await stampInactiveMembershipsReminded(ctx, { ids: dispatchedIds, remindedAt: new Date().toISOString() });
+  log.info('Deferred invites dispatched', { count: dispatched, contexts: channelIds.length });
 
-  log.info('Deferred invites dispatched', { count: dispatchedIds.length, contexts: channelIds.length });
-
-  return { dispatched: dispatchedIds.length };
+  return { dispatched };
 }

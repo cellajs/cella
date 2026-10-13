@@ -1,7 +1,9 @@
 import { type AnyColumn, and, count, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import { type ChannelEntityType, hierarchy, isProduct, roles, type EntityType as SharedEntityType } from 'shared';
 import type z from 'zod';
-import type { DbContext } from '#/core/context';
+import type { ActorContext, DbContext } from '#/core/context';
+import { baseDb } from '#/db/db';
+import { tenantRead } from '#/db/tenant-context';
 import { jsonbIntRaw } from '#/db/utils/jsonb-counters';
 import { hasPublishedAt } from '#/db/utils/published-predicate';
 import { activitiesTable } from '#/modules/activities/activities-db';
@@ -137,18 +139,21 @@ interface GetOrganizationEntityCountOpts {
 
 /**
  * Reads `e:c:{entityType}` from the org's counter row. Draft-lifecycle tables fall back to a
- * direct COUNT including drafts, since that counter tracks published rows only.
+ * direct COUNT including drafts, since that counter tracks published rows only. A product table sits
+ * under RLS, where a bare connection reads no row, so on one the count opens its own tenant transaction.
  */
-export const getOrganizationEntityCount = async (ctx: DbContext, { organizationId, entityType }: GetOrganizationEntityCountOpts) => {
-  const { db } = ctx.var;
-
+export const getOrganizationEntityCount = async (ctx: ActorContext, { organizationId, entityType }: GetOrganizationEntityCountOpts) => {
   const table = isProduct(entityType) ? getEntityTable(entityType) : null;
   if (table && hasPublishedAt(table)) {
-    const deletedFilter = hasDeletedAt(table) ? sql.raw(' AND deleted_at IS NULL') : sql.raw('');
-    const [row] = await db.select({ count: count() }).from(table).where(sql`organization_id = ${organizationId}${deletedFilter}`);
-    return row?.count ?? 0;
+    const countRows = async (readCtx: DbContext) => {
+      const deletedFilter = hasDeletedAt(table) ? sql.raw(' AND deleted_at IS NULL') : sql.raw('');
+      const [row] = await readCtx.var.db.select({ count: count() }).from(table).where(sql`organization_id = ${organizationId}${deletedFilter}`);
+      return row?.count ?? 0;
+    };
+    return ctx.var.db === baseDb ? tenantRead(ctx, countRows) : countRows(ctx);
   }
 
+  const { db } = ctx.var;
   const key = `e:c:${entityType}`;
   const [row] = await db
     .select({ count: sql<number>`coalesce((${channelCountersTable.counts}->>${key})::int, 0)` })

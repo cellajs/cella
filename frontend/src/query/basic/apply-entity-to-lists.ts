@@ -80,7 +80,13 @@ export function spliceEntityIntoListCaches(
   return { seen, spliced, sawFilteredList };
 }
 
-/** Mutation-path counterpart of the realtime splice: creates enter only the canonical home list live sync owns, never a filtered or search list, and a row present anywhere updates in place. */
+/**
+ * Mutation-path counterpart of the realtime splice: creates enter only the canonical home list live sync owns, never a filtered or search list, and a row present anywhere updates in place.
+ * That includes a cached detail: an edit issued while the row's create is out writes one from the optimistic row, which the stored row replaces here.
+ */
 export function insertEntitiesIntoHome(queryClient: QueryClient, entities: OrgRoutableItemData[]): void {
-  for (const entity of entities) spliceEntityIntoListCaches(queryClient, entity);
+  for (const entity of entities) {
+    spliceEntityIntoListCaches(queryClient, entity);
+    queryClient.setQueryData<ItemData>(getEntityQueryKeys(entity.entityType).detail.byId(entity.id), (cached) => cached && entity);
+  }
 }
