@@ -69,12 +69,13 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOr
   const ids = organizationRecords.map((org) => org.id);
   log.info('Organizations created', { count: organizationRecords.length, ids });
 
-  const membershipInserts = organizationRecords.map((org) => ({ userId: user.id, createdBy: user.id, role: 'admin' as const, entity: org }));
+  const creatorRole = 'admin' as const;
+  const membershipInserts = organizationRecords.map((org) => ({ userId: user.id, createdBy: user.id, role: creatorRole, entity: org }));
 
   const createdMemberships = await insertMemberships({ var: { db } }, { items: membershipInserts });
   invalidateCache.user(user.id);
 
-  const counts = buildZeroCounts('organization');
+  const counts = buildZeroCounts('organization', creatorRole);
 
   const membershipByOrgId = new Map(createdMemberships.map((m) => [m.organizationId, m]));
 

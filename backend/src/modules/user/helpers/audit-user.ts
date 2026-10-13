@@ -42,7 +42,8 @@ export function coalesceAuditUsers<T extends RawAuditRow>(rows: T[]): WithAuditU
   }));
 }
 
-export const toUserMinimalBase = (user: Pick<UserMinimalBase, 'id' | 'name' | 'slug' | 'thumbnailUrl'>): UserMinimalBase => ({
-  ...user,
+/** Picks the minimal fields, so a whole user row handed in leaves with no other column. */
+export const toUserMinimalBase = (user: Pick<UserMinimalBase, AuditUserColumnKey>): UserMinimalBase => ({
+  ...pick(user, selectKeys),
   entityType: 'user',
 });

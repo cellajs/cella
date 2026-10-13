@@ -1,6 +1,6 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { type GetNotificationsResponse, getNotifications, updateAttachment } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, publicReadGrants } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
@@ -163,6 +163,29 @@ describe('Attachment mentions (template notification source)', async () => {
     expect(keywords).not.toContain('quarterly budget');
   });
 
+  it('stores a description that holds a NUL character on both write paths, and refuses one in the sync metadata', async () => {
+    // Postgres takes a NUL in no text value. The stored body escapes it; the columns derived from the body leave it out.
+    expect((await putDescription(JSON.stringify([paragraphWithText('quarter\u0000ly')]))).response.status).toBe(200);
+    expect(await storedKeywords()).toBe('quarterly');
+
+    await materializeDescriptionOp({
+      entityType: 'attachment',
+      entityId: attachmentId,
+      tenantId: tenant.tenantId,
+      organizationId: tenant.organization.id,
+      description: JSON.stringify([paragraphWithText('con\u0000tract')]),
+      editors: [tenant.user.id],
+    });
+    expect(await storedKeywords()).toBe('contract');
+
+    const withNulInStx = await call(updateAttachment, {
+      path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id: attachmentId },
+      body: { ops: { description: JSON.stringify([paragraphWithText('kept')]) }, stx: { ...updateStx(), mutationId: 'stx:\u0000' } },
+      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+    });
+    expect(withNulInStx.response.status).toBe(400);
+  });
+
   it('fans out a mention a Yjs materialization wrote to the inbox and mails it instantly, never to the actor', async () => {
     await materializeDescriptionOp({
       entityType: 'attachment',
@@ -270,12 +293,21 @@ describe('Attachment mentions (template notification source)', async () => {
     let other: { id: string };
     const subjectIds: string[] = [];
 
-    const newSubject = async (description: string | null = null) => {
+    const newSubject = async (description: string | null = null, columns: { publicAt?: string } = {}) => {
       const id = generateId();
       subjectIds.push(id);
       const row = buildInsertableProduct(
         'attachment',
-        { id, tenantId: tenant.tenantId, ...plan.channelIdColumns, description, createdBy: tenant.user.id, updatedBy: null, deletedBy: null },
+        {
+          id,
+          tenantId: tenant.tenantId,
+          ...plan.channelIdColumns,
+          description,
+          createdBy: tenant.user.id,
+          updatedBy: null,
+          deletedBy: null,
+          ...columns,
+        },
         id,
       );
       await insertAttachmentRow(row);
@@ -344,6 +376,16 @@ describe('Attachment mentions (template notification source)', async () => {
 
       expect(await fanOutNotifications(updatedEvent(tenant.user.id, { subjectId }))).toBe(false);
       expect(await inboxOf(stranger.id, subjectId)).toEqual([]);
+    });
+
+    it('notifies the users mentioned in a public row next to an id that names no user', async () => {
+      // A public row reads for any id, so only the lookup of the account itself can leave the unknown id out.
+      publicReadGrants.attachment = true;
+      onTestFinished(() => void delete publicReadGrants.attachment);
+      const subjectId = await newSubject(mentionsOf([generateId(), member.id]), { publicAt: new Date().toISOString() });
+
+      expect(await fanOutNotifications(createdEvent(subjectId))).toBe(true);
+      expect(await inboxOf(member.id, subjectId)).toEqual([{ type: 'mention' }]);
     });
 
     it('sends no mention from a source declared mentionable: false', async () => {

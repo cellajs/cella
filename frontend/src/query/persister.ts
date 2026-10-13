@@ -5,9 +5,15 @@ import { currentSchemaVersion } from 'shared/schema-evolution';
 import { reportCriticalError } from '~/lib/tracing';
 import { entityTypeOf, migrateMutations, migrateQueryState } from '~/query/cache-migration';
 import { getLocalUserDb, type LocalUserDatabase, type PersistedQueryRecord } from '~/query/local-user-db';
+import { upgradePersistedMutation, withVariablesVersion } from '~/query/offline/mutation-variables';
 import { isBundleStale, markBundleStale } from '~/query/schema-version-guard';
 
 type DehydratedQuery = DehydratedState['queries'][number];
+type DehydratedMutation = DehydratedState['mutations'][number];
+
+/** A stored queue with each mutation in the variables shape this bundle reads; one that cannot get there is quarantined and left out. */
+const inCurrentShape = (mutations: DehydratedMutation[]): DehydratedMutation[] =>
+  mutations.flatMap((mutation) => upgradePersistedMutation(mutation) ?? []);
 
 const SESSION_KEY_PREFIX = 's-';
 const SESSION_ID_STORAGE_KEY = `${appConfig.slug}-tab-session-id`;
@@ -134,10 +140,11 @@ export function createIDBPersister(scope = 'rq') {
       if (rewritten.length > 0) await db.queries.bulkPut(rewritten);
     }
 
-    // Per-tab mutation records migrate in the same pass (their variables carry old shapes too).
+    // Per-tab mutation records migrate in the same pass (their variables carry old shapes too). The variables upgrade
+    // goes first, so the lenses find the rows under the keys this bundle reads.
     const mutationRecords = await db.meta.where('key').startsWith(mutationRecordPrefix(scope)).toArray();
     for (const record of mutationRecords) {
-      await db.meta.put({ ...record, mutations: migrateMutations(record.mutations ?? [], fromVersion) });
+      await db.meta.put({ ...record, mutations: migrateMutations(inCurrentShape(record.mutations ?? []), fromVersion) });
     }
 
     const meta = await db.meta.get(scope);
@@ -147,7 +154,7 @@ export function createIDBPersister(scope = 'rq') {
       const entityType = entityTypeOf(q.queryKey);
       channelQueries.push(entityType ? { ...q, state: await migrateQueryState(entityType, q.state, fromVersion) } : q);
     }
-    const mutations = migrateMutations(meta.mutations ?? [], fromVersion);
+    const mutations = migrateMutations(inCurrentShape(meta.mutations ?? []), fromVersion);
     // Final write advances the pointer atomically with the last rewritten data.
     await db.meta.put({ ...meta, channelQueries, mutations, schemaVersion: currentSchemaVersion });
     console.debug(`[QueryPersister] Lens migration v${fromVersion} → v${currentSchemaVersion} complete (${scope})`);
@@ -182,7 +189,9 @@ export function createIDBPersister(scope = 'rq') {
         return;
       }
 
-      const { queries, mutations } = client.clientState;
+      const { queries } = client.clientState;
+      // Each queued mutation is stored with the version of its variables, which the restore reads.
+      const mutations = client.clientState.mutations.map(withVariablesVersion);
 
       const productQueries: DehydratedQuery[] = [];
       const channelQueries: DehydratedQuery[] = [];
@@ -359,10 +368,13 @@ export function createIDBPersister(scope = 'rq') {
         }
         if (absorbedKeys.length > 0) await db.meta.bulkDelete(absorbedKeys);
 
+        // A mutation queued by an older bundle is brought to the variables shape this one reads, or quarantined.
+        const mutations = inCurrentShape(restoredMutations);
+
         return {
           timestamp: meta.timestamp,
           buster: meta.buster,
-          clientState: { queries: allQueries, mutations: restoredMutations },
+          clientState: { queries: allQueries, mutations },
         };
       } catch (error) {
         console.error('[QueryPersister] Failed to restore client:', error);

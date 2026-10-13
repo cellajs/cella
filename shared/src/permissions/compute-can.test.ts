@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { ChannelEntityType, EntityActionType } from '../../types.ts';
+import type { ChannelEntityType, EntityActionType, EntityType } from '../../types.ts';
 import { appConfig } from '../config-builder/app-config.ts';
-import { type DeepChannelType, deepItemPolicies, makeDeepHierarchy } from '../testing/deep-fixture.ts';
+import { type DeepChannelType, deepChannelRoles, deepEntityTypes, deepItemPolicies, makeDeepHierarchy } from '../testing/deep-fixture.ts';
+import { configurePolicyMatrix } from '../testing/policies.ts';
 import { computeWideCan, configureWidePermissions, wideMembership, wideOverrides } from '../testing/wide-fixture.ts';
 import { resolveCan } from './action-helpers.ts';
-import { computeCan } from './compute-can.ts';
+import { type CanGrant, computeCan } from './compute-can.ts';
 import { getAllDecisions } from './engine/check.ts';
 import type { AccessMembership, SubjectForPermission } from './engine/types.ts';
 import type { CanState } from './types.ts';
@@ -215,5 +216,165 @@ describe('computeCan parity with the engine under home scoping', () => {
         }
       }
     }
+  });
+});
+
+// The engine reads every membership the actor holds on a row's chain. The map does the same: the grant on the channel
+// itself and the grants above it merge into one cell, which resolves per row to what the engine decides with all of them.
+// The casts below carry the deep vocabulary, typed independently of the app config, as the fixture's other callers cast it.
+describe('computeCan over the grants on a channel and above it', () => {
+  const hierarchy = makeDeepHierarchy(undefined, { organization: ['admin'], course: ['staff'], courseSection: ['staff'] });
+  const overrides = { hierarchy };
+  const actor = 'actor';
+  const channelTypes = hierarchy.channelTypes as readonly DeepChannelType[];
+
+  // One cell pattern per role, crossing 1, 'own' and 0 with elevated and home-scoped roles.
+  const cellsByRole: Record<string, Partial<Record<EntityActionType, 0 | 1 | 'own'>>> = {
+    admin: { create: 1, read: 1, update: 'own', delete: 0 },
+    staff: { create: 0, read: 1, update: 'own', delete: 'own' },
+    owner: { create: 1, read: 1, update: 1, delete: 0 },
+    member: { create: 1, read: 1, update: 'own', delete: 0 },
+    student: { create: 1, read: 1, update: 1, delete: 'own' },
+    follower: { read: 1, update: 'own' },
+  };
+
+  // Every entity type gets a policy row for each role of each channel on its chain: a channel's own roles and the roles above it.
+  const policies = configurePolicyMatrix(
+    deepEntityTypes as unknown as readonly EntityType[],
+    ({ entityType, channels }) => {
+      if ((entityType as string) === 'user') return;
+      const builders = channels as unknown as Record<string, Record<string, (cells: Partial<Record<EntityActionType, 0 | 1 | 'own'>>) => void>>;
+      const chain = [...(hierarchy.isChannel(entityType) ? [entityType as string] : []), ...hierarchy.getOrderedAncestors(entityType)];
+      for (const channelType of chain) {
+        // A create cell of 'own' is refused at config time: no row exists yet.
+        for (const role of deepChannelRoles[channelType as DeepChannelType]) builders[channelType][role]?.(cellsByRole[role]);
+      }
+    },
+    overrides,
+  );
+
+  /** The actor's membership on `${channelType}1`, the one channel of its type in this world. */
+  const membershipAt = (channelType: DeepChannelType, role: string): AccessMembership =>
+    ({ channelType, channelId: `${channelType}1`, role }) as unknown as AccessMembership;
+
+  /** Every way to hold a role, or none, on each channel of the chain; the empty combination is left out. */
+  const grantCombinations = (chain: readonly DeepChannelType[]): AccessMembership[][] =>
+    chain
+      .reduce<AccessMembership[][]>(
+        (combinations, channelType) =>
+          combinations.flatMap((held) => [held, ...deepChannelRoles[channelType].map((role) => [...held, membershipAt(channelType, role)])]),
+        [[]],
+      )
+      .filter((held) => held.length > 0);
+
+  const chainOf = (channelType: DeepChannelType) => [channelType, ...hierarchy.getOrderedAncestors(channelType)] as DeepChannelType[];
+
+  /** The ids of `${type}1` for every channel from the organization down to `home`, null below it. */
+  const idsDownTo = (ancestors: readonly string[], home: DeepChannelType) => {
+    const depth = ancestors.indexOf(home);
+    return Object.fromEntries(ancestors.map((type, i) => [type, i >= depth ? `${type}1` : null]));
+  };
+
+  const engineCan = (memberships: AccessMembership[], subject: SubjectForPermission) =>
+    getAllDecisions(policies, memberships, subject, { actorId: actor, elevatedGrants: hierarchy.elevatedGrants, ...overrides }).can;
+
+  const mapFor = (channelType: DeepChannelType, memberships: AccessMembership[]) =>
+    computeCan(channelType as unknown as ChannelEntityType, memberships as unknown as CanGrant[], policies, overrides) as Partial<
+      Record<string, Record<EntityActionType, CanState>>
+    >;
+
+  const named = (memberships: AccessMembership[]) => memberships.map((m) => `${m.channelType}:${m.role}`).join(' + ');
+
+  it('agrees with the engine on an item homed at the channel and below it, for every combination of grants on the chain', () => {
+    let compared = 0;
+    for (const channelType of channelTypes) {
+      for (const memberships of grantCombinations(chainOf(channelType))) {
+        const states = mapFor(channelType, memberships).item;
+        // The homes of the rows a page of this channel lists: the channel itself and every channel below it.
+        const homes = hierarchy.getOrderedAncestors('item').filter(
+          (type) =>
+            !chainOf(channelType)
+              .slice(1)
+              .includes(type as DeepChannelType),
+        );
+        for (const home of homes as DeepChannelType[]) {
+          for (const action of appConfig.entityActions) {
+            // Create has no row: the map answers it for a row created at its own channel.
+            if (action === 'create' && home !== channelType) continue;
+            for (const createdBy of [actor, 'other']) {
+              const subject = {
+                entityType: 'item',
+                id: `item-${home}-${createdBy}`,
+                createdBy,
+                channelIds: idsDownTo(hierarchy.getOrderedAncestors('item'), home),
+              } as unknown as SubjectForPermission;
+              const resolved = resolveCan(states?.[action], createdBy, actor, { row: `${home}1`, channel: `${channelType}1` });
+              const label = `${channelType} map, grants ${named(memberships)}: ${action} on an item homed at ${home} created by ${createdBy}`;
+              expect(resolved, label).toBe(engineCan(memberships, subject)[action]);
+              compared++;
+            }
+          }
+        }
+      }
+    }
+    // 2 + 8 + 26 + 80 combinations of grants, each over its homes, actions and creators: no loop above ran empty.
+    expect(compared).toBeGreaterThan(1000);
+  });
+
+  it('agrees with the engine on the channel itself and on a channel of each type below it', () => {
+    let compared = 0;
+    for (const channelType of channelTypes) {
+      for (const memberships of grantCombinations(chainOf(channelType))) {
+        const map = mapFor(channelType, memberships);
+        const descendants = hierarchy.getOrderedDescendants(channelType).filter((type) => hierarchy.isChannel(type)) as DeepChannelType[];
+        for (const subjectType of [channelType, ...descendants]) {
+          for (const action of appConfig.entityActions) {
+            for (const createdBy of [actor, 'other']) {
+              // The channel of the map, or one of a type below it that hangs under the map's channel.
+              const subject = {
+                entityType: subjectType,
+                id: subjectType === channelType ? `${channelType}1` : `${subjectType}-new`,
+                createdBy,
+                channelIds: idsDownTo(hierarchy.getOrderedAncestors(subjectType), channelType),
+              } as unknown as SubjectForPermission;
+              const resolved = resolveCan(map[subjectType]?.[action], createdBy, actor);
+              const label = `${channelType} map, grants ${named(memberships)}: ${action} on a ${subjectType} created by ${createdBy}`;
+              expect(resolved, label).toBe(engineCan(memberships, subject)[action]);
+              compared++;
+            }
+          }
+        }
+      }
+    }
+    expect(compared).toBeGreaterThan(1000);
+  });
+
+  it('holds what a grant above allows for a caller without a membership on the channel', () => {
+    // An organization admin (elevated) on a project they are no member of.
+    const map = mapFor('project', [membershipAt('organization', 'admin')]);
+    expect(map.project).toEqual({ create: true, read: true, update: 'own', delete: false });
+    expect(map.item).toEqual({ create: true, read: true, update: 'own', delete: false });
+
+    // An organization member is not elevated: its item grant reaches no row of the project, its project grant does.
+    const member = mapFor('project', [membershipAt('organization', 'member')]);
+    expect(member.project?.read).toBe(true);
+    expect(member.item).toEqual({ create: false, read: false, update: false, delete: false });
+  });
+
+  it("merges a home-scoped grant on the channel with an 'own' cell from above into one state that takes either", () => {
+    // Course student (home-scoped): update any item homed at the course. Organization admin (elevated): update own items anywhere.
+    const states = mapFor('course', [membershipAt('course', 'student'), membershipAt('organization', 'admin')]).item;
+    expect(states?.update).toBe('home|own');
+    expect(resolveCan(states?.update, 'other', actor, { row: 'course1', channel: 'course1' })).toBe(true);
+    expect(resolveCan(states?.update, actor, actor, { row: 'project1', channel: 'course1' })).toBe(true);
+    expect(resolveCan(states?.update, 'other', actor, { row: 'project1', channel: 'course1' })).toBe(false);
+  });
+
+  it('leaves out a grant on a type outside the chain, and answers an empty map without any grant on it', () => {
+    expect(mapFor('course', [membershipAt('project', 'owner')])).toEqual({});
+    expect(mapFor('course', [])).toEqual({});
+    expect(mapFor('course', [membershipAt('project', 'owner'), membershipAt('course', 'staff')])).toEqual(
+      mapFor('course', [membershipAt('course', 'staff')]),
+    );
   });
 });

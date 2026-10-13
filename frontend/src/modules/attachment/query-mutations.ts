@@ -1,8 +1,9 @@
-import type { Attachment, CreateAttachmentsData, StxBase, UpdateAttachmentData } from 'sdk';
+import type { Attachment, CreateAttachmentsData, UpdateAttachmentData } from 'sdk';
 import { createAttachments, deleteAttachments, updateAttachment } from 'sdk';
+import { zCreateAttachmentsBody } from 'sdk/zod.gen';
 import { type AncestorChannelType, appConfig, type EntityIdColumnKey, hierarchy } from 'shared';
+import type { CreateVariables, DeleteVariables, UpdateVariables } from '~/query/offline/mutation-variables';
 import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
-import type { QueryOrgContext } from '~/query/types';
 
 type CreateAttachmentItem = CreateAttachmentsData['body'][number];
 /**
@@ -21,9 +22,12 @@ export type CreateAttachmentInput = (Omit<CreateAttachmentItem, 'stx' | Placemen
 type UpdateAttachmentFields = UpdateAttachmentData['body']['ops'];
 export type UpdateAttachmentVars = { id: string; ops: UpdateAttachmentFields };
 
-export type CreateAttachmentVars = QueryOrgContext & { data: CreateAttachmentInput; stx?: StxBase };
-export type UpdateAttachmentFullVars = QueryOrgContext & UpdateAttachmentVars & { stx?: StxBase };
-export type DeleteAttachmentVars = QueryOrgContext & { attachments: Attachment[]; stx?: StxBase };
+export type CreateAttachmentVars = CreateVariables<CreateAttachmentInput[number]>;
+export type UpdateAttachmentFullVars = UpdateVariables<UpdateAttachmentFields>;
+export type DeleteAttachmentVars = DeleteVariables<Attachment>;
+
+/** The keys a create row takes. An edit of any other field, such as the description, cannot fold into a queued create. */
+export const attachmentCreateKeys = Object.keys(zCreateAttachmentsBody.element.shape);
 
 export async function createAttachmentsMutationFn({ tenantId, organizationId, data, stx }: CreateAttachmentVars) {
   const effectiveStx = stx ?? createStxForCreate();
@@ -41,8 +45,8 @@ export async function updateAttachmentMutationFn({ tenantId, organizationId, id,
   return updateAttachment({ path: { tenantId, organizationId, id }, body: { ops, stx: effectiveStx } });
 }
 
-export async function deleteAttachmentsMutationFn({ tenantId, organizationId, attachments, stx }: DeleteAttachmentVars) {
-  const ids = attachments.map((a) => a.id);
+export async function deleteAttachmentsMutationFn({ tenantId, organizationId, rows, stx }: DeleteAttachmentVars) {
+  const ids = rows.map((row) => row.id);
   const effectiveStx = stx ?? createStxForDelete();
   return deleteAttachments({ path: { tenantId, organizationId }, body: { ids, stx: effectiveStx } });
 }

@@ -1,9 +1,12 @@
+import { BoxIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { exportDate } from '~/lib/export';
 import type { BreakpointKey } from '~/modules/common/data-grid/types';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { dateShort } from '~/utils/date-short';
+import { formatCount } from '~/utils/format-count';
 
 type DateValue = string | Date | null | undefined;
 
@@ -41,6 +44,37 @@ export const dateColumn = <T,>(
   placeholderValue: '-',
   renderCell: ({ row }) => dateShort(get(row)),
   exportValue: (row) => exportDate(get(row)),
+});
+
+interface CountColumnOptions<T> {
+  name: string;
+  /** Defaults to a box. */
+  icon?: IconComponent;
+  hidden?: boolean;
+  get: (row: T) => number | null | undefined;
+}
+
+/** A compact count behind an icon, hidden below md; hover and exports give the exact number. */
+export const countColumn = <T,>(key: string, { name, icon: Icon = BoxIcon, hidden, get }: CountColumnOptions<T>): ColumnOrColumnGroup<T> => ({
+  key,
+  name,
+  hidden,
+  minBreakpoint: 'md',
+  minWidth: 60,
+  maxWidth: 120,
+  renderCell: ({ row }) => {
+    const count = get(row);
+    const text = typeof count === 'number' ? formatCount(count) : '-';
+    const isAbbreviated = typeof count === 'number' && text !== String(count);
+
+    return (
+      <>
+        <Icon className="mr-2 opacity-50" />
+        <span {...(isAbbreviated && { 'data-tooltip': 'true', 'data-tooltip-content': count })}>{text}</span>
+      </>
+    );
+  },
+  exportValue: get,
 });
 
 interface EmailColumnOptions {

@@ -23,7 +23,7 @@ export {
   type PermissionResult,
   type PredicateActor,
 } from './check-access.ts';
-export type { EntityCanMap } from './compute-can.ts';
+export type { CanGrant, EntityCanMap } from './compute-can.ts';
 export { computeCan } from './compute-can.ts';
 // Permission engine (tier-neutral decision logic)
 export { getAllDecisions } from './engine/check.ts';

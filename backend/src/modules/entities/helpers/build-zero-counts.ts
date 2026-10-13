@@ -1,7 +1,11 @@
-import { type ChannelEntityType, hierarchy, isProduct, recordFromKeys, roles } from 'shared';
+import { type ChannelEntityType, type EntityRole, hierarchy, isProduct, recordFromKeys, roles } from 'shared';
 
-/** Shape matches `channelIncludedSchema`: { membership, entities, entitiesSelf, activity }. */
-export const buildZeroCounts = (entityType: ChannelEntityType, creatorRole = 'admin') => {
+/**
+ * The counts of a channel its creator just made, in the shape of `channelIncludedSchema`.
+ * @param entityType - The channel type created.
+ * @param creatorRole - The role the creator's membership was inserted with: the one member the counts hold.
+ */
+export const buildZeroCounts = (entityType: ChannelEntityType, creatorRole: EntityRole) => {
   const descendants = hierarchy.getOrderedDescendants(entityType);
   const entities = recordFromKeys(descendants, () => 0);
   const entitiesSelf = recordFromKeys(descendants, () => 0);

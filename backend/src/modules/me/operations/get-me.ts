@@ -7,8 +7,5 @@ export async function getMeOp(ctx: UserContext) {
   const { isSystemAdmin, impersonator } = ctx.var;
   const user = await findCurrentUser(ctx);
 
-  // `toUserMinimalBase` keeps what it is handed, so the admin's row is cut to the minimal fields first.
-  const admin = impersonator && { id: impersonator.id, name: impersonator.name, slug: impersonator.slug, thumbnailUrl: impersonator.thumbnailUrl };
-
-  return { user, isSystemAdmin, impersonator: admin ? toUserMinimalBase(admin) : null };
+  return { user, isSystemAdmin, impersonator: impersonator ? toUserMinimalBase(impersonator) : null };
 }

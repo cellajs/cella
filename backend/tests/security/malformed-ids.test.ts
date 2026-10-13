@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders } from '../fixtures';
 import { createTestOrganization, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -24,7 +24,7 @@ describe('Malformed ids in a path', async () => {
 
   beforeAll(async () => {
     organization = await createTestOrganization();
-    member = await createOrgUser(call, organization.tenantId, organization.id, 'malformed-id-member');
+    member = await createOrgUser(call, organization.tenantId, organization.id, 'malformed-id-member', adminRole);
   });
 
   afterAll(async () => await clearSecurityTestData());
@@ -39,6 +39,37 @@ describe('Malformed ids in a path', async () => {
     const { status, text } = await get(`/${organization.tenantId}/${organization.id}/attachments/not-a-uuid`);
     expect(status).toBe(400);
     expect(text.toLowerCase()).not.toMatch(/select|invalid input syntax|from "/);
+  });
+
+  // Postgres takes a NUL character in no text value and refuses the query itself (SQLSTATE 22021).
+  it('must not answer a server error for a NUL character in an id of a path', async () => {
+    const nul = encodeURIComponent('x\u0000y');
+    const paths = [
+      `/${organization.tenantId}/${nul}/attachments`,
+      `/${organization.tenantId}/${organization.id}/attachments/${nul}`,
+      `/${nul}/${organization.id}/attachments`,
+      `/${organization.tenantId}/organizations/${nul}?slug=true`,
+    ];
+    for (const path of paths) {
+      const { status, text } = await get(path);
+      expect(status, path).toBe(400);
+      expect(text.toLowerCase(), path).not.toMatch(/select|invalid byte sequence|from "/);
+    }
+  });
+
+  it('must not answer a server error for a NUL character in an id of a delete batch or in a written value', async () => {
+    const send = (method: string, path: string, body: unknown) =>
+      baseApp.request(`/${organization.tenantId}/${path}`, {
+        method,
+        headers: { ...defaultHeaders, Cookie: member.sessionCookie },
+        body: JSON.stringify(body),
+      });
+
+    const batch = await send('DELETE', `${organization.id}/attachments`, { ids: ['x\u0000y'] });
+    expect(batch.status).toBe(400);
+
+    const written = await send('PUT', `organizations/${organization.id}`, { name: 'Named\u0000' });
+    expect(written.status).toBe(400);
   });
 
   it('answers a well-formed id that names nothing with 404 (positive control)', async () => {

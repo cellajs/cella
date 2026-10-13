@@ -31,12 +31,14 @@ export const filterWithRejection = <T extends { id: string }>(
   return { items: passed, rejectionState: rejectMany(rejectionState, rejectedIds, reason) };
 };
 
+/** Takes the first `restriction` items and rejects the rest; a restriction below zero, as a count above its quota gives, takes none. */
 export const takeWithRestriction = <T extends { id: string }>(
   items: T[],
   restriction: number,
   reason: string,
   rejectionState: RejectionState = createRejectionState(),
 ): { items: T[]; rejectionState: RejectionState } => {
-  const excessIds = items.slice(restriction).map((item) => item.id);
-  return { items: items.slice(0, restriction), rejectionState: rejectMany(rejectionState, excessIds, reason) };
+  const take = Math.max(0, restriction);
+  const excessIds = items.slice(take).map((item) => item.id);
+  return { items: items.slice(0, take), rejectionState: rejectMany(rejectionState, excessIds, reason) };
 };

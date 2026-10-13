@@ -84,7 +84,7 @@ interface FindAttachmentsPaginatedOpts {
  * unpublished drafts; a delta read passes tombstones through so caches can drop rows. The total is the page length for
  * a delta read, the `e:c:attachment` counter for an org-wide read without search, else a COUNT.
  */
-export const findAttachmentsPaginated = async (ctx: DbContext, opts: FindAttachmentsPaginatedOpts) => {
+export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAttachmentsPaginatedOpts) => {
   const { db } = ctx.var;
   const { organizationId, orgWide, q, sort, order, limit, offset, seqCursor } = opts;
   const filters = [...opts.filters];

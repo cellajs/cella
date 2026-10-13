@@ -1,12 +1,13 @@
 import { nanoid } from 'nanoid';
 import { appConfig } from 'shared';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { defaultHeaders } from '../fixtures';
 import type { ErrorResponse } from '../helpers';
+import { failRequestInserts } from './helpers';
 
 const testMode = appConfig.mode;
 
-/** Answers a request whose insert fails in Postgres (a NUL in a text value), under the given app mode. */
+/** Answers a request whose insert Postgres refuses (`failRequestInserts`), under the given app mode. */
 const failQueryIn = async (mode: typeof appConfig.mode) => {
   Reflect.set(appConfig, 'mode', mode);
   const { baseApp } = await import('#/routes');
@@ -15,7 +16,7 @@ const failQueryIn = async (mode: typeof appConfig.mode) => {
   const response = await baseApp.request('/requests', {
     method: 'POST',
     headers: defaultHeaders,
-    body: JSON.stringify({ email: `${nanoid(8)}@example.test`, type: 'contact', message: `${marker}\u0000` }),
+    body: JSON.stringify({ email: `${nanoid(8)}@example.test`, type: 'contact', message: `failing:${marker}` }),
   });
   const text = await response.text();
   return { status: response.status, text, marker, body: JSON.parse(text) as ErrorResponse };
@@ -27,6 +28,14 @@ const failQueryIn = async (mode: typeof appConfig.mode) => {
  * production answer a fixed message.
  */
 describe('Server error messages', () => {
+  let undoFailingInserts: () => Promise<void>;
+
+  beforeAll(async () => {
+    undoFailingInserts = await failRequestInserts();
+  });
+
+  afterAll(async () => await undoFailingInserts());
+
   afterEach(() => {
     Reflect.set(appConfig, 'mode', testMode);
   });

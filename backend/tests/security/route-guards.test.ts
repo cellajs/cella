@@ -142,4 +142,25 @@ describe('Route guards', async () => {
     // The sweep ran signed in: a session passes every guard chain but the ones that take a token or a key alone.
     expect(reached).toBeGreaterThan(swept.length / 2);
   });
+
+  it('must not answer a server error for a NUL character in any parameter of a path', async () => {
+    // Postgres refuses a NUL in a text value (SQLSTATE 22021), and a guard or a handler reads a path id before any
+    // schema does. No such id names a row, so one member serves every route.
+    const member = await createOrgUser(call, tenant.id, tenant.organizationId, 'route-guards-nul-member');
+    const nul = encodeURIComponent('x\u0000y');
+    const withParameters = nonPublic.filter(({ path, streams }) => !streams && path.includes('{'));
+    expect(withParameters.length).toBeGreaterThan(20);
+
+    for (const operation of withParameters) {
+      for (const [parameter] of operation.path.matchAll(/\{[^}]+\}/g)) {
+        const path = pathOf({ ...operation, path: operation.path.replace(parameter, nul) });
+        const { status } = await baseApp.request(path, {
+          method: operation.method,
+          headers: { ...defaultHeaders, Cookie: member.sessionCookie },
+          body: operation.method === 'GET' ? undefined : '{}',
+        });
+        expect(status, `${nameOf(operation)} with a NUL in ${parameter}`).toBeLessThan(500);
+      }
+    }
+  });
 });
