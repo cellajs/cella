@@ -327,7 +327,7 @@ To put the admin application key on another operator machine, run `pnpm infra fe
 `pnpm infra` → **Rotate keys & secrets** → **Set up operator key** (`pnpm infra operator-key`), run once per stack with your Owner API key:
 
 1. Asks for the dedicated IPv4 address or addresses the key works from; the default is the address this machine reaches the internet with. Ranges wider than `/24` are refused, as for the database allowlist.
-2. Creates the `<slug>-<mode>-operator` application with a policy of three rules: every product of the app project, DNS in the serving zone's project when that is another one, and IAM write in the organization. Each rule carries the same address condition.
+2. Creates the `<slug>-<mode>-operator` application with a policy of three rules: every product of the app project, DNS in the serving zone's project when that is another one, and IAM write and read in the organization. Each rule carries the same address condition.
 3. Shows the new key once and waits until you confirm it is in your password manager.
 4. Tries the key from this machine until Scaleway accepts it. A new policy takes about a minute to apply, and single APIs follow later still.
 

@@ -23,10 +23,10 @@ describe('operatorRules', () => {
     for (const rule of rules) expect(rule.condition).toBe(lock);
   });
 
-  it('grants every product of the app project and IAM write in the organization', () => {
+  it('grants every product of the app project, and IAM write with IAM read in the organization', () => {
     expect(operatorRules({ projectId: 'proj', organizationId: 'org-1', dnsProjectIds: ['proj'], cidrs: ['203.0.113.7/32'] })).toEqual([
       { permission_set_names: ['AllProductsFullAccess'], project_ids: ['proj'], condition: lock },
-      { permission_set_names: ['IAMManager'], organization_id: 'org-1', condition: lock },
+      { permission_set_names: ['IAMManager', 'IAMReadOnly'], organization_id: 'org-1', condition: lock },
     ]);
   });
 

@@ -58,8 +58,11 @@ export const ADMIN_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
  */
 export const OPERATOR_PROJECT_PERMISSION_SETS = ['AllProductsFullAccess'] as const;
 
-/** Organization-scoped set for the operator application: IAM write for the VM principals and policies; it includes the project reads the engine makes. */
-export const OPERATOR_ORG_PERMISSION_SETS = ['IAMManager'] as const;
+/**
+ * Organization-scoped sets for the operator application: IAM write for the VM principals and policies, and IAM read. Scaleway splits the two:
+ * IAMManager alone cannot list or describe, which the bearer check, the policy refresh and the verify after an `up` all do.
+ */
+export const OPERATOR_ORG_PERMISSION_SETS = ['IAMManager', 'IAMReadOnly'] as const;
 
 // Per-service model (P3): service, boot, and CI key-mint grants
 
