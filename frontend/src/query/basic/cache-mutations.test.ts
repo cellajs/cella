@@ -1,6 +1,6 @@
 import { QueryClient, QueryObserver } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
-import { removeDetailQueriesById } from '~/query/basic/cache-mutations';
+import { removeDetailQueriesById, removeDetailQueriesOnceUnobserved } from '~/query/basic/cache-mutations';
 
 vi.mock('~/query/query-client', () => ({ queryClient: new QueryClient() }));
 
@@ -22,6 +22,17 @@ describe('removeDetailQueriesById', () => {
     expect(client.getQueryData(['user', 'detail', 'remove'])).toBe('other entity');
   });
 
+  it('does not scan or remove queries for an empty ID set', () => {
+    const client = new QueryClient();
+    client.setQueryData(['attachment', 'detail', 'keep'], 'detail');
+
+    removeDetailQueriesById(client, ['attachment', 'detail'], []);
+
+    expect(client.getQueryData(['attachment', 'detail', 'keep'])).toBe('detail');
+  });
+});
+
+describe('removeDetailQueriesOnceUnobserved', () => {
   it('leaves a detail a page still shows until the page lets go of it, so the deleted row is not fetched again', () => {
     const client = new QueryClient();
     const key = ['organization', 'detail', 'org-1'];
@@ -30,7 +41,7 @@ describe('removeDetailQueriesById', () => {
     // The settings page of the organization it just deleted: still mounted while the delete settles.
     const leavePage = new QueryObserver(client, { queryKey: key, queryFn: fetchDetail, staleTime: Number.POSITIVE_INFINITY }).subscribe(() => {});
 
-    removeDetailQueriesById(client, ['organization', 'detail'], ['org-1']);
+    removeDetailQueriesOnceUnobserved(client, ['organization', 'detail'], ['org-1']);
     expect(client.getQueryData(key)).toBe('detail');
 
     leavePage();
@@ -44,19 +55,19 @@ describe('removeDetailQueriesById', () => {
     client.setQueryData(key, 'detail');
     new QueryObserver(client, { queryKey: key, queryFn: async () => 'detail', staleTime: Number.POSITIVE_INFINITY }).subscribe(() => {});
 
-    removeDetailQueriesById(client, ['organization', 'detail'], ['org-1']);
+    removeDetailQueriesOnceUnobserved(client, ['organization', 'detail'], ['org-1']);
     expect(client.getQueryCache().hasListeners()).toBe(true);
 
     client.clear();
     expect(client.getQueryCache().hasListeners()).toBe(false);
   });
 
-  it('does not scan or remove queries for an empty ID set', () => {
+  it('removes a detail nobody shows at once', () => {
     const client = new QueryClient();
-    client.setQueryData(['attachment', 'detail', 'keep'], 'detail');
+    client.setQueryData(['organization', 'detail', 'org-1'], 'detail');
 
-    removeDetailQueriesById(client, ['attachment', 'detail'], []);
+    removeDetailQueriesOnceUnobserved(client, ['organization', 'detail'], ['org-1']);
 
-    expect(client.getQueryData(['attachment', 'detail', 'keep'])).toBe('detail');
+    expect(client.getQueryData(['organization', 'detail', 'org-1'])).toBeUndefined();
   });
 });

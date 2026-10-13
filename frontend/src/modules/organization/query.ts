@@ -16,7 +16,7 @@ import { ApiError } from '~/lib/api';
 import { addMyMembershipCache, getApiIncludedMembership } from '~/modules/memberships/query-mutations';
 import { organizationsSearchDefaults } from '~/modules/organization/search-params-schemas';
 import type { EnrichedOrganization } from '~/modules/organization/types';
-import { cacheCreate, cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
+import { cacheCreate, cacheRemove, cacheUpdate, removeDetailQueriesOnceUnobserved } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
@@ -144,7 +144,7 @@ export const useOrganizationDeleteMutation = () => {
     },
     onSuccess: (_, { organizations }) => {
       cacheRemove(listKey, organizations);
-      removeDetailQueriesById(
+      removeDetailQueriesOnceUnobserved(
         queryClient,
         keys.detail.base,
         organizations.map(({ id }) => id),

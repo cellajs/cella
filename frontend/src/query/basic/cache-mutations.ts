@@ -23,11 +23,21 @@ export function cacheRemove(queryKey: QueryKey, items: ItemData[]) {
   mutateMatchingQueries(queryKey, items, 'remove');
 }
 
-/**
- * Drops the detail queries of deleted rows. One a page still shows goes when that page lets go of it: removed under its
- * observer it would be fetched again at once, for a row that no longer exists.
- */
 export function removeDetailQueriesById(client: QueryClient, detailBase: QueryKey, ids: Iterable<string | number>) {
+  const idsToRemove = new Set(ids);
+  if (idsToRemove.size === 0) return;
+
+  const idIndex = detailBase.length;
+  client.removeQueries({ queryKey: detailBase, predicate: ({ queryKey }) => idsToRemove.has(queryKey[idIndex] as string | number) });
+}
+
+/**
+ * {@link removeDetailQueriesById} for a delete the server has confirmed while a page of the deleted row may still be
+ * open, as a channel deleted from its own settings: a detail that page shows goes when the page lets go of it. Removed
+ * under its observer it would be fetched again at once, for a row that no longer exists. An optimistic delete keeps
+ * the immediate form: its other callbacks read a missing detail as "deleted".
+ */
+export function removeDetailQueriesOnceUnobserved(client: QueryClient, detailBase: QueryKey, ids: Iterable<string | number>) {
   const idsToRemove = new Set(ids);
   if (idsToRemove.size === 0) return;
 

@@ -42,7 +42,8 @@ No script: manual.
 11. A notification declaration that casts fields of its row: type it as `ModuleNotifications<NotificationSubjectRow & Pick<<Row>, '<column>'>>`.
 12. An opener of the user sheet written inline: `useOpenUserSheet()` from `~/modules/user/use-open-user-sheet`. A list's default order written inline: `defaultOrderFor(sort)` from `~/query/basic/get-query-key-sort-order`.
 13. A `files.maxSize` an app added to `biome.jsonc`, and a `lib` an app set in `bench`, `cdc` or `yjs` to match the backend: take the template's files.
-14. Optional, for a product create of an app's own that documents 200: return `replayed` from the operation and answer `replayed ? 200 : 201`, as `attachment-handlers.ts` does. A delete form of an offline-capable product follows `delete-attachments.tsx`: `mutate`, no await, `allowOfflineDelete`.
+14. A channel delete whose settings page may be open while it runs: `removeDetailQueriesOnceUnobserved` from `~/query/basic/cache-mutations` in its `onSuccess`, as `organization/query.ts` does.
+15. Optional, for a product create of an app's own that documents 200: return `replayed` from the operation and answer `replayed ? 200 : 201`, as `attachment-handlers.ts` does. A delete form of an offline-capable product follows `delete-attachments.tsx`: `mutate`, no await, `allowOfflineDelete`.
 
 ## Verify
 

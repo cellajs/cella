@@ -84,7 +84,7 @@ export function SlugFormField<TFieldValues extends FieldValues>({
     },
   });
 
-  // The form a slug is stored in. The API also takes upper case, which it lowers.
+  // The form a slug is stored in. The input lowers what is typed, as the API does with an upper-case slug.
   const isValidSlug = (value: string) => {
     if (!value || value.trim().length < 2) return false;
     return /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/.test(value);
@@ -117,14 +117,20 @@ export function SlugFormField<TFieldValues extends FieldValues>({
     <FormField
       control={control}
       name={name as Path<TFieldValues>}
-      render={({ field: { value: formFieldValue, ...rest } }) => (
+      render={({ field: { value: formFieldValue, onChange, ...rest } }) => (
         <FormItem name={name}>
           <FormLabel help={description}>
             {label}
             <span className="ml-1 opacity-50">*</span>
           </FormLabel>
           <InputGroup className={inputClassName}>
-            <SlugInput type={entityType} onFocus={() => setDeviating(true)} value={formFieldValue || ''} {...rest} />
+            <SlugInput
+              type={entityType}
+              onFocus={() => setDeviating(true)}
+              value={formFieldValue || ''}
+              onChange={(event) => onChange(event.target.value.toLowerCase())}
+              {...rest}
+            />
             {prefix && (
               <InputGroupAddon>
                 <InputGroupText id="slug-prefix" className="text-xs" style={{ opacity: formFieldValue ? 1 : 0.5 }}>
