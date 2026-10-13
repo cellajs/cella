@@ -1,13 +1,12 @@
 import { spawnSync } from 'node:child_process';
 import { actionLabel, menuPath } from '../../lib/operator-actions';
-import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { endAction, type InfraContext, keyPairOrPrompt, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
+import { adminKeyOrPrompt, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 
 /**
  * Read-only `pulumi preview` of what "Apply changes" would apply, authenticating the provider from SCW_* env, not stack config, so it also
@@ -28,7 +27,7 @@ export async function runPreview(context: InfraContext): Promise<void> {
 
   const { projectId, appConfig } = context;
 
-  const { accessKey, secretKey } = await keyPairOrPrompt(resolveOperatorIdentity().admin, 'Scaleway admin application key');
+  const { accessKey, secretKey } = await adminKeyOrPrompt(context);
 
   const targetStack = stackNameFor(context);
 

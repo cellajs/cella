@@ -61,9 +61,10 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
   const { projectId, appConfig } = context;
 
   const identity = resolveOperatorIdentity();
+  const names = principalNames(appConfig.slug, context.environment);
   const ownerKey = await acquireOwnerKey({
     identity,
-    names: principalNames(appConfig.slug, context.environment),
+    names,
     projectId,
     slug: appConfig.slug,
     mode: context.environment,
@@ -112,7 +113,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
       env.SCW_DEFAULT_ORGANIZATION_ID = organizationId;
 
       // Registry principals are privileged like the policies they anchor: create any missing vm-<service>/boot application here, so a registry change converges in this one run. Idempotent; a failure only warns because a missing application still fails the `up` with guidance.
-      console.info(pc.dim('\n→ Ensuring registry IAM principals (vm-<service> + boot applications)…'));
+      console.info(pc.dim(`\n→ Ensuring registry IAM principals (the '${names.vmService('<service>')}' and '${names.boot}' applications)…`));
       try {
         await ensureRegistryPrincipals({
           callerSecretKey: ownerKey.secretKey,

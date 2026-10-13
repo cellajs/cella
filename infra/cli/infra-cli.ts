@@ -4,6 +4,7 @@ import { select } from '@inquirer/prompts';
 import { dbExposureConfigured } from '../lib/db-public-endpoint';
 import { actionCommand, actionLabel, type MenuRowId, menuRow, OPERATOR_ACTIONS, type OperatorActionId } from '../lib/operator-actions';
 import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
+import { principalNames } from '../lib/scaleway/principals';
 import { detectComputeDeferred, type Environment, pickStackShort } from '../lib/stack/bootstrap-stack-state';
 import { loadStackContext } from '../lib/stack/stack-context';
 import { crossMark, DIVIDER, failWithHint, pc, printHeader, warningMark, withSpinner } from '../lib/utils/cli-output';
@@ -139,7 +140,8 @@ async function printStackFacts(context: InfraContext): Promise<string[] | undefi
     );
     liveEndpoints = endpoints;
     const configured = identity.admin ? 'admin' : identity.ambient ? 'ambient' : 'none';
-    for (const line of formatQuickFacts(facts, { configured })) console.info(line);
+    const adminApplication = principalNames(context.appConfig.slug, context.environment).admin;
+    for (const line of formatQuickFacts(facts, { configured, adminApplication })) console.info(line);
   }
   const access = formatAccessLines({
     ownerKeySource: identity.owner?.source,

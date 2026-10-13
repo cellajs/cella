@@ -2,17 +2,16 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { syncGithubEnvironment } from '../../lib/github-sync';
-import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { generatePassphrase, supportsStdinPassphraseRotation, verifyStackPassphrase } from '../../lib/stack/pulumi-passphrase';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
 import {
   acquireStackLockOrExit,
+  adminKeyOrPrompt,
   confirmPassphraseStored,
   endAction,
   type InfraContext,
-  keyPairOrPrompt,
   pulumiLoginAndSelect,
   resolveVerifiedPassphrase,
   stackNameFor,
@@ -47,7 +46,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
 
   const oldPassphrase = await resolveVerifiedPassphrase(context.stackYaml);
 
-  const { accessKey, secretKey } = await keyPairOrPrompt(resolveOperatorIdentity().admin, 'Scaleway admin application key');
+  const { accessKey, secretKey } = await adminKeyOrPrompt(context);
   const targetStack = stackNameFor(context);
 
   const env = buildProviderEnv(infraDir, { accessKey, secretKey, projectId: context.projectId, passphrase: oldPassphrase });

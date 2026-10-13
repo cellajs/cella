@@ -10,7 +10,7 @@ import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
 import { deleteApiKey, fetchAppRulesByName } from '../../lib/scaleway/iam-client';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { CI_RULE_SHAPES } from '../../lib/scaleway/permissions';
-import { principalNames } from '../../lib/scaleway/principals';
+import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { createProject, listProjects, resolveOrganizationIdFromKey } from '../../lib/scaleway/scaleway-account';
 import { ensureBootstrapDnsGrant, removeBootstrapDnsGrant, resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
@@ -187,7 +187,9 @@ async function ensureAdminApp(ctx: SetupContext): Promise<string> {
       { SCW_ADMIN_ACCESS_KEY: admin.accessKey, SCW_ADMIN_SECRET_KEY: admin.secretKey },
       { remove: LEGACY_ADMIN_KEY_NAMES },
     );
-    console.info(`  ${checkMark} Admin application key written to ${written.path} (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY)`);
+    console.info(
+      `  ${checkMark} Admin application key ('${principalNames(ctx.appConfig.slug, ctx.context.environment).admin}') written to ${written.path} (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY)`,
+    );
     return admin.applicationId;
   } catch (error) {
     console.warn(`${warningMark} Admin app setup failed: ${errorMessage(error)}`);
@@ -195,20 +197,20 @@ async function ensureAdminApp(ctx: SetupContext): Promise<string> {
   }
 }
 
-function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; adminAppId: string }): void {
-  const { needsCiKey, ciAccessKey, adminAppId } = opts;
+function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; adminAppId: string; names: PrincipalNames }): void {
+  const { needsCiKey, ciAccessKey, adminAppId, names } = opts;
   const divider = pc.dim(DIVIDER);
   console.info(`\n${divider}`);
   if (!needsCiKey) {
     console.info(`${checkMark} ${pc.bold('Resume verified.')} Existing keys left unchanged.`);
   } else if (ciAccessKey) {
-    console.info(`${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key: ${pc.cyanBright(ciAccessKey)}`);
+    console.info(`${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key ('${names.ciDeploy}'): ${pc.cyanBright(ciAccessKey)}`);
   } else {
     console.info(`${warningMark} ${pc.bold(pc.yellowBright('Done, but CI key was not created.'))} Run ${pc.cyan(actionCommand('rotate-keys'))}.`);
   }
   if (adminAppId) {
     console.info(
-      `  ${checkMark} Admin IAM app: ${pc.cyanBright(adminAppId)}\n` +
+      `  ${checkMark} Admin IAM app '${names.admin}': ${pc.cyanBright(adminAppId)}\n` +
         `    ${pc.dim('Its key is in infra/.env.<mode> here and in Secret Manager (admin-key); on another machine run `pnpm infra fetch-admin-key` with your Owner API key.')}`,
     );
   }
@@ -572,7 +574,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     );
   }
 
-  printSummary({ needsCiKey, ciAccessKey: ciKey.accessKey, adminAppId });
+  printSummary({ needsCiKey, ciAccessKey: ciKey.accessKey, adminAppId, names: principalNames(appConfig.slug, context.environment) });
 
   // Base infrastructure provisioning
   const canDeploy = context.hasCiKey || !!ciKey.accessKey;

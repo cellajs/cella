@@ -1,6 +1,7 @@
 import { syncGithubEnvironment } from '../lib/github-sync';
 import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project';
 import { CI_RULE_SHAPES } from '../lib/scaleway/permissions';
+import { principalNames } from '../lib/scaleway/principals';
 import { resolveProjectId } from '../lib/scaleway/provider-env';
 import { type ProvisionScopedKeyOptions, provisionScopedKey, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam';
 import { checkMark, DIVIDER, pc, warningMark } from '../lib/utils/cli-output';
@@ -63,7 +64,7 @@ if (isMain(import.meta.url)) {
   const { loadEngineConfig } = await import('../config/engine-config');
   const appConfig = await loadEngineConfig();
 
-  console.info('\n→ Setting up CI deploy key');
+  console.info(`\n→ Setting up CI deploy key ('${principalNames(appConfig.slug, appConfig.mode).ciDeploy}')`);
   const { deriveInfra } = await import('../lib/naming');
   const result = await setupCiKey({
     callerSecretKey: secretKey,

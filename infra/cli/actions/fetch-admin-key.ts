@@ -17,10 +17,12 @@ import { acquireOwnerKey, printRevokeReminder } from './owner-key';
  */
 export async function runFetchAdminKey(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
-  console.info(
-    pc.dim(`\n${actionLabel('fetch-admin-key')}: read it from Secret Manager with your Owner API key and write it to infra/.env.<mode>.\n`),
-  );
   const names = principalNames(appConfig.slug, context.environment);
+  console.info(
+    pc.dim(
+      `\n${actionLabel('fetch-admin-key')}: read the key of '${names.admin}' from Secret Manager with your Owner API key and write it to infra/.env.${context.environment}.\n`,
+    ),
+  );
   const ownerKey = await acquireOwnerKey({
     identity: resolveOperatorIdentity(),
     names,
@@ -45,7 +47,7 @@ async function writeAdminKey(context: InfraContext, ownerSecretKey: string): Pro
   const container = await secrets.getSecretByName(ADMIN_KEY_SECRET_NAME, engineSecretPath(appConfig.slug, context.environment));
   if (!container) {
     console.error(
-      `${warningMark} No '${ADMIN_KEY_SECRET_NAME}' secret under ${engineSecretPath(appConfig.slug, context.environment)}: run "${menuPath('rotate-keys')}" once to create the admin application and its key.`,
+      `${warningMark} No '${ADMIN_KEY_SECRET_NAME}' secret under ${engineSecretPath(appConfig.slug, context.environment)}: run "${menuPath('rotate-keys')}" once to create the '${names.admin}' application and its key.`,
     );
     endAction(1);
   }
@@ -62,7 +64,7 @@ async function writeAdminKey(context: InfraContext, ownerSecretKey: string): Pro
   const desc = await describeKey(pair);
   const role = classifyPrincipal(desc, names);
   if (role !== 'admin') {
-    console.error(`${warningMark} ${formatKeyLine(desc, role)} is not the admin application's key; refusing to write it.`);
+    console.error(`${warningMark} ${formatKeyLine(desc, role)} is not the key of '${names.admin}'; refusing to write it.`);
     endAction(1);
   }
   const written = writeModeEnvValues(

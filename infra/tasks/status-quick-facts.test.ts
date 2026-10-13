@@ -53,6 +53,11 @@ describe('formatQuickFacts', () => {
     ]);
   });
 
+  it('names the application whose key the admin slot expects when the caller knows it', () => {
+    const lines = strip(formatQuickFacts({ unavailable: [] }, { now: T, configured: 'none', adminApplication: 'cella-production-admin' }));
+    expect(lines[0]).toContain("Admin application key ('cella-production-admin'): none in infra/.env.<mode>");
+  });
+
   it('names an ambient SCW_* pair as such and says CLI actions do not use it', () => {
     const lines = strip(
       formatQuickFacts(
