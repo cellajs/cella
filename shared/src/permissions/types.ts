@@ -46,6 +46,7 @@ export type PolicyCallback = (config: PolicyConfiguration) => void;
 /**
  * Unconditional boolean, or a condition the frontend resolves per row: a policy cell name, or the
  * map's mark of a home-scoped grant (`'home'`: the row is homed at the map's channel; `'home:own'`:
- * an `'own'` cell under that grant). @see compute-can.ts
+ * an `'own'` cell under that grant). `'home|own'` is either: a home-scoped grant on the channel beside
+ * an `'own'` cell of a grant above it. @see compute-can.ts
  */
-export type CanState = boolean | RowConditionName | 'home' | 'home:own';
+export type CanState = boolean | RowConditionName | 'home' | 'home:own' | 'home|own';

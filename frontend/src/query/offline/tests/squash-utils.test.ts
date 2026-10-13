@@ -149,6 +149,8 @@ describe('squashPendingMutation', () => {
 describe('squashIntoPendingCreate', () => {
   let queryClient: QueryClient;
   const createKey = ['task', 'create'] as const;
+  /** The keys the create body of this entity takes. */
+  const creatable = ['id', 'name', 'description', 'labels'];
   const cleanups: (() => void)[] = [];
 
   beforeEach(() => {
@@ -165,7 +167,7 @@ describe('squashIntoPendingCreate', () => {
   });
 
   it('returns false when no paused create exists', () => {
-    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'Updated' });
+    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'Updated' }, creatable);
     expect(result).toBe(false);
   });
 
@@ -173,7 +175,7 @@ describe('squashIntoPendingCreate', () => {
     const variables = { id: 'entity-1', name: 'Original' };
     queuePausedMutation(queryClient, createKey, variables);
 
-    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { description: 'Added' });
+    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { description: 'Added' }, creatable);
 
     expect(result).toBe(true);
     expect(variables).toEqual({ id: 'entity-1', name: 'Original', description: 'Added' });
@@ -191,7 +193,7 @@ describe('squashIntoPendingCreate', () => {
     };
     queuePausedMutation(queryClient, createKey, variables);
 
-    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-2', { name: 'Renamed' });
+    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-2', { name: 'Renamed' }, creatable);
 
     expect(result).toBe(true);
     // Merged into the row, not the variables root.
@@ -204,18 +206,26 @@ describe('squashIntoPendingCreate', () => {
     const variables = { tenantId: 't1', organizationId: 'o1', data: { id: 'entity-1', name: 'One' } };
     queuePausedMutation(queryClient, createKey, variables);
 
-    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'Renamed' })).toBe(true);
+    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'Renamed' }, creatable)).toBe(true);
     expect(variables.data).toEqual({ id: 'entity-1', name: 'Renamed' });
-    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-2', { name: 'Other' })).toBe(false);
+    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-2', { name: 'Other' }, creatable)).toBe(false);
+  });
+
+  it('leaves an edit that names a field the create body does not take for a separate update: the server would drop it from the create', () => {
+    const variables = { tenantId: 't1', organizationId: 'o1', data: [{ id: 'entity-1', name: 'One' }] };
+    queuePausedMutation(queryClient, createKey, variables);
+
+    // `status` is an update-only field here; `name` alone would fold.
+    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'Renamed', status: 3 }, creatable)).toBe(false);
+    expect(variables.data[0]).toEqual({ id: 'entity-1', name: 'One' });
+    expect(squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'Renamed' }, creatable)).toBe(true);
   });
 
   it('falls through (false) for array-delta ops: creates carry full arrays, deltas are relative', () => {
     const variables = { id: 'entity-1', labels: ['a'] };
     queuePausedMutation(queryClient, createKey, variables);
 
-    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', {
-      labels: { add: ['b'], remove: [] },
-    });
+    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { labels: { add: ['b'], remove: [] } }, creatable);
 
     expect(result).toBe(false);
     expect(variables).toEqual({ id: 'entity-1', labels: ['a'] });
@@ -225,7 +235,7 @@ describe('squashIntoPendingCreate', () => {
     onlineManager.setOnline(false); // offline so the online gate does not mask the in-flight guard
     cleanups.push(queueInFlightMutation(queryClient, createKey, { id: 'entity-1', name: 'Original' }));
 
-    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'X' });
+    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'X' }, creatable);
     expect(result).toBe(false);
   });
 
@@ -234,7 +244,7 @@ describe('squashIntoPendingCreate', () => {
     queuePausedMutation(queryClient, createKey, variables);
     onlineManager.setOnline(true);
 
-    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { description: 'Added' });
+    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { description: 'Added' }, creatable);
 
     expect(result).toBe(false);
     expect(variables).toEqual({ id: 'entity-1', name: 'Original' });
@@ -243,7 +253,7 @@ describe('squashIntoPendingCreate', () => {
   it('ignores creates for different entities', () => {
     queuePausedMutation(queryClient, createKey, { id: 'entity-2', name: 'Other' });
 
-    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'X' });
+    const result = squashIntoPendingCreate(queryClient, createKey, 'entity-1', { name: 'X' }, creatable);
     expect(result).toBe(false);
   });
 });

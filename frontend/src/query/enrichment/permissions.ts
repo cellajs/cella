@@ -1,5 +1,7 @@
+import type { MembershipBase } from 'sdk';
 import type { ChannelEntityType, EntityActionType, EntityCanMap, EntityType } from 'shared';
-import { allActionsAllowed, computeCan, hierarchy, policyMatrix } from 'shared';
+import { allActionsAllowed, appConfig, computeCan, hierarchy, policyMatrix } from 'shared';
+import { asRecord } from 'shared/utils/as-record';
 import { useUserStore } from '~/modules/user/user-store';
 import type { EnrichableChannel } from '~/query/enrichment/types';
 
@@ -30,13 +32,26 @@ function computeSystemAdminCan(channelType: ChannelEntityType): EntityCanMap {
   return map;
 }
 
-/** Permission map keyed by entity type, self plus hierarchy descendants, computed from the item's membership. A system admin without a membership gets full permissions, as on the backend. */
-export function enrichWithPermissions(item: EnrichableChannel, channelType: ChannelEntityType): EnrichableChannel {
-  const membership = item.membership ?? null;
+/** The actor's memberships on the channels above the row, found by the ancestor ids the row carries. */
+function membershipsAbove(item: EnrichableChannel, channelType: ChannelEntityType, memberships: MembershipBase[]): MembershipBase[] {
+  const row = asRecord(item);
+  const ancestorIds = new Set(hierarchy.getOrderedAncestors(channelType).map((ancestor) => row[appConfig.entityIdColumnKeys[ancestor]]));
+  return memberships.filter((membership) => membership.channelId !== item.id && ancestorIds.has(membership.channelId));
+}
+
+/**
+ * Permission map keyed by entity type, self plus hierarchy descendants, computed as the backend decides: from the actor's
+ * membership on the row and their memberships on the channels above it. A system admin gets every action, with or without a membership.
+ */
+export function enrichWithPermissions(
+  item: EnrichableChannel,
+  channelType: ChannelEntityType,
+  memberships: MembershipBase[] = [],
+): EnrichableChannel {
   const existing = item.can;
 
-  const isSystemAdmin = useUserStore.getState().isSystemAdmin;
-  const computed = membership ? computeCan(channelType, membership, policyMatrix) : isSystemAdmin ? computeSystemAdminCan(channelType) : {};
+  const grants = [...(item.membership ? [item.membership] : []), ...membershipsAbove(item, channelType, memberships)];
+  const computed = useUserStore.getState().isSystemAdmin ? computeSystemAdminCan(channelType) : computeCan(channelType, grants, policyMatrix);
 
   if (!hasCanChanged(existing, computed)) return item;
 

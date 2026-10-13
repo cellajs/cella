@@ -75,6 +75,15 @@ describe('resolveCan home scoping', () => {
     expect(resolveCan('home:own', 'creator', 'other', home('c1'))).toBe(false);
     expect(resolveCan('home:own', 'creator', 'creator', home('c2'))).toBe(false);
   });
+
+  it('home|own takes either: a row homed at the channel, or one the actor created wherever it is homed', () => {
+    expect(resolveCan('home|own', 'creator', 'other', home('c1'))).toBe(true);
+    expect(resolveCan('home|own', 'creator', 'creator', home('c2'))).toBe(true);
+    expect(resolveCan('home|own', 'creator', 'other', home('c2'))).toBe(false);
+    // Without a home the home part denies and the own part still answers.
+    expect(resolveCan('home|own', 'creator', 'creator')).toBe(true);
+    expect(resolveCan('home|own', 'creator', 'other')).toBe(false);
+  });
 });
 
 describe('isUnconditionalCan', () => {

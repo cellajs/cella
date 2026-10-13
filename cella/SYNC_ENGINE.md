@@ -168,6 +168,12 @@ Columns the server derives from a write stay outside the merge: the attachment `
 
 Paused mutations persist to IndexedDB and survive a reload, so mutation variables must carry all routing data. Hook closures no longer exist at replay. The attachment module is the reference: mutation functions are registered as replay defaults, and `stx` is minted at intent time and stored in the variables so a replay reuses the mutation ID and field timestamps.
 
+A product's three mutations carry one shape each, whatever the product: a create its rows under `data`, an update one `id` with its `ops`, a delete its rows under `rows`. The queue helpers read a paused mutation through those shapes: an edit of a row whose create is still queued folds into that create when the create body takes every field it names and stays an update behind it otherwise, and a remote change of a row with a pending create, update or delete is kept from the cache until that mutation settles. A delete the server refuses puts its rows back and reads the list again.
+
+A paused mutation outlives the reload that brings a new bundle. When a bundle changes the shape of a mutation's variables it declares a version and an upgrade for that mutation. Each stored mutation carries the version of its shape, and a queue stored under an older version is rewritten as it is restored, before the lenses change the rows it holds. A queued mutation this bundle cannot read (no upgrade knows it, or a newer bundle stored it) moves to the quarantine and is never replayed.
+
+Mutation defaults and versions reach the mutations restored after them, not the ones restored before: a mutation hydrated before its defaults exist replays without a mutation function and fails. The module that registers them therefore has to load with the entry, through static imports from `main.tsx`.
+
 Idempotency is operation-specific: a product create runs `checkIdempotency(ctx, table, mutationId)`, which returns the batch the caller created under that id in the request scope (known once the CDC worker has recorded that create), so another actor reusing the id creates its own rows. Update and delete do not.
 
 ## Resilience

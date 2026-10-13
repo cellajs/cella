@@ -173,15 +173,18 @@ Two row columns sit beside the engine: drafts (`publishedAt`) are checked before
 
 ## Frontend map
 
-`computeCan(channelType, membership, policyMatrix)` derives the `can` map the UI reads (`entity.can[entityType][action]`) from one membership: the channel's own cells plus every descendant type's cells for that channel and role. A cell reaches the UI as `true`, `false` or a condition the frontend resolves per row with `resolveCan(state, createdBy, actorId, home)`:
+`computeCan(channelType, grants, policyMatrix)` derives the `can` map the UI reads (`entity.can[entityType][action]`) from the actor's grants on a channel and on the channels above it, as the engine reads them: the channel's own cells plus every descendant type's cells, merged so a cell holds what any grant allows. The enrichment pipeline collects those memberships from the ancestor ids a cached row carries, and a system admin gets every action, with or without a membership. A cell reaches the UI as `true`, `false` or a condition the frontend resolves per row with `resolveCan(state, createdBy, actorId, home)`:
 
 | State | Resolves to | Where it comes from |
 | --- | --- | --- |
 | `'own'` | the actor created the row | the policy cell |
 | `'home'` | the row is homed at the map's channel: `home.row` (its deepest non-null ancestor id, `hierarchy.resolveDeepestAncestorId(type, row)`) equals `home.channel` | a `1` cell of a home-scoped grant |
 | `'home:own'` | both | an `'own'` cell of a home-scoped grant |
+| `'home\|own'` | either | a home-scoped grant on the channel beside an `'own'` cell of a grant above it |
 
-`'home'` is the map's form of the engine's home scoping: a role outside `hierarchy.elevatedGrants` reaches only product rows homed at its own channel, so that membership's product cells carry the mark, except `create` (no row: the frontend creates at the map's channel, the new row's home) and grants at the product's declared parent (every row below is homed there). Channel entries are never marked: the engine scopes product subjects only. A call without `home` denies the marked states, so every product row affordance passes `{ row, channel }`; channel-wide features use `isUnconditionalCan`. The map shapes the interface only: `shared/src/permissions/compute-can.test.ts` runs every role, channel and action of a hierarchy with elevated and home-scoped roles against the engine, on rows homed at the channel and below it, and the two agree.
+`'home'` is the map's form of the engine's home scoping: a role outside `hierarchy.elevatedGrants` reaches only product rows homed at its own channel. On the map's own channel that grant's product cells carry the mark, except `create` (no row: the frontend creates at the map's channel, the new row's home) and grants at the product's declared parent (every row below is homed there). On a channel above, such a grant reaches no row the map is asked about and adds nothing to a product cell. Channel entries are never marked: the engine scopes product subjects only, so a grant above counts in full for the channel itself and for the channel types below it. A call without `home` denies the home part of a marked state, so every product row affordance passes `{ row, channel }`; channel-wide features use `isUnconditionalCan`. The map shapes the interface only: `shared/src/permissions/compute-can.test.ts` runs every combination of roles an actor can hold on a channel and above it against the engine, for every action, on rows homed at the channel and below it and on the channels themselves, and the two agree.
+
+A route gate asks the same map before the page loads: `requireEntityAction` (`frontend/src/routes/-permission-guard.ts`) reads the actor's memberships itself, cache-first, since a row resolved on a cold load carries none yet. Where they cannot be read (offline with none cached) it lets the caller through, and the server decides.
 
 ## Enforcement paths
 

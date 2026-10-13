@@ -15,6 +15,7 @@ import { findInCache } from '~/query/basic/find-in-list-cache';
 import { forEachListQuery, getQueryItems } from '~/query/basic/mutate-query';
 import type { ItemData, RoutableItemData } from '~/query/basic/types';
 import { isPending } from '~/query/offline/mutation-queue';
+import { entityIdsOf } from '~/query/offline/mutation-variables';
 import { queryClient } from '~/query/query-client';
 import { collectEmbeddingTouches, type EmbeddingTouches, invalidateEmbeddedUsage } from './propagation';
 
@@ -24,13 +25,7 @@ function hasPendingMutationForEntity(entityType: string, entityId: string): bool
   for (const suffix of ['update', 'create', 'delete'] as const) {
     const mutations = mutationCache.findAll({ mutationKey: [entityType, suffix] });
     for (const mutation of mutations) {
-      if (!isPending(mutation)) continue;
-      const variables = mutation.state.variables as { id?: string } | { id?: string }[] | undefined;
-      if (Array.isArray(variables)) {
-        if (variables.some((v) => v.id === entityId)) return true;
-      } else if (variables?.id === entityId) {
-        return true;
-      }
+      if (isPending(mutation) && entityIdsOf(mutation.state.variables).includes(entityId)) return true;
     }
   }
   return false;

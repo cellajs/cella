@@ -46,7 +46,7 @@ function enrichItem(
   slugIndex: SlugIndex,
 ): EnrichableChannel {
   let result = enrichWithMembership(item, memberships);
-  result = enrichWithPermissions(result, entityType);
+  result = enrichWithPermissions(result, entityType, memberships);
   result = enrichWithAncestorSlugs(result, ancestors, slugIndex);
   return result;
 }
@@ -128,8 +128,9 @@ function ensureAncestorSlugs(entityType: ChannelEntityType, slugIndex: SlugIndex
 
 /** Enrich one entity type: build its slug index on demand, then enrich its lists, details, and dependent child types. */
 function runEnrichment(entityType: ChannelEntityType) {
+  // Loaded and empty still enriches: a system admin holds every action without a membership, and URLs need the slugs.
   const memberships = getCachedMemberships();
-  if (!memberships?.length) return;
+  if (!memberships) return;
 
   const slugIndex: SlugIndex = new Map([[entityType, buildSlugIndex(entityType)]]);
 

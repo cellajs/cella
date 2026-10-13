@@ -9,9 +9,9 @@ export const Route = createFileRoute('/_app/$tenantId/$organizationSlug/organiza
     isAuth: true,
     navTab: { id: 'settings', label: 'c:settings', description: 'c:tab_settings.text', requires: 'update', locked: true },
   },
-  beforeLoad: ({ context }) => {
+  beforeLoad: async ({ context }) => {
     // Same grant the tab's `requires: 'update'` hides on; direct URLs get the same gate.
-    requireEntityAction(context.organization, 'organization', 'organization', 'update', '/$tenantId/$organizationSlug/organization');
+    await requireEntityAction(context.organization, 'organization', 'organization', 'update', '/$tenantId/$organizationSlug/organization');
   },
   head: ({ match }) => ({ meta: [{ title: appTitle(`Settings · ${match.context.organization?.name}`) }] }),
   component: OrganizationSettingsComponent,

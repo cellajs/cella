@@ -36,8 +36,8 @@ describe('attachment offline-replay mutation functions', () => {
 
   it('delete replays ids + context derived entirely from persisted variables', async () => {
     deleteAttachments.mockClear();
-    const attachments = [{ id: 'a' }, { id: 'b' }] as never;
-    await deleteAttachmentsMutationFn({ ...ctx, attachments });
+    const rows = [{ id: 'a' }, { id: 'b' }] as never;
+    await deleteAttachmentsMutationFn({ ...ctx, rows });
 
     expect(lastPath(deleteAttachments)).toEqual({ tenantId: 'ten-1', organizationId: 'org-1' });
     const body = lastBody(deleteAttachments);
