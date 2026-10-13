@@ -1,5 +1,5 @@
 import { actionLabel, menuPath } from '../../lib/operator-actions';
-import { classifyPrincipal, describeKey, formatKeyLine, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { classifyPrincipal, describeKey, formatKeyLine } from '../../lib/scaleway/operator-identity';
 import { principalNames } from '../../lib/scaleway/principals';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { engineSecretPath } from '../../lib/scaleway/secret-paths';
@@ -8,28 +8,23 @@ import { LEGACY_ADMIN_KEY_NAMES, writeModeEnvValues } from '../../lib/utils/env-
 import { errorMessage } from '../../lib/utils/errors';
 import { ADMIN_KEY_SECRET_NAME } from '../../tasks/setup-admin-app';
 import { endAction, type InfraContext } from '../shared';
-import { acquireOwnerKey, printRevokeReminder } from './owner-key';
+import { acquirePrivilegedKey } from './operator-unlock';
+import { printRevokeReminder } from './owner-key';
 
 /**
- * Put the admin application key on this machine: read the `admin-key` pair setup custodied in Secret Manager with the Owner API key, confirm it
+ * Put the admin application key on this machine: read the `admin-key` pair setup custodied in Secret Manager with the operator key, confirm it
  * really belongs to the admin application, and write it to infra/.env.<mode> as SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY. The one privileged
  * moment a new operator machine needs.
  */
 export async function runFetchAdminKey(context: InfraContext): Promise<void> {
-  const { appConfig, projectId } = context;
+  const { appConfig } = context;
   const names = principalNames(appConfig.slug, context.environment);
   console.info(
     pc.dim(
-      `\n${actionLabel('fetch-admin-key')}: read the key of '${names.admin}' from Secret Manager with your Owner API key and write it to infra/.env.${context.environment}.\n`,
+      `\n${actionLabel('fetch-admin-key')}: read the key of '${names.admin}' from Secret Manager with your operator key and write it to infra/.env.${context.environment}.\n`,
     ),
   );
-  const ownerKey = await acquireOwnerKey({
-    identity: resolveOperatorIdentity(),
-    names,
-    projectId,
-    slug: appConfig.slug,
-    mode: context.environment,
-  });
+  const ownerKey = await acquirePrivilegedKey(context);
   // The key minted for this run is revoked on every way out, a failed read included.
   try {
     await writeAdminKey(context, ownerKey.secretKey);

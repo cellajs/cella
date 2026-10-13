@@ -8,20 +8,37 @@ import { principalNames } from '../lib/scaleway/principals';
 import { detectComputeDeferred, type Environment, pickStackShort } from '../lib/stack/bootstrap-stack-state';
 import { loadStackContext } from '../lib/stack/stack-context';
 import { crossMark, DIVIDER, failWithHint, pc, printHeader, warningMark, withSpinner } from '../lib/utils/cli-output';
-import { loadBaseEnvFiles } from '../lib/utils/env-files';
+import { dropPromptOnlyEnv, loadBaseEnvFiles } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
+import { within } from '../lib/utils/retry';
 import { runAction } from './actions';
 import { liveDbEndpoints } from './actions/db-exposure';
+import { addressVerdict, installPassphraseCustody, operatorLock, publicAddress } from './actions/operator-unlock';
 import { parseCliArgs } from './args';
-import { BACK, disabledReason, formatAccessLines, formatStackLine, type MenuState, mainMenuItems, pickItems, QUIT, visibleRows } from './menu';
+import {
+  BACK,
+  disabledReason,
+  formatAccessLines,
+  formatStackLine,
+  type MenuState,
+  mainMenuItems,
+  type OperatorFacts,
+  pickItems,
+  QUIT,
+  visibleRows,
+} from './menu';
 import { installPromptAbortHandler } from './prompts/abort';
 import { ESCAPED, menuSelect } from './prompts/menu-select';
+import { setPassphraseCustody } from './session';
 import type { InfraContext } from './shared';
-import { autoAcceptDefaults, nonInteractive } from './shared';
+import { autoAcceptDefaults } from './shared';
 
 // Load backend/.env before the root fallback so infra child tasks share the app's local config; ambient env keeps precedence over both files.
 loadBaseEnvFiles();
+
+// A privileged key or the passphrase in the environment would let the CLI run with nobody at the prompt: they are dropped here and asked for.
+const droppedFromEnv = dropPromptOnlyEnv();
 
 // A Ctrl-C at any prompt below ends the run with one line and releases a held stack lock.
 installPromptAbortHandler();
@@ -42,7 +59,7 @@ function printHelp(): void {
 
 /**
  * The target mode. `--mode` or INFRA_MODE selects it explicitly, including a fresh stack with no Pulumi.<mode>.yaml yet;
- * otherwise the only existing stack file wins silently, two existing stack files ask once (and fail non-interactively), and with no stack
+ * otherwise the only existing stack file wins silently, two existing stack files ask once (under `--defaults` they need `--mode`), and with no stack
  * file an interactive install asks, defaulting to staging.
  * A mode-scoped `infra/.env.<mode>` OVERRIDES the ambient env, so a staging run cannot inherit production keys from backend/.env.
  */
@@ -91,7 +108,11 @@ async function loadContext(environment: Environment, log?: (message: string) => 
   if (!stack.projectId && stack.state !== 'fresh') {
     throw new Error('SCW_PROJECT_ID is not set: add it to backend/.env before running the infra CLI.');
   }
-  return { ...stack, hasCiKey: stack.state === 'bootstrapped' };
+  const context = { ...stack, hasCiKey: stack.state === 'bootstrapped' };
+  // An existing stack keeps its passphrase in Secret Manager: reading it unlocks the session with the operator key, so nobody types it.
+  setPassphraseCustody(undefined);
+  if (context.state !== 'fresh' && context.projectId) installPassphraseCustody(context);
+  return context;
 }
 
 /** What the menu needs to say which entries can run. `liveEndpoints` comes from the header's read of the database instance. */
@@ -110,7 +131,7 @@ function menuState(context: InfraContext, liveEndpoints?: string[]): MenuState {
 function printStackNotices(context: InfraContext): void {
   console.info(`${formatStackLine({ slug: context.appConfig.slug, environment: context.environment, state: context.state })}\n`);
 
-  // One line per key misconfiguration (a superseded name in the env file, SCW_OWNER_* holding the admin key, …) before any action trips over it.
+  // One line per key misconfiguration (a superseded name in the env file, a key the CLI no longer reads, …) before any action trips over it.
   for (const warning of [...context.envWarnings, ...resolveOperatorIdentity().warnings]) console.warn(`${warningMark} ${warning}`);
 
   const deferredSince = detectComputeDeferred(context.stackYaml);
@@ -144,7 +165,7 @@ async function printStackFacts(context: InfraContext): Promise<string[] | undefi
     for (const line of formatQuickFacts(facts, { configured, adminApplication })) console.info(line);
   }
   const access = formatAccessLines({
-    ownerKeySource: identity.owner?.source,
+    operator: await operatorFacts(context),
     stackState: context.state,
     dbExposed: dbExposureConfigured(context.environment, context.stackYaml),
     liveEndpoints,
@@ -152,6 +173,20 @@ async function printStackFacts(context: InfraContext): Promise<string[] | undefi
   for (const line of access) console.info(line);
   console.info('');
   return liveEndpoints;
+}
+
+/** How long the header waits for the operator application's policy and this machine's address. */
+const OPERATOR_FACTS_BUDGET_MS = 4_000;
+
+/** The operator key's address lock against this machine's address, for the header. Undefined on a fresh stack and when it is not known in time. */
+async function operatorFacts(context: InfraContext): Promise<OperatorFacts | undefined> {
+  if (context.state === 'fresh' || !context.projectId) return undefined;
+  const read = Promise.all([operatorLock(context), publicAddress()]).then(([lock, address]) => ({
+    lock,
+    address,
+    verdict: addressVerdict(address, lock),
+  }));
+  return within(OPERATOR_FACTS_BUDGET_MS, read);
 }
 
 /** The row the cursor starts on: the one last entered, so a second action in the same area is one keypress away. */
@@ -222,6 +257,11 @@ let context = await loadContext(environment, (message) => console.info(pc.dim(me
 }
 
 printStackNotices(context);
+if (droppedFromEnv.length > 0) {
+  console.warn(
+    `${warningMark} ${droppedFromEnv.join(', ')} ${droppedFromEnv.length === 1 ? 'is' : 'are'} set in this shell or in backend/.env and not read: the CLI asks for a privileged key at the prompt and fetches the passphrase with it.\n`,
+  );
+}
 
 // `pnpm infra <action>`: one action, no menu. An action the stack cannot run now says why, as its menu entry does.
 if (args.action) {
@@ -234,7 +274,7 @@ if (args.action) {
 }
 
 // A fresh install has nothing to manage yet and automation has nobody to ask: both go straight to the setup.
-if (context.state === 'fresh' || nonInteractive()) process.exit(await runAction('resume', context));
+if (context.state === 'fresh') process.exit(await runAction('resume', context));
 
 /** Actions that change nothing, so the menu comes back without reading the stack again. */
 const READ_ONLY: readonly OperatorActionId[] = ['status', 'preview'];

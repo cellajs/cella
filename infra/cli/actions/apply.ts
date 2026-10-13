@@ -7,13 +7,13 @@ import { askToApply, type ReviewedPlan, reviewPlan } from './plan';
 import { runPrivilegedConverge } from './privileged-converge';
 
 /**
- * Plan, ask, then one `pulumi up` with the Owner API key in SCW_* env, for changes to privileged resources (registry IAM principals and policies, DB, VPC, private network) the read-only CI key cannot make.
- * The admin application key is enough to plan, so the Owner API key and the stack lock are taken only for a plan the operator said yes to.
+ * Plan, ask, then one `pulumi up` with a key minted from the operator key in SCW_* env, for changes to privileged resources (registry IAM principals and policies, DB, VPC, private network) the read-only CI key cannot make.
+ * The admin application key makes the plan, so a privileged key is minted and the stack lock taken only for a plan the operator said yes to.
  * It runs against a bootstrapped stack with live compute, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
  */
 export async function runApply(context: InfraContext): Promise<void> {
   console.info(
-    pc.dim(`\n${actionLabel('apply')}: plan what differs between the code and the live stack, ask, then apply it with your Owner API key.\n`),
+    pc.dim(`\n${actionLabel('apply')}: plan what differs between the code and the live stack, ask, then apply it with your operator key.\n`),
   );
 
   const { admin } = resolveOperatorIdentity();
@@ -27,7 +27,7 @@ export async function runApply(context: InfraContext): Promise<void> {
   } else {
     console.info(
       pc.dim(
-        `No admin application key on this machine (\`${actionCommand('fetch-admin-key')}\` stores it): the plan is made with your Owner API key, under the stack lock.`,
+        `No admin application key on this machine (\`${actionCommand('fetch-admin-key')}\` stores it): the plan is made with your operator key, under the stack lock.`,
       ),
     );
   }

@@ -1,19 +1,30 @@
 import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
 import { actionLabel } from '../../lib/operator-actions';
-import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
-import { principalNames } from '../../lib/scaleway/principals';
+import { describeKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { deleteApplicationCascade, deleteGroup, listManagedPrincipals, removeBootstrapDnsGrant } from '../../lib/scaleway/scaleway-iam';
 import { checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { acquireStackLockOrExit, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
-import { acquireOwnerKey, type OwnerKey, printRevokeReminder } from './owner-key';
+import { acquirePrivilegedKey } from './operator-unlock';
+import { type OwnerKey, printRevokeReminder } from './owner-key';
+
+/** The applications a cleanup may delete, apart from the one the run itself authenticates as: deleting that one revokes the key every later call needs. */
+export function splitOwnApplication<App extends { id: string }>(
+  applications: readonly App[],
+  ownApplicationId: string | undefined,
+): { own?: App; others: App[] } {
+  return {
+    own: applications.find((app) => app.id === ownApplicationId),
+    others: applications.filter((app) => app.id !== ownApplicationId),
+  };
+}
 
 /**
  * Destroy an environment: state-backend login, AWS_ and SCW_ env mapping, stack selection, `destroy --refresh`, then optional IAM principal cleanup.
- * The destroy phase needs full project write and the IAM cleanup IAMManager, so it takes the Owner API key the way Apply does (from SCW_OWNER_*
+ * The destroy phase needs full project write and the IAM cleanup IAMManager, so it takes a privileged key the way Apply does (minted from the operator key
  * or a prompt, validated first). Production stacks require typing `<slug>-production`, and their frontend/private buckets carry
  * `protect: true`, so Pulumi refuses to delete them until protection is lifted in code.
  */
@@ -37,13 +48,8 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   }
 
   const identity = resolveOperatorIdentity();
-  const ownerKey = await acquireOwnerKey({
-    identity,
-    names: principalNames(appConfig.slug, mode),
-    projectId: context.projectId,
-    slug: appConfig.slug,
-    mode,
-  });
+  // A destroy outlasts the usual half hour of a minted key.
+  const ownerKey = await acquirePrivilegedKey(context, { ttlMs: 2 * 60 * 60_000 });
   try {
     await destroyStack(context, ownerKey, identity.admin);
   } finally {
@@ -60,7 +66,7 @@ async function destroyStack(context: InfraContext, ownerKey: OwnerKey, admin: { 
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const targetStack = stackNameFor(context);
 
-  // The state bucket admits only the admin and CI deploy applications, so the Owner API key drives the provider while the admin application key serves the state side, as in Apply.
+  // The state bucket admits only the admin and CI deploy applications, so the run's privileged key drives the provider while the admin application key serves the state side, as in Apply.
   const env = buildProviderEnv(infraDir, {
     accessKey,
     secretKey,
@@ -116,9 +122,18 @@ async function destroyStack(context: InfraContext, ownerKey: OwnerKey, admin: { 
     if (applications.length === 0) {
       console.info(`${tildeMark} No engine-managed IAM applications found.`);
     }
-    for (const app of applications) {
+    // A run under the operator key must not delete its own application: the key dies with it, and every call after that fails.
+    const self = await describeKey({ accessKey, secretKey }).catch(() => undefined);
+    const { own, others } = splitOwnApplication(applications, self?.bearer === 'application' ? self.bearerId : undefined);
+    for (const app of others) {
       await deleteApplicationCascade({ callerSecretKey: secretKey, organizationId, applicationId: app.id });
       console.info(`  ${tildeMark} Deleted ${app.name}`);
+    }
+    if (own) {
+      console.warn(
+        `${warningMark} Kept '${own.name}' and group ${confirmToken}: this run authenticates as that application. Delete both in the console, or run teardown once more with your Owner API key.`,
+      );
+      return;
     }
     await deleteGroup({ callerSecretKey: secretKey, organizationId, slug: appConfig.slug, mode });
     await removeBootstrapDnsGrant({ callerSecretKey: secretKey, organizationId, slug: appConfig.slug }).catch(() => false);

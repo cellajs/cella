@@ -49,6 +49,9 @@ export async function runUnlock(context: InfraContext): Promise<void> {
   const { appConfig } = context;
   const targetStack = stackNameFor(context);
 
+  // The admin application key sits on disk, so it must not be enough to remove a lock: a person supplies the operator key or the passphrase first.
+  await resolveVerifiedPassphrase(context.stackYaml);
+
   // The admin application key, as Apply and the deploy lock with: the state bucket admits only the admin and CI deploy applications, any other key 403s here.
   const key = await adminKeyOrPrompt(context);
 

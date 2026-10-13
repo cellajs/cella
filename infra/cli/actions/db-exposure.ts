@@ -90,7 +90,7 @@ function writeDbCaFile(env: NodeJS.ProcessEnv, stack: string, environment: strin
   return caPath;
 }
 
-/** The secret key a converge env authenticates with: the Owner API key, or the key minted from it. */
+/** The secret key a converge env authenticates with: the key minted from the operator key for this run. */
 function convergeSecretKey(env: NodeJS.ProcessEnv): string {
   if (!env.SCW_SECRET_KEY) throw new Error('the converge environment carries no SCW_SECRET_KEY');
   return env.SCW_SECRET_KEY;
@@ -192,7 +192,7 @@ async function convergeOrExit(
 }
 
 /**
- * Open the database's public endpoint for scoped operator access: prompt for the client ACL (default the detected /32), converge with the Owner API key, print the admin DSN.
+ * Open the database's public endpoint for scoped operator access: prompt for the client ACL (default the detected /32), converge with the operator key, print the admin DSN.
  * The endpoint is internet-reachable but restricted to the ACL; run "Close public DB access" when finished.
  */
 export async function runExposeDatabase(context: InfraContext): Promise<void> {

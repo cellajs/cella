@@ -12,6 +12,7 @@ import { crossMark, type Hint, pc, printFailureHint, warningMark } from '../lib/
 import { errorMessage } from '../lib/utils/errors';
 import { isPromptAbort } from './prompts/abort';
 import { maskedSecret } from './prompts/masked-secret';
+import { passphraseCustody, rememberedPassphrase, rememberPassphrase } from './session';
 
 type AppConfigType = EngineConfig;
 
@@ -59,33 +60,27 @@ export function endsAction(error: unknown): boolean {
   return error instanceof ActionEnded || isPromptAbort(error);
 }
 
-/** Non-interactive mode (INFRA_NON_INTERACTIVE=1): every prompt resolves to its default, its env value, or empty; a prompt without a safe default throws. */
-export const nonInteractive = (): boolean => process.env.INFRA_NON_INTERACTIVE === '1';
-
 /**
- * True when the run accepts prompt defaults without asking: `--defaults` (a human on the fast path) or INFRA_NON_INTERACTIVE (automation).
- * They differ only for required inputs such as the Owner API key: `--defaults` still prompts, automation lets the prompt throw on a non-TTY.
+ * True when the run takes prompt defaults without asking: `--defaults`, a person on the fast path. A required input such as the Owner API
+ * key is still asked, so the CLI never changes infrastructure without someone at the prompt.
  */
-export const autoAcceptDefaults = (): boolean => process.argv.includes('--defaults') || nonInteractive();
+export const autoAcceptDefaults = (): boolean => process.argv.includes('--defaults');
 
-/** Short label for the auto-resolution log line. */
-const autoLabel = (): string => (nonInteractive() ? 'non-interactive' : 'defaults');
-
-/** `confirm` that resolves to its default under `--defaults`/INFRA_NON_INTERACTIVE. */
+/** `confirm` that resolves to its default under `--defaults`. */
 export async function confirmOrDefault(opts: { message: string; default: boolean }): Promise<boolean> {
   if (autoAcceptDefaults()) {
-    console.info(pc.dim(`  [${autoLabel()}] ${opts.message} -> ${opts.default ? 'yes' : 'no'}`));
+    console.info(pc.dim(`  [defaults] ${opts.message} -> ${opts.default ? 'yes' : 'no'}`));
     return opts.default;
   }
   return confirm(opts);
 }
 
-/** Optional free-text `input` that resolves to env/default under `--defaults`/INFRA_NON_INTERACTIVE. */
+/** Optional free-text `input` that resolves to env/default under `--defaults`. */
 export async function inputOrDefault(opts: { message: string; envName?: string; default?: string }): Promise<string> {
   const fromEnv = opts.envName ? process.env[opts.envName]?.trim() : undefined;
   if (autoAcceptDefaults()) {
     const value = fromEnv ?? opts.default ?? '';
-    console.info(pc.dim(`  [${autoLabel()}] ${opts.message} -> ${value || '<empty>'}`));
+    console.info(pc.dim(`  [defaults] ${opts.message} -> ${value || '<empty>'}`));
     return value;
   }
   if (fromEnv) return fromEnv;
@@ -93,22 +88,35 @@ export async function inputOrDefault(opts: { message: string; envName?: string; 
 }
 
 /**
- * Resolve and verify the Pulumi passphrase against existing stack encryption metadata.
- * An invalid environment value falls back to repeated prompts; a new unencrypted stack accepts the environment or one prompt unverified.
+ * Resolve and verify the Pulumi passphrase against existing stack encryption metadata. It never comes from the environment: a value on disk
+ * would let the CLI run with nobody at the prompt. It comes from Secret Manager, read with the operator key the session is unlocked with,
+ * else from the prompt; either way it is kept in memory for this run of the CLI, so a menu session asks once.
+ * A passphrase typed while the session is unlocked is stored in Secret Manager, which is how an existing stack gets its copy there.
+ * A stack with nothing encrypted yet takes one prompt unverified.
  */
 export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<string> {
   const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml);
-  if (!canVerify) return process.env.PULUMI_CONFIG_PASSPHRASE || maskedSecret({ message: 'Pulumi passphrase' });
+  if (!canVerify) return maskedSecret({ message: 'Pulumi passphrase' });
 
-  const fromEnv = process.env.PULUMI_CONFIG_PASSPHRASE;
-  if (fromEnv && verifyStackPassphrase(stackYaml, fromEnv)) return fromEnv;
-  if (fromEnv) {
-    console.warn(`${warningMark} ${pc.yellow('PULUMI_CONFIG_PASSPHRASE in your environment does not match this stack: prompting instead.')}`);
+  // From earlier in this run: a rotation since then changed the stack's salt, so a stale one fails here and is fetched or asked again.
+  const remembered = rememberedPassphrase();
+  if (remembered && verifyStackPassphrase(stackYaml, remembered)) return remembered;
+
+  const custody = passphraseCustody();
+  const stored = await custody?.read();
+  if (stored && verifyStackPassphrase(stackYaml, stored)) {
+    rememberPassphrase(stored);
+    return stored;
   }
+  if (stored) console.warn(`${warningMark} The passphrase in Secret Manager does not open this stack: type the current one, and it is stored again.`);
 
   while (true) {
     const entered = await maskedSecret({ message: 'Pulumi passphrase' });
-    if (verifyStackPassphrase(stackYaml, entered)) return entered;
+    if (verifyStackPassphrase(stackYaml, entered)) {
+      rememberPassphrase(entered);
+      if (await custody?.store(entered)) console.info(pc.dim('  Stored in Secret Manager: from now on the operator key fetches it.'));
+      return entered;
+    }
     console.warn(`${warningMark} Incorrect passphrase for this stack. Try again.`);
   }
 }
@@ -128,21 +136,15 @@ export async function confirmPassphraseStored(passphrase: string, heading: strin
 }
 
 /**
- * Setup-time counterpart of `resolveVerifiedPassphrase`: an already-encrypting stack (or a set `PULUMI_CONFIG_PASSPHRASE`) defers to the verify/prompt flow.
+ * Setup-time counterpart of `resolveVerifiedPassphrase`: an already-encrypting stack defers to the fetch-or-prompt flow.
  * A stack with nothing encrypted yet gets a generated passphrase, shown once via `confirmPassphraseStored`, and `generated` reports that to the caller.
  */
 export async function resolveOrCreatePassphrase(stackYaml?: string): Promise<{ passphrase: string; generated: boolean }> {
   const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml);
-  if (canVerify || process.env.PULUMI_CONFIG_PASSPHRASE) {
-    return { passphrase: await resolveVerifiedPassphrase(stackYaml), generated: false };
-  }
+  if (canVerify) return { passphrase: await resolveVerifiedPassphrase(stackYaml), generated: false };
 
   const passphrase = generatePassphrase();
-  await confirmPassphraseStored(
-    passphrase,
-    `Pulumi passphrase ${pc.dim('(encrypts stack secret state: generated for this new stack)')}`,
-    'To supply your own instead, abort and re-run with PULUMI_CONFIG_PASSPHRASE set.',
-  );
+  await confirmPassphraseStored(passphrase, `Pulumi passphrase ${pc.dim('(encrypts stack secret state: generated for this new stack)')}`);
   return { passphrase, generated: true };
 }
 

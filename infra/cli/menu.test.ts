@@ -4,6 +4,7 @@ import {
   BACK,
   disabledReason,
   formatAccessLines,
+  formatOperatorLine,
   formatStackLine,
   type MenuItem,
   type MenuState,
@@ -32,17 +33,17 @@ describe('mainMenuItems', () => {
     expect(render(mainMenuItems(bootstrapped))).toEqual([
       'Observe',
       '  Show status              read-only',
-      '  Review & apply changes   admin key to review · Owner key to apply',
+      '  Review & apply changes   operator key',
       'Change',
-      '  Rotate keys & secrets ›  CI deploy key, admin key, passphrase',
-      '  Manage runtime secrets   Owner key',
+      '  Rotate keys & secrets ›  CI key, admin key, passphrase, operator key',
+      '  Manage runtime secrets   operator key',
       'Database',
-      '  Open public DB access ›  Owner key · temporary, locked to your IP',
-      '  Reset database           Owner key · DESTRUCTIVE',
+      '  Open public DB access ›  operator key · temporary, locked to your IP',
+      '  Reset database           operator key · DESTRUCTIVE',
       'Recover',
       '  Repair stack ›           stack lock, setup, admin key',
       'Rare',
-      '  Tear down stack          Owner key · DESTRUCTIVE',
+      '  Tear down stack          operator key · DESTRUCTIVE',
       '',
       '  Quit',
     ]);
@@ -54,15 +55,15 @@ describe('mainMenuItems', () => {
       '  Show status              read-only',
       '- Review & apply changes (needs a bootstrapped stack: run "Resume setup")',
       'Change',
-      '  Rotate keys & secrets ›  CI deploy key, admin key, passphrase',
-      '  Manage runtime secrets   Owner key',
+      '  Rotate keys & secrets ›  CI key, admin key, passphrase, operator key',
+      '  Manage runtime secrets   operator key',
       'Database',
       '- Open public DB access › (needs a bootstrapped stack: run "Resume setup")',
       '- Reset database (needs a bootstrapped stack: run "Resume setup")',
       'Recover',
       '  Repair stack ›           stack lock, setup, admin key',
       'Rare',
-      '  Tear down stack          Owner key · DESTRUCTIVE',
+      '  Tear down stack          operator key · DESTRUCTIVE',
       '',
       '  Quit',
     ]);
@@ -70,7 +71,7 @@ describe('mainMenuItems', () => {
 
   it('shows the close row while the exposure config says open', () => {
     const lines = render(mainMenuItems({ ...bootstrapped, dbExposed: true }));
-    expect(lines).toContain('  Close public DB access (OPEN)  Owner key');
+    expect(lines).toContain('  Close public DB access (OPEN)  operator key');
     expect(lines.some((line) => line.includes('Open public DB access'))).toBe(false);
   });
 
@@ -108,11 +109,17 @@ describe('mainMenuItems', () => {
 
 describe('pickItems', () => {
   it('offers the actions of a row with the key each runs with, then Back', () => {
-    expect(render(pickItems('rotate', bootstrapped))).toEqual(['  Rotate keys        Owner key', '  Rotate passphrase  admin key', '  ← Back']);
+    expect(render(pickItems('rotate', bootstrapped))).toEqual([
+      '  Rotate keys          operator key',
+      '  Rotate passphrase    operator key',
+      '  Set up operator key  Owner key',
+      '  Change dedicated IP  operator key',
+      '  ← Back',
+    ]);
     expect(render(pickItems('repair', bootstrapped))).toEqual([
-      '  Unlock stack                 admin key',
-      '  Resume setup                 Owner key',
-      '  Fetch admin application key  Owner key',
+      '  Unlock stack                 operator key',
+      '  Resume setup                 operator key',
+      '  Fetch admin application key  operator key',
       '  ← Back',
     ]);
     expect(pickItems('repair', bootstrapped).at(-1)?.value).toBe(BACK);
@@ -120,7 +127,7 @@ describe('pickItems', () => {
 
   it('disables seeding on production and leaves the plain open available', () => {
     expect(render(pickItems('db-open', { ...bootstrapped, environment: 'production' }))).toEqual([
-      '  Open public DB access  Owner key',
+      '  Open public DB access  operator key',
       '- Seed database (seed data never goes to production)',
       '  ← Back',
     ]);
@@ -128,8 +135,10 @@ describe('pickItems', () => {
 
   it('disables the passphrase rotation on a stack without encrypted state', () => {
     expect(render(pickItems('rotate', partial))).toEqual([
-      '  Rotate keys        Owner key',
+      '  Rotate keys          operator key',
       '- Rotate passphrase (the stack has no encrypted state yet)',
+      '  Set up operator key  Owner key',
+      '  Change dedicated IP  operator key',
       '  ← Back',
     ]);
   });
@@ -137,7 +146,9 @@ describe('pickItems', () => {
   it('ends every description with the key the action runs with', () => {
     for (const id of ['rotate', 'db-open', 'repair'] as const) {
       for (const choice of pickItems(id, bootstrapped).filter((entry) => entry.value !== BACK)) {
-        expect(choice.description).toMatch(/(Needs your Owner API key|Uses the admin application key|Works without a Scaleway key)\.$/);
+        expect(choice.description).toMatch(
+          /(Needs your operator key|Needs your Owner API key|Uses the admin application key|Works without a Scaleway key)\.$/,
+        );
       }
     }
   });
@@ -183,14 +194,47 @@ describe('formatStackLine', () => {
   });
 });
 
+describe('formatOperatorLine', () => {
+  const line = (operator: Parameters<typeof formatOperatorLine>[0]) => plain(formatOperatorLine(operator));
+  const present = (cidrs: string[], open = false) => ({ state: 'present' as const, cidrs, open });
+
+  it('points a stack without an operator application at the action that sets one up', () => {
+    expect(line({ lock: { state: 'absent', cidrs: [], open: false }, verdict: 'unknown' })).toBe(
+      '○ Operator key: none yet, so privileged actions ask for your Owner API key (pnpm infra operator-key sets one up)',
+    );
+  });
+
+  it('says the key works from this machine when its address is on the list', () => {
+    expect(line({ lock: present(['203.0.113.7/32']), verdict: 'inside', address: '203.0.113.7' })).toBe(
+      '● Operator key: works from this address (203.0.113.7/32)',
+    );
+  });
+
+  it('must not leave a refusal looking like an empty stack: an address off the list is named before any action', () => {
+    expect(line({ lock: present(['203.0.113.7/32']), verdict: 'outside', address: '198.51.100.9' })).toBe(
+      '● Operator key: works from 203.0.113.7/32 only; this machine is 198.51.100.9',
+    );
+  });
+
+  it('must not call an open policy locked: a rule without its condition is reported as working from every address', () => {
+    expect(line({ lock: present([], true), verdict: 'unknown' })).toBe(
+      '● Operator key: works from every address: a rule of its policy has no address condition',
+    );
+  });
+
+  it('names the list alone when this machine has no detectable address', () => {
+    expect(line({ lock: present(['203.0.113.7/32']), verdict: 'unknown' })).toBe('○ Operator key: works from 203.0.113.7/32');
+  });
+});
+
 describe('formatAccessLines', () => {
   const lines = (facts: Parameters<typeof formatAccessLines>[0]) => formatAccessLines(facts).map(plain);
 
-  it('says where the Owner API key comes from', () => {
-    expect(lines({ ownerKeySource: 'SCW_OWNER_*', stackState: 'partial', dbExposed: false })).toEqual([
-      '● Owner API key: SCW_OWNER_* in infra/.env.<mode>',
-    ]);
-    expect(lines({ stackState: 'partial', dbExposed: false })).toEqual(['○ Owner API key: asked when an action needs it']);
+  it('says the operator key is asked for when nothing is known about it', () => {
+    expect(lines({ stackState: 'partial', dbExposed: false })).toEqual(['○ Operator key: asked when an action needs it']);
+    expect(
+      lines({ operator: { lock: { state: 'unknown', cidrs: [], open: false }, verdict: 'unknown' }, stackState: 'partial', dbExposed: false }),
+    ).toEqual(['○ Operator key: asked when an action needs it']);
   });
 
   it('reports a private database only when the instance was read', () => {

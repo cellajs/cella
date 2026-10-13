@@ -26,13 +26,41 @@ export function loadBaseEnvFiles(): void {
 export const LEGACY_ADMIN_KEY_NAMES = ['SCW_ACCESS_KEY', 'SCW_SECRET_KEY', 'SCW_STATE_ACCESS_KEY', 'SCW_STATE_SECRET_KEY'] as const;
 
 /**
- * The values a parsed mode env file exports, and the warnings it earns. The provider's own `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` never come from
+ * Names whose value a person supplies at the prompt, every run: a privileged key and the Pulumi passphrase. The CLI reads none of them from a
+ * file or the environment, in any form, as a value on disk would let it change infrastructure with nobody at the terminal.
+ */
+const PROMPT_ONLY_NAMES = [
+  'PULUMI_CONFIG_PASSPHRASE',
+  'SCW_OWNER_ACCESS_KEY',
+  'SCW_OWNER_SECRET_KEY',
+  'SCW_BOOTSTRAP_ACCESS_KEY',
+  'SCW_BOOTSTRAP_SECRET_KEY',
+  'SCW_BOOTSTRAP_KEY',
+] as const;
+
+/** Take the prompt-only names out of `env` and return the ones it held, for the CLI to name once. */
+export function dropPromptOnlyEnv(env: NodeJS.ProcessEnv = process.env): string[] {
+  const found = PROMPT_ONLY_NAMES.filter((name) => env[name] !== undefined);
+  for (const name of found) delete env[name];
+  return found;
+}
+
+/**
+ * The values a parsed mode env file exports, and the warnings it earns. A prompt-only name is dropped before its value is looked at, so a
+ * `keychain:` or `op:` reference under one is never resolved. The provider's own `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` never come from
  * the file: in it they meant the admin application key, which now travels as `SCW_ADMIN_*`, and in the process env they keep meaning the key the
  * process was started with (a CI runner, a shell export).
  */
 export function modeEnvValues(parsed: Record<string, string>, mode: string): { values: Record<string, string>; warnings: string[] } {
   const values = { ...parsed };
   const warnings: string[] = [];
+  const stored = PROMPT_ONLY_NAMES.filter((name) => name in values);
+  for (const name of stored) delete values[name];
+  if (stored.length > 0) {
+    warnings.push(
+      `infra/.env.${mode}: ${stored.join(', ')} ${stored.length === 1 ? 'is' : 'are'} not read. The CLI asks for a privileged key at the prompt and fetches the passphrase with it: remove ${stored.length === 1 ? 'the line' : 'these lines'}.`,
+    );
+  }
   const legacy = ['SCW_ACCESS_KEY', 'SCW_SECRET_KEY'] as const;
   if (legacy.some((name) => name in values)) {
     if ('SCW_ADMIN_ACCESS_KEY' in values || 'SCW_ADMIN_SECRET_KEY' in values) {
@@ -50,8 +78,8 @@ export function modeEnvValues(parsed: Record<string, string>, mode: string): { v
 }
 
 /**
- * Load `infra/.env.<mode>`, which overrides the ambient env so a staging run cannot inherit production values. The file holds a live secret key
- * and the Pulumi passphrase, so it is tightened to 0600 on sight. Returns the warnings the file earned (superseded key names).
+ * Load `infra/.env.<mode>`, which overrides the ambient env so a staging run cannot inherit production values. The file holds a live secret key,
+ * so it is tightened to 0600 on sight. Returns the warnings the file earned (superseded key names, values the CLI no longer reads).
  */
 export function loadModeEnvFile(mode: string, log: (message: string) => void = () => {}): string[] {
   // A bare infra/.env is never read; naming the file that is read saves a round of prompts for the values it holds.
@@ -108,30 +136,13 @@ export function resolveSecretReference(key: string, value: string, exec: ExecLik
       : ['secret-tool', ['lookup', 'service', ref.service, 'account', ref.account]];
   const res = exec(cmd, args);
   if (res.status !== 0 || res.stdout === '') {
-    throw fail(
-      `keychain entry ${ref.service}/${ref.account} not found`,
-      `store it with \`${actionCommand('store-passphrase')}\`, or ${cmd} directly; ${res.stderr}`,
-    );
+    throw fail(`keychain entry ${ref.service}/${ref.account} not found`, `${cmd} could not read it; ${res.stderr}`);
   }
   return res.stdout.replace(/\r?\n$/, '');
 }
 
-/** Write a secret into the OS keychain under `service`/`account`, replacing an existing entry. */
-export function storeInKeychain(service: string, account: string, value: string, exec: ExecLike = defaultExec, platform = process.platform): void {
-  const res =
-    platform === 'darwin'
-      ? exec('security', ['add-generic-password', '-U', '-s', service, '-a', account, '-w', value])
-      : exec('secret-tool', ['store', `--label=${service} ${account}`, 'service', service, 'account', account], value);
-  if (res.status !== 0) throw new Error(`keychain write for ${service}/${account} failed (${res.stderr.trim() || 'no output'})`);
-}
-
-/** The reference `resolveSecretReference` reads back for a keychain entry. */
-export function keychainReference(service: string, account: string): string {
-  return `keychain:${service}/${account}`;
-}
-
 /** Path of the mode-scoped operator env file. */
-export function modeEnvPath(mode: string): string {
+function modeEnvPath(mode: string): string {
   return resolve(infraDir, `.env.${mode}`);
 }
 

@@ -16,7 +16,7 @@ import { infraDir } from '../../lib/utils/paths';
 import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
-import { acquireOwnerKey } from './owner-key';
+import { acquirePrivilegedKey } from './operator-unlock';
 import { askToApply, type ReviewedPlan, showPlan } from './plan';
 
 export interface PrivilegedConvergeOptions {
@@ -33,7 +33,7 @@ export interface PrivilegedConvergeOptions {
    */
   confirmPlan?: boolean;
   /**
-   * With `confirmPlan`, the plan the operator confirmed before this run took the Owner API key and the lock. It is applied without a second
+   * With `confirmPlan`, the plan the operator confirmed before this run took its privileged key and the lock. It is applied without a second
    * question for as long as the state it was computed from stands; a state that changed since is planned and confirmed again under the lock.
    */
   reviewed?: ReviewedPlan;
@@ -41,7 +41,7 @@ export interface PrivilegedConvergeOptions {
   verifyAfter?: boolean;
   /** Capture the engine and provider log of the `up` under infra/.debug/, for an update Pulumi reports but the provider never sent. */
   debugProvider?: boolean;
-  /** Read-only check after a completed `up`, while the Owner API key is still valid; a throw is reported as a warning. */
+  /** Read-only check after a completed `up`, while the run's privileged key is still valid; a throw is reported as a warning. */
   afterUp?: (env: NodeJS.ProcessEnv) => Promise<void>;
 }
 
@@ -58,7 +58,7 @@ export interface PrivilegedConvergeResult {
 
 /**
  * The privileged converge shared by "Review & apply changes", the DB access actions, and seeding, in order: resolve the passphrase, take the
- * Owner API key and the stack lock, reconcile rollout config from live state so a local `up` cannot revert compute to a stale generation,
+ * privileged key and the stack lock, reconcile rollout config from live state so a local `up` cannot revert compute to a stale generation,
  * apply the caller's config mutation, hold the plan against what the operator confirmed, then `pulumi up` with an orphan-prune/retry loop.
  * Returns the provider env and stack for reading outputs after the lock releases, and exits the process on hard failures before the `up` loop.
  */
@@ -73,17 +73,11 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
 
   const identity = resolveOperatorIdentity();
   const names = principalNames(appConfig.slug, context.environment);
-  const ownerKey = await acquireOwnerKey({
-    identity,
-    names,
-    projectId,
-    slug: appConfig.slug,
-    mode: context.environment,
-  });
+  const ownerKey = await acquirePrivilegedKey(context);
   const { organizationId } = ownerKey;
   const stack = stackNameFor(context);
 
-  // The admin application key from infra/.env.<mode> signs every state-bucket touch (login, lock, `up`) while the Owner API key drives the resource mutations; without an admin key the Owner API key serves both sides.
+  // The admin application key from infra/.env.<mode> signs every state-bucket touch (login, lock, `up`) while the run's privileged key drives the resource mutations; without an admin key the Owner API key serves both sides.
   const stateOverride = identity.admin ? { stateAccessKey: identity.admin.accessKey, stateSecretKey: identity.admin.secretKey } : {};
   const env = buildProviderEnv(infraDir, {
     accessKey: ownerKey.accessKey,

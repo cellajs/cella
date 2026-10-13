@@ -20,14 +20,12 @@ export function envKeyPair(env: NodeJS.ProcessEnv, accessVar: string, secretVar:
 /**
  * Every API key an operator process may hold, resolved in one place so the CLI actions cannot drift apart in which env pair they read.
  * - `admin`: `SCW_ADMIN_ACCESS_KEY` / `SCW_ADMIN_SECRET_KEY` from infra/.env.<mode>, the admin application's key: provider reads and the state bucket.
- * - `owner`: `SCW_OWNER_ACCESS_KEY` / `SCW_OWNER_SECRET_KEY`, the Owner API key (usually a `keychain:`/`op:` reference). Privileged actions use it,
- *   or mint a short-lived key from it, and prompt for one when it is absent.
  * - `ambient`: `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` as the process found them (a CI runner, a shell export): shown in diagnostics, never written to the env file.
- * Deprecated pairs are read for one more release with a rename warning: `SCW_STATE_*` as the admin key, `SCW_BOOTSTRAP_*` as the Owner API key.
+ * A privileged key is not among them: the operator key and an Owner API key are typed at the prompt and never read from the environment.
+ * The deprecated `SCW_STATE_*` pair is read as the admin key for one more release, with a rename warning.
  */
 export interface OperatorIdentity {
   admin?: KeyPair & { source: 'SCW_ADMIN_*' | 'SCW_STATE_*' };
-  owner?: KeyPair & { source: 'SCW_OWNER_*' | 'SCW_BOOTSTRAP_*' };
   ambient?: KeyPair;
   /** Deprecated or suspicious configuration, for the CLI to print once. */
   warnings: string[];
@@ -64,29 +62,7 @@ export function resolveOperatorIdentity(env: NodeJS.ProcessEnv = process.env): O
 
   const ambient = optionalKeyPair(env, 'SCW_ACCESS_KEY', 'SCW_SECRET_KEY', warnings);
 
-  const ownerPair = optionalKeyPair(env, 'SCW_OWNER_ACCESS_KEY', 'SCW_OWNER_SECRET_KEY', warnings);
-  let owner: OperatorIdentity['owner'] = ownerPair ? { ...ownerPair, source: 'SCW_OWNER_*' } : undefined;
-  // `SCW_BOOTSTRAP_*` named this key until 0.12, and `SCW_BOOTSTRAP_KEY` is the misspelling operators reached for.
-  const legacyEnv: NodeJS.ProcessEnv = { ...env };
-  if (!legacyEnv.SCW_BOOTSTRAP_ACCESS_KEY?.trim() && legacyEnv.SCW_BOOTSTRAP_KEY?.trim()) {
-    legacyEnv.SCW_BOOTSTRAP_ACCESS_KEY = legacyEnv.SCW_BOOTSTRAP_KEY;
-  }
-  const legacyOwner = optionalKeyPair(legacyEnv, 'SCW_BOOTSTRAP_ACCESS_KEY', 'SCW_BOOTSTRAP_SECRET_KEY', warnings);
-  if (legacyOwner) {
-    if (owner) {
-      warnings.push('SCW_BOOTSTRAP_* is ignored because SCW_OWNER_* is set: remove the SCW_BOOTSTRAP_* pair.');
-    } else {
-      owner = { ...legacyOwner, source: 'SCW_BOOTSTRAP_*' };
-      warnings.push('SCW_BOOTSTRAP_* is read as SCW_OWNER_ACCESS_KEY / SCW_OWNER_SECRET_KEY (the Owner API key): rename it.');
-    }
-  }
-
-  if (owner && admin && owner.accessKey === admin.accessKey) {
-    warnings.push(
-      'SCW_OWNER_* holds the same key as SCW_ADMIN_*: the Owner API key is your own user key as organization Owner, not the admin application key.',
-    );
-  }
-  return { admin, owner, ambient, warnings };
+  return { admin, ambient, warnings };
 }
 
 /** Who bears an API key: an organization Owner, a member user, or an IAM application. */
@@ -123,12 +99,13 @@ export async function describeKey(pair: KeyPair, opts: { fetchImpl?: FetchLike }
 }
 
 /** The engine role of a key's bearer, or the kind of outside principal it is. */
-export type PrincipalRole = 'ci-deploy' | 'admin' | 'boot' | 'vm-service' | 'owner' | 'member' | 'application';
+export type PrincipalRole = 'ci-deploy' | 'admin' | 'operator' | 'boot' | 'vm-service' | 'owner' | 'member' | 'application';
 
 export function classifyPrincipal(desc: KeyDescription, names: PrincipalNames): PrincipalRole {
   if (desc.bearer !== 'application') return desc.bearer;
   if (desc.name === names.ciDeploy) return 'ci-deploy';
   if (desc.name === names.admin) return 'admin';
+  if (desc.name === names.operator) return 'operator';
   if (desc.name === names.boot) return 'boot';
   if (desc.name.startsWith(`${names.group}-vm-`)) return 'vm-service';
   return 'application';
@@ -137,6 +114,7 @@ export function classifyPrincipal(desc: KeyDescription, names: PrincipalNames): 
 const ROLE_LABELS: Record<PrincipalRole, string> = {
   'ci-deploy': 'CI deploy application',
   admin: 'admin application',
+  operator: 'operator application',
   boot: 'boot application',
   'vm-service': 'VM service application',
   owner: 'organization Owner',

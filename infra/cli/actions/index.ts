@@ -7,13 +7,14 @@ import { runApply } from './apply';
 import { runExposeDatabase, runUnexposeDatabase } from './db-exposure';
 import { runFetchAdminKey } from './fetch-admin-key';
 import { runGeoipRefresh } from './geoip-refresh';
+import { runOperatorAddress } from './operator-address';
+import { runOperatorKey } from './operator-key';
 import { runPreview } from './preview';
 import { runResetDatabase } from './reset-database';
 import { runRotatePassphrase } from './rotate-passphrase';
 import { runSecrets } from './secrets';
 import { runSeedDatabase } from './seed-db';
 import { runSetup } from './setup';
-import { runStorePassphrase } from './store-passphrase';
 import { runTeardown } from './teardown';
 import { runUnlock } from './unlock';
 
@@ -27,6 +28,8 @@ export const ACTION_RUNNERS: ActionRunners = {
   apply: runApply,
   'rotate-keys': (context) => runSetup(context, 'rotate-keys'),
   'rotate-passphrase': runRotatePassphrase,
+  'operator-key': runOperatorKey,
+  'operator-address': runOperatorAddress,
   secrets: runSecrets,
   'db-open': runExposeDatabase,
   'db-seed': runSeedDatabase,
@@ -35,7 +38,6 @@ export const ACTION_RUNNERS: ActionRunners = {
   unlock: runUnlock,
   resume: (context) => runSetup(context, 'resume'),
   'fetch-admin-key': runFetchAdminKey,
-  'store-passphrase': runStorePassphrase,
   'geoip-refresh': runGeoipRefresh,
   teardown: runTeardown,
 };
