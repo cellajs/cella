@@ -88,7 +88,6 @@ function OperationsTable() {
           isFiltered={!!q}
           rowHeight={42}
           enableVirtualization
-          enableStickyHeader
           resetWidthsKey={focusView ? 'focus' : 'normal'}
           sortColumns={sortColumns}
           onSortColumnsChange={setSortColumns}

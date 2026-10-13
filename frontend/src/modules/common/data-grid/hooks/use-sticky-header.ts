@@ -1,11 +1,16 @@
 import type { RefObject } from 'react';
 import { useLayoutEffect } from 'react';
+import { getScrollParent, stackOffset, stackOffsetCss } from '~/modules/common/sticky-box';
 
-/** Pins measured header cells to the viewport with fixed positioning, syncing horizontal offsets in animation frames. */
+/**
+ * Pins measured header cells with fixed positioning below the sticky stack (the bars `StickyBox` publishes), syncing
+ * horizontal offsets in animation frames. Only a grid the window scrolls is pinned: fixed cells measure from the
+ * viewport, which is not the pin line of a sheet, drawer or dialog that scrolls its own content.
+ */
 export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, headerRowsCount: number, headerRowHeight: number, enabled: boolean) {
   useLayoutEffect(() => {
     const grid = gridRef.current;
-    if (!enabled || !grid || headerRowsCount === 0) return;
+    if (!enabled || !grid || headerRowsCount === 0 || getScrollParent(grid) !== window) return;
 
     const headerRowsHeight = headerRowsCount * headerRowHeight;
     // Separate rAF IDs so different concerns don't cancel each other
@@ -36,7 +41,7 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
         const rect = rects[i];
         cell.style.position = 'fixed';
         cell.style.zIndex = '20';
-        cell.style.top = '0px';
+        cell.style.top = stackOffsetCss();
         cell.style.left = `${rect.left}px`;
         cell.style.width = `${rect.width}px`;
         cell.style.height = `${headerRowHeight}px`;
@@ -98,9 +103,9 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
 
     function update() {
       const rect = grid!.getBoundingClientRect();
-      const gridTop = rect.top;
-      const gridBottom = rect.bottom;
-      const shouldStick = gridTop < 0 && gridBottom > headerRowsHeight;
+      // Read per frame: a bar above can change height, or leave in focus view, without the grid rendering.
+      const pinTop = stackOffset(grid!);
+      const shouldStick = rect.top < pinTop && rect.bottom > pinTop + headerRowsHeight;
 
       if (shouldStick && !isSticky) {
         applyFixed();
@@ -132,18 +137,7 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
       resizeSettleTimer = window.setTimeout(syncWidths, 150);
     };
 
-    let scrollTarget: HTMLElement | Window = window;
-    let parent: HTMLElement | null = grid.parentElement;
-    while (parent && parent !== document.body && parent !== document.documentElement) {
-      const { overflowY } = getComputedStyle(parent);
-      if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
-        scrollTarget = parent;
-        break;
-      }
-      parent = parent.parentElement;
-    }
-
-    scrollTarget.addEventListener('scroll', onScrollVertical, { passive: true });
+    window.addEventListener('scroll', onScrollVertical, { passive: true });
     window.addEventListener('resize', onScrollVertical, { passive: true });
     window.addEventListener('resize', onResize, { passive: true });
     // Track horizontal scroll on the grid itself (it has overflow-x: auto)
@@ -163,7 +157,7 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
       cancelAnimationFrame(resizeRafId);
       clearTimeout(resizeSettleTimer);
       resizeObserver.disconnect();
-      scrollTarget.removeEventListener('scroll', onScrollVertical);
+      window.removeEventListener('scroll', onScrollVertical);
       window.removeEventListener('resize', onScrollVertical);
       window.removeEventListener('resize', onResize);
       grid.removeEventListener('scroll', onScrollHorizontal);

@@ -1,6 +1,6 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import { type CSSProperties, useState } from 'react';
 import { expect, userEvent, waitFor } from 'storybook/test';
 import { cn } from '~/utils/cn';
 import {
@@ -627,6 +627,67 @@ export const ShouldFreezeFrozenColumns: Story = {
         }
       });
     });
+  },
+};
+
+export const ShouldPinHeaderBelowStickyStack: Story = {
+  name: 'when the window scrolls past the grid top, the header pins below the sticky stack',
+  tags: ['!dev', '!autodocs'],
+  render: function Render(args) {
+    return (
+      // Stands in for the parent a StickyBox publishes its height on.
+      <div style={{ '--sticky-stack-nav': '48px' } as CSSProperties} data-testid="stack-host">
+        <DataGrid {...args} rows={largeData} />
+      </div>
+    );
+  },
+  args: { columns: basicColumns },
+  play: async ({ canvas, step }) => {
+    const grid = canvas.getByRole('grid');
+    const firstHeaderCell = () => grid.querySelector('.rdg-header-row > .rdg-cell') as HTMLElement;
+
+    await step('The header pins at the stack offset once the grid top passes it', async () => {
+      window.scrollTo(0, 600);
+      await waitFor(() => {
+        expect(firstHeaderCell().style.position).toBe('fixed');
+        expect(firstHeaderCell().getBoundingClientRect().top).toBe(48);
+      });
+    });
+
+    await step('It follows the stack when the bar above leaves, as in focus view', async () => {
+      canvas.getByTestId('stack-host').style.setProperty('--sticky-stack-nav', '0px');
+      expect(firstHeaderCell().getBoundingClientRect().top).toBe(0);
+    });
+
+    await step('It returns to its place when the grid is back below the pin line', async () => {
+      window.scrollTo(0, 0);
+      await waitFor(() => expect(firstHeaderCell().style.position).not.toBe('fixed'));
+    });
+  },
+};
+
+export const ShouldKeepHeaderInPlaceInScrollContainer: Story = {
+  name: 'when a container scrolls the grid, the header stays in place',
+  tags: ['!dev', '!autodocs'],
+  render: function Render(args) {
+    return (
+      <div style={{ height: 300, overflow: 'auto' }} data-testid="scroll-container">
+        {/* The grid fills a parent of fixed height and scrolls itself; this one lets it grow, so the container scrolls. */}
+        <div>
+          <DataGrid {...args} rows={largeData} />
+        </div>
+      </div>
+    );
+  },
+  args: { columns: basicColumns },
+  play: async ({ canvas }) => {
+    const grid = canvas.getByRole('grid');
+    const container = canvas.getByTestId('scroll-container');
+    container.scrollTop = 500;
+    await waitFor(() => expect(grid.getBoundingClientRect().top).toBeLessThan(0));
+    // Two frames: a pin would be applied in the frame after the scroll event.
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    expect((grid.querySelector('.rdg-header-row > .rdg-cell') as HTMLElement).style.position).not.toBe('fixed');
   },
 };
 
