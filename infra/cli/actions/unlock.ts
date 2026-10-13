@@ -3,7 +3,8 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { menuPath } from '../../lib/operator-actions';
-import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import type { KeyPair } from '../../lib/scaleway/operator-identity';
+import { principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { forceUnlock, type LockInfo, lockKey, makeControlClient, peekLock, type S3Like, stateBucket } from '../../lib/stack/control-store';
 import {
@@ -19,10 +20,10 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import {
   acquireStackLockOrExit,
+  adminKeyOrPrompt,
   confirmOrDefault,
   endAction,
   type InfraContext,
-  keyPairOrPrompt,
   pulumiLoginAndSelect,
   resolveVerifiedPassphrase,
   stackNameFor,
@@ -49,7 +50,7 @@ export async function runUnlock(context: InfraContext): Promise<void> {
   const targetStack = stackNameFor(context);
 
   // The admin application key, as Apply and the deploy lock with: the state bucket admits only the admin and CI deploy applications, any other key 403s here.
-  const key = await keyPairOrPrompt(resolveOperatorIdentity().admin, 'Scaleway admin application key');
+  const key = await adminKeyOrPrompt(context);
 
   const s3 = await makeControlClient(appConfig.s3.region, key.accessKey, key.secretKey);
   const held = await peekLock(s3, stateBucket(appConfig.slug), lockKey(targetStack));
@@ -116,7 +117,7 @@ async function reviewPendingOperations(context: InfraContext, opts: { s3: S3Like
     console.info(
       '\n  An interrupted update or delete is resolved by a refresh: it reads each resource from Scaleway into the state and clears these records.\n' +
         `  Run "${menuPath('preview')}" first to see the drift a refresh records, then: ${pc.cyan(`pulumi refresh --stack ${opts.stack}`)}\n` +
-        `  ${pc.dim('(logged in to the state backend with the admin application key, PULUMI_CONFIG_PASSPHRASE set, and no run in progress)')}\n` +
+        `  ${pc.dim(`(logged in to the state backend with the key of '${principalNames(context.appConfig.slug, context.environment).admin}', PULUMI_CONFIG_PASSPHRASE set, and no run in progress)`)}\n` +
         `  ${pc.dim('Nothing is cleared here: dropping the records through an import would drop the interrupted updates and deletes unread.')}`,
     );
     return;

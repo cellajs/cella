@@ -267,8 +267,8 @@ export async function collectQuickFacts(
   return facts;
 }
 
-/** Human lines for the quick facts; pure, so the shape is testable without Scaleway. `configured` is the slot the env resolved to, or `none`. */
-export function formatQuickFacts(facts: QuickFacts, opts: { now?: number; configured?: KeySlot | 'none' } = {}): string[] {
+/** Human lines for the quick facts; pure, so the shape is testable without Scaleway. `configured` is the slot the env resolved to, or `none`; `adminApplication` names the application whose key the admin slot expects. */
+export function formatQuickFacts(facts: QuickFacts, opts: { now?: number; configured?: KeySlot | 'none'; adminApplication?: string } = {}): string[] {
   const now = opts.now ?? Date.now();
   const lines: string[] = [];
   if (facts.lock) {
@@ -293,6 +293,7 @@ export function formatQuickFacts(facts: QuickFacts, opts: { now?: number; config
     lines.push(`${pc.green('●')} Live: ${[...active, ...pending].join(', ') || 'nothing rolled out'}${when}`);
   }
   const fetchHint = menuPath('fetch-admin-key');
+  const named = opts.adminApplication ? ` ('${opts.adminApplication}')` : '';
   if (facts.key) {
     const { desc, role, slot } = facts.key;
     const hours = hoursUntilExpiry(desc, now);
@@ -302,13 +303,13 @@ export function formatQuickFacts(facts: QuickFacts, opts: { now?: number; config
     lines.push(`${healthy ? pc.green('●') : warningMark} ${label} ${formatKeyLine(desc, role)}${expiry}`);
     if (slot === 'ambient') {
       lines.push(
-        `  ${pc.dim(`CLI actions do not use the process's SCW_* pair; put the admin application key in infra/.env.<mode> as SCW_ADMIN_* (${fetchHint}).`)}`,
+        `  ${pc.dim(`CLI actions do not use the process's SCW_* pair; put the admin application key${named} in infra/.env.<mode> as SCW_ADMIN_* (${fetchHint}).`)}`,
       );
     } else if (role !== 'admin') {
-      lines.push(`  ${pc.dim(`SCW_ADMIN_* should hold the admin application key: ${fetchHint}.`)}`);
+      lines.push(`  ${pc.dim(`SCW_ADMIN_* should hold the admin application key${named}: ${fetchHint}.`)}`);
     }
   } else if (opts.configured === 'none') {
-    lines.push(`${warningMark} Admin application key: none in infra/.env.<mode> (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY; ${fetchHint})`);
+    lines.push(`${warningMark} Admin application key${named}: none in infra/.env.<mode> (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY; ${fetchHint})`);
   }
   if (facts.unavailable.length > 0) lines.push(pc.dim(`  (${facts.unavailable.join(', ')}: no answer within the budget)`));
   return lines;
@@ -321,6 +322,7 @@ export async function printQuickFacts(context: { environment: string; appConfig:
   );
   const identity = resolveOperatorIdentity();
   const configured = identity.admin ? 'admin' : identity.ambient ? 'ambient' : 'none';
-  for (const line of formatQuickFacts(facts, { configured })) console.info(line);
+  const adminApplication = principalNames(context.appConfig.slug, context.environment).admin;
+  for (const line of formatQuickFacts(facts, { configured, adminApplication })) console.info(line);
   console.info('');
 }

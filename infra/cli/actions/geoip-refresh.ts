@@ -1,6 +1,7 @@
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { principalNames } from '../../lib/scaleway/principals';
 import { checkMark, crossMark, pc } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { DEFAULT_PREFIX, main as geoipRefresh, monthOf } from '../../tasks/geoip-refresh';
@@ -23,7 +24,7 @@ export async function runGeoipRefresh(context: InfraContext): Promise<void> {
   const admin = resolveOperatorIdentity().admin;
   if (!admin) {
     console.error(
-      `${crossMark} No admin application key in infra/.env.${context.environment} (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY): run \`${actionCommand('fetch-admin-key')}\`.`,
+      `${crossMark} No admin application key ('${principalNames(context.appConfig.slug, context.environment).admin}') in infra/.env.${context.environment} (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY): run \`${actionCommand('fetch-admin-key')}\`.`,
     );
     endAction(1);
   }
