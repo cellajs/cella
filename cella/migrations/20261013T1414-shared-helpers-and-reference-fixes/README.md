@@ -32,7 +32,7 @@ No script: manual.
 1. `frontend/src/modules/common/form-fields/lazy-blocknote.tsx` of an app's own: take the template's file, which exports `LazyBlockNoteContentFormField`.
 2. Run `pnpm test:core`. `product-mock-registry.test.ts` fails for a product mock that ignores its `key` or returns a key that is no column of its table: pass the key to `withFakerSeed` and return the select shape.
 3. A product table's five standard indexes: `...productIndexes('<table>', table)` from `#/db/utils/product-columns`, in place of the five `index(...)` lines. `pnpm generate` reports no schema change when the names matched `<table>_<column>_index`.
-4. A function that filters ids down to the live rows of the organization before a host row stores them: `filterExistingProductIds(ctx, { entityType, ids })` from `#/modules/entities/entities-queries`, inside the write's tenant transaction.
+4. A function that filters ids down to the live rows of the organization before a host row stores them: `filterExistingProductIds(ctx, { entityType, ids })` from `#/modules/entities/embedding-queries`, inside the write's tenant transaction.
 5. A relation id array schema (`validUuidSchema.array().max(50).refine(unique)`): `uniqueIdsSchema()` from `#/schemas`.
 6. A test builder for a stamped stx: `mockStxFor('<field>', ...)` from `#/schemas/sync-transaction-mocks`.
 7. `navTab.order` fields kept only so `TabsArrangementCard` matched the tab bar: delete them. The card orders by `appConfig.surfaces` as the bar does.

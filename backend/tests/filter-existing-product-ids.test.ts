@@ -6,7 +6,7 @@ import { baseDb, getSeedDb } from '#/db/db';
 import { tenantRead } from '#/db/tenant-context';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { filterExistingProductIds } from '#/modules/entities/entities-queries';
+import { filterExistingProductIds } from '#/modules/entities/embedding-queries';
 import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
