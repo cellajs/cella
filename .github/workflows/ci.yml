@@ -12,7 +12,8 @@ permissions: {}
 #     suites run only on the release PR, once per release batch.
 on:
   pull_request:
-    branches: [main]
+    # `infra-rewrite` is the integration branch of the infra rewrite; its entry leaves with the landing on main.
+    branches: [main, infra-rewrite]
 
 # Cancel older runs of the same PR when a new push arrives.
 concurrency:
