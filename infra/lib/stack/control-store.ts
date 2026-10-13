@@ -63,6 +63,18 @@ export async function readObjectText(s3: S3Like, bucket: string, key: string): P
   }
 }
 
+/** HEAD an object for its etag, without its body; null when the object does not exist. */
+export async function readObjectEtag(s3: S3Like, bucket: string, key: string): Promise<string | null> {
+  const { HeadObjectCommand } = await s3sdk();
+  try {
+    const res = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    return res.ETag ?? null;
+  } catch (err) {
+    if (isNotFound(err)) return null;
+    throw err;
+  }
+}
+
 /** PUT a JSON object body with optional conditional-write headers. */
 async function putJsonObject(s3: S3Like, bucket: string, key: string, body: string, opts: ConditionalWrite): Promise<{ etag?: string }> {
   const { PutObjectCommand } = await s3sdk();

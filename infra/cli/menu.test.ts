@@ -31,18 +31,18 @@ describe('mainMenuItems', () => {
   it('lists eight rows under five groups on a healthy stack, then Quit', () => {
     expect(render(mainMenuItems(bootstrapped))).toEqual([
       'Observe',
-      '  Show status               read-only',
-      '  Review & apply changes ›  admin key to review · Owner key to apply',
+      '  Show status              read-only',
+      '  Review & apply changes   admin key to review · Owner key to apply',
       'Change',
-      '  Rotate keys & secrets ›   CI deploy key, admin key, passphrase',
-      '  Manage runtime secrets    Owner key',
+      '  Rotate keys & secrets ›  CI deploy key, admin key, passphrase',
+      '  Manage runtime secrets   Owner key',
       'Database',
-      '  Open public DB access ›   Owner key · temporary, locked to your IP',
-      '  Reset database            Owner key · DESTRUCTIVE',
+      '  Open public DB access ›  Owner key · temporary, locked to your IP',
+      '  Reset database           Owner key · DESTRUCTIVE',
       'Recover',
-      '  Repair stack ›            stack lock, setup, admin key',
+      '  Repair stack ›           stack lock, setup, admin key',
       'Rare',
-      '  Tear down stack           Owner key · DESTRUCTIVE',
+      '  Tear down stack          Owner key · DESTRUCTIVE',
       '',
       '  Quit',
     ]);
@@ -51,18 +51,18 @@ describe('mainMenuItems', () => {
   it('keeps every row on a partial stack and says why a row cannot run', () => {
     expect(render(mainMenuItems(partial))).toEqual([
       'Observe',
-      '  Show status               read-only',
-      '- Review & apply changes › (needs a bootstrapped stack: run "Resume setup")',
+      '  Show status              read-only',
+      '- Review & apply changes (needs a bootstrapped stack: run "Resume setup")',
       'Change',
-      '  Rotate keys & secrets ›   CI deploy key, admin key, passphrase',
-      '  Manage runtime secrets    Owner key',
+      '  Rotate keys & secrets ›  CI deploy key, admin key, passphrase',
+      '  Manage runtime secrets   Owner key',
       'Database',
       '- Open public DB access › (needs a bootstrapped stack: run "Resume setup")',
       '- Reset database (needs a bootstrapped stack: run "Resume setup")',
       'Recover',
-      '  Repair stack ›            stack lock, setup, admin key',
+      '  Repair stack ›           stack lock, setup, admin key',
       'Rare',
-      '  Tear down stack           Owner key · DESTRUCTIVE',
+      '  Tear down stack          Owner key · DESTRUCTIVE',
       '',
       '  Quit',
     ]);
@@ -108,7 +108,6 @@ describe('mainMenuItems', () => {
 
 describe('pickItems', () => {
   it('offers the actions of a row with the key each runs with, then Back', () => {
-    expect(render(pickItems('changes', bootstrapped))).toEqual(['  Preview changes  admin key', '  Apply changes    Owner key', '  ← Back']);
     expect(render(pickItems('rotate', bootstrapped))).toEqual(['  Rotate keys        Owner key', '  Rotate passphrase  admin key', '  ← Back']);
     expect(render(pickItems('repair', bootstrapped))).toEqual([
       '  Unlock stack                 admin key',
@@ -136,7 +135,7 @@ describe('pickItems', () => {
   });
 
   it('ends every description with the key the action runs with', () => {
-    for (const id of ['changes', 'rotate', 'db-open', 'repair'] as const) {
+    for (const id of ['rotate', 'db-open', 'repair'] as const) {
       for (const choice of pickItems(id, bootstrapped).filter((entry) => entry.value !== BACK)) {
         expect(choice.description).toMatch(/(Needs your Owner API key|Uses the admin application key|Works without a Scaleway key)\.$/);
       }

@@ -98,6 +98,8 @@ export interface PulumiUpOptions {
   configFile?: string;
   /** Skip Pulumi's own preview: the caller already showed the plan and got a confirmation. */
   skipPreview?: boolean;
+  /** Read every resource live before updating, as the confirmed plan did, so the `up` also corrects drift made outside Pulumi. */
+  refresh?: boolean;
   /** Capture engine and provider logs (`--logflow -v=9`) into this file: the record of every API call the provider made, for a "reported but not applied" update. */
   debugLogPath?: string;
 }
@@ -112,6 +114,7 @@ export function pulumiUpArgs(stack: string, opts: PulumiUpOptions = {}): string[
     '--non-interactive',
     ...(opts.configFile ? ['--config-file', opts.configFile] : []),
     ...(opts.skipPreview ? ['--skip-preview'] : []),
+    ...(opts.refresh ? ['--refresh'] : []),
     ...(opts.debugLogPath ? ['--logtostderr', '--logflow', '-v=9'] : []),
   ];
 }
