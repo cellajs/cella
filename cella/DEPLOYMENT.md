@@ -93,6 +93,7 @@ Scaleway API keys descend in privilege, each in a different store, each minting 
 | Key | Permissions | Lifetime | Where stored |
 | --- | --- | --- | --- |
 | **Owner API key** (your own key as organization Owner, **or** an application holding ProjectManager + IAMManager) | Everything: required for any `pulumi up` that touches privileged resources (DB, VPC, private network, IAM policies), and for setup, teardown and runtime secrets. The CLI checks the bearer before using one: an application the engine created is refused by name. | Your durable key stays in the OS keychain or password manager; a privileged run never drives Pulumi with it but mints a 30-minute key from it and revokes that at the end. A short-lived key you paste is used as it is, and you revoke it afterwards. | `SCW_OWNER_ACCESS_KEY` / `SCW_OWNER_SECRET_KEY` in `infra/.env.<mode>` as a `keychain:` or `op:` reference; without it the CLI prompts. |
+| **Operator application key** (`<slug>-<mode>-operator`) | Everything in the app project plus IAM write, like an Owner API key for this stack, but Scaleway accepts it **from your dedicated IP address only**: every rule of its policy carries that condition. An Owner API key cannot be held to an address, so this is the key for day-to-day privileged work. | Long-lived. Created and replaced by `pnpm infra operator-key` with your Owner API key ([Operator key](#operator-key)). | Your password manager only: shown once, stored nowhere by the CLI. Paste it wherever the CLI asks for the Owner API key. |
 | **CI deploy application key** (`<slug>-<mode>-ci-deploy`) | Write on compute / LB / private networks / edge / secrets / object storage / registry / DNS. **Read-only** on VPC and RDB (privileged resources). Project-scoped. | Long-lived. Rotate via the CLI **Rotate keys** action ([Key rotation](#key-rotation)) | The stack's GitHub Environment (`staging` or `production`) secrets `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`, the names the Scaleway provider reads. |
 | **Admin application key** (`<slug>-<mode>-admin`) | Read-only on every project resource, object storage full access, IAM read; admitted to the state bucket. The day-2 key for status, previewing changes, and the state side of applying them. | Long-lived. Created by the CLI **Rotate keys** action; custody copy at `/<slug>-<mode>/engine/admin-key`. | `infra/.env.<mode>` as `SCW_ADMIN_ACCESS_KEY` / `SCW_ADMIN_SECRET_KEY` (0600, never committed): setup writes it on the machine that ran it; anywhere else, `pnpm infra fetch-admin-key` reads it from Secret Manager with your Owner API key. |
 | **Boot + service application keys** (`<slug>-<mode>-boot`, `<slug>-<mode>-vm-<service>`) | Boot key: registry pull + boot-diag write + handoff-only secret read. Service key: path-conditioned secret read (its own folder plus the shared folder of each secret it consumes). The backend additionally gets granular S3 object sets. | Minted per deploy by the CI key. Superseded keys are pruned on the next mint | Boot key baked into VM cloud-init. Each service key is delivered via a single-access handoff bundle in Secret Manager. Not in stack config. |
@@ -322,6 +323,19 @@ Verify: `curl https://<your-app>/api/health?depth=full` reports every component 
 4. Revoke a pasted key in the Scaleway console.
 
 To put the admin application key on another operator machine, run `pnpm infra fetch-admin-key` there with your Owner API key (in the menu: **Repair stack**): it reads the custodied pair, confirms it belongs to the admin application, and writes `infra/.env.<mode>` (`SCW_ADMIN_*`).
+
+### Operator key
+
+`pnpm infra` → **Rotate keys & secrets** → **Set up operator key** (`pnpm infra operator-key`), run once per stack with your Owner API key:
+
+1. Asks for the dedicated IPv4 address or addresses the key works from; the default is the address this machine reaches the internet with. Ranges wider than `/24` are refused, as for the database allowlist.
+2. Creates the `<slug>-<mode>-operator` application with a policy of three rules: every product of the app project, DNS in the serving zone's project when that is another one, and IAM write and read in the organization. Each rule carries the same address condition.
+3. Shows the new key once and waits until you confirm it is in your password manager.
+4. Tries the key from this machine until Scaleway accepts it. A new policy takes about a minute to apply, and single APIs follow later still.
+
+From another address Scaleway refuses the key: IAM, Secret Manager and Object Storage answer with an error, while the database and Instances APIs answer a list with nothing in it. A stack that looks empty from a new address is therefore the address, not the stack.
+
+Running the action again replaces the policy and every earlier key, which is also how the address is changed. It needs your Owner API key each time: the operator application's own key cannot replace its own policy. Keep the Owner account for this and for recovery, with MFA and no API key lying around.
 
 ### Passphrase rotation
 

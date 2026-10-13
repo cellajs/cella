@@ -7,6 +7,7 @@ import { runApply } from './apply';
 import { runExposeDatabase, runUnexposeDatabase } from './db-exposure';
 import { runFetchAdminKey } from './fetch-admin-key';
 import { runGeoipRefresh } from './geoip-refresh';
+import { runOperatorKey } from './operator-key';
 import { runPreview } from './preview';
 import { runResetDatabase } from './reset-database';
 import { runRotatePassphrase } from './rotate-passphrase';
@@ -27,6 +28,7 @@ export const ACTION_RUNNERS: ActionRunners = {
   apply: runApply,
   'rotate-keys': (context) => runSetup(context, 'rotate-keys'),
   'rotate-passphrase': runRotatePassphrase,
+  'operator-key': runOperatorKey,
   secrets: runSecrets,
   'db-open': runExposeDatabase,
   'db-seed': runSeedDatabase,

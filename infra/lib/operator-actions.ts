@@ -41,6 +41,11 @@ export const OPERATOR_ACTIONS = {
     key: 'admin',
     description: 'Re-encrypt stack state with a new Pulumi passphrase and sync it.',
   },
+  'operator-key': {
+    label: 'Set up operator key',
+    key: 'owner',
+    description: 'Create the operator application and a fresh key that works from your dedicated IP address only. Replaces an earlier operator key.',
+  },
   secrets: {
     label: 'Manage runtime secrets',
     key: 'owner',
@@ -145,9 +150,9 @@ export const MENU_ROWS = {
   rotate: {
     group: 'change',
     label: 'Rotate keys & secrets',
-    actions: ['rotate-keys', 'rotate-passphrase'],
-    hint: 'CI deploy key, admin key, passphrase',
-    description: 'Replace the CI deploy key and the admin application key, or re-encrypt the stack with a new Pulumi passphrase.',
+    actions: ['rotate-keys', 'rotate-passphrase', 'operator-key'],
+    hint: 'CI key, admin key, passphrase, operator key',
+    description: 'Replace the CI deploy key and the admin application key, re-encrypt the stack with a new passphrase, or set up the operator key.',
   },
   secrets: {
     group: 'change',
