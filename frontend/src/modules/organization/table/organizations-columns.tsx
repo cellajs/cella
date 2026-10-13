@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import i18n from 'i18next';
-import { BoxIcon, PencilIcon, ShieldIcon, TrashIcon, UserRoundIcon } from 'lucide-react';
+import { PencilIcon, ShieldIcon, TrashIcon, UserRoundIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
@@ -8,7 +8,7 @@ import { hierarchy, isChannel } from 'shared';
 import { ConfirmText } from '~/modules/common/confirm-text';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
+import { countColumn, dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
@@ -123,18 +123,12 @@ export const useColumns = () => {
     },
     // Dynamic membership count columns from role config
     ...hierarchy.getRoles('organization').map((role) => ({
-      key: `${role}Count`,
-      exportValue: (row: EnrichedOrganization) => row.included.counts?.membership[role],
-      name: t(`c:${role}`, { count: 2 }),
-      minBreakpoint: 'md' as const,
-      minWidth: 60,
+      ...countColumn<EnrichedOrganization>(`${role}Count`, {
+        name: t(`c:${role}`, { count: 2 }),
+        icon: role === 'admin' ? ShieldIcon : UserRoundIcon,
+        get: (row) => row.included.counts?.membership[role],
+      }),
       maxWidth: 140,
-      renderCell: ({ row }: { row: EnrichedOrganization }) => (
-        <>
-          {role === 'admin' ? <ShieldIcon className="mr-2 opacity-50" /> : <UserRoundIcon className="mr-2 opacity-50" />}
-          {row.included.counts?.membership[role] ?? '-'}
-        </>
-      ),
     })),
     // Dynamic entity count columns for org-scoped descendant entities
     ...(() => {
@@ -145,21 +139,13 @@ export const useColumns = () => {
       const lastChannel = channelDescendants[channelDescendants.length - 1];
       const firstProduct = productDescendants[0];
 
-      return descendants.map((type) => ({
-        key: `${type}Count`,
-        exportValue: (row: EnrichedOrganization) => (row.included.counts?.entities as Record<string, number>)?.[type],
-        name: t(`c:${type}`, { count: 2 }),
-        hidden: type !== lastChannel && type !== firstProduct,
-        minBreakpoint: 'md' as const,
-        minWidth: 60,
-        maxWidth: 120,
-        renderCell: ({ row }: { row: EnrichedOrganization }) => (
-          <>
-            <BoxIcon className="mr-2 opacity-50" />
-            {(row.included.counts?.entities as Record<string, number>)?.[type] ?? '-'}
-          </>
-        ),
-      }));
+      return descendants.map((type) =>
+        countColumn<EnrichedOrganization>(`${type}Count`, {
+          name: t(`c:${type}`, { count: 2 }),
+          hidden: type !== lastChannel && type !== firstProduct,
+          get: (row) => (row.included.counts?.entities as Record<string, number>)?.[type],
+        }),
+      );
     })(),
   ];
 
