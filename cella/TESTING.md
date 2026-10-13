@@ -86,9 +86,9 @@ Coverage excludes `*.test.ts`, `tests/**` and mocks, so placement does not chang
 
 **New packages.** Register a new workspace package with tests in the root [vitest.config.ts](../vitest.config.ts): add it to `projects` and the `coverage.include` globs.
 
-## Storybook
+**Mutation hooks.** A product module's mutation hooks are tested under the app's own query client with `frontend/src/query/tests/mutation-hooks-kit.ts`: `callHook` runs a hook, `goOffline` and `goOnline` queue and replay its mutations, and the test mocks `sdk` with spies (`attachment-mutation-hooks.test.ts`).
 
-A product module's mutation hooks are tested under the app's own query client with `frontend/src/query/tests/mutation-hooks-kit.ts`: `callHook` runs a hook, `goOffline` and `goOnline` queue and replay its mutations, and the test mocks `sdk` with spies (`attachment-mutation-hooks.test.ts`).
+## Storybook
 
 Frontend components are also tested through stories, using Vitest browser mode with Playwright (`@storybook/addon-vitest`).
 
