@@ -10,7 +10,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import { assertSurfaceIds, getSlotDescriptors, isPlacementHidden, type PlacementDescriptor, resolvePlacementList, type Slot } from '~/lib/placements';
 import { ActiveTabMarker, useTabIndicator } from '~/modules/common/page/tab-indicator';
 import { type TabNavAvatar, TabNavShell } from '~/modules/common/page/tab-nav-shell';
-import { useScrollReset } from '~/modules/common/scroll-reset';
+import { useScrollResetOnNavigate } from '~/modules/common/scroll-reset';
 import { getRouter } from '~/routes/-router-instance';
 import { truncateMiddle } from '~/utils/truncate-middle';
 
@@ -252,7 +252,7 @@ export function PageTabNav({ tabs: explicitTabs, parentRouteId, grants, pairs, s
     if (!isMobile && hasStarted && tabs[0]) tabRefs.current[tabs[0].id]?.focus();
   }, [hasStarted]);
 
-  const scrollToReset = useScrollReset();
+  const scrollToResetOnNavigate = useScrollResetOnNavigate();
 
   return (
     <TabNavShell title={title} avatar={avatar} className={className} indicator={indicator}>
@@ -272,7 +272,7 @@ export function PageTabNav({ tabs: explicitTabs, parentRouteId, grants, pairs, s
           search={search}
           activeOptions={activeOptions}
           activeProps={{ 'data-active': true }}
-          onClick={scrollToReset}
+          onClick={scrollToResetOnNavigate}
         >
           {({ isActive }) => {
             const showAsActive = isActive || (fallbackToFirst && index === 0);

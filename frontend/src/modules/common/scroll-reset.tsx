@@ -1,3 +1,4 @@
+import { useRouter } from '@tanstack/react-router';
 import { createContext, type ReactNode, useContext, useRef } from 'react';
 
 const ScrollResetContext = createContext<(() => void) | null>(null);
@@ -29,3 +30,31 @@ export function ScrollReset({ children }: { children: ReactNode }) {
 
 /** Returns `scrollToReset` from the nearest `ScrollReset` ancestor, or a no-op. */
 export const useScrollReset = () => useContext(ScrollResetContext) ?? (() => {});
+
+/**
+ * Click handler for a link that navigates with `resetScroll={false}`, such as a tab: scrolls back to the sentinel once
+ * the route the click leads to has rendered. Never at the click itself: the router records the scroll position of the
+ * page being left when the load starts, and history back returns to what it recorded.
+ */
+export function useScrollResetOnNavigate() {
+  const scrollToReset = useScrollReset();
+  const router = useRouter();
+
+  return () => {
+    // The link navigates within this click, so a load that starts before the click ends is its own. A click that
+    // does not navigate (modifier key held) leaves nothing subscribed.
+    let key: string | undefined;
+    const stopWatching = router.subscribe('onBeforeLoad', ({ toLocation }) => {
+      key = toLocation.state.__TSR_key;
+    });
+    queueMicrotask(() => {
+      stopWatching();
+      if (!key) return;
+      const stopWaiting = router.subscribe('onRendered', ({ toLocation }) => {
+        stopWaiting();
+        // Another navigation can overtake this one; a history back among them restores its own position.
+        if (toLocation.state.__TSR_key === key) scrollToReset();
+      });
+    });
+  };
+}
