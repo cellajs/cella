@@ -37,6 +37,10 @@ export interface InstallOpts {
   deferCompute?: boolean;
   /** Stack config overrides, namespaced (e.g. `{ 'infra:dbPublicEndpoint': 'true' }`). */
   config?: Record<string, string>;
+  /** Render as `pulumi preview` does (`pulumi.runtime.isDryRun()` is true). */
+  preview?: boolean;
+  /** True for the name of an IAM application the `getApplication` lookup does not find. */
+  absentApplication?: (name: string) => boolean;
 }
 
 /** Install Pulumi mocks for the current Node process. Must run BEFORE any module importing `@pulumi/pulumi` is loaded, which is why it pairs with `renderModule(importPath)`. */
@@ -88,6 +92,7 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
         // IAM data sources pulumi-context.ts derives identity ids from; deterministic stub ids let consuming modules render without talking to Scaleway.
         if (args.token.includes('getApplication')) {
           const name = String((args.inputs as { name?: string }).name ?? 'app');
+          if (opts.absentApplication?.(name)) return { id: '', applicationId: '', name };
           return { id: `${name}-id`, applicationId: `${name}-id`, name };
         }
         if (args.token.includes('getApiKey')) {
@@ -107,7 +112,7 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
     },
     opts.project ?? 'infra',
     opts.stack ?? opts.mode ?? 'production',
-    false,
+    opts.preview ?? false,
   );
 
   const byType = (prefix: string) => resources.filter((r) => r.type.startsWith(prefix));

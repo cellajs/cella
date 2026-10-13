@@ -54,4 +54,15 @@ describe('pulumiUpArgs', () => {
       '-v=9',
     ]);
   });
+  it('refreshes before the update when the confirmed plan was a refreshed one', () => {
+    expect(pulumiUpArgs('s', { skipPreview: true, refresh: true })).toEqual([
+      'up',
+      '--stack',
+      's',
+      '--yes',
+      '--non-interactive',
+      '--skip-preview',
+      '--refresh',
+    ]);
+  });
 });

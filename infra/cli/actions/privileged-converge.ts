@@ -2,10 +2,12 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
-import { menuPath } from '../../lib/operator-actions';
+import { actionCommand, menuPath } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
+import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
+import { planBasisChanges, readPlanBasis } from '../../lib/stack/plan-basis';
 import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
@@ -15,6 +17,7 @@ import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { acquireOwnerKey } from './owner-key';
+import { askToApply, type ReviewedPlan, showPlan } from './plan';
 
 export interface PrivilegedConvergeOptions {
   /** Operation name recorded in the stack lock (e.g. 'apply', 'expose-db'). */
@@ -24,8 +27,16 @@ export interface PrivilegedConvergeOptions {
    * Returns an alternate `--config-file` for the `up`, or undefined to converge the committed config. A throw ends the run before the `up`.
    */
   prepare?: (env: NodeJS.ProcessEnv, stack: string) => string | undefined | Promise<string | undefined>;
-  /** Show the plan (`pulumi preview --diff`) and confirm it once before `up`; `up` then skips its own preview. Declining ends the run with `completed: false`. */
+  /**
+   * Apply only a plan the operator confirmed: show it (`pulumi preview --diff --refresh`) under the lock and ask once before `up`, which
+   * then refreshes as the plan did and skips its own preview. Declining ends the run with `completed: false`.
+   */
   confirmPlan?: boolean;
+  /**
+   * With `confirmPlan`, the plan the operator confirmed before this run took the Owner API key and the lock. It is applied without a second
+   * question for as long as the state it was computed from stands; a state that changed since is planned and confirmed again under the lock.
+   */
+  reviewed?: ReviewedPlan;
   /** After a completed `up`, prove the live IAM grants and database privileges match what the program declares; the outcome lands in `verified`. */
   verifyAfter?: boolean;
   /** Capture the engine and provider log of the `up` under infra/.debug/, for an update Pulumi reports but the provider never sent. */
@@ -46,9 +57,9 @@ export interface PrivilegedConvergeResult {
 }
 
 /**
- * The privileged converge shared by "Apply changes", the DB access actions, and seeding, in order: resolve the passphrase, take the
+ * The privileged converge shared by "Review & apply changes", the DB access actions, and seeding, in order: resolve the passphrase, take the
  * Owner API key and the stack lock, reconcile rollout config from live state so a local `up` cannot revert compute to a stale generation,
- * apply the caller's config mutation, then `pulumi up` with an orphan-prune/retry loop.
+ * apply the caller's config mutation, hold the plan against what the operator confirmed, then `pulumi up` with an orphan-prune/retry loop.
  * Returns the provider env and stack for reading outputs after the lock releases, and exits the process on hard failures before the `up` loop.
  */
 export async function runPrivilegedConverge(context: InfraContext, opts: PrivilegedConvergeOptions): Promise<PrivilegedConvergeResult> {
@@ -57,7 +68,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
     endAction(1);
   }
 
-  const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
+  const passphrase = opts.reviewed?.passphrase ?? (await resolveVerifiedPassphrase(context.stackYaml));
   const { projectId, appConfig } = context;
 
   const identity = resolveOperatorIdentity();
@@ -87,10 +98,11 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
 
   // Lock the stack through the control bucket to exclude concurrent operators and CI.
   // Every exit path must release. The hard-failure paths release before they print and end the action, and the guard stops the double release when the finally below runs too.
+  const stateKey = identity.admin ?? ownerKey;
   const stackLock = await acquireStackLockOrExit({
     appConfig,
-    accessKey: stateOverride.stateAccessKey ?? ownerKey.accessKey,
-    secretKey: stateOverride.stateSecretKey ?? ownerKey.secretKey,
+    accessKey: stateKey.accessKey,
+    secretKey: stateKey.secretKey,
     stack,
     operation: opts.operation,
   });
@@ -104,6 +116,17 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
   const releaseAll = async () => {
     await releaseLock();
     await ownerKey.release();
+  };
+
+  /** Why a plan confirmed before the lock may no longer hold; empty when the state it was computed from stands. A state that cannot be compared counts as changed. */
+  const changesSinceReview = async (reviewed: ReviewedPlan): Promise<string[]> => {
+    if (!reviewed.basis) return ['the state bucket could not be read when it was made'];
+    try {
+      const s3 = await makeControlClient(appConfig.s3.region, stateKey.accessKey, stateKey.secretKey);
+      return planBasisChanges(reviewed.basis, await readPlanBasis(s3, stateBucket(appConfig.slug), stack));
+    } catch (error) {
+      return [`the state bucket could not be read (${errorMessage(error)})`];
+    }
   };
 
   let completed = false;
@@ -141,17 +164,22 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
       const configFile = await opts.prepare?.(env, stack);
 
       if (opts.confirmPlan) {
-        const previewArgs = ['preview', '--stack', stack, '--diff', ...(configFile ? ['--config-file', configFile] : [])];
-        console.info(`\n→ pulumi preview (the plan this run would apply)\n  $ pulumi ${previewArgs.join(' ')}`);
-        const preview = spawnSync('pulumi', previewArgs, { cwd: infraDir, env, stdio: 'inherit' });
-        if (preview.status !== 0) {
-          await releaseAll();
-          console.error(`${warningMark} pulumi preview exited ${preview.status}; nothing applied.`);
-          endAction(preview.status ?? 1);
-        }
-        if (!(await confirm({ message: `Apply this plan to ${context.environment}?`, default: false }))) {
-          console.info('Declined; nothing applied.');
-          return { env, stack, completed: false, ownerKeyPasted: ownerKey.pasted };
+        // Read after the reconcile above: a rollout pointer it corrected changes what the `up` does, so the plan made before it no longer holds.
+        const outdated = opts.reviewed ? await changesSinceReview(opts.reviewed) : undefined;
+        if (outdated?.length === 0) {
+          console.info(pc.dim('\nThe stack is as the confirmed plan found it.'));
+        } else {
+          if (outdated) console.warn(`\n${warningMark} The confirmed plan may no longer hold: ${outdated.join(' and ')}. The plan as it stands now:`);
+          const status = showPlan(env, stack, configFile);
+          if (status !== 0) {
+            await releaseAll();
+            console.error(`${warningMark} pulumi preview exited ${status}; nothing applied.`);
+            endAction(status);
+          }
+          if (!(await askToApply(context.environment))) {
+            console.info('Declined; nothing applied.');
+            return { env, stack, completed: false, ownerKeyPasted: ownerKey.pasted };
+          }
         }
       }
 
@@ -163,7 +191,12 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
       }
 
       while (true) {
-        const { code, output } = await runPulumiUpWithHint(stack, infraDir, env, { configFile, skipPreview: opts.confirmPlan, debugLogPath });
+        const { code, output } = await runPulumiUpWithHint(stack, infraDir, env, {
+          configFile,
+          skipPreview: opts.confirmPlan,
+          refresh: opts.confirmPlan,
+          debugLogPath,
+        });
         if (code === 0) {
           completed = true;
           break;
@@ -203,7 +236,9 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
         console.error(
           `\n${warningMark} could not verify the live infrastructure after the up:\n${result.errors.map((error) => `  ✗ ${error}`).join('\n')}`,
         );
-        console.error(pc.dim("  Nothing is known to be wrong: re-run Preview, or let the next deploy's Verify VM IAM grants step tell."));
+        console.error(
+          pc.dim(`  Nothing is known to be wrong: run \`${actionCommand('preview')}\`, or let the next deploy's Verify VM IAM grants step tell.`),
+        );
       }
       if (result.problems.length > 0) {
         console.error(

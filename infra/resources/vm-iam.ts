@@ -32,14 +32,26 @@ function findApplicationId(name: string): pulumi.Output<string | undefined> {
   );
 }
 
-/** Require a principal: missing means the stack cannot function, so fail with guidance. */
-function requirePrincipalId(resolved: pulumi.Output<string | undefined>, label: string): pulumi.Output<string> {
+/**
+ * Require a principal: missing means the stack cannot function, so fail with guidance.
+ * With `pendingOnPreview`, a preview continues on an unknown id and names the application, so the plan of a registry change is readable before
+ * the Owner API key creates it. An `up` still fails without the application.
+ */
+function requirePrincipalId(
+  resolved: pulumi.Output<string | undefined>,
+  label: string,
+  opts: { pendingOnPreview?: boolean } = {},
+): pulumi.Output<string> {
   return resolved.apply((id) => {
-    if (!id)
-      throw new Error(
-        `IAM application for ${label} not found: run the pnpm infra setup first, or \`${actionCommand('apply')}\` after a registry change.`,
-      );
-    return id;
+    if (id) return id;
+    if (opts.pendingOnPreview && pulumi.runtime.isDryRun()) {
+      pulumi.log.warn(`IAM application for ${label} does not exist yet: \`${actionCommand('apply')}\` creates it before its up.`);
+      // The engine shows an unknown input as "known after apply"; the type has no word for it.
+      return pulumi.unknown as unknown as string;
+    }
+    throw new Error(
+      `IAM application for ${label} not found: run the pnpm infra setup first, or \`${actionCommand('apply')}\` after a registry change.`,
+    );
   });
 }
 
@@ -61,11 +73,11 @@ export const adminApplicationId: pulumi.Output<string | undefined> = findApplica
 const singleVM = appConfig.singleVM ?? false;
 const vmServices = principalServices(singleVM);
 
-/** Per-service application ids. Required. */
+/** Per-service application ids. Required for an `up`; a preview plans a registry service whose application the next apply creates. */
 export const serviceApplicationIds: Record<string, pulumi.Output<string>> = Object.fromEntries(
   vmServices.map((svc) => [
     svc.slug,
-    requirePrincipalId(findApplicationId(names.vmService(svc.slug)), `service VM ('${names.vmService(svc.slug)}')`),
+    requirePrincipalId(findApplicationId(names.vmService(svc.slug)), `service VM ('${names.vmService(svc.slug)}')`, { pendingOnPreview: true }),
   ]),
 );
 

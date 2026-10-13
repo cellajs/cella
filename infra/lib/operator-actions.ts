@@ -23,12 +23,13 @@ export const OPERATOR_ACTIONS = {
     label: 'Preview changes',
     key: 'admin',
     description:
-      'Plan what "Apply changes" would change, refreshed against the live stack (a CI deploy applies the same minus VM policy rules). Read-only.',
+      'The plan of "Review & apply changes" without its question, refreshed against the live stack (a CI deploy applies the same minus VM policy rules). Read-only.',
   },
   apply: {
-    label: 'Apply changes',
+    label: 'Review & apply changes',
     key: 'owner',
-    description: 'Apply privileged changes: registry IAM principals and policies, database, VPC, network. Shows the plan and asks first.',
+    description:
+      'See what differs between the code and the live stack, then apply it on your yes: database, VPC, IAM principals and policies. Answer no to only look.',
   },
   'rotate-keys': {
     label: 'Rotate keys',
@@ -124,7 +125,7 @@ export interface MenuRow {
 
 /**
  * The rows of the `pnpm infra` menu, in menu order. `db-open` and `db-close` share one place: the menu lists the one that applies.
- * An action no row lists (`geoip-refresh`, `store-passphrase`) runs only by its command.
+ * An action no row lists (`preview`, `geoip-refresh`, `store-passphrase`) runs only by its command.
  */
 export const MENU_ROWS = {
   status: {
@@ -136,10 +137,10 @@ export const MENU_ROWS = {
   },
   changes: {
     group: 'observe',
-    label: 'Review & apply changes',
-    actions: ['preview', 'apply'],
+    label: OPERATOR_ACTIONS.apply.label,
+    actions: ['apply'],
     hint: 'admin key to review · Owner key to apply',
-    description: 'See what differs between the code and the live stack, then apply it: database, VPC, IAM principals and policies.',
+    description: OPERATOR_ACTIONS.apply.description,
   },
   rotate: {
     group: 'change',

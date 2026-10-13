@@ -30,6 +30,7 @@ const RETIRED_LABELS = [
   'Stop public DB exposure',
   'Public DB access: OPEN',
   'Apply infra change',
+  'Apply changes',
   'Manage keys & secrets',
   'Manage database',
   'Stack setup →',
@@ -85,12 +86,13 @@ describe('menu rows', () => {
     for (const id of rowIds) expect(Object.keys(MENU_GROUPS)).toContain(menuRow(id).group);
   });
 
-  it('leaves only the two background actions without a row', () => {
+  it('leaves three actions without a row: the plan without its question, and the two background actions', () => {
     const listed = new Set(rowIds.flatMap((id) => [...menuRow(id).actions]));
     const commandOnly = ids.filter((id) => !listed.has(id)).sort();
-    expect(commandOnly).toHaveLength(2);
+    expect(commandOnly).toHaveLength(3);
     expect(commandOnly[0]).toBe('geoip-refresh');
-    expect(commandOnly[1]).toBe('store-passphrase');
+    expect(commandOnly[1]).toBe('preview');
+    expect(commandOnly[2]).toBe('store-passphrase');
   });
 
   it('says where an action is found: the row, the pick inside a row, or the command', () => {
@@ -98,7 +100,8 @@ describe('menu rows', () => {
     expect(menuPath('db-open')).toBe('Open public DB access');
     expect(menuPath('db-close')).toBe('Close public DB access');
     expect(menuPath('db-seed')).toBe('Open public DB access → Seed database');
-    expect(menuPath('apply')).toBe('Review & apply changes → Apply changes');
+    expect(menuPath('apply')).toBe('Review & apply changes');
+    expect(menuPath('preview')).toBe('pnpm infra preview');
     expect(menuPath('unlock')).toBe('Repair stack → Unlock stack');
     expect(menuPath('fetch-admin-key')).toBe('Repair stack → Fetch admin application key');
     expect(menuPath('geoip-refresh')).toBe('pnpm infra geoip-refresh');
