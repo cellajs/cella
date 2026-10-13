@@ -1,5 +1,4 @@
 import { spawnSync } from 'node:child_process';
-import { resolve } from 'node:path';
 import { confirm, select } from '@inquirer/prompts';
 import { syncGithubEnvironment } from '../../lib/github-sync';
 import { type ManagedKeyId, managedKeys } from '../../lib/managed-keys';
@@ -16,9 +15,10 @@ import { createProject, listProjects, resolveOrganizationIdFromKey } from '../..
 import { ensureBootstrapDnsGrant, removeBootstrapDnsGrant, resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { secretManagerPath } from '../../lib/scaleway/secret-paths';
+import type { Environment } from '../../lib/stack/bootstrap-stack-state';
+import { projectChoices, projectsOfOtherModes } from '../../lib/stack/project-per-mode';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { changeMark, checkMark, DIVIDER, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
-import { writeEnvVar } from '../../lib/utils/env-file';
 import { LEGACY_ADMIN_KEY_NAMES, writeModeEnvValues } from '../../lib/utils/env-files';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
@@ -329,25 +329,22 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
 }
 
 /**
- * Pick or create the Scaleway project when none is configured yet, using the Owner API key.
- * The chosen id is written to backend/.env as SCW_PROJECT_ID so later runs resolve it without prompting.
+ * Pick or create this environment's Scaleway project when it has none yet, using the Owner API key. Every environment has a project of its own:
+ * the project of another environment is listed and cannot be taken. The chosen id is written to infra/.env.<mode> as SCW_PROJECT_ID.
  */
-async function ensureProjectId(opts: { slug: string; accessKey: string; secretKey: string }): Promise<string> {
-  console.info(`\n→ Scaleway project ${pc.dim('(none configured yet)')}`);
+async function ensureProjectId(opts: { slug: string; mode: Environment; accessKey: string; secretKey: string }): Promise<string> {
+  console.info(`\n→ Scaleway project for ${opts.mode} ${pc.dim('(none configured yet)')}`);
   const { organizationId, projects } = await withSpinner('Loading Scaleway projects', async () => {
     const organizationId = await resolveOrganizationIdFromKey(opts.secretKey, opts.accessKey);
     return { organizationId, projects: await listProjects(opts.secretKey, organizationId) };
   });
   const CREATE = '__create__';
-  const existing = projects.find((project) => project.name === opts.slug);
+  const offered = projectChoices(projects, opts.slug, projectsOfOtherModes(opts.mode), CREATE);
   const choice = await select<string>({
-    message: 'Scaleway project for this stack',
-    default: existing?.id ?? CREATE,
+    message: `Scaleway project for ${opts.mode}`,
+    default: offered.default,
     loop: false,
-    choices: [
-      { name: `Create project "${opts.slug}"`, value: CREATE, description: 'Creates a fresh project in your organization.' },
-      ...projects.map((project) => ({ name: `${project.name} ${pc.dim(`(${project.id})`)}`, value: project.id })),
-    ],
+    choices: offered.choices,
   });
   let projectId = choice;
   if (choice === CREATE) {
@@ -356,9 +353,9 @@ async function ensureProjectId(opts: { slug: string; accessKey: string; secretKe
     console.info(`  ${changeMark} Created project ${project.name} (${project.id})`);
     projectId = project.id;
   }
-  writeEnvVar(resolve(infraDir, '..', 'backend', '.env'), 'SCW_PROJECT_ID', projectId);
+  writeModeEnvValues(opts.mode, { SCW_PROJECT_ID: projectId });
   process.env.SCW_PROJECT_ID = projectId;
-  console.info(`  ${checkMark} SCW_PROJECT_ID written to backend/.env`);
+  console.info(`  ${checkMark} SCW_PROJECT_ID written to infra/.env.${opts.mode}`);
   return projectId;
 }
 
@@ -457,7 +454,8 @@ async function runSetupWith(
   // After the key: an unlocked session fetches the passphrase, so nobody types it.
   const { passphrase: pulumiPassphrase, generated: passphraseGenerated } = await resolveOrCreatePassphrase(context.stackYaml);
   const scwProjectId =
-    context.projectId || (await ensureProjectId({ slug: context.appConfig.slug, accessKey: scwAccessKey, secretKey: scwSecretKey }));
+    context.projectId ||
+    (await ensureProjectId({ slug: context.appConfig.slug, mode: context.environment, accessKey: scwAccessKey, secretKey: scwSecretKey }));
 
   const stackName = stackNameFor(context);
 
