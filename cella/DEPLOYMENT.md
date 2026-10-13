@@ -101,6 +101,8 @@ The **Pulumi passphrase** sits outside the chain: it encrypts the stack's secret
 
 On an operator machine `infra/.env.<mode>` therefore holds the admin application key, the passphrase and, optionally, the Owner API key, as values or as `keychain:` / `op:` references the CLI resolves on load ([env-files.ts](../infra/lib/utils/env-files.ts)). The provider's own `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` names are never read from the file: until 0.12 they meant the admin application key there, and the CLI still reads them as `SCW_ADMIN_*` with a rename warning, while in the process environment they keep meaning the key the process was started with (a CI runner). `SCW_STATE_*` and `SCW_BOOTSTRAP_*` are read the same way for one release. On start the CLI prints which principal the admin application key belongs to, whether the stack is locked, and what is live, so a CI key in the admin slot is visible before any action.
 
+A passphrase or Owner API key the file does not hold is asked at the prompt, once per run of the CLI: a menu session keeps what you typed in memory until you quit and writes it nowhere. Each action still verifies the passphrase against the stack and validates the key again.
+
 ## CI deploys
 
 [.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger (push to main, release published, manual dispatch) for the reusable [.github/workflows/deploy-pipeline.yml](../.github/workflows/deploy-pipeline.yml): `setup` derives names and matrices from config, a build matrix pushes images, and one `deploy` job runs a single command:

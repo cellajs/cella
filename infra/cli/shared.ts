@@ -12,6 +12,7 @@ import { crossMark, type Hint, pc, printFailureHint, warningMark } from '../lib/
 import { errorMessage } from '../lib/utils/errors';
 import { isPromptAbort } from './prompts/abort';
 import { maskedSecret } from './prompts/masked-secret';
+import { rememberedPassphrase, rememberPassphrase } from './session';
 
 type AppConfigType = EngineConfig;
 
@@ -95,6 +96,7 @@ export async function inputOrDefault(opts: { message: string; envName?: string; 
 /**
  * Resolve and verify the Pulumi passphrase against existing stack encryption metadata.
  * An invalid environment value falls back to repeated prompts; a new unencrypted stack accepts the environment or one prompt unverified.
+ * A passphrase typed at the prompt is kept in memory for this run of the CLI, so a menu session asks once.
  */
 export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<string> {
   const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml);
@@ -106,9 +108,16 @@ export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<str
     console.warn(`${warningMark} ${pc.yellow('PULUMI_CONFIG_PASSPHRASE in your environment does not match this stack: prompting instead.')}`);
   }
 
+  // Typed earlier in this run: a rotation since then changed the stack's salt, so a stale one fails here and the prompt returns.
+  const remembered = rememberedPassphrase();
+  if (remembered && verifyStackPassphrase(stackYaml, remembered)) return remembered;
+
   while (true) {
     const entered = await maskedSecret({ message: 'Pulumi passphrase' });
-    if (verifyStackPassphrase(stackYaml, entered)) return entered;
+    if (verifyStackPassphrase(stackYaml, entered)) {
+      rememberPassphrase(entered);
+      return entered;
+    }
     console.warn(`${warningMark} Incorrect passphrase for this stack. Try again.`);
   }
 }
