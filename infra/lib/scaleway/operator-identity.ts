@@ -123,12 +123,13 @@ export async function describeKey(pair: KeyPair, opts: { fetchImpl?: FetchLike }
 }
 
 /** The engine role of a key's bearer, or the kind of outside principal it is. */
-export type PrincipalRole = 'ci-deploy' | 'admin' | 'boot' | 'vm-service' | 'owner' | 'member' | 'application';
+export type PrincipalRole = 'ci-deploy' | 'admin' | 'operator' | 'boot' | 'vm-service' | 'owner' | 'member' | 'application';
 
 export function classifyPrincipal(desc: KeyDescription, names: PrincipalNames): PrincipalRole {
   if (desc.bearer !== 'application') return desc.bearer;
   if (desc.name === names.ciDeploy) return 'ci-deploy';
   if (desc.name === names.admin) return 'admin';
+  if (desc.name === names.operator) return 'operator';
   if (desc.name === names.boot) return 'boot';
   if (desc.name.startsWith(`${names.group}-vm-`)) return 'vm-service';
   return 'application';
@@ -137,6 +138,7 @@ export function classifyPrincipal(desc: KeyDescription, names: PrincipalNames): 
 const ROLE_LABELS: Record<PrincipalRole, string> = {
   'ci-deploy': 'CI deploy application',
   admin: 'admin application',
+  operator: 'operator application',
   boot: 'boot application',
   'vm-service': 'VM service application',
   owner: 'organization Owner',

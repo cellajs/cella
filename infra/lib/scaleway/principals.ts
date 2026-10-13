@@ -6,6 +6,8 @@ export interface PrincipalNames {
   ciDeploy: string;
   /** Human admin application: bucket access plus infra reads. */
   admin: string;
+  /** Operator application: the principal a person runs privileged actions as, from a dedicated IP address only. */
+  operator: string;
   /** Per-service VM application. */
   vmService: (service: string) => string;
   /** Boot fetcher application: registry pull and handoff-secret read. */
@@ -19,6 +21,7 @@ export function principalNames(slug: string, mode: string): PrincipalNames {
     group: prefix,
     ciDeploy: `${prefix}-ci-deploy`,
     admin: `${prefix}-admin`,
+    operator: `${prefix}-operator`,
     vmService: (service: string) => `${prefix}-vm-${service}`,
     boot: `${prefix}-boot`,
   };

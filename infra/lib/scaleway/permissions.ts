@@ -50,6 +50,17 @@ export const ADMIN_PROJECT_PERMISSION_SETS = [
 /** Org-scoped admin sets: IAM reads so `pulumi preview` can resolve principals by name. */
 export const ADMIN_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
+// Operator app (`<slug>-<mode>-operator`): the principal a person runs privileged actions as
+
+/**
+ * Project-scoped set for the operator application: every product of the app project, as a privileged `pulumi up` writes all of them.
+ * Every operator rule carries an IP condition (lib/scaleway/ip-lock.ts), so the key works from the dedicated address only.
+ */
+export const OPERATOR_PROJECT_PERMISSION_SETS = ['AllProductsFullAccess'] as const;
+
+/** Organization-scoped set for the operator application: IAM write for the VM principals and policies; it includes the project reads the engine makes. */
+export const OPERATOR_ORG_PERMISSION_SETS = ['IAMManager'] as const;
+
 // Per-service model (P3): service, boot, and CI key-mint grants
 
 /** Secret-value read sets, always paired with a resource-level path condition. SecretManagerReadOnly alone is metadata-only and 403s the sync; SecretManagerSecretAccess decrypts the values. */

@@ -34,7 +34,7 @@ describe('mainMenuItems', () => {
       '  Show status              read-only',
       '  Review & apply changes   admin key to review · Owner key to apply',
       'Change',
-      '  Rotate keys & secrets ›  CI deploy key, admin key, passphrase',
+      '  Rotate keys & secrets ›  CI key, admin key, passphrase, operator key',
       '  Manage runtime secrets   Owner key',
       'Database',
       '  Open public DB access ›  Owner key · temporary, locked to your IP',
@@ -54,7 +54,7 @@ describe('mainMenuItems', () => {
       '  Show status              read-only',
       '- Review & apply changes (needs a bootstrapped stack: run "Resume setup")',
       'Change',
-      '  Rotate keys & secrets ›  CI deploy key, admin key, passphrase',
+      '  Rotate keys & secrets ›  CI key, admin key, passphrase, operator key',
       '  Manage runtime secrets   Owner key',
       'Database',
       '- Open public DB access › (needs a bootstrapped stack: run "Resume setup")',
@@ -108,7 +108,12 @@ describe('mainMenuItems', () => {
 
 describe('pickItems', () => {
   it('offers the actions of a row with the key each runs with, then Back', () => {
-    expect(render(pickItems('rotate', bootstrapped))).toEqual(['  Rotate keys        Owner key', '  Rotate passphrase  admin key', '  ← Back']);
+    expect(render(pickItems('rotate', bootstrapped))).toEqual([
+      '  Rotate keys          Owner key',
+      '  Rotate passphrase    admin key',
+      '  Set up operator key  Owner key',
+      '  ← Back',
+    ]);
     expect(render(pickItems('repair', bootstrapped))).toEqual([
       '  Unlock stack                 admin key',
       '  Resume setup                 Owner key',
@@ -128,8 +133,9 @@ describe('pickItems', () => {
 
   it('disables the passphrase rotation on a stack without encrypted state', () => {
     expect(render(pickItems('rotate', partial))).toEqual([
-      '  Rotate keys        Owner key',
+      '  Rotate keys          Owner key',
       '- Rotate passphrase (the stack has no encrypted state yet)',
+      '  Set up operator key  Owner key',
       '  ← Back',
     ]);
   });
