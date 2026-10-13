@@ -9,6 +9,8 @@ export type QueryMeta = {
   /** Org/tenant context used by SSE handlers + setQueryDefaults to resolve fetch params. */
   organizationId?: string;
   tenantId?: string;
+  /** On a queued mutation in the persisted cache: the version of its variables' shape. The persister sets it. */
+  variablesVersion?: number;
 };
 
 // Makes ApiError the default error type for every TanStack Query hook and types `meta` for the suppression flag.

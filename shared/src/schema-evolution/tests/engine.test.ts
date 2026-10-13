@@ -117,6 +117,38 @@ describe('migrateQueuedMutation (client replay)', () => {
     const vars = { ops: { title: 'x' } };
     expect(migrateQueuedMutation('attachment', vars, 1)).toEqual(vars);
   });
+
+  it('rewrites the rows a queued create carries under `data`, as a list and as one row', () => {
+    const context = { tenantId: 't', organizationId: 'o' };
+    const many = migrateQueuedMutation(
+      'attachment',
+      {
+        ...context,
+        data: [
+          { id: 'a', name: 'x' },
+          { id: 'b', name: 'y' },
+        ],
+      },
+      0,
+    );
+    expect(many).toEqual({
+      ...context,
+      data: [
+        { id: 'a', title: 'x' },
+        { id: 'b', title: 'y' },
+      ],
+    });
+
+    expect(migrateQueuedMutation('attachment', { ...context, data: { id: 'a', name: 'x' } }, 0)).toEqual({
+      ...context,
+      data: { id: 'a', title: 'x' },
+    });
+  });
+
+  it('rewrites the rows a queued delete carries under `rows`, which a refusal puts back into the cache', () => {
+    const rewritten = migrateQueuedMutation('attachment', { tenantId: 't', rows: [{ id: 'a', name: 'x' }] }, 0);
+    expect(rewritten).toEqual({ tenantId: 't', rows: [{ id: 'a', title: 'x' }] });
+  });
 });
 
 describe('widenedOpsKeyMap', () => {

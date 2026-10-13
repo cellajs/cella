@@ -291,7 +291,8 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
 
 /**
  * Client entry point: rewrites a queued mutation's variables from its persisted global version
- * to current canonical keys, across top-level keys, `ops` and `stx.fieldTimestamps`.
+ * to current canonical keys, across `ops`, `stx.fieldTimestamps` and the rows the variables hold:
+ * under `data` for a create and `rows` for a delete, or the variables themselves where they are one row.
  */
 export function migrateQueuedMutation<V extends AnyRecord>(entityType: LensEntityType, variables: V, fromVersion: number): V {
   const pending = lensesFor(entityType).filter(({ ordinal }) => ordinal > fromVersion);
@@ -302,6 +303,24 @@ export function migrateQueuedMutation<V extends AnyRecord>(entityType: LensEntit
     const { [from]: value, ...rest } = record;
     return { ...rest, [to]: value };
   };
+  const dropField = (record: AnyRecord, field: string): AnyRecord => {
+    if (!(field in record)) return record;
+    const { [field]: _omit, ...rest } = record;
+    return rest;
+  };
+  const isRow = (value: unknown): value is AnyRecord => typeof value === 'object' && value !== null && !Array.isArray(value);
+  /** Applies a change to each row the variables hold. A holder keeps its key, whatever a column of that name becomes. */
+  const inRows = (record: AnyRecord, change: (row: AnyRecord) => AnyRecord): AnyRecord => {
+    // A top-level id without ops: the variables are one row themselves, and `data` or `rows` are its columns.
+    if (typeof record.id === 'string' && !('ops' in record)) return change(record);
+    const changed = { ...record };
+    for (const key of ['data', 'rows']) {
+      const held = record[key];
+      if (Array.isArray(held)) changed[key] = held.map((row) => (isRow(row) ? change(row) : row));
+      else if (isRow(held)) changed[key] = change(held);
+    }
+    return changed;
+  };
 
   let next: AnyRecord = { ...variables };
   for (const { lens } of pending) {
@@ -309,14 +328,11 @@ export function migrateQueuedMutation<V extends AnyRecord>(entityType: LensEntit
     if (!rename) {
       if ('drop' in lens.delta) {
         const field = lens.delta.drop.field;
-        if (field in next) {
-          const { [field]: _omit, ...rest } = next;
-          next = rest;
-        }
+        next = inRows(next, (row) => dropField(row, field));
       }
       continue;
     }
-    next = renameRecord(next, rename.from, rename.to);
+    next = inRows(next, (row) => renameRecord(row, rename.from, rename.to));
     if (next.ops && typeof next.ops === 'object') {
       next = { ...next, ops: renameRecord(next.ops as AnyRecord, rename.from, rename.to) };
     }

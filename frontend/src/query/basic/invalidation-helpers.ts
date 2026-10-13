@@ -1,6 +1,7 @@
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import type { ChannelEntityType } from 'shared';
 import { isQueued } from '~/query/offline/mutation-queue';
+import { queuedUpdateOf } from '~/query/offline/mutation-variables';
 import { getEntityQueryKeys } from './entity-query-registry';
 
 /** Removes parked updates before deletion so they cannot replay afterward; active updates stay queued so the delete remains serialized behind them. */
@@ -9,10 +10,8 @@ export function removePendingMutations(queryClient: QueryClient, updateKey: Quer
   const mutationCache = queryClient.getMutationCache();
   for (const mutation of mutationCache.findAll({ mutationKey: updateKey })) {
     if (!isQueued(mutation)) continue;
-    const vars = mutation.state.variables as { id?: string } | undefined;
-    if (vars?.id && idSet.has(vars.id)) {
-      mutationCache.remove(mutation);
-    }
+    const id = queuedUpdateOf(mutation.state.variables)?.id;
+    if (id && idSet.has(id)) mutationCache.remove(mutation);
   }
 }
 

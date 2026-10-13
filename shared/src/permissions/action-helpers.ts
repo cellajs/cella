@@ -19,7 +19,7 @@ export type CanHome = { row: string | null; channel: string };
 /**
  * Resolves `true | false | condition name` to a boolean. `'own'` compares the actor id against
  * `entity.createdBy`; `'home'` compares the row's home with the map's channel, `'home:own'` needs
- * both, and a call without `home` denies them. The switch is exhaustive over {@link CanState}, so
+ * both and `'home|own'` either, and a call without `home` denies the home part. The switch is exhaustive over {@link CanState}, so
  * adding a condition breaks the build here; the frontend never denies a new condition unnoticed.
  */
 export const resolveCan = (permission: CanState | undefined, entityCreatedBy?: string | null, actorId?: string, home?: CanHome): boolean => {
@@ -33,6 +33,8 @@ export const resolveCan = (permission: CanState | undefined, entityCreatedBy?: s
       return atHome;
     case 'home:own':
       return atHome && own;
+    case 'home|own':
+      return atHome || own;
     case 'public':
       // Public read is membership-independent and resolved server-side, so it never reaches the
       // frontend can-map. This arm exists for exhaustiveness and denies by default.

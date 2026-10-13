@@ -12,7 +12,12 @@ import type {
   UpdateAttachmentFullVars,
   UpdateAttachmentVars,
 } from '~/modules/attachment/query-mutations';
-import { createAttachmentsMutationFn, deleteAttachmentsMutationFn, updateAttachmentMutationFn } from '~/modules/attachment/query-mutations';
+import {
+  attachmentCreateKeys,
+  createAttachmentsMutationFn,
+  deleteAttachmentsMutationFn,
+  updateAttachmentMutationFn,
+} from '~/modules/attachment/query-mutations';
 import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
 import { registerDescriptionDerivation } from '~/modules/common/blocknote/description-derivation';
 import { registerYjsOwnedFields } from '~/modules/common/blocknote/yjs-editor';
@@ -29,6 +34,7 @@ import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/
 import { syncStaleTime } from '~/query/basic/sync-stale-state';
 import type { OrgRoutableItemData } from '~/query/basic/types';
 import { addMutationRegistrar } from '~/query/mutation-registry';
+import { registerVariablesVersion } from '~/query/offline/mutation-variables';
 import { buildPreparedHandlers, type PreparedVars } from '~/query/offline/prepared-mutation';
 import { removePausedCreates, squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
 import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
@@ -215,14 +221,14 @@ const attachmentDeleteOptions = (
   scope: { id: 'attachment' },
   mutationFn: deleteAttachmentsMutationFn,
   meta: { suppressGlobalErrorToast: true },
-  onMutate: async ({ organizationId, attachments }) => {
+  onMutate: async ({ organizationId, rows }) => {
     const orgKey = keys.list.org(organizationId);
-    const attachmentIds = attachments.map((a) => a.id);
+    const attachmentIds = rows.map((row) => row.id);
     removePendingMutations(queryClient, keys.update, attachmentIds);
     await queryClient.cancelQueries({ queryKey: orgKey });
-    cacheRemove(orgKey, attachments);
+    cacheRemove(orgKey, rows);
     removeDetailQueriesById(queryClient, keys.detail.base, attachmentIds);
-    return { deletedAttachments: attachments };
+    return { deletedAttachments: rows };
   },
   onError: (error, _variables, context) => {
     handleError('delete', error);
@@ -234,12 +240,14 @@ const attachmentDeleteOptions = (
     const rejectedIds = result?.rejectedIds ?? [];
     if (rejectedIds.length === 0) return;
     const rejectedSet = new Set(rejectedIds);
-    const rejectedAttachments = variables.attachments.filter((a) => rejectedSet.has(a.id));
+    const rejectedAttachments = variables.rows.filter((row) => rejectedSet.has(row.id));
     insertEntitiesIntoHome(queryClient, rejectedAttachments);
-    toaster.info(i18n.t('c:resources_delete_denied', { count: rejectedIds.length, total: variables.attachments.length }));
+    toaster.info(i18n.t('c:resources_delete_denied', { count: rejectedIds.length, total: variables.rows.length }));
   },
-  onSettled: (_data, error, variables) => {
-    if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.org(variables.organizationId));
+  onSettled: (data, error, variables) => {
+    // A row put back is as the delete held it: remote changes were kept from the cache while it was pending.
+    if (error || data?.rejectedIds?.length)
+      invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.org(variables.organizationId));
   },
 });
 
@@ -260,7 +268,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
   const mutation = useMutation(attachmentUpdateOptions(queryClient));
 
   const prepare = ({ id, ops }: UpdateAttachmentVars): PreparedVars<UpdateAttachmentFullVars> => {
-    if (squashIntoPendingCreate(queryClient, keys.create, id, ops)) {
+    if (squashIntoPendingCreate(queryClient, keys.create, id, ops, attachmentCreateKeys)) {
       const cached = findAttachmentInCache(id);
       if (cached) {
         const optimisticAttachment = { ...cached, ...ops, updatedAt: new Date().toISOString() };
@@ -297,7 +305,7 @@ export const useAttachmentDeleteMutation = (tenantId: string, organizationId: st
 
     const remaining = attachments.filter((a) => !cancelled.has(a.id));
     if (remaining.length === 0) return { kind: 'noop' };
-    return { kind: 'run', vars: { tenantId, organizationId, attachments: remaining, stx: createStxForDelete() } };
+    return { kind: 'run', vars: { tenantId, organizationId, rows: remaining, stx: createStxForDelete() } };
   };
 
   return { ...mutation, ...buildPreparedHandlers(mutation, prepare) };
@@ -317,4 +325,11 @@ addMutationRegistrar((queryClient: QueryClient) => {
   queryClient.setMutationDefaults(keys.create, attachmentCreateOptions(queryClient));
   queryClient.setMutationDefaults(keys.update, attachmentUpdateOptions(queryClient));
   queryClient.setMutationDefaults(keys.delete, attachmentDeleteOptions(queryClient));
+});
+
+// Version 2 of a delete carries its rows under `rows`; a bundle of version 1 queued them as `attachments`.
+registerVariablesVersion(keys.delete, 2, (variables) => {
+  if (typeof variables !== 'object' || variables === null || !('attachments' in variables)) return null;
+  const { attachments, ...rest } = variables;
+  return Array.isArray(attachments) ? { ...rest, rows: attachments } : null;
 });
