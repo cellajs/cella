@@ -189,6 +189,18 @@ describe('date columns', () => {
   });
 });
 
+describe('count columns', () => {
+  it('organizations: a count abbreviates from a thousand with the exact number on hover, and a missing one is a dash', () => {
+    const [role] = hierarchy.getRoles('organization');
+    const col = column(columnsOf(organizations.useColumns), `${role}Count`);
+    const row = (count?: number) => ({ included: { counts: { membership: { [role]: count } } } });
+
+    expect(cellMarkup(col, row(21312))).toContain('<span data-tooltip="true" data-tooltip-content="21312">21k</span>');
+    expect(cellMarkup(col, row(999))).toContain('<span>999</span>');
+    expect(cellMarkup(col, row())).toContain('<span>-</span>');
+  });
+});
+
 describe('ellipsis columns', () => {
   // Opening a sheet checks the focused element.
   beforeAll(() => {
