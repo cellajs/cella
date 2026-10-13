@@ -39,7 +39,6 @@ import {
   endsAction,
   inputOrDefault,
   keyPairOrPrompt,
-  nonInteractive,
   pulumiLoginUrl,
   resolveOrCreatePassphrase,
   stackNameFor,
@@ -161,7 +160,7 @@ async function mintCiKey(ctx: SetupContext, keyMintAppIds?: readonly string[]): 
       return { accessKey: key.accessKey, secretKey: key.secretKey, organizationId: key.organizationId };
     } catch (error) {
       console.error(`\n${warningMark} CI key setup failed: ${errorMessage(error)}`);
-      if (nonInteractive() || !(await confirm({ message: 'Retry?', default: true }))) return { accessKey: '', secretKey: '', organizationId: '' };
+      if (!(await confirm({ message: 'Retry?', default: true }))) return { accessKey: '', secretKey: '', organizationId: '' };
     }
   }
 }
@@ -293,7 +292,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
   while (true) {
     const { code } = await runPulumiUpWithHint(ctx.stackName, infraDir, ctx.childEnv);
     if (code === 0) break;
-    if (nonInteractive() || !(await confirm({ message: 'Retry?', default: true }))) {
+    if (!(await confirm({ message: 'Retry?', default: true }))) {
       await stackLock.release();
       endActionWithHint(
         `Base provisioning failed (pulumi up exited ${code})`,
@@ -330,12 +329,8 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
 /**
  * Pick or create the Scaleway project when none is configured yet, using the Owner API key.
  * The chosen id is written to backend/.env as SCW_PROJECT_ID so later runs resolve it without prompting.
- * Non-interactive runs must supply SCW_PROJECT_ID themselves.
  */
 async function ensureProjectId(opts: { slug: string; accessKey: string; secretKey: string }): Promise<string> {
-  if (nonInteractive()) {
-    throw new Error('SCW_PROJECT_ID is not set. Non-interactive setup requires it in backend/.env or the environment.');
-  }
   console.info(`\n→ Scaleway project ${pc.dim('(none configured yet)')}`);
   const { organizationId, projects } = await withSpinner('Loading Scaleway projects', async () => {
     const organizationId = await resolveOrganizationIdFromKey(opts.secretKey, opts.accessKey);
@@ -389,14 +384,12 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: B
         `    Set it first via "Manage runtime secrets", or the deploy will fail before rolling anything.`,
     );
   }
-  const deployNow = nonInteractive()
-    ? process.env.INFRA_DEPLOY_NOW === '1'
-    : autoAcceptDefaults()
-      ? hasAdminEmail
-      : await confirm({
-          message: `Deploy ${sha.slice(0, 7)} to ${mode} now? Builds images locally, then rolls out (10-20 min).`,
-          default: hasAdminEmail,
-        });
+  const deployNow = autoAcceptDefaults()
+    ? hasAdminEmail
+    : await confirm({
+        message: `Deploy ${sha.slice(0, 7)} to ${mode} now? Builds images locally, then rolls out (10-20 min).`,
+        default: hasAdminEmail,
+      });
   if (!deployNow) {
     console.info(`  ${pc.dim('Deploy later from CI (publish a release / run the Deploy workflow) or locally:')} ${pc.cyan(manualCmd(sha))}`);
     return;
@@ -451,8 +444,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
       message: 'Admin email (optional, set later via "Manage runtime secrets")',
       envName: 'INFRA_ADMIN_EMAIL',
     });
-    inputs.operatorSecrets.brevoApiKey =
-      inputs.operatorSecrets.adminEmail && !nonInteractive() ? await optionalSecret('Brevo API key (optional)') : '';
+    inputs.operatorSecrets.brevoApiKey = inputs.operatorSecrets.adminEmail ? await optionalSecret('Brevo API key (optional)') : '';
     for (const key of managedKeys) {
       inputs.mintDecisions.set(key.id, await confirmOrDefault({ message: key.prompt.message, default: key.prompt.default }));
     }
@@ -618,16 +610,15 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
         ),
       );
     }
-    // Revoking the key is the last call because a key may delete itself. Only a key typed at the prompt is offered: one from SCW_OWNER_* is the operator's durable key, and keys under automation are never revoked.
-    const revokeNow =
-      !ownerKeyPasted || nonInteractive()
-        ? false
-        : autoAcceptDefaults()
-          ? true
-          : await confirm({
-              message: `Revoke the Owner API key you pasted (${scwAccessKey}) now? Nothing else needs it; day-2 privileged actions take one from SCW_OWNER_* or ask again.`,
-              default: true,
-            });
+    // Revoking the key is the last call because a key may delete itself. Only a key typed at the prompt is offered: one from SCW_OWNER_* is the operator's durable key.
+    const revokeNow = !ownerKeyPasted
+      ? false
+      : autoAcceptDefaults()
+        ? true
+        : await confirm({
+            message: `Revoke the Owner API key you pasted (${scwAccessKey}) now? Nothing else needs it; day-2 privileged actions take one from SCW_OWNER_* or ask again.`,
+            default: true,
+          });
     if (revokeNow) {
       try {
         await withSpinner('Revoking the setup key', () => deleteApiKey({ secretKey: scwSecretKey }, scwAccessKey));

@@ -60,33 +60,27 @@ export function endsAction(error: unknown): boolean {
   return error instanceof ActionEnded || isPromptAbort(error);
 }
 
-/** Non-interactive mode (INFRA_NON_INTERACTIVE=1): every prompt resolves to its default, its env value, or empty; a prompt without a safe default throws. */
-export const nonInteractive = (): boolean => process.env.INFRA_NON_INTERACTIVE === '1';
-
 /**
- * True when the run accepts prompt defaults without asking: `--defaults` (a human on the fast path) or INFRA_NON_INTERACTIVE (automation).
- * They differ only for required inputs such as the Owner API key: `--defaults` still prompts, automation lets the prompt throw on a non-TTY.
+ * True when the run takes prompt defaults without asking: `--defaults`, a person on the fast path. A required input such as the Owner API
+ * key is still asked, so the CLI never changes infrastructure without someone at the prompt.
  */
-export const autoAcceptDefaults = (): boolean => process.argv.includes('--defaults') || nonInteractive();
+export const autoAcceptDefaults = (): boolean => process.argv.includes('--defaults');
 
-/** Short label for the auto-resolution log line. */
-const autoLabel = (): string => (nonInteractive() ? 'non-interactive' : 'defaults');
-
-/** `confirm` that resolves to its default under `--defaults`/INFRA_NON_INTERACTIVE. */
+/** `confirm` that resolves to its default under `--defaults`. */
 export async function confirmOrDefault(opts: { message: string; default: boolean }): Promise<boolean> {
   if (autoAcceptDefaults()) {
-    console.info(pc.dim(`  [${autoLabel()}] ${opts.message} -> ${opts.default ? 'yes' : 'no'}`));
+    console.info(pc.dim(`  [defaults] ${opts.message} -> ${opts.default ? 'yes' : 'no'}`));
     return opts.default;
   }
   return confirm(opts);
 }
 
-/** Optional free-text `input` that resolves to env/default under `--defaults`/INFRA_NON_INTERACTIVE. */
+/** Optional free-text `input` that resolves to env/default under `--defaults`. */
 export async function inputOrDefault(opts: { message: string; envName?: string; default?: string }): Promise<string> {
   const fromEnv = opts.envName ? process.env[opts.envName]?.trim() : undefined;
   if (autoAcceptDefaults()) {
     const value = fromEnv ?? opts.default ?? '';
-    console.info(pc.dim(`  [${autoLabel()}] ${opts.message} -> ${value || '<empty>'}`));
+    console.info(pc.dim(`  [defaults] ${opts.message} -> ${value || '<empty>'}`));
     return value;
   }
   if (fromEnv) return fromEnv;
