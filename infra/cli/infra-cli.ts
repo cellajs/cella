@@ -18,7 +18,7 @@ import { BACK, disabledReason, formatAccessLines, formatStackLine, type MenuStat
 import { installPromptAbortHandler } from './prompts/abort';
 import { ESCAPED, menuSelect } from './prompts/menu-select';
 import type { InfraContext } from './shared';
-import { autoAcceptDefaults, nonInteractive } from './shared';
+import { autoAcceptDefaults } from './shared';
 
 // Load backend/.env before the root fallback so infra child tasks share the app's local config; ambient env keeps precedence over both files.
 loadBaseEnvFiles();
@@ -42,7 +42,7 @@ function printHelp(): void {
 
 /**
  * The target mode. `--mode` or INFRA_MODE selects it explicitly, including a fresh stack with no Pulumi.<mode>.yaml yet;
- * otherwise the only existing stack file wins silently, two existing stack files ask once (and fail non-interactively), and with no stack
+ * otherwise the only existing stack file wins silently, two existing stack files ask once (under `--defaults` they need `--mode`), and with no stack
  * file an interactive install asks, defaulting to staging.
  * A mode-scoped `infra/.env.<mode>` OVERRIDES the ambient env, so a staging run cannot inherit production keys from backend/.env.
  */
@@ -234,7 +234,7 @@ if (args.action) {
 }
 
 // A fresh install has nothing to manage yet and automation has nobody to ask: both go straight to the setup.
-if (context.state === 'fresh' || nonInteractive()) process.exit(await runAction('resume', context));
+if (context.state === 'fresh') process.exit(await runAction('resume', context));
 
 /** Actions that change nothing, so the menu comes back without reading the stack again. */
 const READ_ONLY: readonly OperatorActionId[] = ['status', 'preview'];
