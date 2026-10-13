@@ -99,7 +99,14 @@ function PanelDropdown({ dropdown, triggerEl }: { dropdown: InternalDropdown; tr
 
   return (
     <Popover key={dropdown.key} open={true} onOpenChange={onOpenChange} modal={false}>
-      <PopoverContent anchor={triggerEl} align={dropdown.align} positionerClassName="z-301" className="p-0" finalFocus={triggerFocusRef}>
+      <PopoverContent
+        anchor={triggerEl}
+        align={dropdown.align}
+        positionerClassName="z-301"
+        className="p-0"
+        finalFocus={triggerFocusRef}
+        aria-label={dropdown.triggerLabel}
+      >
         <FocusTrap active initialFocus returnFocus containFocus>
           <div className="contents">{dropdown.content}</div>
         </FocusTrap>

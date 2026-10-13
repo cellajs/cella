@@ -16,10 +16,11 @@ import { ApiError } from '~/lib/api';
 import { addMyMembershipCache, getApiIncludedMembership } from '~/modules/memberships/query-mutations';
 import { organizationsSearchDefaults } from '~/modules/organization/search-params-schemas';
 import type { EnrichedOrganization } from '~/modules/organization/types';
-import { cacheCreate, cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
+import { cacheCreate, cacheRemove, cacheUpdate, removeDetailQueriesOnceUnobserved } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
+import { defaultOrderFor } from '~/query/basic/get-query-key-sort-order';
 import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import { preserveIncluded } from '~/query/basic/preserve-included';
@@ -59,8 +60,7 @@ type OrganizationsListParams = OrganizationsQuery & { limit?: number };
 const withDefaults = ({
   q = organizationsSearchDefaults.q,
   sort = organizationsSearchDefaults.sort,
-  // displayOrder reads ascending; every other column defaults to descending
-  order = sort === 'displayOrder' ? 'asc' : 'desc',
+  order = defaultOrderFor(sort),
   relatableUserId,
   excludeArchived,
   role,
@@ -144,7 +144,7 @@ export const useOrganizationDeleteMutation = () => {
     },
     onSuccess: (_, { organizations }) => {
       cacheRemove(listKey, organizations);
-      removeDetailQueriesById(
+      removeDetailQueriesOnceUnobserved(
         queryClient,
         keys.detail.base,
         organizations.map(({ id }) => id),

@@ -87,15 +87,17 @@ export interface NotificationCandidate {
  * row and were not told about it before. Deep links need no declaration: emails and push carry
  * the subject's location for the frontend `/n` route.
  */
-export interface ModuleNotifications {
+export interface ModuleNotifications<TRow extends NotificationSubjectRow = NotificationSubjectRow> {
   /** Mention fan-out from the stored `description`; on unless set to false. */
   mentionable?: boolean;
+  // The row readers are methods, so a declaration typed to its module's own row (`TRow`: the subject row plus the
+  // columns the module reads) is assignable where the registry holds the base type.
   /** Batch-load audience-bearing subject rows (with `description` when mentionable); drop drafts and deleted rows here. */
-  loadRows?: (tx: DbOrTx, ids: string[]) => Promise<NotificationSubjectRow[]>;
+  loadRows?(tx: DbOrTx, ids: string[]): Promise<TRow[]>;
   /** Recipients beyond mentions (thread participants, assignees, ...) with their notification type. */
-  resolveRecipients?: (tx: DbOrTx, row: NotificationSubjectRow) => Promise<NotificationCandidate[]>;
+  resolveRecipients?(tx: DbOrTx, row: TRow): Promise<NotificationCandidate[]>;
   /** Grouping/deep-link context id for a row (e.g. the host thread); defaults to the row's own id. */
-  resolveContextId?: (row: NotificationSubjectRow) => string | null;
+  resolveContextId?(row: TRow): string | null;
   /** Title and plain-text body for instant emails; read inside a tenant transaction. */
   loadPreview?: (tx: DbOrTx, subjectId: string) => Promise<{ title: string; body: string } | null>;
   /** Display names for context ids in digest lines; read inside a tenant transaction. */

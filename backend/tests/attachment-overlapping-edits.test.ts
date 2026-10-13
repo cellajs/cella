@@ -2,9 +2,8 @@ import { eq } from 'drizzle-orm';
 import { updateAttachment } from 'sdk';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { generateServerHLC } from '#/core/stx';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { mockStxBase } from '#/schemas/sync-transaction-mocks';
+import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from './fixtures';
 import { adminDb } from './helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
@@ -43,7 +42,7 @@ describe('Overlapping edits of one attachment', async () => {
       path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id },
       body: {
         ops: { [field]: value },
-        stx: { ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { [field]: generateServerHLC('test-client') } },
+        stx: mockStxFor(field),
       },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });

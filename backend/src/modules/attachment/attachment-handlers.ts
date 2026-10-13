@@ -29,8 +29,8 @@ app.openapi(attachmentRoutes.getAttachment, async (ctx) => {
 });
 
 app.openapi(attachmentRoutes.createAttachments, async (ctx) => {
-  const result = await createAttachmentsOp(ctx, ctx.req.valid('json'));
-  return ctx.json(result, 201);
+  const { replayed, ...result } = await createAttachmentsOp(ctx, ctx.req.valid('json'));
+  return ctx.json(result, replayed ? 200 : 201);
 });
 
 app.openapi(attachmentRoutes.updateAttachment, async (ctx) => {

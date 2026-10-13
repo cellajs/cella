@@ -148,6 +148,13 @@ export const refineWithType = <T>(check: (val: T) => boolean, errorType: string)
 
 export const validUuidSchema = z.string().uuid(translatedError('error:invalid_id'));
 
+/** A bounded list of ids that names each row once: the ids a body picks, or the rows a host row relates to. */
+export const uniqueIdsSchema = (maxItems = 50) =>
+  validUuidSchema
+    .array()
+    .max(maxItems)
+    .refine((ids) => new Set(ids).size === ids.length, 'IDs must be unique');
+
 export const noDuplicateSlugsRefine = (items: { slug: string }[]) => new Set(items.map((i) => i.slug)).size === items.length;
 
 /** Scheme and host are case-insensitive; userinfo, path, query and fragment are not, so they keep their case. */
@@ -199,12 +206,15 @@ export const validDomainSchema = z
   )
   .openapi({ type: 'string', format: 'hostname', minLength: 4, maxLength: maxLength.field, pattern: canonicalDomainPattern.source });
 
+// Both cases are spelled out: an OpenAPI pattern carries no flags, so a case-insensitive regex would publish a pattern
+// that refuses the upper-case slug this schema takes and lowers.
+const slugPattern = /^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$/;
 export const validSlugSchema = z
   .string()
   .min(2, translatedError('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
   .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Slug', min: 2, max: maxLength.field }))
-  .regex(/^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i, translatedError('error:invalid_slug'))
-  .superRefine(refineWithType((s) => /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/i.test(s), 'invalid_slug'))
+  .regex(slugPattern, translatedError('error:invalid_slug'))
+  .superRefine(refineWithType((s) => slugPattern.test(s), 'invalid_slug'))
   .transform((str) => str.toLowerCase().trim());
 
 /**

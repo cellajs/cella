@@ -161,7 +161,8 @@ export interface GuardNavTabsOptions {
  * route mounts and fetches. Detection uses {@link isPlacementHidden} on the arrangement layers
  * only, never `requires`/`visibleTo`, whose inputs may still be loading. Config changes while
  * sitting on a tab are handled by {@link useNavTabRedirect}.
- * @throws A history-replacing redirect preserving params, search, and hash.
+ * @throws A history-replacing redirect preserving params and hash, and the search of a bare parent navigation. The search of a
+ * tab it forwards off stays behind: that tab's own sort and filters.
  */
 export function guardNavTabs(
   matches: readonly { routeId: string; fullPath: string; params: unknown }[],
@@ -176,7 +177,8 @@ export function guardNavTabs(
   if (!slot) return;
 
   // Data-defined tabs match on the deepest match's `$tool` param, route tabs on its route path
-  let needsLanding = deepest.routeId === parentRouteId;
+  const fromBareParent = deepest.routeId === parentRouteId;
+  let needsLanding = fromBareParent;
   if (!needsLanding) {
     const candidates = getNavTabCandidates(parentRouteId);
     const toolId = (deepest.params as { tool?: string } | undefined)?.tool;
@@ -189,7 +191,7 @@ export function guardNavTabs(
   const landing = resolveNavTabs(parentRouteId, { slotConfig })[0];
   if (!landing) return;
 
-  throw redirect({ to: landing.path, params: landing.params, search: true, replace: true, hash: true });
+  throw redirect({ to: landing.path, params: landing.params, search: fromBareParent ? true : {}, replace: true, hash: true });
 }
 
 /**

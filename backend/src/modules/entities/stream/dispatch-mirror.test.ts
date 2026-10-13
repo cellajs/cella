@@ -5,6 +5,7 @@ import type { ActivityEvent, ActivityRow } from '#/lib/activity-bus';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { dispatchToAppStream } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import type { StreamNotification } from '#/schemas';
 import { memberRole } from '../../../../tests/fixtures';
 import { streamSubscriberManager } from './subscriber-manager';
@@ -15,14 +16,7 @@ const ORG_A = 'org-dispatch-a';
 const ORG_B = 'org-dispatch-b';
 
 const membership = (organizationId: string, role: EntityRole, userId: string): MembershipBaseModel =>
-  ({
-    id: `mem-organization-${organizationId}-${role}-${userId}`,
-    userId,
-    channelType: 'organization',
-    channelId: organizationId,
-    organizationId,
-    role,
-  }) as unknown as MembershipBaseModel;
+  mockMembershipBase(`mem-organization-${organizationId}-${role}-${userId}`, { channelId: organizationId, userId, role });
 
 /** Fake SSE subscriber capturing every notification written to its stream. */
 const fakeSubscriber = (memberships: MembershipBaseModel[], userId: string, organizationIds: string[], channelOrg: string) => {

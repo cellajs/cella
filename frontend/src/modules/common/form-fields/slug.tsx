@@ -64,6 +64,8 @@ export function SlugFormField<TFieldValues extends FieldValues>({
 
   const { mutate: checkAvailability } = useMutation<CheckSlugResponse, ApiError, NonNullable<CheckSlugData['body']>>({
     mutationKey: [name],
+    // A taken slug shows on the field; the check runs while the user types, so it never toasts.
+    meta: { suppressGlobalErrorToast: true },
     mutationFn: async (body) => {
       if (!tenantId) return;
       return await checkSlug({ path: { tenantId }, body });
@@ -82,7 +84,7 @@ export function SlugFormField<TFieldValues extends FieldValues>({
     },
   });
 
-  // Same shape as validSlugSchema on the backend and the generated client zod.
+  // The form a slug is stored in. The input lowers what is typed, as the API does with an upper-case slug.
   const isValidSlug = (value: string) => {
     if (!value || value.trim().length < 2) return false;
     return /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/.test(value);
@@ -115,14 +117,20 @@ export function SlugFormField<TFieldValues extends FieldValues>({
     <FormField
       control={control}
       name={name as Path<TFieldValues>}
-      render={({ field: { value: formFieldValue, ...rest } }) => (
+      render={({ field: { value: formFieldValue, onChange, ...rest } }) => (
         <FormItem name={name}>
           <FormLabel help={description}>
             {label}
             <span className="ml-1 opacity-50">*</span>
           </FormLabel>
           <InputGroup className={inputClassName}>
-            <SlugInput type={entityType} onFocus={() => setDeviating(true)} value={formFieldValue || ''} {...rest} />
+            <SlugInput
+              type={entityType}
+              onFocus={() => setDeviating(true)}
+              value={formFieldValue || ''}
+              onChange={(event) => onChange(event.target.value.toLowerCase())}
+              {...rest}
+            />
             {prefix && (
               <InputGroupAddon>
                 <InputGroupText id="slug-prefix" className="text-xs" style={{ opacity: formFieldValue ? 1 : 0.5 }}>

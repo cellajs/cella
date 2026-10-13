@@ -2,7 +2,7 @@ import { OpenAPIRegistry, OpenApiGeneratorV31 } from '@asteasolutions/zod-to-ope
 import { z } from '@hono/zod-openapi';
 import { describe, expect, it } from 'vitest';
 import { uploadTokenSchema } from '#/modules/me/me-schema';
-import { booleanTransformSchema } from './common-schemas';
+import { booleanTransformSchema, validSlugSchema } from './common-schemas';
 import { nullableUserMinimalBaseSchema, userMinimalBaseSchema } from './minimal-base';
 import { streamNotificationSchema } from './stream-schemas';
 import { nullableStxBaseSchema, stxBaseSchema } from './sync-transaction-schemas';
@@ -15,11 +15,23 @@ registry.register(
   z.object({ user: nullableUserMinimalBaseSchema, stx: nullableStxBaseSchema, flag: booleanTransformSchema.optional() }),
 );
 registry.register('UploadToken', uploadTokenSchema);
+registry.register('SlugFixture', z.object({ slug: validSlugSchema }));
 registry.register('StreamNotification', streamNotificationSchema);
 
 const schemas = new OpenApiGeneratorV31(registry.definitions).generateComponents().components?.schemas ?? {};
 
 describe('OpenAPI composition conventions', () => {
+  it('publishes a slug pattern that takes every slug the schema takes, so a client that checks the pattern refuses none', () => {
+    // A pattern carries no flags: a case-insensitive regex publishes as its lower-case form, which the generated client enforces.
+    const { pattern } = (schemas.SlugFixture as { properties: { slug: { pattern: string } } }).properties.slug;
+    for (const slug of ['acme', 'Acme-Team', 'ACME2']) {
+      expect(validSlugSchema.safeParse(slug).success, slug).toBe(true);
+      expect(new RegExp(pattern).test(slug), slug).toBe(true);
+    }
+    expect(new RegExp(pattern).test('-acme')).toBe(false);
+    expect(validSlugSchema.parse('Acme-Team')).toBe('acme-team');
+  });
+
   it('inlines nullable references as anyOf [$ref, null] without extra component schemas', () => {
     // Guards against `.nullable()` on a registered schema, which emits a contradictory
     // allOf [$ref, {type: [x, 'null']}]. Unnamed z.union([ref, z.null()]) is the convention.

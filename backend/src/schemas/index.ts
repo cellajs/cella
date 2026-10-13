@@ -26,6 +26,7 @@ export {
   tenantOnlyParamSchema,
   tenantOrgParamSchema,
   translatedError,
+  uniqueIdsSchema,
   validCDNUrlSchema,
   validDomainSchema,
   validEmailSchema,

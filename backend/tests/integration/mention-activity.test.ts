@@ -3,13 +3,12 @@ import { updateAttachment } from 'sdk';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { generateServerHLC } from '#/core/stx';
 import { getSeedDb } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { notificationsTable } from '#/modules/notification/notification-db';
-import { mockStxBase } from '#/schemas/sync-transaction-mocks';
+import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders } from '../fixtures';
 import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from '../hierarchy-helpers';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from '../security/helpers';
@@ -93,7 +92,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Mention edit activity', async
       path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id: attachmentId },
       body: {
         ops: { description: mentionDocument(member.id) },
-        stx: { ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { description: generateServerHLC('test') } },
+        stx: mockStxFor('description'),
       },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });

@@ -3,11 +3,10 @@ import { updateAttachment } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { generateServerHLC } from '#/core/stx';
 import { modeSecret } from '#/env';
 import { descriptionToSeed } from '#/modules/yjs/helpers/description-update';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
-import { mockStxBase } from '#/schemas/sync-transaction-mocks';
+import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders } from '../fixtures';
 import { adminDb, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
@@ -105,7 +104,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
       path: { organizationId: owner.organization.id, tenantId: owner.tenantId, id: entityId },
       body: {
         ops: { description: paragraph(text) },
-        stx: { ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { description: generateServerHLC('test-client') } },
+        stx: mockStxFor('description'),
       },
       headers: { ...defaultHeaders, Cookie: owner.sessionCookie },
     });

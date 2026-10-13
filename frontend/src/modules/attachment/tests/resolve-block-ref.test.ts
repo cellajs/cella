@@ -2,7 +2,11 @@ import { appConfig } from 'shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getPresignedUrlBatched = vi.fn(async (attachmentId: string) => `https://signed.example.test/${attachmentId}`);
-vi.mock('~/modules/attachment/presign-batch', () => ({ getPresignedUrlBatched: (attachmentId: string) => getPresignedUrlBatched(attachmentId) }));
+class PresignRejectedError extends Error {}
+vi.mock('~/modules/attachment/presign-batch', () => ({
+  getPresignedUrlBatched: (attachmentId: string) => getPresignedUrlBatched(attachmentId),
+  PresignRejectedError,
+}));
 vi.mock('~/modules/attachment/offline/storage-service', () => ({
   attachmentStorage: { getSharedBlobUrl: async () => null, createBlobUrlWithVariant: async () => null },
 }));
@@ -48,5 +52,15 @@ describe('resolveBlockNoteFileRef', () => {
     const attachmentId = '0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2c';
     expect(await resolveBlockNoteFileRef(attachmentId, ctx)).toBe(`https://signed.example.test/${attachmentId}`);
     expect(getPresignedUrlBatched).toHaveBeenCalledWith(attachmentId);
+  });
+
+  it('renders nothing for an attachment the server refuses to sign, such as a row that is gone, and passes a failed request on', async () => {
+    const attachmentId = '0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2d';
+    getPresignedUrlBatched.mockRejectedValueOnce(new PresignRejectedError(attachmentId));
+    expect(await resolveBlockNoteFileRef(attachmentId, ctx)).toBe('');
+
+    // A request that failed may succeed later: the caller keeps the error.
+    getPresignedUrlBatched.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    await expect(resolveBlockNoteFileRef(attachmentId, ctx)).rejects.toThrow('Failed to fetch');
   });
 });

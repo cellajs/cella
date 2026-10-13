@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { CreateAttachmentsData } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
@@ -48,17 +48,35 @@ export async function cleanupEntityHierarchy(db: ExecutableDb, ...plans: TestEnt
 }
 
 /**
+ * The channels a row needs when it homes at its deepest strict ancestor: that ancestor and every channel above it.
+ * @param ancestors - The row's ancestor types, deepest first.
+ * @param nullable - The ancestors the row may leave unset.
+ */
+export const channelsDownToStrictHome = <T extends string>(ancestors: readonly T[], nullable: readonly T[]): T[] => {
+  const deepestStrict = ancestors.findIndex((type) => !nullable.includes(type));
+  return deepestStrict === -1 ? [] : ancestors.slice(deepestStrict);
+};
+
+/**
  * Seeds, on the admin connection, the channels between an organization and where its attachments live, and returns
  * the plan: none in the template, whose attachments live in the organization itself. Rows home at the deepest strict
- * ancestor, the one place every app's hierarchy allows, so the plan leaves the nullable ancestor columns unset.
+ * ancestor, the one place every app's hierarchy allows, so the plan holds that channel and the ones above it and
+ * leaves every channel below it unseeded and its column unset.
  */
 export async function seedAttachmentHome(org: { id: string; tenantId: string }, createdBy: string) {
-  const plan = buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId: org.id, makeChannelId: () => generateId() });
-  const slugPrefix = `home-${nanoid(6)}`;
-  await seedEntityHierarchy(getAdminDb('test setup'), plan, { tenantId: org.tenantId, createdBy, slugPrefix });
-  const nullable = new Set<string>(hierarchy.getNullableAncestors('attachment').map((type) => appConfig.entityIdColumnKeys[type]));
-  const channelIdColumns = Object.fromEntries(Object.entries(plan.channelIdColumns).filter(([key]) => !nullable.has(key)));
-  return { ...plan, channelIdColumns };
+  const full = buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId: org.id, makeChannelId: () => generateId() });
+  const needed = channelsDownToStrictHome<ChannelEntityType>(
+    hierarchy.getOrderedAncestors('attachment'),
+    hierarchy.getNullableAncestors('attachment'),
+  );
+  const neededKeys = new Set<string>(needed.map((type) => appConfig.entityIdColumnKeys[type]));
+  const plan = {
+    ...full,
+    seedChannelRows: full.seedChannelRows.filter((row) => needed.includes(row.channelType)),
+    channelIdColumns: Object.fromEntries(Object.entries(full.channelIdColumns).filter(([key]) => neededKeys.has(key))),
+  };
+  await seedEntityHierarchy(getAdminDb('test setup'), plan, { tenantId: org.tenantId, createdBy, slugPrefix: `home-${nanoid(6)}` });
+  return plan;
 }
 
 /** The id column a create body names its home by: the deepest channel in the plan's columns, none when that is the organization. */

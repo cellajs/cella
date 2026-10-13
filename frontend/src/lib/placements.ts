@@ -153,9 +153,21 @@ export function isPlacementHidden(slot: Slot, item: PlacementDescriptor, options
 }
 
 /**
- * The app's `surfaces` list for this slot decides which placements exist and their base order; a
- * slot the app does not list keeps every placement in its declared `order`. Channel-stored hiding
- * (`locked` immune), then `requires`/`visibleTo`, then the channel's stored order apply on top.
+ * The placements of a slot in the order it shows them, hidden ones included: what a channel arranges. The app's
+ * `surfaces` list for the slot decides which placements exist and their base order; a slot the app does not list keeps
+ * every placement in its declared `order`. The channel's stored order applies on top.
+ */
+export function arrangePlacements<T extends PlacementDescriptor & { order: number }>(slot: Slot, items: T[], slotConfig?: SlotToolsConfig): T[] {
+  const listed = surfaceOrder(slot);
+  if (!listed) return orderBySlotConfig(items, slotConfig);
+
+  const surfaced = items.filter((item) => listed.includes(item.id)).map((item) => ({ ...item, order: listed.indexOf(item.id) }));
+  return orderBySlotConfig(surfaced, slotConfig);
+}
+
+/**
+ * {@link arrangePlacements} for the placements a viewer sees: channel-stored hiding (`locked` immune), then
+ * `requires`/`visibleTo` leave a placement out.
  */
 export function resolvePlacementList<T extends PlacementDescriptor & { order: number }>(
   slot: Slot,
@@ -163,16 +175,13 @@ export function resolvePlacementList<T extends PlacementDescriptor & { order: nu
   options: ResolvePlacementOptions = {},
 ): T[] {
   const { grants = [], pairs = [], slotConfig } = options;
-  const listed = surfaceOrder(slot);
 
-  const adjusted = items
+  const visible = items
     .filter((item) => !isPlacementHidden(slot, item, { slotConfig }))
     .filter((item) => !item.requires || grants.includes(item.requires))
-    .filter((item) => !item.visibleTo || item.visibleTo.some((pair) => pairs.includes(pair)))
-    // A listed slot orders by list position; the declared `order` is the base everywhere else.
-    .map((item) => (listed ? { ...item, order: listed.indexOf(item.id) } : item));
+    .filter((item) => !item.visibleTo || item.visibleTo.some((pair) => pairs.includes(pair)));
 
-  return orderBySlotConfig(adjusted, slotConfig);
+  return arrangePlacements(slot, visible, slotConfig);
 }
 
 /**

@@ -135,9 +135,9 @@ describe('Idempotent attachment creates', async () => {
     expect((await create(owner, body)).status).toBe(201);
     await logProcessed(mutationId, id, owner.id);
 
-    // The row exists already, so only the replay check can hand it back.
+    // The row exists already, so only the replay check can hand it back: 200, since this request created nothing.
     const { status, data } = await create(owner, body);
-    expect(status).toBe(201);
+    expect(status).toBe(200);
     expect(data.map((row) => row.id)).toEqual([id]);
   });
 });

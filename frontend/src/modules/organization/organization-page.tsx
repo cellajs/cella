@@ -1,6 +1,6 @@
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet } from '@tanstack/react-router';
-import { Suspense, useMemo } from 'react';
+import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page/header';
@@ -31,7 +31,7 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
   const canUpdate = resolveCan(organization.can?.organization?.update, organization.createdBy);
 
   // Grants for declarative tab gating: tabs declaring navTab.requires (settings) hide without them
-  const grants = useMemo(() => (canUpdate ? ['update'] : []), [canUpdate]);
+  const grants = canUpdate ? ['update'] : [];
 
   // Context-role pairs and channel arrangement for registry tabs (visibleTo gating + order/hidden)
   const { data: myMemberships } = useQuery(myMembershipsQueryOptions());

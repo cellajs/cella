@@ -31,6 +31,14 @@ describe('getErrorInfo', () => {
     expect(getErrorInfo({ error: lastAdmin }).title).toBe('An admin is needed');
   });
 
+  it("describes an app's own error type by its texts in `appError.json`, ahead of the name and message the server rendered", () => {
+    i18n.addResourceBundle('en', 'appError', { quota_reached: 'Quota reached', 'quota_reached.text': 'This plan holds no more rows.' });
+    const error = new ApiError({ status: 429, type: 'quota_reached', name: 'Quotum bereikt', severity: 'warn', message: 'Dit abonnement is vol.' });
+
+    expect(getErrorInfo({ error })).toEqual({ title: 'Quota reached', message: 'This plan holds no more rows.' });
+    i18n.removeResourceBundle('en', 'appError');
+  });
+
   it('shows the sentence the server sent when the type has no explanation of its own', () => {
     const error = new ApiError({
       status: 400,

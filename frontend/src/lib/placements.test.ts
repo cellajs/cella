@@ -3,7 +3,7 @@ import { assumeNoSurfaces, withSurface } from 'shared/testing/surfaces';
 import { describe, expect, it } from 'vitest';
 import type { TKey } from '~/lib/i18n-locales';
 import { defineFrontendModule } from '~/lib/module';
-import { assertSurfaceIds, getTools, isPlacementHidden, orderBySlotConfig, resolvePlacementList } from '~/lib/placements';
+import { arrangePlacements, assertSurfaceIds, getTools, isPlacementHidden, orderBySlotConfig, resolvePlacementList } from '~/lib/placements';
 
 // Fixtures use synthetic labels that are not real translation keys.
 const key = (s: string) => s as TKey;
@@ -88,6 +88,38 @@ describe('orderBySlotConfig', () => {
 });
 
 const slot = 'organization.settings' as const;
+
+describe('arrangePlacements', () => {
+  const items = [
+    { id: 'a', label: key('c:a'), order: 10 },
+    { id: 'b', label: key('c:b'), order: 20 },
+    { id: 'c', label: key('c:c'), order: 30 },
+  ];
+
+  it('lists a slot the app does not list by declared order, then by the stored order', () => {
+    expect(arrangePlacements(slot, items).map((i) => i.id)).toEqual(['a', 'b', 'c']);
+    expect(arrangePlacements(slot, items, { order: ['c'] }).map((i) => i.id)).toEqual(['c', 'a', 'b']);
+  });
+
+  it('lists a slot the app lists in the list order, without the ids the list leaves out, and keeps a hidden one', () => {
+    withSurface(slot, ['c', 'a'], () => {
+      expect(arrangePlacements(slot, items, { order: [], hidden: ['a'] }).map((i) => i.id)).toEqual(['c', 'a']);
+      expect(arrangePlacements(slot, items, { order: ['a'] }).map((i) => i.id)).toEqual(['a', 'c']);
+    });
+  });
+
+  it('gives the order the bar of the slot resolves, for every placement the bar shows', () => {
+    withSurface(slot, ['b', 'c', 'a'], () => {
+      const slotConfig = { order: ['c'], hidden: ['b'] };
+      const shown = resolvePlacementList(slot, items, { slotConfig }).map((i) => i.id);
+      expect(
+        arrangePlacements(slot, items, slotConfig)
+          .map((i) => i.id)
+          .filter((id) => shown.includes(id)),
+      ).toEqual(shown);
+    });
+  });
+});
 
 describe('isPlacementHidden', () => {
   const item = { id: 'extra', label: key('c:extra'), order: 50 };

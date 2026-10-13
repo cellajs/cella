@@ -6,7 +6,6 @@
     "incremental": true,
     "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
     "allowImportingTsExtensions": true,
-    "lib": ["es2022"],
     "sourceMap": true,
     "inlineSources": true,
     "sourceRoot": "/",

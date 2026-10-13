@@ -14,6 +14,7 @@ const stringToSeed = (key: string): number => {
 export const withFakerSeed = <T>(key: string, generator: () => T): T => {
   faker.seed(stringToSeed(key));
   const result = generator();
-  faker.seed();
+  // A bare `faker.seed()` draws one of 2^32 seeds: the id drawn next then repeats within some hundred thousand rows of a seed run.
+  faker.seed([...crypto.getRandomValues(new Uint32Array(8))]);
   return result;
 };

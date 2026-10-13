@@ -11,7 +11,7 @@ import { persistAttachments } from '~/modules/attachment/helpers/persist-attachm
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
-import type { BlockNoteContentFormField as BlockNoteContentFormFieldType } from '~/modules/common/form-fields/blocknote';
+import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -21,12 +21,6 @@ import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
-import { lazyNamed } from '~/utils/lazy-named';
-
-const BlockNoteContentFormField = lazyNamed(
-  () => import('~/modules/common/form-fields/blocknote'),
-  'BlockNoteContentFormField',
-) as unknown as typeof BlockNoteContentFormFieldType;
 
 const formSchema = zUpdateOrganizationBody;
 
@@ -113,7 +107,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <Suspense fallback={<Spinner className="my-16 size-6 opacity-50" noDelay />}>
-          <BlockNoteContentFormField
+          <LazyBlockNoteContentFormField
             key={editorKey}
             control={form.control}
             name="welcomeText"

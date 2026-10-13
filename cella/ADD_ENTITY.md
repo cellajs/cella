@@ -31,7 +31,7 @@ Pick the kind ([Architecture](./ARCHITECTURE.md#entity-hierarchy-model)): a **ch
 
 ### Migrations
 
-- `pnpm generate`, review the SQL in `backend/drizzle/`, then `pnpm --filter backend migrate`.
+- `pnpm generate`, review the SQL in `backend/drizzle/`, then `pnpm --filter backend migrate`. A type change of an array column that has a default (`text[]` to `uuid[]`) needs a `DROP DEFAULT` before the `SET DATA TYPE ... USING` that drizzle-kit writes and a `SET DEFAULT` after it: Postgres does not cast the default along.
 - Optional seed at `backend/scripts/seeds/NN-<name>.seed.ts`. Product inserts must set `stx: mockStx()`.
 
 ### Frontend
