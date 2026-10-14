@@ -4,7 +4,7 @@ import { fetchAppRulesByName, type GrantedRule, IAM_BASE } from '../../lib/scale
 import { ipAllowed, ipConditionCidrs } from '../../lib/scaleway/ip-lock';
 import { describeKey, type KeyDescription, type KeyPair, organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
-import { projectAccessKey } from '../../lib/scaleway/s3-client';
+import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { scwErrorStatus, scwFetch } from '../../lib/scaleway/scw-fetch';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
@@ -228,7 +228,7 @@ export async function acquirePrivilegedKey(stack: StackRef): Promise<OperatorKey
  */
 export async function operatorKeys(stack: StackRef): Promise<{ key: KeyPair; state: KeyPair }> {
   const { accessKey, secretKey } = await acquirePrivilegedKey(stack);
-  return { key: { accessKey, secretKey }, state: { accessKey: projectAccessKey(accessKey, stack.projectId), secretKey } };
+  return { key: { accessKey, secretKey }, state: stateKeyOf({ accessKey, secretKey }, stack.projectId) };
 }
 
 /**

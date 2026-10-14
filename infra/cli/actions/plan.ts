@@ -3,7 +3,7 @@ import { confirm } from '@inquirer/prompts';
 import { menuPath } from '../../lib/operator-actions';
 import { type KeyPair, organizationIdOfKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
-import { projectAccessKey } from '../../lib/scaleway/s3-client';
+import { projectAccessKey, stateKeyOf } from '../../lib/scaleway/s3-client';
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { type PlanBasis, readPlanBasis } from '../../lib/stack/plan-basis';
 import { pc, warningMark } from '../../lib/utils/cli-output';
@@ -70,8 +70,7 @@ export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { fo
   if (opts.forgetRetired) {
     const lock = await acquireStackLockOrExit({
       appConfig,
-      accessKey: projectAccessKey(key.accessKey, projectId),
-      secretKey: key.secretKey,
+      ...stateKeyOf(key, projectId),
       stack,
       operation: 'forget-retired-resources',
     });

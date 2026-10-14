@@ -10,7 +10,7 @@ import { machinePolicies } from '../../lib/scaleway/machine-policies';
 import { type KeyPair, organizationIdOfKey } from '../../lib/scaleway/operator-identity';
 import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
-import { projectAccessKey } from '../../lib/scaleway/s3-client';
+import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createProject, listProjects } from '../../lib/scaleway/scaleway-account';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { secretManagerPath } from '../../lib/scaleway/secret-paths';
@@ -484,7 +484,7 @@ async function runOperatorPart(context: InfraContext, operatorKey: OperatorKey, 
   // The operator key serves the state side too, naming this project, as it is made in one environment's. A stack whose buckets predate the
   // operator lets it in first.
   if (!firstSetup) await admitOperatorOrExit(context, { ...operatorKey, passphrase: pulumiPassphrase, stack: stackName });
-  const stateKey: KeyPair = { accessKey: projectAccessKey(operatorKey.accessKey, projectId), secretKey: operatorKey.secretKey };
+  const stateKey: KeyPair = stateKeyOf(operatorKey, projectId);
   const childEnv = buildProviderEnv(infraDir, {
     accessKey: operatorKey.accessKey,
     secretKey: operatorKey.secretKey,
@@ -580,7 +580,7 @@ async function runOperatorPart(context: InfraContext, operatorKey: OperatorKey, 
 async function recordKeyRotation(context: InfraContext, operatorKey: OperatorKey): Promise<void> {
   const { appConfig, projectId } = context;
   const stack = stackNameFor(context);
-  const state = { accessKey: projectAccessKey(operatorKey.accessKey, projectId), secretKey: operatorKey.secretKey };
+  const state = stateKeyOf(operatorKey, projectId);
   const lock = await acquireStackLockOrExit({ appConfig, ...state, stack, operation: 'rotate-keys' });
   try {
     const s3 = await makeControlClient(appConfig.s3.region, state.accessKey, state.secretKey);

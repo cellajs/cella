@@ -4,7 +4,7 @@ import { deriveInfra } from '../../lib/naming';
 import { actionLabel } from '../../lib/operator-actions';
 import { describeKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
-import { projectAccessKey } from '../../lib/scaleway/s3-client';
+import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { deleteApplicationCascade, deleteGroup, listManagedPrincipals, removeBootstrapDnsGrant } from '../../lib/scaleway/scaleway-iam';
 import { checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
@@ -86,8 +86,7 @@ async function destroyStack(context: InfraContext, operator: OperatorKey): Promi
 
   const stackLock = await acquireStackLockOrExit({
     appConfig,
-    accessKey: projectAccessKey(accessKey, context.projectId),
-    secretKey,
+    ...stateKeyOf(operator, context.projectId),
     stack: targetStack,
     operation: 'teardown',
   });

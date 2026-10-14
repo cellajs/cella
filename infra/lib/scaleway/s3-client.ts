@@ -24,6 +24,11 @@ export function projectAccessKey(accessKey: string, projectId: string): string {
   return accessKey.includes('@') ? accessKey : `${accessKey}@${projectId}`;
 }
 
+/** The state side of a run: the same key, naming the environment's project to Object Storage. */
+export function stateKeyOf(key: { accessKey: string; secretKey: string }, projectId: string): { accessKey: string; secretKey: string } {
+  return { accessKey: projectAccessKey(key.accessKey, projectId), secretKey: key.secretKey };
+}
+
 /** The key a deploy-side bucket write authenticates with: the SCW_* pair, else the AWS_* pair of the state backend. Empty when neither is set, so the SDK's own error names the missing key. */
 export function deployS3Key(env: NodeJS.ProcessEnv = process.env): { accessKey: string; secretKey: string } {
   return { accessKey: env.SCW_ACCESS_KEY ?? env.AWS_ACCESS_KEY_ID ?? '', secretKey: env.SCW_SECRET_KEY ?? env.AWS_SECRET_ACCESS_KEY ?? '' };

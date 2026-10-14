@@ -5,7 +5,7 @@ import { confirm } from '@inquirer/prompts';
 import { actionCommand, menuPath } from '../../lib/operator-actions';
 import { describeKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
-import { projectAccessKey } from '../../lib/scaleway/s3-client';
+import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { planBasisChanges, readPlanBasis } from '../../lib/stack/plan-basis';
@@ -86,7 +86,7 @@ export async function runOperatorApply(context: InfraContext, opts: OperatorAppl
   // Lock the stack through the control bucket to exclude concurrent operators and CI.
   // Every exit path must release. The hard-failure paths release before they print and end the action, and the guard stops the double release when the finally below runs too.
   // The state side names this project: the operator key is made in one environment's project and serves them all.
-  const stateKey = { accessKey: projectAccessKey(operator.accessKey, projectId), secretKey: operator.secretKey };
+  const stateKey = stateKeyOf(operator, projectId);
   const stackLock = await acquireStackLockOrExit({
     appConfig,
     accessKey: stateKey.accessKey,
