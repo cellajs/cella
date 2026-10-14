@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { ruleConditions } from '../lib/scaleway/secret-paths';
 import type { FetchLike } from '../lib/utils/fetch-like';
 import { assertVmGrants } from './assert-vm-grants';
 
@@ -131,6 +132,42 @@ describe('assertVmGrants', () => {
     expect(exact.missing).toEqual([]);
     expect(exact.unconditionedSecretRules).toEqual([]);
     expect(exact.ok).toBe(true);
+  });
+
+  it('must not pass a condition spread over rules when a part is missing or a rule carries something else', async () => {
+    // A condition too large for one rule lives in several: each part must be on a rule, or the principal cannot read the secrets under those folders.
+    const terms = Array.from({ length: 12 }, (_, index) => `resource.name.startsWith("/cella-staging-staging/shared/folder-${index}/")`);
+    const condition = terms.join(' || ');
+    const parts = ruleConditions(condition);
+    expect(parts.length).toBeGreaterThan(1);
+    const sets = [...REQUIRED];
+    const grants = (conditions: string[]) =>
+      assertVmGrants({
+        ...baseOpts,
+        requiredSecretCondition: condition,
+        fetchImpl: makeFetch([
+          NO_GROUPS,
+          { match: '/iam/v1alpha1/policies?', body: { policies: [{ id: 'pol-1', name: 'vm-reader-policy', application_id: 'vm-app' }] } },
+          {
+            match: '/iam/v1alpha1/rules?policy_id=pol-1',
+            body: { rules: conditions.map((part) => ({ permission_set_names: sets, condition: part })) },
+          },
+        ]),
+      });
+
+    const whole = await grants(parts);
+    expect(whole.missingSecretConditions).toEqual([]);
+    expect(whole.unconditionedSecretRules).toEqual([]);
+    expect(whole.ok).toBe(true);
+
+    const short = await grants(parts.slice(0, -1));
+    expect(short.ok).toBe(false);
+    expect(short.missingSecretConditions).toEqual(parts.slice(-1));
+
+    // The whole condition in one rule is what Scaleway refuses, and it is not what the program writes.
+    const joined = await grants([condition]);
+    expect(joined.ok).toBe(false);
+    expect(joined.unconditionedSecretRules).toHaveLength(1);
   });
 
   it('excludes policies bound to other principals (shared-organization leakage)', async () => {

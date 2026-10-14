@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { engineConfig } from '../config/engine-config';
+import { ruleConditions } from '../lib/scaleway/secret-paths';
 import { buildVmAssertRows } from '../lib/scaleway/vm-assert-rows';
 import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
@@ -22,7 +23,7 @@ interface PolicyRule {
 const readsSecrets = (rule: PolicyRule) => rule.permissionSetNames.some((set) => set.startsWith('SecretManager'));
 
 describe('vm-iam module', () => {
-  it('must not let a VM principal read secrets outside its folders: every secret rule carries the exact condition the deploy asserts', () => {
+  it('must not let a VM principal read secrets outside its folders: the secret rules carry exactly the parts of the condition the deploy asserts', () => {
     const policies = h.byType('scaleway:iam/policy:Policy');
     // The rows the deploy's assert-vm-grants step compares the live policies with; the CI app has no policy here.
     const rows = buildVmAssertRows(engineConfig()).filter((row) => row.condition !== '');
@@ -35,15 +36,19 @@ describe('vm-iam module', () => {
       const rules = policy.inputs.rules as PolicyRule[];
       const secretRules = rules.filter(readsSecrets);
       expect(secretRules.length, policy.name).toBeGreaterThan(0);
+      // A condition too large for one rule is spread over several: together they carry every part once, and nothing else.
+      expect(
+        secretRules.map((rule) => rule.condition),
+        policy.name,
+      ).toEqual(ruleConditions(row.condition));
       for (const rule of secretRules) {
         const label = `${policy.name} [${rule.permissionSetNames.join(', ')}]`;
-        expect(rule.condition, label).toBe(row.condition);
         // Project-scoped, as the deploy requires: an organization-scoped rule would cover every project.
         expect(rule.projectIds, label).toHaveLength(1);
         expect(rule.organizationId, label).toBeUndefined();
       }
       // Positive control: the program grants the union of sets the deploy expects, so a matching live policy passes the assertion.
-      expect(rules.flatMap((rule) => rule.permissionSetNames).sort(), policy.name).toEqual([...row.sets].sort());
+      expect([...new Set(rules.flatMap((rule) => rule.permissionSetNames))].sort(), policy.name).toEqual([...row.sets].sort());
     }
   });
 });

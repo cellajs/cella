@@ -6,6 +6,7 @@ import {
   resolveApplicationIdByName,
   resolveOrganizationIdViaProject,
 } from '../lib/scaleway/iam-client';
+import { ruleConditions } from '../lib/scaleway/secret-paths';
 import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like';
 import { runIfMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
@@ -31,8 +32,9 @@ export interface AssertVmGrantsOptions {
   /** Permission sets the VM must hold (the caller derives the per-principal set). */
   required: readonly string[];
   /**
-   * Exact CEL condition every secret-granting rule must carry (REQ-9, built by serviceKeyCondition / bootKeyCondition).
-   * IAM conditions only narrow an allow, so one unconditioned secret rule on this app un-scopes the conditioned one. That is a FAILURE here, not a warning.
+   * Exact CEL condition the secret-granting rules must carry together (REQ-9, built by serviceKeyCondition / bootKeyCondition). A condition too
+   * large for one rule is spread over several (`ruleConditions`): every secret-granting rule must carry one of those parts, and every part must be carried.
+   * IAM conditions only narrow an allow, so one unconditioned secret rule on this app un-scopes the conditioned ones. That is a FAILURE here, not a warning.
    */
   requiredSecretCondition?: string;
   /** A registry principal with no deployed VM. It keeps its policy but must hold ZERO API keys: any key on it is an unmonitored key, a FAILURE. */
@@ -53,6 +55,8 @@ export interface AssertVmGrantsResult {
   extra: string[];
   /** Secret-grant rules whose condition deviates from the required one (union semantics: ONE unconditioned rule un-scopes everything). */
   unconditionedSecretRules: string[];
+  /** Parts of the required condition that no secret-granting rule carries: the principal cannot read the secrets under those folders. */
+  missingSecretConditions: string[];
   /** Access keys found on a dormant principal; empty unless `dormant` was requested. */
   dormantKeys: string[];
   /** Rules whose scope is not exactly the required project; empty unless `requiredProjectId` was given. */
@@ -62,7 +66,7 @@ export interface AssertVmGrantsResult {
 /**
  * Collect the union of permission set names granted to an application across all its IAM policies and rules, then verify it EQUALS the required set:
  * missing sets break secret hydration, and extra sets are privilege drift beyond the minimal VM profile.
- * With `requiredSecretCondition`, every secret-granting rule must additionally carry EXACTLY that condition, compared as a string.
+ * With `requiredSecretCondition`, every secret-granting rule must additionally carry EXACTLY one part of that condition, compared as a string, and every part must be carried.
  */
 export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<AssertVmGrantsResult> {
   const auth: IamAuth = { secretKey: opts.secretKey, fetchImpl: resolveFetch(opts.fetchImpl) };
@@ -87,13 +91,16 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
   const extraFatal = extra.filter((set) => !isBenignExtraSet(set));
 
   const unconditionedSecretRules: string[] = [];
+  const missingSecretConditions: string[] = [];
   if (opts.requiredSecretCondition) {
+    const parts = ruleConditions(opts.requiredSecretCondition);
+    const carried = new Set<string>();
     for (const rule of rules) {
       if (!rule.permissionSets.some((set) => SECRET_PERMISSION_SETS.has(set))) continue;
-      if (rule.condition !== opts.requiredSecretCondition) {
-        unconditionedSecretRules.push(`${rule.policyName} [${rule.permissionSets.join(', ')}] condition='${rule.condition || '(none)'}'`);
-      }
+      if (parts.includes(rule.condition)) carried.add(rule.condition);
+      else unconditionedSecretRules.push(`${rule.policyName} [${rule.permissionSets.join(', ')}] condition='${rule.condition || '(none)'}'`);
     }
+    missingSecretConditions.push(...parts.filter((part) => !carried.has(part)));
   }
 
   const misscopedRules: string[] = [];
@@ -108,16 +115,18 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
   // Only a dormant principal is listed: a live one legitimately holds the current and previous generation's keys.
   const dormantKeys = opts.dormant ? (await listApiKeys(auth, organizationId, applicationId)).map((key) => key.access_key) : [];
 
-  // Fatal: missing sets break hydration, a non-read-only extra set is an escalation, an un-scoped secret rule leaks secrets, a key on a dormant principal is an unmonitored key. Extra read-only sets only warn (see isBenignExtraSet).
+  // Fatal: missing sets break hydration, a non-read-only extra set is an escalation, an un-scoped secret rule leaks secrets, a missing part of the path condition breaks hydration too, a key on a dormant principal is an unmonitored key. Extra read-only sets only warn (see isBenignExtraSet).
   const ok =
     missing.length === 0 &&
     extraFatal.length === 0 &&
     unconditionedSecretRules.length === 0 &&
+    missingSecretConditions.length === 0 &&
     dormantKeys.length === 0 &&
     misscopedRules.length === 0;
   if (missing.length > 0) log(`✗ VM grant INCOMPLETE, missing: ${missing.join(', ')}`);
   if (extraFatal.length > 0) log(`✗ VM grant TOO BROAD, extra write/broad grant(s): ${extraFatal.join(', ')}`);
   for (const entry of unconditionedSecretRules) log(`✗ VM secret rule NOT path-scoped (union semantics un-scope the conditioned rule): ${entry}`);
+  for (const entry of missingSecretConditions) log(`✗ VM secret rule MISSING, no rule carries this part of the path condition: ${entry}`);
   for (const entry of misscopedRules) log(`✗ VM rule NOT scoped to the project (reaches every project of the organization): ${entry}`);
   if (dormantKeys.length > 0)
     log(
@@ -131,7 +140,7 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
     const dormantNote = opts.dormant ? ', dormant principal holds no key' : '';
     log(`✓ VM grant verified: required permission sets present, no escalation${conditionNote}${scopeNote}${dormantNote}`);
   }
-  return { ok, granted: [...granted].sort(), missing, extra, unconditionedSecretRules, dormantKeys, misscopedRules };
+  return { ok, granted: [...granted].sort(), missing, extra, unconditionedSecretRules, missingSecretConditions, dormantKeys, misscopedRules };
 }
 
 // Standalone entry point.
@@ -168,7 +177,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     requiredProjectId,
   });
   if (!result.ok) {
-    // Only fatal problems reach here: missing sets, a write or broad escalation, or an un-scoped secret rule. Benign read-only extras warn without setting ok=false.
+    // Only fatal problems reach here: missing sets, a write or broad escalation, an un-scoped secret rule, or a part of the path condition no rule carries. Benign read-only extras warn without setting ok=false.
     const problems = [
       result.missing.length > 0 ? `missing required permission sets: ${result.missing.join(', ')}` : '',
       result.extra.filter((set) => !set.endsWith('ReadOnly')).length > 0
@@ -177,6 +186,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       result.unconditionedSecretRules.length > 0
         ? `secret rules without the required path condition: ${result.unconditionedSecretRules.join('; ')}`
         : '',
+      result.missingSecretConditions.length > 0 ? `no secret rule carries: ${result.missingSecretConditions.join('; ')}` : '',
       result.dormantKeys.length > 0 ? `dormant principal holds API key(s): ${result.dormantKeys.join(', ')}` : '',
       result.misscopedRules.length > 0 ? `rules not scoped to the project: ${result.misscopedRules.join('; ')}` : '',
     ].filter(Boolean);
