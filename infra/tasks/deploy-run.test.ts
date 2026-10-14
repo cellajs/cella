@@ -173,6 +173,12 @@ describe('runDeploy sequencing', () => {
     expect(ops.some((op) => op.startsWith('boot-diag'))).toBe(false);
   });
 
+  it("only checks the state bucket: making and hardening it is the setup's, on the operator key", async () => {
+    const { fx, taskArgs } = makeFake();
+    await runDeploy(baseOpts, fx, fakeDeployEnv);
+    expect(taskArgs['ensure-state-bucket']).toEqual(['--check']);
+  });
+
   it('reconciles pointers against the services the rollout cuts over', async () => {
     const { fx, taskArgs } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);

@@ -145,7 +145,7 @@ export async function runDeploy(
   let lease: { release(): Promise<void> } | undefined;
   let outcome: 'ok' | 'error' = 'ok';
   try {
-    await step('Ensure Pulumi state bucket', () => fx.task('ensure-state-bucket'));
+    await step('Check Pulumi state bucket', () => fx.task('ensure-state-bucket', ['--check']));
     await step('Login to S3 state backend', () => fx.exec('pulumi', ['login', stateBackendUrl(env.state_bucket, env.region)]));
     await step('Select stack', () => fx.exec('pulumi', ['stack', 'select', stack]));
     await step('Acquire stack lock', async () => {
@@ -406,7 +406,7 @@ async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string
 
 // Each task stays an independent CLI (tsx tasks/<name>.ts) for operators, while the deploy runs the same mains in-process so config is read once and a failing step keeps its stack trace.
 const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
-  'ensure-state-bucket': async () => (await import('./ensure-state-bucket')).main(),
+  'ensure-state-bucket': async (argv) => (await import('./ensure-state-bucket')).main(argv),
   'install-pulumi-providers': async () => (await import('./install-pulumi-providers')).main(),
   'forget-retired-resources': async (argv) => (await import('./forget-retired-resources')).main(argv),
   'preflight-privileged': async (argv) => (await import('./preflight-privileged')).main(argv),
