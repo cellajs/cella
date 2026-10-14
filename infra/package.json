@@ -11,7 +11,7 @@
     "print-deploy-env": "tsx tasks/print-deploy-env.ts",
     "print-frontend-build-env": "tsx tasks/print-frontend-build-env.ts",
     "sync-rollout-config": "tsx tasks/sync-rollout-config.ts",
-    "forget-machine-policies": "tsx tasks/forget-machine-policies.ts",
+    "forget-retired-resources": "tsx tasks/forget-retired-resources.ts",
     "deploy": "tsx tasks/deploy.ts",
     "reap": "tsx tasks/reap.ts",
     "status": "tsx tasks/status.ts",

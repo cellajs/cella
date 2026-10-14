@@ -123,6 +123,14 @@ export function validateRuntimeSecrets(secrets: readonly RuntimeSecretDefinition
 export const runtimeSecrets: RuntimeSecretDefinition[] = buildRuntimeSecrets(appStores, runtimeSecretsConfig);
 validateRuntimeSecrets(runtimeSecrets, new Set<string>(serviceNames));
 
+/**
+ * The runtime secrets whose values the operator task ensure-secrets makes straight into Secret Manager: generated ones, and the ones derived
+ * from another runtime secret. Their versions never pass through the Pulumi state.
+ */
+export function generatedRuntimeSecrets(definitions: readonly RuntimeSecretDefinition[] = runtimeSecrets): RuntimeSecretDefinition[] {
+  return definitions.filter((secret) => secret.valueSource === 'pulumi' && (secret.generation === 'random' || secret.derivedFrom !== undefined));
+}
+
 export const operatorManagedRuntimeSecrets: RuntimeSecretDefinition[] = runtimeSecrets.filter((secret) => secret.valueSource === 'operator');
 
 export function runtimeSecretsForConsumer(consumer: RuntimeSecretConsumer): RuntimeSecretDefinition[] {

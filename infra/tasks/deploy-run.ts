@@ -44,7 +44,7 @@ export interface DeployOptions {
 export type TaskName =
   | 'ensure-state-bucket'
   | 'install-pulumi-providers'
-  | 'forget-machine-policies'
+  | 'forget-retired-resources'
   | 'preflight-privileged'
   | 'wait-for-images'
   | 'repair-certs'
@@ -52,6 +52,7 @@ export type TaskName =
   | 'stage-generation-keys'
   | 'assert-vm-grants'
   | 'copy-shared-secrets'
+  | 'ensure-secrets'
   | 'assert-secrets-deliverable'
   | 'geoip-refresh'
   | 'smoke';
@@ -176,7 +177,7 @@ export async function runDeploy(
     );
     // Privileged changes (a database privilege, a VM policy rule) need an operator Apply first: fail here, in seconds, with that command.
     // The machine policies are written at Owner moments: a state that still holds them would have this update delete them.
-    await step('Take the machine policies out of the state', () => fx.task('forget-machine-policies', ['--stack', stack]));
+    await step('Take retired resources out of the state', () => fx.task('forget-retired-resources', ['--stack', stack]));
     await step('Preflight privileged changes', () => fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]));
 
     const registry = `rg.${env.region}.scw.cloud`;
@@ -281,6 +282,10 @@ export async function runDeploy(
     // The base update made each consumer's copy; operator values still in a shared folder move into them (ledger L3).
     await step('Copy shared operator secrets', () =>
       fx.task('copy-shared-secrets', ['--region', env.region, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--mode', opts.mode]),
+    );
+    // A generated or derived secret's value is made in Secret Manager, never in the state; one that exists is kept.
+    await step('Make generated secrets', () =>
+      fx.task('ensure-secrets', ['--region', env.region, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--mode', opts.mode]),
     );
     await step('Verify runtime secrets are deliverable', () =>
       fx.task('assert-secrets-deliverable', [
@@ -448,7 +453,7 @@ async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string
 const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'ensure-state-bucket': async () => (await import('./ensure-state-bucket')).main(),
   'install-pulumi-providers': async () => (await import('./install-pulumi-providers')).main(),
-  'forget-machine-policies': async (argv) => (await import('./forget-machine-policies')).main(argv),
+  'forget-retired-resources': async (argv) => (await import('./forget-retired-resources')).main(argv),
   'preflight-privileged': async (argv) => (await import('./preflight-privileged')).main(argv),
   'wait-for-images': async (argv) => (await import('./wait-for-images')).main(argv),
   'repair-certs': async (argv) => (await import('./repair-certs')).main(argv),
@@ -456,6 +461,7 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'stage-generation-keys': async (argv) => (await import('./stage-generation-keys')).main(argv),
   'assert-vm-grants': async (argv) => (await import('./assert-vm-grants')).main(argv),
   'copy-shared-secrets': async (argv) => (await import('./copy-shared-secrets')).main(argv),
+  'ensure-secrets': async (argv) => (await import('./ensure-secrets')).main(argv),
   'assert-secrets-deliverable': async (argv) => (await import('./assert-secrets-deliverable')).main(argv),
   'geoip-refresh': async (argv) => (await import('./geoip-refresh')).main(argv),
   smoke: async (argv) => (await import('./smoke')).main(argv),

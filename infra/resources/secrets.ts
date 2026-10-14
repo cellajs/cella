@@ -1,9 +1,8 @@
-import * as pulumi from '@pulumi/pulumi';
+import type * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
 import { type RuntimeSecretDefinition, type RuntimeSecretId, runtimeSecrets } from '../lib/runtime-secrets';
 import { secretCopies } from '../lib/scaleway/secret-paths';
 import { mode, naming, region, tags } from '../pulumi-context';
-import { configuredOrRandomSecret } from './configured-secret';
 import { derivedRuntimeSecretData } from './stores';
 
 // One copy per consumer, in `/<slug>-<mode>/<service>/`. The folder is the security boundary the machine grant is conditioned on, so it is derived
@@ -52,34 +51,15 @@ function createSecretVersion(name: string, copy: { service: string; only: boolea
   );
 }
 
-// The `generated-<secretName>` resource names are the Pulumi identities of the live secret values; renaming re-creates them.
-function pulumiOwnedRuntimeSecret(configKey: string, name: string) {
-  return configuredOrRandomSecret(configKey, `generated-${name}`);
-}
+// The values a store supplies (connection strings, CA data) are bound by the store plugins in resources/stores and written as versions here.
+// Generated and derived values are made by the operator task ensure-secrets straight into Secret Manager, so they never pass through the state.
 
-// Store-derived values (connection strings, CA data) are bound by the store plugins in resources/stores; other pulumi-owned values resolve from registry generation metadata below.
-
-// One value per secret: a derived secret reads its source's value, which must not create a second random resource.
-const pulumiValues = new Map<RuntimeSecretId, pulumi.Input<string>>();
-
-function pulumiRuntimeSecretData(definition: RuntimeSecretDefinition): pulumi.Input<string> {
-  const known = pulumiValues.get(definition.id);
-  if (known !== undefined) return known;
-  const value = resolvePulumiRuntimeSecretData(definition);
-  pulumiValues.set(definition.id, value);
-  return value;
-}
-
-function resolvePulumiRuntimeSecretData(definition: RuntimeSecretDefinition): pulumi.Input<string> {
-  const derived = derivedRuntimeSecretData[definition.id];
-  if (derived !== undefined) return derived;
-  if (definition.derivedFrom) {
-    const { secretId, derive } = definition.derivedFrom;
-    const source = runtimeSecrets.find((candidate) => candidate.id === secretId);
-    if (!source) throw new Error(`secrets: '${definition.id}' derives from unknown secret '${secretId}'.`);
-    return pulumi.output(pulumiRuntimeSecretData(source)).apply(derive);
-  }
-  if (definition.generation === 'random') return pulumiOwnedRuntimeSecret(definition.id, definition.secretName);
+/** The value a store supplies for a runtime secret, or undefined for one the program writes no version of. */
+function storeSuppliedData(definition: RuntimeSecretDefinition): pulumi.Input<string> | undefined {
+  if (definition.valueSource !== 'pulumi') return undefined;
+  const supplied = derivedRuntimeSecretData[definition.id];
+  if (supplied !== undefined) return supplied;
+  if (definition.generation === 'random' || definition.derivedFrom) return undefined;
   throw new Error(
     `secrets: pulumi-owned secret '${definition.id}' has generation 'manual' but no derived value: add it to derivedRuntimeSecretData.`,
   );
@@ -98,7 +78,8 @@ function secretContainers(definition: RuntimeSecretDefinition): Record<string, p
         retainOnDelete: isOperator,
         importId: isOperator ? operatorSecretImports[`${definition.secretName}@${service}`] : undefined,
       });
-      if (!isOperator) createSecretVersion(definition.secretName, copy, secret.id, pulumiRuntimeSecretData(definition));
+      const supplied = storeSuppliedData(definition);
+      if (supplied !== undefined) createSecretVersion(definition.secretName, copy, secret.id, supplied);
       return [service, secret.id];
     }),
   );
