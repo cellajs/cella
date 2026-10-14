@@ -1,5 +1,5 @@
+import { machineApplications } from '../lib/scaleway/declared-identities';
 import { resolveApplicationIdByName } from '../lib/scaleway/iam-client';
-import { principalNames } from '../lib/scaleway/principals';
 import { ensureApplication, type ProvisionScopedKeyOptions } from '../lib/scaleway/scaleway-iam';
 import { principalServices } from '../lib/services';
 
@@ -65,8 +65,7 @@ export async function ensureMachineIdentities(opts: Omit<MachineIdentitiesOption
  * key can create.
  */
 export async function missingMachineIdentities(opts: { secretKey: string; organizationId: string; slug: string; mode: string }): Promise<string[]> {
-  const names = principalNames(opts.slug, opts.mode);
-  const wanted = [...principalServices().map((svc) => names.vmService(svc.slug)), names.boot, names.builder];
+  const wanted = machineApplications(opts.slug, opts.mode);
   const missing: string[] = [];
   for (const name of wanted) {
     if (!(await resolveApplicationIdByName({ secretKey: opts.secretKey }, opts.organizationId, name))) missing.push(name);
