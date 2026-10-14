@@ -1,9 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { databaseRuntimeSecrets, generatedRuntimeSecrets, type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
-import { createSecretManagerClient, type SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
+import type { SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
 import { type CopyContainer, secretCopyContainers } from '../lib/scaleway/secret-copies';
-import { runIfMain } from '../lib/utils/is-main';
-import { getFlag } from './args';
 
 /** The Secret Manager calls the task needs, so a test passes its own. */
 export interface EnsureSecretsClient {
@@ -95,18 +93,3 @@ export async function ensureSecrets(opts: {
   for (const definition of [...generatedRuntimeSecrets(all), ...databaseRuntimeSecrets(all)]) await resolveValue(definition);
   return written;
 }
-
-/** The deploy's step: the key in `SCW_SECRET_KEY`, the project and region from flags, the slug from the mode's engine config. */
-export async function main(argv = process.argv.slice(2)): Promise<void> {
-  const secretKey = process.env.SCW_SECRET_KEY;
-  const region = getFlag(argv, '--region');
-  const projectId = getFlag(argv, '--project-id');
-  const mode = getFlag(argv, '--mode');
-  if (!secretKey || !region || !projectId || !mode) throw new Error('Required: SCW_SECRET_KEY, --region, --project-id, --mode');
-  process.env.APP_MODE = mode;
-  const { loadEngineConfig } = await import('../config/engine-config');
-  const { slug } = await loadEngineConfig();
-  await ensureSecrets({ client: createSecretManagerClient({ secretKey, region, projectId }), slug, mode });
-}
-
-runIfMain(import.meta.url, main);

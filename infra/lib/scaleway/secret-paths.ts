@@ -32,7 +32,7 @@ export function legacySharedSecretPath(slug: string, mode: string, consumers: re
   return `/${slug}-${mode}/shared/${[...consumers].sort().join('/')}/`;
 }
 
-/** Folder of what a deploy reads: the standing machine keys it hands over. Outside every machine's condition. */
+/** Folder of the values a deploy reads: the standing machine keys it hands over and the telemetry ingest key. Outside every machine's condition. */
 export function deployFolderPath(slug: string, mode: string): string {
   return `/${slug}-${mode}/deploy/`;
 }

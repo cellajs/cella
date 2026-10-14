@@ -10,6 +10,7 @@ import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-ma
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { planBasisChanges, readPlanBasis } from '../../lib/stack/plan-basis';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
+import { syncDeployTelemetryKey } from '../../lib/telemetry/sink-key';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
@@ -244,7 +245,11 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
         log: (message) => console.info(pc.dim(message)),
       }).catch((error) => console.warn(`${warningMark} Could not make the database roles and connection strings (${errorMessage(error)}).`));
       await ensureSecrets({ client, slug: appConfig.slug, mode: context.environment, log: (message) => console.info(pc.dim(message)) }).catch(
-        (error) => console.warn(`${warningMark} Could not make the generated secrets (${errorMessage(error)}); the next deploy tries again.`),
+        (error) => console.warn(`${warningMark} Could not make the generated secrets (${errorMessage(error)}); run the apply again.`),
+      );
+      // The deploy reads values in the deploy folder only: the telemetry key it exports with is copied there.
+      await syncDeployTelemetryKey({ client, slug: appConfig.slug, mode: context.environment }).catch((error) =>
+        console.warn(`${warningMark} Could not copy the telemetry key into the deploy folder (${errorMessage(error)}).`),
       );
     }
 

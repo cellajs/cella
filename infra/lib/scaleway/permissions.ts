@@ -1,31 +1,59 @@
-// CI deploy key (`<slug>-ci-deploy`): project scope
+// Deploy key (`<slug>-<mode>-ci-deploy`): the rights of plan §3.1, built into rules by lib/scaleway/deploy-policy.ts
 
-/** Permission sets granted to the CI deploy key at project scope. The `…ReadOnly` entries are privileged resources: CI refreshes but may not mutate them. */
-export const PROJECT_PERMISSION_SETS = [
-  // Write: touched by routine CI deploys.
-  'BlockStorageFullAccess', // block volumes attached to instances (split from InstancesFullAccess upstream)
-  'ContainerRegistryFullAccess', // image push
-  'IPAMFullAccess', // reserve + attach stable private IPAM IPs for VMs
-  'InstancesFullAccess', // VM lifecycle
-  'LoadBalancersFullAccess', // backend/frontend re-pointing
-  'ObjectStorageFullAccess', // frontend bucket uploads, policy refresh
-  'PrivateNetworksFullAccess', // VM PN attachments (write required by InstancesFullAccess replacements)
-  'SecretManagerFullAccess', // secret version rotation
-  // Read-only: privileged resources, refreshed but not mutated by CI.
+/**
+ * The deploy key's unconditioned project sets: machines and what they attach to, the buckets (narrowed per bucket by their policies), the
+ * registry, and reads of what is privileged. Machines are granular: no serial console, no image, no snapshot and no security group is written.
+ * The registry push stays until the builder machine (phase 6) pushes the images.
+ */
+export const DEPLOY_PROJECT_PERMISSION_SETS = [
+  'InstancesReadOnly',
+  'InstancesServerCreate',
+  'InstancesServerWrite',
+  'InstancesServerDelete',
+  'InstancesServerStart',
+  'InstancesServerStop',
+  'InstancesIpCreate',
+  'InstancesIpWrite',
+  'InstancesIpDelete',
+  // The provider uses both Instance APIs for a private NIC: it creates one through v2 (`InstancesPrivateNetworkInterface*`) and detaches it
+  // through v1 (`InstancesPrivateNic*`) when a machine is reaped. Neither family covers the other.
+  'InstancesPrivateNetworkInterfaceCreate',
+  'InstancesPrivateNetworkInterfaceWrite',
+  'InstancesPrivateNetworkInterfaceDelete',
+  'InstancesPrivateNicCreate',
+  'InstancesPrivateNicWrite',
+  'InstancesPrivateNicDelete',
+  'InstancesVolumeCreate',
+  'InstancesVolumeWrite',
+  'InstancesVolumeDelete',
+  'BlockStorageFullAccess',
+  'IPAMFullAccess',
+  'LoadBalancersFullAccess',
+  'PrivateNetworksFullAccess',
+  'ObjectStorageFullAccess',
+  'ContainerRegistryFullAccess',
   'VPCReadOnly',
   'RelationalDatabasesReadOnly',
+  'ServerlessJobsReadOnly',
 ] as const;
 
-// CI deploy key: grants beyond the app project
+/**
+ * Secret metadata (names, folders, version counts, no value), on the whole project: Scaleway refuses a list call under any condition, and the
+ * deploy finds its containers by listing them. The names are the registry's, which the repository holds. Values are read with the value set alone.
+ */
+export const DEPLOY_SECRET_METADATA_SETS = ['SecretManagerReadOnly'] as const;
 
-/** DNS permission set, "Scoped by Project" on Scaleway. The CI key gets it project-scoped (app project plus the serving zone's project) so it cannot touch unrelated zones. */
+/** Secret writes, in the runtime folders and the hand-over folder: containers the program declares, versions it writes, bundles it stages. */
+export const DEPLOY_SECRET_WRITE_SETS = ['SecretManagerSecretCreate', 'SecretManagerSecretWrite', 'SecretManagerSecretDelete'] as const;
+
+/** Secret values, in the deploy folder only: the standing machine keys and the telemetry key. */
+export const DEPLOY_SECRET_VALUE_SETS = ['SecretManagerSecretAccess'] as const;
+
+/** DNS permission set, "Scoped by Project" on Scaleway: the app's records in the serving zone's project. */
 export const DNS_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const;
 
-/** Organization-scoped sets: IAMReadOnly lets `pulumi up` look up applications by name. A single IAM policy rule may hold permission sets of only ONE scope type, so this needs its own org-keyed rule. */
-const ORG_SCOPED_PERMISSION_SETS = ['IAMReadOnly'] as const;
-
-/** Audit union of the CI grants beyond the plain app-project rule (rule-agnostic). */
-export const ORG_PERMISSION_SETS = [...DNS_PERMISSION_SETS, ...ORG_SCOPED_PERMISSION_SETS] as const;
+/** Organization-scoped sets: IAMReadOnly lets `pulumi up` look up applications by name. A rule holds sets of one scope type only. */
+export const DEPLOY_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
 // Observer app (`<app>-observer`): reads, from the office only
 
@@ -77,18 +105,6 @@ export const BACKEND_S3_PERMISSION_SETS = ['ObjectStorageObjectsRead', 'ObjectSt
 
 /** Boot application sets: pull images and write boot diagnostics. Its Secret Manager rule is separate and conditioned to the handoff folder (bootKeyCondition). */
 export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'] as const;
-
-/** The CI policy's per-rule shape, shared by the rule builder and the drift check so the two cannot diverge. Every CI rule is unconditioned; a condition on any CI rule is drift. */
-export interface CiRuleShape {
-  id: 'project' | 'dns' | 'org-read';
-  scope: 'project' | 'dns-projects' | 'organization';
-  permissionSets: readonly string[];
-}
-export const CI_RULE_SHAPES: readonly CiRuleShape[] = [
-  { id: 'project', scope: 'project', permissionSets: PROJECT_PERMISSION_SETS },
-  { id: 'dns', scope: 'dns-projects', permissionSets: DNS_PERMISSION_SETS },
-  { id: 'org-read', scope: 'organization', permissionSets: ORG_SCOPED_PERMISSION_SETS },
-];
 
 /**
  * Resource-token fragments of the privileged resources, the ones NOT write-granted to the CI key: on "insufficient permissions: write <resource>" the fix is a privileged `pulumi up` with the Owner API key, never widening the CI key.

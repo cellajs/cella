@@ -5,10 +5,9 @@ import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
-import { deleteApiKey, fetchAppRulesByName } from '../../lib/scaleway/iam-client';
+import { deleteApiKey } from '../../lib/scaleway/iam-client';
 import { machinePolicies } from '../../lib/scaleway/machine-policies';
 import { type KeyPair, organizationIdOfKey } from '../../lib/scaleway/operator-identity';
-import { CI_RULE_SHAPES } from '../../lib/scaleway/permissions';
 import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { projectAccessKey } from '../../lib/scaleway/s3-client';
@@ -123,41 +122,6 @@ async function warnOnMissingOperatorSecrets(ctx: SetupContext): Promise<void> {
     }
   } catch {
     // Secret Manager unreachable (e.g. fresh project): skip the gap check.
-  }
-}
-
-/**
- * Advisory-only drift check of the live CI grant against the code-defined rule shapes.
- * Compared per rule (sets AND condition), because a permission-set union hides a missing rule whose sets survive elsewhere and a condition on a rule that must stay unconditioned.
- */
-async function warnOnCiPolicyDrift(ctx: SetupContext): Promise<void> {
-  try {
-    const liveRules = await fetchAppRulesByName({
-      secretKey: ctx.secretKey,
-      projectId: ctx.projectId,
-      applicationName: principalNames(ctx.appConfig.slug, ctx.context.environment).ciDeploy,
-    });
-    if (!liveRules) return;
-    const setKey = (sets: readonly string[]): string => [...sets].sort().join(',');
-    const liveByKey = new Map(liveRules.map((rule) => [setKey(rule.permissionSets), rule]));
-    const problems: string[] = [];
-    for (const shape of CI_RULE_SHAPES) {
-      const live = liveByKey.get(setKey(shape.permissionSets));
-      if (!live) {
-        problems.push(`missing rule [${shape.id}: ${shape.permissionSets.join(', ')}]`);
-        continue;
-      }
-      if (live.condition) problems.push(`rule [${shape.id}] carries a condition '${live.condition}' (CI rules are unconditioned by design)`);
-      liveByKey.delete(setKey(shape.permissionSets));
-    }
-    for (const [key, rule] of liveByKey) problems.push(`unexpected rule [${rule.policyName}: ${key}]`);
-    if (problems.length > 0) {
-      console.warn(
-        `  ${warningMark} CI policy has drifted from code: ${problems.join('; ')}. ` + `Run ${pc.cyan(actionCommand('rotate-keys'))} to reconcile.`,
-      );
-    }
-  } catch {
-    // IAM unreachable (e.g. fresh project): skip the advisory drift check.
   }
 }
 
@@ -312,11 +276,8 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
     projectId: ctx.projectId,
     secretKey: ctx.secretKey,
   });
-  await ensureSecrets({
-    client: createSecretManagerClient({ secretKey: ctx.secretKey, region: ctx.appConfig.s3.region, projectId: ctx.projectId }),
-    slug: ctx.appConfig.slug,
-    mode: ctx.context.environment,
-  });
+  const secrets = createSecretManagerClient({ secretKey: ctx.secretKey, region: ctx.appConfig.s3.region, projectId: ctx.projectId });
+  await ensureSecrets({ client: secrets, slug: ctx.appConfig.slug, mode: ctx.context.environment });
 
   // Seed prompted values only after Pulumi creates the empty secret containers; skipped values stay available through "Manage runtime secrets".
   await seedOperatorSecrets({
@@ -554,7 +515,6 @@ async function runOperatorPart(context: InfraContext, operatorKey: OwnerKey, mom
 
   // The pre-apply gap check is read-only; values are seeded after the first `pulumi up` makes their containers.
   if (!operatorSecrets.adminEmail) await warnOnMissingOperatorSecrets(ctx);
-  if (!moment) await warnOnCiPolicyDrift(ctx);
 
   // The passphrase goes into Secret Manager, so later runs fetch it with the operator key and nobody types it.
   await storeCustodiedPassphrase({
