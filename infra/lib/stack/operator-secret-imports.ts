@@ -6,8 +6,8 @@ const trimSlashes = (path: string) => `/${path.split('/').filter(Boolean).join('
 
 /**
  * The `OPERATOR_SECRET_IMPORTS` value for a stack's first `pulumi up`: the operator-value containers that already exist at their own paths. A
- * teardown keeps them, with their values, so a setup of the same environment adopts them instead of failing to create a second container with
- * the same name and path. Empty when there is none.
+ * teardown keeps them, with their values, and Secret Manager refuses a second container with the same name and path, so a setup of the same
+ * environment adopts them. Empty when there is none.
  */
 export function operatorSecretImports(
   listed: readonly Pick<SecretManagerSecret, 'id' | 'name' | 'path'>[],
