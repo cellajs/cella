@@ -9,6 +9,7 @@ import { runGeoipRefresh } from './geoip-refresh';
 import { runIdentity } from './identity';
 import { runOperatorKey } from './operator-key';
 import { runPreview } from './preview';
+import { runRepositoryKey } from './repository-key';
 import { runResetDatabase } from './reset-database';
 import { runRotatePassphrase } from './rotate-passphrase';
 import { runRotateSecrets } from './rotate-secrets';
@@ -31,6 +32,7 @@ export const ACTION_RUNNERS: ActionRunners = {
   'rotate-passphrase': runRotatePassphrase,
   'operator-key': runOperatorKey,
   identity: runIdentity,
+  'repository-key': runRepositoryKey,
   secrets: runSecrets,
   'db-open': runExposeDatabase,
   'db-seed': runSeedDatabase,

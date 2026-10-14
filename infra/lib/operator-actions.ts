@@ -60,6 +60,12 @@ export const OPERATOR_ACTIONS = {
     description:
       'Make the applications the service registry needs, write the machine policies, keep one standing key per machine identity, put the observer key on this machine, and delete the retired admin application once nothing needs it. Shows what differs first; asks for your Owner API key only when something must change.',
   },
+  'repository-key': {
+    label: 'Set repository read key',
+    key: 'operator',
+    description:
+      "Store, replace or remove the read-only GitHub key a private repository needs: the builder fetches a release's commit with it. A repository anyone may read needs none.",
+  },
   secrets: {
     label: 'Manage runtime secrets',
     key: 'operator',
@@ -134,7 +140,7 @@ export interface MenuRow {
 
 /**
  * The rows of the `pnpm infra` menu, in menu order. `db-open` and `db-close` share one place: the menu lists the one that applies.
- * An action no row lists (`preview`, `geoip-refresh`) runs only by its command.
+ * An action no row lists (`preview`, `geoip-refresh`, `repository-key`) runs only by its command.
  */
 export const MENU_ROWS = {
   status: {

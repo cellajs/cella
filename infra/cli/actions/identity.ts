@@ -1,9 +1,9 @@
 import { ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
-import { deployPolicy } from '../../lib/scaleway/deploy-policy';
+import { declaredIdentities } from '../../lib/scaleway/declared-identities';
 import { type IamAuth, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
 import type { MachineKeyStep } from '../../lib/scaleway/machine-keys';
-import { type MachinePolicy, machinePolicies } from '../../lib/scaleway/machine-policies';
+import type { MachinePolicy } from '../../lib/scaleway/machine-policies';
 import { organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { type AppPrincipalNames, appPrincipalNames, principalNames } from '../../lib/scaleway/principals';
 import { makeS3Client, projectAccessKey } from '../../lib/scaleway/s3-client';
@@ -120,7 +120,7 @@ function secretsFor(context: Pick<InfraContext, 'appConfig' | 'projectId'>, secr
 /** Every policy an identity update writes for an environment: the machine identities' and the deploy key's. Written at Owner moments only. */
 function declaredPolicies(context: Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>, organizationId: string): MachinePolicy[] {
   const { appConfig, projectId } = context;
-  return [...machinePolicies(appConfig, projectId), deployPolicy({ slug: appConfig.slug, mode: context.environment, projectId, organizationId })];
+  return declaredIdentities({ slug: appConfig.slug, mode: context.environment }, { projectId, organizationId }).policies;
 }
 
 /**

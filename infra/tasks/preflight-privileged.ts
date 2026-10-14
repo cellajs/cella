@@ -70,9 +70,13 @@ export function splitUrn(urn: string): { type: string; name: string } {
   return { type: parts[2] ?? '', name: parts.slice(3).join('::') };
 }
 
-export function isPrivilegedUrn(urn: string): boolean {
-  const { type } = splitUrn(urn);
+/** True for a Pulumi resource type only an apply writes. */
+export function isPrivilegedType(type: string): boolean {
   return PRIVILEGED_URN_TYPES.some((prefix) => type.startsWith(prefix));
+}
+
+export function isPrivilegedUrn(urn: string): boolean {
+  return isPrivilegedType(splitUrn(urn).type);
 }
 
 const MUTATING_OPS = new Set(['create', 'update', 'replace', 'delete', 'create-replacement', 'delete-replaced', 'import']);

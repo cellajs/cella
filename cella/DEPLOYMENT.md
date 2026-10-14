@@ -106,7 +106,7 @@ Every action that reads or writes the Pulumi state, a lock included, takes the o
 
 ## CI deploys
 
-[.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger (push to main, release published, manual dispatch) for the reusable [.github/workflows/deploy-pipeline.yml](../.github/workflows/deploy-pipeline.yml): `setup` derives names and matrices from config, a build matrix pushes images, and one `deploy` job runs a single command:
+[.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger (push to main, release published, manual dispatch) for the reusable [.github/workflows/deploy-pipeline.yml](../.github/workflows/deploy-pipeline.yml): `setup` finds the target ([What a deploy deploys](#what-a-deploy-deploys)) and derives names from config, and one `deploy` job, on a checkout of the target, runs a single command:
 
 ```
 pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref <ref>
@@ -115,12 +115,26 @@ pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref
 - Pushes to main auto-deploy **staging**. Create a `staging` [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) holding the `SCW_*` secrets before merging to main. Until `Pulumi.staging.yaml` carries the `infra:bootstrapComplete` marker, the deploy job is skipped. The newest push cancels a superseded in-flight staging run (`cancel-in-progress`). Production rollouts never cancel. Manual: Actions → Deploy → Run workflow → `staging`.
 - **Production** deploys only on a published release or a manual dispatch. For a manual promote, give the `production` GitHub Environment required reviewers. The run then pauses for approval.
 
+### What a deploy deploys
+
+Without further instructions a push to main deploys main's newest commit to staging, a published release deploys the newest release (the highest `x.y.z` tag) to production, and a manual run deploys the commit it was started on. An optional file in the repository, `infra/environments`, changes that with one line per environment:
+
+```
+# <environment> <target> [retry <n>]
+production 0.18.0 retry 1    # held at 0.18.0, deployed once more
+staging    branch:my-branch  # staging follows my-branch
+```
+
+A target is `branch:<name>`, `releases`, a release tag, or a full commit id. A line pins an environment until it is removed, also when a newer release is published: that is how production is held or rolled back. The retry counter asks for the same target once more; the runner that replaces these workflows starts a run when it rises. The file is read from the commit that started the run, so a pin or a rollback of production takes a merge and then a manual run of production on main. A file the deploy cannot read stops it, as a deploy must never guess; `pnpm --filter infra target --mode <environment>` prints what it would deploy.
+
+The deploy runs the engine of its target, so a rolled-back release is deployed the way it was made. A release made before a planned break of the engine's state cannot be deployed after it: roll forward instead.
+
 ### Bring your own CI
 
 1. **Env**: export `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`, `PULUMI_CONFIG_PASSPHRASE` (the workflow maps its `SCW_PROJECT_ID` / `SCW_ORGANIZATION_ID` secrets onto the `SCW_DEFAULT_*` names the Scaleway provider reads). Install node, pnpm, docker (buildx, for the registry checks), and the pulumi CLI.
 2. **Deploy**: `pnpm --filter infra run deploy --mode <mode> --sha <sha>` for a commit pushed to the repository that the root `package.json` names. Safe to re-run. The stack lock serializes concurrent attempts.
 
-The deploy builds nothing itself. When the registry lacks one of the release's images or the frontend bucket its entry files, it makes a builder machine (`<slug>-<mode>-builder-<sha>`, a `POP2-HC-8C-16G` from Scaleway's `docker` image, in the stack's closed security group) that fetches the commit, installs the workspace and builds the boot bundle and the frontend in a `node` container that holds no key, pushes every image (the services' while the frontend builds, with a layer cache in the registry under `buildcache-r<rotation counter>` that only the builder key writes, so a rotation starts a clean one) and writes the frontend's files with the builder key, and reports each step to the boot-diagnostics bucket (`boot-diag/builder/<sha>/`). The deploy deletes it when the build ends, or when it stops waiting after 30 minutes; one left by a dead deploy is deleted by the next deploy and by a teardown. The release's entry files wait under `releases/<sha>/` in the frontend bucket until the deploy publishes them. Jobs that hold deploy secrets install only the `infra` and `shared` workspaces and do not use the shared pnpm cache. `--git-ref`, when provided, gates production deploys to main/release refs.
+The deploy builds nothing itself. When the registry lacks one of the release's images or the frontend bucket its entry files, it makes a builder machine (`<slug>-<mode>-builder-<sha>`, a `POP2-HC-8C-16G` from Scaleway's `docker` image, in the stack's closed security group) that fetches the commit (a private repository's with its [read key](#repository-read-key)), installs the workspace and builds the boot bundle and the frontend in a `node` container that holds no key, pushes every image (the services' while the frontend builds, with a layer cache in the registry under `buildcache-r<rotation counter>` that only the builder key writes, so a rotation starts a clean one) and writes the frontend's files with the builder key, and reports each step to the boot-diagnostics bucket (`boot-diag/builder/<sha>/`). The deploy deletes it when the build ends, or when it stops waiting after 30 minutes; one left by a dead deploy is deleted by the next deploy and by a teardown. The release's entry files wait under `releases/<sha>/` in the frontend bucket until the deploy publishes them. Jobs that hold deploy secrets install only the `infra` and `shared` workspaces and do not use the shared pnpm cache. `--git-ref`, when provided, gates production deploys to main/release refs.
 
 ## Rollout strategies
 
@@ -171,6 +185,8 @@ Most config changes ship through a normal CI deploy, including toggling `appConf
 `pnpm infra preview` is step 1 without the question: for a script, or a look that must never reach an apply. The organization id comes from `SCW_ORGANIZATION_ID` in `backend/.env`.
 
 The same preview runs as a **preflight**: first thing in every deploy, and as the `infra-preflight` job on the release PR against the production Environment. It names any pending privileged change (a database privilege, the VPC) with the Apply command above, so an owed Apply blocks the release PR instead of failing the production deploy after the images have built.
+
+Every pull request also gets the `privileged-changes` check, which needs no key: the base and the head each render, under mocks, the identities and the privileged resources they declare for every environment with a stack file, and the job summary names what merging owes before the next deploy: **Update identities** for an application or a policy that is new, gone or changed, an apply for a privileged resource that is. It passes either way. It reads code only, so drift made outside Pulumi shows in the plan of an apply and not here.
 
 **Deploy right after an Apply that removes a secret.** The running VMs keep the previous release until the next deploy replaces them. A VM boots from the secret list of its own generation and fails the boot on a `required` secret it can no longer read, so when an Apply deletes a runtime secret, or narrows which secrets a VM key reads, an old VM that reboots before the deploy stays down until the deploy replaces it. Run the deploy right after such an Apply. A deployment that serves users keeps the old secret and the old consumer lists for one release, and removes them in the next.
 
@@ -363,6 +379,10 @@ Running the action again replaces the policy and every earlier key. It needs you
 **A new dedicated address** is set the same way, with **Set up operator key**, or by editing the address in the policy's rules in the console. Scaleway applies a policy change within a few minutes, one API after the other, so an address that was removed can still work for a short while.
 
 **How a session is unlocked.** The first action that changes something, or that needs the passphrase, asks for the operator key, access key and secret key. The CLI proves it by asking IAM who bears it, with the key itself: the answer has to be the operator application. It keeps the pair in memory until you quit, and every action of the run works with that key. When Scaleway refuses the key, the CLI says why: a secret key Scaleway does not know, or an address off the list, with this machine's address beside the ones the policy names.
+
+### Repository read key
+
+The builder fetches a release's commit from the repository the root `package.json` names. A repository anyone may read needs nothing; a private one needs a read-only key in each environment, set before its first deploy: `pnpm infra repository-key`, on your operator key. Make a fine-grained GitHub token for that repository only, with **Contents: read** and nothing else, and an expiry. The action checks that the repository answers to it, then stores it in the environment's deploy folder (`/<slug>-<mode>/deploy/repository-read-key`). The deploy hands it to the builder in its read-once bundle, and the builder sends it as a header with its one fetch, so it is in no URL and no file the build sees. Run the action again to replace it before it expires; an empty answer removes it. A build that fails at its fetch names the action. The deploy pipeline finds a target with its own job's read token, which needs no key of yours.
 
 ### Passphrase rotation
 

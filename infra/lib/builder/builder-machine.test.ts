@@ -35,6 +35,15 @@ describe('the builder machine', () => {
     expect(check.status).toBe(0);
   });
 
+  it("fetches a private repository with its read key as a header of that one fetch, and drops the key before the app's code runs", () => {
+    const lines = BUILDER_SCRIPT.split('\n');
+    const keyed = lines.find((line) => line.includes('http.extraHeader'));
+    expect(keyed).toContain('fetch -q --depth 1 origin "$SHA"');
+    expect(keyed).not.toContain('remote add');
+    expect(lines.indexOf('rm -f /run/builder.repo')).toBeGreaterThan(lines.indexOf(keyed ?? ''));
+    expect(lines.indexOf('rm -f /run/builder.repo')).toBeLessThan(lines.indexOf('step build'));
+  });
+
   it("must not hand a key to the app's code: the container gets the frontend env file only", () => {
     const run = BUILDER_SCRIPT.split('\n').find((line) => line.startsWith('docker run'));
     expect(run).toBeDefined();

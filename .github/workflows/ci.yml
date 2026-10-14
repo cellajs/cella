@@ -316,6 +316,43 @@ jobs:
         if: env.SCW_ACCESS_KEY != ''
         run: pnpm --filter infra preflight --mode production --login
 
+  # What merging owes an operator, said without a key (infra/tasks/privileged-check.ts): the base and the head each render, under mocks, the
+  # identities and the privileged resources they declare, and the job summary lists what an Owner moment or an apply must write before the
+  # next deploy. It holds no secret and passes either way; a head the render cannot read fails it.
+  privileged-changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout the head
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Checkout the base
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .base
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 26
+          cache: "pnpm"
+
+      - name: Install the head
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Install the base
+        working-directory: .base
+        run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      - name: Say what the change owes
+        run: pnpm --silent --filter infra exec tsx tasks/privileged-check.ts --base "$GITHUB_WORKSPACE/.base"
+
   # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR only, so a
   # story that breaks on a feature PR fails the release PR; run `pnpm test:storybook` before merging frontend work.
   storybook-test:
