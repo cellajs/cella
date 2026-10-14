@@ -1,3 +1,5 @@
+import { S3_SCRIPT } from './s3-script';
+
 /** What the script reads from `/etc/builder.env`. */
 export interface BuilderValues {
   SHA: string;
@@ -27,9 +29,10 @@ set -a; . /etc/builder.env; set +a
 export HOME=/root GIT_TERMINAL_PROMPT=0
 LOG=/var/log/builder.log
 exec >>"$LOG" 2>&1
-DIAG="https://$DIAG_BUCKET.s3.$REGION.scw.cloud/boot-diag/builder/$SHA"
+# Object Storage writes go through /etc/builder-s3.mjs in the node image: the machine image's curl may not sign them.
 put() {
-  curl -sS -m 60 --retry 3 --fail --aws-sigv4 "aws:amz:$REGION:s3" --user "$BOOT_AK@$PROJECT:$BOOT_SK" -X PUT -H 'Content-Type: text/plain; charset=utf-8' --data-binary @"$2" "$DIAG/$1"
+  docker run --rm -e REGION -e S3_AK="$BOOT_AK@$PROJECT" -e S3_SK="$BOOT_SK" -v /etc/builder-s3.mjs:/s3.mjs:ro -v /run:/run:ro "$NODE_IMAGE" \
+    node /s3.mjs put "$DIAG_BUCKET" "boot-diag/builder/$SHA/$1" "$2" 'text/plain; charset=utf-8'
 }
 step() {
   echo "$1" > /run/builder.step
@@ -48,6 +51,7 @@ finish() {
 trap 'echo "failed at line $LINENO"; finish failed' ERR
 set -eE -o pipefail
 
+docker pull -q "$NODE_IMAGE"
 step key
 # Read once: a second read fails, as the bundle is disabled after the first.
 curl -sS -m 30 --fail -H "X-Auth-Token: $BOOT_SK" "https://api.scaleway.com/secret-manager/v1beta1/regions/$REGION/secrets/$BUNDLE_ID/versions/latest/access" > /run/builder.bundle
@@ -74,15 +78,8 @@ docker logout "$REGISTRY_HOST"
 
 if [ -s /build/.release-files ]; then
   step files
-  upload() {
-    IFS=$'\t' read -r path key type cache <<< "$1"
-    curl -sS -m 120 --retry 3 --fail --aws-sigv4 "aws:amz:$REGION:s3" --user "$BUILDER_AK@$PROJECT:$BUILDER_SK" -X PUT -H "Content-Type: $type" -H "Cache-Control: $cache" --data-binary @"$path" "https://$FRONTEND_BUCKET.s3.$REGION.scw.cloud/$key"
-  }
-  export -f upload
-  export REGION PROJECT BUILDER_AK BUILDER_SK FRONTEND_BUCKET
-  # Hashed and stable-named files in parallel; the release's entry files, listed last, after them.
-  { grep -v $'\treleases/' /build/.release-files || true; } | xargs -r -d '\n' -P 16 -I{} bash -c 'upload "$1"' _ {}
-  { grep $'\treleases/' /build/.release-files || true; } | xargs -r -d '\n' -I{} bash -c 'upload "$1"' _ {}
+  docker run --rm -e REGION -e S3_AK="$BUILDER_AK@$PROJECT" -e S3_SK="$BUILDER_SK" -v /etc/builder-s3.mjs:/s3.mjs:ro -v /build:/build:ro "$NODE_IMAGE" \
+    node /s3.mjs upload "$FRONTEND_BUCKET" /build/.release-files
 fi
 
 finish ok
@@ -146,6 +143,7 @@ export function builderCloudConfig(opts: { values: BuilderValues; frontendEnv: R
     },
     { path: '/etc/builder-bake.json', permissions: '0644', content: JSON.stringify(opts.bake, null, 2) },
     { path: '/etc/builder-container.sh', permissions: '0644', content: opts.container.trimEnd() },
+    { path: '/etc/builder-s3.mjs', permissions: '0644', content: S3_SCRIPT.trimEnd() },
     { path: '/usr/local/bin/builder.sh', permissions: '0755', content: BUILDER_SCRIPT.trimEnd() },
     { path: '/etc/systemd/system/builder.service', permissions: '0644', content: UNIT },
   ];

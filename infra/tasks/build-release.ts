@@ -63,7 +63,7 @@ export async function buildRelease(opts: BuildReleaseOptions, fx: BuildEffects):
   const log = opts.log ?? ((message: string) => console.info(message));
   const missing: string[] = [];
   for (const image of opts.images) if (!(await fx.imagePresent(image))) missing.push(image);
-  if (opts.withFrontend && !(await fx.entryFile('index.html'))) missing.push('frontend');
+  if (opts.withFrontend && !(await fx.entryFile('index.html'))) missing.push('the frontend files');
 
   let outcome: 'present' | 'built' = 'present';
   if (missing.length > 0) {

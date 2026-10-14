@@ -1,6 +1,10 @@
 import { spawnSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { BUILDER_SCRIPT, type BuilderValues, builderCloudConfig, containerScript } from './builder-machine';
+import { S3_SCRIPT } from './s3-script';
 
 const values: BuilderValues = {
   SHA: 'a'.repeat(40),
@@ -19,6 +23,14 @@ const values: BuilderValues = {
 describe('the builder machine', () => {
   it('runs a script bash accepts', () => {
     const check = spawnSync('bash', ['-n'], { input: BUILDER_SCRIPT, encoding: 'utf8' });
+    expect(check.stderr).toBe('');
+    expect(check.status).toBe(0);
+  });
+
+  it('writes to Object Storage with a script Node accepts', () => {
+    const file = join(mkdtempSync(join(tmpdir(), 's3-')), 's3.mjs');
+    writeFileSync(file, S3_SCRIPT);
+    const check = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
     expect(check.stderr).toBe('');
     expect(check.status).toBe(0);
   });
