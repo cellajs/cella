@@ -29,7 +29,7 @@ function render(items: Array<MenuItem<string>>): string[] {
 }
 
 describe('mainMenuItems', () => {
-  it('lists eight rows under five groups on a healthy stack, then Quit', () => {
+  it('lists nine rows under five groups on a healthy stack, then Quit', () => {
     expect(render(mainMenuItems(bootstrapped))).toEqual([
       'Observe',
       '  Show status              read-only',
@@ -37,6 +37,7 @@ describe('mainMenuItems', () => {
       'Change',
       '  Rotate keys & secrets ›  CI key, admin key, passphrase, operator key',
       '  Manage runtime secrets   operator key',
+      '  Update identities        Owner key',
       'Database',
       '  Open public DB access ›  operator key · temporary, locked to your IP',
       '  Reset database           operator key · DESTRUCTIVE',
@@ -57,6 +58,7 @@ describe('mainMenuItems', () => {
       'Change',
       '  Rotate keys & secrets ›  CI key, admin key, passphrase, operator key',
       '  Manage runtime secrets   operator key',
+      '  Update identities        Owner key',
       'Database',
       '- Open public DB access › (needs a bootstrapped stack: run "Resume setup")',
       '- Reset database (needs a bootstrapped stack: run "Resume setup")',

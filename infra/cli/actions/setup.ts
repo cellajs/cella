@@ -7,6 +7,7 @@ import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
 import { deleteApiKey, fetchAppRulesByName } from '../../lib/scaleway/iam-client';
+import { machinePolicies } from '../../lib/scaleway/machine-policies';
 import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { CI_RULE_SHAPES } from '../../lib/scaleway/permissions';
 import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
@@ -24,6 +25,7 @@ import { changeMark, checkMark, DIVIDER, pc, warningMark, withSpinner } from '..
 import { LEGACY_ADMIN_KEY_NAMES, writeModeEnvValues } from '../../lib/utils/env-files';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
+import { writeMachinePolicies } from '../../tasks/machine-policies';
 import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { provisionManagedKey } from '../../tasks/provision-managed-key';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
@@ -609,6 +611,14 @@ async function runSetupWith(
     } catch (error) {
       console.warn(
         `${warningMark} Service app setup failed: ${errorMessage(error)}: the CI key-mint rule will be omitted; run \`${actionCommand('rotate-keys')}\`.`,
+      );
+    }
+    // The machine policies follow their applications: written here at the Owner moment, never by the Pulumi program.
+    const organizationId = ctx.childEnv.SCW_DEFAULT_ORGANIZATION_ID;
+    if (organizationId && serviceAppIds.length > 0) {
+      console.info('\n→ Machine policies');
+      await writeMachinePolicies({ secretKey: ctx.secretKey }, organizationId, machinePolicies(appConfig, ctx.projectId)).catch((error) =>
+        console.warn(`${warningMark} Machine policies not written: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`),
       );
     }
   }

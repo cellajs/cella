@@ -20,7 +20,6 @@ import { privateNetworkId } from './network';
 import { registryEndpoint } from './registry';
 import { secretIds } from './secrets';
 import { bootDiagBucketName } from './storage';
-import { vmIamPolicies } from './vm-iam';
 
 /** This deploy's minted keys, from tasks/mint-generation-keys.ts via INFRA_GENERATION_KEYS_FILE. Absent on apply/preview ups, where pre-existing generations ignore cloudInit changes; planning a new generation without it is refused. */
 interface GenerationKeysFile {
@@ -261,8 +260,6 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     },
     {
       // Generation VMs keep their initial cloud-init and image: changes roll a new content-addressed generation, and ignoring image UUID drift prevents in-place replacement outside LB cutover.
-      // IAM grants must exist before the VM's first runtime-secret hydration.
-      dependsOn: [...vmIamPolicies],
       ignoreChanges: ['cloudInit', 'image'],
     },
   );
