@@ -7,16 +7,25 @@ import { ResetBlockTypeItem } from '~/modules/common/blocknote/custom-side-menu/
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
-export function CustomSideMenu({ editor, allowedTypes, headingLevels }: CustomBlockNoteMenuProps) {
+export function CustomSideMenu({ editor, allowedTypes, headingLevels, pinTitleBlock }: CustomBlockNoteMenuProps & { pinTitleBlock?: boolean }) {
   return (
     <SideMenuController
       sideMenu={(props) => {
         const sideMenu = useExtension(SideMenuExtension);
         const block = useExtensionState(SideMenuExtension, { editor, selector: (state) => state?.block });
         if (block === undefined) return null;
+        // A pinned title is not moved, so it gets no handle (TypeCellOS/BlockNote#709).
+        if (pinTitleBlock && block.id === editor.document[0]?.id) return null;
         return (
           <SideMenu {...props}>
-            <DragHandle sideMenu={sideMenu} block={block} editor={editor} allowedTypes={allowedTypes} headingLevels={headingLevels} />
+            <DragHandle
+              sideMenu={sideMenu}
+              block={block}
+              editor={editor}
+              allowedTypes={allowedTypes}
+              headingLevels={headingLevels}
+              pinTitleBlock={pinTitleBlock}
+            />
           </SideMenu>
         );
       }}
@@ -31,6 +40,7 @@ function DragHandle({
   editor,
   allowedTypes,
   headingLevels,
+  pinTitleBlock,
 }: {
   // biome-ignore lint/suspicious/noExplicitAny: BlockNote extension instance type is not exported
   sideMenu: any;
@@ -39,6 +49,7 @@ function DragHandle({
   editor: CustomBlockNoteMenuProps['editor'];
   allowedTypes: CustomBlockNoteMenuProps['allowedTypes'];
   headingLevels: CustomBlockNoteMenuProps['headingLevels'];
+  pinTitleBlock?: boolean;
 }) {
   const { t } = useTranslation();
   const portalElement = usePortalElement();
@@ -98,6 +109,7 @@ function DragHandle({
         <MoveBlockItems
           editor={editor}
           block={block}
+          canMoveUp={!(pinTitleBlock && block.id === editor.document[1]?.id)}
           onMoved={() => {
             setMenuOpen(false);
             sideMenu.unfreezeMenu();
@@ -113,11 +125,13 @@ function DragHandle({
 function MoveBlockItems({
   editor,
   block,
+  canMoveUp,
   onMoved,
 }: {
   editor: CustomBlockNoteMenuProps['editor'];
   // biome-ignore lint/suspicious/noExplicitAny: Block type depends on editor schema
   block: any;
+  canMoveUp: boolean;
   onMoved: () => void;
 }) {
   const { t } = useTranslation();
@@ -126,16 +140,18 @@ function MoveBlockItems({
 
   return (
     <>
-      <Components.Generic.Menu.Item
-        className="bn-menu-item"
-        icon={<ArrowUpIcon />}
-        onClick={() => {
-          editor.moveBlocksUp(block);
-          onMoved();
-        }}
-      >
-        {t('c:move_up')}
-      </Components.Generic.Menu.Item>
+      {canMoveUp && (
+        <Components.Generic.Menu.Item
+          className="bn-menu-item"
+          icon={<ArrowUpIcon />}
+          onClick={() => {
+            editor.moveBlocksUp(block);
+            onMoved();
+          }}
+        >
+          {t('c:move_up')}
+        </Components.Generic.Menu.Item>
+      )}
       <Components.Generic.Menu.Item
         className="bn-menu-item"
         icon={<ArrowDownIcon />}
