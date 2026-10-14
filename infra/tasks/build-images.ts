@@ -1,4 +1,4 @@
-import { BOOT_IMAGE_NAME } from '../lib/scaleway/boot-image';
+import { BOOT_IMAGE_NAME } from '../lib/scaleway/release-image';
 import { parseServiceRows } from '../lib/utils/service-rows';
 
 // Engine-side image builder behind `infra deploy --build`: targets derive from

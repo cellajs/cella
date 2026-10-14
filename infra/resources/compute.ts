@@ -7,10 +7,10 @@ import { telemetrySink } from '../config/telemetry.config';
 
 const appConfig = engineConfig();
 
-import type { ServiceName } from '../compose/compose';
+import { composeConfig, type ServiceName } from '../compose/compose';
 import { sizing } from '../config/sizing';
 import { type RuntimeSecretConsumer, unionRuntimeSecrets } from '../lib/runtime-secrets';
-import { type ResolvedBootImage, resolveBootImage } from '../lib/scaleway/boot-image';
+import { BOOT_IMAGE_NAME, imageRepositoryOf, type ResolvedImage, resolveReleaseImage } from '../lib/scaleway/release-image';
 import type { ServiceDefinition } from '../lib/services';
 import { naming, region, tags, zone } from '../pulumi-context';
 import { renderCloudInit } from './cloud-init';
@@ -103,36 +103,57 @@ interface ServiceConfig {
   exportS3Env?: boolean;
 }
 
-// Per-tag boot-image memo so a release resolves the boot image name and digest once, not once per VM. Stores the raw resolution, which may reject; callers apply their own pin handling.
-const bootImageResolutions = new Map<string, Promise<ResolvedBootImage>>();
+// Per image and release memo, so a release resolves each image's digest once, not once per VM. Stores the raw resolution, which may reject;
+// callers apply their own pin handling.
+const imageResolutions = new Map<string, Promise<ResolvedImage>>();
 
-function resolveBootImageOnce(registry: string, releaseSha: string, secretKey: string): Promise<ResolvedBootImage> {
-  const memoKey = `${registry}|${releaseSha}`;
-  let pending = bootImageResolutions.get(memoKey);
+function resolveImageOnce(registry: string, image: string, releaseSha: string, secretKey: string): Promise<ResolvedImage> {
+  const memoKey = `${registry}|${image}|${releaseSha}`;
+  let pending = imageResolutions.get(memoKey);
   if (!pending) {
-    pending = resolveBootImage({ registry, releaseSha, secretKey });
-    bootImageResolutions.set(memoKey, pending);
+    pending = resolveReleaseImage({ registry, image, releaseSha, secretKey });
+    imageResolutions.set(memoKey, pending);
   }
   return pending;
 }
 
 /**
- * Resolve the boot runner tag to the name and digest it is pullable by, pinning the socket-mounted image against later registry pushes.
- * `requirePinned` fails closed on a real `up` for a newly rolling generation; a pre-existing generation and any dry run degrade to the unpinned tag with a warning.
+ * Resolve an image of the release (the boot runner's or a service's) to the digest it is pullable by, so a later push under the same tag
+ * changes nothing a machine runs. `requirePinned` fails closed on a real `up` for a newly rolling generation; a pre-existing generation and any
+ * dry run degrade to the tag with a warning.
  */
-function bootImageFor(registry: string, releaseSha: string, secretKey: string, requirePinned: boolean): Promise<ResolvedBootImage | undefined> {
-  return resolveBootImageOnce(registry, releaseSha, secretKey).catch((err: unknown) => {
+function pinnedImageFor(
+  registry: string,
+  image: string,
+  releaseSha: string,
+  secretKey: string,
+  requirePinned: boolean,
+): Promise<ResolvedImage | undefined> {
+  return resolveImageOnce(registry, image, releaseSha, secretKey).catch((err: unknown) => {
     const message = err instanceof Error ? err.message : String(err);
     if (pulumi.runtime.isDryRun()) {
-      pulumi.log.warn(`boot image digest resolution failed (preview continues on the tag): ${message}`);
+      pulumi.log.warn(`${image} digest resolution failed (preview continues on the tag): ${message}`);
       return undefined;
     }
     if (!requirePinned) {
-      pulumi.log.warn(`boot image not resolvable for existing generation ${releaseSha}; it keeps running on its booted image: ${message}`);
+      pulumi.log.warn(`${image} not resolvable for existing generation ${releaseSha}; it keeps running on its booted image: ${message}`);
       return undefined;
     }
-    throw new Error(`Refusing to plan a VM with an unpinned boot image: ${message}`);
+    throw new Error(`Refusing to plan a VM with an unpinned ${image} image: ${message}`);
   });
+}
+
+/** A service's `*_TAG` for one generation: `<sha>@sha256:<digest>`, which compose pulls by digest; the bare tag where pinning degrades. */
+function pinnedImageTag(releaseSha: string, requirePinned: boolean): (slug: string) => pulumi.Output<string> {
+  return (slug) => {
+    const block = composeConfig.services[slug];
+    if (!block) throw new Error(`compute: no compose service '${slug}' to pin an image for`);
+    const image = imageRepositoryOf(block.image);
+    return pulumi.all([registryEndpoint, vmSecretKey]).apply(async ([registry, secretKey]) => {
+      const resolved = await pinnedImageFor(registry, image, releaseSha, secretKey, requirePinned);
+      return resolved ? `${releaseSha}@${resolved.digest}` : releaseSha;
+    });
+  };
 }
 
 function buildCloudInit(service: ServiceConfig, releaseSha: string, requirePinnedBootImage: boolean): pulumi.Output<string> {
@@ -141,7 +162,7 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string, requirePinne
 
   const bootImage = pulumi
     .all([registryEndpoint, vmSecretKey])
-    .apply(([registry, secretKey]) => bootImageFor(registry, releaseSha, secretKey, requirePinnedBootImage));
+    .apply(([registry, secretKey]) => pinnedImageFor(registry, BOOT_IMAGE_NAME, releaseSha, secretKey, requirePinnedBootImage));
 
   return pulumi
     .all([
@@ -266,7 +287,8 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     startServices: [svc.slug, ...(appConfig.singleVM && svc.slug === hostSlug ? collocated.map((s) => s.slug) : [])],
     runRelease: svc.runRelease ?? false,
     secretConsumers: secretConsumersFor(svc),
-    composeEnv: buildComposeEnv(svc, generation.sha),
+    // A newly rolling generation pulls every image by digest; a pre-existing one keeps the cloud-init it booted with (ignoreChanges below).
+    composeEnv: buildComposeEnv(svc, pinnedImageTag(generation.sha, !generation.preexisting)),
     handoffs: secretConsumersFor(svc).flatMap((consumer) => {
       const secretId = generationKeys?.handoffSecretIds[consumer];
       return secretId ? [{ service: consumer, secretId }] : [];
