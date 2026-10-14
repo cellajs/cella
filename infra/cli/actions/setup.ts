@@ -11,6 +11,7 @@ import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operat
 import { CI_RULE_SHAPES } from '../../lib/scaleway/permissions';
 import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
+import { projectAccessKey } from '../../lib/scaleway/s3-client';
 import { createProject, listProjects, resolveOrganizationIdFromKey } from '../../lib/scaleway/scaleway-account';
 import { ensureBootstrapDnsGrant, removeBootstrapDnsGrant, resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
@@ -47,7 +48,6 @@ import {
 } from '../shared';
 import { acquireOperatorKey, operatorLock } from './operator-unlock';
 import { OWNER_KEY_HINT, type OwnerKey } from './owner-key';
-import { keyForProject } from './project-key';
 
 /** An optional masked value: empty when the prompt cannot run (no terminal), while a Ctrl-C at it still leaves the wizard. */
 async function optionalSecret(message: string): Promise<string> {
@@ -312,7 +312,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
 
   // The first up puts the policy on the state bucket, which admits the admin and CI applications only: a run whose state side is still the
   // Owner API key would be shut out of its own state halfway.
-  if (ctx.context.state === 'fresh' && ctx.stateKey.accessKey === ctx.accessKey) {
+  if (ctx.context.state === 'fresh' && ctx.stateKey.secretKey === ctx.secretKey) {
     endActionWithHint('The first provisioning needs the admin application key for the Pulumi state, and this run has none (see the warning above)', {
       command: actionCommand('resume'),
       description: 'creates the admin application, then provisions',
@@ -494,55 +494,18 @@ async function runSetupWith(
   mode: Extract<CliMode, 'resume' | 'rotate-keys'>,
   operatorKey: OwnerKey | undefined,
 ): Promise<void> {
-  const pasted = operatorKey ?? (await keyPairOrPrompt(undefined, 'Scaleway Owner API key', OWNER_KEY_HINT));
-  // After the key: an unlocked session fetches the passphrase, so nobody types it.
-  const passphrase = await resolveOrCreatePassphrase(context.stackYaml);
-  const projectId =
-    context.projectId ||
-    (await ensureProjectId({ slug: context.appConfig.slug, mode: context.environment, accessKey: pasted.accessKey, secretKey: pasted.secretKey }));
-
-  // A key minted from the operator key already names this project. An Owner API key typed at the prompt names the project it was created for, which
-  // with a project per environment is often another environment's: the run then takes a key of the same bearer for this project.
-  const key = operatorKey
-    ? { accessKey: pasted.accessKey, secretKey: pasted.secretKey, minted: false, release: async () => {} }
-    : await withSpinner('Checking the project the key points at', () => keyForProject(pasted, projectId));
-  if (key.minted) {
-    console.info(
-      `${checkMark} The Owner API key points at another project, so this run works with key ${key.accessKey}, made for project ${projectId} and deleted when the run ends.`,
-    );
-  }
-  try {
-    await runSetupSteps(context, mode, { operatorKey, pasted, key, passphrase, projectId });
-  } finally {
-    await key
-      .release()
-      .catch((error) =>
-        console.warn(
-          `${warningMark} Could not delete key ${key.accessKey} (${errorMessage(error)}). Delete it in the console: ${pc.underline('https://console.scaleway.com/iam/api-keys')}`,
-        ),
-      );
-  }
-}
-
-/** The keys, passphrase and project a setup run works with. */
-interface SetupAccess {
-  operatorKey: OwnerKey | undefined;
-  /** The key the run started with: the Owner API key typed at the prompt, or the key minted from the operator key. */
-  pasted: KeyPair;
-  /** The key every step uses: `pasted`, or the key minted for this project. */
-  key: KeyPair;
-  passphrase: { passphrase: string; generated: boolean };
-  projectId: string;
-}
-
-async function runSetupSteps(context: InfraContext, mode: Extract<CliMode, 'resume' | 'rotate-keys'>, access: SetupAccess): Promise<void> {
   const needsCiKey = mode === 'rotate-keys' || !context.hasCiKey;
-  const identity = resolveOperatorIdentity();
-  const { operatorKey, pasted, projectId: scwProjectId } = access;
-  const ownerKeyPasted = !operatorKey;
+
   // Provider authentication and all IAM / Secret Manager work use this key through SCW_* env (childEnv below), never stack config.
-  const { accessKey: scwAccessKey, secretKey: scwSecretKey } = access.key;
-  const { passphrase: pulumiPassphrase, generated: passphraseGenerated } = access.passphrase;
+  const identity = resolveOperatorIdentity();
+  const ownerKeyPasted = !operatorKey;
+  const { accessKey: scwAccessKey, secretKey: scwSecretKey } =
+    operatorKey ?? (await keyPairOrPrompt(undefined, 'Scaleway Owner API key', OWNER_KEY_HINT));
+  // After the key: an unlocked session fetches the passphrase, so nobody types it.
+  const { passphrase: pulumiPassphrase, generated: passphraseGenerated } = await resolveOrCreatePassphrase(context.stackYaml);
+  const scwProjectId =
+    context.projectId ||
+    (await ensureProjectId({ slug: context.appConfig.slug, mode: context.environment, accessKey: scwAccessKey, secretKey: scwSecretKey }));
 
   const stackName = stackNameFor(context);
 
@@ -570,9 +533,10 @@ async function runSetupSteps(context: InfraContext, mode: Extract<CliMode, 'resu
 
   // The state side (login, lock) takes the admin application key when this machine holds one, as Apply does. A first setup has none yet: it
   // starts on the Owner API key, which creates the bucket, and moves to the admin application key as soon as that exists (moveStateSideTo).
+  // An Owner API key is made for one project, often another environment's, so on the state side it names this one.
   const stateKey: KeyPair = identity.admin
     ? { accessKey: identity.admin.accessKey, secretKey: identity.admin.secretKey }
-    : { accessKey: scwAccessKey, secretKey: scwSecretKey };
+    : { accessKey: projectAccessKey(scwAccessKey, scwProjectId), secretKey: scwSecretKey };
   const childEnv = buildProviderEnv(infraDir, {
     accessKey: scwAccessKey,
     secretKey: scwSecretKey,
@@ -743,13 +707,13 @@ async function runSetupSteps(context: InfraContext, mode: Extract<CliMode, 'resu
       : autoAcceptDefaults()
         ? true
         : await confirm({
-            message: `Revoke the Owner API key you pasted (${pasted.accessKey}) now? Nothing else needs it: day-2 privileged actions run on the operator key.`,
+            message: `Revoke the Owner API key you pasted (${scwAccessKey}) now? Nothing else needs it: day-2 privileged actions run on the operator key.`,
             default: true,
           });
     if (revokeNow) {
       try {
-        await withSpinner('Revoking the setup key', () => deleteApiKey({ secretKey: pasted.secretKey }, pasted.accessKey));
-        console.info(`${checkMark} Key ${pasted.accessKey} revoked.`);
+        await withSpinner('Revoking the setup key', () => deleteApiKey({ secretKey: scwSecretKey }, scwAccessKey));
+        console.info(`${checkMark} Key ${scwAccessKey} revoked.`);
       } catch (error) {
         console.warn(
           `${warningMark} Could not revoke the key (${errorMessage(error)}). Delete it in the console: ${pc.underline('https://console.scaleway.com/iam/api-keys')}`,
@@ -757,7 +721,7 @@ async function runSetupSteps(context: InfraContext, mode: Extract<CliMode, 'resu
       }
     } else if (ownerKeyPasted) {
       console.info(
-        `\n${pc.dim('Reminder:')} revoke the Owner API key you pasted (${pasted.accessKey}) if it was created for this setup: console → IAM → API keys.`,
+        `\n${pc.dim('Reminder:')} revoke the Owner API key you pasted (${scwAccessKey}) if it was created for this setup: console → IAM → API keys.`,
       );
     }
   }
