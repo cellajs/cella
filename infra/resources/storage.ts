@@ -41,21 +41,12 @@ const humanAccess = (bucketName: pulumi.Input<string>) =>
       })),
   );
 
-// Full S3 access for the CI deploy application, on every bucket policy: policies are deny-by-default, so without it the deploy key cannot touch the bucket.
-const deployAccess = (bucketName: pulumi.Input<string>) => ({
-  Sid: 'DeployAccess',
-  Effect: 'Allow',
-  Principal: { SCW: pulumi.interpolate`application_id:${ciDeployApplicationId}` },
-  Action: ['s3:*'],
-  Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
-});
-
 /**
- * CI access on buckets holding irreplaceable user data: everything a deploy or refresh needs except `s3:DeleteObjectVersion`, so a leaked CI key can delete objects but not destroy version history.
- * `PutBucketVersioning` stays granted because Pulumi manages the versioning config itself; the residual risk is that a leaked key can suspend future versioning.
- * Scaleway's supported bucket-policy action vocabulary is undocumented, so validate any change to this list on staging before trusting it.
+ * The deploy key's access on every bucket policy: objects only (the frontend's files, GeoIP data, boot diagnostics). A bucket's configuration
+ * and its policy are the apply's, a privileged change the deploy stops on, and no version is deleted, so a leaked deploy key can delete
+ * objects but not their history. Policies are deny-by-default, so without this statement the deploy key cannot touch the bucket.
  */
-const deployAccessNoVersionDelete = (bucketName: pulumi.Input<string>) => ({
+const deployAccess = (bucketName: pulumi.Input<string>) => ({
   Sid: 'DeployAccess',
   Effect: 'Allow',
   Principal: { SCW: pulumi.interpolate`application_id:${ciDeployApplicationId}` },
@@ -67,18 +58,6 @@ const deployAccessNoVersionDelete = (bucketName: pulumi.Input<string>) => ({
     's3:PutObject',
     's3:DeleteObject',
     's3:AbortMultipartUpload',
-    's3:GetBucketTagging',
-    's3:PutBucketTagging',
-    's3:GetBucketVersioning',
-    's3:PutBucketVersioning',
-    // Scaleway spells CORS all-caps; the AWS casing is rejected as an invalid action (MalformedPolicy 400).
-    's3:GetBucketCORS',
-    's3:PutBucketCORS',
-    's3:GetLifecycleConfiguration',
-    's3:PutLifecycleConfiguration',
-    's3:GetBucketAcl',
-    's3:GetBucketLocation',
-    's3:GetBucketWebsite',
   ],
   Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
 });
@@ -201,7 +180,7 @@ if (publicUploadsBucket) {
           Action: ['s3:GetObject'],
           Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
         },
-        deployAccessNoVersionDelete(publicUploadsBucket.name),
+        deployAccess(publicUploadsBucket.name),
         ...admin,
         ...signers,
       ]),
@@ -242,7 +221,7 @@ if (privateUploadsBucket) {
       Version: '2023-04-17',
       Statement: pulumi
         .all([humanAccess(privateUploadsBucket.name), uploadsSignerAccess(privateUploadsBucket.name)])
-        .apply(([admin, signers]) => [deployAccessNoVersionDelete(privateUploadsBucket.name), ...admin, ...signers]),
+        .apply(([admin, signers]) => [deployAccess(privateUploadsBucket.name), ...admin, ...signers]),
     }),
   });
 }

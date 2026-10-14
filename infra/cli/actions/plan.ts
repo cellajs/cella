@@ -38,8 +38,8 @@ export interface ReviewedPlan {
 
 /**
  * Show the plan of what an apply would change, with the operator key, before anything is locked or written. The provider authenticates from SCW_* env, never from stack config, in the environment the privileged converge builds
- * (organization id, privileged marker). A CI deploy applies the same diff except the VM policy rules, which only a privileged run reconciles,
- * so one plan covers both. Nothing is locked or written: the returned basis lets the apply tell whether the plan still holds once it is.
+ * (organization id, privileged marker). A deploy applies only the part of such a diff that is not privileged, and stops while a privileged
+ * change is pending. Nothing is locked or written: the returned basis lets the apply tell whether the plan still holds once it is.
  */
 export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { forgetRetired?: boolean } = {}): Promise<ReviewedPlan> {
   if (context.state !== 'bootstrapped') {
@@ -97,7 +97,7 @@ export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { fo
     endAction(status);
   }
   console.info(
-    `\n${pc.dim('Nothing was changed. A clean "no changes" result means the stack matches the code; a CI deploy applies the same plan minus the VM policy rules.')}`,
+    `\n${pc.dim('The plan changed nothing. A clean "no changes" result means the stack matches the code; a deploy stops on any privileged change in it.')}`,
   );
   return { passphrase, basis };
 }

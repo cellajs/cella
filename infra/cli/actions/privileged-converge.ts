@@ -11,16 +11,16 @@ import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { planBasisChanges, readPlanBasis } from '../../lib/stack/plan-basis';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { syncDeployTelemetryKey } from '../../lib/telemetry/sink-key';
-import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { admitOperatorToBuckets } from '../../tasks/admit-operator-buckets';
 import { copySharedSecrets } from '../../tasks/copy-shared-secrets';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
-import { missingRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
+import { machineIdentityLines, planMachineIdentities } from './identity';
 import { acquirePrivilegedKey } from './operator-unlock';
 import { askToApply, type ReviewedPlan, showPlan } from './plan';
 
@@ -124,23 +124,20 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
     try {
       env.SCW_DEFAULT_ORGANIZATION_ID = organizationId;
 
-      // Registry principals anchor the machine policies. The operator key writes no IAM: it finds out which ones are missing and stops, since
-      // the `up` would fail on them halfway.
-      const missing = await missingRegistryPrincipals({
-        slug: appConfig.slug,
-        mode: context.environment,
-        organizationId,
-        secretKey: ownerKey.secretKey,
-      }).catch((error) => {
-        console.warn(`${warningMark} Could not check the registry principals (${errorMessage(error)}).`);
-        return [] as string[];
+      // Identities are IAM, which the operator key writes none of: an application, a policy or a standing key that differs from the declared
+      // ones stops the apply before its `up`, which would fail on it halfway or leave machines a deploy cannot hand keys to.
+      const identity = await planMachineIdentities({ secretKey: ownerKey.secretKey }, organizationId, context).catch((error) => {
+        console.warn(`${warningMark} Could not read the identities (${errorMessage(error)}).`);
+        return undefined;
       });
-      if (missing.length > 0) {
+      const identityChanges = identity ? machineIdentityLines(identity) : [];
+      if (identityChanges.length > 0) {
         await releaseAll();
+        console.error(`${warningMark} The identities of ${context.environment} differ from the declared ones:`);
+        for (const line of identityChanges) console.error(`  ${tildeMark} ${line}`);
         console.error(
-          `${warningMark} The service registry needs ${missing.length === 1 ? 'an identity that does' : 'identities that do'} not exist yet: ${missing.join(', ')}.`,
+          `  They are IAM, which the operator key cannot write: \`${actionCommand('identity')}\` writes them with your Owner API key. Nothing applied.`,
         );
-        console.error(`  Creating one writes IAM, which the operator key cannot: \`${actionCommand('identity')}\` makes it with your Owner API key.`);
         endAction(1);
       }
 

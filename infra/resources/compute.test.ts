@@ -11,7 +11,10 @@ import {
 } from '../tests/helpers/pulumi-mock';
 
 // A new generation refuses to plan without a pinnable boot image; the registry lookup is a network call, so it answers a fixed digest here.
-vi.mock('../lib/scaleway/boot-image', () => ({ resolveBootImage: async () => ({ image: 'infra-boot', digest: `sha256:${'a'.repeat(64)}` }) }));
+vi.mock('../lib/scaleway/release-image', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../lib/scaleway/release-image')>()),
+  resolveReleaseImage: async ({ image }: { image: string }) => ({ image, digest: `sha256:${'a'.repeat(64)}` }),
+}));
 
 /** The deploy's staged keys, as tasks/stage-generation-keys.ts writes them for the Pulumi program. */
 const keys = {
@@ -62,6 +65,15 @@ describe('compute module', () => {
 
   it('pulls images from a private registry namespace', () => {
     expect(h.oneOfType('scaleway:registry/namespace:Namespace').inputs.isPublic).toBe(false);
+  });
+
+  it('pins every image a new machine starts to the digest its release tag resolved to', () => {
+    for (const server of servers) {
+      const tags = bootPlanOf(server)
+        .plan.files.env.split('\n')
+        .filter((line) => /^[A-Z0-9]+_TAG=/.test(line));
+      expect(tags, server.name).toEqual([expect.stringMatching(new RegExp(`^${serviceOf(server).toUpperCase()}_TAG=[^@]+@sha256:a{64}$`))]);
+    }
   });
 
   it('bakes the minted boot key into every VM and hands each VM the bundles of the services it carries only', () => {

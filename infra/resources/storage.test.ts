@@ -56,6 +56,20 @@ describe('storage module', () => {
     }
   });
 
+  it('lets the deploy key at objects only: no bucket configuration, no policy, no version deleted', () => {
+    type Statement = { Sid: string; Action: string[] };
+    for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
+      const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
+      const deploy = Statement.find((statement) => statement.Sid === 'DeployAccess');
+      expect(deploy, policy.name).toBeDefined();
+      for (const action of deploy?.Action ?? []) {
+        expect(action, policy.name).toMatch(
+          /^s3:(ListBucket|ListBucketMultipartUploads|ListMultipartUploadParts|GetObject|PutObject|DeleteObject|AbortMultipartUpload)$/,
+        );
+      }
+    }
+  });
+
   it('must not admit the retired admin application outside the run that admits the operator with its key', () => {
     for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
       expect(String(policy.inputs.policy), policy.name).not.toContain('cella-production-admin');

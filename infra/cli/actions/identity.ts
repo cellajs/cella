@@ -28,14 +28,15 @@ export interface RetiredAdmin {
   removable: boolean;
 }
 
-/**
- * What an identity update would change: the applications the registry needs and lacks, each machine policy's step, each machine identity's
- * standing key, the observer's step, the retired admin.
- */
-export interface IdentityPlan {
+/** What an identity update would change for the machines and the deploy: the applications the registry lacks, each policy, each standing key. */
+export interface MachineIdentityPlan {
   missingApplications: string[];
   policies: MachinePolicyStep[];
   keys: MachineKeyStep[];
+}
+
+/** What an identity update would change: the machine part, the observer's step, the retired admin. */
+export interface IdentityPlan extends MachineIdentityPlan {
   observer: ObserverStep;
   retiredAdmin?: RetiredAdmin;
 }
@@ -51,21 +52,14 @@ export function identityPlanIsEmpty(plan: IdentityPlan): boolean {
   );
 }
 
-/** The plan as lines to print. */
-export function identityPlanLines(plan: IdentityPlan, names: Pick<PrincipalNames, 'observer'>): string[] {
+/** The machine part of a plan as lines to print. */
+export function machineIdentityLines(plan: MachineIdentityPlan): string[] {
   const words: Record<MachinePolicyStep['change'], string> = {
     none: 'as declared',
     create: 'to create',
     update: 'rules to replace',
     'missing-application': 'to create once its application exists',
   };
-  const observerWords: Record<ObserverStep, string | undefined> = {
-    none: undefined,
-    create: 'to create, its key written to this machine',
-    reach: 'to reach this environment, and its key written to this machine',
-    key: 'a key for this machine',
-  };
-  const observer = observerWords[plan.observer];
   return [
     ...plan.missingApplications.map((name) => `application ${name}: to create`),
     ...plan.policies.filter((step) => step.change !== 'none').map((step) => `policy ${step.policy}: ${words[step.change]}`),
@@ -76,6 +70,20 @@ export function identityPlanLines(plan: IdentityPlan, names: Pick<PrincipalNames
           ? [`standing key of ${step.application}: ${step.extra.length} key(s) beside it to delete`]
           : [],
     ),
+  ];
+}
+
+/** The plan as lines to print. */
+export function identityPlanLines(plan: IdentityPlan, names: Pick<PrincipalNames, 'observer'>): string[] {
+  const observerWords: Record<ObserverStep, string | undefined> = {
+    none: undefined,
+    create: 'to create, its key written to this machine',
+    reach: 'to reach this environment, and its key written to this machine',
+    key: 'a key for this machine',
+  };
+  const observer = observerWords[plan.observer];
+  return [
+    ...machineIdentityLines(plan),
     ...(observer ? [`observer ${names.observer}: ${observer}`] : []),
     ...(plan.retiredAdmin?.removable ? [`application ${plan.retiredAdmin.name}: retired, to delete with its keys and its custody secret`] : []),
   ];
@@ -109,17 +117,36 @@ function secretsFor(context: Pick<InfraContext, 'appConfig' | 'projectId'>, secr
   return createSecretManagerClient({ secretKey, region: context.appConfig.s3.region, projectId: context.projectId });
 }
 
+/** Every policy an identity update writes for an environment: the machine identities' and the deploy key's. Written at Owner moments only. */
+function declaredPolicies(context: Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>, organizationId: string): MachinePolicy[] {
+  const { appConfig, projectId } = context;
+  return [...machinePolicies(appConfig, projectId), deployPolicy({ slug: appConfig.slug, mode: context.environment, projectId, organizationId })];
+}
+
+/**
+ * The machine part of an identity update, read with any key that reads IAM and secret metadata: the observer's, the operator's (an apply stops
+ * on it, as the operator key writes no IAM), the Owner's.
+ */
+export async function planMachineIdentities(
+  auth: IamAuth,
+  organizationId: string,
+  context: Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>,
+): Promise<MachineIdentityPlan> {
+  const registry = { slug: context.appConfig.slug, mode: context.environment };
+  return {
+    missingApplications: await missingRegistryPrincipals({ ...registry, secretKey: auth.secretKey, organizationId }),
+    policies: await planMachinePolicies(auth, organizationId, declaredPolicies(context, organizationId)),
+    keys: await planMachineKeys({ auth, secrets: secretsFor(context, auth.secretKey), organizationId, ...registry }),
+  };
+}
+
 async function planIdentities(
   auth: IamAuth,
   organizationId: string,
   context: Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>,
-  wanted: readonly MachinePolicy[],
 ): Promise<IdentityPlan> {
-  const registry = { slug: context.appConfig.slug, mode: context.environment };
   return {
-    missingApplications: await missingRegistryPrincipals({ ...registry, secretKey: auth.secretKey, organizationId }),
-    policies: await planMachinePolicies(auth, organizationId, wanted),
-    keys: await planMachineKeys({ auth, secrets: secretsFor(context, auth.secretKey), organizationId, ...registry }),
+    ...(await planMachineIdentities(auth, organizationId, context)),
     observer: await observerStep(auth, organizationId, context, context.projectId),
     retiredAdmin: await retiredAdmin(auth, organizationId, context),
   };
@@ -147,11 +174,6 @@ export async function runIdentity(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   const registry = { slug: appConfig.slug, mode: context.environment };
   const names = principalNames(appConfig.slug, context.environment);
-  // The machine policies and the deploy key's: identities' rules, written at Owner moments only.
-  const wantedFor = (organizationId: string): MachinePolicy[] => [
-    ...machinePolicies(appConfig, projectId),
-    deployPolicy({ slug: appConfig.slug, mode: context.environment, projectId, organizationId }),
-  ];
   console.info(
     pc.dim(
       `\n${actionLabel('identity')}: the applications the service registry needs, the machine policies and the observer, written with your Owner API key.\n`,
@@ -176,7 +198,7 @@ export async function runIdentity(context: InfraContext): Promise<void> {
   if (observer) {
     const organizationId = await organizationIdOfKey(observer, projectId);
     const auth = { secretKey: observer.secretKey };
-    plan = await planIdentities(auth, organizationId, context, wantedFor(organizationId));
+    plan = await planIdentities(auth, organizationId, context);
     if (!show(plan)) return;
     if (!(await confirmOrDefault({ message: 'Write them with your Owner API key?', default: false }))) return;
   }
@@ -185,12 +207,12 @@ export async function runIdentity(context: InfraContext): Promise<void> {
   try {
     const auth = { secretKey: ownerKey.secretKey };
     if (!plan) {
-      plan = await planIdentities(auth, ownerKey.organizationId, context, wantedFor(ownerKey.organizationId));
+      plan = await planIdentities(auth, ownerKey.organizationId, context);
       if (!show(plan)) return;
       if (!(await confirmOrDefault({ message: 'Write them?', default: false }))) return;
     }
     await ensureRegistryPrincipals({ ...registry, callerSecretKey: ownerKey.secretKey, projectId, organizationId: ownerKey.organizationId });
-    await writeMachinePolicies(auth, ownerKey.organizationId, wantedFor(ownerKey.organizationId));
+    await writeMachinePolicies(auth, ownerKey.organizationId, declaredPolicies(context, ownerKey.organizationId));
     await writeMachineKeys({
       auth,
       secrets: secretsFor(context, ownerKey.secretKey),

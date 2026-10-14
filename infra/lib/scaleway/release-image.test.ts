@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { BOOT_IMAGE_NAME, resolveBootImage } from './boot-image';
+import { appServices } from '../../config/services.config';
+import { BOOT_IMAGE_NAME, imageRepositoryOf, resolveReleaseImage } from './release-image';
 
 const REGISTRY = 'rg.nl-ams.scw.cloud/cellastaging';
 const SHA = '58d6ab01388f16665c8e729022912982478b8174';
@@ -22,10 +23,10 @@ function makeFetch(present: string[]) {
   return { fetchImpl, queried };
 }
 
-describe('resolveBootImage', () => {
+describe('resolveReleaseImage', () => {
   it('resolves the current name to its manifest digest', async () => {
     const { fetchImpl, queried } = makeFetch([BOOT_IMAGE_NAME]);
-    const resolved = await resolveBootImage({ registry: REGISTRY, releaseSha: SHA, secretKey: 'x', fetchImpl });
+    const resolved = await resolveReleaseImage({ registry: REGISTRY, image: BOOT_IMAGE_NAME, releaseSha: SHA, secretKey: 'x', fetchImpl });
     expect(resolved.image).toBe(BOOT_IMAGE_NAME);
     expect(resolved.digest).toMatch(/^sha256:/);
     expect(queried).toHaveLength(1);
@@ -33,14 +34,28 @@ describe('resolveBootImage', () => {
 
   it('rethrows the lookup error (naming the image) when the manifest is absent', async () => {
     const { fetchImpl } = makeFetch([]);
-    await expect(resolveBootImage({ registry: REGISTRY, releaseSha: SHA, secretKey: 'x', fetchImpl })).rejects.toThrow(
+    await expect(resolveReleaseImage({ registry: REGISTRY, image: BOOT_IMAGE_NAME, releaseSha: SHA, secretKey: 'x', fetchImpl })).rejects.toThrow(
       new RegExp(`${BOOT_IMAGE_NAME}:${SHA}`),
     );
   });
 
   it('surfaces a non-404 failure as-is', async () => {
     const fetchImpl = vi.fn(async () => ({ ok: false, status: 401, headers: new Map(), text: async () => 'unauthorized' }) as never);
-    await expect(resolveBootImage({ registry: REGISTRY, releaseSha: SHA, secretKey: 'x', fetchImpl })).rejects.toThrow(/status 401/);
+    await expect(resolveReleaseImage({ registry: REGISTRY, image: BOOT_IMAGE_NAME, releaseSha: SHA, secretKey: 'x', fetchImpl })).rejects.toThrow(
+      /status 401/,
+    );
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('imageRepositoryOf', () => {
+  it('names the repository of every service image, a reused one included', () => {
+    expect(imageRepositoryOf('${REGISTRY}/backend:${JOBS_TAG:-latest}')).toBe('backend');
+    expect(imageRepositoryOf('${REGISTRY}/cdc:${CDC_TAG}')).toBe('cdc');
+    for (const [slug, service] of Object.entries(appServices)) expect(imageRepositoryOf(service.image), slug).toMatch(/^[a-z0-9-]+$/);
+  });
+
+  it('refuses a reference it cannot pin', () => {
+    expect(() => imageRepositoryOf('docker.io/library/redis:7')).toThrow(/cannot be pinned/);
   });
 });
