@@ -1,6 +1,7 @@
 import { ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { actionLabel } from '../../lib/operator-actions';
 import { type IamAuth, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
+import type { MachineKeyStep } from '../../lib/scaleway/machine-keys';
 import { type MachinePolicy, machinePolicies } from '../../lib/scaleway/machine-policies';
 import { organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
@@ -11,6 +12,7 @@ import { engineSecretPath } from '../../lib/scaleway/secret-paths';
 import { stateBucket } from '../../lib/stack/control-store';
 import { changeMark, checkMark, pc, tildeMark } from '../../lib/utils/cli-output';
 import { ADMIN_KEY_SECRET_NAME } from '../../tasks/admit-operator-buckets';
+import { planMachineKeys, writeMachineKeys } from '../../tasks/machine-keys';
 import { type MachinePolicyStep, planMachinePolicies, writeMachinePolicies } from '../../tasks/machine-policies';
 import { ensureRegistryPrincipals, missingRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { confirmOrDefault, type InfraContext } from '../shared';
@@ -25,10 +27,14 @@ export interface RetiredAdmin {
   removable: boolean;
 }
 
-/** What an identity update would change: the applications the registry needs and lacks, each machine policy's step, the observer's, the retired admin. */
+/**
+ * What an identity update would change: the applications the registry needs and lacks, each machine policy's step, each machine identity's
+ * standing key, the observer's step, the retired admin.
+ */
 export interface IdentityPlan {
   missingApplications: string[];
   policies: MachinePolicyStep[];
+  keys: MachineKeyStep[];
   observer: ObserverStep;
   retiredAdmin?: RetiredAdmin;
 }
@@ -38,6 +44,7 @@ export function identityPlanIsEmpty(plan: IdentityPlan): boolean {
   return (
     plan.missingApplications.length === 0 &&
     plan.policies.every((step) => step.change === 'none') &&
+    plan.keys.every((step) => step.change === 'none') &&
     plan.observer === 'none' &&
     !plan.retiredAdmin?.removable
   );
@@ -61,6 +68,13 @@ export function identityPlanLines(plan: IdentityPlan, names: Pick<PrincipalNames
   return [
     ...plan.missingApplications.map((name) => `application ${name}: to create`),
     ...plan.policies.filter((step) => step.change !== 'none').map((step) => `policy ${step.policy}: ${words[step.change]}`),
+    ...plan.keys.flatMap((step) =>
+      step.change === 'make'
+        ? [`standing key of ${step.application}: to make${step.extra.length > 0 ? `, its ${step.extra.length} other key(s) deleted` : ''}`]
+        : step.change === 'prune'
+          ? [`standing key of ${step.application}: ${step.extra.length} key(s) beside it to delete`]
+          : [],
+    ),
     ...(observer ? [`observer ${names.observer}: ${observer}`] : []),
     ...(plan.retiredAdmin?.removable ? [`application ${plan.retiredAdmin.name}: retired, to delete with its keys and its custody secret`] : []),
   ];
@@ -89,6 +103,11 @@ async function retiredAdmin(
   return { name, id, removable };
 }
 
+/** A Secret Manager client in the environment's project. */
+function secretsFor(context: Pick<InfraContext, 'appConfig' | 'projectId'>, secretKey: string) {
+  return createSecretManagerClient({ secretKey, region: context.appConfig.s3.region, projectId: context.projectId });
+}
+
 async function planIdentities(
   auth: IamAuth,
   organizationId: string,
@@ -99,6 +118,7 @@ async function planIdentities(
   return {
     missingApplications: await missingRegistryPrincipals({ ...registry, secretKey: auth.secretKey, organizationId }),
     policies: await planMachinePolicies(auth, organizationId, wanted),
+    keys: await planMachineKeys({ auth, secrets: secretsFor(context, auth.secretKey), organizationId, ...registry }),
     observer: await observerStep(auth, organizationId, context, context.projectId),
     retiredAdmin: await retiredAdmin(auth, organizationId, context),
   };
@@ -165,6 +185,14 @@ export async function runIdentity(context: InfraContext): Promise<void> {
     }
     await ensureRegistryPrincipals({ ...registry, callerSecretKey: ownerKey.secretKey, projectId, organizationId: ownerKey.organizationId });
     await writeMachinePolicies(auth, ownerKey.organizationId, wanted);
+    await writeMachineKeys({
+      auth,
+      secrets: secretsFor(context, ownerKey.secretKey),
+      organizationId: ownerKey.organizationId,
+      projectId,
+      ...registry,
+      steps: plan.keys,
+    });
     if (plan.observer !== 'none') await ensureObserverForEnvironment(context, ownerKey, projectId);
     if (plan.retiredAdmin?.removable) await deleteRetiredAdmin(ownerKey, context, plan.retiredAdmin);
     console.info(`${checkMark} The identities of ${context.environment} are written.`);

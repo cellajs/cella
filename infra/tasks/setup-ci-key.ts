@@ -12,14 +12,6 @@ export interface SetupCiKeyOptions extends ProvisionScopedKeyOptions {
   dnsZone?: string;
   /** Deploy mode; per-mode CI apps keep staging/production keys independent. */
   mode: string;
-  /**
-   * Service + boot application ids (v2 model): presence adds the key-mint
-   * rule so CI can rotate service keys per deploy. The ids intentionally no
-   * longer narrow the rule (see CI_KEY_MINT_PERMISSION_SETS for why and the
-   * trade-off); they remain declared as the intended scope for a future
-   * re-narrowing.
-   */
-  keyMintAppIds?: readonly string[];
 }
 export type CiKeyResult = ScopedKeyResult;
 
@@ -34,12 +26,10 @@ export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> 
     suffix: 'ci-deploy',
     appDescription: 'Non-human principal for GitHub Actions CI deployments',
     policyDescription: 'Least-privilege policy for CI deployments (auto-generated)',
-    // One rule per CI_RULE_SHAPES entry (separate rules per scope type:
-    // Scaleway rejects mixing scopes in one rule). The key-mint rule is
-    // unconditioned: the resource.id condition 403s real api-key mints on
-    // live Scaleway (disproven 2026-08-10; see CI_KEY_MINT_PERMISSION_SETS).
+    // One rule per CI_RULE_SHAPES entry: separate rules per scope type, as Scaleway rejects mixing scopes in one rule. No rule writes IAM: a
+    // deploy hands over the standing machine keys an Owner moment made.
     buildRules: ({ projectId, organizationId }) =>
-      CI_RULE_SHAPES.filter((shape) => shape.id !== 'key-mint' || (opts.keyMintAppIds?.length ?? 0) > 0).map((shape) =>
+      CI_RULE_SHAPES.map((shape) =>
         shape.scope === 'project'
           ? { permission_set_names: [...shape.permissionSets], project_ids: [projectId] }
           : shape.scope === 'dns-projects'

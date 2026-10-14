@@ -15,7 +15,7 @@ export interface ServiceAppsResult {
   serviceAppIds: Record<string, string>;
   /** The boot fetcher application id. */
   bootAppId: string;
-  /** Every created/reused application id (services + boot); their presence gates the CI key-mint rule. */
+  /** Every created/reused application id (services + boot). */
   allAppIds: string[];
 }
 
@@ -24,11 +24,9 @@ export interface ServiceAppsResult {
  * the boot fetcher application (`<slug>-<mode>-boot`), applications only:
  * their POLICIES are the machine policies, written at Owner moments
  * (lib/scaleway/machine-policies.ts), and
- * their KEYS are minted per deploy by CI (tasks/mint-generation-keys.ts) under
- * the unconditioned org-wide IAMApplicationManager grant (the boundary is the
- * absent IAMPolicyManager). Runs with an IAMManager-capable key; the returned
- * ids gate the presence of the CI key-mint rule, so setup runs this before
- * setup-ci-key. Idempotent: an existing application is reused by name.
+ * their standing KEYS are made at Owner moments too (tasks/machine-keys.ts) and
+ * only handed over by a deploy. Runs with an IAMManager-capable key.
+ * Idempotent: an existing application is reused by name.
  */
 export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<ServiceAppsResult> {
   const serviceAppIds: Record<string, string> = {};

@@ -49,7 +49,7 @@ export type TaskName =
   | 'wait-for-images'
   | 'repair-certs'
   | 'sync-rollout-config'
-  | 'mint-generation-keys'
+  | 'stage-generation-keys'
   | 'assert-vm-grants'
   | 'copy-shared-secrets'
   | 'assert-secrets-deliverable'
@@ -248,11 +248,11 @@ export async function runDeploy(
     // A stack that never had a machine plans its first generation in the base update below, before the rollout names one: it is this release.
     process.env.INFRA_RELEASE_SHA = opts.sha;
 
-    // Mint this generation's keys and handoff bundles BEFORE the stack update bakes their references into cloud-init.
-    await step('Mint generation keys', async () => {
+    // Stage the standing machine keys in hand-over bundles BEFORE the stack update bakes their references into cloud-init. No IAM write.
+    await step('Stage machine keys', async () => {
       const { tmpdir } = await import('node:os');
       const outFile = resolve(tmpdir(), `generation-keys-${stack}-${opts.sha.slice(0, 10)}.json`);
-      await fx.task('mint-generation-keys', ['--sha', opts.sha, '--out', outFile]);
+      await fx.task('stage-generation-keys', ['--sha', opts.sha, '--out', outFile]);
       // The pulumi child (fx.update) inherits this env and bakes the boot key and handoff ids into the new generation's cloud-init.
       process.env.INFRA_GENERATION_KEYS_FILE = outFile;
     });
@@ -260,8 +260,8 @@ export async function runDeploy(
     await step('Repair errored LB certificates', () => fx.task('repair-certs', ['--stack', stack]));
     await step('Base stack update', () => fx.update(stack));
     await step('Verify VM IAM grants', async () => {
-      // One assertion per principal: exact sets AND exact path condition; a dormant principal must also hold no key.
-      const rows = JSON.parse(env.vm_assert_json) as Array<{ app: string; sets: string[]; condition: string; dormant?: boolean }>;
+      // One assertion per principal: exact sets AND exact path condition. Their keys were checked when they were staged.
+      const rows = JSON.parse(env.vm_assert_json) as Array<{ app: string; sets: string[]; condition: string }>;
       for (const row of rows) {
         await fx.task('assert-vm-grants', [
           '--application-name',
@@ -274,7 +274,6 @@ export async function runDeploy(
           process.env.SCW_DEFAULT_PROJECT_ID ?? '',
           '--organization-id',
           process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '',
-          ...(row.dormant ? ['--dormant'] : []),
           ...(row.condition ? ['--project-scope'] : []),
         ]);
       }
@@ -454,7 +453,7 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'wait-for-images': async (argv) => (await import('./wait-for-images')).main(argv),
   'repair-certs': async (argv) => (await import('./repair-certs')).main(argv),
   'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),
-  'mint-generation-keys': async (argv) => (await import('./mint-generation-keys')).main(argv),
+  'stage-generation-keys': async (argv) => (await import('./stage-generation-keys')).main(argv),
   'assert-vm-grants': async (argv) => (await import('./assert-vm-grants')).main(argv),
   'copy-shared-secrets': async (argv) => (await import('./copy-shared-secrets')).main(argv),
   'assert-secrets-deliverable': async (argv) => (await import('./assert-secrets-deliverable')).main(argv),

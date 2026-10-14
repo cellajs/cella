@@ -5,18 +5,18 @@ const names = { observer: 'app-observer' };
 
 describe('identity plan', () => {
   it('is empty when every application exists, every policy is as declared and the observer is in place', () => {
-    expect(identityPlanIsEmpty({ missingApplications: [], policies: [{ policy: 'a', change: 'none' }], observer: 'none' })).toBe(true);
-    expect(identityPlanIsEmpty({ missingApplications: ['app-vm-oauth'], policies: [], observer: 'none' })).toBe(false);
-    expect(identityPlanIsEmpty({ missingApplications: [], policies: [{ policy: 'a', change: 'update' }], observer: 'none' })).toBe(false);
-    expect(identityPlanIsEmpty({ missingApplications: [], policies: [], observer: 'key' })).toBe(false);
+    expect(identityPlanIsEmpty({ missingApplications: [], policies: [{ policy: 'a', change: 'none' }], keys: [], observer: 'none' })).toBe(true);
+    expect(identityPlanIsEmpty({ missingApplications: ['app-vm-oauth'], policies: [], keys: [], observer: 'none' })).toBe(false);
+    expect(identityPlanIsEmpty({ missingApplications: [], policies: [{ policy: 'a', change: 'update' }], keys: [], observer: 'none' })).toBe(false);
+    expect(identityPlanIsEmpty({ missingApplications: [], policies: [], keys: [], observer: 'key' })).toBe(false);
   });
 
   it('must not delete the retired admin application while a bucket policy may still need it', () => {
     const kept = { name: 'app-staging-admin', id: 'a1', removable: false };
-    expect(identityPlanIsEmpty({ missingApplications: [], policies: [], observer: 'none', retiredAdmin: kept })).toBe(true);
-    expect(identityPlanLines({ missingApplications: [], policies: [], observer: 'none', retiredAdmin: kept }, names)).toEqual([]);
+    expect(identityPlanIsEmpty({ missingApplications: [], policies: [], keys: [], observer: 'none', retiredAdmin: kept })).toBe(true);
+    expect(identityPlanLines({ missingApplications: [], policies: [], keys: [], observer: 'none', retiredAdmin: kept }, names)).toEqual([]);
     const removable = { ...kept, removable: true };
-    expect(identityPlanIsEmpty({ missingApplications: [], policies: [], observer: 'none', retiredAdmin: removable })).toBe(false);
+    expect(identityPlanIsEmpty({ missingApplications: [], policies: [], keys: [], observer: 'none', retiredAdmin: removable })).toBe(false);
   });
 
   it('lists what changes, and leaves out what is as declared', () => {
@@ -29,6 +29,11 @@ describe('identity plan', () => {
             { policy: 'app-vm-boot-policy', change: 'none' },
             { policy: 'app-vm-oauth-policy', change: 'missing-application' },
           ],
+          keys: [
+            { principal: 'cdc', application: 'app-staging-vm-cdc', change: 'make', extra: ['SCWOLD'] },
+            { principal: 'boot', application: 'app-staging-boot', change: 'prune', extra: ['SCWX1', 'SCWX2'] },
+            { principal: 'jobs', application: 'app-staging-vm-jobs', change: 'none', extra: [] },
+          ],
           observer: 'reach',
           retiredAdmin: { name: 'app-staging-admin', id: 'a1', removable: true },
         },
@@ -38,6 +43,8 @@ describe('identity plan', () => {
       'application app-staging-vm-oauth: to create',
       'policy app-vm-backend-policy: rules to replace',
       'policy app-vm-oauth-policy: to create once its application exists',
+      'standing key of app-staging-vm-cdc: to make, its 1 other key(s) deleted',
+      'standing key of app-staging-boot: 2 key(s) beside it to delete',
       'observer app-observer: to reach this environment, and its key written to this machine',
       'application app-staging-admin: retired, to delete with its keys and its custody secret',
     ]);

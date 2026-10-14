@@ -21,7 +21,7 @@ import { registryEndpoint } from './registry';
 import { secretIds } from './secrets';
 import { bootDiagBucketName } from './storage';
 
-/** This deploy's minted keys, from tasks/mint-generation-keys.ts via INFRA_GENERATION_KEYS_FILE. Absent on apply/preview ups, where pre-existing generations ignore cloudInit changes; planning a new generation without it is refused. */
+/** This deploy's staged keys, from tasks/stage-generation-keys.ts via INFRA_GENERATION_KEYS_FILE. Absent on apply/preview ups, where pre-existing generations ignore cloudInit changes; planning a new generation without it is refused. */
 interface GenerationKeysFile {
   bootAccessKey: string;
   bootSecretKey: string;
@@ -33,7 +33,7 @@ function readGenerationKeysFile(): GenerationKeysFile | undefined {
   if (!file) return undefined;
   const parsed = JSON.parse(fs.readFileSync(file, 'utf8')) as Partial<GenerationKeysFile>;
   if (typeof parsed.bootAccessKey !== 'string' || typeof parsed.bootSecretKey !== 'string' || typeof parsed.handoffSecretIds !== 'object') {
-    throw new Error('INFRA_GENERATION_KEYS_FILE is malformed: re-run the deploy (mint-generation-keys writes it).');
+    throw new Error('INFRA_GENERATION_KEYS_FILE is malformed: re-run the deploy (stage-generation-keys writes it).');
   }
   return parsed as GenerationKeysFile;
 }
@@ -239,7 +239,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   if (!generation.preexisting && !generationKeys) {
     if (!pulumi.runtime.isDryRun()) {
       throw new Error(
-        `compute: planning a NEW ${svc.slug} generation without INFRA_GENERATION_KEYS_FILE: deploy via the deploy task (it runs mint-generation-keys first).`,
+        `compute: planning a NEW ${svc.slug} generation without INFRA_GENERATION_KEYS_FILE: deploy via the deploy task (it runs stage-generation-keys first).`,
       );
     }
     pulumi.log.info(`compute: ${svc.slug} generation ${generation.id} is planned without its keys; a deploy mints them before it updates.`);
@@ -257,7 +257,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     !generation.preexisting && generationKeys ? secretConsumersFor(svc).filter((consumer) => !generationKeys.handoffSecretIds[consumer]) : [];
   if (unminted.length > 0) {
     throw new Error(
-      `compute: a NEW ${svc.slug} generation carries ${unminted.join(', ')}, for which the deploy minted no key: mint-generation-keys must cover every running service.`,
+      `compute: a NEW ${svc.slug} generation carries ${unminted.join(', ')}, for which the deploy staged no key: stage-generation-keys must cover every running service.`,
     );
   }
   const serviceConfig: ServiceConfig = {

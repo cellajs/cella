@@ -35,7 +35,7 @@ export const OPERATOR_ACTIONS = {
     label: 'Rotate keys',
     key: 'owner',
     description:
-      'Replace the CI deploy key and the observer key with fresh ones (the observer key is rewritten in every infra/.env.<mode> on this machine that holds it).',
+      'Replace the CI deploy key, the observer key and every standing machine key with fresh ones (the observer key is rewritten in every infra/.env.<mode> on this machine that holds it).',
   },
   'rotate-passphrase': {
     label: 'Rotate passphrase',
@@ -52,7 +52,7 @@ export const OPERATOR_ACTIONS = {
     label: 'Update identities',
     key: 'owner',
     description:
-      'Make the applications the service registry needs, write the machine policies, put the observer key on this machine, and delete the retired admin application once nothing needs it. Shows what differs first; asks for your Owner API key only when something must change.',
+      'Make the applications the service registry needs, write the machine policies, keep one standing key per machine identity, put the observer key on this machine, and delete the retired admin application once nothing needs it. Shows what differs first; asks for your Owner API key only when something must change.',
   },
   secrets: {
     label: 'Manage runtime secrets',
