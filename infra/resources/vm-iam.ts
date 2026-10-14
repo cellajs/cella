@@ -8,7 +8,7 @@ const appConfig = engineConfig();
 import { principalSecretCondition } from '../lib/runtime-secrets';
 import { BACKEND_S3_PERMISSION_SETS, BOOT_PROJECT_PERMISSION_SETS, SERVICE_SECRET_PERMISSION_SETS } from '../lib/scaleway/permissions';
 import { principalNames } from '../lib/scaleway/principals';
-import { bootKeyCondition } from '../lib/scaleway/secret-paths';
+import { bootKeyCondition, ruleConditions } from '../lib/scaleway/secret-paths';
 import { principalServices } from '../lib/services';
 import { vmPolicyIgnoreChanges } from '../lib/stack/privileged-up';
 import { mode, naming, organizationId, projectId, tags } from '../pulumi-context';
@@ -106,11 +106,12 @@ for (const svc of vmServices) {
         applicationId: serviceApplicationIds[svc.slug],
         organizationId,
         rules: [
-          {
+          // One rule per part of the condition: a condition too large for one rule is spread over several, which grant the same in sum.
+          ...ruleConditions(principalSecretCondition(naming.slug, mode, singleVM, svc.slug)).map((condition) => ({
             permissionSetNames: [...SERVICE_SECRET_PERMISSION_SETS],
             projectIds: [projectId],
-            condition: principalSecretCondition(naming.slug, mode, singleVM, svc.slug),
-          },
+            condition,
+          })),
           ...(isBackend ? [{ permissionSetNames: [...BACKEND_S3_PERMISSION_SETS], projectIds: [projectId] }] : []),
         ],
         tags,

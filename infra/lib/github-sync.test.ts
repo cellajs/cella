@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { githubSecretEntries, parseGithubOriginRepo } from './github-sync';
+import { githubSecretEntries, githubSecretSetArgs, parseGithubOriginRepo } from './github-sync';
 
 describe('parseGithubOriginRepo', () => {
   it('parses https URL with .git suffix', () => {
@@ -54,5 +54,19 @@ describe('githubSecretEntries', () => {
 
   it('writes nothing when neither is given', () => {
     expect(githubSecretEntries({})).toEqual([]);
+  });
+});
+
+describe('githubSecretSetArgs', () => {
+  it('names the secret, its environment and the repository, and holds no value: gh reads it from stdin', () => {
+    expect(githubSecretSetArgs('SCW_SECRET_KEY', 'staging', 'cellajs/cella')).toEqual([
+      'secret',
+      'set',
+      'SCW_SECRET_KEY',
+      '--env',
+      'staging',
+      '--repo',
+      'cellajs/cella',
+    ]);
   });
 });

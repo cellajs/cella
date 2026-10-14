@@ -27,6 +27,7 @@ const okGrants: typeof assertVmGrants = async () => ({
   missing: [],
   extra: [],
   unconditionedSecretRules: [],
+  missingSecretConditions: [],
   dormantKeys: [],
   misscopedRules: [],
 });

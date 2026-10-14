@@ -69,6 +69,35 @@ export function serviceKeyCondition(
     .join(' || ');
 }
 
+/**
+ * Characters the condition of one rule may hold. Scaleway refuses a larger one as "condition is too complex": it accepts every condition up to
+ * about 600 characters and refuses from about 630, and the tipping point moves a little with the number of terms.
+ */
+const RULE_CONDITION_BUDGET = 500;
+
+/** Rules one policy may hold for its condition: Scaleway's quota is ten rules a policy, and a policy keeps one for its unconditioned rights. */
+const MAX_CONDITION_RULES = 9;
+
+/**
+ * The conditions of the rules that together grant one `||` condition. The rules of a policy add up, so terms spread over several rules grant
+ * exactly what the terms joined in one rule grant, and each rule stays within what Scaleway accepts. A long slug or a host that carries
+ * several services passes the budget of one rule. The Pulumi program and the grant assertion both split here, so they compare equal as strings.
+ */
+export function ruleConditions(condition: string): string[] {
+  const rules: string[] = [];
+  for (const term of condition.split(' || ')) {
+    const last = rules.at(-1);
+    if (last !== undefined && last.length + ' || '.length + term.length <= RULE_CONDITION_BUDGET) rules[rules.length - 1] = `${last} || ${term}`;
+    else rules.push(term);
+  }
+  if (rules.length > MAX_CONDITION_RULES) {
+    throw new Error(
+      `A secret-read condition of ${condition.length} characters needs ${rules.length} rules, and one policy holds ${MAX_CONDITION_RULES}: shorten the slug or reduce the number of secret folders.`,
+    );
+  }
+  return rules;
+}
+
 /** Condition for the boot application: only the handoff folder. The boot key is baked into cloud-init, so its reach is exactly the single-access bundles, and re-reading a consumed bundle fails as the tamper alarm. */
 export function bootKeyCondition(slug: string, mode: string): string {
   return `resource.name.startsWith("${handoffFolderPath(slug, mode)}")`;

@@ -7,7 +7,7 @@ import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
 import { deleteApiKey, fetchAppRulesByName } from '../../lib/scaleway/iam-client';
-import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { CI_RULE_SHAPES } from '../../lib/scaleway/permissions';
 import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
@@ -17,6 +17,7 @@ import { ensureBootstrapDnsGrant, removeBootstrapDnsGrant, resolveOrganizationId
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { secretManagerPath } from '../../lib/scaleway/secret-paths';
 import type { Environment } from '../../lib/stack/bootstrap-stack-state';
+import { lockKey, makeControlClient, readObjectText, stateBucket } from '../../lib/stack/control-store';
 import { projectChoices, projectsOfOtherModes } from '../../lib/stack/project-per-mode';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { changeMark, checkMark, DIVIDER, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
@@ -66,6 +67,8 @@ interface SetupContext {
   /** The Owner API key (provider auth + IAM / Secret Manager work). */
   accessKey: string;
   secretKey: string;
+  /** The key for the state side (backend login, stack lock): the admin application key once this machine holds it. */
+  stateKey: KeyPair;
   stackName: string;
   /** Secret Manager folder for this stack's runtime secrets. */
   runtimeSecretPath: string;
@@ -168,6 +171,40 @@ async function mintCiKey(ctx: SetupContext, keyMintAppIds?: readonly string[]): 
   }
 }
 
+/** How long a key made a moment ago gets to be accepted by Object Storage. */
+const STATE_ACCESS_LIMIT_MS = 120_000;
+const STATE_ACCESS_POLL_MS = 3000;
+
+/**
+ * Move the state side of this run to the admin application key. The first `pulumi up` puts a policy on the state bucket that admits the admin
+ * and CI applications only, so a user key that writes the state is shut out in the middle of that up. A key made a moment ago is not accepted
+ * by Object Storage at once: the run waits until the bucket answers it, and stops when it never does.
+ */
+async function moveStateSideTo(ctx: SetupContext, adminKey: KeyPair): Promise<void> {
+  if (ctx.stateKey.accessKey === adminKey.accessKey) return;
+  const s3 = await makeControlClient(ctx.appConfig.s3.region, adminKey.accessKey, adminKey.secretKey);
+  const bucket = stateBucket(ctx.appConfig.slug);
+  const startedAt = Date.now();
+  await withSpinner('Waiting until the state bucket accepts the admin application key', async () => {
+    for (;;) {
+      try {
+        await readObjectText(s3, bucket, lockKey(ctx.stackName));
+        return;
+      } catch (error) {
+        if (Date.now() - startedAt >= STATE_ACCESS_LIMIT_MS) {
+          throw new Error(
+            `The state bucket ${bucket} refuses the admin application key (${errorMessage(error)}). Run \`${actionCommand('resume')}\` in a minute: it continues from here.`,
+          );
+        }
+        await new Promise((resolve) => setTimeout(resolve, STATE_ACCESS_POLL_MS));
+      }
+    }
+  });
+  ctx.stateKey = adminKey;
+  ctx.childEnv.AWS_ACCESS_KEY_ID = adminKey.accessKey;
+  ctx.childEnv.AWS_SECRET_ACCESS_KEY = adminKey.secretKey;
+}
+
 /**
  * Admin IAM application, created on fresh/rotate (the Owner API key holds IAMManager). It grants Object Storage full plus
  * read-only infra rights for `pulumi preview --refresh`, teardown, and bucket recovery, never IAM write. Its key lives in
@@ -175,8 +212,9 @@ async function mintCiKey(ctx: SetupContext, keyMintAppIds?: readonly string[]): 
  * The id is never persisted: every consumer resolves it from IAM by its canonical name.
  */
 async function ensureAdminApp(ctx: SetupContext): Promise<string> {
+  let admin: Awaited<ReturnType<typeof setupAdminApp>>;
   try {
-    const admin = await setupAdminApp({
+    admin = await setupAdminApp({
       callerSecretKey: ctx.secretKey,
       projectId: ctx.projectId,
       slug: ctx.appConfig.slug,
@@ -192,11 +230,13 @@ async function ensureAdminApp(ctx: SetupContext): Promise<string> {
     console.info(
       `  ${checkMark} Admin application key ('${principalNames(ctx.appConfig.slug, ctx.context.environment).admin}') written to ${written.path} (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY)`,
     );
-    return admin.applicationId;
   } catch (error) {
     console.warn(`${warningMark} Admin app setup failed: ${errorMessage(error)}`);
     return '';
   }
+  // Outside the catch above: a state bucket that refuses the key stops the run, since going on would lose the state.
+  await moveStateSideTo(ctx, { accessKey: admin.accessKey, secretKey: admin.secretKey });
+  return admin.applicationId;
 }
 
 function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; adminAppId: string; names: PrincipalNames }): void {
@@ -270,11 +310,20 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
     }
   }
 
+  // The first up puts the policy on the state bucket, which admits the admin and CI applications only: a run whose state side is still the
+  // Owner API key would be shut out of its own state halfway.
+  if (ctx.context.state === 'fresh' && ctx.stateKey.secretKey === ctx.secretKey) {
+    endActionWithHint('The first provisioning needs the admin application key for the Pulumi state, and this run has none (see the warning above)', {
+      command: actionCommand('resume'),
+      description: 'creates the admin application, then provisions',
+    });
+  }
+
   // Lock provisioning against concurrent operators and CI; every exit path releases it, and abandoned locks expire or clear with "Unlock stack".
   const stackLock = await acquireStackLockOrExit({
     appConfig: ctx.appConfig,
-    accessKey: projectAccessKey(ctx.accessKey, ctx.projectId),
-    secretKey: ctx.secretKey,
+    accessKey: ctx.stateKey.accessKey,
+    secretKey: ctx.stateKey.secretKey,
     stack: ctx.stackName,
     operation: 'setup',
   });
@@ -482,15 +531,19 @@ async function runSetupWith(
         : actionLabel('resume');
   if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return;
 
-  // The state side (login, lock) takes the admin application key when this machine holds one, as Apply does; a first setup has none yet, and the Owner API key holds the object-storage rights too.
+  // The state side (login, lock) takes the admin application key when this machine holds one, as Apply does. A first setup has none yet: it
+  // starts on the Owner API key, which creates the bucket, and moves to the admin application key as soon as that exists (moveStateSideTo).
+  // An Owner API key is made for one project, often another environment's, so on the state side it names this one.
+  const stateKey: KeyPair = identity.admin
+    ? { accessKey: identity.admin.accessKey, secretKey: identity.admin.secretKey }
+    : { accessKey: projectAccessKey(scwAccessKey, scwProjectId), secretKey: scwSecretKey };
   const childEnv = buildProviderEnv(infraDir, {
     accessKey: scwAccessKey,
     secretKey: scwSecretKey,
     projectId: scwProjectId,
     passphrase: pulumiPassphrase,
-    // An Owner API key is made for one project, often another environment's: the state side names this one.
-    stateAccessKey: identity.admin?.accessKey ?? projectAccessKey(scwAccessKey, scwProjectId),
-    stateSecretKey: identity.admin?.secretKey ?? scwSecretKey,
+    stateAccessKey: stateKey.accessKey,
+    stateSecretKey: stateKey.secretKey,
   });
 
   // The Pulumi program requires SCW_DEFAULT_ORGANIZATION_ID (pulumi-context.ts requireEnv), so resolve it here for the provisioning `up`.
@@ -512,6 +565,7 @@ async function runSetupWith(
     projectId: scwProjectId,
     accessKey: scwAccessKey,
     secretKey: scwSecretKey,
+    stateKey,
     stackName,
     runtimeSecretPath: secretManagerPath(appConfig.slug, context.environment),
     childEnv,
