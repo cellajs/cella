@@ -57,7 +57,7 @@ function createSecretVersion(name: string, copy: { service: string; only: boolea
 
 /** The value a store supplies for a runtime secret, or undefined for one the program writes no version of. */
 function storeSuppliedData(definition: RuntimeSecretDefinition): pulumi.Input<string> | undefined {
-  if (definition.valueSource !== 'pulumi') return undefined;
+  if (definition.valueSource !== 'engine') return undefined;
   const supplied = derivedRuntimeSecretData[definition.id];
   if (supplied !== undefined) return supplied;
   if (definition.generation === 'random' || definition.derivedFrom || definition.database) return undefined;

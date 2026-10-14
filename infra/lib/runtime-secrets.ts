@@ -9,7 +9,7 @@ export const runtimeSecretConsumers = serviceNames;
 
 export type RuntimeSecretConsumer = ServiceName;
 
-export type RuntimeSecretValueSource = 'pulumi' | 'operator';
+export type RuntimeSecretValueSource = 'engine' | 'operator';
 export type RuntimeSecretGeneration = 'manual' | 'random';
 
 /** One runtime secret's app-owned mapping data from `runtime-secrets.config.ts`. The `id` is the config object key; {@link RuntimeSecretDefinition} is the flattened shape. */
@@ -22,7 +22,7 @@ export interface RuntimeSecretConfig {
   envVar: string;
   /** Whether deploy/health gating treats the value's absence as fatal. */
   required: boolean;
-  /** `'pulumi'` = the engine writes a version; `'operator'` = supplied out-of-band. */
+  /** `'engine'` = the engine makes the value (generated, derived, a database's connection string, a store's output); `'operator'` = the operator sets it. */
   valueSource: RuntimeSecretValueSource;
   /** `'random'` = Pulumi RandomPassword; `'manual'` = derived/hand-supplied. */
   generation: RuntimeSecretGeneration;
@@ -123,7 +123,7 @@ export function validateRuntimeSecrets(secrets: readonly RuntimeSecretDefinition
     if (!secret.derivedFrom) continue;
     const source = secrets.find((candidate) => candidate.id === secret.derivedFrom?.secretId);
     // Only Pulumi writes both values, so the derived one can never drift from an out-of-band rotation of its source.
-    if (source?.valueSource !== 'pulumi' || source.derivedFrom || secret.valueSource !== 'pulumi') {
+    if (source?.valueSource !== 'engine' || source.derivedFrom || secret.valueSource !== 'engine') {
       throw new Error(`runtime-secrets.config: secret '${secret.id}' must be pulumi-owned and derive from a pulumi-owned, non-derived secret.`);
     }
   }
@@ -138,7 +138,7 @@ validateRuntimeSecrets(runtimeSecrets, new Set<string>(serviceNames));
  * from another runtime secret. Their versions never pass through the Pulumi state.
  */
 export function generatedRuntimeSecrets(definitions: readonly RuntimeSecretDefinition[] = runtimeSecrets): RuntimeSecretDefinition[] {
-  return definitions.filter((secret) => secret.valueSource === 'pulumi' && (secret.generation === 'random' || secret.derivedFrom !== undefined));
+  return definitions.filter((secret) => secret.valueSource === 'engine' && (secret.generation === 'random' || secret.derivedFrom !== undefined));
 }
 
 /** The database connection strings, which the operator task ensure-database assembles; a deploy only fills an empty copy from another. */

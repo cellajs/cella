@@ -34,7 +34,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           envVar: 'DATABASE_URL',
           description: 'PostgreSQL runtime_role connection string (backend API, subject to RLS)',
           required: true,
-          valueSource: 'pulumi',
+          valueSource: 'engine',
           services: consumers.runtime,
           database: { role: 'runtime' },
         });
@@ -46,7 +46,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           envVar: 'DATABASE_ADMIN_URL',
           description: 'PostgreSQL admin_role connection string (migrations, seeds, owner of the RLS tables)',
           required: true,
-          valueSource: 'pulumi',
+          valueSource: 'engine',
           services: consumers.admin,
           database: { role: 'admin' },
         });
@@ -58,7 +58,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           envVar: 'DATABASE_CDC_URL',
           description: 'PostgreSQL CDC worker connection string (admin_role with replication access)',
           required: true,
-          valueSource: 'pulumi',
+          valueSource: 'engine',
           services: consumers.cdc,
           database: { role: 'admin' },
         });
@@ -71,7 +71,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           description:
             'base64-encoded PEM CA cert of the Scaleway RDB instance, used by services to verify the PostgreSQL TLS connection (derived by pulumi from the database instance; base64 keeps the multi-line PEM deliverable through the line-based .env.runtime)',
           required: true,
-          valueSource: 'pulumi',
+          valueSource: 'engine',
           services: consumers.ca,
         });
       }
