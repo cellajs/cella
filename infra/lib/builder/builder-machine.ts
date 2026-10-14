@@ -67,13 +67,20 @@ git -C /build remote add origin "$REPO"
 git -C /build fetch -q --depth 1 origin "$SHA"
 git -C /build checkout -q FETCH_HEAD
 
+printf '%s' "$BUILDER_SK" | docker login "$REGISTRY_HOST" -u nologin --password-stdin
+# A BuildKit container: the docker driver writes no layer cache to a registry.
+docker buildx create --use --name release --driver docker-container >/dev/null
+
 step build
+# The services' images bake while the keyless container builds the boot bundle and the frontend; only the boot image waits for its bundle.
+docker buildx bake --file /etc/builder-bake.json --push services &
+BAKE=$!
 # The app's dependencies run here, in a container that holds no key.
 docker run --rm -v /build:/build -v /etc/builder-container.sh:/builder-container.sh:ro -w /build --env-file /etc/builder-frontend.env "$NODE_IMAGE" bash -eo pipefail /builder-container.sh
+wait "$BAKE"
 
 step images
-printf '%s' "$BUILDER_SK" | docker login "$REGISTRY_HOST" -u nologin --password-stdin
-docker buildx bake --file /etc/builder-bake.json --push
+docker buildx bake --file /etc/builder-bake.json --push boot
 docker logout "$REGISTRY_HOST"
 
 if [ -s /build/.release-files ]; then

@@ -7,6 +7,7 @@ import { BOOT_IMAGE_NAME } from '../lib/scaleway/release-image';
 import { makeS3Client, projectAccessKey } from '../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
+import { controlKey, makeControlClient, readControlState, stateBucket } from '../lib/stack/control-store';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
@@ -18,7 +19,8 @@ import { readStandingKey, stageHandoffBundle } from './stage-generation-keys';
 
 /** The node image the builder installs and builds the workspace in: the boot image's base. */
 const NODE_IMAGE = 'node:26-bookworm-slim';
-const BUILDER_TYPE = 'DEV1-L';
+// 8 vCPUs: the bake and the frontend build run side by side; about two cents a build.
+const BUILDER_TYPE = 'POP2-HC-8C-16G';
 const BUILDER_IMAGE = 'docker';
 const BUILDER_DISK_BYTES = 40_000_000_000;
 
@@ -277,6 +279,10 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   const registry = `rg.${region}.scw.cloud`;
   const rows = parseBuildRows(buildImagesJson);
+  // The layer cache is named after the rotation counter, so a rotation (after a compromise, keys first) starts a clean one (D13).
+  const control = await makeControlClient(region, projectAccessKey(accessKey, projectId), secretKey);
+  const { state } = await readControlState(control, stateBucket(appConfig.slug), controlKey(mode));
+  const cacheTag = `buildcache-r${state.rotations?.counter ?? 0}`;
   const frontendBucket = distDir ? naming.frontendBucket : '';
   const frontendBucketUrl = frontendBucket ? `https://${frontendBucket}.s3.${region}.scw.cloud` : undefined;
   const prefix = builderPrefix(naming.resource);
@@ -304,7 +310,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
             NODE_IMAGE,
           },
           frontendEnv: frontendBucket ? frontendBuildEnv(mode, servicesJson) : {},
-          bake: bakeDefinition(rows, { registry, namespace: naming.registryNamespace, tag: sha, context: '/build' }),
+          bake: bakeDefinition(rows, { registry, namespace: naming.registryNamespace, tag: sha, context: '/build', cacheTag }),
           container: containerScript({ pnpmVersion, sha, frontendBucketUrl }),
         }),
     },
