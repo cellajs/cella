@@ -64,13 +64,16 @@ describe('compute module', () => {
     expect(h.oneOfType('scaleway:registry/namespace:Namespace').inputs.isPublic).toBe(false);
   });
 
-  it('bakes the minted boot key into every VM and hands each VM its own service bundle only', () => {
+  it('bakes the minted boot key into every VM and hands each VM the bundles of the services it carries only', () => {
     for (const server of servers) {
       const cloudInit = cloudInitOf(server);
       expect(cloudInit).toContain(`<<'SCW_ACCESS_KEY_EOF'\n${keys.bootAccessKey}\nSCW_ACCESS_KEY_EOF`);
       expect(cloudInit).toContain(`<<'SCW_SECRET_KEY_EOF'\n${keys.bootSecretKey}\nSCW_SECRET_KEY_EOF`);
       const { plan } = bootPlanOf(server);
-      expect(plan.serviceKeyHandoff?.secretId, server.name).toBe(keys.handoffSecretIds[serviceOf(server)]);
+      expect(
+        plan.serviceKeyHandoffs?.map((handoff) => [handoff.service, handoff.secretId]),
+        server.name,
+      ).toEqual([[serviceOf(server), keys.handoffSecretIds[serviceOf(server)]]]);
       // Only the upload-signing service gets its key exported as S3 env.
       expect(plan.exportS3Env, server.name).toBe(serviceOf(server) === 'backend' ? true : undefined);
     }
@@ -85,10 +88,12 @@ describe('compute module', () => {
         envVars.filter((name) => secretVars.has(name)),
         server.name,
       ).toEqual([]);
-      // The manifest names each secret's env var and Secret Manager id; any other field would be a value baked into cloud-init.
+      // The manifest names each secret's env var, Secret Manager id and the service whose copy it is; any other field would be a value baked
+      // into cloud-init. On its own machine a service reads its own copies only.
       const manifest = (raw.files as { runtimeSecretManifest: Record<string, unknown>[] }).runtimeSecretManifest;
       for (const entry of manifest) {
-        expect(Object.keys(entry).sort()).toEqual(['envVar', 'required', 'secretId']);
+        expect(Object.keys(entry).sort()).toEqual(['envVar', 'required', 'secretId', 'service']);
+        expect(entry.service, String(entry.envVar)).toBe(serviceOf(server));
         expect(entry.secretId, String(entry.envVar)).toMatch(/^secret-.*-id$/);
       }
       expect(

@@ -2,7 +2,7 @@ import type { ServiceName } from '../compose/compose';
 import { runtimeSecretsConfig } from '../config/runtime-secrets.config';
 import { appStores } from '../config/stores.config';
 import { serviceKeyCondition } from './scaleway/secret-paths';
-import { principalSecretScopeSlugs, serviceNames } from './services';
+import { serviceNames } from './services';
 import type { StoreProvisioner } from './stores';
 
 export const runtimeSecretConsumers = serviceNames;
@@ -142,9 +142,9 @@ export function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[])
 }
 
 /**
- * The secret-read condition of a service principal: the folders of its scope, and nothing else. The machine policies
- * (lib/scaleway/machine-policies.ts) and the deploy's grant assertion both build it here, so they compare equal as strings.
+ * The secret-read condition of a service principal: its own folder, and nothing else. The machine policies (lib/scaleway/machine-policies.ts)
+ * and the deploy's grant assertion both build it here, so they compare equal as strings.
  */
-export function principalSecretCondition(slug: string, mode: string, singleVM: boolean, service: ServiceName): string {
-  return serviceKeyCondition(slug, mode, principalSecretScopeSlugs(singleVM, service));
+export function principalSecretCondition(slug: string, mode: string, service: ServiceName): string {
+  return serviceKeyCondition(slug, mode, service);
 }

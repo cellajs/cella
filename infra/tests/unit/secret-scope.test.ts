@@ -3,7 +3,7 @@ import { runtimeSecrets } from '../../lib/runtime-secrets';
 import { principalNames } from '../../lib/scaleway/principals';
 import { engineSecretPath, handoffFolderPath, secretCopies } from '../../lib/scaleway/secret-paths';
 import { buildVmAssertRows } from '../../lib/scaleway/vm-assert-rows';
-import { principalSecretScopeSlugs, principalServices, serviceNames } from '../../lib/services';
+import { principalServices, serviceNames } from '../../lib/services';
 import { fakeConfig } from '../helpers/fake-config';
 
 const slug = 'app';
@@ -40,10 +40,10 @@ describe('secret scope per principal', () => {
     const names = principalNames(slug, mode);
 
     it(`must not let a principal read a secret none of its services consume (singleVM: ${singleVM})`, () => {
-      for (const svc of principalServices(singleVM)) {
+      for (const svc of principalServices()) {
         const row = rows.find((candidate) => candidate.app === names.vmService(svc.slug));
         if (!row) throw new Error(`no assertion row for ${svc.slug}`);
-        const scope = principalSecretScopeSlugs(singleVM, svc.slug);
+        const scope = [svc.slug];
         for (const secret of runtimeSecrets) {
           for (const copy of copyNames(secret)) {
             const carries = scope.some((slug) => slug === copy.service);

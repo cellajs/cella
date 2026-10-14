@@ -33,8 +33,8 @@ export interface CloudInitParams {
   region: string;
   /** Dedicated Object Storage bucket for boot diagnostics. */
   bootDiagBucket: string;
-  /** v2: single-access handoff secret id for this service's minted key. */
-  handoffSecretId?: string;
+  /** Single-access handoff secret ids of the keys of every service the machine carries, one per service. */
+  handoffs?: ReadonlyArray<{ service: string; secretId: string }>;
   /** v2 + s3Access: export the service key as S3_* env into .env.runtime. */
   exportS3Env?: boolean;
   /** Deploy trace context baked into the boot plan (absent outside a deploy run). */
@@ -128,7 +128,15 @@ function bootPlan(p: CloudInitParams): string {
       registry: p.registry,
       region: p.region,
       credentials: { scwAccessKeyFile: paths.accessKey, scwSecretKeyFile: paths.secretKey },
-      ...(p.handoffSecretId ? { serviceKeyHandoff: { secretId: p.handoffSecretId, cacheFile: `${paths.etcDir}/service-key.json` } } : {}),
+      ...(p.handoffs?.length
+        ? {
+            serviceKeyHandoffs: p.handoffs.map((handoff) => ({
+              service: handoff.service,
+              secretId: handoff.secretId,
+              cacheFile: `${paths.etcDir}/service-key-${handoff.service}.json`,
+            })),
+          }
+        : {}),
       ...(p.exportS3Env ? { exportS3Env: true } : {}),
       bootDiagnostics: { bucket: p.bootDiagBucket, logFile: bootLogPath },
       releaseCommand: {

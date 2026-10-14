@@ -159,11 +159,10 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
   const { loadEngineConfig } = await import('../config/engine-config');
   const appConfig = await loadEngineConfig();
-  // Keys go to VM-bearing enabled services (singleVM folds co-hosted/collocated into the host); the rest of the registry's principals are dormant.
-  const { deployedServices, principalServices } = await import('../lib/services');
-  const singleVM = appConfig.singleVM ?? false;
-  const services = deployedServices(appConfig.services, singleVM).map((svc) => svc.slug);
-  const dormantServices = principalServices(singleVM)
+  // A key for every service that runs, on its own machine or on the singleVM host; the rest of the registry's principals are dormant.
+  const { principalServices, runningServices } = await import('../lib/services');
+  const services = runningServices(appConfig.services).map((svc) => svc.slug);
+  const dormantServices = principalServices()
     .map((svc) => svc.slug)
     .filter((slug) => !services.includes(slug));
   await mintGenerationKeys({

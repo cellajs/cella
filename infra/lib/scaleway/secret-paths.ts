@@ -48,13 +48,11 @@ export function handoffFolderPath(slug: string, mode: string): string {
 }
 
 /**
- * Condition for one service application: value reads only under the folders of the services its machines carry, leaving other services'
- * secrets, engine keys and sibling stacks unreadable. String equality matters: assert-vm-grants compares the live rule condition against
- * this exact output. Pass the full secret scope from `secretScopeSlugs`, which for the singleVM host includes the folded services.
+ * Condition for one service application: value reads only under its own folder, leaving other services' secrets, engine keys and sibling
+ * stacks unreadable. String equality matters: assert-vm-grants compares the live rule condition against this exact output.
  */
-export function serviceKeyCondition(slug: string, mode: string, services: string | readonly string[]): string {
-  const scope = typeof services === 'string' ? [services] : services;
-  return scope.map((service) => `resource.name.startsWith("${serviceSecretPath(slug, mode, service)}")`).join(' || ');
+export function serviceKeyCondition(slug: string, mode: string, service: string): string {
+  return `resource.name.startsWith("${serviceSecretPath(slug, mode, service)}")`;
 }
 
 /**

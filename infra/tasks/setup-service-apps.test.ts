@@ -16,8 +16,8 @@ beforeEach(() => {
 });
 
 describe('ensureRegistryPrincipals', () => {
-  it('split-VM: one application per registry service plus boot, whatever is enabled', async () => {
-    const result = await ensureRegistryPrincipals({ ...base, singleVM: false });
+  it('one application per registry service plus boot, whatever is enabled and wherever it runs', async () => {
+    const result = await ensureRegistryPrincipals(base);
     const suffixes = vi.mocked(provisionScopedKey).mock.calls.map(([, config]) => config.suffix);
     expect(suffixes).toEqual(['vm-backend', 'vm-cdc', 'vm-yjs', 'vm-mcp', 'vm-oauth', 'vm-jobs', 'vm-frontend', 'boot']);
     expect(result.allAppIds).toEqual([
@@ -32,16 +32,8 @@ describe('ensureRegistryPrincipals', () => {
     ]);
   });
 
-  it('singleVM: only the host application plus boot', async () => {
-    const result = await ensureRegistryPrincipals({ ...base, singleVM: true });
-    const suffixes = vi.mocked(provisionScopedKey).mock.calls.map(([, config]) => config.suffix);
-    expect(suffixes).toEqual(['vm-backend', 'boot']);
-    expect(result.serviceAppIds).toEqual({ backend: 'id-vm-backend' });
-    expect(result.bootAppId).toBe('id-boot');
-  });
-
   it('creates applications only: policies stay Pulumi-managed and keys are minted per deploy', async () => {
-    await ensureRegistryPrincipals({ ...base, singleVM: false });
+    await ensureRegistryPrincipals(base);
     for (const [, config] of vi.mocked(provisionScopedKey).mock.calls) {
       expect(config.managePolicy).toBe(false);
       expect(config.mintKey).toBe(false);
@@ -57,17 +49,17 @@ describe('missingRegistryPrincipals', () => {
       name.endsWith('-vm-jobs') || name.endsWith('-boot') ? null : 'id',
     );
 
-    expect(await missingRegistryPrincipals({ ...check, singleVM: false })).toEqual(['cella-production-vm-jobs', 'cella-production-boot']);
+    expect(await missingRegistryPrincipals(check)).toEqual(['cella-production-vm-jobs', 'cella-production-boot']);
     expect(provisionScopedKey).not.toHaveBeenCalled();
   });
 
-  it('is empty when every principal exists, and asks only for the host under singleVM', async () => {
+  it('is empty when every principal exists, and asks for every registry service', async () => {
     vi.mocked(resolveApplicationIdByName).mockReset();
     vi.mocked(resolveApplicationIdByName).mockResolvedValue('id');
 
-    expect(await missingRegistryPrincipals({ ...check, singleVM: true })).toEqual([]);
+    expect(await missingRegistryPrincipals(check)).toEqual([]);
     expect(vi.mocked(resolveApplicationIdByName).mock.calls.map(([, , name]) => name)).toEqual([
-      'cella-production-vm-backend',
+      ...['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'jobs', 'frontend'].map((service) => `cella-production-vm-${service}`),
       'cella-production-boot',
     ]);
   });

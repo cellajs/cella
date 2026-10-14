@@ -95,7 +95,7 @@ async function planIdentities(
   context: Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>,
   wanted: readonly MachinePolicy[],
 ): Promise<IdentityPlan> {
-  const registry = { slug: context.appConfig.slug, mode: context.environment, singleVM: context.appConfig.singleVM ?? false };
+  const registry = { slug: context.appConfig.slug, mode: context.environment };
   return {
     missingApplications: await missingRegistryPrincipals({ ...registry, secretKey: auth.secretKey, organizationId }),
     policies: await planMachinePolicies(auth, organizationId, wanted),
@@ -124,7 +124,7 @@ async function deleteRetiredAdmin(
  */
 export async function runIdentity(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
-  const registry = { slug: appConfig.slug, mode: context.environment, singleVM: appConfig.singleVM ?? false };
+  const registry = { slug: appConfig.slug, mode: context.environment };
   const names = principalNames(appConfig.slug, context.environment);
   const wanted = machinePolicies(appConfig, projectId);
   console.info(

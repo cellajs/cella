@@ -80,10 +80,10 @@ export const observerApplicationId: pulumi.Output<string | undefined> = findAppl
 export const retiredAdminApplicationId: pulumi.Output<string | undefined> =
   process.env[ADMISSION_RUN_ENV] === '1' ? findApplicationId(names.admin) : pulumi.output(undefined);
 
-// VM-side principals: one application per registry service that owns VMs, plus the boot fetcher. Registry-derived: an `enabled` toggle changes compute, never a principal.
+// Machine principals: one application per registry service, wherever it runs, plus the boot fetcher. Registry-derived: neither an `enabled`
+// toggle nor a placement changes a principal.
 
-const singleVM = appConfig.singleVM ?? false;
-const vmServices = principalServices(singleVM);
+const vmServices = principalServices();
 
 /** Per-service application ids. Required for an `up`; a preview plans a registry service whose application the next apply creates. */
 export const serviceApplicationIds: Record<string, pulumi.Output<string>> = Object.fromEntries(

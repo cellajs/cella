@@ -19,13 +19,9 @@ describe('ruleConditions', () => {
     expect(rules.flatMap((rule) => rule.split(' || '))).toEqual(terms);
   });
 
-  it('spreads the condition of a single-machine host with a long slug, which names one folder per service it carries', () => {
-    const services = ['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'jobs', 'frontend'];
-    const condition = serviceKeyCondition('cella-staging', 'staging', services);
-    expect(condition.split(' || ')).toHaveLength(services.length);
-    const rules = ruleConditions(condition);
-    expect(rules.join(' || ')).toBe(condition);
-    for (const rule of rules) expect(rule.length).toBeLessThanOrEqual(500);
+  it('keeps a service condition with a long slug in one rule: it names one folder', () => {
+    const condition = serviceKeyCondition('cella-staging', 'staging', 'backend');
+    expect(ruleConditions(condition)).toEqual([condition]);
   });
 
   it('refuses a condition that needs more rules than one policy holds', () => {

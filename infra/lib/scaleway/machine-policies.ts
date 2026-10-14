@@ -17,23 +17,22 @@ export interface MachinePolicy {
 }
 
 /**
- * The machine policies of one environment: one per registry service that owns machines, and one for the boot fetcher. They are written at
+ * The machine policies of one environment: one per registry service, and one for the boot fetcher. They are written at
  * Owner moments, never by the Pulumi program: the operator and the deploy key hold no IAM write. Principals and conditions follow the service
  * registry, not the enabled set, so a service toggle changes compute only. The deploy's grant check compares the live policies with the same
  * builders (lib/scaleway/vm-assert-rows.ts).
  */
-export function machinePolicies(appConfig: Pick<EngineConfig, 'slug' | 'mode' | 'singleVM'>, projectId: string): MachinePolicy[] {
+export function machinePolicies(appConfig: Pick<EngineConfig, 'slug' | 'mode'>, projectId: string): MachinePolicy[] {
   const { slug, mode } = appConfig;
-  const singleVM = appConfig.singleVM ?? false;
   const names = principalNames(slug, mode);
   const tags = principalTags(slug, mode);
-  const services = principalServices(singleVM).map((svc) => ({
+  const services = principalServices().map((svc) => ({
     name: `${slug}-vm-${svc.slug}-policy`,
     applicationName: names.vmService(svc.slug),
     description: `Path-conditioned secret read${svc.s3Access ? ' + S3 object access' : ''} for the ${svc.slug} service machines (written at Owner moments)`,
     rules: [
       // One rule per part of the condition: a condition too large for one rule is spread over several, which grant the same in sum.
-      ...ruleConditions(principalSecretCondition(slug, mode, singleVM, svc.slug)).map((condition) => ({
+      ...ruleConditions(principalSecretCondition(slug, mode, svc.slug)).map((condition) => ({
         permission_set_names: [...SERVICE_SECRET_PERMISSION_SETS],
         project_ids: [projectId],
         condition,

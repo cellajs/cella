@@ -127,7 +127,6 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
         slug: appConfig.slug,
         mode: context.environment,
         organizationId,
-        singleVM: appConfig.singleVM ?? false,
         secretKey: ownerKey.secretKey,
       }).catch((error) => {
         console.warn(`${warningMark} Could not check the registry principals (${errorMessage(error)}).`);
