@@ -1,30 +1,27 @@
 import { createPrompt, isEnterKey, makeTheme, type Status, useKeypress, usePrefix, useState } from '@inquirer/core';
 
 /**
- * Render a value with its first/last `revealEnds` characters visible and the middle masked, so a pasted secret can be checked for a wrong-clipboard mistake.
- * A value too short to hide at least as many characters as it reveals is fully masked.
+ * Render a secret as one mask character per character, and nothing of the value. The prompt redraws at every keystroke, so a character shown
+ * at the end of a value being typed is shown for every position in turn: whatever records the terminal's output (a session log, a recorder,
+ * a CI log, an agent's transcript) would then hold the whole secret.
  */
-export function maskSecret(value: string, revealEnds: number): string {
-  if (value.length === 0) return '';
-  if (value.length < revealEnds * 3) return '•'.repeat(value.length);
-  return `${value.slice(0, revealEnds)}${'•'.repeat(value.length - revealEnds * 2)}${value.slice(-revealEnds)}`;
+export function maskSecret(value: string): string {
+  return '•'.repeat(value.length);
 }
 
 interface MaskedSecretConfig {
   message: string;
   /** Mirrors `@inquirer/prompts`' password validate so this is a drop-in replacement. */
   validate?: (value: string) => boolean | string | Promise<boolean | string>;
-  /** How many characters to reveal at each end while typing/pasting. */
-  revealEnds?: number;
 }
 
 /**
- * A password-style prompt that reveals only the ends of a pasted value and shows its length, catching a wrong paste before it is stored.
+ * A password-style prompt that shows a mask and the length of what was typed or pasted: the length catches a wrong paste before it is stored,
+ * and no character of the value reaches the terminal, its scrollback, or anything that records its output.
  * Drop-in replacement for `@inquirer/prompts`' `password`: same `{ message, validate? }` config and `Promise<string>` result.
- * The raw value lives only in readline and the masked view is rendered here, so the full secret never reaches the terminal or scrollback.
  */
 export const maskedSecret = createPrompt<string, MaskedSecretConfig>((config, done) => {
-  const { validate = () => true, revealEnds = 3 } = config;
+  const { validate = () => true } = config;
   const theme = makeTheme();
   const [status, setStatus] = useState<Status>('idle');
   const [errorMsg, setError] = useState<string>();
@@ -53,7 +50,7 @@ export const maskedSecret = createPrompt<string, MaskedSecretConfig>((config, do
   });
 
   const message = theme.style.message(config.message, status);
-  const masked = maskSecret(value, revealEnds);
+  const masked = maskSecret(value);
   const display = status === 'done' ? theme.style.answer(masked) : masked;
   const counter = status === 'idle' && value.length > 0 ? ` ${theme.style.help(`(${value.length} chars)`)}` : '';
   const error = errorMsg ? theme.style.error(errorMsg) : '';
