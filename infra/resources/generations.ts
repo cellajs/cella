@@ -66,5 +66,7 @@ export function activeGenerations(svc: ServiceDefinition): Generation[] {
   return selectGenerations(controlState.rollout[svc.slug], {
     exclusive: svc.replacementStrategy === 'stop-first',
     genIdFor: (sha) => deriveGenId(sha, fingerprint),
+    // Set by the deploy task: a stack's first deploy builds its first generation from the release, never from an image tag no build pushes.
+    firstSha: process.env.INFRA_RELEASE_SHA,
   });
 }

@@ -15,6 +15,8 @@ export interface SelectGenerationsOptions {
   exclusive: boolean;
   /** Content-addressed id for a sha under the service's current fingerprint. */
   genIdFor: (sha: string) => string;
+  /** The sha of the first generation when the control state holds none: the release a deploy rolls out, so the rollout finds that generation in place. `latest` outside a deploy. */
+  firstSha?: string;
 }
 
 /** Generations the stack provisions for one service, deduplicated by id. The first entry is the binding target, and equal active/pending ids collapse to one VM. */
@@ -34,7 +36,8 @@ export function selectGenerations(entry: ServiceRollout | undefined, opts: Selec
 
   // First provision, before any deploy initializes the control object: one default generation.
   const fallback = () => {
-    if (generations.length === 0) add({ id: opts.genIdFor('latest'), sha: 'latest' });
+    const sha = opts.firstSha || 'latest';
+    if (generations.length === 0) add({ id: opts.genIdFor(sha), sha });
   };
 
   // Exclusive services provision only the selected generation: replacement happens within one stack update, never as an overlap.

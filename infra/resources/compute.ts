@@ -225,11 +225,15 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   const genPrivateIp = genIps.get(genIpKey(svc.slug, generation.id));
   if (!genPrivateIp) throw new Error(`compute: no reserved private IP for ${svc.slug} gen ${generation.id} (pass 1 must run first)`);
 
-  // A new generation must carry its minted handoff reference: no keys file means the mint step did not run, so refuse the plan and never bake an empty key.
+  // A new generation must carry its minted handoff reference: no keys file means the mint step did not run, so an update refuses and never bakes an
+  // empty key. A preview only plans: the deploy's preflight previews before it mints, and on a stack that never had a machine every generation is new.
   if (!generation.preexisting && !generationKeys) {
-    throw new Error(
-      `compute: planning a NEW ${svc.slug} generation without INFRA_GENERATION_KEYS_FILE: deploy via the deploy task (it runs mint-generation-keys first).`,
-    );
+    if (!pulumi.runtime.isDryRun()) {
+      throw new Error(
+        `compute: planning a NEW ${svc.slug} generation without INFRA_GENERATION_KEYS_FILE: deploy via the deploy task (it runs mint-generation-keys first).`,
+      );
+    }
+    pulumi.log.info(`compute: ${svc.slug} generation ${generation.id} is planned without its keys; a deploy mints them before it updates.`);
   }
   const serviceConfig: ServiceConfig = {
     name: svc.slug,
