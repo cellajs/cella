@@ -22,6 +22,8 @@ export default meta;
 
 type Story = StoryObj<typeof SelectEmails>;
 
+const chipOf = (text: HTMLElement) => text.closest<HTMLElement>('[data-slot="chip"]') as HTMLElement;
+
 /**
  * Default email input with basic functionality.
  */
@@ -148,7 +150,7 @@ export const ShouldRemoveChips: Story = {
     });
 
     await step('the close button of a chip removes that chip', async () => {
-      await userEvent.click(within(canvas.getByText('a@x.com')).getByRole('button'));
+      await userEvent.click(within(chipOf(canvas.getByText('a@x.com'))).getByRole('button'));
       await expect(canvas.getByText('value: ["b@x.com"]')).toBeVisible();
     });
   },
@@ -258,7 +260,7 @@ export const ShouldLabelRemoveButtons: Story = {
     const canvas = within(canvasElement);
 
     for (const email of ['a@x.com', 'b@x.com']) {
-      await expect(within(canvas.getByText(email)).getByRole('button')).toHaveAccessibleName();
+      await expect(within(chipOf(canvas.getByText(email))).getByRole('button')).toHaveAccessibleName();
     }
   },
 };

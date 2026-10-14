@@ -9,7 +9,6 @@ import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { countColumn, dateColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { Member } from '~/modules/memberships/types';
-import { Badge } from '~/modules/ui/badge';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
@@ -88,15 +87,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, entityType: Chann
         minBreakpoint: 'md',
         minWidth: 120,
         placeholderValue: '-',
-        // An empty lastSeenAt means the member never signed in, which the badge states explicitly
-        renderCell: ({ row }) =>
-          row.lastSeenAt ? (
-            dateShort(row.lastSeenAt)
-          ) : (
-            <Badge variant="secondary" size="xs">
-              {t('c:inactive')}
-            </Badge>
-          ),
+        renderCell: ({ row }) => dateShort(row.lastSeenAt),
         exportValue: (row) => exportDate(row.lastSeenAt),
       },
       // Per-member insight columns from include=counts: when the member last posted in this

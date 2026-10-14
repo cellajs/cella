@@ -18,6 +18,7 @@ import { useLatestRef } from '~/hooks/use-latest-ref';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
+import { pinnedTitleDropPosition, pinnedTitleExtension } from '~/modules/common/blocknote/custom-elements/pinned-title/pinned-title-extension';
 import { FilePanelBridge } from '~/modules/common/blocknote/custom-file-panel/file-panel-bridge';
 import { useUploadHost } from '~/modules/common/blocknote/custom-file-panel/upload-host';
 import { InlineUppyFilePanel } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
@@ -96,6 +97,7 @@ function BlockNote({
   excludeBlockTypes,
   excludeFileBlockTypes,
   titlePlaceholder,
+  pinTitleBlock = false,
   ariaLabel,
   extensions,
   members, // for mentions
@@ -143,7 +145,8 @@ function BlockNote({
     trailingBlock,
     dictionary: getDictionary(),
     // Caller extensions come first: BlockNote keeps the first extension per key and drops later duplicates.
-    extensions: [...(extensions ?? []), checkedExtension(), syntaxHighlighter],
+    extensions: [...(extensions ?? []), checkedExtension(), syntaxHighlighter, ...(pinTitleBlock ? [pinnedTitleExtension()] : [])],
+    ...(pinTitleBlock && { dropCursor: { hooks: { computeDropPosition: pinnedTitleDropPosition } } }),
     resolveFileUrl: createResolveFileUrl({ baseFilePanelProps }),
     ...(ariaLabel && { domAttributes: { editor: { 'aria-label': ariaLabel } } }),
   };
@@ -312,7 +315,7 @@ function BlockNote({
 
       {!isMobile && formattingToolbar && <CustomFormattingToolbar headingLevels={headingLevels} />}
 
-      {sideMenu && <CustomSideMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} />}
+      {sideMenu && <CustomSideMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} pinTitleBlock={pinTitleBlock} />}
 
       {/* To avoid rendering "0" */}
       {members?.length ? <Mention members={members} editor={editor} /> : null}

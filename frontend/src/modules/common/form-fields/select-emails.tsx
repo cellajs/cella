@@ -1,12 +1,9 @@
-import { XIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { zMembershipInviteBody } from 'sdk/zod.gen';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { Badge } from '~/modules/ui/badge';
-import { Button } from '~/modules/ui/button';
+import { Chip } from '~/modules/ui/chip';
 import { Input } from '~/modules/ui/input';
-import { cn } from '~/utils/cn';
 
 const delimiter = /[,;\s]+/;
 
@@ -59,28 +56,13 @@ export function SelectEmails({ emails = [], onValueChange, placeholder, inputPro
     // biome-ignore lint/a11y/useKeyWithClickEvents: a click on the padding forwards focus to the input, which takes the keys
     <div
       onClick={(event) => event.target === event.currentTarget && inputRef.current?.focus()}
-      className="focus-effect flex flex-row flex-wrap items-center rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs ring-offset-background focus-ring:focus-within:ring-2 focus-ring:focus-within:ring-ring focus-ring:focus-within:ring-offset-2"
+      className="focus-effect flex flex-row flex-wrap items-center gap-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs ring-offset-background focus-ring:focus-within:ring-2 focus-ring:focus-within:ring-ring focus-ring:focus-within:ring-offset-2"
     >
-      {emails.length > 0 && (
-        <div className="flex flex-row flex-wrap gap-1 rounded-md pr-1">
-          {emails.map((email) => (
-            <Badge key={email} className="gap-0.5 pr-0">
-              {email}
-              <Button
-                type="button"
-                variant="ghost"
-                size="micro"
-                aria-label={t('c:remove_resource', { resource: email })}
-                onClick={() => remove(email)}
-                className="size-4.5 cursor-pointer rounded-full p-0 ring-inset focus-ring:focus-visible:ring-2"
-                press={false}
-              >
-                <XIcon />
-              </Button>
-            </Badge>
-          ))}
-        </div>
-      )}
+      {emails.map((email) => (
+        <Chip key={email} onRemove={() => remove(email)} removeLabel={t('c:remove_resource', { resource: email })}>
+          {email}
+        </Chip>
+      ))}
       <Input
         ref={inputRef}
         type="text"
@@ -90,10 +72,7 @@ export function SelectEmails({ emails = [], onValueChange, placeholder, inputPro
         onChange={({ target }) => (delimiter.test(target.value) ? commit(target.value) : setText(target.value))}
         onKeyDown={onKeyDown}
         onBlur={() => text.trim() && commit(text)}
-        className={cn(
-          '-my-px h-8 w-auto grow border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0',
-          emails.length && 'ml-1',
-        )}
+        className="-my-px h-8 w-auto min-w-32 grow basis-32 border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0"
       />
     </div>
   );

@@ -5,7 +5,10 @@ import { cn } from '~/utils/cn';
 
 // Styled base-ui Combobox primitives
 
-const Combobox = ComboboxPrimitive.Root;
+// The first match is highlighted while typing, so type-then-Enter picks without arrow keys
+function Combobox<Value, Multiple extends boolean | undefined = false>(props: ComboboxPrimitive.Root.Props<Value, Multiple>) {
+  return <ComboboxPrimitive.Root autoHighlight {...props} />;
+}
 
 function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Trigger.Props) {
   return (
