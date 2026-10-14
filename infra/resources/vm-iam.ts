@@ -96,5 +96,10 @@ export const serviceApplicationIds: Record<string, pulumi.Output<string>> = Obje
 /** Boot fetcher application id. Required. */
 export const bootApplicationId: pulumi.Output<string> = requirePrincipalId(findApplicationId(names.boot), `boot fetcher ('${names.boot}')`);
 
+/** Builder application id, for the frontend bucket's statement. Required; a preview plans it before the next identity update makes it. */
+export const builderApplicationId: pulumi.Output<string> = requirePrincipalId(findApplicationId(names.builder), `builder ('${names.builder}')`, {
+  pendingOnPreview: true,
+});
+
 /** Backend service app id when the backend service is deployed, for the bucket statements; undefined otherwise. */
 export const backendServiceApplicationId: pulumi.Output<string | undefined> = serviceApplicationIds.backend ?? pulumi.output(undefined);

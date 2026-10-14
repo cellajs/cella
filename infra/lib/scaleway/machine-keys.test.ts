@@ -4,9 +4,12 @@ import { machineKeyDescription, machineKeyStep, machinePrincipals, standingAcces
 const principal = { principal: 'cdc', application: 'app-production-vm-cdc' };
 
 describe('machine keys', () => {
-  it('has one identity per registry service, wherever it runs, and the boot fetcher', () => {
+  it('has one identity per registry service, wherever it runs, the boot fetcher and the builder', () => {
     const principals = machinePrincipals('app', 'production');
-    expect(principals.at(-1)).toEqual({ principal: 'boot', application: 'app-production-boot' });
+    expect(principals.slice(-2)).toEqual([
+      { principal: 'boot', application: 'app-production-boot' },
+      { principal: 'builder', application: 'app-production-builder' },
+    ]);
     expect(principals.map((entry) => entry.principal)).toContain('backend');
   });
 

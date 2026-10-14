@@ -15,13 +15,15 @@ export interface ServiceAppsResult {
   serviceAppIds: Record<string, string>;
   /** The boot fetcher application id. */
   bootAppId: string;
-  /** Every created/reused application id (services + boot). */
+  /** The builder application id. */
+  builderAppId: string;
+  /** Every created/reused application id (services, boot, builder). */
   allAppIds: string[];
 }
 
 /**
- * Provision the per-service VM applications (`<slug>-<mode>-vm-<service>`) and
- * the boot fetcher application (`<slug>-<mode>-boot`), applications only:
+ * Provision the per-service VM applications (`<slug>-<mode>-vm-<service>`),
+ * the boot fetcher application (`<slug>-<mode>-boot`) and the builder application (`<slug>-<mode>-builder`), applications only:
  * their POLICIES are the machine policies, written at Owner moments
  * (lib/scaleway/machine-policies.ts), and
  * their standing KEYS are made at Owner moments too (tasks/machine-keys.ts) and
@@ -47,7 +49,19 @@ export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<S
     managePolicy: false,
     mintKey: false,
   });
-  return { serviceAppIds, bootAppId: boot.applicationId, allAppIds: [...Object.values(serviceAppIds), boot.applicationId] };
+  const builder = await provisionScopedKey(opts, {
+    suffix: 'builder',
+    appDescription: "Non-human builder: pushes a release's images and writes its frontend files, on a builder machine",
+    policyDescription: 'unused (a machine policy, written apart)',
+    managePolicy: false,
+    mintKey: false,
+  });
+  return {
+    serviceAppIds,
+    bootAppId: boot.applicationId,
+    builderAppId: builder.applicationId,
+    allAppIds: [...Object.values(serviceAppIds), boot.applicationId, builder.applicationId],
+  };
 }
 
 /** Ensure every registry principal exists: one `vm-<service>` application per `principalServices` entry plus the boot application. Setup and "Review & apply changes" share it, so a registry change converges in one privileged run. */
@@ -61,7 +75,7 @@ export async function ensureRegistryPrincipals(opts: Omit<SetupServiceAppsOption
  */
 export async function missingRegistryPrincipals(opts: { secretKey: string; organizationId: string; slug: string; mode: string }): Promise<string[]> {
   const names = principalNames(opts.slug, opts.mode);
-  const wanted = [...principalServices().map((svc) => names.vmService(svc.slug)), names.boot];
+  const wanted = [...principalServices().map((svc) => names.vmService(svc.slug)), names.boot, names.builder];
   const missing: string[] = [];
   for (const name of wanted) {
     if (!(await resolveApplicationIdByName({ secretKey: opts.secretKey }, opts.organizationId, name))) missing.push(name);
