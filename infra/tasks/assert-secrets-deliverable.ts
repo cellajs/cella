@@ -2,7 +2,6 @@ import type { ServiceName } from '../compose/compose';
 import { runtimeSecrets } from '../lib/runtime-secrets';
 import { secretCopies } from '../lib/scaleway/secret-paths';
 import { serviceNames } from '../lib/services';
-import { isEnvFileDeliverable } from '../lib/utils/env-file';
 import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like';
 import { runIfMain } from '../lib/utils/is-main';
 import { parseJsonBody } from '../lib/utils/json';
@@ -24,8 +23,8 @@ export interface DeliverabilityOffender {
   envVar: string;
   secretName: string;
   path?: string;
-  /** 'missing' (required + no version) or an env-file reason ('multiline'/'empty'). */
-  reason: 'missing' | 'multiline' | 'empty';
+  /** A required copy with no version: the machine reading it would stop at hydration. */
+  reason: 'missing';
 }
 
 export interface AssertSecretsDeliverableResult {
@@ -48,42 +47,27 @@ export interface AssertSecretsDeliverableOptions {
 
 const trimSlashes = (path: string) => `/${path.split('/').filter(Boolean).join('/')}`;
 
-/** Resolve a secret's id from its name, and from its folder when one is given (copies share a name). Returns null when absent. */
-async function resolveSecretId(
+/** How many versions a secret holds, from its name and, when one is given, its folder (copies share a name); 0 when absent. Metadata only. */
+async function versionCount(
   fetchImpl: FetchLike,
   secretKey: string,
   region: string,
   projectId: string,
   name: string,
   path?: string,
-): Promise<string | null> {
+): Promise<number> {
   const url = `${SECRET_BASE}/regions/${region}/secrets?project_id=${projectId}&name=${encodeURIComponent(name)}&page_size=50`;
   const res = await fetchImpl(url, { method: 'GET', headers: { 'X-Auth-Token': secretKey } });
   const body = await res.text();
   if (!res.ok) throw new Error(`Secret Manager list '${name}' → ${res.status}: ${body}`);
-  const { secrets = [] } = parseJsonBody<{ secrets?: Array<{ id: string; name: string; path?: string }> }>(body);
-  return secrets.find((s) => s.name === name && (path === undefined || trimSlashes(s.path ?? '') === trimSlashes(path)))?.id ?? null;
+  const { secrets = [] } = parseJsonBody<{ secrets?: Array<{ name: string; path?: string; version_count?: number }> }>(body);
+  const found = secrets.find((s) => s.name === name && (path === undefined || trimSlashes(s.path ?? '') === trimSlashes(path)));
+  return found?.version_count ?? 0;
 }
 
 /**
- * Read a secret's latest version value as the VM would (base64-decoded payload).
- * Returns null when the secret has no accessible version (404 / NoSuchVersion).
- */
-async function readLatestSecretValue(fetchImpl: FetchLike, secretKey: string, region: string, secretId: string): Promise<string | null> {
-  const url = `${SECRET_BASE}/regions/${region}/secrets/${secretId}/versions/latest/access`;
-  const res = await fetchImpl(url, { method: 'GET', headers: { 'X-Auth-Token': secretKey } });
-  const body = await res.text();
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`Secret Manager access '${secretId}' → ${res.status}: ${body}`);
-  const { data } = parseJsonBody<{ data?: string }>(body);
-  // Secret Manager returns the value base64-encoded in `data`; the VM decodes it
-  // once before writing the env line, so we mirror that to probe the real value.
-  return Buffer.from(data ?? '', 'base64').toString('utf-8');
-}
-
-/**
- * Probe each secret and collect the ones that cannot be delivered to a VM. Pure
- * over the injected `fetchImpl`, so it is fully unit-testable.
+ * Check from metadata that every required copy a machine reads holds a version, without reading a value: the deploy key reads no value of
+ * the app's. A value's form (a single line) is checked where it is written. Pure over the injected `fetchImpl`.
  */
 export async function assertSecretsDeliverable(opts: AssertSecretsDeliverableOptions): Promise<AssertSecretsDeliverableResult> {
   const fetchImpl = resolveFetch(opts.fetchImpl);
@@ -91,32 +75,15 @@ export async function assertSecretsDeliverable(opts: AssertSecretsDeliverableOpt
   const offenders: DeliverabilityOffender[] = [];
 
   for (const secret of opts.secrets) {
-    const secretId = await resolveSecretId(fetchImpl, opts.secretKey, opts.region, opts.projectId, secret.secretName, secret.path);
-    const value = secretId === null ? null : await readLatestSecretValue(fetchImpl, opts.secretKey, opts.region, secretId);
-
-    if (value === null) {
-      // Absent. Only a problem for required secrets (the sync skips an absent
-      // optional secret, but a missing required one fails the boot).
-      if (secret.required)
-        offenders.push({ envVar: secret.envVar, secretName: secret.secretName, ...(secret.path ? { path: secret.path } : {}), reason: 'missing' });
-      continue;
-    }
-
-    const deliverable = isEnvFileDeliverable(value);
-    if (!deliverable.ok) {
-      // A present-but-multiline value breaks the sync regardless of required.
-      offenders.push({
-        envVar: secret.envVar,
-        secretName: secret.secretName,
-        ...(secret.path ? { path: secret.path } : {}),
-        reason: deliverable.reason,
-      });
-    }
+    if (!secret.required) continue;
+    const versions = await versionCount(fetchImpl, opts.secretKey, opts.region, opts.projectId, secret.secretName, secret.path);
+    if (versions === 0)
+      offenders.push({ envVar: secret.envVar, secretName: secret.secretName, ...(secret.path ? { path: secret.path } : {}), reason: 'missing' });
   }
 
   const ok = offenders.length === 0;
   if (ok) {
-    log(`✓ Runtime secrets deliverable: all ${opts.secrets.length} probed secrets are single-line and present where required`);
+    log(`✓ Runtime secrets deliverable: every required copy of the ${opts.secrets.length} probed holds a value`);
   } else {
     log(`✗ Runtime secrets NOT deliverable: ${offenders.map((o) => `${o.envVar} (${o.reason})`).join(', ')}`);
   }
@@ -164,8 +131,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   if (!result.ok) {
     throw new Error(
       `Undeliverable runtime secrets: ${result.offenders.map((o) => `${o.envVar} [${o.secretName}${o.path ? ` in ${o.path}` : ''}] (${o.reason})`).join(', ')}. ` +
-        'A multi-line value must be base64-encoded (single line) and decoded by the consumer; a missing required secret must be ' +
-        'provisioned (pulumi-derived) or seeded (operator) before the roll. See infra/README.md, "Runtime secret delivery".',
+        'A missing required value is made by an apply (generated, database) or set in "Manage runtime secrets" (operator) before the roll.',
     );
   }
 }

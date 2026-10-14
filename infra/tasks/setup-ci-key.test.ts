@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { deployRules } from '../lib/scaleway/deploy-policy';
 import { clearOrganizationEnv, makeFetch } from '../tests/helpers/fake-fetch';
 import { setupCiKey } from './setup-ci-key';
 
@@ -101,20 +102,10 @@ describe('setupCiKey', () => {
     const policyCreate = calls.find((c) => c.url.endsWith('/policies') && c.init.method === 'POST')!;
     const policyBody = JSON.parse(policyCreate.init.body as string);
     expect(policyBody.application_id).toBe('app-new');
-    // Three rules: project-scoped sets, project-scoped DNS, and org-scoped IAM
-    // read. DNS and IAM must be separate rules because Scaleway rejects mixing
-    // scope types within one rule.
-    expect(policyBody.rules).toHaveLength(3);
-    // Project-scoped rule binds to project id.
-    expect(policyBody.rules[0].project_ids).toEqual(['proj-1']);
-    expect(policyBody.rules[0].permission_set_names).toContain('ObjectStorageFullAccess');
-    // DNS is project-scoped (no dnsZone passed: app project only), never org-wide.
-    expect(policyBody.rules[1].project_ids).toEqual(['proj-1']);
-    expect(policyBody.rules[1].organization_id).toBeUndefined();
-    expect(policyBody.rules[1].permission_set_names).toEqual(['DomainsDNSFullAccess']);
-    // Org-scoped rule covers IAM read, on its own (different scope type from DNS).
-    expect(policyBody.rules[2].organization_id).toBe('org-1');
-    expect(policyBody.rules[2].permission_set_names).toEqual(['IAMReadOnly']);
+    // The deploy rules of plan §3.1, the same ones Update identities writes in place (lib/scaleway/deploy-policy.ts).
+    expect(policyBody.rules).toEqual(
+      deployRules({ slug: 'demo', mode: 'production', projectId: 'proj-1', organizationId: 'org-1', dnsProjectIds: ['proj-1'] }),
+    );
   });
 
   it('resolves organization id from project when not provided', async () => {

@@ -51,8 +51,6 @@ export type TaskName =
   | 'sync-rollout-config'
   | 'stage-generation-keys'
   | 'assert-vm-grants'
-  | 'copy-shared-secrets'
-  | 'ensure-secrets'
   | 'assert-secrets-deliverable'
   | 'geoip-refresh'
   | 'smoke';
@@ -279,14 +277,8 @@ export async function runDeploy(
         ]);
       }
     });
-    // The base update made each consumer's copy; operator values still in a shared folder move into them (ledger L3).
-    await step('Copy shared operator secrets', () =>
-      fx.task('copy-shared-secrets', ['--region', env.region, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--mode', opts.mode]),
-    );
-    // A generated or derived secret's value is made in Secret Manager, never in the state; one that exists is kept.
-    await step('Make generated secrets', () =>
-      fx.task('ensure-secrets', ['--region', env.region, '--project-id', process.env.SCW_DEFAULT_PROJECT_ID ?? '', '--mode', opts.mode]),
-    );
+    // The deploy reads no value of the app's: the apply makes and moves values (ensure-secrets, ensure-database, copy-shared-secrets), and
+    // this step checks from metadata that every copy a machine reads has one.
     await step('Verify runtime secrets are deliverable', () =>
       fx.task('assert-secrets-deliverable', [
         '--region',
@@ -460,8 +452,6 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),
   'stage-generation-keys': async (argv) => (await import('./stage-generation-keys')).main(argv),
   'assert-vm-grants': async (argv) => (await import('./assert-vm-grants')).main(argv),
-  'copy-shared-secrets': async (argv) => (await import('./copy-shared-secrets')).main(argv),
-  'ensure-secrets': async (argv) => (await import('./ensure-secrets')).main(argv),
   'assert-secrets-deliverable': async (argv) => (await import('./assert-secrets-deliverable')).main(argv),
   'geoip-refresh': async (argv) => (await import('./geoip-refresh')).main(argv),
   smoke: async (argv) => (await import('./smoke')).main(argv),

@@ -1,10 +1,13 @@
 import { randomBytes } from 'node:crypto';
+import { telemetrySink } from '../config/telemetry.config';
 import { managedKeys } from '../lib/managed-keys';
 import { type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { existingContainers, missingCopies, putEveryCopy, secretCopyContainers } from '../lib/scaleway/secret-copies';
 import { secretCopies } from '../lib/scaleway/secret-paths';
+import { syncDeployTelemetryKey } from '../lib/telemetry/sink-key';
 import { checkMark, pc, tildeMark, warningMark } from '../lib/utils/cli-output';
+import { isEnvFileDeliverable } from '../lib/utils/env-file';
 import { isMain } from '../lib/utils/is-main';
 import { provisionManagedKey } from './provision-managed-key';
 
@@ -168,7 +171,12 @@ async function handleSet(ctx: MenuContext): Promise<void> {
   const value = (
     await ctx.prompts.password({
       message: `New value for ${secret.secretName}`,
-      validate: (input) => input.trim().length > 0 || 'Value is required',
+      // A machine's env file is line-based, and the deploy checks presence only: the form is checked here, where the value is written.
+      validate: (input) => {
+        const verdict = isEnvFileDeliverable(input.trim());
+        if (verdict.ok) return true;
+        return verdict.reason === 'empty' ? 'Value is required' : 'One line only: base64-encode a multi-line value and decode it in the service';
+      },
     })
   ).trim();
   // One value for every consumer's copy.
@@ -179,6 +187,13 @@ async function handleSet(ctx: MenuContext): Promise<void> {
   ctx.log(
     `${checkMark} Updated ${secret.secretName} ${pc.dim(`(${revisions.length} cop${revisions.length === 1 ? 'y' : 'ies'}, ${value.length} chars)`)}`,
   );
+  // The deploy reads values in the deploy folder only: the telemetry key it exports with is copied there.
+  if (
+    secret.secretName === telemetrySink.keySecretName &&
+    (await syncDeployTelemetryKey({ client: ctx.client, slug: ctx.slug, mode: ctx.mode })) === 'written'
+  ) {
+    ctx.log(`${checkMark} Copied ${secret.secretName} into the deploy folder, where the deploy reads it`);
+  }
 }
 
 /**

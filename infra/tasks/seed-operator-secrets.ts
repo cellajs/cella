@@ -1,6 +1,7 @@
 import { operatorManagedRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { secretCopies } from '../lib/scaleway/secret-paths';
+import { isEnvFileDeliverable } from '../lib/utils/env-file';
 
 export interface SeedOperatorSecretsOptions {
   secretKey: string;
@@ -32,6 +33,8 @@ export async function seedOperatorSecrets(options: SeedOperatorSecretsOptions): 
   for (const secret of operatorManagedRuntimeSecrets as RuntimeSecretDefinition[]) {
     const value = options.values[secret.id];
     if (!value) continue;
+    if (!isEnvFileDeliverable(value).ok)
+      throw new Error(`${secret.secretName}: one line only; the deploy checks presence, so the form is checked here`);
 
     // One copy per consumer: each is seeded alike, and one that has a value already is left alone.
     for (const { service, path } of secretCopies(secret, options.slug, options.mode)) {

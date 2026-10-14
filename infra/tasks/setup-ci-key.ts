@@ -1,6 +1,6 @@
 import { syncGithubEnvironment } from '../lib/github-sync';
+import { deployRules } from '../lib/scaleway/deploy-policy';
 import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project';
-import { CI_RULE_SHAPES } from '../lib/scaleway/permissions';
 import { principalNames } from '../lib/scaleway/principals';
 import { resolveProjectId } from '../lib/scaleway/provider-env';
 import { type ProvisionScopedKeyOptions, provisionScopedKey, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam';
@@ -26,16 +26,8 @@ export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> 
     suffix: 'ci-deploy',
     appDescription: 'Non-human principal for GitHub Actions CI deployments',
     policyDescription: 'Least-privilege policy for CI deployments (auto-generated)',
-    // One rule per CI_RULE_SHAPES entry: separate rules per scope type, as Scaleway rejects mixing scopes in one rule. No rule writes IAM: a
-    // deploy hands over the standing machine keys an Owner moment made.
-    buildRules: ({ projectId, organizationId }) =>
-      CI_RULE_SHAPES.map((shape) =>
-        shape.scope === 'project'
-          ? { permission_set_names: [...shape.permissionSets], project_ids: [projectId] }
-          : shape.scope === 'dns-projects'
-            ? { permission_set_names: [...shape.permissionSets], project_ids: dnsProjectIds }
-            : { permission_set_names: [...shape.permissionSets], organization_id: organizationId },
-      ),
+    // The rights of plan §3.1 (lib/scaleway/deploy-policy.ts), which Update identities also writes in place.
+    buildRules: ({ projectId, organizationId }) => deployRules({ slug: opts.slug, mode: opts.mode, projectId, organizationId, dnsProjectIds }),
   });
 }
 
