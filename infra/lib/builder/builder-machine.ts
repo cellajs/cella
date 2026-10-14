@@ -1,0 +1,167 @@
+/** What the script reads from `/etc/builder.env`. */
+export interface BuilderValues {
+  SHA: string;
+  REPO: string;
+  REGION: string;
+  PROJECT: string;
+  REGISTRY_HOST: string;
+  DIAG_BUCKET: string;
+  FRONTEND_BUCKET: string;
+  BUNDLE_ID: string;
+  BOOT_AK: string;
+  BOOT_SK: string;
+  NODE_IMAGE: string;
+}
+
+/** Where the builder reports, in the boot-diagnostics bucket: `step`, `log` and `result` (`ok` or `failed`). */
+export function builderReportPrefix(sha: string): string {
+  return `boot-diag/builder/${sha}/`;
+}
+
+/**
+ * The script. Written with String.raw: every backslash reaches bash as it stands, and no dollar-brace may appear. Keys are never echoed,
+ * and the log it uploads is the script's own output.
+ */
+export const BUILDER_SCRIPT = String.raw`#!/bin/bash
+set -a; . /etc/builder.env; set +a
+export HOME=/root GIT_TERMINAL_PROMPT=0
+LOG=/var/log/builder.log
+exec >>"$LOG" 2>&1
+DIAG="https://$DIAG_BUCKET.s3.$REGION.scw.cloud/boot-diag/builder/$SHA"
+put() {
+  curl -sS -m 60 --retry 3 --fail --aws-sigv4 "aws:amz:$REGION:s3" --user "$BOOT_AK@$PROJECT:$BOOT_SK" -X PUT -H 'Content-Type: text/plain; charset=utf-8' --data-binary @"$2" "$DIAG/$1"
+}
+step() {
+  echo "$1" > /run/builder.step
+  echo "== $(date -u +%FT%TZ) $1"
+  put step /run/builder.step || true
+}
+finish() {
+  trap - ERR
+  tail -c 12000 "$LOG" > /run/builder.tail
+  put log /run/builder.tail || true
+  echo "$1" > /run/builder.result
+  put result /run/builder.result || true
+  shutdown -h now
+  exit 0
+}
+trap 'echo "failed at line $LINENO"; finish failed' ERR
+set -eE -o pipefail
+
+step key
+# Read once: a second read fails, as the bundle is disabled after the first.
+curl -sS -m 30 --fail -H "X-Auth-Token: $BOOT_SK" "https://api.scaleway.com/secret-manager/v1beta1/regions/$REGION/secrets/$BUNDLE_ID/versions/latest/access" > /run/builder.bundle
+python3 -c 'import base64,json; b=json.loads(base64.b64decode(json.load(open("/run/builder.bundle"))["data"])); open("/run/builder.ak","w").write(b["accessKey"]); open("/run/builder.sk","w").write(b["secretKey"])'
+rm -f /run/builder.bundle
+chmod 600 /run/builder.ak /run/builder.sk
+BUILDER_AK=$(cat /run/builder.ak)
+BUILDER_SK=$(cat /run/builder.sk)
+
+step clone
+git init -q /build
+git -C /build remote add origin "$REPO"
+git -C /build fetch -q --depth 1 origin "$SHA"
+git -C /build checkout -q FETCH_HEAD
+
+step build
+# The app's dependencies run here, in a container that holds no key.
+docker run --rm -v /build:/build -v /etc/builder-container.sh:/builder-container.sh:ro -w /build --env-file /etc/builder-frontend.env "$NODE_IMAGE" bash -eo pipefail /builder-container.sh
+
+step images
+printf '%s' "$BUILDER_SK" | docker login "$REGISTRY_HOST" -u nologin --password-stdin
+docker buildx bake --file /etc/builder-bake.json --push
+docker logout "$REGISTRY_HOST"
+
+if [ -s /build/.release-files ]; then
+  step files
+  upload() {
+    IFS=$'\t' read -r path key type cache <<< "$1"
+    curl -sS -m 120 --retry 3 --fail --aws-sigv4 "aws:amz:$REGION:s3" --user "$BUILDER_AK@$PROJECT:$BUILDER_SK" -X PUT -H "Content-Type: $type" -H "Cache-Control: $cache" --data-binary @"$path" "https://$FRONTEND_BUCKET.s3.$REGION.scw.cloud/$key"
+  }
+  export -f upload
+  export REGION PROJECT BUILDER_AK BUILDER_SK FRONTEND_BUCKET
+  # Hashed and stable-named files in parallel; the release's entry files, listed last, after them.
+  { grep -v $'\treleases/' /build/.release-files || true; } | xargs -r -d '\n' -P 16 -I{} bash -c 'upload "$1"' _ {}
+  { grep $'\treleases/' /build/.release-files || true; } | xargs -r -d '\n' -I{} bash -c 'upload "$1"' _ {}
+fi
+
+finish ok
+`;
+
+/** The keyless container's commands: install the workspace, build the boot bundle, and the frontend with its upload list when there is one. */
+export function containerScript(opts: { pnpmVersion: string; sha: string; frontendBucketUrl?: string }): string {
+  const lines = [`npm install -g --silent pnpm@${opts.pnpmVersion}`];
+  if (opts.frontendBucketUrl) {
+    lines.push(
+      "pnpm install --frozen-lockfile --filter 'frontend...' --filter 'infra...'",
+      'pnpm --filter infra boot:build',
+      'pnpm --filter frontend build',
+      `pnpm --silent --filter infra release-files --dist /build/frontend/dist --sha ${opts.sha} --bucket-url ${opts.frontendBucketUrl} > /build/.release-files`,
+    );
+  } else {
+    lines.push("pnpm install --frozen-lockfile --filter 'infra...'", 'pnpm --filter infra boot:build');
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+const UNIT = [
+  '[Unit]',
+  'Description=builder, runs once',
+  'After=network-online.target docker.service',
+  'Wants=network-online.target',
+  '[Service]',
+  'Type=oneshot',
+  // A backstop: the deploy deletes the machine when it stops waiting.
+  'TimeoutStartSec=45min',
+  'ExecStart=/usr/local/bin/builder.sh',
+].join('\n');
+
+const indent = (text: string, spaces: number) =>
+  text
+    .split('\n')
+    .map((line) => (line ? ' '.repeat(spaces) + line : ''))
+    .join('\n');
+
+/**
+ * The builder machine's cloud-init: the values, the bake file, the commands of its keyless container, the script, and a unit started once.
+ * The script runs on Scaleway's `docker` image: it takes the builder key from its read-once bundle with the boot key, fetches the release's
+ * commit, has a `node` container that holds no key install the workspace and build the boot bundle and the frontend, then pushes the images
+ * and uploads the frontend files with the builder key, and reports each step to the boot-diagnostics bucket with the boot key.
+ */
+export function builderCloudConfig(opts: { values: BuilderValues; frontendEnv: Record<string, string>; bake: unknown; container: string }): string {
+  const files = [
+    {
+      path: '/etc/builder.env',
+      permissions: '0600',
+      content: Object.entries(opts.values)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('\n'),
+    },
+    {
+      path: '/etc/builder-frontend.env',
+      permissions: '0644',
+      content: Object.entries(opts.frontendEnv)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('\n'),
+    },
+    { path: '/etc/builder-bake.json', permissions: '0644', content: JSON.stringify(opts.bake, null, 2) },
+    { path: '/etc/builder-container.sh', permissions: '0644', content: opts.container.trimEnd() },
+    { path: '/usr/local/bin/builder.sh', permissions: '0755', content: BUILDER_SCRIPT.trimEnd() },
+    { path: '/etc/systemd/system/builder.service', permissions: '0644', content: UNIT },
+  ];
+  const written = files.flatMap((file) => [
+    `  - path: ${file.path}`,
+    `    permissions: '${file.permissions}'`,
+    '    content: |',
+    indent(file.content, 6),
+  ]);
+  return [
+    '#cloud-config',
+    'write_files:',
+    ...written,
+    'runcmd:',
+    '  - systemctl daemon-reload',
+    '  - systemctl start --no-block builder.service',
+    '',
+  ].join('\n');
+}

@@ -55,7 +55,7 @@ function printHelp(): void {
   for (const id of ids) console.info(`  ${pc.cyan(id.padEnd(width))}  ${actionLabel(id)}`);
   console.info(`\n  ${pc.dim('--once      leave after the first action chosen in the menu')}`);
   console.info(`  ${pc.dim('--defaults  take every optional default; required inputs are still asked')}`);
-  console.info(`\n  ${pc.dim('A release is deployed by its own command: pnpm --filter infra run deploy --mode <mode> --sha <sha> [--build]')}`);
+  console.info(`\n  ${pc.dim('A release is deployed by its own command: pnpm --filter infra run deploy --mode <mode> --sha <sha>')}`);
 }
 
 /**

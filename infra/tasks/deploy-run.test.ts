@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type DeployEffects, type DeployOptions, execEnv, parseDeployArgs, parseReapArgs, runDeploy, runReap } from './deploy-run';
+import { type DeployEffects, type DeployOptions, parseDeployArgs, parseReapArgs, runDeploy, runReap } from './deploy-run';
 import type { AllowedKey } from './print-deploy-env';
 
 /** Cella-shaped deploy env table, injected in place of the shared config load. */
@@ -58,9 +58,6 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     initTelemetry: async () => {
       ops.push('telemetry:init');
     },
-    uploadAssets: async () => {
-      ops.push('upload-assets');
-    },
     task: async (name, argv = []) => {
       ops.push(`task:${name}${argv[0] && !argv[0].startsWith('--') ? `:${argv[0]}` : ''}`);
       if (name === 'assert-vm-grants') grantArgs.push([...argv]);
@@ -104,19 +101,11 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
   return { fx, ops, rolloutArgs, grantArgs, taskArgs, execCalls };
 }
 
-const baseOpts = { mode: 'production', sha: 'abc123', distDir: '/tmp/dist' };
+const baseOpts = { mode: 'production', sha: 'abc123' };
 
 describe('parseDeployArgs', () => {
   it('parses flags and refuses non-pinned tags', () => {
-    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc', '--dist', 'dist'])).toEqual({
-      mode: 'staging',
-      sha: 'abc',
-      distDir: 'dist',
-      build: false,
-      gitRef: undefined,
-      deferReap: false,
-    });
-    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc', '--build']).build).toBe(true);
+    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc'])).toEqual({ mode: 'staging', sha: 'abc', gitRef: undefined, deferReap: false });
     expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc', '--defer-reap']).deferReap).toBe(true);
     expect(() => parseDeployArgs(['--mode', 'staging', '--sha', 'latest'])).toThrow(/non-pinned/);
     expect(() => parseDeployArgs(['--mode', 'staging'])).toThrow(/Usage/);
@@ -161,6 +150,7 @@ describe('runDeploy sequencing', () => {
       // Leftover pointers are reconciled before anything plans the stack.
       'task:sync-rollout-config',
       'task:preflight-privileged',
+      'task:build-release',
       'task:wait-for-images',
       'task:stage-generation-keys',
       'update:production',
@@ -228,12 +218,12 @@ describe('runDeploy sequencing', () => {
     expect(ops.at(-1)).toBe('lease:release');
   });
 
-  it('a frontend-less registry (empty frontend_bucket) skips build, asset upload, and entry publish', async () => {
-    const { fx, ops } = makeFake();
+  it('a frontend-less registry (empty frontend_bucket) builds no frontend and publishes no entry file', async () => {
+    const { fx, ops, taskArgs } = makeFake();
     const frontendless = async (opts: DeployOptions) => ({ ...(await fakeDeployEnv(opts)), frontend_bucket: '' });
-    await runDeploy({ ...baseOpts, distDir: undefined as unknown as string }, fx, frontendless);
-    expect(ops).not.toContain('exec:pnpm:--filter');
-    expect(ops).not.toContain('upload-assets');
+    await runDeploy(baseOpts, fx, frontendless);
+    const build = taskArgs['build-release'] ?? [];
+    expect(build[build.indexOf('--dist') + 1]).toBe('');
     expect(ops).not.toContain('publish-entry');
     expect(ops).toContain('task:smoke');
     expect(ops.at(-1)).toBe('lease:release');
@@ -246,46 +236,15 @@ describe('runDeploy sequencing', () => {
     expect(ops.at(-1)).toBe('lease:release');
   });
 
-  it('builds the frontend itself when no dist dir is provided', async () => {
-    const { fx, ops } = makeFake();
-    await runDeploy({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv);
-    expect(ops).toContain('exec:pnpm:--filter');
-    expect(ops).toContain('upload-assets');
-    expect(ops).toContain('publish-entry');
-    expect(ops).toContain('task:smoke');
-  });
-
-  it('the registry wait progresses while the frontend build runs (exec must not block it)', async () => {
-    const { fx, ops } = makeFake();
-    const fxConcurrent: DeployEffects = {
-      ...fx,
-      exec: async (cmd, args) => {
-        // The fake build finishes only after the concurrent images branch completed its registry wait; a build that blocks that branch deadlocks this test.
-        if (cmd === 'pnpm' && args[0] === '--filter') {
-          while (!ops.includes('task:wait-for-images')) await new Promise((tick) => setTimeout(tick, 1));
-        }
-        ops.push(`exec:${cmd}:${args[0]}`);
-      },
-    };
-    await runDeploy({ mode: 'production', sha: 'abc123' }, fxConcurrent, fakeDeployEnv);
-    expect(ops.indexOf('task:wait-for-images')).toBeLessThan(ops.indexOf('exec:pnpm:--filter'));
-  });
-
-  it('skips the frontend build (but still uploads) with a prebuilt dist dir', async () => {
-    const { fx, ops } = makeFake();
+  it('publishes and smoke-tests the entry files the build wrote', async () => {
+    const { fx, taskArgs } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
-    expect(ops).not.toContain('exec:pnpm:--filter');
-    expect(ops).toContain('upload-assets');
-  });
-
-  it('bakes and pushes images in-process with --build', async () => {
-    const { fx, ops } = makeFake();
-    await runDeploy({ ...baseOpts, build: true }, fx, fakeDeployEnv);
-    expect(ops).toContain('exec:docker:buildx');
-    const bakeIndex = ops.indexOf('exec:docker:buildx');
-    const waitIndex = ops.indexOf('task:wait-for-images');
-    expect(bakeIndex).toBeGreaterThan(-1);
-    expect(waitIndex).toBeGreaterThan(bakeIndex);
+    const build = taskArgs['build-release'] ?? [];
+    const distDir = build[build.indexOf('--dist') + 1] ?? '';
+    expect(distDir).toMatch(/release-/);
+    expect(build.slice(0, 4)).toEqual(['--sha', 'abc123', '--mode', 'production']);
+    const smoke = taskArgs.smoke ?? [];
+    expect(smoke[smoke.indexOf('--dist') + 1]).toBe(`${distDir}/index.html`);
   });
 
   it('asserts every principal', async () => {
@@ -346,56 +305,10 @@ describe('runReap sequencing', () => {
   });
 });
 
-describe('frontend build process', () => {
-  /** The deploy job's environment: cloud keys, the state passphrase and the GitHub token beside ordinary runner vars. */
-  const deployJobEnv = {
-    PATH: '/usr/bin',
-    HOME: '/home/runner',
-    CI: 'true',
-    SCW_ACCESS_KEY: 'SCWDEPLOYACCESSKEY01',
-    SCW_SECRET_KEY: 'scw-deploy-secret-value',
-    SCW_DEFAULT_PROJECT_ID: 'scw-project-id-value',
-    SCW_DEFAULT_ORGANIZATION_ID: 'scw-organization-id-value',
-    PULUMI_CONFIG_PASSPHRASE: 'pulumi-passphrase-value',
-    GITHUB_TOKEN: 'ghs_deploy_token_value',
-    AWS_SECRET_ACCESS_KEY: 'aws-secret-access-key-value',
-  };
-  const deploySecrets = Object.entries(deployJobEnv).filter(([key]) => !['PATH', 'HOME', 'CI'].includes(key));
-
-  it('must not hand a deploy secret to the frontend build via its environment', async () => {
-    const { fx, execCalls } = makeFake();
-    // No --dist: the deploy command builds the frontend itself, as an operator run does.
-    await runDeploy({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv);
-
-    const build = execCalls.find((call) => call.cmd === 'pnpm' && call.args.join(' ') === '--filter frontend build');
-    expect(build).toBeDefined();
-    const buildEnv = execEnv(deployJobEnv, build?.opts ?? {});
-    for (const [key, value] of deploySecrets) {
-      expect(buildEnv, key).not.toHaveProperty(key);
-      expect(Object.values(buildEnv)).not.toContain(value);
-    }
-    // Positive control: the build still receives its config and the runner basics.
-    expect(buildEnv).toMatchObject({
-      APP_MODE: 'production',
-      BACKEND_URL: 'https://www.cellajs.com/api',
-      FRONTEND_URL: 'https://www.cellajs.com',
-      PATH: '/usr/bin',
-    });
-  });
-
-  it('keeps the deploy secrets for the steps that use them', async () => {
-    const { fx, execCalls } = makeFake();
-    await runDeploy({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv);
-
-    const login = execCalls.find((call) => call.cmd === 'pulumi' && call.args[0] === 'login');
-    expect(login).toBeDefined();
-    expect(execEnv(deployJobEnv, login?.opts ?? {})).toMatchObject(Object.fromEntries(deploySecrets));
-  });
-
-  it('runs no frontend build in the deploy process when CI hands it a prebuilt dist', async () => {
+describe('what the deploy runs', () => {
+  it('runs no build: the app code runs on the builder machine, never beside the deploy key', async () => {
     const { fx, execCalls } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
-
-    expect(execCalls.filter((call) => call.args.includes('frontend'))).toEqual([]);
+    expect([...new Set(execCalls.map((call) => `${call.cmd} ${call.args[0]}`))].sort()).toEqual(['docker login', 'pulumi login', 'pulumi stack']);
   });
 });

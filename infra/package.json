@@ -10,6 +10,7 @@
     "validate-state-bucket-policy": "tsx tasks/validate-state-bucket-policy.ts",
     "print-deploy-env": "tsx tasks/print-deploy-env.ts",
     "print-frontend-build-env": "tsx tasks/print-frontend-build-env.ts",
+    "release-files": "tsx tasks/release-files.ts",
     "sync-rollout-config": "tsx tasks/sync-rollout-config.ts",
     "forget-retired-resources": "tsx tasks/forget-retired-resources.ts",
     "deploy": "tsx tasks/deploy.ts",

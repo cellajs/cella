@@ -38,6 +38,49 @@ export function standingKeyProblem(principal: MachinePrincipal, stored: string |
 }
 
 /**
+ * Put one principal's standing key into a SINGLE-ACCESS bundle under `/handoff/<principal>/`, which the machine it is for reads once; an unread
+ * bundle of an earlier deploy is pruned first, as the machine it was for never booted. Returns the bundle's secret id.
+ */
+export async function stageHandoffBundle(opts: {
+  slug: string;
+  mode: string;
+  sha: string;
+  principal: string;
+  key: { accessKey: string; secretKey: string };
+  secrets: Pick<StageSecrets, 'listSecretsUnder' | 'ensureSecret' | 'putSecretValue' | 'deleteSecret'>;
+  log: (message: string) => void;
+}): Promise<string> {
+  const handoffFolder = handoffServicePath(opts.slug, opts.mode, opts.principal);
+  for (const stale of await opts.secrets.listSecretsUnder(handoffFolder)) {
+    await opts.secrets.deleteSecret(stale.id);
+    opts.log(`  ~ pruned stale handoff bundle ${stale.name}`);
+  }
+  const bundle = await opts.secrets.ensureSecret({
+    name: `handoff-${opts.principal}-${opts.sha.slice(0, 10)}`,
+    path: handoffFolder,
+    description: `Single-access key handoff for ${opts.principal} gen ${opts.sha.slice(0, 10)} (read once by the booting machine)`,
+    ephemeralPolicy: { expires_once_accessed: true, action: 'disable' },
+  });
+  await opts.secrets.putSecretValue({ secretId: bundle.id, value: JSON.stringify(opts.key), description: 'Staged by stage-generation-keys' });
+  opts.log(`✓ staged handoff bundle for ${opts.principal} (${bundle.id})`);
+  return bundle.id;
+}
+
+/** A principal's standing key, read from the deploy folder. */
+export async function readStandingKey(
+  secrets: Pick<StageSecrets, 'listSecretsUnder' | 'accessLatestValue'>,
+  slug: string,
+  mode: string,
+  principal: string,
+): Promise<{ accessKey: string; secretKey: string }> {
+  const container = (await secrets.listSecretsUnder(deployFolderPath(slug, mode))).find(
+    (secret) => secret.name === machineKeyName(principal) && (secret.version_count ?? 0) > 0,
+  );
+  if (!container) throw new Error(`no standing key for ${principal} in the deploy folder: \`${actionCommand('identity')}\` makes it`);
+  return JSON.parse(await secrets.accessLatestValue(container.id)) as { accessKey: string; secretKey: string };
+}
+
+/**
  * Stage this deploy's machine keys without calling IAM to write anything: each running service's standing key, read from the deploy folder,
  * goes into a SINGLE-ACCESS hand-over bundle under `/handoff/<service>/`, which a booting machine reads once (a failed read halts it as an
  * interception signal); the boot key goes into the keys file for cloud-init. First every machine identity is checked to hold exactly its
@@ -82,22 +125,7 @@ export async function stageGenerationKeys(opts: {
   const boot = await read('boot');
   const handoffSecretIds: Record<string, string> = {};
   for (const service of opts.services) {
-    const key = await read(service);
-    // An unread bundle of an earlier deploy is stale: the machine it was for never booted.
-    const handoffFolder = handoffServicePath(opts.slug, opts.mode, service);
-    for (const stale of await opts.secrets.listSecretsUnder(handoffFolder)) {
-      await opts.secrets.deleteSecret(stale.id);
-      log(`  ~ pruned stale handoff bundle ${stale.name}`);
-    }
-    const bundle = await opts.secrets.ensureSecret({
-      name: `handoff-${service}-${opts.sha.slice(0, 10)}`,
-      path: handoffFolder,
-      description: `Single-access service-key handoff for ${service} gen ${opts.sha.slice(0, 10)} (read once by the booting machine)`,
-      ephemeralPolicy: { expires_once_accessed: true, action: 'disable' },
-    });
-    await opts.secrets.putSecretValue({ secretId: bundle.id, value: JSON.stringify(key), description: 'Staged by stage-generation-keys' });
-    handoffSecretIds[service] = bundle.id;
-    log(`✓ staged handoff bundle for ${service} (${bundle.id})`);
+    handoffSecretIds[service] = await stageHandoffBundle({ ...opts, principal: service, key: await read(service), log });
   }
 
   const result: GenerationKeys = { bootAccessKey: boot.accessKey, bootSecretKey: boot.secretKey, handoffSecretIds };

@@ -324,12 +324,12 @@ async function ensureProjectId(opts: { slug: string; mode: Environment; accessKe
 
 /**
  * Offer to run the first deploy here, so a fresh setup ends with a live app.
- * Runs the same one-command deploy CI runs with --build (local docker buildx), authenticated with the freshly minted CI deploy key so it also proves the CI key path.
+ * Runs the same one-command deploy CI runs, whose builder machine builds the release, authenticated with the freshly minted CI deploy key so it also proves the CI key path.
  * Skipped when docker or a git HEAD is unavailable.
  */
 async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, operatorSecrets: OperatorSecretValues): Promise<void> {
   const mode = ctx.context.environment;
-  const manualCmd = (sha: string) => `pnpm --filter infra run deploy --mode ${mode} --sha ${sha} --build`;
+  const manualCmd = (sha: string) => `pnpm --filter infra run deploy --mode ${mode} --sha ${sha}`;
   if (spawnSync('docker', ['buildx', 'version'], { stdio: 'ignore' }).status !== 0) {
     console.info(`\n${pc.dim('docker (with buildx) not found; skipping the first deploy. Run it later:')} ${pc.cyan(manualCmd('<git-sha>'))}`);
     return;
@@ -349,7 +349,7 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, operatorS
   const deployNow = autoAcceptDefaults()
     ? hasAdminEmail
     : await confirm({
-        message: `Deploy ${sha.slice(0, 7)} to ${mode} now? Builds images locally, then rolls out (10-20 min).`,
+        message: `Deploy ${sha.slice(0, 7)} to ${mode} now? A builder machine builds the release, then it rolls out (10-20 min).`,
         default: hasAdminEmail,
       });
   if (!deployNow) {
@@ -369,7 +369,7 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, operatorS
     AWS_SECRET_ACCESS_KEY: ciKey.secretKey,
     ...(ciKey.organizationId ? { SCW_DEFAULT_ORGANIZATION_ID: ciKey.organizationId } : {}),
   };
-  const { status } = spawnSync('pnpm', ['run', 'deploy', '--mode', mode, '--sha', sha, '--build'], {
+  const { status } = spawnSync('pnpm', ['run', 'deploy', '--mode', mode, '--sha', sha], {
     cwd: infraDir,
     env: deployEnv,
     stdio: 'inherit',
