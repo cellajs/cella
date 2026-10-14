@@ -234,6 +234,14 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     }
     pulumi.log.info(`compute: ${svc.slug} generation ${generation.id} is planned without its keys; a deploy mints them before it updates.`);
   }
+  // The hand-over bundle is minted for the release this deploy rolls out, one per service. A new machine of another release would read it first
+  // and leave the release's own machine nothing to read.
+  const releaseSha = process.env.INFRA_RELEASE_SHA;
+  if (!generation.preexisting && generationKeys && releaseSha && generation.sha !== releaseSha) {
+    throw new Error(
+      `compute: a NEW ${svc.slug} generation of ${generation.sha.slice(0, 10)} would take the hand-over bundle minted for ${releaseSha.slice(0, 10)}: the rollout record names a release the stack does not run.`,
+    );
+  }
   const serviceConfig: ServiceConfig = {
     name: svc.slug,
     profile: svc.slug,

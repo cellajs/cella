@@ -1,14 +1,5 @@
 import { changeMark, checkMark, tildeMark } from '../utils/cli-output';
-import {
-  createApiKey,
-  deleteApiKey,
-  getApiKey,
-  IAM_BASE,
-  listApiKeys,
-  resolveApplicationIdByName,
-  resolveOrganizationIdViaProject,
-} from './iam-client';
-import { DNS_PERMISSION_SETS } from './permissions';
+import { createApiKey, deleteApiKey, IAM_BASE, listApiKeys, resolveApplicationIdByName, resolveOrganizationIdViaProject } from './iam-client';
 import { principalNames, principalTags } from './principals';
 import { resolveOrganizationIdFromEnv } from './provider-env';
 import { scwFetch, scwSend } from './scw-fetch';
@@ -307,44 +298,5 @@ export async function removeBootstrapDnsGrant(opts: {
   if (!id) return false;
   await scwSend({ secretKey: opts.callerSecretKey }, 'DELETE', `${IAM_BASE}/policies/${id}`);
   log(`  ${tildeMark} Removed org-wide bootstrap DNS grant '${policyName}'`);
-  return true;
-}
-
-/** Ensure the setup key's IAM application carries org-wide DNS, needed when the zone lives in a sibling project. No-ops for user-owned keys (an Owner API key) and when the policy exists. */
-export async function ensureBootstrapDnsGrant(opts: {
-  callerSecretKey: string;
-  accessKey: string;
-  organizationId: string;
-  slug: string;
-  log?: (msg: string) => void;
-}): Promise<boolean> {
-  const log = opts.log ?? ((msg) => console.info(msg));
-  const key = await getApiKey({ secretKey: opts.callerSecretKey }, opts.accessKey);
-  if (!key.application_id) return false;
-
-  const policyName = `${opts.slug}-bootstrap-dns`;
-  try {
-    const existing = await findPolicyIdByName(opts.callerSecretKey, opts.organizationId, policyName);
-    if (existing) {
-      log(`  Bootstrap DNS grant '${policyName}' already present`);
-      return true;
-    }
-  } catch (error) {
-    if (!isPermissionDenied(error)) throw error;
-  }
-  try {
-    await scwFetch<ScwPolicy>({ secretKey: opts.callerSecretKey }, 'POST', `${IAM_BASE}/policies`, {
-      name: policyName,
-      organization_id: opts.organizationId,
-      application_id: key.application_id,
-      description:
-        'Org-wide DNS for the setup key: first provisioning up writes records in the org-shared zone (auto-generated; removed when setup completes)',
-      rules: [{ permission_set_names: [...DNS_PERMISSION_SETS], organization_id: opts.organizationId }],
-    });
-    log(`  Created bootstrap DNS grant '${policyName}' (org-wide DomainsDNSFullAccess)`);
-  } catch (error) {
-    if (!isAlreadyExists(error)) throw error;
-    log(`  Bootstrap DNS grant '${policyName}' already present`);
-  }
   return true;
 }

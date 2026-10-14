@@ -201,7 +201,7 @@ The machines' IAM applications and their policies follow the **service registry*
 
 1. Easiest: as an organization Owner, generate an [API key for your user](https://console.scaleway.com/iam/users) (User menu → API keys → Generate). Give it an expiry when it is only for this setup.
 2. Stricter: create an Application in [IAM → Applications](https://console.scaleway.com/iam/applications) with **ProjectManager + IAMManager** on the organization, and generate an API key for it.
-3. Keep project ID and organization ID in your password manager. The key itself is for this setup only: the wizard offers to revoke it at its end, and day-2 work runs on the operator key ([Operator key](#operator-key)).
+3. Keep project ID and organization ID in your password manager. The key itself is for this setup only: the wizard offers to revoke it when the Owner moment ends, and everything after it runs on the operator key ([Operator key](#operator-key)).
 
 ### 3. Run the infra CLI
 
@@ -209,14 +209,25 @@ The machines' IAM applications and their policies follow the **service registry*
 pnpm infra
 ```
 
+The first setup has two parts. The **Owner moment** writes IAM and nothing else, with the Owner API key you paste:
+
 1. Picks or creates the Scaleway project (prerequisite 5).
-2. Generates the Pulumi passphrase. **Store it when shown**: it is shown once and unrecoverable (set `PULUMI_CONFIG_PASSPHRASE` beforehand to supply your own).
+2. Creates the machine identities (one application per registry service, and the boot fetcher) and writes their policies ([Machine policies](#machine-policies)).
+3. Creates the CI deploy application with its key, and sets it on the GitHub Environment (if `gh` is authenticated).
+4. Creates the admin application with its key and writes the key to `infra/.env.<mode>` (`SCW_ADMIN_*`) on this machine.
+5. Makes sure the app's operator reaches this environment: an app without an operator gets it created (you give the dedicated address, and the key is shown once: store it); an app that has one gets this environment's project added to its policy, and its key keeps working ([Operator key](#operator-key)).
+6. Offers to **revoke the Owner API key you pasted**. Nothing after this needs it.
+
+The **operator part** runs on the operator key: the one just created, or the one you paste.
+
+1. Generates the Pulumi passphrase and stores it in Secret Manager, so later runs fetch it with the operator key (set `PULUMI_CONFIG_PASSPHRASE` beforehand to supply your own).
+2. Asks for the admin email and, with it, the mail key.
 3. Creates state storage and initializes Pulumi.
-4. Creates the CI deploy and admin applications with their keys and writes the admin application key to `infra/.env.<mode>` (`SCW_ADMIN_*`) on this machine.
-5. Configures GitHub (if `gh` is authenticated).
-6. Optionally runs the first `pulumi up` (registry, DB, and network, but no compute yet).
-7. Offers the **first deploy** (the CI command with `--build`, using the new CI deploy key). Accepting ends with a live app. Declining leaves it to CI (step 4).
-8. Offers to **revoke the key you pasted** as its last call, and names the action that creates the operator key.
+4. Sets the passphrase on the GitHub Environment.
+5. Optionally runs the first `pulumi up` (registry, DB, and network, but no compute yet) and seeds the admin email.
+6. Offers the **first deploy** (the CI command with `--build`, using the new CI deploy key). Accepting ends with a live app. Declining leaves it to CI (step 4).
+
+A second environment of the same app runs the same two parts: its Owner moment adds the environment to the operator's reach, and its operator part asks for the operator key you stored.
 
 ### 4. Commit and push
 
@@ -235,7 +246,7 @@ pnpm infra
 
 ### 5. Revoke the setup key
 
-If you pasted a key created for this setup, revoke it now. The wizard's final step covers it. If you declined or it failed:
+If you pasted a key created for this setup, revoke it now. The Owner moment's last step covers it. If you declined or it failed:
 
 1. Delete the key at [IAM → API Keys](https://console.scaleway.com/iam/api-keys).
 2. Optionally delete the temporary application.
@@ -328,7 +339,7 @@ To put the admin application key on another operator machine, run `pnpm infra fe
 
 ### Operator key
 
-`pnpm infra` → **Rotate keys & secrets** → **Set up operator key** (`pnpm infra operator-key`), run once per app with your Owner API key, and again when an environment is added or the address changes:
+`pnpm infra` → **Rotate keys & secrets** → **Set up operator key** (`pnpm infra operator-key`), run once per app with your Owner API key (a first setup runs it for you), and again when the address changes. A new environment needs no new key, as its setup adds the environment to the operator's policy in place. The action:
 
 1. Asks for the dedicated IPv4 address or addresses the key works from; the default is the address this machine reaches the internet with. Ranges wider than `/24` are refused, as for the database allowlist.
 2. Creates the `<app>-operator` application with a policy of up to three rules: every product in the project of each environment this machine knows (the ones whose setup wrote a project to `infra/.env.<mode>`), DNS in the serving zone's project when that is none of them, and IAM read in the organization. Each rule carries the same address condition. The app's name is the slug without a `-<mode>` ending, so `cella-staging` and `cella` share `cella-operator`.
@@ -356,7 +367,7 @@ Running the action again replaces the policy and every earlier key. It needs you
 
 ### Teardown
 
-`pnpm infra` → **Tear down stack** deletes every resource to stop billing: it takes an Owner API key, as it deletes the stack's identities ([API keys](#credentials)), requires typing `<slug>-<mode>`, runs `pulumi destroy --refresh` under the stack lock, then optionally deletes the stack's IAM principals. The app's operator application stays: it serves the other environments. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket, operator secret values, and GitHub Environment secrets.
+`pnpm infra` → **Tear down stack** deletes every resource to stop billing: it requires typing `<slug>-<mode>`, runs `pulumi destroy --refresh` under the stack lock with your operator key, then optionally deletes the stack's IAM principals, for which it asks for an Owner API key ([API keys](#credentials)). The app's operator application stays: it serves the other environments. Production resources marked `protect: true` (frontend/private buckets, database) are refused unless protection is lifted in code first. Left in place on purpose: the versioned state bucket, operator secret values, and GitHub Environment secrets.
 
 > **Clean slate** below is not a teardown: it resets stack tracking to set up a still-running stack again. Live resources stay.
 

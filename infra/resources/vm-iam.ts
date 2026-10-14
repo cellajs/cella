@@ -51,6 +51,18 @@ function requirePrincipalId(
   });
 }
 
+/**
+ * Operator application id: the app's privileged human principal, one per app. Optional: until `operator-key` creates it, its bucket-policy
+ * statements are dropped with a warning.
+ */
+export const operatorApplicationId: pulumi.Output<string | undefined> = findApplicationId(names.operator).apply((id) => {
+  if (id) return id;
+  pulumi.log.warn(
+    `Operator IAM application '${names.operator}' not found: its bucket-policy statements are dropped this update. \`${actionCommand('operator-key')}\` creates it.`,
+  );
+  return undefined;
+});
+
 /** CI deploy application id: the principal CI authenticates as. Required. */
 export const ciDeployApplicationId = requirePrincipalId(findApplicationId(names.ciDeploy), `CI deploy ('${names.ciDeploy}')`);
 

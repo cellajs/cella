@@ -1,24 +1,22 @@
 import { spawnSync } from 'node:child_process';
 import { confirm, select } from '@inquirer/prompts';
 import { syncGithubEnvironment } from '../../lib/github-sync';
-import { type ManagedKeyId, managedKeys } from '../../lib/managed-keys';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
 import { deleteApiKey, fetchAppRulesByName } from '../../lib/scaleway/iam-client';
 import { machinePolicies } from '../../lib/scaleway/machine-policies';
-import { type KeyPair, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { type KeyPair, organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { CI_RULE_SHAPES } from '../../lib/scaleway/permissions';
 import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { projectAccessKey } from '../../lib/scaleway/s3-client';
 import { createProject, listProjects, resolveOrganizationIdFromKey } from '../../lib/scaleway/scaleway-account';
-import { ensureBootstrapDnsGrant, removeBootstrapDnsGrant, resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { secretManagerPath } from '../../lib/scaleway/secret-paths';
-import type { Environment } from '../../lib/stack/bootstrap-stack-state';
-import { lockKey, makeControlClient, readObjectText, stateBucket } from '../../lib/stack/control-store';
+import { detectComputeDeferred, type Environment } from '../../lib/stack/bootstrap-stack-state';
+import { operatorSecretImports } from '../../lib/stack/operator-secret-imports';
 import { projectChoices, projectsOfOtherModes } from '../../lib/stack/project-per-mode';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { changeMark, checkMark, DIVIDER, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
@@ -27,12 +25,12 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { writeMachinePolicies } from '../../tasks/machine-policies';
 import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
-import { provisionManagedKey } from '../../tasks/provision-managed-key';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { setupAdminApp } from '../../tasks/setup-admin-app';
 import { setupCiKey } from '../../tasks/setup-ci-key';
 import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { maskedSecret } from '../prompts/masked-secret';
+import { rememberOperatorKey } from '../session';
 import type { CliMode, InfraContext } from '../shared';
 import {
   acquireStackLockOrExit,
@@ -48,8 +46,11 @@ import {
   resolveOrCreatePassphrase,
   stackNameFor,
 } from '../shared';
-import { acquireOperatorKey, operatorLock } from './operator-unlock';
+import { ensureOperatorForEnvironment } from './operator-key';
+import { acquireOperatorKey } from './operator-unlock';
 import { OWNER_KEY_HINT, type OwnerKey } from './owner-key';
+
+type SetupMode = Extract<CliMode, 'resume' | 'rotate-keys'>;
 
 /** An optional masked value: empty when the prompt cannot run (no terminal), while a Ctrl-C at it still leaves the wizard. */
 async function optionalSecret(message: string): Promise<string> {
@@ -61,17 +62,15 @@ async function optionalSecret(message: string): Promise<string> {
   }
 }
 
-/** Everything the per-phase helpers below share. */
+/** What the operator part of a setup shares. */
 interface SetupContext {
   context: InfraContext;
   appConfig: InfraContext['appConfig'];
   projectId: string;
-  /** The Owner API key (provider auth + IAM / Secret Manager work). */
+  /** The operator key: provider auth, Secret Manager writes and IAM reads. */
   accessKey: string;
   secretKey: string;
-  /** True when the run's key is an Owner API key; false for the operator key, which writes no IAM. */
-  writesIam: boolean;
-  /** The key for the state side (backend login, stack lock): the admin application key once this machine holds it. */
+  /** The key for the state side (backend login, stack lock): the admin application key while this machine holds one, else the operator key. */
   stateKey: KeyPair;
   stackName: string;
   /** Secret Manager folder for this stack's runtime secrets. */
@@ -81,17 +80,10 @@ interface SetupContext {
   must: ReturnType<typeof createStepRunner>['must'];
 }
 
-/** Optional operator secret values gathered at the first-setup prompts. */
+/** Optional operator secret values gathered at the first-setup prompts, seeded once the first `pulumi up` made their containers. */
 interface OperatorSecretValues {
   adminEmail: string;
   brevoApiKey: string;
-}
-
-/** What the operator opted into at the setup prompts. Both are applied after the first `pulumi up`, once the containers exist. */
-interface BootstrapSecretInputs {
-  operatorSecrets: OperatorSecretValues;
-  /** Managed-key id → whether the operator asked to mint it now. */
-  mintDecisions: Map<ManagedKeyId, boolean>;
 }
 
 /** Result of the CI-deploy-key phase; empty strings when nothing was minted. */
@@ -99,6 +91,14 @@ interface CiKeyResult {
   accessKey: string;
   secretKey: string;
   organizationId: string;
+}
+
+/** What an Owner moment hands to the operator part of the same run. */
+interface OwnerMomentResult {
+  projectId: string;
+  ciKey: CiKeyResult;
+  /** The operator key, when this moment created the app's operator: the operator part runs on it without asking. */
+  operatorKey?: KeyPair;
 }
 
 /** Read-only warning about required operator-managed runtime secrets with no value. Non-fatal: the first `pulumi up` creates the containers. */
@@ -156,16 +156,19 @@ async function warnOnCiPolicyDrift(ctx: SetupContext): Promise<void> {
 }
 
 /** Mint (or rotate) the CI deploy key, retrying on operator confirm. */
-async function mintCiKey(ctx: SetupContext, keyMintAppIds?: readonly string[]): Promise<CiKeyResult> {
+async function mintCiKey(
+  ownerSecretKey: string,
+  opts: { projectId: string; appConfig: InfraContext['appConfig']; mode: string; keyMintAppIds?: readonly string[] },
+): Promise<CiKeyResult> {
   while (true) {
     try {
       const key = await setupCiKey({
-        callerSecretKey: ctx.secretKey,
-        projectId: ctx.projectId,
-        slug: ctx.appConfig.slug,
-        mode: ctx.context.environment,
-        dnsZone: deriveInfra(ctx.appConfig).dnsZone,
-        keyMintAppIds,
+        callerSecretKey: ownerSecretKey,
+        projectId: opts.projectId,
+        slug: opts.appConfig.slug,
+        mode: opts.mode,
+        dnsZone: deriveInfra(opts.appConfig).dnsZone,
+        keyMintAppIds: opts.keyMintAppIds,
       });
       return { accessKey: key.accessKey, secretKey: key.secretKey, organizationId: key.organizationId };
     } catch (error) {
@@ -175,153 +178,100 @@ async function mintCiKey(ctx: SetupContext, keyMintAppIds?: readonly string[]): 
   }
 }
 
-/** How long a key made a moment ago gets to be accepted by Object Storage. */
-const STATE_ACCESS_LIMIT_MS = 120_000;
-const STATE_ACCESS_POLL_MS = 3000;
-
 /**
- * Move the state side of this run to the admin application key. The first `pulumi up` puts a policy on the state bucket that admits the admin
- * and CI applications only, so a user key that writes the state is shut out in the middle of that up. A key made a moment ago is not accepted
- * by Object Storage at once: the run waits until the bucket answers it, and stops when it never does.
+ * Admin IAM application, created on fresh/rotate at the Owner moment. It grants Object Storage full plus read-only infra rights for
+ * `pulumi preview --refresh` and `status`, never IAM write. Its key lives in Secret Manager and in infra/.env.<mode> on this machine, and is
+ * never printed or stored as a GitHub secret. Idempotent: reuses the app. The id is never persisted: consumers resolve it from IAM by name.
  */
-async function moveStateSideTo(ctx: SetupContext, adminKey: KeyPair): Promise<void> {
-  if (ctx.stateKey.accessKey === adminKey.accessKey) return;
-  const s3 = await makeControlClient(ctx.appConfig.s3.region, adminKey.accessKey, adminKey.secretKey);
-  const bucket = stateBucket(ctx.appConfig.slug);
-  const startedAt = Date.now();
-  await withSpinner('Waiting until the state bucket accepts the admin application key', async () => {
-    for (;;) {
-      try {
-        await readObjectText(s3, bucket, lockKey(ctx.stackName));
-        return;
-      } catch (error) {
-        if (Date.now() - startedAt >= STATE_ACCESS_LIMIT_MS) {
-          throw new Error(
-            `The state bucket ${bucket} refuses the admin application key (${errorMessage(error)}). Run \`${actionCommand('resume')}\` in a minute: it continues from here.`,
-          );
-        }
-        await new Promise((resolve) => setTimeout(resolve, STATE_ACCESS_POLL_MS));
-      }
-    }
-  });
-  ctx.stateKey = adminKey;
-  ctx.childEnv.AWS_ACCESS_KEY_ID = adminKey.accessKey;
-  ctx.childEnv.AWS_SECRET_ACCESS_KEY = adminKey.secretKey;
-}
-
-/**
- * Admin IAM application, created on fresh/rotate (the Owner API key holds IAMManager). It grants Object Storage full plus
- * read-only infra rights for `pulumi preview --refresh`, teardown, and bucket recovery, never IAM write. Its key lives in
- * Secret Manager and is never printed or stored as a GitHub secret. Idempotent: reuses the app.
- * The id is never persisted: every consumer resolves it from IAM by its canonical name.
- */
-async function ensureAdminApp(ctx: SetupContext): Promise<string> {
-  let admin: Awaited<ReturnType<typeof setupAdminApp>>;
+async function ensureAdminApp(
+  ownerSecretKey: string,
+  opts: { projectId: string; appConfig: InfraContext['appConfig']; mode: Environment },
+): Promise<string> {
   try {
-    admin = await setupAdminApp({
-      callerSecretKey: ctx.secretKey,
-      projectId: ctx.projectId,
-      slug: ctx.appConfig.slug,
-      mode: ctx.context.environment,
-      region: ctx.appConfig.s3.region,
+    const admin = await setupAdminApp({
+      callerSecretKey: ownerSecretKey,
+      projectId: opts.projectId,
+      slug: opts.appConfig.slug,
+      mode: opts.mode,
+      region: opts.appConfig.s3.region,
     });
-    // This machine holds the Owner API key right now, so it gets the admin application key too: every later CLI run (status, preview, the state side of Apply) authenticates with it.
+    // This machine holds the Owner API key right now, so it gets the admin application key too: `status` and the plan of an apply read with it.
     const written = writeModeEnvValues(
-      ctx.context.environment,
+      opts.mode,
       { SCW_ADMIN_ACCESS_KEY: admin.accessKey, SCW_ADMIN_SECRET_KEY: admin.secretKey },
       { remove: LEGACY_ADMIN_KEY_NAMES },
     );
+    // The rest of this run reads the new key too: the env loaded at start may still hold one this moment replaced.
+    process.env.SCW_ADMIN_ACCESS_KEY = admin.accessKey;
+    process.env.SCW_ADMIN_SECRET_KEY = admin.secretKey;
     console.info(
-      `  ${checkMark} Admin application key ('${principalNames(ctx.appConfig.slug, ctx.context.environment).admin}') written to ${written.path} (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY)`,
+      `  ${checkMark} Admin application key ('${principalNames(opts.appConfig.slug, opts.mode).admin}') written to ${written.path} (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY)`,
     );
+    return admin.applicationId;
   } catch (error) {
     console.warn(`${warningMark} Admin app setup failed: ${errorMessage(error)}`);
     return '';
   }
-  // Outside the catch above: a state bucket that refuses the key stops the run, since going on would lose the state.
-  await moveStateSideTo(ctx, { accessKey: admin.accessKey, secretKey: admin.secretKey });
-  return admin.applicationId;
 }
 
-function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; adminAppId: string; names: PrincipalNames }): void {
-  const { needsCiKey, ciAccessKey, adminAppId, names } = opts;
+function printSummary(opts: { rotated: boolean; ciAccessKey: string; adminAppId: string; names: PrincipalNames }): void {
+  const { ciAccessKey, adminAppId, names } = opts;
   const divider = pc.dim(DIVIDER);
   console.info(`\n${divider}`);
-  if (!needsCiKey) {
-    console.info(`${checkMark} ${pc.bold('Resume verified.')} Existing keys left unchanged.`);
-  } else if (ciAccessKey) {
-    console.info(`${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key ('${names.ciDeploy}'): ${pc.cyanBright(ciAccessKey)}`);
+  if (ciAccessKey) {
+    console.info(
+      `${checkMark} ${pc.bold(pc.greenBright(opts.rotated ? 'Keys rotated.' : 'Identities written.'))} CI deploy key ('${names.ciDeploy}'): ${pc.cyanBright(ciAccessKey)}`,
+    );
   } else {
     console.info(`${warningMark} ${pc.bold(pc.yellowBright('Done, but CI key was not created.'))} Run ${pc.cyan(actionCommand('rotate-keys'))}.`);
   }
   if (adminAppId) {
     console.info(
       `  ${checkMark} Admin IAM app '${names.admin}': ${pc.cyanBright(adminAppId)}\n` +
-        `    ${pc.dim('Its key is in infra/.env.<mode> here and in Secret Manager (admin-key); on another machine run `pnpm infra fetch-admin-key` with your Owner API key.')}`,
+        `    ${pc.dim('Its key is in infra/.env.<mode> here and in Secret Manager (admin-key); on another machine run `pnpm infra fetch-admin-key`.')}`,
     );
   }
   console.info(divider);
 }
 
-/**
- * Mint the scoped Scaleway IAM keys the operator opted into, once `pulumi up` has created their empty runtime-secret containers.
- * Non-fatal per key: a mint failure warns and continues, and the key can be minted later via "Manage runtime secrets".
- */
-async function provisionConfirmedManagedKeys(ctx: SetupContext, mintDecisions: Map<ManagedKeyId, boolean>): Promise<void> {
-  for (const key of managedKeys) {
-    if (!mintDecisions.get(key.id)) continue;
-    console.info(`\n→ Minting ${key.label} key (${ctx.appConfig.slug}-${key.suffix})`);
-    try {
-      const result = await provisionManagedKey({
-        definition: key,
-        callerSecretKey: ctx.secretKey,
-        projectId: ctx.projectId,
-        region: ctx.appConfig.s3.region,
-        slug: ctx.appConfig.slug,
-        mode: ctx.context.environment,
-        path: ctx.runtimeSecretPath,
+/** Offer to revoke the Owner API key typed for this moment: the last call that needs it. */
+async function offerOwnerKeyRevoke(pair: KeyPair): Promise<void> {
+  const revokeNow = autoAcceptDefaults()
+    ? true
+    : await confirm({
+        message: `Revoke the Owner API key you pasted (${pair.accessKey}) now? Nothing else needs it: the rest runs on the operator key.`,
+        default: true,
       });
-      console.info(`  ${checkMark} Minted ${key.label} ${pc.dim(`(app ${result.applicationId})`)}`);
-    } catch (error) {
-      console.warn(`  ${warningMark} ${key.label} mint failed: ${errorMessage(error)}. Mint later via "Manage runtime secrets".`);
-    }
+  if (!revokeNow) {
+    console.info(
+      `\n${pc.dim('Reminder:')} revoke the Owner API key you pasted (${pair.accessKey}) if it was created for this setup: console → IAM → API keys.`,
+    );
+    return;
+  }
+  try {
+    await withSpinner('Revoking the Owner API key', () => deleteApiKey({ secretKey: pair.secretKey }, pair.accessKey));
+    console.info(`${checkMark} Key ${pair.accessKey} revoked.`);
+  } catch (error) {
+    console.warn(
+      `${warningMark} Could not revoke the key (${errorMessage(error)}). Delete it in the console: ${pc.underline('https://console.scaleway.com/iam/api-keys')}`,
+    );
   }
 }
 
 /**
- * Validate DNS, lock the stack, defer fresh compute, and converge Pulumi.
- * Once secret containers exist, seed operator values and mint requested keys.
+ * Validate DNS, lock the stack, defer fresh compute, and converge Pulumi, on the operator key.
+ * Once secret containers exist, seed the operator's values.
  */
-async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInputs): Promise<void> {
+async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSecretValues): Promise<void> {
   const { dnsZone, hasDomain } = deriveInfra(ctx.appConfig);
   if (hasDomain) {
     try {
-      // A setup key owned by an application needs org-wide DNS before the first up can write records in an org-shared zone. The operator key
-      // holds DNS where its app's zone lives and cannot write the grant.
-      const organizationId = ctx.childEnv.SCW_DEFAULT_ORGANIZATION_ID;
-      if (organizationId && ctx.writesIam) {
-        await ensureBootstrapDnsGrant({
-          callerSecretKey: ctx.secretKey,
-          accessKey: ctx.accessKey,
-          organizationId,
-          slug: ctx.appConfig.slug,
-        }).catch((error) => console.warn(`  ${warningMark} Bootstrap DNS grant skipped: ${errorMessage(error)}`));
-      }
       await ensureDnsZone({ secretKey: ctx.secretKey, projectId: ctx.projectId, domain: dnsZone });
     } catch (error) {
       if (endsAction(error)) throw error;
       console.error(`\n${warningMark} DNS zone check failed: ${errorMessage(error)}`);
       if (!(await confirmOrDefault({ message: 'Continue with pulumi up anyway?', default: false }))) endAction(1);
     }
-  }
-
-  // The first up puts the policy on the state bucket, which admits the admin and CI applications only: a run whose state side is still the
-  // Owner API key would be shut out of its own state halfway.
-  if (ctx.context.state === 'fresh' && ctx.stateKey.secretKey === ctx.secretKey) {
-    endActionWithHint('The first provisioning needs the admin application key for the Pulumi state, and this run has none (see the warning above)', {
-      command: actionCommand('resume'),
-      description: 'creates the admin application, then provisions',
-    });
   }
 
   // Lock provisioning against concurrent operators and CI; every exit path releases it, and abandoned locks expire or clear with "Unlock stack".
@@ -334,8 +284,30 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
   });
 
   const firstProvision = ctx.context.state === 'fresh';
+  // Until the first provisioning completes, the stack keeps compute deferred; a resume after a failed one is still that first provisioning.
+  const inFirstProvisioning = firstProvision || Boolean(detectComputeDeferred(ctx.context.stackYaml));
+  if (inFirstProvisioning) {
+    // A teardown keeps the operator-value containers with their values: the first `up` of the same environment adopts them.
+    const listed = await createSecretManagerClient({ secretKey: ctx.secretKey, region: ctx.appConfig.s3.region, projectId: ctx.projectId })
+      .listSecretsUnder(ctx.runtimeSecretPath)
+      .catch(() => []);
+    const imports = operatorSecretImports(listed, operatorManagedRuntimeSecrets, {
+      slug: ctx.appConfig.slug,
+      mode: ctx.context.environment,
+      region: ctx.appConfig.s3.region,
+    });
+    if (imports) {
+      ctx.childEnv.OPERATOR_SECRET_IMPORTS = imports;
+      console.info(
+        `  ${checkMark} Adopting the operator values a teardown kept: ${imports
+          .split(',')
+          .map((entry) => entry.split('=')[0])
+          .join(', ')}`,
+      );
+    }
+  }
   if (firstProvision) {
-    console.info(`${pc.dim('  first provisioning runs with the Owner API key (the CI key is read-only on VPC/PN/RDB and cannot create them)')}`);
+    console.info(`${pc.dim('  the first provisioning runs on the operator key (the CI key is read-only on VPC/PN/RDB and cannot create them)')}`);
     // Fresh provision: no images exist yet, so compute is deferred until CI pushes them (helpers gate on this marker).
     const startedAt = new Date().toISOString();
     spawnSync('pulumi', ['config', 'set', 'bootstrap:computeDeferred', startedAt, '--stack', ctx.stackName], {
@@ -345,7 +317,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
     });
   }
 
-  // The Scaleway provider authenticates from SCW_* env (childEnv), which carries the Owner API key on fresh and resume runs alike.
+  // The Scaleway provider authenticates from SCW_* env (childEnv), which carries the operator key.
   while (true) {
     const { code } = await runPulumiUpWithHint(ctx.stackName, infraDir, ctx.childEnv);
     if (code === 0) break;
@@ -358,7 +330,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
       );
     }
   }
-  if (firstProvision) {
+  if (inFirstProvisioning) {
     spawnSync('pulumi', ['config', 'rm', 'bootstrap:computeDeferred', '--stack', ctx.stackName], {
       cwd: infraDir,
       env: ctx.childEnv,
@@ -374,11 +346,8 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
     region: ctx.appConfig.s3.region,
     slug: ctx.appConfig.slug,
     mode: ctx.context.environment,
-    values: { adminEmail: inputs.operatorSecrets.adminEmail || undefined, brevoApiKey: inputs.operatorSecrets.brevoApiKey || undefined },
+    values: { adminEmail: operatorSecrets.adminEmail || undefined, brevoApiKey: operatorSecrets.brevoApiKey || undefined },
   });
-
-  // Mint the scoped Scaleway IAM keys the operator opted into (containers now exist).
-  await provisionConfirmedManagedKeys(ctx, inputs.mintDecisions);
 
   await stackLock.release();
 }
@@ -419,7 +388,7 @@ async function ensureProjectId(opts: { slug: string; mode: Environment; accessKe
  * Runs the same one-command deploy CI runs with --build (local docker buildx), authenticated with the freshly minted CI deploy key so it also proves the CI key path.
  * Skipped when docker or a git HEAD is unavailable.
  */
-async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: BootstrapSecretInputs): Promise<void> {
+async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, operatorSecrets: OperatorSecretValues): Promise<void> {
   const mode = ctx.context.environment;
   const manualCmd = (sha: string) => `pnpm --filter infra run deploy --mode ${mode} --sha ${sha} --build`;
   if (spawnSync('docker', ['buildx', 'version'], { stdio: 'ignore' }).status !== 0) {
@@ -431,7 +400,7 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: B
     console.info(`\n${pc.dim('Could not resolve git HEAD; skipping the first deploy. Run it later:')} ${pc.cyan(manualCmd('<git-sha>'))}`);
     return;
   }
-  const hasAdminEmail = !!inputs.operatorSecrets.adminEmail;
+  const hasAdminEmail = !!operatorSecrets.adminEmail;
   if (!hasAdminEmail) {
     console.warn(
       `  ${warningMark} No admin email is set, and the deploy preflight requires the ${pc.bold('admin-email')} runtime secret.\n` +
@@ -476,113 +445,135 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: B
   }
 }
 
-/** A setup run can include the first `pulumi up` and a first deploy, so its minted key lives longer than an action's half hour. */
 /**
- * Set up or resume a stack: key, project, identities, CI key, state backend, and base infrastructure. A run that makes or replaces identities
- * (a first setup, a setup that never minted its CI key, a key rotation) writes IAM and takes an Owner API key typed at the prompt, as does a
- * stack that has no operator application yet. A resume that only re-syncs takes the operator key.
+ * The Owner moment of a setup: the project and every identity, written with an Owner API key typed at the prompt, and nothing else runs on it
+ * (no Pulumi, no state, no secret value). The machine identities and their policies, the CI deploy key (synced to GitHub), the admin
+ * application, and the app's operator: created when the app has none, else given this environment's project in place. Undefined when declined.
  */
-export async function runSetup(context: InfraContext, mode: Extract<CliMode, 'resume' | 'rotate-keys'>): Promise<void> {
-  const hasOperator = context.state !== 'fresh' && (await operatorLock(context)).state !== 'absent';
-  const writesIdentities = mode === 'rotate-keys' || !context.hasCiKey;
-  if (hasOperator && writesIdentities) {
-    console.info(pc.dim('This run makes or replaces identities. That writes IAM, which the operator key cannot: it takes your Owner API key.'));
-  }
-  const operatorKey = hasOperator && !writesIdentities ? await acquireOperatorKey(context) : undefined;
+async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<OwnerMomentResult | undefined> {
+  const { appConfig } = context;
+  const environment = context.environment;
+  const names = principalNames(appConfig.slug, environment);
+  console.info(
+    pc.dim(`\n→ Owner moment for ${environment}: the project and the identities, written with your Owner API key. Nothing else runs on it.`),
+  );
+  const pair = await keyPairOrPrompt(undefined, 'Scaleway Owner API key', OWNER_KEY_HINT);
+  const projectId = context.projectId || (await ensureProjectId({ slug: appConfig.slug, mode: environment, ...pair }));
+  const organizationId = await organizationIdOfKey(pair, projectId);
+  const proceedWith = mode === 'rotate-keys' ? actionLabel('rotate-keys') : `the identities of ${environment}`;
+  if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return undefined;
+
+  // Machine identities first: their ids feed the CI policy's key-mint rule.
+  console.info('\n→ Machine identities (one application per registry service, and the boot fetcher; keys made per deploy)');
+  let serviceAppIds: readonly string[] = [];
   try {
-    await runSetupWith(context, mode, operatorKey, hasOperator);
-  } finally {
-    await operatorKey?.release();
-  }
-}
-
-async function runSetupWith(
-  context: InfraContext,
-  mode: Extract<CliMode, 'resume' | 'rotate-keys'>,
-  operatorKey: OwnerKey | undefined,
-  hasOperator: boolean,
-): Promise<void> {
-  const needsCiKey = mode === 'rotate-keys' || !context.hasCiKey;
-
-  // Provider authentication and all IAM / Secret Manager work use this key through SCW_* env (childEnv below), never stack config.
-  const identity = resolveOperatorIdentity();
-  const ownerKeyPasted = !operatorKey;
-  const { accessKey: scwAccessKey, secretKey: scwSecretKey } =
-    operatorKey ?? (await keyPairOrPrompt(undefined, 'Scaleway Owner API key', OWNER_KEY_HINT));
-  // After the key: an unlocked session fetches the passphrase, so nobody types it.
-  const { passphrase: pulumiPassphrase, generated: passphraseGenerated } = await resolveOrCreatePassphrase(context.stackYaml);
-  const scwProjectId =
-    context.projectId ||
-    (await ensureProjectId({ slug: context.appConfig.slug, mode: context.environment, accessKey: scwAccessKey, secretKey: scwSecretKey }));
-
-  const stackName = stackNameFor(context);
-
-  // Prompt for operator secrets and managed-key decisions only on the first setup; keys are minted after the first infrastructure update creates their containers.
-  const isFirstSetup = !context.hasCiKey;
-  const inputs: BootstrapSecretInputs = { operatorSecrets: { adminEmail: '', brevoApiKey: '' }, mintDecisions: new Map<ManagedKeyId, boolean>() };
-  if (isFirstSetup) {
-    inputs.operatorSecrets.adminEmail = await inputOrDefault({
-      message: 'Admin email (optional, set later via "Manage runtime secrets")',
-      envName: 'INFRA_ADMIN_EMAIL',
+    const apps = await ensureRegistryPrincipals({
+      callerSecretKey: pair.secretKey,
+      projectId,
+      organizationId,
+      slug: appConfig.slug,
+      mode: environment,
+      singleVM: appConfig.singleVM ?? false,
     });
-    inputs.operatorSecrets.brevoApiKey = inputs.operatorSecrets.adminEmail ? await optionalSecret('Brevo API key (optional)') : '';
-    for (const key of managedKeys) {
-      inputs.mintDecisions.set(key.id, await confirmOrDefault({ message: key.prompt.message, default: key.prompt.default }));
+    serviceAppIds = apps.allAppIds;
+    console.info('\n→ Machine policies');
+    await writeMachinePolicies({ secretKey: pair.secretKey }, organizationId, machinePolicies(appConfig, projectId));
+  } catch (error) {
+    console.warn(`${warningMark} Machine identities incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`);
+  }
+
+  console.info('\n→ CI deploy key');
+  const ciKey = await mintCiKey(pair.secretKey, {
+    projectId,
+    appConfig,
+    mode: environment,
+    keyMintAppIds: serviceAppIds.length > 0 ? serviceAppIds : undefined,
+  });
+  console.info('\n→ Admin application');
+  const adminAppId = await ensureAdminApp(pair.secretKey, { projectId, appConfig, mode: environment });
+
+  console.info('\n→ Operator');
+  const ownerKey: OwnerKey = { ...pair, organizationId, minted: false, pasted: true, release: async () => {} };
+  const operatorKey = await ensureOperatorForEnvironment({ ...context, projectId }, ownerKey, projectId);
+
+  // GitHub holds the CI deploy key now; the passphrase follows from the operator part, which makes it.
+  if (ciKey.accessKey) {
+    const synced = await syncGithubEnvironment({
+      repoRoot: new URL('..', `file://${infraDir}/`).pathname,
+      environment,
+      ciKey: { accessKey: ciKey.accessKey, secretKey: ciKey.secretKey, projectId, organizationId: ciKey.organizationId },
+    });
+    if (!synced) {
+      console.warn(
+        `\n${warningMark} GitHub sync skipped (gh not authenticated or origin is not a GitHub remote). The environment holds: SCW_ACCESS_KEY, SCW_SECRET_KEY, SCW_PROJECT_ID, SCW_ORGANIZATION_ID, PULUMI_CONFIG_PASSPHRASE.`,
+      );
     }
   }
 
-  const proceedWith =
-    mode === 'rotate-keys'
-      ? actionLabel('rotate-keys')
-      : context.state === 'fresh'
-        ? `the first setup of ${context.environment}`
-        : actionLabel('resume');
+  printSummary({ rotated: mode === 'rotate-keys', ciAccessKey: ciKey.accessKey, adminAppId, names });
+  // Revoking is the moment's last call: a key may delete itself, and nothing after this needs it.
+  await offerOwnerKeyRevoke(pair);
+  return { projectId, ciKey, operatorKey };
+}
+
+/**
+ * The operator part of a setup, on the operator key: the passphrase and its custody, the state bucket and the stack, the first `pulumi up`
+ * and the operator's secret values. It writes no IAM.
+ */
+async function runOperatorPart(context: InfraContext, operatorKey: OwnerKey, moment: OwnerMomentResult | undefined): Promise<void> {
+  const { appConfig } = context;
+  const environment = context.environment;
+  const projectId = moment?.projectId ?? context.projectId;
+  const stackName = stackNameFor(context);
+  const firstSetup = context.state === 'fresh';
+
+  // After the key: an unlocked session fetches the passphrase, so nobody types it.
+  const { passphrase: pulumiPassphrase, generated: passphraseGenerated } = await resolveOrCreatePassphrase(context.stackYaml);
+  const operatorSecrets: OperatorSecretValues = { adminEmail: '', brevoApiKey: '' };
+  if (firstSetup) {
+    operatorSecrets.adminEmail = await inputOrDefault({
+      message: 'Admin email (optional, set later via "Manage runtime secrets")',
+      envName: 'INFRA_ADMIN_EMAIL',
+    });
+    operatorSecrets.brevoApiKey = operatorSecrets.adminEmail ? await optionalSecret('Brevo API key (optional)') : '';
+  }
+  const proceedWith = firstSetup ? `the first setup of ${environment}` : actionLabel('resume');
   if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return;
 
-  // The state side (login, lock) takes the admin application key when this machine holds one, as Apply does. A first setup has none yet: it
-  // starts on the Owner API key, which creates the bucket, and moves to the admin application key as soon as that exists (moveStateSideTo).
-  // An Owner API key is made for one project, often another environment's, so on the state side it names this one.
-  const stateKey: KeyPair = identity.admin
-    ? { accessKey: identity.admin.accessKey, secretKey: identity.admin.secretKey }
-    : { accessKey: projectAccessKey(scwAccessKey, scwProjectId), secretKey: scwSecretKey };
+  // The state side (login, lock): the operator key on a first setup, as the first `pulumi up` writes a state bucket policy that admits it
+  // (an admin key made a moment ago is admitted by that policy only, and may not be accepted yet); on an existing stack the admin application
+  // key while this machine holds one. The operator key names this project, as it is made for one environment's.
+  const identity = resolveOperatorIdentity();
+  const stateKey: KeyPair =
+    identity.admin && !firstSetup
+      ? { accessKey: identity.admin.accessKey, secretKey: identity.admin.secretKey }
+      : { accessKey: projectAccessKey(operatorKey.accessKey, projectId), secretKey: operatorKey.secretKey };
   const childEnv = buildProviderEnv(infraDir, {
-    accessKey: scwAccessKey,
-    secretKey: scwSecretKey,
-    projectId: scwProjectId,
+    accessKey: operatorKey.accessKey,
+    secretKey: operatorKey.secretKey,
+    projectId,
     passphrase: pulumiPassphrase,
+    organizationId: operatorKey.organizationId,
     stateAccessKey: stateKey.accessKey,
     stateSecretKey: stateKey.secretKey,
   });
 
-  // The Pulumi program requires SCW_DEFAULT_ORGANIZATION_ID (pulumi-context.ts requireEnv), so resolve it here for the provisioning `up`.
-  try {
-    childEnv.SCW_DEFAULT_ORGANIZATION_ID = await resolveOrganizationId(scwSecretKey, scwProjectId);
-  } catch (error) {
-    console.warn(
-      `${warningMark} Could not resolve organization id (${errorMessage(error)}); \`pulumi up\` will fail without SCW_DEFAULT_ORGANIZATION_ID in the environment.`,
-    );
-  }
-
-  const stateBucketEnv: NodeJS.ProcessEnv = { ...childEnv, SCW_ACCESS_KEY: scwAccessKey, SCW_SECRET_KEY: scwSecretKey };
-
   const { must } = createStepRunner(infraDir, childEnv);
-  const { appConfig } = context;
   const ctx: SetupContext = {
     context,
     appConfig,
-    projectId: scwProjectId,
-    accessKey: scwAccessKey,
-    secretKey: scwSecretKey,
-    writesIam: ownerKeyPasted,
+    projectId,
+    accessKey: operatorKey.accessKey,
+    secretKey: operatorKey.secretKey,
     stateKey,
     stackName,
-    runtimeSecretPath: secretManagerPath(appConfig.slug, context.environment),
+    runtimeSecretPath: secretManagerPath(appConfig.slug, environment),
     childEnv,
     must,
   };
 
   // State backend + stack
-  await must('Ensure Pulumi state bucket', 'pnpm', ['ensure-state-bucket'], spawnSync, { retry: true, env: stateBucketEnv });
+  await must('Ensure Pulumi state bucket', 'pnpm', ['ensure-state-bucket'], spawnSync, { retry: true });
   await must('Pulumi login (S3 backend)', 'pulumi', ['login', pulumiLoginUrl(appConfig)], spawnSync, { retry: true });
   const selected = spawnSync('pulumi', ['stack', 'select', stackName], { cwd: infraDir, env: childEnv, stdio: 'ignore' });
   if (selected.status === 0) {
@@ -591,64 +582,25 @@ async function runSetupWith(
     await must('Pulumi stack init', 'pulumi', ['stack', 'init', stackName], spawnSync);
   }
 
-  // Seed operator secret values after the first `pulumi up`; Pulumi owns their containers.
-  // The pre-apply gap check is read-only.
-  if (!inputs.operatorSecrets.adminEmail) await warnOnMissingOperatorSecrets(ctx);
+  // The pre-apply gap check is read-only; values are seeded after the first `pulumi up` makes their containers.
+  if (!operatorSecrets.adminEmail) await warnOnMissingOperatorSecrets(ctx);
+  if (!moment) await warnOnCiPolicyDrift(ctx);
 
-  // Identities: per-service + boot apps, CI deploy key, admin app. Service apps come FIRST: their ids feed the CI policy's key-mint rule.
-  let serviceAppIds: readonly string[] = [];
-  if (needsCiKey) {
-    console.info('\n→ Service VM applications (registry principals; keys minted per deploy)');
-    try {
-      const apps = await ensureRegistryPrincipals({
-        callerSecretKey: ctx.secretKey,
-        projectId: ctx.projectId,
-        slug: appConfig.slug,
-        mode: context.environment,
-        singleVM: appConfig.singleVM ?? false,
-      });
-      serviceAppIds = apps.allAppIds;
-    } catch (error) {
-      console.warn(
-        `${warningMark} Service app setup failed: ${errorMessage(error)}: the CI key-mint rule will be omitted; run \`${actionCommand('rotate-keys')}\`.`,
-      );
-    }
-    // The machine policies follow their applications: written here at the Owner moment, never by the Pulumi program.
-    const organizationId = ctx.childEnv.SCW_DEFAULT_ORGANIZATION_ID;
-    if (organizationId && serviceAppIds.length > 0) {
-      console.info('\n→ Machine policies');
-      await writeMachinePolicies({ secretKey: ctx.secretKey }, organizationId, machinePolicies(appConfig, ctx.projectId)).catch((error) =>
-        console.warn(`${warningMark} Machine policies not written: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`),
-      );
-    }
-  }
-
-  let ciKey: CiKeyResult = { accessKey: '', secretKey: '', organizationId: '' };
-  if (needsCiKey) {
-    ciKey = await mintCiKey(ctx, serviceAppIds.length > 0 ? serviceAppIds : undefined);
-  } else {
-    console.info('\n→ CI deploy key: skipped (already in stack config)');
-    await warnOnCiPolicyDrift(ctx);
-  }
-
-  // Only a fresh/rotate run touches the admin app; a Resume leaves it alone and reports nothing about it (`infra status` resolves it from IAM).
-  const adminAppId = needsCiKey ? await ensureAdminApp(ctx) : '';
-
-  // The passphrase goes into Secret Manager beside the admin key, so later runs fetch it with the operator key and nobody types it.
+  // The passphrase goes into Secret Manager, so later runs fetch it with the operator key and nobody types it.
   await storeCustodiedPassphrase({
-    secretKey: scwSecretKey,
+    secretKey: operatorKey.secretKey,
     region: appConfig.s3.region,
-    projectId: scwProjectId,
+    projectId,
     slug: appConfig.slug,
-    mode: context.environment,
+    mode: environment,
     passphrase: pulumiPassphrase,
   }).catch((error) =>
     console.warn(`${warningMark} Could not store the passphrase in Secret Manager (${errorMessage(error)}); it is asked once on the next run.`),
   );
 
   // Identity ids come from the IAM API, so stack config only needs a non-secret bootstrap marker.
-  const bootstrapComplete = context.hasCiKey || !!ciKey.accessKey;
-  if (bootstrapComplete) {
+  const ciKey = moment?.ciKey;
+  if (context.hasCiKey || ciKey?.accessKey) {
     await must(
       'Mark bootstrap complete',
       'pulumi',
@@ -660,91 +612,53 @@ async function runSetupWith(
   // The passphrase is verified against the stack above and re-synced every run, which repairs a missing or drifted PULUMI_CONFIG_PASSPHRASE environment secret.
   const synced = await syncGithubEnvironment({
     repoRoot: new URL('..', `file://${infraDir}/`).pathname,
-    environment: context.environment,
-    ciKey: ciKey.accessKey
-      ? { accessKey: ciKey.accessKey, secretKey: ciKey.secretKey, projectId: scwProjectId, organizationId: ciKey.organizationId }
-      : undefined,
+    environment,
     passphrase: pulumiPassphrase,
   });
   if (!synced) {
     console.warn(
       `\n${warningMark} GitHub sync skipped (gh not authenticated or origin is not a GitHub remote).\n` +
-        `  Add the Environment secrets manually${passphraseGenerated ? `: including the just-generated ${pc.bold('PULUMI_CONFIG_PASSPHRASE')}` : ''}.\n` +
-        '  The environment holds: SCW_ACCESS_KEY, SCW_SECRET_KEY, SCW_PROJECT_ID, SCW_ORGANIZATION_ID, PULUMI_CONFIG_PASSPHRASE.',
+        `  Add the Environment secrets manually${passphraseGenerated ? `: including the just-generated ${pc.bold('PULUMI_CONFIG_PASSPHRASE')}` : ''}.`,
     );
   }
-
-  printSummary({ needsCiKey, ciAccessKey: ciKey.accessKey, adminAppId, names: principalNames(appConfig.slug, context.environment) });
 
   // Base infrastructure provisioning
-  const canDeploy = context.hasCiKey || !!ciKey.accessKey;
-  if (canDeploy) {
-    console.info(`\n${pc.bold('Next: provision base infrastructure')} (registry, DB, network, no compute yet)`);
-    // A fresh stack's first provision needs a local `pulumi up` with the Owner API key because the CI key cannot create VPC/PN/RDB; afterwards CI runs `pulumi up` on push.
-    const isFirstProvision = context.state === 'fresh';
-    if (!isFirstProvision) {
-      console.info(
-        `  ${pc.dim('Recommended: push to the deploy branch and let CI run `pulumi up` (this local run is only needed for out-of-band changes).')}`,
-      );
-    }
-    const runNow = await confirmOrDefault({
-      message: isFirstProvision ? 'Run the recommended first pulumi up now?' : 'Run pulumi up now?',
-      default: isFirstProvision,
-    });
-    if (runNow) {
-      await provisionBaseInfra(ctx, inputs);
-      // Only a first setup still holds the CI key secret in memory; rotate and resume leave deploys to CI.
-      if (isFirstSetup && ciKey.secretKey) {
-        await offerFirstDeploy(ctx, ciKey, inputs);
-      }
-    } else {
-      console.info(`  ${pc.dim(`Recommended: run \`${actionCommand('resume')}\` to retry.`)}`);
-      console.info('  Manual fallback if needed:');
-      console.info(
-        `  ${pc.cyan(`cd infra && SCW_ACCESS_KEY=<owner-access> SCW_SECRET_KEY=<owner-secret> AWS_ACCESS_KEY_ID=<admin-access> AWS_SECRET_ACCESS_KEY=<admin-secret> PULUMI_CONFIG_PASSPHRASE='<passphrase>' pulumi up --stack ${stackName}`)}`,
-      );
-    }
-  }
-  if (needsCiKey && ciKey.accessKey) {
-    // The org-wide bootstrap DNS grant is the widest grant the engine creates and must not outlive this wizard; CI's project-scoped DNS grant covers routine deploys.
-    if (childEnv.SCW_DEFAULT_ORGANIZATION_ID) {
-      await removeBootstrapDnsGrant({
-        callerSecretKey: scwSecretKey,
-        organizationId: childEnv.SCW_DEFAULT_ORGANIZATION_ID,
-        slug: appConfig.slug,
-      }).catch((error) =>
-        console.warn(
-          `${warningMark} Could not remove the bootstrap DNS grant: ${errorMessage(error)}. Delete the '${appConfig.slug}-bootstrap-dns' policy in the console.`,
-        ),
-      );
-    }
-    // Revoking the key is the last call because a key may delete itself. Only an Owner API key typed at the prompt is offered: a key minted from the operator key is revoked by the caller.
-    const revokeNow = !ownerKeyPasted
-      ? false
-      : autoAcceptDefaults()
-        ? true
-        : await confirm({
-            message: `Revoke the Owner API key you pasted (${scwAccessKey}) now? Nothing else needs it: day-2 privileged actions run on the operator key.`,
-            default: true,
-          });
-    if (revokeNow) {
-      try {
-        await withSpinner('Revoking the setup key', () => deleteApiKey({ secretKey: scwSecretKey }, scwAccessKey));
-        console.info(`${checkMark} Key ${scwAccessKey} revoked.`);
-      } catch (error) {
-        console.warn(
-          `${warningMark} Could not revoke the key (${errorMessage(error)}). Delete it in the console: ${pc.underline('https://console.scaleway.com/iam/api-keys')}`,
-        );
-      }
-    } else if (ownerKeyPasted) {
-      console.info(
-        `\n${pc.dim('Reminder:')} revoke the Owner API key you pasted (${scwAccessKey}) if it was created for this setup: console → IAM → API keys.`,
-      );
-    }
-  }
-  if (!hasOperator) {
+  console.info(`\n${pc.bold('Next: provision base infrastructure')} (registry, DB, network, no compute yet)`);
+  if (!firstSetup) {
     console.info(
-      `\n${pc.dim('Next:')} ${pc.cyan(actionCommand('operator-key'))} ${pc.dim('creates the operator key for day-to-day work, which Scaleway accepts from your dedicated IP address only.')}`,
+      `  ${pc.dim('Recommended: push to the deploy branch and let CI run `pulumi up` (this local run is only needed for out-of-band changes).')}`,
     );
+  }
+  const runNow = await confirmOrDefault({
+    message: firstSetup ? 'Run the recommended first pulumi up now?' : 'Run pulumi up now?',
+    default: firstSetup,
+  });
+  if (!runNow) {
+    console.info(`  ${pc.dim(`Recommended: run \`${actionCommand('resume')}\` to retry.`)}`);
+    return;
+  }
+  await provisionBaseInfra(ctx, operatorSecrets);
+  // Only a first setup still holds the CI key secret in memory; rotate and resume leave deploys to CI.
+  if (firstSetup && ciKey?.secretKey) await offerFirstDeploy(ctx, ciKey, operatorSecrets);
+}
+
+/**
+ * Set up, resume or rotate a stack. A run that makes or replaces identities (a first setup, a setup that never minted its CI key, a key
+ * rotation) starts with an Owner moment: the project and the identities, written with an Owner API key typed at the prompt. Everything else
+ * (state, stack, passphrase, the first `pulumi up`, secret values) runs on the operator key, which writes no IAM. A rotation ends after its
+ * Owner moment; a resume that only re-syncs needs no Owner key.
+ */
+export async function runSetup(context: InfraContext, mode: SetupMode): Promise<void> {
+  const writesIdentities = mode === 'rotate-keys' || !context.hasCiKey;
+  const moment = writesIdentities ? await runOwnerMoment(context, mode) : undefined;
+  if (writesIdentities && !moment) return;
+  if (mode === 'rotate-keys') return;
+  // An operator the moment just created is in memory: the session asks for nothing.
+  if (moment?.operatorKey) rememberOperatorKey(moment.operatorKey);
+  const operatorKey = await acquireOperatorKey(context);
+  try {
+    await runOperatorPart(context, operatorKey, moment);
+  } finally {
+    await operatorKey.release();
   }
 }
