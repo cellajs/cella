@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router';
-import i18n from 'i18next';
 import { Link2OffIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +14,6 @@ import { ConnectionsCard } from '~/modules/tenants/connections/connections-card'
 import { UpdateTenantForm } from '~/modules/tenants/update-tenant-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 
 const statusOptions = ['active', 'suspended', 'archived'] as const;
 
@@ -24,17 +22,9 @@ export const openUpdateSheet = (tenant: Tenant, triggerRef: TriggerRef) =>
     id: 'update-tenant',
     resource: 'c:tenant',
     triggerRef,
+    section: { label: 'c:general', id: 'update-tenant-general' },
     children: <UpdateTenantForm tenant={tenant} sheet />,
-    after: isStrategyEnabled('sso') ? (
-      <Card className="mb-20">
-        <CardHeader>
-          <CardTitle>{i18n.t('c:connection_other')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ConnectionsCard tenant={tenant} />
-        </CardContent>
-      </Card>
-    ) : undefined,
+    after: isStrategyEnabled('sso') ? <ConnectionsCard tenant={tenant} className="mb-20" /> : undefined,
   });
 
 export const useColumns = () => {

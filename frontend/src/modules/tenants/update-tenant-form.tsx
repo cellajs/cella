@@ -1,3 +1,5 @@
+import { CheckboxGroup } from '@base-ui/react/checkbox-group';
+import { Field } from '@base-ui/react/field';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +18,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { useTenantUpdateMutation } from '~/modules/tenants/query';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
-import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { FieldContent, FieldLabel, FieldLayout, FieldTitle, Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 
 const formSchema = zUpdateTenantBody.pick({ name: true, status: true, authStrategies: true });
@@ -54,8 +56,10 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
     defaultValues: { name: tenant.name, status: tenant.status, authStrategies: tenant.authStrategies },
   };
 
-  const formContainerId = 'update-tenant';
-  const form = useFormWithDraft<FormValues>(`${formContainerId}-${tenant.id}`, { formOptions, formContainerId });
+  // The sheet is `update-tenant`; this form is its General section, which carries the unsaved badge.
+  const sheetId = 'update-tenant';
+  const formContainerId = 'update-tenant-general';
+  const form = useFormWithDraft<FormValues>(`${sheetId}-${tenant.id}`, { formOptions, formContainerId });
 
   useBeforeUnload(form.isDirty);
 
@@ -64,7 +68,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
       { path: { tenantId: tenant.id }, body },
       {
         onSuccess: (updatedTenant) => {
-          if (isSheet) useSheeter.getState().remove(formContainerId);
+          if (isSheet) useSheeter.getState().remove(sheetId);
           form.reset(body);
           toaster.success(t('c:success.update_resource', { resource: t('c:tenant') }));
           callback?.({ data: updatedTenant, status: 'success' });
@@ -108,26 +112,25 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
           name="authStrategies"
           render={({ field }) => (
             <FormItem name="authStrategies">
-              <FormLabel>{t('c:allowed_sign_in_methods')}</FormLabel>
-              <div className="flex flex-wrap gap-x-4 gap-y-2">
-                {signInMethods.map((method) => {
-                  const selected = field.value ?? [];
-                  const checked = selected.includes(method.value);
-                  return (
-                    // biome-ignore lint/a11y/noLabelWithoutControl: the Base UI checkbox renders the hidden input this label wraps
-                    <label key={method.value} className="inline-flex cursor-pointer items-center gap-2 text-sm">
-                      <Checkbox
-                        checked={checked}
-                        onCheckedChange={() =>
-                          field.onChange(checked ? selected.filter((value) => value !== method.value) : [...selected, method.value])
-                        }
-                      />
-                      {method.label ?? t(method.labelKey as TKey)}
-                    </label>
-                  );
-                })}
-              </div>
-              <p className="text-muted-foreground text-sm">{t('c:allowed_sign_in_methods.text')}</p>
+              <FormLabel help={t('c:allowed_sign_in_methods.text')}>{t('c:allowed_sign_in_methods')}</FormLabel>
+              {/* Choice cards, as the digest cadences in the account notifications. Each checkbox sits in a `Field.Item`, so
+                  it gets its own id and label instead of the field's. */}
+              <CheckboxGroup
+                value={field.value ?? []}
+                onValueChange={(value) => field.onChange(value as SignInMethod[])}
+                className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+              >
+                {signInMethods.map((method) => (
+                  <FieldLabel key={method.value} className="cursor-pointer">
+                    <Field.Item render={<FieldLayout orientation="horizontal" />}>
+                      <Checkbox value={method.value} />
+                      <FieldContent>
+                        <FieldTitle>{method.label ?? t(method.labelKey as TKey)}</FieldTitle>
+                      </FieldContent>
+                    </Field.Item>
+                  </FieldLabel>
+                ))}
+              </CheckboxGroup>
               <FormMessage />
             </FormItem>
           )}
