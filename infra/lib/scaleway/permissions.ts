@@ -15,10 +15,14 @@ export const DEPLOY_PROJECT_PERMISSION_SETS = [
   'InstancesIpCreate',
   'InstancesIpWrite',
   'InstancesIpDelete',
-  // The provider attaches machines through the Instance API v2, whose sets these are; the v1 sets (`InstancesPrivateNic*`) do not cover it.
+  // The provider uses both Instance APIs for a private NIC: it creates one through v2 (`InstancesPrivateNetworkInterface*`) and detaches it
+  // through v1 (`InstancesPrivateNic*`) when a machine is reaped. Neither family covers the other.
   'InstancesPrivateNetworkInterfaceCreate',
   'InstancesPrivateNetworkInterfaceWrite',
   'InstancesPrivateNetworkInterfaceDelete',
+  'InstancesPrivateNicCreate',
+  'InstancesPrivateNicWrite',
+  'InstancesPrivateNicDelete',
   'InstancesVolumeCreate',
   'InstancesVolumeWrite',
   'InstancesVolumeDelete',
