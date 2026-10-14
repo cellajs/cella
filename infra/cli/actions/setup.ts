@@ -14,7 +14,7 @@ import { projectAccessKey } from '../../lib/scaleway/s3-client';
 import { createProject, listProjects } from '../../lib/scaleway/scaleway-account';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { secretManagerPath } from '../../lib/scaleway/secret-paths';
-import { detectComputeDeferred, type Environment } from '../../lib/stack/bootstrap-stack-state';
+import { type Environment, inFirstProvisioning } from '../../lib/stack/bootstrap-stack-state';
 import { controlActor, makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { operatorSecretImports } from '../../lib/stack/operator-secret-imports';
 import { projectChoices, projectsOfOtherModes } from '../../lib/stack/project-per-mode';
@@ -212,8 +212,8 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
 
   const firstProvision = ctx.context.state === 'fresh';
   // Until the first provisioning completes, the stack keeps compute deferred; a resume after a failed one is still that first provisioning.
-  const inFirstProvisioning = firstProvision || Boolean(detectComputeDeferred(ctx.context.stackYaml));
-  if (inFirstProvisioning) {
+  const firstProvisioning = inFirstProvisioning(ctx.context);
+  if (firstProvisioning) {
     // A teardown keeps the operator-value containers with their values: the first `up` of the same environment adopts them.
     const listed = await createSecretManagerClient({ secretKey: ctx.secretKey, region: ctx.appConfig.s3.region, projectId: ctx.projectId })
       .listSecretsUnder(ctx.runtimeSecretPath)
@@ -257,7 +257,7 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
       );
     }
   }
-  if (inFirstProvisioning) {
+  if (firstProvisioning) {
     spawnSync('pulumi', ['config', 'rm', 'bootstrap:computeDeferred', '--stack', ctx.stackName], {
       cwd: infraDir,
       env: ctx.childEnv,

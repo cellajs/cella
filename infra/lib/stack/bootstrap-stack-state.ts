@@ -30,6 +30,14 @@ export function detectComputeDeferred(yamlText?: string): string | undefined {
   return yamlText ? extractComputeDeferredMarker(yamlText) : undefined;
 }
 
+/**
+ * Whether a stack is in its first provisioning: never provisioned, or a resume of a first provisioning that did not finish, which still
+ * carries the compute-deferred marker. The one reading of it, so the steps that care cannot disagree.
+ */
+export function inFirstProvisioning(stack: { state: StackState; stackYaml?: string }): boolean {
+  return stack.state === 'fresh' || Boolean(detectComputeDeferred(stack.stackYaml));
+}
+
 /** Detect `infra:dbPublicEndpoint: "true"` in a stack config text. Callers pass the gitignored exposure overlay when present; the converge is idempotent, so a stale read only mislabels the menu. */
 export function detectDbPublicEndpoint(yamlText?: string): boolean {
   return yamlText ? /(?:^|\n)\s*infra:dbPublicEndpoint:\s*["']?true/.test(yamlText) : false;
