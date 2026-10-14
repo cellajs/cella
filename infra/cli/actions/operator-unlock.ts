@@ -1,10 +1,9 @@
 import { input } from '@inquirer/prompts';
 import { actionCommand } from '../../lib/operator-actions';
-import { fetchAppRulesByName, type GrantedRule, IAM_BASE, listApiKeys, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
+import { fetchAppRulesByName, type GrantedRule, IAM_BASE } from '../../lib/scaleway/iam-client';
 import { ipAllowed, ipConditionCidrs } from '../../lib/scaleway/ip-lock';
-import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { describeKey, type KeyDescription, organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
-import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { scwErrorStatus, scwFetch } from '../../lib/scaleway/scw-fetch';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
@@ -46,7 +45,7 @@ export async function operatorLock(stack: StackRef): Promise<OperatorLock> {
   let lock: OperatorLock = { state: 'unknown', cidrs: [], open: false };
   if (admin && stack.projectId) {
     try {
-      const organizationId = await resolveOrganizationId(admin.secretKey, stack.projectId);
+      const organizationId = await organizationIdOfKey(admin, stack.projectId);
       const names = principalNames(stack.appConfig.slug, stack.environment);
       const rules = await fetchAppRulesByName({
         secretKey: admin.secretKey,
@@ -82,7 +81,10 @@ export function refusalLines(opts: {
 }): string[] {
   const { names, address, lock } = opts;
   if (opts.status === 401) {
-    return [`Scaleway does not know that secret key. Paste the secret key of '${names.operator}' from your password manager.`];
+    return [`Scaleway does not know that secret key. Paste the key of '${names.operator}' from your password manager.`];
+  }
+  if (opts.status === 404) {
+    return [`Scaleway knows no such access key. Paste the key of '${names.operator}' from your password manager.`];
   }
   if (opts.status !== 403) return [`Scaleway did not take the operator key: ${opts.detail}`];
   const from = address ? `This machine reaches the internet as ${address}` : 'The address of this machine could not be detected';
@@ -137,61 +139,39 @@ interface Unlocked {
 }
 
 /**
- * The access key that belongs to a secret key of the operator application. The application holds one key, the one `operator-key` made, so the
- * operator pastes the secret key alone. An application that holds several is asked which one.
- */
-async function operatorAccessKey(secret: string, organizationId: string, applicationId: string, name: string): Promise<string> {
-  const keys = (await listApiKeys({ secretKey: secret }, organizationId, applicationId)).map((key) => key.access_key);
-  const [only] = keys;
-  if (keys.length === 1 && only) return only;
-  if (keys.length === 0) throw new Error(`'${name}' holds no API key`);
-  const typed = (await input({ message: `'${name}' holds ${keys.length} keys. Access key of the one you pasted` })).trim();
-  if (!keys.includes(typed)) throw new Error(`'${name}' holds no key ${typed}`);
-  return typed;
-}
-
-/**
- * Unlock the session: the operator key's secret key, typed once per run, proven by resolving the operator application with it. With
- * `optional`, an empty answer returns undefined: the caller then asks for what it needs in another way.
+ * Unlock the session: the operator key, both halves, typed once per run. It is proven by asking IAM who bears it, with the key itself: that
+ * names the application and its organization, and needs no right beyond the IAM read the operator holds. With `optional`, an empty access
+ * key returns undefined: the caller then asks for what it needs in another way.
  */
 async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promise<Unlocked | undefined> {
   const names = principalNames(stack.appConfig.slug, stack.environment);
-  const remembered = rememberedOperatorKey();
-  const secret =
-    remembered?.secretKey ??
-    (
-      await maskedSecret({ message: `Operator key of '${names.operator}', secret key${opts.optional ? ` ${pc.dim(`(${opts.optional})`)}` : ''}` })
-    ).trim();
-  if (!secret) {
-    if (opts.optional) return undefined;
-    console.error(`${crossMark} No key given.`);
-    return endAction(1);
+  let pair = rememberedOperatorKey();
+  if (!pair) {
+    const label = `Operator key of '${names.operator}'`;
+    const accessKey = (await input({ message: `${label}, access key${opts.optional ? ` ${pc.dim(`(${opts.optional})`)}` : ''}` })).trim();
+    const secretKey = accessKey ? (await maskedSecret({ message: `${label}, secret key` })).trim() : '';
+    if (!accessKey || !secretKey) {
+      if (opts.optional && !accessKey) return undefined;
+      console.error(`${crossMark} No key given.`);
+      return endAction(1);
+    }
+    pair = { accessKey, secretKey };
   }
-  let applicationId: string | null;
-  let organizationId: string;
+  let desc: KeyDescription;
   try {
-    organizationId = await resolveOrganizationId(secret, stack.projectId);
-    applicationId = await resolveApplicationIdByName({ secretKey: secret }, organizationId, names.operator);
+    desc = await describeKey(pair);
   } catch (error) {
     return endOnRefusal(stack, names, error);
   }
-  if (!applicationId) {
+  if (desc.bearer !== 'application' || desc.name !== names.operator || !desc.organizationId) {
     forgetOperatorKey();
     console.error(
-      `${crossMark} This organization has no '${names.operator}' application. Create it once with your Owner API key: \`${actionCommand('operator-key')}\`.`,
+      `${crossMark} ${pair.accessKey} is a key of '${desc.name}', not of '${names.operator}'. The operator key is created once per app with your Owner API key: \`${actionCommand('operator-key')}\`.`,
     );
     return endAction(1);
   }
-  let accessKey: string;
-  try {
-    accessKey = remembered?.accessKey ?? (await operatorAccessKey(secret, organizationId, applicationId, names.operator));
-  } catch (error) {
-    forgetOperatorKey();
-    console.error(`${crossMark} ${errorMessage(error)}.`);
-    return endAction(1);
-  }
-  rememberOperatorKey({ accessKey, secretKey: secret });
-  return { accessKey, secret, organizationId, applicationId };
+  rememberOperatorKey(pair);
+  return { accessKey: pair.accessKey, secret: pair.secretKey, organizationId: desc.organizationId, applicationId: desc.bearerId };
 }
 
 /** One IAM read with a key: true when Scaleway accepts it from this address. */

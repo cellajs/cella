@@ -1,7 +1,8 @@
 import type { FetchLike } from '../utils/fetch-like';
 import { resolveFetch } from '../utils/fetch-like';
-import { getApiKey, IAM_BASE, type IamAuth, listOrganizationPolicies } from './iam-client';
+import { getApiKey, IAM_BASE, type IamAuth, listOrganizationPolicies, resolveOrganizationIdViaProject } from './iam-client';
 import type { PrincipalNames } from './principals';
+import { resolveOrganizationIdFromEnv } from './provider-env';
 import { scwFetch } from './scw-fetch';
 
 export interface KeyPair {
@@ -77,6 +78,8 @@ export interface KeyDescription {
   bearerId: string;
   expiresAt?: string;
   description?: string;
+  /** The organization the bearer belongs to, as IAM reports it. */
+  organizationId?: string;
 }
 
 /**
@@ -88,14 +91,40 @@ export async function describeKey(pair: KeyPair, opts: { fetchImpl?: FetchLike }
   const record = await getApiKey(auth, pair.accessKey);
   const base = { accessKey: pair.accessKey, expiresAt: record.expires_at ?? undefined, description: record.description || undefined };
   if (record.user_id) {
-    const user = await scwFetch<{ email?: string; type?: string }>(auth, 'GET', `${IAM_BASE}/users/${record.user_id}`);
-    return { ...base, bearer: user.type === 'owner' ? 'owner' : 'member', name: user.email ?? record.user_id, bearerId: record.user_id };
+    const user = await scwFetch<{ email?: string; type?: string; organization_id?: string }>(auth, 'GET', `${IAM_BASE}/users/${record.user_id}`);
+    return {
+      ...base,
+      bearer: user.type === 'owner' ? 'owner' : 'member',
+      name: user.email ?? record.user_id,
+      bearerId: record.user_id,
+      organizationId: user.organization_id,
+    };
   }
   if (record.application_id) {
-    const app = await scwFetch<{ name?: string }>(auth, 'GET', `${IAM_BASE}/applications/${record.application_id}`);
-    return { ...base, bearer: 'application', name: app.name ?? record.application_id, bearerId: record.application_id };
+    const app = await scwFetch<{ name?: string; organization_id?: string }>(auth, 'GET', `${IAM_BASE}/applications/${record.application_id}`);
+    return {
+      ...base,
+      bearer: 'application',
+      name: app.name ?? record.application_id,
+      bearerId: record.application_id,
+      organizationId: app.organization_id,
+    };
   }
   throw new Error(`IAM returned no bearer for API key ${pair.accessKey}`);
+}
+
+/**
+ * The organization a key works in: the env value when one is set, else what IAM says about the key's own bearer, else the owner of the
+ * project through the Account API. An application key holds IAM read and no right over the Account API, so the last way serves user keys.
+ */
+export async function organizationIdOfKey(pair: KeyPair, projectId: string, opts: { fetchImpl?: FetchLike } = {}): Promise<string> {
+  const fromEnv = resolveOrganizationIdFromEnv();
+  if (fromEnv) return fromEnv;
+  const described = await describeKey(pair, opts).then(
+    (desc) => desc.organizationId,
+    () => undefined,
+  );
+  return described ?? resolveOrganizationIdViaProject({ secretKey: pair.secretKey, fetchImpl: resolveFetch(opts.fetchImpl) }, projectId);
 }
 
 /** The engine role of a key's bearer, or the kind of outside principal it is. */
