@@ -1,9 +1,9 @@
 // Deploy key (`<slug>-<mode>-ci-deploy`): the rights of plan §3.1, built into rules by lib/scaleway/deploy-policy.ts
 
 /**
- * The deploy key's unconditioned project sets: machines and what they attach to, the buckets (narrowed per bucket by their policies), the
- * registry, and reads of what is privileged. Machines are granular: no serial console, no image, no snapshot and no security group is written.
- * The registry push stays until the builder machine (phase 6) pushes the images.
+ * The deploy key's unconditioned project sets: machines and what they attach to (a builder machine among them), the buckets (narrowed per
+ * bucket by their policies), and reads of the registry and of what is privileged. Machines are granular: no serial console, no image, no
+ * snapshot and no security group is written. The builder machine pushes the images; the deploy key only reads them.
  */
 export const DEPLOY_PROJECT_PERMISSION_SETS = [
   'InstancesReadOnly',
@@ -31,7 +31,7 @@ export const DEPLOY_PROJECT_PERMISSION_SETS = [
   'LoadBalancersFullAccess',
   'PrivateNetworksFullAccess',
   'ObjectStorageFullAccess',
-  'ContainerRegistryFullAccess',
+  'ContainerRegistryReadOnly',
   'VPCReadOnly',
   'RelationalDatabasesReadOnly',
   'ServerlessJobsReadOnly',

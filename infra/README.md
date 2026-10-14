@@ -31,10 +31,10 @@ Infra CLI sets up a full-stack app on European cloud provider [Scaleway](https:/
 **Release** is one command, triggered by a published GitHub release, a manual dispatch, or any other CI:
 
 ```
-pnpm --filter infra run deploy --mode <production|staging> --sha <sha> [--build]
+pnpm --filter infra run deploy --mode <production|staging> --sha <sha>
 ```
 
-It owns the whole pipeline ([deploy flow](../cella/DEPLOYMENT.md#deploy-flow)). `--build` also bakes and pushes the images, for self-contained laptop and bring-your-own-CI deploys. CI deploys with `--defer-reap`; a follow-up `pnpm --filter infra run reap` job destroys the displaced VMs off the critical path (already detached from every LB pool).
+It owns the whole pipeline ([deploy flow](../cella/DEPLOYMENT.md#deploy-flow)): when the release's images or frontend files are missing, a builder machine it makes builds them from the pushed commit. CI deploys with `--defer-reap`; a follow-up `pnpm --filter infra run reap` job destroys the displaced VMs off the critical path (already detached from every LB pool).
 
 **Manage** is the same `pnpm infra` entrypoint on an existing stack: one menu for status, reviewing and applying privileged changes (database, VPC, IAM), key and passphrase rotation, runtime secrets, database access and reset, repair (a stale lock, interrupted Pulumi operations, a re-sync of the setup) and [teardown](../cella/DEPLOYMENT.md#teardown). Every action also runs alone as `pnpm infra <action>`, listed by `pnpm infra help` ([advanced operations](../cella/DEPLOYMENT.md#advanced-operations)).
 

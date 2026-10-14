@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
-import { basename, resolve } from 'node:path';
+import { mkdtemp, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { basename, join, resolve } from 'node:path';
 import { healthContract } from '../config/health.config';
 import { actionCommand } from '../lib/operator-actions';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
@@ -11,12 +12,9 @@ import { otlpConfigFromEnv } from '../lib/telemetry/emitter';
 import { errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
-import { scrubSecretEnv } from '../lib/utils/scrub-secret-env';
 import { getFlag } from './args';
-import { bakeDefinition, parseBuildRows } from './build-images';
 import { main as runWavedRolloutCli } from './deploy-rollout';
 import { type AllowedKey, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env';
-import { frontendBuildEnv } from './print-frontend-build-env';
 import { createFetchProbe, pollForVersion } from './wait-for-version';
 
 /**
@@ -27,10 +25,6 @@ import { createFetchProbe, pollForVersion } from './wait-for-version';
 export interface DeployOptions {
   mode: string;
   sha: string;
-  /** Prebuilt frontend dist directory. Absent = the command builds the frontend itself. */
-  distDir?: string;
-  /** Build + push all images in-process (buildx bake) before waiting on the registry. */
-  build?: boolean;
   /** CI ref for the production trust gate; local operator runs may omit it. */
   gitRef?: string;
   /**
@@ -46,6 +40,7 @@ export type TaskName =
   | 'install-pulumi-providers'
   | 'forget-retired-resources'
   | 'preflight-privileged'
+  | 'build-release'
   | 'wait-for-images'
   | 'repair-certs'
   | 'sync-rollout-config'
@@ -64,13 +59,7 @@ export interface DeployEffects {
   /** Hold the stack lease for the run (renewed in-process, released on exit or signal); throws when another holder keeps it. */
   lease(stack: string, operation: 'deploy' | 'reap'): Promise<{ release(): Promise<void> }>;
   /** Run an external binary in the infra dir; rejects on non-zero exit unless allowFailure. Async so concurrent steps (registry wait, asset upload) keep progressing while a build runs. */
-  exec(
-    cmd: string,
-    args: string[],
-    opts?: { allowFailure?: boolean; stdin?: string; env?: Record<string, string>; secretless?: boolean },
-  ): Promise<void>;
-  /** Upload the built frontend bundle (hashed assets skip when present; entry files excluded). */
-  uploadAssets(opts: { distDir: string; bucket: string; region: string }): Promise<void>;
+  exec(cmd: string, args: string[], opts?: { allowFailure?: boolean; stdin?: string; env?: Record<string, string> }): Promise<void>;
   /** One full stack update through the configured Pulumi driver. */
   update(stack: string): Promise<void>;
   rollout(argv: string[]): Promise<void>;
@@ -91,13 +80,11 @@ interface RolloutRow {
 export function parseDeployArgs(argv: string[]): DeployOptions {
   const mode = getFlag(argv, '--mode');
   const sha = getFlag(argv, '--sha');
-  if (!mode || !sha) throw new Error('Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--dist <dir>] [--git-ref <ref>] [--defer-reap]');
+  if (!mode || !sha) throw new Error('Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--git-ref <ref>] [--defer-reap]');
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`);
   return {
     mode,
     sha,
-    distDir: getFlag(argv, '--dist'),
-    build: argv.includes('--build'),
     gitRef: getFlag(argv, '--git-ref'),
     deferReap: argv.includes('--defer-reap'),
   };
@@ -183,54 +170,37 @@ export async function runDeploy(
       fx.exec('docker', ['login', registry, '-u', 'nologin', '--password-stdin'], { stdin: process.env.SCW_SECRET_KEY ?? '' }),
     );
 
-    // Images and frontend converge concurrently: images build (with --build) or wait for CI's registry pushes, while the frontend builds and uploads hashed assets.
-    // Entry files stay out until after version verification below.
-    const distDir = opts.distDir ?? resolve(infraDir, '..', 'frontend', 'dist');
-    const imagesReady = (async () => {
-      if (opts.build) {
-        await step('Build images (buildx bake)', async () => {
-          const bake = bakeDefinition(parseBuildRows(env.build_images_matrix), {
-            registry,
-            namespace: env.registry_ns,
-            tag: opts.sha,
-            context: '..',
-          });
-          await fx.exec('pnpm', ['run', 'boot:build']);
-          await fx.exec('docker', ['buildx', 'bake', '--file', '-', '--push'], { stdin: JSON.stringify(bake) });
-        });
-      }
-      await step('Wait for image tags in registry', () =>
-        fx.task('wait-for-images', [
-          '--registry',
-          registry,
-          '--ns',
-          env.registry_ns,
-          '--tag',
-          opts.sha,
-          '--build-images-json',
-          env.build_images_matrix,
-        ]),
-      );
-    })();
-    const frontendReady = (async () => {
-      // No SPA bucket (frontend-less registry): nothing to build or upload.
-      if (!env.frontend_bucket) return;
-      if (!opts.distDir) {
-        await step('Build frontend', () =>
-          fx.exec('pnpm', ['--filter', 'frontend', 'build'], {
-            env: { ...frontendBuildEnv(opts.mode, env.enabled_services_json) },
-            // The Vite build runs a large third-party plugin graph; deny it the
-            // deploy's cloud keys so a compromised build dep cannot exfiltrate them.
-            secretless: true,
-          }),
-        );
-      }
-      await step('Upload frontend assets', () => fx.uploadAssets({ distDir, bucket: env.frontend_bucket, region: env.region }));
-    })();
-    const [imagesOutcome, frontendOutcome] = await Promise.allSettled([imagesReady, frontendReady]);
-    for (const settled of [imagesOutcome, frontendOutcome]) {
-      if (settled.status === 'rejected') throw settled.reason;
-    }
+    // The release's images and frontend files: a builder machine makes the missing ones, then the release's entry files wait in a folder of
+    // their own for the publish below. No app code runs beside the deploy key.
+    const distDir = env.frontend_bucket ? await mkdtemp(join(tmpdir(), 'release-')) : '';
+    await step('Build the release', () =>
+      fx.task('build-release', [
+        '--sha',
+        opts.sha,
+        '--mode',
+        opts.mode,
+        '--project-id',
+        process.env.SCW_DEFAULT_PROJECT_ID ?? '',
+        '--build-images-json',
+        env.build_images_matrix,
+        '--services-json',
+        env.enabled_services_json,
+        '--dist',
+        distDir,
+      ]),
+    );
+    await step('Wait for image tags in registry', () =>
+      fx.task('wait-for-images', [
+        '--registry',
+        registry,
+        '--ns',
+        env.registry_ns,
+        '--tag',
+        opts.sha,
+        '--build-images-json',
+        env.build_images_matrix,
+      ]),
+    );
 
     // GeoIP databases live in the public bucket, not the image: a first deploy fills the prefix, later ones refresh it
     // once a month. Best-effort: a DB-IP or bucket hiccup must never block a release, the API only loses the country line.
@@ -402,14 +372,9 @@ export async function reapMain(argv = process.argv.slice(2)): Promise<void> {
   await runReap(parseReapArgs(argv), createRealEffects());
 }
 
-/**
- * The environment `exec` hands a child. `secretless` strips the deploy's secrets (Scaleway keys, Pulumi passphrase,
- * GitHub token) before `env` layers on top, so an untrusted build (the frontend Vite plugin graph) cannot read them;
- * without it the child inherits the whole environment.
- */
-export function execEnv(parentEnv: NodeJS.ProcessEnv, opts: { env?: Record<string, string>; secretless?: boolean }): NodeJS.ProcessEnv {
-  const baseEnv = opts.secretless ? scrubSecretEnv(parentEnv) : parentEnv;
-  return opts.env ? { ...baseEnv, ...opts.env } : baseEnv;
+/** The environment `exec` hands a child: the deploy's own, with `env` layered on top. */
+export function execEnv(parentEnv: NodeJS.ProcessEnv, opts: { env?: Record<string, string> }): NodeJS.ProcessEnv {
+  return opts.env ? { ...parentEnv, ...opts.env } : parentEnv;
 }
 
 // Real effects: subprocesses in the infra dir, S3 entry publish, GitHub-aware log grouping. Every ordering and failure decision lives in runDeploy.
@@ -451,6 +416,7 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'repair-certs': async (argv) => (await import('./repair-certs')).main(argv),
   'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),
   'stage-generation-keys': async (argv) => (await import('./stage-generation-keys')).main(argv),
+  'build-release': async (argv) => (await import('./build-release')).main(argv),
   'assert-vm-grants': async (argv) => (await import('./assert-vm-grants')).main(argv),
   'assert-secrets-deliverable': async (argv) => (await import('./assert-secrets-deliverable')).main(argv),
   'geoip-refresh': async (argv) => (await import('./geoip-refresh')).main(argv),
@@ -543,10 +509,6 @@ function createRealEffects(): DeployEffects {
           else done();
         });
       });
-    },
-    async uploadAssets(assetOpts) {
-      const { uploadFrontendAssets } = await import('./frontend-assets');
-      await uploadFrontendAssets(assetOpts);
     },
     update: async (stack) => {
       const { createPulumiDriver } = await import('../lib/stack/pulumi-driver');
