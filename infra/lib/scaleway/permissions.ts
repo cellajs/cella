@@ -15,9 +15,10 @@ export const DEPLOY_PROJECT_PERMISSION_SETS = [
   'InstancesIpCreate',
   'InstancesIpWrite',
   'InstancesIpDelete',
-  'InstancesPrivateNicCreate',
-  'InstancesPrivateNicWrite',
-  'InstancesPrivateNicDelete',
+  // The provider attaches machines through the Instance API v2, whose sets these are; the v1 sets (`InstancesPrivateNic*`) do not cover it.
+  'InstancesPrivateNetworkInterfaceCreate',
+  'InstancesPrivateNetworkInterfaceWrite',
+  'InstancesPrivateNetworkInterfaceDelete',
   'InstancesVolumeCreate',
   'InstancesVolumeWrite',
   'InstancesVolumeDelete',
