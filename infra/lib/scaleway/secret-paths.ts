@@ -5,33 +5,37 @@ export function secretManagerPath(slug: string, mode: string): string {
 
 // The path hierarchy is the security boundary: IAM conditions grant secret-value reads by `resource.name.startsWith(<path>)`, so where a secret lives decides who reads it. Never rename a path in place.
 
-/** Folder for secrets consumed by exactly one service. */
+/**
+ * The folder of one service's secrets. A secret several services consume is stored once in each one's folder, so a service's grant names its
+ * own folder and nothing else, and a change of consumers writes no IAM.
+ */
 function serviceSecretPath(slug: string, mode: string, service: string): string {
   return `/${slug}-${mode}/${service}/`;
 }
 
+/** One copy of a runtime secret: the consumer it serves and the folder it lives in. */
+export interface SecretCopy {
+  service: string;
+  path: string;
+}
+
+/** Where the copies of a runtime secret live: one in the folder of each consumer. */
+export function secretCopies(definition: { services: readonly string[] }, slug: string, mode: string): SecretCopy[] {
+  return definition.services.map((service) => ({ service, path: serviceSecretPath(slug, mode, service) }));
+}
+
 /**
- * Folder for secrets consumed by more than one service: one folder per consumer set, the consumers sorted and nested
- * (`/shared/backend/mcp/`), so a grant on it reaches exactly the secrets that set consumes. A folder that prefixes
- * another belongs to a subset of its consumers, so a `startsWith` grant never reaches a secret outside its set.
+ * The folder a secret of several consumers lived in before each consumer had its own copy: one folder per consumer set, the consumers sorted
+ * and nested. Read only to copy operator values out of it once (tasks/copy-shared-secrets.ts).
  */
-function sharedSecretPath(slug: string, mode: string, consumers: readonly string[]): string {
+export function legacySharedSecretPath(slug: string, mode: string, consumers: readonly string[]): string {
   return `/${slug}-${mode}/shared/${[...consumers].sort().join('/')}/`;
 }
 
-/** Folder for engine-internal keys. Outside the VM condition on purpose: a VM must never read the admin key. */
+/** Folder for engine-internal keys. Outside every machine's condition: a machine never reads the passphrase. */
 export function engineSecretPath(slug: string, mode: string): string {
   return `/${slug}-${mode}/engine/`;
 }
-
-/** The folder a runtime secret lives in, from its consumer list. */
-export function secretPathFor(definition: { services: readonly string[] }, slug: string, mode: string): string {
-  return definition.services.length === 1
-    ? serviceSecretPath(slug, mode, definition.services[0] as string)
-    : sharedSecretPath(slug, mode, definition.services);
-}
-
-// P3 (per-service model): handoff folders + per-principal conditions.
 
 /** Folder for per-generation single-access handoff bundles of one service. */
 export function handoffServicePath(slug: string, mode: string, service: string): string {
@@ -44,29 +48,13 @@ export function handoffFolderPath(slug: string, mode: string): string {
 }
 
 /**
- * Condition for one service application: value reads only under its own folders plus the shared folder of every
- * consumer set its scope belongs to, leaving other sets' secrets, engine keys and sibling stacks unreadable.
- * String equality matters: assert-vm-grants compares the live rule condition against this exact output. Pass the full secret scope from `secretScopeSlugs`, which for the singleVM host includes the folded services, and the consumer list of every runtime secret.
+ * Condition for one service application: value reads only under the folders of the services its machines carry, leaving other services'
+ * secrets, engine keys and sibling stacks unreadable. String equality matters: assert-vm-grants compares the live rule condition against
+ * this exact output. Pass the full secret scope from `secretScopeSlugs`, which for the singleVM host includes the folded services.
  */
-export function serviceKeyCondition(
-  slug: string,
-  mode: string,
-  services: string | readonly string[],
-  consumerSets: readonly (readonly string[])[],
-): string {
+export function serviceKeyCondition(slug: string, mode: string, services: string | readonly string[]): string {
   const scope = typeof services === 'string' ? [services] : services;
-  const sharedPaths = [
-    ...new Set(
-      consumerSets
-        .filter((consumers) => consumers.length > 1 && consumers.some((service) => scope.includes(service)))
-        .map((consumers) => sharedSecretPath(slug, mode, consumers)),
-    ),
-  ].sort();
-  // A folder under another granted folder is covered by it already.
-  const grantedShared = sharedPaths.filter((path) => !sharedPaths.some((other) => other !== path && path.startsWith(other)));
-  return [...scope.map((service) => serviceSecretPath(slug, mode, service)), ...grantedShared]
-    .map((path) => `resource.name.startsWith("${path}")`)
-    .join(' || ');
+  return scope.map((service) => `resource.name.startsWith("${serviceSecretPath(slug, mode, service)}")`).join(' || ');
 }
 
 /**

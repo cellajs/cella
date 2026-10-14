@@ -52,7 +52,7 @@ Three rules:
 - **The observer application** is the read-only principal: read sets on the app's projects, IAM read, and read on the state and boot-diagnostics buckets; from the dedicated IP address only. Its key lives in `infra/.env.<mode>` (`SCW_OBSERVER_*`), never in git or GitHub. The admin application it replaces is retired: an apply lets the operator into bucket policies written before it with the admin key from its custody secret, and **Update identities** then deletes it.
 - **VM keys are per service and per deploy**, path-conditioned (`resource.name.startsWith`). Cloud-init carries only the **boot key**; the service key arrives in a **single-access** Secret Manager bundle. A consumed bundle on first boot halts the VM as an interception signal; reboots reuse the on-disk pair.
 - **Bucket policies are deny-by-default** for everyone not listed, org admins included (the Owner can always edit a policy). Uploads buckets are versioned and CI statements exclude `s3:DeleteObjectVersion`, so a leaked CI key cannot destroy state history or user data.
-- **Secret folders are the boundary:** `/<slug>-<mode>/<service>/` for a secret one service consumes, `/shared/<consumers>/` for each set of consumers (so a VM key reads exactly the secrets its services consume), `/handoff/`, `/engine/` (unreadable from VMs).
+- **Secret folders are the boundary:** `/<slug>-<mode>/<service>/` holds one copy of every secret that service consumes, so a secret of several consumers is stored once in each one's folder and a machine key reads its own folder only; `/handoff/`, `/engine/` (unreadable from machines). A change of consumers adds or removes copies and writes no IAM.
 
 ## Observability
 

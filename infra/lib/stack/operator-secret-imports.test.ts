@@ -8,12 +8,20 @@ const definitions = [
 const opts = { slug: 'app-staging', mode: 'staging', region: 'nl-ams' };
 
 describe('operatorSecretImports', () => {
-  it('adopts the containers a teardown kept, each at its own path', () => {
+  it('adopts the copies a teardown kept, each at its consumer folder', () => {
     const listed = [
       { id: 'id-1', name: 'admin-email', path: '/app-staging-staging/backend/' },
-      { id: 'id-2', name: 'brevo-api-key', path: '/app-staging-staging/shared/backend/jobs' },
+      { id: 'id-2', name: 'brevo-api-key', path: '/app-staging-staging/backend' },
+      { id: 'id-3', name: 'brevo-api-key', path: '/app-staging-staging/jobs/' },
     ];
-    expect(operatorSecretImports(listed, definitions, opts)).toBe('admin-email=nl-ams/id-1,brevo-api-key=nl-ams/id-2');
+    expect(operatorSecretImports(listed, definitions, opts)).toBe(
+      'admin-email@backend=nl-ams/id-1,brevo-api-key@backend=nl-ams/id-2,brevo-api-key@jobs=nl-ams/id-3',
+    );
+  });
+
+  it('must not adopt a container left in a shared folder: the copy step moves its value', () => {
+    const listed = [{ id: 'id-4', name: 'brevo-api-key', path: '/app-staging-staging/shared/backend/jobs' }];
+    expect(operatorSecretImports(listed, definitions, opts)).toBe('');
   });
 
   it('must not adopt a container of the same name at another path', () => {

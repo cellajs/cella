@@ -3,7 +3,8 @@ import { telemetrySink } from '../../config/telemetry.config';
 import { actionCommand } from '../operator-actions';
 import { type RuntimeSecretDefinition, runtimeSecrets } from '../runtime-secrets';
 import { createSecretManagerClient } from '../scaleway/scaleway-secret-manager';
-import { secretPathFor } from '../scaleway/secret-paths';
+import { secretCopyContainers } from '../scaleway/secret-copies';
+import { secretCopies } from '../scaleway/secret-paths';
 
 /** The ingest key, or why there is none: a deploy that exports nothing says so in its log. */
 export type SinkKeyLookup = { key: string } | { missing: string };
@@ -22,18 +23,19 @@ export interface SinkKeyLookupOptions {
 
 /**
  * Read the operator-seeded telemetry ingest key. The secret lives in the folder its registry entry's consumer list
- * derives (`secretPathFor`), the same one the Pulumi program creates and the VMs read, so a change to that list moves
+ * derives (`secretCopies`), the same ones the Pulumi program creates and the VMs read, so a change to that list moves
  * this lookup with it.
  */
 export async function lookupSinkIngestKey(opts: SinkKeyLookupOptions): Promise<SinkKeyLookup> {
   const secretName = opts.secretName ?? telemetrySink.keySecretName;
   const definition = (opts.secrets ?? runtimeSecrets).find((secret) => secret.secretName === secretName);
   if (!definition) return { missing: `no runtime secret named '${secretName}' in config/runtime-secrets.config.ts` };
-  const path = secretPathFor(definition, opts.slug, opts.mode);
-  const secret = await opts.client.getSecretByName(secretName, path);
-  if (!secret) return { missing: `secret '${secretName}' not found in ${path}; seed it with \`${actionCommand('secrets')}\`` };
-  const value = (await opts.client.accessLatestValue(secret.id)).trim();
-  return value ? { key: value } : { missing: `secret '${secretName}' in ${path} has an empty value` };
+  // Every consumer's copy holds the same value: the first that exists is read.
+  const [path] = secretCopies(definition, opts.slug, opts.mode).map((copy) => copy.path);
+  const found = (await secretCopyContainers(opts.client, definition, opts.slug, opts.mode)).find((copy) => copy.container);
+  if (!found?.container) return { missing: `secret '${secretName}' not found in ${path}; seed it with \`${actionCommand('secrets')}\`` };
+  const value = (await opts.client.accessLatestValue(found.container.id)).trim();
+  return value ? { key: value } : { missing: `secret '${secretName}' in ${found.path} has an empty value` };
 }
 
 /**

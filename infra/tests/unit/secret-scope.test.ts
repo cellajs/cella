@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { runtimeSecrets } from '../../lib/runtime-secrets';
 import { principalNames } from '../../lib/scaleway/principals';
-import { engineSecretPath, handoffFolderPath, secretPathFor } from '../../lib/scaleway/secret-paths';
+import { engineSecretPath, handoffFolderPath, secretCopies } from '../../lib/scaleway/secret-paths';
 import { buildVmAssertRows } from '../../lib/scaleway/vm-assert-rows';
 import { principalSecretScopeSlugs, principalServices, serviceNames } from '../../lib/services';
 import { fakeConfig } from '../helpers/fake-config';
@@ -23,12 +23,16 @@ const grantedPrefixes = (condition: string) => [...condition.matchAll(/resource\
 /** Whether a condition lets its principal read the secret named `name` (its full Secret Manager path and name). */
 const covers = (condition: string, name: string) => grantedPrefixes(condition).some((prefix) => name.startsWith(prefix));
 
-const secretName = (secret: (typeof runtimeSecrets)[number]) => `${secretPathFor(secret, slug, mode)}${secret.secretName}`;
+/** The full Secret Manager name of each copy of a secret, with the consumer it serves. */
+const copyNames = (secret: (typeof runtimeSecrets)[number]) =>
+  secretCopies(secret, slug, mode).map((copy) => ({ service: copy.service, name: `${copy.path}${secret.secretName}` }));
+
+/** The full name of the copy a given consumer reads. */
+const copyFor = (secret: (typeof runtimeSecrets)[number], service: string) => copyNames(secret).find((copy) => copy.service === service)?.name ?? '';
 
 /**
- * A VM principal's grant is conditioned on secret folders, so where a secret lives decides who reads it: a folder
- * holding secrets of several consumer sets hands every one of them to each set's services. Each principal must read
- * exactly the secrets its services consume, the ones the deploy delivers to its VMs.
+ * A VM principal's grant is conditioned on secret folders, so where a secret lives decides who reads it. Every consumer has its own copy in
+ * its own folder: each principal must read exactly the copies of the services its machines carry, and no other service's copy.
  */
 describe('secret scope per principal', () => {
   for (const singleVM of [false, true]) {
@@ -41,8 +45,10 @@ describe('secret scope per principal', () => {
         if (!row) throw new Error(`no assertion row for ${svc.slug}`);
         const scope = principalSecretScopeSlugs(singleVM, svc.slug);
         for (const secret of runtimeSecrets) {
-          const consumes = secret.services.some((service) => scope.some((slug) => slug === service));
-          expect(covers(row.condition, secretName(secret)), `${svc.slug} reading ${secret.secretName}`).toBe(consumes);
+          for (const copy of copyNames(secret)) {
+            const carries = scope.some((slug) => slug === copy.service);
+            expect(covers(row.condition, copy.name), `${svc.slug} reading ${secret.secretName} of ${copy.service}`).toBe(carries);
+          }
         }
       }
     });
@@ -50,12 +56,12 @@ describe('secret scope per principal', () => {
     it(`must not let the boot key or any VM key read the engine folder (singleVM: ${singleVM})`, () => {
       const boot = rows.find((row) => row.app === names.boot);
       if (!boot) throw new Error('no assertion row for the boot principal');
-      for (const secret of runtimeSecrets) expect(covers(boot.condition, secretName(secret))).toBe(false);
+      for (const secret of runtimeSecrets) for (const copy of copyNames(secret)) expect(covers(boot.condition, copy.name)).toBe(false);
       // Positive control: the boot key reads the handoff bundles.
       expect(covers(boot.condition, `${handoffFolderPath(slug, mode)}backend/bundle`)).toBe(true);
 
       for (const row of rows.filter((candidate) => candidate.app.includes('-vm-'))) {
-        expect(covers(row.condition, `${engineSecretPath(slug, mode)}admin-key`), row.app).toBe(false);
+        expect(covers(row.condition, `${engineSecretPath(slug, mode)}pulumi-passphrase`), row.app).toBe(false);
       }
     });
   }
@@ -69,8 +75,8 @@ describe('secret scope per principal', () => {
     const signingKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PRIVATE_KEY');
     const publicKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PUBLIC_KEY');
     if (!yjsRow || !signingKey || !publicKey) throw new Error('fixture missing');
-    expect(covers(yjsRow.condition, secretName(signingKey))).toBe(false);
-    // Positive control: the relay reads the public half.
-    expect(covers(yjsRow.condition, secretName(publicKey))).toBe(true);
+    for (const copy of copyNames(signingKey)) expect(covers(yjsRow.condition, copy.name), copy.service).toBe(false);
+    // Positive control: the relay reads its own copy of the public half.
+    expect(covers(yjsRow.condition, copyFor(publicKey, 'yjs'))).toBe(true);
   });
 });

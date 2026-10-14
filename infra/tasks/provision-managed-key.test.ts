@@ -73,8 +73,9 @@ describe('provisionManagedKey', () => {
 
     await provisionManagedKey({ ...baseOptions, definition: aiKey });
 
-    expect(putSecretValue).toHaveBeenCalledTimes(1);
-    expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: 'container-ai', value: 'SK' }));
+    // The secret half only, into each consumer's copy (backend and mcp).
+    expect(putSecretValue).toHaveBeenCalledTimes(2);
+    for (const [input] of putSecretValue.mock.calls) expect(input).toMatchObject({ secretId: 'container-ai', value: 'SK' });
   });
 
   it('aborts without minting when a target container does not exist yet', async () => {

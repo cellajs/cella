@@ -6,6 +6,7 @@ import { actionCommand, menuPath } from '../../lib/operator-actions';
 import { describeKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { projectAccessKey } from '../../lib/scaleway/s3-client';
+import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { planBasisChanges, readPlanBasis } from '../../lib/stack/plan-basis';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
@@ -13,6 +14,7 @@ import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { admitOperatorToBuckets } from '../../tasks/admit-operator-buckets';
+import { copySharedSecrets } from '../../tasks/copy-shared-secrets';
 import { missingRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
@@ -217,6 +219,17 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
       }
     } finally {
       await releaseLock();
+    }
+
+    // The `up` made each consumer's copy of a secret; operator values still in a shared folder move into them (ledger L3).
+    if (completed) {
+      const client = createSecretManagerClient({ secretKey: ownerKey.secretKey, region: appConfig.s3.region, projectId });
+      await copySharedSecrets({ client, slug: appConfig.slug, mode: context.environment, log: (message) => console.info(pc.dim(message)) }).catch(
+        (error) =>
+          console.warn(
+            `${warningMark} Could not move the shared operator secrets into their copies (${errorMessage(error)}); the next deploy tries again.`,
+          ),
+      );
     }
 
     if (completed && opts.verifyAfter) {
