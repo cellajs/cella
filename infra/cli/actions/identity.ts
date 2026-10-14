@@ -1,5 +1,5 @@
 import { ListObjectsV2Command } from '@aws-sdk/client-s3';
-import { actionLabel } from '../../lib/operator-actions';
+import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { deployPolicy } from '../../lib/scaleway/deploy-policy';
 import { type IamAuth, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
 import type { MachineKeyStep } from '../../lib/scaleway/machine-keys';
@@ -11,12 +11,12 @@ import { deleteApplicationCascade } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { engineSecretPath } from '../../lib/scaleway/secret-paths';
 import { stateBucket } from '../../lib/stack/control-store';
-import { changeMark, checkMark, pc, tildeMark } from '../../lib/utils/cli-output';
+import { changeMark, checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { ADMIN_KEY_SECRET_NAME } from '../../tasks/admit-operator-buckets';
 import { planMachineKeys, writeMachineKeys } from '../../tasks/machine-keys';
 import { type MachinePolicyStep, planMachinePolicies, writeMachinePolicies } from '../../tasks/machine-policies';
 import { ensureRegistryPrincipals, missingRegistryPrincipals } from '../../tasks/setup-service-apps';
-import { confirmOrDefault, type InfraContext } from '../shared';
+import { confirmOrDefault, endAction, type InfraContext } from '../shared';
 import { ensureObserverForEnvironment, type ObserverStep, observerKeyHere, observerStep } from './observer-key';
 import { acquireIdentityKey } from './operator-unlock';
 import { type OwnerKey, printRevokeReminder } from './owner-key';
@@ -138,6 +138,30 @@ export async function planMachineIdentities(
     policies: await planMachinePolicies(auth, organizationId, declaredPolicies(context, organizationId)),
     keys: await planMachineKeys({ auth, secrets: secretsFor(context, auth.secretKey), organizationId, ...registry }),
   };
+}
+
+/**
+ * End a run on the operator key when the machine identities differ from the declared ones: they are IAM, which that key cannot write, and an
+ * `up` would fail on them halfway or leave machines a deploy cannot hand keys to. `release` lets go of what the run holds first.
+ */
+export async function exitOnIdentityChanges(
+  context: Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>,
+  key: { secretKey: string; organizationId: string },
+  release?: () => Promise<void>,
+): Promise<void> {
+  const plan = await planMachineIdentities({ secretKey: key.secretKey }, key.organizationId, context).catch((error) => {
+    console.warn(`${warningMark} Could not read the identities (${error instanceof Error ? error.message : String(error)}).`);
+    return undefined;
+  });
+  const changes = plan ? machineIdentityLines(plan) : [];
+  if (changes.length === 0) return;
+  await release?.();
+  console.error(`${warningMark} The identities of ${context.environment} differ from the declared ones:`);
+  for (const line of changes) console.error(`  ${tildeMark} ${line}`);
+  console.error(
+    `  They are IAM, which the operator key cannot write: \`${actionCommand('identity')}\` writes them with your Owner API key. Nothing applied.`,
+  );
+  endAction(1);
 }
 
 async function planIdentities(

@@ -1,6 +1,7 @@
 import { actionLabel } from '../../lib/operator-actions';
 import { pc } from '../../lib/utils/cli-output';
 import { endAction, type InfraContext, resolveVerifiedPassphrase, stackNameFor } from '../shared';
+import { exitOnIdentityChanges } from './identity';
 import { acquirePrivilegedKey } from './operator-unlock';
 import { printRevokeReminder } from './owner-key';
 import { askToApply, reviewPlan } from './plan';
@@ -21,6 +22,8 @@ export async function runApply(context: InfraContext): Promise<void> {
   const operator = await acquirePrivilegedKey(context);
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   await admitOperatorOrExit(context, { ...operator, passphrase, stack: stackNameFor(context) });
+  // A missing identity would break the plan itself: the program looks up every application it names.
+  await exitOnIdentityChanges(context, operator);
   const reviewed = await reviewPlan(context, operator, { forgetRetired: true });
   if (!(await askToApply(context.environment))) {
     console.info('Declined; nothing applied.');

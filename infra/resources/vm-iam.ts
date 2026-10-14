@@ -13,6 +13,15 @@ const names = principalNames(appConfig.slug, mode);
 
 // The engine's IAM principals, resolved by their canonical per-mode names. A required principal throws on a resolution failure; an optional one warns and drops its statements, so a missing admin app never blocks a release.
 
+/**
+ * Whether a failed application lookup means the application does not exist. Only a real not-found counts: a transient IAM outage must not
+ * demote a required principal or drop admin statements. The provider says "no element found with the name <name>" (measured on staging).
+ */
+export function isAbsentApplication(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /not.?found|no element found|404|does not exist/i.test(message);
+}
+
 /** Resolve an application id by name, or undefined when the app is absent. */
 function findApplicationId(name: string): pulumi.Output<string | undefined> {
   return pulumi.output(
@@ -20,9 +29,7 @@ function findApplicationId(name: string): pulumi.Output<string | undefined> {
       .getApplication({ name, organizationId })
       .then((app) => app.applicationId || undefined)
       .catch((error: unknown) => {
-        // Only a real not-found counts as absent: a transient IAM outage must not demote a required principal or drop admin statements, so rethrow anything else.
-        const message = error instanceof Error ? error.message : String(error);
-        if (/not.?found|404|does not exist/i.test(message)) return undefined;
+        if (isAbsentApplication(error)) return undefined;
         throw error;
       }),
   );
