@@ -12,6 +12,7 @@ export function ScrollArea({
   horizontalScroll,
   autoScrollOnDrag,
   disableTrackClick,
+  focusableViewport = true,
   ...props
 }: React.ComponentProps<typeof ScrollAreaPrimitive.Root> & {
   viewportRef?: React.RefObject<HTMLDivElement | null>;
@@ -22,6 +23,8 @@ export function ScrollArea({
   autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
   /** Disable clicking the scrollbar track to jump scroll position. Only the thumb remains draggable. */
   disableTrackClick?: boolean;
+  /** Keep the viewport out of the tab order. Only for content that has its own tab stops, which already scroll it. */
+  focusableViewport?: boolean;
 }) {
   const internalViewportRef = React.useRef<HTMLDivElement | null>(null);
   const viewportRef = externalViewportRef ?? internalViewportRef;
@@ -63,6 +66,7 @@ export function ScrollArea({
         data-slot="scroll-area-viewport"
         id={id ? `${id}-viewport` : undefined}
         ref={viewportRef}
+        tabIndex={focusableViewport ? undefined : -1}
         className={cn(
           'size-full touch-manipulation rounded-[inherit] outline-hidden focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset',
           viewportClassName,
