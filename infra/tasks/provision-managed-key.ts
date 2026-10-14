@@ -75,7 +75,6 @@ export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Pro
       appDescription: definition.appDescription,
       policyDescription: definition.policyDescription,
       buildRules: ({ projectId }) => [{ permission_set_names: [...definition.permissionSets], project_ids: [projectId] }],
-      mintKey: true,
     },
   );
 

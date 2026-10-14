@@ -1,6 +1,6 @@
 import { resolveApplicationIdByName } from '../lib/scaleway/iam-client';
 import { principalNames } from '../lib/scaleway/principals';
-import { type ProvisionScopedKeyOptions, provisionScopedKey } from '../lib/scaleway/scaleway-iam';
+import { ensureApplication, type ProvisionScopedKeyOptions } from '../lib/scaleway/scaleway-iam';
 import { principalServices } from '../lib/services';
 
 export interface MachineIdentitiesOptions extends ProvisionScopedKeyOptions {
@@ -33,34 +33,25 @@ export interface MachineIdentitiesResult {
 export async function makeMachineIdentities(opts: MachineIdentitiesOptions): Promise<MachineIdentitiesResult> {
   const serviceAppIds: Record<string, string> = {};
   for (const service of opts.services) {
-    const app = await provisionScopedKey(opts, {
+    const app = await ensureApplication(opts, {
       suffix: `vm-${service}`,
-      appDescription: `Non-human principal for ${service} service VMs: path-conditioned secret read (key minted per deploy)`,
-      policyDescription: 'unused (a machine policy, written apart)',
-      managePolicy: false,
-      mintKey: false,
+      description: `Non-human principal for ${service} service machines: reads its own secret folder (standing key, handed over by a deploy)`,
     });
-    serviceAppIds[service] = app.applicationId;
+    serviceAppIds[service] = app.id;
   }
-  const boot = await provisionScopedKey(opts, {
+  const boot = await ensureApplication(opts, {
     suffix: 'boot',
-    appDescription: 'Non-human boot fetcher: registry pull, boot-diag write, handoff-only secret read (key minted per deploy)',
-    policyDescription: 'unused (a machine policy, written apart)',
-    managePolicy: false,
-    mintKey: false,
+    description: 'Non-human boot fetcher: registry pull, boot-diag write, handoff-only secret read (standing key)',
   });
-  const builder = await provisionScopedKey(opts, {
+  const builder = await ensureApplication(opts, {
     suffix: 'builder',
-    appDescription: "Non-human builder: pushes a release's images and writes its frontend files, on a builder machine",
-    policyDescription: 'unused (a machine policy, written apart)',
-    managePolicy: false,
-    mintKey: false,
+    description: "Non-human builder: pushes a release's images and writes its frontend files, on a builder machine",
   });
   return {
     serviceAppIds,
-    bootAppId: boot.applicationId,
-    builderAppId: builder.applicationId,
-    allAppIds: [...Object.values(serviceAppIds), boot.applicationId, builder.applicationId],
+    bootAppId: boot.id,
+    builderAppId: builder.id,
+    allAppIds: [...Object.values(serviceAppIds), boot.id, builder.id],
   };
 }
 

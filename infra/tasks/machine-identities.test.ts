@@ -1,24 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveApplicationIdByName } from '../lib/scaleway/iam-client';
-import { provisionScopedKey } from '../lib/scaleway/scaleway-iam';
+import { ensureApplication, provisionScopedKey } from '../lib/scaleway/scaleway-iam';
 import { ensureMachineIdentities, missingMachineIdentities } from './machine-identities';
 
-vi.mock('../lib/scaleway/scaleway-iam', () => ({ provisionScopedKey: vi.fn() }));
+vi.mock('../lib/scaleway/scaleway-iam', () => ({ ensureApplication: vi.fn(), provisionScopedKey: vi.fn() }));
 vi.mock('../lib/scaleway/iam-client', () => ({ resolveApplicationIdByName: vi.fn() }));
 
 const base = { callerSecretKey: 'boot-secret', organizationId: 'org-1', projectId: 'proj', slug: 'cella', mode: 'production' };
 
 beforeEach(() => {
-  vi.mocked(provisionScopedKey).mockReset();
-  vi.mocked(provisionScopedKey).mockImplementation(
-    async (_opts, config) => ({ applicationId: `id-${config.suffix}`, accessKey: '', secretKey: '' }) as never,
-  );
+  vi.mocked(ensureApplication).mockReset();
+  vi.mocked(ensureApplication).mockImplementation(async (_opts, app) => ({ id: `id-${app.suffix}`, name: `cella-production-${app.suffix}` }));
 });
 
 describe('ensureMachineIdentities', () => {
   it('one application per registry service plus boot and builder, whatever is enabled and wherever it runs', async () => {
     const result = await ensureMachineIdentities(base);
-    const suffixes = vi.mocked(provisionScopedKey).mock.calls.map(([, config]) => config.suffix);
+    const suffixes = vi.mocked(ensureApplication).mock.calls.map(([, app]) => app.suffix);
     expect(suffixes).toEqual(['vm-backend', 'vm-cdc', 'vm-yjs', 'vm-mcp', 'vm-oauth', 'vm-jobs', 'vm-frontend', 'boot', 'builder']);
     expect(result.allAppIds).toEqual([
       'id-vm-backend',
@@ -35,10 +33,7 @@ describe('ensureMachineIdentities', () => {
 
   it('creates applications only: their policies and standing keys are written apart', async () => {
     await ensureMachineIdentities(base);
-    for (const [, config] of vi.mocked(provisionScopedKey).mock.calls) {
-      expect(config.managePolicy).toBe(false);
-      expect(config.mintKey).toBe(false);
-    }
+    expect(provisionScopedKey).not.toHaveBeenCalled();
   });
 });
 
