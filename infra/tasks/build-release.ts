@@ -63,6 +63,9 @@ export interface BuildReleaseOptions {
  */
 export async function buildRelease(opts: BuildReleaseOptions, fx: BuildEffects): Promise<'present' | 'built'> {
   const log = opts.log ?? ((message: string) => console.info(message));
+  // Under the stack lock, a builder that is there was left by a deploy that ended without deleting it (cancelled, killed): it goes first,
+  // whether or not this release needs a build.
+  for (const name of await fx.removeBuilders()) log(`  ~ deleted ${name}, left by an earlier deploy`);
   const missing: string[] = [];
   for (const image of opts.images) if (!(await fx.imagePresent(image))) missing.push(image);
   if (opts.withFrontend && !(await fx.entryFile('index.html'))) missing.push('the frontend files');
@@ -71,7 +74,6 @@ export async function buildRelease(opts: BuildReleaseOptions, fx: BuildEffects):
   if (missing.length > 0) {
     outcome = 'built';
     log(`[build] missing for ${opts.sha.slice(0, 10)}: ${missing.join(', ')}; building on ${opts.builderName}`);
-    for (const name of await fx.removeBuilders()) log(`  ~ deleted ${name}, left by an earlier deploy`);
     const keys = await fx.keys();
     try {
       await fx.startBuilder(opts.builderName, opts.cloudConfig(keys));

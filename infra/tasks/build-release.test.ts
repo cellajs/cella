@@ -45,11 +45,11 @@ const options = (overrides: Partial<BuildReleaseOptions> = {}): BuildReleaseOpti
 });
 
 describe('buildRelease', () => {
-  it('makes no builder for a release that is built, and writes its entry files', async () => {
+  it('makes no builder for a release that is built, deletes one a cancelled deploy left, and writes its entry files', async () => {
     const { fx, ops } = fake({ present: true });
     const opts = options();
     expect(await buildRelease(opts, fx)).toBe('present');
-    expect(ops).toEqual([]);
+    expect(ops).toEqual(['remove']);
     expect(readFileSync(join(opts.distDir ?? '', 'index.html'), 'utf8')).toBe('<index.html>');
   });
 
