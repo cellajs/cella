@@ -29,13 +29,13 @@ async function renderSeparator(node: ReactNode) {
 
 // No template page renders the board, so the accessibility audit never visits this control.
 describe('ResizableSeparator', () => {
-  it('is a focusable, named, upright separator that keeps the focus ring', async () => {
+  it('is a focusable, named, upright separator that keeps the forced-colors outline', async () => {
     const separator = await renderSeparator(<ResizableSeparator index={0} className="w-1.5" />);
     expect(separator.getAttribute('tabindex')).toBe('0');
     expect(separator.getAttribute('aria-label')).toBe('c:resize_panels');
     expect(separator.getAttribute('aria-orientation')).toBe('vertical');
-    expect(separator.className).toContain('focus-effect');
-    expect(separator.className).not.toMatch(/outline-hidden|ring-0/);
+    expect(separator.className).toContain('outline-hidden');
+    expect(separator.className).not.toMatch(/outline-none|ring-0/);
   });
 
   it('takes the name its consumer passes', async () => {
