@@ -135,4 +135,46 @@ describe('ensureDatabase', () => {
     expect(writes[`${root}/backend/database-url-runtime`]).toBe(dsn('runtime', 'rotated'));
     expect(writes[`${root}/cdc/database-url-cdc`]).toBe(dsn('admin', 'rotated'));
   });
+
+  it('must not keep a password the role never got: a failed role update leaves the engine folder as it was', async () => {
+    const { secrets, writes } = fakeSecrets({ [`${root}/engine/db-password-admin`]: 'adm-pw', [`${root}/engine/db-password-runtime`]: 'run-pw' });
+    const { rdb } = fakeRdb([POSTGRES_ROLE_NAMES.admin, POSTGRES_ROLE_NAMES.runtime]);
+    rdb.setUserPassword = async () => {
+      throw new Error('400 from the database API');
+    };
+    await expect(
+      ensureDatabase({
+        rdb,
+        secrets,
+        slug: 'app',
+        mode: 'production',
+        endpoint,
+        definitions,
+        generate: () => 'rotated',
+        rotate: true,
+        log: () => {},
+      }),
+    ).rejects.toThrow(/400/);
+    expect(writes).toEqual({});
+  });
+
+  it('addresses the instance by its uuid, as the database API takes it, when the store output names its region', async () => {
+    const { secrets } = fakeSecrets({});
+    const instances: string[] = [];
+    const { rdb } = fakeRdb([]);
+    rdb.listUsers = async (instance) => {
+      instances.push(instance);
+      return [];
+    };
+    await ensureDatabase({
+      rdb,
+      secrets,
+      slug: 'app',
+      mode: 'production',
+      endpoint: { ...endpoint, instanceId: 'nl-ams/inst-uuid' },
+      definitions,
+      log: () => {},
+    });
+    expect(instances).toEqual(['inst-uuid']);
+  });
 });

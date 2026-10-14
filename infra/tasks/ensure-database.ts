@@ -67,7 +67,9 @@ export async function ensureDatabase(opts: {
   const generate = opts.generate ?? generateSecretValue;
   const definitions = opts.definitions ?? databaseRuntimeSecrets();
   const engineFolder = engineSecretPath(opts.slug, opts.mode);
-  const { instanceId, databaseName } = opts.endpoint;
+  const { databaseName } = opts.endpoint;
+  // The store output names the instance as Pulumi does, `<region>/<uuid>`; the database API takes the uuid.
+  const instanceId = opts.endpoint.instanceId.split('/').pop() ?? opts.endpoint.instanceId;
 
   const passwords = {} as Record<DatabaseRole, string>;
   const sources = {} as Record<DatabaseRole, PasswordSource>;
@@ -87,20 +89,6 @@ export async function ensureDatabase(opts: {
     }
     passwords[role] = recovered ?? generate();
     sources[role] = recovered ? 'recovered' : 'generated';
-    const container =
-      kept ??
-      (await opts.secrets.ensureSecret({
-        name: rolePasswordSecretName(role),
-        path: engineFolder,
-        description: `Password of the ${role} database role`,
-      }));
-    await opts.secrets.putSecretValue({
-      secretId: container.id,
-      value: passwords[role],
-      description: `Kept by ensure-database (${sources[role]})`,
-      disablePrevious: true,
-    });
-    log(`[ensure-database] ${role} role password ${sources[role]} and kept in ${engineFolder}`);
   }
 
   const live = new Set((await opts.rdb.listUsers(instanceId)).map((user) => user.name));
@@ -118,6 +106,26 @@ export async function ensureDatabase(opts: {
       await opts.rdb.setUserPassword(instanceId, name, passwords[role]);
       log(`[ensure-database] ${name} given the fresh password`);
     }
+  }
+
+  // A password is kept only once its role has it: kept before, a failure in between would leave the engine folder naming a password no role
+  // has, which the next run would trust and write into every connection string.
+  for (const role of ROLES) {
+    if (sources[role] === 'stored') continue;
+    const container =
+      (await opts.secrets.getSecretByName(rolePasswordSecretName(role), engineFolder)) ??
+      (await opts.secrets.ensureSecret({
+        name: rolePasswordSecretName(role),
+        path: engineFolder,
+        description: `Password of the ${role} database role`,
+      }));
+    await opts.secrets.putSecretValue({
+      secretId: container.id,
+      value: passwords[role],
+      description: `Kept by ensure-database (${sources[role]})`,
+      disablePrevious: true,
+    });
+    log(`[ensure-database] ${role} role password ${sources[role]} and kept in ${engineFolder}`);
   }
 
   const written: string[] = [];
