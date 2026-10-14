@@ -7,6 +7,7 @@ import { BOOT_IMAGE_NAME } from '../lib/scaleway/release-image';
 import { makeS3Client, projectAccessKey } from '../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { scwFetch, scwSend } from '../lib/scaleway/scw-fetch';
+import { controlKey, makeControlClient, readControlState, stateBucket } from '../lib/stack/control-store';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
@@ -18,7 +19,8 @@ import { readStandingKey, stageHandoffBundle } from './stage-generation-keys';
 
 /** The node image the builder installs and builds the workspace in: the boot image's base. */
 const NODE_IMAGE = 'node:26-bookworm-slim';
-const BUILDER_TYPE = 'DEV1-L';
+// 8 vCPUs: the bake and the frontend build run side by side; about two cents a build.
+const BUILDER_TYPE = 'POP2-HC-8C-16G';
 const BUILDER_IMAGE = 'docker';
 const BUILDER_DISK_BYTES = 40_000_000_000;
 
@@ -61,6 +63,9 @@ export interface BuildReleaseOptions {
  */
 export async function buildRelease(opts: BuildReleaseOptions, fx: BuildEffects): Promise<'present' | 'built'> {
   const log = opts.log ?? ((message: string) => console.info(message));
+  // Under the stack lock, a builder that is there was left by a deploy that ended without deleting it (cancelled, killed): it goes first,
+  // whether or not this release needs a build.
+  for (const name of await fx.removeBuilders()) log(`  ~ deleted ${name}, left by an earlier deploy`);
   const missing: string[] = [];
   for (const image of opts.images) if (!(await fx.imagePresent(image))) missing.push(image);
   if (opts.withFrontend && !(await fx.entryFile('index.html'))) missing.push('the frontend files');
@@ -69,7 +74,6 @@ export async function buildRelease(opts: BuildReleaseOptions, fx: BuildEffects):
   if (missing.length > 0) {
     outcome = 'built';
     log(`[build] missing for ${opts.sha.slice(0, 10)}: ${missing.join(', ')}; building on ${opts.builderName}`);
-    for (const name of await fx.removeBuilders()) log(`  ~ deleted ${name}, left by an earlier deploy`);
     const keys = await fx.keys();
     try {
       await fx.startBuilder(opts.builderName, opts.cloudConfig(keys));
@@ -277,6 +281,10 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   const registry = `rg.${region}.scw.cloud`;
   const rows = parseBuildRows(buildImagesJson);
+  // The layer cache is named after the rotation counter, so a rotation (after a compromise, keys first) starts a clean one (D13).
+  const control = await makeControlClient(region, projectAccessKey(accessKey, projectId), secretKey);
+  const { state } = await readControlState(control, stateBucket(appConfig.slug), controlKey(mode));
+  const cacheTag = `buildcache-r${state.rotations?.counter ?? 0}`;
   const frontendBucket = distDir ? naming.frontendBucket : '';
   const frontendBucketUrl = frontendBucket ? `https://${frontendBucket}.s3.${region}.scw.cloud` : undefined;
   const prefix = builderPrefix(naming.resource);
@@ -304,7 +312,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
             NODE_IMAGE,
           },
           frontendEnv: frontendBucket ? frontendBuildEnv(mode, servicesJson) : {},
-          bake: bakeDefinition(rows, { registry, namespace: naming.registryNamespace, tag: sha, context: '/build' }),
+          bake: bakeDefinition(rows, { registry, namespace: naming.registryNamespace, tag: sha, context: '/build', cacheTag }),
           container: containerScript({ pnpmVersion, sha, frontendBucketUrl }),
         }),
     },

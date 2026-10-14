@@ -16,4 +16,15 @@ describe('bakeDefinition', () => {
     expect(target.frontend).not.toHaveProperty('target');
     expect((target['boot-runner'] as { context: string }).context).toBe('/build/infra/boot');
   });
+
+  it("bakes the services before the boot image, and caches each image's layers under the builder's tag", () => {
+    const rows = parseBuildRows(JSON.stringify([{ service: 'backend', dockerfile: 'Dockerfile', target: 'backend' }]));
+    const bake = bakeDefinition(rows, { registry: 'rg', namespace: 'app', tag: 'abc', cacheTag: 'buildcache-r3' });
+    expect(bake.group).toMatchObject({ services: { targets: ['backend'] }, boot: { targets: ['boot-runner'] } });
+    expect(bake.target.backend).toMatchObject({
+      'cache-from': ['type=registry,ref=rg/app/backend:buildcache-r3'],
+      'cache-to': ['type=registry,ref=rg/app/backend:buildcache-r3,mode=max'],
+    });
+    expect(bakeDefinition(rows, { registry: 'rg', namespace: 'app', tag: 'abc' }).target.backend).not.toHaveProperty('cache-from');
+  });
 });
