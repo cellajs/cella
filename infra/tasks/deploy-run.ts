@@ -42,7 +42,6 @@ export type TaskName =
   | 'preflight-privileged'
   | 'build-release'
   | 'wait-for-images'
-  | 'repair-certs'
   | 'sync-rollout-config'
   | 'stage-generation-keys'
   | 'assert-vm-grants'
@@ -226,7 +225,6 @@ export async function runDeploy(
       process.env.INFRA_GENERATION_KEYS_FILE = outFile;
     });
 
-    await step('Repair errored LB certificates', () => fx.task('repair-certs', ['--stack', stack]));
     await step('Base stack update', () => fx.update(stack));
     await step('Verify VM IAM grants', async () => {
       // One assertion per principal: exact sets AND exact path condition. Their keys were checked when they were staged.
@@ -413,7 +411,6 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'forget-retired-resources': async (argv) => (await import('./forget-retired-resources')).main(argv),
   'preflight-privileged': async (argv) => (await import('./preflight-privileged')).main(argv),
   'wait-for-images': async (argv) => (await import('./wait-for-images')).main(argv),
-  'repair-certs': async (argv) => (await import('./repair-certs')).main(argv),
   'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),
   'stage-generation-keys': async (argv) => (await import('./stage-generation-keys')).main(argv),
   'build-release': async (argv) => (await import('./build-release')).main(argv),
