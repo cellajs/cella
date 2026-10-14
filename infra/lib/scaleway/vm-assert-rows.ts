@@ -1,6 +1,6 @@
 import type { EngineConfig } from '../../config/engine-config';
 import { principalSecretCondition } from '../runtime-secrets';
-import { deployedServices, principalServices } from '../services';
+import { principalServices, runningServices } from '../services';
 import { BACKEND_S3_PERMISSION_SETS, BOOT_PROJECT_PERMISSION_SETS, CI_RULE_SHAPES, SERVICE_SECRET_PERMISSION_SETS } from './permissions';
 import { principalNames } from './principals';
 import { bootKeyCondition } from './secret-paths';
@@ -17,18 +17,17 @@ export interface VmAssertRow {
 
 /**
  * One assertion row per principal, built by the same shared builders the Pulumi program uses so the deploy's grant-verification step and the
- * Apply's self-check compare strings, not semantics. Principals follow the registry; a registry service outside the deployed set is dormant.
+ * Apply's self-check compare strings, not semantics. Principals follow the registry; a registry service that runs nowhere is dormant.
  */
 export function buildVmAssertRows(appConfig: EngineConfig): VmAssertRow[] {
   const names = principalNames(appConfig.slug, appConfig.mode);
-  const singleVM = appConfig.singleVM ?? false;
-  const deployedSlugs = new Set(deployedServices(appConfig.services, singleVM).map((service) => service.slug));
+  const running = new Set(runningServices(appConfig.services).map((service) => service.slug));
   return [
-    ...principalServices(singleVM).map((svc) => ({
+    ...principalServices().map((svc) => ({
       app: names.vmService(svc.slug),
       sets: [...SERVICE_SECRET_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])],
-      condition: principalSecretCondition(appConfig.slug, appConfig.mode, singleVM, svc.slug),
-      dormant: !deployedSlugs.has(svc.slug),
+      condition: principalSecretCondition(appConfig.slug, appConfig.mode, svc.slug),
+      dormant: !running.has(svc.slug),
     })),
     {
       app: names.boot,

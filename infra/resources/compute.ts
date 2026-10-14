@@ -58,8 +58,10 @@ const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
 /** Build the secret ID and env-name manifest baked into cloud-init. It never contains values. A secret is read from the copy of the first consumer the machine carries. */
 function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi.Output<string> {
   const definitions = unionRuntimeSecrets(consumers);
+  const consumerOf = (definition: (typeof definitions)[number]) =>
+    consumers.find((candidate) => (definition.services as readonly string[]).includes(candidate));
   const copyOf = (definition: (typeof definitions)[number]) => {
-    const consumer = consumers.find((candidate) => (definition.services as readonly string[]).includes(candidate));
+    const consumer = consumerOf(definition);
     const id = consumer ? secretIds[definition.id]?.[consumer] : undefined;
     if (!id) throw new Error(`compute: no copy of '${definition.secretName}' for ${consumers.join(', ')}`);
     return id;
@@ -69,6 +71,8 @@ function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi
       definitions.map((definition, index) => ({
         id: definition.id,
         secretName: definition.secretName,
+        // The copy is read with the key of the service it belongs to.
+        service: consumerOf(definition),
         // Strip the region from Pulumi's composite secret id: the access URL already carries it.
         secretId: (ids[index] ?? '').split('/').pop(),
         envVar: definition.envVar,
@@ -93,8 +97,8 @@ interface ServiceConfig {
   secretConsumers: RuntimeSecretConsumer[];
   /** Compose env var suppliers (REGISTRY, URLs, the baked image tag), lazy so resource-backed values resolve only when VMs are created. */
   composeEnv: Record<string, () => pulumi.Input<string>>;
-  /** v2: single-access handoff secret id holding this service's minted key. */
-  handoffSecretId?: string;
+  /** Single-access handoff secret ids holding the minted keys of every service the machine carries, one per service. */
+  handoffs: Array<{ service: string; secretId: string }>;
   /** v2 + s3Access: the boot runner exports the service key as S3_* env. */
   exportS3Env?: boolean;
 }
@@ -168,7 +172,7 @@ function buildCloudInit(service: ServiceConfig, releaseSha: string, requirePinne
         secretKey,
         region,
         bootDiagBucket,
-        handoffSecretId: service.handoffSecretId,
+        handoffs: service.handoffs,
         exportS3Env: service.exportS3Env,
         // Deploy trace context, exported by deploy-run before the stack update; ignoreChanges on cloudInit keeps existing generations untouched.
         traceparent: process.env.TRACEPARENT,
@@ -248,6 +252,14 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
       `compute: a NEW ${svc.slug} generation of ${generation.sha.slice(0, 10)} would take the hand-over bundle minted for ${releaseSha.slice(0, 10)}: the rollout record names a release the stack does not run.`,
     );
   }
+  // Every service a new machine carries reads its own copies with its own key: a missing bundle would fail the boot at hydration.
+  const unminted =
+    !generation.preexisting && generationKeys ? secretConsumersFor(svc).filter((consumer) => !generationKeys.handoffSecretIds[consumer]) : [];
+  if (unminted.length > 0) {
+    throw new Error(
+      `compute: a NEW ${svc.slug} generation carries ${unminted.join(', ')}, for which the deploy minted no key: mint-generation-keys must cover every running service.`,
+    );
+  }
   const serviceConfig: ServiceConfig = {
     name: svc.slug,
     profile: svc.slug,
@@ -255,7 +267,10 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     runRelease: svc.runRelease ?? false,
     secretConsumers: secretConsumersFor(svc),
     composeEnv: buildComposeEnv(svc, generation.sha),
-    handoffSecretId: generationKeys?.handoffSecretIds[svc.slug],
+    handoffs: secretConsumersFor(svc).flatMap((consumer) => {
+      const secretId = generationKeys?.handoffSecretIds[consumer];
+      return secretId ? [{ service: consumer, secretId }] : [];
+    }),
     exportS3Env: svc.s3Access === true,
   };
 

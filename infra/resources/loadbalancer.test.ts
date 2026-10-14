@@ -44,7 +44,12 @@ const vmEnv = (slug: string): Record<string, string> => {
 };
 
 beforeAll(async () => {
-  writeGenerationKeys({ bootAccessKey: 'ak', bootSecretKey: 'sk', handoffSecretIds: {} });
+  // A bundle for every service, as the deploy mints one for each that runs.
+  writeGenerationKeys({
+    bootAccessKey: 'ak',
+    bootSecretKey: 'sk',
+    handoffSecretIds: Object.fromEntries([...servicesByName.keys()].map((slug) => [slug, `handoff-${slug}`])),
+  });
   // The LB resolves its private-network address from IPAM over HTTPS.
   vi.stubEnv('SCW_SECRET_KEY', 'test-secret-key');
   vi.stubGlobal('fetch', makeFetch([{ method: 'GET', match: '/ipam/v1/', body: { ips: [{ address: '10.0.0.200/24' }] } }]).fn);

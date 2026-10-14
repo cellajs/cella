@@ -218,19 +218,24 @@ export async function boot(opts: BootOptions): Promise<void> {
     await phase('wait-private-network', () => waitForPrivateNetwork({ exec, timeoutSeconds: plan.timeouts.privateNetworkSeconds }));
     await phase('write-app-files', () => writeAppFiles(plan));
     await phase('docker-login', () => dockerLogin(plan, secretKey, streamingExec));
-    // Swap the baked boot key for the real service key via the single-access handoff bundle, cache-first on reboots.
-    // A consumed bundle on first boot means interception, so this phase throws and the boot halts.
-    let serviceKey = { accessKey, secretKey };
-    if (plan.serviceKeyHandoff) {
+    // Swap the baked boot key for the real service keys, one per service the machine carries, via single-access handoff bundles, cache-first
+    // on reboots. A consumed bundle on first boot means interception, so this phase throws and the boot halts.
+    const serviceKeys: Record<string, { accessKey: string; secretKey: string }> = {};
+    if (plan.serviceKeyHandoffs) {
       await phase('fetch-service-key', async () => {
-        serviceKey = await fetchServiceKey({ handoff: plan.serviceKeyHandoff!, bootSecretKey: secretKey, region: plan.region });
-        redactor.add(serviceKey.accessKey, serviceKey.secretKey);
+        for (const handoff of plan.serviceKeyHandoffs ?? []) {
+          const key = await fetchServiceKey({ handoff, bootSecretKey: secretKey, region: plan.region });
+          redactor.add(key.accessKey, key.secretKey);
+          serviceKeys[handoff.service] = key;
+        }
       });
     }
+    const serviceKey = serviceKeys[plan.service] ?? { accessKey, secretKey };
     await phase('hydrate-runtime-secrets', async () => {
       const delivered = await hydrateRuntimeSecrets({
         manifest: plan.files.runtimeSecretManifest,
         secretKey: serviceKey.secretKey,
+        secretKeys: Object.fromEntries(Object.entries(serviceKeys).map(([service, key]) => [service, key.secretKey])),
         region: plan.region,
         outputPath: '/opt/app/.env.runtime',
         // REQ-20: the backend signs S3 requests with its own service key.

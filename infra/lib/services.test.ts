@@ -7,11 +7,10 @@ import {
   enabledServices,
   isSingletonHost,
   placeServices,
-  principalSecretScopeSlugs,
   principalServices,
   rolloutOwner,
+  runningServices,
   type ServiceDefinition,
-  secretScopeSlugs,
   services,
 } from './services';
 
@@ -149,28 +148,13 @@ describe('placeServices (placement is independent of enablement)', () => {
   });
 });
 
-describe('registry view: privileged IAM ignores enablement', () => {
-  it('split-VM: every registry service owns a principal, whatever appConfig enables', () => {
-    expect(principalServices(false).map((s) => s.slug)).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'jobs', 'frontend']);
+describe('registry view: privileged IAM ignores enablement and placement', () => {
+  it('every registry service owns a principal, whatever appConfig enables and wherever it runs', () => {
+    expect(principalServices().map((s) => s.slug)).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'jobs', 'frontend']);
   });
 
-  it('singleVM: only the host owns a principal', () => {
-    expect(principalServices(true).map((s) => s.slug)).toEqual(['backend']);
-  });
-
-  it('singleVM host scope unions every registry worker and collocated container, enabled or not', () => {
-    expect(principalSecretScopeSlugs(true, 'backend')).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'jobs', 'frontend']);
-  });
-
-  it('a non-host principal reads only its own folder', () => {
-    expect(principalSecretScopeSlugs(true, 'cdc')).toEqual(['cdc']);
-    expect(principalSecretScopeSlugs(false, 'backend')).toEqual(['backend']);
-    expect(principalSecretScopeSlugs(false, 'yjs')).toEqual(['yjs']);
-  });
-
-  it('secretScopeSlugs over the enabled set still narrows to what is enabled', () => {
-    expect(secretScopeSlugs(enabledServices(allOff), true, 'backend')).toEqual(['backend', 'cdc', 'jobs', 'frontend']);
-    expect(secretScopeSlugs(services, true, 'backend')).toEqual(principalSecretScopeSlugs(true, 'backend'));
+  it('every enabled service runs, on its own machine or on the singleVM host, so each needs its key', () => {
+    expect(runningServices(allOff).map((s) => s.slug)).toEqual(enabledServices(allOff).map((s) => s.slug));
   });
 });
 

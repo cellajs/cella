@@ -433,7 +433,6 @@ async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<O
       organizationId,
       slug: appConfig.slug,
       mode: environment,
-      singleVM: appConfig.singleVM ?? false,
     });
     serviceAppIds = apps.allAppIds;
     console.info('\n→ Machine policies');

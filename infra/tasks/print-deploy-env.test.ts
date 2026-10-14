@@ -77,18 +77,15 @@ describe('buildDeployEnv', () => {
     });
   });
 
-  it('singleVM: one host principal whose condition covers every registry worker, enabled or not', () => {
-    const rows = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM: true }).vm_assert_json) as Array<{
-      app: string;
-      condition: string;
-      dormant?: boolean;
-    }>;
-    const serviceRows = rows.filter((row) => row.app.includes('-vm-'));
-    expect(serviceRows.map((row) => row.app)).toEqual(['cella-production-vm-backend']);
-    expect(serviceRows[0]?.condition).toBe(principalSecretCondition('cella', 'production', true, 'backend'));
-    expect(serviceRows[0]?.condition).toContain('/cella-production/yjs/');
-    expect(serviceRows[0]?.condition).toContain('/cella-production/mcp/');
-    expect(serviceRows[0]?.dormant).toBe(false);
+  it('singleVM: the same principals as split-VM, each reading its own folder, so placement changes no identity', () => {
+    type Row = { app: string; condition: string; dormant?: boolean };
+    const single = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM: true }).vm_assert_json) as Row[];
+    const split = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM: false }).vm_assert_json) as Row[];
+    expect(single).toEqual(split);
+    const backend = single.find((row) => row.app === 'cella-production-vm-backend');
+    expect(backend?.condition).toBe(principalSecretCondition('cella', 'production', 'backend'));
+    expect(backend?.condition).not.toContain('/cella-production/yjs/');
+    expect(backend?.dormant).toBe(false);
   });
 
   it('toggling enabled never changes a principal row, only its dormant flag', () => {

@@ -8,9 +8,13 @@ export interface RuntimeSecretManifestEntry {
   envVar: string;
   secretId: string;
   required: boolean;
+  /** The service whose copy this is, read with that service's key. Absent: the plan's own service. */
+  service?: string;
 }
 
 export interface ServiceKeyHandoff {
+  /** The service whose key this is: a host that carries several services receives one key per service. */
+  service: string;
   /** Single-access secret holding this generation's service key pair. */
   secretId: string;
   /** Where the fetched pair persists (0600) so reboots never re-fetch. */
@@ -36,10 +40,11 @@ export interface BootPlan {
   region: string;
   credentials: { scwAccessKeyFile: string; scwSecretKeyFile: string };
   /**
-   * Fetch the real service key from a single-access handoff bundle using the baked boot key, cache-first on reboots.
-   * A failed fetch on FIRST boot means the bundle was already consumed, which is an interception signal and halts the boot. Absent = the baked key does everything.
+   * Fetch the real service keys, one per service the machine carries, from single-access handoff bundles using the baked boot key, cache-first
+   * on reboots. A failed fetch on FIRST boot means a bundle was already consumed, which is an interception signal and halts the boot. Absent =
+   * the baked key does everything.
    */
-  serviceKeyHandoff?: ServiceKeyHandoff;
+  serviceKeyHandoffs?: ServiceKeyHandoff[];
   /** Export the service key as S3_ACCESS_KEY_ID/S3_ACCESS_KEY_SECRET into the runtime env (backend uploads/presigning). */
   exportS3Env?: boolean;
   bootDiagnostics: { bucket: string; logFile: string };
@@ -63,7 +68,7 @@ const topLevelKeys = new Set([
   'registry',
   'region',
   'credentials',
-  'serviceKeyHandoff',
+  'serviceKeyHandoffs',
   'exportS3Env',
   'bootDiagnostics',
   'releaseCommand',
@@ -136,7 +141,13 @@ export function parseRuntimeSecretManifest(value: unknown): RuntimeSecretManifes
   if (!Array.isArray(value)) throw new Error("boot plan: 'runtimeSecretManifest' must be an array");
   return value.map((entry, index) => {
     if (!isRecord(entry)) throw new Error(`boot plan: runtimeSecretManifest[${index}] must be an object`);
-    return { envVar: stringField(entry, 'envVar'), secretId: stringField(entry, 'secretId'), required: booleanField(entry, 'required') };
+    const service = entry.service === undefined ? undefined : stringField(entry, 'service');
+    return {
+      envVar: stringField(entry, 'envVar'),
+      secretId: stringField(entry, 'secretId'),
+      required: booleanField(entry, 'required'),
+      ...(service ? { service } : {}),
+    };
   });
 }
 
@@ -167,12 +178,18 @@ export function parseBootPlanJson(json: string, planPath: string): BootPlan {
 
   const traceparent = typeof parsed.traceparent === 'string' && parsed.traceparent.trim() !== '' ? parsed.traceparent : undefined;
 
-  let serviceKeyHandoff: ServiceKeyHandoff | undefined;
-  if (parsed.serviceKeyHandoff !== undefined) {
-    const handoff = objectField(parsed, 'serviceKeyHandoff');
-    const cacheFile = stringField(handoff, 'cacheFile');
-    assertAllowedPath(cacheFile, configDir);
-    serviceKeyHandoff = { secretId: stringField(handoff, 'secretId'), cacheFile };
+  let serviceKeyHandoffs: ServiceKeyHandoff[] | undefined;
+  if (parsed.serviceKeyHandoffs !== undefined) {
+    if (!Array.isArray(parsed.serviceKeyHandoffs)) throw new Error("boot plan: 'serviceKeyHandoffs' must be an array");
+    serviceKeyHandoffs = parsed.serviceKeyHandoffs.map((entry, index) => {
+      if (!isRecord(entry)) throw new Error(`boot plan: serviceKeyHandoffs[${index}] must be an object`);
+      const cacheFile = stringField(entry, 'cacheFile');
+      assertAllowedPath(cacheFile, configDir);
+      return { service: stringField(entry, 'service'), secretId: stringField(entry, 'secretId'), cacheFile };
+    });
+    if (new Set(serviceKeyHandoffs.map((handoff) => handoff.service)).size !== serviceKeyHandoffs.length) {
+      throw new Error('boot plan: serviceKeyHandoffs names a service twice');
+    }
   }
   const exportS3Env = parsed.exportS3Env === undefined ? undefined : booleanField(parsed, 'exportS3Env');
 
@@ -196,7 +213,7 @@ export function parseBootPlanJson(json: string, planPath: string): BootPlan {
     registry: stringField(parsed, 'registry'),
     region: stringField(parsed, 'region'),
     credentials: { scwAccessKeyFile, scwSecretKeyFile },
-    ...(serviceKeyHandoff ? { serviceKeyHandoff } : {}),
+    ...(serviceKeyHandoffs ? { serviceKeyHandoffs } : {}),
     ...(exportS3Env !== undefined ? { exportS3Env } : {}),
     bootDiagnostics: { bucket: stringField(bootDiagnostics, 'bucket'), logFile },
     releaseCommand: {

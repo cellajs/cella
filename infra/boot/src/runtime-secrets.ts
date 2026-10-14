@@ -6,7 +6,10 @@ import type { RuntimeSecretManifestEntry } from './plan';
 
 export interface HydrateRuntimeSecretsOptions {
   manifest: readonly RuntimeSecretManifestEntry[];
+  /** The key an entry without a service of its own is read with: the plan's own service. */
   secretKey: string;
+  /** Per service, the key its copies are read with: each service's key reads its own folder only. */
+  secretKeys?: Readonly<Record<string, string>>;
   region: string;
   outputPath: string;
   /** Extra env lines appended verbatim (e.g. the v2 S3 key export). */
@@ -20,7 +23,9 @@ async function readSecret(opts: HydrateRuntimeSecretsOptions, entry: RuntimeSecr
   const secretId = entry.secretId.split('/').at(-1);
   if (!secretId) throw new Error(`${entry.envVar}: manifest entry has a blank secretId ('${entry.secretId}')`);
   const url = `https://api.scaleway.com/secret-manager/v1beta1/regions/${opts.region}/secrets/${secretId}/versions/latest/access`;
-  const res = await fetchImpl(url, { method: 'GET', headers: { 'X-Auth-Token': opts.secretKey } });
+  const key = entry.service ? opts.secretKeys?.[entry.service] : opts.secretKey;
+  if (!key) throw new Error(`${entry.envVar}: no key for service '${entry.service}' on this machine`);
+  const res = await fetchImpl(url, { method: 'GET', headers: { 'X-Auth-Token': key } });
   const body = await res.text();
   if (res.status === 404) return null;
   if (!res.ok) {
