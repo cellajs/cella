@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { Switch } from '~/modules/ui/switch';
+import { PreferenceSwitch } from '~/modules/navigation/menu-sheet/preferences-group';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 export function OfflineAccessSwitch() {
@@ -19,11 +19,12 @@ export function OfflineAccessSwitch() {
   };
 
   return (
-    <div className="flex items-center gap-3 px-3">
-      <Switch size="sm" id="offlineMode" checked={offlineAccess} onCheckedChange={onCheckedChange} aria-label={t('c:offline_access')} />
-      <label htmlFor="offlineMode" className="cursor-pointer select-none text-sm leading-none">
-        {t('c:offline_access')}
-      </label>
-    </div>
+    <PreferenceSwitch
+      id="offlineMode"
+      label={t('c:offline_access')}
+      description={t('c:offline_access.text')}
+      checked={offlineAccess}
+      onCheckedChange={onCheckedChange}
+    />
   );
 }
