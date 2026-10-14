@@ -1,6 +1,6 @@
 import { stripVTControlCharacters } from 'node:util';
 import { describe, expect, it } from 'vitest';
-import { formatQuickFacts, type QuickFacts } from './status';
+import { formatQuickFacts, type QuickFacts, rotationLine } from './status';
 
 const strip = (lines: string[]) => lines.map((line) => stripVTControlCharacters(line));
 const T = Date.parse('2026-09-24T12:00:00Z');
@@ -23,6 +23,7 @@ describe('formatQuickFacts', () => {
     expect(strip(formatQuickFacts(facts, { now: T }))).toEqual([
       '● Lock: free',
       '● Live: backend 117397c (updated 2026-09-23 21:37 UTC by ci:run-590)',
+      '● Last rotation: keys never, secrets never',
       '● Observer key: SCWOBS → cella-observer (observer application)',
     ]);
   });
@@ -68,5 +69,13 @@ describe('formatQuickFacts', () => {
     );
     expect(lines[1]).toBe('⚠ Ambient key: SCW_ACCESS_KEY SCWCI → cella-production-ci-deploy (CI deploy application)');
     expect(lines[2]).toContain('CLI actions do not use');
+  });
+});
+
+describe('rotationLine', () => {
+  it('says when each kind was last rotated, and never where it was not', () => {
+    expect(rotationLine({ counter: 2, keys: { at: '2026-10-14T09:00:00.000Z', by: 'operator:flip' } })).toBe(
+      'Last rotation: keys 2026-10-14 by operator:flip, secrets never',
+    );
   });
 });

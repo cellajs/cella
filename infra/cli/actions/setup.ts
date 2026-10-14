@@ -16,6 +16,7 @@ import { createProject, listProjects, resolveOrganizationIdFromKey } from '../..
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { secretManagerPath } from '../../lib/scaleway/secret-paths';
 import { detectComputeDeferred, type Environment } from '../../lib/stack/bootstrap-stack-state';
+import { controlActor, makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { operatorSecretImports } from '../../lib/stack/operator-secret-imports';
 import { projectChoices, projectsOfOtherModes } from '../../lib/stack/project-per-mode';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
@@ -28,6 +29,7 @@ import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { planMachineKeys, writeMachineKeys } from '../../tasks/machine-keys';
 import { writeMachinePolicies } from '../../tasks/machine-policies';
 import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
+import { recordRotation } from '../../tasks/record-rotation';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { setupCiKey } from '../../tasks/setup-ci-key';
 import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
@@ -610,6 +612,23 @@ async function runOperatorPart(context: InfraContext, operatorKey: OwnerKey, mom
   if (firstSetup && ciKey?.secretKey) await offerFirstDeploy(ctx, ciKey, operatorSecrets);
 }
 
+/** Record a rotation of keys in the control object, under the stack lock, with the operator key. */
+async function recordKeyRotation(context: InfraContext, operatorKey: OwnerKey): Promise<void> {
+  const { appConfig, projectId } = context;
+  const stack = stackNameFor(context);
+  const state = { accessKey: projectAccessKey(operatorKey.accessKey, projectId), secretKey: operatorKey.secretKey };
+  const lock = await acquireStackLockOrExit({ appConfig, ...state, stack, operation: 'rotate-keys' });
+  try {
+    const s3 = await makeControlClient(appConfig.s3.region, state.accessKey, state.secretKey);
+    const rotations = await recordRotation({ s3, bucket: stateBucket(appConfig.slug), stack, kind: 'keys', by: controlActor() });
+    console.info(
+      `${checkMark} Rotation ${rotations.counter} recorded. ${pc.bold('Deploy now')}: every machine is replaced with the new machine keys.`,
+    );
+  } finally {
+    await lock.release();
+  }
+}
+
 /**
  * Set up, resume or rotate a stack. A run that makes or replaces identities (a first setup, a setup that never minted its CI key, a key
  * rotation) starts with an Owner moment: the project and the identities, written with an Owner API key typed at the prompt. Everything else
@@ -620,12 +639,14 @@ export async function runSetup(context: InfraContext, mode: SetupMode): Promise<
   const writesIdentities = mode === 'rotate-keys' || !context.hasCiKey;
   const moment = writesIdentities ? await runOwnerMoment(context, mode) : undefined;
   if (writesIdentities && !moment) return;
-  if (mode === 'rotate-keys') return;
   // An operator the moment just created is in memory: the session asks for nothing.
   if (moment?.operatorKey) rememberOperatorKey(moment.operatorKey);
   const operatorKey = await acquireOperatorKey(context);
   try {
-    await runOperatorPart(context, operatorKey, moment);
+    // An Owner key never writes the state: the rotation is recorded with the operator key, and its counter makes the next deploy replace
+    // every machine, so none keeps a key the rotation deleted.
+    if (mode === 'rotate-keys') await recordKeyRotation(context, operatorKey);
+    else await runOperatorPart(context, operatorKey, moment);
   } finally {
     await operatorKey.release();
   }

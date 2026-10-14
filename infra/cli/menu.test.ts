@@ -35,7 +35,7 @@ describe('mainMenuItems', () => {
       '  Show status              read-only',
       '  Review & apply changes   operator key',
       'Change',
-      '  Rotate keys & secrets ›  CI key, observer key, passphrase, operator key',
+      '  Rotate keys & secrets ›  keys, secrets, passphrase, operator key',
       '  Manage runtime secrets   operator key',
       '  Update identities        Owner key',
       'Database',
@@ -56,7 +56,7 @@ describe('mainMenuItems', () => {
       '  Show status              read-only',
       '- Review & apply changes (needs a bootstrapped stack: run "Resume setup")',
       'Change',
-      '  Rotate keys & secrets ›  CI key, observer key, passphrase, operator key',
+      '  Rotate keys & secrets ›  keys, secrets, passphrase, operator key',
       '  Manage runtime secrets   operator key',
       '  Update identities        Owner key',
       'Database',
@@ -113,6 +113,7 @@ describe('pickItems', () => {
   it('offers the actions of a row with the key each runs with, then Back', () => {
     expect(render(pickItems('rotate', bootstrapped))).toEqual([
       '  Rotate keys          Owner key',
+      '  Rotate secrets       operator key',
       '  Rotate passphrase    operator key',
       '  Set up operator key  Owner key',
       '  ← Back',
@@ -132,6 +133,7 @@ describe('pickItems', () => {
   it('disables the passphrase rotation on a stack without encrypted state', () => {
     expect(render(pickItems('rotate', partial))).toEqual([
       '  Rotate keys          Owner key',
+      '  Rotate secrets       operator key',
       '- Rotate passphrase (the stack has no encrypted state yet)',
       '  Set up operator key  Owner key',
       '  ← Back',

@@ -11,6 +11,7 @@ import { runOperatorKey } from './operator-key';
 import { runPreview } from './preview';
 import { runResetDatabase } from './reset-database';
 import { runRotatePassphrase } from './rotate-passphrase';
+import { runRotateSecrets } from './rotate-secrets';
 import { runSecrets } from './secrets';
 import { runSeedDatabase } from './seed-db';
 import { runSetup } from './setup';
@@ -26,6 +27,7 @@ export const ACTION_RUNNERS: ActionRunners = {
   preview: runPreview,
   apply: runApply,
   'rotate-keys': (context) => runSetup(context, 'rotate-keys'),
+  'rotate-secrets': runRotateSecrets,
   'rotate-passphrase': runRotatePassphrase,
   'operator-key': runOperatorKey,
   identity: runIdentity,
