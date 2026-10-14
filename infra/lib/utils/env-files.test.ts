@@ -5,10 +5,10 @@ import { describe, expect, it } from 'vitest';
 import {
   dropPromptOnlyEnv,
   type ExecLike,
-  LEGACY_ADMIN_KEY_NAMES,
   modeEnvValues,
   parseEnvFile,
   parseSecretReference,
+  RETIRED_KEY_NAMES,
   resolveSecretReference,
   writeEnvValues,
 } from './env-files';
@@ -26,17 +26,21 @@ describe('dropPromptOnlyEnv', () => {
 });
 
 describe('modeEnvValues', () => {
-  it('reads a superseded SCW_ACCESS_KEY / SCW_SECRET_KEY pair as SCW_ADMIN_* with a rename warning, and never exports the old names', () => {
-    const { values, warnings } = modeEnvValues({ SCW_ACCESS_KEY: 'SCWA', SCW_SECRET_KEY: 's', SCW_PROJECT_ID: 'p' }, 'production');
-    expect(values).toEqual({ SCW_ADMIN_ACCESS_KEY: 'SCWA', SCW_ADMIN_SECRET_KEY: 's', SCW_PROJECT_ID: 'p' });
-    expect(warnings[0]).toMatch(/infra\/\.env\.production: SCW_ACCESS_KEY \/ SCW_SECRET_KEY are read as SCW_ADMIN_ACCESS_KEY/);
+  it('must not read the retired admin application key, under its own names or the superseded ones, and says to remove them', () => {
+    const { values, warnings } = modeEnvValues(
+      { SCW_ADMIN_ACCESS_KEY: 'SCWA', SCW_ADMIN_SECRET_KEY: 's', SCW_ACCESS_KEY: 'OLD', SCW_SECRET_KEY: 'o', SCW_PROJECT_ID: 'p' },
+      'production',
+    );
+    expect(values).toEqual({ SCW_PROJECT_ID: 'p' });
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatch(/infra\/\.env\.production: SCW_ADMIN_ACCESS_KEY, SCW_ADMIN_SECRET_KEY, SCW_ACCESS_KEY, SCW_SECRET_KEY are not read/);
   });
 
   it('must not export a privileged key or the passphrase from the file, in any form: a value on disk would run the CLI unattended', () => {
     const { values, warnings } = modeEnvValues(
       {
-        SCW_ADMIN_ACCESS_KEY: 'SCWA',
-        SCW_ADMIN_SECRET_KEY: 's',
+        SCW_OBSERVER_ACCESS_KEY: 'SCWO',
+        SCW_OBSERVER_SECRET_KEY: 's',
         PULUMI_CONFIG_PASSPHRASE: 'keychain:cella-production/PULUMI_CONFIG_PASSPHRASE',
         SCW_OWNER_ACCESS_KEY: 'SCWOWNER',
         SCW_OWNER_SECRET_KEY: 'op:op://Infra/owner/secret',
@@ -44,23 +48,14 @@ describe('modeEnvValues', () => {
       },
       'production',
     );
-    expect(values).toEqual({ SCW_ADMIN_ACCESS_KEY: 'SCWA', SCW_ADMIN_SECRET_KEY: 's' });
+    expect(values).toEqual({ SCW_OBSERVER_ACCESS_KEY: 'SCWO', SCW_OBSERVER_SECRET_KEY: 's' });
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toMatch(/PULUMI_CONFIG_PASSPHRASE, SCW_OWNER_ACCESS_KEY, SCW_OWNER_SECRET_KEY, SCW_BOOTSTRAP_KEY are not read/);
   });
 
-  it('ignores the old pair when SCW_ADMIN_* is set, and says so', () => {
-    const { values, warnings } = modeEnvValues(
-      { SCW_ACCESS_KEY: 'OLD', SCW_SECRET_KEY: 'o', SCW_ADMIN_ACCESS_KEY: 'SCWA', SCW_ADMIN_SECRET_KEY: 's' },
-      'staging',
-    );
-    expect(values).toEqual({ SCW_ADMIN_ACCESS_KEY: 'SCWA', SCW_ADMIN_SECRET_KEY: 's' });
-    expect(warnings[0]).toMatch(/ignored because SCW_ADMIN_\* is set/);
-  });
-
-  it('passes a file without the old names through untouched', () => {
-    expect(modeEnvValues({ SCW_ADMIN_ACCESS_KEY: 'SCWA', SCW_ADMIN_SECRET_KEY: 's' }, 'staging')).toEqual({
-      values: { SCW_ADMIN_ACCESS_KEY: 'SCWA', SCW_ADMIN_SECRET_KEY: 's' },
+  it('passes the observer key through untouched', () => {
+    expect(modeEnvValues({ SCW_OBSERVER_ACCESS_KEY: 'SCWO', SCW_OBSERVER_SECRET_KEY: 's' }, 'staging')).toEqual({
+      values: { SCW_OBSERVER_ACCESS_KEY: 'SCWO', SCW_OBSERVER_SECRET_KEY: 's' },
       warnings: [],
     });
   });
@@ -86,10 +81,10 @@ describe('writeEnvValues', () => {
 
   it('removes superseded names on request and reports which ones it found', () => {
     const path = join(mkdtempSync(join(tmpdir(), 'envw-')), '.env.production');
-    writeFileSync(path, 'SCW_ACCESS_KEY=old\nSCW_SECRET_KEY=o\nSCW_STATE_ACCESS_KEY=st\nPULUMI_CONFIG_PASSPHRASE=p\n');
-    const removed = writeEnvValues(path, { SCW_ADMIN_ACCESS_KEY: 'SCWA', SCW_ADMIN_SECRET_KEY: 's' }, { remove: LEGACY_ADMIN_KEY_NAMES });
-    expect(removed).toEqual(['SCW_ACCESS_KEY', 'SCW_SECRET_KEY', 'SCW_STATE_ACCESS_KEY']);
-    expect(readFileSync(path, 'utf8')).toBe('PULUMI_CONFIG_PASSPHRASE=p\nSCW_ADMIN_ACCESS_KEY=SCWA\nSCW_ADMIN_SECRET_KEY=s\n');
+    writeFileSync(path, 'SCW_ADMIN_ACCESS_KEY=old\nSCW_ADMIN_SECRET_KEY=o\nSCW_STATE_ACCESS_KEY=st\nPULUMI_CONFIG_PASSPHRASE=p\n');
+    const removed = writeEnvValues(path, { SCW_OBSERVER_ACCESS_KEY: 'SCWO', SCW_OBSERVER_SECRET_KEY: 's' }, { remove: RETIRED_KEY_NAMES });
+    expect(removed).toEqual(['SCW_ADMIN_ACCESS_KEY', 'SCW_ADMIN_SECRET_KEY', 'SCW_STATE_ACCESS_KEY']);
+    expect(readFileSync(path, 'utf8')).toBe('PULUMI_CONFIG_PASSPHRASE=p\nSCW_OBSERVER_ACCESS_KEY=SCWO\nSCW_OBSERVER_SECRET_KEY=s\n');
   });
 
   it('refuses a value that spans lines', () => {

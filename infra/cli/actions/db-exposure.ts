@@ -113,11 +113,11 @@ async function readDbExposure(context: InfraContext, secretKey: string): Promise
   return { endpoints: publicEndpoints(instance), aclRules: rules.length };
 }
 
-/** The live public endpoints, read with the admin application key within `budgetMs`. Undefined without that key, without an answer in time and on any error, so the menu falls back to the config. */
+/** The live public endpoints, read with the observer key within `budgetMs`. Undefined without that key, without an answer in time and on any error, so the menu falls back to the config. */
 export async function liveDbEndpoints(context: InfraContext, budgetMs = 4_000): Promise<string[] | undefined> {
-  const admin = resolveOperatorIdentity().admin;
-  if (!admin) return undefined;
-  const read = readDbExposure(context, admin.secretKey).then(
+  const { observer } = resolveOperatorIdentity();
+  if (!observer) return undefined;
+  const read = readDbExposure(context, observer.secretKey).then(
     (exposure) => exposure.endpoints.map(endpointAddress),
     () => undefined,
   );

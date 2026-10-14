@@ -1,7 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { actionCommand } from '../operator-actions';
 import { infraDir } from './paths';
 
 /** Parse a dotenv-style file into key/value pairs (no interpolation). */
@@ -40,8 +39,18 @@ export function ownProjectId(mode: string): string | undefined {
   return (existsSync(path) ? parseEnvFile(path).SCW_PROJECT_ID?.trim() : undefined) || undefined;
 }
 
-/** The names a mode env file used for the admin application key before 0.12: read as `SCW_ADMIN_*` with a rename warning, removed by the actions that write the admin key. */
-export const LEGACY_ADMIN_KEY_NAMES = ['SCW_ACCESS_KEY', 'SCW_SECRET_KEY', 'SCW_STATE_ACCESS_KEY', 'SCW_STATE_SECRET_KEY'] as const;
+/** Names a mode env file held for the admin application key, which is retired: never read, and removed when the observer key is written. */
+export const RETIRED_KEY_NAMES = [
+  'SCW_ADMIN_ACCESS_KEY',
+  'SCW_ADMIN_SECRET_KEY',
+  'SCW_ACCESS_KEY',
+  'SCW_SECRET_KEY',
+  'SCW_STATE_ACCESS_KEY',
+  'SCW_STATE_SECRET_KEY',
+] as const;
+
+/** Where the observer key lives in `infra/.env.<mode>`. */
+export const OBSERVER_KEY_NAMES = { accessKey: 'SCW_OBSERVER_ACCESS_KEY', secretKey: 'SCW_OBSERVER_SECRET_KEY' } as const;
 
 /**
  * Names whose value a person supplies at the prompt, every run: a privileged key and the Pulumi passphrase. The CLI reads none of them from a
@@ -65,9 +74,8 @@ export function dropPromptOnlyEnv(env: NodeJS.ProcessEnv = process.env): string[
 
 /**
  * The values a parsed mode env file exports, and the warnings it earns. A prompt-only name is dropped before its value is looked at, so a
- * `keychain:` or `op:` reference under one is never resolved. The provider's own `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` never come from
- * the file: in it they meant the admin application key, which now travels as `SCW_ADMIN_*`, and in the process env they keep meaning the key the
- * process was started with (a CI runner, a shell export).
+ * `keychain:` or `op:` reference under one is never resolved. A retired name is dropped the same way: the admin application key is gone, and the
+ * provider's own `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` keep meaning the key the process was started with (a CI runner, a shell export).
  */
 export function modeEnvValues(parsed: Record<string, string>, mode: string): { values: Record<string, string>; warnings: string[] } {
   const values = { ...parsed };
@@ -79,18 +87,12 @@ export function modeEnvValues(parsed: Record<string, string>, mode: string): { v
       `infra/.env.${mode}: ${stored.join(', ')} ${stored.length === 1 ? 'is' : 'are'} not read. The CLI asks for a privileged key at the prompt and fetches the passphrase with it: remove ${stored.length === 1 ? 'the line' : 'these lines'}.`,
     );
   }
-  const legacy = ['SCW_ACCESS_KEY', 'SCW_SECRET_KEY'] as const;
-  if (legacy.some((name) => name in values)) {
-    if ('SCW_ADMIN_ACCESS_KEY' in values || 'SCW_ADMIN_SECRET_KEY' in values) {
-      warnings.push(`infra/.env.${mode}: SCW_ACCESS_KEY / SCW_SECRET_KEY are ignored because SCW_ADMIN_* is set; remove them.`);
-    } else {
-      if (values.SCW_ACCESS_KEY !== undefined) values.SCW_ADMIN_ACCESS_KEY = values.SCW_ACCESS_KEY;
-      if (values.SCW_SECRET_KEY !== undefined) values.SCW_ADMIN_SECRET_KEY = values.SCW_SECRET_KEY;
-      warnings.push(
-        `infra/.env.${mode}: SCW_ACCESS_KEY / SCW_SECRET_KEY are read as SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY; rename them (\`${actionCommand('fetch-admin-key')}\` rewrites the file).`,
-      );
-    }
-    for (const name of legacy) delete values[name];
+  const retired = RETIRED_KEY_NAMES.filter((name) => name in values);
+  for (const name of retired) delete values[name];
+  if (retired.length > 0) {
+    warnings.push(
+      `infra/.env.${mode}: ${retired.join(', ')} ${retired.length === 1 ? 'is' : 'are'} not read. The admin application key is retired and the observer key (SCW_OBSERVER_*) reads: remove ${retired.length === 1 ? 'the line' : 'these lines'}.`,
+    );
   }
   return { values, warnings };
 }
@@ -207,4 +209,24 @@ export function writeModeEnvValues(
 ): { path: string; removed: string[] } {
   const path = modeEnvPath(mode);
   return { path, removed: writeEnvValues(path, values, opts) };
+}
+
+/** The observer key a mode's env file holds, read from the file itself; undefined when it holds none. */
+export function observerKeyInModeFile(mode: string): { accessKey: string; secretKey: string } | undefined {
+  const path = modeEnvPath(mode);
+  if (!existsSync(path)) return undefined;
+  const parsed = parseEnvFile(path);
+  const accessKey = parsed[OBSERVER_KEY_NAMES.accessKey]?.trim();
+  const secretKey = parsed[OBSERVER_KEY_NAMES.secretKey]?.trim();
+  return accessKey && secretKey ? { accessKey, secretKey } : undefined;
+}
+
+/**
+ * Write the observer key to `mode`'s env file and to every other mode file in `modes` that holds one, so the one key of the app's observer
+ * serves them all; the retired names leave each file written. Returns the files written.
+ */
+export function writeObserverKey(mode: string, pair: { accessKey: string; secretKey: string }, modes: readonly string[]): string[] {
+  const targets = [mode, ...modes.filter((other) => other !== mode && observerKeyInModeFile(other))];
+  const values = { [OBSERVER_KEY_NAMES.accessKey]: pair.accessKey, [OBSERVER_KEY_NAMES.secretKey]: pair.secretKey };
+  return targets.map((target) => writeModeEnvValues(target, values, { remove: RETIRED_KEY_NAMES }).path);
 }

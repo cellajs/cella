@@ -1,3 +1,4 @@
+import { OBSERVER_KEY_NAMES } from '../utils/env-files';
 import type { FetchLike } from '../utils/fetch-like';
 import { resolveFetch } from '../utils/fetch-like';
 import { getApiKey, IAM_BASE, type IamAuth, listOrganizationPolicies, resolveOrganizationIdViaProject } from './iam-client';
@@ -20,15 +21,14 @@ export function envKeyPair(env: NodeJS.ProcessEnv, accessVar: string, secretVar:
 
 /**
  * Every API key an operator process may hold, resolved in one place so the CLI actions cannot drift apart in which env pair they read.
- * - `admin`: `SCW_ADMIN_ACCESS_KEY` / `SCW_ADMIN_SECRET_KEY` from infra/.env.<mode>, the admin application's key: provider reads and the state bucket.
+ * - `observer`: `SCW_OBSERVER_ACCESS_KEY` / `SCW_OBSERVER_SECRET_KEY` from infra/.env.<mode>, the observer application's key: read-only.
  * - `ambient`: `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` as the process found them (a CI runner, a shell export): shown in diagnostics, never written to the env file.
  * A privileged key is not among them: the operator key and an Owner API key are typed at the prompt and never read from the environment.
- * The deprecated `SCW_STATE_*` pair is read as the admin key for one more release, with a rename warning.
  */
 export interface OperatorIdentity {
-  admin?: KeyPair & { source: 'SCW_ADMIN_*' | 'SCW_STATE_*' };
+  observer?: KeyPair;
   ambient?: KeyPair;
-  /** Deprecated or suspicious configuration, for the CLI to print once. */
+  /** Suspicious configuration, for the CLI to print once. */
   warnings: string[];
 }
 
@@ -44,26 +44,9 @@ function optionalKeyPair(env: NodeJS.ProcessEnv, accessVar: string, secretVar: s
 
 export function resolveOperatorIdentity(env: NodeJS.ProcessEnv = process.env): OperatorIdentity {
   const warnings: string[] = [];
-
-  const adminPair = optionalKeyPair(env, 'SCW_ADMIN_ACCESS_KEY', 'SCW_ADMIN_SECRET_KEY', warnings);
-  let admin: OperatorIdentity['admin'] = adminPair ? { ...adminPair, source: 'SCW_ADMIN_*' } : undefined;
-  const statePair = optionalKeyPair(env, 'SCW_STATE_ACCESS_KEY', 'SCW_STATE_SECRET_KEY', warnings);
-  if (statePair) {
-    if (admin) {
-      warnings.push(
-        'SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY are deprecated and ignored because SCW_ADMIN_* is set: remove the SCW_STATE_* pair.',
-      );
-    } else {
-      admin = { ...statePair, source: 'SCW_STATE_*' };
-      warnings.push(
-        'SCW_STATE_ACCESS_KEY / SCW_STATE_SECRET_KEY are deprecated: rename them to SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY (the admin application key).',
-      );
-    }
-  }
-
+  const observer = optionalKeyPair(env, OBSERVER_KEY_NAMES.accessKey, OBSERVER_KEY_NAMES.secretKey, warnings);
   const ambient = optionalKeyPair(env, 'SCW_ACCESS_KEY', 'SCW_SECRET_KEY', warnings);
-
-  return { admin, ambient, warnings };
+  return { observer, ambient, warnings };
 }
 
 /** Who bears an API key: an organization Owner, a member user, or an IAM application. */
@@ -128,13 +111,14 @@ export async function organizationIdOfKey(pair: KeyPair, projectId: string, opts
 }
 
 /** The engine role of a key's bearer, or the kind of outside principal it is. */
-export type PrincipalRole = 'ci-deploy' | 'admin' | 'operator' | 'boot' | 'vm-service' | 'owner' | 'member' | 'application';
+export type PrincipalRole = 'ci-deploy' | 'admin' | 'operator' | 'observer' | 'boot' | 'vm-service' | 'owner' | 'member' | 'application';
 
 export function classifyPrincipal(desc: KeyDescription, names: PrincipalNames): PrincipalRole {
   if (desc.bearer !== 'application') return desc.bearer;
   if (desc.name === names.ciDeploy) return 'ci-deploy';
   if (desc.name === names.admin) return 'admin';
   if (desc.name === names.operator) return 'operator';
+  if (desc.name === names.observer) return 'observer';
   if (desc.name === names.boot) return 'boot';
   if (desc.name.startsWith(`${names.group}-vm-`)) return 'vm-service';
   return 'application';
@@ -144,6 +128,7 @@ const ROLE_LABELS: Record<PrincipalRole, string> = {
   'ci-deploy': 'CI deploy application',
   admin: 'admin application',
   operator: 'operator application',
+  observer: 'observer application',
   boot: 'boot application',
   'vm-service': 'VM service application',
   owner: 'organization Owner',
@@ -186,7 +171,7 @@ export async function assertIamManager(opts: {
     );
   }
   const role = classifyPrincipal(desc, opts.names);
-  if (role === 'ci-deploy' || role === 'admin' || role === 'boot' || role === 'vm-service') {
+  if (role === 'ci-deploy' || role === 'admin' || role === 'observer' || role === 'boot' || role === 'vm-service') {
     throw new Error(
       `${formatKeyLine(desc, role)} is an application the engine created, not an Owner API key: it cannot write IAM policies or database privileges. Use ${OWNER_KEY_HOWTO}.`,
     );

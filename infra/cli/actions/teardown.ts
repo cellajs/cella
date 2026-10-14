@@ -1,8 +1,9 @@
 import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
 import { actionLabel } from '../../lib/operator-actions';
-import { describeKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { describeKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
+import { projectAccessKey } from '../../lib/scaleway/s3-client';
 import { deleteApplicationCascade, deleteGroup, listManagedPrincipals, removeBootstrapDnsGrant } from '../../lib/scaleway/scaleway-iam';
 import { checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
@@ -10,6 +11,7 @@ import { infraDir } from '../../lib/utils/paths';
 import { acquireStackLockOrExit, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { acquireIdentityKey, acquirePrivilegedKey } from './operator-unlock';
 import { type OwnerKey, printRevokeReminder } from './owner-key';
+import { admitOperatorOrExit } from './privileged-converge';
 
 /** The applications a cleanup may delete, apart from the one the run itself authenticates as: deleting that one revokes the key every later call needs. */
 export function splitOwnApplication<App extends { id: string }>(
@@ -47,11 +49,10 @@ export async function runTeardown(context: InfraContext): Promise<void> {
     return;
   }
 
-  const identity = resolveOperatorIdentity();
   const operatorKey = await acquirePrivilegedKey(context);
   let destroyed = false;
   try {
-    destroyed = await destroyStack(context, operatorKey, identity.admin);
+    destroyed = await destroyStack(context, operatorKey);
   } finally {
     await operatorKey.release();
   }
@@ -66,7 +67,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
     console.info(pc.dim('IAM principals kept. Re-run teardown later or delete them in the console.'));
     return;
   }
-  const ownerKey = operatorKey.pasted ? operatorKey : await acquireIdentityKey(context, 'Deleting the identities writes IAM.');
+  const ownerKey = await acquireIdentityKey(context, 'Deleting the identities writes IAM.');
   try {
     await deleteIdentities(context, ownerKey);
   } finally {
@@ -76,33 +77,22 @@ export async function runTeardown(context: InfraContext): Promise<void> {
 }
 
 /** Destroy the stack's resources and remove it from the backend; true when the destroy completed. */
-async function destroyStack(
-  context: InfraContext,
-  ownerKey: OwnerKey,
-  admin: { accessKey: string; secretKey: string } | undefined,
-): Promise<boolean> {
+async function destroyStack(context: InfraContext, ownerKey: OwnerKey): Promise<boolean> {
   const { appConfig } = context;
   const mode = context.environment;
   const { accessKey, secretKey, organizationId } = ownerKey;
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const targetStack = stackNameFor(context);
 
-  // The state bucket admits only the admin and CI deploy applications, so the run's privileged key drives the provider while the admin application key serves the state side, as in Apply.
-  const env = buildProviderEnv(infraDir, {
-    accessKey,
-    secretKey,
-    projectId: context.projectId,
-    passphrase,
-    organizationId,
-    stateAccessKey: admin?.accessKey,
-    stateSecretKey: admin?.secretKey,
-  });
+  // The operator key serves both sides, as in Apply; buckets written before it was admitted let it in first.
+  await admitOperatorOrExit(context, { ...ownerKey, passphrase, stack: targetStack });
+  const env = buildProviderEnv(infraDir, { accessKey, secretKey, projectId: context.projectId, passphrase, organizationId });
   pulumiLoginAndSelect(infraDir, env, appConfig, targetStack);
 
   const stackLock = await acquireStackLockOrExit({
     appConfig,
-    accessKey: admin?.accessKey ?? accessKey,
-    secretKey: admin?.secretKey ?? secretKey,
+    accessKey: projectAccessKey(accessKey, context.projectId),
+    secretKey,
     stack: targetStack,
     operation: 'teardown',
   });

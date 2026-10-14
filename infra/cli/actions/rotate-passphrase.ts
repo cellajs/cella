@@ -9,7 +9,6 @@ import { infraDir } from '../../lib/utils/paths';
 import { passphraseCustody, rememberPassphrase } from '../session';
 import {
   acquireStackLockOrExit,
-  adminKeyOrPrompt,
   confirmPassphraseStored,
   endAction,
   type InfraContext,
@@ -17,6 +16,7 @@ import {
   resolveVerifiedPassphrase,
   stackNameFor,
 } from '../shared';
+import { operatorKeys } from './operator-unlock';
 
 /**
  * Rotates and verifies the Pulumi passphrase, then synchronizes it to the GitHub environment.
@@ -41,13 +41,14 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
 
   console.info(
     pc.dim(
-      '\nRotate passphrase: re-encrypts the stack state and Pulumi.<stack>.yaml with a freshly generated passphrase, then syncs it to GitHub. No Scaleway resources are touched: the admin application key does the work, and your operator key fetches the current passphrase and stores the new one.\n',
+      '\nRotate passphrase: re-encrypts the stack state and Pulumi.<stack>.yaml with a freshly generated passphrase, then syncs it to GitHub. No Scaleway resources are touched: your operator key does the work, fetches the current passphrase and stores the new one.\n',
     ),
   );
 
   const oldPassphrase = await resolveVerifiedPassphrase(context.stackYaml);
 
-  const { accessKey, secretKey } = await adminKeyOrPrompt(context);
+  const { key, state } = await operatorKeys(context);
+  const { accessKey, secretKey } = key;
   const targetStack = stackNameFor(context);
 
   const env = buildProviderEnv(infraDir, { accessKey, secretKey, projectId: context.projectId, passphrase: oldPassphrase });
@@ -56,8 +57,8 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
   // Hold the stack lock across the re-encryption: a CI deploy reading state mid-rotation would decrypt against the wrong passphrase.
   const stackLock = await acquireStackLockOrExit({
     appConfig: context.appConfig,
-    accessKey,
-    secretKey,
+    accessKey: state.accessKey,
+    secretKey: state.secretKey,
     stack: targetStack,
     operation: 'rotate-passphrase',
   });

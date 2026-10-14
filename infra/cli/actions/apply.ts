@@ -1,15 +1,15 @@
-import { actionCommand, actionLabel } from '../../lib/operator-actions';
-import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { actionLabel } from '../../lib/operator-actions';
 import { pc } from '../../lib/utils/cli-output';
-import { endAction, type InfraContext } from '../shared';
+import { endAction, type InfraContext, resolveVerifiedPassphrase, stackNameFor } from '../shared';
+import { acquirePrivilegedKey } from './operator-unlock';
 import { printRevokeReminder } from './owner-key';
-import { askToApply, type ReviewedPlan, reviewPlan } from './plan';
-import { runPrivilegedConverge } from './privileged-converge';
+import { askToApply, reviewPlan } from './plan';
+import { admitOperatorOrExit, runPrivilegedConverge } from './privileged-converge';
 
 /**
  * Plan, ask, then one `pulumi up` with the operator key in SCW_* env, for changes to privileged resources (DB, VPC, private network, buckets, DNS) the read-only CI key cannot make.
  * The machine policies and the registry's applications are IAM, written by `pnpm infra identity` with an Owner API key, never by this apply.
- * The admin application key makes the plan, so the privileged key is asked for and the stack lock taken only for a plan the operator said yes to.
+ * The plan is made before the stack lock, so the lock is taken only for a plan the operator said yes to.
  * It runs against a bootstrapped stack with live compute, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
  */
 export async function runApply(context: InfraContext): Promise<void> {
@@ -17,20 +17,14 @@ export async function runApply(context: InfraContext): Promise<void> {
     pc.dim(`\n${actionLabel('apply')}: plan what differs between the code and the live stack, ask, then apply it with your operator key.\n`),
   );
 
-  const { admin } = resolveOperatorIdentity();
-  let reviewed: ReviewedPlan | undefined;
-  if (admin) {
-    reviewed = await reviewPlan(context, admin);
-    if (!(await askToApply(context.environment))) {
-      console.info('Declined; nothing applied.');
-      return;
-    }
-  } else {
-    console.info(
-      pc.dim(
-        `No admin application key on this machine (\`${actionCommand('fetch-admin-key')}\` stores it): the plan is made with your operator key, under the stack lock.`,
-      ),
-    );
+  // The plan is made before the lock, so the operator says yes before anything is held; the lock comes with the `up`.
+  const operator = await acquirePrivilegedKey(context);
+  const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
+  await admitOperatorOrExit(context, { ...operator, passphrase, stack: stackNameFor(context) });
+  const reviewed = await reviewPlan(context, operator);
+  if (!(await askToApply(context.environment))) {
+    console.info('Declined; nothing applied.');
+    return;
   }
 
   console.warn(

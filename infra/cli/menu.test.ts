@@ -15,8 +15,8 @@ import {
   visibleRows,
 } from './menu';
 
-const bootstrapped: MenuState = { stackState: 'bootstrapped', environment: 'staging', encrypted: true, hasAdminKey: true, dbExposed: false };
-const partial: MenuState = { ...bootstrapped, stackState: 'partial', encrypted: false, hasAdminKey: false };
+const bootstrapped: MenuState = { stackState: 'bootstrapped', environment: 'staging', encrypted: true, dbExposed: false };
+const partial: MenuState = { ...bootstrapped, stackState: 'partial', encrypted: false };
 
 const plain = (text: string) => stripVTControlCharacters(text);
 
@@ -35,14 +35,14 @@ describe('mainMenuItems', () => {
       '  Show status              read-only',
       '  Review & apply changes   operator key',
       'Change',
-      '  Rotate keys & secrets ›  CI key, admin key, passphrase, operator key',
+      '  Rotate keys & secrets ›  CI key, observer key, passphrase, operator key',
       '  Manage runtime secrets   operator key',
       '  Update identities        Owner key',
       'Database',
       '  Open public DB access ›  operator key · temporary, locked to your IP',
       '  Reset database           operator key · DESTRUCTIVE',
       'Recover',
-      '  Repair stack ›           stack lock, setup, admin key',
+      '  Repair stack ›           stack lock, setup',
       'Rare',
       '  Tear down stack          Owner key · DESTRUCTIVE',
       '',
@@ -56,14 +56,14 @@ describe('mainMenuItems', () => {
       '  Show status              read-only',
       '- Review & apply changes (needs a bootstrapped stack: run "Resume setup")',
       'Change',
-      '  Rotate keys & secrets ›  CI key, admin key, passphrase, operator key',
+      '  Rotate keys & secrets ›  CI key, observer key, passphrase, operator key',
       '  Manage runtime secrets   operator key',
       '  Update identities        Owner key',
       'Database',
       '- Open public DB access › (needs a bootstrapped stack: run "Resume setup")',
       '- Reset database (needs a bootstrapped stack: run "Resume setup")',
       'Recover',
-      '  Repair stack ›           stack lock, setup, admin key',
+      '  Repair stack ›           stack lock, setup',
       'Rare',
       '  Tear down stack          Owner key · DESTRUCTIVE',
       '',
@@ -117,12 +117,7 @@ describe('pickItems', () => {
       '  Set up operator key  Owner key',
       '  ← Back',
     ]);
-    expect(render(pickItems('repair', bootstrapped))).toEqual([
-      '  Unlock stack                 operator key',
-      '  Resume setup                 operator key',
-      '  Fetch admin application key  operator key',
-      '  ← Back',
-    ]);
+    expect(render(pickItems('repair', bootstrapped))).toEqual(['  Unlock stack  operator key', '  Resume setup  operator key', '  ← Back']);
     expect(pickItems('repair', bootstrapped).at(-1)?.value).toBe(BACK);
   });
 
@@ -147,7 +142,7 @@ describe('pickItems', () => {
     for (const id of ['rotate', 'db-open', 'repair'] as const) {
       for (const choice of pickItems(id, bootstrapped).filter((entry) => entry.value !== BACK)) {
         expect(choice.description).toMatch(
-          /(Needs your operator key|Needs your Owner API key|Uses the admin application key|Works without a Scaleway key)\.$/,
+          /(Needs your operator key|Needs your Owner API key|Reads with the observer key|Works without a Scaleway key)\.$/,
         );
       }
     }
@@ -162,14 +157,9 @@ describe('disabledReason', () => {
   });
 
   it('leaves the actions that repair a stack available on a partial one', () => {
-    for (const id of ['resume', 'rotate-keys', 'unlock', 'teardown', 'fetch-admin-key', 'secrets', 'status'] as const) {
+    for (const id of ['resume', 'rotate-keys', 'unlock', 'teardown', 'secrets', 'status'] as const) {
       expect(disabledReason(id, partial)).toBeUndefined();
     }
-  });
-
-  it('asks for the admin key before a GeoIP refresh', () => {
-    expect(disabledReason('geoip-refresh', { ...bootstrapped, hasAdminKey: false })).toBe('needs the admin key: run "Fetch admin application key"');
-    expect(disabledReason('geoip-refresh', bootstrapped)).toBeUndefined();
   });
 });
 
