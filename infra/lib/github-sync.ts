@@ -37,6 +37,11 @@ export function githubSecretEntries(opts: Pick<GithubSyncOptions, 'ciKey' | 'pas
   return entries;
 }
 
+/** The `gh secret set` arguments for one environment secret. They hold no value: it is fed on stdin. Pure. */
+export function githubSecretSetArgs(name: string, environment: string, ownerRepo: string): string[] {
+  return ['secret', 'set', name, '--env', environment, '--repo', ownerRepo];
+}
+
 const defaultRun = (cmd: string, args: string[], opts: { cwd: string; input?: string }): number =>
   spawnSync(cmd, args, {
     cwd: opts.cwd,
@@ -62,10 +67,11 @@ export async function syncGithubEnvironment(opts: GithubSyncOptions): Promise<bo
     return false;
   }
 
-  const step = (label: string, cmd: string, args: string[], input?: string) => {
+  const step = (label: string, cmd: string, args: string[], input?: string): boolean => {
     console.info(`\n→ ${label}\n  $ ${cmd} ${args.join(' ')}`);
     const code = run(cmd, args, { cwd: opts.repoRoot, input });
     if (code !== 0) console.error(`${crossMark} ${label} failed (exit ${code})`);
+    return code === 0;
   };
 
   step(`Ensure GitHub Environment "${opts.environment}"`, 'gh', [
@@ -76,15 +82,16 @@ export async function syncGithubEnvironment(opts: GithubSyncOptions): Promise<bo
     '--silent',
   ]);
 
+  const notWritten: string[] = [];
   for (const [name, value] of githubSecretEntries(opts)) {
-    // The secret value is fed on stdin via `--body-file -`, never as an argv
-    // element, so it cannot leak through `ps`, execve audit logs, or the echoed
-    // command above (the args now hold no secret to redact).
-    step(
-      `gh secret set ${name} (env: ${opts.environment})`,
-      'gh',
-      ['secret', 'set', name, '--env', opts.environment, '--repo', ownerRepo, '--body-file', '-'],
-      value,
+    // The value goes in on stdin, which `gh secret set` reads when no `--body` is given. It is never an argv element, so it cannot leak
+    // through `ps`, execve audit logs, or the echoed command above.
+    const written = step(`gh secret set ${name} (env: ${opts.environment})`, 'gh', githubSecretSetArgs(name, opts.environment, ownerRepo), value);
+    if (!written) notWritten.push(name);
+  }
+  if (notWritten.length > 0) {
+    console.warn(
+      `\n${warningMark} GitHub Environment "${opts.environment}" does not hold ${notWritten.join(', ')}: deploys from GitHub fail until they are written. Fix the cause above and run the action again.`,
     );
   }
   return true;
