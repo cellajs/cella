@@ -1,15 +1,7 @@
 import type { EngineConfig } from '../../config/engine-config';
-import { principalSecretCondition } from '../runtime-secrets';
-import { principalServices } from '../services';
 import { DEPLOY_PERMISSION_SETS } from './deploy-policy';
-import {
-  BACKEND_S3_PERMISSION_SETS,
-  BOOT_PROJECT_PERMISSION_SETS,
-  BUILDER_PROJECT_PERMISSION_SETS,
-  SERVICE_SECRET_PERMISSION_SETS,
-} from './permissions';
+import { machinePolicies } from './machine-policies';
 import { principalNames } from './principals';
-import { bootKeyCondition } from './secret-paths';
 
 /** One grant assertion: the exact permission sets and secret condition a principal must hold, and whether it must hold no key at all. */
 export interface GrantRow {
@@ -20,25 +12,18 @@ export interface GrantRow {
 }
 
 /**
- * One assertion row per principal, built by the same shared builders the Pulumi program uses so the deploy's grant-verification step and the
- * Apply's self-check compare strings, not semantics. Principals follow the registry; their keys are checked where the deploy stages them.
+ * One assertion row per principal, read from the policies Update identities writes (`machinePolicies`), so the deploy's grant check and the
+ * apply's self-check compare the live policies with what was declared, and the two cannot drift. A policy whose condition spans several rules
+ * asserts it whole. The deploy key's rules carry two conditions (writes and values), so its row asserts the sets alone.
  */
 export function buildGrantRows(appConfig: EngineConfig): GrantRow[] {
   const names = principalNames(appConfig.slug, appConfig.mode);
   return [
-    ...principalServices().map((svc) => ({
-      app: names.vmService(svc.slug),
-      sets: [...SERVICE_SECRET_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])],
-      condition: principalSecretCondition(appConfig.slug, appConfig.mode, svc.slug),
+    ...machinePolicies(appConfig, '').map((policy) => ({
+      app: policy.applicationName,
+      sets: [...new Set(policy.rules.flatMap((rule) => rule.permission_set_names))],
+      condition: policy.rules.flatMap((rule) => (rule.condition ? [rule.condition] : [])).join(' || '),
     })),
-    {
-      app: names.boot,
-      sets: [...BOOT_PROJECT_PERMISSION_SETS, ...SERVICE_SECRET_PERMISSION_SETS],
-      condition: bootKeyCondition(appConfig.slug, appConfig.mode),
-    },
-    // The builder's rules are unconditioned: each bucket's policy says where it writes.
-    { app: names.builder, sets: [...BUILDER_PROJECT_PERMISSION_SETS], condition: '' },
-    // The CI app asserts its own grant too: exact set union (missing sets fail deploys later and non-read-only extras are an escalation).
     { app: names.ciDeploy, sets: [...new Set(DEPLOY_PERMISSION_SETS)], condition: '' },
   ];
 }
