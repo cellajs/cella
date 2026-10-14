@@ -3,7 +3,7 @@ import { formatPostgresUrl } from '../lib/postgres-url';
 import type { RuntimeSecretDefinition } from '../lib/runtime-secrets';
 import { POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-privileges';
 import type { SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
-import { type EnsureDatabaseRdb, type EnsureDatabaseSecrets, ensureDatabase } from './ensure-database';
+import { type EnsureDatabaseRdb, type EnsureDatabaseSecrets, ensureDatabase, generateRolePassword } from './ensure-database';
 
 const root = '/app-production';
 const endpoint = { instanceId: 'inst', privateIp: '10.0.0.9', port: '5432', databaseName: 'app' };
@@ -176,5 +176,13 @@ describe('ensureDatabase', () => {
       log: () => {},
     });
     expect(instances).toEqual(['inst-uuid']);
+  });
+
+  it('makes passwords the database API accepts: every required class, and URL-safe', () => {
+    for (let n = 0; n < 200; n++) {
+      const password = generateRolePassword();
+      expect(password).toMatch(/^[A-Za-z0-9._~-]{32}$/);
+      for (const required of [/[0-9]/, /[A-Z]/, /[a-z]/, /[._~-]/]) expect(password).toMatch(required);
+    }
   });
 });

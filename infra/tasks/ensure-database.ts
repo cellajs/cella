@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto';
 import { formatPostgresUrl, passwordOfPostgresUrl } from '../lib/postgres-url';
 import { databaseRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets';
 import { expectedDbPrivileges, POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-privileges';
@@ -7,7 +8,6 @@ import { secretCopyContainers } from '../lib/scaleway/secret-copies';
 import { engineSecretPath } from '../lib/scaleway/secret-paths';
 import { readStoreOutputs } from '../lib/stack/store-outputs';
 import type { DatabaseRole } from '../lib/stores';
-import { generateSecretValue } from './ensure-secrets';
 
 /** The database API calls the task needs, so a test passes its own. */
 export interface EnsureDatabaseRdb {
@@ -34,6 +34,28 @@ export interface DatabaseEndpoint {
 }
 
 const ROLES: readonly DatabaseRole[] = ['admin', 'runtime'];
+
+const LOWER = 'abcdefghijklmnopqrstuvwxyz';
+const UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const DIGITS = '0123456789';
+// URL-unreserved specials (RFC 3986): the password goes into connection strings.
+const SPECIAL = '-_.~';
+
+/**
+ * A fresh role password: 32 characters with at least two of each class Scaleway's database API requires (a digit, an uppercase and a
+ * lowercase letter, a special character), the rest from all four, in random order.
+ */
+export function generateRolePassword(): string {
+  const all = LOWER + UPPER + DIGITS + SPECIAL;
+  const pick = (from: string) => from[randomInt(from.length)] as string;
+  const chars = [LOWER, LOWER, UPPER, UPPER, DIGITS, DIGITS, SPECIAL, SPECIAL].map(pick);
+  while (chars.length < 32) chars.push(pick(all));
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1);
+    [chars[i], chars[j]] = [chars[j] as string, chars[i] as string];
+  }
+  return chars.join('');
+}
 
 /** The engine-folder container that keeps a role's password, which only the operator reads. */
 export function rolePasswordSecretName(role: DatabaseRole): string {
@@ -64,7 +86,7 @@ export async function ensureDatabase(opts: {
   log?: (message: string) => void;
 }): Promise<{ passwords: Record<DatabaseRole, PasswordSource>; created: string[]; written: string[] }> {
   const log = opts.log ?? ((message) => console.info(message));
-  const generate = opts.generate ?? generateSecretValue;
+  const generate = opts.generate ?? generateRolePassword;
   const definitions = opts.definitions ?? databaseRuntimeSecrets();
   const engineFolder = engineSecretPath(opts.slug, opts.mode);
   const { databaseName } = opts.endpoint;
