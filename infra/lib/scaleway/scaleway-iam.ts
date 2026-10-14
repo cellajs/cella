@@ -174,21 +174,6 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
   return { accessKey: apiKey.access_key, secretKey: apiKey.secret_key, applicationId: app.id, organizationId };
 }
 
-/**
- * Replace the rules of the policy named `policyName` in place. The policy keeps existing between the old rules and the new ones, so a caller
- * whose own rights come from this policy keeps them throughout, where deleting and recreating it would cut the caller off in between.
- */
-export async function setPolicyRules(opts: {
-  callerSecretKey: string;
-  organizationId: string;
-  policyName: string;
-  rules: PolicyRule[];
-}): Promise<void> {
-  const policyId = await findPolicyIdByName(opts.callerSecretKey, opts.organizationId, opts.policyName);
-  if (!policyId) throw new Error(`no IAM policy named '${opts.policyName}'`);
-  await scwSend({ secretKey: opts.callerSecretKey }, 'PUT', `${IAM_BASE}/rules`, { policy_id: policyId, rules: opts.rules });
-}
-
 /** Find an IAM policy id by exact name within an organization. Detects an orphaned policy that must be adopted into Pulumi state. */
 async function findPolicyIdByName(secretKey: string, organizationId: string, name: string): Promise<string | undefined> {
   const { policies } = await scwFetch<{ policies: ScwPolicy[] }>(

@@ -8,7 +8,7 @@ import { checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-outpu
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { acquireStackLockOrExit, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
-import { acquirePrivilegedKey } from './operator-unlock';
+import { acquireIdentityKey } from './operator-unlock';
 import { type OwnerKey, printRevokeReminder } from './owner-key';
 
 /** The applications a cleanup may delete, apart from the one the run itself authenticates as: deleting that one revokes the key every later call needs. */
@@ -48,8 +48,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   }
 
   const identity = resolveOperatorIdentity();
-  // A destroy outlasts the usual half hour of a minted key.
-  const ownerKey = await acquirePrivilegedKey(context, { ttlMs: 2 * 60 * 60_000 });
+  const ownerKey = await acquireIdentityKey(context, 'A teardown destroys the machine policies and deletes the identities.');
   try {
     await destroyStack(context, ownerKey, identity.admin);
   } finally {

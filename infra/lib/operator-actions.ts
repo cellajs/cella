@@ -29,11 +29,11 @@ export const OPERATOR_ACTIONS = {
     label: 'Review & apply changes',
     key: 'operator',
     description:
-      'See what differs between the code and the live stack, then apply it on your yes: database, VPC, IAM principals and policies. Answer no to only look.',
+      'See what differs between the code and the live stack, then apply it on your yes: database, VPC, buckets, DNS. A plan that changes a machine policy is applied with `--owner`. Answer no to only look.',
   },
   'rotate-keys': {
     label: 'Rotate keys',
-    key: 'operator',
+    key: 'owner',
     description: 'Replace the CI deploy key and the admin application key with fresh ones (the admin key is rewritten in infra/.env.<mode>).',
   },
   'rotate-passphrase': {
@@ -44,12 +44,8 @@ export const OPERATOR_ACTIONS = {
   'operator-key': {
     label: 'Set up operator key',
     key: 'owner',
-    description: 'Create the operator application and a fresh key that works from your dedicated IP address only. Replaces an earlier operator key.',
-  },
-  'operator-address': {
-    label: 'Change dedicated IP',
-    key: 'operator',
-    description: 'Change the address the operator key works from, from the current dedicated address.',
+    description:
+      "Create the app's operator application and a fresh key that works from your dedicated IP address only, in every environment. Replaces an earlier operator key; run it again to change the address.",
   },
   secrets: {
     label: 'Manage runtime secrets',
@@ -98,7 +94,7 @@ export const OPERATOR_ACTIONS = {
   },
   teardown: {
     label: 'Tear down stack',
-    key: 'operator',
+    key: 'owner',
     description: 'DESTRUCTIVE: destroy every stack resource, then optionally delete the IAM principals.',
   },
 } as const satisfies Record<string, OperatorAction>;
@@ -150,7 +146,7 @@ export const MENU_ROWS = {
   rotate: {
     group: 'change',
     label: 'Rotate keys & secrets',
-    actions: ['rotate-keys', 'rotate-passphrase', 'operator-key', 'operator-address'],
+    actions: ['rotate-keys', 'rotate-passphrase', 'operator-key'],
     hint: 'CI key, admin key, passphrase, operator key',
     description: 'Replace the CI deploy key and the admin application key, re-encrypt the stack, or set up the operator key and its dedicated IP.',
   },
@@ -193,7 +189,7 @@ export const MENU_ROWS = {
     group: 'rare',
     label: OPERATOR_ACTIONS.teardown.label,
     actions: ['teardown'],
-    hint: 'operator key · DESTRUCTIVE',
+    hint: 'Owner key · DESTRUCTIVE',
     description: OPERATOR_ACTIONS.teardown.description,
   },
 } as const satisfies Record<string, MenuRow>;

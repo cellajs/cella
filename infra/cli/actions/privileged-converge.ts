@@ -6,6 +6,7 @@ import { actionCommand, menuPath } from '../../lib/operator-actions';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
+import { projectAccessKey } from '../../lib/scaleway/s3-client';
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { planBasisChanges, readPlanBasis } from '../../lib/stack/plan-basis';
 import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
@@ -13,10 +14,10 @@ import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from 
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
+import { ensureRegistryPrincipals, missingRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
-import { acquirePrivilegedKey } from './operator-unlock';
+import { acquireIdentityKey, acquirePrivilegedKey } from './operator-unlock';
 import { askToApply, type ReviewedPlan, showPlan } from './plan';
 
 export interface PrivilegedConvergeOptions {
@@ -43,6 +44,16 @@ export interface PrivilegedConvergeOptions {
   debugProvider?: boolean;
   /** Read-only check after a completed `up`, while the run's privileged key is still valid; a throw is reported as a warning. */
   afterUp?: (env: NodeJS.ProcessEnv) => Promise<void>;
+  /**
+   * Run on an Owner API key: for a plan that changes a machine policy, or a registry that needs an identity made. Both write IAM, which the
+   * operator key cannot.
+   */
+  identity?: boolean;
+}
+
+/** True when a failed `up` was refused a write of IAM: an application, a policy or a key. */
+export function refusedOnIam(output: string): boolean {
+  return /insufficient permissions:\s*\w+\s+\S*(polic|application|api_key|iam)/i.test(output);
 }
 
 export interface PrivilegedConvergeResult {
@@ -73,7 +84,11 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
 
   const identity = resolveOperatorIdentity();
   const names = principalNames(appConfig.slug, context.environment);
-  const ownerKey = await acquirePrivilegedKey(context);
+  const ownerKey = opts.identity
+    ? await acquireIdentityKey(context, 'This apply changes identities: machine policies, or the applications a registry change needs.')
+    : await acquirePrivilegedKey(context);
+  // An Owner API key writes IAM; the operator key does not.
+  const writesIam = ownerKey.pasted;
   const { organizationId } = ownerKey;
   const stack = stackNameFor(context);
 
@@ -92,7 +107,8 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
 
   // Lock the stack through the control bucket to exclude concurrent operators and CI.
   // Every exit path must release. The hard-failure paths release before they print and end the action, and the guard stops the double release when the finally below runs too.
-  const stateKey = identity.admin ?? ownerKey;
+  // Without an admin key the run's own key serves the state side, naming this project: an operator key is made for one environment's project.
+  const stateKey = identity.admin ?? { accessKey: projectAccessKey(ownerKey.accessKey, projectId), secretKey: ownerKey.secretKey };
   const stackLock = await acquireStackLockOrExit({
     appConfig,
     accessKey: stateKey.accessKey,
@@ -129,21 +145,39 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
     try {
       env.SCW_DEFAULT_ORGANIZATION_ID = organizationId;
 
-      // Registry principals are privileged like the policies they anchor: create any missing vm-<service>/boot application here, so a registry change converges in this one run. Idempotent; a failure only warns because a missing application still fails the `up` with guidance.
-      console.info(pc.dim(`\n→ Ensuring registry IAM principals (the '${names.vmService('<service>')}' and '${names.boot}' applications)…`));
-      try {
-        await ensureRegistryPrincipals({
-          callerSecretKey: ownerKey.secretKey,
-          projectId,
-          slug: appConfig.slug,
-          mode: context.environment,
-          organizationId: env.SCW_DEFAULT_ORGANIZATION_ID,
-          singleVM: appConfig.singleVM ?? false,
+      // Registry principals anchor the machine policies. An Owner API key creates any that is missing, so a registry change converges in this
+      // one run. The operator key writes no IAM: it finds out which ones are missing and stops, since the `up` would fail on them halfway.
+      const registry = {
+        projectId,
+        slug: appConfig.slug,
+        mode: context.environment,
+        organizationId,
+        singleVM: appConfig.singleVM ?? false,
+      };
+      if (writesIam) {
+        console.info(pc.dim(`\n→ Ensuring registry IAM principals (the '${names.vmService('<service>')}' and '${names.boot}' applications)…`));
+        try {
+          await ensureRegistryPrincipals({ ...registry, callerSecretKey: ownerKey.secretKey });
+        } catch (error) {
+          console.warn(
+            `${warningMark} Could not ensure registry principals (${errorMessage(error)}); \`pulumi up\` fails at requirePrincipalId if one is missing.`,
+          );
+        }
+      } else {
+        const missing = await missingRegistryPrincipals({ ...registry, secretKey: ownerKey.secretKey }).catch((error) => {
+          console.warn(`${warningMark} Could not check the registry principals (${errorMessage(error)}).`);
+          return [] as string[];
         });
-      } catch (error) {
-        console.warn(
-          `${warningMark} Could not ensure registry principals (${errorMessage(error)}); \`pulumi up\` fails at requirePrincipalId if one is missing.`,
-        );
+        if (missing.length > 0) {
+          await releaseAll();
+          console.error(
+            `${warningMark} The service registry needs ${missing.length === 1 ? 'an identity that does' : 'identities that do'} not exist yet: ${missing.join(', ')}.`,
+          );
+          console.error(
+            `  Creating one writes IAM, which the operator key cannot. Apply with your Owner API key: \`${actionCommand('apply')} --owner\`.`,
+          );
+          endAction(1);
+        }
       }
 
       // Reconcile gen/sha from live state before `up`: a stale committed Pulumi.<stack>.yaml would converge compute back to an old generation and destroy newer live VMs.
@@ -209,6 +243,12 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
             pruneOrphanedDeletes(orphans, stack, infraDir, env);
             continue;
           }
+        }
+        if (!writesIam && refusedOnIam(output)) {
+          console.error(
+            `\n${warningMark} The plan changes IAM, which the operator key cannot write. Apply it with your Owner API key: \`${actionCommand('apply')} --owner\`.`,
+          );
+          break;
         }
         if (!(await confirm({ message: 'Retry pulumi up?', default: false }))) break;
       }

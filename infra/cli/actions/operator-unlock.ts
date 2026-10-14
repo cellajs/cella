@@ -1,12 +1,6 @@
+import { input } from '@inquirer/prompts';
 import { actionCommand } from '../../lib/operator-actions';
-import {
-  createApiKey,
-  deleteApiKey,
-  fetchAppRulesByName,
-  type GrantedRule,
-  IAM_BASE,
-  resolveApplicationIdByName,
-} from '../../lib/scaleway/iam-client';
+import { fetchAppRulesByName, type GrantedRule, IAM_BASE, listApiKeys, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
 import { ipAllowed, ipConditionCidrs } from '../../lib/scaleway/ip-lock';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
@@ -14,25 +8,21 @@ import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { scwErrorStatus, scwFetch } from '../../lib/scaleway/scw-fetch';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
-import { pollUntil } from '../../lib/utils/retry';
 import { readCustodiedPassphrase, storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { maskedSecret } from '../prompts/masked-secret';
 import {
-  forgetOperatorSecret,
+  forgetOperatorKey,
   type OperatorLock,
+  rememberedOperatorKey,
   rememberedOperatorLock,
-  rememberedOperatorSecret,
+  rememberOperatorKey,
   rememberOperatorLock,
-  rememberOperatorSecret,
   setPassphraseCustody,
 } from '../session';
 import { endAction, type InfraContext } from '../shared';
 import { acquireOwnerKey, type OwnerKey } from './owner-key';
 
 type StackRef = Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>;
-
-/** Lifetime of the key an action mints from the operator key. */
-const MINTED_KEY_TTL_MS = 30 * 60_000;
 
 /**
  * What the operator application's rules say about its address lock. Every rule must carry the same readable condition: one rule without it
@@ -124,7 +114,7 @@ export function publicAddress(): Promise<string | undefined> {
 
 /** Print why a call with the operator key failed, drop the key from the session, and end the action. */
 async function endOnRefusal(stack: StackRef, names: PrincipalNames, error: unknown): Promise<never> {
-  forgetOperatorSecret();
+  forgetOperatorKey();
   const status = scwErrorStatus(error);
   const [first, ...rest] = refusalLines({
     status,
@@ -139,10 +129,25 @@ async function endOnRefusal(stack: StackRef, names: PrincipalNames, error: unkno
 }
 
 interface Unlocked {
-  /** The operator key's own secret key: authenticates API calls, and mints the short-lived keys actions run on. */
+  /** The operator key: it authenticates API calls and every privileged action of the session. */
+  accessKey: string;
   secret: string;
   organizationId: string;
   applicationId: string;
+}
+
+/**
+ * The access key that belongs to a secret key of the operator application. The application holds one key, the one `operator-key` made, so the
+ * operator pastes the secret key alone. An application that holds several is asked which one.
+ */
+async function operatorAccessKey(secret: string, organizationId: string, applicationId: string, name: string): Promise<string> {
+  const keys = (await listApiKeys({ secretKey: secret }, organizationId, applicationId)).map((key) => key.access_key);
+  const [only] = keys;
+  if (keys.length === 1 && only) return only;
+  if (keys.length === 0) throw new Error(`'${name}' holds no API key`);
+  const typed = (await input({ message: `'${name}' holds ${keys.length} keys. Access key of the one you pasted` })).trim();
+  if (!keys.includes(typed)) throw new Error(`'${name}' holds no key ${typed}`);
+  return typed;
 }
 
 /**
@@ -151,9 +156,9 @@ interface Unlocked {
  */
 async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promise<Unlocked | undefined> {
   const names = principalNames(stack.appConfig.slug, stack.environment);
-  const remembered = rememberedOperatorSecret();
+  const remembered = rememberedOperatorKey();
   const secret =
-    remembered ??
+    remembered?.secretKey ??
     (
       await maskedSecret({ message: `Operator key of '${names.operator}', secret key${opts.optional ? ` ${pc.dim(`(${opts.optional})`)}` : ''}` })
     ).trim();
@@ -171,14 +176,22 @@ async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promis
     return endOnRefusal(stack, names, error);
   }
   if (!applicationId) {
-    forgetOperatorSecret();
+    forgetOperatorKey();
     console.error(
       `${crossMark} This organization has no '${names.operator}' application. Create it once with your Owner API key: \`${actionCommand('operator-key')}\`.`,
     );
     return endAction(1);
   }
-  rememberOperatorSecret(secret);
-  return { secret, organizationId, applicationId };
+  let accessKey: string;
+  try {
+    accessKey = remembered?.accessKey ?? (await operatorAccessKey(secret, organizationId, applicationId, names.operator));
+  } catch (error) {
+    forgetOperatorKey();
+    console.error(`${crossMark} ${errorMessage(error)}.`);
+    return endAction(1);
+  }
+  rememberOperatorKey({ accessKey, secretKey: secret });
+  return { accessKey, secret, organizationId, applicationId };
 }
 
 /** One IAM read with a key: true when Scaleway accepts it from this address. */
@@ -189,49 +202,28 @@ export async function keyAccepted(secretKey: string, organizationId: string): Pr
   );
 }
 
+let operatorNoticeShown = false;
+
 /**
- * The key for a privileged action under the operator application: a key minted from the operator key for this action alone, revoked when the
- * action ends. It belongs to the operator application, so Scaleway accepts it from the dedicated address only. The operator key itself never
- * reaches Pulumi or a child process: the session holds its secret key in memory and nothing else.
+ * The key for a privileged action under the operator application: the operator key itself, pasted once per session and kept in this
+ * process's memory. Scaleway accepts it from the dedicated address only, and it holds no IAM write, so nothing is minted from it and nothing
+ * is left to revoke when the action ends.
  */
-export async function acquireOperatorKey(stack: StackRef, opts: { ttlMs?: number } = {}): Promise<OwnerKey> {
+export async function acquireOperatorKey(stack: StackRef): Promise<OwnerKey> {
   const names = principalNames(stack.appConfig.slug, stack.environment);
   const unlocked = await unlock(stack);
   if (!unlocked) return endAction(1);
-  const { secret, organizationId, applicationId } = unlocked;
-  const expiresAt = new Date(Date.now() + (opts.ttlMs ?? MINTED_KEY_TTL_MS)).toISOString();
-  const minted = await createApiKey(
-    { secretKey: secret },
-    {
-      applicationId,
-      description: `${stack.appConfig.slug}-${stack.environment} privileged run (auto-revoked)`,
-      defaultProjectId: stack.projectId,
-      expiresAt,
-    },
-  ).catch((error) => endOnRefusal(stack, names, error));
-
-  // A key is usable a moment after its creation; an action must not start on one Scaleway does not take yet.
-  const ready = await pollUntil(() => keyAccepted(minted.secret_key, organizationId), { attempts: 10, intervalMs: 3_000 });
-  if (!ready) console.warn(`${warningMark} Scaleway does not accept the minted key ${minted.access_key} yet; the action may fail on its first call.`);
-  console.info(
-    `${pc.dim('Operator key:')} ${names.operator}\n  ${pc.dim('minted')} ${minted.access_key} ${pc.dim(`for this action, expires ${expiresAt.slice(0, 16).replace('T', ' ')} UTC, revoked when it ends`)}`,
-  );
-  let released = false;
+  if (!operatorNoticeShown) {
+    operatorNoticeShown = true;
+    console.info(`${pc.dim('Operator key:')} ${names.operator} ${pc.dim(unlocked.accessKey)}`);
+  }
   return {
-    accessKey: minted.access_key,
-    secretKey: minted.secret_key,
-    organizationId,
-    minted: true,
+    accessKey: unlocked.accessKey,
+    secretKey: unlocked.secret,
+    organizationId: unlocked.organizationId,
+    minted: false,
     pasted: false,
-    async release() {
-      if (released) return;
-      released = true;
-      await deleteApiKey({ secretKey: secret }, minted.access_key).then(
-        () => console.info(pc.dim(`Minted key ${minted.access_key} revoked.`)),
-        (error) =>
-          console.warn(`${warningMark} could not revoke the minted key ${minted.access_key} (${errorMessage(error)}); it expires at ${expiresAt}.`),
-      );
-    },
+    release: async () => {},
   };
 }
 
@@ -241,9 +233,9 @@ let ownerNoticeShown = false;
  * The key a privileged action runs on. A stack with an operator application takes the operator key, which works from the dedicated address
  * only. A stack that has none yet takes an Owner API key at the prompt, with a pointer to the action that sets the operator key up.
  */
-export async function acquirePrivilegedKey(stack: StackRef, opts: { ttlMs?: number } = {}): Promise<OwnerKey> {
+export async function acquirePrivilegedKey(stack: StackRef): Promise<OwnerKey> {
   const lock = await operatorLock(stack);
-  if (lock.state !== 'absent') return acquireOperatorKey(stack, opts);
+  if (lock.state !== 'absent') return acquireOperatorKey(stack);
   const names = principalNames(stack.appConfig.slug, stack.environment);
   if (!ownerNoticeShown) {
     ownerNoticeShown = true;
@@ -251,6 +243,16 @@ export async function acquirePrivilegedKey(stack: StackRef, opts: { ttlMs?: numb
       pc.dim(`This stack has no operator key yet, so the action takes your Owner API key. \`${actionCommand('operator-key')}\` sets one up.`),
     );
   }
+  return acquireOwnerKey({ names, projectId: stack.projectId, slug: stack.appConfig.slug, mode: stack.environment });
+}
+
+/**
+ * The key for an action that writes IAM: applications, policies, keys. The operator key holds no IAM write, so this is always an Owner API
+ * key, made in the console for the occasion and typed at the prompt.
+ */
+export async function acquireIdentityKey(stack: StackRef, why: string): Promise<OwnerKey> {
+  const names = principalNames(stack.appConfig.slug, stack.environment);
+  console.info(pc.dim(`${why} That writes IAM, which the operator key cannot: it takes your Owner API key.`));
   return acquireOwnerKey({ names, projectId: stack.projectId, slug: stack.appConfig.slug, mode: stack.environment });
 }
 
@@ -278,9 +280,9 @@ export function installPassphraseCustody(stack: StackRef): void {
       });
     },
     async store(passphrase) {
-      const secret = rememberedOperatorSecret();
-      if (!secret) return false;
-      return storeCustodiedPassphrase({ ...custody, secretKey: secret, passphrase }).then(
+      const key = rememberedOperatorKey();
+      if (!key) return false;
+      return storeCustodiedPassphrase({ ...custody, secretKey: key.secretKey, passphrase }).then(
         () => true,
         (error) => {
           console.warn(`${warningMark} Could not store the passphrase in Secret Manager (${errorMessage(error)}); it is asked again next time.`);

@@ -25,7 +25,7 @@ export interface PassphraseCustody {
 const session: {
   passphrase?: string;
   ownerKey?: KeyPair;
-  operatorSecret?: string;
+  operatorKey?: KeyPair;
   operatorLock?: OperatorLock;
   passphraseCustody?: PassphraseCustody;
 } = {};
@@ -55,19 +55,19 @@ export function forgetOwnerKey(): void {
   session.ownerKey = undefined;
 }
 
-/** Keep the operator key's secret key once Scaleway took it: it unlocks the rest of the session. */
-export function rememberOperatorSecret(secretKey: string): void {
-  session.operatorSecret = secretKey;
+/** Keep the operator key once Scaleway took it: it serves every action of the session. */
+export function rememberOperatorKey(pair: KeyPair): void {
+  session.operatorKey = { accessKey: pair.accessKey, secretKey: pair.secretKey };
 }
 
-/** The operator secret key typed earlier in this run; every action mints its own short-lived key from it. */
-export function rememberedOperatorSecret(): string | undefined {
-  return session.operatorSecret;
+/** The operator key typed earlier in this run. */
+export function rememberedOperatorKey(): KeyPair | undefined {
+  return session.operatorKey;
 }
 
-/** Drop the operator secret key, so the next action asks again: one that Scaleway refused must not be offered again. */
-export function forgetOperatorSecret(): void {
-  session.operatorSecret = undefined;
+/** Drop the operator key, so the next action asks again: one that Scaleway refused must not be offered again. */
+export function forgetOperatorKey(): void {
+  session.operatorKey = undefined;
 }
 
 /** Keep what the admin application key showed about the operator application. */
@@ -99,7 +99,7 @@ export function passphraseCustody(): PassphraseCustody | undefined {
 export function forgetSession(): void {
   session.passphrase = undefined;
   session.ownerKey = undefined;
-  session.operatorSecret = undefined;
+  session.operatorKey = undefined;
   session.operatorLock = undefined;
   session.passphraseCustody = undefined;
 }
