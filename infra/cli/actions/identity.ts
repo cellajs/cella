@@ -53,7 +53,7 @@ export function identityPlanIsEmpty(plan: IdentityPlan): boolean {
 }
 
 /** The machine part of a plan as lines to print. */
-export function machineIdentityLines(plan: MachineIdentityPlan): string[] {
+function machineIdentityLines(plan: MachineIdentityPlan): string[] {
   const words: Record<MachinePolicyStep['change'], string> = {
     none: 'as declared',
     create: 'to create',
@@ -127,7 +127,7 @@ function declaredPolicies(context: Pick<InfraContext, 'appConfig' | 'environment
  * The machine part of an identity update, read with any key that reads IAM and secret metadata: the observer's, the operator's (an apply stops
  * on it, as the operator key writes no IAM), the Owner's.
  */
-export async function planMachineIdentities(
+async function planMachineIdentities(
   auth: IamAuth,
   organizationId: string,
   context: Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>,
