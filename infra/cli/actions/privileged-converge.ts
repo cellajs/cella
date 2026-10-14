@@ -2,8 +2,9 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
+import { deriveInfra } from '../../lib/naming';
 import { actionCommand, menuPath } from '../../lib/operator-actions';
-import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { describeKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { projectAccessKey } from '../../lib/scaleway/s3-client';
@@ -13,6 +14,7 @@ import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from 
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
+import { admitOperatorToBuckets } from '../../tasks/admit-operator-buckets';
 import { ensureRegistryPrincipals, missingRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
@@ -162,6 +164,33 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
             `  Creating one writes IAM, which the operator key cannot: \`${actionCommand('identity')}\` makes it with your Owner API key.`,
           );
           endAction(1);
+        }
+      }
+
+      // Bucket policies written before the operator was admitted keep it out of its own buckets; the admin application key lets it in.
+      if (identity.admin && !ownerKey.pasted) {
+        const operator = await describeKey(ownerKey).catch(() => undefined);
+        if (operator?.bearer === 'application') {
+          const { naming } = deriveInfra(appConfig);
+          const buckets = [
+            { bucket: stateBucket(appConfig.slug), resource: 'state-bucket-policy' },
+            { bucket: naming.frontendBucket, resource: 'frontend-policy' },
+            { bucket: naming.publicBucket, resource: 'public-uploads-policy' },
+            { bucket: naming.privateBucket, resource: 'private-uploads-policy' },
+            { bucket: naming.bootDiagBucket, resource: 'boot-diag-policy' },
+          ];
+          const admitted = await admitOperatorToBuckets({
+            stack,
+            buckets,
+            region: appConfig.s3.region,
+            operatorApplicationId: operator.bearerId,
+            admin: identity.admin,
+            env,
+          }).catch((error) => {
+            console.warn(`${warningMark} Could not admit the operator to the buckets (${errorMessage(error)}).`);
+            return [] as string[];
+          });
+          if (admitted.length > 0) console.info(`${checkMark} The operator is admitted now: ${admitted.join(', ')}.`);
         }
       }
 

@@ -200,6 +200,9 @@ async function ensureAdminApp(
       { SCW_ADMIN_ACCESS_KEY: admin.accessKey, SCW_ADMIN_SECRET_KEY: admin.secretKey },
       { remove: LEGACY_ADMIN_KEY_NAMES },
     );
+    // The rest of this run reads the new key too: the env loaded at start may still hold one this moment replaced.
+    process.env.SCW_ADMIN_ACCESS_KEY = admin.accessKey;
+    process.env.SCW_ADMIN_SECRET_KEY = admin.secretKey;
     console.info(
       `  ${checkMark} Admin application key ('${principalNames(opts.appConfig.slug, opts.mode).admin}') written to ${written.path} (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY)`,
     );
@@ -514,12 +517,14 @@ async function runOperatorPart(context: InfraContext, operatorKey: OwnerKey, mom
   const proceedWith = firstSetup ? `the first setup of ${environment}` : actionLabel('resume');
   if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return;
 
-  // The state side (login, lock): the admin application key while this machine holds one, else the operator key, which the state bucket
-  // admits; it names this project, as the operator key is made for one environment's.
+  // The state side (login, lock): the operator key on a first setup, as the first `pulumi up` writes a state bucket policy that admits it
+  // (an admin key made a moment ago is admitted by that policy only, and may not be accepted yet); on an existing stack the admin application
+  // key while this machine holds one. The operator key names this project, as it is made for one environment's.
   const identity = resolveOperatorIdentity();
-  const stateKey: KeyPair = identity.admin
-    ? { accessKey: identity.admin.accessKey, secretKey: identity.admin.secretKey }
-    : { accessKey: projectAccessKey(operatorKey.accessKey, projectId), secretKey: operatorKey.secretKey };
+  const stateKey: KeyPair =
+    identity.admin && !firstSetup
+      ? { accessKey: identity.admin.accessKey, secretKey: identity.admin.secretKey }
+      : { accessKey: projectAccessKey(operatorKey.accessKey, projectId), secretKey: operatorKey.secretKey };
   const childEnv = buildProviderEnv(infraDir, {
     accessKey: operatorKey.accessKey,
     secretKey: operatorKey.secretKey,
