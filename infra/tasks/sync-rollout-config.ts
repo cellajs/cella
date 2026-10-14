@@ -171,14 +171,11 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
   if (!stack) throw new Error('Usage: sync-rollout-config.ts --stack <stack> [--reset-pending --deployed <slug,...>]');
   const opts = parseReconcileOptions(argv);
 
+  // A stack that runs no generation has nothing to seed. A deploy reconciles it all the same: the control object outlives a teardown, and the
+  // releases it names would be provisioned again, under keys minted for the new release.
   const rawMetadata = tryStackOutputRaw(stack, 'computeGenerationMetadata');
-  if (!rawMetadata) {
-    console.info('[sync-rollout-config] no computeGenerationMetadata output yet; skipping');
-    return;
-  }
-
-  const metadata = parseRolloutGenerations(rawMetadata);
-  if (!metadata.some((item) => item.genId.length > 0)) {
+  const metadata = rawMetadata ? parseRolloutGenerations(rawMetadata) : [];
+  if (!opts.resetPending && !metadata.some((item) => item.genId.length > 0)) {
     console.info('[sync-rollout-config] no content-addressed generations in live state yet; nothing to seed');
     return;
   }
