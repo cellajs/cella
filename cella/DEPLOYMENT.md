@@ -106,7 +106,7 @@ Every action that reads or writes the Pulumi state, a lock included, takes the o
 
 ## CI deploys
 
-[.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger (push to main, release published, manual dispatch) for the reusable [.github/workflows/deploy-pipeline.yml](../.github/workflows/deploy-pipeline.yml): `setup` derives names and matrices from config, a build matrix pushes images, and one `deploy` job runs a single command:
+[.github/workflows/deploy.yml](../.github/workflows/deploy.yml) is a thin trigger (push to main, release published, manual dispatch) for the reusable [.github/workflows/deploy-pipeline.yml](../.github/workflows/deploy-pipeline.yml): `setup` finds the target ([What a deploy deploys](#what-a-deploy-deploys)) and derives names from config, and one `deploy` job, on a checkout of the target, runs a single command:
 
 ```
 pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref <ref>
@@ -114,6 +114,20 @@ pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref
 
 - Pushes to main auto-deploy **staging**. Create a `staging` [GitHub Environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) holding the `SCW_*` secrets before merging to main. Until `Pulumi.staging.yaml` carries the `infra:bootstrapComplete` marker, the deploy job is skipped. The newest push cancels a superseded in-flight staging run (`cancel-in-progress`). Production rollouts never cancel. Manual: Actions → Deploy → Run workflow → `staging`.
 - **Production** deploys only on a published release or a manual dispatch. For a manual promote, give the `production` GitHub Environment required reviewers. The run then pauses for approval.
+
+### What a deploy deploys
+
+Without further instructions a push to main deploys main's newest commit to staging, a published release deploys the newest release (the highest `x.y.z` tag) to production, and a manual run deploys the commit it was started on. An optional file in the repository, `infra/environments`, changes that with one line per environment:
+
+```
+# <environment> <target> [retry <n>]
+production 0.18.0 retry 1    # held at 0.18.0, deployed once more
+staging    branch:my-branch  # staging follows my-branch
+```
+
+A target is `branch:<name>`, `releases`, a release tag, or a full commit id. A line pins an environment until it is removed, also when a newer release is published: that is how production is held or rolled back. The retry counter asks for the same target once more; the runner that replaces these workflows starts a run when it rises. The file is read from the commit that started the run, so a pin or a rollback of production takes a merge and then a manual run of production on main. A file the deploy cannot read stops it, as a deploy must never guess; `pnpm --filter infra target --mode <environment>` prints what it would deploy.
+
+The deploy runs the engine of its target, so a rolled-back release is deployed the way it was made. A release made before a planned break of the engine's state cannot be deployed after it: roll forward instead.
 
 ### Bring your own CI
 
@@ -171,6 +185,8 @@ Most config changes ship through a normal CI deploy, including toggling `appConf
 `pnpm infra preview` is step 1 without the question: for a script, or a look that must never reach an apply. The organization id comes from `SCW_ORGANIZATION_ID` in `backend/.env`.
 
 The same preview runs as a **preflight**: first thing in every deploy, and as the `infra-preflight` job on the release PR against the production Environment. It names any pending privileged change (a database privilege, the VPC) with the Apply command above, so an owed Apply blocks the release PR instead of failing the production deploy after the images have built.
+
+Every pull request also gets the `privileged-changes` check, which needs no key: the base and the head each render, under mocks, the identities and the privileged resources they declare for every environment with a stack file, and the job summary names what merging owes before the next deploy: **Update identities** for an application or a policy that is new, gone or changed, an apply for a privileged resource that is. It passes either way. It reads code only, so drift made outside Pulumi shows in the plan of an apply and not here.
 
 **Deploy right after an Apply that removes a secret.** The running VMs keep the previous release until the next deploy replaces them. A VM boots from the secret list of its own generation and fails the boot on a `required` secret it can no longer read, so when an Apply deletes a runtime secret, or narrows which secrets a VM key reads, an old VM that reboots before the deploy stays down until the deploy replaces it. Run the deploy right after such an Apply. A deployment that serves users keeps the old secret and the old consumer lists for one release, and removes them in the next.
 

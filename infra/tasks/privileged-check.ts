@@ -30,18 +30,21 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const modes = environments.filter((mode) => existsSync(join(infraDir, `Pulumi.${mode}.yaml`)));
   const lines: string[] = ['### Privileged changes', ''];
   let owes = false;
+  let uncompared = false;
   for (const mode of modes) {
     const head = render(infraDir, mode, join(work, `head-${mode}.json`));
     if (!existsSync(join(baseInfra, RENDER))) {
-      lines.push(`**${mode}:** the base cannot render what it declares without a key, so there is nothing to compare with.`);
+      lines.push(`**${mode}:** the base cannot render what it declares without a key, so there is nothing to compare with.`, '');
+      uncompared = true;
       continue;
     }
     let base: PrivilegedFootprint;
     try {
       base = render(baseInfra, mode, join(work, `base-${mode}.json`));
     } catch (error) {
-      lines.push(`**${mode}:** the base did not render, so there is nothing to compare with.`);
+      lines.push(`**${mode}:** the base did not render, so there is nothing to compare with.`, '');
       console.error(error instanceof Error ? error.message : String(error));
+      uncompared = true;
       continue;
     }
     const owed = owedWork(base, head);
@@ -54,7 +57,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       }
     }
   }
-  if (!owes) lines.push('A deploy can take this change as it is.');
+  if (!owes && !uncompared) lines.push('A deploy can take this change as it is.');
   const text = `${lines.join('\n')}\n`;
   process.stdout.write(text);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, text);
