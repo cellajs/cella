@@ -42,12 +42,12 @@ afterEach(() => {
 });
 
 describe('runApply', () => {
-  it('must not take the lock for a plan the operator declined', async () => {
+  it('must not apply a plan the operator declined', async () => {
     askToApply.mockResolvedValue(false);
 
     await runApply(context);
 
-    expect(reviewPlan).toHaveBeenCalledWith(context, operator);
+    expect(reviewPlan).toHaveBeenCalledWith(context, operator, { forgetRetired: true });
     expect(runPrivilegedConverge).not.toHaveBeenCalled();
   });
 

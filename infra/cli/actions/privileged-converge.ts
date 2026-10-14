@@ -15,6 +15,7 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { admitOperatorToBuckets } from '../../tasks/admit-operator-buckets';
 import { copySharedSecrets } from '../../tasks/copy-shared-secrets';
+import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { missingRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
@@ -230,7 +231,18 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
             `${warningMark} Could not move the shared operator secrets into their copies (${errorMessage(error)}); the next deploy tries again.`,
           ),
       );
-      // Generated and derived values are made in Secret Manager, never in the state; the `up` made any new secret's containers.
+      // The database roles and connection strings, then the generated and derived values: made outside the state, after the `up` made any
+      // new secret's containers.
+      await ensureDatabaseForStack({
+        env,
+        stack,
+        slug: appConfig.slug,
+        mode: context.environment,
+        region: appConfig.s3.region,
+        projectId,
+        secretKey: ownerKey.secretKey,
+        log: (message) => console.info(pc.dim(message)),
+      }).catch((error) => console.warn(`${warningMark} Could not make the database roles and connection strings (${errorMessage(error)}).`));
       await ensureSecrets({ client, slug: appConfig.slug, mode: context.environment, log: (message) => console.info(pc.dim(message)) }).catch(
         (error) => console.warn(`${warningMark} Could not make the generated secrets (${errorMessage(error)}); the next deploy tries again.`),
       );

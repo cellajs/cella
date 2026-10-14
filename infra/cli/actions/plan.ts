@@ -9,7 +9,7 @@ import { type PlanBasis, readPlanBasis } from '../../lib/stack/plan-basis';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import { endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
+import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 
 /** The `pulumi preview` arguments of a plan an operator reviews. `--refresh` reads every resource live first, so drift made outside Pulumi (a rule re-scoped in the console) is part of the diff. */
 export function planArgs(stack: string, configFile?: string): string[] {
@@ -41,7 +41,7 @@ export interface ReviewedPlan {
  * (organization id, privileged marker). A CI deploy applies the same diff except the VM policy rules, which only a privileged run reconciles,
  * so one plan covers both. Nothing is locked or written: the returned basis lets the apply tell whether the plan still holds once it is.
  */
-export async function reviewPlan(context: InfraContext, key: KeyPair): Promise<ReviewedPlan> {
+export async function reviewPlan(context: InfraContext, key: KeyPair, opts: { forgetRetired?: boolean } = {}): Promise<ReviewedPlan> {
   if (context.state !== 'bootstrapped') {
     console.error(`${warningMark} A plan needs a fully bootstrapped stack (state=${context.state}). Run "${menuPath('resume')}" first.`);
     endAction(1);
@@ -64,6 +64,27 @@ export async function reviewPlan(context: InfraContext, key: KeyPair): Promise<R
   // The operator key serves both sides: the provider reads and the state bucket, which admits it.
   const env = buildProviderEnv(infraDir, { ...key, projectId, passphrase, organizationId });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
+
+  // An apply first takes retired resources out of the state, under the stack lock, so its plan shows none of them as deleted: they stay live
+  // (lib/stack/retired-state.ts). A preview leaves the state as it is.
+  if (opts.forgetRetired) {
+    const lock = await acquireStackLockOrExit({
+      appConfig,
+      accessKey: projectAccessKey(key.accessKey, projectId),
+      secretKey: key.secretKey,
+      stack,
+      operation: 'forget-retired-resources',
+    });
+    try {
+      const forget = spawnSync('pnpm', ['--filter', 'infra', 'forget-retired-resources', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
+      if (forget.status !== 0) {
+        console.error(`${warningMark} forget-retired-resources failed (exit ${forget.status}). Nothing was planned or applied.`);
+        endAction(forget.status ?? 1);
+      }
+    } finally {
+      await lock.release();
+    }
+  }
 
   // Read before the plan runs, so a deploy that lands while Pulumi computes it counts as a change too.
   const basis = await makeControlClient(appConfig.s3.region, projectAccessKey(key.accessKey, projectId), key.secretKey)

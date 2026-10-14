@@ -21,7 +21,7 @@ export async function runApply(context: InfraContext): Promise<void> {
   const operator = await acquirePrivilegedKey(context);
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   await admitOperatorOrExit(context, { ...operator, passphrase, stack: stackNameFor(context) });
-  const reviewed = await reviewPlan(context, operator);
+  const reviewed = await reviewPlan(context, operator, { forgetRetired: true });
   if (!(await askToApply(context.environment))) {
     console.info('Declined; nothing applied.');
     return;
