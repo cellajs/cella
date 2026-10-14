@@ -148,6 +148,8 @@ jobs:
           SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_PROJECT_ID }}
           SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+          # Pulumi downloads its provider plugin from GitHub; without a token it shares the runner's anonymous rate limit.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pnpm --filter infra run reap --mode "${{ needs.setup.outputs.environment }}" --sha "${{ needs.setup.outputs.image_tag }}"
 
 # GitHub creates one deployment record per environment-declaring job
