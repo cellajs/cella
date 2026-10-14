@@ -16,11 +16,11 @@ beforeAll(async () => {
       return name === missing;
     },
   });
-  await import('./vm-iam');
+  await import('./identities');
   await h.settle();
 });
 
-describe('vm-iam module in a preview', () => {
+describe('identities module in a preview', () => {
   it('renders while a registry service has no application yet', () => {
     expect(missing).toBeDefined();
   });

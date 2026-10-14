@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { runtimeSecrets } from '../../lib/runtime-secrets';
+import { buildGrantRows } from '../../lib/scaleway/grant-rows';
 import { principalNames } from '../../lib/scaleway/principals';
 import { engineSecretPath, handoffFolderPath, secretCopies } from '../../lib/scaleway/secret-paths';
-import { buildVmAssertRows } from '../../lib/scaleway/vm-assert-rows';
 import { principalServices, serviceNames } from '../../lib/services';
 import { fakeConfig } from '../helpers/fake-config';
 
@@ -36,7 +36,7 @@ const copyFor = (secret: (typeof runtimeSecrets)[number], service: string) => co
  */
 describe('secret scope per principal', () => {
   for (const singleVM of [false, true]) {
-    const rows = buildVmAssertRows(appConfigFor(singleVM));
+    const rows = buildGrantRows(appConfigFor(singleVM));
     const names = principalNames(slug, mode);
 
     it(`must not let a principal read a secret none of its services consume (singleVM: ${singleVM})`, () => {
@@ -71,7 +71,7 @@ describe('secret scope per principal', () => {
   });
 
   it('must not give the Yjs relay the key that signs editor tokens, under split-VM', () => {
-    const yjsRow = buildVmAssertRows(appConfigFor(false)).find((row) => row.app === principalNames(slug, mode).vmService('yjs'));
+    const yjsRow = buildGrantRows(appConfigFor(false)).find((row) => row.app === principalNames(slug, mode).vmService('yjs'));
     const signingKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PRIVATE_KEY');
     const publicKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PUBLIC_KEY');
     if (!yjsRow || !signingKey || !publicKey) throw new Error('fixture missing');

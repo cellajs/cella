@@ -54,7 +54,7 @@ export function handoffFolderPath(slug: string, mode: string): string {
 
 /**
  * Condition for one service application: value reads only under its own folder, leaving other services' secrets, engine keys and sibling
- * stacks unreadable. String equality matters: assert-vm-grants compares the live rule condition against this exact output.
+ * stacks unreadable. String equality matters: assert-grants compares the live rule condition against this exact output.
  */
 export function serviceKeyCondition(slug: string, mode: string, service: string): string {
   return `resource.name.startsWith("${serviceSecretPath(slug, mode, service)}")`;

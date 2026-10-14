@@ -44,7 +44,7 @@ export type TaskName =
   | 'wait-for-images'
   | 'sync-rollout-config'
   | 'stage-generation-keys'
-  | 'assert-vm-grants'
+  | 'assert-grants'
   | 'assert-secrets-deliverable'
   | 'geoip-refresh'
   | 'smoke';
@@ -226,11 +226,11 @@ export async function runDeploy(
     });
 
     await step('Base stack update', () => fx.update(stack));
-    await step('Verify VM IAM grants', async () => {
+    await step('Verify identity grants', async () => {
       // One assertion per principal: exact sets AND exact path condition. Their keys were checked when they were staged.
-      const rows = JSON.parse(env.vm_assert_json) as Array<{ app: string; sets: string[]; condition: string }>;
+      const rows = JSON.parse(env.grant_rows_json) as Array<{ app: string; sets: string[]; condition: string }>;
       for (const row of rows) {
-        await fx.task('assert-vm-grants', [
+        await fx.task('assert-grants', [
           '--application-name',
           row.app,
           '--required-sets',
@@ -414,7 +414,7 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),
   'stage-generation-keys': async (argv) => (await import('./stage-generation-keys')).main(argv),
   'build-release': async (argv) => (await import('./build-release')).main(argv),
-  'assert-vm-grants': async (argv) => (await import('./assert-vm-grants')).main(argv),
+  'assert-grants': async (argv) => (await import('./assert-grants')).main(argv),
   'assert-secrets-deliverable': async (argv) => (await import('./assert-secrets-deliverable')).main(argv),
   'geoip-refresh': async (argv) => (await import('./geoip-refresh')).main(argv),
   smoke: async (argv) => (await import('./smoke')).main(argv),

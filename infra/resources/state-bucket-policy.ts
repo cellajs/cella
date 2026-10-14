@@ -3,7 +3,7 @@ import * as scaleway from '@pulumiverse/scaleway';
 import { engineConfig } from '../config/engine-config';
 import { stateBucket } from '../lib/stack/control-store';
 import { region } from '../pulumi-context';
-import { ciDeployApplicationId, observerApplicationId, operatorApplicationId, retiredAdminApplicationId } from './vm-iam';
+import { ciDeployApplicationId, observerApplicationId, operatorApplicationId, retiredAdminApplicationId } from './identities';
 
 const appConfig = engineConfig();
 

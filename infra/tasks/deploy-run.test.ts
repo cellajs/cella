@@ -13,7 +13,7 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
     public_bucket: '',
     frontend_bucket: 'cella-frontend',
     state_bucket: 'cella-pulumi-state',
-    vm_assert_json: JSON.stringify([
+    grant_rows_json: JSON.stringify([
       {
         app: 'cella-production-vm-backend',
         sets: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
@@ -60,7 +60,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     },
     task: async (name, argv = []) => {
       ops.push(`task:${name}${argv[0] && !argv[0].startsWith('--') ? `:${argv[0]}` : ''}`);
-      if (name === 'assert-vm-grants') grantArgs.push([...argv]);
+      if (name === 'assert-grants') grantArgs.push([...argv]);
       taskArgs[name] = [...argv];
     },
     lease: async (_stack, operation) => {
@@ -154,7 +154,7 @@ describe('runDeploy sequencing', () => {
       'task:wait-for-images',
       'task:stage-generation-keys',
       'update:production',
-      'task:assert-vm-grants',
+      'task:assert-grants',
       'rollout',
       'publish-entry',
       'task:smoke',

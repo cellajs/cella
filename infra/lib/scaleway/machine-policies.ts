@@ -25,7 +25,7 @@ export interface MachinePolicy {
  * The machine policies of one environment: one per registry service, one for the boot fetcher, one for the builder. They are written at
  * Owner moments, never by the Pulumi program: the operator and the deploy key hold no IAM write. Principals and conditions follow the service
  * registry, not the enabled set, so a service toggle changes compute only. The deploy's grant check compares the live policies with the same
- * builders (lib/scaleway/vm-assert-rows.ts).
+ * builders (lib/scaleway/grant-rows.ts).
  */
 export function machinePolicies(appConfig: Pick<EngineConfig, 'slug' | 'mode'>, projectId: string): MachinePolicy[] {
   const { slug, mode } = appConfig;

@@ -255,7 +255,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
           `\n${warningMark} could not verify the live infrastructure after the up:\n${result.errors.map((error) => `  ✗ ${error}`).join('\n')}`,
         );
         console.error(
-          pc.dim(`  Nothing is known to be wrong: run \`${actionCommand('preview')}\`, or let the next deploy's Verify VM IAM grants step tell.`),
+          pc.dim(`  Nothing is known to be wrong: run \`${actionCommand('preview')}\`, or let the next deploy's Verify identity grants step tell.`),
         );
       }
       if (result.problems.length > 0) {

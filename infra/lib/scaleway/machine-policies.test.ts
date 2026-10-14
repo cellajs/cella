@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { fakeConfig } from '../../tests/helpers/fake-config';
+import { buildGrantRows } from './grant-rows';
 import { machinePolicies, sameRules } from './machine-policies';
 import { ruleConditions } from './secret-paths';
-import { buildVmAssertRows } from './vm-assert-rows';
 
 const readsSecrets = (sets: readonly string[]) => sets.some((set) => set.startsWith('SecretManager'));
 
@@ -11,8 +11,8 @@ describe('machinePolicies', () => {
     it(`must not let a machine read secrets outside its folders (singleVM ${singleVM}): each policy carries exactly what the deploy asserts`, () => {
       const config = fakeConfig({ singleVM });
       const policies = machinePolicies(config, 'project-1');
-      // The rows the deploy's assert-vm-grants step compares the live policies with; the CI application has no machine policy.
-      const rows = buildVmAssertRows(config).filter((row) => !row.app.endsWith('-ci-deploy'));
+      // The rows the deploy's assert-grants step compares the live policies with; the CI application has no machine policy.
+      const rows = buildGrantRows(config).filter((row) => !row.app.endsWith('-ci-deploy'));
       expect(policies).toHaveLength(rows.length);
       for (const row of rows) {
         const policy = policies.find((candidate) => candidate.applicationName === row.app);

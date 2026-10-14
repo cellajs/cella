@@ -1,10 +1,10 @@
 import type { EngineConfig } from '../config/engine-config';
 import { deriveInfra } from '../lib/naming';
 import { expectedDbPrivileges } from '../lib/scaleway/db-privileges';
+import { buildGrantRows } from '../lib/scaleway/grant-rows';
 import { createRdbClient } from '../lib/scaleway/scaleway-rdb';
-import { buildVmAssertRows } from '../lib/scaleway/vm-assert-rows';
 import type { FetchLike } from '../lib/utils/fetch-like';
-import { assertVmGrants } from './assert-vm-grants';
+import { assertGrants } from './assert-grants';
 
 export interface VerifyPrivilegedUpOptions {
   appConfig: EngineConfig;
@@ -15,7 +15,7 @@ export interface VerifyPrivilegedUpOptions {
   fetchImpl?: FetchLike;
   log?: (msg: string) => void;
   /** Injected for tests; defaults to the real grant assertion. */
-  assertGrants?: typeof assertVmGrants;
+  assertGrants?: typeof assertGrants;
 }
 
 export interface VerifyPrivilegedUpResult {
@@ -33,13 +33,13 @@ export interface VerifyPrivilegedUpResult {
  */
 export async function verifyPrivilegedUp(opts: VerifyPrivilegedUpOptions): Promise<VerifyPrivilegedUpResult> {
   const log = opts.log ?? ((msg) => console.info(msg));
-  const assertGrants = opts.assertGrants ?? assertVmGrants;
+  const assertOne = opts.assertGrants ?? assertGrants;
   const problems: string[] = [];
   const errors: string[] = [];
 
-  for (const row of buildVmAssertRows(opts.appConfig)) {
+  for (const row of buildGrantRows(opts.appConfig)) {
     try {
-      const result = await assertGrants({
+      const result = await assertOne({
         secretKey: opts.secretKey,
         applicationName: row.app,
         projectId: opts.projectId,

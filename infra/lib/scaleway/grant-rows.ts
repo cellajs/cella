@@ -12,7 +12,7 @@ import { principalNames } from './principals';
 import { bootKeyCondition } from './secret-paths';
 
 /** One grant assertion: the exact permission sets and secret condition a principal must hold, and whether it must hold no key at all. */
-export interface VmAssertRow {
+export interface GrantRow {
   app: string;
   sets: string[];
   /** '' skips the secret-condition check (the CI app's rules are unconditioned by design). */
@@ -23,7 +23,7 @@ export interface VmAssertRow {
  * One assertion row per principal, built by the same shared builders the Pulumi program uses so the deploy's grant-verification step and the
  * Apply's self-check compare strings, not semantics. Principals follow the registry; their keys are checked where the deploy stages them.
  */
-export function buildVmAssertRows(appConfig: EngineConfig): VmAssertRow[] {
+export function buildGrantRows(appConfig: EngineConfig): GrantRow[] {
   const names = principalNames(appConfig.slug, appConfig.mode);
   return [
     ...principalServices().map((svc) => ({

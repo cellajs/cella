@@ -15,7 +15,7 @@ const SECRET_PERMISSION_SETS = new Set(['SecretManagerSecretAccess', 'SecretMana
  */
 const isBenignExtraSet = (set: string): boolean => set.endsWith('ReadOnly');
 
-export interface AssertVmGrantsOptions {
+export interface AssertGrantsOptions {
   secretKey: string;
   /** Either an explicit id, or a name to resolve via IAM list-applications. */
   applicationId?: string;
@@ -39,7 +39,7 @@ export interface AssertVmGrantsOptions {
   log?: (msg: string) => void;
 }
 
-export interface AssertVmGrantsResult {
+export interface AssertGrantsResult {
   ok: boolean;
   granted: string[];
   missing: string[];
@@ -58,7 +58,7 @@ export interface AssertVmGrantsResult {
  * missing sets break secret hydration, and extra sets are privilege drift beyond the minimal VM profile.
  * With `requiredSecretCondition`, every secret-granting rule must additionally carry EXACTLY one part of that condition, compared as a string, and every part must be carried.
  */
-export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<AssertVmGrantsResult> {
+export async function assertGrants(opts: AssertGrantsOptions): Promise<AssertGrantsResult> {
   const auth: IamAuth = { secretKey: opts.secretKey, fetchImpl: resolveFetch(opts.fetchImpl) };
   const log = opts.log ?? ((msg) => console.info(msg));
   const required = opts.required;
@@ -69,7 +69,7 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
     applicationId = (await resolveApplicationIdByName(auth, organizationId, opts.applicationName)) ?? undefined;
     if (!applicationId) throw new Error(`IAM application '${opts.applicationName}' not found in organization ${organizationId}`);
   }
-  if (!applicationId) throw new Error('assertVmGrants: provide applicationId or applicationName');
+  if (!applicationId) throw new Error('assertGrants: provide applicationId or applicationName');
 
   const rules = await fetchGrantedRules(auth, organizationId, applicationId);
   const granted = new Set(rules.flatMap((rule) => rule.permissionSets));
@@ -119,7 +119,7 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
   if (ok) {
     const conditionNote = opts.requiredSecretCondition ? ', secret rules path-conditioned' : '';
     const scopeNote = opts.requiredProjectId ? ', project-scoped' : '';
-    log(`✓ VM grant verified: required permission sets present, no escalation${conditionNote}${scopeNote}`);
+    log(`✓ grant verified: required permission sets present, no escalation${conditionNote}${scopeNote}`);
   }
   return { ok, granted: [...granted].sort(), missing, extra, unconditionedSecretRules, missingSecretConditions, misscopedRules };
 }
@@ -145,7 +145,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     .map((set) => set.trim())
     .filter(Boolean);
   if (required.length === 0) throw new Error('Required: --required-sets <csv of permission sets>');
-  const result = await assertVmGrants({
+  const result = await assertGrants({
     secretKey,
     applicationId,
     applicationName,

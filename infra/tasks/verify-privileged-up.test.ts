@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { EngineConfig } from '../config/engine-config';
 import { CRON_HOME_DATABASE, expectedDbPrivileges, POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-privileges';
 import type { FetchLike } from '../lib/utils/fetch-like';
-import type { assertVmGrants } from './assert-vm-grants';
+import type { assertGrants } from './assert-grants';
 import { verifyPrivilegedUp } from './verify-privileged-up';
 
 function makeFetch(routes: Array<{ match: string; body: unknown }>): FetchLike {
@@ -21,7 +21,7 @@ const appConfig = {
   services: { backend: { enabled: true } },
 } as unknown as EngineConfig;
 
-const okGrants: typeof assertVmGrants = async () => ({
+const okGrants: typeof assertGrants = async () => ({
   ok: true,
   granted: [],
   missing: [],
@@ -96,7 +96,7 @@ describe('verifyPrivilegedUp', () => {
       },
       { match: 'privileges?database_name=rdb', body: { privileges: [], total_count: 0 } },
     ]);
-    const failingGrants: typeof assertVmGrants = async (opts) => ({
+    const failingGrants: typeof assertGrants = async (opts) => ({
       ...(await okGrants(opts)),
       ok: opts.applicationName !== 'cella-production-vm-backend',
     });
@@ -118,7 +118,7 @@ describe('verifyPrivilegedUp', () => {
 
   it('keeps probe failures apart from verified differences: a revoked key is unknown, not wrong', async () => {
     const denied: FetchLike = async () => ({ ok: false, status: 401, text: async () => JSON.stringify({ message: 'authentication is denied' }) });
-    const throwingGrants: typeof assertVmGrants = async () => {
+    const throwingGrants: typeof assertGrants = async () => {
       throw new Error('Scaleway GET applications → 401: authentication is denied');
     };
     const result = await verifyPrivilegedUp({
@@ -138,7 +138,7 @@ describe('verifyPrivilegedUp', () => {
 
   it('passes the project scope only to conditioned (VM/boot) rows', async () => {
     const seen: Array<{ app?: string; scope?: string }> = [];
-    const spyGrants: typeof assertVmGrants = async (opts) => {
+    const spyGrants: typeof assertGrants = async (opts) => {
       seen.push({ app: opts.applicationName, scope: opts.requiredProjectId });
       return okGrants(opts);
     };

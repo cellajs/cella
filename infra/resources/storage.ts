@@ -11,7 +11,7 @@ import {
   observerApplicationId,
   operatorApplicationId,
   retiredAdminApplicationId,
-} from './vm-iam';
+} from './identities';
 
 // App-owned buckets follow the service registry: the SPA bucket needs a default-route service, the upload buckets need an s3Access service, and browser CORS exists only when both do. The boot-diag bucket below is unconditional.
 const needs = appStorageNeeds(services);
