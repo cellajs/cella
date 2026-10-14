@@ -23,6 +23,8 @@ import { changeMark, checkMark, DIVIDER, pc, warningMark, withSpinner } from '..
 import { writeModeEnvValues } from '../../lib/utils/env-files';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
+import { ensureDatabaseForStack } from '../../tasks/ensure-database';
+import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { planMachineKeys, writeMachineKeys } from '../../tasks/machine-keys';
 import { writeMachinePolicies } from '../../tasks/machine-policies';
 import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
@@ -297,6 +299,22 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
     });
   }
   console.info(`\n${checkMark} Base infrastructure provisioned (no compute yet). The next deploy, local or CI, brings the VMs up.`);
+
+  // The database roles and connection strings, and the generated values, are made outside the state once the `up` made their containers.
+  await ensureDatabaseForStack({
+    env: ctx.childEnv,
+    stack: ctx.stackName,
+    slug: ctx.appConfig.slug,
+    mode: ctx.context.environment,
+    region: ctx.appConfig.s3.region,
+    projectId: ctx.projectId,
+    secretKey: ctx.secretKey,
+  });
+  await ensureSecrets({
+    client: createSecretManagerClient({ secretKey: ctx.secretKey, region: ctx.appConfig.s3.region, projectId: ctx.projectId }),
+    slug: ctx.appConfig.slug,
+    mode: ctx.context.environment,
+  });
 
   // Seed prompted values only after Pulumi creates the empty secret containers; skipped values stay available through "Manage runtime secrets".
   await seedOperatorSecrets({

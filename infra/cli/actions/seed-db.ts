@@ -46,7 +46,7 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
   }
 
   try {
-    const dsn = readPublicDsn(env, stack);
+    const dsn = await readPublicDsn(env, stack, context);
     if (!dsn) throw new Error('public DSN output empty; the endpoint may still be provisioning: re-run to seed.');
     // Pin the instance CA so the seed's admin-role connection verifies the server; backend's verifiedPostgresSsl upgrades to verify-full with hostname pinning when DATABASE_SSL_CA is set.
     const dbCa = readDbCa(env, stack);

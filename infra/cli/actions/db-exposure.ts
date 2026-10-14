@@ -8,14 +8,20 @@ import { parseAclInput } from '../../lib/db-exposure-acl';
 import { closePublicEndpoints, dbInstanceUrn, endpointAddress, exposureOverlayPath, publicEndpoints } from '../../lib/db-public-endpoint';
 import { deriveInfra } from '../../lib/naming';
 import { actionLabel } from '../../lib/operator-actions';
+import { formatPostgresUrl } from '../../lib/postgres-url';
+import { POSTGRES_ROLE_NAMES } from '../../lib/scaleway/db-privileges';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { createRdbClient, type RdbEndpoint } from '../../lib/scaleway/scaleway-rdb';
+import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
+import { engineSecretPath } from '../../lib/scaleway/secret-paths';
 import { pulumiConfigRm, pulumiConfigSet } from '../../lib/stack/pulumi-up';
+import { readStoreOutputs } from '../../lib/stack/store-outputs';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { hardenPublicDsn } from '../../lib/utils/public-dsn';
 import { within } from '../../lib/utils/retry';
+import { rolePasswordSecretName } from '../../tasks/ensure-database';
 import { endAction, endsAction, type InfraContext } from '../shared';
 import { printRevokeReminder } from './owner-key';
 import { type PrivilegedConvergeOptions, runPrivilegedConverge } from './privileged-converge';
@@ -23,8 +29,7 @@ import { type PrivilegedConvergeOptions, runPrivilegedConverge } from './privile
 // Pulumi config keys consumed by resources/stores/postgres-managed.ts and the outputs it exports.
 const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint';
 const DB_ACL_KEY = 'infra:dbPublicAcl';
-// Keys within the primary store's entry of the `storeOutputs` stack output.
-const PUBLIC_DSN_OUTPUT = 'connectionStringAdminPublic';
+// Key within the primary store's entry of the `storeOutputs` stack output.
 const DB_CA_OUTPUT = 'caCertificate';
 const PRIMARY_STORE_ID = Object.keys(appStores)[0] ?? 'primary';
 
@@ -57,23 +62,26 @@ export async function detectPublicIp(): Promise<string | undefined> {
 
 /** Read one key of the primary store's `storeOutputs` entry; empty when absent or unreadable. */
 function readPrimaryStoreOutput(env: NodeJS.ProcessEnv, stack: string, key: string): string {
-  const result = spawnSync('pulumi', ['stack', 'output', 'storeOutputs', '--show-secrets', '--json', '--stack', stack], {
-    cwd: infraDir,
-    env,
-    encoding: 'utf8',
-  });
-  if (result.status !== 0) return '';
-  try {
-    const parsed = JSON.parse(result.stdout ?? '{}') as Record<string, Record<string, string> | undefined>;
-    return (parsed?.[PRIMARY_STORE_ID]?.[key] ?? '').trim();
-  } catch {
-    return '';
-  }
+  return readStoreOutputs(env, stack)[PRIMARY_STORE_ID]?.[key] ?? '';
 }
 
-/** Read the public admin DSN store output (empty when the endpoint is disabled). */
-export function readPublicDsn(env: NodeJS.ProcessEnv, stack: string): string {
-  return readPrimaryStoreOutput(env, stack, PUBLIC_DSN_OUTPUT);
+/**
+ * The admin connection string over the public endpoint, empty while none is open: the endpoint from the store outputs, the admin role's
+ * password from the engine folder, which the operator key of the converge reads. No password passes through the state.
+ */
+export async function readPublicDsn(
+  env: NodeJS.ProcessEnv,
+  stack: string,
+  context: Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>,
+): Promise<string> {
+  const host = readPrimaryStoreOutput(env, stack, 'publicHost');
+  const port = readPrimaryStoreOutput(env, stack, 'publicPort');
+  const databaseName = readPrimaryStoreOutput(env, stack, 'databaseName');
+  if (!host || !port || !databaseName) return '';
+  const secrets = createSecretManagerClient({ secretKey: convergeSecretKey(env), region: context.appConfig.s3.region, projectId: context.projectId });
+  const kept = await secrets.getSecretByName(rolePasswordSecretName('admin'), engineSecretPath(context.appConfig.slug, context.environment));
+  if (!kept) return '';
+  return formatPostgresUrl(POSTGRES_ROLE_NAMES.admin, await secrets.accessLatestValue(kept.id), host, port, databaseName);
 }
 
 /** Read the database instance CA certificate store output (PEM; empty when unavailable). */
@@ -241,7 +249,7 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
   } else if (live) {
     console.info(`${checkMark} Public endpoint ${live.endpoints.map(endpointAddress).join(', ')} is open with ${live.aclRules} ACL rule(s).`);
   }
-  const dsn = readPublicDsn(env, stack);
+  const dsn = await readPublicDsn(env, stack, context);
   if (!dsn) {
     console.warn(
       `${warningMark} Endpoint applied but no public DSN output yet: Scaleway may still be provisioning the load balancer. Re-run to read it.`,

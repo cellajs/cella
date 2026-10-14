@@ -52,14 +52,15 @@ function createSecretVersion(name: string, copy: { service: string; only: boolea
 }
 
 // The values a store supplies (connection strings, CA data) are bound by the store plugins in resources/stores and written as versions here.
-// Generated and derived values are made by the operator task ensure-secrets straight into Secret Manager, so they never pass through the state.
+// Generated and derived values are made by the operator task ensure-secrets, and database connection strings by ensure-database, straight
+// into Secret Manager, so they never pass through the state.
 
 /** The value a store supplies for a runtime secret, or undefined for one the program writes no version of. */
 function storeSuppliedData(definition: RuntimeSecretDefinition): pulumi.Input<string> | undefined {
   if (definition.valueSource !== 'pulumi') return undefined;
   const supplied = derivedRuntimeSecretData[definition.id];
   if (supplied !== undefined) return supplied;
-  if (definition.generation === 'random' || definition.derivedFrom) return undefined;
+  if (definition.generation === 'random' || definition.derivedFrom || definition.database) return undefined;
   throw new Error(
     `secrets: pulumi-owned secret '${definition.id}' has generation 'manual' but no derived value: add it to derivedRuntimeSecretData.`,
   );

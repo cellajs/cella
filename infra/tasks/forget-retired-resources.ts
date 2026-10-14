@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { generatedRuntimeSecrets } from '../lib/runtime-secrets';
+import { engineMadeRuntimeSecrets } from '../lib/runtime-secrets';
 import { retiredUrns, withoutUrns } from '../lib/stack/retired-state';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
@@ -14,7 +14,7 @@ import { getFlag } from './args';
  * before the change is kept beside the edited one in a temporary folder.
  */
 export function forgetRetiredResources(stack: string, log: (message: string) => void = console.info): number {
-  const generated = new Set(generatedRuntimeSecrets().map((definition) => definition.secretName));
+  const generated = new Set(engineMadeRuntimeSecrets().map((definition) => definition.secretName));
   const run = (args: string[]) => spawnSync('pulumi', [...args, '--stack', stack], { cwd: infraDir, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   const exported = run(['stack', 'export']);
   if (exported.status !== 0) throw new Error(`pulumi stack export failed: ${exported.stderr.trim()}`);

@@ -3,7 +3,7 @@ import { runtimeSecretsConfig } from '../config/runtime-secrets.config';
 import { appStores } from '../config/stores.config';
 import { serviceKeyCondition } from './scaleway/secret-paths';
 import { serviceNames } from './services';
-import type { StoreProvisioner } from './stores';
+import type { DatabaseRole, StoreProvisioner } from './stores';
 
 export const runtimeSecretConsumers = serviceNames;
 
@@ -53,6 +53,8 @@ export interface RuntimeSecretDefinition {
   /** Consuming services; store contributions are runtime-validated against the registry. */
   services: readonly string[];
   derivedFrom?: RuntimeSecretDerivation;
+  /** A database connection string the operator task ensure-database assembles for this role. */
+  database?: { role: DatabaseRole };
 }
 
 /** Helper for `runtime-secrets.config.ts`: typed identity preserving literal keys. */
@@ -75,6 +77,7 @@ export function buildRuntimeSecrets(
       valueSource: contribution.valueSource,
       generation: 'manual' as const,
       services: contribution.services,
+      ...(contribution.database ? { database: contribution.database } : {}),
     })),
   );
   return [...storeContributions, ...Object.entries(appSecrets).map(([id, definition]) => ({ id, ...definition }))];
@@ -129,6 +132,16 @@ validateRuntimeSecrets(runtimeSecrets, new Set<string>(serviceNames));
  */
 export function generatedRuntimeSecrets(definitions: readonly RuntimeSecretDefinition[] = runtimeSecrets): RuntimeSecretDefinition[] {
   return definitions.filter((secret) => secret.valueSource === 'pulumi' && (secret.generation === 'random' || secret.derivedFrom !== undefined));
+}
+
+/** The database connection strings, which the operator task ensure-database assembles; a deploy only fills an empty copy from another. */
+export function databaseRuntimeSecrets(definitions: readonly RuntimeSecretDefinition[] = runtimeSecrets): RuntimeSecretDefinition[] {
+  return definitions.filter((secret) => secret.database !== undefined);
+}
+
+/** Every runtime secret whose value the engine makes outside the Pulumi state: the generated, the derived and the database ones. */
+export function engineMadeRuntimeSecrets(definitions: readonly RuntimeSecretDefinition[] = runtimeSecrets): RuntimeSecretDefinition[] {
+  return [...generatedRuntimeSecrets(definitions), ...databaseRuntimeSecrets(definitions)];
 }
 
 export const operatorManagedRuntimeSecrets: RuntimeSecretDefinition[] = runtimeSecrets.filter((secret) => secret.valueSource === 'operator');

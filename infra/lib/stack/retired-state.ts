@@ -2,11 +2,15 @@
  * Resources the program no longer declares, and an update must not delete, as their live counterparts stay in use:
  * - the machine policies (`vm-<service>-policy`, `vm-boot-policy`), written at Owner moments since 2·1;
  * - the versions and the random values of generated runtime secrets (`secret-version-<name>`, `generated-<name>`), made by the operator task
- *   ensure-secrets since 4a·1. Deleting a version deletes the value it holds.
+ *   ensure-secrets since 4a·1. Deleting a version deletes the value it holds;
+ * - the database roles, their privileges and passwords, and the connection strings' versions, made by the operator task ensure-database
+ *   since 4a·2. Deleting a role would cut the app off its database.
  */
 const MACHINE_POLICY_URN = /::scaleway:iam\/policy:Policy::vm-[a-z0-9-]+-policy$/;
 const SECRET_VERSION_URN = /::scaleway:secrets\/version:Version::secret-version-([a-z0-9-]+?)(@[a-z0-9-]+)?$/;
 const RANDOM_VALUE_URN = /::random:index\/randomPassword:RandomPassword::generated-([a-z0-9-]+)$/;
+const DATABASE_ROLE_URN = /::scaleway:databases\/(user:User|privilege:Privilege)::[a-z0-9-]+$/;
+const ROLE_PASSWORD_URN = /::random:index\/randomPassword:RandomPassword::(admin|runtime)-password$/;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -19,9 +23,9 @@ function resourcesOf(deployment: Record<string, unknown>): Record<string, unknow
   return Array.isArray(deployment.resources) ? deployment.resources.filter(isRecord) : [];
 }
 
-/** Whether a URN is a retired resource. `generated` names the runtime secrets whose values the operator task makes. */
+/** Whether a URN is a retired resource. `generated` names the runtime secrets whose values the operator tasks make. */
 export function isRetired(urn: string, generated: ReadonlySet<string>): boolean {
-  if (MACHINE_POLICY_URN.test(urn)) return true;
+  if (MACHINE_POLICY_URN.test(urn) || DATABASE_ROLE_URN.test(urn) || ROLE_PASSWORD_URN.test(urn)) return true;
   const version = SECRET_VERSION_URN.exec(urn)?.[1];
   if (version !== undefined) return generated.has(version);
   const random = RANDOM_VALUE_URN.exec(urn)?.[1];

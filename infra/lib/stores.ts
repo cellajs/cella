@@ -26,7 +26,12 @@ export interface StoreSecretContribution {
   valueSource: 'pulumi' | 'operator';
   /** Services that receive the secret in their per-VM `.env.runtime`. */
   services: readonly string[];
+  /** A database connection string the operator task ensure-database assembles for this role, never the program. */
+  database?: { role: DatabaseRole };
 }
+
+/** A database role whose password the operator task keeps: `admin` owns the tables and replicates, `runtime` serves requests under RLS. */
+export type DatabaseRole = 'admin' | 'runtime';
 
 /** Engine facilities injected into `provision()`. Stores take the Pulumi toolchain as arguments and keep module scope free of Pulumi imports, so CLI tasks can import the store registry without building a resource graph. */
 export interface ProvisionContext {

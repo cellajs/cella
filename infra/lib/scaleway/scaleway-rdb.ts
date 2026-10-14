@@ -128,6 +128,19 @@ export function createRdbClient(opts: RdbClientOptions) {
       return res.users;
     },
 
+    async createUser(instanceId: string, user: { name: string; password: string; isAdmin: boolean }): Promise<RdbUser> {
+      return scwFetch<RdbUser>(auth, 'POST', `${instanceBase(instanceId)}/users`, {
+        name: user.name,
+        password: user.password,
+        is_admin: user.isAdmin,
+      });
+    },
+
+    /** Set a user's password; the instance applies it to new connections. */
+    async setUserPassword(instanceId: string, name: string, password: string): Promise<void> {
+      await scwFetch<RdbUser>(auth, 'PATCH', `${instanceBase(instanceId)}/users/${encodeURIComponent(name)}`, { password });
+    },
+
     async listPrivileges(instanceId: string, databaseName: string): Promise<RdbPrivilege[]> {
       const url = `${instanceBase(instanceId)}/privileges?database_name=${encodeURIComponent(databaseName)}`;
       const res = await scwFetch<PrivilegeListResponse>(auth, 'GET', url);

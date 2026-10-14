@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { generatedRuntimeSecrets, runtimeSecrets } from '../lib/runtime-secrets';
+import { engineMadeRuntimeSecrets, runtimeSecrets } from '../lib/runtime-secrets';
 import { secretCopies } from '../lib/scaleway/secret-paths';
 import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
@@ -33,11 +33,11 @@ describe('secrets module', () => {
     }
   });
 
-  it('writes a version only of what a store supplies: never of a generated, derived or operator value, which the state must not hold', () => {
+  it('writes a version only of what a store supplies: never of a generated, derived, database or operator value, which the state must not hold', () => {
     const versioned = new Set(versions().map((r) => r.inputs.secretId));
-    const generated = new Set(generatedRuntimeSecrets().map((definition) => definition.id));
+    const engineMade = new Set(engineMadeRuntimeSecrets().map((definition) => definition.id));
     for (const definition of runtimeSecrets) {
-      const storeSupplied = definition.valueSource === 'pulumi' && !generated.has(definition.id);
+      const storeSupplied = definition.valueSource === 'pulumi' && !engineMade.has(definition.id);
       for (const container of containers().filter((r) => r.inputs.name === definition.secretName)) {
         expect(versioned.has(`${container.name}-id`), `${definition.id} ${container.name}`).toBe(storeSupplied);
       }
