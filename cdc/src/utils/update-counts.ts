@@ -1,5 +1,5 @@
 import type { ActivityAction, EntityHierarchy, EntityType } from 'shared';
-import { appConfig, entityIdColumnKey, hierarchy } from 'shared';
+import { entityIdColumnKey, hierarchy } from 'shared';
 import { log } from '../lib/pino';
 import type { ActivityWithoutId } from '../pipeline/parse-message';
 import type { CdcRowData, TableMeta } from '../types';
@@ -57,20 +57,6 @@ export function getCountDeltas(
       }
     }
 
-    // How many countable hosts hold each embedded id, kept on the embedded row's own counter. It follows the host's
-    // countable set like every count, so a soft delete takes the host's references off and a restore puts them back:
-    // what the recount gives, which reads live and published hosts only.
-    for (const embedding of appConfig.productEmbeddings) {
-      if (embedding.hostProduct !== tableMeta.type || countAction === null) continue;
-      const col = embedding.hostColumn;
-      const counterKey = `e:c:${embedding.hostProduct}`;
-      const heldBefore = countAction === 'create' ? [] : getArrayValue(oldRow ?? newRow, col);
-      const heldAfter = countAction === 'delete' ? [] : getArrayValue(newRow, col);
-
-      for (const id of heldAfter) if (!heldBefore.includes(id)) deltas.push({ channelKey: id, deltas: { [counterKey]: 1 } });
-      for (const id of heldBefore) if (!heldAfter.includes(id)) deltas.push({ channelKey: id, deltas: { [counterKey]: -1 } });
-    }
-
     return deltas;
   }
 
@@ -99,11 +85,6 @@ function deriveCountAction(action: ActivityAction, newRow: CdcRowData, oldRow: C
 function getStringValue(row: CdcRowData, key: string): string | null {
   const v = row[key];
   return typeof v === 'string' ? v : null;
-}
-
-function getArrayValue(row: CdcRowData, key: string): string[] {
-  const v = row[key];
-  return Array.isArray(v) ? v.filter((item): item is string => typeof item === 'string') : [];
 }
 
 /** Reads channelId and role, both NOT NULL: a missing value means a malformed row and yields no delta. */

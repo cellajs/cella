@@ -9,11 +9,8 @@ import type { PendingEvent, TableMeta } from '../types';
 /** Strips the mocked database was asked to run: the table, which hosts were looked up, the set() values and which rows it wrote. */
 const statements: Array<{ table: AnyPgTable; lookup: SQL; values: Record<string, SQL>; written: SQL }> = [];
 
-/** Counter statements the mocked database was asked to run, in the transaction of a strip. */
-const booked: SQL[] = [];
-
-/** The hosts the lookup of a strip finds: their id, the ids they hold, and what says whether they count. */
-const world: { hosts: Array<{ id: string; held: string[]; deletedAt: string | null }> } = { hosts: [] };
+/** The hosts the lookup of a strip finds. */
+const world: { hosts: Array<{ id: string }> } = { hosts: [] };
 
 // A host `task` that holds `item` ids in its `items` column, on synthetic tables.
 vi.mock('#/tables', async () => {
@@ -60,7 +57,7 @@ vi.mock('shared', async (importOriginal) => {
 });
 
 vi.mock('../lib/db', () => {
-  /** One transaction of the strip: the lookup that locks the hosts, the write, and the counter statements. */
+  /** One transaction of the strip: the lookup that locks the hosts, and the write. */
   const transaction = async (run: (tx: unknown) => Promise<void>) => {
     let lookup: SQL | undefined;
     const tx = {
@@ -83,10 +80,6 @@ vi.mock('../lib/db', () => {
           },
         }),
       }),
-      execute: async (statement: SQL) => {
-        booked.push(statement);
-        return { rows: [{ counts: {} }] };
-      },
     };
     await run(tx);
   };
@@ -100,7 +93,6 @@ const { cleanupEmbeddingReferences } = await import('../embeddings/embedding-cle
 const { handleUpdate } = await import('../handlers/update');
 const { createActivity } = await import('../services/create-activity');
 const { TransactionBuffer } = await import('../services/transaction-buffer');
-const { getCountDeltas } = await import('../utils/update-counts');
 const { computeBatchUnifiedDeltas } = await import('../utils/compute-unified-deltas');
 
 type SyntheticProduct = 'task' | 'item';
@@ -164,18 +156,10 @@ function rendered({ table, lookup, values, written }: (typeof statements)[number
   };
 }
 
-/** The counter statements as `channel key: deltas`. */
-const bookedDeltas = () =>
-  booked.map((statement) => {
-    const [channelKey, deltas] = dialect.sqlToQuery(statement).params as [string, string];
-    return { channelKey, deltas: JSON.parse(deltas) };
-  });
-
 beforeEach(() => {
   statements.length = 0;
-  booked.length = 0;
-  // One live host that holds every id a case strips, unless the case says otherwise.
-  world.hosts = [{ id: 't1', held: ['i1', 'i2', 'i3'], deletedAt: null }];
+  // One host that holds every id a case strips, unless the case says otherwise.
+  world.hosts = [{ id: 't1' }];
 });
 
 describe('suppressEmbeddingPropagation: at the commit of a source transaction', () => {
@@ -351,42 +335,19 @@ describe('cleanupEmbeddingReferences', () => {
   });
 
   it('writes the hosts it looked up and locked, and no other', async () => {
-    world.hosts = [
-      { id: 't1', held: ['i1'], deletedAt: null },
-      { id: 't2', held: ['i1', 'i9'], deletedAt: null },
-    ];
+    world.hosts = [{ id: 't1' }, { id: 't2' }];
 
     await cleanupEmbeddingReferences(productOf('item'), 'delete', [{ result: change('item', 'delete', itemRow('i1')) }]);
 
     expect(rendered(statements[0]).writtenIds).toEqual(['t1', 't2']);
   });
 
-  it('books one use less per live host that held the id: the strip comes back as no activity, so nothing else would', async () => {
-    world.hosts = [
-      { id: 't1', held: ['i1', 'i2'], deletedAt: null },
-      { id: 't2', held: ['i1', 'i9'], deletedAt: null },
-      // A soft-deleted host is stripped too, and its references were taken off when it was deleted.
-      { id: 't3', held: ['i1', 'i2'], deletedAt: '2026-10-01T10:00:00.000Z' },
-    ];
-
-    await cleanupEmbeddingReferences(productOf('item'), 'delete', [
-      { result: change('item', 'delete', itemRow('i1')) },
-      { result: change('item', 'delete', itemRow('i2')) },
-    ]);
-
-    expect(bookedDeltas()).toEqual([
-      { channelKey: 'i1', deltas: { 'e:c:task': -2 } },
-      { channelKey: 'i2', deltas: { 'e:c:task': -1 } },
-    ]);
-  });
-
-  it('must not book a strip that finds no host, as on a second delivery of the same delete', async () => {
+  it('writes nothing when the lookup finds no host, as on a second delivery of the same delete', async () => {
     world.hosts = [];
 
     await cleanupEmbeddingReferences(productOf('item'), 'delete', [{ result: change('item', 'delete', itemRow('i1')) }]);
 
     expect(statements).toHaveLength(0);
-    expect(booked).toHaveLength(0);
   });
 });
 
@@ -399,7 +360,6 @@ describe('a channel delete that takes rows with it', () => {
       change('project', 'delete', projectRow),
       change('item', 'delete', itemRow('i1')),
       change('item', 'delete', itemRow('i2')),
-      // A host that goes with the channel no longer uses the row it held.
       change('task', 'delete', taskRow('t1', { items: ['i9'] })),
     ]);
 
@@ -409,7 +369,6 @@ describe('a channel delete that takes rows with it', () => {
       o1: { 'e:c:item': -2, 'e:c:task': -1 },
       c1: { 'e:c:item': -2, 'e:c:task': -1 },
       s1: { 'e:c:item': -2, 'e:c:task': -1 },
-      i9: { 'e:c:task': -1 },
     });
   });
 
@@ -449,43 +408,6 @@ describe('a channel delete that takes rows with it', () => {
     // The project itself, and the item that went with it. The section was the project's home.
     expect(countDeltasByChannelKey.get('o1')).toEqual({ 'e:c:project': -1, 'e:c:item': -1 });
     expect(countDeltasByChannelKey.get('s1')).toEqual({ 'e:c:project': -1, 'e:c:h:project': -1, 'e:c:item': -1 });
-  });
-});
-
-describe('usage counts: how many countable hosts hold an embedded row', () => {
-  const at = '2026-10-01T10:00:00.000Z';
-  const usage = (action: ActivityAction, row: Row, oldRow: Row | null = null) =>
-    getCountDeltas(metaOf('task'), createActivity(metaOf('task'), row, action), row, oldRow)
-      .filter(({ channelKey }) => channelKey.startsWith('i'))
-      .map(({ channelKey, deltas }) => `${channelKey}:${deltas['e:c:task']}`);
-
-  it('counts the ids a new host holds, and takes them off when the host is deleted', () => {
-    expect(usage('create', taskRow('t1', { items: ['i1', 'i2'] }))).toEqual(['i1:1', 'i2:1']);
-    expect(usage('delete', taskRow('t1', { items: ['i1', 'i2'] }))).toEqual(['i1:-1', 'i2:-1']);
-  });
-
-  it('follows an edit of the array of a live host', () => {
-    expect(usage('update', taskRow('t1', { items: ['i2', 'i3'] }), taskRow('t1', { items: ['i1', 'i2'] }))).toEqual(['i3:1', 'i1:-1']);
-  });
-
-  it('must not keep the references of a soft-deleted host: the recount reads live hosts only', () => {
-    const live = taskRow('t1', { items: ['i1', 'i2'], deletedAt: null });
-    const deleted = { ...live, deletedAt: at };
-
-    expect(usage('update', deleted, live)).toEqual(['i1:-1', 'i2:-1']);
-    expect(usage('update', live, deleted)).toEqual(['i1:1', 'i2:1']);
-  });
-
-  it('must not take the references off a second time when a soft-deleted host is removed for good', () => {
-    expect(usage('delete', taskRow('t1', { items: ['i1'], deletedAt: at }))).toEqual([]);
-  });
-
-  it('counts what a host holds at the moment it is restored', () => {
-    const deleted = taskRow('t1', { items: ['i1', 'i2'], deletedAt: at });
-    // The strip of a deleted id reached the host while it was soft-deleted.
-    const restored = taskRow('t1', { items: ['i2'], deletedAt: null });
-
-    expect(usage('update', restored, deleted)).toEqual(['i2:1']);
   });
 });
 

@@ -5,7 +5,7 @@ import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/syn
 import { sourceId } from '~/query/offline/stx-utils';
 import { queryClient } from '~/query/query-client';
 import * as cacheOps from './cache-ops';
-import { invalidateEmbeddedForHost, invalidateEmbeddedUsage, propagateEmbeddings } from './propagation';
+import { propagateEmbeddings } from './propagation';
 import { getSyncTier, isViewingChannel } from './sync-priority';
 import { publishSyncedRows } from './sync-signals';
 import { syncStore } from './sync-store';
@@ -259,7 +259,6 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
     if (result.reachedSeq < untilSeq) {
       // Short delivery: do not advance the cursor, so catchup re-checks the gap; heal the visible view once and degrade sync trust.
       cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
-      invalidateEmbeddedForHost(entityType, organizationId);
       enterBasicFetchMode({ entityType, organizationId, promisedSeq: untilSeq, reachedSeq: result.reachedSeq });
     } else {
       // The fetch covered [fromSeq, untilSeq] for every channel under the covering prefix, so each due channel advances to the shared upper bound.
@@ -267,14 +266,10 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
     }
     // Row contents for subscribers that derive state from them; the org id is the fallback home for rows without ancestor ids.
     publishSyncedRows({ entityType, organizationId, rows: result.items as { id: string }[], degraded: false });
-    // Usage aggregates on embedded rows are server-derived, so a moved reference refetches their lists.
-    invalidateEmbeddedUsage(result.embeddingTouches, organizationId);
   } else {
     // Overflow, unsupported, or exhausted retries: the list refetch owns recovery, and the watermark advances to prevent a fetch loop.
     const anyViewing = entries.some((entry) => isViewingChannel(organizationId, entry.channelId));
     cacheOps.invalidateEntityListForOrg(keys, organizationId, anyViewing ? 'active' : 'none');
-    // No row reached the embedding diff, so every product this host embeds may hold a stale aggregate.
-    invalidateEmbeddedForHost(entityType, organizationId);
     for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
     if (entries.some((entry) => entry.hasCreates)) invalidateUnseenCounts(entityType);
     // Activity happened but no rows were delivered, so subscribers must fall back to invalidation.

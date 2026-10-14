@@ -69,7 +69,7 @@ Recording happens once per change, however often the change arrives. An activity
 
 ### Hand over
 
-After the commit the worker hands the changes to the API. A row that is no product (a membership, a tenant, a channel) goes alone and in commit order, because its listeners act on that one row. Product rows go as one message per audience, with a list of its rows. The API turns a list of one into a notification that carries the row's `stx`, so the tab that wrote it recognizes its own change and fetches nothing. For an app with product embeddings the worker then takes a deleted row out of the hosts that referenced it, and counts the uses it removes: that write is its own and comes back through the stream as no activity. Then the worker acknowledges the flush.
+After the commit the worker hands the changes to the API. A row that is no product (a membership, a tenant, a channel) goes alone and in commit order, because its listeners act on that one row. Product rows go as one message per audience, with a list of its rows. The API turns a list of one into a notification that carries the row's `stx`, so the tab that wrote it recognizes its own change and fetches nothing. For an app with product embeddings the worker then takes a deleted row out of the hosts that referenced it: that write is its own and comes back through the stream as no activity. Then the worker acknowledges the flush.
 
 ## Internal API channel
 
@@ -144,4 +144,3 @@ Keys in `channel_counters` are `sequence`, `membership`, or `<e|m>:<metric>:[h:]
 | `e:c:h:{type}` | Home-only | Count of countable rows homed at the node |
 | `e:li:h:{type}` / `e:lu:h:{type}` | Home-only | Last insert and update timestamps |
 | `m:c:{role}` / `m:c:total` / `m:c:pending` | Channel | Membership counts |
-| `e:c:{host type}` | Embedded row | Live host rows that reference the embedded row. The key is the embedded row's id, not a channel |
