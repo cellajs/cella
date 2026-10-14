@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project';
 import { provisionScopedKey } from '../lib/scaleway/scaleway-iam';
-import { operatorRules, setupOperatorApp } from './setup-operator-app';
+import { operatorPolicyReach, operatorRules, setupOperatorApp } from './setup-operator-app';
 
 vi.mock('../lib/scaleway/scaleway-iam', () => ({ provisionScopedKey: vi.fn() }));
 vi.mock('../lib/scaleway/dns-zone-project', () => ({ resolveDnsProjectIds: vi.fn() }));
@@ -81,5 +81,22 @@ describe('setupOperatorApp', () => {
     await expect(setupOperatorApp({ ...base, cidrs: ['not-an-address'] })).rejects.toThrow(/not an IPv4 CIDR/);
     expect(provisionScopedKey).not.toHaveBeenCalled();
     expect(resolveDnsProjectIds).not.toHaveBeenCalled();
+  });
+});
+
+describe('operatorPolicyReach', () => {
+  it('reads the projects the products rule covers and the one address list every rule carries', () => {
+    const rules = operatorRules({
+      projectIds: ['proj', 'proj-staging'],
+      organizationId: 'org-1',
+      dnsProjectIds: ['zone-proj'],
+      cidrs: ['203.0.113.7/32'],
+    });
+    expect(operatorPolicyReach(rules)).toEqual({ projectIds: ['proj', 'proj-staging'], cidrs: ['203.0.113.7/32'] });
+  });
+
+  it('must not read an address list when one rule carries another condition or none', () => {
+    const rules = operatorRules({ projectIds: ['proj'], organizationId: 'org-1', dnsProjectIds: ['proj'], cidrs: ['203.0.113.7/32'] });
+    expect(operatorPolicyReach([...rules, { permission_set_names: ['X'], condition: '' }]).cidrs).toEqual([]);
   });
 });

@@ -8,7 +8,7 @@ import { checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-outpu
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { acquireStackLockOrExit, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
-import { acquireIdentityKey } from './operator-unlock';
+import { acquireIdentityKey, acquirePrivilegedKey } from './operator-unlock';
 import { type OwnerKey, printRevokeReminder } from './owner-key';
 
 /** The applications a cleanup may delete, apart from the one the run itself authenticates as: deleting that one revokes the key every later call needs. */
@@ -24,9 +24,9 @@ export function splitOwnApplication<App extends { id: string }>(
 
 /**
  * Destroy an environment: state-backend login, AWS_ and SCW_ env mapping, stack selection, `destroy --refresh`, then optional IAM principal cleanup.
- * The destroy phase needs full project write and the IAM cleanup IAMManager, so it takes a privileged key the way Apply does (minted from the operator key
- * or a prompt, validated first). Production stacks require typing `<slug>-production`, and their frontend/private buckets carry
- * `protect: true`, so Pulumi refuses to delete them until protection is lifted in code.
+ * The destroy runs on the operator key, as an apply does; deleting the identities writes IAM, so that part asks for an Owner API key.
+ * Production stacks require typing `<slug>-production`, and their frontend/private buckets carry `protect: true`, so Pulumi refuses to
+ * delete them until protection is lifted in code.
  */
 export async function runTeardown(context: InfraContext): Promise<void> {
   const { appConfig } = context;
@@ -48,19 +48,41 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   }
 
   const identity = resolveOperatorIdentity();
-  const ownerKey = await acquireIdentityKey(context, 'A teardown destroys the machine policies and deletes the identities.');
+  const operatorKey = await acquirePrivilegedKey(context);
+  let destroyed = false;
   try {
-    await destroyStack(context, ownerKey, identity.admin);
+    destroyed = await destroyStack(context, operatorKey, identity.admin);
+  } finally {
+    await operatorKey.release();
+  }
+  if (!destroyed) return;
+
+  // IAM principal cleanup: group members plus the org-wide bootstrap DNS residue, enumerated via the per-mode group (REQ-1) and never by name-guessing.
+  const cleanupIam = await confirm({
+    message: `Also delete the IAM principals (group ${confirmToken}, its applications, keys, and policies)? It takes your Owner API key.`,
+    default: mode !== 'production',
+  });
+  if (!cleanupIam) {
+    console.info(pc.dim('IAM principals kept. Re-run teardown later or delete them in the console.'));
+    return;
+  }
+  const ownerKey = operatorKey.pasted ? operatorKey : await acquireIdentityKey(context, 'Deleting the identities writes IAM.');
+  try {
+    await deleteIdentities(context, ownerKey);
   } finally {
     await ownerKey.release();
   }
   if (ownerKey.pasted) printRevokeReminder();
 }
 
-async function destroyStack(context: InfraContext, ownerKey: OwnerKey, admin: { accessKey: string; secretKey: string } | undefined): Promise<void> {
+/** Destroy the stack's resources and remove it from the backend; true when the destroy completed. */
+async function destroyStack(
+  context: InfraContext,
+  ownerKey: OwnerKey,
+  admin: { accessKey: string; secretKey: string } | undefined,
+): Promise<boolean> {
   const { appConfig } = context;
   const mode = context.environment;
-  const confirmToken = `${appConfig.slug}-${mode}`;
   const { accessKey, secretKey, organizationId } = ownerKey;
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const targetStack = stackNameFor(context);
@@ -99,7 +121,7 @@ async function destroyStack(context: InfraContext, ownerKey: OwnerKey, admin: { 
       `\n${warningMark} pulumi destroy exited ${destroy.status}. Common causes: protected resources (lift 'protect' in code for a real teardown), ` +
         'or missing write permissions on the supplied key. Re-running teardown is safe.',
     );
-    return;
+    return false;
   }
   console.info(`${checkMark} Stack resources destroyed.`);
 
@@ -107,15 +129,19 @@ async function destroyStack(context: InfraContext, ownerKey: OwnerKey, admin: { 
   const rmStack = spawnSync('pulumi', ['stack', 'rm', '--yes', '--stack', targetStack], { cwd: infraDir, env, stdio: 'inherit' });
   if (rmStack.status === 0) console.info(`${checkMark} Pulumi stack '${targetStack}' removed from the backend.`);
 
-  // IAM principal cleanup: group members plus the org-wide bootstrap DNS residue, enumerated via the per-mode group (REQ-1) and never by name-guessing. Needs IAMManager + IAMReadOnly on the same key.
-  const cleanupIam = await confirm({
-    message: `Also delete the IAM principals (group ${confirmToken}, its applications, keys, and policies)? Requires IAMManager on this key.`,
-    default: mode !== 'production',
-  });
-  if (!cleanupIam) {
-    console.info(pc.dim('IAM principals kept. Re-run teardown later or delete them in the console.'));
-    return;
-  }
+  console.info(
+    `\n${pc.dim('Not touched (by design): the Pulumi state bucket (versioned history), Secret Manager containers with operator values, GitHub Environment secrets.')}\n` +
+      `${pc.dim('Remove GitHub secrets with')} ${pc.cyan(`gh secret delete -e ${mode} SCW_ACCESS_KEY`)} ${pc.dim('etc. when the environment is gone for good.')}`,
+  );
+  return true;
+}
+
+/** Delete the stack's identities: the per-mode group's applications with their keys and policies, then the group. The app's operator is not in it. */
+async function deleteIdentities(context: InfraContext, ownerKey: OwnerKey): Promise<void> {
+  const { appConfig } = context;
+  const mode = context.environment;
+  const confirmToken = `${appConfig.slug}-${mode}`;
+  const { accessKey, secretKey, organizationId } = ownerKey;
   try {
     const { applications } = await listManagedPrincipals({ callerSecretKey: secretKey, organizationId, slug: appConfig.slug, mode });
     if (applications.length === 0) {
@@ -142,9 +168,4 @@ async function destroyStack(context: InfraContext, ownerKey: OwnerKey, admin: { 
       `${warningMark} IAM cleanup incomplete: ${errorMessage(error)}. The remainder can be deleted in the console (group ${confirmToken}).`,
     );
   }
-
-  console.info(
-    `\n${pc.dim('Not touched (by design): the Pulumi state bucket (versioned history), Secret Manager containers with operator values, GitHub Environment secrets.')}\n` +
-      `${pc.dim('Remove GitHub secrets with')} ${pc.cyan(`gh secret delete -e ${mode} SCW_ACCESS_KEY`)} ${pc.dim('etc. when the environment is gone for good.')}`,
-  );
 }
