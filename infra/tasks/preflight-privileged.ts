@@ -9,8 +9,8 @@ import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
 
 /**
- * Pulumi resource types only a privileged run (an apply on the operator key) may write: the database, IAM, the VPC and private network, secret containers, DNS records, and the state bucket's
- * own policy (bucket-config writes on it are reserved to the admin application). Matched as URN-type prefixes; everything else a CI deploy applies itself.
+ * Pulumi resource types only an apply (on the operator key) writes: the database, IAM, the VPC and private network, secret containers, DNS
+ * records, and buckets with their policies. Matched as URN-type prefixes; everything else a deploy applies itself (plan §3.2).
  */
 // A secret container is privileged: a new one needs its value, which only the apply makes; the deploy makes no value.
 const PRIVILEGED_URN_TYPES = [
@@ -21,10 +21,9 @@ const PRIVILEGED_URN_TYPES = [
   'scaleway:secrets/secret:',
   // A record follows the load balancer's address, which the setup's first apply makes: the deploy key writes no DNS.
   'scaleway:domain/',
+  // A bucket's configuration and its policy: the deploy writes objects only.
+  'scaleway:object/',
 ] as const;
-
-/** Resource names (the URN's last segment) that are privileged regardless of type. */
-const PRIVILEGED_URN_NAMES = new Set(['state-bucket-policy']);
 
 /** One step of `pulumi preview --json`. */
 export interface PreviewStep {
@@ -69,8 +68,8 @@ export function splitUrn(urn: string): { type: string; name: string } {
 }
 
 export function isPrivilegedUrn(urn: string): boolean {
-  const { type, name } = splitUrn(urn);
-  return PRIVILEGED_URN_NAMES.has(name) || PRIVILEGED_URN_TYPES.some((prefix) => type.startsWith(prefix));
+  const { type } = splitUrn(urn);
+  return PRIVILEGED_URN_TYPES.some((prefix) => type.startsWith(prefix));
 }
 
 const MUTATING_OPS = new Set(['create', 'update', 'replace', 'delete', 'create-replacement', 'delete-replaced', 'import']);
