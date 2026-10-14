@@ -17,7 +17,6 @@ import type { ItemData, RoutableItemData } from '~/query/basic/types';
 import { isPending } from '~/query/offline/mutation-queue';
 import { entityIdsOf } from '~/query/offline/mutation-variables';
 import { queryClient } from '~/query/query-client';
-import { collectEmbeddingTouches, type EmbeddingTouches, invalidateEmbeddedUsage } from './propagation';
 
 /** Callers skip remote cache writes while this is true, so optimistic state survives; the mutation's onSuccess reconciles on settle. */
 function hasPendingMutationForEntity(entityType: string, entityId: string): boolean {
@@ -230,7 +229,7 @@ export async function fetchEntityAndUpdateList(
     return;
   }
 
-  // Read before the fetch, which writes the detail: the cached row is the only record of which embedded rows this host referenced.
+  // Read before the fetch, which writes the detail: without a list copy, the guard compares against the row as it was.
   const cached = entityType ? findInCache<ItemData>(entityType, entityId) : undefined;
 
   try {
@@ -241,13 +240,9 @@ export async function fetchEntityAndUpdateList(
     });
     if (!entity) return;
 
-    const touches: EmbeddingTouches = new Map();
-    if (entityType) collectEmbeddingTouches(entityType, cached, entity, touches);
-
     // The fetch replaced the detail, so its guard compares against a list copy, which a patch made meanwhile also reached, else the row read before.
     const listCopy = entityType ? findInCache<ItemData>(entityType, (item) => item.id === entityId) : undefined;
     applyServerEntity(entityType ?? '', entity, keys, organizationId ?? null, listCopy ?? cached);
-    if (organizationId) invalidateEmbeddedUsage(touches, organizationId);
     // The notification says create: active filtered lists refetch to place the new row.
     if (action === 'create' && organizationId) {
       invalidateFilteredLists(entityType ?? '', keys.list.org(organizationId), [entity]);
@@ -264,8 +259,6 @@ export interface RangeFetchResult {
   items: ItemData[];
   /** Highest seq actually returned; 0 when empty. Lets callers detect a short delivery. */
   reachedSeq: number;
-  /** Embedded rows whose usage aggregates the fetched host rows made stale; empty unless status is `ok`. */
-  embeddingTouches: EmbeddingTouches;
 }
 
 // Product rows carry the org sequence; read it defensively (ItemData is intentionally loose).
@@ -284,11 +277,11 @@ export async function fetchRangeAndPatch(
 ): Promise<RangeFetchResult> {
   if (!tenantId && organizationId) {
     console.debug(`[CacheOps] No tenantId for ${entityType} delta fetch, falling back to invalidation`);
-    return { status: 'unsupported', items: [], reachedSeq: 0, embeddingTouches: new Map() };
+    return { status: 'unsupported', items: [], reachedSeq: 0 };
   }
 
   const deltaFetch = getEntityDeltaFetch(entityType);
-  if (!deltaFetch) return { status: 'unsupported', items: [], reachedSeq: 0, embeddingTouches: new Map() };
+  if (!deltaFetch) return { status: 'unsupported', items: [], reachedSeq: 0 };
 
   try {
     const { items } = await deltaFetch(organizationId, tenantId, seqCursor, channelId);
@@ -296,15 +289,12 @@ export async function fetchRangeAndPatch(
     // A full chunk may truncate the range: report overflow so the caller invalidates without advancing past unseen rows.
     if (items.length >= SYNC_CHUNK_SIZE) {
       console.debug(`[CacheOps] Delta fetch: ${entityType} window overflow (seqCursor=${seqCursor}) → invalidation`);
-      return { status: 'overflow', items: [], reachedSeq: 0, embeddingTouches: new Map() };
+      return { status: 'overflow', items: [], reachedSeq: 0 };
     }
 
     const newRows: ItemData[] = [];
-    const embeddingTouches: EmbeddingTouches = new Map();
     for (const entity of items) {
-      // Read before applying: the cached row is the only record of which embedded rows this host referenced.
       const cached = findInCache<ItemData>(entityType, entity.id);
-      collectEmbeddingTouches(entityType, cached, entity, embeddingTouches);
       if (applyServerEntity(entityType, entity, keys, organizationId, cached)) newRows.push(entity);
     }
 
@@ -315,9 +305,9 @@ export async function fetchRangeAndPatch(
       console.debug(`[CacheOps] Delta fetch: ${entityType} patched ${items.length} entities (seqCursor=${seqCursor})`);
     }
     const reachedSeq = items.reduce((max, item) => Math.max(max, seqOf(item)), 0);
-    return { status: 'ok', items, reachedSeq, embeddingTouches };
+    return { status: 'ok', items, reachedSeq };
   } catch (error) {
     console.warn(`[CacheOps] Delta fetch failed for ${entityType}, falling back to invalidation`, error);
-    return { status: 'error', items: [], reachedSeq: 0, embeddingTouches: new Map() };
+    return { status: 'error', items: [], reachedSeq: 0 };
   }
 }

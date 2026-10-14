@@ -8,7 +8,7 @@ import { syncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
 import { enqueueRange } from './fetch-prioritizer';
 import * as membershipOps from './membership-ops';
-import { invalidateEmbeddedForHost, propagateEmbeddings } from './propagation';
+import { propagateEmbeddings } from './propagation';
 import { getSyncTier } from './sync-priority';
 import { publishChangeEvent } from './sync-signals';
 import type { AppStreamNotification } from './types';
@@ -161,7 +161,6 @@ function handleEntityNotification(
         // Mark stale only; the next access refetches.
         cacheOps.invalidateEntityDetail(entityId, keys, 'none');
         cacheOps.invalidateEntityListForOrg(keys, organizationId, 'none');
-        invalidateEmbeddedForHost(entityType, organizationId, 'none');
       } else {
         // Propagation is chained after the fetch so fresh source data is in cache.
         cacheOps
@@ -182,8 +181,6 @@ function handleEntityNotification(
       // Physical deletes and unpublishes leave no fetchable tombstone; soft deletes stay updates reconciled through sequence ranges.
       cacheOps.invalidateEntityDetail(entityId, keys, 'none');
       cacheOps.invalidateEntityListForOrg(keys, organizationId, isViewing ? 'active' : 'none');
-      // The row leaves with its references, and no tombstone reaches the embedding diff.
-      invalidateEmbeddedForHost(entityType, organizationId, isViewing ? 'active' : 'none');
       applyUnfetchableRemovalUnseen(entityType, entityId, channelId);
       if (propagation) propagateEmbeddings(propagation);
       break;

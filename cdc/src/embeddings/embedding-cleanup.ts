@@ -5,8 +5,6 @@ import { getEntityTable } from '#/tables';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import type { CdcRowData } from '../types';
-import { applyCounterDeltas } from '../utils/apply-unified-deltas';
-import { isCountableRow } from '../utils/countability';
 import { isSoftDeleteTransition } from '../utils/is-soft-delete-transition';
 import { isEmbeddingColumn } from './reference-columns';
 import { stripChangedFieldsStx } from './strip-changed-fields';
@@ -15,21 +13,16 @@ type EmbeddingCleanupAction = Extract<ActivityAction, 'update' | 'delete'>;
 
 /** Pre-resolved embedding with Drizzle column references. */
 interface ResolvedEmbedding {
-  hostProduct: string;
   hostTable: AnyPgTable;
   hostColumn: AnyPgColumn;
   hostColumnName: string;
   parentColumnName: string;
   parentColumn: AnyPgColumn;
-  /** The host row as the strip reads it: its id, the ids it holds, and the columns that say whether it counts. */
-  heldSelection: { id: AnyPgColumn; held: AnyPgColumn } & Record<string, AnyPgColumn>;
+  hostIdColumn: AnyPgColumn;
 }
 
 /** What the cleanup writes through: the worker's pool, or the transaction a test keeps to itself. */
 type CleanupExecutor = Pick<typeof cdcDb, 'transaction'>;
-
-/** The columns `isCountableRow` reads, where the host table has them. */
-const countabilityColumns = ['deletedAt', 'publishedAt'];
 
 /** Resolves productEmbeddings to Drizzle column references at module init; throws on misconfiguration. */
 function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]> {
@@ -59,10 +52,7 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
     const parentColumn = columns[parentColumnName];
     if (!parentColumn) throw new Error(`productEmbeddings: column "${parentColumnName}" not found on "${hostProduct}" table`);
 
-    const heldSelection: ResolvedEmbedding['heldSelection'] = { id: columns.id, held: hostColumn };
-    for (const name of countabilityColumns) if (columns[name]) heldSelection[name] = columns[name];
-
-    const resolved: ResolvedEmbedding = { hostProduct, hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn, heldSelection };
+    const resolved: ResolvedEmbedding = { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn, hostIdColumn: columns.id };
     const list = map.get(embeddedProduct);
     if (list) list.push(resolved);
     else map.set(embeddedProduct, [resolved]);
@@ -77,10 +67,6 @@ const embeddingsByProduct = resolveEmbeddings();
 /**
  * Removes deleted or unpublished embedded ids from configured host arrays. Runs outside request
  * handlers so the indexed, parent-scoped update does not take row locks on the request path.
- *
- * The strip is the worker's own write: it comes back through the stream and is no activity there. So the references
- * it takes away are booked here, in the transaction of the strip: each embedded id loses one use per countable host
- * that held it. A strip that finds nothing, as on a second delivery, books nothing.
  */
 export async function cleanupEmbeddingReferences(
   embeddedProductType: ProductEntityType,
@@ -96,7 +82,7 @@ export async function cleanupEmbeddingReferences(
 
   if (relevantEvents.length === 0) return;
 
-  for (const { hostProduct, hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn, heldSelection } of embeddings) {
+  for (const { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn, hostIdColumn } of embeddings) {
     // Grouped by parent scope, e.g. projectId.
     const byParent = new Map<string, string[]>();
     for (const { result } of relevantEvents) {
@@ -116,12 +102,12 @@ export async function cleanupEmbeddingReferences(
     for (const parentId of [...byParent.keys()].sort()) {
       const embeddedIds = byParent.get(parentId) ?? [];
       await db.transaction(async (tx) => {
-        // Locked in id order before the strip: what a host held is read from the row the strip then writes.
+        // Locked in id order before the strip: two strips over the same hosts take their locks the same way round.
         const hosts = await tx
-          .select(heldSelection)
+          .select({ id: hostIdColumn })
           .from(hostTable)
           .where(and(arrayOverlaps(hostColumn, embeddedIds), sql`${parentColumn} = ${parentId}`))
-          .orderBy(asc(heldSelection.id))
+          .orderBy(asc(hostIdColumn))
           .for('no key update');
         if (hosts.length === 0) return;
 
@@ -137,21 +123,10 @@ export async function cleanupEmbeddingReferences(
           })
           .where(
             inArray(
-              heldSelection.id,
+              hostIdColumn,
               hosts.map((host) => host.id),
             ),
           );
-
-        const lostUses = new Map<string, number>();
-        for (const host of hosts) {
-          if (!isCountableRow(host)) continue;
-          for (const id of Array.isArray(host.held) ? host.held : []) {
-            if (embeddedIds.includes(id)) lostUses.set(id, (lostUses.get(id) ?? 0) + 1);
-          }
-        }
-        for (const id of [...lostUses.keys()].sort()) {
-          await applyCounterDeltas(tx, id, { [`e:c:${hostProduct}`]: -(lostUses.get(id) ?? 0) });
-        }
       });
     }
   }

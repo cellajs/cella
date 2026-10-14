@@ -185,30 +185,6 @@ function channelCounterSelects(): string[] {
     `);
   }
 
-  // 4b: Array-ref counters into channel_counters, e.g. label usage from tasks.labels[].
-  for (const ref of appConfig.productEmbeddings) {
-    // Hydrated single-reference embeddings have no array column to unnest.
-    if (!(ref.hostColumn in getColumns(getEntityTable(ref.hostProduct as EntityType)))) continue;
-    const hostType = ref.hostProduct as EntityType;
-    const src = tbl(hostType);
-    const embedded = tbl(ref.embeddedProduct as EntityType);
-    const key = `e:c:${ref.hostProduct}`;
-
-    // Driven from the embedded table, not the reference set: a row whose last host dropped it must be
-    // written back to 0, and GROUP BY alone would leave its previous count standing.
-    selects.push(`
-      SELECT e.id::text, jsonb_build_object('${key}', COALESCE(u.ref_count, 0)::int), NOW()
-      FROM ${embedded} e
-      LEFT JOIN (
-        SELECT target_id, COUNT(*)::int AS ref_count
-        FROM ${src} h, unnest(h.${ref.hostColumn}) AS target_id
-        WHERE TRUE${livePredicate(hostType, 'h')}${publishedPredicate(hostType, 'h')}
-        GROUP BY target_id
-      -- Host id arrays may be text[] or uuid[], so both sides compare as text.
-      ) u ON u.target_id::text = e.id::text
-    `);
-  }
-
   return selects;
 }
 

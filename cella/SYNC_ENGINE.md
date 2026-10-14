@@ -126,7 +126,9 @@ Unseen badges update from delivered rows with the server's own predicate (inside
 
 ### Embeddings
 
-A product can reference other products through an id array column: the **host** row holds the ids, each referenced row is **embedded**. Declare the relationship in `appConfig.productEmbeddings` (`hostProduct`, `embeddedProduct`, `hostColumn`). The template configures none. Host and embedded rows sync independently, so patching runs both ways: an embedded row change carries a `PropagationHint` that patches the copies inside cached host rows, and a host row change refetches the lists of embedded rows whose references it added or removed, because derived values such as a usage count come from the list endpoint only.
+A product can reference other products through an id array column: the **host** row holds the ids, each referenced row is **embedded**. Declare the relationship in `appConfig.productEmbeddings` (`hostProduct`, `embeddedProduct`, `hostColumn`). The template configures none. Host and embedded rows sync independently: an embedded row change carries a `PropagationHint` that patches the copies inside cached host rows.
+
+The engine keeps no count of how many hosts reference an embedded row. A count shown next to synced data, such as the number of tasks with a label, is derived on the client from the host lists the page already syncs, with a definition that matches what is loaded (all of a project's tasks, say, or only open ones). It then follows every change the moment the host rows do, the user's own edits and other users' alike, with no refetch. Where the hosts are not synced, or a decision must not rest on what this viewer can read (deleting an unused label), count on demand on the server.
 
 ## Writes
 
