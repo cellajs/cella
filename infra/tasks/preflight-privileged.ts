@@ -10,7 +10,8 @@ import { getFlag } from './args';
 
 /**
  * Pulumi resource types only an apply (on the operator key) writes: the database, IAM, the VPC and private network, secret containers, DNS
- * records, and buckets with their policies. Matched as URN-type prefixes; everything else a deploy applies itself (plan §3.2).
+ * records, buckets with their policies, and the load balancer. Matched as URN-type prefixes; everything else a deploy applies itself (plan §3.2).
+ * A deploy still moves the load balancer's pools: the cutover sets their servers through the API, which the program leaves alone.
  */
 // A secret container is privileged: a new one needs its value, which only the apply makes; the deploy makes no value.
 const PRIVILEGED_URN_TYPES = [
@@ -23,6 +24,8 @@ const PRIVILEGED_URN_TYPES = [
   'scaleway:domain/',
   // A bucket's configuration and its policy: the deploy writes objects only.
   'scaleway:object/',
+  // Frontends, routes, ACLs and certificates decide what is public, and an ACL guards the internal listener (D15).
+  'scaleway:loadbalancers/',
 ] as const;
 
 /** One step of `pulumi preview --json`. */

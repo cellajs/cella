@@ -136,6 +136,15 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
         endAction(forget.status ?? 1);
       }
 
+      // An errored certificate leaves the state and Scaleway here, so the `up` makes it anew behind its DNS gate; certificates are the apply's (D15).
+      console.info(pc.dim('\n→ Clearing errored load balancer certificates (repair-certs)…'));
+      const repair = spawnSync('pnpm', ['--filter', 'infra', 'repair-certs', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
+      if (repair.status !== 0) {
+        await releaseAll();
+        console.error(`${warningMark} repair-certs failed (exit ${repair.status}). Nothing applied.`);
+        endAction(repair.status ?? 1);
+      }
+
       // Reconcile gen/sha from live state before `up`: a stale committed Pulumi.<stack>.yaml would converge compute back to an old generation and destroy newer live VMs.
       console.info(pc.dim('\n→ Reconciling rollout config from live state (sync-rollout-config)…'));
       const sync = spawnSync('pnpm', ['--filter', 'infra', 'sync-rollout-config', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
