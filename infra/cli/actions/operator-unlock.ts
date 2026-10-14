@@ -190,7 +190,12 @@ let operatorNoticeShown = false;
  * process's memory. Scaleway accepts it from the dedicated address only, and it holds no IAM write, so nothing is minted from it and nothing
  * is left to revoke when the action ends.
  */
-export async function acquireOperatorKey(stack: StackRef): Promise<OwnerKey> {
+/** The operator key a run holds: works from the dedicated address only, writes no IAM, and is kept in memory for the session. */
+export interface OperatorKey extends KeyPair {
+  organizationId: string;
+}
+
+export async function acquireOperatorKey(stack: StackRef): Promise<OperatorKey> {
   const names = principalNames(stack.appConfig.slug, stack.environment);
   const unlocked = await unlock(stack);
   if (!unlocked) return endAction(1);
@@ -198,21 +203,14 @@ export async function acquireOperatorKey(stack: StackRef): Promise<OwnerKey> {
     operatorNoticeShown = true;
     console.info(`${pc.dim('Operator key:')} ${names.operator} ${pc.dim(unlocked.accessKey)}`);
   }
-  return {
-    accessKey: unlocked.accessKey,
-    secretKey: unlocked.secret,
-    organizationId: unlocked.organizationId,
-    minted: false,
-    pasted: false,
-    release: async () => {},
-  };
+  return { accessKey: unlocked.accessKey, secretKey: unlocked.secret, organizationId: unlocked.organizationId };
 }
 
 /**
  * The key a privileged action runs on: the operator key, which works from the dedicated address only. An Owner key never runs one, as the
  * buckets admit no person; an app without an operator gets one from `operator-key` or its setup, with an Owner API key.
  */
-export async function acquirePrivilegedKey(stack: StackRef): Promise<OwnerKey> {
+export async function acquirePrivilegedKey(stack: StackRef): Promise<OperatorKey> {
   const lock = await operatorLock(stack);
   if (lock.state === 'absent') {
     const names = principalNames(stack.appConfig.slug, stack.environment);

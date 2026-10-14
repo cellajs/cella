@@ -17,23 +17,21 @@ async function selectWithEscape<T extends string>(options: { message: string; ch
 }
 
 /**
- * Manage this environment's runtime secrets. Writing a secret version needs Secret Manager write, which the admin application key lacks, so
- * this takes the operator key the way every privileged action does. Minting a managed key writes IAM, which takes an Owner API key, asked
+ * Manage this environment's runtime secrets. Writing a secret version needs Secret Manager write, so this takes the operator key the
+ * way every privileged action does. Minting a managed key writes IAM, which takes an Owner API key, asked
  * for when a mint is confirmed.
  */
 export async function runSecrets(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
-  console.info(pc.dim('\n→ Manage runtime secrets writes Secret Manager, which the admin application key cannot: it uses your operator key.'));
-  const ownerKey = await acquirePrivilegedKey(context);
+  console.info(pc.dim('\n→ Manage runtime secrets writes Secret Manager: it uses your operator key.'));
+  const operator = await acquirePrivilegedKey(context);
   let identityKey: OwnerKey | undefined;
 
   try {
     await manageRuntimeSecrets({
-      secretKey: ownerKey.secretKey,
+      secretKey: operator.secretKey,
       identitySecretKey: async () => {
-        identityKey ??= ownerKey.pasted
-          ? ownerKey
-          : await acquireIdentityKey(context, 'Minting a managed key creates an application, a policy and a key.');
+        identityKey ??= await acquireIdentityKey(context, 'Minting a managed key creates an application, a policy and a key.');
         return identityKey.secretKey;
       },
       projectId,
@@ -45,7 +43,6 @@ export async function runSecrets(context: InfraContext): Promise<void> {
     });
   } finally {
     await identityKey?.release();
-    await ownerKey.release();
   }
-  if (ownerKey.pasted || identityKey?.pasted) printRevokeReminder();
+  if (identityKey) printRevokeReminder();
 }

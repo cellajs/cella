@@ -251,5 +251,5 @@ export async function runIdentity(context: InfraContext): Promise<void> {
   } finally {
     await ownerKey.release();
   }
-  if (ownerKey.pasted) printRevokeReminder();
+  printRevokeReminder();
 }

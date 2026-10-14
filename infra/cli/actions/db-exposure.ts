@@ -23,7 +23,6 @@ import { hardenPublicDsn } from '../../lib/utils/public-dsn';
 import { within } from '../../lib/utils/retry';
 import { rolePasswordSecretName } from '../../tasks/ensure-database';
 import { endAction, endsAction, type InfraContext } from '../shared';
-import { printRevokeReminder } from './owner-key';
 import { type PrivilegedConvergeOptions, runPrivilegedConverge } from './privileged-converge';
 
 // Pulumi config keys consumed by resources/stores/postgres-managed.ts and the outputs it exports.
@@ -183,7 +182,7 @@ async function convergeOrExit(
   context: InfraContext,
   operation: string,
   hooks: Pick<PrivilegedConvergeOptions, 'prepare' | 'afterUp'>,
-): Promise<{ env: NodeJS.ProcessEnv; stack: string; ownerKeyPasted: boolean }> {
+): Promise<{ env: NodeJS.ProcessEnv; stack: string }> {
   let result: Awaited<ReturnType<typeof runPrivilegedConverge>>;
   try {
     result = await runPrivilegedConverge(context, { operation, ...hooks });
@@ -237,7 +236,7 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
   }
 
   let live: { endpoints: RdbEndpoint[]; aclRules: number } | undefined;
-  const { env, stack, ownerKeyPasted } = await convergeOrExit(context, 'expose-db', {
+  const { env, stack } = await convergeOrExit(context, 'expose-db', {
     prepare: prepareExpose(context, acl),
     afterUp: async (e) => {
       live = await readDbExposure(context, convergeSecretKey(e));
@@ -264,7 +263,6 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
     else console.warn(`  ${warningMark} CA output unavailable; DSN left encrypt-only (sslmode=require). Re-run to pick up the CA.`);
   }
   console.info(`\n  ${pc.bold(`When finished, run "${actionLabel('db-close')}" to close it again.`)}`);
-  if (ownerKeyPasted) printRevokeReminder();
 }
 
 /** Close the database's public endpoint: delete it over the RDB API, converge without the exposure config, and confirm the instance has none left. */
@@ -276,7 +274,7 @@ export async function runUnexposeDatabase(context: InfraContext): Promise<void> 
   }
 
   let left: RdbEndpoint[] | undefined;
-  const { ownerKeyPasted } = await convergeOrExit(context, 'unexpose-db', {
+  await convergeOrExit(context, 'unexpose-db', {
     prepare: prepareClose(context),
     afterUp: async (env) => {
       left = (await readDbExposure(context, convergeSecretKey(env))).endpoints;
@@ -293,5 +291,4 @@ export async function runUnexposeDatabase(context: InfraContext): Promise<void> 
   } else {
     console.info(`\n${checkMark} ${pc.bold('Public endpoint closed.')} The database is private-only again.`);
   }
-  if (ownerKeyPasted) printRevokeReminder();
 }

@@ -26,7 +26,7 @@ vi.mock('./identity', () => ({ exitOnIdentityChanges: async () => {} }));
 const { runApply } = await import('./apply');
 
 const context = { environment: 'production' } as InfraContext;
-const operator = { accessKey: 'SCWOPERATOR', secretKey: 'operator-secret', organizationId: 'org-1', pasted: false };
+const operator = { accessKey: 'SCWOPERATOR', secretKey: 'operator-secret', organizationId: 'org-1' };
 const reviewed = { passphrase: 'correct horse', basis: { checkpoint: '"aaa"', control: '"bbb"' } };
 
 beforeEach(() => {
@@ -34,7 +34,7 @@ beforeEach(() => {
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   acquirePrivilegedKey.mockResolvedValue(operator);
   reviewPlan.mockResolvedValue(reviewed);
-  runPrivilegedConverge.mockResolvedValue({ completed: true, verified: true, ownerKeyPasted: false });
+  runPrivilegedConverge.mockResolvedValue({ completed: true, verified: true });
 });
 
 afterEach(() => {
@@ -77,7 +77,7 @@ describe('runApply', () => {
 
   it('ends with a failure when the up completed but the live grants still differ', async () => {
     askToApply.mockResolvedValue(true);
-    runPrivilegedConverge.mockResolvedValue({ completed: true, verified: false, ownerKeyPasted: false });
+    runPrivilegedConverge.mockResolvedValue({ completed: true, verified: false });
 
     await expect(runApply(context)).rejects.toMatchObject({ name: 'ActionEnded', exitCode: 1 });
   });

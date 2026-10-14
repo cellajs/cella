@@ -51,7 +51,7 @@ import {
 } from '../shared';
 import { ensureObserverForEnvironment } from './observer-key';
 import { ensureOperatorForEnvironment } from './operator-key';
-import { acquireOperatorKey } from './operator-unlock';
+import { acquireOperatorKey, type OperatorKey } from './operator-unlock';
 import { OWNER_KEY_HINT, type OwnerKey } from './owner-key';
 import { admitOperatorOrExit } from './privileged-converge';
 
@@ -427,7 +427,7 @@ async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<O
   console.info('\n→ CI deploy key');
   const ciKey = await mintCiKey(pair.secretKey, { projectId, appConfig, mode: environment });
   console.info('\n→ Operator');
-  const ownerKey: OwnerKey = { ...pair, organizationId, minted: false, pasted: true, release: async () => {} };
+  const ownerKey: OwnerKey = { ...pair, organizationId, minted: false, release: async () => {} };
   const operatorKey = await ensureOperatorForEnvironment({ ...context, projectId }, ownerKey, projectId);
 
   // The observer takes the operator's address list, so it follows the operator.
@@ -460,7 +460,7 @@ async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<O
  * The operator part of a setup, on the operator key: the passphrase and its custody, the state bucket and the stack, the first `pulumi up`
  * and the operator's secret values. It writes no IAM.
  */
-async function runOperatorPart(context: InfraContext, operatorKey: OwnerKey, moment: OwnerMomentResult | undefined): Promise<void> {
+async function runOperatorPart(context: InfraContext, operatorKey: OperatorKey, moment: OwnerMomentResult | undefined): Promise<void> {
   const { appConfig } = context;
   const environment = context.environment;
   const projectId = moment?.projectId ?? context.projectId;
@@ -576,7 +576,7 @@ async function runOperatorPart(context: InfraContext, operatorKey: OwnerKey, mom
 }
 
 /** Record a rotation of keys in the control object, under the stack lock, with the operator key. */
-async function recordKeyRotation(context: InfraContext, operatorKey: OwnerKey): Promise<void> {
+async function recordKeyRotation(context: InfraContext, operatorKey: OperatorKey): Promise<void> {
   const { appConfig, projectId } = context;
   const stack = stackNameFor(context);
   const state = { accessKey: projectAccessKey(operatorKey.accessKey, projectId), secretKey: operatorKey.secretKey };
@@ -605,12 +605,8 @@ export async function runSetup(context: InfraContext, mode: SetupMode): Promise<
   // An operator the moment just created is in memory: the session asks for nothing.
   if (moment?.operatorKey) rememberOperatorKey(moment.operatorKey);
   const operatorKey = await acquireOperatorKey(context);
-  try {
-    // An Owner key never writes the state: the rotation is recorded with the operator key, and its counter makes the next deploy replace
-    // every machine, so none keeps a key the rotation deleted.
-    if (mode === 'rotate-keys') await recordKeyRotation(context, operatorKey);
-    else await runOperatorPart(context, operatorKey, moment);
-  } finally {
-    await operatorKey.release();
-  }
+  // An Owner key never writes the state: the rotation is recorded with the operator key, and its counter makes the next deploy replace
+  // every machine, so none keeps a key the rotation deleted.
+  if (mode === 'rotate-keys') await recordKeyRotation(context, operatorKey);
+  else await runOperatorPart(context, operatorKey, moment);
 }

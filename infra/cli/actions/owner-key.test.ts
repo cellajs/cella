@@ -49,7 +49,7 @@ describe('acquireOwnerKey in one run of the CLI', () => {
 
     expect(keyPairOrPrompt).toHaveBeenCalledTimes(1);
     expect(assertIamManager).toHaveBeenCalledTimes(2);
-    expect(second).toMatchObject({ accessKey: first.accessKey, secretKey: 'typed-secret', pasted: true });
+    expect(second).toMatchObject({ accessKey: first.accessKey, secretKey: 'typed-secret', minted: false });
   });
 
   it('must not offer a key again that failed its validation: the next action asks for one', async () => {

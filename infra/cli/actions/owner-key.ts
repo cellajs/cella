@@ -27,8 +27,6 @@ export interface OwnerKey extends KeyPair {
   organizationId: string;
   /** True when this run minted the key from a durable Owner API key and revokes it on release. */
   minted: boolean;
-  /** True for an Owner API key typed at the prompt: the operator holds a key the CLI did not mint and cannot revoke for them. False for a key minted from the operator key. */
-  pasted: boolean;
   /** Revoke a minted key; a supplied key is left alone. Safe to call twice. */
   release(): Promise<void>;
 }
@@ -73,7 +71,7 @@ export async function acquireOwnerKey(opts: { names: PrincipalNames; projectId: 
   const durableUserKey = desc.bearer !== 'application' && (hours === undefined || hours > DURABLE_KEY_HOURS);
   if (!durableUserKey) {
     console.info(`${pc.dim('Owner API key:')} ${formatKeyLine(desc, role)}`);
-    return { ...pair, organizationId, minted: false, pasted: true, release: async () => {} };
+    return { ...pair, organizationId, minted: false, release: async () => {} };
   }
 
   const expiresAt = new Date(Date.now() + MINTED_KEY_TTL_MS).toISOString();
@@ -90,7 +88,6 @@ export async function acquireOwnerKey(opts: { names: PrincipalNames; projectId: 
     secretKey: minted.secret_key,
     organizationId,
     minted: true,
-    pasted: true,
     async release() {
       if (released) return;
       released = true;

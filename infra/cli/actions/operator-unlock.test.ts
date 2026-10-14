@@ -127,8 +127,7 @@ describe('acquireOperatorKey', () => {
     const key = await acquireOperatorKey(stack);
 
     expect(describeKey).toHaveBeenCalledWith({ accessKey: 'SCWOPERATOR', secretKey: 'operator-secret' });
-    expect(key).toMatchObject({ accessKey: 'SCWOPERATOR', secretKey: 'operator-secret', organizationId: 'org-1', minted: false, pasted: false });
-    await key.release();
+    expect(key).toEqual({ accessKey: 'SCWOPERATOR', secretKey: 'operator-secret', organizationId: 'org-1' });
     expect(rememberedOperatorKey()).toEqual({ accessKey: 'SCWOPERATOR', secretKey: 'operator-secret' });
   });
 
@@ -215,7 +214,7 @@ describe('acquirePrivilegedKey', () => {
 
 describe('acquireIdentityKey', () => {
   it('must not write IAM with the operator key: an identity change takes an Owner API key, whatever the stack has', async () => {
-    acquireOwnerKey.mockResolvedValue({ accessKey: 'SCWOWNER', pasted: true });
+    acquireOwnerKey.mockResolvedValue({ accessKey: 'SCWOWNER' });
 
     const key = await acquireIdentityKey(stack, 'A teardown deletes the identities.');
 

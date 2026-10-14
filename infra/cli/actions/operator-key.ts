@@ -166,7 +166,7 @@ export async function runOperatorKey(context: InfraContext): Promise<void> {
   } finally {
     await ownerKey.release();
   }
-  if (ownerKey.pasted) printRevokeReminder();
+  printRevokeReminder();
 }
 
 /**
