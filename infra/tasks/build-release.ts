@@ -1,7 +1,9 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { builderCloudConfig, builderReportPrefix, containerScript } from '../lib/builder/builder-machine';
+import { readRepositoryKey, repositoryUrl } from '../lib/deploy/repository-key';
 import { deriveInfra } from '../lib/naming';
+import { actionCommand } from '../lib/operator-actions';
 import { resolveImageDigest } from '../lib/scaleway/registry-digest';
 import { BOOT_IMAGE_NAME } from '../lib/scaleway/release-image';
 import { makeS3Client, projectAccessKey } from '../lib/scaleway/s3-client';
@@ -114,7 +116,9 @@ async function waitForBuilder(opts: BuildReleaseOptions, fx: BuildEffects, log: 
     }
     if (result) {
       const tail = (await fx.report('log')) ?? '';
-      throw new Error(`the builder failed at '${lastStep ?? 'its start'}'. The end of its log:\n${tail}`);
+      // A private repository answers a fetch without its key as if the commit were not there.
+      const hint = lastStep === 'clone' ? `\nA private repository needs its read key: \`${actionCommand('repository-key')}\`.` : '';
+      throw new Error(`the builder failed at '${lastStep ?? 'its start'}'. The end of its log:\n${tail}${hint}`);
     }
   }
   throw new Error(
@@ -210,7 +214,14 @@ function liveEffects(opts: {
     keys: async () => {
       const key = await readStandingKey(secrets, opts.slug, opts.mode, 'builder');
       const boot = await readStandingKey(secrets, opts.slug, opts.mode, 'boot');
-      const bundleId = await stageHandoffBundle({ ...opts, principal: 'builder', key, secrets, log: (message) => console.info(message) });
+      const repositoryKey = await readRepositoryKey(secrets, opts.slug, opts.mode);
+      const bundleId = await stageHandoffBundle({
+        ...opts,
+        principal: 'builder',
+        key: { ...key, ...(repositoryKey ? { repositoryKey } : {}) },
+        secrets,
+        log: (message) => console.info(message),
+      });
       return { bundleId, boot };
     },
     removeBuilders: () =>
@@ -272,10 +283,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const { loadEngineConfig } = await import('../config/engine-config');
   const appConfig = await loadEngineConfig();
   const { naming, region, zone } = deriveInfra(appConfig);
-  const rootPackage = JSON.parse(await readFile(join(infraDir, '..', 'package.json'), 'utf8')) as { repository?: string; packageManager?: string };
-  const repository = rootPackage.repository;
-  if (!repository?.startsWith('https://'))
-    throw new Error("the builder clones the repository the root package.json names: set its 'repository' to the https URL");
+  const rootPackage = JSON.parse(await readFile(join(infraDir, '..', 'package.json'), 'utf8')) as { packageManager?: string };
+  const repository = repositoryUrl();
   const pnpmVersion = rootPackage.packageManager?.match(/^pnpm@(.+)$/)?.[1];
   if (!pnpmVersion) throw new Error("the builder installs the pnpm the root package.json's 'packageManager' names");
 
@@ -300,7 +309,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         builderCloudConfig({
           values: {
             SHA: sha,
-            REPO: `${repository.replace(/\.git$/, '')}.git`,
+            REPO: repository,
             REGION: region,
             PROJECT: projectId,
             REGISTRY_HOST: registry,

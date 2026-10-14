@@ -61,6 +61,8 @@ jobs:
           ENV: ${{ inputs.environment || 'production' }}
           EVENT: ${{ github.event_name }}
           GIT_SHA: ${{ github.sha }}
+          # Reads a private repository's refs (D19); this job's token reads contents only.
+          REPOSITORY_READ_KEY: ${{ github.token }}
         run: |
           started_on=()
           if [ "$EVENT" = "workflow_dispatch" ]; then started_on=(--started-on "$GIT_SHA"); fi

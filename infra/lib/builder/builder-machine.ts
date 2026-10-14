@@ -55,16 +55,22 @@ docker pull -q "$NODE_IMAGE"
 step key
 # Read once: a second read fails, as the bundle is disabled after the first.
 curl -sS -m 30 --fail -H "X-Auth-Token: $BOOT_SK" "https://api.scaleway.com/secret-manager/v1beta1/regions/$REGION/secrets/$BUNDLE_ID/versions/latest/access" > /run/builder.bundle
-python3 -c 'import base64,json; b=json.loads(base64.b64decode(json.load(open("/run/builder.bundle"))["data"])); open("/run/builder.ak","w").write(b["accessKey"]); open("/run/builder.sk","w").write(b["secretKey"])'
+python3 -c 'import base64,json; b=json.loads(base64.b64decode(json.load(open("/run/builder.bundle"))["data"])); open("/run/builder.ak","w").write(b["accessKey"]); open("/run/builder.sk","w").write(b["secretKey"]); open("/run/builder.repo","w").write(b.get("repositoryKey",""))'
 rm -f /run/builder.bundle
-chmod 600 /run/builder.ak /run/builder.sk
+chmod 600 /run/builder.ak /run/builder.sk /run/builder.repo
 BUILDER_AK=$(cat /run/builder.ak)
 BUILDER_SK=$(cat /run/builder.sk)
 
 step clone
 git init -q /build
 git -C /build remote add origin "$REPO"
-git -C /build fetch -q --depth 1 origin "$SHA"
+# A private repository's read key (D19) goes with this one fetch as a header: it is in no URL, no remote and no file the build sees.
+if [ -s /run/builder.repo ]; then
+  git -C /build -c http.extraHeader="Authorization: Basic $(printf 'x-access-token:%s' "$(cat /run/builder.repo)" | base64 -w0)" fetch -q --depth 1 origin "$SHA"
+else
+  git -C /build fetch -q --depth 1 origin "$SHA"
+fi
+rm -f /run/builder.repo
 git -C /build checkout -q FETCH_HEAD
 
 printf '%s' "$BUILDER_SK" | docker login "$REGISTRY_HOST" -u nologin --password-stdin
@@ -129,7 +135,7 @@ const indent = (text: string, spaces: number) =>
 /**
  * The builder machine's cloud-init: the values, the bake file, the commands of its keyless container, the script, and a unit started once.
  * The script runs on Scaleway's `docker` image: it takes the builder key from its read-once bundle with the boot key, fetches the release's
- * commit, has a `node` container that holds no key install the workspace and build the boot bundle and the frontend, then pushes the images
+ * commit (with the repository read key the bundle carries for a private repository), has a `node` container that holds no key install the workspace and build the boot bundle and the frontend, then pushes the images
  * and uploads the frontend files with the builder key, and reports each step to the boot-diagnostics bucket with the boot key.
  */
 export function builderCloudConfig(opts: { values: BuilderValues; frontendEnv: Record<string, string>; bake: unknown; container: string }): string {

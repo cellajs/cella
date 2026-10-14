@@ -46,7 +46,8 @@ export async function stageHandoffBundle(opts: {
   mode: string;
   sha: string;
   principal: string;
-  key: { accessKey: string; secretKey: string };
+  /** The principal's key; the builder's carries the repository read key too, for a private repository (D19). */
+  key: { accessKey: string; secretKey: string; repositoryKey?: string };
   secrets: Pick<StageSecrets, 'listSecretsUnder' | 'ensureSecret' | 'putSecretValue' | 'deleteSecret'>;
   log: (message: string) => void;
 }): Promise<string> {
