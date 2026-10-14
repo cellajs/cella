@@ -1,15 +1,15 @@
 import * as pulumi from '@pulumi/pulumi';
 import * as scaleway from '@pulumiverse/scaleway';
 import { type RuntimeSecretDefinition, type RuntimeSecretId, runtimeSecrets } from '../lib/runtime-secrets';
-import { secretPathFor } from '../lib/scaleway/secret-paths';
+import { secretCopies } from '../lib/scaleway/secret-paths';
 import { mode, naming, region, tags } from '../pulumi-context';
 import { configuredOrRandomSecret } from './configured-secret';
 import { derivedRuntimeSecretData } from './stores';
 
-// Folder per secret: `/<slug>-<mode>/<service>/` for single-consumer secrets, `/<slug>-<mode>/shared/<consumers>/` per consumer set for multi-consumer ones. The path is the security boundary the VM grant is conditioned on, so it is derived from the consumer list, never hand-assigned.
-const secretPath = (definition: RuntimeSecretDefinition) => secretPathFor(definition, naming.slug, mode);
+// One copy per consumer, in `/<slug>-<mode>/<service>/`. The folder is the security boundary the machine grant is conditioned on, so it is derived
+// from the consumer list, never hand-assigned, and a grant names its own folder only.
 
-/** Imports of operator secret containers that exist outside the state, as `secretName=region/uuid`: a setup fills it for its first `up` when a teardown kept them. */
+/** Imports of operator secret containers that exist outside the state, as `secretName@service=region/uuid`: a setup fills it for its first `up` when a teardown kept them. */
 function parseOperatorSecretImports(raw: string | undefined): Record<string, string> {
   if (!raw) return {};
   const map: Record<string, string> = {};
@@ -19,7 +19,7 @@ function parseOperatorSecretImports(raw: string | undefined): Record<string, str
     const eq = entry.indexOf('=');
     const name = eq === -1 ? '' : entry.slice(0, eq).trim();
     const id = eq === -1 ? '' : entry.slice(eq + 1).trim();
-    if (!name || !id) throw new Error(`OPERATOR_SECRET_IMPORTS: malformed entry '${entry}' (expected name=region/uuid).`);
+    if (!name || !id) throw new Error(`OPERATOR_SECRET_IMPORTS: malformed entry '${entry}' (expected name@service=region/uuid).`);
     map[name] = id;
   }
   return map;
@@ -27,16 +27,29 @@ function parseOperatorSecretImports(raw: string | undefined): Record<string, str
 
 const operatorSecretImports = parseOperatorSecretImports(process.env.OPERATOR_SECRET_IMPORTS);
 
-function createSecretContainer(name: string, path: string, description: string, opts?: { retainOnDelete?: boolean; importId?: string }) {
+/**
+ * The container of one copy. A secret of one consumer keeps the resource name it had before copies (`secret-<name>`), through an alias, as
+ * its folder did not move: a new resource at the same name and path would be refused.
+ */
+function createSecretContainer(
+  name: string,
+  copy: { service: string; path: string; only: boolean },
+  description: string,
+  opts?: { retainOnDelete?: boolean; importId?: string },
+) {
   return new scaleway.secrets.Secret(
-    `secret-${name}`,
-    { name, path, description, region, tags },
-    { retainOnDelete: opts?.retainOnDelete, import: opts?.importId },
+    `secret-${name}@${copy.service}`,
+    { name, path: copy.path, description, region, tags },
+    { retainOnDelete: opts?.retainOnDelete, import: opts?.importId, aliases: copy.only ? [{ name: `secret-${name}` }] : undefined },
   );
 }
 
-function createSecretVersion(name: string, secretId: pulumi.Input<string>, data: pulumi.Input<string>) {
-  return new scaleway.secrets.Version(`secret-version-${name}`, { secretId, data, region });
+function createSecretVersion(name: string, copy: { service: string; only: boolean }, secretId: pulumi.Input<string>, data: pulumi.Input<string>) {
+  return new scaleway.secrets.Version(
+    `secret-version-${name}@${copy.service}`,
+    { secretId, data, region },
+    { aliases: copy.only ? [{ name: `secret-version-${name}` }] : undefined },
+  );
 }
 
 // The `generated-<secretName>` resource names are the Pulumi identities of the live secret values; renaming re-creates them.
@@ -74,23 +87,28 @@ function resolvePulumiRuntimeSecretData(definition: RuntimeSecretDefinition): pu
 
 // Registry-driven secret containers
 
-const secretResources = Object.fromEntries(
-  runtimeSecrets.map((definition) => {
-    const isOperator = definition.valueSource === 'operator';
-    // Pulumi creates every container and operators add versions through the CLI. Operator values are retained when a registry entry disappears, so orphans are cleaned up by hand.
-    const secret = createSecretContainer(definition.secretName, secretPath(definition), definition.description, {
-      retainOnDelete: isOperator,
-      importId: isOperator ? operatorSecretImports[definition.secretName] : undefined,
-    });
-    if (!isOperator) {
-      createSecretVersion(definition.secretName, secret.id, pulumiRuntimeSecretData(definition));
-    }
-    return [definition.id, secret];
-  }),
-);
+function secretContainers(definition: RuntimeSecretDefinition): Record<string, pulumi.Output<string>> {
+  const isOperator = definition.valueSource === 'operator';
+  const copies = secretCopies(definition, naming.slug, mode);
+  return Object.fromEntries(
+    copies.map(({ service, path }) => {
+      const copy = { service, path, only: copies.length === 1 };
+      // Pulumi creates every container and operators add versions through the CLI. Operator values are retained when a registry entry disappears, so orphans are cleaned up by hand.
+      const secret = createSecretContainer(definition.secretName, copy, definition.description, {
+        retainOnDelete: isOperator,
+        importId: isOperator ? operatorSecretImports[`${definition.secretName}@${service}`] : undefined,
+      });
+      if (!isOperator) createSecretVersion(definition.secretName, copy, secret.id, pulumiRuntimeSecretData(definition));
+      return [service, secret.id];
+    }),
+  );
+}
 
-/** Runtime secret ids to Scaleway secret ids. The key type is the literal id union, so a typo is a compile error; Object.fromEntries widens, hence the cast. */
-export const secretIds = Object.fromEntries(Object.entries(secretResources).map(([id, secret]) => [id, secret.id])) as Record<
+/**
+ * Runtime secret ids to the Scaleway secret id of each consumer's copy. The key type is the literal id union, so a typo is a compile error;
+ * Object.fromEntries widens, hence the cast.
+ */
+export const secretIds = Object.fromEntries(runtimeSecrets.map((definition) => [definition.id, secretContainers(definition)])) as Record<
   RuntimeSecretId,
-  pulumi.Output<string>
+  Record<string, pulumi.Output<string>>
 >;

@@ -21,14 +21,15 @@ function fakeClient(secrets: Record<string, Record<string, string>>): SinkKeyCli
   };
 }
 
-const sharedPath = '/cella-production/shared/backend/cdc/jobs/yjs/';
+const backendPath = '/cella-production/backend/';
+const copyPaths = ['backend', 'cdc', 'yjs', 'jobs'].map((service) => `/cella-production/${service}/`);
 
 describe('lookupSinkIngestKey', () => {
-  it('reads the key from the folder its registry entry derives, never the stack root', async () => {
+  it('reads the key from a consumer copy its registry entry derives, never the stack root', async () => {
     // The stack root /cella-production/ holds no secret: a lookup there leaves every deploy without telemetry.
-    const client = fakeClient({ [sharedPath]: { 'maple-secret-ingest-key': ' ik-123 \n' }, '/cella-production/': {} });
+    const client = fakeClient({ [backendPath]: { 'maple-secret-ingest-key': ' ik-123 \n' }, '/cella-production/': {} });
     expect(await lookupSinkIngestKey({ slug: 'cella', mode: 'production', client })).toEqual({ key: 'ik-123' });
-    expect(client.paths).toEqual([sharedPath]);
+    expect(client.paths.sort()).toEqual([...copyPaths].sort());
   });
 
   it('follows the entry when its consumer list changes', async () => {
@@ -41,12 +42,12 @@ describe('lookupSinkIngestKey', () => {
 
   it('says why when there is no key', async () => {
     const missing = await lookupSinkIngestKey({ slug: 'cella', mode: 'production', client: fakeClient({}) });
-    expect(missing).toEqual({ missing: expect.stringContaining(`not found in ${sharedPath}`) });
+    expect(missing).toEqual({ missing: expect.stringContaining(`not found in ${backendPath}`) });
 
     const empty = await lookupSinkIngestKey({
       slug: 'cella',
       mode: 'production',
-      client: fakeClient({ [sharedPath]: { 'maple-secret-ingest-key': '  ' } }),
+      client: fakeClient({ [backendPath]: { 'maple-secret-ingest-key': '  ' } }),
     });
     expect(empty).toEqual({ missing: expect.stringContaining('empty value') });
 

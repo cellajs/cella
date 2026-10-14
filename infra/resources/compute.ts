@@ -55,10 +55,16 @@ const securityGroup = new scaleway.instance.SecurityGroup('compute-sg', {
   tags,
 });
 
-/** Build the secret ID and env-name manifest baked into cloud-init. It never contains values. */
+/** Build the secret ID and env-name manifest baked into cloud-init. It never contains values. A secret is read from the copy of the first consumer the machine carries. */
 function buildRuntimeSecretsManifest(consumers: RuntimeSecretConsumer[]): pulumi.Output<string> {
   const definitions = unionRuntimeSecrets(consumers);
-  return pulumi.all(definitions.map((definition) => secretIds[definition.id])).apply((ids) =>
+  const copyOf = (definition: (typeof definitions)[number]) => {
+    const consumer = consumers.find((candidate) => (definition.services as readonly string[]).includes(candidate));
+    const id = consumer ? secretIds[definition.id]?.[consumer] : undefined;
+    if (!id) throw new Error(`compute: no copy of '${definition.secretName}' for ${consumers.join(', ')}`);
+    return id;
+  };
+  return pulumi.all(definitions.map(copyOf)).apply((ids) =>
     JSON.stringify(
       definitions.map((definition, index) => ({
         id: definition.id,

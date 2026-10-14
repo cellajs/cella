@@ -1,5 +1,6 @@
 import type { ServiceName } from '../compose/compose';
 import { runtimeSecrets } from '../lib/runtime-secrets';
+import { secretCopies } from '../lib/scaleway/secret-paths';
 import { serviceNames } from '../lib/services';
 import { isEnvFileDeliverable } from '../lib/utils/env-file';
 import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like';
@@ -15,11 +16,14 @@ export interface SecretToCheck {
   envVar: string;
   secretName: string;
   required: boolean;
+  /** The folder of the copy to probe: a secret of several consumers has one copy in each one's folder. */
+  path?: string;
 }
 
 export interface DeliverabilityOffender {
   envVar: string;
   secretName: string;
+  path?: string;
   /** 'missing' (required + no version) or an env-file reason ('multiline'/'empty'). */
   reason: 'missing' | 'multiline' | 'empty';
 }
@@ -42,20 +46,23 @@ export interface AssertSecretsDeliverableOptions {
   log?: (msg: string) => void;
 }
 
-/** Resolve a secret's id from its (project-unique) name. Returns null when absent. */
-async function resolveSecretIdByName(
+const trimSlashes = (path: string) => `/${path.split('/').filter(Boolean).join('/')}`;
+
+/** Resolve a secret's id from its name, and from its folder when one is given (copies share a name). Returns null when absent. */
+async function resolveSecretId(
   fetchImpl: FetchLike,
   secretKey: string,
   region: string,
   projectId: string,
   name: string,
+  path?: string,
 ): Promise<string | null> {
   const url = `${SECRET_BASE}/regions/${region}/secrets?project_id=${projectId}&name=${encodeURIComponent(name)}&page_size=50`;
   const res = await fetchImpl(url, { method: 'GET', headers: { 'X-Auth-Token': secretKey } });
   const body = await res.text();
   if (!res.ok) throw new Error(`Secret Manager list '${name}' → ${res.status}: ${body}`);
-  const { secrets = [] } = parseJsonBody<{ secrets?: Array<{ id: string; name: string }> }>(body);
-  return secrets.find((s) => s.name === name)?.id ?? null;
+  const { secrets = [] } = parseJsonBody<{ secrets?: Array<{ id: string; name: string; path?: string }> }>(body);
+  return secrets.find((s) => s.name === name && (path === undefined || trimSlashes(s.path ?? '') === trimSlashes(path)))?.id ?? null;
 }
 
 /**
@@ -84,20 +91,26 @@ export async function assertSecretsDeliverable(opts: AssertSecretsDeliverableOpt
   const offenders: DeliverabilityOffender[] = [];
 
   for (const secret of opts.secrets) {
-    const secretId = await resolveSecretIdByName(fetchImpl, opts.secretKey, opts.region, opts.projectId, secret.secretName);
+    const secretId = await resolveSecretId(fetchImpl, opts.secretKey, opts.region, opts.projectId, secret.secretName, secret.path);
     const value = secretId === null ? null : await readLatestSecretValue(fetchImpl, opts.secretKey, opts.region, secretId);
 
     if (value === null) {
       // Absent. Only a problem for required secrets (the sync skips an absent
       // optional secret, but a missing required one fails the boot).
-      if (secret.required) offenders.push({ envVar: secret.envVar, secretName: secret.secretName, reason: 'missing' });
+      if (secret.required)
+        offenders.push({ envVar: secret.envVar, secretName: secret.secretName, ...(secret.path ? { path: secret.path } : {}), reason: 'missing' });
       continue;
     }
 
     const deliverable = isEnvFileDeliverable(value);
     if (!deliverable.ok) {
       // A present-but-multiline value breaks the sync regardless of required.
-      offenders.push({ envVar: secret.envVar, secretName: secret.secretName, reason: deliverable.reason });
+      offenders.push({
+        envVar: secret.envVar,
+        secretName: secret.secretName,
+        ...(secret.path ? { path: secret.path } : {}),
+        reason: deliverable.reason,
+      });
     }
   }
 
@@ -111,15 +124,16 @@ export async function assertSecretsDeliverable(opts: AssertSecretsDeliverableOpt
 }
 
 /**
- * Build the probe list from the runtime-secrets registry, scoped to the secrets
- * that the given enabled services actually receive, so an optional secret for a
- * disabled service (e.g. ai) never produces a false failure.
+ * Build the probe list from the runtime-secrets registry: the copy of every enabled consumer, so an optional secret for a disabled service
+ * (e.g. ai) never produces a false failure, and a copy left empty fails as the machine reading it would.
  */
-export function secretsForServices(enabled: readonly ServiceName[]): SecretToCheck[] {
+export function secretsForServices(enabled: readonly ServiceName[], slug: string, mode: string): SecretToCheck[] {
   const enabledSet = new Set<string>(enabled);
-  return runtimeSecrets
-    .filter((secret) => secret.services.some((svc) => enabledSet.has(svc)))
-    .map((secret) => ({ envVar: secret.envVar, secretName: secret.secretName, required: secret.required }));
+  return runtimeSecrets.flatMap((secret) =>
+    secretCopies(secret, slug, mode)
+      .filter((copy) => enabledSet.has(copy.service))
+      .map((copy) => ({ envVar: secret.envVar, secretName: secret.secretName, required: secret.required, path: copy.path })),
+  );
 }
 
 export function serviceNamesFromServicesJson(raw: string): ServiceName[] {
@@ -138,13 +152,18 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const requested = servicesJson ? serviceNamesFromServicesJson(servicesJson) : servicesArg ? servicesArg.split(',') : serviceNames;
   const enabled = requested.map((s) => s.trim()).filter((s): s is ServiceName => (serviceNames as readonly string[]).includes(s));
 
-  if (!secretKey || !region || !projectId) throw new Error('Required: SCW_SECRET_KEY, --region, --project-id');
+  const mode = getFlag(argv, '--mode');
+  if (!secretKey || !region || !projectId || !mode) throw new Error('Required: SCW_SECRET_KEY, --region, --project-id, --mode');
+  // The copies' folders carry the app's slug, which the engine config of the mode names.
+  process.env.APP_MODE = mode;
+  const { loadEngineConfig } = await import('../config/engine-config');
+  const { slug } = await loadEngineConfig();
 
-  const secrets = secretsForServices(enabled);
+  const secrets = secretsForServices(enabled, slug, mode);
   const result = await assertSecretsDeliverable({ secretKey, region, projectId, secrets });
   if (!result.ok) {
     throw new Error(
-      `Undeliverable runtime secrets: ${result.offenders.map((o) => `${o.envVar} [${o.secretName}] (${o.reason})`).join(', ')}. ` +
+      `Undeliverable runtime secrets: ${result.offenders.map((o) => `${o.envVar} [${o.secretName}${o.path ? ` in ${o.path}` : ''}] (${o.reason})`).join(', ')}. ` +
         'A multi-line value must be base64-encoded (single line) and decoded by the consumer; a missing required secret must be ' +
         'provisioned (pulumi-derived) or seeded (operator) before the roll. See infra/README.md, "Runtime secret delivery".',
     );

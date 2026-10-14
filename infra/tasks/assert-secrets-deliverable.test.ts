@@ -100,3 +100,30 @@ describe('serviceNamesFromServicesJson', () => {
     expect(serviceNamesFromServicesJson(raw)).toEqual(['backend', 'frontend']);
   });
 });
+
+describe('assertSecretsDeliverable, one copy per consumer', () => {
+  it('probes the copy in the given folder, not another copy of the same name', async () => {
+    const listed = [
+      { id: 'copy-backend', name: 'brevo-api-key', path: '/app-production/backend' },
+      { id: 'copy-jobs', name: 'brevo-api-key', path: '/app-production/jobs' },
+    ];
+    const fetchImpl = (async (url: string) => {
+      if (url.includes('/secrets?')) return new Response(JSON.stringify({ secrets: listed }), { status: 200 });
+      // Only the backend copy has a value: the jobs copy is empty and must be reported.
+      if (url.includes('copy-backend')) return new Response(JSON.stringify({ data: Buffer.from('v').toString('base64') }), { status: 200 });
+      return new Response('{}', { status: 404 });
+    }) as never;
+    const res = await assertSecretsDeliverable({
+      secretKey: 'k',
+      region: 'nl-ams',
+      projectId: 'p',
+      secrets: [
+        { envVar: 'BREVO_API_KEY', secretName: 'brevo-api-key', required: true, path: '/app-production/backend/' },
+        { envVar: 'BREVO_API_KEY', secretName: 'brevo-api-key', required: true, path: '/app-production/jobs/' },
+      ],
+      fetchImpl,
+      log: () => {},
+    });
+    expect(res.offenders).toEqual([{ envVar: 'BREVO_API_KEY', secretName: 'brevo-api-key', path: '/app-production/jobs/', reason: 'missing' }]);
+  });
+});

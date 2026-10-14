@@ -1,6 +1,6 @@
 import { operatorManagedRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { secretPathFor } from '../lib/scaleway/secret-paths';
+import { secretCopies } from '../lib/scaleway/secret-paths';
 
 export interface SeedOperatorSecretsOptions {
   secretKey: string;
@@ -33,15 +33,16 @@ export async function seedOperatorSecrets(options: SeedOperatorSecretsOptions): 
     const value = options.values[secret.id];
     if (!value) continue;
 
-    const path = secretPathFor(secret, options.slug, options.mode);
-    const existing = await client.getSecretByName(secret.secretName, path);
-    if (existing?.version_count && existing.version_count > 0) {
-      log(`skip ${secret.secretName}: already has ${existing.version_count} version(s)`);
-      continue;
+    // One copy per consumer: each is seeded alike, and one that has a value already is left alone.
+    for (const { service, path } of secretCopies(secret, options.slug, options.mode)) {
+      const existing = await client.getSecretByName(secret.secretName, path);
+      if (existing?.version_count && existing.version_count > 0) {
+        log(`skip ${secret.secretName} for ${service}: already has ${existing.version_count} version(s)`);
+        continue;
+      }
+      const ensured = existing ?? (await client.ensureSecret({ name: secret.secretName, path, description: secret.description }));
+      await client.putSecretValue({ secretId: ensured.id, value, description: 'Seeded during setup', disablePrevious: false });
+      log(`seed ${secret.secretName} for ${service}`);
     }
-
-    const ensured = existing ?? (await client.ensureSecret({ name: secret.secretName, path, description: secret.description }));
-    await client.putSecretValue({ secretId: ensured.id, value, description: 'Seeded during setup', disablePrevious: false });
-    log(`seed ${secret.secretName}`);
   }
 }
