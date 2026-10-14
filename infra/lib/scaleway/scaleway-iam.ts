@@ -141,7 +141,7 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
   }
 
   if (config.mintKey === false) {
-    log(`  ${checkMark} No key made here: each deploy makes the keys of ${app.name}`);
+    log(`  ${checkMark} No key made here: the standing key of ${app.name} is made by its own step`);
     return { accessKey: '', secretKey: '', applicationId: app.id, organizationId };
   }
 
