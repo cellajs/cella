@@ -32,7 +32,7 @@ interface Facts {
 function base(overrides: Partial<Facts> = {}): Facts {
   return {
     tooling: { pulumi: true, dockerBuildx: true, gh: true },
-    identity: { observerAppId: 'app-1' },
+    identity: { observerAppId: 'app-1', keyAges: [] },
     github: { authenticated: true, repo: 'org/repo', environmentExists: true, missingSecrets: [] },
     state: {
       stateBucketExists: true,
@@ -141,7 +141,7 @@ describe('admin app identity', () => {
   });
 
   it('warns and points at setup when the application does not exist', () => {
-    const check = find(reportFor(base({ identity: { observerAppId: null } })).checks, 'identity.observerApp');
+    const check = find(reportFor(base({ identity: { observerAppId: null, keyAges: [] } })).checks, 'identity.observerApp');
     expect(check?.status).toBe('warn');
     expect(check?.detail).toContain('not found');
     expect(check?.nextAction?.command).toBe('pnpm infra');

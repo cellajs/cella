@@ -1,5 +1,6 @@
 import { actionCommand } from '../../operator-actions';
-import { resolveApplicationIdByName } from '../../scaleway/iam-client';
+import { listApiKeys, resolveApplicationIdByName } from '../../scaleway/iam-client';
+import { machinePrincipals } from '../../scaleway/machine-keys';
 import { organizationIdOfKey } from '../../scaleway/operator-identity';
 import { principalNames } from '../../scaleway/principals';
 import { projectsOfOtherModes, projectVerdict } from '../../stack/project-per-mode';
@@ -33,8 +34,26 @@ export const stackProvider: StatusProvider<Record<string, never>> = {
   },
 };
 
-/** Resolved observer application id, or `null` when the app does not exist. `undefined` facts mean the probe could not run. */
-export type IdentityFacts = { observerAppId: string | null };
+/** One key's age, by the application that bears it. */
+export interface KeyAge {
+  application: string;
+  createdAt: string;
+}
+
+/**
+ * Resolved observer application id, or `null` when the app does not exist, and the age of every key of the environment's identities.
+ * `undefined` facts mean the probe could not run.
+ */
+export type IdentityFacts = { observerAppId: string | null; keyAges: KeyAge[] };
+
+/** The keys' ages as one line, oldest first, in days. No age is a deadline (D12): the line only says how old each key is. */
+export function keyAgesLine(ages: readonly KeyAge[], now = Date.now()): string {
+  const days = (createdAt: string) => Math.max(0, Math.floor((now - Date.parse(createdAt)) / 86_400_000));
+  return [...ages]
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .map((age) => `${age.application} ${days(age.createdAt)} d`)
+    .join(', ');
+}
 
 /**
  * Scaleway project + observer identity checks. The project id is a session fact; the observer application is resolved from
@@ -48,8 +67,22 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
     try {
       // An application key learns its organization from IAM; an unresolvable one degrades the check to unknown, never an error.
       const organizationId = await organizationIdOfKey({ accessKey: session.accessKey, secretKey: session.secretKey }, session.projectId);
-      const name = principalNames(session.appConfig.slug, session.mode).observer;
-      return { observerAppId: await resolveApplicationIdByName({ secretKey: session.secretKey }, organizationId, name) };
+      const auth = { secretKey: session.secretKey };
+      const names = principalNames(session.appConfig.slug, session.mode);
+      const observerAppId = await resolveApplicationIdByName(auth, organizationId, names.observer);
+      const applications = [
+        names.operator,
+        names.observer,
+        names.ciDeploy,
+        ...machinePrincipals(session.appConfig.slug, session.mode).map((principal) => principal.application),
+      ];
+      const keyAges: KeyAge[] = [];
+      for (const application of applications) {
+        const id = application === names.observer ? observerAppId : await resolveApplicationIdByName(auth, organizationId, application);
+        if (!id) continue;
+        for (const key of await listApiKeys(auth, organizationId, id)) if (key.created_at) keyAges.push({ application, createdAt: key.created_at });
+      }
+      return { observerAppId, keyAges };
     } catch {
       return undefined;
     }
@@ -74,6 +107,12 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
                 `IAM application '${principalNames(session.appConfig.slug, session.mode).observer}' not found; \`${actionCommand('identity')}\` creates it`,
                 runSetup,
               ),
+        ),
+      );
+      const ages = check('identity.keyAges', 'Key ages', 'scaleway');
+      checks.push(
+        probed(ages, session.scalewayKeyAvailable, facts, 'could not read the keys', ({ keyAges }) =>
+          ages.ok(keyAges.length > 0 ? keyAgesLine(keyAges) : 'no key found'),
         ),
       );
     }

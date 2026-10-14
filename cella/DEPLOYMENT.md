@@ -327,11 +327,17 @@ Verify: `curl https://<your-app>/api/health?depth=full` reports every component 
 - **Re-granting is mandatory, and the task owns it.** Deleting a database drops its Scaleway privileges. Neither a recreate nor a backup restore brings them back (`pg_dump` carries table ACLs, not database-level ones), so without it `CONNECT` is absent and the app reports `database_unreachable`.
 - If the task fails after the delete, it prints the exact `scw rdb backup restore` command plus the two `privilege set` calls a restore does not perform.
 
+### Rotation
+
+Two acts, each recorded in the control object with when and by whom, and `pnpm infra` opens with the last of each kind ("never" where that is so). No date is a deadline: nothing fails by age, and `status` lists every key's age. A rotation raises a counter that is part of every new generation's identity, so the next deploy replaces every machine, also on the same release, and none keeps a key or a value from before. After a compromise, rotate keys first.
+
+**Rotate secrets** (`pnpm infra rotate-secrets`, operator key): a fresh password for every database role, set on the live role through the database API, and a fresh value for every generated secret marked `rotatable` in [runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts), every consumer's copy rewritten. A key that encrypts or hashes stored data (`data-encryption-key`, `pii-hash-secret`) is not marked: a new value would leave that data unreadable or unmatched, so it needs a rotation in the app, with both keys at hand. The running machines keep the old values until the next deploy replaces them, and the database refuses the new connections they open with the old passwords: deploy right after. Third-party keys are pasted anew in **Manage runtime secrets**, the passphrase in **Rotate passphrase**.
+
 ### Key rotation
 
 1. Have your operator key at hand.
 2. `pnpm infra` → **Rotate keys & secrets** → **Rotate keys**: mints a fresh `<slug>-<mode>-ci-deploy` key and, if `gh` is authenticated, pushes it to the stack's GitHub Environment as `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`. It also replaces the observer key (rewritten in every `infra/.env.<mode>` on this machine that holds it; a copy on another machine stops working) and every standing machine key, deleting the old ones. No key is written to stack config.
-3. Deploy. The running machines booted with the old machine keys, which are deleted now: a reboot before the next deploy cannot hydrate, and the backend's presigned URLs stop working until then. No commit is needed.
+3. The rotation is recorded with your operator key. Deploy. The running machines booted with the old machine keys, which are deleted now: a reboot before the next deploy cannot hydrate, and the backend's presigned URLs stop working until then. No commit is needed.
 4. Revoke a pasted key in the Scaleway console.
 
 To put the observer key on another machine, run **Update identities** there with your Owner API key: it makes a key of the observer for that machine, and the keys elsewhere keep working.

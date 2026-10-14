@@ -63,4 +63,48 @@ describe('ensureSecrets', () => {
   it('generates 32 URL-safe characters', () => {
     expect(generateSecretValue()).toMatch(/^[A-Za-z0-9_-]{32}$/);
   });
+
+  it('must not rotate a key that protects stored data: the data would become unreadable', async () => {
+    const dataKey = runtimeSecrets.find((secret) => secret.secretName === 'data-encryption-key') as RuntimeSecretDefinition;
+    const { client, writes } = fakeClient({ [`${root}/backend/data-encryption-key`]: 'kept-data-key-of-32-characters-x' });
+    await ensureSecrets({
+      client,
+      slug: 'app',
+      mode: 'production',
+      secrets: [{ ...dataKey, services: ['backend'] }],
+      generate: () => 'fresh',
+      rotate: true,
+      log: () => {},
+    });
+    expect(writes).toEqual({});
+  });
+
+  it('rotates every copy of a generated secret to one fresh value, and recomputes what derives from it', async () => {
+    const yjs = runtimeSecrets.filter((secret) => secret.secretName.startsWith('yjs-token-'));
+    const { client, writes } = fakeClient({
+      [`${root}/backend/cookie-secret`]: 'old',
+      [`${root}/jobs/cookie-secret`]: 'old',
+      [`${root}/backend/yjs-token-private-key`]: 'old-material-of-32-characters-xx',
+      [`${root}/yjs/yjs-token-public-key`]: 'old-public',
+    });
+    let n = 0;
+    await ensureSecrets({
+      client,
+      slug: 'app',
+      mode: 'production',
+      secrets: [cookie, ...yjs],
+      generate: () => `fresh-material-${n++}-of-32-characters`,
+      rotate: true,
+      log: () => {},
+    });
+    expect(writes[`${root}/backend/cookie-secret`]).toBe(writes[`${root}/jobs/cookie-secret`]);
+    expect(writes[`${root}/backend/cookie-secret`]).not.toBe('old');
+    const material = writes[`${root}/backend/yjs-token-private-key`] ?? '';
+    const token = signYjsToken(
+      { userId: 'u', entityType: 'attachment', entityId: 'e', tenantId: 't', organizationId: null },
+      yjsTokenSigningKey(material),
+      60_000,
+    );
+    expect(verifyYjsToken(token, yjsTokenVerifyKey(writes[`${root}/yjs/yjs-token-public-key`] ?? '')).ok).toBe(true);
+  });
 });

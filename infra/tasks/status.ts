@@ -24,6 +24,8 @@ import {
   lockKey,
   makeControlClient,
   peekLock,
+  type RotationRecord,
+  type Rotations,
   readControlState,
   stateBucket,
 } from '../lib/stack/control-store';
@@ -274,6 +276,12 @@ export async function collectQuickFacts(
   return facts;
 }
 
+/** The last rotation of each kind, "never" where none happened. No date is a deadline (D12): the line only says when. */
+export function rotationLine(rotations: Rotations | undefined): string {
+  const day = (record: RotationRecord | undefined) => (record ? `${record.at.slice(0, 10)} by ${record.by}` : 'never');
+  return `Last rotation: keys ${day(rotations?.keys)}, secrets ${day(rotations?.secrets)}`;
+}
+
 /** Human lines for the quick facts; pure, so the shape is testable without Scaleway. `configured` is the slot the env resolved to, or `none`; `observerApplication` names the application whose key the observer slot expects. */
 export function formatQuickFacts(
   facts: QuickFacts,
@@ -301,6 +309,7 @@ export function formatQuickFacts(
       ? ` (updated ${facts.control.updatedAt.slice(0, 16).replace('T', ' ')} UTC by ${facts.control.updatedBy ?? '?'})`
       : '';
     lines.push(`${pc.green('●')} Live: ${[...active, ...pending].join(', ') || 'nothing rolled out'}${when}`);
+    lines.push(`${pc.green('●')} ${rotationLine(facts.control.rotations)}`);
   }
   const fetchHint = `${menuPath('identity')} puts it on this machine`;
   const named = opts.observerApplication ? ` ('${opts.observerApplication}')` : '';

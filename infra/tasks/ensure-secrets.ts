@@ -32,19 +32,29 @@ export async function ensureSecrets(opts: {
   mode: string;
   secrets?: readonly RuntimeSecretDefinition[];
   generate?: () => string;
+  /** Rotate: a fresh value for every rotatable secret in every copy, the ones derived from it recomputed; connection strings are ensure-database's. */
+  rotate?: boolean;
   log?: (message: string) => void;
 }): Promise<string[]> {
   const log = opts.log ?? ((message) => console.info(message));
   const generate = opts.generate ?? generateSecretValue;
   const all = opts.secrets ?? runtimeSecrets;
   const values = new Map<string, string>();
+  // A derived value follows its source; anything else rotates only when it says it may.
+  const isRotatable = (definition: RuntimeSecretDefinition): boolean => {
+    if (!definition.derivedFrom) return definition.rotatable === true;
+    const source = all.find((candidate) => candidate.id === definition.derivedFrom?.secretId);
+    return source !== undefined && isRotatable(source);
+  };
   const written: string[] = [];
 
   const resolveValue = async (definition: RuntimeSecretDefinition): Promise<string | undefined> => {
     const known = values.get(definition.id);
     if (known !== undefined) return known;
     const copies = await secretCopyContainers(opts.client, definition, opts.slug, opts.mode);
-    const existing = copies.find(hasValue);
+    if (opts.rotate && definition.database) return undefined;
+    const rotating = Boolean(opts.rotate) && isRotatable(definition);
+    const existing = rotating ? undefined : copies.find(hasValue);
     let value: string | undefined;
     if (existing?.container) {
       value = await opts.client.accessLatestValue(existing.container.id);
@@ -61,9 +71,14 @@ export async function ensureSecrets(opts: {
       value = generate();
     }
     if (value === undefined) return undefined;
-    const empty = copies.filter((copy) => copy.container && !hasValue(copy));
+    const empty = copies.filter((copy) => copy.container && (rotating || !hasValue(copy)));
     for (const copy of empty) {
-      await opts.client.putSecretValue({ secretId: copy.container!.id, value, description: 'Made by ensure-secrets', disablePrevious: false });
+      await opts.client.putSecretValue({
+        secretId: copy.container!.id,
+        value,
+        description: rotating ? 'Rotated by ensure-secrets' : 'Made by ensure-secrets',
+        disablePrevious: rotating,
+      });
     }
     const missing = copies.filter((copy) => !copy.container);
     if (missing.length > 0) log(`[ensure-secrets] ${definition.secretName}: no container yet for ${missing.map((copy) => copy.service).join(', ')}`);

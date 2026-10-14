@@ -3,7 +3,7 @@ import { formatPostgresUrl } from '../lib/postgres-url';
 import type { RuntimeSecretDefinition } from '../lib/runtime-secrets';
 import { POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-privileges';
 import type { SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
-import { type EnsureDatabaseRdb, type EnsureDatabaseSecrets, ensureDatabase } from './ensure-database';
+import { type EnsureDatabaseRdb, type EnsureDatabaseSecrets, ensureDatabase, generateRolePassword } from './ensure-database';
 
 const root = '/app-production';
 const endpoint = { instanceId: 'inst', privateIp: '10.0.0.9', port: '5432', databaseName: 'app' };
@@ -109,5 +109,80 @@ describe('ensureDatabase', () => {
     const { rdb, calls } = fakeRdb([POSTGRES_ROLE_NAMES.admin, POSTGRES_ROLE_NAMES.runtime]);
     await run(rdb, secrets);
     expect(calls).toEqual([`password ${POSTGRES_ROLE_NAMES.runtime}`]);
+  });
+
+  it('rotates: a fresh password on every live role, kept and written into every connection string', async () => {
+    const { secrets, writes } = fakeSecrets({
+      [`${root}/engine/db-password-admin`]: 'adm-pw',
+      [`${root}/engine/db-password-runtime`]: 'run-pw',
+      [`${root}/backend/database-url-runtime`]: dsn('runtime', 'run-pw'),
+      [`${root}/cdc/database-url-cdc`]: dsn('admin', 'adm-pw'),
+    });
+    const { rdb, calls } = fakeRdb([POSTGRES_ROLE_NAMES.admin, POSTGRES_ROLE_NAMES.runtime]);
+    await ensureDatabase({
+      rdb,
+      secrets,
+      slug: 'app',
+      mode: 'production',
+      endpoint,
+      definitions,
+      generate: () => 'rotated',
+      rotate: true,
+      log: () => {},
+    });
+    expect(calls).toEqual([`password ${POSTGRES_ROLE_NAMES.admin}`, `password ${POSTGRES_ROLE_NAMES.runtime}`]);
+    expect(writes[`${root}/engine/db-password-admin`]).toBe('rotated');
+    expect(writes[`${root}/backend/database-url-runtime`]).toBe(dsn('runtime', 'rotated'));
+    expect(writes[`${root}/cdc/database-url-cdc`]).toBe(dsn('admin', 'rotated'));
+  });
+
+  it('must not keep a password the role never got: a failed role update leaves the engine folder as it was', async () => {
+    const { secrets, writes } = fakeSecrets({ [`${root}/engine/db-password-admin`]: 'adm-pw', [`${root}/engine/db-password-runtime`]: 'run-pw' });
+    const { rdb } = fakeRdb([POSTGRES_ROLE_NAMES.admin, POSTGRES_ROLE_NAMES.runtime]);
+    rdb.setUserPassword = async () => {
+      throw new Error('400 from the database API');
+    };
+    await expect(
+      ensureDatabase({
+        rdb,
+        secrets,
+        slug: 'app',
+        mode: 'production',
+        endpoint,
+        definitions,
+        generate: () => 'rotated',
+        rotate: true,
+        log: () => {},
+      }),
+    ).rejects.toThrow(/400/);
+    expect(writes).toEqual({});
+  });
+
+  it('addresses the instance by its uuid, as the database API takes it, when the store output names its region', async () => {
+    const { secrets } = fakeSecrets({});
+    const instances: string[] = [];
+    const { rdb } = fakeRdb([]);
+    rdb.listUsers = async (instance) => {
+      instances.push(instance);
+      return [];
+    };
+    await ensureDatabase({
+      rdb,
+      secrets,
+      slug: 'app',
+      mode: 'production',
+      endpoint: { ...endpoint, instanceId: 'nl-ams/inst-uuid' },
+      definitions,
+      log: () => {},
+    });
+    expect(instances).toEqual(['inst-uuid']);
+  });
+
+  it('makes passwords the database API accepts: every required class, and URL-safe', () => {
+    for (let n = 0; n < 200; n++) {
+      const password = generateRolePassword();
+      expect(password).toMatch(/^[A-Za-z0-9._~-]{32}$/);
+      for (const required of [/[0-9]/, /[A-Z]/, /[a-z]/, /[._~-]/]) expect(password).toMatch(required);
+    }
   });
 });

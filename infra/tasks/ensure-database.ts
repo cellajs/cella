@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto';
 import { formatPostgresUrl, passwordOfPostgresUrl } from '../lib/postgres-url';
 import { databaseRuntimeSecrets, type RuntimeSecretDefinition } from '../lib/runtime-secrets';
 import { expectedDbPrivileges, POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-privileges';
@@ -7,7 +8,6 @@ import { secretCopyContainers } from '../lib/scaleway/secret-copies';
 import { engineSecretPath } from '../lib/scaleway/secret-paths';
 import { readStoreOutputs } from '../lib/stack/store-outputs';
 import type { DatabaseRole } from '../lib/stores';
-import { generateSecretValue } from './ensure-secrets';
 
 /** The database API calls the task needs, so a test passes its own. */
 export interface EnsureDatabaseRdb {
@@ -35,6 +35,28 @@ export interface DatabaseEndpoint {
 
 const ROLES: readonly DatabaseRole[] = ['admin', 'runtime'];
 
+const LOWER = 'abcdefghijklmnopqrstuvwxyz';
+const UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const DIGITS = '0123456789';
+// URL-unreserved specials (RFC 3986): the password goes into connection strings.
+const SPECIAL = '-_.~';
+
+/**
+ * A fresh role password: 32 characters with at least two of each class Scaleway's database API requires (a digit, an uppercase and a
+ * lowercase letter, a special character), the rest from all four, in random order.
+ */
+export function generateRolePassword(): string {
+  const all = LOWER + UPPER + DIGITS + SPECIAL;
+  const pick = (from: string) => from[randomInt(from.length)] as string;
+  const chars = [LOWER, LOWER, UPPER, UPPER, DIGITS, DIGITS, SPECIAL, SPECIAL].map(pick);
+  while (chars.length < 32) chars.push(pick(all));
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1);
+    [chars[i], chars[j]] = [chars[j] as string, chars[i] as string];
+  }
+  return chars.join('');
+}
+
 /** The engine-folder container that keeps a role's password, which only the operator reads. */
 export function rolePasswordSecretName(role: DatabaseRole): string {
   return `db-password-${role}`;
@@ -59,25 +81,29 @@ export async function ensureDatabase(opts: {
   endpoint: DatabaseEndpoint;
   definitions?: readonly RuntimeSecretDefinition[];
   generate?: () => string;
+  /** Rotate: a fresh password for every role, set on the live role, and every connection string rewritten. */
+  rotate?: boolean;
   log?: (message: string) => void;
 }): Promise<{ passwords: Record<DatabaseRole, PasswordSource>; created: string[]; written: string[] }> {
   const log = opts.log ?? ((message) => console.info(message));
-  const generate = opts.generate ?? generateSecretValue;
+  const generate = opts.generate ?? generateRolePassword;
   const definitions = opts.definitions ?? databaseRuntimeSecrets();
   const engineFolder = engineSecretPath(opts.slug, opts.mode);
-  const { instanceId, databaseName } = opts.endpoint;
+  const { databaseName } = opts.endpoint;
+  // The store output names the instance as Pulumi does, `<region>/<uuid>`; the database API takes the uuid.
+  const instanceId = opts.endpoint.instanceId.split('/').pop() ?? opts.endpoint.instanceId;
 
   const passwords = {} as Record<DatabaseRole, string>;
   const sources = {} as Record<DatabaseRole, PasswordSource>;
   for (const role of ROLES) {
     const kept = await opts.secrets.getSecretByName(rolePasswordSecretName(role), engineFolder);
-    if (kept && (kept.version_count ?? 0) > 0) {
+    if (!opts.rotate && kept && (kept.version_count ?? 0) > 0) {
       passwords[role] = await opts.secrets.accessLatestValue(kept.id);
       sources[role] = 'stored';
       continue;
     }
     let recovered: string | undefined;
-    for (const definition of definitions.filter((candidate) => candidate.database?.role === role)) {
+    for (const definition of opts.rotate ? [] : definitions.filter((candidate) => candidate.database?.role === role)) {
       for (const copy of await secretCopyContainers(opts.secrets, definition, opts.slug, opts.mode)) {
         if (recovered || !copy.container || (copy.container.version_count ?? 0) === 0) continue;
         recovered = passwordOfPostgresUrl(await opts.secrets.accessLatestValue(copy.container.id));
@@ -85,15 +111,6 @@ export async function ensureDatabase(opts: {
     }
     passwords[role] = recovered ?? generate();
     sources[role] = recovered ? 'recovered' : 'generated';
-    const container =
-      kept ??
-      (await opts.secrets.ensureSecret({
-        name: rolePasswordSecretName(role),
-        path: engineFolder,
-        description: `Password of the ${role} database role`,
-      }));
-    await opts.secrets.putSecretValue({ secretId: container.id, value: passwords[role], description: `Kept by ensure-database (${sources[role]})` });
-    log(`[ensure-database] ${role} role password ${sources[role]} and kept in ${engineFolder}`);
   }
 
   const live = new Set((await opts.rdb.listUsers(instanceId)).map((user) => user.name));
@@ -111,6 +128,26 @@ export async function ensureDatabase(opts: {
       await opts.rdb.setUserPassword(instanceId, name, passwords[role]);
       log(`[ensure-database] ${name} given the fresh password`);
     }
+  }
+
+  // A password is kept only once its role has it: kept before, a failure in between would leave the engine folder naming a password no role
+  // has, which the next run would trust and write into every connection string.
+  for (const role of ROLES) {
+    if (sources[role] === 'stored') continue;
+    const container =
+      (await opts.secrets.getSecretByName(rolePasswordSecretName(role), engineFolder)) ??
+      (await opts.secrets.ensureSecret({
+        name: rolePasswordSecretName(role),
+        path: engineFolder,
+        description: `Password of the ${role} database role`,
+      }));
+    await opts.secrets.putSecretValue({
+      secretId: container.id,
+      value: passwords[role],
+      description: `Kept by ensure-database (${sources[role]})`,
+      disablePrevious: true,
+    });
+    log(`[ensure-database] ${role} role password ${sources[role]} and kept in ${engineFolder}`);
   }
 
   const written: string[] = [];
@@ -147,6 +184,7 @@ export async function ensureDatabaseForStack(opts: {
   region: string;
   projectId: string;
   secretKey: string;
+  rotate?: boolean;
   log?: (message: string) => void;
 }): Promise<void> {
   const log = opts.log ?? ((message) => console.info(message));
@@ -164,6 +202,7 @@ export async function ensureDatabaseForStack(opts: {
     slug: opts.slug,
     mode: opts.mode,
     endpoint: { instanceId: store.instanceId, privateIp: store.privateIp, port: store.port || '5432', databaseName: store.databaseName },
+    rotate: opts.rotate,
     log,
   });
 }

@@ -37,6 +37,12 @@ export const OPERATOR_ACTIONS = {
     description:
       'Replace the CI deploy key, the observer key and every standing machine key with fresh ones (the observer key is rewritten in every infra/.env.<mode> on this machine that holds it).',
   },
+  'rotate-secrets': {
+    label: 'Rotate secrets',
+    key: 'operator',
+    description:
+      'Fresh database role passwords and rotatable generated secrets, every copy rewritten; the next deploy replaces every machine. Keys that protect stored data stay; third-party keys are pasted anew in "Manage runtime secrets".',
+  },
   'rotate-passphrase': {
     label: 'Rotate passphrase',
     key: 'operator',
@@ -148,9 +154,10 @@ export const MENU_ROWS = {
   rotate: {
     group: 'change',
     label: 'Rotate keys & secrets',
-    actions: ['rotate-keys', 'rotate-passphrase', 'operator-key'],
-    hint: 'CI key, observer key, passphrase, operator key',
-    description: 'Replace the CI deploy key and the observer key, re-encrypt the stack, or set up the operator key and its dedicated IP.',
+    actions: ['rotate-keys', 'rotate-secrets', 'rotate-passphrase', 'operator-key'],
+    hint: 'keys, secrets, passphrase, operator key',
+    description:
+      'Replace every Scaleway key or every secret the engine makes, re-encrypt the stack, or set up the operator key and its dedicated IP.',
   },
   secrets: {
     group: 'change',

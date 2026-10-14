@@ -30,6 +30,12 @@ export interface RuntimeSecretConfig {
   services: readonly RuntimeSecretConsumer[];
   /** A pulumi-owned value computed from another pulumi-owned secret's value (a public key from its private key), so the two change together. */
   derivedFrom?: RuntimeSecretDerivation;
+  /**
+   * A generated value "Rotate secrets" may replace: one that protects no stored data (a signing key, a secret two services share). A key that
+   * encrypts or hashes stored data is left out: a new value would leave that data unreadable or unmatched. A value derived from a rotatable
+   * one follows it.
+   */
+  rotatable?: boolean;
 }
 
 /** How a derived secret's value follows its source: the source secret's id and a pure function of the source value. */
@@ -53,6 +59,7 @@ export interface RuntimeSecretDefinition {
   /** Consuming services; store contributions are runtime-validated against the registry. */
   services: readonly string[];
   derivedFrom?: RuntimeSecretDerivation;
+  rotatable?: boolean;
   /** A database connection string the operator task ensure-database assembles for this role. */
   database?: { role: DatabaseRole };
 }
