@@ -24,6 +24,8 @@ export interface RuntimeSecretPrompts {
 
 export interface ManageRuntimeSecretsOptions {
   secretKey: string;
+  /** The key that mints a managed key, which writes IAM. Asked for when a mint is confirmed; defaults to `secretKey`. */
+  identitySecretKey?: () => Promise<string>;
   projectId: string;
   region: string;
   /** App slug that names the `<slug>-<mode>-<suffix>` IAM app when minting a managed key. */
@@ -63,8 +65,9 @@ interface MenuContext {
   secrets: ManagedRuntimeSecret[];
   prompts: RuntimeSecretPrompts;
   path: string;
-  /** IAM-capable caller key + identity, used by the mint action. */
+  /** The caller key, and the key the mint action writes IAM with. */
   secretKey: string;
+  identitySecretKey: () => Promise<string>;
   projectId: string;
   region: string;
   slug: string;
@@ -202,7 +205,7 @@ async function handleMint(ctx: MenuContext): Promise<void> {
   if (!key) throw new Error(`manage-runtime-secrets: prompt returned unknown managed key id '${selectedId}'`);
 
   const confirmed = await ctx.prompts.confirm({
-    message: `${warningMark} Mint a fresh scoped Scaleway key for ${key.label}? Supersedes any current value on the next deploy; needs an IAMManager-capable key.`,
+    message: `${warningMark} Mint a fresh scoped Scaleway key for ${key.label}? Supersedes any current value on the next deploy; it writes IAM, so it takes an Owner API key.`,
     default: false,
   });
   if (!confirmed) {
@@ -212,7 +215,7 @@ async function handleMint(ctx: MenuContext): Promise<void> {
   try {
     const result = await provisionManagedKey({
       definition: key,
-      callerSecretKey: ctx.secretKey,
+      callerSecretKey: await ctx.identitySecretKey(),
       projectId: ctx.projectId,
       region: ctx.region,
       slug: ctx.slug,
@@ -233,6 +236,7 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
     prompts: options.prompts,
     path: options.path,
     secretKey: options.secretKey,
+    identitySecretKey: options.identitySecretKey ?? (async () => options.secretKey),
     projectId: options.projectId,
     region: options.region,
     slug: options.slug,

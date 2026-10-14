@@ -43,7 +43,7 @@ describe('mainMenuItems', () => {
       'Recover',
       '  Repair stack ›           stack lock, setup, admin key',
       'Rare',
-      '  Tear down stack          operator key · DESTRUCTIVE',
+      '  Tear down stack          Owner key · DESTRUCTIVE',
       '',
       '  Quit',
     ]);
@@ -63,7 +63,7 @@ describe('mainMenuItems', () => {
       'Recover',
       '  Repair stack ›           stack lock, setup, admin key',
       'Rare',
-      '  Tear down stack          operator key · DESTRUCTIVE',
+      '  Tear down stack          Owner key · DESTRUCTIVE',
       '',
       '  Quit',
     ]);
@@ -110,10 +110,9 @@ describe('mainMenuItems', () => {
 describe('pickItems', () => {
   it('offers the actions of a row with the key each runs with, then Back', () => {
     expect(render(pickItems('rotate', bootstrapped))).toEqual([
-      '  Rotate keys          operator key',
+      '  Rotate keys          Owner key',
       '  Rotate passphrase    operator key',
       '  Set up operator key  Owner key',
-      '  Change dedicated IP  operator key',
       '  ← Back',
     ]);
     expect(render(pickItems('repair', bootstrapped))).toEqual([
@@ -135,10 +134,9 @@ describe('pickItems', () => {
 
   it('disables the passphrase rotation on a stack without encrypted state', () => {
     expect(render(pickItems('rotate', partial))).toEqual([
-      '  Rotate keys          operator key',
+      '  Rotate keys          Owner key',
       '- Rotate passphrase (the stack has no encrypted state yet)',
       '  Set up operator key  Owner key',
-      '  Change dedicated IP  operator key',
       '  ← Back',
     ]);
   });

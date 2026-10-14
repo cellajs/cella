@@ -1,9 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import { confirm } from '@inquirer/prompts';
 import { menuPath } from '../../lib/operator-actions';
-import type { KeyPair } from '../../lib/scaleway/operator-identity';
+import { type KeyPair, organizationIdOfKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
-import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { type PlanBasis, readPlanBasis } from '../../lib/stack/plan-basis';
 import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
@@ -52,10 +51,10 @@ export async function reviewPlan(context: InfraContext, key: KeyPair): Promise<R
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const stack = stackNameFor(context);
 
-  // The Pulumi program requires the organization id (pulumi-context.ts requireEnv): SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID from the env, else the Account API.
+  // The Pulumi program requires the organization id (pulumi-context.ts requireEnv): SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID from the env, else what IAM says about the key.
   let organizationId: string;
   try {
-    organizationId = await resolveOrganizationId(key.secretKey, projectId);
+    organizationId = await organizationIdOfKey(key, projectId);
   } catch (error) {
     console.error(
       `${warningMark} Could not resolve the organization id (${errorMessage(error)}). Set SCW_ORGANIZATION_ID (backend/.env) or SCW_DEFAULT_ORGANIZATION_ID and re-run.`,

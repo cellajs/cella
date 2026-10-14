@@ -50,19 +50,20 @@ export const ADMIN_PROJECT_PERMISSION_SETS = [
 /** Org-scoped admin sets: IAM reads so `pulumi preview` can resolve principals by name. */
 export const ADMIN_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
-// Operator app (`<slug>-<mode>-operator`): the principal a person runs privileged actions as
+// Operator app (`<app>-operator`): the principal a person runs privileged actions as, one per app
 
 /**
- * Project-scoped set for the operator application: every product of the app project, as a privileged `pulumi up` writes all of them.
+ * Project-scoped set for the operator application: every product of the app's projects, as a privileged `pulumi up` writes all of them.
  * Every operator rule carries an IP condition (lib/scaleway/ip-lock.ts), so the key works from the dedicated address only.
  */
 export const OPERATOR_PROJECT_PERMISSION_SETS = ['AllProductsFullAccess'] as const;
 
 /**
- * Organization-scoped sets for the operator application: IAM write for the VM principals and policies, and IAM read. Scaleway splits the two:
- * IAMManager alone cannot list or describe, which the bearer check, the policy refresh and the verify after an `up` all do.
+ * Organization-scoped set for the operator application: IAM read, for the bearer check, the lookup of applications by name and the verify
+ * after an `up`. It holds no IAM write: a key that writes IAM cannot be held to its own app, since an IAM set is never scoped to a project
+ * and a writer of policies can grant itself anything. IAM is written with an Owner API key.
  */
-export const OPERATOR_ORG_PERMISSION_SETS = ['IAMManager', 'IAMReadOnly'] as const;
+export const OPERATOR_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
 // Per-service model (P3): service, boot, and CI key-mint grants
 

@@ -59,7 +59,7 @@ function base(overrides: Partial<Facts> = {}): Facts {
 function session(overrides: Partial<ProbeSession> = {}): ProbeSession {
   return {
     mode: 'staging',
-    appConfig: {} as ProbeSession['appConfig'],
+    appConfig: { slug: 'cella-staging' } as ProbeSession['appConfig'],
     stackState: 'bootstrapped',
     projectId: 'proj-1',
     scalewayKeyAvailable: true,

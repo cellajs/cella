@@ -1,3 +1,5 @@
+import { resolveApplicationIdByName } from '../lib/scaleway/iam-client';
+import { principalNames } from '../lib/scaleway/principals';
 import { type ProvisionScopedKeyOptions, provisionScopedKey } from '../lib/scaleway/scaleway-iam';
 import { principalServices } from '../lib/services';
 
@@ -53,4 +55,24 @@ export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<S
 export async function ensureRegistryPrincipals(opts: Omit<SetupServiceAppsOptions, 'services'> & { singleVM: boolean }): Promise<ServiceAppsResult> {
   const { singleVM, ...rest } = opts;
   return setupServiceApps({ ...rest, services: principalServices(singleVM).map((svc) => svc.slug) });
+}
+
+/**
+ * The registry principals that do not exist yet, by application name. Read-only: the operator key finds out with it what only an Owner API
+ * key can create.
+ */
+export async function missingRegistryPrincipals(opts: {
+  secretKey: string;
+  organizationId: string;
+  slug: string;
+  mode: string;
+  singleVM: boolean;
+}): Promise<string[]> {
+  const names = principalNames(opts.slug, opts.mode);
+  const wanted = [...principalServices(opts.singleVM).map((svc) => names.vmService(svc.slug)), names.boot];
+  const missing: string[] = [];
+  for (const name of wanted) {
+    if (!(await resolveApplicationIdByName({ secretKey: opts.secretKey }, opts.organizationId, name))) missing.push(name);
+  }
+  return missing;
 }

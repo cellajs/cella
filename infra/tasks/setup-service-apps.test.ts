@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { resolveApplicationIdByName } from '../lib/scaleway/iam-client';
 import { provisionScopedKey } from '../lib/scaleway/scaleway-iam';
-import { ensureRegistryPrincipals } from './setup-service-apps';
+import { ensureRegistryPrincipals, missingRegistryPrincipals } from './setup-service-apps';
 
 vi.mock('../lib/scaleway/scaleway-iam', () => ({ provisionScopedKey: vi.fn() }));
+vi.mock('../lib/scaleway/iam-client', () => ({ resolveApplicationIdByName: vi.fn() }));
 
 const base = { callerSecretKey: 'boot-secret', projectId: 'proj', slug: 'cella', mode: 'production' };
 
@@ -44,5 +46,29 @@ describe('ensureRegistryPrincipals', () => {
       expect(config.managePolicy).toBe(false);
       expect(config.mintKey).toBe(false);
     }
+  });
+});
+
+describe('missingRegistryPrincipals', () => {
+  const check = { secretKey: 'operator-secret', organizationId: 'org-1', slug: 'cella', mode: 'production' };
+
+  it('names the applications the registry needs and Scaleway does not have, without creating one', async () => {
+    vi.mocked(resolveApplicationIdByName).mockImplementation(async (_auth, _org, name) =>
+      name.endsWith('-vm-jobs') || name.endsWith('-boot') ? null : 'id',
+    );
+
+    expect(await missingRegistryPrincipals({ ...check, singleVM: false })).toEqual(['cella-production-vm-jobs', 'cella-production-boot']);
+    expect(provisionScopedKey).not.toHaveBeenCalled();
+  });
+
+  it('is empty when every principal exists, and asks only for the host under singleVM', async () => {
+    vi.mocked(resolveApplicationIdByName).mockReset();
+    vi.mocked(resolveApplicationIdByName).mockResolvedValue('id');
+
+    expect(await missingRegistryPrincipals({ ...check, singleVM: true })).toEqual([]);
+    expect(vi.mocked(resolveApplicationIdByName).mock.calls.map(([, , name]) => name)).toEqual([
+      'cella-production-vm-backend',
+      'cella-production-boot',
+    ]);
   });
 });

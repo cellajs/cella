@@ -67,6 +67,8 @@ interface SetupContext {
   /** The Owner API key (provider auth + IAM / Secret Manager work). */
   accessKey: string;
   secretKey: string;
+  /** True when the run's key is an Owner API key; false for the operator key, which writes no IAM. */
+  writesIam: boolean;
   /** The key for the state side (backend login, stack lock): the admin application key once this machine holds it. */
   stateKey: KeyPair;
   stackName: string;
@@ -292,9 +294,10 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
   const { dnsZone, hasDomain } = deriveInfra(ctx.appConfig);
   if (hasDomain) {
     try {
-      // A setup key owned by an application needs org-wide DNS before the first up can write records in an org-shared zone.
+      // A setup key owned by an application needs org-wide DNS before the first up can write records in an org-shared zone. The operator key
+      // holds DNS where its app's zone lives and cannot write the grant.
       const organizationId = ctx.childEnv.SCW_DEFAULT_ORGANIZATION_ID;
-      if (organizationId) {
+      if (organizationId && ctx.writesIam) {
         await ensureBootstrapDnsGrant({
           callerSecretKey: ctx.secretKey,
           accessKey: ctx.accessKey,
@@ -472,18 +475,20 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: B
 }
 
 /** A setup run can include the first `pulumi up` and a first deploy, so its minted key lives longer than an action's half hour. */
-const SETUP_KEY_TTL_MS = 3 * 60 * 60_000;
-
 /**
- * Set up or resume a stack: key, project, identities, CI key, state backend, and base infrastructure. A first setup, and a stack that has no
- * operator application yet, run on the Owner API key typed at the prompt. Every other run takes a key minted from the operator key, which is
- * revoked on every way out.
+ * Set up or resume a stack: key, project, identities, CI key, state backend, and base infrastructure. A run that makes or replaces identities
+ * (a first setup, a setup that never minted its CI key, a key rotation) writes IAM and takes an Owner API key typed at the prompt, as does a
+ * stack that has no operator application yet. A resume that only re-syncs takes the operator key.
  */
 export async function runSetup(context: InfraContext, mode: Extract<CliMode, 'resume' | 'rotate-keys'>): Promise<void> {
   const hasOperator = context.state !== 'fresh' && (await operatorLock(context)).state !== 'absent';
-  const operatorKey = hasOperator ? await acquireOperatorKey(context, { ttlMs: SETUP_KEY_TTL_MS }) : undefined;
+  const writesIdentities = mode === 'rotate-keys' || !context.hasCiKey;
+  if (hasOperator && writesIdentities) {
+    console.info(pc.dim('This run makes or replaces identities. That writes IAM, which the operator key cannot: it takes your Owner API key.'));
+  }
+  const operatorKey = hasOperator && !writesIdentities ? await acquireOperatorKey(context) : undefined;
   try {
-    await runSetupWith(context, mode, operatorKey);
+    await runSetupWith(context, mode, operatorKey, hasOperator);
   } finally {
     await operatorKey?.release();
   }
@@ -493,6 +498,7 @@ async function runSetupWith(
   context: InfraContext,
   mode: Extract<CliMode, 'resume' | 'rotate-keys'>,
   operatorKey: OwnerKey | undefined,
+  hasOperator: boolean,
 ): Promise<void> {
   const needsCiKey = mode === 'rotate-keys' || !context.hasCiKey;
 
@@ -565,6 +571,7 @@ async function runSetupWith(
     projectId: scwProjectId,
     accessKey: scwAccessKey,
     secretKey: scwSecretKey,
+    writesIam: ownerKeyPasted,
     stateKey,
     stackName,
     runtimeSecretPath: secretManagerPath(appConfig.slug, context.environment),
@@ -725,7 +732,7 @@ async function runSetupWith(
       );
     }
   }
-  if (!operatorKey) {
+  if (!hasOperator) {
     console.info(
       `\n${pc.dim('Next:')} ${pc.cyan(actionCommand('operator-key'))} ${pc.dim('creates the operator key for day-to-day work, which Scaleway accepts from your dedicated IP address only.')}`,
     );

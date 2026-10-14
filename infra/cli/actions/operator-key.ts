@@ -4,8 +4,9 @@ import { deriveInfra } from '../../lib/naming';
 import { actionLabel } from '../../lib/operator-actions';
 import { ipAllowed } from '../../lib/scaleway/ip-lock';
 import { classifyPrincipal, describeKey } from '../../lib/scaleway/operator-identity';
-import { principalNames } from '../../lib/scaleway/principals';
+import { appSlug, principalNames } from '../../lib/scaleway/principals';
 import type { ScopedKeyResult } from '../../lib/scaleway/scaleway-iam';
+import { projectsOfOtherModes } from '../../lib/stack/project-per-mode';
 import { checkMark, crossMark, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { pollUntil } from '../../lib/utils/retry';
@@ -39,20 +40,29 @@ async function confirmKeyStored(name: string, key: ScopedKeyResult): Promise<voi
   }
 }
 
+/** The environments an operator key reaches: the one the action runs for, then every other environment that has a project on this machine. */
+export function operatorReach(mode: string, projectId: string, others: ReadonlyMap<string, string>): Array<{ mode: string; projectId: string }> {
+  return [{ mode, projectId }, ...[...others].filter(([id]) => id !== projectId).map(([id, other]) => ({ mode: other, projectId: id }))];
+}
+
 /**
- * Create the operator application and a fresh key for it: the principal a person runs privileged actions as. Scaleway accepts the key from
- * the dedicated address only, which an Owner API key can never be held to. A run replaces the application's policy and every earlier key,
- * so the caller is the organization Owner (or another IAMManager principal), never the operator application itself.
+ * Create the app's operator application and a fresh key for it: the principal a person runs privileged actions as, in every environment of
+ * the app. Scaleway accepts the key from the dedicated address only, which an Owner API key can never be held to, and the key writes no IAM.
+ * A run replaces the application's policy and every earlier key, so the caller is the organization Owner (or another IAMManager principal),
+ * never the operator application itself. An environment set up later, or a new address, takes this action again.
  */
 export async function runOperatorKey(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   const mode = context.environment;
   const names = principalNames(appConfig.slug, mode);
+  const reach = operatorReach(mode, projectId, projectsOfOtherModes(mode));
   console.info(
     pc.dim(
       `\n${actionLabel('operator-key')}: the '${names.operator}' application and a fresh key, which Scaleway accepts from your dedicated IP address only.\n`,
     ),
   );
+  console.info(`The key works in ${reach.map((entry) => `${pc.cyan(entry.mode)} ${pc.dim(`(project ${entry.projectId})`)}`).join(' and ')}.`);
+  console.info(pc.dim('  An environment is listed once its setup named a project on this machine (infra/.env.<mode>).\n'));
 
   const detected = await publicAddress();
   if (detected) console.info(`This machine reaches the internet as ${pc.cyan(detected)}.`);
@@ -80,7 +90,7 @@ export async function runOperatorKey(context: InfraContext): Promise<void> {
   if (addressInList === false)
     console.warn(`  ${warningMark} This machine's address is not in that list: the new key can be neither checked nor used from here.`);
   console.info(pc.dim('  When the address changes, the organization Owner sets the new one: this action again, or the policy in the console.\n'));
-  if (!(await confirm({ message: `Create the operator key for ${mode}?`, default: false }))) {
+  if (!(await confirm({ message: `Create the operator key of ${appSlug(appConfig.slug, mode)}?`, default: false }))) {
     console.info('Aborted; nothing changed.');
     return;
   }
@@ -102,8 +112,8 @@ export async function runOperatorKey(context: InfraContext): Promise<void> {
         callerSecretKey: ownerKey.secretKey,
         organizationId: ownerKey.organizationId,
         projectId,
-        slug: appConfig.slug,
-        mode,
+        projectIds: reach.map((entry) => entry.projectId),
+        slug: appSlug(appConfig.slug, mode),
         dnsZone: deriveInfra(appConfig).dnsZone,
         cidrs,
       });

@@ -7,6 +7,7 @@ import {
   envKeyPair,
   formatKeyLine,
   hoursUntilExpiry,
+  organizationIdOfKey,
   resolveOperatorIdentity,
 } from './operator-identity';
 import { principalNames } from './principals';
@@ -104,6 +105,27 @@ describe('describeKey / classifyPrincipal', () => {
     expect(desc).toMatchObject({ bearer: 'owner', name: 'flip@example.com' });
     expect(classifyPrincipal(desc, names)).toBe('owner');
     expect(hoursUntilExpiry(desc)).toBeUndefined();
+  });
+});
+
+describe('organizationIdOfKey', () => {
+  const pair = { accessKey: 'SCWK', secretKey: 's' };
+
+  it('must not need the Account API for an application key: IAM names the organization of the key`s own bearer', async () => {
+    const saved = { a: process.env.SCW_ORGANIZATION_ID, b: process.env.SCW_DEFAULT_ORGANIZATION_ID };
+    delete process.env.SCW_ORGANIZATION_ID;
+    delete process.env.SCW_DEFAULT_ORGANIZATION_ID;
+    try {
+      const fetchImpl = makeFetch([
+        { match: '/api-keys/SCWK', body: { access_key: 'SCWK', application_id: 'app-1' } },
+        { match: '/applications/app-1', body: { name: 'cella-operator', organization_id: 'org-9' } },
+        { match: '/account/', body: { message: 'insufficient permissions' }, status: 403 },
+      ]);
+      expect(await organizationIdOfKey(pair, 'proj-1', { fetchImpl })).toBe('org-9');
+    } finally {
+      if (saved.a !== undefined) process.env.SCW_ORGANIZATION_ID = saved.a;
+      if (saved.b !== undefined) process.env.SCW_DEFAULT_ORGANIZATION_ID = saved.b;
+    }
   });
 });
 

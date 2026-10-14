@@ -6,12 +6,21 @@ export interface PrincipalNames {
   ciDeploy: string;
   /** Human admin application: bucket access plus infra reads. */
   admin: string;
-  /** Operator application: the principal a person runs privileged actions as, from a dedicated IP address only. */
+  /** Operator application: the principal a person runs privileged actions as, from a dedicated IP address only. One per app, the same in every environment. */
   operator: string;
   /** Per-service VM application. */
   vmService: (service: string) => string;
   /** Boot fetcher application: registry pull and handoff-secret read. */
   boot: string;
+}
+
+/**
+ * The app's own slug, the same in every environment: a mode's slug without its `-<mode>` ending. An environment that is not production
+ * conventionally carries its mode in its slug (`cella-staging` in staging), and both belong to the app `cella`.
+ */
+export function appSlug(slug: string, mode: string): string {
+  const ending = `-${mode}`;
+  return slug.endsWith(ending) && slug.length > ending.length ? slug.slice(0, -ending.length) : slug;
 }
 
 /** Derive all principal names for one app and mode. */
@@ -21,7 +30,7 @@ export function principalNames(slug: string, mode: string): PrincipalNames {
     group: prefix,
     ciDeploy: `${prefix}-ci-deploy`,
     admin: `${prefix}-admin`,
-    operator: `${prefix}-operator`,
+    operator: `${appSlug(slug, mode)}-operator`,
     vmService: (service: string) => `${prefix}-vm-${service}`,
     boot: `${prefix}-boot`,
   };
