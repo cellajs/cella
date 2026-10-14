@@ -136,6 +136,8 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 
 Runtime secrets reach a VM through `/opt/app/.env.runtime`, a docker-compose `env_file` the boot runner writes from Secret Manager at boot.
 
+- **The Pulumi state holds no generated value.** A generated secret (a cookie secret, a token key) and one derived from another (the Yjs relay's public key) are made by the operator task [ensure-secrets.ts](../infra/tasks/ensure-secrets.ts) straight into Secret Manager, after each apply and in each deploy ("Make generated secrets"). A value that exists in any consumer's copy is kept and given to copies without one; rotating one is its own action. The program declares their containers only.
+
 - **Every secret value must be a single line** (an `env_file` is line-based). Store multi-line values such as a PEM certificate **base64-encoded** and decode them in the consuming service, as `DATABASE_SSL_CA` does (encoded by the postgres store in [resources/stores/postgres-managed.ts](../infra/resources/stores/postgres-managed.ts), decoded in the db clients). The rule lives in [lib/utils/env-file.ts](../infra/lib/utils/env-file.ts), shared by the preflight and the boot runner.
 - An undeliverable `required` secret fails hydration and blocks boot, rather than crash-looping behind a 502.
 - A process cannot read a mode-bound secret unless its `MODE` is configured to receive it; `modeSecret()` refuses the read otherwise.

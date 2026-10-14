@@ -15,6 +15,7 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { admitOperatorToBuckets } from '../../tasks/admit-operator-buckets';
 import { copySharedSecrets } from '../../tasks/copy-shared-secrets';
+import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { missingRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
@@ -141,12 +142,12 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
         endAction(1);
       }
 
-      // The machine policies are written at Owner moments: a state that still holds them would have this `up` delete them.
-      console.info(pc.dim('\n→ Taking the machine policies out of the state (forget-machine-policies)…'));
-      const forget = spawnSync('pnpm', ['--filter', 'infra', 'forget-machine-policies', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
+      // Resources the program no longer declares and that stay live (machine policies, generated secret values): a state that still holds them would have this `up` delete them.
+      console.info(pc.dim('\n→ Taking retired resources out of the state (forget-retired-resources)…'));
+      const forget = spawnSync('pnpm', ['--filter', 'infra', 'forget-retired-resources', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
       if (forget.status !== 0) {
         await releaseAll();
-        console.error(`${warningMark} forget-machine-policies failed (exit ${forget.status}). Nothing applied.`);
+        console.error(`${warningMark} forget-retired-resources failed (exit ${forget.status}). Nothing applied.`);
         endAction(forget.status ?? 1);
       }
 
@@ -228,6 +229,10 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
           console.warn(
             `${warningMark} Could not move the shared operator secrets into their copies (${errorMessage(error)}); the next deploy tries again.`,
           ),
+      );
+      // Generated and derived values are made in Secret Manager, never in the state; the `up` made any new secret's containers.
+      await ensureSecrets({ client, slug: appConfig.slug, mode: context.environment, log: (message) => console.info(pc.dim(message)) }).catch(
+        (error) => console.warn(`${warningMark} Could not make the generated secrets (${errorMessage(error)}); the next deploy tries again.`),
       );
     }
 
