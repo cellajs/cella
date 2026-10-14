@@ -31,6 +31,7 @@ const translations = {
   organization: 'Organization',
   tenant: 'Tenant',
   connection_other: 'Connections',
+  general: 'General',
   unsaved_changes: 'Unsaved changes',
 };
 
@@ -74,7 +75,7 @@ async function openAndClose(canvasElement: HTMLElement, { id, title, container }
   const sheet = await body.findByRole('dialog');
   await expect(sheet.id).toBe(id);
   await expect(within(sheet).getByRole('heading', { name: new RegExp(title) })).toBeVisible();
-  await expect(within(sheet).getByText('Unsaved changes')).toBeInTheDocument();
+  await expect(within(sheet).getAllByText('Unsaved changes').length).toBeGreaterThan(0);
 
   const form = sheet.querySelector('form');
   await expect(form).not.toBeNull();
@@ -126,11 +127,17 @@ export const TenantSheet: Story = {
   args: { open: (triggerRef) => openUpdateTenantSheet(tenant, triggerRef) },
   play: async ({ canvasElement }) => {
     const sheet = await openAndClose(canvasElement, { id: 'update-tenant', title: 'Edit tenant', container: 'container w-full' });
-    // The form card, then the connections card.
+    // The General section with the form, then the connections section; each carries its own unsaved badge.
     const cards = [...sheet.querySelectorAll('[data-slot="card"]')];
     await expect(cards).toHaveLength(2);
     await expect(cards[0]).toHaveClass('mb-4');
+    await expect(cards[0].id).toBe('update-tenant-general');
+    await expect(cards[0]).toHaveTextContent('General');
     await expect(cards[0].querySelector('form')).not.toBeNull();
+    await expect(cards[1].id).toBe('tenant-connections');
+    // The badge moves from the title into each section.
+    await expect(cards[0]).toHaveTextContent('Unsaved changes');
+    await expect(sheet.querySelector('[data-slot="sheet-title"]')).not.toHaveTextContent('Unsaved changes');
     await expect(cards[1]).toHaveClass('mb-20');
     await expect(cards[1]).toHaveTextContent('Connections');
   },
