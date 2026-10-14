@@ -11,6 +11,7 @@ vi.mock('i18next', () => ({ default: { t: (key: string) => key }, t: (key: strin
 const { Badge } = await import('~/modules/ui/badge');
 const { Button } = await import('~/modules/ui/button');
 const { Checkbox } = await import('~/modules/ui/checkbox');
+const { Combobox, ComboboxInput, ComboboxItem, ComboboxList } = await import('~/modules/ui/combobox');
 const { Spinner } = await import('~/modules/ui/spinner');
 const { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } = await import('~/modules/ui/select');
 const { Tabs, TabsList, TabsTrigger } = await import('~/modules/ui/tabs');
@@ -44,7 +45,7 @@ async function typeInto(input: HTMLInputElement, text: string) {
   const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
   await act(async () => {
     setValue?.call(input, text);
-    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
   });
 }
 
@@ -137,6 +138,32 @@ describe('Checkbox', () => {
     expect(box.getAttribute('aria-checked')).toBe('mixed');
     expect(box.hasAttribute('data-indeterminate')).toBe(true);
     expect(box.querySelector('.lucide-minus')).not.toBeNull();
+  });
+});
+
+describe('Combobox', () => {
+  it('highlights the first match while typing, so Enter picks it', async () => {
+    const onValueChange = vi.fn();
+    const items = ['apple', 'banana', 'cherry'];
+    const el = await render(
+      <Combobox<string> inline items={items} onValueChange={onValueChange}>
+        <ComboboxInput showTrigger={false} />
+        <ComboboxList>
+          {(item: string) => (
+            <ComboboxItem key={item} value={item}>
+              {item}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </Combobox>,
+    );
+    const input = el.querySelector('input') as HTMLInputElement;
+    await typeInto(input, 'an');
+
+    expect(el.querySelector('[data-highlighted]')?.textContent).toBe('banana');
+
+    await act(async () => input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })));
+    expect(onValueChange).toHaveBeenCalledWith('banana', expect.anything());
   });
 });
 
