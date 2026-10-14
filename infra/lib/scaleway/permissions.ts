@@ -49,7 +49,7 @@ export const DEPLOY_SECRET_WRITE_SETS = ['SecretManagerSecretCreate', 'SecretMan
 /** Secret values, in the deploy folder only: the standing machine keys and the telemetry key. */
 export const DEPLOY_SECRET_VALUE_SETS = ['SecretManagerSecretAccess'] as const;
 
-/** DNS permission set, "Scoped by Project" on Scaleway: the app's records in the serving zone's project. */
+/** DNS permission set, "Scoped by Project" on Scaleway: the operator's, in the serving zone's project. The deploy key writes no DNS. */
 export const DNS_PERMISSION_SETS = ['DomainsDNSFullAccess'] as const;
 
 /** Organization-scoped sets: IAMReadOnly lets `pulumi up` look up applications by name. A rule holds sets of one scope type only. */

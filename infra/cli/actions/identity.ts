@@ -1,8 +1,6 @@
 import { ListObjectsV2Command } from '@aws-sdk/client-s3';
-import { deriveInfra } from '../../lib/naming';
 import { actionLabel } from '../../lib/operator-actions';
 import { deployPolicy } from '../../lib/scaleway/deploy-policy';
-import { resolveDnsProjectIds } from '../../lib/scaleway/dns-zone-project';
 import { type IamAuth, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
 import type { MachineKeyStep } from '../../lib/scaleway/machine-keys';
 import { type MachinePolicy, machinePolicies } from '../../lib/scaleway/machine-policies';
@@ -149,16 +147,10 @@ export async function runIdentity(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   const registry = { slug: appConfig.slug, mode: context.environment };
   const names = principalNames(appConfig.slug, context.environment);
-  // The machine policies and the deploy key's: identities' rules, written at Owner moments only. The deploy policy's DNS reach needs the zone's project.
-  const wantedFor = async (auth: IamAuth, organizationId: string): Promise<MachinePolicy[]> => [
+  // The machine policies and the deploy key's: identities' rules, written at Owner moments only.
+  const wantedFor = (organizationId: string): MachinePolicy[] => [
     ...machinePolicies(appConfig, projectId),
-    deployPolicy({
-      slug: appConfig.slug,
-      mode: context.environment,
-      projectId,
-      organizationId,
-      dnsProjectIds: await resolveDnsProjectIds(auth, deriveInfra(appConfig).dnsZone ?? '', projectId),
-    }),
+    deployPolicy({ slug: appConfig.slug, mode: context.environment, projectId, organizationId }),
   ];
   console.info(
     pc.dim(
@@ -184,7 +176,7 @@ export async function runIdentity(context: InfraContext): Promise<void> {
   if (observer) {
     const organizationId = await organizationIdOfKey(observer, projectId);
     const auth = { secretKey: observer.secretKey };
-    plan = await planIdentities(auth, organizationId, context, await wantedFor(auth, organizationId));
+    plan = await planIdentities(auth, organizationId, context, wantedFor(organizationId));
     if (!show(plan)) return;
     if (!(await confirmOrDefault({ message: 'Write them with your Owner API key?', default: false }))) return;
   }
@@ -193,12 +185,12 @@ export async function runIdentity(context: InfraContext): Promise<void> {
   try {
     const auth = { secretKey: ownerKey.secretKey };
     if (!plan) {
-      plan = await planIdentities(auth, ownerKey.organizationId, context, await wantedFor(auth, ownerKey.organizationId));
+      plan = await planIdentities(auth, ownerKey.organizationId, context, wantedFor(ownerKey.organizationId));
       if (!show(plan)) return;
       if (!(await confirmOrDefault({ message: 'Write them?', default: false }))) return;
     }
     await ensureRegistryPrincipals({ ...registry, callerSecretKey: ownerKey.secretKey, projectId, organizationId: ownerKey.organizationId });
-    await writeMachinePolicies(auth, ownerKey.organizationId, await wantedFor(auth, ownerKey.organizationId));
+    await writeMachinePolicies(auth, ownerKey.organizationId, wantedFor(ownerKey.organizationId));
     await writeMachineKeys({
       auth,
       secrets: secretsFor(context, ownerKey.secretKey),

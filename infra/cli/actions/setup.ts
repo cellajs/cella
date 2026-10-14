@@ -137,7 +137,6 @@ async function mintCiKey(
         projectId: opts.projectId,
         slug: opts.appConfig.slug,
         mode: opts.mode,
-        dnsZone: deriveInfra(opts.appConfig).dnsZone,
       });
       return { accessKey: key.accessKey, secretKey: key.secretKey, organizationId: key.organizationId };
     } catch (error) {
@@ -355,6 +354,10 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, operatorS
       });
   if (!deployNow) {
     console.info(`  ${pc.dim('Deploy later from CI (publish a release / run the Deploy workflow) or locally:')} ${pc.cyan(manualCmd(sha))}`);
+    // CI reads the committed stack file, whose encryption salt the setup just wrote: without it the passphrase is "incorrect".
+    console.info(
+      `  ${pc.bold('Before a CI deploy')}: commit and push ${pc.cyan(`infra/Pulumi.${mode}.yaml`)} (its encryption salt and bootstrap marker are new).`,
+    );
     return;
   }
   // The exact env the GitHub Environment holds: the CI deploy key as both the provider key and the state-backend key, plus the passphrase and project ids from childEnv.
