@@ -9,7 +9,7 @@ import { derivedRuntimeSecretData } from './stores';
 // Folder per secret: `/<slug>-<mode>/<service>/` for single-consumer secrets, `/<slug>-<mode>/shared/<consumers>/` per consumer set for multi-consumer ones. The path is the security boundary the VM grant is conditioned on, so it is derived from the consumer list, never hand-assigned.
 const secretPath = (definition: RuntimeSecretDefinition) => secretPathFor(definition, naming.slug, mode);
 
-/** One-time imports for operator secret containers created outside Pulumi, as `secretName=region/uuid`. The CLI self-heals this drift, so the hook is for direct runs or forced ids. */
+/** Imports of operator secret containers that exist outside the state, as `secretName=region/uuid`: a setup fills it for its first `up` when a teardown kept them. */
 function parseOperatorSecretImports(raw: string | undefined): Record<string, string> {
   if (!raw) return {};
   const map: Record<string, string> = {};

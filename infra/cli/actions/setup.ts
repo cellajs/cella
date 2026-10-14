@@ -15,7 +15,8 @@ import { projectAccessKey } from '../../lib/scaleway/s3-client';
 import { createProject, listProjects, resolveOrganizationIdFromKey } from '../../lib/scaleway/scaleway-account';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { secretManagerPath } from '../../lib/scaleway/secret-paths';
-import type { Environment } from '../../lib/stack/bootstrap-stack-state';
+import { detectComputeDeferred, type Environment } from '../../lib/stack/bootstrap-stack-state';
+import { operatorSecretImports } from '../../lib/stack/operator-secret-imports';
 import { projectChoices, projectsOfOtherModes } from '../../lib/stack/project-per-mode';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { changeMark, checkMark, DIVIDER, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
@@ -283,6 +284,27 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
   });
 
   const firstProvision = ctx.context.state === 'fresh';
+  // Until the first provisioning completes, the stack keeps compute deferred; a resume after a failed one is still that first provisioning.
+  if (firstProvision || detectComputeDeferred(ctx.context.stackYaml)) {
+    // A teardown keeps the operator-value containers with their values: the first `up` of the same environment adopts them.
+    const listed = await createSecretManagerClient({ secretKey: ctx.secretKey, region: ctx.appConfig.s3.region, projectId: ctx.projectId })
+      .listSecretsUnder(ctx.runtimeSecretPath)
+      .catch(() => []);
+    const imports = operatorSecretImports(listed, operatorManagedRuntimeSecrets, {
+      slug: ctx.appConfig.slug,
+      mode: ctx.context.environment,
+      region: ctx.appConfig.s3.region,
+    });
+    if (imports) {
+      ctx.childEnv.OPERATOR_SECRET_IMPORTS = imports;
+      console.info(
+        `  ${checkMark} Adopting the operator values a teardown kept: ${imports
+          .split(',')
+          .map((entry) => entry.split('=')[0])
+          .join(', ')}`,
+      );
+    }
+  }
   if (firstProvision) {
     console.info(`${pc.dim('  the first provisioning runs on the operator key (the CI key is read-only on VPC/PN/RDB and cannot create them)')}`);
     // Fresh provision: no images exist yet, so compute is deferred until CI pushes them (helpers gate on this marker).
