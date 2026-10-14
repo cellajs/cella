@@ -20,7 +20,8 @@ vi.mock('../lib/scaleway/release-image', async (importOriginal) => ({
 const keys = {
   bootAccessKey: 'SCWBOOTACCESSKEY',
   bootSecretKey: 'boot-secret-key-value',
-  handoffSecretIds: { backend: 'handoff-backend-id', frontend: 'handoff-frontend-id' },
+  // Keyed by service and release; the test stack's release is `latest`.
+  handoffSecretIds: { 'backend@latest': 'handoff-backend-id', 'frontend@latest': 'handoff-frontend-id' },
 };
 
 let h: MockHarness;
@@ -48,7 +49,7 @@ const cloudInitOf = (server: CapturedResource) => String(unwrapSecret(server.inp
 /** The boot plan a VM writes. */
 const bootPlanOf = (server: CapturedResource) => bootPlanIn(cloudInitOf(server), '/etc/cella/boot-plan.json');
 
-const serviceOf = (server: CapturedResource) => server.name.split('-')[1] as keyof typeof keys.handoffSecretIds;
+const serviceOf = (server: CapturedResource) => server.name.split('-')[1] as 'backend' | 'frontend';
 
 describe('compute module', () => {
   it('attaches the closed security group to every generation VM', () => {
@@ -85,7 +86,7 @@ describe('compute module', () => {
       expect(
         plan.serviceKeyHandoffs?.map((handoff) => [handoff.service, handoff.secretId]),
         server.name,
-      ).toEqual([[serviceOf(server), keys.handoffSecretIds[serviceOf(server)]]]);
+      ).toEqual([[serviceOf(server), keys.handoffSecretIds[`${serviceOf(server)}@latest`]]]);
       // Only the upload-signing service gets its key exported as S3 env.
       expect(plan.exportS3Env, server.name).toBe(serviceOf(server) === 'backend' ? true : undefined);
     }

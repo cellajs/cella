@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { actionCommand } from '../lib/operator-actions';
 import { type IamAuth, listApiKeys, resolveApplicationIdByName } from '../lib/scaleway/iam-client';
-import { type MachinePrincipal, machineKeyName, machinePrincipals, standingAccessKey } from '../lib/scaleway/machine-keys';
+import { handoffBundleKey, type MachinePrincipal, machineKeyName, machinePrincipals, standingAccessKey } from '../lib/scaleway/machine-keys';
 import { createSecretManagerClient, type SecretManagerSecret } from '../lib/scaleway/scaleway-secret-manager';
 import { deployFolderPath, handoffServicePath } from '../lib/scaleway/secret-paths';
 import { runIfMain } from '../lib/utils/is-main';
@@ -11,7 +11,7 @@ export interface GenerationKeys {
   /** Boot fetcher key pair, baked into every generation's cloud-init. */
   bootAccessKey: string;
   bootSecretKey: string;
-  /** service slug → single-access handoff secret id holding that service's standing key. */
+  /** `handoffBundleKey(service, sha)` → single-access handoff secret id holding that service's standing key. */
   handoffSecretIds: Record<string, string>;
 }
 
@@ -125,7 +125,7 @@ export async function stageGenerationKeys(opts: {
   const boot = await read('boot');
   const handoffSecretIds: Record<string, string> = {};
   for (const service of opts.services) {
-    handoffSecretIds[service] = await stageHandoffBundle({ ...opts, principal: service, key: await read(service), log });
+    handoffSecretIds[handoffBundleKey(service, opts.sha)] = await stageHandoffBundle({ ...opts, principal: service, key: await read(service), log });
   }
 
   const result: GenerationKeys = { bootAccessKey: boot.accessKey, bootSecretKey: boot.secretKey, handoffSecretIds };

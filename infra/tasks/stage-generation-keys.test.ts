@@ -82,9 +82,10 @@ describe('stageGenerationKeys', () => {
     expect(staged.map((entry) => entry.name)).toEqual(['handoff-backend-abcdef0123', 'handoff-cdc-abcdef0123']);
     expect(JSON.parse(staged[1]?.value ?? '{}')).toEqual({ accessKey: accessKeyOf('cdc'), secretKey: 'secret-of-stored:cdc' });
     expect(result.bootAccessKey).toBe(accessKeyOf('boot'));
+    // Keyed by service and release: a machine of another release finds no bundle.
     expect(JSON.parse(readFileSync(outFile, 'utf8')).handoffSecretIds).toEqual({
-      backend: 'bundle:handoff-backend-abcdef0123',
-      cdc: 'bundle:handoff-cdc-abcdef0123',
+      'backend@abcdef0123456789': 'bundle:handoff-backend-abcdef0123',
+      'cdc@abcdef0123456789': 'bundle:handoff-cdc-abcdef0123',
     });
   });
 
