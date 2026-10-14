@@ -22,7 +22,8 @@ export interface ServiceAppsResult {
 /**
  * Provision the per-service VM applications (`<slug>-<mode>-vm-<service>`) and
  * the boot fetcher application (`<slug>-<mode>-boot`), applications only:
- * their POLICIES are Pulumi-managed (resources/vm-iam.ts, privileged) and
+ * their POLICIES are the machine policies, written at Owner moments
+ * (lib/scaleway/machine-policies.ts), and
  * their KEYS are minted per deploy by CI (tasks/mint-generation-keys.ts) under
  * the unconditioned org-wide IAMApplicationManager grant (the boundary is the
  * absent IAMPolicyManager). Runs with an IAMManager-capable key; the returned
@@ -35,7 +36,7 @@ export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<S
     const app = await provisionScopedKey(opts, {
       suffix: `vm-${service}`,
       appDescription: `Non-human principal for ${service} service VMs: path-conditioned secret read (key minted per deploy)`,
-      policyDescription: 'unused (Pulumi manages the policy)',
+      policyDescription: 'unused (a machine policy, written apart)',
       managePolicy: false,
       mintKey: false,
     });
@@ -44,7 +45,7 @@ export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<S
   const boot = await provisionScopedKey(opts, {
     suffix: 'boot',
     appDescription: 'Non-human boot fetcher: registry pull, boot-diag write, handoff-only secret read (key minted per deploy)',
-    policyDescription: 'unused (Pulumi manages the policy)',
+    policyDescription: 'unused (a machine policy, written apart)',
     managePolicy: false,
     mintKey: false,
   });

@@ -51,9 +51,9 @@ export interface ScopedKeyConfig {
   policyDescription: string;
   /** Builds the policy rules once the organization id is known. Required unless `managePolicy` is false. */
   buildRules?: (ctx: { projectId: string; organizationId: string }) => PolicyRule[];
-  /** Whether this flow owns the identity's IAM policy. Defaults to `true`; set `false` when a Pulumi `iam.Policy` resource reconciles the grant. */
+  /** Whether this flow owns the identity's IAM policy. Defaults to `true`; set `false` when the policy is written by its own step (the machine policies). */
   managePolicy?: boolean;
-  /** Whether to mint an API key. Defaults to `true`; when `false` the result's accessKey/secretKey are empty and a human mints the key in the console. */
+  /** Whether to mint an API key. Defaults to `true`; when `false` the result's accessKey/secretKey are empty and the key is made elsewhere (per deploy). */
   mintKey?: boolean;
 }
 
@@ -146,11 +146,11 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
       log(`  ${checkMark} Policy ${policyName} already exists: kept as-is (rules refresh needs IAMReadOnly)`);
     }
   } else {
-    log(`  ${checkMark} Policy management delegated to Pulumi (iam.Policy resource): skipping`);
+    log(`  ${checkMark} Its policy is written by its own step`);
   }
 
   if (config.mintKey === false) {
-    log(`  ${checkMark} Key minting skipped: create one in the console for ${app.name}`);
+    log(`  ${checkMark} No key made here: each deploy makes the keys of ${app.name}`);
     return { accessKey: '', secretKey: '', applicationId: app.id, organizationId };
   }
 

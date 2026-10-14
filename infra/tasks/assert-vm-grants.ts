@@ -15,8 +15,8 @@ import { getFlag } from './args';
 const SECRET_PERMISSION_SETS = new Set(['SecretManagerSecretAccess', 'SecretManagerReadOnly', 'SecretManagerFullAccess']);
 
 /**
- * Whether an EXTRA permission set on the VM key is benign. A read-only set is drift worth reporting but not a deploy-blocker: the VM policy is privileged
- * (vm-iam.ts `ignoreChanges: ['rules']`), so failing on it would only wedge deploys until a manual Apply.
+ * Whether an EXTRA permission set on the VM key is benign. A read-only set is drift worth reporting but not a deploy-blocker: the machine policy is
+ * written at Owner moments only, so failing on it would only wedge deploys until one.
  * Any non-read-only extra set is an escalation on the VM key and stays fatal until an operator strips it.
  */
 const isBenignExtraSet = (set: string): boolean => set.endsWith('ReadOnly');
@@ -133,7 +133,7 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
       `✗ dormant principal holds ${dormantKeys.length} API key(s): a registry service outside the deployed set must have none: ${dormantKeys.join(', ')}`,
     );
   if (extraBenign.length > 0)
-    log(`⚠ VM application has extra read-only grant(s) (benign drift; reconcile with \`${actionCommand('apply')}\`): ${extraBenign.join(', ')}`);
+    log(`⚠ VM application has extra read-only grant(s) (benign drift; reconcile with \`${actionCommand('identity')}\`): ${extraBenign.join(', ')}`);
   if (ok) {
     const conditionNote = opts.requiredSecretCondition ? ', secret rules path-conditioned' : '';
     const scopeNote = opts.requiredProjectId ? ', project-scoped' : '';
@@ -192,7 +192,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     ].filter(Boolean);
     throw new Error(
       `VM application ${applicationId ?? applicationName} ${problems.join('; ')}. ` +
-        `The Pulumi-managed policy (infra/resources/vm-iam.ts) defines the exact grant. A CI deploy never rewrites policy rules: after a registry change run \`${actionCommand('apply')}\` (a privileged up reconciles them), remove any manually-attached policy, and delete keys on dormant principals.`,
+        `The machine policy (infra/lib/scaleway/machine-policies.ts) defines the exact grant, and a deploy never writes it: run \`${actionCommand('identity')}\` with your Owner API key, remove any manually-attached policy, and delete keys on dormant principals.`,
     );
   }
 }

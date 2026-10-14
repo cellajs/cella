@@ -143,7 +143,7 @@ export function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[])
 
 /**
  * The secret-read condition of a service principal: its scope's own folders plus the shared folder of every runtime
- * secret its scope consumes, and nothing else. The Pulumi program (resources/vm-iam.ts) and the deploy's grant
+ * secret its scope consumes, and nothing else. The machine policies (lib/scaleway/machine-policies.ts) and the deploy's grant
  * assertion both build it here, so they compare equal as strings.
  */
 export function principalSecretCondition(slug: string, mode: string, singleVM: boolean, service: ServiceName): string {
