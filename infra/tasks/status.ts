@@ -13,7 +13,7 @@ import {
   type PrincipalRole,
   resolveOperatorIdentity,
 } from '../lib/scaleway/operator-identity';
-import { principalNames } from '../lib/scaleway/principals';
+import { allPrincipalNames, appPrincipalNames } from '../lib/scaleway/principals';
 import { resolveProjectId } from '../lib/scaleway/provider-env';
 import { projectAccessKey } from '../lib/scaleway/s3-client';
 import { detectComputeDeferred, pickStackShort, type StackState } from '../lib/stack/bootstrap-stack-state';
@@ -257,7 +257,7 @@ export async function collectQuickFacts(
   const keyProbe = async () => {
     if (!key || !slot) return;
     const desc = await describeKey(key);
-    facts.key = { desc, role: classifyPrincipal(desc, principalNames(ctx.appConfig.slug, ctx.environment)), slot };
+    facts.key = { desc, role: classifyPrincipal(desc, allPrincipalNames(ctx.appConfig, ctx.environment)), slot };
   };
   await Promise.all([
     within(
@@ -341,7 +341,7 @@ export async function printQuickFacts(context: { environment: string; appConfig:
   );
   const identity = resolveOperatorIdentity();
   const configured = identity.observer ? 'observer' : identity.ambient ? 'ambient' : 'none';
-  const observerApplication = principalNames(context.appConfig.slug, context.environment).observer;
+  const observerApplication = appPrincipalNames(context.appConfig.appSlug).observer;
   for (const line of formatQuickFacts(facts, { configured, observerApplication })) console.info(line);
   console.info('');
 }

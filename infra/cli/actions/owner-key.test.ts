@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { principalNames } from '../../lib/scaleway/principals';
+import { allPrincipalNames } from '../../lib/scaleway/principals';
 
 const keyPairOrPrompt = vi.fn();
 const assertIamManager = vi.fn();
@@ -23,7 +23,7 @@ const application = { desc: { accessKey: 'SCWTYPED', bearer: 'application', bear
 
 const acquire = () =>
   acquireOwnerKey({
-    names: principalNames('cella', 'production'),
+    names: allPrincipalNames({ slug: 'cella', appSlug: 'cella' }, 'production'),
     projectId: 'project-1',
     slug: 'cella',
     mode: 'production',

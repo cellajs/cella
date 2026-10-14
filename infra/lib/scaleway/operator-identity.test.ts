@@ -10,9 +10,9 @@ import {
   organizationIdOfKey,
   resolveOperatorIdentity,
 } from './operator-identity';
-import { principalNames } from './principals';
+import { allPrincipalNames } from './principals';
 
-const names = principalNames('cella', 'production');
+const names = allPrincipalNames({ slug: 'cella', appSlug: 'cella' }, 'production');
 
 /** Route-matched fake fetch: the first entry whose `match` is a substring of the url answers; anything else is a 404. */
 function makeFetch(routes: Array<{ match: string; body: unknown; status?: number }>): FetchLike {

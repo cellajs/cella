@@ -5,7 +5,7 @@ import { type IamAuth, resolveApplicationIdByName } from '../../lib/scaleway/iam
 import type { MachineKeyStep } from '../../lib/scaleway/machine-keys';
 import { type MachinePolicy, machinePolicies } from '../../lib/scaleway/machine-policies';
 import { organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
-import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
+import { type AppPrincipalNames, appPrincipalNames, principalNames } from '../../lib/scaleway/principals';
 import { makeS3Client, projectAccessKey } from '../../lib/scaleway/s3-client';
 import { deleteApplicationCascade } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
@@ -74,7 +74,7 @@ function machineIdentityLines(plan: MachineIdentityPlan): string[] {
 }
 
 /** The plan as lines to print. */
-export function identityPlanLines(plan: IdentityPlan, names: Pick<PrincipalNames, 'observer'>): string[] {
+export function identityPlanLines(plan: IdentityPlan, names: Pick<AppPrincipalNames, 'observer'>): string[] {
   const observerWords: Record<ObserverStep, string | undefined> = {
     none: undefined,
     create: 'to create, its key written to this machine',
@@ -197,7 +197,7 @@ async function deleteRetiredAdmin(
 export async function runIdentity(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   const registry = { slug: appConfig.slug, mode: context.environment };
-  const names = principalNames(appConfig.slug, context.environment);
+  const names = appPrincipalNames(appConfig.appSlug);
   console.info(
     pc.dim(
       `\n${actionLabel('identity')}: the applications the service registry needs, the machine policies and the observer, written with your Owner API key.\n`,

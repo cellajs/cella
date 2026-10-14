@@ -4,7 +4,7 @@ import { select } from '@inquirer/prompts';
 import { dbExposureConfigured } from '../lib/db-public-endpoint';
 import { actionCommand, actionLabel, type MenuRowId, menuRow, OPERATOR_ACTIONS, type OperatorActionId } from '../lib/operator-actions';
 import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
-import { principalNames } from '../lib/scaleway/principals';
+import { appPrincipalNames } from '../lib/scaleway/principals';
 import { detectComputeDeferred, type Environment, pickStackShort } from '../lib/stack/bootstrap-stack-state';
 import { environments } from '../lib/stack/project-per-mode';
 import { loadStackContext } from '../lib/stack/stack-context';
@@ -166,7 +166,7 @@ async function printStackFacts(context: InfraContext): Promise<string[] | undefi
     );
     liveEndpoints = endpoints;
     const configured = identity.observer ? 'observer' : identity.ambient ? 'ambient' : 'none';
-    const observerApplication = principalNames(context.appConfig.slug, context.environment).observer;
+    const observerApplication = appPrincipalNames(context.appConfig.appSlug).observer;
     for (const line of formatQuickFacts(facts, { configured, observerApplication })) console.info(line);
   }
   const access = formatAccessLines({

@@ -1,30 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { principalNames } from '../../lib/scaleway/principals';
+import { appPrincipalNames } from '../../lib/scaleway/principals';
 import type { InfraContext } from '../shared';
 
 const maskedSecret = vi.fn();
 const input = vi.fn();
-const describeKey = vi.fn();
-const fetchAppRulesByName = vi.fn();
-const scwFetch = vi.fn();
-const resolveOperatorIdentity = vi.fn();
 const acquireOwnerKey = vi.fn();
 
+// The terminal prompts and the Owner key's own action: the effects a person answers. Scaleway is the fake below, behind fetch.
 vi.mock('../prompts/masked-secret', () => ({ maskedSecret: (...args: unknown[]) => maskedSecret(...args) }));
 vi.mock('@inquirer/prompts', () => ({ input: (...args: unknown[]) => input(...args) }));
-vi.mock('../../lib/scaleway/iam-client', () => ({
-  IAM_BASE: 'https://iam.test',
-  fetchAppRulesByName: (...args: unknown[]) => fetchAppRulesByName(...args),
-}));
-vi.mock('../../lib/scaleway/scw-fetch', async (original) => ({
-  ...(await original<typeof import('../../lib/scaleway/scw-fetch')>()),
-  scwFetch: (...args: unknown[]) => scwFetch(...args),
-}));
-vi.mock('../../lib/scaleway/operator-identity', async (original) => ({
-  ...(await original<typeof import('../../lib/scaleway/operator-identity')>()),
-  resolveOperatorIdentity: () => resolveOperatorIdentity(),
-  describeKey: (...args: unknown[]) => describeKey(...args),
-}));
 vi.mock('./owner-key', () => ({ acquireOwnerKey: (...args: unknown[]) => acquireOwnerKey(...args) }));
 
 const { acquireIdentityKey, acquireOperatorKey, acquirePrivilegedKey, addressVerdict, readOperatorLock, refusalLines } = await import(
@@ -33,34 +17,48 @@ const { acquireIdentityKey, acquireOperatorKey, acquirePrivilegedKey, addressVer
 const { forgetSession, rememberedOperatorKey, rememberOperatorLock } = await import('../session');
 
 const stack = {
-  appConfig: { slug: 'cella', s3: { region: 'nl-ams' } },
+  appConfig: { slug: 'cella', appSlug: 'cella', s3: { region: 'nl-ams' } },
   environment: 'production',
   projectId: 'project-1',
 } as unknown as InfraContext;
-const names = principalNames('cella', 'production');
+const names = appPrincipalNames('cella');
 const lock = "request.ip in ['203.0.113.7']";
 const present = { state: 'present' as const, cidrs: ['203.0.113.7/32'], open: false };
-const refused = (status: number) => new Error(`Scaleway GET https://iam.test/x → ${status}: {"message":"no"}`);
+
+/** Who bears each access key, as IAM tells it; a number is the status IAM refuses the key with. */
+const bearers = new Map<string, { application?: string; owner?: string } | number>();
+/** The IAM key reads, with the secret key each was made with. */
+const keyReads: Array<{ accessKey: string; secretKey: string }> = [];
+
+/** A fake Scaleway: the IAM reads that tell a key's bearer, and the address lookup, which answers with this machine's address. */
+async function fakeScaleway(url: string, init?: { headers?: Record<string, string> }) {
+  const answer = (status: number, body: unknown) => ({ ok: status < 400, status, text: async () => JSON.stringify(body) });
+  const path = new URL(url).pathname;
+  const keyRead = path.match(/\/api-keys\/([^/]+)$/);
+  if (keyRead?.[1]) {
+    keyReads.push({ accessKey: keyRead[1], secretKey: init?.headers?.['X-Auth-Token'] ?? '' });
+    const bearer = bearers.get(keyRead[1]);
+    if (bearer === undefined) return answer(404, { message: 'not found' });
+    if (typeof bearer === 'number') return answer(bearer, { message: 'no' });
+    return answer(200, { access_key: keyRead[1], application_id: bearer.application, user_id: bearer.owner });
+  }
+  const application = path.match(/\/applications\/([^/]+)$/)?.[1];
+  if (application) return answer(200, { name: application, organization_id: 'org-1' });
+  const user = path.match(/\/users\/([^/]+)$/)?.[1];
+  if (user) return answer(200, { email: user, type: 'owner', organization_id: 'org-1' });
+  return { ok: true, status: 200, text: async () => '198.51.100.9' };
+}
 
 beforeEach(() => {
   vi.spyOn(console, 'info').mockImplementation(() => {});
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async () => ({ ok: true, text: async () => '198.51.100.9' })),
-  );
+  vi.stubGlobal('fetch', vi.fn(fakeScaleway));
+  bearers.clear();
+  bearers.set('SCWOPERATOR', { application: 'cella-operator' });
+  keyReads.length = 0;
   input.mockResolvedValue('SCWOPERATOR');
   maskedSecret.mockResolvedValue('operator-secret');
-  describeKey.mockResolvedValue({
-    accessKey: 'SCWOPERATOR',
-    bearer: 'application',
-    name: 'cella-operator',
-    bearerId: 'app-operator',
-    organizationId: 'org-1',
-  });
-  scwFetch.mockResolvedValue({});
-  resolveOperatorIdentity.mockReturnValue({ warnings: [] });
   rememberOperatorLock(present);
 });
 
@@ -126,7 +124,7 @@ describe('acquireOperatorKey', () => {
   it('runs an action on the operator key itself: nothing is minted, and nothing is left to revoke', async () => {
     const key = await acquireOperatorKey(stack);
 
-    expect(describeKey).toHaveBeenCalledWith({ accessKey: 'SCWOPERATOR', secretKey: 'operator-secret' });
+    expect(keyReads).toEqual([{ accessKey: 'SCWOPERATOR', secretKey: 'operator-secret' }]);
     expect(key).toEqual({ accessKey: 'SCWOPERATOR', secretKey: 'operator-secret', organizationId: 'org-1' });
     expect(rememberedOperatorKey()).toEqual({ accessKey: 'SCWOPERATOR', secretKey: 'operator-secret' });
   });
@@ -134,7 +132,7 @@ describe('acquireOperatorKey', () => {
   it('is one application for every environment of the app', async () => {
     const key = await acquireOperatorKey({
       ...stack,
-      appConfig: { slug: 'cella-staging', s3: { region: 'nl-ams' } },
+      appConfig: { slug: 'cella-staging', appSlug: 'cella', s3: { region: 'nl-ams' } },
       environment: 'staging',
     } as never);
     expect(key.accessKey).toBe('SCWOPERATOR');
@@ -149,13 +147,7 @@ describe('acquireOperatorKey', () => {
   });
 
   it('must not take the key of another application, however much that key may do', async () => {
-    describeKey.mockResolvedValueOnce({
-      accessKey: 'SCWADMIN',
-      bearer: 'application',
-      name: 'cella-production-admin',
-      bearerId: 'a',
-      organizationId: 'org-1',
-    });
+    bearers.set('SCWOPERATOR', { application: 'cella-production-admin' });
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
@@ -164,17 +156,18 @@ describe('acquireOperatorKey', () => {
   });
 
   it('must not take a user key in the place of the operator key', async () => {
-    describeKey.mockResolvedValueOnce({ accessKey: 'SCWOWNER', bearer: 'owner', name: 'owner@example.com', bearerId: 'u', organizationId: 'org-1' });
+    bearers.set('SCWOPERATOR', { owner: 'owner@example.com' });
     await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
     expect(rememberedOperatorKey()).toBeUndefined();
   });
 
   it('must not keep a key Scaleway refused: the action ends, and the next one asks again', async () => {
-    describeKey.mockRejectedValueOnce(refused(403));
+    bearers.set('SCWOPERATOR', 403);
 
     await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
     expect(rememberedOperatorKey()).toBeUndefined();
 
+    bearers.set('SCWOPERATOR', { application: 'cella-operator' });
     await acquireOperatorKey(stack);
     expect(maskedSecret).toHaveBeenCalledTimes(2);
   });
@@ -183,7 +176,7 @@ describe('acquireOperatorKey', () => {
     input.mockResolvedValueOnce('  ');
     await expect(acquireOperatorKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
     expect(maskedSecret).not.toHaveBeenCalled();
-    expect(describeKey).not.toHaveBeenCalled();
+    expect(keyReads).toEqual([]);
   });
 });
 

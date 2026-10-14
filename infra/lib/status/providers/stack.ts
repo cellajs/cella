@@ -2,7 +2,7 @@ import { actionCommand } from '../../operator-actions';
 import { listApiKeys, resolveApplicationIdByName } from '../../scaleway/iam-client';
 import { machinePrincipals } from '../../scaleway/machine-keys';
 import { organizationIdOfKey } from '../../scaleway/operator-identity';
-import { principalNames } from '../../scaleway/principals';
+import { allPrincipalNames, appPrincipalNames } from '../../scaleway/principals';
 import { projectsOfOtherModes, projectVerdict } from '../../stack/project-per-mode';
 import { check, deployAction, probed, runSetup } from '../check';
 import type { StatusProvider } from '../types';
@@ -68,7 +68,7 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
       // An application key learns its organization from IAM; an unresolvable one degrades the check to unknown, never an error.
       const organizationId = await organizationIdOfKey({ accessKey: session.accessKey, secretKey: session.secretKey }, session.projectId);
       const auth = { secretKey: session.secretKey };
-      const names = principalNames(session.appConfig.slug, session.mode);
+      const names = allPrincipalNames(session.appConfig, session.mode);
       const observerAppId = await resolveApplicationIdByName(auth, organizationId, names.observer);
       const applications = [
         names.operator,
@@ -104,7 +104,7 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
           observerAppId
             ? observer.ok(observerAppId)
             : observer.warn(
-                `IAM application '${principalNames(session.appConfig.slug, session.mode).observer}' not found; \`${actionCommand('identity')}\` creates it`,
+                `IAM application '${appPrincipalNames(session.appConfig.appSlug).observer}' not found; \`${actionCommand('identity')}\` creates it`,
                 runSetup,
               ),
         ),

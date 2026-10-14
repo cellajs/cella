@@ -8,7 +8,7 @@ import {
   organizationIdOfKey,
   type PrincipalRole,
 } from '../../lib/scaleway/operator-identity';
-import type { PrincipalNames } from '../../lib/scaleway/principals';
+import type { AppPrincipalNames, PrincipalNames } from '../../lib/scaleway/principals';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { forgetOwnerKey, rememberedOwnerKey, rememberOwnerKey } from '../session';
@@ -39,7 +39,12 @@ export interface OwnerKey extends KeyPair {
  * the end. A short-lived user key or an application key is used as it is. Every failure names the fix and exits before the stack is touched.
  * A key typed at the prompt is kept in memory for this run of the CLI, so a menu session asks once; every action validates it again.
  */
-export async function acquireOwnerKey(opts: { names: PrincipalNames; projectId: string; slug: string; mode: string }): Promise<OwnerKey> {
+export async function acquireOwnerKey(opts: {
+  names: PrincipalNames & AppPrincipalNames;
+  projectId: string;
+  slug: string;
+  mode: string;
+}): Promise<OwnerKey> {
   const { names, projectId } = opts;
   // A key typed earlier in this run is used again, and validated again below: it may have been revoked since.
   const remembered = rememberedOwnerKey();

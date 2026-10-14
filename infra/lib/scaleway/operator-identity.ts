@@ -2,7 +2,7 @@ import { OBSERVER_KEY_NAMES } from '../utils/env-files';
 import type { FetchLike } from '../utils/fetch-like';
 import { resolveFetch } from '../utils/fetch-like';
 import { getApiKey, IAM_BASE, type IamAuth, listOrganizationPolicies, resolveOrganizationIdViaProject } from './iam-client';
-import type { PrincipalNames } from './principals';
+import type { AppPrincipalNames, PrincipalNames } from './principals';
 import { resolveOrganizationIdFromEnv } from './provider-env';
 import { scwFetch } from './scw-fetch';
 
@@ -118,7 +118,7 @@ export async function organizationIdOfKey(pair: KeyPair, projectId?: string, opt
 /** The engine role of a key's bearer, or the kind of outside principal it is. */
 export type PrincipalRole = 'ci-deploy' | 'admin' | 'operator' | 'observer' | 'boot' | 'vm-service' | 'owner' | 'member' | 'application';
 
-export function classifyPrincipal(desc: KeyDescription, names: PrincipalNames): PrincipalRole {
+export function classifyPrincipal(desc: KeyDescription, names: PrincipalNames & AppPrincipalNames): PrincipalRole {
   if (desc.bearer !== 'application') return desc.bearer;
   if (desc.name === names.ciDeploy) return 'ci-deploy';
   if (desc.name === names.admin) return 'admin';
@@ -163,7 +163,7 @@ const OWNER_KEY_HOWTO = 'your own key as an organization Owner (console → your
  */
 export async function assertIamManager(opts: {
   pair: KeyPair;
-  names: PrincipalNames;
+  names: PrincipalNames & AppPrincipalNames;
   organizationId: string;
   fetchImpl?: FetchLike;
 }): Promise<{ desc: KeyDescription; role: PrincipalRole }> {

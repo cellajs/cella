@@ -4,7 +4,7 @@ import { deriveInfra } from '../../lib/naming';
 import { actionLabel } from '../../lib/operator-actions';
 import { ipAllowed } from '../../lib/scaleway/ip-lock';
 import { classifyPrincipal, describeKey, type KeyPair } from '../../lib/scaleway/operator-identity';
-import { appSlug, principalNames } from '../../lib/scaleway/principals';
+import { allPrincipalNames, appPrincipalNames } from '../../lib/scaleway/principals';
 import type { ScopedKeyResult } from '../../lib/scaleway/scaleway-iam';
 import { projectsOfOtherModes } from '../../lib/stack/project-per-mode';
 import { changeMark, checkMark, crossMark, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
@@ -56,7 +56,7 @@ async function createOperator(
 ): Promise<ScopedKeyResult | undefined> {
   const { appConfig, projectId } = context;
   const mode = context.environment;
-  const names = principalNames(appConfig.slug, mode);
+  const names = allPrincipalNames(appConfig, mode);
   console.info(`The key works in ${reach.map((entry) => `${pc.cyan(entry.mode)} ${pc.dim(`(project ${entry.projectId})`)}`).join(' and ')}.`);
   console.info(pc.dim('  An environment is listed once its setup named a project on this machine (infra/.env.<mode>).\n'));
 
@@ -86,7 +86,7 @@ async function createOperator(
   if (addressInList === false)
     console.warn(`  ${warningMark} This machine's address is not in that list: the new key can be neither checked nor used from here.`);
   console.info(pc.dim('  When the address changes, the organization Owner sets the new one: this action again, or the policy in the console.\n'));
-  if (!(await confirm({ message: `Create the operator key of ${appSlug(appConfig.slug, mode)}?`, default: false }))) {
+  if (!(await confirm({ message: `Create the operator key of ${appConfig.appSlug}?`, default: false }))) {
     console.info('Aborted; nothing changed.');
     return undefined;
   }
@@ -107,7 +107,7 @@ async function createOperator(
       organizationId: ownerKey.organizationId,
       projectId,
       projectIds: reach.map((entry) => entry.projectId),
-      slug: appSlug(appConfig.slug, mode),
+      slug: appConfig.appSlug,
       dnsZone: deriveInfra(appConfig).dnsZone,
       cidrs,
     });
@@ -149,7 +149,7 @@ async function createOperator(
 export async function runOperatorKey(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   const mode = context.environment;
-  const names = principalNames(appConfig.slug, mode);
+  const names = allPrincipalNames(appConfig, mode);
   console.info(
     pc.dim(
       `\n${actionLabel('operator-key')}: the '${names.operator}' application and a fresh key, which Scaleway accepts from your dedicated IP address only.\n`,
@@ -177,12 +177,12 @@ export async function runOperatorKey(context: InfraContext): Promise<void> {
 export async function ensureOperatorForEnvironment(context: InfraContext, ownerKey: OwnerKey, projectId: string): Promise<KeyPair | undefined> {
   const { appConfig } = context;
   const mode = context.environment;
-  const names = principalNames(appConfig.slug, mode);
+  const names = appPrincipalNames(appConfig.appSlug);
   const auth = { secretKey: ownerKey.secretKey };
   const reach = await extendOperatorReach({
     auth,
     organizationId: ownerKey.organizationId,
-    slug: appSlug(appConfig.slug, mode),
+    slug: appConfig.appSlug,
     projectIds: [projectId],
     dnsZone: deriveInfra(appConfig).dnsZone,
   });
