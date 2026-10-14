@@ -11,7 +11,8 @@ export interface BuildImageRow {
 }
 
 export function parseBuildRows(raw: string): BuildImageRow[] {
-  return parseServiceRows(raw, '--build-images-json', { required: ['service', 'dockerfile'] });
+  // The stage of a multi-stage Dockerfile: without it every image of that file would be its last stage.
+  return parseServiceRows(raw, '--build-images-json', { required: ['service', 'dockerfile'], optional: ['target'] });
 }
 
 export interface BakeOptions {
