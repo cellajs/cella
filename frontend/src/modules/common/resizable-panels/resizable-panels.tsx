@@ -969,7 +969,8 @@ export function ResizableSeparator({ index, className, children, 'aria-label': a
       aria-controls={ariaControls || undefined}
       tabIndex={0}
       data-separator="inactive"
-      className={cn('focus-effect select-none', className)}
+      // Consumers draw focus in the bar's own color: a ring has no room between panels. outline-hidden keeps the forced-colors outline.
+      className={cn('select-none outline-hidden', className)}
       style={{ touchAction: 'none', cursor: 'col-resize', flexShrink: 0 }}
       onPointerDown={handlePointerDown}
       onPointerEnter={handlePointerEnter}
