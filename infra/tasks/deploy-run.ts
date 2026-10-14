@@ -241,6 +241,9 @@ export async function runDeploy(
       });
     }
 
+    // A stack that never had a machine plans its first generation in the base update below, before the rollout names one: it is this release.
+    process.env.INFRA_RELEASE_SHA = opts.sha;
+
     // Mint this generation's keys and handoff bundles BEFORE the stack update bakes their references into cloud-init.
     await step('Mint generation keys', async () => {
       const { tmpdir } = await import('node:os');
