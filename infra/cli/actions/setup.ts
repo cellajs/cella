@@ -285,7 +285,8 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
 
   const firstProvision = ctx.context.state === 'fresh';
   // Until the first provisioning completes, the stack keeps compute deferred; a resume after a failed one is still that first provisioning.
-  if (firstProvision || detectComputeDeferred(ctx.context.stackYaml)) {
+  const inFirstProvisioning = firstProvision || Boolean(detectComputeDeferred(ctx.context.stackYaml));
+  if (inFirstProvisioning) {
     // A teardown keeps the operator-value containers with their values: the first `up` of the same environment adopts them.
     const listed = await createSecretManagerClient({ secretKey: ctx.secretKey, region: ctx.appConfig.s3.region, projectId: ctx.projectId })
       .listSecretsUnder(ctx.runtimeSecretPath)
@@ -329,7 +330,7 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
       );
     }
   }
-  if (firstProvision) {
+  if (inFirstProvisioning) {
     spawnSync('pulumi', ['config', 'rm', 'bootstrap:computeDeferred', '--stack', ctx.stackName], {
       cwd: infraDir,
       env: ctx.childEnv,
