@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type DeployEffects, type DeployOptions, parseDeployArgs, parseReapArgs, runDeploy, runReap } from './deploy-run';
+import { type DeployEffects, type DeployOptions, deployFailureHint, parseDeployArgs, parseReapArgs, runDeploy, runReap } from './deploy-run';
 import type { AllowedKey } from './print-deploy-env';
 
 /** Cella-shaped deploy env table, injected in place of the shared config load. */
@@ -316,5 +316,27 @@ describe('what the deploy runs', () => {
     const { fx, execCalls } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
     expect([...new Set(execCalls.map((call) => `${call.cmd} ${call.args[0]}`))].sort()).toEqual(['docker login', 'pulumi login', 'pulumi stack']);
+  });
+});
+
+describe('deployFailureHint', () => {
+  it('names the step it stopped at, and points at boot diagnostics only once machines booted', async () => {
+    const early = makeFake();
+    const task = early.fx.task;
+    early.fx.task = async (name, argv) => {
+      if (name === 'build-release') throw new Error('the builder failed');
+      return task(name, argv);
+    };
+    const buildError = await runDeploy(baseOpts, early.fx, fakeDeployEnv).catch((err: unknown) => err);
+    expect(deployFailureHint(buildError, 'staging', 'abc123')).toEqual({
+      description: 'It stopped at "Build the release". Re-running is safe: generations are content-addressed.',
+    });
+
+    const late = makeFake({ rolloutFails: true });
+    const rolloutError = await runDeploy(baseOpts, late.fx, fakeDeployEnv).catch((err: unknown) => err);
+    expect(deployFailureHint(rolloutError, 'staging', 'abc123')).toMatchObject({
+      description: expect.stringContaining('"Waved rollout"'),
+      command: 'pnpm --filter infra diag --mode staging --sha abc123',
+    });
   });
 });

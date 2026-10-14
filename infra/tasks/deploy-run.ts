@@ -76,6 +76,20 @@ interface RolloutRow {
   health_url: string;
 }
 
+/** The steps from which a release's machines have booted: their boot diagnostics say why one did not come up. */
+const STEPS_WITH_MACHINES = new Set(['Base stack update', 'Waved rollout', 'Verify public versions', 'Smoke tests']);
+
+/** What a failed deploy says last: the step it stopped at, and the diagnostics only when machines of the release booted. */
+export function deployFailureHint(err: unknown, mode: string, sha?: string): { description: string; command?: string } {
+  const step = (err as { deployStep?: string } | undefined)?.deployStep;
+  const where = step ? `It stopped at "${step}". ` : '';
+  if (step && !STEPS_WITH_MACHINES.has(step)) return { description: `${where}Re-running is safe: generations are content-addressed.` };
+  return {
+    description: `${where}Re-running is safe (generations are content-addressed). For a machine that did not come up, read this release's diagnostics:`,
+    command: `pnpm --filter infra diag --mode ${mode}${sha ? ` --sha ${sha}` : ''}`,
+  };
+}
+
 export function parseDeployArgs(argv: string[]): DeployOptions {
   const mode = getFlag(argv, '--mode');
   const sha = getFlag(argv, '--sha');
@@ -136,6 +150,7 @@ export async function runDeploy(
       const failAttrs: { step: string; error: string; 'error.stack'?: string } = { step: title, error: errorMessage(err) };
       if (err instanceof Error && err.stack) failAttrs['error.stack'] = err.stack.slice(0, 4000);
       telemetry?.event(deployEvents.stepFailed, failAttrs, { severity: 'error', ctx: span?.ctx });
+      if (err instanceof Error) Object.assign(err, { deployStep: (err as { deployStep?: string }).deployStep ?? title });
       throw err;
     } finally {
       fx.groupEnd();
