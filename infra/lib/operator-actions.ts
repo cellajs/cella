@@ -29,7 +29,7 @@ export const OPERATOR_ACTIONS = {
     label: 'Review & apply changes',
     key: 'operator',
     description:
-      'See what differs between the code and the live stack, then apply it on your yes: database, VPC, buckets, DNS. A plan that changes a machine policy is applied with `--owner`. Answer no to only look.',
+      'See what differs between the code and the live stack, then apply it on your yes: database, VPC, buckets, DNS. Machine policies are written by "Update identities". Answer no to only look.',
   },
   'rotate-keys': {
     label: 'Rotate keys',
@@ -46,6 +46,12 @@ export const OPERATOR_ACTIONS = {
     key: 'owner',
     description:
       "Create the app's operator application and a fresh key that works from your dedicated IP address only, in every environment. Replaces an earlier operator key; run it again to change the address.",
+  },
+  identity: {
+    label: 'Update identities',
+    key: 'owner',
+    description:
+      'Make the applications the service registry needs and write the machine policies. Shows what differs first; asks for your Owner API key only when something must change.',
   },
   secrets: {
     label: 'Manage runtime secrets',
@@ -156,6 +162,13 @@ export const MENU_ROWS = {
     actions: ['secrets'],
     hint: 'operator key',
     description: `${OPERATOR_ACTIONS.secrets.description} A new value takes effect at the next deploy.`,
+  },
+  identity: {
+    group: 'change',
+    label: OPERATOR_ACTIONS.identity.label,
+    actions: ['identity'],
+    hint: 'Owner key',
+    description: OPERATOR_ACTIONS.identity.description,
   },
   'db-open': {
     group: 'database',

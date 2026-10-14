@@ -8,16 +8,13 @@ import { runPrivilegedConverge } from './privileged-converge';
 
 /**
  * Plan, ask, then one `pulumi up` with the operator key in SCW_* env, for changes to privileged resources (DB, VPC, private network, buckets, DNS) the read-only CI key cannot make.
- * A plan that changes a machine policy, or a registry that needs an identity made, writes IAM: `--owner` runs the same apply on an Owner API key.
+ * The machine policies and the registry's applications are IAM, written by `pnpm infra identity` with an Owner API key, never by this apply.
  * The admin application key makes the plan, so the privileged key is asked for and the stack lock taken only for a plan the operator said yes to.
  * It runs against a bootstrapped stack with live compute, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
  */
 export async function runApply(context: InfraContext): Promise<void> {
-  const identity = process.argv.includes('--owner');
   console.info(
-    pc.dim(
-      `\n${actionLabel('apply')}: plan what differs between the code and the live stack, ask, then apply it with your ${identity ? 'Owner API key' : 'operator key'}.\n`,
-    ),
+    pc.dim(`\n${actionLabel('apply')}: plan what differs between the code and the live stack, ask, then apply it with your operator key.\n`),
   );
 
   const { admin } = resolveOperatorIdentity();
@@ -49,7 +46,6 @@ export async function runApply(context: InfraContext): Promise<void> {
     reviewed,
     verifyAfter: true,
     debugProvider,
-    identity,
   });
   if (completed && ownerKeyPasted) printRevokeReminder();
   if (completed && verified === false) endAction(1);

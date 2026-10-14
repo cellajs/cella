@@ -5,13 +5,9 @@ import { actionCommand } from '../lib/operator-actions';
 
 const appConfig = engineConfig();
 
-import { principalSecretCondition } from '../lib/runtime-secrets';
-import { BACKEND_S3_PERMISSION_SETS, BOOT_PROJECT_PERMISSION_SETS, SERVICE_SECRET_PERMISSION_SETS } from '../lib/scaleway/permissions';
 import { principalNames } from '../lib/scaleway/principals';
-import { bootKeyCondition, ruleConditions } from '../lib/scaleway/secret-paths';
 import { principalServices } from '../lib/services';
-import { vmPolicyIgnoreChanges } from '../lib/stack/privileged-up';
-import { mode, naming, organizationId, projectId, tags } from '../pulumi-context';
+import { mode, organizationId } from '../pulumi-context';
 
 const names = principalNames(appConfig.slug, mode);
 
@@ -45,12 +41,12 @@ function requirePrincipalId(
   return resolved.apply((id) => {
     if (id) return id;
     if (opts.pendingOnPreview && pulumi.runtime.isDryRun()) {
-      pulumi.log.warn(`IAM application for ${label} does not exist yet: \`${actionCommand('apply')}\` creates it before its up.`);
+      pulumi.log.warn(`IAM application for ${label} does not exist yet: \`${actionCommand('identity')}\` creates it.`);
       // The engine shows an unknown input as "known after apply"; the type has no word for it.
       return pulumi.unknown as unknown as string;
     }
     throw new Error(
-      `IAM application for ${label} not found: run the pnpm infra setup first, or \`${actionCommand('apply')}\` after a registry change.`,
+      `IAM application for ${label} not found: run the pnpm infra setup first, or \`${actionCommand('identity')}\` after a registry change.`,
     );
   });
 }
@@ -83,64 +79,6 @@ export const serviceApplicationIds: Record<string, pulumi.Output<string>> = Obje
 
 /** Boot fetcher application id. Required. */
 export const bootApplicationId: pulumi.Output<string> = requirePrincipalId(findApplicationId(names.boot), `boot fetcher ('${names.boot}')`);
-
-/**
- * Pulumi-managed IAM policies for the VM-side principals. Privileged: IAM policy write is forbidden to the CI key, so a privileged up creates these before compute exists, and compute VMs depend on them so grants attach before the first runtime-secret hydration.
- * One policy per service app (secret read conditioned to its own folder and the shared folders of the secrets it consumes) and one for the boot app (registry pull, diag write, handoff-only secret read). Conditions only narrow, and `assert-vm-grants` verifies no other policy un-scopes them.
- * Principals and conditions follow the service registry, not the enabled set: a service toggle changes compute only, while a registry change or a `singleVM` flip needs a privileged up.
- * CI ups ignore `rules` (they would 403 on the IAM write, and the provider shows a phantom ~rules from its condition empty-vs-unset asymmetry); a privileged up (`pnpm infra apply`) reconciles them, which is how a changed secret scope reaches the live policy.
- * @see resources/compute.ts
- * @see lib/stack/privileged-up.ts
- */
-export const vmIamPolicies: scaleway.iam.Policy[] = [];
-const policyOptions = { ignoreChanges: vmPolicyIgnoreChanges() };
-
-for (const svc of vmServices) {
-  const isBackend = svc.s3Access === true;
-  vmIamPolicies.push(
-    new scaleway.iam.Policy(
-      `vm-${svc.slug}-policy`,
-      {
-        name: naming.resource(`vm-${svc.slug}-policy`),
-        description: `Path-conditioned secret read${isBackend ? ' + S3 object access' : ''} for the ${svc.slug} service VMs (managed by Pulumi)`,
-        applicationId: serviceApplicationIds[svc.slug],
-        organizationId,
-        rules: [
-          // One rule per part of the condition: a condition too large for one rule is spread over several, which grant the same in sum.
-          ...ruleConditions(principalSecretCondition(naming.slug, mode, singleVM, svc.slug)).map((condition) => ({
-            permissionSetNames: [...SERVICE_SECRET_PERMISSION_SETS],
-            projectIds: [projectId],
-            condition,
-          })),
-          ...(isBackend ? [{ permissionSetNames: [...BACKEND_S3_PERMISSION_SETS], projectIds: [projectId] }] : []),
-        ],
-        tags,
-      },
-      policyOptions,
-    ),
-  );
-}
-vmIamPolicies.push(
-  new scaleway.iam.Policy(
-    'vm-boot-policy',
-    {
-      name: naming.resource('vm-boot-policy'),
-      description: 'Registry pull + boot-diag write + handoff-only secret read for the boot fetcher (managed by Pulumi)',
-      applicationId: bootApplicationId,
-      organizationId,
-      rules: [
-        { permissionSetNames: [...BOOT_PROJECT_PERMISSION_SETS], projectIds: [projectId] },
-        {
-          permissionSetNames: [...SERVICE_SECRET_PERMISSION_SETS],
-          projectIds: [projectId],
-          condition: bootKeyCondition(naming.slug, mode),
-        },
-      ],
-      tags,
-    },
-    policyOptions,
-  ),
-);
 
 /** Backend service app id when the backend service is deployed, for the bucket statements; undefined otherwise. */
 export const backendServiceApplicationId: pulumi.Output<string | undefined> = serviceApplicationIds.backend ?? pulumi.output(undefined);

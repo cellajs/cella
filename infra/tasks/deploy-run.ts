@@ -44,6 +44,7 @@ export interface DeployOptions {
 export type TaskName =
   | 'ensure-state-bucket'
   | 'install-pulumi-providers'
+  | 'forget-machine-policies'
   | 'preflight-privileged'
   | 'wait-for-images'
   | 'repair-certs'
@@ -173,6 +174,8 @@ export async function runDeploy(
       fx.task('sync-rollout-config', ['--stack', stack, '--reset-pending', '--deployed', deployed.map((row) => row.service).join(',')]),
     );
     // Privileged changes (a database privilege, a VM policy rule) need an operator Apply first: fail here, in seconds, with that command.
+    // The machine policies are written at Owner moments: a state that still holds them would have this update delete them.
+    await step('Take the machine policies out of the state', () => fx.task('forget-machine-policies', ['--stack', stack]));
     await step('Preflight privileged changes', () => fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]));
 
     const registry = `rg.${env.region}.scw.cloud`;
@@ -439,6 +442,7 @@ async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string
 const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'ensure-state-bucket': async () => (await import('./ensure-state-bucket')).main(),
   'install-pulumi-providers': async () => (await import('./install-pulumi-providers')).main(),
+  'forget-machine-policies': async (argv) => (await import('./forget-machine-policies')).main(argv),
   'preflight-privileged': async (argv) => (await import('./preflight-privileged')).main(argv),
   'wait-for-images': async (argv) => (await import('./wait-for-images')).main(argv),
   'repair-certs': async (argv) => (await import('./repair-certs')).main(argv),

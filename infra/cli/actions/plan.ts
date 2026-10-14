@@ -5,7 +5,6 @@ import { type KeyPair, organizationIdOfKey } from '../../lib/scaleway/operator-i
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { type PlanBasis, readPlanBasis } from '../../lib/stack/plan-basis';
-import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
@@ -64,8 +63,6 @@ export async function reviewPlan(context: InfraContext, key: KeyPair): Promise<R
 
   // The admin application key serves both sides: the provider reads and the state bucket, which admits it.
   const env = buildProviderEnv(infraDir, { ...key, projectId, passphrase, organizationId });
-  // The program diffs VM policy rules only under this marker, and that diff is the one an operator is here to see.
-  env[PRIVILEGED_UP_ENV] = '1';
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
   // Read before the plan runs, so a deploy that lands while Pulumi computes it counts as a change too.

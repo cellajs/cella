@@ -9,7 +9,6 @@ import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { projectAccessKey } from '../../lib/scaleway/s3-client';
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { planBasisChanges, readPlanBasis } from '../../lib/stack/plan-basis';
-import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
@@ -17,7 +16,7 @@ import { infraDir } from '../../lib/utils/paths';
 import { ensureRegistryPrincipals, missingRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
-import { acquireIdentityKey, acquirePrivilegedKey } from './operator-unlock';
+import { acquirePrivilegedKey } from './operator-unlock';
 import { askToApply, type ReviewedPlan, showPlan } from './plan';
 
 export interface PrivilegedConvergeOptions {
@@ -44,16 +43,6 @@ export interface PrivilegedConvergeOptions {
   debugProvider?: boolean;
   /** Read-only check after a completed `up`, while the run's privileged key is still valid; a throw is reported as a warning. */
   afterUp?: (env: NodeJS.ProcessEnv) => Promise<void>;
-  /**
-   * Run on an Owner API key: for a plan that changes a machine policy, or a registry that needs an identity made. Both write IAM, which the
-   * operator key cannot.
-   */
-  identity?: boolean;
-}
-
-/** True when a failed `up` was refused a write of IAM: an application, a policy or a key. */
-export function refusedOnIam(output: string): boolean {
-  return /insufficient permissions:\s*\w+\s+\S*(polic|application|api_key|iam)/i.test(output);
 }
 
 export interface PrivilegedConvergeResult {
@@ -84,10 +73,8 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
 
   const identity = resolveOperatorIdentity();
   const names = principalNames(appConfig.slug, context.environment);
-  const ownerKey = opts.identity
-    ? await acquireIdentityKey(context, 'This apply changes identities: machine policies, or the applications a registry change needs.')
-    : await acquirePrivilegedKey(context);
-  // An Owner API key writes IAM; the operator key does not.
+  const ownerKey = await acquirePrivilegedKey(context);
+  // An Owner API key writes IAM: a stack without an operator application yet. The operator key does not.
   const writesIam = ownerKey.pasted;
   const { organizationId } = ownerKey;
   const stack = stackNameFor(context);
@@ -101,8 +88,6 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
     passphrase,
     ...stateOverride,
   });
-  // Marks the `pulumi up` child as privileged: the resources only a privileged run writes (VM IAM policy rules) reconcile under this marker.
-  env[PRIVILEGED_UP_ENV] = '1';
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
   // Lock the stack through the control bucket to exclude concurrent operators and CI.
@@ -174,10 +159,19 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
             `${warningMark} The service registry needs ${missing.length === 1 ? 'an identity that does' : 'identities that do'} not exist yet: ${missing.join(', ')}.`,
           );
           console.error(
-            `  Creating one writes IAM, which the operator key cannot. Apply with your Owner API key: \`${actionCommand('apply')} --owner\`.`,
+            `  Creating one writes IAM, which the operator key cannot: \`${actionCommand('identity')}\` makes it with your Owner API key.`,
           );
           endAction(1);
         }
+      }
+
+      // The machine policies are written at Owner moments: a state that still holds them would have this `up` delete them.
+      console.info(pc.dim('\n→ Taking the machine policies out of the state (forget-machine-policies)…'));
+      const forget = spawnSync('pnpm', ['--filter', 'infra', 'forget-machine-policies', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
+      if (forget.status !== 0) {
+        await releaseAll();
+        console.error(`${warningMark} forget-machine-policies failed (exit ${forget.status}). Nothing applied.`);
+        endAction(forget.status ?? 1);
       }
 
       // Reconcile gen/sha from live state before `up`: a stale committed Pulumi.<stack>.yaml would converge compute back to an old generation and destroy newer live VMs.
@@ -244,12 +238,6 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
             continue;
           }
         }
-        if (!writesIam && refusedOnIam(output)) {
-          console.error(
-            `\n${warningMark} The plan changes IAM, which the operator key cannot write. Apply it with your Owner API key: \`${actionCommand('apply')} --owner\`.`,
-          );
-          break;
-        }
         if (!(await confirm({ message: 'Retry pulumi up?', default: false }))) break;
       }
     } finally {
@@ -280,7 +268,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
         );
         console.error(
           pc.dim(
-            '  The provider recorded an update Scaleway did not keep. Re-run with --debug-provider to capture the API calls, then fix the rule in the console if a deploy is waiting.',
+            `  A machine policy differs from the declared one: \`${actionCommand('identity')}\` writes it with your Owner API key. A database privilege that differs: re-run with --debug-provider to capture the API calls.`,
           ),
         );
       } else if (result.errors.length === 0) {
