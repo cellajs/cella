@@ -41,7 +41,7 @@ export const OPERATOR_ACTIONS = {
     label: 'Rotate secrets',
     key: 'operator',
     description:
-      'Fresh database role passwords and generated secrets, every copy rewritten; the next deploy replaces every machine. Third-party keys are pasted anew in "Manage runtime secrets".',
+      'Fresh database role passwords and rotatable generated secrets, every copy rewritten; the next deploy replaces every machine. Keys that protect stored data stay; third-party keys are pasted anew in "Manage runtime secrets".',
   },
   'rotate-passphrase': {
     label: 'Rotate passphrase',

@@ -28,6 +28,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
+    rotatable: true,
     services: ['backend', 'mcp', 'oauth', 'jobs'],
   },
   unsubscribeSecret: {
@@ -37,6 +38,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
+    rotatable: true,
     services: ['backend', 'mcp', 'jobs'],
   },
   cdcSecret: {
@@ -46,6 +48,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
+    rotatable: true,
     // The CDC socket is served by the API process's internal listener only.
     services: ['backend', 'cdc'],
   },
@@ -56,6 +59,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
+    rotatable: true,
     // Only the API process's token route signs; the relay verifies with the public half.
     services: ['backend'],
   },
@@ -76,6 +80,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
+    rotatable: true,
     services: ['backend', 'yjs'],
   },
   piiHashSecret: {
@@ -85,6 +90,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
+    // Not rotatable: it protects stored data, which a new value would leave unreadable or unmatched.
     services: ['backend', 'mcp', 'oauth'],
   },
   dataEncryptionKey: {
@@ -94,6 +100,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
+    // Not rotatable: it protects stored data, which a new value would leave unreadable or unmatched.
     services: ['backend', 'mcp', 'oauth', 'jobs'],
   },
   adminEmail: {

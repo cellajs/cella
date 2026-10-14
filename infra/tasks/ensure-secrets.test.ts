@@ -64,6 +64,21 @@ describe('ensureSecrets', () => {
     expect(generateSecretValue()).toMatch(/^[A-Za-z0-9_-]{32}$/);
   });
 
+  it('must not rotate a key that protects stored data: the data would become unreadable', async () => {
+    const dataKey = runtimeSecrets.find((secret) => secret.secretName === 'data-encryption-key') as RuntimeSecretDefinition;
+    const { client, writes } = fakeClient({ [`${root}/backend/data-encryption-key`]: 'kept-data-key-of-32-characters-x' });
+    await ensureSecrets({
+      client,
+      slug: 'app',
+      mode: 'production',
+      secrets: [{ ...dataKey, services: ['backend'] }],
+      generate: () => 'fresh',
+      rotate: true,
+      log: () => {},
+    });
+    expect(writes).toEqual({});
+  });
+
   it('rotates every copy of a generated secret to one fresh value, and recomputes what derives from it', async () => {
     const yjs = runtimeSecrets.filter((secret) => secret.secretName.startsWith('yjs-token-'));
     const { client, writes } = fakeClient({
