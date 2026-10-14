@@ -5,10 +5,10 @@ import {
   hoursUntilExpiry,
   type KeyDescription,
   type KeyPair,
+  organizationIdOfKey,
   type PrincipalRole,
 } from '../../lib/scaleway/operator-identity';
 import type { PrincipalNames } from '../../lib/scaleway/principals';
-import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { forgetOwnerKey, rememberedOwnerKey, rememberOwnerKey } from '../session';
@@ -47,7 +47,7 @@ export async function acquireOwnerKey(opts: { names: PrincipalNames; projectId: 
 
   let organizationId: string;
   try {
-    organizationId = await resolveOrganizationId(pair.secretKey, projectId);
+    organizationId = await organizationIdOfKey(pair, projectId);
   } catch (error) {
     forgetOwnerKey();
     console.error(

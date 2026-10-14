@@ -1,5 +1,6 @@
 import { syncGithubEnvironment } from '../lib/github-sync';
 import { deployRules } from '../lib/scaleway/deploy-policy';
+import { organizationIdOfKey } from '../lib/scaleway/operator-identity';
 import { principalNames } from '../lib/scaleway/principals';
 import { resolveProjectId } from '../lib/scaleway/provider-env';
 import { type ProvisionScopedKeyOptions, provisionScopedKey, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam';
@@ -25,14 +26,15 @@ export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> 
 
 // Standalone entry point.
 if (isMain(import.meta.url)) {
+  const accessKey = process.env.SCW_ACCESS_KEY;
   const secretKey = process.env.SCW_SECRET_KEY;
   const projectId = resolveProjectId();
-  const organizationId = process.env.SCW_DEFAULT_ORGANIZATION_ID;
 
-  if (!secretKey || !projectId) {
-    process.stderr.write('Required: SCW_SECRET_KEY, SCW_PROJECT_ID\nOptional: SCW_DEFAULT_ORGANIZATION_ID\n');
+  if (!accessKey || !secretKey || !projectId) {
+    process.stderr.write('Required: SCW_ACCESS_KEY, SCW_SECRET_KEY, SCW_PROJECT_ID\n');
     process.exit(1);
   }
+  const organizationId = await organizationIdOfKey({ accessKey, secretKey }, projectId);
 
   process.env.APP_MODE = process.env.APP_MODE ?? 'production';
   const { loadEngineConfig } = await import('../config/engine-config');

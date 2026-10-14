@@ -11,8 +11,8 @@ vi.mock('../shared', async (original) => ({
 vi.mock('../../lib/scaleway/operator-identity', async (original) => ({
   ...(await original<typeof import('../../lib/scaleway/operator-identity')>()),
   assertIamManager: (...args: unknown[]) => assertIamManager(...args),
+  organizationIdOfKey: async () => 'org-1',
 }));
-vi.mock('../../lib/scaleway/scaleway-iam', () => ({ resolveOrganizationId: async () => 'org-1' }));
 
 const { acquireOwnerKey } = await import('./owner-key');
 const { forgetSession, rememberedOwnerKey } = await import('../session');

@@ -1,7 +1,6 @@
 import { changeMark, checkMark, tildeMark } from '../utils/cli-output';
-import { createApiKey, deleteApiKey, IAM_BASE, listApiKeys, resolveApplicationIdByName, resolveOrganizationIdViaProject } from './iam-client';
+import { createApiKey, deleteApiKey, IAM_BASE, listApiKeys, resolveApplicationIdByName } from './iam-client';
 import { principalNames, principalTags } from './principals';
-import { resolveOrganizationIdFromEnv } from './provider-env';
 import { scwFetch, scwSend } from './scw-fetch';
 
 /** A Scaleway permissions_denied error (403), regardless of resource. */
@@ -50,7 +49,7 @@ export interface ScopedKeyConfig {
 
 export interface ProvisionScopedKeyOptions {
   callerSecretKey: string;
-  organizationId?: string;
+  organizationId: string;
   projectId: string;
   slug: string;
   /** Deploy mode (`production` / `staging`): names the application `<slug>-<mode>-<suffix>`, tags it, and enrolls it in the `<slug>-<mode>` IAM group. */
@@ -66,17 +65,12 @@ export interface ScopedKeyResult {
   organizationId: string;
 }
 
-/** The organization id: the env value wins (either variable name), since a project-scoped key may lack the Account read; else the project's owner via the Account API. */
-export async function resolveOrganizationId(secretKey: string, projectId: string): Promise<string> {
-  return resolveOrganizationIdFromEnv() ?? resolveOrganizationIdViaProject({ secretKey }, projectId);
-}
-
 /** Provision (or rotate) a scoped IAM application, policy and API key. Scaleway reveals `secret_key` only at creation, so the caller must persist it immediately. */
 export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config: ScopedKeyConfig): Promise<ScopedKeyResult> {
   const { callerSecretKey, projectId, slug, mode } = opts;
   const log = opts.log ?? ((msg) => console.info(msg));
 
-  const organizationId = opts.organizationId ?? (await resolveOrganizationId(callerSecretKey, projectId));
+  const { organizationId } = opts;
 
   const appName = mode ? `${slug}-${mode}-${config.suffix}` : `${slug}-${config.suffix}`;
   const policyName = `${appName}-policy`;

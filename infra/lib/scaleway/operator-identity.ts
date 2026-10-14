@@ -97,17 +97,22 @@ export async function describeKey(pair: KeyPair, opts: { fetchImpl?: FetchLike }
 }
 
 /**
- * The organization a key works in: the env value when one is set, else what IAM says about the key's own bearer, else the owner of the
- * project through the Account API. An application key holds IAM read and no right over the Account API, so the last way serves user keys.
+ * The organization a key works in, the one way the engine finds it: the env value when one is set, else what IAM says about the key's own
+ * bearer, else the owner of the project through the Account API: the given project, or the key's default one before a project is known. An
+ * application key holds IAM read and no right over the Account API, so the last ways serve user keys.
  */
-export async function organizationIdOfKey(pair: KeyPair, projectId: string, opts: { fetchImpl?: FetchLike } = {}): Promise<string> {
+export async function organizationIdOfKey(pair: KeyPair, projectId?: string, opts: { fetchImpl?: FetchLike } = {}): Promise<string> {
   const fromEnv = resolveOrganizationIdFromEnv();
   if (fromEnv) return fromEnv;
   const described = await describeKey(pair, opts).then(
     (desc) => desc.organizationId,
     () => undefined,
   );
-  return described ?? resolveOrganizationIdViaProject({ secretKey: pair.secretKey, fetchImpl: resolveFetch(opts.fetchImpl) }, projectId);
+  if (described) return described;
+  const auth = { secretKey: pair.secretKey, fetchImpl: resolveFetch(opts.fetchImpl) };
+  const project = projectId ?? (await getApiKey(auth, pair.accessKey)).default_project_id;
+  if (!project) throw new Error(`API key ${pair.accessKey} names no project to find its organization by: set SCW_DEFAULT_ORGANIZATION_ID.`);
+  return resolveOrganizationIdViaProject(auth, project);
 }
 
 /** The engine role of a key's bearer, or the kind of outside principal it is. */

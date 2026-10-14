@@ -123,6 +123,35 @@ describe('organizationIdOfKey', () => {
       if (saved.b !== undefined) process.env.SCW_DEFAULT_ORGANIZATION_ID = saved.b;
     }
   });
+
+  it("finds the organization through the key's default project before a project is known, and says what to set when it cannot", async () => {
+    const saved = { a: process.env.SCW_ORGANIZATION_ID, b: process.env.SCW_DEFAULT_ORGANIZATION_ID };
+    delete process.env.SCW_ORGANIZATION_ID;
+    delete process.env.SCW_DEFAULT_ORGANIZATION_ID;
+    try {
+      const withDefault = makeFetch([
+        { match: '/api-keys/SCWK', body: { access_key: 'SCWK', default_project_id: 'proj-default' } },
+        { match: '/account/v3/projects/proj-default', body: { id: 'proj-default', organization_id: 'org-1' } },
+      ]);
+      expect(await organizationIdOfKey(pair, undefined, { fetchImpl: withDefault })).toBe('org-1');
+      const without = makeFetch([{ match: '/api-keys/SCWK', body: { access_key: 'SCWK' } }]);
+      await expect(organizationIdOfKey(pair, undefined, { fetchImpl: without })).rejects.toThrow(/SCW_DEFAULT_ORGANIZATION_ID/);
+    } finally {
+      if (saved.a !== undefined) process.env.SCW_ORGANIZATION_ID = saved.a;
+      if (saved.b !== undefined) process.env.SCW_DEFAULT_ORGANIZATION_ID = saved.b;
+    }
+  });
+
+  it('takes the organization from the environment first', async () => {
+    const saved = process.env.SCW_DEFAULT_ORGANIZATION_ID;
+    process.env.SCW_DEFAULT_ORGANIZATION_ID = 'org-env';
+    try {
+      expect(await organizationIdOfKey(pair, undefined, { fetchImpl: makeFetch([]) })).toBe('org-env');
+    } finally {
+      if (saved === undefined) delete process.env.SCW_DEFAULT_ORGANIZATION_ID;
+      else process.env.SCW_DEFAULT_ORGANIZATION_ID = saved;
+    }
+  });
 });
 
 describe('assertIamManager', () => {

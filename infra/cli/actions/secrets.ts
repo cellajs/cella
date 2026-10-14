@@ -30,9 +30,9 @@ export async function runSecrets(context: InfraContext): Promise<void> {
   try {
     await manageRuntimeSecrets({
       secretKey: operator.secretKey,
-      identitySecretKey: async () => {
+      identityKey: async () => {
         identityKey ??= await acquireIdentityKey(context, 'Minting a managed key creates an application, a policy and a key.');
-        return identityKey.secretKey;
+        return identityKey;
       },
       projectId,
       region: appConfig.s3.region,

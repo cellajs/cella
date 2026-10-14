@@ -32,6 +32,7 @@ const pairKey = {
 
 const baseOptions = {
   callerSecretKey: 'caller-secret',
+  organizationId: 'org-1',
   projectId: 'proj-1',
   region: 'nl-ams',
   slug: 'demo',

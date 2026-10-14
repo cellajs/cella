@@ -137,7 +137,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
 
   const requiredSecretCondition = getFlag(argv, '--secret-condition') ?? undefined;
-  // The CI app legitimately holds organization-scoped rules (IAM read, DNS); VM and boot principals pass --project-scope.
+  // The deploy key holds an organization-scoped IAM read; machine identities pass --project-scope.
   const requiredProjectId = argv.includes('--project-scope') ? projectId : undefined;
   const requiredSetsCsv = getFlag(argv, '--required-sets');
   const required = (requiredSetsCsv ?? '')

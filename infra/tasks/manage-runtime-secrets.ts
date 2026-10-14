@@ -28,8 +28,8 @@ export interface RuntimeSecretPrompts {
 
 export interface ManageRuntimeSecretsOptions {
   secretKey: string;
-  /** The key that mints a managed key, which writes IAM. Asked for when a mint is confirmed; defaults to `secretKey`. */
-  identitySecretKey?: () => Promise<string>;
+  /** The key that mints a managed key, which writes IAM, with its organization: asked for when a mint is confirmed. */
+  identityKey: () => Promise<{ secretKey: string; organizationId: string }>;
   projectId: string;
   region: string;
   /** App slug that names the `<slug>-<mode>-<suffix>` IAM app when minting a managed key. */
@@ -71,7 +71,7 @@ interface MenuContext {
   path: string;
   /** The caller key, and the key the mint action writes IAM with. */
   secretKey: string;
-  identitySecretKey: () => Promise<string>;
+  identityKey: () => Promise<{ secretKey: string; organizationId: string }>;
   projectId: string;
   region: string;
   slug: string;
@@ -231,9 +231,11 @@ async function handleMint(ctx: MenuContext): Promise<void> {
     return;
   }
   try {
+    const identity = await ctx.identityKey();
     const result = await provisionManagedKey({
       definition: key,
-      callerSecretKey: await ctx.identitySecretKey(),
+      callerSecretKey: identity.secretKey,
+      organizationId: identity.organizationId,
       projectId: ctx.projectId,
       region: ctx.region,
       slug: ctx.slug,
@@ -254,7 +256,7 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
     prompts: options.prompts,
     path: options.path,
     secretKey: options.secretKey,
-    identitySecretKey: options.identitySecretKey ?? (async () => options.secretKey),
+    identityKey: options.identityKey,
     projectId: options.projectId,
     region: options.region,
     slug: options.slug,

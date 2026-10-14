@@ -88,31 +88,6 @@ describe('provisionScopedKey', () => {
     expect(apiKeyDeletes.map((c) => c.url)).toEqual([expect.stringContaining('/api-keys/OLD1'), expect.stringContaining('/api-keys/OLD2')]);
   });
 
-  it('resolves organization id from project when not provided', async () => {
-    const { fn, calls } = makeFetch([
-      { method: 'GET', match: '/account/v3/projects/proj-1', body: { organization_id: 'org-resolved' } },
-      {
-        method: 'GET',
-        match: '/iam/v1alpha1/applications?',
-        body: { applications: [{ id: 'app-1', name: 'demo-demo-key' }] },
-      },
-      { method: 'GET', match: '/iam/v1alpha1/policies?', body: { policies: [] } },
-      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-1', name: 'demo-demo-key-policy' } },
-      { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
-      { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCW', secret_key: 's', application_id: 'app-1' } },
-    ]);
-    vi.stubGlobal('fetch', fn);
-
-    const result = await provisionScopedKey({ ...baseOpts, organizationId: undefined }, config);
-
-    expect(result.organizationId).toBe('org-resolved');
-    const scopedCalls = calls.filter((c) => c.init.method === 'GET' && (c.url.includes('/applications?') || c.url.includes('/policies?')));
-    expect(scopedCalls.length).toBeGreaterThan(0);
-    for (const c of scopedCalls) {
-      expect(c.url).toContain('organization_id=org-resolved');
-    }
-  });
-
   it('throws with a useful message on Scaleway error responses', async () => {
     const { fn } = makeFetch([{ method: 'GET', match: '/iam/v1alpha1/applications?', body: { message: 'forbidden' }, status: 403 }]);
     vi.stubGlobal('fetch', fn);

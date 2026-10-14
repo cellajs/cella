@@ -6,7 +6,14 @@ import { operatorPolicyReach, operatorRules, setupOperatorApp } from './setup-op
 vi.mock('../lib/scaleway/scaleway-iam', () => ({ provisionScopedKey: vi.fn() }));
 vi.mock('../lib/scaleway/dns-zone-project', () => ({ resolveDnsProjectIds: vi.fn() }));
 
-const base = { callerSecretKey: 'owner-secret', projectId: 'proj', projectIds: ['proj', 'proj-staging'], slug: 'cella', dnsZone: 'cellajs.com' };
+const base = {
+  callerSecretKey: 'owner-secret',
+  organizationId: 'org-1',
+  projectId: 'proj',
+  projectIds: ['proj', 'proj-staging'],
+  slug: 'cella',
+  dnsZone: 'cellajs.com',
+};
 const lock = "request.ip in ['203.0.113.7']";
 
 beforeEach(() => {

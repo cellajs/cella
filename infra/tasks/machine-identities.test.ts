@@ -6,7 +6,7 @@ import { ensureMachineIdentities, missingMachineIdentities } from './machine-ide
 vi.mock('../lib/scaleway/scaleway-iam', () => ({ provisionScopedKey: vi.fn() }));
 vi.mock('../lib/scaleway/iam-client', () => ({ resolveApplicationIdByName: vi.fn() }));
 
-const base = { callerSecretKey: 'boot-secret', projectId: 'proj', slug: 'cella', mode: 'production' };
+const base = { callerSecretKey: 'boot-secret', organizationId: 'org-1', projectId: 'proj', slug: 'cella', mode: 'production' };
 
 beforeEach(() => {
   vi.mocked(provisionScopedKey).mockReset();

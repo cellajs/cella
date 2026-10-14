@@ -11,7 +11,7 @@ import { type KeyPair, organizationIdOfKey } from '../../lib/scaleway/operator-i
 import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { projectAccessKey } from '../../lib/scaleway/s3-client';
-import { createProject, listProjects, resolveOrganizationIdFromKey } from '../../lib/scaleway/scaleway-account';
+import { createProject, listProjects } from '../../lib/scaleway/scaleway-account';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { secretManagerPath } from '../../lib/scaleway/secret-paths';
 import { detectComputeDeferred, type Environment } from '../../lib/stack/bootstrap-stack-state';
@@ -128,12 +128,13 @@ async function warnOnMissingOperatorSecrets(ctx: SetupContext): Promise<void> {
 /** Mint (or rotate) the CI deploy key, retrying on operator confirm. */
 async function mintCiKey(
   ownerSecretKey: string,
-  opts: { projectId: string; appConfig: InfraContext['appConfig']; mode: string },
+  opts: { projectId: string; organizationId: string; appConfig: InfraContext['appConfig']; mode: string },
 ): Promise<CiKeyResult> {
   while (true) {
     try {
       const key = await setupCiKey({
         callerSecretKey: ownerSecretKey,
+        organizationId: opts.organizationId,
         projectId: opts.projectId,
         slug: opts.appConfig.slug,
         mode: opts.mode,
@@ -298,7 +299,7 @@ async function provisionBaseInfra(ctx: SetupContext, operatorSecrets: OperatorSe
 async function ensureProjectId(opts: { slug: string; mode: Environment; accessKey: string; secretKey: string }): Promise<string> {
   console.info(`\n→ Scaleway project for ${opts.mode} ${pc.dim('(none configured yet)')}`);
   const { organizationId, projects } = await withSpinner('Loading Scaleway projects', async () => {
-    const organizationId = await resolveOrganizationIdFromKey(opts.secretKey, opts.accessKey);
+    const organizationId = await organizationIdOfKey({ accessKey: opts.accessKey, secretKey: opts.secretKey });
     return { organizationId, projects: await listProjects(opts.secretKey, organizationId) };
   });
   const CREATE = '__create__';
@@ -425,7 +426,7 @@ async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<O
   }
 
   console.info('\n→ CI deploy key');
-  const ciKey = await mintCiKey(pair.secretKey, { projectId, appConfig, mode: environment });
+  const ciKey = await mintCiKey(pair.secretKey, { projectId, organizationId, appConfig, mode: environment });
   console.info('\n→ Operator');
   const ownerKey: OwnerKey = { ...pair, organizationId, minted: false, release: async () => {} };
   const operatorKey = await ensureOperatorForEnvironment({ ...context, projectId }, ownerKey, projectId);
