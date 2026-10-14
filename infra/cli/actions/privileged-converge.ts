@@ -11,7 +11,7 @@ import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { planBasisChanges, readPlanBasis } from '../../lib/stack/plan-basis';
 import { parseOrphanedDeletes, pruneOrphanedDeletes, runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { syncDeployTelemetryKey } from '../../lib/telemetry/sink-key';
-import { checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
+import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { admitOperatorToBuckets } from '../../tasks/admit-operator-buckets';
@@ -20,7 +20,7 @@ import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
 import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
-import { machineIdentityLines, planMachineIdentities } from './identity';
+import { exitOnIdentityChanges } from './identity';
 import { acquirePrivilegedKey } from './operator-unlock';
 import { askToApply, type ReviewedPlan, showPlan } from './plan';
 
@@ -124,22 +124,8 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
     try {
       env.SCW_DEFAULT_ORGANIZATION_ID = organizationId;
 
-      // Identities are IAM, which the operator key writes none of: an application, a policy or a standing key that differs from the declared
-      // ones stops the apply before its `up`, which would fail on it halfway or leave machines a deploy cannot hand keys to.
-      const identity = await planMachineIdentities({ secretKey: ownerKey.secretKey }, organizationId, context).catch((error) => {
-        console.warn(`${warningMark} Could not read the identities (${errorMessage(error)}).`);
-        return undefined;
-      });
-      const identityChanges = identity ? machineIdentityLines(identity) : [];
-      if (identityChanges.length > 0) {
-        await releaseAll();
-        console.error(`${warningMark} The identities of ${context.environment} differ from the declared ones:`);
-        for (const line of identityChanges) console.error(`  ${tildeMark} ${line}`);
-        console.error(
-          `  They are IAM, which the operator key cannot write: \`${actionCommand('identity')}\` writes them with your Owner API key. Nothing applied.`,
-        );
-        endAction(1);
-      }
+      // Identities are IAM, which the operator key writes none of: one that differs from the declared ones stops the run before its `up`.
+      await exitOnIdentityChanges(context, { secretKey: ownerKey.secretKey, organizationId }, releaseAll);
 
       // Resources the program no longer declares and that stay live (machine policies, generated secret values): a state that still holds them would have this `up` delete them.
       console.info(pc.dim('\n→ Taking retired resources out of the state (forget-retired-resources)…'));

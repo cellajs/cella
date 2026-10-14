@@ -21,6 +21,7 @@ vi.mock('./privileged-converge', () => ({
   runPrivilegedConverge: (...args: unknown[]) => runPrivilegedConverge(...args),
 }));
 vi.mock('./owner-key', () => ({ printRevokeReminder: () => {} }));
+vi.mock('./identity', () => ({ exitOnIdentityChanges: async () => {} }));
 
 const { runApply } = await import('./apply');
 

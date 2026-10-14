@@ -1,7 +1,12 @@
 import type { EngineConfig } from '../../config/engine-config';
 import { principalSecretCondition } from '../runtime-secrets';
 import { principalServices } from '../services';
-import { BACKEND_S3_PERMISSION_SETS, BOOT_PROJECT_PERMISSION_SETS, SERVICE_SECRET_PERMISSION_SETS } from './permissions';
+import {
+  BACKEND_S3_PERMISSION_SETS,
+  BOOT_PROJECT_PERMISSION_SETS,
+  BUILDER_PROJECT_PERMISSION_SETS,
+  SERVICE_SECRET_PERMISSION_SETS,
+} from './permissions';
 import { principalNames, principalTags } from './principals';
 import type { PolicyRule } from './scaleway-iam';
 import { bootKeyCondition, ruleConditions } from './secret-paths';
@@ -17,7 +22,7 @@ export interface MachinePolicy {
 }
 
 /**
- * The machine policies of one environment: one per registry service, and one for the boot fetcher. They are written at
+ * The machine policies of one environment: one per registry service, one for the boot fetcher, one for the builder. They are written at
  * Owner moments, never by the Pulumi program: the operator and the deploy key hold no IAM write. Principals and conditions follow the service
  * registry, not the enabled set, so a service toggle changes compute only. The deploy's grant check compares the live policies with the same
  * builders (lib/scaleway/vm-assert-rows.ts).
@@ -51,7 +56,14 @@ export function machinePolicies(appConfig: Pick<EngineConfig, 'slug' | 'mode'>, 
     ],
     tags,
   };
-  return [...services, boot];
+  const builder: MachinePolicy = {
+    name: `${slug}-builder-policy`,
+    applicationName: names.builder,
+    description: 'Registry push + frontend file writes for the builder machine (written at Owner moments)',
+    rules: [{ permission_set_names: [...BUILDER_PROJECT_PERMISSION_SETS], project_ids: [projectId] }],
+    tags,
+  };
+  return [...services, boot, builder];
 }
 
 /** A rule in a form two rules compare by: sets and projects in order, an absent condition as empty. */

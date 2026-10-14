@@ -16,10 +16,10 @@ beforeEach(() => {
 });
 
 describe('ensureRegistryPrincipals', () => {
-  it('one application per registry service plus boot, whatever is enabled and wherever it runs', async () => {
+  it('one application per registry service plus boot and builder, whatever is enabled and wherever it runs', async () => {
     const result = await ensureRegistryPrincipals(base);
     const suffixes = vi.mocked(provisionScopedKey).mock.calls.map(([, config]) => config.suffix);
-    expect(suffixes).toEqual(['vm-backend', 'vm-cdc', 'vm-yjs', 'vm-mcp', 'vm-oauth', 'vm-jobs', 'vm-frontend', 'boot']);
+    expect(suffixes).toEqual(['vm-backend', 'vm-cdc', 'vm-yjs', 'vm-mcp', 'vm-oauth', 'vm-jobs', 'vm-frontend', 'boot', 'builder']);
     expect(result.allAppIds).toEqual([
       'id-vm-backend',
       'id-vm-cdc',
@@ -29,10 +29,11 @@ describe('ensureRegistryPrincipals', () => {
       'id-vm-jobs',
       'id-vm-frontend',
       'id-boot',
+      'id-builder',
     ]);
   });
 
-  it('creates applications only: policies stay Pulumi-managed and keys are minted per deploy', async () => {
+  it('creates applications only: their policies and standing keys are written apart', async () => {
     await ensureRegistryPrincipals(base);
     for (const [, config] of vi.mocked(provisionScopedKey).mock.calls) {
       expect(config.managePolicy).toBe(false);
@@ -61,6 +62,7 @@ describe('missingRegistryPrincipals', () => {
     expect(vi.mocked(resolveApplicationIdByName).mock.calls.map(([, , name]) => name)).toEqual([
       ...['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'jobs', 'frontend'].map((service) => `cella-production-vm-${service}`),
       'cella-production-boot',
+      'cella-production-builder',
     ]);
   });
 });

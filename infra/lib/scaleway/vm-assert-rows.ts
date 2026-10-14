@@ -2,7 +2,12 @@ import type { EngineConfig } from '../../config/engine-config';
 import { principalSecretCondition } from '../runtime-secrets';
 import { principalServices } from '../services';
 import { DEPLOY_PERMISSION_SETS } from './deploy-policy';
-import { BACKEND_S3_PERMISSION_SETS, BOOT_PROJECT_PERMISSION_SETS, SERVICE_SECRET_PERMISSION_SETS } from './permissions';
+import {
+  BACKEND_S3_PERMISSION_SETS,
+  BOOT_PROJECT_PERMISSION_SETS,
+  BUILDER_PROJECT_PERMISSION_SETS,
+  SERVICE_SECRET_PERMISSION_SETS,
+} from './permissions';
 import { principalNames } from './principals';
 import { bootKeyCondition } from './secret-paths';
 
@@ -31,6 +36,8 @@ export function buildVmAssertRows(appConfig: EngineConfig): VmAssertRow[] {
       sets: [...BOOT_PROJECT_PERMISSION_SETS, ...SERVICE_SECRET_PERMISSION_SETS],
       condition: bootKeyCondition(appConfig.slug, appConfig.mode),
     },
+    // The builder's rules are unconditioned: each bucket's policy says where it writes.
+    { app: names.builder, sets: [...BUILDER_PROJECT_PERMISSION_SETS], condition: '' },
     // The CI app asserts its own grant too: exact set union (missing sets fail deploys later and non-read-only extras are an escalation).
     { app: names.ciDeploy, sets: [...new Set(DEPLOY_PERMISSION_SETS)], condition: '' },
   ];

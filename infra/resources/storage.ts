@@ -6,6 +6,7 @@ import { isProduction, naming, region, serviceUrl, tagsAsMap } from '../pulumi-c
 import {
   backendServiceApplicationId,
   bootApplicationId,
+  builderApplicationId,
   ciDeployApplicationId,
   observerApplicationId,
   operatorApplicationId,
@@ -137,6 +138,14 @@ if (frontendBucket) {
           Resource: [pulumi.interpolate`${frontendBucket.name}/*`],
         },
         deployAccess(frontendBucket.name),
+        // The builder writes a release's files, listing them first to skip unchanged ones; it deletes nothing.
+        {
+          Sid: 'BuilderFiles',
+          Effect: 'Allow',
+          Principal: { SCW: pulumi.interpolate`application_id:${builderApplicationId}` },
+          Action: ['s3:ListBucket', 's3:GetObject', 's3:PutObject'],
+          Resource: [frontendBucket.name, pulumi.interpolate`${frontendBucket.name}/*`],
+        },
         ...admin,
       ]),
     }),

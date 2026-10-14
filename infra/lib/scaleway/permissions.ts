@@ -107,6 +107,12 @@ export const BACKEND_S3_PERMISSION_SETS = ['ObjectStorageObjectsRead', 'ObjectSt
 export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'] as const;
 
 /**
+ * Builder application sets: push a release's images (the registry has no narrower set than full access) and write the frontend's files,
+ * listing them first to skip unchanged ones. The frontend bucket's policy is the one that admits it to objects.
+ */
+export const BUILDER_PROJECT_PERMISSION_SETS = ['ContainerRegistryFullAccess', 'ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite'] as const;
+
+/**
  * Resource-token fragments of the privileged resources, the ones NOT write-granted to the CI key: on "insufficient permissions: write <resource>" the fix is a privileged `pulumi up` with the Owner API key, never widening the CI key.
  * Matched as a case-insensitive substring (Scaleway emits `rdb_instance`, `vpc_private_network`, …).
  */

@@ -1,19 +1,20 @@
 import { principalServices } from '../services';
 import { principalNames } from './principals';
 
-/** One machine identity: a registry service, or the boot fetcher, and its IAM application. */
+/** One machine identity: a registry service, the boot fetcher or the builder, and its IAM application. */
 export interface MachinePrincipal {
-  /** The service slug, or `boot`. */
+  /** The service slug, `boot` or `builder`. */
   principal: string;
   application: string;
 }
 
-/** Every machine identity of an environment: one per registry service, wherever it runs, and the boot fetcher. */
+/** Every machine identity of an environment: one per registry service, wherever it runs, the boot fetcher and the builder. */
 export function machinePrincipals(slug: string, mode: string): MachinePrincipal[] {
   const names = principalNames(slug, mode);
   return [
     ...principalServices().map((svc) => ({ principal: svc.slug, application: names.vmService(svc.slug) })),
     { principal: 'boot', application: names.boot },
+    { principal: 'builder', application: names.builder },
   ];
 }
 

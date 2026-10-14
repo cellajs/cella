@@ -12,7 +12,7 @@ describe('machinePolicies', () => {
       const config = fakeConfig({ singleVM });
       const policies = machinePolicies(config, 'project-1');
       // The rows the deploy's assert-vm-grants step compares the live policies with; the CI application has no machine policy.
-      const rows = buildVmAssertRows(config).filter((row) => row.condition !== '');
+      const rows = buildVmAssertRows(config).filter((row) => !row.app.endsWith('-ci-deploy'));
       expect(policies).toHaveLength(rows.length);
       for (const row of rows) {
         const policy = policies.find((candidate) => candidate.applicationName === row.app);
@@ -21,7 +21,7 @@ describe('machinePolicies', () => {
         expect(
           secretRules.map((rule) => rule.condition),
           policy.name,
-        ).toEqual(ruleConditions(row.condition));
+        ).toEqual(row.condition ? ruleConditions(row.condition) : []);
         for (const rule of policy.rules) {
           // Project-scoped, as the deploy requires: an organization-scoped rule would reach every project.
           expect(rule.project_ids, policy.name).toEqual(['project-1']);
