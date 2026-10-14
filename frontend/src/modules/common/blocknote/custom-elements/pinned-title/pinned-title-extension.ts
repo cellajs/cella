@@ -25,7 +25,7 @@ const hasBlock = (doc: PMNode, id: string) => {
  * True when a change displaces block 0: it still exists afterwards but no longer comes first. Moves, drops above it and
  * drags of it all do; deleting or replacing it does not, so clearing or pasting over the document still works.
  */
-export const displacesFirstBlock = (before: PMNode, after: PMNode) => {
+const displacesFirstBlock = (before: PMNode, after: PMNode) => {
   const titleId = firstBlockId(before);
   if (!titleId || firstBlockId(after) === titleId) return false;
   return hasBlock(after, titleId);
