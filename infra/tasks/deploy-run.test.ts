@@ -23,7 +23,6 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
         app: 'cella-production-vm-yjs',
         sets: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
         condition: 'resource.name.startsWith("/cella-production/yjs/")',
-        dormant: true,
       },
       {
         app: 'cella-production-boot',
@@ -131,7 +130,7 @@ describe('runDeploy sequencing', () => {
     const ok = makeFake();
     await runDeploy(baseOpts, ok.fx, withBucket);
     expect(ok.ops.indexOf('task:geoip-refresh')).toBeGreaterThan(ok.ops.indexOf('task:wait-for-images'));
-    expect(ok.ops.indexOf('task:geoip-refresh')).toBeLessThan(ok.ops.indexOf('task:mint-generation-keys'));
+    expect(ok.ops.indexOf('task:geoip-refresh')).toBeLessThan(ok.ops.indexOf('task:stage-generation-keys'));
 
     const failing = makeFake();
     const task = failing.fx.task;
@@ -163,7 +162,7 @@ describe('runDeploy sequencing', () => {
       'task:sync-rollout-config',
       'task:preflight-privileged',
       'task:wait-for-images',
-      'task:mint-generation-keys',
+      'task:stage-generation-keys',
       'update:production',
       'task:assert-vm-grants',
       'rollout',
@@ -289,14 +288,11 @@ describe('runDeploy sequencing', () => {
     expect(waitIndex).toBeGreaterThan(bakeIndex);
   });
 
-  it('asserts every principal, flagging only the dormant one', async () => {
+  it('asserts every principal', async () => {
     const { fx, grantArgs } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
     const byApp = new Map(grantArgs.map((argv) => [argv[argv.indexOf('--application-name') + 1], argv]));
     expect([...byApp.keys()]).toEqual(['cella-production-vm-backend', 'cella-production-vm-yjs', 'cella-production-boot']);
-    expect(byApp.get('cella-production-vm-yjs')).toContain('--dormant');
-    expect(byApp.get('cella-production-vm-backend')).not.toContain('--dormant');
-    expect(byApp.get('cella-production-boot')).not.toContain('--dormant');
   });
 
   it('passes --skip-reap to the rollout only with deferReap', async () => {

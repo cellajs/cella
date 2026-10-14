@@ -93,7 +93,7 @@ export function isSingletonHost(serviceConfig: Record<string, EngineServiceEndpo
 /**
  * Services owning an IAM principal and a policy: every registry service, wherever it runs. A host that carries several services receives one
  * key per service, so placement (singleVM, a worker folded into the host process) never changes an identity. Registry-derived on purpose, so
- * `enabled` never touches IAM; a registry service that is not enabled is a dormant principal that must hold no key.
+ * `enabled` never touches IAM: a registry service that is not enabled keeps its principal and its standing key, and nothing hands the key over.
  */
 export function principalServices(): readonly ServiceDefinition[] {
   return services;

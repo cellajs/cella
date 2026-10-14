@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type * as PulumiNS from '@pulumi/pulumi';
 import { vi } from 'vitest';
 import { type BootPlan, parseBootPlanJson } from '../../boot/src/plan';
-import type { GenerationKeys } from '../../tasks/mint-generation-keys';
+import type { GenerationKeys } from '../../tasks/stage-generation-keys';
 
 export interface CapturedResource {
   type: string;

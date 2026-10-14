@@ -78,18 +78,17 @@ describe('buildDeployEnv', () => {
   });
 
   it('singleVM: the same principals as split-VM, each reading its own folder, so placement changes no identity', () => {
-    type Row = { app: string; condition: string; dormant?: boolean };
+    type Row = { app: string; condition: string };
     const single = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM: true }).vm_assert_json) as Row[];
     const split = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM: false }).vm_assert_json) as Row[];
     expect(single).toEqual(split);
     const backend = single.find((row) => row.app === 'cella-production-vm-backend');
     expect(backend?.condition).toBe(principalSecretCondition('cella', 'production', 'backend'));
     expect(backend?.condition).not.toContain('/cella-production/yjs/');
-    expect(backend?.dormant).toBe(false);
   });
 
-  it('toggling enabled never changes a principal row, only its dormant flag', () => {
-    type Row = { app: string; sets: string[]; condition: string; dormant?: boolean };
+  it('toggling enabled never changes a principal row', () => {
+    type Row = { app: string; sets: string[]; condition: string };
     const allOn = {
       ...fakeAppConfig.services,
       yjs: { enabled: true, publicUrl: 'https://yjs.cella.example' },
@@ -99,16 +98,7 @@ describe('buildDeployEnv', () => {
     for (const singleVM of [false, true]) {
       const off = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM }).vm_assert_json) as Row[];
       const on = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM, services: allOn }).vm_assert_json) as Row[];
-      const strip = (rows: Row[]) => rows.map(({ dormant: _dormant, ...rest }) => rest);
-      expect(strip(on)).toEqual(strip(off));
-      expect(on.filter((row) => row.dormant)).toEqual([]);
-      if (!singleVM) {
-        expect(off.filter((row) => row.dormant).map((row) => row.app)).toEqual([
-          'cella-production-vm-yjs',
-          'cella-production-vm-mcp',
-          'cella-production-vm-oauth',
-        ]);
-      }
+      expect(on).toEqual(off);
     }
   });
 

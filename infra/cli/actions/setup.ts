@@ -23,6 +23,7 @@ import { changeMark, checkMark, DIVIDER, pc, warningMark, withSpinner } from '..
 import { writeModeEnvValues } from '../../lib/utils/env-files';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
+import { planMachineKeys, writeMachineKeys } from '../../tasks/machine-keys';
 import { writeMachinePolicies } from '../../tasks/machine-policies';
 import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
@@ -159,7 +160,7 @@ async function warnOnCiPolicyDrift(ctx: SetupContext): Promise<void> {
 /** Mint (or rotate) the CI deploy key, retrying on operator confirm. */
 async function mintCiKey(
   ownerSecretKey: string,
-  opts: { projectId: string; appConfig: InfraContext['appConfig']; mode: string; keyMintAppIds?: readonly string[] },
+  opts: { projectId: string; appConfig: InfraContext['appConfig']; mode: string },
 ): Promise<CiKeyResult> {
   while (true) {
     try {
@@ -169,7 +170,6 @@ async function mintCiKey(
         slug: opts.appConfig.slug,
         mode: opts.mode,
         dnsZone: deriveInfra(opts.appConfig).dnsZone,
-        keyMintAppIds: opts.keyMintAppIds,
       });
       return { accessKey: key.accessKey, secretKey: key.secretKey, organizationId: key.organizationId };
     } catch (error) {
@@ -406,9 +406,9 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, operatorS
 
 /**
  * The Owner moment of a setup: the project and every identity, written with an Owner API key typed at the prompt, and nothing else runs on it
- * (no Pulumi, no state, no secret value). The machine identities and their policies, the CI deploy key (synced to GitHub), and the app's
- * operator and observer: created when the app has none, else given this environment's project in place; the observer's key goes to this
- * machine's env files, and a rotation replaces it. Undefined when declined.
+ * (no Pulumi, no state, no value of the app's). The machine identities with their policies and standing keys (in the deploy folder), the CI
+ * deploy key (synced to GitHub), and the app's operator and observer: created when the app has none, else given this environment's project
+ * in place; the observer's key goes to this machine's env files. A rotation replaces every key. Undefined when declined.
  */
 async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<OwnerMomentResult | undefined> {
   const { appConfig } = context;
@@ -423,31 +423,25 @@ async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<O
   const proceedWith = mode === 'rotate-keys' ? actionLabel('rotate-keys') : `the identities of ${environment}`;
   if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return undefined;
 
-  // Machine identities first: their ids feed the CI policy's key-mint rule.
-  console.info('\n→ Machine identities (one application per registry service, and the boot fetcher; keys made per deploy)');
-  let serviceAppIds: readonly string[] = [];
+  console.info('\n→ Machine identities (one application per registry service, and the boot fetcher, each with a standing key)');
   try {
-    const apps = await ensureRegistryPrincipals({
-      callerSecretKey: pair.secretKey,
-      projectId,
-      organizationId,
-      slug: appConfig.slug,
-      mode: environment,
-    });
-    serviceAppIds = apps.allAppIds;
+    const registry = { slug: appConfig.slug, mode: environment };
+    await ensureRegistryPrincipals({ ...registry, callerSecretKey: pair.secretKey, projectId, organizationId });
     console.info('\n→ Machine policies');
     await writeMachinePolicies({ secretKey: pair.secretKey }, organizationId, machinePolicies(appConfig, projectId));
+    // The standing keys go to the deploy folder, which a deploy hands over from; a rotation makes every one anew.
+    console.info('\n→ Standing machine keys');
+    const auth = { secretKey: pair.secretKey };
+    const secrets = createSecretManagerClient({ secretKey: pair.secretKey, region: appConfig.s3.region, projectId });
+    const planned = await planMachineKeys({ auth, secrets, organizationId, ...registry });
+    const steps = mode === 'rotate-keys' ? planned.map((step) => ({ ...step, change: 'make' as const })) : planned;
+    await writeMachineKeys({ auth, secrets, organizationId, projectId, ...registry, steps });
   } catch (error) {
     console.warn(`${warningMark} Machine identities incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`);
   }
 
   console.info('\n→ CI deploy key');
-  const ciKey = await mintCiKey(pair.secretKey, {
-    projectId,
-    appConfig,
-    mode: environment,
-    keyMintAppIds: serviceAppIds.length > 0 ? serviceAppIds : undefined,
-  });
+  const ciKey = await mintCiKey(pair.secretKey, { projectId, appConfig, mode: environment });
   console.info('\n→ Operator');
   const ownerKey: OwnerKey = { ...pair, organizationId, minted: false, pasted: true, release: async () => {} };
   const operatorKey = await ensureOperatorForEnvironment({ ...context, projectId }, ownerKey, projectId);

@@ -47,7 +47,6 @@ export async function verifyPrivilegedUp(opts: VerifyPrivilegedUpOptions): Promi
         required: row.sets,
         requiredSecretCondition: row.condition || undefined,
         requiredProjectId: row.condition ? opts.projectId : undefined,
-        dormant: row.dormant,
         fetchImpl: opts.fetchImpl,
         log: (msg) => log(`  ${row.app}: ${msg}`),
       });

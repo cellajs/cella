@@ -1,11 +1,5 @@
 import { actionCommand } from '../lib/operator-actions';
-import {
-  fetchGrantedRules,
-  type IamAuth,
-  listApiKeys,
-  resolveApplicationIdByName,
-  resolveOrganizationIdViaProject,
-} from '../lib/scaleway/iam-client';
+import { fetchGrantedRules, type IamAuth, resolveApplicationIdByName, resolveOrganizationIdViaProject } from '../lib/scaleway/iam-client';
 import { ruleConditions } from '../lib/scaleway/secret-paths';
 import { type FetchLike, resolveFetch } from '../lib/utils/fetch-like';
 import { runIfMain } from '../lib/utils/is-main';
@@ -37,8 +31,6 @@ export interface AssertVmGrantsOptions {
    * IAM conditions only narrow an allow, so one unconditioned secret rule on this app un-scopes the conditioned ones. That is a FAILURE here, not a warning.
    */
   requiredSecretCondition?: string;
-  /** A registry principal with no deployed VM. It keeps its policy but must hold ZERO API keys: any key on it is an unmonitored key, a FAILURE. */
-  dormant?: boolean;
   /** Every rule must be scoped to exactly this project: an organization-wide rule (a console edit's default) reaches every project, a FAILURE. */
   requiredProjectId?: string;
   /** Injected for tests; defaults to global fetch. */
@@ -57,8 +49,6 @@ export interface AssertVmGrantsResult {
   unconditionedSecretRules: string[];
   /** Parts of the required condition that no secret-granting rule carries: the principal cannot read the secrets under those folders. */
   missingSecretConditions: string[];
-  /** Access keys found on a dormant principal; empty unless `dormant` was requested. */
-  dormantKeys: string[];
   /** Rules whose scope is not exactly the required project; empty unless `requiredProjectId` was given. */
   misscopedRules: string[];
 }
@@ -112,35 +102,26 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
     }
   }
 
-  // Only a dormant principal is listed: a live one legitimately holds the current and previous generation's keys.
-  const dormantKeys = opts.dormant ? (await listApiKeys(auth, organizationId, applicationId)).map((key) => key.access_key) : [];
-
-  // Fatal: missing sets break hydration, a non-read-only extra set is an escalation, an un-scoped secret rule leaks secrets, a missing part of the path condition breaks hydration too, a key on a dormant principal is an unmonitored key. Extra read-only sets only warn (see isBenignExtraSet).
+  // Fatal: missing sets break hydration, a non-read-only extra set is an escalation, an un-scoped secret rule leaks secrets, a missing part of the path condition breaks hydration too. Extra read-only sets only warn (see isBenignExtraSet).
   const ok =
     missing.length === 0 &&
     extraFatal.length === 0 &&
     unconditionedSecretRules.length === 0 &&
     missingSecretConditions.length === 0 &&
-    dormantKeys.length === 0 &&
     misscopedRules.length === 0;
   if (missing.length > 0) log(`✗ VM grant INCOMPLETE, missing: ${missing.join(', ')}`);
   if (extraFatal.length > 0) log(`✗ VM grant TOO BROAD, extra write/broad grant(s): ${extraFatal.join(', ')}`);
   for (const entry of unconditionedSecretRules) log(`✗ VM secret rule NOT path-scoped (union semantics un-scope the conditioned rule): ${entry}`);
   for (const entry of missingSecretConditions) log(`✗ VM secret rule MISSING, no rule carries this part of the path condition: ${entry}`);
   for (const entry of misscopedRules) log(`✗ VM rule NOT scoped to the project (reaches every project of the organization): ${entry}`);
-  if (dormantKeys.length > 0)
-    log(
-      `✗ dormant principal holds ${dormantKeys.length} API key(s): a registry service outside the deployed set must have none: ${dormantKeys.join(', ')}`,
-    );
   if (extraBenign.length > 0)
     log(`⚠ VM application has extra read-only grant(s) (benign drift; reconcile with \`${actionCommand('identity')}\`): ${extraBenign.join(', ')}`);
   if (ok) {
     const conditionNote = opts.requiredSecretCondition ? ', secret rules path-conditioned' : '';
     const scopeNote = opts.requiredProjectId ? ', project-scoped' : '';
-    const dormantNote = opts.dormant ? ', dormant principal holds no key' : '';
-    log(`✓ VM grant verified: required permission sets present, no escalation${conditionNote}${scopeNote}${dormantNote}`);
+    log(`✓ VM grant verified: required permission sets present, no escalation${conditionNote}${scopeNote}`);
   }
-  return { ok, granted: [...granted].sort(), missing, extra, unconditionedSecretRules, missingSecretConditions, dormantKeys, misscopedRules };
+  return { ok, granted: [...granted].sort(), missing, extra, unconditionedSecretRules, missingSecretConditions, misscopedRules };
 }
 
 // Standalone entry point.
@@ -156,8 +137,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
 
   const requiredSecretCondition = getFlag(argv, '--secret-condition') ?? undefined;
-  const dormant = argv.includes('--dormant');
-  // The CI app legitimately holds an organization-scoped key-mint rule; VM and boot principals pass --project-scope.
+  // The CI app legitimately holds organization-scoped rules (IAM read, DNS); VM and boot principals pass --project-scope.
   const requiredProjectId = argv.includes('--project-scope') ? projectId : undefined;
   const requiredSetsCsv = getFlag(argv, '--required-sets');
   const required = (requiredSetsCsv ?? '')
@@ -173,7 +153,6 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     organizationId,
     requiredSecretCondition,
     required,
-    dormant,
     requiredProjectId,
   });
   if (!result.ok) {
@@ -187,12 +166,11 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
         ? `secret rules without the required path condition: ${result.unconditionedSecretRules.join('; ')}`
         : '',
       result.missingSecretConditions.length > 0 ? `no secret rule carries: ${result.missingSecretConditions.join('; ')}` : '',
-      result.dormantKeys.length > 0 ? `dormant principal holds API key(s): ${result.dormantKeys.join(', ')}` : '',
       result.misscopedRules.length > 0 ? `rules not scoped to the project: ${result.misscopedRules.join('; ')}` : '',
     ].filter(Boolean);
     throw new Error(
       `VM application ${applicationId ?? applicationName} ${problems.join('; ')}. ` +
-        `The machine policy (infra/lib/scaleway/machine-policies.ts) defines the exact grant, and a deploy never writes it: run \`${actionCommand('identity')}\` with your Owner API key, remove any manually-attached policy, and delete keys on dormant principals.`,
+        `The machine policy (infra/lib/scaleway/machine-policies.ts) defines the exact grant, and a deploy never writes it: run \`${actionCommand('identity')}\` with your Owner API key, and remove any manually-attached policy.`,
     );
   }
 }

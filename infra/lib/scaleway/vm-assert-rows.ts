@@ -1,6 +1,6 @@
 import type { EngineConfig } from '../../config/engine-config';
 import { principalSecretCondition } from '../runtime-secrets';
-import { principalServices, runningServices } from '../services';
+import { principalServices } from '../services';
 import { BACKEND_S3_PERMISSION_SETS, BOOT_PROJECT_PERMISSION_SETS, CI_RULE_SHAPES, SERVICE_SECRET_PERMISSION_SETS } from './permissions';
 import { principalNames } from './principals';
 import { bootKeyCondition } from './secret-paths';
@@ -11,23 +11,19 @@ export interface VmAssertRow {
   sets: string[];
   /** '' skips the secret-condition check (the CI app's rules are unconditioned by design). */
   condition: string;
-  /** A registry principal with no deployed VM: keeps its policy, must hold zero API keys. */
-  dormant?: boolean;
 }
 
 /**
  * One assertion row per principal, built by the same shared builders the Pulumi program uses so the deploy's grant-verification step and the
- * Apply's self-check compare strings, not semantics. Principals follow the registry; a registry service that runs nowhere is dormant.
+ * Apply's self-check compare strings, not semantics. Principals follow the registry; their keys are checked where the deploy stages them.
  */
 export function buildVmAssertRows(appConfig: EngineConfig): VmAssertRow[] {
   const names = principalNames(appConfig.slug, appConfig.mode);
-  const running = new Set(runningServices(appConfig.services).map((service) => service.slug));
   return [
     ...principalServices().map((svc) => ({
       app: names.vmService(svc.slug),
       sets: [...SERVICE_SECRET_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])],
       condition: principalSecretCondition(appConfig.slug, appConfig.mode, svc.slug),
-      dormant: !running.has(svc.slug),
     })),
     {
       app: names.boot,

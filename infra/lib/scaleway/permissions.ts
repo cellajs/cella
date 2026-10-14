@@ -67,7 +67,7 @@ export const OPERATOR_PROJECT_PERMISSION_SETS = ['AllProductsFullAccess'] as con
  */
 export const OPERATOR_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
-// Per-service model (P3): service, boot, and CI key-mint grants
+// Machine identities: service and boot grants
 
 /** Secret-value read sets, always paired with a resource-level path condition. SecretManagerReadOnly alone is metadata-only and 403s the sync; SecretManagerSecretAccess decrypts the values. */
 export const SERVICE_SECRET_PERMISSION_SETS = ['SecretManagerReadOnly', 'SecretManagerSecretAccess'] as const;
@@ -78,15 +78,9 @@ export const BACKEND_S3_PERMISSION_SETS = ['ObjectStorageObjectsRead', 'ObjectSt
 /** Boot application sets: pull images and write boot diagnostics. Its Secret Manager rule is separate and conditioned to the handoff folder (bootKeyCondition). */
 export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'] as const;
 
-/**
- * CI key-mint grant. Must stay unconditioned: an api-key POST carries no `resource.id`, so a `resource.id in [<app ids>]` condition 403s even for a listed app.
- * Accepted widening: CI can manage applications and api-keys org-wide; the boundary is the absent IAMPolicyManager, so CI cannot grant permissions.
- */
-const CI_KEY_MINT_PERMISSION_SETS = ['IAMApplicationManager'] as const;
-
 /** The CI policy's per-rule shape, shared by the rule builder and the drift check so the two cannot diverge. Every CI rule is unconditioned; a condition on any CI rule is drift. */
 export interface CiRuleShape {
-  id: 'project' | 'dns' | 'org-read' | 'key-mint';
+  id: 'project' | 'dns' | 'org-read';
   scope: 'project' | 'dns-projects' | 'organization';
   permissionSets: readonly string[];
 }
@@ -94,7 +88,6 @@ export const CI_RULE_SHAPES: readonly CiRuleShape[] = [
   { id: 'project', scope: 'project', permissionSets: PROJECT_PERMISSION_SETS },
   { id: 'dns', scope: 'dns-projects', permissionSets: DNS_PERMISSION_SETS },
   { id: 'org-read', scope: 'organization', permissionSets: ORG_SCOPED_PERMISSION_SETS },
-  { id: 'key-mint', scope: 'organization', permissionSets: CI_KEY_MINT_PERMISSION_SETS },
 ];
 
 /**
