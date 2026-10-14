@@ -31,7 +31,7 @@ describe('buildDeployEnv', () => {
 
   it('derives values from appConfig', () => {
     // The grant assertion rows are the shared builder's output, covered by tests/unit/secret-scope.test.ts and the singleVM cases below.
-    const { vm_assert_json: _rows, ...values } = buildDeployEnv(fakeAppConfig);
+    const { grant_rows_json: _rows, ...values } = buildDeployEnv(fakeAppConfig);
     expect(values).toEqual({
       environment: 'production',
       image_tag: '',
@@ -79,8 +79,8 @@ describe('buildDeployEnv', () => {
 
   it('singleVM: the same principals as split-VM, each reading its own folder, so placement changes no identity', () => {
     type Row = { app: string; condition: string };
-    const single = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM: true }).vm_assert_json) as Row[];
-    const split = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM: false }).vm_assert_json) as Row[];
+    const single = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM: true }).grant_rows_json) as Row[];
+    const split = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM: false }).grant_rows_json) as Row[];
     expect(single).toEqual(split);
     const backend = single.find((row) => row.app === 'cella-production-vm-backend');
     expect(backend?.condition).toBe(principalSecretCondition('cella', 'production', 'backend'));
@@ -96,8 +96,8 @@ describe('buildDeployEnv', () => {
       oauth: { enabled: true, publicUrl: 'https://api.cella.example/oauth' },
     };
     for (const singleVM of [false, true]) {
-      const off = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM }).vm_assert_json) as Row[];
-      const on = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM, services: allOn }).vm_assert_json) as Row[];
+      const off = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM }).grant_rows_json) as Row[];
+      const on = JSON.parse(buildDeployEnv({ ...fakeAppConfig, singleVM, services: allOn }).grant_rows_json) as Row[];
       expect(on).toEqual(off);
     }
   });

@@ -1,34 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import { fakeConfig } from '../../tests/helpers/fake-config';
+import { principalSecretCondition } from '../runtime-secrets';
+import { principalServices } from '../services';
 import { machinePolicies, sameRules } from './machine-policies';
-import { ruleConditions } from './secret-paths';
-import { buildVmAssertRows } from './vm-assert-rows';
+import { principalNames } from './principals';
+import { bootKeyCondition, ruleConditions } from './secret-paths';
 
 const readsSecrets = (sets: readonly string[]) => sets.some((set) => set.startsWith('SecretManager'));
 
 describe('machinePolicies', () => {
   for (const singleVM of [true, false]) {
-    it(`must not let a machine read secrets outside its folders (singleVM ${singleVM}): each policy carries exactly what the deploy asserts`, () => {
+    it(`must not let a machine read secrets outside its folders (singleVM ${singleVM})`, () => {
       const config = fakeConfig({ singleVM });
+      const names = principalNames(config.slug, config.mode);
       const policies = machinePolicies(config, 'project-1');
-      // The rows the deploy's assert-vm-grants step compares the live policies with; the CI application has no machine policy.
-      const rows = buildVmAssertRows(config).filter((row) => !row.app.endsWith('-ci-deploy'));
-      expect(policies).toHaveLength(rows.length);
-      for (const row of rows) {
-        const policy = policies.find((candidate) => candidate.applicationName === row.app);
-        if (!policy) throw new Error(`no policy for ${row.app}`);
-        const secretRules = policy.rules.filter((rule) => readsSecrets(rule.permission_set_names));
-        expect(
-          secretRules.map((rule) => rule.condition),
-          policy.name,
-        ).toEqual(row.condition ? ruleConditions(row.condition) : []);
+      for (const policy of policies) {
         for (const rule of policy.rules) {
-          // Project-scoped, as the deploy requires: an organization-scoped rule would reach every project.
+          // Project-scoped: an organization-scoped rule would reach every project.
           expect(rule.project_ids, policy.name).toEqual(['project-1']);
           expect(rule.organization_id, policy.name).toBeUndefined();
         }
-        expect([...new Set(policy.rules.flatMap((rule) => rule.permission_set_names))].sort(), policy.name).toEqual([...row.sets].sort());
+        const secretConditions = policy.rules.filter((rule) => readsSecrets(rule.permission_set_names)).map((rule) => rule.condition);
+        const service = principalServices().find((svc) => names.vmService(svc.slug) === policy.applicationName);
+        if (service) expect(secretConditions, policy.name).toEqual(ruleConditions(principalSecretCondition(config.slug, config.mode, service.slug)));
+        else if (policy.applicationName === names.boot) expect(secretConditions, policy.name).toEqual([bootKeyCondition(config.slug, config.mode)]);
+        else expect(secretConditions, policy.name).toEqual([]);
       }
+      expect(policies.map((policy) => policy.applicationName)).toEqual([
+        ...principalServices().map((svc) => names.vmService(svc.slug)),
+        names.boot,
+        names.builder,
+      ]);
     });
   }
 });

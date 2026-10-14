@@ -44,7 +44,7 @@ export type TaskName =
   | 'wait-for-images'
   | 'sync-rollout-config'
   | 'stage-generation-keys'
-  | 'assert-vm-grants'
+  | 'assert-grants'
   | 'assert-secrets-deliverable'
   | 'geoip-refresh'
   | 'smoke';
@@ -74,6 +74,20 @@ export interface DeployEffects {
 interface RolloutRow {
   service: string;
   health_url: string;
+}
+
+/** The steps from which a release's machines have booted: their boot diagnostics say why one did not come up. */
+const STEPS_WITH_MACHINES = new Set(['Base stack update', 'Waved rollout', 'Verify public versions', 'Smoke tests']);
+
+/** What a failed deploy says last: the step it stopped at, and the diagnostics only when machines of the release booted. */
+export function deployFailureHint(err: unknown, mode: string, sha?: string): { description: string; command?: string } {
+  const step = (err as { deployStep?: string } | undefined)?.deployStep;
+  const where = step ? `It stopped at "${step}". ` : '';
+  if (step && !STEPS_WITH_MACHINES.has(step)) return { description: `${where}Re-running is safe: generations are content-addressed.` };
+  return {
+    description: `${where}Re-running is safe (generations are content-addressed). For a machine that did not come up, read this release's diagnostics:`,
+    command: `pnpm --filter infra diag --mode ${mode}${sha ? ` --sha ${sha}` : ''}`,
+  };
 }
 
 export function parseDeployArgs(argv: string[]): DeployOptions {
@@ -136,6 +150,7 @@ export async function runDeploy(
       const failAttrs: { step: string; error: string; 'error.stack'?: string } = { step: title, error: errorMessage(err) };
       if (err instanceof Error && err.stack) failAttrs['error.stack'] = err.stack.slice(0, 4000);
       telemetry?.event(deployEvents.stepFailed, failAttrs, { severity: 'error', ctx: span?.ctx });
+      if (err instanceof Error) Object.assign(err, { deployStep: (err as { deployStep?: string }).deployStep ?? title });
       throw err;
     } finally {
       fx.groupEnd();
@@ -145,7 +160,7 @@ export async function runDeploy(
   let lease: { release(): Promise<void> } | undefined;
   let outcome: 'ok' | 'error' = 'ok';
   try {
-    await step('Ensure Pulumi state bucket', () => fx.task('ensure-state-bucket'));
+    await step('Check Pulumi state bucket', () => fx.task('ensure-state-bucket', ['--check']));
     await step('Login to S3 state backend', () => fx.exec('pulumi', ['login', stateBackendUrl(env.state_bucket, env.region)]));
     await step('Select stack', () => fx.exec('pulumi', ['stack', 'select', stack]));
     await step('Acquire stack lock', async () => {
@@ -226,11 +241,11 @@ export async function runDeploy(
     });
 
     await step('Base stack update', () => fx.update(stack));
-    await step('Verify VM IAM grants', async () => {
+    await step('Verify identity grants', async () => {
       // One assertion per principal: exact sets AND exact path condition. Their keys were checked when they were staged.
-      const rows = JSON.parse(env.vm_assert_json) as Array<{ app: string; sets: string[]; condition: string }>;
+      const rows = JSON.parse(env.grant_rows_json) as Array<{ app: string; sets: string[]; condition: string }>;
       for (const row of rows) {
-        await fx.task('assert-vm-grants', [
+        await fx.task('assert-grants', [
           '--application-name',
           row.app,
           '--required-sets',
@@ -406,7 +421,7 @@ async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string
 
 // Each task stays an independent CLI (tsx tasks/<name>.ts) for operators, while the deploy runs the same mains in-process so config is read once and a failing step keeps its stack trace.
 const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
-  'ensure-state-bucket': async () => (await import('./ensure-state-bucket')).main(),
+  'ensure-state-bucket': async (argv) => (await import('./ensure-state-bucket')).main(argv),
   'install-pulumi-providers': async () => (await import('./install-pulumi-providers')).main(),
   'forget-retired-resources': async (argv) => (await import('./forget-retired-resources')).main(argv),
   'preflight-privileged': async (argv) => (await import('./preflight-privileged')).main(argv),
@@ -414,7 +429,7 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),
   'stage-generation-keys': async (argv) => (await import('./stage-generation-keys')).main(argv),
   'build-release': async (argv) => (await import('./build-release')).main(argv),
-  'assert-vm-grants': async (argv) => (await import('./assert-vm-grants')).main(argv),
+  'assert-grants': async (argv) => (await import('./assert-grants')).main(argv),
   'assert-secrets-deliverable': async (argv) => (await import('./assert-secrets-deliverable')).main(argv),
   'geoip-refresh': async (argv) => (await import('./geoip-refresh')).main(argv),
   smoke: async (argv) => (await import('./smoke')).main(argv),

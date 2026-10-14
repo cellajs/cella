@@ -106,37 +106,6 @@ describe('setupCiKey', () => {
     expect(policyBody.rules).toEqual(deployRules({ slug: 'demo', mode: 'production', projectId: 'proj-1', organizationId: 'org-1' }));
   });
 
-  it('resolves organization id from project when not provided', async () => {
-    const { fn, calls } = makeFetch([
-      { method: 'GET', match: '/account/v3/projects/proj-1', body: { organization_id: 'org-resolved' } },
-      {
-        method: 'GET',
-        match: '/iam/v1alpha1/applications?',
-        body: { applications: [{ id: 'app-1', name: 'demo-production-ci-deploy' }] },
-      },
-      ...groupRoutes,
-      {
-        method: 'GET',
-        match: '/iam/v1alpha1/policies?',
-        body: { policies: [{ id: 'pol-1', name: 'demo-production-ci-deploy-policy' }] },
-      },
-      { method: 'DELETE', match: '/iam/v1alpha1/policies/pol-1', body: {} },
-      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-1', name: 'demo-production-ci-deploy-policy' } },
-      { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
-      { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCW', secret_key: 's', application_id: 'app-1' } },
-    ]);
-    vi.stubGlobal('fetch', fn);
-
-    await setupCiKey({ ...baseOpts, organizationId: undefined });
-
-    // Subsequent applications/policies list calls should carry the resolved org id.
-    const scopedCalls = calls.filter((c) => c.init.method === 'GET' && (c.url.includes('/applications?') || c.url.includes('/policies?')));
-    expect(scopedCalls.length).toBeGreaterThan(0);
-    for (const c of scopedCalls) {
-      expect(c.url).toContain('organization_id=org-resolved');
-    }
-  });
-
   it('mints the fresh key BEFORE deleting the replaced ones (no keyless window on mint failure)', async () => {
     const { fn, calls } = makeFetch([
       {

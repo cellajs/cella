@@ -10,6 +10,7 @@ const appConfig = engineConfig();
 import { composeConfig, type ServiceName } from '../compose/compose';
 import { sizing } from '../config/sizing';
 import { type RuntimeSecretConsumer, unionRuntimeSecrets } from '../lib/runtime-secrets';
+import { handoffBundleKey } from '../lib/scaleway/machine-keys';
 import { BOOT_IMAGE_NAME, imageRepositoryOf, type ResolvedImage, resolveReleaseImage } from '../lib/scaleway/release-image';
 import type { ServiceDefinition } from '../lib/services';
 import { naming, region, tags, zone } from '../pulumi-context';
@@ -265,20 +266,13 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     }
     pulumi.log.info(`compute: ${svc.slug} generation ${generation.id} is planned without its keys; a deploy mints them before it updates.`);
   }
-  // The hand-over bundle is minted for the release this deploy rolls out, one per service. A new machine of another release would read it first
-  // and leave the release's own machine nothing to read.
-  const releaseSha = process.env.INFRA_RELEASE_SHA;
-  if (!generation.preexisting && generationKeys && releaseSha && generation.sha !== releaseSha) {
-    throw new Error(
-      `compute: a NEW ${svc.slug} generation of ${generation.sha.slice(0, 10)} would take the hand-over bundle minted for ${releaseSha.slice(0, 10)}: the rollout record names a release the stack does not run.`,
-    );
-  }
-  // Every service a new machine carries reads its own copies with its own key: a missing bundle would fail the boot at hydration.
-  const unminted =
-    !generation.preexisting && generationKeys ? secretConsumersFor(svc).filter((consumer) => !generationKeys.handoffSecretIds[consumer]) : [];
+  // Every service a new machine carries reads its own copies with its own key, from a bundle staged for that machine's release: a machine of
+  // another release (a rollout record naming a release the stack does not run) finds none and is refused here, not at its boot.
+  const bundleFor = (consumer: string) => generationKeys?.handoffSecretIds[handoffBundleKey(consumer, generation.sha)];
+  const unminted = !generation.preexisting && generationKeys ? secretConsumersFor(svc).filter((consumer) => !bundleFor(consumer)) : [];
   if (unminted.length > 0) {
     throw new Error(
-      `compute: a NEW ${svc.slug} generation carries ${unminted.join(', ')}, for which the deploy staged no key: stage-generation-keys must cover every running service.`,
+      `compute: a NEW ${svc.slug} generation of ${generation.sha.slice(0, 10)} carries ${unminted.join(', ')}, for which the deploy staged no key for that release: stage-generation-keys covers the running services of the release it deploys.`,
     );
   }
   const serviceConfig: ServiceConfig = {
@@ -290,7 +284,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
     // A newly rolling generation pulls every image by digest; a pre-existing one keeps the cloud-init it booted with (ignoreChanges below).
     composeEnv: buildComposeEnv(svc, pinnedImageTag(generation.sha, !generation.preexisting)),
     handoffs: secretConsumersFor(svc).flatMap((consumer) => {
-      const secretId = generationKeys?.handoffSecretIds[consumer];
+      const secretId = bundleFor(consumer);
       return secretId ? [{ service: consumer, secretId }] : [];
     }),
     exportS3Env: svc.s3Access === true,

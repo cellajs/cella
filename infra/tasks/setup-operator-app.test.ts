@@ -6,7 +6,14 @@ import { operatorPolicyReach, operatorRules, setupOperatorApp } from './setup-op
 vi.mock('../lib/scaleway/scaleway-iam', () => ({ provisionScopedKey: vi.fn() }));
 vi.mock('../lib/scaleway/dns-zone-project', () => ({ resolveDnsProjectIds: vi.fn() }));
 
-const base = { callerSecretKey: 'owner-secret', projectId: 'proj', projectIds: ['proj', 'proj-staging'], slug: 'cella', dnsZone: 'cellajs.com' };
+const base = {
+  callerSecretKey: 'owner-secret',
+  organizationId: 'org-1',
+  projectId: 'proj',
+  projectIds: ['proj', 'proj-staging'],
+  slug: 'cella',
+  dnsZone: 'cellajs.com',
+};
 const lock = "request.ip in ['203.0.113.7']";
 
 beforeEach(() => {
@@ -64,8 +71,6 @@ describe('setupOperatorApp', () => {
     // No mode: the application is named `cella-operator` and joins no environment's group, so tearing one environment down leaves it.
     expect((opts as { mode?: string } | undefined)?.mode).toBeUndefined();
     expect(config?.suffix).toBe('operator');
-    expect(config?.managePolicy).toBeUndefined();
-    expect(config?.mintKey).toBeUndefined();
     expect(config?.buildRules?.({ projectId: 'proj', organizationId: 'org-1' })).toEqual(
       operatorRules({ projectIds: ['proj', 'proj-staging'], organizationId: 'org-1', dnsProjectIds: ['proj'], cidrs: ['203.0.113.7/32'] }),
     );

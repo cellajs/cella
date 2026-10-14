@@ -13,7 +13,6 @@ import {
 } from '../../tasks/reset-database';
 import { endAction, endsAction, type InfraContext } from '../shared';
 import { acquirePrivilegedKey } from './operator-unlock';
-import { printRevokeReminder } from './owner-key';
 
 /** Roles Pulumi provisions on the instance (`resources/stores/postgres-managed.ts`). Both must be re-granted. */
 const ROLES = ['admin_role', 'runtime_role'] as const;
@@ -59,8 +58,8 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
   console.info(pc.dim('Pre-production use, or with services quiesced: this is a hard outage.\n'));
 
   // A privileged write, so the same key flow as Apply: a key minted from the operator key, asked once per session.
-  const ownerKey = await acquirePrivilegedKey(context);
-  const client = createRdbClient({ secretKey: ownerKey.secretKey, region });
+  const operator = await acquirePrivilegedKey(context);
+  const client = createRdbClient({ secretKey: operator.secretKey, region });
   const expiresAt = new Date(Date.now() + BACKUP_RETENTION_DAYS * 86_400_000).toISOString();
 
   try {
@@ -94,10 +93,7 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
     console.info(`  ${pc.dim(`Backup retained ${BACKUP_RETENTION_DAYS} days: ${result.backupId}`)}\n`);
     console.info(serialConsoleSteps(databaseName));
     console.info(`\n  ${pc.dim(`Then confirm: curl ${appConfig.backendUrl}/health?depth=full`)}`);
-    await ownerKey.release();
-    if (ownerKey.pasted) printRevokeReminder();
   } catch (error) {
-    await ownerKey.release();
     if (endsAction(error)) throw error;
     if (error instanceof ResetIrrecoverableError) {
       console.error(`\n${restoreHint(error, region)}\n`);

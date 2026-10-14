@@ -37,7 +37,7 @@ describe('secrets module', () => {
     const versioned = new Set(versions().map((r) => r.inputs.secretId));
     const engineMade = new Set(engineMadeRuntimeSecrets().map((definition) => definition.id));
     for (const definition of runtimeSecrets) {
-      const storeSupplied = definition.valueSource === 'pulumi' && !engineMade.has(definition.id);
+      const storeSupplied = definition.valueSource === 'engine' && !engineMade.has(definition.id);
       for (const container of containers().filter((r) => r.inputs.name === definition.secretName)) {
         expect(versioned.has(`${container.name}-id`), `${definition.id} ${container.name}`).toBe(storeSupplied);
       }

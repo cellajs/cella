@@ -5,10 +5,10 @@ import {
   hoursUntilExpiry,
   type KeyDescription,
   type KeyPair,
+  organizationIdOfKey,
   type PrincipalRole,
 } from '../../lib/scaleway/operator-identity';
-import type { PrincipalNames } from '../../lib/scaleway/principals';
-import { resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
+import type { AppPrincipalNames, PrincipalNames } from '../../lib/scaleway/principals';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { forgetOwnerKey, rememberedOwnerKey, rememberOwnerKey } from '../session';
@@ -27,8 +27,6 @@ export interface OwnerKey extends KeyPair {
   organizationId: string;
   /** True when this run minted the key from a durable Owner API key and revokes it on release. */
   minted: boolean;
-  /** True for an Owner API key typed at the prompt: the operator holds a key the CLI did not mint and cannot revoke for them. False for a key minted from the operator key. */
-  pasted: boolean;
   /** Revoke a minted key; a supplied key is left alone. Safe to call twice. */
   release(): Promise<void>;
 }
@@ -41,7 +39,12 @@ export interface OwnerKey extends KeyPair {
  * the end. A short-lived user key or an application key is used as it is. Every failure names the fix and exits before the stack is touched.
  * A key typed at the prompt is kept in memory for this run of the CLI, so a menu session asks once; every action validates it again.
  */
-export async function acquireOwnerKey(opts: { names: PrincipalNames; projectId: string; slug: string; mode: string }): Promise<OwnerKey> {
+export async function acquireOwnerKey(opts: {
+  names: PrincipalNames & AppPrincipalNames;
+  projectId: string;
+  slug: string;
+  mode: string;
+}): Promise<OwnerKey> {
   const { names, projectId } = opts;
   // A key typed earlier in this run is used again, and validated again below: it may have been revoked since.
   const remembered = rememberedOwnerKey();
@@ -49,7 +52,7 @@ export async function acquireOwnerKey(opts: { names: PrincipalNames; projectId: 
 
   let organizationId: string;
   try {
-    organizationId = await resolveOrganizationId(pair.secretKey, projectId);
+    organizationId = await organizationIdOfKey(pair, projectId);
   } catch (error) {
     forgetOwnerKey();
     console.error(
@@ -73,7 +76,7 @@ export async function acquireOwnerKey(opts: { names: PrincipalNames; projectId: 
   const durableUserKey = desc.bearer !== 'application' && (hours === undefined || hours > DURABLE_KEY_HOURS);
   if (!durableUserKey) {
     console.info(`${pc.dim('Owner API key:')} ${formatKeyLine(desc, role)}`);
-    return { ...pair, organizationId, minted: false, pasted: true, release: async () => {} };
+    return { ...pair, organizationId, minted: false, release: async () => {} };
   }
 
   const expiresAt = new Date(Date.now() + MINTED_KEY_TTL_MS).toISOString();
@@ -90,7 +93,6 @@ export async function acquireOwnerKey(opts: { names: PrincipalNames; projectId: 
     secretKey: minted.secret_key,
     organizationId,
     minted: true,
-    pasted: true,
     async release() {
       if (released) return;
       released = true;

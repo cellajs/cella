@@ -51,7 +51,7 @@ beforeAll(async () => {
   writeGenerationKeys({
     bootAccessKey: 'ak',
     bootSecretKey: 'sk',
-    handoffSecretIds: Object.fromEntries([...servicesByName.keys()].map((slug) => [slug, `handoff-${slug}`])),
+    handoffSecretIds: Object.fromEntries([...servicesByName.keys()].map((slug) => [`${slug}@latest`, `handoff-${slug}`])),
   });
   // The LB resolves its private-network address from IPAM over HTTPS.
   vi.stubEnv('SCW_SECRET_KEY', 'test-secret-key');

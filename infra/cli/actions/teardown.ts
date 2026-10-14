@@ -4,16 +4,16 @@ import { deriveInfra } from '../../lib/naming';
 import { actionLabel } from '../../lib/operator-actions';
 import { describeKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
-import { projectAccessKey } from '../../lib/scaleway/s3-client';
+import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { deleteApplicationCascade, deleteGroup, listManagedPrincipals, removeBootstrapDnsGrant } from '../../lib/scaleway/scaleway-iam';
 import { checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { builderPrefix, removeBuilderMachines } from '../../tasks/build-release';
 import { acquireStackLockOrExit, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
-import { acquireIdentityKey, acquirePrivilegedKey } from './operator-unlock';
+import { admitOperatorOrExit } from './operator-apply';
+import { acquireIdentityKey, acquirePrivilegedKey, type OperatorKey } from './operator-unlock';
 import { type OwnerKey, printRevokeReminder } from './owner-key';
-import { admitOperatorOrExit } from './privileged-converge';
 
 /** The applications a cleanup may delete, apart from the one the run itself authenticates as: deleting that one revokes the key every later call needs. */
 export function splitOwnApplication<App extends { id: string }>(
@@ -51,14 +51,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
     return;
   }
 
-  const operatorKey = await acquirePrivilegedKey(context);
-  let destroyed = false;
-  try {
-    destroyed = await destroyStack(context, operatorKey);
-  } finally {
-    await operatorKey.release();
-  }
-  if (!destroyed) return;
+  if (!(await destroyStack(context, await acquirePrivilegedKey(context)))) return;
 
   // IAM principal cleanup: group members plus the org-wide bootstrap DNS residue, enumerated via the per-mode group (REQ-1) and never by name-guessing.
   const cleanupIam = await confirm({
@@ -75,26 +68,25 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   } finally {
     await ownerKey.release();
   }
-  if (ownerKey.pasted) printRevokeReminder();
+  printRevokeReminder();
 }
 
 /** Destroy the stack's resources and remove it from the backend; true when the destroy completed. */
-async function destroyStack(context: InfraContext, ownerKey: OwnerKey): Promise<boolean> {
+async function destroyStack(context: InfraContext, operator: OperatorKey): Promise<boolean> {
   const { appConfig } = context;
   const mode = context.environment;
-  const { accessKey, secretKey, organizationId } = ownerKey;
+  const { accessKey, secretKey, organizationId } = operator;
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
   const targetStack = stackNameFor(context);
 
   // The operator key serves both sides, as in Apply; buckets written before it was admitted let it in first.
-  await admitOperatorOrExit(context, { ...ownerKey, passphrase, stack: targetStack });
+  await admitOperatorOrExit(context, { ...operator, passphrase, stack: targetStack });
   const env = buildProviderEnv(infraDir, { accessKey, secretKey, projectId: context.projectId, passphrase, organizationId });
   pulumiLoginAndSelect(infraDir, env, appConfig, targetStack);
 
   const stackLock = await acquireStackLockOrExit({
     appConfig,
-    accessKey: projectAccessKey(accessKey, context.projectId),
-    secretKey,
+    ...stateKeyOf(operator, context.projectId),
     stack: targetStack,
     operation: 'teardown',
   });

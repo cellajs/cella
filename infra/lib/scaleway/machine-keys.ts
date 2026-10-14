@@ -18,6 +18,11 @@ export function machinePrincipals(slug: string, mode: string): MachinePrincipal[
   ];
 }
 
+/** How a deploy's keys file names one service's hand-over bundle: by service and release, so a machine of another release finds none. */
+export function handoffBundleKey(service: string, releaseSha: string): string {
+  return `${service}@${releaseSha}`;
+}
+
 /** The Secret Manager container, in the deploy folder, that holds a principal's standing key. */
 export function machineKeyName(principal: string): string {
   return `machine-key-${principal}`;

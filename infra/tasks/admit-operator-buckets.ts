@@ -5,7 +5,7 @@ import { deriveInfra } from '../lib/naming';
 import type { KeyPair } from '../lib/scaleway/operator-identity';
 import { ADMISSION_RUN_ENV } from '../lib/scaleway/principals';
 import { buildProviderEnv } from '../lib/scaleway/provider-env';
-import { makeS3Client, projectAccessKey } from '../lib/scaleway/s3-client';
+import { makeS3Client, stateKeyOf } from '../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { engineSecretPath } from '../lib/scaleway/secret-paths';
 import { stateBackendUrl, stateBucket } from '../lib/stack/control-store';
@@ -103,7 +103,7 @@ export async function admitOperatorToBuckets(opts: {
   const { appConfig, projectId } = opts;
   const region = appConfig.s3.region;
   const buckets = policedBuckets(appConfig);
-  const operatorState = { accessKey: projectAccessKey(opts.operator.accessKey, projectId), secretKey: opts.operator.secretKey };
+  const operatorState = stateKeyOf(opts.operator, projectId);
   if (!(await operatorShutOut(region, operatorState, buckets))) return [];
 
   const admin = await retiredAdminKey({ operatorSecretKey: opts.operator.secretKey, region, projectId, slug: appConfig.slug, mode: opts.mode });
@@ -112,12 +112,7 @@ export async function admitOperatorToBuckets(opts: {
       `bucket policies of ${opts.mode} shut the operator out, and the admin application's key (${ADMIN_KEY_SECRET_NAME} under ${engineSecretPath(appConfig.slug, opts.mode)}) is gone: only a principal they name can rewrite them`,
     );
   }
-  const lacking = await lackingPolicies(
-    region,
-    { accessKey: projectAccessKey(admin.accessKey, projectId), secretKey: admin.secretKey },
-    buckets,
-    opts.operator.applicationId,
-  );
+  const lacking = await lackingPolicies(region, stateKeyOf(admin, projectId), buckets, opts.operator.applicationId);
   if (lacking.length === 0) return [];
 
   const env = {

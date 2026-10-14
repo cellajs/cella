@@ -10,7 +10,7 @@ export interface ProvisionedStore {
   secretValues: Record<string, pulumi.Input<string>>;
 }
 
-/** One runtime-secret a store contributes: managed stores supply `'pulumi'` values via {@link ProvisionedStore.secretValues}, external-URL stores declare `'operator'` entries filled through the CLI. */
+/** One runtime-secret a store contributes: managed stores supply `'engine'` values via {@link ProvisionedStore.secretValues}, external-URL stores declare `'operator'` entries filled through the CLI. */
 export interface StoreSecretContribution {
   /** Runtime-secret id (the key other layers address the secret by). */
   id: string;
@@ -22,8 +22,8 @@ export interface StoreSecretContribution {
   description: string;
   /** Whether health/deploy gating treats absence as fatal. */
   required: boolean;
-  /** `'pulumi'` = the store binds a version; `'operator'` = supplied out-of-band. */
-  valueSource: 'pulumi' | 'operator';
+  /** `'engine'` = the store binds a version; `'operator'` = the operator sets it. */
+  valueSource: 'engine' | 'operator';
   /** Services that receive the secret in their per-VM `.env.runtime`. */
   services: readonly string[];
   /** A database connection string the operator task ensure-database assembles for this role, never the program. */

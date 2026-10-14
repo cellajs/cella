@@ -32,6 +32,7 @@ function resetMocks() {
 
 const baseOptions = {
   secretKey: 'caller-secret',
+  identityKey: async () => ({ secretKey: 'caller-secret', organizationId: 'org-1' }),
   projectId: 'proj-1',
   region: 'nl-ams',
   slug: 'demo',

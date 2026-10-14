@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type DeployEffects, type DeployOptions, parseDeployArgs, parseReapArgs, runDeploy, runReap } from './deploy-run';
+import { type DeployEffects, type DeployOptions, deployFailureHint, parseDeployArgs, parseReapArgs, runDeploy, runReap } from './deploy-run';
 import type { AllowedKey } from './print-deploy-env';
 
 /** Cella-shaped deploy env table, injected in place of the shared config load. */
@@ -13,7 +13,7 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
     public_bucket: '',
     frontend_bucket: 'cella-frontend',
     state_bucket: 'cella-pulumi-state',
-    vm_assert_json: JSON.stringify([
+    grant_rows_json: JSON.stringify([
       {
         app: 'cella-production-vm-backend',
         sets: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'],
@@ -60,7 +60,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     },
     task: async (name, argv = []) => {
       ops.push(`task:${name}${argv[0] && !argv[0].startsWith('--') ? `:${argv[0]}` : ''}`);
-      if (name === 'assert-vm-grants') grantArgs.push([...argv]);
+      if (name === 'assert-grants') grantArgs.push([...argv]);
       taskArgs[name] = [...argv];
     },
     lease: async (_stack, operation) => {
@@ -154,7 +154,7 @@ describe('runDeploy sequencing', () => {
       'task:wait-for-images',
       'task:stage-generation-keys',
       'update:production',
-      'task:assert-vm-grants',
+      'task:assert-grants',
       'rollout',
       'publish-entry',
       'task:smoke',
@@ -171,6 +171,12 @@ describe('runDeploy sequencing', () => {
     expect(ops.some((op) => op.startsWith('verify:') && op.endsWith('/health'))).toBe(true);
     expect(ops).toContain('verify:https://www.cellajs.com/yjs/health');
     expect(ops.some((op) => op.startsWith('boot-diag'))).toBe(false);
+  });
+
+  it("only checks the state bucket: making and hardening it is the setup's, on the operator key", async () => {
+    const { fx, taskArgs } = makeFake();
+    await runDeploy(baseOpts, fx, fakeDeployEnv);
+    expect(taskArgs['ensure-state-bucket']).toEqual(['--check']);
   });
 
   it('reconciles pointers against the services the rollout cuts over', async () => {
@@ -310,5 +316,27 @@ describe('what the deploy runs', () => {
     const { fx, execCalls } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
     expect([...new Set(execCalls.map((call) => `${call.cmd} ${call.args[0]}`))].sort()).toEqual(['docker login', 'pulumi login', 'pulumi stack']);
+  });
+});
+
+describe('deployFailureHint', () => {
+  it('names the step it stopped at, and points at boot diagnostics only once machines booted', async () => {
+    const early = makeFake();
+    const task = early.fx.task;
+    early.fx.task = async (name, argv) => {
+      if (name === 'build-release') throw new Error('the builder failed');
+      return task(name, argv);
+    };
+    const buildError = await runDeploy(baseOpts, early.fx, fakeDeployEnv).catch((err: unknown) => err);
+    expect(deployFailureHint(buildError, 'staging', 'abc123')).toEqual({
+      description: 'It stopped at "Build the release". Re-running is safe: generations are content-addressed.',
+    });
+
+    const late = makeFake({ rolloutFails: true });
+    const rolloutError = await runDeploy(baseOpts, late.fx, fakeDeployEnv).catch((err: unknown) => err);
+    expect(deployFailureHint(rolloutError, 'staging', 'abc123')).toMatchObject({
+      description: expect.stringContaining('"Waved rollout"'),
+      command: 'pnpm --filter infra diag --mode staging --sha abc123',
+    });
   });
 });

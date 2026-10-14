@@ -10,6 +10,7 @@ export interface ProvisionManagedKeyOptions {
   definition: ManagedKeyDefinition;
   /** IAM-capable caller key: needs IAMManager to create the app/policy + key. */
   callerSecretKey: string;
+  organizationId: string;
   projectId: string;
   region: string;
   slug: string;
@@ -68,13 +69,12 @@ export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Pro
   }
 
   const minted = await provisionScopedKey(
-    { callerSecretKey: opts.callerSecretKey, projectId: opts.projectId, slug: opts.slug, mode: opts.mode, log },
+    { callerSecretKey: opts.callerSecretKey, organizationId: opts.organizationId, projectId: opts.projectId, slug: opts.slug, mode: opts.mode, log },
     {
       suffix: definition.suffix,
       appDescription: definition.appDescription,
       policyDescription: definition.policyDescription,
       buildRules: ({ projectId }) => [{ permission_set_names: [...definition.permissionSets], project_ids: [projectId] }],
-      mintKey: true,
     },
   );
 

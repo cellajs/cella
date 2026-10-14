@@ -3,7 +3,7 @@ import { confirm, input } from '@inquirer/prompts';
 import type { EngineConfig } from '../config/engine-config';
 import { menuPath, type OperatorActionId } from '../lib/operator-actions';
 import type { KeyPair } from '../lib/scaleway/operator-identity';
-import { principalNames } from '../lib/scaleway/principals';
+import { allPrincipalNames } from '../lib/scaleway/principals';
 import { controlActor, lockKey, makeControlClient, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
 import { generatePassphrase, verifyStackPassphrase } from '../lib/stack/pulumi-passphrase';
 import type { StackContext } from '../lib/stack/stack-context';
@@ -170,7 +170,7 @@ export function pulumiLoginUrl(appConfig: AppConfigType): string {
 export function pulumiLoginAndSelect(infraDir: string, env: NodeJS.ProcessEnv, appConfig: AppConfigType, targetStack: string): void {
   const login = spawnSync('pulumi', ['login', pulumiLoginUrl(appConfig)], { cwd: infraDir, env, stdio: 'inherit' });
   if (login.status !== 0) {
-    const names = principalNames(appConfig.slug, appConfig.mode);
+    const names = allPrincipalNames(appConfig, appConfig.mode);
     console.error(
       `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits the '${names.operator}', '${names.observer}' and '${names.ciDeploy}' applications, and a key made for another project reaches it only as \`<access key>@<project id>\`.`,
     );

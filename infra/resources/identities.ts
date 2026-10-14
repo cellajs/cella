@@ -5,11 +5,11 @@ import { actionCommand } from '../lib/operator-actions';
 
 const appConfig = engineConfig();
 
-import { ADMISSION_RUN_ENV, principalNames } from '../lib/scaleway/principals';
+import { ADMISSION_RUN_ENV, allPrincipalNames } from '../lib/scaleway/principals';
 import { principalServices } from '../lib/services';
 import { mode, organizationId } from '../pulumi-context';
 
-const names = principalNames(appConfig.slug, mode);
+const names = allPrincipalNames(appConfig, mode);
 
 // The engine's IAM principals, resolved by their canonical per-mode names. A required principal throws on a resolution failure; an optional one warns and drops its statements, so a missing admin app never blocks a release.
 

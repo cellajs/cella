@@ -2,7 +2,7 @@ import { OBSERVER_KEY_NAMES } from '../utils/env-files';
 import type { FetchLike } from '../utils/fetch-like';
 import { resolveFetch } from '../utils/fetch-like';
 import { getApiKey, IAM_BASE, type IamAuth, listOrganizationPolicies, resolveOrganizationIdViaProject } from './iam-client';
-import type { PrincipalNames } from './principals';
+import type { AppPrincipalNames, PrincipalNames } from './principals';
 import { resolveOrganizationIdFromEnv } from './provider-env';
 import { scwFetch } from './scw-fetch';
 
@@ -97,23 +97,28 @@ export async function describeKey(pair: KeyPair, opts: { fetchImpl?: FetchLike }
 }
 
 /**
- * The organization a key works in: the env value when one is set, else what IAM says about the key's own bearer, else the owner of the
- * project through the Account API. An application key holds IAM read and no right over the Account API, so the last way serves user keys.
+ * The organization a key works in, the one way the engine finds it: the env value when one is set, else what IAM says about the key's own
+ * bearer, else the owner of the project through the Account API: the given project, or the key's default one before a project is known. An
+ * application key holds IAM read and no right over the Account API, so the last ways serve user keys.
  */
-export async function organizationIdOfKey(pair: KeyPair, projectId: string, opts: { fetchImpl?: FetchLike } = {}): Promise<string> {
+export async function organizationIdOfKey(pair: KeyPair, projectId?: string, opts: { fetchImpl?: FetchLike } = {}): Promise<string> {
   const fromEnv = resolveOrganizationIdFromEnv();
   if (fromEnv) return fromEnv;
   const described = await describeKey(pair, opts).then(
     (desc) => desc.organizationId,
     () => undefined,
   );
-  return described ?? resolveOrganizationIdViaProject({ secretKey: pair.secretKey, fetchImpl: resolveFetch(opts.fetchImpl) }, projectId);
+  if (described) return described;
+  const auth = { secretKey: pair.secretKey, fetchImpl: resolveFetch(opts.fetchImpl) };
+  const project = projectId ?? (await getApiKey(auth, pair.accessKey)).default_project_id;
+  if (!project) throw new Error(`API key ${pair.accessKey} names no project to find its organization by: set SCW_DEFAULT_ORGANIZATION_ID.`);
+  return resolveOrganizationIdViaProject(auth, project);
 }
 
 /** The engine role of a key's bearer, or the kind of outside principal it is. */
 export type PrincipalRole = 'ci-deploy' | 'admin' | 'operator' | 'observer' | 'boot' | 'vm-service' | 'owner' | 'member' | 'application';
 
-export function classifyPrincipal(desc: KeyDescription, names: PrincipalNames): PrincipalRole {
+export function classifyPrincipal(desc: KeyDescription, names: PrincipalNames & AppPrincipalNames): PrincipalRole {
   if (desc.bearer !== 'application') return desc.bearer;
   if (desc.name === names.ciDeploy) return 'ci-deploy';
   if (desc.name === names.admin) return 'admin';
@@ -158,7 +163,7 @@ const OWNER_KEY_HOWTO = 'your own key as an organization Owner (console → your
  */
 export async function assertIamManager(opts: {
   pair: KeyPair;
-  names: PrincipalNames;
+  names: PrincipalNames & AppPrincipalNames;
   organizationId: string;
   fetchImpl?: FetchLike;
 }): Promise<{ desc: KeyDescription; role: PrincipalRole }> {

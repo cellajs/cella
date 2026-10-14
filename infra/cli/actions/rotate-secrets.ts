@@ -1,6 +1,6 @@
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
-import { projectAccessKey } from '../../lib/scaleway/s3-client';
+import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { controlActor, makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
@@ -16,8 +16,8 @@ import {
   resolveVerifiedPassphrase,
   stackNameFor,
 } from '../shared';
+import { admitOperatorOrExit } from './operator-apply';
 import { acquirePrivilegedKey } from './operator-unlock';
-import { admitOperatorOrExit } from './privileged-converge';
 
 /**
  * Rotate the secrets the engine checks, on the operator key: a fresh password for every database role (set on the live role through the
@@ -43,7 +43,7 @@ export async function runRotateSecrets(context: InfraContext): Promise<void> {
   const env = buildProviderEnv(infraDir, { ...operator, projectId, passphrase, organizationId: operator.organizationId });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
-  const state = { accessKey: projectAccessKey(operator.accessKey, projectId), secretKey: operator.secretKey };
+  const state = stateKeyOf(operator, projectId);
   const lock = await acquireStackLockOrExit({ appConfig, ...state, stack, operation: 'rotate-secrets' });
   try {
     const log = (message: string) => console.info(pc.dim(message));

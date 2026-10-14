@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { principalNames } from '../../lib/scaleway/principals';
+import { allPrincipalNames } from '../../lib/scaleway/principals';
 
 const keyPairOrPrompt = vi.fn();
 const assertIamManager = vi.fn();
@@ -11,8 +11,8 @@ vi.mock('../shared', async (original) => ({
 vi.mock('../../lib/scaleway/operator-identity', async (original) => ({
   ...(await original<typeof import('../../lib/scaleway/operator-identity')>()),
   assertIamManager: (...args: unknown[]) => assertIamManager(...args),
+  organizationIdOfKey: async () => 'org-1',
 }));
-vi.mock('../../lib/scaleway/scaleway-iam', () => ({ resolveOrganizationId: async () => 'org-1' }));
 
 const { acquireOwnerKey } = await import('./owner-key');
 const { forgetSession, rememberedOwnerKey } = await import('../session');
@@ -23,7 +23,7 @@ const application = { desc: { accessKey: 'SCWTYPED', bearer: 'application', bear
 
 const acquire = () =>
   acquireOwnerKey({
-    names: principalNames('cella', 'production'),
+    names: allPrincipalNames({ slug: 'cella', appSlug: 'cella' }, 'production'),
     projectId: 'project-1',
     slug: 'cella',
     mode: 'production',
@@ -49,7 +49,7 @@ describe('acquireOwnerKey in one run of the CLI', () => {
 
     expect(keyPairOrPrompt).toHaveBeenCalledTimes(1);
     expect(assertIamManager).toHaveBeenCalledTimes(2);
-    expect(second).toMatchObject({ accessKey: first.accessKey, secretKey: 'typed-secret', pasted: true });
+    expect(second).toMatchObject({ accessKey: first.accessKey, secretKey: 'typed-secret', minted: false });
   });
 
   it('must not offer a key again that failed its validation: the next action asks for one', async () => {

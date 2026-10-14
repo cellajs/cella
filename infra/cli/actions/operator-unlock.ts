@@ -3,8 +3,8 @@ import { actionCommand } from '../../lib/operator-actions';
 import { fetchAppRulesByName, type GrantedRule, IAM_BASE } from '../../lib/scaleway/iam-client';
 import { ipAllowed, ipConditionCidrs } from '../../lib/scaleway/ip-lock';
 import { describeKey, type KeyDescription, type KeyPair, organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
-import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
-import { projectAccessKey } from '../../lib/scaleway/s3-client';
+import { type AppPrincipalNames, allPrincipalNames, appPrincipalNames } from '../../lib/scaleway/principals';
+import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { scwErrorStatus, scwFetch } from '../../lib/scaleway/scw-fetch';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
@@ -47,7 +47,7 @@ export async function operatorLock(stack: StackRef): Promise<OperatorLock> {
   if (observer && stack.projectId) {
     try {
       const organizationId = await organizationIdOfKey(observer, stack.projectId);
-      const names = principalNames(stack.appConfig.slug, stack.environment);
+      const names = appPrincipalNames(stack.appConfig.appSlug);
       const rules = await fetchAppRulesByName({
         secretKey: observer.secretKey,
         projectId: stack.projectId,
@@ -76,7 +76,7 @@ export function addressVerdict(address: string | undefined, lock: OperatorLock):
 export function refusalLines(opts: {
   status: number | undefined;
   detail: string;
-  names: PrincipalNames;
+  names: AppPrincipalNames;
   address?: string;
   lock: OperatorLock;
 }): string[] {
@@ -116,7 +116,7 @@ export function publicAddress(): Promise<string | undefined> {
 }
 
 /** Print why a call with the operator key failed, drop the key from the session, and end the action. */
-async function endOnRefusal(stack: StackRef, names: PrincipalNames, error: unknown): Promise<never> {
+async function endOnRefusal(stack: StackRef, names: AppPrincipalNames, error: unknown): Promise<never> {
   forgetOperatorKey();
   const status = scwErrorStatus(error);
   const [first, ...rest] = refusalLines({
@@ -145,7 +145,7 @@ interface Unlocked {
  * key returns undefined: the caller then asks for what it needs in another way.
  */
 async function unlock(stack: StackRef, opts: { optional?: string } = {}): Promise<Unlocked | undefined> {
-  const names = principalNames(stack.appConfig.slug, stack.environment);
+  const names = appPrincipalNames(stack.appConfig.appSlug);
   let pair = rememberedOperatorKey();
   if (!pair) {
     const label = `Operator key of '${names.operator}'`;
@@ -185,37 +185,35 @@ export async function keyAccepted(secretKey: string, organizationId: string): Pr
 
 let operatorNoticeShown = false;
 
+/** The operator key a run holds: works from the dedicated address only, writes no IAM, and is kept in memory for the session. */
+export interface OperatorKey extends KeyPair {
+  organizationId: string;
+}
+
 /**
  * The key for a privileged action under the operator application: the operator key itself, pasted once per session and kept in this
  * process's memory. Scaleway accepts it from the dedicated address only, and it holds no IAM write, so nothing is minted from it and nothing
  * is left to revoke when the action ends.
  */
-export async function acquireOperatorKey(stack: StackRef): Promise<OwnerKey> {
-  const names = principalNames(stack.appConfig.slug, stack.environment);
+export async function acquireOperatorKey(stack: StackRef): Promise<OperatorKey> {
+  const names = appPrincipalNames(stack.appConfig.appSlug);
   const unlocked = await unlock(stack);
   if (!unlocked) return endAction(1);
   if (!operatorNoticeShown) {
     operatorNoticeShown = true;
     console.info(`${pc.dim('Operator key:')} ${names.operator} ${pc.dim(unlocked.accessKey)}`);
   }
-  return {
-    accessKey: unlocked.accessKey,
-    secretKey: unlocked.secret,
-    organizationId: unlocked.organizationId,
-    minted: false,
-    pasted: false,
-    release: async () => {},
-  };
+  return { accessKey: unlocked.accessKey, secretKey: unlocked.secret, organizationId: unlocked.organizationId };
 }
 
 /**
  * The key a privileged action runs on: the operator key, which works from the dedicated address only. An Owner key never runs one, as the
  * buckets admit no person; an app without an operator gets one from `operator-key` or its setup, with an Owner API key.
  */
-export async function acquirePrivilegedKey(stack: StackRef): Promise<OwnerKey> {
+export async function acquirePrivilegedKey(stack: StackRef): Promise<OperatorKey> {
   const lock = await operatorLock(stack);
   if (lock.state === 'absent') {
-    const names = principalNames(stack.appConfig.slug, stack.environment);
+    const names = appPrincipalNames(stack.appConfig.appSlug);
     console.error(
       `${crossMark} The app has no operator ('${names.operator}') yet: \`${actionCommand('operator-key')}\` makes it, with your Owner API key.`,
     );
@@ -230,7 +228,7 @@ export async function acquirePrivilegedKey(stack: StackRef): Promise<OwnerKey> {
  */
 export async function operatorKeys(stack: StackRef): Promise<{ key: KeyPair; state: KeyPair }> {
   const { accessKey, secretKey } = await acquirePrivilegedKey(stack);
-  return { key: { accessKey, secretKey }, state: { accessKey: projectAccessKey(accessKey, stack.projectId), secretKey } };
+  return { key: { accessKey, secretKey }, state: stateKeyOf({ accessKey, secretKey }, stack.projectId) };
 }
 
 /**
@@ -238,7 +236,7 @@ export async function operatorKeys(stack: StackRef): Promise<{ key: KeyPair; sta
  * key, made in the console for the occasion and typed at the prompt.
  */
 export async function acquireIdentityKey(stack: StackRef, why: string): Promise<OwnerKey> {
-  const names = principalNames(stack.appConfig.slug, stack.environment);
+  const names = allPrincipalNames(stack.appConfig, stack.environment);
   console.info(pc.dim(`${why} That writes IAM, which the operator key cannot: it takes your Owner API key.`));
   return acquireOwnerKey({ names, projectId: stack.projectId, slug: stack.appConfig.slug, mode: stack.environment });
 }

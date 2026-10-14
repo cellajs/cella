@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ruleConditions } from '../lib/scaleway/secret-paths';
 import type { FetchLike } from '../lib/utils/fetch-like';
-import { assertVmGrants } from './assert-vm-grants';
+import { assertGrants } from './assert-grants';
 
 /**
  * Build a fetch mock that matches GET requests by url-substring and returns the
@@ -30,7 +30,7 @@ const baseOpts = {
   log: () => {},
 };
 
-describe('assertVmGrants', () => {
+describe('assertGrants', () => {
   it('passes when the union of policy rules covers all required permission sets', async () => {
     const fetchImpl = makeFetch([
       NO_GROUPS,
@@ -41,7 +41,7 @@ describe('assertVmGrants', () => {
       { match: '/iam/v1alpha1/rules?policy_id=pol-1', body: { rules: [{ permission_set_names: [...REQUIRED] }] } },
     ]);
 
-    const result = await assertVmGrants({ ...baseOpts, fetchImpl });
+    const result = await assertGrants({ ...baseOpts, fetchImpl });
 
     expect(result.ok).toBe(true);
     expect(result.missing).toEqual([]);
@@ -62,7 +62,7 @@ describe('assertVmGrants', () => {
       },
     ]);
 
-    const result = await assertVmGrants({ ...baseOpts, fetchImpl });
+    const result = await assertGrants({ ...baseOpts, fetchImpl });
 
     expect(result.ok).toBe(false);
     expect(result.missing).toEqual([]);
@@ -86,7 +86,7 @@ describe('assertVmGrants', () => {
       },
     ]);
 
-    const result = await assertVmGrants({ ...baseOpts, fetchImpl });
+    const result = await assertGrants({ ...baseOpts, fetchImpl });
 
     expect(result.ok).toBe(true);
     expect(result.extra).toEqual(['ObjectStorageReadOnly']);
@@ -96,7 +96,7 @@ describe('assertVmGrants', () => {
     // IAM conditions only narrow an allow: a second secret rule without the condition reads every secret of the project, so the exact string must match on every secret-granting rule.
     const condition = 'resource.name.startsWith("/cella-production/backend/")';
     const grants = (rules: Array<Record<string, unknown>>) =>
-      assertVmGrants({
+      assertGrants({
         ...baseOpts,
         requiredSecretCondition: condition,
         fetchImpl: makeFetch([
@@ -142,7 +142,7 @@ describe('assertVmGrants', () => {
     expect(parts.length).toBeGreaterThan(1);
     const sets = [...REQUIRED];
     const grants = (conditions: string[]) =>
-      assertVmGrants({
+      assertGrants({
         ...baseOpts,
         requiredSecretCondition: condition,
         fetchImpl: makeFetch([
@@ -195,7 +195,7 @@ describe('assertVmGrants', () => {
       },
     ]);
 
-    const result = await assertVmGrants({ ...baseOpts, fetchImpl });
+    const result = await assertGrants({ ...baseOpts, fetchImpl });
 
     expect(result.ok).toBe(true);
     expect(result.extra).toEqual([]);
@@ -212,7 +212,7 @@ describe('assertVmGrants', () => {
       { match: '/iam/v1alpha1/rules?policy_id=pol-g', body: { rules: [{ permission_set_names: [...REQUIRED] }] } },
     ]);
 
-    const result = await assertVmGrants({ ...baseOpts, fetchImpl });
+    const result = await assertGrants({ ...baseOpts, fetchImpl });
 
     expect(result.ok).toBe(true);
     expect(result.granted).toEqual([...REQUIRED].sort());
@@ -242,7 +242,7 @@ describe('assertVmGrants', () => {
       },
     ]);
 
-    const result = await assertVmGrants({ ...baseOpts, fetchImpl });
+    const result = await assertGrants({ ...baseOpts, fetchImpl });
 
     expect(result.ok).toBe(true);
     expect(result.missing).toEqual([]);
@@ -261,7 +261,7 @@ describe('assertVmGrants', () => {
       },
     ]);
 
-    const result = await assertVmGrants({ ...baseOpts, fetchImpl });
+    const result = await assertGrants({ ...baseOpts, fetchImpl });
 
     expect(result.ok).toBe(false);
     expect(result.missing).toEqual(['SecretManagerSecretAccess']);
@@ -270,7 +270,7 @@ describe('assertVmGrants', () => {
   it('fails closed when the application has no policies bound to it', async () => {
     const fetchImpl = makeFetch([NO_GROUPS, { match: '/iam/v1alpha1/policies?', body: { policies: [] } }]);
 
-    const result = await assertVmGrants({ ...baseOpts, fetchImpl });
+    const result = await assertGrants({ ...baseOpts, fetchImpl });
 
     expect(result.ok).toBe(false);
     expect(result.missing).toEqual([...REQUIRED]);
@@ -289,7 +289,7 @@ describe('assertVmGrants', () => {
       return fetchImpl(url, init);
     };
 
-    const result = await assertVmGrants({ ...baseOpts, organizationId: undefined, fetchImpl: tracking });
+    const result = await assertGrants({ ...baseOpts, organizationId: undefined, fetchImpl: tracking });
 
     expect(result.ok).toBe(true);
     expect(calls.some((u) => u.includes('organization_id=org-resolved'))).toBe(true);
@@ -307,7 +307,7 @@ describe('assertVmGrants', () => {
       return fetchImpl(url, init);
     };
 
-    const result = await assertVmGrants({ ...baseOpts, fetchImpl: tracking });
+    const result = await assertGrants({ ...baseOpts, fetchImpl: tracking });
 
     expect(result.ok).toBe(true);
     expect(calls.some((u) => u.includes('/api-keys'))).toBe(false);
@@ -316,11 +316,11 @@ describe('assertVmGrants', () => {
   it('throws a useful error on a Scaleway error response', async () => {
     const fetchImpl = makeFetch([NO_GROUPS, { match: '/iam/v1alpha1/policies?', body: { message: 'forbidden' }, status: 403 }]);
 
-    await expect(assertVmGrants({ ...baseOpts, fetchImpl })).rejects.toThrow(/403.*forbidden/);
+    await expect(assertGrants({ ...baseOpts, fetchImpl })).rejects.toThrow(/403.*forbidden/);
   });
 });
 
-describe('assertVmGrants project scope', () => {
+describe('assertGrants project scope', () => {
   const policies = {
     match: '/iam/v1alpha1/policies?',
     body: { policies: [{ id: 'pol-1', name: 'vm-policy', application_id: 'vm-app' }], total_count: 1 },
@@ -335,7 +335,7 @@ describe('assertVmGrants project scope', () => {
         body: { rules: [{ permission_set_names: [...REQUIRED], organization_id: 'org-1' }] },
       },
     ]);
-    const result = await assertVmGrants({ ...baseOpts, requiredProjectId: 'proj-1', fetchImpl });
+    const result = await assertGrants({ ...baseOpts, requiredProjectId: 'proj-1', fetchImpl });
     expect(result.ok).toBe(false);
     expect(result.misscopedRules).toEqual([
       'vm-policy [ContainerRegistryReadOnly, SecretManagerReadOnly, SecretManagerSecretAccess] scope=organization org-1',
@@ -351,7 +351,7 @@ describe('assertVmGrants project scope', () => {
         body: { rules: [{ permission_set_names: [...REQUIRED], project_ids: ['proj-1'] }] },
       },
     ]);
-    expect((await assertVmGrants({ ...baseOpts, requiredProjectId: 'proj-1', fetchImpl: scoped })).ok).toBe(true);
+    expect((await assertGrants({ ...baseOpts, requiredProjectId: 'proj-1', fetchImpl: scoped })).ok).toBe(true);
     const orgWide = makeFetch([
       NO_GROUPS,
       policies,
@@ -360,7 +360,7 @@ describe('assertVmGrants project scope', () => {
         body: { rules: [{ permission_set_names: [...REQUIRED], organization_id: 'org-1' }] },
       },
     ]);
-    const result = await assertVmGrants({ ...baseOpts, fetchImpl: orgWide });
+    const result = await assertGrants({ ...baseOpts, fetchImpl: orgWide });
     expect(result.ok).toBe(true);
     expect(result.misscopedRules).toEqual([]);
   });

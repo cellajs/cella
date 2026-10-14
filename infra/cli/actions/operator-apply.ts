@@ -5,7 +5,7 @@ import { confirm } from '@inquirer/prompts';
 import { actionCommand, menuPath } from '../../lib/operator-actions';
 import { describeKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
-import { projectAccessKey } from '../../lib/scaleway/s3-client';
+import { stateKeyOf } from '../../lib/scaleway/s3-client';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { planBasisChanges, readPlanBasis } from '../../lib/stack/plan-basis';
@@ -18,13 +18,13 @@ import { admitOperatorToBuckets } from '../../tasks/admit-operator-buckets';
 import { copySharedSecrets } from '../../tasks/copy-shared-secrets';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
-import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
+import { verifyAfterApply } from '../../tasks/verify-after-apply';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { exitOnIdentityChanges } from './identity';
 import { acquirePrivilegedKey } from './operator-unlock';
 import { askToApply, type ReviewedPlan, showPlan } from './plan';
 
-export interface PrivilegedConvergeOptions {
+export interface OperatorApplyOptions {
   /** Operation name recorded in the stack lock (e.g. 'apply', 'expose-db'). */
   operation: string;
   /**
@@ -50,11 +50,10 @@ export interface PrivilegedConvergeOptions {
   afterUp?: (env: NodeJS.ProcessEnv) => Promise<void>;
 }
 
-export interface PrivilegedConvergeResult {
+export interface OperatorApplyResult {
   env: NodeJS.ProcessEnv;
   stack: string;
   /** True when the Owner API key was typed at the prompt, so a revoke reminder is due once the run's output is complete. */
-  ownerKeyPasted: boolean;
   /** False when the operator declined the retry loop before `up` converged. */
   completed: boolean;
   /** Set only with `verifyAfter`: false when the live grants or privileges still differ from the program after a completed `up`. */
@@ -62,12 +61,12 @@ export interface PrivilegedConvergeResult {
 }
 
 /**
- * The privileged converge shared by "Review & apply changes", the DB access actions, and seeding, in order: resolve the passphrase, take the
- * privileged key and the stack lock, reconcile rollout config from live state so a local `up` cannot revert compute to a stale generation,
+ * The operator apply shared by "Review & apply changes", the DB access actions, and seeding, in order: resolve the passphrase, take the
+ * operator key and the stack lock, reconcile rollout config from live state so a local `up` cannot revert compute to a stale generation,
  * apply the caller's config mutation, hold the plan against what the operator confirmed, then `pulumi up` with an orphan-prune/retry loop.
  * Returns the provider env and stack for reading outputs after the lock releases, and exits the process on hard failures before the `up` loop.
  */
-export async function runPrivilegedConverge(context: InfraContext, opts: PrivilegedConvergeOptions): Promise<PrivilegedConvergeResult> {
+export async function runOperatorApply(context: InfraContext, opts: OperatorApplyOptions): Promise<OperatorApplyResult> {
   if (context.state !== 'bootstrapped') {
     console.error(`${warningMark} This action requires a fully bootstrapped stack (state=${context.state}). Run "${menuPath('resume')}" first.`);
     endAction(1);
@@ -76,18 +75,18 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
   const passphrase = opts.reviewed?.passphrase ?? (await resolveVerifiedPassphrase(context.stackYaml));
   const { projectId, appConfig } = context;
 
-  const ownerKey = await acquirePrivilegedKey(context);
-  const { organizationId } = ownerKey;
+  const operator = await acquirePrivilegedKey(context);
+  const { organizationId } = operator;
   const stack = stackNameFor(context);
 
-  await admitOperatorOrExit(context, { ...ownerKey, passphrase, stack });
-  const env = buildProviderEnv(infraDir, { accessKey: ownerKey.accessKey, secretKey: ownerKey.secretKey, projectId, passphrase });
+  await admitOperatorOrExit(context, { ...operator, passphrase, stack });
+  const env = buildProviderEnv(infraDir, { accessKey: operator.accessKey, secretKey: operator.secretKey, projectId, passphrase });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
   // Lock the stack through the control bucket to exclude concurrent operators and CI.
   // Every exit path must release. The hard-failure paths release before they print and end the action, and the guard stops the double release when the finally below runs too.
   // The state side names this project: the operator key is made in one environment's project and serves them all.
-  const stateKey = { accessKey: projectAccessKey(ownerKey.accessKey, projectId), secretKey: ownerKey.secretKey };
+  const stateKey = stateKeyOf(operator, projectId);
   const stackLock = await acquireStackLockOrExit({
     appConfig,
     accessKey: stateKey.accessKey,
@@ -101,11 +100,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
     lockReleased = true;
     await stackLock.release();
   };
-  // The minted key outlives the lock: the verification below reads IAM and the database with it, so it is revoked last (safe to call twice).
-  const releaseAll = async () => {
-    await releaseLock();
-    await ownerKey.release();
-  };
+  const releaseAll = releaseLock;
 
   /** Why a plan confirmed before the lock may no longer hold; empty when the state it was computed from stands. A state that cannot be compared counts as changed. */
   const changesSinceReview = async (reviewed: ReviewedPlan): Promise<string[]> => {
@@ -125,7 +120,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
       env.SCW_DEFAULT_ORGANIZATION_ID = organizationId;
 
       // Identities are IAM, which the operator key writes none of: one that differs from the declared ones stops the run before its `up`.
-      await exitOnIdentityChanges(context, { secretKey: ownerKey.secretKey, organizationId }, releaseAll);
+      await exitOnIdentityChanges(context, { secretKey: operator.secretKey, organizationId }, releaseAll);
 
       // Resources the program no longer declares and that stay live (machine policies, generated secret values): a state that still holds them would have this `up` delete them.
       console.info(pc.dim('\n→ Taking retired resources out of the state (forget-retired-resources)…'));
@@ -171,7 +166,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
           }
           if (!(await askToApply(context.environment))) {
             console.info('Declined; nothing applied.');
-            return { env, stack, completed: false, ownerKeyPasted: ownerKey.pasted };
+            return { env, stack, completed: false };
           }
         }
       }
@@ -217,7 +212,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
 
     // The `up` made each consumer's copy of a secret; operator values still in a shared folder move into them (ledger L3).
     if (completed) {
-      const client = createSecretManagerClient({ secretKey: ownerKey.secretKey, region: appConfig.s3.region, projectId });
+      const client = createSecretManagerClient({ secretKey: operator.secretKey, region: appConfig.s3.region, projectId });
       await copySharedSecrets({ client, slug: appConfig.slug, mode: context.environment, log: (message) => console.info(pc.dim(message)) }).catch(
         (error) =>
           console.warn(
@@ -233,7 +228,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
         mode: context.environment,
         region: appConfig.s3.region,
         projectId,
-        secretKey: ownerKey.secretKey,
+        secretKey: operator.secretKey,
         log: (message) => console.info(pc.dim(message)),
       }).catch((error) => console.warn(`${warningMark} Could not make the database roles and connection strings (${errorMessage(error)}).`));
       await ensureSecrets({ client, slug: appConfig.slug, mode: context.environment, log: (message) => console.info(pc.dim(message)) }).catch(
@@ -247,11 +242,11 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
 
     if (completed && opts.verifyAfter) {
       console.info(pc.dim('\n→ Verifying live IAM grants and database privileges against the program…'));
-      const result = await verifyPrivilegedUp({
+      const result = await verifyAfterApply({
         appConfig,
         projectId,
         organizationId,
-        secretKey: ownerKey.secretKey,
+        secretKey: operator.secretKey,
         log: (msg) => console.info(pc.dim(msg)),
       });
       verified = result.ok;
@@ -260,7 +255,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
           `\n${warningMark} could not verify the live infrastructure after the up:\n${result.errors.map((error) => `  ✗ ${error}`).join('\n')}`,
         );
         console.error(
-          pc.dim(`  Nothing is known to be wrong: run \`${actionCommand('preview')}\`, or let the next deploy's Verify VM IAM grants step tell.`),
+          pc.dim(`  Nothing is known to be wrong: run \`${actionCommand('preview')}\`, or let the next deploy's Verify identity grants step tell.`),
         );
       }
       if (result.problems.length > 0) {
@@ -280,10 +275,9 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
       await opts.afterUp(env).catch((error) => console.warn(`${warningMark} ${errorMessage(error)}`));
     }
   } finally {
-    await ownerKey.release();
   }
 
-  return { env, stack, completed, verified, ownerKeyPasted: ownerKey.pasted };
+  return { env, stack, completed, verified };
 }
 
 /**

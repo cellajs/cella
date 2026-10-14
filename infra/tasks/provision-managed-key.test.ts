@@ -32,6 +32,7 @@ const pairKey = {
 
 const baseOptions = {
   callerSecretKey: 'caller-secret',
+  organizationId: 'org-1',
   projectId: 'proj-1',
   region: 'nl-ams',
   slug: 'demo',
@@ -54,7 +55,7 @@ describe('provisionManagedKey', () => {
     // Scoped to Object Storage, in the caller's project, minting a key.
     expect(provisionScopedKey).toHaveBeenCalledTimes(1);
     const config = provisionScopedKey.mock.calls[0]![1];
-    expect(config).toMatchObject({ suffix: 'pair', mintKey: true });
+    expect(config).toMatchObject({ suffix: 'pair' });
     expect(config.buildRules({ projectId: 'proj-1', organizationId: 'org-1' })).toEqual([
       { permission_set_names: ['ObjectStorageFullAccess'], project_ids: ['proj-1'] },
     ]);

@@ -2,10 +2,9 @@ import { actionLabel } from '../../lib/operator-actions';
 import { pc } from '../../lib/utils/cli-output';
 import { endAction, type InfraContext, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { exitOnIdentityChanges } from './identity';
+import { admitOperatorOrExit, runOperatorApply } from './operator-apply';
 import { acquirePrivilegedKey } from './operator-unlock';
-import { printRevokeReminder } from './owner-key';
 import { askToApply, reviewPlan } from './plan';
-import { admitOperatorOrExit, runPrivilegedConverge } from './privileged-converge';
 
 /**
  * Plan, ask, then one `pulumi up` with the operator key in SCW_* env, for changes to privileged resources (DB, VPC, private network, buckets, DNS) the read-only CI key cannot make.
@@ -37,13 +36,12 @@ export async function runApply(context: InfraContext): Promise<void> {
   // Established stacks apply compute directly and recover from interruption by rerunning `up`; fresh-provision deferral here would tear down the live VMs and load balancer.
   // `pnpm infra --debug-provider` (or INFRA_DEBUG_PROVIDER=1) keeps the engine and provider log of the up under infra/.debug/ for a post-mortem.
   const debugProvider = process.argv.includes('--debug-provider') || process.env.INFRA_DEBUG_PROVIDER === '1';
-  const { completed, verified, ownerKeyPasted } = await runPrivilegedConverge(context, {
+  const { completed, verified } = await runOperatorApply(context, {
     operation: 'apply',
     confirmPlan: true,
     reviewed,
     verifyAfter: true,
     debugProvider,
   });
-  if (completed && ownerKeyPasted) printRevokeReminder();
   if (completed && verified === false) endAction(1);
 }

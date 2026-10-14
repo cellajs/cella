@@ -2,7 +2,7 @@ import { hostname } from 'node:os';
 import { createApiKey, type IamAuth, resolveApplicationIdByName } from '../../lib/scaleway/iam-client';
 import type { KeyPair } from '../../lib/scaleway/operator-identity';
 import { readPolicy } from '../../lib/scaleway/policy-reach';
-import { appSlug, principalNames } from '../../lib/scaleway/principals';
+import { appPrincipalNames } from '../../lib/scaleway/principals';
 import { environments } from '../../lib/stack/project-per-mode';
 import { changeMark, checkMark } from '../../lib/utils/cli-output';
 import { OBSERVER_KEY_NAMES, observerKeyInModeFile, writeObserverKey } from '../../lib/utils/env-files';
@@ -26,7 +26,7 @@ export async function observerStep(
   context: Pick<InfraContext, 'appConfig' | 'environment'>,
   projectId: string,
 ): Promise<ObserverStep> {
-  const reach = await observerReach(auth, organizationId, appSlug(context.appConfig.slug, context.environment));
+  const reach = await observerReach(auth, organizationId, context.appConfig.appSlug);
   if (!reach) return 'create';
   if (!reach.projectIds.includes(projectId)) return 'reach';
   return observerKeyHere(context.environment) ? 'none' : 'key';
@@ -52,8 +52,8 @@ export async function ensureObserverForEnvironment(
   opts: { rotate?: boolean } = {},
 ): Promise<void> {
   const mode = context.environment;
-  const slug = appSlug(context.appConfig.slug, mode);
-  const names = principalNames(context.appConfig.slug, mode);
+  const slug = context.appConfig.appSlug;
+  const names = appPrincipalNames(slug);
   const auth = { secretKey: ownerKey.secretKey };
   const { organizationId } = ownerKey;
   const reach = await observerReach(auth, organizationId, slug);
