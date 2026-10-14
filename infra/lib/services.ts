@@ -32,8 +32,8 @@ export interface PlacedServices {
 }
 
 /**
- * Apply singleVM placement to any service list: the enabled set for compute, LB and key minting; the full registry for privileged IAM.
- * Privileged IAM (principals, policies, conditions) follows the registry, so an `enabled` toggle changes compute only and needs no privileged up.
+ * Apply singleVM placement to any service list: the enabled set for compute, LB and key handing-over; the full registry for the identities.
+ * The identities (applications, policies, conditions) follow the registry, so an `enabled` toggle changes compute only and needs no identity update.
  */
 export function placeServices(definitions: readonly ServiceDefinition[], singleVM: boolean): PlacedServices {
   if (!singleVM) return { vm: definitions, coHosted: [], collocated: [] };

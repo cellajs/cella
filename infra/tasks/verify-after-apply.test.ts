@@ -3,7 +3,7 @@ import type { EngineConfig } from '../config/engine-config';
 import { CRON_HOME_DATABASE, expectedDbPrivileges, POSTGRES_ROLE_NAMES } from '../lib/scaleway/db-privileges';
 import type { FetchLike } from '../lib/utils/fetch-like';
 import type { assertGrants } from './assert-grants';
-import { verifyPrivilegedUp } from './verify-privileged-up';
+import { verifyAfterApply } from './verify-after-apply';
 
 function makeFetch(routes: Array<{ match: string; body: unknown }>): FetchLike {
   return async (url) => {
@@ -45,7 +45,7 @@ describe('expectedDbPrivileges', () => {
   });
 });
 
-describe('verifyPrivilegedUp', () => {
+describe('verifyAfterApply', () => {
   const instance = {
     match: '/rdb/v1/regions/nl-ams/instances?',
     body: { instances: [{ id: 'i-1', name: 'cella-postgres', status: 'ready' }], total_count: 1 },
@@ -69,7 +69,7 @@ describe('verifyPrivilegedUp', () => {
         body: { privileges: privileges([['rdb', 'admin_role', 'all']]), total_count: 1 },
       },
     ]);
-    const result = await verifyPrivilegedUp({
+    const result = await verifyAfterApply({
       appConfig,
       projectId: 'p',
       organizationId: 'o',
@@ -100,7 +100,7 @@ describe('verifyPrivilegedUp', () => {
       ...(await okGrants(opts)),
       ok: opts.applicationName !== 'cella-production-vm-backend',
     });
-    const result = await verifyPrivilegedUp({
+    const result = await verifyAfterApply({
       appConfig,
       projectId: 'p',
       organizationId: 'o',
@@ -121,7 +121,7 @@ describe('verifyPrivilegedUp', () => {
     const throwingGrants: typeof assertGrants = async () => {
       throw new Error('Scaleway GET applications → 401: authentication is denied');
     };
-    const result = await verifyPrivilegedUp({
+    const result = await verifyAfterApply({
       appConfig,
       projectId: 'proj-1',
       organizationId: 'org-1',
@@ -156,7 +156,7 @@ describe('verifyPrivilegedUp', () => {
         },
       },
     ]);
-    await verifyPrivilegedUp({
+    await verifyAfterApply({
       appConfig,
       projectId: 'p',
       organizationId: 'o',

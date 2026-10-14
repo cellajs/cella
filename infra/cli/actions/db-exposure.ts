@@ -23,7 +23,7 @@ import { hardenPublicDsn } from '../../lib/utils/public-dsn';
 import { within } from '../../lib/utils/retry';
 import { rolePasswordSecretName } from '../../tasks/ensure-database';
 import { endAction, endsAction, type InfraContext } from '../shared';
-import { type PrivilegedConvergeOptions, runPrivilegedConverge } from './privileged-converge';
+import { type OperatorApplyOptions, runOperatorApply } from './operator-apply';
 
 // Pulumi config keys consumed by resources/stores/postgres-managed.ts and the outputs it exports.
 const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint';
@@ -143,7 +143,7 @@ function refreshDbInstance(env: NodeJS.ProcessEnv, stack: string): void {
 }
 
 /** The converge `prepare` of every expose: refresh the instance so the `up` creates the endpoint whatever the state held, then write the overlay. */
-export function prepareExpose(context: InfraContext, acl: string): NonNullable<PrivilegedConvergeOptions['prepare']> {
+export function prepareExpose(context: InfraContext, acl: string): NonNullable<OperatorApplyOptions['prepare']> {
   return (env, stack) => {
     refreshDbInstance(env, stack);
     const overlay = writeExposureOverlay(context.stackPath, context.environment);
@@ -158,7 +158,7 @@ export function prepareExpose(context: InfraContext, acl: string): NonNullable<P
  * The converge `prepare` of every close. Converging config without the exposure keys never removes the endpoint, so this deletes every public
  * endpoint over the RDB API, waits until a re-read of the instance shows none, and refreshes the instance so the state records none either.
  */
-export function prepareClose(context: InfraContext): NonNullable<PrivilegedConvergeOptions['prepare']> {
+export function prepareClose(context: InfraContext): NonNullable<OperatorApplyOptions['prepare']> {
   return async (env, stack) => {
     // Compat: stacks predating the overlay hold the exposure keys in the committed config.
     if (context.stackYaml?.includes(DB_ENDPOINT_KEY)) pulumiConfigRm(env, stack, DB_ENDPOINT_KEY);
@@ -181,11 +181,11 @@ export function prepareClose(context: InfraContext): NonNullable<PrivilegedConve
 async function convergeOrExit(
   context: InfraContext,
   operation: string,
-  hooks: Pick<PrivilegedConvergeOptions, 'prepare' | 'afterUp'>,
+  hooks: Pick<OperatorApplyOptions, 'prepare' | 'afterUp'>,
 ): Promise<{ env: NodeJS.ProcessEnv; stack: string }> {
-  let result: Awaited<ReturnType<typeof runPrivilegedConverge>>;
+  let result: Awaited<ReturnType<typeof runOperatorApply>>;
   try {
-    result = await runPrivilegedConverge(context, { operation, ...hooks });
+    result = await runOperatorApply(context, { operation, ...hooks });
   } catch (error) {
     if (endsAction(error)) throw error;
     console.error(`${crossMark} ${operation} stopped: ${errorMessage(error)}`);

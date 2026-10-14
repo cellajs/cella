@@ -16,8 +16,8 @@ import {
   resolveVerifiedPassphrase,
   stackNameFor,
 } from '../shared';
+import { admitOperatorOrExit } from './operator-apply';
 import { acquirePrivilegedKey } from './operator-unlock';
-import { admitOperatorOrExit } from './privileged-converge';
 
 /**
  * Rotate the secrets the engine checks, on the operator key: a fresh password for every database role (set on the live role through the

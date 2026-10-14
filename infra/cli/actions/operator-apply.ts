@@ -18,13 +18,13 @@ import { admitOperatorToBuckets } from '../../tasks/admit-operator-buckets';
 import { copySharedSecrets } from '../../tasks/copy-shared-secrets';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
-import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
+import { verifyAfterApply } from '../../tasks/verify-after-apply';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { exitOnIdentityChanges } from './identity';
 import { acquirePrivilegedKey } from './operator-unlock';
 import { askToApply, type ReviewedPlan, showPlan } from './plan';
 
-export interface PrivilegedConvergeOptions {
+export interface OperatorApplyOptions {
   /** Operation name recorded in the stack lock (e.g. 'apply', 'expose-db'). */
   operation: string;
   /**
@@ -50,7 +50,7 @@ export interface PrivilegedConvergeOptions {
   afterUp?: (env: NodeJS.ProcessEnv) => Promise<void>;
 }
 
-export interface PrivilegedConvergeResult {
+export interface OperatorApplyResult {
   env: NodeJS.ProcessEnv;
   stack: string;
   /** True when the Owner API key was typed at the prompt, so a revoke reminder is due once the run's output is complete. */
@@ -61,12 +61,12 @@ export interface PrivilegedConvergeResult {
 }
 
 /**
- * The privileged converge shared by "Review & apply changes", the DB access actions, and seeding, in order: resolve the passphrase, take the
- * privileged key and the stack lock, reconcile rollout config from live state so a local `up` cannot revert compute to a stale generation,
+ * The operator apply shared by "Review & apply changes", the DB access actions, and seeding, in order: resolve the passphrase, take the
+ * operator key and the stack lock, reconcile rollout config from live state so a local `up` cannot revert compute to a stale generation,
  * apply the caller's config mutation, hold the plan against what the operator confirmed, then `pulumi up` with an orphan-prune/retry loop.
  * Returns the provider env and stack for reading outputs after the lock releases, and exits the process on hard failures before the `up` loop.
  */
-export async function runPrivilegedConverge(context: InfraContext, opts: PrivilegedConvergeOptions): Promise<PrivilegedConvergeResult> {
+export async function runOperatorApply(context: InfraContext, opts: OperatorApplyOptions): Promise<OperatorApplyResult> {
   if (context.state !== 'bootstrapped') {
     console.error(`${warningMark} This action requires a fully bootstrapped stack (state=${context.state}). Run "${menuPath('resume')}" first.`);
     endAction(1);
@@ -242,7 +242,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
 
     if (completed && opts.verifyAfter) {
       console.info(pc.dim('\n→ Verifying live IAM grants and database privileges against the program…'));
-      const result = await verifyPrivilegedUp({
+      const result = await verifyAfterApply({
         appConfig,
         projectId,
         organizationId,

@@ -6,7 +6,7 @@ import { createRdbClient } from '../lib/scaleway/scaleway-rdb';
 import type { FetchLike } from '../lib/utils/fetch-like';
 import { assertGrants } from './assert-grants';
 
-export interface VerifyPrivilegedUpOptions {
+export interface VerifyAfterApplyOptions {
   appConfig: EngineConfig;
   projectId: string;
   organizationId: string;
@@ -18,7 +18,7 @@ export interface VerifyPrivilegedUpOptions {
   assertGrants?: typeof assertGrants;
 }
 
-export interface VerifyPrivilegedUpResult {
+export interface VerifyAfterApplyResult {
   ok: boolean;
   /** Verified differences between live and declared, one per failed check. */
   problems: string[];
@@ -31,7 +31,7 @@ export interface VerifyPrivilegedUpResult {
  * exact secret condition and project scope, and the database privileges the program declares exist live. Pulumi reporting an update is not proof:
  * one provider update was recorded in state while Scaleway kept the old rule, and the next deploy failed on it.
  */
-export async function verifyPrivilegedUp(opts: VerifyPrivilegedUpOptions): Promise<VerifyPrivilegedUpResult> {
+export async function verifyAfterApply(opts: VerifyAfterApplyOptions): Promise<VerifyAfterApplyResult> {
   const log = opts.log ?? ((msg) => console.info(msg));
   const assertOne = opts.assertGrants ?? assertGrants;
   const problems: string[] = [];

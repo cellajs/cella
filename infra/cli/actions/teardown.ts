@@ -11,9 +11,9 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { builderPrefix, removeBuilderMachines } from '../../tasks/build-release';
 import { acquireStackLockOrExit, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
+import { admitOperatorOrExit } from './operator-apply';
 import { acquireIdentityKey, acquirePrivilegedKey, type OperatorKey } from './operator-unlock';
 import { type OwnerKey, printRevokeReminder } from './owner-key';
-import { admitOperatorOrExit } from './privileged-converge';
 
 /** The applications a cleanup may delete, apart from the one the run itself authenticates as: deleting that one revokes the key every later call needs. */
 export function splitOwnApplication<App extends { id: string }>(

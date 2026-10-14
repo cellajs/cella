@@ -25,13 +25,13 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { ensureDatabaseForStack } from '../../tasks/ensure-database';
 import { ensureSecrets } from '../../tasks/ensure-secrets';
+import { ensureMachineIdentities } from '../../tasks/machine-identities';
 import { planMachineKeys, writeMachineKeys } from '../../tasks/machine-keys';
 import { writeMachinePolicies } from '../../tasks/machine-policies';
 import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { recordRotation } from '../../tasks/record-rotation';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
 import { setupCiKey } from '../../tasks/setup-ci-key';
-import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { maskedSecret } from '../prompts/masked-secret';
 import { rememberOperatorKey } from '../session';
 import type { CliMode, InfraContext } from '../shared';
@@ -50,10 +50,10 @@ import {
   stackNameFor,
 } from '../shared';
 import { ensureObserverForEnvironment } from './observer-key';
+import { admitOperatorOrExit } from './operator-apply';
 import { ensureOperatorForEnvironment } from './operator-key';
 import { acquireOperatorKey, type OperatorKey } from './operator-unlock';
 import { OWNER_KEY_HINT, type OwnerKey } from './owner-key';
-import { admitOperatorOrExit } from './privileged-converge';
 
 type SetupMode = Extract<CliMode, 'resume' | 'rotate-keys'>;
 
@@ -410,7 +410,7 @@ async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<O
   console.info('\n→ Machine identities (one application per registry service, and the boot fetcher, each with a standing key)');
   try {
     const registry = { slug: appConfig.slug, mode: environment };
-    await ensureRegistryPrincipals({ ...registry, callerSecretKey: pair.secretKey, projectId, organizationId });
+    await ensureMachineIdentities({ ...registry, callerSecretKey: pair.secretKey, projectId, organizationId });
     console.info('\n→ Machine policies');
     await writeMachinePolicies({ secretKey: pair.secretKey }, organizationId, machinePolicies(appConfig, projectId));
     // The standing keys go to the deploy folder, which a deploy hands over from; a rotation makes every one anew.

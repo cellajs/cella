@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveApplicationIdByName } from '../lib/scaleway/iam-client';
 import { provisionScopedKey } from '../lib/scaleway/scaleway-iam';
-import { ensureRegistryPrincipals, missingRegistryPrincipals } from './setup-service-apps';
+import { ensureMachineIdentities, missingMachineIdentities } from './machine-identities';
 
 vi.mock('../lib/scaleway/scaleway-iam', () => ({ provisionScopedKey: vi.fn() }));
 vi.mock('../lib/scaleway/iam-client', () => ({ resolveApplicationIdByName: vi.fn() }));
@@ -15,9 +15,9 @@ beforeEach(() => {
   );
 });
 
-describe('ensureRegistryPrincipals', () => {
+describe('ensureMachineIdentities', () => {
   it('one application per registry service plus boot and builder, whatever is enabled and wherever it runs', async () => {
-    const result = await ensureRegistryPrincipals(base);
+    const result = await ensureMachineIdentities(base);
     const suffixes = vi.mocked(provisionScopedKey).mock.calls.map(([, config]) => config.suffix);
     expect(suffixes).toEqual(['vm-backend', 'vm-cdc', 'vm-yjs', 'vm-mcp', 'vm-oauth', 'vm-jobs', 'vm-frontend', 'boot', 'builder']);
     expect(result.allAppIds).toEqual([
@@ -34,7 +34,7 @@ describe('ensureRegistryPrincipals', () => {
   });
 
   it('creates applications only: their policies and standing keys are written apart', async () => {
-    await ensureRegistryPrincipals(base);
+    await ensureMachineIdentities(base);
     for (const [, config] of vi.mocked(provisionScopedKey).mock.calls) {
       expect(config.managePolicy).toBe(false);
       expect(config.mintKey).toBe(false);
@@ -42,7 +42,7 @@ describe('ensureRegistryPrincipals', () => {
   });
 });
 
-describe('missingRegistryPrincipals', () => {
+describe('missingMachineIdentities', () => {
   const check = { secretKey: 'operator-secret', organizationId: 'org-1', slug: 'cella', mode: 'production' };
 
   it('names the applications the registry needs and Scaleway does not have, without creating one', async () => {
@@ -50,7 +50,7 @@ describe('missingRegistryPrincipals', () => {
       name.endsWith('-vm-jobs') || name.endsWith('-boot') ? null : 'id',
     );
 
-    expect(await missingRegistryPrincipals(check)).toEqual(['cella-production-vm-jobs', 'cella-production-boot']);
+    expect(await missingMachineIdentities(check)).toEqual(['cella-production-vm-jobs', 'cella-production-boot']);
     expect(provisionScopedKey).not.toHaveBeenCalled();
   });
 
@@ -58,7 +58,7 @@ describe('missingRegistryPrincipals', () => {
     vi.mocked(resolveApplicationIdByName).mockReset();
     vi.mocked(resolveApplicationIdByName).mockResolvedValue('id');
 
-    expect(await missingRegistryPrincipals(check)).toEqual([]);
+    expect(await missingMachineIdentities(check)).toEqual([]);
     expect(vi.mocked(resolveApplicationIdByName).mock.calls.map(([, , name]) => name)).toEqual([
       ...['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'jobs', 'frontend'].map((service) => `cella-production-vm-${service}`),
       'cella-production-boot',

@@ -37,7 +37,7 @@ export interface ReviewedPlan {
 }
 
 /**
- * Show the plan of what an apply would change, with the operator key, before anything is locked or written. The provider authenticates from SCW_* env, never from stack config, in the environment the privileged converge builds
+ * Show the plan of what an apply would change, with the operator key, before anything is locked or written. The provider authenticates from SCW_* env, never from stack config, in the environment the operator apply builds
  * (organization id, privileged marker). A deploy applies only the part of such a diff that is not privileged, and stops while a privileged
  * change is pending. Nothing is locked or written: the returned basis lets the apply tell whether the plan still holds once it is.
  */

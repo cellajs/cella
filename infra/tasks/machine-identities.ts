@@ -3,14 +3,14 @@ import { principalNames } from '../lib/scaleway/principals';
 import { type ProvisionScopedKeyOptions, provisionScopedKey } from '../lib/scaleway/scaleway-iam';
 import { principalServices } from '../lib/services';
 
-export interface SetupServiceAppsOptions extends ProvisionScopedKeyOptions {
-  /** Deploy mode; service apps are always per-mode. */
+export interface MachineIdentitiesOptions extends ProvisionScopedKeyOptions {
+  /** Deploy mode; machine identities are per mode. */
   mode: string;
-  /** Registry principal slugs (see `principalServices`). */
+  /** The registry services that have an identity (see `principalServices`). */
   services: readonly string[];
 }
 
-export interface ServiceAppsResult {
+export interface MachineIdentitiesResult {
   /** service slug → application id. */
   serviceAppIds: Record<string, string>;
   /** The boot fetcher application id. */
@@ -30,7 +30,7 @@ export interface ServiceAppsResult {
  * only handed over by a deploy. Runs with an IAMManager-capable key.
  * Idempotent: an existing application is reused by name.
  */
-export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<ServiceAppsResult> {
+export async function makeMachineIdentities(opts: MachineIdentitiesOptions): Promise<MachineIdentitiesResult> {
   const serviceAppIds: Record<string, string> = {};
   for (const service of opts.services) {
     const app = await provisionScopedKey(opts, {
@@ -64,16 +64,16 @@ export async function setupServiceApps(opts: SetupServiceAppsOptions): Promise<S
   };
 }
 
-/** Ensure every registry principal exists: one `vm-<service>` application per `principalServices` entry plus the boot application. Setup and "Review & apply changes" share it, so a registry change converges in one privileged run. */
-export async function ensureRegistryPrincipals(opts: Omit<SetupServiceAppsOptions, 'services'>): Promise<ServiceAppsResult> {
-  return setupServiceApps({ ...opts, services: principalServices().map((svc) => svc.slug) });
+/** Ensure every machine identity exists: one `vm-<service>` application per `principalServices` entry, the boot application and the builder. The setup and Update identities call it, at Owner moments. */
+export async function ensureMachineIdentities(opts: Omit<MachineIdentitiesOptions, 'services'>): Promise<MachineIdentitiesResult> {
+  return makeMachineIdentities({ ...opts, services: principalServices().map((svc) => svc.slug) });
 }
 
 /**
- * The registry principals that do not exist yet, by application name. Read-only: the operator key finds out with it what only an Owner API
+ * The machine identities that do not exist yet, by application name. Read-only: the operator key finds out with it what only an Owner API
  * key can create.
  */
-export async function missingRegistryPrincipals(opts: { secretKey: string; organizationId: string; slug: string; mode: string }): Promise<string[]> {
+export async function missingMachineIdentities(opts: { secretKey: string; organizationId: string; slug: string; mode: string }): Promise<string[]> {
   const names = principalNames(opts.slug, opts.mode);
   const wanted = [...principalServices().map((svc) => names.vmService(svc.slug)), names.boot, names.builder];
   const missing: string[] = [];

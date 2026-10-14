@@ -7,7 +7,7 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { endAction, endsAction, type InfraContext } from '../shared';
 import { detectPublicIp, prepareClose, prepareExpose, readDbCa, readPublicDsn, removeExposureOverlay } from './db-exposure';
-import { runPrivilegedConverge } from './privileged-converge';
+import { runOperatorApply } from './operator-apply';
 
 /**
  * Demo data on a non-production environment: expose the database to THIS machine's IP, run the backend seeds, and close the endpoint again, including on failure.
@@ -32,7 +32,7 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
   }
 
   // Exposure keys go into the gitignored overlay, never the committed stack config; see db-exposure.ts.
-  const { env, stack, completed } = await runPrivilegedConverge(context, {
+  const { env, stack, completed } = await runOperatorApply(context, {
     operation: 'seed-db',
     prepare: prepareExpose(context, `${detected}/32`),
   }).catch((error: unknown) => {
@@ -62,7 +62,7 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
     console.info(`\n${checkMark} ${pc.bold('Seeds completed.')}`);
   } finally {
     console.info(pc.dim('\n-> Closing the public endpoint...\n'));
-    const closed = await runPrivilegedConverge(context, { operation: 'unseed-db', prepare: prepareClose(context) }).then(
+    const closed = await runOperatorApply(context, { operation: 'unseed-db', prepare: prepareClose(context) }).then(
       (result) => {
         if (!result.completed) return false;
         removeExposureOverlay(context.environment);

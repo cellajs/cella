@@ -13,9 +13,9 @@ import { engineSecretPath } from '../../lib/scaleway/secret-paths';
 import { stateBucket } from '../../lib/stack/control-store';
 import { changeMark, checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { ADMIN_KEY_SECRET_NAME } from '../../tasks/admit-operator-buckets';
+import { ensureMachineIdentities, missingMachineIdentities } from '../../tasks/machine-identities';
 import { planMachineKeys, writeMachineKeys } from '../../tasks/machine-keys';
 import { type MachinePolicyStep, planMachinePolicies, writeMachinePolicies } from '../../tasks/machine-policies';
-import { ensureRegistryPrincipals, missingRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { confirmOrDefault, endAction, type InfraContext } from '../shared';
 import { ensureObserverForEnvironment, type ObserverStep, observerKeyHere, observerStep } from './observer-key';
 import { acquireIdentityKey } from './operator-unlock';
@@ -134,7 +134,7 @@ async function planMachineIdentities(
 ): Promise<MachineIdentityPlan> {
   const registry = { slug: context.appConfig.slug, mode: context.environment };
   return {
-    missingApplications: await missingRegistryPrincipals({ ...registry, secretKey: auth.secretKey, organizationId }),
+    missingApplications: await missingMachineIdentities({ ...registry, secretKey: auth.secretKey, organizationId }),
     policies: await planMachinePolicies(auth, organizationId, declaredPolicies(context, organizationId)),
     keys: await planMachineKeys({ auth, secrets: secretsFor(context, auth.secretKey), organizationId, ...registry }),
   };
@@ -235,7 +235,7 @@ export async function runIdentity(context: InfraContext): Promise<void> {
       if (!show(plan)) return;
       if (!(await confirmOrDefault({ message: 'Write them?', default: false }))) return;
     }
-    await ensureRegistryPrincipals({ ...registry, callerSecretKey: ownerKey.secretKey, projectId, organizationId: ownerKey.organizationId });
+    await ensureMachineIdentities({ ...registry, callerSecretKey: ownerKey.secretKey, projectId, organizationId: ownerKey.organizationId });
     await writeMachinePolicies(auth, ownerKey.organizationId, declaredPolicies(context, ownerKey.organizationId));
     await writeMachineKeys({
       auth,
