@@ -6,9 +6,10 @@ import { actionCommand, actionLabel, type MenuRowId, menuRow, OPERATOR_ACTIONS, 
 import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
 import { principalNames } from '../lib/scaleway/principals';
 import { detectComputeDeferred, type Environment, pickStackShort } from '../lib/stack/bootstrap-stack-state';
+import { environments } from '../lib/stack/project-per-mode';
 import { loadStackContext } from '../lib/stack/stack-context';
 import { crossMark, DIVIDER, failWithHint, pc, printHeader, warningMark, withSpinner } from '../lib/utils/cli-output';
-import { dropPromptOnlyEnv, loadBaseEnvFiles } from '../lib/utils/env-files';
+import { dropPromptOnlyEnv, loadBaseEnvFiles, writeModeEnvValues } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
 import { within } from '../lib/utils/retry';
@@ -69,7 +70,7 @@ async function resolveMode(flag: string | undefined): Promise<Environment> {
     if (raw !== 'production' && raw !== 'staging') throw new Error(`INFRA_MODE must be 'production' or 'staging' (got '${raw}')`);
     return raw;
   }
-  const anyStackExists = (['production', 'staging'] as const).some((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)));
+  const anyStackExists = environments.some((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)));
   if (!anyStackExists && !autoAcceptDefaults()) {
     return select<Environment>({
       message: 'Fresh install. Which mode do you want to set up?',
@@ -88,7 +89,7 @@ async function resolveMode(flag: string | undefined): Promise<Environment> {
       ],
     });
   }
-  const existing = (['production', 'staging'] as const).filter((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)));
+  const existing = environments.filter((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)));
   if (existing.length === 2) {
     if (autoAcceptDefaults()) {
       throw new Error('Both Pulumi.production.yaml and Pulumi.staging.yaml exist: pass --mode (or set INFRA_MODE).');
@@ -104,9 +105,14 @@ async function resolveMode(flag: string | undefined): Promise<Environment> {
  */
 async function loadContext(environment: Environment, log?: (message: string) => void): Promise<InfraContext> {
   const stack = await loadStackContext(environment, log);
-  // The project id scopes every Scaleway call. Only a fresh install may lack one: the setup wizard picks or creates the project and writes SCW_PROJECT_ID to backend/.env.
+  // The project id scopes every Scaleway call. Only a fresh install may lack one: the setup wizard picks or creates the project and writes SCW_PROJECT_ID to infra/.env.<mode>.
   if (!stack.projectId && stack.state !== 'fresh') {
-    throw new Error('SCW_PROJECT_ID is not set: add it to backend/.env before running the infra CLI.');
+    throw new Error(`SCW_PROJECT_ID is not set: add this environment's project id to infra/.env.${environment} before running the infra CLI.`);
+  }
+  // An existing stack that still reads its project from backend/.env takes the id into its own file, where every environment keeps it.
+  if (stack.projectIdSource === 'shared-file') {
+    writeModeEnvValues(environment, { SCW_PROJECT_ID: stack.projectId });
+    log?.(`SCW_PROJECT_ID copied to infra/.env.${environment}: every environment keeps its project id in its own file.`);
   }
   const context = { ...stack, hasCiKey: stack.state === 'bootstrapped' };
   // An existing stack keeps its passphrase in Secret Manager: reading it unlocks the session with the operator key, so nobody types it.

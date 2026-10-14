@@ -7,32 +7,11 @@ import {
   PutBucketVersioningCommand,
   type S3Client,
 } from '@aws-sdk/client-s3';
-import { getApiKey } from '../lib/scaleway/iam-client';
 import { resolveProjectId } from '../lib/scaleway/provider-env';
-import { makeS3Client } from '../lib/scaleway/s3-client';
-import type { ScwAuth } from '../lib/scaleway/scw-fetch';
+import { makeS3Client, projectAccessKey } from '../lib/scaleway/s3-client';
 import { runIfMain } from '../lib/utils/is-main';
 
 export type EnsureResult = 'exists' | 'created';
-
-/**
- * Report when an API key's preferred project would place the state bucket outside CI reach.
- * Scaleway Object Storage follows `default_project_id` regardless of cross-project IAM grants.
- */
-export function keyProjectMismatch(keyProjectId: string, expectedProjectId: string, accessKey: string): string | undefined {
-  if (keyProjectId === expectedProjectId) return undefined;
-  return (
-    `API key ${accessKey} has preferred project ${keyProjectId}, but this app deploys to project ${expectedProjectId}. ` +
-    `Scaleway Object Storage follows the key's preferred project, so the state bucket would land out of reach of the CI deploy key. ` +
-    `Fix: Scaleway console → IAM → API keys → ${accessKey} → change the preferred project, or ` +
-    `PATCH https://api.scaleway.com/iam/v1alpha1/api-keys/${accessKey} {"default_project_id":"${expectedProjectId}"}, then re-run.`
-  );
-}
-
-/** The key's own `default_project_id`, via IAM self-inspection. */
-export async function keyPreferredProject(auth: ScwAuth, accessKey: string): Promise<string> {
-  return (await getApiKey(auth, accessKey)).default_project_id ?? '';
-}
 
 /**
  * 'exists' when the bucket is already present, including an ambiguous HEAD 403 whose CreateBucket reports BucketAlreadyOwnedByYou; 'created' on a fresh creation.
@@ -175,17 +154,12 @@ export async function main(): Promise<void> {
   const bucketName = stateBucket(appConfig.slug);
   const region = appConfig.s3.region;
 
-  // Preflight: refuse to touch the state bucket with a key pointed at the wrong project (see keyProjectMismatch). Skipped when the environment carries no expected project id.
+  // The key names the app's project, so the bucket lands there whatever the key's preferred project is: with a project per environment, a
+  // key made for one environment sets up another. Without a project id the bucket follows the key's preferred project.
   const expectedProjectId = resolveProjectId();
-  if (expectedProjectId) {
-    const keyProject = await keyPreferredProject({ secretKey }, accessKey);
-    const mismatch = keyProjectMismatch(keyProject, expectedProjectId, accessKey);
-    if (mismatch) throw new Error(mismatch);
-  } else {
-    console.warn('⚠ SCW_PROJECT_ID / SCW_DEFAULT_PROJECT_ID not set: skipping the key-preferred-project preflight.');
-  }
+  if (!expectedProjectId) console.warn("⚠ SCW_PROJECT_ID / SCW_DEFAULT_PROJECT_ID not set: the state bucket follows the key's preferred project.");
 
-  const s3 = await makeS3Client(region, accessKey, secretKey);
+  const s3 = await makeS3Client(region, expectedProjectId ? projectAccessKey(accessKey, expectedProjectId) : accessKey, secretKey);
   const result = await ensureStateBucket(s3, bucketName);
   if (expectedProjectId) await assertBucketProject(s3, bucketName, expectedProjectId);
   await hardenStateBucket(s3, bucketName);

@@ -191,7 +191,7 @@ VM IAM principals and policies follow the **service registry** ([config/services
 
 3. GitHub CLI (recommended), authenticated with `gh auth login`, so the wizard can set the GitHub Environment secrets.
 4. Docker with buildx (recommended), so the wizard can run the first deploy locally.
-5. A Scaleway project (optional): without `SCW_PROJECT_ID` in `backend/.env`, the wizard picks or creates one (named after the app slug) and writes the id back.
+5. A Scaleway project per environment (optional): without `SCW_PROJECT_ID` in `infra/.env.<mode>`, the wizard picks or creates one (named after that environment's slug) and writes the id there. Every environment has a project of its own; the wizard does not offer the project of another environment.
 
 <a id="2-generate-a-bootstrap-api-key"></a>
 

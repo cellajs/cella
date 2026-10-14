@@ -1,6 +1,7 @@
 import { resolveApplicationIdByName } from '../../scaleway/iam-client';
 import { principalNames } from '../../scaleway/principals';
 import { resolveOrganizationId } from '../../scaleway/scaleway-iam';
+import { projectsOfOtherModes, projectVerdict } from '../../stack/project-per-mode';
 import { check, deployAction, probed, runSetup } from '../check';
 import type { StatusProvider } from '../types';
 
@@ -55,8 +56,13 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
   },
   evaluate(facts, session) {
     const project = check('identity.project', 'Scaleway project');
+    const own = projectVerdict(session.projectId, projectsOfOtherModes(session.mode));
     const checks = [
-      session.projectId ? project.ok(session.projectId) : project.missing('SCW_PROJECT_ID not set; setup picks or creates the project', runSetup),
+      own.status === 'missing'
+        ? project.missing(`SCW_PROJECT_ID not set in infra/.env.${session.mode}; setup picks or creates the project`, runSetup)
+        : own.status === 'shared'
+          ? project.error(`${session.projectId} is also the project of ${own.sharedWith}: every environment needs a project of its own`)
+          : project.ok(session.projectId ?? ''),
     ];
     if (session.stackState === 'bootstrapped') {
       const admin = check('identity.adminApp', 'Admin app', 'scaleway');

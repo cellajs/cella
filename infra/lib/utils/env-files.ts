@@ -15,11 +15,29 @@ export function parseEnvFile(path: string): Record<string, string> {
   return out;
 }
 
+/** The env files every mode reads, in loading order. */
+const baseEnvFiles = (): string[] => [resolve(infraDir, '..', 'backend', '.env'), resolve(infraDir, '..', '.env')];
+
 /** Load backend/.env before the root fallback so infra tasks share the app's local config. Existing environment variables keep precedence over both files. */
 export function loadBaseEnvFiles(): void {
-  for (const envFile of [resolve(infraDir, '..', 'backend', '.env'), resolve(infraDir, '..', '.env')]) {
+  for (const envFile of baseEnvFiles()) {
     if (existsSync(envFile)) process.loadEnvFile(envFile);
   }
+}
+
+/** The project id that a file every mode reads names. Such an id belongs to no single environment. */
+export function sharedFileProjectId(): string | undefined {
+  for (const envFile of baseEnvFiles()) {
+    const id = existsSync(envFile) ? parseEnvFile(envFile).SCW_PROJECT_ID?.trim() : undefined;
+    if (id) return id;
+  }
+  return undefined;
+}
+
+/** The project id a mode's own env file names: every environment has a project of its own, and this is where its id lives. */
+export function ownProjectId(mode: string): string | undefined {
+  const path = modeEnvPath(mode);
+  return (existsSync(path) ? parseEnvFile(path).SCW_PROJECT_ID?.trim() : undefined) || undefined;
 }
 
 /** The names a mode env file used for the admin application key before 0.12: read as `SCW_ADMIN_*` with a rename warning, removed by the actions that write the admin key. */
