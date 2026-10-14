@@ -103,9 +103,7 @@ describe('setupCiKey', () => {
     const policyBody = JSON.parse(policyCreate.init.body as string);
     expect(policyBody.application_id).toBe('app-new');
     // The deploy rules of plan §3.1, the same ones Update identities writes in place (lib/scaleway/deploy-policy.ts).
-    expect(policyBody.rules).toEqual(
-      deployRules({ slug: 'demo', mode: 'production', projectId: 'proj-1', organizationId: 'org-1', dnsProjectIds: ['proj-1'] }),
-    );
+    expect(policyBody.rules).toEqual(deployRules({ slug: 'demo', mode: 'production', projectId: 'proj-1', organizationId: 'org-1' }));
   });
 
   it('resolves organization id from project when not provided', async () => {

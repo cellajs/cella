@@ -4,13 +4,19 @@ import { SERVICE_SECRET_PERMISSION_SETS } from '../lib/scaleway/permissions';
 
 // The deploy key's rights are plan §3.1's: these tests state what it must never hold.
 const FORBIDDEN = ['IAMManager', 'IAMFullAccess', 'ProjectManager', 'OrganizationManager', 'BillingManager', 'BillingFullAccess', 'AccountManager'];
-const rules = deployRules({ slug: 'app', mode: 'production', projectId: 'proj', organizationId: 'org', dnsProjectIds: ['proj'] });
+const rules = deployRules({ slug: 'app', mode: 'production', projectId: 'proj', organizationId: 'org' });
 const setsOf = (rule: (typeof rules)[number]) => rule.permission_set_names;
 
 describe('deploy key rights', () => {
-  it('must not write IAM, open a console, or write an image, a snapshot or a security group', () => {
+  it('must not write IAM or DNS, open a console, or write an image, a snapshot or a security group', () => {
     const all = rules.flatMap(setsOf);
-    for (const forbidden of [...FORBIDDEN, 'IAMApplicationManager', 'InstancesFullAccess', 'InstancesServerSerialConsoleAccess']) {
+    for (const forbidden of [
+      ...FORBIDDEN,
+      'IAMApplicationManager',
+      'InstancesFullAccess',
+      'InstancesServerSerialConsoleAccess',
+      'DomainsDNSFullAccess',
+    ]) {
       expect(all, forbidden).not.toContain(forbidden);
     }
     expect(all.filter((set) => /^Instances(Image|Snapshot|SecurityGroup)(Create|Write|Delete)$/.test(set))).toEqual([]);

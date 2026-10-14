@@ -9,7 +9,7 @@ import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
 
 /**
- * Pulumi resource types only a privileged run (an apply on the operator key) may write: the database, IAM, the VPC and private network, secret containers, and the state bucket's
+ * Pulumi resource types only a privileged run (an apply on the operator key) may write: the database, IAM, the VPC and private network, secret containers, DNS records, and the state bucket's
  * own policy (bucket-config writes on it are reserved to the admin application). Matched as URN-type prefixes; everything else a CI deploy applies itself.
  */
 // A secret container is privileged: a new one needs its value, which only the apply makes; the deploy makes no value.
@@ -19,6 +19,8 @@ const PRIVILEGED_URN_TYPES = [
   'scaleway:network/vpc:',
   'scaleway:network/privateNetwork:',
   'scaleway:secrets/secret:',
+  // A record follows the load balancer's address, which the setup's first apply makes: the deploy key writes no DNS.
+  'scaleway:domain/',
 ] as const;
 
 /** Resource names (the URN's last segment) that are privileged regardless of type. */

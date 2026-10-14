@@ -1,6 +1,5 @@
 import { syncGithubEnvironment } from '../lib/github-sync';
 import { deployRules } from '../lib/scaleway/deploy-policy';
-import { resolveDnsProjectIds } from '../lib/scaleway/dns-zone-project';
 import { principalNames } from '../lib/scaleway/principals';
 import { resolveProjectId } from '../lib/scaleway/provider-env';
 import { type ProvisionScopedKeyOptions, provisionScopedKey, type ScopedKeyResult } from '../lib/scaleway/scaleway-iam';
@@ -8,8 +7,6 @@ import { checkMark, DIVIDER, pc, warningMark } from '../lib/utils/cli-output';
 import { isMain } from '../lib/utils/is-main';
 
 export interface SetupCiKeyOptions extends ProvisionScopedKeyOptions {
-  /** The stack's DNS zone; scopes the DNS grant to the projects that serve it. */
-  dnsZone?: string;
   /** Deploy mode; per-mode CI apps keep staging/production keys independent. */
   mode: string;
 }
@@ -17,17 +14,12 @@ export type CiKeyResult = ScopedKeyResult;
 
 /** Create the scoped CI application, least-privilege policy, and fresh key. */
 export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> {
-  // DNS is project-scoped: the app project (fresh zones land there) plus the
-  // serving zone's project when records live in a shared parent zone (staging
-  // on the production apex). Never org-wide: a compromised CI key must not be
-  // able to rewrite unrelated zones.
-  const dnsProjectIds = await resolveDnsProjectIds({ secretKey: opts.callerSecretKey }, opts.dnsZone ?? '', opts.projectId);
   return provisionScopedKey(opts, {
     suffix: 'ci-deploy',
     appDescription: 'Non-human principal for GitHub Actions CI deployments',
     policyDescription: 'Least-privilege policy for CI deployments (auto-generated)',
     // The rights of plan §3.1 (lib/scaleway/deploy-policy.ts), which Update identities also writes in place.
-    buildRules: ({ projectId, organizationId }) => deployRules({ slug: opts.slug, mode: opts.mode, projectId, organizationId, dnsProjectIds }),
+    buildRules: ({ projectId, organizationId }) => deployRules({ slug: opts.slug, mode: opts.mode, projectId, organizationId }),
   });
 }
 
@@ -47,14 +39,12 @@ if (isMain(import.meta.url)) {
   const appConfig = await loadEngineConfig();
 
   console.info(`\n→ Setting up CI deploy key ('${principalNames(appConfig.slug, appConfig.mode).ciDeploy}')`);
-  const { deriveInfra } = await import('../lib/naming');
   const result = await setupCiKey({
     callerSecretKey: secretKey,
     organizationId,
     projectId,
     slug: appConfig.slug,
     mode: appConfig.mode,
-    dnsZone: deriveInfra(appConfig).dnsZone,
   });
 
   const divider = pc.dim(DIVIDER);

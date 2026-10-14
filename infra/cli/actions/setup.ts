@@ -137,7 +137,6 @@ async function mintCiKey(
         projectId: opts.projectId,
         slug: opts.appConfig.slug,
         mode: opts.mode,
-        dnsZone: deriveInfra(opts.appConfig).dnsZone,
       });
       return { accessKey: key.accessKey, secretKey: key.secretKey, organizationId: key.organizationId };
     } catch (error) {
