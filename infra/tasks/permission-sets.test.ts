@@ -24,6 +24,12 @@ describe('deploy key rights', () => {
     expect(rules.flatMap(setsOf)).not.toContain('SecretManagerFullAccess');
   });
 
+  it('reads secret metadata unconditioned: Scaleway refuses a list call under any condition', () => {
+    const metadata = rules.filter((rule) => rule.permission_set_names.includes('SecretManagerReadOnly'));
+    expect(metadata).toHaveLength(1);
+    expect(metadata[0]?.condition).toBeUndefined();
+  });
+
   it('writes secrets in the runtime folders and the hand-over folder only, never in the engine or deploy folder', () => {
     const writes = rules.filter((rule) => rule.permission_set_names.includes('SecretManagerSecretWrite'));
     const condition = writes.map((rule) => rule.condition).join(' || ');

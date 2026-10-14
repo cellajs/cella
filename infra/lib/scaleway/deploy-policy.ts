@@ -29,10 +29,9 @@ const conditioned = (sets: readonly string[], projectId: string, terms: readonly
   ruleConditions(terms.join(' || ')).map((condition) => ({ permission_set_names: [...sets], project_ids: [projectId], condition }));
 
 /**
- * The deploy key's rules (plan §3.1): machines, buckets and the registry in the project; secret metadata in the runtime folders, the hand-over
- * folder and the deploy folder; secret writes in the runtime folders and the hand-over folder; secret values in the deploy folder only; DNS in
- * the serving zone's projects; IAM read. No IAM write, no value of an app's secret, no console, no snapshot. The setup's CI key and Update
- * identities write these rules, and the deploy's grant check reads their sets.
+ * The deploy key's rules (plan §3.1): machines, buckets, the registry and secret metadata in the project; secret writes in the runtime folders
+ * and the hand-over folder; secret values in the deploy folder only; DNS in the serving zone's projects; IAM read. No IAM write, no value of an
+ * app's secret, no console, no snapshot. The setup's CI key and Update identities write these rules, and the deploy's grant check reads their sets.
  */
 export function deployRules(opts: {
   slug: string;
@@ -45,8 +44,7 @@ export function deployRules(opts: {
   const handoff = startsWith(handoffFolderPath(opts.slug, opts.mode));
   const deploy = startsWith(deployFolderPath(opts.slug, opts.mode));
   return [
-    { permission_set_names: [...DEPLOY_PROJECT_PERMISSION_SETS], project_ids: [opts.projectId] },
-    ...conditioned(DEPLOY_SECRET_METADATA_SETS, opts.projectId, [...runtime, handoff, deploy]),
+    { permission_set_names: [...DEPLOY_PROJECT_PERMISSION_SETS, ...DEPLOY_SECRET_METADATA_SETS], project_ids: [opts.projectId] },
     ...conditioned(DEPLOY_SECRET_WRITE_SETS, opts.projectId, [...runtime, handoff]),
     ...conditioned(DEPLOY_SECRET_VALUE_SETS, opts.projectId, [deploy]),
     ...(opts.dnsProjectIds.length > 0 ? [{ permission_set_names: [...DNS_PERMISSION_SETS], project_ids: [...opts.dnsProjectIds] }] : []),

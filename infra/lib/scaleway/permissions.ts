@@ -32,7 +32,10 @@ export const DEPLOY_PROJECT_PERMISSION_SETS = [
   'ServerlessJobsReadOnly',
 ] as const;
 
-/** Secret metadata, read in the runtime folders, the hand-over folder and the deploy folder. Values are read with the next set alone. */
+/**
+ * Secret metadata (names, folders, version counts, no value), on the whole project: Scaleway refuses a list call under any condition, and the
+ * deploy finds its containers by listing them. The names are the registry's, which the repository holds. Values are read with the value set alone.
+ */
 export const DEPLOY_SECRET_METADATA_SETS = ['SecretManagerReadOnly'] as const;
 
 /** Secret writes, in the runtime folders and the hand-over folder: containers the program declares, versions it writes, bundles it stages. */
