@@ -52,12 +52,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra... --filter shared...
 
+      # What to deploy (D8): the environment's line in infra/environments, read from this commit, pins a release or a commit or raises the
+      # retry counter. Without a line, a push deploys the newest commit of main, a release the newest release, and a manual run the commit
+      # it was started on (infra/lib/deploy/target.ts).
+      - name: Resolve the target
+        id: target
+        env:
+          ENV: ${{ inputs.environment || 'production' }}
+          EVENT: ${{ github.event_name }}
+          GIT_SHA: ${{ github.sha }}
+        run: |
+          started_on=()
+          if [ "$EVENT" = "workflow_dispatch" ]; then started_on=(--started-on "$GIT_SHA"); fi
+          pnpm --silent --filter infra target --mode "$ENV" "${started_on[@]}" >> "$GITHUB_OUTPUT"
+
       - name: Derive resource names from shared config
         id: derive
         env:
           ENV: ${{ inputs.environment || 'production' }}
           GIT_REF: ${{ github.ref }}
-          GIT_SHA: ${{ github.sha }}
+          GIT_SHA: ${{ steps.target.outputs.target_sha }}
         run: pnpm --silent --filter infra print-deploy-env "$ENV" --git-ref "$GIT_REF" --git-sha "$GIT_SHA" >> $GITHUB_OUTPUT
 
   # -------------------------------------------------------------------------
@@ -77,8 +91,11 @@ jobs:
       contents: read
     environment: ${{ needs.setup.outputs.environment }}
     steps:
+      # The engine of the target itself: a rollback deploys an older release with the engine it was made with.
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ needs.setup.outputs.image_tag }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
@@ -124,8 +141,11 @@ jobs:
       contents: read
     environment: ${{ needs.setup.outputs.environment }}
     steps:
+      # The engine of the target itself: a rollback deploys an older release with the engine it was made with.
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ needs.setup.outputs.image_tag }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
