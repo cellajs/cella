@@ -3,6 +3,7 @@ import { confirm } from '@inquirer/prompts';
 import { menuPath } from '../../lib/operator-actions';
 import { type KeyPair, organizationIdOfKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
+import { projectAccessKey } from '../../lib/scaleway/s3-client';
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
 import { type PlanBasis, readPlanBasis } from '../../lib/stack/plan-basis';
 import { pc, warningMark } from '../../lib/utils/cli-output';
@@ -27,7 +28,7 @@ export function askToApply(environment: string): Promise<boolean> {
   return confirm({ message: `Apply this plan to ${environment}?`, default: false });
 }
 
-/** A plan shown with the admin application key, before any privileged step. */
+/** A plan shown before the stack is locked. */
 export interface ReviewedPlan {
   /** The passphrase verified for the plan, so the apply does not ask for it again. */
   passphrase: string;
@@ -36,8 +37,7 @@ export interface ReviewedPlan {
 }
 
 /**
- * Show the read-only plan of what an apply would change, with the admin application key (infra/.env.<mode>): every read-only set plus the
- * state bucket. The provider authenticates from SCW_* env, never from stack config, in the environment the privileged converge builds
+ * Show the plan of what an apply would change, with the operator key, before anything is locked or written. The provider authenticates from SCW_* env, never from stack config, in the environment the privileged converge builds
  * (organization id, privileged marker). A CI deploy applies the same diff except the VM policy rules, which only a privileged run reconciles,
  * so one plan covers both. Nothing is locked or written: the returned basis lets the apply tell whether the plan still holds once it is.
  */
@@ -61,12 +61,12 @@ export async function reviewPlan(context: InfraContext, key: KeyPair): Promise<R
     endAction(1);
   }
 
-  // The admin application key serves both sides: the provider reads and the state bucket, which admits it.
+  // The operator key serves both sides: the provider reads and the state bucket, which admits it.
   const env = buildProviderEnv(infraDir, { ...key, projectId, passphrase, organizationId });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
   // Read before the plan runs, so a deploy that lands while Pulumi computes it counts as a change too.
-  const basis = await makeControlClient(appConfig.s3.region, key.accessKey, key.secretKey)
+  const basis = await makeControlClient(appConfig.s3.region, projectAccessKey(key.accessKey, projectId), key.secretKey)
     .then((s3) => readPlanBasis(s3, stateBucket(appConfig.slug), stack))
     .catch(() => undefined);
 

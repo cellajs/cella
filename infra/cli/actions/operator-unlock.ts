@@ -2,8 +2,9 @@ import { input } from '@inquirer/prompts';
 import { actionCommand } from '../../lib/operator-actions';
 import { fetchAppRulesByName, type GrantedRule, IAM_BASE } from '../../lib/scaleway/iam-client';
 import { ipAllowed, ipConditionCidrs } from '../../lib/scaleway/ip-lock';
-import { describeKey, type KeyDescription, organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { describeKey, type KeyDescription, type KeyPair, organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
+import { projectAccessKey } from '../../lib/scaleway/s3-client';
 import { scwErrorStatus, scwFetch } from '../../lib/scaleway/scw-fetch';
 import { crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
@@ -41,21 +42,21 @@ export function readOperatorLock(rules: readonly Pick<GrantedRule, 'condition'>[
 export async function operatorLock(stack: StackRef): Promise<OperatorLock> {
   const known = rememberedOperatorLock();
   if (known) return known;
-  const { admin } = resolveOperatorIdentity();
+  const { observer } = resolveOperatorIdentity();
   let lock: OperatorLock = { state: 'unknown', cidrs: [], open: false };
-  if (admin && stack.projectId) {
+  if (observer && stack.projectId) {
     try {
-      const organizationId = await organizationIdOfKey(admin, stack.projectId);
+      const organizationId = await organizationIdOfKey(observer, stack.projectId);
       const names = principalNames(stack.appConfig.slug, stack.environment);
       const rules = await fetchAppRulesByName({
-        secretKey: admin.secretKey,
+        secretKey: observer.secretKey,
         projectId: stack.projectId,
         applicationName: names.operator,
         organizationId,
       });
       lock = rules === null ? { state: 'absent', cidrs: [], open: false } : { state: 'present', ...readOperatorLock(rules) };
     } catch {
-      // Left unknown: the admin application key could not read IAM just now.
+      // Left unknown: the observer key could not read IAM just now.
     }
   }
   rememberOperatorLock(lock);
@@ -207,23 +208,29 @@ export async function acquireOperatorKey(stack: StackRef): Promise<OwnerKey> {
   };
 }
 
-let ownerNoticeShown = false;
-
 /**
- * The key a privileged action runs on. A stack with an operator application takes the operator key, which works from the dedicated address
- * only. A stack that has none yet takes an Owner API key at the prompt, with a pointer to the action that sets the operator key up.
+ * The key a privileged action runs on: the operator key, which works from the dedicated address only. An Owner key never runs one, as the
+ * buckets admit no person; an app without an operator gets one from `operator-key` or its setup, with an Owner API key.
  */
 export async function acquirePrivilegedKey(stack: StackRef): Promise<OwnerKey> {
   const lock = await operatorLock(stack);
-  if (lock.state !== 'absent') return acquireOperatorKey(stack);
-  const names = principalNames(stack.appConfig.slug, stack.environment);
-  if (!ownerNoticeShown) {
-    ownerNoticeShown = true;
-    console.info(
-      pc.dim(`This stack has no operator key yet, so the action takes your Owner API key. \`${actionCommand('operator-key')}\` sets one up.`),
+  if (lock.state === 'absent') {
+    const names = principalNames(stack.appConfig.slug, stack.environment);
+    console.error(
+      `${crossMark} The app has no operator ('${names.operator}') yet: \`${actionCommand('operator-key')}\` makes it, with your Owner API key.`,
     );
+    return endAction(1);
   }
-  return acquireOwnerKey({ names, projectId: stack.projectId, slug: stack.appConfig.slug, mode: stack.environment });
+  return acquireOperatorKey(stack);
+}
+
+/**
+ * The operator key, and the same key as the state side takes it: its access key names the environment's project, since Object Storage works
+ * in a key's preferred project otherwise. The provider takes the plain key and finds the project by itself.
+ */
+export async function operatorKeys(stack: StackRef): Promise<{ key: KeyPair; state: KeyPair }> {
+  const { accessKey, secretKey } = await acquirePrivilegedKey(stack);
+  return { key: { accessKey, secretKey }, state: { accessKey: projectAccessKey(accessKey, stack.projectId), secretKey } };
 }
 
 /**

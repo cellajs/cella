@@ -1,5 +1,5 @@
 /** The Scaleway key an operator action runs with. */
-export type KeyTier = 'none' | 'admin' | 'operator' | 'owner';
+export type KeyTier = 'none' | 'observer' | 'operator' | 'owner';
 
 export interface OperatorAction {
   /** The one name of the action: its menu entry, every prompt and hint that points at it, and the docs. */
@@ -16,12 +16,12 @@ export interface OperatorAction {
 export const OPERATOR_ACTIONS = {
   status: {
     label: 'Show status',
-    key: 'none',
+    key: 'observer',
     description: 'Health check: what is set up, what is live, and the next step. Read-only.',
   },
   preview: {
     label: 'Preview changes',
-    key: 'admin',
+    key: 'operator',
     description:
       'The plan of "Review & apply changes" without its question, refreshed against the live stack (a CI deploy applies the same minus VM policy rules). Read-only.',
   },
@@ -34,7 +34,8 @@ export const OPERATOR_ACTIONS = {
   'rotate-keys': {
     label: 'Rotate keys',
     key: 'owner',
-    description: 'Replace the CI deploy key and the admin application key with fresh ones (the admin key is rewritten in infra/.env.<mode>).',
+    description:
+      'Replace the CI deploy key and the observer key with fresh ones (the observer key is rewritten in every infra/.env.<mode> on this machine that holds it).',
   },
   'rotate-passphrase': {
     label: 'Rotate passphrase',
@@ -51,7 +52,7 @@ export const OPERATOR_ACTIONS = {
     label: 'Update identities',
     key: 'owner',
     description:
-      'Make the applications the service registry needs and write the machine policies. Shows what differs first; asks for your Owner API key only when something must change.',
+      'Make the applications the service registry needs, write the machine policies, put the observer key on this machine, and delete the retired admin application once nothing needs it. Shows what differs first; asks for your Owner API key only when something must change.',
   },
   secrets: {
     label: 'Manage runtime secrets',
@@ -87,11 +88,6 @@ export const OPERATOR_ACTIONS = {
     label: 'Resume setup',
     key: 'operator',
     description: 'Re-sync config and GitHub secrets, and self-heal missing keys.',
-  },
-  'fetch-admin-key': {
-    label: 'Fetch admin application key',
-    key: 'operator',
-    description: 'Put the admin application key in infra/.env.<mode> on this machine.',
   },
   'geoip-refresh': {
     label: 'Refresh GeoIP data',
@@ -153,8 +149,8 @@ export const MENU_ROWS = {
     group: 'change',
     label: 'Rotate keys & secrets',
     actions: ['rotate-keys', 'rotate-passphrase', 'operator-key'],
-    hint: 'CI key, admin key, passphrase, operator key',
-    description: 'Replace the CI deploy key and the admin application key, re-encrypt the stack, or set up the operator key and its dedicated IP.',
+    hint: 'CI key, observer key, passphrase, operator key',
+    description: 'Replace the CI deploy key and the observer key, re-encrypt the stack, or set up the operator key and its dedicated IP.',
   },
   secrets: {
     group: 'change',
@@ -194,9 +190,9 @@ export const MENU_ROWS = {
   repair: {
     group: 'recover',
     label: 'Repair stack',
-    actions: ['unlock', 'resume', 'fetch-admin-key'],
-    hint: 'stack lock, setup, admin key',
-    description: 'Clear a stale stack lock, re-sync the setup, or put the admin application key on this machine.',
+    actions: ['unlock', 'resume'],
+    hint: 'stack lock, setup',
+    description: 'Clear a stale stack lock, or re-sync the setup.',
   },
   teardown: {
     group: 'rare',
@@ -247,12 +243,15 @@ export function menuPath(id: OperatorActionId): string {
 
 const KEY_SENTENCES = {
   none: 'Works without a Scaleway key.',
-  admin: 'Uses the admin application key.',
+  observer: 'Reads with the observer key.',
   operator: 'Needs your operator key.',
   owner: 'Needs your Owner API key.',
 } as const satisfies Record<KeyTier, string>;
 
-const KEY_HINTS = { none: 'no key', admin: 'admin key', operator: 'operator key', owner: 'Owner key' } as const satisfies Record<KeyTier, string>;
+const KEY_HINTS = { none: 'no key', observer: 'observer key', operator: 'operator key', owner: 'Owner key' } as const satisfies Record<
+  KeyTier,
+  string
+>;
 
 /** The description of an action in a pick: what it does, then the key it runs with. `what` replaces the table's sentence for an entry that depends on live state. */
 export function actionDescription(id: OperatorActionId, what?: string): string {

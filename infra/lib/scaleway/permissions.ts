@@ -27,28 +27,30 @@ const ORG_SCOPED_PERMISSION_SETS = ['IAMReadOnly'] as const;
 /** Audit union of the CI grants beyond the plain app-project rule (rule-agnostic). */
 export const ORG_PERMISSION_SETS = [...DNS_PERMISSION_SETS, ...ORG_SCOPED_PERMISSION_SETS] as const;
 
-// Admin app (`<slug>-<mode>-admin`): the day-2 human principal
+// Observer app (`<app>-observer`): reads, from the office only
 
 /**
- * Project-scoped sets for the admin application, the principal a human authenticates as for day-2 operations.
- * Object Storage is the only write (bucket policies are deny-by-default, so admin needs the IAM allow AND the bucket-policy statement); everything else is read-only, with no IAM write.
+ * Project-scoped sets for the observer application, the key a person and their agents read with: `status`, the plan of an identity update, a
+ * machine's boot account. Read-only sets named one by one, so a set that also reads secret values never comes in by a wider name. Object
+ * Storage reads need the bucket policy too: the state and boot-diagnostics buckets name the observer, the others do not.
  */
-export const ADMIN_PROJECT_PERMISSION_SETS = [
-  'ObjectStorageFullAccess', // bucket reads/refresh + state-bucket recovery (s3:* comes from bucket policies)
+export const OBSERVER_PROJECT_PERMISSION_SETS = [
   'BlockStorageReadOnly',
   'ContainerRegistryReadOnly',
   'DomainsDNSReadOnly',
   'IPAMReadOnly',
   'InstancesReadOnly',
   'LoadBalancersReadOnly',
+  'ObjectStorageReadOnly',
   'PrivateNetworksReadOnly',
   'RelationalDatabasesReadOnly',
   'SecretManagerReadOnly',
+  'ServerlessJobsReadOnly',
   'VPCReadOnly',
 ] as const;
 
-/** Org-scoped admin sets: IAM reads so `pulumi preview` can resolve principals by name. */
-export const ADMIN_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
+/** Org-scoped observer set: IAM reads, so `status` and the identity plan can name what exists. */
+export const OBSERVER_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 
 // Operator app (`<app>-operator`): the principal a person runs privileged actions as, one per app
 

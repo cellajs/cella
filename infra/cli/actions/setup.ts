@@ -7,7 +7,7 @@ import { operatorManagedRuntimeSecrets } from '../../lib/runtime-secrets';
 import { ensureDnsZone } from '../../lib/scaleway/ensure-dns-zone';
 import { deleteApiKey, fetchAppRulesByName } from '../../lib/scaleway/iam-client';
 import { machinePolicies } from '../../lib/scaleway/machine-policies';
-import { type KeyPair, organizationIdOfKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { type KeyPair, organizationIdOfKey } from '../../lib/scaleway/operator-identity';
 import { CI_RULE_SHAPES } from '../../lib/scaleway/permissions';
 import { type PrincipalNames, principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
@@ -20,13 +20,12 @@ import { operatorSecretImports } from '../../lib/stack/operator-secret-imports';
 import { projectChoices, projectsOfOtherModes } from '../../lib/stack/project-per-mode';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
 import { changeMark, checkMark, DIVIDER, pc, warningMark, withSpinner } from '../../lib/utils/cli-output';
-import { LEGACY_ADMIN_KEY_NAMES, writeModeEnvValues } from '../../lib/utils/env-files';
+import { writeModeEnvValues } from '../../lib/utils/env-files';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { writeMachinePolicies } from '../../tasks/machine-policies';
 import { storeCustodiedPassphrase } from '../../tasks/passphrase-custody';
 import { seedOperatorSecrets } from '../../tasks/seed-operator-secrets';
-import { setupAdminApp } from '../../tasks/setup-admin-app';
 import { setupCiKey } from '../../tasks/setup-ci-key';
 import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { maskedSecret } from '../prompts/masked-secret';
@@ -46,9 +45,11 @@ import {
   resolveOrCreatePassphrase,
   stackNameFor,
 } from '../shared';
+import { ensureObserverForEnvironment } from './observer-key';
 import { ensureOperatorForEnvironment } from './operator-key';
 import { acquireOperatorKey } from './operator-unlock';
 import { OWNER_KEY_HINT, type OwnerKey } from './owner-key';
+import { admitOperatorOrExit } from './privileged-converge';
 
 type SetupMode = Extract<CliMode, 'resume' | 'rotate-keys'>;
 
@@ -70,7 +71,7 @@ interface SetupContext {
   /** The operator key: provider auth, Secret Manager writes and IAM reads. */
   accessKey: string;
   secretKey: string;
-  /** The key for the state side (backend login, stack lock): the admin application key while this machine holds one, else the operator key. */
+  /** The key for the state side (backend login, stack lock): the operator key, naming this project. */
   stateKey: KeyPair;
   stackName: string;
   /** Secret Manager folder for this stack's runtime secrets. */
@@ -178,44 +179,8 @@ async function mintCiKey(
   }
 }
 
-/**
- * Admin IAM application, created on fresh/rotate at the Owner moment. It grants Object Storage full plus read-only infra rights for
- * `pulumi preview --refresh` and `status`, never IAM write. Its key lives in Secret Manager and in infra/.env.<mode> on this machine, and is
- * never printed or stored as a GitHub secret. Idempotent: reuses the app. The id is never persisted: consumers resolve it from IAM by name.
- */
-async function ensureAdminApp(
-  ownerSecretKey: string,
-  opts: { projectId: string; appConfig: InfraContext['appConfig']; mode: Environment },
-): Promise<string> {
-  try {
-    const admin = await setupAdminApp({
-      callerSecretKey: ownerSecretKey,
-      projectId: opts.projectId,
-      slug: opts.appConfig.slug,
-      mode: opts.mode,
-      region: opts.appConfig.s3.region,
-    });
-    // This machine holds the Owner API key right now, so it gets the admin application key too: `status` and the plan of an apply read with it.
-    const written = writeModeEnvValues(
-      opts.mode,
-      { SCW_ADMIN_ACCESS_KEY: admin.accessKey, SCW_ADMIN_SECRET_KEY: admin.secretKey },
-      { remove: LEGACY_ADMIN_KEY_NAMES },
-    );
-    // The rest of this run reads the new key too: the env loaded at start may still hold one this moment replaced.
-    process.env.SCW_ADMIN_ACCESS_KEY = admin.accessKey;
-    process.env.SCW_ADMIN_SECRET_KEY = admin.secretKey;
-    console.info(
-      `  ${checkMark} Admin application key ('${principalNames(opts.appConfig.slug, opts.mode).admin}') written to ${written.path} (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY)`,
-    );
-    return admin.applicationId;
-  } catch (error) {
-    console.warn(`${warningMark} Admin app setup failed: ${errorMessage(error)}`);
-    return '';
-  }
-}
-
-function printSummary(opts: { rotated: boolean; ciAccessKey: string; adminAppId: string; names: PrincipalNames }): void {
-  const { ciAccessKey, adminAppId, names } = opts;
+function printSummary(opts: { rotated: boolean; ciAccessKey: string; names: PrincipalNames }): void {
+  const { ciAccessKey, names } = opts;
   const divider = pc.dim(DIVIDER);
   console.info(`\n${divider}`);
   if (ciAccessKey) {
@@ -224,12 +189,6 @@ function printSummary(opts: { rotated: boolean; ciAccessKey: string; adminAppId:
     );
   } else {
     console.info(`${warningMark} ${pc.bold(pc.yellowBright('Done, but CI key was not created.'))} Run ${pc.cyan(actionCommand('rotate-keys'))}.`);
-  }
-  if (adminAppId) {
-    console.info(
-      `  ${checkMark} Admin IAM app '${names.admin}': ${pc.cyanBright(adminAppId)}\n` +
-        `    ${pc.dim('Its key is in infra/.env.<mode> here and in Secret Manager (admin-key); on another machine run `pnpm infra fetch-admin-key`.')}`,
-    );
   }
   console.info(divider);
 }
@@ -447,8 +406,9 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, operatorS
 
 /**
  * The Owner moment of a setup: the project and every identity, written with an Owner API key typed at the prompt, and nothing else runs on it
- * (no Pulumi, no state, no secret value). The machine identities and their policies, the CI deploy key (synced to GitHub), the admin
- * application, and the app's operator: created when the app has none, else given this environment's project in place. Undefined when declined.
+ * (no Pulumi, no state, no secret value). The machine identities and their policies, the CI deploy key (synced to GitHub), and the app's
+ * operator and observer: created when the app has none, else given this environment's project in place; the observer's key goes to this
+ * machine's env files, and a rotation replaces it. Undefined when declined.
  */
 async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<OwnerMomentResult | undefined> {
   const { appConfig } = context;
@@ -489,12 +449,15 @@ async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<O
     mode: environment,
     keyMintAppIds: serviceAppIds.length > 0 ? serviceAppIds : undefined,
   });
-  console.info('\n→ Admin application');
-  const adminAppId = await ensureAdminApp(pair.secretKey, { projectId, appConfig, mode: environment });
-
   console.info('\n→ Operator');
   const ownerKey: OwnerKey = { ...pair, organizationId, minted: false, pasted: true, release: async () => {} };
   const operatorKey = await ensureOperatorForEnvironment({ ...context, projectId }, ownerKey, projectId);
+
+  // The observer takes the operator's address list, so it follows the operator.
+  console.info('\n→ Observer');
+  await ensureObserverForEnvironment({ ...context, projectId }, ownerKey, projectId, { rotate: mode === 'rotate-keys' }).catch((error) =>
+    console.warn(`${warningMark} Observer incomplete: ${errorMessage(error)}. Run \`${actionCommand('identity')}\`.`),
+  );
 
   // GitHub holds the CI deploy key now; the passphrase follows from the operator part, which makes it.
   if (ciKey.accessKey) {
@@ -510,7 +473,7 @@ async function runOwnerMoment(context: InfraContext, mode: SetupMode): Promise<O
     }
   }
 
-  printSummary({ rotated: mode === 'rotate-keys', ciAccessKey: ciKey.accessKey, adminAppId, names });
+  printSummary({ rotated: mode === 'rotate-keys', ciAccessKey: ciKey.accessKey, names });
   // Revoking is the moment's last call: a key may delete itself, and nothing after this needs it.
   await offerOwnerKeyRevoke(pair);
   return { projectId, ciKey, operatorKey };
@@ -540,22 +503,16 @@ async function runOperatorPart(context: InfraContext, operatorKey: OwnerKey, mom
   const proceedWith = firstSetup ? `the first setup of ${environment}` : actionLabel('resume');
   if (!(await confirmOrDefault({ message: `Proceed with ${proceedWith}?`, default: true }))) return;
 
-  // The state side (login, lock): the operator key on a first setup, as the first `pulumi up` writes a state bucket policy that admits it
-  // (an admin key made a moment ago is admitted by that policy only, and may not be accepted yet); on an existing stack the admin application
-  // key while this machine holds one. The operator key names this project, as it is made for one environment's.
-  const identity = resolveOperatorIdentity();
-  const stateKey: KeyPair =
-    identity.admin && !firstSetup
-      ? { accessKey: identity.admin.accessKey, secretKey: identity.admin.secretKey }
-      : { accessKey: projectAccessKey(operatorKey.accessKey, projectId), secretKey: operatorKey.secretKey };
+  // The operator key serves the state side too, naming this project, as it is made in one environment's. A stack whose buckets predate the
+  // operator lets it in first.
+  if (!firstSetup) await admitOperatorOrExit(context, { ...operatorKey, passphrase: pulumiPassphrase, stack: stackName });
+  const stateKey: KeyPair = { accessKey: projectAccessKey(operatorKey.accessKey, projectId), secretKey: operatorKey.secretKey };
   const childEnv = buildProviderEnv(infraDir, {
     accessKey: operatorKey.accessKey,
     secretKey: operatorKey.secretKey,
     projectId,
     passphrase: pulumiPassphrase,
     organizationId: operatorKey.organizationId,
-    stateAccessKey: stateKey.accessKey,
-    stateSecretKey: stateKey.secretKey,
   });
 
   const { must } = createStepRunner(infraDir, childEnv);

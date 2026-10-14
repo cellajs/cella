@@ -5,7 +5,6 @@ import { isPromptAbort } from '../prompts/abort';
 import { ActionEnded, type InfraContext, releaseHeldLocks } from '../shared';
 import { runApply } from './apply';
 import { runExposeDatabase, runUnexposeDatabase } from './db-exposure';
-import { runFetchAdminKey } from './fetch-admin-key';
 import { runGeoipRefresh } from './geoip-refresh';
 import { runIdentity } from './identity';
 import { runOperatorKey } from './operator-key';
@@ -37,7 +36,6 @@ export const ACTION_RUNNERS: ActionRunners = {
   'db-reset': runResetDatabase,
   unlock: runUnlock,
   resume: (context) => runSetup(context, 'resume'),
-  'fetch-admin-key': runFetchAdminKey,
   'geoip-refresh': runGeoipRefresh,
   teardown: runTeardown,
 };

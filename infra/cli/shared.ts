@@ -1,8 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import { confirm, input } from '@inquirer/prompts';
 import type { EngineConfig } from '../config/engine-config';
-import { actionCommand, menuPath, type OperatorActionId } from '../lib/operator-actions';
-import { type KeyPair, resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
+import { menuPath, type OperatorActionId } from '../lib/operator-actions';
+import type { KeyPair } from '../lib/scaleway/operator-identity';
 import { principalNames } from '../lib/scaleway/principals';
 import { controlActor, lockKey, makeControlClient, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
 import { generatePassphrase, verifyStackPassphrase } from '../lib/stack/pulumi-passphrase';
@@ -161,16 +161,6 @@ export async function keyPairOrPrompt(pair: KeyPair | undefined, label: string, 
   return { accessKey, secretKey };
 }
 
-/** The admin application key from the env, else a prompt naming the application that bears it and the action that stores it on this machine. */
-export function adminKeyOrPrompt(context: Pick<StackContext, 'appConfig' | 'environment'>): Promise<KeyPair> {
-  const { admin } = principalNames(context.appConfig.slug, context.environment);
-  return keyPairOrPrompt(
-    resolveOperatorIdentity().admin,
-    `Scaleway admin application key ('${admin}')`,
-    `\`${actionCommand('fetch-admin-key')}\` stores it`,
-  );
-}
-
 /** S3-backend login URL for the app's Pulumi state bucket. */
 export function pulumiLoginUrl(appConfig: AppConfigType): string {
   return stateBackendUrl(stateBucket(appConfig.slug), appConfig.s3.region);
@@ -182,7 +172,7 @@ export function pulumiLoginAndSelect(infraDir: string, env: NodeJS.ProcessEnv, a
   if (login.status !== 0) {
     const names = principalNames(appConfig.slug, appConfig.mode);
     console.error(
-      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits only the '${names.admin}' and '${names.ciDeploy}' applications: put the key of '${names.admin}' in infra/.env.${appConfig.mode} as SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY (${menuPath('fetch-admin-key')}).`,
+      `${crossMark} pulumi login failed (exit ${login.status}). The state bucket admits the '${names.operator}', '${names.observer}' and '${names.ciDeploy}' applications, and a key made for another project reaches it only as \`<access key>@<project id>\`.`,
     );
     endAction(login.status ?? 1);
   }

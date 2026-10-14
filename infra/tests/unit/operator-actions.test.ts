@@ -65,8 +65,8 @@ describe('operator action table', () => {
   it('ends every description with the key the action runs with', () => {
     expect(actionDescription('apply')).toMatch(/Needs your operator key\.$/);
     expect(actionDescription('operator-key')).toMatch(/Needs your Owner API key\.$/);
-    expect(actionDescription('preview')).toMatch(/Uses the admin application key\.$/);
-    expect(actionDescription('status')).toMatch(/Works without a Scaleway key\.$/);
+    expect(actionDescription('preview')).toMatch(/Needs your operator key\.$/);
+    expect(actionDescription('status')).toMatch(/Reads with the observer key\.$/);
     expect(actionDescription('db-close', 'Delete the stray endpoint.')).toBe('Delete the stray endpoint. Needs your operator key.');
   });
 });
@@ -102,7 +102,7 @@ describe('menu rows', () => {
     expect(menuPath('apply')).toBe('Review & apply changes');
     expect(menuPath('preview')).toBe('pnpm infra preview');
     expect(menuPath('unlock')).toBe('Repair stack → Unlock stack');
-    expect(menuPath('fetch-admin-key')).toBe('Repair stack → Fetch admin application key');
+    expect(menuPath('unlock')).toBe('Repair stack → Unlock stack');
     expect(menuPath('geoip-refresh')).toBe('pnpm infra geoip-refresh');
   });
 });

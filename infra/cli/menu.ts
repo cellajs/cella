@@ -20,11 +20,9 @@ export interface MenuState {
   environment: Environment;
   /** The stack config carries an encryption salt, so there is a passphrase to rotate. */
   encrypted: boolean;
-  /** This machine holds the admin application key. */
-  hasAdminKey: boolean;
   /** The local exposure config says the public DB endpoint is open. */
   dbExposed: boolean;
-  /** The instance's live public endpoints, when the admin application key read them in time. */
+  /** The instance's live public endpoints, when the observer key read them in time. */
   liveEndpoints?: string[];
 }
 
@@ -51,7 +49,6 @@ export function disabledReason(id: OperatorActionId, state: MenuState): string |
     return `needs a bootstrapped stack: run "${actionLabel('resume')}"`;
   }
   if (id === 'rotate-passphrase' && !state.encrypted) return 'the stack has no encrypted state yet';
-  if (id === 'geoip-refresh' && !state.hasAdminKey) return `needs the admin key: run "${actionLabel('fetch-admin-key')}"`;
   return undefined;
 }
 

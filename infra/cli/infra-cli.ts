@@ -127,7 +127,6 @@ function menuState(context: InfraContext, liveEndpoints?: string[]): MenuState {
     stackState: context.state,
     environment: context.environment,
     encrypted: !!context.stackYaml && /^encryptionsalt:/m.test(context.stackYaml),
-    hasAdminKey: !!resolveOperatorIdentity().admin,
     dbExposed: dbExposureConfigured(context.environment, context.stackYaml),
     liveEndpoints,
   };
@@ -166,9 +165,9 @@ async function printStackFacts(context: InfraContext): Promise<string[] | undefi
       ]),
     );
     liveEndpoints = endpoints;
-    const configured = identity.admin ? 'admin' : identity.ambient ? 'ambient' : 'none';
-    const adminApplication = principalNames(context.appConfig.slug, context.environment).admin;
-    for (const line of formatQuickFacts(facts, { configured, adminApplication })) console.info(line);
+    const configured = identity.observer ? 'observer' : identity.ambient ? 'ambient' : 'none';
+    const observerApplication = principalNames(context.appConfig.slug, context.environment).observer;
+    for (const line of formatQuickFacts(facts, { configured, observerApplication })) console.info(line);
   }
   const access = formatAccessLines({
     operator: await operatorFacts(context),

@@ -5,7 +5,7 @@ import { actionCommand } from '../lib/operator-actions';
 
 const appConfig = engineConfig();
 
-import { principalNames } from '../lib/scaleway/principals';
+import { ADMISSION_RUN_ENV, principalNames } from '../lib/scaleway/principals';
 import { principalServices } from '../lib/services';
 import { mode, organizationId } from '../pulumi-context';
 
@@ -66,15 +66,19 @@ export const operatorApplicationId: pulumi.Output<string | undefined> = findAppl
 /** CI deploy application id: the principal CI authenticates as. Required. */
 export const ciDeployApplicationId = requirePrincipalId(findApplicationId(names.ciDeploy), `CI deploy ('${names.ciDeploy}')`);
 
-/** Admin application id, the standing human principal. Optional: when absent its bucket-policy statements are dropped with a warning. */
-export const adminApplicationId: pulumi.Output<string | undefined> = findApplicationId(names.admin).apply((id) => {
+/** Observer application id: the read-only key on the person's machine. Optional: until an Owner moment creates it, its statements are dropped. */
+export const observerApplicationId: pulumi.Output<string | undefined> = findApplicationId(names.observer).apply((id) => {
   if (id) return id;
-  pulumi.log.warn(
-    `Admin IAM application '${names.admin}' not found: admin bucket-policy statements are dropped this update. ` +
-      `Run \`${actionCommand('rotate-keys')}\` to create it; until then bucket access is CI-only.`,
-  );
+  pulumi.log.warn(`Observer IAM application '${names.observer}' not found: its bucket-policy statements are dropped this update.`);
   return undefined;
 });
+
+/**
+ * The retired admin application's id, on the admission run only: that run writes the bucket policies with the admin key, so they keep admitting
+ * it until the run ends, and the apply after it drops the statement. Undefined on every other run.
+ */
+export const retiredAdminApplicationId: pulumi.Output<string | undefined> =
+  process.env[ADMISSION_RUN_ENV] === '1' ? findApplicationId(names.admin) : pulumi.output(undefined);
 
 // VM-side principals: one application per registry service that owns VMs, plus the boot fetcher. Registry-derived: an `enabled` toggle changes compute, never a principal.
 

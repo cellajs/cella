@@ -37,9 +37,9 @@ describe('envKeyPair', () => {
 });
 
 describe('resolveOperatorIdentity', () => {
-  it('reads the admin application key from SCW_ADMIN_*', () => {
-    const id = resolveOperatorIdentity({ SCW_ADMIN_ACCESS_KEY: 'SCWADMIN', SCW_ADMIN_SECRET_KEY: 's' });
-    expect(id.admin).toEqual({ accessKey: 'SCWADMIN', secretKey: 's', source: 'SCW_ADMIN_*' });
+  it('reads the observer key from SCW_OBSERVER_*', () => {
+    const id = resolveOperatorIdentity({ SCW_OBSERVER_ACCESS_KEY: 'SCWOBS', SCW_OBSERVER_SECRET_KEY: 's' });
+    expect(id.observer).toEqual({ accessKey: 'SCWOBS', secretKey: 's' });
     expect(id.ambient).toBeUndefined();
     expect(id.warnings).toEqual([]);
   });
@@ -50,30 +50,26 @@ describe('resolveOperatorIdentity', () => {
       SCW_BOOTSTRAP_ACCESS_KEY: 'SCWB',
       SCW_BOOTSTRAP_SECRET_KEY: 'b',
     });
-    expect(id).toEqual({ admin: undefined, ambient: undefined, warnings: [] });
+    expect(id).toEqual({ observer: undefined, ambient: undefined, warnings: [] });
   });
-  it("keeps the process's SCW_* pair apart as ambient, never as the admin key", () => {
+  it('must not read the retired admin application key', () => {
+    const id = resolveOperatorIdentity({
+      SCW_ADMIN_ACCESS_KEY: 'SCWADMIN',
+      SCW_ADMIN_SECRET_KEY: 's',
+      SCW_STATE_ACCESS_KEY: 'X',
+      SCW_STATE_SECRET_KEY: 'y',
+    });
+    expect(id).toEqual({ observer: undefined, ambient: undefined, warnings: [] });
+  });
+  it("keeps the process's SCW_* pair apart as ambient, never as the observer key", () => {
     const id = resolveOperatorIdentity({ SCW_ACCESS_KEY: 'SCWCI', SCW_SECRET_KEY: 'c' });
-    expect(id.admin).toBeUndefined();
+    expect(id.observer).toBeUndefined();
     expect(id.ambient).toEqual({ accessKey: 'SCWCI', secretKey: 'c' });
   });
   it('treats a half-set pair as absent, with a warning, instead of aborting', () => {
-    const id = resolveOperatorIdentity({ SCW_ADMIN_ACCESS_KEY: 'SCWX' });
-    expect(id.admin).toBeUndefined();
+    const id = resolveOperatorIdentity({ SCW_OBSERVER_ACCESS_KEY: 'SCWX' });
+    expect(id.observer).toBeUndefined();
     expect(id.warnings[0]).toMatch(/must be set together.*ignoring/);
-  });
-  it('reads a deprecated SCW_STATE_* pair as the admin key with a rename warning, and ignores it next to SCW_ADMIN_*', () => {
-    const legacy = resolveOperatorIdentity({ SCW_STATE_ACCESS_KEY: 'SCWST', SCW_STATE_SECRET_KEY: 't' });
-    expect(legacy.admin).toEqual({ accessKey: 'SCWST', secretKey: 't', source: 'SCW_STATE_*' });
-    expect(legacy.warnings[0]).toMatch(/deprecated: rename them to SCW_ADMIN_ACCESS_KEY/);
-    const both = resolveOperatorIdentity({
-      SCW_ADMIN_ACCESS_KEY: 'SCWADMIN',
-      SCW_ADMIN_SECRET_KEY: 's',
-      SCW_STATE_ACCESS_KEY: 'SCWST',
-      SCW_STATE_SECRET_KEY: 't',
-    });
-    expect(both.admin?.accessKey).toBe('SCWADMIN');
-    expect(both.warnings[0]).toMatch(/ignored because SCW_ADMIN_\* is set/);
   });
 });
 

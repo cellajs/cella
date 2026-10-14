@@ -1,6 +1,7 @@
+import { actionCommand } from '../../operator-actions';
 import { resolveApplicationIdByName } from '../../scaleway/iam-client';
+import { organizationIdOfKey } from '../../scaleway/operator-identity';
 import { principalNames } from '../../scaleway/principals';
-import { resolveOrganizationId } from '../../scaleway/scaleway-iam';
 import { projectsOfOtherModes, projectVerdict } from '../../stack/project-per-mode';
 import { check, deployAction, probed, runSetup } from '../check';
 import type { StatusProvider } from '../types';
@@ -32,24 +33,23 @@ export const stackProvider: StatusProvider<Record<string, never>> = {
   },
 };
 
-/** Resolved admin application id, or `null` when the app does not exist. `undefined` facts mean the probe could not run. */
-export type IdentityFacts = { adminAppId: string | null };
+/** Resolved observer application id, or `null` when the app does not exist. `undefined` facts mean the probe could not run. */
+export type IdentityFacts = { observerAppId: string | null };
 
 /**
- * Scaleway project + admin-app identity checks. The project id is a session fact; the admin application is resolved from
- * IAM by its canonical per-mode name, the same lookup `pulumi up` does, so status reports what the next up will actually see.
+ * Scaleway project + observer identity checks. The project id is a session fact; the observer application is resolved from
+ * IAM by its canonical per-app name, the same lookup `pulumi up` does for its bucket statements.
  */
 export const identityProvider: StatusProvider<IdentityFacts> = {
   domain: 'identity',
   async gather(session) {
     if (session.stackState !== 'bootstrapped') return undefined;
-    if (!session.scalewayKeyAvailable || !session.secretKey || !session.projectId) return undefined;
+    if (!session.scalewayKeyAvailable || !session.accessKey || !session.secretKey || !session.projectId) return undefined;
     try {
-      // The resolver reads SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID before falling back to the Account API, which no
-      // engine-created application is granted (an unresolvable org degrades the check to unknown, never an error).
-      const organizationId = await resolveOrganizationId(session.secretKey, session.projectId);
-      const name = principalNames(session.appConfig.slug, session.mode).admin;
-      return { adminAppId: await resolveApplicationIdByName({ secretKey: session.secretKey }, organizationId, name) };
+      // An application key learns its organization from IAM; an unresolvable one degrades the check to unknown, never an error.
+      const organizationId = await organizationIdOfKey({ accessKey: session.accessKey, secretKey: session.secretKey }, session.projectId);
+      const name = principalNames(session.appConfig.slug, session.mode).observer;
+      return { observerAppId: await resolveApplicationIdByName({ secretKey: session.secretKey }, organizationId, name) };
     } catch {
       return undefined;
     }
@@ -65,13 +65,13 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
           : project.ok(session.projectId ?? ''),
     ];
     if (session.stackState === 'bootstrapped') {
-      const admin = check('identity.adminApp', 'Admin app', 'scaleway');
+      const observer = check('identity.observerApp', 'Observer app', 'scaleway');
       checks.push(
-        probed(admin, session.scalewayKeyAvailable, facts, 'could not read IAM applications', ({ adminAppId }) =>
-          adminAppId
-            ? admin.ok(adminAppId)
-            : admin.warn(
-                `IAM application '${principalNames(session.appConfig.slug, session.mode).admin}' not found; admin bucket access needs it`,
+        probed(observer, session.scalewayKeyAvailable, facts, 'could not read IAM applications', ({ observerAppId }) =>
+          observerAppId
+            ? observer.ok(observerAppId)
+            : observer.warn(
+                `IAM application '${principalNames(session.appConfig.slug, session.mode).observer}' not found; \`${actionCommand('identity')}\` creates it`,
                 runSetup,
               ),
         ),

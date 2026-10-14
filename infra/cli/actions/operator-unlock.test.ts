@@ -201,15 +201,15 @@ describe('acquirePrivilegedKey', () => {
     expect(acquireOwnerKey).not.toHaveBeenCalled();
   });
 
-  it('falls back to an Owner API key at the prompt only on a stack without an operator application', async () => {
+  it('must not run a privileged action on an Owner key: an app without an operator application stops and names the action that makes it', async () => {
     rememberOperatorLock({ state: 'absent', cidrs: [], open: false });
-    acquireOwnerKey.mockResolvedValue({ accessKey: 'SCWOWNER' });
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    const key = await acquirePrivilegedKey(stack);
+    await expect(acquirePrivilegedKey(stack)).rejects.toMatchObject({ name: 'ActionEnded' });
 
-    expect(key.accessKey).toBe('SCWOWNER');
-    expect(input).not.toHaveBeenCalled();
-    expect(acquireOwnerKey).toHaveBeenCalledWith(expect.objectContaining({ projectId: 'project-1', slug: 'cella', mode: 'production' }));
+    expect(acquireOwnerKey).not.toHaveBeenCalled();
+    expect(errors.mock.calls.flat().join(' ')).toContain('pnpm infra operator-key');
+    errors.mockRestore();
   });
 });
 

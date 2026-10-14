@@ -64,7 +64,7 @@ export function probed<T>(
   unknownDetail: string,
   evaluate: (value: T) => Check,
 ): Check {
-  if (!scalewayKeyAvailable) return builder.unknown('no Scaleway key available to this run (SCW_ADMIN_*, SCW_* or AWS_*)');
+  if (!scalewayKeyAvailable) return builder.unknown('no Scaleway key available to this run (SCW_OBSERVER_*, SCW_* or AWS_*)');
   if (value === undefined) return builder.unknown(unknownDetail);
   return evaluate(value);
 }

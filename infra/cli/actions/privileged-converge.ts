@@ -2,10 +2,8 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
-import { deriveInfra } from '../../lib/naming';
 import { actionCommand, menuPath } from '../../lib/operator-actions';
-import { describeKey, resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
-import { principalNames } from '../../lib/scaleway/principals';
+import { describeKey } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { projectAccessKey } from '../../lib/scaleway/s3-client';
 import { makeControlClient, stateBucket } from '../../lib/stack/control-store';
@@ -15,7 +13,7 @@ import { checkMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { admitOperatorToBuckets } from '../../tasks/admit-operator-buckets';
-import { ensureRegistryPrincipals, missingRegistryPrincipals } from '../../tasks/setup-service-apps';
+import { missingRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
 import { acquireStackLockOrExit, endAction, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { acquirePrivilegedKey } from './operator-unlock';
@@ -73,29 +71,18 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
   const passphrase = opts.reviewed?.passphrase ?? (await resolveVerifiedPassphrase(context.stackYaml));
   const { projectId, appConfig } = context;
 
-  const identity = resolveOperatorIdentity();
-  const names = principalNames(appConfig.slug, context.environment);
   const ownerKey = await acquirePrivilegedKey(context);
-  // An Owner API key writes IAM: a stack without an operator application yet. The operator key does not.
-  const writesIam = ownerKey.pasted;
   const { organizationId } = ownerKey;
   const stack = stackNameFor(context);
 
-  // The admin application key from infra/.env.<mode> signs every state-bucket touch (login, lock, `up`) while the run's privileged key drives the resource mutations; without an admin key the Owner API key serves both sides.
-  const stateOverride = identity.admin ? { stateAccessKey: identity.admin.accessKey, stateSecretKey: identity.admin.secretKey } : {};
-  const env = buildProviderEnv(infraDir, {
-    accessKey: ownerKey.accessKey,
-    secretKey: ownerKey.secretKey,
-    projectId,
-    passphrase,
-    ...stateOverride,
-  });
+  await admitOperatorOrExit(context, { ...ownerKey, passphrase, stack });
+  const env = buildProviderEnv(infraDir, { accessKey: ownerKey.accessKey, secretKey: ownerKey.secretKey, projectId, passphrase });
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
 
   // Lock the stack through the control bucket to exclude concurrent operators and CI.
   // Every exit path must release. The hard-failure paths release before they print and end the action, and the guard stops the double release when the finally below runs too.
-  // Without an admin key the run's own key serves the state side, naming this project: an operator key is made for one environment's project.
-  const stateKey = identity.admin ?? { accessKey: projectAccessKey(ownerKey.accessKey, projectId), secretKey: ownerKey.secretKey };
+  // The state side names this project: the operator key is made in one environment's project and serves them all.
+  const stateKey = { accessKey: projectAccessKey(ownerKey.accessKey, projectId), secretKey: ownerKey.secretKey };
   const stackLock = await acquireStackLockOrExit({
     appConfig,
     accessKey: stateKey.accessKey,
@@ -132,66 +119,25 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
     try {
       env.SCW_DEFAULT_ORGANIZATION_ID = organizationId;
 
-      // Registry principals anchor the machine policies. An Owner API key creates any that is missing, so a registry change converges in this
-      // one run. The operator key writes no IAM: it finds out which ones are missing and stops, since the `up` would fail on them halfway.
-      const registry = {
-        projectId,
+      // Registry principals anchor the machine policies. The operator key writes no IAM: it finds out which ones are missing and stops, since
+      // the `up` would fail on them halfway.
+      const missing = await missingRegistryPrincipals({
         slug: appConfig.slug,
         mode: context.environment,
         organizationId,
         singleVM: appConfig.singleVM ?? false,
-      };
-      if (writesIam) {
-        console.info(pc.dim(`\n→ Ensuring registry IAM principals (the '${names.vmService('<service>')}' and '${names.boot}' applications)…`));
-        try {
-          await ensureRegistryPrincipals({ ...registry, callerSecretKey: ownerKey.secretKey });
-        } catch (error) {
-          console.warn(
-            `${warningMark} Could not ensure registry principals (${errorMessage(error)}); \`pulumi up\` fails at requirePrincipalId if one is missing.`,
-          );
-        }
-      } else {
-        const missing = await missingRegistryPrincipals({ ...registry, secretKey: ownerKey.secretKey }).catch((error) => {
-          console.warn(`${warningMark} Could not check the registry principals (${errorMessage(error)}).`);
-          return [] as string[];
-        });
-        if (missing.length > 0) {
-          await releaseAll();
-          console.error(
-            `${warningMark} The service registry needs ${missing.length === 1 ? 'an identity that does' : 'identities that do'} not exist yet: ${missing.join(', ')}.`,
-          );
-          console.error(
-            `  Creating one writes IAM, which the operator key cannot: \`${actionCommand('identity')}\` makes it with your Owner API key.`,
-          );
-          endAction(1);
-        }
-      }
-
-      // Bucket policies written before the operator was admitted keep it out of its own buckets; the admin application key lets it in.
-      if (identity.admin && !ownerKey.pasted) {
-        const operator = await describeKey(ownerKey).catch(() => undefined);
-        if (operator?.bearer === 'application') {
-          const { naming } = deriveInfra(appConfig);
-          const buckets = [
-            { bucket: stateBucket(appConfig.slug), resource: 'state-bucket-policy' },
-            { bucket: naming.frontendBucket, resource: 'frontend-policy' },
-            { bucket: naming.publicBucket, resource: 'public-uploads-policy' },
-            { bucket: naming.privateBucket, resource: 'private-uploads-policy' },
-            { bucket: naming.bootDiagBucket, resource: 'boot-diag-policy' },
-          ];
-          const admitted = await admitOperatorToBuckets({
-            stack,
-            buckets,
-            region: appConfig.s3.region,
-            operatorApplicationId: operator.bearerId,
-            admin: identity.admin,
-            env,
-          }).catch((error) => {
-            console.warn(`${warningMark} Could not admit the operator to the buckets (${errorMessage(error)}).`);
-            return [] as string[];
-          });
-          if (admitted.length > 0) console.info(`${checkMark} The operator is admitted now: ${admitted.join(', ')}.`);
-        }
+        secretKey: ownerKey.secretKey,
+      }).catch((error) => {
+        console.warn(`${warningMark} Could not check the registry principals (${errorMessage(error)}).`);
+        return [] as string[];
+      });
+      if (missing.length > 0) {
+        await releaseAll();
+        console.error(
+          `${warningMark} The service registry needs ${missing.length === 1 ? 'an identity that does' : 'identities that do'} not exist yet: ${missing.join(', ')}.`,
+        );
+        console.error(`  Creating one writes IAM, which the operator key cannot: \`${actionCommand('identity')}\` makes it with your Owner API key.`);
+        endAction(1);
       }
 
       // The machine policies are written at Owner moments: a state that still holds them would have this `up` delete them.
@@ -312,4 +258,31 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
   }
 
   return { env, stack, completed, verified, ownerKeyPasted: ownerKey.pasted };
+}
+
+/**
+ * Admit the operator to bucket policies written before it, before anything of the run reads the state (tasks/admit-operator-buckets.ts):
+ * nothing when it is admitted already. Ends the action when the policies shut it out and nothing can let it in.
+ */
+export async function admitOperatorOrExit(
+  context: InfraContext,
+  run: { accessKey: string; secretKey: string; organizationId: string; passphrase: string; stack: string },
+): Promise<void> {
+  const operator = await describeKey(run).catch(() => undefined);
+  if (operator?.bearer !== 'application') return;
+  try {
+    const admitted = await admitOperatorToBuckets({
+      appConfig: context.appConfig,
+      mode: context.environment,
+      projectId: context.projectId,
+      organizationId: run.organizationId,
+      stack: run.stack,
+      operator: { accessKey: run.accessKey, secretKey: run.secretKey, applicationId: operator.bearerId },
+      passphrase: run.passphrase,
+    });
+    if (admitted.length > 0) console.info(`${checkMark} The operator is admitted to the buckets now: ${admitted.join(', ')}.`);
+  } catch (error) {
+    console.error(`${warningMark} Could not admit the operator to the buckets: ${errorMessage(error)}.`);
+    endAction(1);
+  }
 }

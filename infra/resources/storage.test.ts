@@ -56,6 +56,25 @@ describe('storage module', () => {
     }
   });
 
+  it('must not admit the retired admin application outside the run that admits the operator with its key', () => {
+    for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
+      expect(String(policy.inputs.policy), policy.name).not.toContain('cella-production-admin');
+    }
+  });
+
+  it('must not let the observer read user data: of the app buckets it reads the boot diagnostics only', () => {
+    type Statement = { Sid: string; Principal: unknown; Action: string[] };
+    for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
+      const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
+      const observer = Statement.filter((statement) => JSON.stringify(statement.Principal).includes('cella-observer-id'));
+      if (policy.name === 'boot-diag-policy') {
+        expect(observer.map((statement) => statement.Action)).toEqual([['s3:ListBucket', 's3:GetObject']]);
+      } else {
+        expect(observer, policy.name).toEqual([]);
+      }
+    }
+  });
+
   it('boot diagnostics bucket grants the boot app write to boot-diag/ only, never public read', () => {
     const policies = h.resources.filter((r) => /bucketPolicy/i.test(r.type));
     const policy = policies.find((p) => p.name === 'boot-diag-policy');
