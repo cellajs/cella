@@ -307,8 +307,12 @@ export const config = {
 
   /** Gleap token for customer support widget */
   gleapToken: '',
-  /** Google Maps API key */
-  googleMapsKey: '',
+  /**
+   * MapLibre style URL per color mode for the contact map; empty hides the map. OpenFreeMap needs no key:
+   * light 'https://tiles.openfreemap.org/styles/positron', dark 'https://tiles.openfreemap.org/styles/dark'.
+   * The CSP allows each style's origin; tiles, fonts and icons must come from that same origin.
+   */
+  mapStyleUrls: { light: '', dark: '' },
   /** Matrix homeserver URL for chat integration */
   matrixURL: 'https://matrix-client.matrix.org',
   /** Maple.dev public ingest key, safe to embed in the frontend bundle (empty disables frontend export) */
@@ -363,13 +367,15 @@ export const config = {
     country: '',
     registration: '',
     bankAccount: '',
-    googleMapsUrl: '',
+    /** Link behind "Get directions" and the address on the contact page */
+    directionsUrl: '',
     scheduleCallUrl: '',
     socialUrl: '',
     blueskyHandle: '',
     element: '',
     githubUrl: '',
-    mapZoom: 4,
+    /** MapLibre zoom of the contact map: 3 shows Europe, 14 a few streets */
+    mapZoom: 3,
     coordinates: { lat: 0, lng: 0 },
   },
 
