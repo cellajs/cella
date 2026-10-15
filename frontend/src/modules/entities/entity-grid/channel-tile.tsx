@@ -28,11 +28,11 @@ const descriptionPreview = (html: string) => {
   const text = html
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&(?:#39|apos);/g, "'")
     .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
     .replace(/\s+/g, ' ')
     .trim();
   return text.length > 200 ? `${text.slice(0, 200).trimEnd()}…` : text;
