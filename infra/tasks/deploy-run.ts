@@ -4,12 +4,13 @@ import { mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { healthContract } from '../config/health.config';
+import { type RunRecord, RunRecorder, runId, runLogKey, runRecordKey } from '../lib/deploy/run-record';
 import { actionCommand } from '../lib/operator-actions';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
 import { adoptStateBackendEnv, stateBackendUrl } from '../lib/stack/control-store';
 import { deployEvents, deployTelemetry, initDeployTelemetry } from '../lib/telemetry/deploy-telemetry';
 import { otlpConfigFromEnv } from '../lib/telemetry/emitter';
-import { errorMessage } from '../lib/utils/errors';
+import { ExitCodeError, errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
@@ -27,6 +28,8 @@ export interface DeployOptions {
   sha: string;
   /** CI ref for the production trust gate; local operator runs may omit it. */
   gitRef?: string;
+  /** The run's id in its record; a new one (start time and target) when not given. */
+  run?: string;
   /**
    * Skip the rollout's final displaced-generation reap so verification, entry publish, and smoke run right after cutover.
    * The displaced VMs stay off every LB pool until a follow-up `reap` run destroys them.
@@ -65,6 +68,8 @@ export interface DeployEffects {
   publishEntryFiles(opts: { distDir: string; bucket: string; region: string }): Promise<void>;
   /** Print the boot bundles of release `sha` (saying so when there is none) and replay its black-box events from `sinceIso` on. */
   bootDiagnostics(sha: string, sinceIso?: string): Promise<void>;
+  /** Write a run's record and log to the environment's diagnostics bucket. */
+  writeRunRecord(opts: { bucket: string; region: string; record: RunRecord; log: string }): Promise<void>;
   group(title: string): void;
   groupEnd(): void;
   info(msg: string): void;
@@ -98,6 +103,7 @@ export function parseDeployArgs(argv: string[]): DeployOptions {
     mode,
     sha,
     gitRef: getFlag(argv, '--git-ref'),
+    run: getFlag(argv, '--run'),
     deferReap: argv.includes('--defer-reap'),
   };
 }
@@ -127,6 +133,13 @@ export async function runDeploy(
   adoptStateBackendEnv(env.region);
 
   const startedAtIso = new Date().toISOString();
+  // One run, one record (plan §3.8): kept while the deploy runs, written at its end whatever the outcome.
+  const recorder = new RunRecorder({ run: opts.run ?? runId(opts.sha), environment: opts.mode, target: opts.sha });
+  const say = (message: string) => {
+    recorder.line(message);
+    fx.info(message);
+  };
+  say(`[deploy] run ${recorder.record().run}: ${opts.sha} to ${opts.mode}`);
   await fx.initTelemetry({ mode: opts.mode, sha: opts.sha });
   const telemetry = deployTelemetry();
   const deploySpan = telemetry?.startSpan(`deploy ${opts.mode}`, { sha: opts.sha });
@@ -143,8 +156,12 @@ export async function runDeploy(
       const seconds = Math.round((Date.now() - startedAt) / 1000);
       span?.end('ok');
       telemetry?.event(deployEvents.stepCompleted, { step: title, duration_s: seconds }, { ctx: span?.ctx });
-      fx.info(`[deploy] ${title}: ok (${seconds}s)`);
+      recorder.step(title, seconds, 'ok');
+      say(`[deploy] ${title}: ok (${seconds}s)`);
     } catch (err) {
+      const seconds = Math.round((Date.now() - startedAt) / 1000);
+      recorder.step(title, seconds, 'error');
+      recorder.line(`[deploy] ${title}: failed (${seconds}s): ${errorMessage(err)}`);
       span?.end('error', { message: errorMessage(err) });
       const failAttrs: { step: string; error: string; 'error.stack'?: string } = { step: title, error: errorMessage(err) };
       if (err instanceof Error && err.stack) failAttrs['error.stack'] = err.stack.slice(0, 4000);
@@ -158,6 +175,7 @@ export async function runDeploy(
 
   let lease: { release(): Promise<void> } | undefined;
   let outcome: 'ok' | 'error' = 'ok';
+  let failure: unknown;
   try {
     await step('Check Pulumi state bucket', () => fx.task('ensure-state-bucket', ['--check']));
     await step('Login to S3 state backend', () => fx.exec('pulumi', ['login', stateBackendUrl(env.state_bucket, env.region)]));
@@ -205,7 +223,7 @@ export async function runDeploy(
         try {
           await fx.task('geoip-refresh', ['--bucket', env.public_bucket, '--region', env.region, '--max-age-days', '35']);
         } catch (err) {
-          fx.info(`[deploy] GeoIP data refresh skipped: ${errorMessage(err)}`);
+          say(`[deploy] GeoIP data refresh skipped: ${errorMessage(err)}`);
         }
       });
     }
@@ -273,8 +291,8 @@ export async function runDeploy(
       );
     } catch (err) {
       telemetry?.event(deployEvents.rolloutFailed, { error: errorMessage(err) }, { severity: 'error' });
-      fx.info('[deploy] rollout failed; collecting boot diagnostics');
-      await fx.bootDiagnostics(opts.sha, startedAtIso).catch((diagErr) => fx.info(`[deploy] boot diagnostics failed: ${errorMessage(diagErr)}`));
+      say('[deploy] rollout failed; collecting boot diagnostics');
+      await fx.bootDiagnostics(opts.sha, startedAtIso).catch((diagErr) => say(`[deploy] boot diagnostics failed: ${errorMessage(diagErr)}`));
       throw err;
     }
 
@@ -308,9 +326,18 @@ export async function runDeploy(
     );
   } catch (err) {
     outcome = 'error';
+    failure = err;
     throw err;
   } finally {
-    await lease?.release().catch((err) => fx.info(`[deploy] lock release failed: ${errorMessage(err)}`));
+    await lease?.release().catch((err) => say(`[deploy] lock release failed: ${errorMessage(err)}`));
+    // A preflight that found an owed privileged change ends the run blocked, not failed: an apply comes first, then the same target.
+    const blocked = failure instanceof ExitCodeError && failure.exitCode === 2;
+    recorder.finish(outcome === 'ok' ? 'deployed' : blocked ? 'blocked' : 'failed', outcome === 'ok' ? undefined : errorMessage(failure));
+    const run = recorder.record().run;
+    await fx.writeRunRecord({ bucket: env.diag_bucket, region: env.region, record: recorder.record(), log: recorder.log() }).then(
+      () => fx.info(`[deploy] record of run ${run}: s3://${env.diag_bucket}/${runRecordKey(run)} (log: ${runLogKey(run)})`),
+      (err) => fx.info(`[deploy] the record of run ${run} could not be written: ${errorMessage(err)}`),
+    );
     deploySpan?.end(outcome);
     telemetry?.event(
       outcome === 'ok' ? deployEvents.completed : deployEvents.failed,
@@ -379,6 +406,23 @@ const ENTRY_FILES: Array<{ name: string; contentType: string }> = [
   { name: 'sw.js', contentType: 'text/javascript; charset=utf-8' },
   { name: 'manifest.webmanifest', contentType: 'application/manifest+json' },
 ];
+
+/** Write a run's record and log to the diagnostics bucket with the deploy key, which may write objects there. */
+async function writeRunRecordToBucket(opts: { bucket: string; region: string; record: RunRecord; log: string }): Promise<void> {
+  const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+  const { accessKey, secretKey } = deployS3Key();
+  const s3 = await makeS3Client(opts.region, accessKey, secretKey);
+  const { run } = opts.record;
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: opts.bucket,
+      Key: runRecordKey(run),
+      Body: JSON.stringify(opts.record, null, 2),
+      ContentType: 'application/json',
+    }),
+  );
+  await s3.send(new PutObjectCommand({ Bucket: opts.bucket, Key: runLogKey(run), Body: opts.log, ContentType: 'text/plain; charset=utf-8' }));
+}
 
 async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string; region: string }): Promise<void> {
   const { PutObjectCommand } = await import('@aws-sdk/client-s3');
@@ -512,6 +556,7 @@ function createRealEffects(): DeployEffects {
       return out.ok;
     },
     publishEntryFiles: publishEntryFilesToBucket,
+    writeRunRecord: writeRunRecordToBucket,
     async bootDiagnostics(sha, sinceIso) {
       const { main: diag } = await import('./diag');
       // This release's bundles only: an older release's transcript would read like this deploy's boot.

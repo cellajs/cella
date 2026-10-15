@@ -135,6 +135,10 @@ Each environment has a Serverless Jobs definition, `<slug>-<mode>-main`, that ru
 
 `pnpm infra start-deploy` starts a run by hand, on your operator key, for the environment's target, and follows it until it ends; its log is in Cockpit under Serverless Jobs. A stack set up before the main job gets its definition from the first apply after a **Rotate keys**, which writes the deploy key's copy; until then the plan warns that the definition waits for it.
 
+### Run records
+
+Every deploy is one run with one record, written at its end whatever the outcome, in the environment's diagnostics bucket: `runs/<run>/record.json` (environment, target, each step with its duration, the step that failed, the error, and `deployed`, `blocked` or `failed`) and `runs/<run>/log`, the deploy's own lines. A run's id is when it started and what it deploys (`20261015T002005Z-21bae33f7c`), so ids sort by time. Every line goes through the same scrub as a machine's boot log first. `pnpm infra` → **Show runs** (`pnpm infra runs`) lists the last ten on the observer key and shows one in full with the end of its log. A record that cannot be written does not fail the deploy; the deploy says so in its own output.
+
 ### Bring your own CI
 
 1. **Env**: export `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`, `PULUMI_CONFIG_PASSPHRASE` (the workflow maps its `SCW_PROJECT_ID` / `SCW_ORGANIZATION_ID` secrets onto the `SCW_DEFAULT_*` names the Scaleway provider reads). Install node, pnpm, git and the pulumi CLI: the deploy needs no Docker.

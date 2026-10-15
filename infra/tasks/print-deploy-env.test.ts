@@ -41,6 +41,7 @@ describe('buildDeployEnv', () => {
       frontend_bucket: 'cella-frontend',
       public_bucket: 'cella-public',
       state_bucket: 'cella-pulumi-state',
+      diag_bucket: 'cella-boot-diag',
       enabled_services_json: JSON.stringify([
         {
           service: 'backend',

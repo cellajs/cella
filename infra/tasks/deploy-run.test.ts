@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { RunRecord } from '../lib/deploy/run-record';
+import { ExitCodeError } from '../lib/utils/errors';
 import { type DeployEffects, type DeployOptions, deployFailureHint, parseDeployArgs, parseReapArgs, runDeploy, runReap } from './deploy-run';
 import type { AllowedKey } from './print-deploy-env';
 
@@ -13,6 +15,7 @@ async function fakeDeployEnv(opts: DeployOptions): Promise<Record<AllowedKey, st
     public_bucket: '',
     frontend_bucket: 'cella-frontend',
     state_bucket: 'cella-pulumi-state',
+    diag_bucket: 'cella-boot-diag',
     grant_rows_json: JSON.stringify([
       {
         app: 'cella-production-vm-backend',
@@ -54,6 +57,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
   const grantArgs: string[][] = [];
   const taskArgs: Record<string, string[]> = {};
   const execCalls: Array<{ cmd: string; args: string[]; opts: Parameters<DeployEffects['exec']>[2] }> = [];
+  const records: Array<{ bucket: string; record: RunRecord; log: string }> = [];
   const fx: DeployEffects = {
     initTelemetry: async () => {
       ops.push('telemetry:init');
@@ -94,18 +98,28 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     bootDiagnostics: async (sha) => {
       ops.push(`boot-diag:${sha}`);
     },
+    writeRunRecord: async ({ bucket, record, log }) => {
+      ops.push('record');
+      records.push({ bucket, record, log });
+    },
     group: () => {},
     groupEnd: () => {},
     info: () => {},
   };
-  return { fx, ops, rolloutArgs, grantArgs, taskArgs, execCalls };
+  return { fx, ops, rolloutArgs, grantArgs, taskArgs, execCalls, records };
 }
 
 const baseOpts = { mode: 'production', sha: 'abc123' };
 
 describe('parseDeployArgs', () => {
   it('parses flags and refuses non-pinned tags', () => {
-    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc'])).toEqual({ mode: 'staging', sha: 'abc', gitRef: undefined, deferReap: false });
+    expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc'])).toEqual({
+      mode: 'staging',
+      sha: 'abc',
+      gitRef: undefined,
+      run: undefined,
+      deferReap: false,
+    });
     expect(parseDeployArgs(['--mode', 'staging', '--sha', 'abc', '--defer-reap']).deferReap).toBe(true);
     expect(() => parseDeployArgs(['--mode', 'staging', '--sha', 'latest'])).toThrow(/non-pinned/);
     expect(() => parseDeployArgs(['--mode', 'staging'])).toThrow(/Usage/);
@@ -210,7 +224,7 @@ describe('runDeploy sequencing', () => {
     expect(ops).toContain('task:preflight-privileged');
     expect(ops).not.toContain('update:production');
     expect(ops).not.toContain('rollout');
-    expect(ops.at(-1)).toBe('lease:release');
+    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
     // The failure travels as the thrown error; the process exit code stays the entry point's business.
     expect(process.exitCode).toBe(exitCodeBefore);
   });
@@ -220,7 +234,7 @@ describe('runDeploy sequencing', () => {
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/);
     expect(ops).toContain(`boot-diag:${baseOpts.sha}`);
     expect(ops).not.toContain('publish-entry');
-    expect(ops.at(-1)).toBe('lease:release');
+    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
   });
 
   it('a frontend-less registry (empty frontend_bucket) builds no frontend and publishes no entry file', async () => {
@@ -231,14 +245,14 @@ describe('runDeploy sequencing', () => {
     expect(build[build.indexOf('--dist') + 1]).toBe('');
     expect(ops).not.toContain('publish-entry');
     expect(ops).toContain('task:smoke');
-    expect(ops.at(-1)).toBe('lease:release');
+    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
   });
 
   it('fails before publishing when a service does not serve the expected version', async () => {
     const { fx, ops } = makeFake({ verifyFails: true });
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/does not serve/);
     expect(ops).not.toContain('publish-entry');
-    expect(ops.at(-1)).toBe('lease:release');
+    expect(ops.slice(-2)).toEqual(['lease:release', 'record']);
   });
 
   it('publishes and smoke-tests the entry files the build wrote', async () => {
@@ -315,6 +329,46 @@ describe('what the deploy runs', () => {
     const { fx, execCalls } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
     expect([...new Set(execCalls.map((call) => `${call.cmd} ${call.args[0]}`))].sort()).toEqual(['pulumi login', 'pulumi stack']);
+  });
+});
+
+describe('the run record', () => {
+  it('keeps every step with its duration, and ends deployed, in the diagnostics bucket', async () => {
+    const { fx, records, ops } = makeFake();
+    await runDeploy({ ...baseOpts, run: 'run-1' }, fx, fakeDeployEnv);
+    const [written] = records;
+    expect(written?.bucket).toBe('cella-boot-diag');
+    expect(written?.record).toMatchObject({ run: 'run-1', environment: 'production', target: 'abc123', outcome: 'deployed' });
+    expect(written?.record.failedStep).toBeUndefined();
+    expect(written?.record.steps.map((step) => step.title)).toContain('Waved rollout');
+    expect(written?.log).toContain('[deploy] Smoke tests: ok');
+    expect(ops.at(-1)).toBe('record');
+  });
+
+  it('is written when the deploy fails too, naming the step and the error', async () => {
+    const { fx, records } = makeFake({ rolloutFails: true });
+    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/);
+    expect(records[0]?.record).toMatchObject({ outcome: 'failed', failedStep: 'Waved rollout', error: 'cutover failed' });
+    expect(records[0]?.log).toContain('[deploy] Waved rollout: failed');
+  });
+
+  it('ends blocked, not failed, when the preflight found an owed privileged change', async () => {
+    const { fx, records } = makeFake();
+    const task = fx.task;
+    fx.task = async (name, argv) => {
+      if (name === 'preflight-privileged') throw new ExitCodeError('an apply is owed', 2);
+      return task(name, argv);
+    };
+    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/apply is owed/);
+    expect(records[0]?.record).toMatchObject({ outcome: 'blocked', failedStep: 'Preflight privileged changes' });
+  });
+
+  it('must not fail a deploy whose record cannot be written', async () => {
+    const { fx } = makeFake();
+    fx.writeRunRecord = async () => {
+      throw new Error('bucket refused');
+    };
+    await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).resolves.toBeUndefined();
   });
 });
 
