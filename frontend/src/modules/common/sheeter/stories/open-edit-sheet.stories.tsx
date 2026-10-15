@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import i18n from 'i18next';
 import { type RefObject, useRef } from 'react';
 import type { Organization, Tenant } from 'sdk';
+import { appConfig } from 'shared';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { Sheeter } from '~/modules/common/sheeter/provider';
 import { openUpdateSheet as openUpdateOrganizationSheet } from '~/modules/organization/table/organizations-columns';
@@ -125,6 +126,15 @@ export const OrganizationSheet: Story = {
 export const TenantSheet: Story = {
   name: 'Tenant',
   args: { open: (triggerRef) => openUpdateTenantSheet(tenant, triggerRef) },
+  // The connections section shows only while the sso strategy is on, which an app may keep off.
+  beforeEach: () => {
+    const { enabledAuthStrategies } = appConfig;
+    // Reflect: an app's config types its strategies as the literal list it enables, which may leave sso out.
+    Reflect.set(appConfig, 'enabledAuthStrategies', [...enabledAuthStrategies, 'sso']);
+    return () => {
+      Reflect.set(appConfig, 'enabledAuthStrategies', enabledAuthStrategies);
+    };
+  },
   play: async ({ canvasElement }) => {
     const sheet = await openAndClose(canvasElement, { id: 'update-tenant', title: 'Edit tenant', container: 'container w-full' });
     // The General section with the form, then the connections section; each carries its own unsaved badge.
