@@ -1,0 +1,13 @@
+/* MapLibre's attribution control in the app's colors, so it reads in dark mode too. */
+.contact-map .maplibregl-ctrl-attrib {
+  background-color: color-mix(in oklch, var(--background) 80%, transparent);
+  color: var(--muted-foreground);
+}
+
+.contact-map .maplibregl-ctrl-attrib a {
+  color: inherit;
+}
+
+.dark .contact-map .maplibregl-ctrl-attrib-button {
+  filter: invert(1);
+}

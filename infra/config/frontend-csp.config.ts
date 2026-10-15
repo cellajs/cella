@@ -28,6 +28,14 @@ const cspOrigins = {
   s3Buckets: appConfig.s3.host ? `https://*.${appConfig.s3.host}` : '',
   s3Public: appConfig.s3.publicCDNUrl,
   s3Private: appConfig.s3.privateCDNUrl,
+  // The contact map fetches its style, tiles, fonts and icons from each style URL's origin.
+  maps: [
+    ...new Set(
+      Object.values(appConfig.mapStyleUrls ?? {})
+        .filter(Boolean)
+        .map((url) => new URL(url).origin),
+    ),
+  ].join(' '),
 };
 
 const connectSrc = [
@@ -39,6 +47,7 @@ const connectSrc = [
   cspOrigins.s3Buckets,
   cspOrigins.s3Public,
   cspOrigins.s3Private,
+  cspOrigins.maps,
   'https://*.transloadit.com',
   'wss://*.transloadit.com',
   'https://transloaditstatus.com',
@@ -52,7 +61,7 @@ const connectSrc = [
 
 export const frontendCsp = [
   `default-src 'self'`,
-  `script-src 'self' *.gleap.io maps.googleapis.com`,
+  `script-src 'self' *.gleap.io`,
   `worker-src 'self' blob:`,
   `style-src 'self' 'unsafe-inline'`,
   connectSrc,

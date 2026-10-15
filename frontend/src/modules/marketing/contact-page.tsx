@@ -8,7 +8,7 @@ import { MarketingLayout } from '~/modules/marketing/layout';
 type ContactMethod = { icon: typeof MapPinIcon; title: TKey; link: string; textKey?: TKey; text?: string };
 
 const methods: ContactMethod[] = [
-  { icon: MapPinIcon, title: 'c:visit', link: appConfig.company.googleMapsUrl, text: appConfig.company.streetAddress },
+  { icon: MapPinIcon, title: 'c:visit', link: appConfig.company.directionsUrl, text: appConfig.company.streetAddress },
   { icon: MailIcon, title: 'c:email', link: `mailto:${appConfig.company.email}`, text: appConfig.company.email },
 ];
 

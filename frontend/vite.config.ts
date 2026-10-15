@@ -55,7 +55,7 @@ const FEATURE_LIBS: [name: string, packages: RegExp][] = [
   ['media', /^(media-chrome|player\.style)$/],
   ['gleap', /^gleap$/],
   ['react-scan', /^react-scan$/],
-  ['maps', /^(@vis\.gl|@googlemaps)/],
+  ['maps', /^maplibre-gl$/],
   ['uppy', /^(@uppy|@transloadit)/],
 ];
 
@@ -71,7 +71,7 @@ const packageOf = (id: string) => {
  * match them by folder, and claimed by the on-demand group last, so each forms its own lazy chunk.
  */
 const ON_DEMAND_APP =
-  /[\\/]src[\\/]modules[\\/](common[\\/](blocknote|uploader)[\\/]|common[\\/]gleap-support|common[\\/]form-fields[\\/]blocknote|attachment[\\/](render[\\/]|offline[\\/]upload-service))/;
+  /[\\/]src[\\/]modules[\\/](common[\\/](blocknote|uploader)[\\/]|common[\\/]gleap-support|common[\\/]contact-form[\\/]contact-form-map|common[\\/]form-fields[\\/]blocknote|attachment[\\/](render[\\/]|offline[\\/]upload-service))/;
 
 /**
  * Plain modules under blocknote/ that boot-time code reads: the Yjs field registry (the cache), the document store, its
@@ -293,7 +293,7 @@ const viteConfig = {
             {
               // ── On-demand app code, last ──────────────────────────────────────────────────────
               // The blocknote wrappers and the form field that renders them, the uploader, the chat
-              // widget, and the attachment renderers behind `lazyNamed`. Claimed after every group
+              // widget, the contact map, and the attachment renderers behind `lazyNamed`. Claimed after every group
               // above, because they import the UI primitives, the query layer and the attachment
               // helpers, and a group captures what it matches along with its dependencies.
               name: (id: string) => {
