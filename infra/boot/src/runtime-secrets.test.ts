@@ -22,6 +22,42 @@ function fetchSecret(values: Record<string, string | null>): FetchLike {
 }
 
 describe('hydrateRuntimeSecrets', () => {
+  it("reads each copy with the key of the service it belongs to, so a host's services never read each other's folders", async () => {
+    tempDir = await mkdtemp(join(tmpdir(), 'infra-boot-'));
+    const tokens: Record<string, string> = {};
+    const fetchImpl: FetchLike = async (url, init) => {
+      const id = url.split('/secrets/')[1]!.split('/')[0]!;
+      tokens[id] = (init?.headers as Record<string, string> | undefined)?.['X-Auth-Token'] ?? '';
+      return { ok: true, status: 200, text: async () => JSON.stringify({ data: Buffer.from(`v-${id}`).toString('base64') }) };
+    };
+    await hydrateRuntimeSecrets({
+      manifest: [
+        { envVar: 'COOKIE_SECRET', secretId: 'copy-backend', required: true, service: 'backend' },
+        { envVar: 'CDC_SECRET', secretId: 'copy-cdc', required: true, service: 'cdc' },
+      ],
+      secretKey: 'backend-key',
+      secretKeys: { backend: 'backend-key', cdc: 'cdc-key' },
+      region: 'nl-ams',
+      outputPath: join(tempDir, '.env.runtime'),
+      fetchImpl,
+    });
+    expect(tokens).toEqual({ 'copy-backend': 'backend-key', 'copy-cdc': 'cdc-key' });
+  });
+
+  it("must not read a copy with another service's key when its own is missing", async () => {
+    tempDir = await mkdtemp(join(tmpdir(), 'infra-boot-'));
+    await expect(
+      hydrateRuntimeSecrets({
+        manifest: [{ envVar: 'CDC_SECRET', secretId: 'copy-cdc', required: true, service: 'cdc' }],
+        secretKey: 'backend-key',
+        secretKeys: { backend: 'backend-key' },
+        region: 'nl-ams',
+        outputPath: join(tempDir, '.env.runtime'),
+        fetchImpl: fetchSecret({ 'copy-cdc': 'x' }),
+      }),
+    ).rejects.toThrow(/no key for service 'cdc'/);
+  });
+
   it('writes deliverable secrets mode 0600', async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'infra-boot-'));
     const outputPath = join(tempDir, '.env.runtime');

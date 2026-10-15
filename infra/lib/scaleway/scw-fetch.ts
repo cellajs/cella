@@ -57,6 +57,12 @@ async function request(auth: ScwAuth, method: string, url: string, body?: unknow
   return text;
 }
 
+/** The HTTP status a failed Scaleway call carried, read from the error {@link scwFetch} throws; undefined for a failure without an answer. */
+export function scwErrorStatus(error: unknown): number | undefined {
+  const status = error instanceof Error ? error.message.match(/ → (\d{3}): /)?.[1] : undefined;
+  return status ? Number(status) : undefined;
+}
+
 /** Authenticated Scaleway call whose JSON response body is the result. */
 export async function scwFetch<T>(auth: ScwAuth, method: string, url: string, body?: unknown): Promise<T> {
   const text = await request(auth, method, url, body);

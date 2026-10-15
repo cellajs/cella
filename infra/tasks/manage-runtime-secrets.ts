@@ -1,9 +1,13 @@
 import { randomBytes } from 'node:crypto';
+import { telemetrySink } from '../config/telemetry.config';
 import { managedKeys } from '../lib/managed-keys';
 import { type RuntimeSecretDefinition, runtimeSecrets } from '../lib/runtime-secrets';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
-import { secretPathFor } from '../lib/scaleway/secret-paths';
+import { existingContainers, missingCopies, putEveryCopy, secretCopyContainers } from '../lib/scaleway/secret-copies';
+import { secretCopies } from '../lib/scaleway/secret-paths';
+import { syncDeployTelemetryKey } from '../lib/telemetry/sink-key';
 import { checkMark, pc, tildeMark, warningMark } from '../lib/utils/cli-output';
+import { isEnvFileDeliverable } from '../lib/utils/env-file';
 import { isMain } from '../lib/utils/is-main';
 import { provisionManagedKey } from './provision-managed-key';
 
@@ -24,6 +28,8 @@ export interface RuntimeSecretPrompts {
 
 export interface ManageRuntimeSecretsOptions {
   secretKey: string;
+  /** The key that mints a managed key, which writes IAM, with its organization: asked for when a mint is confirmed. */
+  identityKey: () => Promise<{ secretKey: string; organizationId: string }>;
   projectId: string;
   region: string;
   /** App slug that names the `<slug>-<mode>-<suffix>` IAM app when minting a managed key. */
@@ -63,8 +69,9 @@ interface MenuContext {
   secrets: ManagedRuntimeSecret[];
   prompts: RuntimeSecretPrompts;
   path: string;
-  /** IAM-capable caller key + identity, used by the mint action. */
+  /** The caller key, and the key the mint action writes IAM with. */
   secretKey: string;
+  identityKey: () => Promise<{ secretKey: string; organizationId: string }>;
   projectId: string;
   region: string;
   slug: string;
@@ -83,15 +90,15 @@ async function selectSecret(ctx: MenuContext, message: string, choices: ManagedR
 
 async function handleList(ctx: MenuContext): Promise<void> {
   const existing = await ctx.client.listSecretsUnder(ctx.path);
-  const byName = new Map(existing.map((secret) => [secret.name, secret]));
+  const trim = (path: string) => `/${path.split('/').filter(Boolean).join('/')}/`;
+  const byCopy = new Map(existing.map((secret) => [`${secret.name}@${trim(secret.path)}`, secret]));
   ctx.log(`\n${pc.bold('Runtime secrets')} ${pc.dim(ctx.path)}`);
   for (const secret of ctx.secrets) {
-    const current = byName.get(secret.secretName);
-    // Treat only versioned secrets as present; an empty container has no readable value.
-    // Report that intermediate state so the operator knows to set it.
-    const status = !current
+    // One copy per consumer. Treat only versioned copies as present; an empty container has no readable value, and the operator sets it.
+    const copies = secretCopies(secret, ctx.slug, ctx.mode).map((copy) => byCopy.get(`${secret.secretName}@${trim(copy.path)}`));
+    const status = copies.some((copy) => !copy)
       ? `${tildeMark} missing`
-      : (current.version_count ?? 0) > 0
+      : copies.every((copy) => (copy?.version_count ?? 0) > 0)
         ? `${checkMark} present`
         : `${warningMark} empty (no version: run "Set or update")`;
     ctx.log(`- ${secret.secretName} (${secret.envVar}): ${status}; consumers: ${secret.services.join(', ')}`);
@@ -109,26 +116,27 @@ async function handleRotate(ctx: MenuContext): Promise<void> {
   // Pulumi owns container creation (resources/secrets.ts); refuse to create one
   // out-of-band here, since that would make the next `pulumi up` fail with
   // "secret already exists". Deploy first so the container exists, then rotate.
-  const existing = await ctx.client.getSecretByName(secret.secretName, secretPathFor(secret, ctx.slug, ctx.mode));
-  if (!existing) {
-    ctx.log(`${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet. Deploy first so Pulumi creates it, then rotate.`);
+  const copies = await secretCopyContainers(ctx.client, secret, ctx.slug, ctx.mode);
+  if (missingCopies(copies).length > 0) {
+    ctx.log(
+      `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet for ${missingCopies(copies).join(', ')}. Deploy first so Pulumi creates it, then rotate.`,
+    );
     return;
   }
-  const version = await ctx.client.putSecretValue({
-    secretId: existing.id,
-    value: generateRandomRuntimeSecret(),
+  // One value for every consumer's copy.
+  const revisions = await putEveryCopy(ctx.client, existingContainers(copies), generateRandomRuntimeSecret(), {
     description: 'Rotated by the infra CLI (Manage runtime secrets)',
     disablePrevious: true,
   });
-  ctx.log(`${checkMark} Rotated ${secret.secretName} ${pc.dim(`(revision ${version.revision})`)}`);
+  ctx.log(`${checkMark} Rotated ${secret.secretName} ${pc.dim(`(${revisions.length} cop${revisions.length === 1 ? 'y' : 'ies'})`)}`);
 }
 
 async function handleDelete(ctx: MenuContext): Promise<void> {
   const secret = await selectSecret(ctx, 'Select a runtime secret to delete (Esc to go back)', ctx.secrets);
   if (!secret) return;
-  const existingSecret = await ctx.client.getSecretByName(secret.secretName, secretPathFor(secret, ctx.slug, ctx.mode));
-  if (!existingSecret) {
-    ctx.log(`${tildeMark} ${secret.secretName} does not exist in ${secretPathFor(secret, ctx.slug, ctx.mode)}`);
+  const containers = existingContainers(await secretCopyContainers(ctx.client, secret, ctx.slug, ctx.mode));
+  if (containers.length === 0) {
+    ctx.log(`${tildeMark} ${secret.secretName} has no copy in ${ctx.path}`);
     return;
   }
   const confirmed = await ctx.prompts.confirm({
@@ -139,8 +147,8 @@ async function handleDelete(ctx: MenuContext): Promise<void> {
     ctx.log(`${tildeMark} Deletion cancelled.`);
     return;
   }
-  await ctx.client.deleteSecret(existingSecret.id);
-  ctx.log(`${checkMark} Deleted ${secret.secretName}`);
+  for (const container of containers) await ctx.client.deleteSecret(container.id);
+  ctx.log(`${checkMark} Deleted ${secret.secretName} ${pc.dim(`(${containers.length} cop${containers.length === 1 ? 'y' : 'ies'})`)}`);
 }
 
 async function handleSet(ctx: MenuContext): Promise<void> {
@@ -148,10 +156,10 @@ async function handleSet(ctx: MenuContext): Promise<void> {
   if (!secret) return;
   // Refuse out-of-band container creation because Pulumi owns it and would hit a duplicate.
   // Operators must deploy the empty container before setting its value.
-  const existingSecret = await ctx.client.getSecretByName(secret.secretName, secretPathFor(secret, ctx.slug, ctx.mode));
-  if (!existingSecret) {
+  const copies = await secretCopyContainers(ctx.client, secret, ctx.slug, ctx.mode);
+  if (missingCopies(copies).length > 0) {
     ctx.log(
-      `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet. ` +
+      `${warningMark} ${secret.secretName} (${secret.envVar}) has no container yet for ${missingCopies(copies).join(', ')}. ` +
         `Deploy first so Pulumi creates it, then run "Set or update" again to give it a value.`,
     );
     return;
@@ -163,16 +171,29 @@ async function handleSet(ctx: MenuContext): Promise<void> {
   const value = (
     await ctx.prompts.password({
       message: `New value for ${secret.secretName}`,
-      validate: (input) => input.trim().length > 0 || 'Value is required',
+      // A machine's env file is line-based, and the deploy checks presence only: the form is checked here, where the value is written.
+      validate: (input) => {
+        const verdict = isEnvFileDeliverable(input.trim());
+        if (verdict.ok) return true;
+        return verdict.reason === 'empty' ? 'Value is required' : 'One line only: base64-encode a multi-line value and decode it in the service';
+      },
     })
   ).trim();
-  const version = await ctx.client.putSecretValue({
-    secretId: existingSecret.id,
-    value,
+  // One value for every consumer's copy.
+  const revisions = await putEveryCopy(ctx.client, existingContainers(copies), value, {
     description: 'Updated by the infra CLI (Manage runtime secrets)',
     disablePrevious: true,
   });
-  ctx.log(`${checkMark} Updated ${secret.secretName} ${pc.dim(`(revision ${version.revision}, ${value.length} chars)`)}`);
+  ctx.log(
+    `${checkMark} Updated ${secret.secretName} ${pc.dim(`(${revisions.length} cop${revisions.length === 1 ? 'y' : 'ies'}, ${value.length} chars)`)}`,
+  );
+  // The deploy reads values in the deploy folder only: the telemetry key it exports with is copied there.
+  if (
+    secret.secretName === telemetrySink.keySecretName &&
+    (await syncDeployTelemetryKey({ client: ctx.client, slug: ctx.slug, mode: ctx.mode })) === 'written'
+  ) {
+    ctx.log(`${checkMark} Copied ${secret.secretName} into the deploy folder, where the deploy reads it`);
+  }
 }
 
 /**
@@ -202,7 +223,7 @@ async function handleMint(ctx: MenuContext): Promise<void> {
   if (!key) throw new Error(`manage-runtime-secrets: prompt returned unknown managed key id '${selectedId}'`);
 
   const confirmed = await ctx.prompts.confirm({
-    message: `${warningMark} Mint a fresh scoped Scaleway key for ${key.label}? Supersedes any current value on the next deploy; needs an IAMManager-capable key.`,
+    message: `${warningMark} Mint a fresh scoped Scaleway key for ${key.label}? Supersedes any current value on the next deploy; it writes IAM, so it takes an Owner API key.`,
     default: false,
   });
   if (!confirmed) {
@@ -210,9 +231,11 @@ async function handleMint(ctx: MenuContext): Promise<void> {
     return;
   }
   try {
+    const identity = await ctx.identityKey();
     const result = await provisionManagedKey({
       definition: key,
-      callerSecretKey: ctx.secretKey,
+      callerSecretKey: identity.secretKey,
+      organizationId: identity.organizationId,
       projectId: ctx.projectId,
       region: ctx.region,
       slug: ctx.slug,
@@ -233,6 +256,7 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
     prompts: options.prompts,
     path: options.path,
     secretKey: options.secretKey,
+    identityKey: options.identityKey,
     projectId: options.projectId,
     region: options.region,
     slug: options.slug,

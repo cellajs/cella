@@ -26,8 +26,9 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     description: 'Cookie signing secret',
     envVar: 'COOKIE_SECRET',
     required: true,
-    valueSource: 'pulumi',
+    valueSource: 'engine',
     generation: 'random',
+    rotatable: true,
     services: ['backend', 'mcp', 'oauth', 'jobs'],
   },
   unsubscribeSecret: {
@@ -35,8 +36,9 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     description: 'Email unsubscribe token secret',
     envVar: 'UNSUBSCRIBE_SECRET',
     required: true,
-    valueSource: 'pulumi',
+    valueSource: 'engine',
     generation: 'random',
+    rotatable: true,
     services: ['backend', 'mcp', 'jobs'],
   },
   cdcSecret: {
@@ -44,8 +46,9 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     description: 'CDC authentication secret',
     envVar: 'CDC_SECRET',
     required: true,
-    valueSource: 'pulumi',
+    valueSource: 'engine',
     generation: 'random',
+    rotatable: true,
     // The CDC socket is served by the API process's internal listener only.
     services: ['backend', 'cdc'],
   },
@@ -54,8 +57,9 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     description: 'Key material of the Ed25519 key that signs Yjs editor tokens',
     envVar: 'YJS_TOKEN_PRIVATE_KEY',
     required: true,
-    valueSource: 'pulumi',
+    valueSource: 'engine',
     generation: 'random',
+    rotatable: true,
     // Only the API process's token route signs; the relay verifies with the public half.
     services: ['backend'],
   },
@@ -64,7 +68,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     description: 'Public key the Yjs relay verifies editor tokens with; it cannot sign one',
     envVar: 'YJS_TOKEN_PUBLIC_KEY',
     required: true,
-    valueSource: 'pulumi',
+    valueSource: 'engine',
     generation: 'manual',
     services: ['yjs'],
     derivedFrom: { secretId: 'yjsTokenPrivateKey', derive: yjsTokenPublicKey },
@@ -74,8 +78,9 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     description: "Authenticates the Yjs relay on the backend's internal materialize route",
     envVar: 'YJS_RELAY_SECRET',
     required: true,
-    valueSource: 'pulumi',
+    valueSource: 'engine',
     generation: 'random',
+    rotatable: true,
     services: ['backend', 'yjs'],
   },
   piiHashSecret: {
@@ -83,8 +88,9 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     description: 'HMAC pepper for hashing PII-derived identifiers',
     envVar: 'PII_HASH_SECRET',
     required: true,
-    valueSource: 'pulumi',
+    valueSource: 'engine',
     generation: 'random',
+    // Not rotatable: it protects stored data, which a new value would leave unreadable or unmatched.
     services: ['backend', 'mcp', 'oauth'],
   },
   dataEncryptionKey: {
@@ -92,8 +98,9 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     description: 'Root key for reversible encryption of sensitive database fields',
     envVar: 'DATA_ENCRYPTION_KEY',
     required: true,
-    valueSource: 'pulumi',
+    valueSource: 'engine',
     generation: 'random',
+    // Not rotatable: it protects stored data, which a new value would leave unreadable or unmatched.
     services: ['backend', 'mcp', 'oauth', 'jobs'],
   },
   adminEmail: {

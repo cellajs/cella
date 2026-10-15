@@ -1,22 +1,21 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
-import { basename, resolve } from 'node:path';
+import { mkdtemp, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { basename, join, resolve } from 'node:path';
 import { healthContract } from '../config/health.config';
+import { type RunRecord, RunRecorder, runId, runLogKey, runRecordKey } from '../lib/deploy/run-record';
 import { actionCommand } from '../lib/operator-actions';
 import { deployS3Key, makeS3Client } from '../lib/scaleway/s3-client';
 import { adoptStateBackendEnv, stateBackendUrl } from '../lib/stack/control-store';
 import { deployEvents, deployTelemetry, initDeployTelemetry } from '../lib/telemetry/deploy-telemetry';
 import { otlpConfigFromEnv } from '../lib/telemetry/emitter';
-import { errorMessage } from '../lib/utils/errors';
+import { ExitCodeError, errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
-import { scrubSecretEnv } from '../lib/utils/scrub-secret-env';
 import { getFlag } from './args';
-import { bakeDefinition, parseBuildRows } from './build-images';
 import { main as runWavedRolloutCli } from './deploy-rollout';
 import { type AllowedKey, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env';
-import { frontendBuildEnv } from './print-frontend-build-env';
 import { createFetchProbe, pollForVersion } from './wait-for-version';
 
 /**
@@ -27,12 +26,10 @@ import { createFetchProbe, pollForVersion } from './wait-for-version';
 export interface DeployOptions {
   mode: string;
   sha: string;
-  /** Prebuilt frontend dist directory. Absent = the command builds the frontend itself. */
-  distDir?: string;
-  /** Build + push all images in-process (buildx bake) before waiting on the registry. */
-  build?: boolean;
   /** CI ref for the production trust gate; local operator runs may omit it. */
   gitRef?: string;
+  /** The run's id in its record; a new one (start time and target) when not given. */
+  run?: string;
   /**
    * Skip the rollout's final displaced-generation reap so verification, entry publish, and smoke run right after cutover.
    * The displaced VMs stay off every LB pool until a follow-up `reap` run destroys them.
@@ -44,12 +41,12 @@ export interface DeployOptions {
 export type TaskName =
   | 'ensure-state-bucket'
   | 'install-pulumi-providers'
+  | 'forget-retired-resources'
   | 'preflight-privileged'
-  | 'wait-for-images'
-  | 'repair-certs'
+  | 'build-release'
   | 'sync-rollout-config'
-  | 'mint-generation-keys'
-  | 'assert-vm-grants'
+  | 'stage-generation-keys'
+  | 'assert-grants'
   | 'assert-secrets-deliverable'
   | 'geoip-refresh'
   | 'smoke';
@@ -62,14 +59,8 @@ export interface DeployEffects {
   task(name: TaskName, argv?: string[]): Promise<void>;
   /** Hold the stack lease for the run (renewed in-process, released on exit or signal); throws when another holder keeps it. */
   lease(stack: string, operation: 'deploy' | 'reap'): Promise<{ release(): Promise<void> }>;
-  /** Run an external binary in the infra dir; rejects on non-zero exit unless allowFailure. Async so concurrent steps (registry wait, asset upload) keep progressing while a build runs. */
-  exec(
-    cmd: string,
-    args: string[],
-    opts?: { allowFailure?: boolean; stdin?: string; env?: Record<string, string>; secretless?: boolean },
-  ): Promise<void>;
-  /** Upload the built frontend bundle (hashed assets skip when present; entry files excluded). */
-  uploadAssets(opts: { distDir: string; bucket: string; region: string }): Promise<void>;
+  /** Run an external binary in the infra dir; rejects on non-zero exit unless allowFailure. Async, so the stack lease keeps renewing while it runs. */
+  exec(cmd: string, args: string[], opts?: { allowFailure?: boolean; stdin?: string; env?: Record<string, string> }): Promise<void>;
   /** One full stack update through the configured Pulumi driver. */
   update(stack: string): Promise<void>;
   rollout(argv: string[]): Promise<void>;
@@ -77,6 +68,8 @@ export interface DeployEffects {
   publishEntryFiles(opts: { distDir: string; bucket: string; region: string }): Promise<void>;
   /** Print the boot bundles of release `sha` (saying so when there is none) and replay its black-box events from `sinceIso` on. */
   bootDiagnostics(sha: string, sinceIso?: string): Promise<void>;
+  /** Write a run's record and log to the environment's diagnostics bucket. */
+  writeRunRecord(opts: { bucket: string; region: string; record: RunRecord; log: string }): Promise<void>;
   group(title: string): void;
   groupEnd(): void;
   info(msg: string): void;
@@ -87,17 +80,30 @@ interface RolloutRow {
   health_url: string;
 }
 
+/** The steps from which a release's machines have booted: their boot diagnostics say why one did not come up. */
+const STEPS_WITH_MACHINES = new Set(['Base stack update', 'Waved rollout', 'Verify public versions', 'Smoke tests']);
+
+/** What a failed deploy says last: the step it stopped at, and the diagnostics only when machines of the release booted. */
+export function deployFailureHint(err: unknown, mode: string, sha?: string): { description: string; command?: string } {
+  const step = (err as { deployStep?: string } | undefined)?.deployStep;
+  const where = step ? `It stopped at "${step}". ` : '';
+  if (step && !STEPS_WITH_MACHINES.has(step)) return { description: `${where}Re-running is safe: generations are content-addressed.` };
+  return {
+    description: `${where}Re-running is safe (generations are content-addressed). For a machine that did not come up, read this release's diagnostics:`,
+    command: `pnpm --filter infra diag --mode ${mode}${sha ? ` --sha ${sha}` : ''}`,
+  };
+}
+
 export function parseDeployArgs(argv: string[]): DeployOptions {
   const mode = getFlag(argv, '--mode');
   const sha = getFlag(argv, '--sha');
-  if (!mode || !sha) throw new Error('Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--dist <dir>] [--git-ref <ref>] [--defer-reap]');
+  if (!mode || !sha) throw new Error('Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--git-ref <ref>] [--defer-reap]');
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`);
   return {
     mode,
     sha,
-    distDir: getFlag(argv, '--dist'),
-    build: argv.includes('--build'),
     gitRef: getFlag(argv, '--git-ref'),
+    run: getFlag(argv, '--run'),
     deferReap: argv.includes('--defer-reap'),
   };
 }
@@ -127,6 +133,13 @@ export async function runDeploy(
   adoptStateBackendEnv(env.region);
 
   const startedAtIso = new Date().toISOString();
+  // One run, one record (plan §3.8): kept while the deploy runs, written at its end whatever the outcome.
+  const recorder = new RunRecorder({ run: opts.run ?? runId(opts.sha), environment: opts.mode, target: opts.sha });
+  const say = (message: string) => {
+    recorder.line(message);
+    fx.info(message);
+  };
+  say(`[deploy] run ${recorder.record().run}: ${opts.sha} to ${opts.mode}`);
   await fx.initTelemetry({ mode: opts.mode, sha: opts.sha });
   const telemetry = deployTelemetry();
   const deploySpan = telemetry?.startSpan(`deploy ${opts.mode}`, { sha: opts.sha });
@@ -143,12 +156,17 @@ export async function runDeploy(
       const seconds = Math.round((Date.now() - startedAt) / 1000);
       span?.end('ok');
       telemetry?.event(deployEvents.stepCompleted, { step: title, duration_s: seconds }, { ctx: span?.ctx });
-      fx.info(`[deploy] ${title}: ok (${seconds}s)`);
+      recorder.step(title, seconds, 'ok');
+      say(`[deploy] ${title}: ok (${seconds}s)`);
     } catch (err) {
+      const seconds = Math.round((Date.now() - startedAt) / 1000);
+      recorder.step(title, seconds, 'error');
+      recorder.line(`[deploy] ${title}: failed (${seconds}s): ${errorMessage(err)}`);
       span?.end('error', { message: errorMessage(err) });
       const failAttrs: { step: string; error: string; 'error.stack'?: string } = { step: title, error: errorMessage(err) };
       if (err instanceof Error && err.stack) failAttrs['error.stack'] = err.stack.slice(0, 4000);
       telemetry?.event(deployEvents.stepFailed, failAttrs, { severity: 'error', ctx: span?.ctx });
+      if (err instanceof Error) Object.assign(err, { deployStep: (err as { deployStep?: string }).deployStep ?? title });
       throw err;
     } finally {
       fx.groupEnd();
@@ -157,8 +175,9 @@ export async function runDeploy(
 
   let lease: { release(): Promise<void> } | undefined;
   let outcome: 'ok' | 'error' = 'ok';
+  let failure: unknown;
   try {
-    await step('Ensure Pulumi state bucket', () => fx.task('ensure-state-bucket'));
+    await step('Check Pulumi state bucket', () => fx.task('ensure-state-bucket', ['--check']));
     await step('Login to S3 state backend', () => fx.exec('pulumi', ['login', stateBackendUrl(env.state_bucket, env.region)]));
     await step('Select stack', () => fx.exec('pulumi', ['stack', 'select', stack]));
     await step('Acquire stack lock', async () => {
@@ -173,61 +192,29 @@ export async function runDeploy(
       fx.task('sync-rollout-config', ['--stack', stack, '--reset-pending', '--deployed', deployed.map((row) => row.service).join(',')]),
     );
     // Privileged changes (a database privilege, a VM policy rule) need an operator Apply first: fail here, in seconds, with that command.
+    // The machine policies are written at Owner moments: a state that still holds them would have this update delete them.
+    await step('Take retired resources out of the state', () => fx.task('forget-retired-resources', ['--stack', stack]));
     await step('Preflight privileged changes', () => fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]));
 
-    const registry = `rg.${env.region}.scw.cloud`;
-    await step('Login to container registry', () =>
-      fx.exec('docker', ['login', registry, '-u', 'nologin', '--password-stdin'], { stdin: process.env.SCW_SECRET_KEY ?? '' }),
+    // The release's images and frontend files: a builder machine makes the missing ones, then the release's entry files wait in a folder of
+    // their own for the publish below. No app code runs beside the deploy key.
+    const distDir = env.frontend_bucket ? await mkdtemp(join(tmpdir(), 'release-')) : '';
+    await step('Build the release', () =>
+      fx.task('build-release', [
+        '--sha',
+        opts.sha,
+        '--mode',
+        opts.mode,
+        '--project-id',
+        process.env.SCW_DEFAULT_PROJECT_ID ?? '',
+        '--build-images-json',
+        env.build_images_matrix,
+        '--services-json',
+        env.enabled_services_json,
+        '--dist',
+        distDir,
+      ]),
     );
-
-    // Images and frontend converge concurrently: images build (with --build) or wait for CI's registry pushes, while the frontend builds and uploads hashed assets.
-    // Entry files stay out until after version verification below.
-    const distDir = opts.distDir ?? resolve(infraDir, '..', 'frontend', 'dist');
-    const imagesReady = (async () => {
-      if (opts.build) {
-        await step('Build images (buildx bake)', async () => {
-          const bake = bakeDefinition(parseBuildRows(env.build_images_matrix), {
-            registry,
-            namespace: env.registry_ns,
-            tag: opts.sha,
-            context: '..',
-          });
-          await fx.exec('pnpm', ['run', 'boot:build']);
-          await fx.exec('docker', ['buildx', 'bake', '--file', '-', '--push'], { stdin: JSON.stringify(bake) });
-        });
-      }
-      await step('Wait for image tags in registry', () =>
-        fx.task('wait-for-images', [
-          '--registry',
-          registry,
-          '--ns',
-          env.registry_ns,
-          '--tag',
-          opts.sha,
-          '--build-images-json',
-          env.build_images_matrix,
-        ]),
-      );
-    })();
-    const frontendReady = (async () => {
-      // No SPA bucket (frontend-less registry): nothing to build or upload.
-      if (!env.frontend_bucket) return;
-      if (!opts.distDir) {
-        await step('Build frontend', () =>
-          fx.exec('pnpm', ['--filter', 'frontend', 'build'], {
-            env: { ...frontendBuildEnv(opts.mode, env.enabled_services_json) },
-            // The Vite build runs a large third-party plugin graph; deny it the
-            // deploy's cloud keys so a compromised build dep cannot exfiltrate them.
-            secretless: true,
-          }),
-        );
-      }
-      await step('Upload frontend assets', () => fx.uploadAssets({ distDir, bucket: env.frontend_bucket, region: env.region }));
-    })();
-    const [imagesOutcome, frontendOutcome] = await Promise.allSettled([imagesReady, frontendReady]);
-    for (const settled of [imagesOutcome, frontendOutcome]) {
-      if (settled.status === 'rejected') throw settled.reason;
-    }
 
     // GeoIP databases live in the public bucket, not the image: a first deploy fills the prefix, later ones refresh it
     // once a month. Best-effort: a DB-IP or bucket hiccup must never block a release, the API only loses the country line.
@@ -236,7 +223,7 @@ export async function runDeploy(
         try {
           await fx.task('geoip-refresh', ['--bucket', env.public_bucket, '--region', env.region, '--max-age-days', '35']);
         } catch (err) {
-          fx.info(`[deploy] GeoIP data refresh skipped: ${errorMessage(err)}`);
+          say(`[deploy] GeoIP data refresh skipped: ${errorMessage(err)}`);
         }
       });
     }
@@ -244,22 +231,21 @@ export async function runDeploy(
     // A stack that never had a machine plans its first generation in the base update below, before the rollout names one: it is this release.
     process.env.INFRA_RELEASE_SHA = opts.sha;
 
-    // Mint this generation's keys and handoff bundles BEFORE the stack update bakes their references into cloud-init.
-    await step('Mint generation keys', async () => {
+    // Stage the standing machine keys in hand-over bundles BEFORE the stack update bakes their references into cloud-init. No IAM write.
+    await step('Stage machine keys', async () => {
       const { tmpdir } = await import('node:os');
       const outFile = resolve(tmpdir(), `generation-keys-${stack}-${opts.sha.slice(0, 10)}.json`);
-      await fx.task('mint-generation-keys', ['--sha', opts.sha, '--out', outFile]);
+      await fx.task('stage-generation-keys', ['--sha', opts.sha, '--out', outFile]);
       // The pulumi child (fx.update) inherits this env and bakes the boot key and handoff ids into the new generation's cloud-init.
       process.env.INFRA_GENERATION_KEYS_FILE = outFile;
     });
 
-    await step('Repair errored LB certificates', () => fx.task('repair-certs', ['--stack', stack]));
     await step('Base stack update', () => fx.update(stack));
-    await step('Verify VM IAM grants', async () => {
-      // One assertion per principal: exact sets AND exact path condition; a dormant principal must also hold no key.
-      const rows = JSON.parse(env.vm_assert_json) as Array<{ app: string; sets: string[]; condition: string; dormant?: boolean }>;
+    await step('Verify identity grants', async () => {
+      // One assertion per principal: exact sets AND exact path condition. Their keys were checked when they were staged.
+      const rows = JSON.parse(env.grant_rows_json) as Array<{ app: string; sets: string[]; condition: string }>;
       for (const row of rows) {
-        await fx.task('assert-vm-grants', [
+        await fx.task('assert-grants', [
           '--application-name',
           row.app,
           '--required-sets',
@@ -270,11 +256,12 @@ export async function runDeploy(
           process.env.SCW_DEFAULT_PROJECT_ID ?? '',
           '--organization-id',
           process.env.SCW_DEFAULT_ORGANIZATION_ID ?? '',
-          ...(row.dormant ? ['--dormant'] : []),
           ...(row.condition ? ['--project-scope'] : []),
         ]);
       }
     });
+    // The deploy reads no value of the app's: the apply makes and moves values (ensure-secrets, ensure-database, copy-shared-secrets), and
+    // this step checks from metadata that every copy a machine reads has one.
     await step('Verify runtime secrets are deliverable', () =>
       fx.task('assert-secrets-deliverable', [
         '--region',
@@ -283,6 +270,8 @@ export async function runDeploy(
         process.env.SCW_DEFAULT_PROJECT_ID ?? '',
         '--services-json',
         env.enabled_services_json,
+        '--mode',
+        opts.mode,
       ]),
     );
 
@@ -302,8 +291,8 @@ export async function runDeploy(
       );
     } catch (err) {
       telemetry?.event(deployEvents.rolloutFailed, { error: errorMessage(err) }, { severity: 'error' });
-      fx.info('[deploy] rollout failed; collecting boot diagnostics');
-      await fx.bootDiagnostics(opts.sha, startedAtIso).catch((diagErr) => fx.info(`[deploy] boot diagnostics failed: ${errorMessage(diagErr)}`));
+      say('[deploy] rollout failed; collecting boot diagnostics');
+      await fx.bootDiagnostics(opts.sha, startedAtIso).catch((diagErr) => say(`[deploy] boot diagnostics failed: ${errorMessage(diagErr)}`));
       throw err;
     }
 
@@ -337,9 +326,18 @@ export async function runDeploy(
     );
   } catch (err) {
     outcome = 'error';
+    failure = err;
     throw err;
   } finally {
-    await lease?.release().catch((err) => fx.info(`[deploy] lock release failed: ${errorMessage(err)}`));
+    await lease?.release().catch((err) => say(`[deploy] lock release failed: ${errorMessage(err)}`));
+    // A preflight that found an owed privileged change ends the run blocked, not failed: an apply comes first, then the same target.
+    const blocked = failure instanceof ExitCodeError && failure.exitCode === 2;
+    recorder.finish(outcome === 'ok' ? 'deployed' : blocked ? 'blocked' : 'failed', outcome === 'ok' ? undefined : errorMessage(failure));
+    const run = recorder.record().run;
+    await fx.writeRunRecord({ bucket: env.diag_bucket, region: env.region, record: recorder.record(), log: recorder.log() }).then(
+      () => fx.info(`[deploy] record of run ${run}: s3://${env.diag_bucket}/${runRecordKey(run)} (log: ${runLogKey(run)})`),
+      (err) => fx.info(`[deploy] the record of run ${run} could not be written: ${errorMessage(err)}`),
+    );
     deploySpan?.end(outcome);
     telemetry?.event(
       outcome === 'ok' ? deployEvents.completed : deployEvents.failed,
@@ -396,14 +394,9 @@ export async function reapMain(argv = process.argv.slice(2)): Promise<void> {
   await runReap(parseReapArgs(argv), createRealEffects());
 }
 
-/**
- * The environment `exec` hands a child. `secretless` strips the deploy's secrets (Scaleway keys, Pulumi passphrase,
- * GitHub token) before `env` layers on top, so an untrusted build (the frontend Vite plugin graph) cannot read them;
- * without it the child inherits the whole environment.
- */
-export function execEnv(parentEnv: NodeJS.ProcessEnv, opts: { env?: Record<string, string>; secretless?: boolean }): NodeJS.ProcessEnv {
-  const baseEnv = opts.secretless ? scrubSecretEnv(parentEnv) : parentEnv;
-  return opts.env ? { ...baseEnv, ...opts.env } : baseEnv;
+/** The environment `exec` hands a child: the deploy's own, with `env` layered on top. */
+export function execEnv(parentEnv: NodeJS.ProcessEnv, opts: { env?: Record<string, string> }): NodeJS.ProcessEnv {
+  return opts.env ? { ...parentEnv, ...opts.env } : parentEnv;
 }
 
 // Real effects: subprocesses in the infra dir, S3 entry publish, GitHub-aware log grouping. Every ordering and failure decision lives in runDeploy.
@@ -413,6 +406,23 @@ const ENTRY_FILES: Array<{ name: string; contentType: string }> = [
   { name: 'sw.js', contentType: 'text/javascript; charset=utf-8' },
   { name: 'manifest.webmanifest', contentType: 'application/manifest+json' },
 ];
+
+/** Write a run's record and log to the diagnostics bucket with the deploy key, which may write objects there. */
+async function writeRunRecordToBucket(opts: { bucket: string; region: string; record: RunRecord; log: string }): Promise<void> {
+  const { PutObjectCommand } = await import('@aws-sdk/client-s3');
+  const { accessKey, secretKey } = deployS3Key();
+  const s3 = await makeS3Client(opts.region, accessKey, secretKey);
+  const { run } = opts.record;
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: opts.bucket,
+      Key: runRecordKey(run),
+      Body: JSON.stringify(opts.record, null, 2),
+      ContentType: 'application/json',
+    }),
+  );
+  await s3.send(new PutObjectCommand({ Bucket: opts.bucket, Key: runLogKey(run), Body: opts.log, ContentType: 'text/plain; charset=utf-8' }));
+}
 
 async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string; region: string }): Promise<void> {
   const { PutObjectCommand } = await import('@aws-sdk/client-s3');
@@ -437,14 +447,14 @@ async function publishEntryFilesToBucket(opts: { distDir: string; bucket: string
 
 // Each task stays an independent CLI (tsx tasks/<name>.ts) for operators, while the deploy runs the same mains in-process so config is read once and a failing step keeps its stack trace.
 const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
-  'ensure-state-bucket': async () => (await import('./ensure-state-bucket')).main(),
+  'ensure-state-bucket': async (argv) => (await import('./ensure-state-bucket')).main(argv),
   'install-pulumi-providers': async () => (await import('./install-pulumi-providers')).main(),
+  'forget-retired-resources': async (argv) => (await import('./forget-retired-resources')).main(argv),
   'preflight-privileged': async (argv) => (await import('./preflight-privileged')).main(argv),
-  'wait-for-images': async (argv) => (await import('./wait-for-images')).main(argv),
-  'repair-certs': async (argv) => (await import('./repair-certs')).main(argv),
   'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),
-  'mint-generation-keys': async (argv) => (await import('./mint-generation-keys')).main(argv),
-  'assert-vm-grants': async (argv) => (await import('./assert-vm-grants')).main(argv),
+  'stage-generation-keys': async (argv) => (await import('./stage-generation-keys')).main(argv),
+  'build-release': async (argv) => (await import('./build-release')).main(argv),
+  'assert-grants': async (argv) => (await import('./assert-grants')).main(argv),
   'assert-secrets-deliverable': async (argv) => (await import('./assert-secrets-deliverable')).main(argv),
   'geoip-refresh': async (argv) => (await import('./geoip-refresh')).main(argv),
   smoke: async (argv) => (await import('./smoke')).main(argv),
@@ -518,8 +528,7 @@ function createRealEffects(): DeployEffects {
       };
     },
     exec(cmd, args, opts = {}) {
-      // spawn, not spawnSync: a synchronous child blocks the event loop, which
-      // serialized the "concurrent" registry wait behind the frontend build.
+      // spawn, not spawnSync: a synchronous child blocks the event loop, and with it the stack lease's renewal.
       return new Promise((done, fail) => {
         const child = spawn(cmd, args, {
           cwd: infraDir,
@@ -537,10 +546,6 @@ function createRealEffects(): DeployEffects {
         });
       });
     },
-    async uploadAssets(assetOpts) {
-      const { uploadFrontendAssets } = await import('./frontend-assets');
-      await uploadFrontendAssets(assetOpts);
-    },
     update: async (stack) => {
       const { createPulumiDriver } = await import('../lib/stack/pulumi-driver');
       await createPulumiDriver(stack).update();
@@ -551,6 +556,7 @@ function createRealEffects(): DeployEffects {
       return out.ok;
     },
     publishEntryFiles: publishEntryFilesToBucket,
+    writeRunRecord: writeRunRecordToBucket,
     async bootDiagnostics(sha, sinceIso) {
       const { main: diag } = await import('./diag');
       // This release's bundles only: an older release's transcript would read like this deploy's boot.

@@ -32,6 +32,7 @@ function resetMocks() {
 
 const baseOptions = {
   secretKey: 'caller-secret',
+  identityKey: async () => ({ secretKey: 'caller-secret', organizationId: 'org-1' }),
   projectId: 'proj-1',
   region: 'nl-ams',
   slug: 'demo',
@@ -45,11 +46,21 @@ describe('manageRuntimeSecrets', () => {
   it('lists operator-managed secrets and reports presence', async () => {
     resetMocks();
     prompts.select.mockResolvedValueOnce('list').mockResolvedValueOnce('exit');
-    // brevo-api-key has a version (content) → present; github-client-id exists as an
-    // empty container (0 versions) → empty, not present. Everything else is missing.
+    // Every copy of brevo-api-key has a version → present; github-client-id's copies exist empty (0 versions) → empty, not present.
+    // Everything else is missing.
     listSecretsUnder.mockResolvedValueOnce([
-      { name: 'brevo-api-key', id: 'secret-1', version_count: 1 },
-      { name: 'github-client-id', id: 'secret-2', version_count: 0 },
+      ...['backend', 'mcp', 'jobs'].map((service) => ({
+        name: 'brevo-api-key',
+        id: `brevo-${service}`,
+        path: `/demo-production/${service}`,
+        version_count: 1,
+      })),
+      ...['backend', 'mcp'].map((service) => ({
+        name: 'github-client-id',
+        id: `gh-${service}`,
+        path: `/demo-production/${service}/`,
+        version_count: 0,
+      })),
     ]);
 
     await manageRuntimeSecrets(baseOptions);
@@ -61,18 +72,22 @@ describe('manageRuntimeSecrets', () => {
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('missing'));
   });
 
-  it('updates an existing operator-managed secret', async () => {
+  it('updates every consumer copy of an operator-managed secret with one value', async () => {
     resetMocks();
     prompts.select.mockResolvedValueOnce('set').mockResolvedValueOnce('brevoApiKey').mockResolvedValueOnce('exit');
     prompts.password.mockResolvedValueOnce('new-api-key');
-    getSecretByName.mockResolvedValueOnce({ id: 'secret-2', name: 'brevo-api-key' });
-    putSecretValue.mockResolvedValueOnce({ revision: 7, secret_id: 'secret-2' });
+    getSecretByName.mockImplementation(async (name: string, path: string) => ({ id: `${path}${name}`, name, path }));
+    putSecretValue.mockResolvedValue({ revision: 7 });
 
     await manageRuntimeSecrets(baseOptions);
 
     expect(ensureSecret).not.toHaveBeenCalled();
-    expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: 'secret-2', value: 'new-api-key' }));
-    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('revision 7'));
+    for (const service of ['backend', 'mcp', 'jobs']) {
+      expect(putSecretValue).toHaveBeenCalledWith(
+        expect.objectContaining({ secretId: `/demo-production/${service}/brevo-api-key`, value: 'new-api-key' }),
+      );
+    }
+    expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('3 copies'));
   });
 
   it('refuses to create a missing container and tells the operator to deploy first', async () => {

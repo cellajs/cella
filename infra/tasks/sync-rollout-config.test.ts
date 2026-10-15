@@ -96,6 +96,18 @@ describe('reconcileRollout', () => {
     ]);
   });
 
+  it('under resetPending, drops what a torn-down stack left when the new stack runs no generation yet', () => {
+    // Staging set up again after a teardown: the control object still named the last good release and a failed deploy's intent.
+    const left = { backend: { seq: 2, pendingSha: 'ddf082d', active: { id: '2d35', sha: '014c1e3', seq: 2 } } };
+    const { rollout, changes } = reconcileRollout(left, [], reset);
+    expect(rollout.backend?.active).toBeUndefined();
+    expect(rollout.backend?.pendingSha).toBeUndefined();
+    expect(changes).toEqual([
+      "dropped backend's pending sha=ddf082d: left by a deploy that failed before promotion",
+      "dropped backend's active gen=2d35 sha=014c1e3: the stack no longer has its VM",
+    ]);
+  });
+
   it('under resetPending, drops every entry of a service the config gives no VM, pending intent included', () => {
     // Production after the move to singleVM: cdc and frontend kept pointers nothing updates any more.
     const folded = {

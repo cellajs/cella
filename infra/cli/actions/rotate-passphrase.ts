@@ -6,9 +6,9 @@ import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { generatePassphrase, supportsStdinPassphraseRotation, verifyStackPassphrase } from '../../lib/stack/pulumi-passphrase';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
+import { passphraseCustody, rememberPassphrase } from '../session';
 import {
   acquireStackLockOrExit,
-  adminKeyOrPrompt,
   confirmPassphraseStored,
   endAction,
   type InfraContext,
@@ -16,6 +16,7 @@ import {
   resolveVerifiedPassphrase,
   stackNameFor,
 } from '../shared';
+import { operatorKeys } from './operator-unlock';
 
 /**
  * Rotates and verifies the Pulumi passphrase, then synchronizes it to the GitHub environment.
@@ -40,13 +41,14 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
 
   console.info(
     pc.dim(
-      '\nRotate passphrase: re-encrypts the stack state and Pulumi.<stack>.yaml with a freshly generated passphrase, then syncs it to GitHub. No Scaleway resources are touched; the admin application key is enough (no Owner API key needed).\n',
+      '\nRotate passphrase: re-encrypts the stack state and Pulumi.<stack>.yaml with a freshly generated passphrase, then syncs it to GitHub. No Scaleway resources are touched: your operator key does the work, fetches the current passphrase and stores the new one.\n',
     ),
   );
 
   const oldPassphrase = await resolveVerifiedPassphrase(context.stackYaml);
 
-  const { accessKey, secretKey } = await adminKeyOrPrompt(context);
+  const { key, state } = await operatorKeys(context);
+  const { accessKey, secretKey } = key;
   const targetStack = stackNameFor(context);
 
   const env = buildProviderEnv(infraDir, { accessKey, secretKey, projectId: context.projectId, passphrase: oldPassphrase });
@@ -55,8 +57,8 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
   // Hold the stack lock across the re-encryption: a CI deploy reading state mid-rotation would decrypt against the wrong passphrase.
   const stackLock = await acquireStackLockOrExit({
     appConfig: context.appConfig,
-    accessKey,
-    secretKey,
+    accessKey: state.accessKey,
+    secretKey: state.secretKey,
     stack: targetStack,
     operation: 'rotate-passphrase',
   });
@@ -110,6 +112,10 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
     passphrase: newPassphrase,
   });
 
+  // The copy the operator key fetches: without this write the next run would read the old passphrase from Secret Manager and ask for the new one.
+  rememberPassphrase(newPassphrase);
+  const custodied = (await passphraseCustody()?.store(newPassphrase)) ?? false;
+
   await stackLock.release();
 
   console.info(`\n${checkMark} ${pc.bold(pc.greenBright('Passphrase rotated.'))}`);
@@ -118,6 +124,11 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
     synced
       ? `  2. GitHub Environment secret ${pc.bold('PULUMI_CONFIG_PASSPHRASE')} updated.`
       : `  2. ${warningMark} GitHub sync skipped: update ${pc.bold('PULUMI_CONFIG_PASSPHRASE')} in the ${context.environment} GitHub Environment before the next deploy.`,
+  );
+  console.info(
+    custodied
+      ? '  3. Secret Manager holds the new passphrase: the operator key fetches it from now on.'
+      : `  3. ${warningMark} Secret Manager was not updated (the session was unlocked with the passphrase, not the operator key): the next run asks for the new passphrase once and stores it.`,
   );
   console.info(`  ${pc.dim('A CI deploy started before this rotation may fail once; re-run it after updating the secret.')}`);
 }

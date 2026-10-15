@@ -4,6 +4,7 @@ import {
   detectDbPublicEndpoint,
   detectStackState,
   extractComputeDeferredMarker,
+  inFirstProvisioning,
   pickStackShort,
 } from './bootstrap-stack-state';
 
@@ -84,5 +85,13 @@ describe('detectDbPublicEndpoint', () => {
     expect(detectDbPublicEndpoint('config:\n  infra:dbPublicEndpoint: "false"\n')).toBe(false);
     expect(detectDbPublicEndpoint('config:\n  scaleway:projectId: abc\n')).toBe(false);
     expect(detectDbPublicEndpoint()).toBe(false);
+  });
+});
+
+describe('inFirstProvisioning', () => {
+  it('holds for a fresh stack and for the resume of a first provisioning, and no longer once the marker is gone', () => {
+    expect(inFirstProvisioning({ state: 'fresh' })).toBe(true);
+    expect(inFirstProvisioning({ state: 'bootstrapped', stackYaml: 'config:\n  bootstrap:computeDeferred: 2026-10-14T00:00:00Z\n' })).toBe(true);
+    expect(inFirstProvisioning({ state: 'bootstrapped', stackYaml: 'config:\n  infra:bootstrapComplete: x\n' })).toBe(false);
   });
 });

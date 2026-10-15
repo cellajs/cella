@@ -39,7 +39,9 @@ export const toolingProvider: StatusProvider<ToolingFacts> = {
         : lag
           ? pulumi.warn(lag, { description: 'Upgrade the Pulumi CLI', command: 'brew upgrade pulumi' })
           : pulumi.ok(tooling.pulumiVersion ? `installed (${tooling.pulumiVersion})` : 'installed'),
-      tooling.dockerBuildx ? docker.ok('available') : docker.warn('not found; local `deploy --build` unavailable (CI builds still work)'),
+      tooling.dockerBuildx
+        ? docker.ok('available')
+        : docker.warn('not found; a local deploy cannot check the registry for its images (CI deploys still work)'),
       tooling.gh ? gh.ok('authenticated') : gh.warn('not authenticated; Environment secret sync is skipped (set them by hand)'),
     ];
   },

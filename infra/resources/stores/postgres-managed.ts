@@ -1,7 +1,5 @@
-import type * as pulumi from '@pulumi/pulumi';
 import { parseAclInput } from '../../lib/db-exposure-acl';
 import { DB_INSTANCE_RESOURCE } from '../../lib/db-public-endpoint';
-import { CRON_HOME_DATABASE, POSTGRES_ROLE_NAMES } from '../../lib/scaleway/db-privileges';
 import type { ProvisionContext, ProvisionedStore, StoreProvisioner, StoreSecretContribution } from '../../lib/stores';
 
 /** Roles provisioned on the instance. Each maps to a PostgreSQL user + DSN. */
@@ -15,14 +13,6 @@ export interface PostgresManagedConfig {
   logicalReplication?: boolean;
   /** Services consuming each role's DSN and the instance CA. When set the store owns the secret declarations; when omitted `runtime-secrets.config.ts` must declare them and the store only binds values. */
   secretConsumers?: { runtime?: readonly string[]; admin?: readonly string[]; cdc?: readonly string[]; ca?: readonly string[] };
-}
-
-/**
- * Assemble a PostgreSQL DSN from plain string parts. User and password are percent-encoded so neither can break out of the userinfo segment.
- * Always pins `sslmode=require&uselibpqcompat=true`: Scaleway private endpoints use self-signed certs, so libpq-compat mode encrypts without cert verification.
- */
-export function formatPostgresUrl(user: string, pass: string, host: string, port: number | string, database: string): string {
-  return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${host}:${port}/${database}?sslmode=require&uselibpqcompat=true`;
 }
 
 /** Managed Scaleway PostgreSQL store: an RDB instance with per-role users and RLS-backing privileges, binding the runtime/admin/cdc DSNs and the instance CA to their runtime secrets. Pure at import time. */
@@ -44,8 +34,9 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           envVar: 'DATABASE_URL',
           description: 'PostgreSQL runtime_role connection string (backend API, subject to RLS)',
           required: true,
-          valueSource: 'pulumi',
+          valueSource: 'engine',
           services: consumers.runtime,
+          database: { role: 'runtime' },
         });
       }
       if (consumers.admin) {
@@ -55,8 +46,9 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           envVar: 'DATABASE_ADMIN_URL',
           description: 'PostgreSQL admin_role connection string (migrations, seeds, owner of the RLS tables)',
           required: true,
-          valueSource: 'pulumi',
+          valueSource: 'engine',
           services: consumers.admin,
+          database: { role: 'admin' },
         });
       }
       if (consumers.cdc) {
@@ -66,8 +58,9 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           envVar: 'DATABASE_CDC_URL',
           description: 'PostgreSQL CDC worker connection string (admin_role with replication access)',
           required: true,
-          valueSource: 'pulumi',
+          valueSource: 'engine',
           services: consumers.cdc,
+          database: { role: 'admin' },
         });
       }
       if (consumers.ca) {
@@ -78,7 +71,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           description:
             'base64-encoded PEM CA cert of the Scaleway RDB instance, used by services to verify the PostgreSQL TLS connection (derived by pulumi from the database instance; base64 keeps the multi-line PEM deliverable through the line-based .env.runtime)',
           required: true,
-          valueSource: 'pulumi',
+          valueSource: 'engine',
           services: consumers.ca,
         });
       }
@@ -86,7 +79,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
     },
 
     provision(ctx: ProvisionContext): ProvisionedStore {
-      const { pulumi, scaleway, naming, region, isProduction, sizing, privateNetworkId, configuredOrRandomSecret } = ctx;
+      const { pulumi, scaleway, naming, region, isProduction, sizing, privateNetworkId } = ctx;
 
       const infraConfig = new pulumi.Config('infra');
 
@@ -95,14 +88,6 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
 
       // Shared with the reset task via `naming`.
       const dbSlug = naming.dbName;
-
-      // One password per role, from a stack config secret or generated. The `<role>-password` resource names are the Pulumi identities of the live passwords; renaming re-rolls them.
-      function rolePassword(name: string): pulumi.Output<string> {
-        return configuredOrRandomSecret(`${name}Password`, `${name}-password`);
-      }
-
-      const adminPassword = rolePassword('admin');
-      const runtimePassword = rolePassword('runtime');
 
       // Opt-in public endpoint for scoped operator tasks: `infra:dbPublicEndpoint` enables it, `infra:dbPublicAcl` limits client CIDRs, and unsetting both returns the database to private-only.
       const dbPublicEndpoint = infraConfig.getBoolean('dbPublicEndpoint') ?? false;
@@ -150,48 +135,8 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
 
       const database = new scaleway.databases.Database('main-database', { instanceId: instance.id, name: dbSlug, region });
 
-      // One user per role: admin_role runs migrations, seeds, system jobs and CDC; runtime_role serves app requests under RLS.
-      // Scaleway's isAdmin grants REPLICATION but not BYPASSRLS (verified on production, 2026-09-04): admin_role bypasses RLS only as the owner of RLS-enabled, never-forced tables.
-
-      const adminUser = new scaleway.databases.User('admin-user', {
-        instanceId: instance.id,
-        name: POSTGRES_ROLE_NAMES.admin,
-        password: adminPassword,
-        isAdmin: true, // grants REPLICATION (not BYPASSRLS) at Scaleway level
-        region,
-      });
-
-      const runtimeUser = new scaleway.databases.User('runtime-user', {
-        instanceId: instance.id,
-        name: POSTGRES_ROLE_NAMES.runtime,
-        password: runtimePassword,
-        isAdmin: false,
-        region,
-      });
-
-      // Each role gets 'all' at creation, after which the role/RLS migrations own the effective grants and their REVOKEs make Scaleway read the privilege back as 'custom'.
-      // ignoreChanges stops a refresh from re-enforcing 'all' over migration-owned grants, which CI cannot execute anyway under RelationalDatabasesReadOnly.
-
-      new scaleway.databases.Privilege(
-        'admin-privilege',
-        { instanceId: instance.id, databaseName: database.name, userName: adminUser.name, permission: 'all', region },
-        { ignoreChanges: ['permission'] },
-      );
-
-      // pg_cron lives only in Scaleway's default `rdb` database; the migrate step schedules the partition maintenance job from there as the admin user.
-      new scaleway.databases.Privilege('admin-cron-privilege', {
-        instanceId: instance.id,
-        databaseName: CRON_HOME_DATABASE,
-        userName: adminUser.name,
-        permission: 'all',
-        region,
-      });
-
-      new scaleway.databases.Privilege(
-        'runtime-privilege',
-        { instanceId: instance.id, databaseName: database.name, userName: runtimeUser.name, permission: 'all', region },
-        { ignoreChanges: ['permission'] },
-      );
+      // The roles, their passwords and privileges, and the connection strings are made by the operator task ensure-database through the
+      // database API, so no password passes through the state (tasks/ensure-database.ts).
 
       // The instance is created with a privateNetwork block; this only trips when Scaleway returns one without it, and names the cause where an undefined-property crash would not.
       const privateNetwork = instance.privateNetwork.apply((pn) => {
@@ -203,43 +148,21 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
       const ip = privateNetwork.ip;
       const port = privateNetwork.port;
 
-      /** Build a connection string for the private network endpoint. */
-      function buildConnectionString(user: pulumi.Output<string>, pass: pulumi.Output<string>): pulumi.Output<string> {
-        return pulumi.all([user, pass, ip, port, database.name]).apply(([u, p, h, pt, db]) => formatPostgresUrl(u, p, h, pt, db));
-      }
-
-      // Admin connection for migrations, seeds, system jobs (owner bypass of RLS).
-      const connectionStringAdmin = buildConnectionString(adminUser.name, adminPassword);
-      // Runtime connection for backend API requests (subject to RLS).
-      const connectionStringRuntime = buildConnectionString(runtimeUser.name, runtimePassword);
-      // CDC connects as the admin role: Scaleway grants the REPLICATION attribute, required to open a logical replication slot, only to isAdmin users.
-      const connectionStringCdc = buildConnectionString(adminUser.name, adminPassword);
-
-      // Optional public admin DSN, preferring the endpoint hostname over its IP. Disabled or unavailable endpoints yield an empty string.
-      const connectionStringAdminPublic = pulumi
-        .all([adminUser.name, adminPassword, instance.loadBalancer, database.name])
-        .apply(([u, p, lb, db]) => {
-          const publicHost = lb?.hostname || lb?.ip;
-          if (!dbPublicEndpoint || !publicHost) return '';
-          return formatPostgresUrl(u, p, publicHost, lb.port, db);
-        });
-
       return {
         outputs: {
           instanceId: instance.id,
           host,
           databaseName: database.name,
-          // Instance CA certificate (PEM) for verifying the TLS connection, also base64-encoded into the CA runtime secret below.
+          // The private endpoint the operator task assembles the connection strings from.
+          privateIp: ip,
+          port: port.apply(String),
+          // The public endpoint while one is open, empty otherwise: an operator's break-glass connection string.
+          publicHost: instance.loadBalancer.apply((lb) => (dbPublicEndpoint ? lb?.hostname || lb?.ip || '' : '')),
+          publicPort: instance.loadBalancer.apply((lb) => (dbPublicEndpoint && lb?.port ? String(lb.port) : '')),
+          // Instance CA certificate (PEM) for verifying the TLS connection, also base64-encoded into the CA runtime secret below. It is public.
           caCertificate: instance.certificate,
-          connectionStringAdmin,
-          connectionStringRuntime,
-          connectionStringCdc,
-          connectionStringAdminPublic,
         },
         secretValues: {
-          databaseUrlAdmin: connectionStringAdmin,
-          databaseUrlRuntime: connectionStringRuntime,
-          databaseUrlCdc: connectionStringCdc,
           // Base64-encoded for line-based `.env.runtime` delivery; clients decode it back to PEM.
           databaseSslCa: instance.certificate.apply((pem) => Buffer.from(pem, 'utf-8').toString('base64')),
         },

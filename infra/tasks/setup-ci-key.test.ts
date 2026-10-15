@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { deployRules } from '../lib/scaleway/deploy-policy';
 import { clearOrganizationEnv, makeFetch } from '../tests/helpers/fake-fetch';
 import { setupCiKey } from './setup-ci-key';
 
@@ -101,51 +102,8 @@ describe('setupCiKey', () => {
     const policyCreate = calls.find((c) => c.url.endsWith('/policies') && c.init.method === 'POST')!;
     const policyBody = JSON.parse(policyCreate.init.body as string);
     expect(policyBody.application_id).toBe('app-new');
-    // Three rules: project-scoped sets, project-scoped DNS, and org-scoped IAM
-    // read. DNS and IAM must be separate rules because Scaleway rejects mixing
-    // scope types within one rule.
-    expect(policyBody.rules).toHaveLength(3);
-    // Project-scoped rule binds to project id.
-    expect(policyBody.rules[0].project_ids).toEqual(['proj-1']);
-    expect(policyBody.rules[0].permission_set_names).toContain('ObjectStorageFullAccess');
-    // DNS is project-scoped (no dnsZone passed: app project only), never org-wide.
-    expect(policyBody.rules[1].project_ids).toEqual(['proj-1']);
-    expect(policyBody.rules[1].organization_id).toBeUndefined();
-    expect(policyBody.rules[1].permission_set_names).toEqual(['DomainsDNSFullAccess']);
-    // Org-scoped rule covers IAM read, on its own (different scope type from DNS).
-    expect(policyBody.rules[2].organization_id).toBe('org-1');
-    expect(policyBody.rules[2].permission_set_names).toEqual(['IAMReadOnly']);
-  });
-
-  it('resolves organization id from project when not provided', async () => {
-    const { fn, calls } = makeFetch([
-      { method: 'GET', match: '/account/v3/projects/proj-1', body: { organization_id: 'org-resolved' } },
-      {
-        method: 'GET',
-        match: '/iam/v1alpha1/applications?',
-        body: { applications: [{ id: 'app-1', name: 'demo-production-ci-deploy' }] },
-      },
-      ...groupRoutes,
-      {
-        method: 'GET',
-        match: '/iam/v1alpha1/policies?',
-        body: { policies: [{ id: 'pol-1', name: 'demo-production-ci-deploy-policy' }] },
-      },
-      { method: 'DELETE', match: '/iam/v1alpha1/policies/pol-1', body: {} },
-      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-1', name: 'demo-production-ci-deploy-policy' } },
-      { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
-      { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCW', secret_key: 's', application_id: 'app-1' } },
-    ]);
-    vi.stubGlobal('fetch', fn);
-
-    await setupCiKey({ ...baseOpts, organizationId: undefined });
-
-    // Subsequent applications/policies list calls should carry the resolved org id.
-    const scopedCalls = calls.filter((c) => c.init.method === 'GET' && (c.url.includes('/applications?') || c.url.includes('/policies?')));
-    expect(scopedCalls.length).toBeGreaterThan(0);
-    for (const c of scopedCalls) {
-      expect(c.url).toContain('organization_id=org-resolved');
-    }
+    // The deploy rules of plan §3.1, the same ones Update identities writes in place (lib/scaleway/deploy-policy.ts).
+    expect(policyBody.rules).toEqual(deployRules({ slug: 'demo', mode: 'production', projectId: 'proj-1', organizationId: 'org-1' }));
   });
 
   it('mints the fresh key BEFORE deleting the replaced ones (no keyless window on mint failure)', async () => {

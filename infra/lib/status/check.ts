@@ -21,11 +21,11 @@ export const clearPending: NextAction = {
   command: actionCommand('unlock'),
 };
 
-/** Local, self-contained deploy of the current HEAD for a mode. */
+/** Local deploy of the current HEAD for a mode: the commit must be pushed, as the builder machine fetches it. */
 export function deployAction(mode: string): NextAction {
   return {
     description: `Deploy the current commit to ${mode}`,
-    command: `pnpm --filter infra run deploy --mode ${mode} --sha $(git rev-parse HEAD) --build`,
+    command: `pnpm --filter infra run deploy --mode ${mode} --sha $(git rev-parse HEAD)`,
   };
 }
 
@@ -33,7 +33,7 @@ export function deployAction(mode: string): NextAction {
 export function diagAction(mode: string): NextAction {
   return {
     description: 'Redeploy, or read boot diagnostics if it keeps failing',
-    command: `pnpm --filter infra run deploy --mode ${mode} --sha $(git rev-parse HEAD) --build  # or: pnpm --filter infra diag`,
+    command: `pnpm --filter infra run deploy --mode ${mode} --sha $(git rev-parse HEAD)  # or: pnpm --filter infra diag`,
   };
 }
 
@@ -64,7 +64,7 @@ export function probed<T>(
   unknownDetail: string,
   evaluate: (value: T) => Check,
 ): Check {
-  if (!scalewayKeyAvailable) return builder.unknown('no Scaleway key available to this run (SCW_ADMIN_*, SCW_* or AWS_*)');
+  if (!scalewayKeyAvailable) return builder.unknown('no Scaleway key available to this run (SCW_OBSERVER_*, SCW_* or AWS_*)');
   if (value === undefined) return builder.unknown(unknownDetail);
   return evaluate(value);
 }

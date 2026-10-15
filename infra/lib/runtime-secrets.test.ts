@@ -49,7 +49,7 @@ describe('derived runtime secrets', () => {
     description: 'Signing key',
     envVar: 'SIGNING_KEY',
     required: true,
-    valueSource: 'pulumi',
+    valueSource: 'engine',
     generation: 'random',
     services: ['api'],
   };
@@ -59,7 +59,7 @@ describe('derived runtime secrets', () => {
     description: 'Public key',
     envVar: 'PUBLIC_KEY',
     required: true,
-    valueSource: 'pulumi',
+    valueSource: 'engine',
     generation: 'manual',
     services: ['worker'],
     derivedFrom: { secretId: 'signingKey', derive },

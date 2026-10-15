@@ -6,13 +6,19 @@ const appConfig = engineConfig();
 
 import type { ServiceName } from '../compose/compose';
 import { healthContract } from '../config/health.config';
-import { sizing } from '../config/sizing';
 import { enabledServices } from '../lib/services';
 import { dnsZone, naming, region, serviceHost, serviceUrl, tags, zone } from '../pulumi-context';
 import { serviceGenerationIps } from './compute';
 import { CertReadyGate, DnsPropagationGate } from './dns-cert-gates';
 import { internalLbPort, publishLbInternalAddress } from './lb-internal';
 import { privateNetworkId, privateNetworkSubnet } from './network';
+
+/**
+ * A frontend whose ACLs are `Acl` resources of their own. The provider reads a frontend's live ACLs into its `acls` field, which this program
+ * leaves empty, so a refreshing `up` would rewrite the frontend without them and delete them: a refreshing apply dropped the HTTPS redirect
+ * and the private-network rule of the internal frontend on staging. The ACLs are owned by their own resources, never by the frontend.
+ */
+const frontendWithAclResources: pulumi.CustomResourceOptions = { ignoreChanges: ['acls'] };
 
 /** Base names pinned to the shipped Pulumi URNs and Scaleway display names; renaming replaces the resources. */
 const legacyBaseNames: Partial<Record<ServiceName, string>> = { backend: 'api', frontend: 'app' };
@@ -22,7 +28,7 @@ const baseName = (slug: ServiceName) => legacyBaseNames[slug] ?? slug;
 interface LoadBalancerOutputs {
   /** Public URL per LB-exposed service slug. */
   serviceUrls: Record<string, pulumi.Output<string>>;
-  lbId: pulumi.Output<string | undefined>;
+  lbId: pulumi.Output<string>;
   lbBackendIds: pulumi.Output<Record<string, string>>;
 }
 
@@ -194,12 +200,16 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     );
     internalBackends.set(`${service.slug}-internal`, internalBackend);
 
-    const internalFrontend = new scaleway.loadbalancers.Frontend(`${service.slug}-internal-frontend`, {
-      lbId: lb.id,
-      name: naming.resource(`${service.slug}-internal`),
-      backendId: internalBackend.id,
-      inboundPort: internalLbPort(internalPort),
-    });
+    const internalFrontend = new scaleway.loadbalancers.Frontend(
+      `${service.slug}-internal-frontend`,
+      {
+        lbId: lb.id,
+        name: naming.resource(`${service.slug}-internal`),
+        backendId: internalBackend.id,
+        inboundPort: internalLbPort(internalPort),
+      },
+      frontendWithAclResources,
+    );
 
     // The frontend also listens on the LB's public IP, so the ACL pair admits private-network sources and denies everything else.
     new scaleway.loadbalancers.Acl(`${service.slug}-internal-allow-pn`, {
@@ -231,6 +241,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
       certificateIds: allCertIds,
     },
     {
+      ...frontendWithAclResources,
       // Attach only certs proven `ready`: a pending or errored cert fails its own gate first, with the ACME detail.
       dependsOn: certGates,
     },
@@ -276,12 +287,16 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     });
   }
 
-  const httpFrontend = new scaleway.loadbalancers.Frontend('http-frontend', {
-    lbId: lb.id,
-    name: naming.resource('http'),
-    backendId: defaultBackend.id, // Required but never reached (ACL redirects all)
-    inboundPort: 80,
-  });
+  const httpFrontend = new scaleway.loadbalancers.Frontend(
+    'http-frontend',
+    {
+      lbId: lb.id,
+      name: naming.resource('http'),
+      backendId: defaultBackend.id, // Required but never reached (ACL redirects all)
+      inboundPort: 80,
+    },
+    frontendWithAclResources,
+  );
 
   new scaleway.loadbalancers.Acl('http-to-https', {
     frontendId: httpFrontend.id,
@@ -312,12 +327,11 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   };
 }
 
-// Skipped while compute is deferred on a fresh provision: without VMs the LB has no backends to route to.
-const outputs: LoadBalancerOutputs = sizing.computeEnabled
-  ? provisionLoadBalancer()
-  : { serviceUrls: {}, lbId: pulumi.output(undefined), lbBackendIds: pulumi.output({} as Record<string, string>) };
+// Made by the setup's first apply, before any machine, with empty pools: its records and certificates are then in place for the first deploy,
+// whose key writes no DNS. The cutover fills the pools.
+const outputs = provisionLoadBalancer();
 
-/** Public URL per LB-exposed service slug; empty when no domain/compute. */
+/** Public URL per LB-exposed service slug. */
 export const serviceDomainUrls: Readonly<Record<string, pulumi.Output<string>>> = outputs.serviceUrls;
 export const lbId = outputs.lbId;
 export const lbBackendIds = outputs.lbBackendIds;

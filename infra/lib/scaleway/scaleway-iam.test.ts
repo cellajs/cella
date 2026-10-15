@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearOrganizationEnv, makeFetch } from '../../tests/helpers/fake-fetch';
-import { provisionScopedKey, type ScopedKeyConfig } from './scaleway-iam';
+import { ensureApplication, provisionScopedKey, type ScopedKeyConfig } from './scaleway-iam';
 
 clearOrganizationEnv();
 
@@ -88,31 +88,6 @@ describe('provisionScopedKey', () => {
     expect(apiKeyDeletes.map((c) => c.url)).toEqual([expect.stringContaining('/api-keys/OLD1'), expect.stringContaining('/api-keys/OLD2')]);
   });
 
-  it('resolves organization id from project when not provided', async () => {
-    const { fn, calls } = makeFetch([
-      { method: 'GET', match: '/account/v3/projects/proj-1', body: { organization_id: 'org-resolved' } },
-      {
-        method: 'GET',
-        match: '/iam/v1alpha1/applications?',
-        body: { applications: [{ id: 'app-1', name: 'demo-demo-key' }] },
-      },
-      { method: 'GET', match: '/iam/v1alpha1/policies?', body: { policies: [] } },
-      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-1', name: 'demo-demo-key-policy' } },
-      { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
-      { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCW', secret_key: 's', application_id: 'app-1' } },
-    ]);
-    vi.stubGlobal('fetch', fn);
-
-    const result = await provisionScopedKey({ ...baseOpts, organizationId: undefined }, config);
-
-    expect(result.organizationId).toBe('org-resolved');
-    const scopedCalls = calls.filter((c) => c.init.method === 'GET' && (c.url.includes('/applications?') || c.url.includes('/policies?')));
-    expect(scopedCalls.length).toBeGreaterThan(0);
-    for (const c of scopedCalls) {
-      expect(c.url).toContain('organization_id=org-resolved');
-    }
-  });
-
   it('throws with a useful message on Scaleway error responses', async () => {
     const { fn } = makeFetch([{ method: 'GET', match: '/iam/v1alpha1/applications?', body: { message: 'forbidden' }, status: 403 }]);
     vi.stubGlobal('fetch', fn);
@@ -120,68 +95,17 @@ describe('provisionScopedKey', () => {
     await expect(provisionScopedKey(baseOpts, config)).rejects.toThrow(/403.*forbidden/);
   });
 
-  it('skips all policy calls when managePolicy is false (policy owned by Pulumi)', async () => {
-    const { fn, calls } = makeFetch([
-      {
-        method: 'GET',
-        match: '/iam/v1alpha1/applications?',
-        body: { applications: [{ id: 'app-1', name: 'demo-demo-key' }] },
-      },
-      { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
-      { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCWNEW', secret_key: 's', application_id: 'app-1' } },
+  it('makes an application only when it does not exist, and says so only then', async () => {
+    const lines: string[] = [];
+    const existing = makeFetch([
+      { method: 'GET', match: '/iam/v1alpha1/applications?', body: { applications: [{ id: 'app-1', name: 'demo-demo-key' }] } },
     ]);
-    vi.stubGlobal('fetch', fn);
-
-    const result = await provisionScopedKey(baseOpts, { ...config, managePolicy: false });
-
-    expect(result).toMatchObject({ accessKey: 'SCWNEW', applicationId: 'app-1' });
-    // No policy reads, deletes, or creates: Pulumi owns the policy resource.
-    expect(calls.some((c) => c.url.includes('/policies'))).toBe(false);
-  });
-
-  it('does not require buildRules when managePolicy is false', async () => {
-    const { fn } = makeFetch([
-      {
-        method: 'GET',
-        match: '/iam/v1alpha1/applications?',
-        body: { applications: [{ id: 'app-1', name: 'demo-demo-key' }] },
-      },
-      { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
-      { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCWNEW', secret_key: 's', application_id: 'app-1' } },
-    ]);
-    vi.stubGlobal('fetch', fn);
-
-    const { buildRules: _drop, ...noRules } = config;
-    await expect(provisionScopedKey(baseOpts, { ...noRules, managePolicy: false })).resolves.toMatchObject({ accessKey: 'SCWNEW' });
-  });
-
-  it('throws when managePolicy is enabled but buildRules is missing', async () => {
-    const { fn } = makeFetch([
-      {
-        method: 'GET',
-        match: '/iam/v1alpha1/applications?',
-        body: { applications: [{ id: 'app-1', name: 'demo-demo-key' }] },
-      },
-    ]);
-    vi.stubGlobal('fetch', fn);
-
-    const { buildRules: _drop, ...noRules } = config;
-    await expect(provisionScopedKey(baseOpts, noRules)).rejects.toThrow(/buildRules is required/);
-  });
-
-  it('skips key minting when mintKey is false (app + policy only)', async () => {
-    const { fn, calls } = makeFetch([
-      { method: 'GET', match: '/iam/v1alpha1/applications?', body: { applications: [] } },
-      { method: 'POST', match: '/iam/v1alpha1/applications', body: { id: 'app-op', name: 'demo-demo-key' } },
-      { method: 'GET', match: '/iam/v1alpha1/policies?', body: { policies: [] } },
-      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-op', name: 'demo-demo-key-policy' } },
-    ]);
-    vi.stubGlobal('fetch', fn);
-
-    const result = await provisionScopedKey(baseOpts, { ...config, mintKey: false });
-
-    expect(result).toMatchObject({ accessKey: '', secretKey: '', applicationId: 'app-op' });
-    // No api-key reads, deletes, or creates: the human mints one in the console.
-    expect(calls.some((c) => c.url.includes('/api-keys'))).toBe(false);
+    vi.stubGlobal('fetch', existing.fn);
+    expect(await ensureApplication({ ...baseOpts, log: (line) => lines.push(line) }, { suffix: 'demo-key', description: 'd' })).toEqual({
+      id: 'app-1',
+      name: 'demo-demo-key',
+    });
+    expect(existing.calls.some((c) => c.init.method === 'POST')).toBe(false);
+    expect(lines).toEqual([]);
   });
 });

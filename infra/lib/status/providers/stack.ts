@@ -1,6 +1,9 @@
-import { resolveApplicationIdByName } from '../../scaleway/iam-client';
-import { principalNames } from '../../scaleway/principals';
-import { resolveOrganizationId } from '../../scaleway/scaleway-iam';
+import { actionCommand } from '../../operator-actions';
+import { listApiKeys, resolveApplicationIdByName } from '../../scaleway/iam-client';
+import { machinePrincipals } from '../../scaleway/machine-keys';
+import { organizationIdOfKey } from '../../scaleway/operator-identity';
+import { allPrincipalNames, appPrincipalNames } from '../../scaleway/principals';
+import { projectsOfOtherModes, projectVerdict } from '../../stack/project-per-mode';
 import { check, deployAction, probed, runSetup } from '../check';
 import type { StatusProvider } from '../types';
 
@@ -31,43 +34,85 @@ export const stackProvider: StatusProvider<Record<string, never>> = {
   },
 };
 
-/** Resolved admin application id, or `null` when the app does not exist. `undefined` facts mean the probe could not run. */
-export type IdentityFacts = { adminAppId: string | null };
+/** One key's age, by the application that bears it. */
+export interface KeyAge {
+  application: string;
+  createdAt: string;
+}
 
 /**
- * Scaleway project + admin-app identity checks. The project id is a session fact; the admin application is resolved from
- * IAM by its canonical per-mode name, the same lookup `pulumi up` does, so status reports what the next up will actually see.
+ * Resolved observer application id, or `null` when the app does not exist, and the age of every key of the environment's identities.
+ * `undefined` facts mean the probe could not run.
+ */
+export type IdentityFacts = { observerAppId: string | null; keyAges: KeyAge[] };
+
+/** The keys' ages as one line, oldest first, in days. No age is a deadline (D12): the line only says how old each key is. */
+export function keyAgesLine(ages: readonly KeyAge[], now = Date.now()): string {
+  const days = (createdAt: string) => Math.max(0, Math.floor((now - Date.parse(createdAt)) / 86_400_000));
+  return [...ages]
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .map((age) => `${age.application} ${days(age.createdAt)} d`)
+    .join(', ');
+}
+
+/**
+ * Scaleway project + observer identity checks. The project id is a session fact; the observer application is resolved from
+ * IAM by its canonical per-app name, the same lookup `pulumi up` does for its bucket statements.
  */
 export const identityProvider: StatusProvider<IdentityFacts> = {
   domain: 'identity',
   async gather(session) {
     if (session.stackState !== 'bootstrapped') return undefined;
-    if (!session.scalewayKeyAvailable || !session.secretKey || !session.projectId) return undefined;
+    if (!session.scalewayKeyAvailable || !session.accessKey || !session.secretKey || !session.projectId) return undefined;
     try {
-      // The resolver reads SCW_ORGANIZATION_ID / SCW_DEFAULT_ORGANIZATION_ID before falling back to the Account API, which no
-      // engine-created application is granted (an unresolvable org degrades the check to unknown, never an error).
-      const organizationId = await resolveOrganizationId(session.secretKey, session.projectId);
-      const name = principalNames(session.appConfig.slug, session.mode).admin;
-      return { adminAppId: await resolveApplicationIdByName({ secretKey: session.secretKey }, organizationId, name) };
+      // An application key learns its organization from IAM; an unresolvable one degrades the check to unknown, never an error.
+      const organizationId = await organizationIdOfKey({ accessKey: session.accessKey, secretKey: session.secretKey }, session.projectId);
+      const auth = { secretKey: session.secretKey };
+      const names = allPrincipalNames(session.appConfig, session.mode);
+      const observerAppId = await resolveApplicationIdByName(auth, organizationId, names.observer);
+      const applications = [
+        names.operator,
+        names.observer,
+        names.ciDeploy,
+        ...machinePrincipals(session.appConfig.slug, session.mode).map((principal) => principal.application),
+      ];
+      const keyAges: KeyAge[] = [];
+      for (const application of applications) {
+        const id = application === names.observer ? observerAppId : await resolveApplicationIdByName(auth, organizationId, application);
+        if (!id) continue;
+        for (const key of await listApiKeys(auth, organizationId, id)) if (key.created_at) keyAges.push({ application, createdAt: key.created_at });
+      }
+      return { observerAppId, keyAges };
     } catch {
       return undefined;
     }
   },
   evaluate(facts, session) {
     const project = check('identity.project', 'Scaleway project');
+    const own = projectVerdict(session.projectId, projectsOfOtherModes(session.mode));
     const checks = [
-      session.projectId ? project.ok(session.projectId) : project.missing('SCW_PROJECT_ID not set; setup picks or creates the project', runSetup),
+      own.status === 'missing'
+        ? project.missing(`SCW_PROJECT_ID not set in infra/.env.${session.mode}; setup picks or creates the project`, runSetup)
+        : own.status === 'shared'
+          ? project.error(`${session.projectId} is also the project of ${own.sharedWith}: every environment needs a project of its own`)
+          : project.ok(session.projectId ?? ''),
     ];
     if (session.stackState === 'bootstrapped') {
-      const admin = check('identity.adminApp', 'Admin app', 'scaleway');
+      const observer = check('identity.observerApp', 'Observer app', 'scaleway');
       checks.push(
-        probed(admin, session.scalewayKeyAvailable, facts, 'could not read IAM applications', ({ adminAppId }) =>
-          adminAppId
-            ? admin.ok(adminAppId)
-            : admin.warn(
-                `IAM application '${principalNames(session.appConfig.slug, session.mode).admin}' not found; admin bucket access needs it`,
+        probed(observer, session.scalewayKeyAvailable, facts, 'could not read IAM applications', ({ observerAppId }) =>
+          observerAppId
+            ? observer.ok(observerAppId)
+            : observer.warn(
+                `IAM application '${appPrincipalNames(session.appConfig.appSlug).observer}' not found; \`${actionCommand('identity')}\` creates it`,
                 runSetup,
               ),
+        ),
+      );
+      const ages = check('identity.keyAges', 'Key ages', 'scaleway');
+      checks.push(
+        probed(ages, session.scalewayKeyAvailable, facts, 'could not read the keys', ({ keyAges }) =>
+          ages.ok(keyAges.length > 0 ? keyAgesLine(keyAges) : 'no key found'),
         ),
       );
     }
