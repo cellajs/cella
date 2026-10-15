@@ -71,7 +71,7 @@ const packageOf = (id: string) => {
  * match them by folder, and claimed by the on-demand group last, so each forms its own lazy chunk.
  */
 const ON_DEMAND_APP =
-  /[\\/]src[\\/]modules[\\/](common[\\/](blocknote|uploader)[\\/]|common[\\/]gleap-support|common[\\/]contact-form[\\/]contact-form-map|common[\\/]form-fields[\\/]blocknote|attachment[\\/](render[\\/]|offline[\\/]upload-service))/;
+  /[\\/]src[\\/]modules[\\/](common[\\/](blocknote|uploader)[\\/]|common[\\/]gleap-support|common[\\/]contact-form[\\/]contact-form-map|common[\\/]form-fields[\\/]blocknote|attachment[\\/](render[\\/]|offline[\\/]upload-service)|auth[\\/]unsaved-edits-dialog)/;
 
 /**
  * Plain modules under blocknote/ that boot-time code reads: the Yjs field registry (the cache), the document store, its
@@ -291,9 +291,16 @@ const viteConfig = {
               minSize: 0,
             },
             {
+              // Yjs helpers with no BlockNote behind them. Claimed before the on-demand group, whose editor
+              // modules would otherwise capture them: the sign-out check reads them and must not load the editor.
+              name: 'yjs-app',
+              test: /[\\/]common[\\/]blocknote[\\/](ydoc-label|yjs-connections|yjs-http|yjs-resync|query|unsaveable-notices)\./,
+              minSize: 0,
+            },
+            {
               // ── On-demand app code, last ──────────────────────────────────────────────────────
-              // The blocknote wrappers and the form field that renders them, the uploader, the chat
-              // widget, the contact map, and the attachment renderers behind `lazyNamed`. Claimed after every group
+              // The blocknote wrappers and the form field that renders them, the uploader, the chat widget, the contact
+              // map, the sign-out check for unsaved edits, and the attachment renderers behind `lazyNamed`. Claimed after every group
               // above, because they import the UI primitives, the query layer and the attachment
               // helpers, and a group captures what it matches along with its dependencies.
               name: (id: string) => {
@@ -304,6 +311,8 @@ const viteConfig = {
                 if (/[\\/]attachment[\\/]offline[\\/]upload-service/.test(id)) return 'upload-service';
                 if (/[\\/]common[\\/]uploader[\\/]/.test(id)) return 'uploader';
                 if (/[\\/]common[\\/]gleap-support/.test(id)) return 'gleap-support';
+                if (/[\\/]common[\\/]contact-form[\\/]/.test(id)) return 'contact-map';
+                if (/[\\/]auth[\\/]unsaved-edits-dialog/.test(id)) return 'unsaved-edits';
                 return 'editor-app';
               },
               minSize: 0,
