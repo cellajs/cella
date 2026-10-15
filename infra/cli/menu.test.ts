@@ -29,10 +29,11 @@ function render(items: Array<MenuItem<string>>): string[] {
 }
 
 describe('mainMenuItems', () => {
-  it('lists nine rows under five groups on a healthy stack, then Quit', () => {
+  it('lists ten rows under five groups on a healthy stack, then Quit', () => {
     expect(render(mainMenuItems(bootstrapped))).toEqual([
       'Observe',
       '  Show status              read-only',
+      '  Show runs                read-only',
       '  Review & apply changes   operator key',
       'Change',
       '  Rotate keys & secrets ›  keys, secrets, passphrase, operator key',
@@ -54,6 +55,7 @@ describe('mainMenuItems', () => {
     expect(render(mainMenuItems(partial))).toEqual([
       'Observe',
       '  Show status              read-only',
+      '  Show runs                read-only',
       '- Review & apply changes (needs a bootstrapped stack: run "Resume setup")',
       'Change',
       '  Rotate keys & secrets ›  keys, secrets, passphrase, operator key',

@@ -19,6 +19,12 @@ export const OPERATOR_ACTIONS = {
     key: 'observer',
     description: 'Health check: what is set up, what is live, and the next step. Read-only.',
   },
+  runs: {
+    label: 'Show runs',
+    key: 'observer',
+    description:
+      "The environment's last deploys: when, which target, how each ended and where a failed one stopped, then one in full with the end of its log. Read-only.",
+  },
   preview: {
     label: 'Preview changes',
     key: 'operator',
@@ -155,6 +161,13 @@ export const MENU_ROWS = {
     actions: ['status'],
     hint: 'read-only',
     description: OPERATOR_ACTIONS.status.description,
+  },
+  runs: {
+    group: 'observe',
+    label: OPERATOR_ACTIONS.runs.label,
+    actions: ['runs'],
+    hint: 'read-only',
+    description: OPERATOR_ACTIONS.runs.description,
   },
   changes: {
     group: 'observe',
