@@ -16,6 +16,7 @@
     "forget-retired-resources": "tsx tasks/forget-retired-resources.ts",
     "deploy": "tsx tasks/deploy.ts",
     "reap": "tsx tasks/reap.ts",
+    "main-job": "tsx tasks/main-job.ts",
     "status": "tsx tasks/status.ts",
     "preflight": "tsx tasks/preflight-privileged.ts",
     "repair-control-store": "tsx tasks/repair-control-store.ts",

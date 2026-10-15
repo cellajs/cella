@@ -88,10 +88,10 @@ describe('menu rows', () => {
     for (const id of rowIds) expect(Object.keys(MENU_GROUPS)).toContain(menuRow(id).group);
   });
 
-  it('leaves three actions without a row: the plan without its question, the GeoIP refresh a workflow already runs, and the key only a private repository needs', () => {
+  it('leaves four actions without a row: the plan without its question, the GeoIP refresh a workflow already runs, the key only a private repository needs, and the hand start the runner makes rare', () => {
     const listed = new Set(rowIds.flatMap((id) => [...menuRow(id).actions]));
     const commandOnly = ids.filter((id) => !listed.has(id)).sort();
-    expect(commandOnly).toEqual(['geoip-refresh', 'preview', 'repository-key']);
+    expect(commandOnly).toEqual(['geoip-refresh', 'preview', 'repository-key', 'start-deploy']);
   });
 
   it('says where an action is found: the row, the pick inside a row, or the command', () => {

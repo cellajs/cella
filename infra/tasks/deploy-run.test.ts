@@ -118,7 +118,7 @@ describe('runDeploy sequencing', () => {
 
     const ok = makeFake();
     await runDeploy(baseOpts, ok.fx, withBucket);
-    expect(ok.ops.indexOf('task:geoip-refresh')).toBeGreaterThan(ok.ops.indexOf('task:wait-for-images'));
+    expect(ok.ops.indexOf('task:geoip-refresh')).toBeGreaterThan(ok.ops.indexOf('task:build-release'));
     expect(ok.ops.indexOf('task:geoip-refresh')).toBeLessThan(ok.ops.indexOf('task:stage-generation-keys'));
 
     const failing = makeFake();
@@ -151,7 +151,6 @@ describe('runDeploy sequencing', () => {
       'task:sync-rollout-config',
       'task:preflight-privileged',
       'task:build-release',
-      'task:wait-for-images',
       'task:stage-generation-keys',
       'update:production',
       'task:assert-grants',
@@ -312,10 +311,10 @@ describe('runReap sequencing', () => {
 });
 
 describe('what the deploy runs', () => {
-  it('runs no build: the app code runs on the builder machine, never beside the deploy key', async () => {
+  it('runs no build and needs no Docker: the app code runs on the builder machine, never beside the deploy key, and a job has no daemon', async () => {
     const { fx, execCalls } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
-    expect([...new Set(execCalls.map((call) => `${call.cmd} ${call.args[0]}`))].sort()).toEqual(['docker login', 'pulumi login', 'pulumi stack']);
+    expect([...new Set(execCalls.map((call) => `${call.cmd} ${call.args[0]}`))].sort()).toEqual(['pulumi login', 'pulumi stack']);
   });
 });
 

@@ -26,6 +26,8 @@ const PRIVILEGED_URN_TYPES = [
   'scaleway:object/',
   // Frontends, routes, ACLs and certificates decide what is public, and an ACL guards the internal listener (D15).
   'scaleway:loadbalancers/',
+  // The main job's definition names the secrets its runs read and the image they start from.
+  'scaleway:job/',
 ] as const;
 
 /** One step of `pulumi preview --json`. */

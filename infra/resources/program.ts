@@ -7,6 +7,7 @@ import * as stores from './stores';
 import './secrets';
 import './state-bucket-policy';
 import './identities';
+import './main-job';
 import { mode, naming, region } from '../pulumi-context';
 import * as lb from './loadbalancer';
 

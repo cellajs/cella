@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { confirm } from '@inquirer/prompts';
+import { storeDeployKeyCopy } from '../../lib/deploy/main-job';
 import { syncGithubEnvironment } from '../../lib/github-sync';
 import { deriveInfra } from '../../lib/naming';
 import { actionCommand, actionLabel } from '../../lib/operator-actions';
@@ -344,6 +345,18 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
 
   // Identity ids come from the IAM API, so stack config only needs a non-secret bootstrap marker.
   const ciKey = moment?.ciKey;
+  // The main job's runs read the deploy key by reference: a key made in this run is copied to the engine folder (plan §3.5).
+  if (ciKey?.accessKey && ciKey.secretKey) {
+    await storeDeployKeyCopy(createSecretManagerClient({ secretKey: operatorKey.secretKey, region: appConfig.s3.region, projectId }), {
+      slug: appConfig.slug,
+      mode: environment,
+      key: ciKey,
+    }).then(
+      () => console.info(`  ${checkMark} The deploy key's copy for the main job is in the engine folder.`),
+      (error) =>
+        console.warn(`${warningMark} Could not copy the deploy key for the main job (${errorMessage(error)}); a rotation of keys copies it.`),
+    );
+  }
   if (context.hasCiKey || ciKey?.accessKey) {
     await must(
       'Mark bootstrap complete',

@@ -16,6 +16,7 @@ import { runRotateSecrets } from './rotate-secrets';
 import { runSecrets } from './secrets';
 import { runSeedDatabase } from './seed-db';
 import { runSetup } from './setup';
+import { runStartDeploy } from './start-deploy';
 import { runTeardown } from './teardown';
 import { runUnlock } from './unlock';
 
@@ -32,6 +33,7 @@ export const ACTION_RUNNERS: ActionRunners = {
   'rotate-passphrase': runRotatePassphrase,
   'operator-key': runOperatorKey,
   identity: runIdentity,
+  'start-deploy': runStartDeploy,
   'repository-key': runRepositoryKey,
   secrets: runSecrets,
   'db-open': runExposeDatabase,
