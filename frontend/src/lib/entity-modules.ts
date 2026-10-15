@@ -1,8 +1,6 @@
-import type { ReactNode } from 'react';
-import { appConfig, type ChannelEntityType, type EntityRole, isChannel, isProduct, type ProductEntityType } from 'shared';
+import { appConfig, type ChannelEntityType, isChannel, isProduct, type ProductEntityType } from 'shared';
 import { onFrontendModuleRegister } from '~/lib/module';
 import type { IconComponent } from '~/modules/common/icons/types';
-import type { ChannelTileEntity, EnrichedChannel } from '~/modules/entities/types';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import type { ChannelListQueryFactory, ChannelListQueryMap } from '~/query/types';
 
@@ -23,29 +21,6 @@ export interface ChannelModuleConfig {
   listQuery?: ChannelListQueryFactory;
   /** Keeps this channel's member-count column out of the members table until a user toggles it on. */
   hiddenMemberCount?: boolean;
-  /** How `ChannelTile` shows this channel in grids; without it, the banner tile counts all members. */
-  tile?: ChannelTileConfig;
-}
-
-/**
- * Per-channel tile settings. The render hooks are method signatures, so a module can type the entity
- * as its own row: the tile only ever passes rows of the channel that declares them.
- */
-export interface ChannelTileConfig {
-  /** `banner` (default) puts the name on a banner with a footer below; `compact` is one row with no banner or footer. */
-  layout?: 'banner' | 'compact';
-  /** Role the meta line counts ("12 students"); all members when unset. */
-  countRole?: EntityRole;
-  /** Role whose members stack as avatars on the banner. */
-  featuredRole?: EntityRole;
-  /** The channel this one sits in, shown as a chip on the banner unless the grid is on that channel's own page. */
-  parent?(entity: ChannelTileEntity): EnrichedChannel | null | undefined;
-  /** Replaces the entity avatar. */
-  leading?(entity: ChannelTileEntity): ReactNode;
-  /** Replaces the meta line under the name. */
-  meta?(entity: ChannelTileEntity): ReactNode;
-  /** Footer action for a viewer without membership, such as a join button. */
-  join?(entity: ChannelTileEntity): ReactNode;
 }
 
 /** A product entity's frontend wiring, declared by the module that owns the entity. */
@@ -91,9 +66,6 @@ onFrontendModuleRegister(({ name, channel, product }) => {
 
 /** The channel's menu sheet section, undefined when its module declares none. */
 export const getMenuSection = (entityType: ChannelEntityType): MenuSectionOptions | undefined => menuSections.get(entityType);
-
-/** The channel's tile settings; an empty object when its module declares none. */
-export const getChannelTile = (entityType: ChannelEntityType): ChannelTileConfig => channels.get(entityType)?.tile ?? {};
 
 /** The channel's list query factory, undefined when its module declares none. */
 export const getChannelListQuery = (entityType: ChannelEntityType): ChannelListQueryFactory | undefined => channels.get(entityType)?.listQuery;

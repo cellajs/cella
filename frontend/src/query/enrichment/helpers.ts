@@ -1,4 +1,4 @@
-import type { MembershipBase } from 'sdk';
+import type { GetMyInvitationsResponse, MembershipBase } from 'sdk';
 import { appConfig, type ChannelEntityType, isChannel } from 'shared';
 import { meKeys } from '~/modules/me/query';
 import type { EntityQueryKeys } from '~/query/basic/entity-query-registry';
@@ -21,6 +21,12 @@ export function getChannelKeys(entityType: string): { type: ChannelEntityType; k
 /** Null while memberships are not loaded. */
 export function getCachedMemberships(): MembershipBase[] | null {
   return queryClient.getQueryData<{ items: MembershipBase[] }>(meKeys.memberships)?.items ?? null;
+}
+
+/** Ids of the channels the viewer holds an unanswered invitation to; null while the invites list is not loaded. */
+export function getCachedInvitedIds(): ReadonlySet<string> | null {
+  const invites = queryClient.getQueryData<GetMyInvitationsResponse>(meKeys.invites);
+  return invites ? new Set(invites.items.map(({ entity }) => entity.id)) : null;
 }
 
 function getMembershipEntityId(m: MembershipBase): string | null {

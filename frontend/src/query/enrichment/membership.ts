@@ -20,3 +20,10 @@ export function enrichWithMembership(item: EnrichableChannel, memberships: Membe
 
   return { ...item, membership: resolved };
 }
+
+/** Sets `invited` from the invites list; leaves the row as is while that list is not loaded. */
+export function enrichWithInvitation(item: EnrichableChannel, invitedIds: ReadonlySet<string> | null): EnrichableChannel {
+  if (!invitedIds) return item;
+  const invited = invitedIds.has(item.id);
+  return !!item.invited === invited ? item : { ...item, invited };
+}

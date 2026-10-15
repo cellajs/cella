@@ -1,4 +1,4 @@
-import type { ChannelBase, MembershipBase } from 'sdk';
+import type { ChannelBase, MembershipBase, UserMinimalBase } from 'sdk';
 import type { ChannelEntityType, EntityCanMap, EntityRole, ProductEntityType } from 'shared';
 
 /** Ancestor channel entity slugs for URL building, populated via cache enrichment. */
@@ -13,6 +13,8 @@ export type ChannelEnrichment = {
   organizationId?: string;
   /** Populated by cache enrichment from myMemberships. */
   membership?: MembershipBase | null;
+  /** The viewer holds an unanswered invitation to this channel; populated by cache enrichment once the invites list is cached. */
+  invited?: boolean;
   ancestorSlugs?: AncestorSlugs;
   /** Populated by cache enrichment from membership and policies. */
   can?: EntityCan;
@@ -28,9 +30,9 @@ type ChannelTileCounts = {
   activity?: Partial<Record<ProductEntityType, { created: number | null }>>;
 };
 
-/** A channel row as `ChannelTile` reads it: fields beyond the channel base are optional, and the tile shows what is there. */
+/** A channel row as the `ChannelTile` parts read it: fields beyond the channel base are optional, and each part shows what is there. */
 export type ChannelTileEntity = EnrichedChannel & {
   publishedAt?: string | null;
   description?: string | null;
-  included?: { counts?: ChannelTileCounts };
+  included?: { counts?: ChannelTileCounts; members?: Pick<UserMinimalBase, 'id' | 'name' | 'thumbnailUrl'>[] };
 };

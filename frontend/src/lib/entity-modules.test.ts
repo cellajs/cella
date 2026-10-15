@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   getChannelListQueries,
   getChannelListQuery,
-  getChannelTile,
   getMemberStatIcon,
   getMenuSection,
   getProductDeepLink,
@@ -26,20 +25,6 @@ describe('entity module declarations', () => {
     expect(getMenuSection('organization')).toEqual({ label: 'c:organization_other', entityType: 'organization' });
     expect(getChannelListQuery('organization')).toBe(listQuery);
     expect(getChannelListQueries()).toEqual({ organization: listQuery });
-  });
-
-  it('reads a channel tile back, and an empty one for a channel that declares none', () => {
-    expect(getChannelTile('organization')).toEqual({});
-
-    defineFrontendModule({
-      name: 'organizations',
-      owner: 'cella',
-      scope: ['frontend'],
-      description: 'test',
-      channel: { entityType: 'organization', tile: { layout: 'compact', countRole: 'member' } },
-    });
-
-    expect(getChannelTile('organization')).toEqual({ layout: 'compact', countRole: 'member' });
   });
 
   it('holds the map identity between calls, so the search sheet keeps its hook order', () => {

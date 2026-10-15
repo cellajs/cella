@@ -50,7 +50,6 @@ defineFrontendModule({
     entityType: 'organization',
     menuSection: { createAction: createOrganizationAction, label: 'c:organization_other' },
     listQuery: (params) => organizationsListQueryOptions(params),
-    tile: { featuredRole: 'admin' },
   },
   tools: [
     {

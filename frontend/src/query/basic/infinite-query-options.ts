@@ -29,14 +29,18 @@ export const offsetPaging = <TPage extends QueryData<unknown>>(
   ...baseInfiniteQueryOptions,
 });
 
+/** `included` parts whose absence on a row means the list was fetched without asking for them. */
+const listIncludes = ['counts', 'members'] as const;
+
 /**
- * `refetchOnMount` for a list whose cache entry it shares with lists fetched without counts: when this one asks for
- * counts and the cached rows have none, it refetches while the entry is still fresh.
+ * `refetchOnMount` for a list whose cache entry it shares with lists fetched with fewer `include` parts: when
+ * this one asks for counts or member previews and the cached rows lack them, it refetches while the entry is fresh.
  */
-export const refetchOnMountForCounts = (include: string | undefined) =>
-  include?.includes('counts')
-    ? ({ state }: { state: { data?: unknown } }): boolean | 'always' => {
-        const firstRow = (state.data as InfiniteData<QueryData<{ included?: { counts?: unknown } }>> | undefined)?.pages[0]?.items[0];
-        return firstRow && !firstRow.included?.counts ? 'always' : true;
-      }
-    : true;
+export const refetchOnMountForIncluded = (include: string | undefined) => {
+  const wanted = listIncludes.filter((part) => include?.split(',').includes(part));
+  if (!wanted.length) return true;
+  return ({ state }: { state: { data?: unknown } }): boolean | 'always' => {
+    const firstRow = (state.data as InfiniteData<QueryData<{ included?: Record<string, unknown> }>> | undefined)?.pages[0]?.items[0];
+    return firstRow && wanted.some((part) => firstRow.included?.[part] === undefined) ? 'always' : true;
+  };
+};

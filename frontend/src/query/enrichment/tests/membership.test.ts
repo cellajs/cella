@@ -21,7 +21,7 @@ vi.mock('shared', () => ({
   policyMatrix: mockPolicyMatrix,
 }));
 vi.mock('~/query/query-client', () => ({ queryClient }));
-vi.mock('~/modules/me/query', () => ({ meKeys: { memberships: ['me', 'memberships'] } }));
+vi.mock('~/modules/me/query', () => ({ meKeys: { memberships: ['me', 'memberships'], invites: ['me', 'invites'] } }));
 vi.mock('~/query/basic/entity-query-registry', () => ({
   getEntityQueryKeys: mockGetEntityQueryKeys,
   getRegisteredEntityTypes: mockGetRegisteredEntityTypes,
@@ -145,5 +145,40 @@ describe('membership enrichment', () => {
     const data = queryClient.getQueryData(['organization', 'list']) as any;
     expect(data.pages[0].items[0].membership).toBeDefined();
     expect(data.pages[0].items[1].membership).toBeUndefined();
+  });
+});
+
+describe('invitation enrichment', () => {
+  let unsubscribe: (() => void) | undefined;
+  const invites = (...ids: string[]) => ({ items: ids.map((id) => ({ entity: { id } })), total: ids.length });
+  const invitedFlags = () => (queryClient.getQueryData(['organization', 'list']) as any).pages[0].items.map((item: any) => item.invited);
+
+  beforeEach(() => {
+    queryClient.clear();
+    queryClient.setQueryData(['me', 'memberships'], { items: [] });
+  });
+
+  afterEach(() => {
+    unsubscribe?.();
+    queryClient.clear();
+  });
+
+  it('leaves rows untouched while the invites list is not loaded', () => {
+    unsubscribe = initChannelEnrichment();
+    queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1' }]));
+
+    expect(invitedFlags()).toEqual([undefined]);
+  });
+
+  // A row that was never invited keeps its reference: no write for the unset flag
+  it('marks invited rows, and clears the mark once the invitation is answered', () => {
+    unsubscribe = initChannelEnrichment();
+    queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1' }, { id: 'org-2' }]));
+
+    queryClient.setQueryData(['me', 'invites'], invites('org-2'));
+    expect(invitedFlags()).toEqual([undefined, true]);
+
+    queryClient.setQueryData(['me', 'invites'], invites());
+    expect(invitedFlags()).toEqual([undefined, false]);
   });
 });

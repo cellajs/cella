@@ -3,25 +3,25 @@ syncBreaking: true
 clientCacheBump: false
 ---
 
-# One `ChannelTile` for every channel grid, shaped per channel by `channel.tile`
+# Channel tiles are composed from `ChannelTile*` parts, and grids take `renderTile`
 
-`ChannelGridTile` is gone: `frontend/src/modules/entities/entity-grid/tile.tsx` exports `ChannelTile`, the grid tile
-for every channel type. A channel module shapes it through a `tile` entry in its `channel` registration
-(`ChannelTileConfig` in `frontend/src/lib/entity-modules.ts`). Point grids at `ChannelTile`, move what an app-owned
-tile does differently into `tile`, and delete the app's tile.
+`ChannelGridTile` is gone: `frontend/src/modules/entities/entity-grid/channel-tile.tsx` exports the default
+`ChannelTile` and the parts it is built from (`ChannelTileCard`, `ChannelTileBanner`, `ChannelTileRow`,
+`ChannelTileHeading`, `ChannelTileStats`, `ChannelTileMembers`, `ChannelTileParentChip`, `ChannelTileFooter`,
+`ChannelTileDescription`, `ChannelTileMembership`). `BaseEntityGrid` takes `renderTile(entity)` in place of
+`tileComponent`. Point grids at `ChannelTile`, or compose a module's own tile from the parts, and delete app-owned tiles.
 
 ## What & why
 
-The banner tile now carries a draft badge, a meta line (member count, post counts per `memberStatProductTypes` entry
-with their `memberStatIcon`, latest post date), featured-role avatars, a parent chip, a description preview and the
-joined button or a pending-invite badge. `tile` sets `layout` (`banner` or `compact`), `countRole`, `featuredRole`,
-and the hooks `parent`, `leading`, `meta` and `join`. Apps had grown their own tiles, which drifted from the shared
-one and never received its fixes.
+Parts read the row from `ChannelTileCard` and run no queries. Member previews come from `included.members`
+(`include=members`, the channel's most privileged role), counts from `included.counts`, and a pending invitation
+from `invited`, which cache enrichment now sets from the cached invites list. Apps had grown tiles that drifted
+from the shared one and fetched per tile. `refetchOnMountForCounts` is now `refetchOnMountForIncluded`.
 
 ## Blast radius
 
-Sync-breaking: the `ChannelGridTile` export is removed. Organization tiles change look (admin avatars, counts,
-joined button). No database change, no cache bump.
+Sync-breaking: `ChannelGridTile` and `tileComponent` are removed. Organization tiles change look (admin
+previews, counts, joined button). No database change, no cache bump.
 
 ## Run
 
@@ -29,16 +29,19 @@ No script: manual.
 
 ## Manual steps
 
-1. Find tiles: `grep -rn "ChannelGridTile\|tileComponent" frontend/src`.
-2. Each channel grid passes `tileComponent={ChannelTile}` and requests `include: 'counts'`; wrap it in `useCallback` to pass `hideOwnRole` or `currentChannelId`, as `organizations-grid.tsx` does. Drop casts on `tileComponent`.
-3. Per channel module, declare `tile`: the counted and featured roles, `parent` for a chip to the channel it sits in, `join` for a self-join button.
-4. A banner-less row (for example a personal channel listing its child channels) uses `layout: 'compact'` with `leading` and `meta`.
-5. Delete the app's own tile, and its user-sheet avatar button in favor of `~/modules/user/member-avatar`.
-6. Remove `in_channel` and `no_description` from `locales/*/app.json` when they match the new `common.json` keys.
+1. Find tiles and grids: `grep -rn "ChannelGridTile\|tileComponent\|refetchOnMountForCounts" frontend/src`.
+2. Each grid passes `renderTile={(entity) => <ChannelTile entity={entity} hideOwnRole={…} />}` and drops its `useCallback` tile wrapper and casts.
+3. Each grid asks for `include: 'counts,members'`; its list query sets `refetchOnMount: refetchOnMountForIncluded(include)`.
+4. Each channel list operation answers `include=members` with `findMemberPreviewsByChannels`, as `get-organizations.ts` does.
+5. A tile that differs composes the parts in its module: `ChannelTileStats countRole`, `ChannelTileParentChip`, `ChannelTileMembership fallback` for a join button, `ChannelTileRow` with `leading` and `meta` for a banner-less row.
+6. A grid of rows the viewer may be invited to loads `meInvitationsQueryOptions()` once, so enrichment can set `invited`.
+7. Delete the app's own tile, and its user-sheet avatar button in favor of `~/modules/user/member-avatar`.
+8. Remove `in_channel` and `no_description` from `locales/*/app.json` when they match the new `common.json` keys.
 
 ## Verify
 
 ```sh
 pnpm check
 pnpm unused
+pnpm test:storybook
 ```

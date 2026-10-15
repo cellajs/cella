@@ -214,16 +214,18 @@ describe('list query factories', () => {
   });
 });
 
-describe('counts on mount', () => {
-  const cached = (rows: { included?: { counts?: unknown } }[]) => ({ state: { data: { pages: [{ items: rows, total: rows.length }] } } });
+describe('included parts on mount', () => {
+  const cached = (rows: { included?: Record<string, unknown> }[]) => ({ state: { data: { pages: [{ items: rows, total: rows.length }] } } });
 
-  it('refetches a fresh list without counts only when the query asks for them', () => {
-    const askingForCounts = organizationsListQueryOptions({ include: 'counts' }).refetchOnMount as (query: unknown) => unknown;
+  it('refetches a fresh list missing an asked-for part, and only then', () => {
+    const askingForBoth = organizationsListQueryOptions({ include: 'counts,members' }).refetchOnMount as (query: unknown) => unknown;
 
     expect(organizationsListQueryOptions({}).refetchOnMount).toBe(true);
-    expect(askingForCounts(cached([{ included: {} }]))).toBe('always');
-    expect(askingForCounts(cached([{ included: { counts: {} } }]))).toBe(true);
-    expect(askingForCounts(cached([]))).toBe(true);
+    expect(organizationsListQueryOptions({ include: 'membership' }).refetchOnMount).toBe(true);
+    expect(askingForBoth(cached([{ included: {} }]))).toBe('always');
+    expect(askingForBoth(cached([{ included: { counts: {} } }]))).toBe('always');
+    expect(askingForBoth(cached([{ included: { counts: {}, members: [] } }]))).toBe(true);
+    expect(askingForBoth(cached([]))).toBe(true);
   });
 });
 
