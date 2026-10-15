@@ -1,6 +1,8 @@
 import type { Preview } from '@storybook/react-vite';
 import { LucideProvider } from 'lucide-react';
 import { appConfig } from 'shared';
+// The dayjs plugins main.tsx installs, for components that format dates
+import '../src/lib/dayjs';
 import '../src/styling/tailwind.css';
 
 const preview: Preview = {

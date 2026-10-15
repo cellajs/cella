@@ -1,7 +1,7 @@
 import type { QueryKey } from '@tanstack/react-query';
 import { t } from 'i18next';
 import { BirdIcon, SearchIcon } from 'lucide-react';
-import type { ComponentType } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import type { TKey } from '~/lib/i18n-locales';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
@@ -17,7 +17,8 @@ type BaseEntityGridProps<TEntity extends { id: string }> = {
 
   // render
   entities?: TEntity[];
-  tileComponent: ComponentType<{ entity: TEntity }>;
+  /** Renders one tile; a grid passes its own props through the closure, and tiles keep their identity when those change. */
+  renderTile: (entity: TEntity) => ReactNode;
 
   /** Approximate height of each tile in px, passed to skeleton (default: 180) */
   skeletonHeight?: number;
@@ -47,7 +48,7 @@ const noTotalKey: QueryKey = ['entity-grid', 'no-total'];
 export function BaseEntityGrid<TEntity extends { id: string }>({
   label,
   entities,
-  tileComponent: TileComponent,
+  renderTile,
   skeletonHeight,
   isLoading,
   isFetching,
@@ -85,7 +86,7 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
     <div className="mb-12">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 md:grid-cols-2 md:gap-6 lg:grid-cols-[repeat(auto-fill,minmax(330px,1fr))]">
         {visibleEntities.map((entity) => (
-          <TileComponent key={entity.id} entity={entity} />
+          <Fragment key={entity.id}>{renderTile(entity)}</Fragment>
         ))}
       </div>
 

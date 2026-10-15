@@ -3,7 +3,7 @@ import { Skeleton } from '~/modules/ui/skeleton';
 import { cn } from '~/utils/cn';
 
 interface EntityGridSkeletonProps {
-  /** Approximate height of each tile in px (default: 180, matching ChannelGridTile) */
+  /** Approximate height of each tile in px (default: 180, matching a banner ChannelTile) */
   tileHeight?: number;
 }
 
