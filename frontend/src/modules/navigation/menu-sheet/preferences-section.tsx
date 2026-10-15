@@ -15,15 +15,11 @@ export function PreferencesContent() {
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
   const toggleDetailedMenu = useNavigationStore((state) => state.toggleDetailedMenu);
   const toggleKeepOpenPreference = useNavigationStore((state) => state.toggleKeepOpenPreference);
-  const keyboardShortcuts = useNavigationStore((state) => state.keyboardShortcuts);
-  const toggleKeyboardShortcuts = useNavigationStore((state) => state.toggleKeyboardShortcuts);
 
   const showDesktopMenuOption = appConfig.menuStructure.some(({ subentityType }) => subentityType);
 
   const mode = useUIStore((state) => state.mode);
   const setMode = useUIStore((state) => state.setMode);
-  const keepMessages = useUIStore((state) => state.keepMessages);
-  const setKeepMessages = useUIStore((state) => state.setKeepMessages);
   const contrast = useUIStore((state) => state.contrast);
   const setContrast = useUIStore((state) => state.setContrast);
 
@@ -71,20 +67,6 @@ export function PreferencesContent() {
             onCheckedChange={toggleDetailedMenu}
           />
         )}
-        <PreferenceSwitch
-          id="keyboardShortcuts"
-          label={t('c:keyboard_shortcuts')}
-          description={t('c:keyboard_shortcuts.text')}
-          checked={keyboardShortcuts}
-          onCheckedChange={toggleKeyboardShortcuts}
-        />
-        <PreferenceSwitch
-          id="keepMessages"
-          label={t('c:keep_messages')}
-          description={t('c:keep_messages.text')}
-          checked={keepMessages}
-          onCheckedChange={setKeepMessages}
-        />
       </PreferencesGroup>
 
       {pwaEnabled && (

@@ -85,10 +85,9 @@ function DocsLayout() {
     }
   }, [isDesktop, sidebarOpen]);
 
-  // Search on ⌘K/Ctrl-K ('mod' matching is broken in the helper, so bind both), collapse on ESC
+  // Search on ⌘K/Ctrl-K, collapse on ESC
   useHotkeys([
-    ['meta + k', () => toggleDocsSearch()],
-    ['ctrl + k', () => toggleDocsSearch()],
+    ['Mod + K', () => toggleDocsSearch()],
     [
       'Escape',
       () => {

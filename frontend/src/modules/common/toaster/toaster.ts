@@ -46,11 +46,17 @@ function close(id?: string) {
 }
 
 /**
- * How long a toast stays, in ms; 0 keeps it until dismissed. A reader who chose to keep messages open overrules every
- * timeout. A toast that asks for a decision passes `timeout: 0` itself; the rest close by themselves.
+ * Increased contrast, set on the user or asked for by the device, also keeps toasts open: a reader who needs stronger
+ * edges likely needs more than a few seconds as well. The device setting covers signed-out pages, which have no switch.
+ */
+const keepsMessages = () => useUIStore.getState().contrast === 'more' || !!globalThis.matchMedia?.('(prefers-contrast: more)').matches;
+
+/**
+ * How long a toast stays, in ms; 0 keeps it until dismissed. Increased contrast overrules every timeout. A toast that
+ * asks for a decision passes `timeout: 0` itself; the rest close by themselves.
  */
 function timeoutFor(type: ToastSeverity | undefined, options: ToastOptions) {
-  if (useUIStore.getState().keepMessages) return 0;
+  if (keepsMessages()) return 0;
   return options.timeout ?? (type === 'error' || options.description ? LONG_TIMEOUT : TIMEOUT);
 }
 

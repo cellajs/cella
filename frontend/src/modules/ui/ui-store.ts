@@ -20,11 +20,8 @@ interface UIStoreState {
   theme: Theme; // Selected theme ('none' for default)
   setTheme: (theme: Theme) => void;
 
-  contrast: Contrast; // Non-text contrast: 'system' follows prefers-contrast, 'more' forces the raised tokens
+  contrast: Contrast; // 'system' follows prefers-contrast, 'more' forces the raised tokens and keeps toasts open
   setContrast: (contrast: Contrast) => void;
-
-  keepMessages: boolean; // Toasts stay until dismissed, for a reader who needs more than a few seconds
-  setKeepMessages: (status: boolean) => void;
 
   publicAlertsSeen: string[]; // Public route alert IDs dismissed before a user DB exists
   setPublicAlertSeen: (alertSeen: string) => void;
@@ -45,15 +42,11 @@ interface UIStoreState {
 // Guarded so tests in a node environment can import modules that reach this store
 const browserMode = typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
-const initStore: Pick<
-  UIStoreState,
-  'mode' | 'theme' | 'contrast' | 'offlineAccess' | 'keepMessages' | 'publicAlertsSeen' | 'hintsSeen' | 'focusView' | 'uiLocks'
-> = {
+const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'contrast' | 'offlineAccess' | 'publicAlertsSeen' | 'hintsSeen' | 'focusView' | 'uiLocks'> = {
   mode: browserMode,
   theme: 'none',
   contrast: 'system',
   offlineAccess: false,
-  keepMessages: false,
   publicAlertsSeen: [],
   hintsSeen: [],
   focusView: false,
@@ -84,11 +77,6 @@ export const useUIStore = create<UIStoreState>()(
         setContrast: (contrast) => {
           set((state) => {
             state.contrast = contrast;
-          });
-        },
-        setKeepMessages: (status) => {
-          set((state) => {
-            state.keepMessages = status;
           });
         },
         setPublicAlertSeen: (alertSeen) => {
@@ -132,7 +120,6 @@ export const useUIStore = create<UIStoreState>()(
           mode: state.mode,
           theme: state.theme,
           contrast: state.contrast,
-          keepMessages: state.keepMessages,
           publicAlertsSeen: state.publicAlertsSeen,
           hintsSeen: state.hintsSeen,
         }),

@@ -36,7 +36,7 @@ The template's accessibility fixes arrive through synced files only. An app's ow
 - **Names (1.1.1, 4.1.2)**: an icon-only button, toggle or link has a translated `aria-label`; a custom control states its role and state.
 - **Focus (2.4.7)**: a custom focus target carries `focus-effect`. Never remove the ring (`focus-visible:outline-hidden`, `ring-0`) without another visible indicator.
 - **Dragging (2.5.7)**: every drag (reorder, resize, move) has a button or key that does the same, as the move buttons in the menu's edit mode.
-- **Character keys (2.1.4)**: a hotkey of one character, or Shift plus one, is registered only while `keyboardShortcuts` in `navigation-store.ts` is on, as `app-nav.tsx` does.
+- **Character keys (2.1.4)**: every hotkey needs Ctrl, Alt or Meta (`Mod`), as in `app-nav.tsx`. There is no switch to turn shortcuts off, so a character alone or with Shift is never registered.
 - **Motion (2.2.2)**: animation follows the reduced-motion preference: `motion-reduce:` on CSS transitions and animations, `<MotionConfig reducedMotion="user">` or `useReducedMotion()` for `motion` components.
 - **Dimmed text (1.4.3)**: dim text with a color token such as `text-muted-foreground`. `opacity-*` on text lowers its contrast below what the token was measured at.
 

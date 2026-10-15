@@ -42,13 +42,9 @@ export const legalConfig = {
     label: 'c:accessibility',
     sections: [
       { id: 'overview', label: null },
-      { id: 'commitment', label: 'Our commitment' },
       { id: 'what-you-can-do', label: 'What you can do' },
       { id: 'known-limitations', label: 'Known limitations' },
-      { id: 'third-party-content', label: 'Third-party content' },
       { id: 'how-we-test', label: 'How we test' },
-      { id: 'conformance-report', label: 'Conformance report' },
-      { id: 'feedback', label: 'Feedback' },
     ],
   },
 } as const satisfies LegalTexts;
@@ -247,7 +243,7 @@ export const accessibilityReview: AccessibilityReview = {
       description: 'Short confirmation messages close by themselves after 4 seconds.',
       criteria: ['2.2.1'],
       workaround:
-        "Signed in, you can turn that off under Preferences with 'Keep messages open'. On the public pages, hover the message or press F6 to hold it.",
+        'With more contrast, turned on under Preferences or on your device, they stay until you close them. You can also hover a message or press F6 to hold it.',
     },
     {
       description: 'Setting up an authenticator app must be finished within 5 minutes.',
