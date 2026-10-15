@@ -1,4 +1,4 @@
-import type { GetNextPageParamFunction } from '@tanstack/react-query';
+import type { GetNextPageParamFunction, InfiniteData } from '@tanstack/react-query';
 import type { PageParams, QueryData } from '~/query/types';
 
 /** Pages any `{ items, total }` response until all are fetched. staleTime is omitted so it inherits the global default from query-client.ts. */
@@ -28,3 +28,15 @@ export const offsetPaging = <TPage extends QueryData<unknown>>(
     fetchPage(offset ?? (page ?? 0) * limit, signal),
   ...baseInfiniteQueryOptions,
 });
+
+/**
+ * `refetchOnMount` for a list whose cache entry it shares with lists fetched without counts: when this one asks for
+ * counts and the cached rows have none, it refetches while the entry is still fresh.
+ */
+export const refetchOnMountForCounts = (include: string | undefined) =>
+  include?.includes('counts')
+    ? ({ state }: { state: { data?: unknown } }): boolean | 'always' => {
+        const firstRow = (state.data as InfiniteData<QueryData<{ included?: { counts?: unknown } }>> | undefined)?.pages[0]?.items[0];
+        return firstRow && !firstRow.included?.counts ? 'always' : true;
+      }
+    : true;

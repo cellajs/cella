@@ -1,7 +1,9 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useSearchParams } from '~/hooks/use-search-params';
-import { BaseEntityGrid, ChannelGridTile, EntityGridBar } from '~/modules/entities/entity-grid';
+import { BaseEntityGrid, ChannelTile, EntityGridBar } from '~/modules/entities/entity-grid';
+import type { ChannelTileEntity } from '~/modules/entities/types';
+import { useUserStore } from '~/modules/user/user-store';
 import { organizationsListQueryOptions } from './query';
 
 type OrgSearch = Parameters<typeof organizationsListQueryOptions>[0];
@@ -14,8 +16,6 @@ interface Props {
   limitedView?: boolean;
 }
 
-const tileComponent = ChannelGridTile;
-
 export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, limitedView: initialLimitedView }: Props) {
   const [expanded, setExpanded] = useState(false);
   const limitedView = initialLimitedView && !expanded;
@@ -24,7 +24,9 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
 
   const search: OrgSearch = { ...baseSearch, ...(fixedQuery ?? {}) };
 
-  const queryOptions = organizationsListQueryOptions(search);
+  const ofAnotherUser = useUserStore((state) => !!search.relatableUserId && search.relatableUserId !== state.user?.id);
+
+  const queryOptions = organizationsListQueryOptions({ ...search, include: 'counts' });
 
   const q = search.q ?? '';
   const isFiltered = !!q;
@@ -35,6 +37,11 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
   });
 
   const entities = data;
+
+  const tileComponent = useCallback(
+    ({ entity }: { entity: ChannelTileEntity }) => <ChannelTile entity={entity} hideOwnRole={ofAnotherUser} />,
+    [ofAnotherUser],
+  );
 
   return (
     <div className="flex h-full flex-col gap-2">
