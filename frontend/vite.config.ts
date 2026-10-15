@@ -57,7 +57,11 @@ const FEATURE_LIBS: [name: string, packages: RegExp][] = [
   ['react-scan', /^react-scan$/],
   ['maps', /^maplibre-gl$/],
   ['uppy', /^(@uppy|@transloadit)/],
+  ['replay', /^(rrweb|@rrweb\/[\w-]+|rrweb-snapshot)$/],
 ];
+
+/** The Maple SDK's session replay module: it imports rrweb, and the SDK reaches it by dynamic import only when replay is on. */
+const MAPLE_REPLAY = /[\\/]@maple-dev[\\/]browser[\\/]dist[\\/]replay-session-/;
 
 /** The npm package a module id belongs to, or undefined outside node_modules. */
 const packageOf = (id: string) => {
@@ -220,14 +224,15 @@ const viteConfig = {
               // keeps the lifecycle of whatever imports it. It runs before the feature libraries so
               // that a shared package cannot be captured into one of them: react-dom landed inside
               // the editor chunk that way, and every module needing React then booted the editor.
-              // The feature packages are excluded so the groups below still claim them.
+              // The feature packages are excluded so the groups below still claim them, and the Maple
+              // replay module so it forms its own lazy chunk with rrweb.
               name: (id: string) => {
                 const pkg = packageOf(id);
                 return pkg ? `v-${pkg.replace(/[^\w-]/g, '-')}` : null;
               },
               test: (id: string) => {
                 const pkg = packageOf(id);
-                return Boolean(pkg) && !FEATURE_LIBS.some(([, packages]) => packages.test(pkg as string));
+                return Boolean(pkg) && !MAPLE_REPLAY.test(id) && !FEATURE_LIBS.some(([, packages]) => packages.test(pkg as string));
               },
               minSize: 0,
             },
@@ -478,8 +483,9 @@ viteConfig.plugins?.push(
     },
     injectManifest: {
       globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-      // `grammars-*` is the codeSplitting group for shiki/tm-grammars: runtime-loaded, not precached
-      globIgnores: ['**/grammars-*.js', '**/static/common/flags/**/*'],
+      // `grammars-*` is the codeSplitting group for shiki/tm-grammars: runtime-loaded, not precached.
+      // `replay-*` is Maple's session replay with rrweb, loaded only when replay is on.
+      globIgnores: ['**/grammars-*.js', '**/replay-*.js', '**/static/common/flags/**/*'],
       maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
     },
   }),

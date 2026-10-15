@@ -68,7 +68,8 @@ OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer <key>
 
 A deployed VM receives only the variables its runtime secrets declare, so declare these two beside the
 Maple key in [runtime-secrets.config.ts](../infra/config/runtime-secrets.config.ts). The browser reports
-to Maple through Maple's own SDK and has no OTLP export.
+to Maple through Maple's own SDK and has no OTLP export. It sends errors, traces and web vitals, with no
+session replay, cookies or user id ([maple.ts](../frontend/src/lib/maple.ts)): the privacy policy relies on that.
 
 ## Add a worker
 

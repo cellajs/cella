@@ -6,6 +6,12 @@ import { scrubText, scrubUrl } from '../utils/scrub-url.ts';
 const isStringArray = (value: AttributeValue): value is (string | null | undefined)[] =>
   Array.isArray(value) && value.some((item: unknown) => typeof item === 'string');
 
+/**
+ * Where the HTTP instrumentation puts the caller's IP address, under both semantic conventions. No trace needs it: the
+ * request id ties a span to the request log, and the session behind it holds the IP as a hash.
+ */
+const ipAttributes = ['client.address', 'network.peer.address', 'network.peer.port', 'http.client_ip', 'net.peer.ip', 'net.sock.peer.addr'];
+
 /** An error message: a failed query's whole message goes, since its values may span any number of lines. */
 const scrubMessage = (message: string): string => (isFailedQueryMessage(message) ? redactedFailedQuery : scrubText(message));
 
@@ -30,7 +36,7 @@ function scrubException(attributes: Attributes): void {
 }
 
 /**
- * Removes secrets from a span as it ends, with the same `scrubUrl` the loggers use: the name, every string attribute
+ * Removes IP addresses and secrets from a span as it ends, with the same `scrubUrl` the loggers use: the name, every string attribute
  * (`url.full`, `url.query`, `url.path` and the rest), event attributes such as an exception's message and stack, and
  * the status message. A failed query quoted anywhere loses its SQL and values (`redactFailedQuery`). `createOtelSDK`
  * registers it before every other processor, so the exporter and any debug processor only ever read the scrubbed span.
@@ -43,6 +49,7 @@ export function createRedactingSpanProcessor(): SpanProcessor {
     onEnd(span: ReadableSpan): void {
       const name = scrubUrl(span.name);
       if (name !== span.name) Object.assign(span, { name });
+      for (const key of ipAttributes) delete span.attributes[key];
       scrubAttributes(span.attributes);
       for (const event of span.events) {
         if (!event.attributes) continue;

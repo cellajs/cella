@@ -59,7 +59,7 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
     // A /me or /me/menu probe without a valid session shows no error.
     if (isCasualSessionAttempt && statusCode === 401) return;
 
-    // The structured console.error is the Maple SDK's capture path, and requestId ties the session timeline to the backend request log.
+    // The console line with requestId is for developers; Maple's fetch span already records the status and joins the backend trace.
     if (statusCode >= 500) {
       console.error('[api]', error.type ?? 'server_error', { requestId: error.requestId, path: error.path, status: statusCode });
     }

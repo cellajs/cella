@@ -19,12 +19,6 @@ export interface LegalTextConfig {
 
 export type LegalTexts = Record<string, LegalTextConfig>;
 
-export interface CollectedDataCategory {
-  label: string;
-  description: string;
-  items: string[];
-}
-
 export interface Subprocessor {
   slug: string;
   name: string;

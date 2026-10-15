@@ -8,81 +8,69 @@ const sections = legalConfig.terms.sections;
 const s = (id: string) => sections.find((sec) => sec.id === id)!;
 
 function TermsText() {
-  const lastUpdated = 'March 13, 2026';
+  const lastUpdated = 'October 15, 2026';
 
   const appName = appConfig.name;
   const company = appConfig.company.name;
   const frontendUrl = appConfig.frontendUrl;
   const supportEmail = appConfig.company.supportEmail;
+  const email = (
+    <a href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
+      {supportEmail}
+    </a>
+  );
 
   return (
     <div id="terms-content">
       <LegalSection id={s('overview').id} label={s('overview').label}>
-        <p className="mb-2 pt-8 italic">Last updated: {lastUpdated}</p>
+        <p className="text-muted-foreground text-sm">Last updated: {lastUpdated}</p>
+        <p>
+          These Terms of Use ("Terms") govern your use of {appName} (the "Service") at{' '}
+          <a href={frontendUrl} target="_blank" rel="noreferrer">
+            {frontendUrl}
+          </a>
+          , run by {company} ("we"). The Service is for organizations: you use it as a member of one.
+        </p>
         <p>Questions about these terms? Contact us.</p>
         <LegalContact className="mt-8" />
       </LegalSection>
 
-      <LegalSection id={s('introduction').id} label={s('introduction').label}>
-        <p>
-          Welcome to {appName}, operated by {company} ({'"'}we{'"'}, {'"'}us{'"'}, {'"'}our{'"'}). These Terms of Use ({'"'}Terms{'"'}) govern your
-          access to and use of the Service available at{' '}
-          <a href={frontendUrl} target="_blank" rel="noreferrer">
-            {frontendUrl}
-          </a>
-          .
-        </p>
-      </LegalSection>
-
       <LegalSection id={s('agreement').id} label={s('agreement').label}>
         <p>
-          By accessing or using the Service you agree to be bound by these Terms and our{' '}
-          <LegalCrossLink subject="privacy">Privacy Policy</LegalCrossLink>. These Terms form a legally binding agreement between you and {company}.
-          If you do not agree, do not use the Service.
+          By using the Service you enter a binding agreement with {company} on these Terms. If you do not agree, do not use the Service. Our{' '}
+          <LegalCrossLink subject="privacy">Privacy Policy</LegalCrossLink> explains how we handle your data. Where your organization has its own
+          agreement with us, that agreement prevails.
         </p>
-        <p>
-          We may update these Terms from time to time. We will notify you of material changes via email or an announcement on the Service. Changes to
-          pricing or features on the <LegalCrossLink subject="privacy">Privacy Policy</LegalCrossLink> page are always communicated in advance.
-        </p>
-      </LegalSection>
-
-      <LegalSection id={s('privacy').id} label={s('privacy').label}>
-        <p>
-          Your use of the Service is also governed by our <LegalCrossLink subject="privacy">Privacy Policy</LegalCrossLink>, which describes how we
-          collect, use and protect your data.
-        </p>
+        <p>We announce material changes to these Terms at least two weeks in advance, by email or in the Service.</p>
       </LegalSection>
 
       <LegalSection id={s('accounts').id} label={s('accounts').label}>
         <p>
-          You must provide accurate and complete registration information. You may not use a name you do not have the right to use or impersonate
-          another person. Your organization may assign a username on your behalf. You may not transfer your account without our written consent.
+          Your organization may set up your account or username. Give accurate details, do not impersonate anyone and do not transfer your account
+          without our written consent. By using the Service you confirm that you are old enough to agree to these Terms (or have a parent's or
+          guardian's consent), that you may act for any organization you represent, and that you follow applicable law.
         </p>
-        <p>By creating an account you represent that:</p>
-        <ul className="my-2">
-          <li>You are of legal age to form a binding contract (or have parental/guardian consent).</li>
-          <li>If acting on behalf of an organization, you are authorized to bind that organization to these Terms.</li>
-          <li>You will use the Service only in compliance with all applicable laws.</li>
-        </ul>
-        <p>We are not responsible for use of the Service that violates applicable law.</p>
       </LegalSection>
 
       <LegalSection id={s('acceptable-use').id} label={s('acceptable-use').label}>
         <p>You agree not to:</p>
-        <ul className="my-2">
+        <ul>
           <li>Violate any applicable law or regulation.</li>
           <li>Upload malicious content or introduce viruses, trojans or harmful code.</li>
           <li>Attempt to gain unauthorized access to any part of the Service or its infrastructure.</li>
           <li>Use the Service to harass, abuse or harm others.</li>
           <li>Interfere with or disrupt the integrity or performance of the Service.</li>
-          <li>Reverse-engineer, decompile or attempt to extract the source code of the Service.</li>
+          <li>Reverse-engineer the Service, except where the law or its open-source license allows it.</li>
         </ul>
-        <p>Content you share within your organization is visible to its members.</p>
-
-        <h4 className="font-medium">Responsibility</h4>
         <p>
-          You are responsible for all content you submit and must ensure you have the necessary rights. We are not liable for user-generated content.
-          Do not share highly sensitive personal information through the Service.
+          You are responsible for the content you submit and must have the rights to it. We are not liable for content users submit. Do not share
+          highly sensitive personal information through the Service.
+        </p>
+
+        <h4>Reporting content</h4>
+        <p>
+          Report illegal content or abuse to {email}. A person reviews each report. We may remove content or suspend accounts that break these Terms
+          or the law, and tell those affected what we decided and why, unless the law prevents it. They can reply to contest the decision.
         </p>
       </LegalSection>
 
@@ -106,58 +94,55 @@ function TermsText() {
 
       <LegalSection id={s('termination').id} label={s('termination').label}>
         <p>
-          You may delete your account at any time. See our <LegalCrossLink subject="privacy">Privacy Policy</LegalCrossLink> for how we handle your
-          data after termination.
+          You may delete your account at any time; our <LegalCrossLink subject="privacy">Privacy Policy</LegalCrossLink> says what happens to your
+          data. If you deleted it by mistake, contact {email}: we will try to help but cannot guarantee recovery.
         </p>
         <p>
-          We may terminate or suspend your access for any reason, including breach of these Terms. We will try to provide advance notice so you can
-          retrieve important data, except where impractical, illegal or unsafe.
-        </p>
-        <p>
-          If you deleted your account by mistake, contact us at{' '}
-          <a href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
-            {supportEmail}
-          </a>
-          . We will try to help but cannot guarantee recovery.
+          We may suspend or end your access for any reason, including a breach of these Terms. We will try to give notice first so you can retrieve
+          important data, unless that is impractical, unlawful or unsafe. When your organization stops using the Service, it has at least 30 days to
+          request its data before we delete it.
         </p>
         <p>
           Provisions that by their nature should survive termination (payment obligations, liability limitations, intellectual property, dispute
-          resolution) will survive.
+          resolution) survive.
         </p>
       </LegalSection>
 
       <LegalSection id={s('disclaimers').id} label={s('disclaimers').label}>
         <p>
-          The Service is provided {'"'}as is{'"'} and {'"'}as available{'"'} without warranties of any kind, express or implied, including
-          merchantability, fitness for a particular purpose or non-infringement. We do not guarantee that the Service will be uninterrupted or
-          error-free.
+          To the fullest extent permitted by law, the Service is provided "as is" and "as available", without warranties of any kind, express or
+          implied, including merchantability, fitness for a particular purpose or non-infringement. We do not guarantee that the Service will be
+          uninterrupted or error-free.
         </p>
       </LegalSection>
 
       <LegalSection id={s('liability').id} label={s('liability').label}>
         <p>
-          To the fullest extent permitted by law, {company} shall not be liable for any indirect, special, incidental or consequential damages. Our
-          total liability shall not exceed the greater of $100 or the amounts you paid us in the 12 months preceding the claim.
+          To the fullest extent permitted by law, {company} is not liable for indirect, special, incidental or consequential damages, and our total
+          liability is limited to the greater of €100 or the amounts you paid us in the 12 months before the claim. These limits do not apply to
+          damage caused by our intent or gross negligence, or to liability the law does not allow us to limit.
         </p>
       </LegalSection>
 
       <LegalSection id={s('indemnification').id} label={s('indemnification').label}>
         <p>
-          You agree to indemnify and hold {company}, its affiliates, officers, agents, employees and partners harmless from any claims, damages or
-          expenses arising from your use of the Service or violation of these Terms.
+          To the fullest extent permitted by law, you agree to indemnify and hold {company}, its affiliates, officers, agents, employees and partners
+          harmless from any claims, damages or expenses arising from your use of the Service or violation of these Terms.
         </p>
       </LegalSection>
 
       <LegalSection id={s('governing-law').id} label={s('governing-law').label}>
-        <p>These Terms are governed by the laws of {appConfig.company.country}.</p>
+        <p>
+          These Terms are governed by the laws of {appConfig.company.country}, and the competent court where {company} is established decides
+          disputes. Nothing in these Terms limits rights that mandatory law where you live gives you.
+        </p>
       </LegalSection>
 
       <LegalSection id={s('general').id} label={s('general').label}>
         <p>
-          These Terms, together with our Privacy Policy, constitute the entire agreement between you and {company}
-          regarding the Service. If any provision is found unenforceable, the remaining provisions will continue in full force. Our failure to enforce
-          any right or provision does not constitute a waiver. You may not assign your rights under these Terms without our consent. We may assign
-          ours at any time.
+          These Terms, our Privacy Policy and any agreement between your organization and us are the entire agreement about the Service. If a
+          provision is unenforceable, the rest stays in force. Not enforcing a right does not waive it. You may not assign your rights under these
+          Terms without our consent; we may assign ours at any time.
         </p>
       </LegalSection>
     </div>

@@ -3,23 +3,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~
 
 export function ProcessedDataTypes() {
   return (
-    <Table title="Processed Data Types" className="mt-2">
+    <Table title="Processed data" className="mt-2">
       <TableHeader>
         <TableRow>
-          <TableHead>Name</TableHead>
+          <TableHead>Data</TableHead>
           <TableHead>Purpose</TableHead>
-          <TableHead>Data Categories</TableHead>
-          <TableHead>Storage Location</TableHead>
-          <TableHead>Retention Period</TableHead>
+          <TableHead>Legal basis</TableHead>
+          <TableHead>Retention</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {sharedDataTypes.map((type) => (
           <TableRow key={type.slug}>
-            <TableCell>{type.name}</TableCell>
+            <TableCell className="whitespace-normal">
+              <strong>{type.name}</strong>
+              <br />
+              <span className="text-muted-foreground">{type.dataCategories.join(', ')}</span>
+            </TableCell>
             <TableCell className="whitespace-normal">{type.purpose}</TableCell>
-            <TableCell className="whitespace-normal">{type.dataCategories.join(', ')}</TableCell>
-            <TableCell className="whitespace-normal">{type.storageLocation}</TableCell>
+            <TableCell className="whitespace-normal first-letter:uppercase">{type.legalBasis}</TableCell>
             <TableCell className="whitespace-normal">{type.retentionPeriod}</TableCell>
           </TableRow>
         ))}
