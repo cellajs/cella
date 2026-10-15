@@ -18,7 +18,12 @@
       "entry": ["src/drive.ts"]
     },
     "backend": {
+      // The drizzle plugin makes every `*-db.ts` an entry, and knip reports no unused export of an entry. Off, the files
+      // are checked like any other: tables are imported through `src/tables.ts`, and an export only drizzle-kit reads
+      // takes `@public`.
+      "drizzle": false,
       "entry": [
+        "drizzle.config.ts",
         "scripts/*.ts",
         // Loaded by readdir in scripts/scripts-discovery.ts.
         "scripts/migrations/*.migration.ts",

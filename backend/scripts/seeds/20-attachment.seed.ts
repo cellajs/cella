@@ -50,9 +50,9 @@ const warnWhenAssetsUnreachable = async () => {
 };
 
 /**
- * Seeds attachment rows for each placement the seam returns (one per organization by default),
- * one row per published seed asset. Every row is a public-bucket row, so it renders in any
- * development environment without S3 credentials.
+ * Seeds one attachment row per published seed asset in each organization, dealt round-robin over
+ * the placements the seam returns for it (one per organization by default). Every row is a
+ * public-bucket row, so it renders in any development environment without S3 credentials.
  */
 export const attachmentsSeed = async () => {
   const spinner = startSpinner('Seeding attachments...');
@@ -81,9 +81,10 @@ export const attachmentsSeed = async () => {
 
   let totalCreated = 0;
 
-  for (const { organizationId, tenantId, placement } of placements) {
-    const records = seedAssets.map((asset, i) =>
-      withFakerSeed(`attachment:seed:${organizationId}:${Object.values(placement).join(':')}:${i}`, () => {
+  for (const [organizationId, homes] of Map.groupBy(placements, (home) => home.organizationId)) {
+    const records = seedAssets.map((asset, i) => {
+      const { tenantId, placement } = homes[i % homes.length];
+      return withFakerSeed(`attachment:seed:${organizationId}:${Object.values(placement).join(':')}:${i}`, () => {
         const createdAt = faker.date.recent({ days: 30 }).toISOString();
         const extIndex = asset.filename.lastIndexOf('.');
         const paragraphs = seedDescriptions[asset.filename];
@@ -111,8 +112,8 @@ export const attachmentsSeed = async () => {
           publicBucket: true,
           bucketName: appConfig.s3.publicBucket,
         };
-      }),
-    );
+      });
+    });
 
     await db.insert(attachmentsTable).values(records).onConflictDoNothing();
     totalCreated += records.length;

@@ -9,7 +9,7 @@ import { actorsTable } from '#/modules/actors/actors-db';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { usersTable } from '#/modules/user/user-db';
 
-export const sessionTypeEnum = ['regular', 'impersonation', 'mfa'] as const;
+const sessionTypeEnum = ['regular', 'impersonation', 'mfa'] as const;
 export type SessionTypes = (typeof sessionTypeEnum)[number];
 
 const baseAuthStrategies = ['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic'] as const;
@@ -26,7 +26,7 @@ export const authStrategiesEnum = [...baseAuthStrategies, ...(Object.keys(appCon
  * housekeeping during a sign-in: `session_cap` beyond `maxSessionsPerUser`. `replaced` by a newer session in the same
  * browser: a sign-in, or the mfa session that enabling MFA mints. `impersonation_stopped` when the admin stops.
  */
-export const sessionRevocationReasons = ['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped'] as const;
+const sessionRevocationReasons = ['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped'] as const;
 export type SessionRevocationReason = (typeof sessionRevocationReasons)[number];
 
 /** Why sessions end: a revocation, or `user_deleted`, whose delete takes the session rows along. */
@@ -36,7 +36,7 @@ export type SessionEndReason = SessionRevocationReason | 'user_deleted';
  * How a session last proved its user's presence again: a second factor (a step-up, or the MFA completion that minted the
  * session), or an emailed link for a user without one.
  */
-export const stepUpProofs = ['passkey', 'totp', 'email'] as const;
+const stepUpProofs = ['passkey', 'totp', 'email'] as const;
 export type StepUpProof = (typeof stepUpProofs)[number];
 
 /**

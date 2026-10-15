@@ -23,6 +23,12 @@ const edits: { files: string[]; from: string; to: string }[] = [
     to: "surfaces: { 'organization.tabs': ['members', 'settings'], 'user.profile': ['organizations'] } as",
   },
   { files: configFiles, from: 'commentEmail: false as boolean', to: 'commentEmail: true as boolean' },
+  // An app without a federation runs without the sso strategy; the template keeps it on.
+  {
+    files: ['config.default.ts'],
+    from: "enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic', 'sso'] as const",
+    to: "enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as const",
+  },
   {
     files: ['permissions-config.ts'],
     from: "channels.organization.member({ create: 1, read: 1, update: 'own', delete: 'own' });",

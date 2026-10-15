@@ -73,3 +73,6 @@ export interface PartitionConfig {
   /** Retention period (e.g., '30 days', '90 days'). Null = no retention (keep indefinitely). */
   retention: string | null;
 }
+
+/** App partition entry (`appPartitionConfigs` in product-tables.ts): the Drizzle table stands in for `name`, so the parity test checks the same schema the migration converts. */
+export type AppPartitionConfig = Omit<PartitionConfig, 'name'> & { table: AnyPgTable };

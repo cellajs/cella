@@ -20,7 +20,7 @@
     "diag": "tsx tasks/diag.ts",
     "geoip-refresh": "tsx tasks/geoip-refresh.ts",
     "boot:build": "rm -rf boot/dist && tsc --noEmit -p boot/tsconfig.json && tsup boot/src/entry.ts --format cjs --platform node --target node26 --out-dir boot/dist",
-    "boot:image": "pnpm run boot:build && docker build -t ${BOOT_IMAGE:-infra-boot:dev} boot",
+    "boot:image": "pnpm run boot:build && docker build --build-arg NODE_VERSION=$(node -p \"require('../package.json').engines.node\") -t ${BOOT_IMAGE:-infra-boot:dev} boot",
     "compose:generate": "tsx compose/synth.ts",
     "compose:check": "tsx compose/synth.ts --check",
     "engine-gate": "bash scripts/engine-gate.sh",

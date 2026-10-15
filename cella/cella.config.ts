@@ -9,7 +9,7 @@ export default defineConfig({
     upstreamBranch: 'main',
     // upstreamTrack: 'release',
     syncWithPackages: true,
-    packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides', 'exports'],
+    packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides', 'exports', 'engines', 'packageManager'],
     fileLinkMode: 'file',
   },
 
@@ -54,6 +54,9 @@ export default defineConfig({
       '.github/release-please-config.json',
       // Accessibility results are about one product: each app's audit (`pnpm a11y`) writes its own ledger.
       'json/accessibility-conformance.json',
+      // About-page copy: the marketing module that renders it is app-owned
+      'locales/en/about.json',
+      'locales/nl/about.json',
     ],
     // Paths pinned to the app: the app copy always wins, upstream hunks never merge in. Adopt them by hand
     // from the analyze list ("protected but behind upstream").
@@ -71,8 +74,6 @@ export default defineConfig({
       'frontend/src/alert-config.tsx',
       'frontend/src/entity-sync-queries.ts',
       'frontend/src/styling/gradients.css',
-      // Marketing copy: feature lists, pricing, showcases and the screenshots behind them
-      'frontend/src/modules/marketing/marketing-config.tsx',
       // The pages and states the accessibility audit covers
       'a11y/scope-config.ts',
       // Where bench attachments live below the organization
@@ -81,7 +82,6 @@ export default defineConfig({
       'cella/skills/screenshots/shots-config.mjs',
       'frontend/src/modules/home/home-page.tsx',
       'json/text-blocks.json',
-      'locales/en/about.json',
     ],
   },
 });

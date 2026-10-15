@@ -1,3 +1,4 @@
+# check=skip=InvalidDefaultArgInFrom
 # Boot runner: runs at VM first-boot via `docker run` to bring a service's
 # Docker Compose stack up. It ships as a normal registry image pulled at boot.
 #
@@ -6,8 +7,11 @@
 # also runs with --network host and probes the private network via `ip route`,
 # so it needs iproute2. The JS bundle is produced on the host by
 # `pnpm --filter infra boot:build` (tsup -> boot/dist/entry.cjs) before
-# `docker build` (context: infra/boot).
-FROM node:26-bookworm-slim
+# `docker build` (context: infra/boot). NODE_VERSION is the root package.json
+# `engines.node`, passed by every build (`boot:image`, the deploy pipeline, bake);
+# without a default, so the `check=skip` line on top.
+ARG NODE_VERSION
+FROM node:${NODE_VERSION}-bookworm-slim
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl gnupg iproute2 \

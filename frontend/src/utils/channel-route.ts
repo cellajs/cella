@@ -2,7 +2,27 @@ import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import type { EntityRoute } from '~/modules/navigation/types';
 import { findOrganizationByIdOrSlug } from '~/modules/organization/query';
-import { type ChannelRouteEntry, channelRouteConfig } from '~/routes-config';
+import { channelRouteConfig } from '~/routes-config';
+
+/**
+ * One entry of `channelRouteConfig` (`routes-config.tsx`, which apps pin and fill with their channels). `paramName` is
+ * used both when the entity is the route target AND when it appears as an ancestor in another entity's route.
+ *
+ * The one piece of a channel's frontend wiring that stays central: the router types `to` from the literal `path`
+ * strings, and a registry filled at runtime hands back a widened `string`. A channel's menu section, list query and
+ * members-table defaults live in its own `<name>-module` file; which tabs its page shows, and the one a link lands on,
+ * come from `appConfig.surfaces`. What a notification deep link opens is the product's own `deepLinkParam`, not a
+ * channel's.
+ */
+export type ChannelRouteEntry = {
+  /** Route path template for this entity: its tabbed layout route, so links stay tab-less and
+   *  the layout's `beforeLoad` picks the landing tab against the channel's stored arrangement. */
+  path: string;
+  /** Route param name this entity's slug fills (both as self and as ancestor) */
+  paramName: string;
+  /** When shown as a subitem, navigate to a parent entity's route. */
+  subitemOf?: { entityType: ChannelEntityType; searchParam: string };
+};
 
 /** Nav hint for entity links: lands forward navigation on the header (`id="pt"`); back/forward keeps cached scroll. */
 export const pageTopHashNav: { hash: string; hashScrollIntoView: ScrollIntoViewOptions } = {

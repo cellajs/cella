@@ -182,7 +182,7 @@ export function BoardLayout({
 
   return (
     <ScrollArea
-      className={cn('transition sm:h-[calc(100dvh-var(--board-offset-sm))] md:h-[calc(100dvh-var(--board-offset-md))]', className)}
+      className={cn('transition sm:h-[calc(100dvh-var(--board-offset-sm,4rem))] md:h-[calc(100dvh-var(--board-offset-md,4.88rem))]', className)}
       viewportClassName="overflow-y-hidden! overscroll-y-auto"
       horizontalScroll
       autoScrollOnDrag="horizontal"

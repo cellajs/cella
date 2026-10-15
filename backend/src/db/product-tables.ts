@@ -1,7 +1,6 @@
-import type { AnyPgTable } from 'drizzle-orm/pg-core';
 import type { ProductEntityType } from 'shared';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import type { PartitionConfig, ResolvableTable } from '#/tables';
+import type { AppPartitionConfig, ResolvableTable } from '#/tables';
 
 /**
  * Product tables by type as lazy getters (pinned; apps list theirs): the product half of the
@@ -12,9 +11,6 @@ import type { PartitionConfig, ResolvableTable } from '#/tables';
  * product a compile error.
  */
 export const productTables = { attachment: () => attachmentsTable } satisfies Record<ProductEntityType, () => ResolvableTable>;
-
-/** App partition entry: the Drizzle table stands in for `name`, so the parity test checks the same schema the migration converts. */
-export type AppPartitionConfig = Omit<PartitionConfig, 'name'> & { table: AnyPgTable };
 
 /** App tables to convert to range partitions; merged after cella's own entries in the partition migration. */
 export const appPartitionConfigs: AppPartitionConfig[] = [];
