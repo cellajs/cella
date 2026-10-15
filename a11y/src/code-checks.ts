@@ -13,16 +13,16 @@ function search(pattern: string, globs = sourceGlobs) {
 
 const files = (lines: string[]) => [...new Set(lines.map((line) => line.split(':')[0]))];
 
-/** Keyboard shortcuts made of a printable character alone or with Shift only, each as `combination (file)`. */
-export function characterShortcuts() {
-  const found: string[] = [];
+/** Keyboard shortcuts made of a printable character alone or with Shift only. */
+function characterShortcuts() {
+  const found: { combo: string; file: string }[] = [];
   for (const line of search(String.raw`\['[^']+'[[:space:]]*,[[:space:]]*\(`)) {
     const combo = /\['([^']+)'/.exec(line)?.[1];
     if (!combo) continue;
     const keys = combo.split('+').map((key) => key.trim().toLowerCase());
     const modifiers = keys.filter((key) => ['meta', 'ctrl', 'control', 'alt', 'mod'].includes(key));
     const printable = keys.filter((key) => key !== 'shift').every((key) => key.length === 1);
-    if (!modifiers.length && printable) found.push(`${combo} (${line.split(':')[0]})`);
+    if (!modifiers.length && printable) found.push({ combo, file: line.split(':')[0] });
   }
   return found;
 }
@@ -66,15 +66,31 @@ export function runCodeChecks(evidence: EvidenceSet) {
       : { check: 'code:autoplay', result: 'not-applicable', summary: 'No audio or video plays automatically.', where: [] },
   );
 
+  // A shortcut a person can turn off would pass too, but the app has no such switch: each shortcut needs a modifier
+  const shortcuts = characterShortcuts();
+  evidence.add(
+    ['2.1.4'],
+    shortcuts.length
+      ? {
+          check: 'code:shortcuts',
+          result: 'fail',
+          summary: `Shortcuts of a character alone or with Shift, which speech input fires by accident: ${shortcuts.map(({ combo, file }) => `${combo} (${file})`).join(', ')}. Give each Ctrl, Alt or Meta.`,
+          where: [...new Set(shortcuts.map(({ file }) => file))],
+        }
+      : { check: 'code:shortcuts', result: 'pass', summary: 'Every keyboard shortcut needs Ctrl, Alt or Meta.', where: [] },
+  );
+
   const sessionSpan = search(String.raw`new TimeSpan\(1, 'w'\)`, ['backend/src/modules/auth/sessions/**/*.ts']);
-  const toastTimeout = /timeout=\{(\d+)\}/.exec(search('<Toaster .*timeout=').join('\n'))?.[1];
+  const toastsKept = search('prefers-contrast: more', ['frontend/src/modules/common/toaster/toaster.ts']).length > 0;
   evidence.add(['2.2.1'], {
     check: 'code:timing',
     result: 'review',
     summary: [
       sessionSpan.length ? 'Sessions last a week, beyond the 20-hour exception.' : 'Session lifetime not found.',
       'Sign-in challenges (passkey, email link, step-up) expire after 5 to 10 minutes and can be requested again.',
-      toastTimeout ? `Toasts close after ${Number(toastTimeout) / 1000} seconds; check that none carries information users need to act on.` : '',
+      toastsKept
+        ? 'Toasts stay until closed with increased contrast, set in Preferences or on the device, which this audit runs with; without it they close after 4 to 10 seconds.'
+        : 'Toasts close by themselves; check that none carries information users need to act on.',
     ].join(' '),
     where: [],
   });

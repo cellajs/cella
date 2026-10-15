@@ -1,6 +1,7 @@
 import { type RefObject, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
 import { type LegalSubject, legalConfig } from '~/modules/auth/legal/legal-config';
 import { LegalDialogNavProvider } from '~/modules/auth/legal/legal-cross-link';
 import { LegalText } from '~/modules/auth/legal/legal-text';
@@ -33,6 +34,9 @@ function LegalDialog({ initialSubject }: { initialSubject: LegalSubject }) {
 // The links take the notice's font size, which a caller may shrink.
 const linkClassName = tw('h-auto p-0 text-[length:inherit]');
 
+// Fetched while the notice is read, so the dialog opens at full height with no spinner.
+const linkedTexts = [legalConfig.terms.component, legalConfig.privacy.component];
+
 interface LegalNoticeProps {
   email?: string;
   mode?: 'waitlist' | 'signup' | 'verify' | 'continue';
@@ -42,6 +46,7 @@ interface LegalNoticeProps {
 export function LegalNotice({ email = '', mode = 'signup', className }: LegalNoticeProps) {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
+  usePreloadLazyComponents(linkedTexts);
 
   const termsButtonRef = useRef(null);
   const privacyButtonRef = useRef(null);

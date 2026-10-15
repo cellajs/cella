@@ -21,9 +21,6 @@ interface NavigationStoreState {
   detailedMenu: boolean; // Menu sheet shows submenus
   toggleDetailedMenu: (status: boolean) => void;
 
-  keyboardShortcuts: boolean; // Character-key shortcuts (Shift + letter) are active
-  toggleKeyboardShortcuts: (status: boolean) => void;
-
   activeSections: Record<string, boolean> | null; // Expanded state per section, including archived ones
   toggleSection: (section: string) => void;
   setSectionsDefault: () => void;
@@ -43,7 +40,6 @@ interface InitStore
     | 'recentSearches'
     | 'keepNavOpen'
     | 'detailedMenu'
-    | 'keyboardShortcuts'
     | 'activeSections'
     | 'navSheetOpen'
     | 'keepOpenPreference'
@@ -57,7 +53,6 @@ const initStore: InitStore = {
   keepNavOpen: false, // Managed reactively by app-nav effect
   keepOpenPreference: false,
   detailedMenu: false,
-  keyboardShortcuts: true,
   floatingNavActive: false,
   activeSections: null,
   menuSheetPanel: null,
@@ -95,11 +90,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
               state.detailedMenu = status;
             });
           },
-          toggleKeyboardShortcuts: (status) => {
-            set((state) => {
-              state.keyboardShortcuts = status;
-            });
-          },
           setFloatingNavActive: (status) => {
             set((state) => {
               state.floatingNavActive = status;
@@ -131,7 +121,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
           partialize: (state) => ({
             keepOpenPreference: state.keepOpenPreference,
             detailedMenu: state.detailedMenu,
-            keyboardShortcuts: state.keyboardShortcuts,
             activeSections: state.activeSections,
             recentSearches: state.recentSearches,
           }),

@@ -18,11 +18,14 @@ export function WaitlistStep() {
         {email.length > 0 && <AuthEmailButton email={email} onClick={resetSteps} className="mt-2" />}
       </div>
       <LegalNotice email={email} mode="waitlist" />
+      {/* Stacked like the email step; the form's own row layout serves the pricing dialog */}
       <WaitlistForm
         email={email}
+        className="flex-col items-stretch"
+        inputClassName="h-12"
         buttonContent={
           <>
-            <span className="text-base">{t('c:request_access')}</span>
+            {t('c:request_access')}
             <ArrowRightIcon />
           </>
         }

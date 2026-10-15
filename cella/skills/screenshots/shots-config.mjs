@@ -50,7 +50,7 @@ export const suppress = {
  * not the button: `#menu-nav` is the mobile bottom bar's, the sidebar's has no id, and a click leaves a hover state.
  */
 const openMenu = async (page) => {
-  await page.keyboard.press('Shift+M');
+  await page.keyboard.press('Alt+M');
   await page.locator('#nav-sheet').waitFor();
 
   // "Keep open" puts the sheet beside the content; without it the sheet covers the page. The preference lives in the
