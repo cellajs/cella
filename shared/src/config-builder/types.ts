@@ -122,7 +122,7 @@ export interface CompanyConfig {
   city: string;
   country: string;
   registration: string;
-  bankAccount: string;
+  vatNumber: string;
   directionsUrl: string;
   scheduleCallUrl: string;
   socialUrl: string;

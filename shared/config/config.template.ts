@@ -366,7 +366,7 @@ export const config = {
     city: '',
     country: '',
     registration: '',
-    bankAccount: '',
+    vatNumber: '',
     /** Link behind "Get directions" and the address on the contact page */
     directionsUrl: '',
     scheduleCallUrl: '',

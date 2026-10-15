@@ -329,7 +329,7 @@ export const config = {
     city: 'Hono City',
     country: 'TypeScript Rock',
     registration: 'Chamber of Commerce (KvK): 578 25 920',
-    bankAccount: 'NL07 RABO 0309 4430 24',
+    vatNumber: 'NL001234567B01',
     directionsUrl: 'https://goo.gl/maps/SQlrh',
     scheduleCallUrl: 'https://cal.com/flip-van-haaren',
     socialUrl: 'https://bsky.app/profile/flipvh.bsky.social',
