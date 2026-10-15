@@ -15,9 +15,6 @@ on:
         required: true
         type: string
 
-env:
-  NODE_VERSION: '26'
-
 # Jobs that hold secrets, and `setup`, whose outputs they interpolate, install without the pnpm cache: every job
 # saves the store under one lockfile-hashed key, so a secretless job running third-party build code could plant a
 # package there (guarded by infra/tests/unit/ci-workflows.test.ts).
@@ -48,6 +45,7 @@ jobs:
       roll_rest_matrix: ${{ steps.derive.outputs.roll_rest_matrix }}
       frontend_backend_url: ${{ steps.frontend_env.outputs.BACKEND_URL }}
       frontend_frontend_url: ${{ steps.frontend_env.outputs.FRONTEND_URL }}
+      node_version: ${{ steps.node_version.outputs.node_version }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -58,10 +56,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: package.json
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra... --filter shared...
+
+      # The images run the Node the root package.json `engines.node` pins, the version CI tested.
+      - name: Read the Node version
+        id: node_version
+        run: echo "node_version=$(jq -r .engines.node package.json)" >> "$GITHUB_OUTPUT"
 
       - name: Derive resource names from shared config
         id: derive
@@ -122,6 +125,7 @@ jobs:
           # RELEASE_SHA is baked into the image as ENV for verification later
           build-args: |
             RELEASE_SHA=${{ needs.setup.outputs.image_tag }}
+            NODE_VERSION=${{ needs.setup.outputs.node_version }}
           cache-from: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/${{ matrix.service }}:buildcache
           cache-to: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/${{ matrix.service }}:buildcache,mode=max
           provenance: false
@@ -146,7 +150,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: package.json
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra... --filter shared...
@@ -171,6 +175,8 @@ jobs:
           file: infra/boot/Dockerfile
           push: true
           platforms: linux/amd64
+          build-args: |
+            NODE_VERSION=${{ needs.setup.outputs.node_version }}
           tags: rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/infra-boot:${{ needs.setup.outputs.image_tag }}
           cache-from: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/infra-boot:buildcache
           cache-to: type=registry,ref=rg.${{ needs.setup.outputs.region }}.scw.cloud/${{ needs.setup.outputs.registry_ns }}/infra-boot:buildcache,mode=max
@@ -206,7 +212,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: package.json
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -259,7 +265,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: package.json
 
       # Only the workspaces the deploy command runs: no frontend dependencies,
       # so none of their install scripts run in the one job that holds the
@@ -315,7 +321,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: package.json
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra... --filter shared...

@@ -8,7 +8,7 @@ import { usersTable } from '#/modules/user/user-db';
  * What a challenge was issued for: registering a passkey, signing in with one, the second factor of MFA, or a step-up
  * of a signed-in session. A response answers only a challenge of its own purpose.
  */
-export const passkeyChallengePurposes = ['registration', 'authentication', 'mfa', 'step-up'] as const;
+const passkeyChallengePurposes = ['registration', 'authentication', 'mfa', 'step-up'] as const;
 export type PasskeyChallengePurpose = (typeof passkeyChallengePurposes)[number];
 
 /**

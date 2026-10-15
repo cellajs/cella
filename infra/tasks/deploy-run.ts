@@ -186,10 +186,12 @@ export async function runDeploy(
     const imagesReady = (async () => {
       if (opts.build) {
         await step('Build images (buildx bake)', async () => {
+          const rootPackage = JSON.parse(await readFile(resolve(infraDir, '..', 'package.json'), 'utf8')) as { engines: { node: string } };
           const bake = bakeDefinition(parseBuildRows(env.build_images_matrix), {
             registry,
             namespace: env.registry_ns,
             tag: opts.sha,
+            nodeVersion: rootPackage.engines.node,
             context: '..',
           });
           await fx.exec('pnpm', ['run', 'boot:build']);

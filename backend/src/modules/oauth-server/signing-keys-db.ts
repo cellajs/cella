@@ -4,7 +4,7 @@ import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 
 /** `next` is published before it signs anything; `current` signs; `retired` still verifies until its last token expires. */
-export const signingKeyStatuses = ['next', 'current', 'retired'] as const;
+const signingKeyStatuses = ['next', 'current', 'retired'] as const;
 
 /**
  * The keystore: RS256 keypairs that sign the tokens this app issues (OAuth access tokens; later LTI launches and client

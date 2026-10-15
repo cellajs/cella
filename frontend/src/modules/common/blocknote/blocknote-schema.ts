@@ -64,6 +64,30 @@ const withImageBox = (spec: typeof defaultBlockSpecs.image) => {
   };
 };
 
+const supportedLanguage = (language: string) =>
+  Object.hasOwn(codeBlockConfig.supportedLanguages, language) ? language : codeBlockConfig.defaultLanguage;
+
+/**
+ * A VS Code paste or a typed fence stores any language id. Outside `supportedLanguages`, BlockNote's language select throws
+ * and its highlighter logs an error on every update, so that block renders and highlights as the default language and keeps its stored prop.
+ */
+const withLanguageFallback = (spec: ReturnType<typeof createCodeBlockSpec>) => {
+  type Render = typeof spec.implementation.render;
+  const baseRender = spec.implementation.render as (...args: Parameters<Render>) => ReturnType<Render>;
+  const highlight: NonNullable<typeof spec.implementation.meta>['highlight'] = (block) => supportedLanguage(block.props.language);
+
+  return {
+    ...spec,
+    implementation: {
+      ...spec.implementation,
+      meta: { ...spec.implementation.meta, highlight },
+      render(this: unknown, block: Parameters<Render>[0], editor: Parameters<Render>[1]) {
+        return baseRender.call(this, { ...block, props: { ...block.props, language: supportedLanguage(block.props.language) } }, editor);
+      },
+    },
+  };
+};
+
 // Block and inline configs are shared with the Yjs relay seeder (blocknote-seed.ts) and must stay in lockstep for Y.Doc round-tripping.
 export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs }).extend({
   blockSpecs: {
@@ -73,7 +97,7 @@ export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs 
     video: withAttachmentRef(defaultBlockSpecs.video),
     checklistItem: checklistItemBlock(),
     notify: notifyBlock(),
-    codeBlock: createCodeBlockSpec(codeBlockConfig),
+    codeBlock: withLanguageFallback(createCodeBlockSpec(codeBlockConfig)),
   },
   inlineContentSpecs: { mention: MentionSchema },
 });

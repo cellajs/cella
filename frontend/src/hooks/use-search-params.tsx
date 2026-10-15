@@ -1,5 +1,7 @@
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { appConfig } from 'shared';
+import { getProductDeepLink } from '~/lib/entity-modules';
 import type { router } from '~/routes/router';
 import { objectKeys } from '~/utils/object-keys';
 
@@ -8,16 +10,18 @@ type RoutesById = keyof typeof router.routesById;
 type SearchParams = { from?: RoutesById; saveDataInSearch?: boolean };
 
 /**
- * Keys owned by URL-driven overlays (user sheet, attachment dialog). Left out of the hook's state, so overlay writes
- * don't re-render the table behind them, and setSearch never writes back a stale overlay value.
+ * Keys owned by URL-driven overlays: the user sheet, each product's registered `deepLinkParam` (its sheet or dialog)
+ * and the attachment dialog's `groupId`. Left out of the hook's state, so overlay writes don't re-render the table
+ * behind them, and setSearch never writes back a stale overlay value.
  */
-const overlaySearchKeys = new Set(['userSheetId', 'attachmentDialogId', 'groupId']);
+const isOverlaySearchKey = (key: string) =>
+  key === 'userSheetId' || key === 'groupId' || appConfig.productEntityTypes.some((entityType) => getProductDeepLink(entityType).param === key);
 
 /** Sorted keys and dropped undefined values, so equal search content always serializes to the same string. */
 const serializeSearch = (search: Record<string, unknown>) => {
   const own: Record<string, unknown> = {};
   for (const key of Object.keys(search).sort()) {
-    if (!overlaySearchKeys.has(key)) own[key] = search[key];
+    if (!isOverlaySearchKey(key)) own[key] = search[key];
   }
   return JSON.stringify(own);
 };

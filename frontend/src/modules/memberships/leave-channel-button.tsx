@@ -14,19 +14,24 @@ import { queryClient } from '~/query/query-client';
 import { invalidateMemberships } from '~/query/realtime/membership-ops';
 import { cn } from '~/utils/cn';
 
-export type LeaveChannelButtonProps = {
-  channel: ChannelBase;
+type LeaveChannelOptions = {
   /** Where to navigate after leaving; `null` stays put, for surfaces outside the channel itself. */
   redirectPath?: string | null;
-  buttonProps?: ButtonProps;
   callback?: (args: CallbackArgs) => void;
 };
 
-export function LeaveChannelButton({ channel, buttonProps, redirectPath = appConfig.defaultRedirectPath, callback }: LeaveChannelButtonProps) {
+export type LeaveChannelButtonProps = LeaveChannelOptions & { channel: ChannelBase; buttonProps?: ButtonProps };
+
+/**
+ * Leaves a channel: removes it from the list cache and refreshes memberships, so the menu updates at once. `leave`
+ * warns and does nothing while offline. For an app's own leave control; `LeaveChannelButton` is the default one.
+ * @public
+ */
+export function useLeaveChannel(channel: ChannelBase, { redirectPath = appConfig.defaultRedirectPath, callback }: LeaveChannelOptions = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { mutate: leaveChannel } = useMutation({
+  const { mutate, isPending } = useMutation({
     mutationFn: async () => {
       const entityId = channel.id;
       return await deleteMyMembership({ query: { entityId, entityType: channel.entityType } });
@@ -47,13 +52,20 @@ export function LeaveChannelButton({ channel, buttonProps, redirectPath = appCon
     },
   });
 
-  const handleLeave = () => {
+  const leave = () => {
     if (!onlineManager.isOnline()) {
       toaster.warning(t('c:action.offline.text'));
       return;
     }
-    leaveChannel();
+    mutate();
   };
+
+  return { leave, isPending };
+}
+
+export function LeaveChannelButton({ channel, buttonProps, redirectPath, callback }: LeaveChannelButtonProps) {
+  const { t } = useTranslation();
+  const { leave: handleLeave } = useLeaveChannel(channel, { redirectPath, callback });
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLButtonElement> = (e) => {
     if (e.key !== 'Enter') return;
