@@ -86,11 +86,16 @@ export async function settleRender(resources: readonly unknown[]): Promise<void>
 }
 
 /**
- * The fetch of a keyless render: the program's one direct read, the load balancer's private address from IPAM, gets a fixed address; any
- * other call is refused, so a render never reaches the network.
+ * The fetch of a keyless render. The program's direct reads get fixed answers: the load balancer's private address from IPAM, and the
+ * engine folder's secrets the main job's definition references, as present. Any other call is refused, so a render never reaches the network.
  */
 export const keylessFetch: typeof fetch = async (input) => {
-  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-  if (new URL(url).pathname.startsWith('/ipam/v1/')) return Response.json({ ips: [{ address: '10.0.0.200/24' }] });
-  throw new Error(`a keyless render reaches no network, and the program called ${url}`);
+  const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url);
+  if (url.pathname.startsWith('/ipam/v1/')) return Response.json({ ips: [{ address: '10.0.0.200/24' }] });
+  if (url.pathname.startsWith('/secret-manager/') && url.pathname.endsWith('/secrets')) {
+    const path = url.searchParams.get('path') ?? '/';
+    const names = ['deploy-key', 'pulumi-passphrase'];
+    return Response.json({ secrets: names.map((name) => ({ id: `keyless-${name}`, name, path, version_count: 1 })), total_count: names.length });
+  }
+  throw new Error(`a keyless render reaches no network, and the program called ${url.href}`);
 };

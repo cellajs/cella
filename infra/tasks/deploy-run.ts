@@ -41,7 +41,6 @@ export type TaskName =
   | 'forget-retired-resources'
   | 'preflight-privileged'
   | 'build-release'
-  | 'wait-for-images'
   | 'sync-rollout-config'
   | 'stage-generation-keys'
   | 'assert-grants'
@@ -57,7 +56,7 @@ export interface DeployEffects {
   task(name: TaskName, argv?: string[]): Promise<void>;
   /** Hold the stack lease for the run (renewed in-process, released on exit or signal); throws when another holder keeps it. */
   lease(stack: string, operation: 'deploy' | 'reap'): Promise<{ release(): Promise<void> }>;
-  /** Run an external binary in the infra dir; rejects on non-zero exit unless allowFailure. Async so concurrent steps (registry wait, asset upload) keep progressing while a build runs. */
+  /** Run an external binary in the infra dir; rejects on non-zero exit unless allowFailure. Async, so the stack lease keeps renewing while it runs. */
   exec(cmd: string, args: string[], opts?: { allowFailure?: boolean; stdin?: string; env?: Record<string, string> }): Promise<void>;
   /** One full stack update through the configured Pulumi driver. */
   update(stack: string): Promise<void>;
@@ -179,11 +178,6 @@ export async function runDeploy(
     await step('Take retired resources out of the state', () => fx.task('forget-retired-resources', ['--stack', stack]));
     await step('Preflight privileged changes', () => fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]));
 
-    const registry = `rg.${env.region}.scw.cloud`;
-    await step('Login to container registry', () =>
-      fx.exec('docker', ['login', registry, '-u', 'nologin', '--password-stdin'], { stdin: process.env.SCW_SECRET_KEY ?? '' }),
-    );
-
     // The release's images and frontend files: a builder machine makes the missing ones, then the release's entry files wait in a folder of
     // their own for the publish below. No app code runs beside the deploy key.
     const distDir = env.frontend_bucket ? await mkdtemp(join(tmpdir(), 'release-')) : '';
@@ -201,18 +195,6 @@ export async function runDeploy(
         env.enabled_services_json,
         '--dist',
         distDir,
-      ]),
-    );
-    await step('Wait for image tags in registry', () =>
-      fx.task('wait-for-images', [
-        '--registry',
-        registry,
-        '--ns',
-        env.registry_ns,
-        '--tag',
-        opts.sha,
-        '--build-images-json',
-        env.build_images_matrix,
       ]),
     );
 
@@ -425,7 +407,6 @@ const taskRunners: Record<TaskName, (argv: string[]) => Promise<void>> = {
   'install-pulumi-providers': async () => (await import('./install-pulumi-providers')).main(),
   'forget-retired-resources': async (argv) => (await import('./forget-retired-resources')).main(argv),
   'preflight-privileged': async (argv) => (await import('./preflight-privileged')).main(argv),
-  'wait-for-images': async (argv) => (await import('./wait-for-images')).main(argv),
   'sync-rollout-config': async (argv) => (await import('./sync-rollout-config')).syncRolloutConfig(argv),
   'stage-generation-keys': async (argv) => (await import('./stage-generation-keys')).main(argv),
   'build-release': async (argv) => (await import('./build-release')).main(argv),
@@ -503,8 +484,7 @@ function createRealEffects(): DeployEffects {
       };
     },
     exec(cmd, args, opts = {}) {
-      // spawn, not spawnSync: a synchronous child blocks the event loop, which
-      // serialized the "concurrent" registry wait behind the frontend build.
+      // spawn, not spawnSync: a synchronous child blocks the event loop, and with it the stack lease's renewal.
       return new Promise((done, fail) => {
         const child = spawn(cmd, args, {
           cwd: infraDir,

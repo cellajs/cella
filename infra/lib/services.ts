@@ -16,9 +16,6 @@ export const serviceNames = services.map((s) => s.slug);
 /** Lookup a service definition by slug. */
 export const servicesByName = new Map<ServiceName, ServiceDefinition>(services.map((s) => [s.slug, s]));
 
-/** Services that build & push their own image (exclude image-reuse services). */
-export const imageServiceNames = services.filter((s) => !s.reusesImageOf).map((s) => s.slug);
-
 /** Services enabled for an app. Enabled by default; an entry opts out with `{ enabled: false }`. Compute and the load balancer both derive from this list. */
 export function enabledServices(serviceConfig: Record<string, EngineServiceEndpoint>): readonly ServiceDefinition[] {
   return services.filter((s) => serviceConfig[s.slug]?.enabled !== false);

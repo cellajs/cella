@@ -1,8 +1,7 @@
-import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { gitKeyOptions, repositoryUrl } from '../lib/deploy/repository-key';
-import { ENVIRONMENTS_FILE, parseEnvironmentsFile, parseLsRemote, resolveTarget } from '../lib/deploy/target';
+import { listRemoteRefs, repositoryUrl } from '../lib/deploy/repository-key';
+import { ENVIRONMENTS_FILE, parseEnvironmentsFile, resolveTarget } from '../lib/deploy/target';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
@@ -23,14 +22,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     environment,
     line: lines.get(environment),
     startedOn: getFlag(argv, '--started-on'),
-    listRemote: async (patterns) => {
-      const listed = spawnSync('git', [...gitKeyOptions(process.env.REPOSITORY_READ_KEY), 'ls-remote', repo, ...patterns], {
-        encoding: 'utf8',
-        env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
-      });
-      if (listed.status !== 0) throw new Error(`git ls-remote ${repo} failed: ${listed.stderr.trim()}`);
-      return parseLsRemote(listed.stdout);
-    },
+    listRemote: listRemoteRefs(repo, process.env.REPOSITORY_READ_KEY),
   });
   process.stdout.write(`target_sha=${target.sha}\nretry=${target.retry}\ntarget_source=${target.source}\n`);
   console.error(`${environment} deploys ${target.sha} (${target.source}, retry ${target.retry})`);
