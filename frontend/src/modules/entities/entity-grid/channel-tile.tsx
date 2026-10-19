@@ -181,7 +181,9 @@ export function ChannelTileMembers() {
           <MemberAvatar key={member.id} member={member} className="size-8" />
         ))}
         {overflow > 0 && (
-          <div className="z-10 flex size-8 items-center justify-center rounded-full bg-muted text-xs ring-2 ring-background">+{overflow}</div>
+          <div className="z-10 flex size-8 items-center justify-center rounded-full bg-muted text-xs more-contrast:ring-black/85 ring-2 ring-black/50">
+            +{overflow}
+          </div>
         )}
       </AvatarGroup>
     </div>
