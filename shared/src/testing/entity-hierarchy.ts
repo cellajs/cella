@@ -114,3 +114,33 @@ export const buildTestEntityHierarchyPlan = ({
     seedChannelRows,
   };
 };
+
+/**
+ * The channels a row needs when it homes at its deepest strict ancestor: that ancestor and every channel above it.
+ * @param ancestors - The row's ancestor types, deepest first.
+ * @param nullable - The ancestors the row may leave unset.
+ */
+export const channelsDownToStrictHome = <T extends string>(ancestors: readonly T[], nullable: readonly T[]): T[] => {
+  const deepestStrict = ancestors.findIndex((type) => !nullable.includes(type));
+  return deepestStrict === -1 ? [] : ancestors.slice(deepestStrict);
+};
+
+/**
+ * The plan of a row that homes at its deepest strict ancestor, the one place every app's hierarchy allows: the channels
+ * below that ancestor are neither seeded nor set on the row. The same plan in the template, whose attachments live in
+ * the organization.
+ */
+export const toStrictHomePlan = (plan: TestEntityHierarchyPlan): TestEntityHierarchyPlan => {
+  const needed = channelsDownToStrictHome<ChannelEntityType>(
+    hierarchy.getOrderedAncestors(plan.entityType) as ChannelEntityType[],
+    hierarchy.getNullableAncestors(plan.entityType) as ChannelEntityType[],
+  );
+  const sqlChannelColumns = plan.sqlChannelColumns.filter((column) => needed.includes(column.channelType));
+  return {
+    ...plan,
+    channelIdsByType: Object.fromEntries(sqlChannelColumns.map(({ channelType, id }) => [channelType, id])),
+    channelIdColumns: Object.fromEntries(sqlChannelColumns.map(({ idKey, id }) => [idKey, id])),
+    sqlChannelColumns,
+    seedChannelRows: plan.seedChannelRows.filter((row) => needed.includes(row.channelType)),
+  };
+};

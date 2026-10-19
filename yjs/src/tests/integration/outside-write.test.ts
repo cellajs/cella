@@ -6,7 +6,7 @@ import * as decoding from 'lib0/decoding';
 import pg from 'pg';
 import { hierarchy } from 'shared';
 import { testDatabaseUrl, testRuntimeDatabaseUrl } from 'shared/test-db';
-import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { buildTestEntityHierarchyPlan, toStrictHomePlan } from 'shared/testing/entity-hierarchy';
 import { testYjsTokenPublicKey } from 'shared/testing/yjs-token-keys';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocket as WsWebSocket } from 'ws';
@@ -64,7 +64,7 @@ const { retireYjsDocuments } = await import('#/modules/yjs/operations/retire-yjs
 const tenantId = 'yjs-outside-tenant';
 const organizationId = '60000000-0000-4000-a000-000000000001';
 const userId = randomUUID();
-const plan = buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId, makeChannelId: () => randomUUID() });
+const plan = toStrictHomePlan(buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId, makeChannelId: () => randomUUID() }));
 const entityIds: string[] = [];
 
 let admin: pg.Client;

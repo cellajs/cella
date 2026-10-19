@@ -19,9 +19,10 @@ const productNameAllowlist: VocabularyAllowlist = {
 };
 /**
  * The app-side marker the cella-sync skill puts on intentional app edits: `// fork: <why>`, the css/md forms and a
- * ` * fork: <why>` line inside a JSDoc block.
+ * ` * fork: <why>` line inside a JSDoc block. YAML has a `# fork: <why>` line, which elsewhere could be a private field.
  */
 const markerComment = /\/\/[ \t]*fork:[^\n]*|\/\*[ \t]*fork:[\s\S]*?\*\/|<!--[ \t]*fork:[\s\S]*?-->|^[ \t]*\*[ \t]*fork:[^\n]*/gim;
+const yamlMarkerComment = /#[ \t]*fork:[^\n]*/gi;
 const sourceControlAdvice = 'use template/app terminology';
 const productNameAdvice = 'derive it from appConfig or use a neutral name; the product name is not an identifier or wire string';
 
@@ -65,7 +66,9 @@ export function findAppVocabularyFindings(file: string, source: string, allowlis
 
   const finding = (term: string) => ({ file, rule: 'source-control-term', term, message: sourceControlAdvice });
   // Blank the markers to same-length whitespace so line and column numbers of real findings hold.
-  const scanned = source.replace(markerComment, (marker) => marker.replace(/[^\n]/g, ' '));
+  const blank = (marker: string) => marker.replace(/[^\n]/g, ' ');
+  const markers = source.replace(markerComment, blank);
+  const scanned = /\.ya?ml$/.test(file) ? markers.replace(yamlMarkerComment, blank) : markers;
   return [
     ...[...file.matchAll(disallowedTerm)].map((match) => finding(match[0])),
     ...[...scanned.matchAll(disallowedTerm)].map((match) => ({ ...finding(match[0]), ...lineColumn(scanned, match.index) })),
