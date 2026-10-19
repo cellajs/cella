@@ -16,7 +16,7 @@ export type UserMinimalBase = {
 };
 
 /**
- * The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
+ * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
  */
 export type UserBase = {
   id: string;
@@ -27,6 +27,9 @@ export type UserBase = {
   thumbnailUrl: string | null;
   bannerUrl: string | null;
   description: string | null;
+  /**
+   * The primary email address, shown to every user who shares an organization with this one.
+   */
   email: string;
   entityType: 'user';
 };
@@ -4569,7 +4572,7 @@ export type GetUsersResponses = {
    */
   200: {
     /**
-     * The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
+     * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
      */
     items: Array<
       UserBase & {
@@ -4626,7 +4629,7 @@ export type GetUserError = GetUserErrors[keyof GetUserErrors];
 
 export type GetUserResponses = {
   /**
-   * The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
+   * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
    */
   200: UserBase & {
     lastSeenAt: string | null;
@@ -5836,7 +5839,7 @@ export type GetMembersResponses = {
    */
   200: {
     /**
-     * The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
+     * The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.
      */
     items: Array<
       UserBase & {
@@ -5928,6 +5931,9 @@ export type GetPendingMembershipsResponses = {
   200: {
     items: Array<{
       id: string;
+      /**
+       * The primary email address, shown to every user who shares an organization with this one.
+       */
       email: string;
       role: 'admin' | 'member' | null;
       createdAt: string;

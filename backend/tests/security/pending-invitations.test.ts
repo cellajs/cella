@@ -24,8 +24,8 @@ const newcomer = 'pending-newcomer@security-test.com';
 
 /**
  * Anyone can create a tenant with an organization and invite any address to it, so the inviter is the attacker here: an
- * invitation must look the same whether an account holds the address or not. Members still see who is invited
- * (decision 5), as they see every member's address.
+ * invitation must look the same whether an account holds the address or not. Members still see who is invited, as
+ * they see every member's address (`cella/PERMISSIONS.md`, What members see).
  */
 describe('Pending invitations list', async () => {
   const call = await createAppClient();
@@ -127,7 +127,7 @@ describe('Pending invitations list', async () => {
     expect(toMember.data).toMatchObject({ rejectedIds: [member.email], invitesSentCount: 0 });
   });
 
-  it('lists the invited addresses to a member too (positive control, decision 5)', async () => {
+  it('lists the invited addresses to a member too (positive control)', async () => {
     const { status, items } = await listPending(member);
     expect(status).toBe(200);
     expect(items.map((item) => item.email)).toEqual(expect.arrayContaining([accountAlternate, newcomer]));

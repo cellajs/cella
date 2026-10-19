@@ -96,7 +96,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     summary: 'Get list of pending memberships',
     description:
-      'Returns the pending invitations of a channel entity, identified by ID: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.',
+      'Returns the pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.',
     request: { params: tenantOrgParamSchema, query: pendingMembershipListQuerySchema },
     responses: { 200: json('Pending memberships', paginationSchema(pendingMembershipSchema), mockPaginatedPendingMembershipsResponse()) },
   }),

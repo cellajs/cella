@@ -489,7 +489,8 @@
           },
           "email": {
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "description": "The primary email address, shown to every user who shares an organization with this one."
           },
           "entityType": {
             "type": "string",
@@ -497,7 +498,7 @@
           }
         },
         "required": ["id", "name", "createdAt", "updatedAt", "slug", "thumbnailUrl", "bannerUrl", "description", "email", "entityType"],
-        "description": "The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
+        "description": "The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
         "example": {
           "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
           "createdAt": "2024-01-28T04:41:50.387Z",
@@ -9311,7 +9312,7 @@
                             "required": ["lastSeenAt"]
                           }
                         ],
-                        "description": "The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
+                        "description": "The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
                         "example": {
                           "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
                           "createdAt": "2024-01-28T04:41:50.387Z",
@@ -9454,7 +9455,7 @@
                       "required": ["lastSeenAt"]
                     }
                   ],
-                  "description": "The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
+                  "description": "The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
                   "example": {
                     "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
                     "createdAt": "2024-01-28T04:41:50.387Z",
@@ -13029,7 +13030,7 @@
                             "required": ["lastSeenAt", "membership"]
                           }
                         ],
-                        "description": "The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
+                        "description": "The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
                         "example": {
                           "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
                           "createdAt": "2024-01-28T04:41:50.387Z",
@@ -13085,7 +13086,7 @@
         "operationId": "getPendingMemberships",
         "tags": ["memberships", "cella"],
         "summary": "Get list of pending memberships",
-        "description": "Returns the pending invitations of a channel entity, identified by ID: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.",
+        "description": "Returns the pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -13232,7 +13233,8 @@
                           },
                           "email": {
                             "type": "string",
-                            "format": "email"
+                            "format": "email",
+                            "description": "The primary email address, shown to every user who shares an organization with this one."
                           },
                           "role": {
                             "type": ["string", "null"],
