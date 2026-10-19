@@ -541,6 +541,14 @@
      viewport, which on phones reads as the page zooming out and flipping to desktop breakpoints. */
   html {
     @apply font-sans overscroll-none overflow-x-clip max-sm:text-[112.5%];
+
+    /* Native scrollbars and form controls follow the theme. A macOS overlay scrollbar takes its thumb color from the
+       scroller's color-scheme, so a transparent scroller such as the PDF viewer needs it to show a light thumb in dark mode. */
+    color-scheme: light;
+
+    &.dark {
+      color-scheme: dark;
+    }
   }
 
   /* Lucide icons default to 1rem, which scales with the mobile root font size; its px `size` prop never applies.
