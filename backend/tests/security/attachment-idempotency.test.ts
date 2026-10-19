@@ -40,10 +40,14 @@ describe('Idempotent attachment creates', async () => {
       stx: { mutationId, sourceId: 'idempotency-test', fieldTimestamps: {} },
     });
 
-  const create = async (as: { sessionCookie: string }, body: ReturnType<typeof bodyFor>, home: { id: string; tenantId: string } = organization) => {
+  const create = async (
+    as: { sessionCookie: string },
+    body: ReturnType<typeof bodyFor> | ReturnType<typeof bodyFor>[],
+    home: { id: string; tenantId: string } = organization,
+  ) => {
     const { data, response } = await call(createAttachments, {
       path: { tenantId: home.tenantId, organizationId: home.id },
-      body: [body] as never,
+      body: (Array.isArray(body) ? body : [body]) as never,
       headers: { ...defaultHeaders, Cookie: as.sessionCookie },
     });
     return { status: response.status, data: (data as Created | undefined)?.data ?? [] };
@@ -123,6 +127,26 @@ describe('Idempotent attachment creates', async () => {
     const { status, data } = await create(owner, body);
     expect(status).toBe(200);
     expect(data.map((row) => row.id)).toEqual([id]);
+  });
+
+  it('creates the new rows of a batch that repeats a row it already wrote', async () => {
+    const first = generateId();
+    expect((await create(owner, bodyFor(first, generateId()))).status).toBe(201);
+
+    // A retry that adds a file, under a new mutation id: the repeated row comes back, the new one is created.
+    const second = generateId();
+    const { status, data } = await create(owner, [bodyFor(first, generateId()), bodyFor(second, generateId())]);
+    expect(status).toBe(201);
+    expect(data.map((row) => row.id).sort()).toEqual([first, second].sort());
+    expect((await storedRow(second))?.createdBy).toBe(owner.id);
+  });
+
+  it('answers two attempts of one create sent at the same time with its row', async () => {
+    const id = generateId();
+    const body = bodyFor(id, generateId());
+
+    const answers = await Promise.all([create(owner, body), create(owner, body)]);
+    for (const { data } of answers) expect(data.map((row) => row.id)).toEqual([id]);
   });
 
   it('answers a replay of an edited row with its current state', async () => {

@@ -176,7 +176,7 @@ A paused mutation outlives the reload that brings a new bundle. When a bundle ch
 
 Mutation defaults and versions reach the mutations restored after them, not the ones restored before: a mutation hydrated before its defaults exist replays without a mutation function and fails. The module that registers them therefore has to load with the entry: a product module's own module file imports it, and a restored mutation without a mutation function shows as a warning in the console.
 
-Idempotency is operation-specific: a product create runs `checkIdempotency(ctx, table, ids)` with the ids the client gave its rows, which returns the caller's own rows under those ids in the request scope, so a replay finds its rows as soon as the first attempt committed, whatever the CDC worker has done. An id another actor learned finds nothing. Update and delete do not.
+Idempotency is operation-specific: a product create runs `checkIdempotency(ctx, table, ids)` with the ids the client gave its rows, which returns the caller's own rows under those ids in the request scope, so a replay finds its rows as soon as the first attempt committed, whatever the CDC worker has done; the create inserts only the other items. An id another actor learned finds nothing. Update and delete do not.
 
 ## Resilience
 

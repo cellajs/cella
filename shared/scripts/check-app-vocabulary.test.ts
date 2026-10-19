@@ -43,6 +43,8 @@ describe('findAppVocabularyFindings', () => {
 
     expect(findAppVocabularyFindings('pnpm-workspace.yaml', source)).toEqual([]);
     expect(findAppVocabularyFindings('example.ts', `class A { #${legacyTerm}: string }`)).toHaveLength(1);
+    // Inside a value a `#` starts no comment
+    expect(findAppVocabularyFindings('pnpm-workspace.yaml', `key: abc#${legacyTerm}: value`)).toHaveLength(1);
   });
 
   it('finds the term in a file path', () => {

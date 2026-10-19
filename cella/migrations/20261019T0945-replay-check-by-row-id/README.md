@@ -5,9 +5,9 @@ clientCacheBump: false
 
 # A create's replay check reads its rows by id
 
-`checkIdempotency(ctx, table, ids)` takes the ids of the create's input rows in place of the mutation id, and
-`isTransactionProcessed` is gone. Every product create operation passes `input.map((item) => item.id)`, before its quota
-count.
+`checkIdempotency(ctx, table, ids)` takes the ids of the create's input rows in place of the mutation id and returns
+the rows found (`[]` for a new create, no longer `null`); `isTransactionProcessed` is gone. Every product create
+operation passes `input.map((item) => item.id)` before its quota count and inserts only the items not returned.
 
 ## What & why
 
@@ -27,8 +27,10 @@ No script: manual.
 
 ## Manual steps
 
-1. In each `operations/create-*.ts` that calls `checkIdempotency`, pass `input.map((item) => item.id)` as the third argument, and keep the call before the quota count.
-2. A test that inserted an activity row so the replay check would see a create (`logProcessed` in the template's `attachment-idempotency.test.ts`) drops that row.
+1. In each `operations/create-*.ts` that calls `checkIdempotency`, pass `input.map((item) => item.id)` as the third argument, before the quota count.
+2. Answer a replay (`replayed: true`) when every item came back; otherwise count the quota for, check and insert only the items whose id is not among the returned rows, and answer the returned rows with the created ones, as `create-attachments.ts` does.
+3. After the insert, read the items it returned no row for with `checkIdempotency` again: an attempt sent at the same time committed them first.
+4. A test that inserted an activity row so the replay check would see a create (`logProcessed` in the template's `attachment-idempotency.test.ts`) drops that row.
 
 ## Verify
 
