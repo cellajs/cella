@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type AttachmentBlob, attachmentsDb, makeBlobKey } from '../offline/attachments-db';
 
 vi.mock('shared', async () => ({ appConfig: (await import('./test-setup')).mockAttachmentAppConfig }));
@@ -77,24 +77,16 @@ const storeBlob = (uploadStatus: AttachmentBlob['uploadStatus']) =>
 
 const blob = () => attachmentsDb.blobs.get(blobId);
 
-describe('uploadService: files kept on this device', () => {
-  // Each test starts past the previous one's probe interval.
-  let now = Date.now();
-
+describe('uploadService: files uploaded after their row was created', () => {
   beforeEach(async () => {
-    now += 60 * 60 * 1000;
-    vi.useFakeTimers({ toFake: ['Date'] });
-    vi.setSystemTime(now);
     await attachmentsDb.blobs.clear();
     vi.clearAllMocks();
     addedFiles.length = 0;
     assemblyResults = { ':original': [{ url: storedKey, original_id: 'upload-1', mime: 'image/png' }] };
   });
 
-  afterAll(() => vi.useRealTimers());
-
-  it('uploads a local-only file once the app has cloud storage and links its keys to the row', async () => {
-    await storeBlob('local-only');
+  it('uploads a pending file and links its keys to the row', async () => {
+    await storeBlob('pending');
     getUploadToken.mockResolvedValue(cloudToken);
     linkAttachmentKeys.mockResolvedValue({ id: attachmentId });
 
@@ -109,14 +101,12 @@ describe('uploadService: files kept on this device', () => {
     expect(await blob()).toMatchObject({ uploadStatus: 'uploaded', cloudKeys: { original: storedKey }, keysLinkedAt: expect.any(Date) });
   });
 
-  it('keeps a file local-only while the app has no cloud storage, asking again only after the probe interval', async () => {
-    await storeBlob('local-only');
+  it('files a pending file local-only when the app has no cloud storage', async () => {
+    await storeBlob('pending');
     getUploadToken.mockResolvedValue({ params: null, signature: null });
 
     await uploadService.processPendingUploads();
-    await uploadService.processPendingUploads();
 
-    expect(getUploadToken).toHaveBeenCalledTimes(1);
     expect(addedFiles).toEqual([]);
     expect((await blob())?.uploadStatus).toBe('local-only');
   });

@@ -17,8 +17,6 @@ import { getLocalUserDb } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
 import { getTenantIdForOrg } from '~/query/realtime/sync-priority';
 
-/** How often local-only blobs ask whether the app has cloud storage by now. */
-const cloudProbeIntervalMs = 10 * 60 * 1000;
 /** Attempts to link an uploaded blob's keys to its row; a 404 waits for a create still queued offline. */
 const linkAttemptLimit = 10;
 
@@ -32,14 +30,9 @@ class AttachmentUploadService {
   private processing = false;
   private intervalId: ReturnType<typeof setInterval> | null = null;
   private onlineHandler: (() => void) | null = null;
-  private nextCloudProbeAt = 0;
 
   start(): void {
-    this.nextCloudProbeAt = 0;
-    this.onlineHandler = () => {
-      this.nextCloudProbeAt = 0;
-      this.processPendingUploads();
-    };
+    this.onlineHandler = () => this.processPendingUploads();
     window.addEventListener('online', this.onlineHandler);
 
     this.intervalId = setInterval(() => this.processPendingUploads(), 60000);
@@ -67,7 +60,6 @@ class AttachmentUploadService {
 
     try {
       for (const blob of await attachmentStorage.getUnlinkedUploads(linkAttemptLimit)) await this.linkBlobKeys(blob);
-      await this.promoteLocalOnlyBlobs();
 
       const pending = await this.selectUploadCandidates();
       if (pending.length === 0) return;
@@ -96,21 +88,6 @@ class AttachmentUploadService {
     const now = Date.now();
     const candidates = await attachmentsDb.blobs.where('uploadStatus').anyOf('pending', 'failed').toArray();
     return candidates.filter((blob) => isUploadCandidate(blob, retryLimit, now));
-  }
-
-  /** Queues local-only blobs for upload once their organization can get an upload token with cloud params. */
-  private async promoteLocalOnlyBlobs(): Promise<void> {
-    if (Date.now() < this.nextCloudProbeAt) return;
-    const localOnly = await attachmentsDb.blobs.where('uploadStatus').equals('local-only').toArray();
-    if (localOnly.length === 0) return;
-    this.nextCloudProbeAt = Date.now() + cloudProbeIntervalMs;
-
-    for (const organizationId of new Set(localOnly.map((blob) => blob.organizationId))) {
-      if ((await this.checkCloudAvailability(organizationId)) !== 'available') continue;
-      for (const blob of localOnly) {
-        if (blob.organizationId === organizationId) await attachmentStorage.updateUploadStatus(blob.id, 'pending');
-      }
-    }
   }
 
   private async checkCloudAvailability(organizationId: string): Promise<CloudAvailability> {

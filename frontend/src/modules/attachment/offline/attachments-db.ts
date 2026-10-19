@@ -44,7 +44,7 @@ export interface AttachmentBlob {
   /** How this blob was created: 'upload' (local, may need uploading) or 'download' (from cloud). */
   source: BlobSource;
 
-  /** Upload status: 'uploaded' means "exists in cloud" (downloads included), 'local-only' means the app had no cloud storage when last checked, the rest apply to source='upload'. */
+  /** Upload status: 'uploaded' means "exists in cloud" (downloads included), 'local-only' means no cloud is configured, the rest apply to source='upload'. */
   uploadStatus: UploadStatus;
 
   /** Upload retry count (source='upload' only) */
