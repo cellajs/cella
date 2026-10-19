@@ -1,7 +1,7 @@
 import { rememberOperatorKey } from '../session';
 import type { InfraContext } from '../shared';
 import { acquireOperatorKey } from './operator-unlock';
-import { recordKeyRotation, runOperatorPart } from './setup-operator-part';
+import { copyDeployKeyForMainJob, recordKeyRotation, runOperatorPart } from './setup-operator-part';
 import { runOwnerMoment, type SetupMode } from './setup-owner-moment';
 
 /**
@@ -18,7 +18,9 @@ export async function runSetup(context: InfraContext, mode: SetupMode): Promise<
   if (moment?.operatorKey) rememberOperatorKey(moment.operatorKey);
   const operatorKey = await acquireOperatorKey(context);
   // An Owner key never writes the state: the rotation is recorded with the operator key, and its counter makes the next deploy replace
-  // every machine, so none keeps a key the rotation deleted.
-  if (mode === 'rotate-keys') await recordKeyRotation(context, operatorKey);
-  else await runOperatorPart(context, operatorKey, moment);
+  // every machine, so none keeps a key the rotation deleted. The main job's copy of the deploy key is replaced first, for the same reason.
+  if (mode === 'rotate-keys') {
+    await copyDeployKeyForMainJob(context, operatorKey, moment?.projectId ?? context.projectId, moment?.ciKey);
+    await recordKeyRotation(context, operatorKey);
+  } else await runOperatorPart(context, operatorKey, moment);
 }

@@ -345,18 +345,7 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
 
   // Identity ids come from the IAM API, so stack config only needs a non-secret bootstrap marker.
   const ciKey = moment?.ciKey;
-  // The main job's runs read the deploy key by reference: a key made in this run is copied to the engine folder (plan §3.5).
-  if (ciKey?.accessKey && ciKey.secretKey) {
-    await storeDeployKeyCopy(createSecretManagerClient({ secretKey: operatorKey.secretKey, region: appConfig.s3.region, projectId }), {
-      slug: appConfig.slug,
-      mode: environment,
-      key: ciKey,
-    }).then(
-      () => console.info(`  ${checkMark} The deploy key's copy for the main job is in the engine folder.`),
-      (error) =>
-        console.warn(`${warningMark} Could not copy the deploy key for the main job (${errorMessage(error)}); a rotation of keys copies it.`),
-    );
-  }
+  await copyDeployKeyForMainJob(context, operatorKey, projectId, ciKey);
   if (context.hasCiKey || ciKey?.accessKey) {
     await must(
       'Mark bootstrap complete',
@@ -400,6 +389,32 @@ export async function runOperatorPart(context: InfraContext, operatorKey: Operat
 }
 
 /** Record a rotation of keys in the control object, under the stack lock, with the operator key. */
+/**
+ * Copy a deploy key the Owner moment made into the engine folder, where the main job's definition references it (plan §3.5). Both a setup
+ * and a rotation of keys make one, and a rotation deletes the key the copy held before, so a rotation that skipped this would leave the
+ * main job's runs a dead key. The secret key is shown only when the key is made, so a failed copy takes another rotation of keys.
+ */
+export async function copyDeployKeyForMainJob(
+  context: InfraContext,
+  operatorKey: OperatorKey,
+  projectId: string,
+  ciKey: { accessKey: string; secretKey: string } | undefined,
+): Promise<void> {
+  if (!ciKey?.accessKey || !ciKey.secretKey) return;
+  const { appConfig } = context;
+  await storeDeployKeyCopy(createSecretManagerClient({ secretKey: operatorKey.secretKey, region: appConfig.s3.region, projectId }), {
+    slug: appConfig.slug,
+    mode: context.environment,
+    key: ciKey,
+  }).then(
+    () => console.info(`  ${checkMark} The deploy key's copy for the main job is in the engine folder.`),
+    (error) =>
+      console.warn(
+        `${warningMark} Could not copy the deploy key for the main job (${errorMessage(error)}); \`${actionCommand('rotate-keys')}\` makes a new key and copies it.`,
+      ),
+  );
+}
+
 export async function recordKeyRotation(context: InfraContext, operatorKey: OperatorKey): Promise<void> {
   const { appConfig, projectId } = context;
   const stack = stackNameFor(context);
