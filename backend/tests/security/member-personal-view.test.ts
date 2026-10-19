@@ -10,7 +10,7 @@ import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-type MemberRow = { id: string; membership: Record<string, unknown> };
+type MemberRow = { id: string; email: string; membership: Record<string, unknown> };
 
 /** Archive, mute and menu order are each member's own view of a channel, so a members list shows them for the caller's row only. */
 describe("A member's personal view in the members list", async () => {
@@ -47,6 +47,11 @@ describe("A member's personal view in the members list", async () => {
     for (const field of ['archived', 'muted', 'displayOrder']) expect(otherRow?.membership).not.toHaveProperty(field);
     // The rest of the membership stays: members see each other's role.
     expect(otherRow?.membership).toMatchObject({ userId: other.id, role: memberRole });
+  });
+
+  it("shows a plain member every member's email address: the directory is organization-wide", async () => {
+    const admin = (await listMembers(other)).find((item) => item.id === viewer.id);
+    expect(admin?.email).toMatch(/@/);
   });
 
   it("shows the caller's own archive, mute and order (positive control)", async () => {

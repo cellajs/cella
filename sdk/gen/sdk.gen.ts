@@ -4209,7 +4209,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(
 /**
  * Get list of pending memberships
  *
- * Returns the pending invitations of a channel entity, identified by ID: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.
+ * Returns the pending invitations of a channel entity, identified by ID, to every user who may read it: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.
  *
  * **GET /{tenantId}/{organizationId}/memberships/pending** ·· [getPendingMemberships](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/{tenantId}/{organizationId}/memberships/pending) ·· [getPendingMemberships](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/memberships/pending) ·· _memberships_cella_
  *

@@ -1980,7 +1980,12 @@
           "type": ["string", "null"],
           "required": true
         },
-        "email": { "type": "string", "required": true, "format": "email" },
+        "email": {
+          "type": "string",
+          "required": true,
+          "description": "The primary email address, shown to every user who shares an organization with this one.",
+          "format": "email"
+        },
         "entityType": {
           "type": "string",
           "required": true,
@@ -1994,7 +1999,7 @@
       "module": ["users"],
       "owner": ["cella"]
     },
-    "description": "The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
+    "description": "The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
     "example": {
       "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
       "createdAt": "2024-01-28T04:41:50.387Z",

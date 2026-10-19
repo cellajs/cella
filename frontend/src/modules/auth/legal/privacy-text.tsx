@@ -9,7 +9,7 @@ const sections = legalConfig.privacy.sections;
 const s = (id: string) => sections.find((sec) => sec.id === id)!;
 
 function PrivacyText() {
-  const lastUpdated = 'October 15, 2026';
+  const lastUpdated = 'October 19, 2026';
 
   const appName = appConfig.name;
   const company = appConfig.company.name;
@@ -48,7 +48,8 @@ function PrivacyText() {
         <p>We share personal data only:</p>
         <ul>
           <li>
-            <strong>Within your organization</strong>: members see your profile, when you were last active and the content you contribute.
+            <strong>Within your organization</strong>: members see your profile with your name and email address, when you were last active and the
+            content you contribute. They also see the email addresses of people invited to the organization.
           </li>
           <li>
             <strong>With subprocessors</strong> that run parts of the Service for us, listed below.
