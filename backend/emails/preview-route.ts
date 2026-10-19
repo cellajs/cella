@@ -1,11 +1,11 @@
 import { Hono } from 'hono';
 import { appConfig } from 'shared';
-import { emailPreviewFixtures, emailPreviewNames } from './preview-fixtures';
+import { type EmailPreviewName, emailPreviewNames, emailPreviews } from './preview-fixtures';
 import { renderEmailPreview } from './render-preview';
 
 const app = new Hono();
 
-const isPreviewName = (value: string): value is (typeof emailPreviewNames)[number] => Object.hasOwn(emailPreviewFixtures, value);
+const isPreviewName = (value: string): value is EmailPreviewName => Object.hasOwn(emailPreviews, value);
 
 app.get('/', (c) => {
   const rows = emailPreviewNames

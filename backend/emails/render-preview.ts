@@ -1,4 +1,4 @@
-import { type EmailPreviewFixture, type EmailPreviewName, emailPreviewFixtures } from './preview-fixtures';
+import { type EmailPreviewName, emailPreviews } from './preview-fixtures';
 import { render } from './renderer/render';
 import { brevoPlaceholder } from './types';
 
@@ -10,17 +10,13 @@ export interface RenderEmailPreviewOptions {
 
 /** Uses the real render pipeline, so preview output matches what the mailer sends. */
 export async function renderEmailPreview(name: EmailPreviewName, { lng, placeholders = false }: RenderEmailPreviewOptions) {
-  // The cast to the loose fixture type stops `translate`'s parameter collapsing to `never`.
-  const fixture = emailPreviewFixtures[name] as EmailPreviewFixture | undefined;
-  if (!fixture) throw new Error(`Unknown email preview: ${name}`);
-
-  const translated = fixture.def.translate(lng, fixture.statics);
-  const { subject, ...componentProps } = translated;
+  const def = emailPreviews[name];
+  const { subject, ...componentProps } = def.translate(lng, def.preview.statics);
 
   const recipientProps = placeholders
-    ? Object.fromEntries(Object.keys(fixture.recipient).map((key) => [key, brevoPlaceholder(key, { ...fixture.def.htmlParams })]))
-    : fixture.recipient;
+    ? Object.fromEntries(Object.keys(def.preview.recipient).map((key) => [key, brevoPlaceholder(key, { ...def.htmlParams })]))
+    : def.preview.recipient;
 
-  const html = await render(fixture.def.component({ ...componentProps, ...recipientProps }));
-  return { subject: subject as string, html };
+  const html = await render(def.component({ ...componentProps, ...recipientProps }));
+  return { subject, html };
 }
