@@ -1,5 +1,6 @@
+// @vitest-environment jsdom
 import i18n from 'i18next';
-import { isValidElement, type ReactElement } from 'react';
+import { type BaseSyntheticEvent, isValidElement, type ReactElement } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { locales } from '~/lib/i18n-locales';
 
@@ -38,5 +39,28 @@ describe('defaultOnInvalid', () => {
     defaultOnInvalid({ description: { type: 'custom' } });
 
     expect(toastedLines()).toEqual(['Description: Invalid input']);
+  });
+
+  /** A submitted form holding a visible `name` input and a hidden `email` one, as the submit event names it. */
+  const submitOf = () => {
+    const form = document.body.appendChild(document.createElement('form'));
+    const name = form.appendChild(Object.assign(document.createElement('input'), { name: 'name' }));
+    // jsdom lays nothing out: a rendered input has one box
+    name.getClientRects = () => [new DOMRect()] as unknown as DOMRectList;
+    form.appendChild(Object.assign(document.createElement('input'), { name: 'email' }));
+    // A stand-in for React's submit event: the handler reads its `target` only
+    return { target: form } as unknown as BaseSyntheticEvent;
+  };
+
+  it('leaves out an error its field shows under a visible input, and lists one whose input is hidden', () => {
+    defaultOnInvalid({ name: { type: 'too_small' }, email: { type: 'invalid_format' } }, submitOf());
+
+    expect(toastedLines()).toEqual(['Email: Format of the input is invalid.']);
+  });
+
+  it('shows the headline alone when every field shows its own error', () => {
+    defaultOnInvalid({ name: { type: 'too_small' } }, submitOf());
+
+    expect(toaster.error).toHaveBeenCalledWith('Form is not yet valid.', { description: undefined });
   });
 });

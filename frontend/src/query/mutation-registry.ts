@@ -27,3 +27,19 @@ export function initMutationDefaults(queryClient: QueryClient): void {
   registrars.length = 0;
   console.debug(`[MutationRegistry] Initialized (${count} buffered, late registrations apply immediately)`);
 }
+
+/**
+ * Warns about restored mutations that hold no `mutationFn`: their module registered its defaults after the restore,
+ * so their replay fails. Call it after the restore, before resuming. Returns the keys it warned about.
+ */
+export function warnMutationsWithoutDefaults(queryClient: QueryClient): unknown[] {
+  const keys = queryClient
+    .getMutationCache()
+    .getAll()
+    .filter((mutation) => mutation.state.isPaused && !mutation.options.mutationFn)
+    .map((mutation) => mutation.options.mutationKey);
+  if (keys.length > 0) {
+    console.warn('[MutationRegistry] Restored mutations without a mutationFn; import their query.ts from the <name>-module.ts file', keys);
+  }
+  return keys;
+}
