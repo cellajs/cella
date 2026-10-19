@@ -21,7 +21,7 @@ export function MemberAvatar({ member, className }: { member: Pick<UserMinimalBa
           id={member.id}
           name={member.name}
           url={member.thumbnailUrl}
-          className={cn('size-7 border-2 border-background text-xs', className)}
+          className={cn('size-7 border-2 border-black/50 more-contrast:border-black/85 text-xs', className)}
         />
       </button>
     </TooltipButton>
