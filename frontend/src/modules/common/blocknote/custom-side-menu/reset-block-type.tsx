@@ -1,6 +1,6 @@
 import { SideMenuExtension } from '@blocknote/core/extensions';
 import type { BlockTypeSelectItem } from '@blocknote/react';
-import { useComponentsContext, useDictionary, useExtension, useExtensionState } from '@blocknote/react';
+import { useComponentsContext, useExtension, useExtensionState } from '@blocknote/react';
 import { customBlockTypeSwitchItems, getSideMenuItems } from '~/modules/common/blocknote/blocknote-schema';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
@@ -14,8 +14,6 @@ interface ResetBlockTypeItemProp {
 
 export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels }: ResetBlockTypeItemProp) {
   const Components = useComponentsContext()!;
-  const dict = useDictionary();
-
   const sideMenu = useExtension(SideMenuExtension);
   const block = useExtensionState(SideMenuExtension, { selector: (state) => state?.block });
 
@@ -24,7 +22,7 @@ export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels }: Rese
   const filteredSelectItems = customBlockTypeSwitchItems.filter((i) => allowedTypes.includes(i));
   const selectItemsType: readonly string[] = filteredSelectItems;
 
-  const filteredItems = getSideMenuItems(dict).filter((item) => {
+  const filteredItems = getSideMenuItems(editor).filter((item) => {
     if (!selectItemsType.includes(item.type)) return false;
 
     if (item.type === 'heading') {

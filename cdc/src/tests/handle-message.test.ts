@@ -37,7 +37,7 @@ const { processFlush } = await import('../pipeline/process-events');
 const mockDmlMessage = (tag: 'insert' | 'update' | 'delete', id: string) => dmlMessage(tag, 'tasks', { id });
 
 const begin = (commitLsn: string) => handleDataMessage(commitLsn, { tag: 'begin', xid: 7, commitLsn, commitTime: BigInt(0) });
-const commit = (lsn: string) => handleDataMessage(lsn, { tag: 'commit' } as never);
+const commit = (commitEndLsn: string) => handleDataMessage(commitEndLsn, { tag: 'commit', commitEndLsn } as never);
 
 /** A service that takes every acknowledgement, as an open subscription does. */
 const serviceWith = (acknowledge = vi.fn(async () => true)) => {
@@ -88,7 +88,7 @@ describe('handleDataMessage: what a flush acknowledges', () => {
     vi.useRealTimers();
   });
 
-  it('acknowledges the commit position of the last source transaction of a flush', async () => {
+  it('acknowledges the end of the commit of the last source transaction of a flush', async () => {
     const { acknowledge } = serviceWith();
 
     await begin('0/90');
@@ -101,8 +101,8 @@ describe('handleDataMessage: what a flush acknowledges', () => {
 
     // One flush of two source transactions. 0/20, its last change, lies before the second commit.
     expect(processFlush).toHaveBeenCalledOnce();
-    expect(acknowledge.mock.calls).toEqual([['0/A0']]);
-    expect(replicationState.lastAckedLsn).toBe('0/A0');
+    expect(acknowledge.mock.calls).toEqual([['0/A8']]);
+    expect(replicationState.lastAckedLsn).toBe('0/A8');
   });
 
   it('must not move the acknowledged position backwards from one flush to the next', async () => {
@@ -119,7 +119,7 @@ describe('handleDataMessage: what a flush acknowledges', () => {
     await vi.runAllTimersAsync();
 
     // By the positions of the changes the second acknowledgement would be 0/10, behind the first.
-    expect(acknowledge.mock.calls).toEqual([['0/90'], ['0/200']]);
+    expect(acknowledge.mock.calls).toEqual([['0/98'], ['0/208']]);
   });
 
   it('forgets the failure it was reading again from once a flush is recorded', async () => {

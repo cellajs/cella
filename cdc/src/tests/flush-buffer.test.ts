@@ -3,9 +3,9 @@ import { FlushBuffer } from '../services/flush-buffer';
 import type { PendingEvent } from '../types';
 import { mockPendingEvent } from './factories';
 
-/** A source transaction of `count` changes whose positions start at `first`; `commitLsn` is where it committed. */
-const transaction = (first: number, count = 1, commitLsn?: string): PendingEvent[] =>
-  Array.from({ length: count }, (_, i) => ({ ...mockPendingEvent({ lsn: `0/${(first + i).toString(16).toUpperCase()}` }), commitLsn }));
+/** A source transaction of `count` changes whose positions start at `first`; `commitEndLsn` is where its commit record ends. */
+const transaction = (first: number, count = 1, commitEndLsn?: string): PendingEvent[] =>
+  Array.from({ length: count }, (_, i) => ({ ...mockPendingEvent({ lsn: `0/${(first + i).toString(16).toUpperCase()}` }), commitEndLsn }));
 
 const lsnsOf = (transactions: PendingEvent[][]) => transactions.map((events) => events.map((event) => event.lsn));
 
@@ -114,7 +114,7 @@ describe('FlushBuffer', () => {
       expect(flushes.map((transactions) => transactions.map((events) => events.length))).toEqual([[2, 600, 1]]);
     });
 
-    it('acknowledges the commit position of its last source transaction, not the position of its last change', async () => {
+    it('acknowledges the end of the commit of its last source transaction, not the position of its last change', async () => {
       const buffer = new FlushBuffer(processFlush, acknowledge, 10);
 
       // Two source transactions in one flush. The commit record of each lies after its last change.

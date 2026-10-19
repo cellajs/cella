@@ -504,9 +504,9 @@ describe.skipIf(!READY)('Verify and rebuild (integration)', () => {
       expect(incident).toMatchObject({ reason: 'stuck', positionFrom: '0/AB', error: refused.message });
       expect(incident.positionTo).toMatch(/^[0-9A-F]+\/[0-9A-F]+$/);
       expect(replicationState.failure).toBeNull();
-      // The status timer of the next subscription repeats what was acknowledged last, and an acknowledgement reports
-      // the byte after its position: that must be where the slot is now, not a position behind it.
-      expect(lsnToBigInt(replicationState.lastAckedLsn ?? '0/0') + 1n).toBe(lsnToBigInt(incident.positionTo ?? '0/0'));
+      // The status timer of the next subscription repeats what was acknowledged last: that must be where the slot is
+      // now, not a position behind it.
+      expect(lsnToBigInt(replicationState.lastAckedLsn ?? '0/0')).toBe(lsnToBigInt(incident.positionTo ?? '0/0'));
 
       await readAgain();
       const later = await insertAttachment();

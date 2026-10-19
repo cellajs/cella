@@ -4,7 +4,6 @@ import {
   blockTypeSelectItems,
   useBlockNoteEditor,
   useComponentsContext,
-  useDictionary,
   useEditorState,
   usePortalElement,
   useSelectedBlocks,
@@ -17,7 +16,6 @@ import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types'
 
 export function CustomBlockTypeSelect({ headingLevels }: { headingLevels: CustomBlockNoteMenuProps['headingLevels'] }) {
   const Components = useComponentsContext()!;
-  const dict = useDictionary();
   const portalElement = usePortalElement();
   const editor = useBlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>();
 
@@ -27,7 +25,7 @@ export function CustomBlockTypeSelect({ headingLevels }: { headingLevels: Custom
 
   const [block, setBlock] = useState(editor.getTextCursorPosition().block);
 
-  const filteredItems = blockTypeSelectItems(dict).filter(({ type, props }) => {
+  const filteredItems = blockTypeSelectItems(editor).filter(({ type, props }) => {
     if (!itemsType.includes(type)) return false;
     if (type === 'heading') {
       if (props?.isToggleable) return false;

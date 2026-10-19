@@ -5,7 +5,7 @@ import { fence } from '../services/fence';
 import { FlushBuffer } from '../services/flush-buffer';
 import { replicationState } from '../services/replication-state';
 import { TransactionBuffer } from '../services/transaction-buffer';
-import { formatLsn, lsnToBigInt } from '../utils/lsn';
+import { lsnToBigInt } from '../utils/lsn';
 import { parseMessage } from './parse-message';
 import { processFlush } from './process-events';
 
@@ -76,11 +76,10 @@ async function acknowledgeIdlePosition(): Promise<boolean> {
   const busy = inFlightMessages > 0 || txBuffer.isBuffering || !flushBuffer.isIdle;
   if (!lastKeepaliveLsn || busy) return false;
 
-  // The client reports lsn + 1 as flushed: one byte back acknowledges the keepalive position itself, never a byte of the next commit record.
-  const position = lsnToBigInt(lastKeepaliveLsn) - 1n;
-  if (position <= (lastAckedLsn ? lsnToBigInt(lastAckedLsn) : 0n)) return false;
+  // The keepalive position is the end of what Postgres has sent, acknowledged as it is: never a byte of the next commit record.
+  if (lsnToBigInt(lastKeepaliveLsn) <= (lastAckedLsn ? lsnToBigInt(lastAckedLsn) : 0n)) return false;
 
-  return acknowledgeLsn(formatLsn(position));
+  return acknowledgeLsn(lastKeepaliveLsn);
 }
 
 /**
@@ -125,7 +124,7 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
   }
 
   if (tag === 'commit') {
-    await txBuffer.onCommit();
+    await txBuffer.onCommit((msg as Pgoutput.MessageCommit).commitEndLsn);
     return;
   }
 
