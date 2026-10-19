@@ -16,7 +16,7 @@ import { reportReactError } from '~/lib/maple';
 import { AppRouter } from '~/modules/common/app/app-router';
 import { assertSurfaces } from '~/modules/common/page/tab-nav';
 import { QueryClientProvider } from '~/query/provider';
-import { canonicalOriginUrl } from '~/utils/canonical-origin';
+import { canonicalOriginUrl, leaveForCanonicalOrigin } from '~/utils/canonical-origin';
 import { initFaviconBadge } from '~/utils/init-favicon-badge';
 import { initViewportObserver } from '~/utils/viewport-observer';
 
@@ -49,8 +49,8 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
 const canonicalUrl = canonicalOriginUrl(window.location, appConfig.frontendUrl, appConfig.mode);
 
 if (canonicalUrl) {
-  // No render: this host would get a service worker of its own, which serves the cached app on later visits before any server redirect.
-  window.location.replace(canonicalUrl);
+  // No render, so this host registers no service worker of its own.
+  void leaveForCanonicalOrigin(canonicalUrl);
 } else {
   ReactDOM.createRoot(root, {
     onUncaughtError: (error, errorInfo) => reportReactError('uncaught', error, errorInfo.componentStack),
