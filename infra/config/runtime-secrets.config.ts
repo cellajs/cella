@@ -151,6 +151,25 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     generation: 'manual',
     services: ['backend', 'mcp'],
   },
+  transloaditKey: {
+    secretName: 'transloadit-key',
+    description: 'Transloadit auth key that signed upload assemblies carry',
+    envVar: 'TRANSLOADIT_KEY',
+    required: false,
+    valueSource: 'operator',
+    generation: 'manual',
+    // Only the API process's upload token route signs assemblies; without both values uploads stay in the browser.
+    services: ['backend'],
+  },
+  transloaditSecret: {
+    secretName: 'transloadit-secret',
+    description: 'Transloadit auth secret that signs upload assembly params',
+    envVar: 'TRANSLOADIT_SECRET',
+    required: false,
+    valueSource: 'operator',
+    generation: 'manual',
+    services: ['backend'],
+  },
   systemAdminIpAllowlist: {
     secretName: 'system-admin-ip-allowlist',
     description: "System admin IP allowlist ('none' to disable, '*' for any IP, or comma-separated IPv4 addresses)",
