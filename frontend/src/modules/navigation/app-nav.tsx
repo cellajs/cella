@@ -33,7 +33,6 @@ export function AppNav() {
 
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
-  const keyboardShortcuts = useNavigationStore((state) => state.keyboardShortcuts);
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
 
   const triggerNavItem: TriggerNavItemFn = (id, ref) => {
@@ -78,16 +77,13 @@ export function AppNav() {
     }
   };
 
-  // Shift + letter is a character key to speech input, which fires it by accident: users can turn these off (WCAG 2.1.4)
-  useHotkeys(
-    keyboardShortcuts
-      ? [
-          ['Shift + A', () => triggerNavItem('account')],
-          ['Shift + F', () => triggerNavItem('search')],
-          ['Shift + M', () => triggerNavItem('menu')],
-        ]
-      : [],
-  );
+  // Each needs Ctrl, Alt or Meta: a letter alone or with Shift is typed by speech input and fires by accident (WCAG 2.1.4).
+  // Not Alt + F: Chrome on Windows opens its own menu with it.
+  useHotkeys([
+    ['Alt + A', () => triggerNavItem('account')],
+    ['Mod + K', () => triggerNavItem('search')],
+    ['Alt + M', () => triggerNavItem('menu')],
+  ]);
 
   // keepNavOpen is pinned only on desktop, with the preference set and a sheet open.
   useEffect(() => {

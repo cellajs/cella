@@ -10,7 +10,7 @@ export function LegalContact({ addressOnly = false, className }: { addressOnly?:
   const country = appConfig.company.country;
   const supportEmail = appConfig.company.supportEmail;
   const registration = appConfig.company.registration;
-  const bankAccount = appConfig.company.bankAccount;
+  const vatNumber = appConfig.company.vatNumber;
 
   return (
     <div className={cn('not-prose flex', className)}>
@@ -33,7 +33,7 @@ export function LegalContact({ addressOnly = false, className }: { addressOnly?:
           </a>
         </li>
         {!addressOnly && <li>{registration}</li>}
-        {!addressOnly && <li>Bank account: {bankAccount}</li>}
+        {!addressOnly && vatNumber && <li>VAT number: {vatNumber}</li>}
       </ul>
     </div>
   );

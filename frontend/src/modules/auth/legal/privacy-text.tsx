@@ -1,7 +1,6 @@
 import { appConfig } from 'shared';
-import { collectedData, legalConfig } from '~/modules/auth/legal/legal-config';
+import { legalConfig } from '~/modules/auth/legal/legal-config';
 import { LegalContact } from '~/modules/auth/legal/legal-contact';
-import { LegalCrossLink } from '~/modules/auth/legal/legal-cross-link';
 import { LegalSection } from '~/modules/auth/legal/legal-section';
 import { ProcessedDataTypes } from '~/modules/auth/legal/processed-data-types';
 import { Subprocessors } from '~/modules/auth/legal/subprocessors';
@@ -10,126 +9,95 @@ const sections = legalConfig.privacy.sections;
 const s = (id: string) => sections.find((sec) => sec.id === id)!;
 
 function PrivacyText() {
-  const lastUpdated = 'March 13, 2026';
+  const lastUpdated = 'October 19, 2026';
 
   const appName = appConfig.name;
   const company = appConfig.company.name;
   const supportEmail = appConfig.company.supportEmail;
+  const mapHost = appConfig.mapStyleUrls.light && new URL(appConfig.mapStyleUrls.light).hostname;
+  const email = (
+    <a href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
+      {supportEmail}
+    </a>
+  );
 
   return (
     <div id="privacy-content">
       <LegalSection id={s('overview').id} label={s('overview').label}>
-        <p className="mb-2 pt-8 italic">Last updated: {lastUpdated}</p>
+        <p className="text-muted-foreground text-sm">Last updated: {lastUpdated}</p>
+        <p>
+          {company} ("we") runs {appName} (the "Service") for organizations. This policy explains how we handle personal data under the EU General
+          Data Protection Regulation (GDPR). We are the controller of your account data. Content your organization puts in the Service is usually its
+          responsibility: we process it on its behalf, under a data processing agreement.
+        </p>
         <p>Questions about this policy? Contact us.</p>
         <LegalContact className="mt-8" />
       </LegalSection>
 
-      <LegalSection id={s('introduction').id} label={s('introduction').label}>
-        <p>
-          {company} ("we", "us", "our") operates {appName} (the "Service"). This Privacy Policy explains how we collect, use and protect your
-          information. By using the Service you accept this policy and our <LegalCrossLink subject="terms">Terms of Use</LegalCrossLink>.
-        </p>
-      </LegalSection>
-
-      <LegalSection id={s('data-we-collect').id} label={s('data-we-collect').label}>
-        {collectedData.map((category) => (
-          <div key={category.label}>
-            <h4 className="font-semibold">{category.label}</h4>
-            <p>{category.description}</p>
-            <ul className="my-2">
-              {category.items.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </LegalSection>
-
       <LegalSection id={s('how-we-use-data').id} label={s('how-we-use-data').label}>
-        <p>We use your data to:</p>
-        <ul className="my-2">
-          <li>Provide, maintain and improve the Service</li>
-          <li>Authenticate your identity and manage your account</li>
-          <li>Send service-related communications (e.g. verification, notifications)</li>
-          <li>Monitor for errors and optimize performance</li>
-          <li>Comply with legal obligations</li>
-        </ul>
-        <p>We do not sell your data or use it for advertising.</p>
+        <p>
+          We get personal data from you, from GitHub or your institution when you sign in through them, and from your use of the Service. Each use
+          rests on a legal basis. Contract: we need the data to provide the Service to you and your organization (Art. 6(1)(b) GDPR). Legitimate
+          interest: we need it to keep the Service secure and reliable (Art. 6(1)(f)). We do not sell your data, use it for advertising or make
+          automated decisions about you.
+        </p>
+        <ProcessedDataTypes />
       </LegalSection>
 
       <LegalSection id={s('data-processing').id} label={s('data-processing').label}>
-        <p>We do not rent or sell personal information. We may share data only in these circumstances:</p>
-        <ul className="my-2">
+        <p>We share personal data only:</p>
+        <ul>
           <li>
-            <strong>Within your organization</strong>: content you contribute is visible to other members of your organization.
+            <strong>Within your organization</strong>: members see your profile with your name and email address, when you were last active and the
+            content you contribute. They also see the email addresses of people invited to the organization.
           </li>
           <li>
-            <strong>Subprocessors</strong>: third-party services that process data on our behalf (listed below).
+            <strong>With subprocessors</strong> that run parts of the Service for us, listed below.
           </li>
           <li>
-            <strong>Legal requirements</strong>: when required by law, subpoena or to protect rights and safety.
+            <strong>When the law requires it</strong>, or to protect rights and safety.
           </li>
           <li>
-            <strong>Business transfers</strong>: in connection with a merger, acquisition or asset sale.
+            <strong>In a merger, acquisition or asset sale.</strong>
           </li>
         </ul>
-      </LegalSection>
-
-      <LegalSection id={s('cookies').id} label={s('cookies').label}>
-        <p>We use essential cookies for authentication and session management only. We do not use third-party advertising or tracking cookies.</p>
-      </LegalSection>
-
-      <LegalSection id={s('data-retention').id} label={s('data-retention').label}>
-        <p>
-          Account data is retained for as long as your account is active. When you delete your account, personal data is removed from the Service
-          immediately and permanently deleted from our database within 90 days. Your organization may retain certain data for legal compliance
-          purposes until they request its removal.
-        </p>
-      </LegalSection>
-
-      <LegalSection id={s('security').id} label={s('security').label}>
-        <p>
-          We implement industry-standard security measures including encryption in transit (TLS), permission-based access controls and secure coding
-          practices. However, no method of transmission or storage is 100% secure, and we cannot guarantee absolute security. Contact us at{' '}
-          <a href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
-            {supportEmail}
-          </a>{' '}
-          for security inquiries.
-        </p>
-      </LegalSection>
-
-      <LegalSection id={s('your-rights').id} label={s('your-rights').label}>
-        <p>You have the right to:</p>
-        <ul className="my-2">
-          <li>Access the personal data we hold about you</li>
-          <li>Request correction of inaccurate data</li>
-          <li>Request deletion of your account and data</li>
-          <li>Export your data</li>
-          <li>Withdraw consent for data processing</li>
-          <li>Opt out of non-essential email communications</li>
-        </ul>
-        <p>
-          To exercise these rights, contact us at{' '}
-          <a href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
-            {supportEmail}
-          </a>
-          .
-        </p>
-      </LegalSection>
-
-      <LegalSection id={s('changes').id} label={s('changes').label}>
-        <p>
-          We may update this policy from time to time. For material changes we will provide at least two (2) weeks advance notice via email or an
-          announcement on the Service. Continued use after the notice period constitutes acceptance.
-        </p>
       </LegalSection>
 
       <LegalSection id={s('subprocessors').id} label={s('subprocessors').label}>
         <Subprocessors />
       </LegalSection>
 
-      <LegalSection id={s('processed-data-types').id} label={s('processed-data-types').label}>
-        <ProcessedDataTypes />
+      <LegalSection id={s('cookies').id} label={s('cookies').label}>
+        <p>
+          Our sign-in cookies keep you signed in and protect your account. One recognizes your browser for up to 400 days, so we can warn you about
+          sign-ins from a new device. Your preferences and offline copies of your data stay in your browser's storage. We use no advertising cookies.
+        </p>
+        <ul>
+          {appConfig.maplePublicIngestKey && <li>Maple, our error monitoring, sets no cookies and keeps a session id only for the open tab.</li>}
+          <li>We count page visits with One Dollar Stats, which sets no cookies.</li>
+          {appConfig.has.chatSupport && <li>The support chat by Gleap sets its own cookies.</li>}
+          {mapHost && <li>The map on our contact form loads from {mapHost}, which receives your IP address.</li>}
+        </ul>
+      </LegalSection>
+
+      <LegalSection id={s('security').id} label={s('security').label}>
+        <p>
+          The Service runs on servers in the EU and encrypts data in transit (TLS). Our database holds session tokens and IP addresses only as hashes,
+          and roles limit who can access what. No system is perfectly secure: if a breach puts your data at risk, we inform those affected as the GDPR
+          requires. Report security issues to {email}.
+        </p>
+      </LegalSection>
+
+      <LegalSection id={s('your-rights').id} label={s('your-rights').label}>
+        <p>
+          You can ask us to access, correct, delete or export your data, to restrict its use, or object to it, and you can stop non-essential emails.
+          Email {email} and we reply within one month. For content your organization controls, we pass your request on to it.
+        </p>
+        <p>You can also complain to a data protection authority, for example in the EU country where you live or work.</p>
+      </LegalSection>
+
+      <LegalSection id={s('changes').id} label={s('changes').label}>
+        <p>We announce material changes to this policy at least two weeks in advance, by email or in the Service.</p>
       </LegalSection>
     </div>
   );

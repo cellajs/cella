@@ -88,7 +88,7 @@ export const attachmentCreateManyStxBodySchema = attachmentContract.createItemSc
   .superRefine((items, ctx) => {
     items.forEach((item, index) => {
       const issue = validatePlacement('attachment', item);
-      if (issue) ctx.addIssue({ code: 'custom', path: [index, ...issue.path], message: issue.message });
+      if (issue) ctx.addIssue({ code: 'custom', path: [index, ...issue.path], message: issue.message, params: { type: issue.type } });
     });
   });
 

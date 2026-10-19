@@ -283,7 +283,8 @@ export const config = {
   // Third-party services
 
   gleapToken: '1ZoAxCRA83h5pj7qtRSvuz7rNNN9iXDd',
-  googleMapsKey: 'AIzaSyBc1KkCJr6TNMeAw9XK4OunGVWDSXJAKEM',
+  // OpenFreeMap: free, no key, no cookies. Any MapLibre style URL works; its origin is added to the CSP.
+  mapStyleUrls: { light: 'https://tiles.openfreemap.org/styles/positron', dark: 'https://tiles.openfreemap.org/styles/dark' },
   matrixURL: 'https://matrix-client.matrix.org',
   maplePublicIngestKey: 'maple_pk_LnUSK6-_5j3orVrlZ1Hv6I1pxzDh3SJ5',
 
@@ -328,14 +329,14 @@ export const config = {
     city: 'Hono City',
     country: 'TypeScript Rock',
     registration: 'Chamber of Commerce (KvK): 578 25 920',
-    bankAccount: 'NL07 RABO 0309 4430 24',
-    googleMapsUrl: 'https://goo.gl/maps/SQlrh',
+    vatNumber: 'NL001234567B01',
+    directionsUrl: 'https://goo.gl/maps/SQlrh',
     scheduleCallUrl: 'https://cal.com/flip-van-haaren',
     socialUrl: 'https://bsky.app/profile/flipvh.bsky.social',
     blueskyHandle: '@flipvh.bsky.social',
     element: 'https://matrix.to/#/!fvwljIbZIqzhNvjKvk:matrix.org',
     githubUrl: 'https://github.com/cellajs/cella',
-    mapZoom: 4,
+    mapZoom: 3,
     coordinates: { lat: 51.92760809717153, lng: 4.47421039909924 },
   },
 

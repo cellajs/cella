@@ -1,9 +1,18 @@
 // @vitest-environment jsdom
 import { BlockNoteEditor } from '@blocknote/core';
 import type { ComputeDropPositionContext } from '@blocknote/core/extensions';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { pinnedTitleDropPosition, pinnedTitleExtension } from '~/modules/common/blocknote/custom-elements/pinned-title/pinned-title-extension';
+
+/**
+ * Every editor is unmounted after its test. A mounted view holds a 20 ms ProseMirror flush timer, and one that
+ * fires after jsdom is torn down throws `document is not defined`, which fails the run though every test passed.
+ */
+const mounted: Pick<BlockNoteEditor, 'unmount'>[] = [];
+afterEach(() => {
+  for (const editor of mounted.splice(0)) editor.unmount();
+});
 
 const createEditor = () => {
   const editor = BlockNoteEditor.create({
@@ -16,6 +25,7 @@ const createEditor = () => {
     ],
   });
   editor.mount(document.createElement('div'));
+  mounted.push(editor);
   return editor;
 };
 

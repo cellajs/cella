@@ -1,33 +1,25 @@
-import { and, eq, type InferSelectModel, sql } from 'drizzle-orm';
+import { and, eq, type InferSelectModel, inArray, isNull } from 'drizzle-orm';
 import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import type { ActorContext } from '#/core/context';
-import { findActivityByMutationId } from '#/db/prepared';
 import { tenantRead } from '#/db/tenant-context';
 import { requestScopeWhere } from '#/db/utils/request-scope';
 
-/**
- * Replay check on the client-generated mutation id. Prepared, since it runs on every mutation.
- * @public
- */
-export async function isTransactionProcessed(stxId: string): Promise<boolean> {
-  const existing = await findActivityByMutationId.execute({ mutationId: stxId });
-  return existing.length > 0;
-}
-
-type ProductTable = PgTable & { stx: PgColumn; createdBy: PgColumn; tenantId: PgColumn; organizationId: PgColumn };
+type ProductTable = PgTable & { id: PgColumn; createdBy: PgColumn; deletedAt: PgColumn; tenantId: PgColumn; organizationId: PgColumn };
 
 /**
- * The rows of `table` a processed transaction created, null when it is new. Mutation ids travel in sync payloads, so
- * the lookup takes the caller's own rows in the request scope: a replay by another actor finds nothing and creates
- * its own rows.
+ * The rows an earlier attempt of a create already wrote, read by the ids the client gave them, so the answer is the
+ * same whether or not the CDC worker has processed that attempt. Only the caller's own live rows in the request scope
+ * count: an id another actor learned finds nothing, and so does an id whose row was deleted since (the tenant read
+ * policy hides deleted rows too), whose insert then writes nothing.
+ * @param ids - The ids of the create's input rows.
+ * @returns The rows found, empty for a new create. A create inserts only the items not among them.
  */
-export async function checkIdempotency<T extends ProductTable>(ctx: ActorContext, table: T, stxId: string): Promise<InferSelectModel<T>[] | null> {
-  if (!(await isTransactionProcessed(stxId))) return null;
-  const batch = await tenantRead(ctx, (readCtx) =>
+export async function checkIdempotency<T extends ProductTable>(ctx: ActorContext, table: T, ids: string[]): Promise<InferSelectModel<T>[]> {
+  const rows = await tenantRead(ctx, (readCtx) =>
     readCtx.var.db
       .select()
       .from(table as PgTable)
-      .where(and(sql`${table.stx}->>'mutationId' = ${stxId}`, eq(table.createdBy, ctx.var.actor.id), requestScopeWhere(ctx, table))),
+      .where(and(inArray(table.id, ids), eq(table.createdBy, ctx.var.actor.id), isNull(table.deletedAt), requestScopeWhere(ctx, table))),
   );
-  return batch.length > 0 ? (batch as InferSelectModel<T>[]) : null;
+  return rows as InferSelectModel<T>[];
 }

@@ -5,17 +5,17 @@ import { PreferenceSwitch, PreferencesGroup } from '~/modules/navigation/menu-sh
 
 function Group() {
   const [dark, setDark] = useState(false);
-  const [keep, setKeep] = useState(true);
+  const [contrast, setContrast] = useState(true);
   return (
     <div className="w-72">
       <PreferencesGroup title="Appearance" help>
         <PreferenceSwitch id="dark" label="Dark mode" description="Use a dark color scheme." checked={dark} onCheckedChange={setDark} />
         <PreferenceSwitch
-          id="keep"
-          label="Keep messages open"
-          description="Notifications stay until closed."
-          checked={keep}
-          onCheckedChange={setKeep}
+          id="contrast"
+          label="Increase contrast"
+          description="Stronger text and border colors."
+          checked={contrast}
+          onCheckedChange={setContrast}
         />
       </PreferencesGroup>
     </div>

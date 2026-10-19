@@ -59,6 +59,8 @@ Ship the migration in the same PR as the breaking change:
    `backend/drizzle`) is a breaking change for apps even when nothing else moves: the app's copy
    never updates. `pnpm style` asks for the note; `Migration-Note: none, <reason>` in a commit
    message answers it when apps have nothing to do.
+5. A reference module (attachment, organization) that starts to call a shared helper another way
+   gets a `syncBreaking: false` note too: apps copied the old call into their own modules.
 
 A `syncBreaking: true` change without a migration folder is what this system exists to prevent;
 treat it like a missing `clientCacheVersion` bump.

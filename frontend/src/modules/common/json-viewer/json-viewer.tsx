@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { foldText } from 'shared/utils/text-match';
+import { MatchScope } from '~/modules/common/match-highlight';
 import { cn } from '~/utils/cn';
 import { JsonViewerContext, type JsonViewerContextValue } from './context';
 import { JsonNode } from './json-node';
@@ -81,7 +83,6 @@ export function JsonViewer({
   openapiMode,
   searchText = '',
   expandAll = false,
-  currentMatchIndex = 0,
   searchMatchPath = null,
   showKeyQuotes = true,
   expandChildrenDepth = 1,
@@ -121,7 +122,6 @@ export function JsonViewer({
     searchMatchPath,
     searchText,
     expandAll,
-    currentMatchIndex,
     showKeyQuotes,
     expandChildrenDepth,
     openapiMode,
@@ -141,16 +141,17 @@ export function JsonViewer({
             0%, 70% { background-color: rgb(251 191 36); box-shadow: 0 0 0 2px rgb(251 191 36); }
             100% { background-color: transparent; box-shadow: none; }
           }
-          .json-current-match {
-            outline: 2px solid rgb(59 130 246) !important;
-            outline-offset: 2px;
-            border-radius: 2px;
-          }
         `}
       </style>
-      <div ref={containerRef} data-openapi-mode={openapiMode} className={cn('group/jv font-mono text-foreground text-sm leading-relaxed', className)}>
-        <JsonNode value={value} path={[]} keyName={rootName} depth={0} />
-      </div>
+      <MatchScope terms={searchText ? [foldText(searchText)] : []}>
+        <div
+          ref={containerRef}
+          data-openapi-mode={openapiMode}
+          className={cn('group/jv font-mono text-foreground text-sm leading-relaxed', className)}
+        >
+          <JsonNode value={value} path={[]} keyName={rootName} depth={0} />
+        </div>
+      </MatchScope>
     </JsonViewerContext.Provider>
   );
 }

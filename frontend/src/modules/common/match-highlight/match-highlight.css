@@ -1,0 +1,59 @@
+:root {
+  --match-bg: oklch(0.93 0.13 98);
+  --match-fg: oklch(0.25 0.03 85);
+  --match-current-bg: oklch(0.8 0.16 62);
+  --match-current-fg: oklch(0.2 0.03 50);
+}
+
+.dark {
+  --match-bg: oklch(0.82 0.14 95);
+  --match-fg: oklch(0.2 0.03 85);
+  --match-current-bg: oklch(0.74 0.17 58);
+  --match-current-fg: oklch(0.18 0.03 50);
+}
+
+mark[data-match] {
+  background-color: var(--match-bg);
+  color: var(--match-fg);
+  border-radius: 2px;
+}
+
+[data-match-current] mark[data-match] {
+  background-color: var(--match-current-bg);
+  color: var(--match-current-fg);
+}
+
+/* Highlight pseudo-elements take literal colors: custom properties do not resolve inside them in every engine. */
+::highlight(match) {
+  background-color: oklch(0.93 0.13 98);
+  color: oklch(0.25 0.03 85);
+}
+
+[data-match-current] ::highlight(match) {
+  background-color: oklch(0.8 0.16 62);
+  color: oklch(0.2 0.03 50);
+}
+
+.dark ::highlight(match) {
+  background-color: oklch(0.82 0.14 95);
+  color: oklch(0.2 0.03 85);
+}
+
+.dark [data-match-current] ::highlight(match) {
+  background-color: oklch(0.74 0.17 58);
+  color: oklch(0.18 0.03 50);
+}
+
+@media (forced-colors: active) {
+  mark[data-match],
+  ::highlight(match) {
+    background-color: Mark;
+    color: MarkText;
+  }
+
+  [data-match-current] mark[data-match],
+  [data-match-current] ::highlight(match) {
+    background-color: Highlight;
+    color: HighlightText;
+  }
+}

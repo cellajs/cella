@@ -1,27 +1,21 @@
 import { MapleBrowser } from '@maple-dev/browser';
 import { appConfig } from 'shared';
-import { useUserStore } from '~/modules/user/user-store';
 import { mapleEnabled } from './maple-enabled';
 
+// Errors, traces and web vitals only: no session replay, no cookies or lasting visitor id, and no user id.
 if (mapleEnabled) {
   MapleBrowser.init({
     ingestKey: appConfig.maplePublicIngestKey,
     serviceName: `${appConfig.slug}-frontend`,
     environment: appConfig.mode,
     serviceVersion: __APP_VERSION__,
-    replay: { sampleRate: 1 },
-    privacy: { maskAllInputs: true, maskAllText: true },
-  });
-
-  // Attach the opaque user id to the session once known.
-  const identify = (userId?: string) => userId && MapleBrowser.identify(userId);
-  identify(useUserStore.getState().user?.id);
-  useUserStore.subscribe((state, prev) => {
-    if (state.user?.id && state.user.id !== prev.user?.id) identify(state.user.id);
+    replay: { enabled: false },
+    privacy: { maskAllInputs: true, maskAllText: true, persistVisitorId: false, crossSubdomainCookie: false },
   });
 }
 
-/** Reports a React-caught error. console.error is the Maple SDK capture path, so it reaches the session timeline. */
+/** Reports a React-caught error, which the SDK's global error handlers never see. */
 export const reportReactError = (scope: string, error: unknown, componentStack?: string | null) => {
   console.error(`[react:${scope}]`, error, componentStack ? `\n${componentStack}` : '');
+  if (mapleEnabled) MapleBrowser.captureException(error, { name: `react.${scope}` });
 };

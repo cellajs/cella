@@ -19,10 +19,10 @@ export const handleChecklistItemEnter = (editor: AnyBlockNoteEditor): boolean =>
     selectionEmpty: tr.selection.anchor === tr.selection.head,
   }));
 
-  if (!blockInfo.isBlockContainer) return false;
-  if (blockInfo.blockContent.node.type.name !== 'checklistItem' || !selectionEmpty) return false;
+  if (!blockInfo.hasContent) return false;
+  if (blockInfo.content.node.type.name !== 'checklistItem' || !selectionEmpty) return false;
 
-  if (blockInfo.blockContent.node.childCount === 0) {
+  if (blockInfo.isContentEmpty) {
     editor.updateBlock(editor.getTextCursorPosition().block, { type: 'paragraph', props: {} });
     return true;
   }
@@ -31,11 +31,11 @@ export const handleChecklistItemEnter = (editor: AnyBlockNoteEditor): boolean =>
     tr.deleteSelection();
     const pos = tr.selection.from;
     const info = getBlockInfoFromSelection(tr);
-    if (!info.isBlockContainer) return;
+    if (!info.hasContent) return;
     // Empty container attrs give the new block default props.
     tr.split(pos, 2, [
-      { type: info.bnBlock.node.type, attrs: {} },
-      { type: info.blockContent.node.type, attrs: { checkboxId: nanoid(12) } },
+      { type: info.block.node.type, attrs: {} },
+      { type: info.content.node.type, attrs: { checkboxId: nanoid(12) } },
     ]);
   });
   // The browser caret only follows once React renders the new block, so defer; the hop through prevBlock forces a

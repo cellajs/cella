@@ -18,7 +18,7 @@ advances one stage (steps 6 and 7).
   always wins; the CLI restores every changed pinned file to HEAD right after the merge, so no upstream
   hunk merges in and a pinned file never conflicts. Adopt upstream hunks by hand from the analyze list
   ("protected but behind upstream").
-- **fork marker**: `// fork: <why>` (css `/* fork: ... */`, md `<!-- fork: ... -->`, a ` * fork: ...` line in JSDoc) on every
+- **fork marker**: `// fork: <why>` (css `/* fork: ... */`, md `<!-- fork: ... -->`, a ` * fork: ...` line in JSDoc, YAML `# fork: ...`) on every
   intentional app edit in a cella-owned file, one marker per contiguous edit, naming the
   customization axis, not the diff; unmarked drift counts as accidental. JSON cannot carry
   markers: pin or ignore changed JSON files.

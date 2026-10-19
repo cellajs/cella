@@ -1,20 +1,19 @@
+import { HighlightText } from '~/modules/common/match-highlight';
 import { cn } from '~/utils/cn';
 
 interface KeyRendererProps {
   keyName?: string | number | false;
   showKeyQuotes: boolean;
-  searchText: string;
   isObjectValue: boolean;
   hasSelfRequired: boolean;
   openapiMode?: 'spec' | 'schema';
-  theme: { key: string; index: string; required: string; searchMatch: string };
+  theme: { key: string; index: string; required: string };
 }
 
-export function KeyRenderer({ keyName, showKeyQuotes, searchText, isObjectValue, hasSelfRequired, openapiMode, theme }: KeyRendererProps) {
+export function KeyRenderer({ keyName, showKeyQuotes, isObjectValue, hasSelfRequired, openapiMode, theme }: KeyRendererProps) {
   if (keyName === false || keyName === undefined) return null;
 
   const keyStr = String(keyName);
-  const isMatch = searchText && keyStr.toLowerCase().includes(searchText.toLowerCase());
 
   // Dictionary key from additionalProperties, written as [key].
   const isDictionaryKey = openapiMode === 'schema' && keyStr.startsWith('[') && keyStr.endsWith(']');
@@ -31,12 +30,10 @@ export function KeyRenderer({ keyName, showKeyQuotes, searchText, isObjectValue,
         className={cn(
           'font-medium',
           theme.key,
-          isMatch && theme.searchMatch,
           isDictionaryKey ? 'text-muted-foreground! italic' : openapiMode === 'schema' && !isObjectValue ? 'text-muted-foreground!' : '',
         )}
-        data-search-match={isMatch ? 'true' : undefined}
       >
-        {showKeyQuotes && !isDictionaryKey ? `"${keyName}"` : keyName}
+        <HighlightText text={showKeyQuotes && !isDictionaryKey ? `"${keyName}"` : keyName} />
       </span>
       {requiredLabel}
     </>

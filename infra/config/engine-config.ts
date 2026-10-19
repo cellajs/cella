@@ -28,6 +28,8 @@ export interface EngineConfig {
   };
   /** Service endpoint config keyed by slug (enabled flags + public URLs). */
   services: Record<string, EngineServiceEndpoint>;
+  /** Contact-map style URLs per color mode; the frontend CSP allows their origins. */
+  mapStyleUrls?: Record<string, string>;
 }
 
 let injected: EngineConfig | undefined;

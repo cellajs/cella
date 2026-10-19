@@ -41,8 +41,6 @@ function buildMutation(mutationId: string, paused: boolean) {
 
 async function failMutation(mutation: ReturnType<typeof buildMutation>['mutation'], variables: unknown) {
   await cacheHandlers.onError(badRequest, variables, undefined, mutation);
-  // The quarantine import is lazy, so let it settle.
-  await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 describe('failedSync quarantine is gated on replay', () => {

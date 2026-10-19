@@ -1,4 +1,4 @@
-import { and, count, eq, getColumns, ilike, inArray, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, inArray, type SQL, sql } from 'drizzle-orm';
 import type { EntityRole, OrganizationFlags, OrganizationSetupConfig } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
 import type { ActorContext, DbContext } from '#/core/context';
@@ -11,7 +11,7 @@ import { organizationFlagsSelect, setupConfigSelect } from '#/modules/organizati
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { auditUserSelect, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
 import { getOrderColumns } from '#/utils/order-column';
-import { prepareStringForILikeFilter } from '#/utils/sql';
+import { textSearchFilter } from '#/utils/sql';
 
 interface FindOrganizationByTenantOpts {
   tenantId: string;
@@ -118,7 +118,7 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
 
   // Org-only filters belong in WHERE (safe for both admin + non-admin)
   const orgWhere: SQL[] = [
-    ...(q ? [ilike(organizationsTable.name, prepareStringForILikeFilter(q))] : []),
+    ...(q ? [textSearchFilter(organizationsTable.name, q)] : []),
     ...(organizationIds ? [inArray(organizationsTable.id, organizationIds)] : []),
   ];
 

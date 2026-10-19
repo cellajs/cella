@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import type { Attachment } from 'sdk';
 import { hierarchy, isChannel } from 'shared';
 import { useAttachmentUpdateMutation } from '~/modules/attachment/query';
-import { CollaborativeBlockNote } from '~/modules/common/blocknote/collaborative-blocknote';
+import { LazyCollaborativeBlockNote } from '~/modules/common/blocknote/lazy-collaborative-blocknote';
 import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
 import { useDescriptionUpdate } from '~/modules/common/blocknote/use-description-update';
 import { type TriggerRef, useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -62,21 +62,24 @@ function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
     </div>
   );
 
+  // The stored description also covers the editor's code loading, so opening the sheet shows one fallback, not two.
   return (
-    <CollaborativeBlockNote
-      entityType="attachment"
-      entityId={attachment.id}
-      tenantId={tenantId}
-      organizationId={organizationId}
-      canEdit={canEdit}
-      editable={canEdit}
-      description={attachment.description}
-      updateData={updateData}
-      members={members}
-      autoFocus={canEdit}
-      waitingFallback={waitingFallback}
-      className="min-h-40"
-    />
+    <Suspense fallback={waitingFallback}>
+      <LazyCollaborativeBlockNote
+        entityType="attachment"
+        entityId={attachment.id}
+        tenantId={tenantId}
+        organizationId={organizationId}
+        canEdit={canEdit}
+        editable={canEdit}
+        description={attachment.description}
+        updateData={updateData}
+        members={members}
+        autoFocus={canEdit}
+        waitingFallback={waitingFallback}
+        className="min-h-40"
+      />
+    </Suspense>
   );
 }
 

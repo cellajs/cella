@@ -1,5 +1,99 @@
 # Changelog
 
+## [0.20.0](https://github.com/cellajs/cella/compare/0.19.0...0.20.0) (2026-10-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* replayed creates find their rows without the CDC worker, and other fixes the apps asked for ([#1416](https://github.com/cellajs/cella/issues/1416))
+
+### 🎉 New features
+
+* **search:** one text matcher for filters, database search and highlighting ([#1414](https://github.com/cellajs/cella/issues/1414)) ([b523b8f](https://github.com/cellajs/cella/commit/b523b8f4a95da4fe46c4c5171d521e1790799685))
+
+
+### 🐞 Bug fixes
+
+* replayed creates find their rows without the CDC worker, and other fixes the apps asked for ([#1416](https://github.com/cellajs/cella/issues/1416)) ([1fca2e4](https://github.com/cellajs/cella/commit/1fca2e4b3b1a338fa4ac6165ea0f09b5648441a3))
+* **search:** textSearchFilter ships as a sync-breaking note with a codemod ([#1417](https://github.com/cellajs/cella/issues/1417)) ([e9632c0](https://github.com/cellajs/cella/commit/e9632c028cb2aef93b7b20cb9c85eeca7a67b1a7))
+
+
+### 🔧 Small improvements
+
+* **emails:** the preview registry holds the templates, not a copy of their sample data ([#1420](https://github.com/cellajs/cella/issues/1420)) ([01ad792](https://github.com/cellajs/cella/commit/01ad792e97141bf7c5d49e9bcec491ac88532ffe))
+
+
+### 📖 Documentation
+
+* members of an organization see each other's email address, stated where it is decided ([#1418](https://github.com/cellajs/cella/issues/1418)) ([34a2652](https://github.com/cellajs/cella/commit/34a26521b63bb3e3510275bfe25f385a79d84458))
+
+
+### 🧹 Chores
+
+* **deps:** dependency updates ([#1419](https://github.com/cellajs/cella/issues/1419)) ([da322dc](https://github.com/cellajs/cella/commit/da322dcf6dd707e454d7cfa1323e911d265d3de7))
+
+## [0.19.0](https://github.com/cellajs/cella/compare/0.18.1...0.19.0) (2026-10-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* sync PRs run the heavy CI jobs, engines.node pins Node everywhere, and upstream fixes from raak ([#1411](https://github.com/cellajs/cella/issues/1411))
+* **a11y:** shortcuts need a modifier, more contrast keeps messages open, and a shorter accessibility statement ([#1412](https://github.com/cellajs/cella/issues/1412))
+* **frontend:** privacy policy and terms follow the GDPR, and telemetry drops replay, cookies and IPs ([#1409](https://github.com/cellajs/cella/issues/1409))
+* **frontend:** contact map on MapLibre and OpenFreeMap, without a Google Maps key ([#1408](https://github.com/cellajs/cella/issues/1408))
+* **frontend:** compose channel tiles from ChannelTile parts, grids take renderTile ([#1407](https://github.com/cellajs/cella/issues/1407))
+* **sync:** drop embedding usage counters; counts derive on the client ([#1398](https://github.com/cellajs/cella/issues/1398))
+* the reference's small defects from projectcampus's ledger, and helpers both apps copied ([#1366](https://github.com/cellajs/cella/issues/1366))
+* **permissions:** the can map counts grants above a channel, and queued mutations carry versioned variables ([#1368](https://github.com/cellajs/cella/issues/1368))
+* **permissions:** single reads and batches apply the draft rule of the lists, and nine helper fixes ([#1364](https://github.com/cellajs/cella/issues/1364))
+* **sync:** product placement follows the hierarchy, and template tests state the config they assume ([#1356](https://github.com/cellajs/cella/issues/1356))
+
+### 🎉 New features
+
+* **a11y:** shortcuts need a modifier, more contrast keeps messages open, and a shorter accessibility statement ([#1412](https://github.com/cellajs/cella/issues/1412)) ([cbc17d6](https://github.com/cellajs/cella/commit/cbc17d6df85396d435805ba2eb9f6d3ef67fdbd1))
+* **frontend:** contact map on MapLibre and OpenFreeMap, without a Google Maps key ([#1408](https://github.com/cellajs/cella/issues/1408)) ([bbff156](https://github.com/cellajs/cella/commit/bbff156544e86997143613e3bec1f7441751fe59))
+* **frontend:** count cells in tables abbreviate from a thousand, with the exact number on hover and in exports ([#1362](https://github.com/cellajs/cella/issues/1362)) ([5561291](https://github.com/cellajs/cella/commit/556129154ed18d82994b01e2c89b7d99d1ccfc46))
+* **frontend:** privacy policy and terms follow the GDPR, and telemetry drops replay, cookies and IPs ([#1409](https://github.com/cellajs/cella/issues/1409)) ([781ba1c](https://github.com/cellajs/cella/commit/781ba1c4ec1ad8863a8e0e09a33f4d53fbf66de8))
+* **frontend:** scroll viewport tab-stop opt-out, and panel separator focus as a lit bar ([#1397](https://github.com/cellajs/cella/issues/1397)) ([40b3f8e](https://github.com/cellajs/cella/commit/40b3f8e06d62573d118475213840dc4aef3f405a))
+* **frontend:** table headers pin below the page's sticky bars by default ([#1369](https://github.com/cellajs/cella/issues/1369)) ([2bf1fe1](https://github.com/cellajs/cella/commit/2bf1fe19469b186ccd4172b8c52479af3d8f5a1f))
+* **frontend:** the tenant sheet has a General and a Connections section, each with its own unsaved badge ([#1390](https://github.com/cellajs/cella/issues/1390)) ([2b18cc5](https://github.com/cellajs/cella/commit/2b18cc58b0c122f5558d6060d0f122efe8d30786))
+* **frontend:** UI tuning: pinned title block, members last seen, preference help, shared Chip ([#1395](https://github.com/cellajs/cella/issues/1395)) ([02186db](https://github.com/cellajs/cella/commit/02186dbb4bb41c27d43a00e24ac610a4c640586a))
+* **infra:** review and apply is one action, and the Owner key is asked only after the plan ([#1360](https://github.com/cellajs/cella/issues/1360)) ([f09f797](https://github.com/cellajs/cella/commit/f09f7972985e8d127065eb87cba3b9a22ee0eeda))
+* **permissions:** the can map counts grants above a channel, and queued mutations carry versioned variables ([#1368](https://github.com/cellajs/cella/issues/1368)) ([4a25b49](https://github.com/cellajs/cella/commit/4a25b49d31cf15c0b9a1666063b3f1c98a08efe1))
+* sync PRs run the heavy CI jobs, engines.node pins Node everywhere, and upstream fixes from raak ([#1411](https://github.com/cellajs/cella/issues/1411)) ([1d2e268](https://github.com/cellajs/cella/commit/1d2e268941e3a96127fabcde950366c24f912de7))
+* **sync:** drop embedding usage counters; counts derive on the client ([#1398](https://github.com/cellajs/cella/issues/1398)) ([2037d7c](https://github.com/cellajs/cella/commit/2037d7cc2689a63152ac642cd7f2ba030fa02a62))
+
+
+### 🐞 Bug fixes
+
+* **dev:** pnpm docker returns once Postgres accepts connections, so the seed after it runs ([#1358](https://github.com/cellajs/cella/issues/1358)) ([8627715](https://github.com/cellajs/cella/commit/8627715a9bcb9e5a1bc87a426a3cb33c6686541d))
+* **frontend:** comboboxes highlight the first match while typing ([#1396](https://github.com/cellajs/cella/issues/1396)) ([2b0104c](https://github.com/cellajs/cella/commit/2b0104c094187ec9b0155f0485e7370db6a9119c))
+* **frontend:** history back returns to the scroll position of the tab that was left ([#1371](https://github.com/cellajs/cella/issues/1371)) ([b907221](https://github.com/cellajs/cella/commit/b907221827b5c0580082c829353c9ff29325d1a2))
+* **infra:** github sync feeds a secret on stdin without a flag gh does not have ([#1373](https://github.com/cellajs/cella/issues/1373)) ([33bf964](https://github.com/cellajs/cella/commit/33bf964c9e6682c5c299eb98795d1c25e44fbe13))
+* **infra:** the CLI names the IAM application whose key it asks for ([#1359](https://github.com/cellajs/cella/issues/1359)) ([60e0fd3](https://github.com/cellajs/cella/commit/60e0fd3bde000d6a6f26bcd269890809d7b1d24a))
+* **infra:** the first deploy of a fresh stack runs to its machines ([#1377](https://github.com/cellajs/cella/issues/1377)) ([22c2c61](https://github.com/cellajs/cella/commit/22c2c6123cb653f8691a8fc13a6b3499a0fea8a0))
+* **infra:** the secret prompt shows no character of the value ([#1376](https://github.com/cellajs/cella/issues/1376)) ([7503a59](https://github.com/cellajs/cella/commit/7503a593c505f31c170f1fe5bd41274818250d71))
+* **openapi:** the spec generates on Node 26.12, and the Tenant sheet story states the sso strategy it needs ([#1406](https://github.com/cellajs/cella/issues/1406)) ([720af7d](https://github.com/cellajs/cella/commit/720af7d3aea120dc252dae6ac2b632aae0027d9e))
+* **permissions:** single reads and batches apply the draft rule of the lists, and nine helper fixes ([#1364](https://github.com/cellajs/cella/issues/1364)) ([974065b](https://github.com/cellajs/cella/commit/974065babcc1c6babd598d8a57b281b958eb0e60))
+* **sync:** product placement follows the hierarchy, and template tests state the config they assume ([#1356](https://github.com/cellajs/cella/issues/1356)) ([d9c633f](https://github.com/cellajs/cella/commit/d9c633f5552356fc8074397a6d0602b75767cac7))
+* the reference's small defects from projectcampus's ledger, and helpers both apps copied ([#1366](https://github.com/cellajs/cella/issues/1366)) ([c053e89](https://github.com/cellajs/cella/commit/c053e8990b6e978f9644655f922235c128e0eae1))
+
+
+### 🔧 Small improvements
+
+* **frontend:** compose channel tiles from ChannelTile parts, grids take renderTile ([#1407](https://github.com/cellajs/cella/issues/1407)) ([9e85787](https://github.com/cellajs/cella/commit/9e857875cd29de8b32de099319cf3b61f95abffe))
+* **frontend:** the editor, Uppy and Yjs leave the boot path again ([#1410](https://github.com/cellajs/cella/issues/1410)) ([22d7c2e](https://github.com/cellajs/cella/commit/22d7c2e3c5ce73898dd6891cbbf9b1a34bc92e6f))
+
+
+### 🧹 Chores
+
+* **deps:** dependency updates, adapted to BlockNote 0.56 and pg-logical-replication 2.6 ([#1413](https://github.com/cellajs/cella/issues/1413)) ([f577290](https://github.com/cellajs/cella/commit/f577290538c022284e449eadea1b134d316a7fc3))
+
+
+### 🧪 Tests
+
+* **frontend:** unmount the pinned-title test editors, so a late ProseMirror timer cannot fail the run ([#1405](https://github.com/cellajs/cella/issues/1405)) ([32345a4](https://github.com/cellajs/cella/commit/32345a4703c99057144035b45cf7dbd9954fce0f))
+
 ## [0.18.1](https://github.com/cellajs/cella/compare/0.18.0...0.18.1) (2026-10-10)
 
 

@@ -19,6 +19,8 @@ export interface BakeOptions {
   registry: string;
   namespace: string;
   tag: string;
+  /** The root package.json `engines.node`: the Node every image's `FROM` uses. */
+  nodeVersion: string;
   /** Path of the build context relative to the bake process cwd (the repo root). */
   context?: string;
   /** The registry tag of each image's layer cache, which only the builder writes (D13); none, no cache. */
@@ -46,7 +48,7 @@ export function bakeDefinition(rows: BuildImageRow[], opts: BakeOptions): { grou
       dockerfile: row.dockerfile,
       ...(row.target ? { target: row.target } : {}),
       tags: [image(row.service)],
-      args: { RELEASE_SHA: opts.tag },
+      args: { RELEASE_SHA: opts.tag, NODE_VERSION: opts.nodeVersion },
       ...cache(row.service),
     };
   }
@@ -54,6 +56,7 @@ export function bakeDefinition(rows: BuildImageRow[], opts: BakeOptions): { grou
     context: `${context === '.' ? '' : `${context}/`}infra/boot`,
     dockerfile: 'Dockerfile',
     tags: [image(BOOT_IMAGE_NAME)],
+    args: { NODE_VERSION: opts.nodeVersion },
     ...cache(BOOT_IMAGE_NAME),
   };
   const services = rows.map((row) => row.service);

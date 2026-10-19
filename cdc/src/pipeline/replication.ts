@@ -11,7 +11,6 @@ import { wsClient } from '../network/websocket-client';
 import { metrics } from '../services/cdc-metrics';
 import { replicationState } from '../services/replication-state';
 import { checkReplicationSetup } from '../services/setup-check';
-import { formatLsn, lsnToBigInt } from '../utils/lsn';
 import { flushHasFailed, handleDataMessage, resetBuffers, scheduleIdleCheck } from './handle-message';
 import { isStalePublicationError } from './replication-errors';
 import { ensureBooksStateRestored, readLostCaseFacts, rebuildAllowed, rebuildBooks, rebuildWasInterrupted } from './verify';
@@ -167,8 +166,8 @@ async function giveUpBacklog(): Promise<string | null> {
   );
   const position = advanced.rows[0]?.position ?? null;
   // The status timer of the next subscription repeats what was acknowledged last: that is the slot's new position now,
-  // never one behind it. One byte back, because an acknowledgement reports the byte after its position.
-  if (position) replicationState.lastAckedLsn = formatLsn(lsnToBigInt(position) - 1n);
+  // never one behind it.
+  if (position) replicationState.lastAckedLsn = position;
   return position;
 }
 

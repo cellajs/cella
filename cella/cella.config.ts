@@ -9,7 +9,7 @@ export default defineConfig({
     upstreamBranch: 'main',
     // upstreamTrack: 'release',
     syncWithPackages: true,
-    packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides', 'exports'],
+    packageJsonSync: ['dependencies', 'devDependencies', 'scripts', 'overrides', 'exports', 'engines', 'packageManager'],
     fileLinkMode: 'file',
   },
 
@@ -22,8 +22,7 @@ export default defineConfig({
   // File overrides
   overrides: {
     // Paths the fork fully owns: never synced, whether existing or new
-    // NOTE: package.jsons, lockfiles, this file are always ignored
-    // NOTE: Modules with `app` owner are also ignored, including their public static asset folder
+    // NOTE: package.jsons, lockfile, this file, modules with `app` owner are also ignored, with their static assets
     ignored: [
       'README.md',
       'infra/compose.gen.yml',
@@ -36,9 +35,6 @@ export default defineConfig({
       'frontend/src/content',
       'frontend/src/routes/routeTree.gen.ts',
       'frontend/src/modules/common/morph-animation',
-      // App identity: brand assets and the app's own locale namespace. cella has no upstream fix
-      // to push into these, so they are never synced. Template-consumed copy lives in common.json,
-      // never in app.json.
       'frontend/public/favicon.ico',
       'frontend/public/favicon.svg',
       'frontend/public/thumbnail.png',
@@ -46,14 +42,13 @@ export default defineConfig({
       'frontend/src/modules/auth/legal/legal-config.ts',
       'locales/en/app.json',
       'locales/nl/app.json',
-      // The app's own error types; the template ships both files empty
       'locales/en/appError.json',
       'locales/nl/appError.json',
-      // Release state is the app's own: create-cella resets the version and moves the changelog to the app's root
       '.github/release-please-manifest.json',
       '.github/release-please-config.json',
-      // Accessibility results are about one product: each app's audit (`pnpm a11y`) writes its own ledger.
       'json/accessibility-conformance.json',
+      'locales/en/about.json',
+      'locales/nl/about.json',
     ],
     // Paths pinned to the app: the app copy always wins, upstream hunks never merge in. Adopt them by hand
     // from the analyze list ("protected but behind upstream").
@@ -71,17 +66,11 @@ export default defineConfig({
       'frontend/src/alert-config.tsx',
       'frontend/src/entity-sync-queries.ts',
       'frontend/src/styling/gradients.css',
-      // Marketing copy: feature lists, pricing, showcases and the screenshots behind them
-      'frontend/src/modules/marketing/marketing-config.tsx',
-      // The pages and states the accessibility audit covers
       'a11y/scope-config.ts',
-      // Where bench attachments live below the organization
       'bench/src/seeds/attachment-home.ts',
-      // The pages and states the marketing screenshots show
       'cella/skills/screenshots/shots-config.mjs',
       'frontend/src/modules/home/home-page.tsx',
       'json/text-blocks.json',
-      'locales/en/about.json',
     ],
   },
 });

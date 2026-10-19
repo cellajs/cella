@@ -9,7 +9,7 @@ import { usersTable } from '#/modules/user/user-db';
 export const supportedOAuthProviders = ['github', 'google', 'microsoft'] as const;
 
 /** Trust class of an external identity: social OAuth, or an institution's SSO federation. */
-export const identityKinds = ['oauth', 'sso'] as const;
+const identityKinds = ['oauth', 'sso'] as const;
 export type IdentityKind = (typeof identityKinds)[number];
 
 /**

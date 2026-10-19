@@ -4,7 +4,7 @@ import type { ActorId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 
 /** Who can act and be named in provenance: a human user, or a service account behind an API key. */
-export const actorKinds = ['user', 'service'] as const;
+const actorKinds = ['user', 'service'] as const;
 export type ActorKind = (typeof actorKinds)[number];
 
 /**

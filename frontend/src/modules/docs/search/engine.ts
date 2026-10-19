@@ -1,6 +1,6 @@
 import { create, insertMultiple, search } from '@orama/orama';
 import type { GenComponentSchema, GenOperationSummary } from 'sdk/docs-types';
-import { markMatches, trimAroundMatch } from '~/modules/docs/search/highlight';
+import { parseTerms, trimAroundMatch } from 'shared/utils/text-match';
 import type { DocsSearchResult, DocsSearchResultType, DocsSearchScope } from '~/modules/docs/search/types';
 
 /** Everything the engine indexes for one docs page. */
@@ -152,7 +152,7 @@ export function createEngine(
     id: doc.id,
     pageId: doc.pageId,
     type: doc.kind,
-    title: doc.kind === 'text' ? markMatches(trimAroundMatch(doc.content, terms), terms) : markMatches(doc.title, terms),
+    title: doc.kind === 'text' ? trimAroundMatch(doc.content, terms) : doc.title,
     breadcrumbs: doc.breadcrumbs,
     to: doc.to,
     params: doc.params,
@@ -171,7 +171,7 @@ export function createEngine(
     },
 
     async search(term: string, scope: DocsSearchScope = 'all'): Promise<DocsSearchResult[]> {
-      const terms = term.toLowerCase().split(/\s+/).filter(Boolean);
+      const terms = parseTerms(term);
       if (!terms.length) return [];
 
       const found = await search(db, {

@@ -1,5 +1,5 @@
 import type { ToastManagerEvent } from '@base-ui/react/toast';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toaster, toastManager } from '~/modules/common/toaster/toaster';
 import { useUIStore } from '~/modules/ui/ui-store';
 
@@ -20,7 +20,8 @@ describe('toaster', () => {
     unsubscribe?.();
     unsubscribe = undefined;
     toaster.close();
-    useUIStore.setState({ keepMessages: false });
+    useUIStore.setState({ contrast: 'system' });
+    vi.unstubAllGlobals();
   });
 
   it('gives string messages a stable id so repeats refresh one toast', () => {
@@ -57,15 +58,24 @@ describe('toaster', () => {
     expect(events.map((event) => event.options.timeout)).toEqual([4_000, 4_000, 10_000, 10_000]);
   });
 
-  it('keeps a toast open when the call asks for it or the reader keeps messages open', () => {
+  it('keeps a toast open when the call asks for it or the reader turned on increased contrast', () => {
     subscribe();
 
     toaster('New version', { timeout: 0 });
-    useUIStore.setState({ keepMessages: true });
+    useUIStore.setState({ contrast: 'more' });
     toaster.success('Saved');
     toaster.error('Upload failed', { timeout: 8_000 });
 
     expect(events.map((event) => event.options.timeout)).toEqual([0, 0, 0]);
+  });
+
+  it('keeps a toast open when the device asks for more contrast, as on signed-out pages', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(prefers-contrast: more)' }));
+    subscribe();
+
+    toaster.success('Saved');
+
+    expect(events.map((event) => event.options.timeout)).toEqual([0]);
   });
 
   it('keeps explicit ids and leaves the id of a non-string message to Base UI', () => {

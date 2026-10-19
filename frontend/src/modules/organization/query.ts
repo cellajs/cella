@@ -21,7 +21,7 @@ import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
 import { defaultOrderFor } from '~/query/basic/get-query-key-sort-order';
-import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
+import { offsetPaging, pageQuery, refetchOnMountForIncluded } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import { preserveIncluded } from '~/query/basic/preserve-included';
 import type { MutationData } from '~/query/types';
@@ -79,7 +79,7 @@ export const organizationsListQueryOptions = ({ include, limit = appConfig.reque
   return infiniteQueryOptions({
     queryKey: keys.list.filtered(filters),
     ...offsetPaging(limit, (offset, signal) => fetchOrganizationsPage({ ...filters, include }, limit, offset, signal)),
-    refetchOnMount: true,
+    refetchOnMount: refetchOnMountForIncluded(include),
   });
 };
 

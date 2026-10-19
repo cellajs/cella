@@ -4,8 +4,18 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useSearchParams } from '~/hooks/use-search-params';
+import { defineFrontendModule } from '~/lib/module';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+// The overlay keys come from the products' registered deep-link params, as the attachment module declares its own.
+defineFrontendModule({
+  name: 'attachments',
+  owner: 'cella',
+  scope: ['frontend'],
+  description: 'test',
+  product: { entityType: 'attachment', deepLinkParam: 'attachmentDialogId' },
+});
 
 type TableSearch = { q?: string };
 

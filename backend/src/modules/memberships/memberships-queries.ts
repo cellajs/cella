@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, inArray, isNull, lte, max, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, isNull, lte, max, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { DbContext, OrgContext, UserContext } from '#/core/context';
@@ -14,7 +14,7 @@ import { lastSeenOrder, memberSelect, userActorJoin } from '#/modules/user/helpe
 import { usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
-import { prepareStringForILikeFilter } from '#/utils/sql';
+import { textSearchFilter } from '#/utils/sql';
 
 interface CountMembershipsByChannelOpts {
   channelType: ChannelEntityType;
@@ -365,7 +365,7 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
   const { db } = ctx.var;
   const { organizationId, entityId, entityType, q, sort, order, offset, limit, role, userIds, includeCounts, includeMfa } = opts;
 
-  const $or = q ? [ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q))] : [];
+  const $or = q ? [textSearchFilter(usersTable.name, q), textSearchFilter(usersTable.email, q)] : [];
 
   const membersFilters: SQL[] = [
     eq(membershipsTable.organizationId, organizationId),

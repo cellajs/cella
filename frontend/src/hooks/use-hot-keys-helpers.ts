@@ -32,9 +32,9 @@ function isExactHotkey(hotkey: Hotkey, event: KeyboardEvent): boolean {
   const { alt, ctrl, meta, mod, shift, key } = hotkey;
   const { altKey, ctrlKey, metaKey, shiftKey, key: pressedKey } = event;
 
-  if (alt !== altKey || (mod && !(ctrlKey || metaKey)) || ctrl !== ctrlKey || meta !== metaKey || shift !== shiftKey) {
-    return false;
-  }
+  // Mod is Ctrl or Meta, whichever the platform uses, so it stands in for both exact checks
+  const modifierMatch = mod ? ctrlKey || metaKey : ctrl === ctrlKey && meta === metaKey;
+  if (alt !== altKey || shift !== shiftKey || !modifierMatch) return false;
 
   const lowerKey = key?.toLowerCase();
   if (lowerKey && (pressedKey.toLowerCase() === lowerKey || event.code.replace('Key', '').toLowerCase() === lowerKey)) {

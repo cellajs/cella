@@ -5,14 +5,14 @@ import { getTextFromBlock } from 'shared/blocknote';
 export const extractKeywords = (...inputs: (string | null | undefined)[]): string => {
   const combined = inputs.filter(Boolean).join(' ');
 
-  const regex = /[a-z0-9]+(?:[-'][a-z0-9]+)?/gi;
+  const regex = /[\p{L}\p{N}]+(?:[-'][\p{L}\p{N}]+)?/gu;
 
   const words = new Set<string>();
   const matches = combined.match(regex) || [];
 
   for (const match of matches) {
     const lowerWord = match.toLowerCase();
-    const cleanedWord = lowerWord.replace(/[^a-z0-9]/g, '');
+    const cleanedWord = lowerWord.replace(/[^\p{L}\p{N}]/gu, '');
     words.add(cleanedWord);
     if (cleanedWord !== lowerWord) words.add(lowerWord);
   }

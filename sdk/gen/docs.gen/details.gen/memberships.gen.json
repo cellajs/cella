@@ -528,7 +528,7 @@
               "itemType": "object",
               "items": {
                 "type": "object",
-                "description": "The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
+                "description": "The user fields shown to every user who shares an organization with this one: name, slug, profile images, description and email address. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
                 "properties": {
                   "id": { "type": "string", "required": true },
                   "name": { "type": "string", "required": true },
@@ -550,7 +550,12 @@
                     "type": ["string", "null"],
                     "required": true
                   },
-                  "email": { "type": "string", "required": true, "format": "email" },
+                  "email": {
+                    "type": "string",
+                    "required": true,
+                    "description": "The primary email address, shown to every user who shares an organization with this one.",
+                    "format": "email"
+                  },
                   "entityType": {
                     "type": "string",
                     "required": true,
@@ -783,7 +788,12 @@
                 "type": "object",
                 "properties": {
                   "id": { "type": "string", "required": true },
-                  "email": { "type": "string", "required": true, "format": "email" },
+                  "email": {
+                    "type": "string",
+                    "required": true,
+                    "description": "The primary email address, shown to every user who shares an organization with this one.",
+                    "format": "email"
+                  },
                   "role": {
                     "type": ["string", "null"],
                     "required": true,

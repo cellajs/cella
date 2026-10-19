@@ -28,14 +28,20 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
     throw new AppError(429, 'restrict_by_org', 'warn', { entityType: 'attachment' });
   }
 
-  const batchStxId = input[0].stx.mutationId;
-  const existing = await checkIdempotency(ctx, attachmentsTable, batchStxId);
-  // A replay of a mutation that already created its rows: the caller gets them back, and `replayed` tells the handler this request created none.
-  if (existing) return { data: await withAuditUsers(ctx, existing), rejectedIds: [] as string[], replayed: true };
+  // Rows an earlier attempt of this create wrote come back as they are; only the other items are created.
+  const replayed = await checkIdempotency(
+    ctx,
+    attachmentsTable,
+    input.map((item) => item.id),
+  );
+  const replayedIds = new Set(replayed.map((row) => row.id));
+  const fresh = input.filter((item) => !replayedIds.has(item.id));
+  // `replayed` tells the handler this request created none.
+  if (fresh.length === 0) return { data: await withAuditUsers(ctx, replayed), rejectedIds: [] as string[], replayed: true };
 
   const currentAttachments = await getOrganizationEntityCount(ctx, { organizationId: organization.id, entityType: 'attachment' });
 
-  if (attachmentRestrictions !== 0 && currentAttachments + input.length > attachmentRestrictions) {
+  if (attachmentRestrictions !== 0 && currentAttachments + fresh.length > attachmentRestrictions) {
     throw new AppError(429, 'restrict_by_org', 'warn', { entityType: 'attachment' });
   }
 
@@ -44,7 +50,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   // claims, so a row never names storage its upload did not use.
   const storage = uploadStorage('attachment');
   const attachmentsToInsert: InsertAttachmentModel[] = [];
-  for (const { stx, ...att } of input) {
+  for (const { stx, ...att } of fresh) {
     // The backend later signs these keys: they must name this organization's uploads.
     if (!namesOwnStorage(att.keys, organization.id)) {
       throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment', meta: { reason: 'storage_key' } });
@@ -82,7 +88,12 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
 
   log.info('Attachments created', { count: createdAttachments.length });
 
-  const attachmentResponses = await withAuditUsers(ctx, createdAttachments);
+  // An attempt of this create running at the same time and committing first leaves this insert without those rows
+  const insertedIds = new Set(createdAttachments.map((row) => row.id));
+  const missingIds = fresh.map((item) => item.id).filter((id) => !insertedIds.has(id));
+  const committedMeanwhile = missingIds.length > 0 ? await checkIdempotency(ctx, attachmentsTable, missingIds) : [];
+
+  const attachmentResponses = await withAuditUsers(ctx, [...replayed, ...createdAttachments, ...committedMeanwhile]);
 
   return { data: attachmentResponses, rejectedIds: [] as string[], replayed: false };
 }

@@ -1,12 +1,5 @@
 import { onModuleRegister } from 'shared/module-registry';
 
-// Bridge module registry to tag registry; a `hidden` module becomes a hidden-kind tag.
-onModuleRegister(({ name, owner, description, scope, hidden }) => {
-  if (scope.includes('backend')) {
-    registerTag({ tag: name, kind: hidden ? 'hidden' : 'module', parent: owner, description });
-  }
-});
-
 /** Tag definition for OpenAPI documentation (forward-compatible with OpenAPI 3.2.0). */
 export interface OpenApiTag {
   tag: string;
@@ -60,3 +53,11 @@ registerTag({
 
 // Per-operation hide: a route adds `'internal'` to its `tags` to drop from docs while staying in the SDK.
 registerTag({ tag: 'internal', kind: 'hidden', description: 'Operations hidden from the public API reference.' });
+
+// Bridge module registry to tag registry; a `hidden` module becomes a hidden-kind tag. Last in the file: the bridge
+// replays modules registered before this file loaded, which reach `registerTag` and must find it initialized.
+onModuleRegister(({ name, owner, description, scope, hidden }) => {
+  if (scope.includes('backend')) {
+    registerTag({ tag: name, kind: hidden ? 'hidden' : 'module', parent: owner, description });
+  }
+});

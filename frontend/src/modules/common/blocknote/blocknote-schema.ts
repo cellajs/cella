@@ -1,4 +1,4 @@
-import { BlockNoteSchema, createCodeBlockSpec, type Dictionary, defaultBlockSpecs, defaultStyleSpecs } from '@blocknote/core';
+import { BlockNoteSchema, createCodeBlockSpec, defaultBlockSpecs, defaultStyleSpecs } from '@blocknote/core';
 import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import { codeBlockConfig, withAttachmentRef } from 'shared/utils/blocknote-schema-configs';
@@ -38,7 +38,7 @@ const applyImageBox = (dom: HTMLElement | DocumentFragment, props: Record<string
 
 /** Decorates the image spec without touching config/propSchema, which must stay in lockstep with the Yjs relay schema; stays a vanilla DOM block so the headless read-only editor can render it. */
 const withImageBox = (spec: typeof defaultBlockSpecs.image) => {
-  type Render = typeof spec.implementation.render;
+  type Render = NonNullable<typeof spec.implementation.render>;
   type ToExternalHTML = NonNullable<typeof spec.implementation.toExternalHTML>;
   // render/toExternalHTML read a `this` context (blockContentDOMAttributes, propSchema), so keep them methods and forward it.
   const baseRender = spec.implementation.render as (...args: Parameters<Render>) => ReturnType<Render>;
@@ -64,6 +64,30 @@ const withImageBox = (spec: typeof defaultBlockSpecs.image) => {
   };
 };
 
+const supportedLanguage = (language: string) =>
+  Object.hasOwn(codeBlockConfig.supportedLanguages, language) ? language : codeBlockConfig.defaultLanguage;
+
+/**
+ * A VS Code paste or a typed fence stores any language id. Outside `supportedLanguages`, BlockNote's language select throws
+ * and its highlighter logs an error on every update, so that block renders and highlights as the default language and keeps its stored prop.
+ */
+const withLanguageFallback = (spec: ReturnType<typeof createCodeBlockSpec>) => {
+  type Render = NonNullable<typeof spec.implementation.render>;
+  const baseRender = spec.implementation.render as (...args: Parameters<Render>) => ReturnType<Render>;
+  const highlight: NonNullable<typeof spec.implementation.meta>['highlight'] = (block) => supportedLanguage(block.props.language);
+
+  return {
+    ...spec,
+    implementation: {
+      ...spec.implementation,
+      meta: { ...spec.implementation.meta, highlight },
+      render(this: unknown, block: Parameters<Render>[0], editor: Parameters<Render>[1]) {
+        return baseRender.call(this, { ...block, props: { ...block.props, language: supportedLanguage(block.props.language) } }, editor);
+      },
+    },
+  };
+};
+
 // Block and inline configs are shared with the Yjs relay seeder (blocknote-seed.ts) and must stay in lockstep for Y.Doc round-tripping.
 export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs }).extend({
   blockSpecs: {
@@ -73,14 +97,14 @@ export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs 
     video: withAttachmentRef(defaultBlockSpecs.video),
     checklistItem: checklistItemBlock(),
     notify: notifyBlock(),
-    codeBlock: createCodeBlockSpec(codeBlockConfig),
+    codeBlock: withLanguageFallback(createCodeBlockSpec(codeBlockConfig)),
   },
   inlineContentSpecs: { mention: MentionSchema },
 });
 
 export const customBlockTypeSwitchItems: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checklistItem'];
 
-export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict)];
+export const getSideMenuItems = (editor: CustomBlockNoteEditor) => [...blockTypeSelectItems(editor)];
 
 // Indexed items (max 9 for quick number-based selection)
 export const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checklistItem', 'notify'];

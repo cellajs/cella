@@ -37,14 +37,14 @@ const intendedDifferences = [
   'supportEmail',
   'securityEmail',
   'gleapToken',
-  'googleMapsKey',
   'maplePublicIngestKey',
   's3.region',
   's3.host',
   'company.',
-  // Fresh-app starting values: yjs and uploads off until the app provisions them, cache versions at v1.
+  // Fresh-app starting values: yjs, uploads and the contact map off until the app provisions them, cache versions at v1.
   'services.yjs.enabled',
   'has.uploadEnabled',
+  'mapStyleUrls.',
   'cookieVersion',
   'clientCacheVersion',
   // A new app declares no federation, so it starts without the `sso` strategy.

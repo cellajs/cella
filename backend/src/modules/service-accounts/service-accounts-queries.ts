@@ -1,4 +1,4 @@
-import { and, count, desc, eq, getColumns, gt, ilike, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, desc, eq, getColumns, gt, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
@@ -6,7 +6,7 @@ import { actorsTable } from '#/modules/actors/actors-db';
 import { insertActors } from '#/modules/actors/actors-queries';
 import { type ApiKeyModel, apiKeySafeColumns, apiKeysTable, type InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import { type InsertServiceAccountModel, type ServiceAccountModel, serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
-import { prepareStringForILikeFilter } from '#/utils/sql';
+import { textSearchFilter } from '#/utils/sql';
 
 interface InTenantOpts {
   tenantId: string;
@@ -41,7 +41,7 @@ interface ListServiceAccountsOpts extends InTenantOpts {
 /** A tenant holds one organization, so tenant scope is organization scope. */
 export async function listServiceAccounts(ctx: DbContext, { tenantId, q, offset, limit }: ListServiceAccountsOpts) {
   const where: SQL[] = [eq(serviceAccountsTable.tenantId, tenantId)];
-  if (q) where.push(ilike(serviceAccountsTable.name, prepareStringForILikeFilter(q)));
+  if (q) where.push(textSearchFilter(serviceAccountsTable.name, q));
 
   const itemsQuery = ctx.var.db
     .select(serviceAccountSelect)

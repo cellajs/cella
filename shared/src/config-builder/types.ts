@@ -122,8 +122,8 @@ export interface CompanyConfig {
   city: string;
   country: string;
   registration: string;
-  bankAccount: string;
-  googleMapsUrl: string;
+  vatNumber: string;
+  directionsUrl: string;
   scheduleCallUrl: string;
   socialUrl: string;
   blueskyHandle: string;
@@ -269,7 +269,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   localBlobStorage: LocalBlobStorageConfig;
 
   gleapToken: string;
-  googleMapsKey: string;
+  mapStyleUrls: { light: string; dark: string };
   matrixURL: string;
   maplePublicIngestKey: string;
 

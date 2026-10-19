@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { context, propagation, SpanStatusCode, trace } from '@opentelemetry/api';
+import { context, propagation, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createOtelSDK } from './otel.ts';
@@ -173,6 +173,42 @@ describe('createOtelSDK', () => {
     expect(redacted?.name).toBe('GET /auth/invoke-token/magic/[REDACTED]');
     expect(redacted?.attributes['url.full']).toBe('https://api.example.com/auth/invoke-token/magic/[REDACTED]?page=2');
     expect(redacted?.attributes['url.query']).toBe('token=[REDACTED]&page=2');
+  });
+
+  it("must not export the caller's IP address", async () => {
+    const exported: ReadableSpan[] = [];
+    const otel = createOtelSDK({
+      serviceName: 'test-service',
+      traceExporter: collectingExporter(exported),
+      autoInstrumentations: false,
+      flushOnShutdown: true,
+    });
+    otel.start();
+
+    // The attributes the HTTP instrumentation sets on a server span, plus the request id the API captures.
+    trace
+      .getTracer('test')
+      .startSpan('GET /me', {
+        kind: SpanKind.SERVER,
+        attributes: {
+          'client.address': '203.0.113.7',
+          'network.peer.address': '198.51.100.2',
+          'network.peer.port': 51234,
+          'http.client_ip': '203.0.113.7',
+          'http.request.method': 'GET',
+          'http.response.header.x-request-id': ['request-id-1'],
+        },
+      })
+      .end();
+    await otel.shutdown();
+
+    const text = exportedText(exported);
+    expect(text).not.toContain('203.0.113.7');
+    expect(text).not.toContain('198.51.100.2');
+    expect(exported[0]?.attributes).not.toHaveProperty('network.peer.port');
+    // Positive control: the request id and the rest of the span survive.
+    expect(exported[0]?.attributes['http.response.header.x-request-id']).toEqual(['request-id-1']);
+    expect(exported[0]?.attributes['http.request.method']).toBe('GET');
   });
 
   it('must not export the values of a failed query via an exception event or the status', async () => {

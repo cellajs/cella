@@ -49,7 +49,7 @@ describe('validatePlacement', () => {
   });
 
   it('asks for an id where the organization is no place for the row', () => {
-    expect(validatePlacement(ITEM, {}, { hierarchy: mixed })?.message).toMatch(/^Missing placement/);
+    expect(validatePlacement(ITEM, {}, { hierarchy: mixed })?.type).toBe('home_required');
     expect(validatePlacement(ITEM, { courseId: uuid(1) }, { hierarchy: mixed })).toBeNull();
     expect(validatePlacement(ITEM, { courseSectionId: uuid(2) }, { hierarchy: mixed })).toBeNull();
     expect(validatePlacement(ITEM, {}, { hierarchy: strict })?.path).toEqual(['projectId']);
@@ -57,7 +57,7 @@ describe('validatePlacement', () => {
 
   it('refuses two ids, naming the deepest', () => {
     const issue = validatePlacement(ITEM, { courseId: uuid(1), courseSectionId: uuid(2) }, { hierarchy: mixed });
-    expect(issue).toEqual({ path: ['courseSectionId'], message: expect.stringMatching(/^Ambiguous placement/) });
+    expect(issue).toEqual({ path: ['courseSectionId'], type: 'ambiguous_placement', message: expect.any(String) });
   });
 });
 
@@ -97,10 +97,13 @@ describe('resolvePlacement', () => {
   });
 
   it('refuses what the schema check refuses, so a strict column never holds a null', async () => {
-    await expect(resolvePlacement(ctx, ITEM, {}, { hierarchy: strict, resolveHome })).rejects.toMatchObject({ status: 400, type: 'invalid_request' });
+    await expect(resolvePlacement(ctx, ITEM, {}, { hierarchy: strict, resolveHome })).rejects.toMatchObject({ status: 400, type: 'home_required' });
     await expect(resolvePlacement(ctx, ITEM, {}, { hierarchy: anyDepth, requireChannel: true, resolveHome })).rejects.toMatchObject({ status: 400 });
     const twoIds = { courseId: uuid(1), courseSectionId: uuid(2) };
-    await expect(resolvePlacement(ctx, ITEM, twoIds, { hierarchy: anyDepth, resolveHome })).rejects.toMatchObject({ status: 400 });
+    await expect(resolvePlacement(ctx, ITEM, twoIds, { hierarchy: anyDepth, resolveHome })).rejects.toMatchObject({
+      status: 400,
+      type: 'ambiguous_placement',
+    });
   });
 
   it('homes a row without an id in the organization: every column null, no lookup', async () => {

@@ -214,6 +214,21 @@ describe('list query factories', () => {
   });
 });
 
+describe('included parts on mount', () => {
+  const cached = (rows: { included?: Record<string, unknown> }[]) => ({ state: { data: { pages: [{ items: rows, total: rows.length }] } } });
+
+  it('refetches a fresh list missing an asked-for part, and only then', () => {
+    const askingForBoth = organizationsListQueryOptions({ include: 'counts,members' }).refetchOnMount as (query: unknown) => unknown;
+
+    expect(organizationsListQueryOptions({}).refetchOnMount).toBe(true);
+    expect(organizationsListQueryOptions({ include: 'membership' }).refetchOnMount).toBe(true);
+    expect(askingForBoth(cached([{ included: {} }]))).toBe('always');
+    expect(askingForBoth(cached([{ included: { counts: {} } }]))).toBe('always');
+    expect(askingForBoth(cached([{ included: { counts: {}, members: [] } }]))).toBe(true);
+    expect(askingForBoth(cached([]))).toBe(true);
+  });
+});
+
 describe('export fetchers', () => {
   it('organizations: order follows displayOrder and the rows include counts and my membership', async () => {
     await fetchOrganizationsForExport({ limit: 1000, offset: 2000 });

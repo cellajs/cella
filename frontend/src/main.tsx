@@ -16,6 +16,7 @@ import { reportReactError } from '~/lib/maple';
 import { AppRouter } from '~/modules/common/app/app-router';
 import { assertSurfaces } from '~/modules/common/page/tab-nav';
 import { QueryClientProvider } from '~/query/provider';
+import { canonicalOriginUrl, leaveForCanonicalOrigin } from '~/utils/canonical-origin';
 import { initFaviconBadge } from '~/utils/init-favicon-badge';
 import { initViewportObserver } from '~/utils/viewport-observer';
 
@@ -45,21 +46,28 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
   });
 }
 
-ReactDOM.createRoot(root, {
-  onUncaughtError: (error, errorInfo) => reportReactError('uncaught', error, errorInfo.componentStack),
-  onCaughtError: (error, errorInfo) => reportReactError('boundary', error, errorInfo.componentStack),
-}).render(
-  <StrictMode>
-    <Themer />
-    {/* size="1rem" keeps the emitted width/height attributes truthful: they mirror the
+const canonicalUrl = canonicalOriginUrl(window.location, appConfig.frontendUrl, appConfig.mode);
+
+if (canonicalUrl) {
+  // No render, so this host registers no service worker of its own.
+  void leaveForCanonicalOrigin(canonicalUrl);
+} else {
+  ReactDOM.createRoot(root, {
+    onUncaughtError: (error, errorInfo) => reportReactError('uncaught', error, errorInfo.componentStack),
+    onCaughtError: (error, errorInfo) => reportReactError('boundary', error, errorInfo.componentStack),
+  }).render(
+    <StrictMode>
+      <Themer />
+      {/* size="1rem" keeps the emitted width/height attributes truthful: they mirror the
         `:where(svg.lucide)` CSS default, not lucide's misleading px 24. Sizing itself
         stays class-based (icon-* utilities); classes override both the rule and the attrs.
         The cast bridges a lucide-react typing gap: LucideConfig narrows size to number,
         while the icons consuming the context accept LucideProps' string | number. */}
-    <LucideProvider size={'1rem' as unknown as number} strokeWidth={appConfig.theme.strokeWidth}>
-      <QueryClientProvider>
-        <AppRouter />
-      </QueryClientProvider>
-    </LucideProvider>
-  </StrictMode>,
-);
+      <LucideProvider size={'1rem' as unknown as number} strokeWidth={appConfig.theme.strokeWidth}>
+        <QueryClientProvider>
+          <AppRouter />
+        </QueryClientProvider>
+      </LucideProvider>
+    </StrictMode>,
+  );
+}

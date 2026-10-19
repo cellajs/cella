@@ -55,9 +55,13 @@ const FEATURE_LIBS: [name: string, packages: RegExp][] = [
   ['media', /^(media-chrome|player\.style)$/],
   ['gleap', /^gleap$/],
   ['react-scan', /^react-scan$/],
-  ['maps', /^(@vis\.gl|@googlemaps)/],
+  ['maps', /^maplibre-gl$/],
   ['uppy', /^(@uppy|@transloadit)/],
+  ['replay', /^(rrweb|@rrweb\/[\w-]+|rrweb-snapshot)$/],
 ];
+
+/** The Maple SDK's session replay module: it imports rrweb, and the SDK reaches it by dynamic import only when replay is on. */
+const MAPLE_REPLAY = /[\\/]@maple-dev[\\/]browser[\\/]dist[\\/]replay-session-/;
 
 /** The npm package a module id belongs to, or undefined outside node_modules. */
 const packageOf = (id: string) => {
@@ -71,7 +75,7 @@ const packageOf = (id: string) => {
  * match them by folder, and claimed by the on-demand group last, so each forms its own lazy chunk.
  */
 const ON_DEMAND_APP =
-  /[\\/]src[\\/]modules[\\/](common[\\/](blocknote|uploader)[\\/]|common[\\/]gleap-support|common[\\/]form-fields[\\/]blocknote|attachment[\\/](render[\\/]|offline[\\/]upload-service))/;
+  /[\\/]src[\\/]modules[\\/](common[\\/](blocknote|uploader)[\\/]|common[\\/]gleap-support|common[\\/]contact-form[\\/]contact-form-map|common[\\/]form-fields[\\/]blocknote|attachment[\\/](render[\\/]|offline[\\/]upload-service)|auth[\\/]unsaved-edits-dialog)/;
 
 /**
  * Plain modules under blocknote/ that boot-time code reads: the Yjs field registry (the cache), the document store, its
@@ -220,14 +224,15 @@ const viteConfig = {
               // keeps the lifecycle of whatever imports it. It runs before the feature libraries so
               // that a shared package cannot be captured into one of them: react-dom landed inside
               // the editor chunk that way, and every module needing React then booted the editor.
-              // The feature packages are excluded so the groups below still claim them.
+              // The feature packages are excluded so the groups below still claim them, and the Maple
+              // replay module so it forms its own lazy chunk with rrweb.
               name: (id: string) => {
                 const pkg = packageOf(id);
                 return pkg ? `v-${pkg.replace(/[^\w-]/g, '-')}` : null;
               },
               test: (id: string) => {
                 const pkg = packageOf(id);
-                return Boolean(pkg) && !FEATURE_LIBS.some(([, packages]) => packages.test(pkg as string));
+                return Boolean(pkg) && !MAPLE_REPLAY.test(id) && !FEATURE_LIBS.some(([, packages]) => packages.test(pkg as string));
               },
               minSize: 0,
             },
@@ -291,9 +296,16 @@ const viteConfig = {
               minSize: 0,
             },
             {
+              // Yjs helpers with no BlockNote behind them. Claimed before the on-demand group, whose editor
+              // modules would otherwise capture them: the sign-out check reads them and must not load the editor.
+              name: 'yjs-app',
+              test: /[\\/]common[\\/]blocknote[\\/](ydoc-label|yjs-connections|yjs-http|yjs-resync|query|unsaveable-notices)\./,
+              minSize: 0,
+            },
+            {
               // ── On-demand app code, last ──────────────────────────────────────────────────────
-              // The blocknote wrappers and the form field that renders them, the uploader, the chat
-              // widget, and the attachment renderers behind `lazyNamed`. Claimed after every group
+              // The blocknote wrappers and the form field that renders them, the uploader, the chat widget, the contact
+              // map, the sign-out check for unsaved edits, and the attachment renderers behind `lazyNamed`. Claimed after every group
               // above, because they import the UI primitives, the query layer and the attachment
               // helpers, and a group captures what it matches along with its dependencies.
               name: (id: string) => {
@@ -304,6 +316,8 @@ const viteConfig = {
                 if (/[\\/]attachment[\\/]offline[\\/]upload-service/.test(id)) return 'upload-service';
                 if (/[\\/]common[\\/]uploader[\\/]/.test(id)) return 'uploader';
                 if (/[\\/]common[\\/]gleap-support/.test(id)) return 'gleap-support';
+                if (/[\\/]common[\\/]contact-form[\\/]/.test(id)) return 'contact-map';
+                if (/[\\/]auth[\\/]unsaved-edits-dialog/.test(id)) return 'unsaved-edits';
                 return 'editor-app';
               },
               minSize: 0,
@@ -478,8 +492,9 @@ viteConfig.plugins?.push(
     },
     injectManifest: {
       globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-      // `grammars-*` is the codeSplitting group for shiki/tm-grammars: runtime-loaded, not precached
-      globIgnores: ['**/grammars-*.js', '**/static/common/flags/**/*'],
+      // `grammars-*` is the codeSplitting group for shiki/tm-grammars: runtime-loaded, not precached.
+      // `replay-*` is Maple's session replay with rrweb, loaded only when replay is on.
+      globIgnores: ['**/grammars-*.js', '**/replay-*.js', '**/static/common/flags/**/*'],
       maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
     },
   }),

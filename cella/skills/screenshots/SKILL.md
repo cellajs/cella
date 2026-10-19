@@ -103,7 +103,7 @@ this skill inside the raak checkout, whose shot list writes the four files to it
 - The color mode and the one-time UI go into the persisted ui store, whose key carries the app slug
   (`frontend/src/modules/ui/ui-store.ts`), derived from the session cookie name. `themer.tsx` turns `mode` into the
   `.light` / `.dark` class.
-- The menu sheet is the sheeter's `#nav-sheet`, opened with `Shift+M` (`Shift+F` search, `Shift+A` account). The
+- The menu sheet is the sheeter's `#nav-sheet`, opened with `Alt+M` (`ControlOrMeta+K` search, `Alt+A` account). The
   `#<id>-nav` buttons are the mobile bottom bar's only: the desktop sidebar's carry no id, so a desktop shot that
   reaches for one waits 30 seconds and fails. Account sections are anchored as `#spy-<tool id>-anchor-wrap`.
 - The sheet sits beside the content only from `2xl` up, with "Keep menu open" on (`isDesktop` in `app-nav.tsx`). Below

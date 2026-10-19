@@ -1,4 +1,4 @@
-import type { AccessibilityReview, CollectedDataCategory, LegalTexts, SharedDataType, Subprocessor } from '~/modules/auth/legal/legal-types';
+import type { AccessibilityReview, LegalTexts, SharedDataType, Subprocessor } from '~/modules/auth/legal/legal-types';
 import { lazyNamed } from '~/utils/lazy-named';
 
 export type LegalSubject = keyof typeof legalConfig;
@@ -10,17 +10,13 @@ export const legalConfig = {
     label: 'c:privacy_policy',
     sections: [
       { id: 'overview', label: null },
-      { id: 'introduction', label: 'Introduction' },
-      { id: 'data-we-collect', label: 'Data we collect' },
-      { id: 'how-we-use-data', label: 'How we use data' },
-      { id: 'data-processing', label: 'Data processing' },
-      { id: 'cookies', label: 'Cookies' },
-      { id: 'data-retention', label: 'Data retention' },
+      { id: 'how-we-use-data', label: 'Data we process' },
+      { id: 'data-processing', label: 'Who sees your data' },
+      { id: 'subprocessors', label: 'Subprocessors' },
+      { id: 'cookies', label: 'Cookies and storage' },
       { id: 'security', label: 'Security' },
       { id: 'your-rights', label: 'Your rights' },
       { id: 'changes', label: 'Policy changes' },
-      { id: 'subprocessors', label: 'Subprocessors' },
-      { id: 'processed-data-types', label: 'Processed data' },
     ],
   },
   terms: {
@@ -28,9 +24,7 @@ export const legalConfig = {
     label: 'c:terms_of_use',
     sections: [
       { id: 'overview', label: null },
-      { id: 'introduction', label: 'Introduction' },
       { id: 'agreement', label: 'Agreement' },
-      { id: 'privacy', label: 'Privacy' },
       { id: 'accounts', label: 'Accounts' },
       { id: 'acceptable-use', label: 'Acceptable use' },
       { id: 'intellectual-property', label: 'Intellectual property' },
@@ -48,13 +42,9 @@ export const legalConfig = {
     label: 'c:accessibility',
     sections: [
       { id: 'overview', label: null },
-      { id: 'commitment', label: 'Our commitment' },
       { id: 'what-you-can-do', label: 'What you can do' },
       { id: 'known-limitations', label: 'Known limitations' },
-      { id: 'third-party-content', label: 'Third-party content' },
       { id: 'how-we-test', label: 'How we test' },
-      { id: 'conformance-report', label: 'Conformance report' },
-      { id: 'feedback', label: 'Feedback' },
     ],
   },
 } as const satisfies LegalTexts;
@@ -63,25 +53,6 @@ export const legalSubjects = Object.keys(legalConfig) as [LegalSubject, ...Legal
 
 /** Default legal subject used when no or an unknown subject is requested. */
 export const defaultLegalSubject = legalSubjects[0];
-
-/** Personal data categories collected by this app; update when data collection changes. */
-export const collectedData: CollectedDataCategory[] = [
-  {
-    label: 'Account information',
-    description: 'When you create an account we collect:',
-    items: ['Name', 'Email address', 'Authentication credentials'],
-  },
-  {
-    label: 'User-generated content',
-    description: 'Content you or your organization members create, upload or share through the Service, including:',
-    items: ['Tasks, projects and workspace data', 'Attachments (images, files, videos)', 'Profile information (name, avatar, biography)'],
-  },
-  {
-    label: 'Automatically collected data',
-    description: 'When you interact with the Service we automatically collect:',
-    items: ['Browser type and version', 'Anonymized count of pages and data requested', 'Anonymized IP addresses (for rate limiting and security)'],
-  },
-];
 
 /** Subprocessors handling personal data; `optional: true` marks services an app can filter out. */
 export const subprocessors: Subprocessor[] = [
@@ -135,69 +106,114 @@ export const subprocessors: Subprocessor[] = [
     dpa: { signed: true, effectiveDate: '2023-01-01', url: 'https://gleap.io/privacy-policy/' },
     optional: true,
   },
+  {
+    slug: 'maple',
+    name: 'Maple',
+    legalName: 'Makisuo, Inc.',
+    website: 'https://maple.dev/',
+    servicesProvided: ['Error and performance monitoring'],
+    processingActivities: ['Collecting errors, traces and performance data'],
+    categoriesOfPersonalData: ['IP addresses', 'User ids', 'Browser data', 'Pages visited'],
+    purposes: ['Finding and fixing errors and slow pages'],
+    country: 'United States',
+    dpa: { signed: false, effectiveDate: '', url: '' },
+    optional: true,
+  },
+  {
+    slug: 'onedollarstats',
+    name: 'One Dollar Stats',
+    legalName: 'One Dollar Stats',
+    website: 'https://onedollarstats.com/',
+    servicesProvided: ['Page visit statistics'],
+    processingActivities: ['Counting page visits without cookies'],
+    categoriesOfPersonalData: ['Hashed IP address and browser', 'Pages visited'],
+    purposes: ['Counting visits to our pages'],
+    country: 'Ukraine (servers in Finland)',
+    dpa: { signed: false, effectiveDate: '', url: '' },
+  },
 ];
 
 /** Shared data types describing personal data flows; `optional: true` marks filterable entries. */
 export const sharedDataTypes: SharedDataType[] = [
   {
     slug: 'user_profile',
-    name: 'User profile data',
-    purpose: 'Store user identity and preferences for authentication and personalization.',
-    legalBasis: 'contract',
-    dataCategories: ['name', 'email address', 'avatar', 'language preference'],
+    name: 'Profile',
+    purpose: 'Identify you, sign you in and remember your preferences.',
+    legalBasis: 'Contract',
+    dataCategories: ['name', 'email address', 'avatar', 'bio', 'passkeys (public key only)', 'authenticator app setup', 'preferences'],
     dataSubjects: ['end users'],
     storageLocation: 'Primary database (EU)',
-    retentionPeriod: 'Retained until account deletion, then permanently removed within 90 days.',
+    retentionPeriod: 'Until you delete your account: then gone from the Service at once and deleted within 90 days.',
   },
   {
     slug: 'auth_sessions',
-    name: 'Authentication sessions',
-    purpose: 'Maintain authenticated sessions and manage secure access.',
-    legalBasis: 'contract',
-    dataCategories: ['session tokens', 'OAuth tokens', 'refresh tokens'],
+    name: 'Sessions and devices',
+    purpose: 'Keep you signed in, show your active sessions, warn you about sign-ins from a new device and limit abuse.',
+    legalBasis: 'Contract and legitimate interest',
+    dataCategories: ['hashed session token', 'device and browser', 'hashed IP address with country and network', 'hashed device id'],
     dataSubjects: ['end users'],
     storageLocation: 'Primary database (EU)',
-    retentionPeriod: 'Tokens expire on logout or after 30 days of inactivity.',
+    retentionPeriod: 'Sessions last a week and are deleted 30 days after they end. Known devices: until you delete your account.',
   },
   {
     slug: 'organization_membership',
-    name: 'Organization membership',
-    purpose: 'Manage roles, permissions and membership within organizations.',
-    legalBasis: 'contract',
-    dataCategories: ['membership role', 'permissions', 'join date'],
+    name: 'Memberships',
+    purpose: 'Manage roles and permissions within organizations.',
+    legalBasis: 'Contract',
+    dataCategories: ['organizations you belong to', 'role', 'join date', 'last seen'],
     dataSubjects: ['organization members'],
     storageLocation: 'Primary database (EU)',
-    retentionPeriod: 'Retained until membership is removed or organization is deleted.',
+    retentionPeriod: 'Until the membership or organization is removed.',
   },
   {
     slug: 'user_uploads',
-    name: 'User file uploads',
-    purpose: 'Store and deliver user-uploaded files within the workspace.',
-    legalBasis: 'contract',
-    dataCategories: ['user files', 'file metadata (names, timestamps, owner ID)'],
+    name: 'Files',
+    purpose: 'Store and deliver files you upload.',
+    legalBasis: 'Contract',
+    dataCategories: ['files', 'file name, time and owner'],
     dataSubjects: ['end users', 'organization members'],
     storageLocation: 'Scaleway Object Storage (EU)',
-    retentionPeriod: 'Files retained until deleted by the user or up to 90 days after account deletion.',
+    retentionPeriod: 'Until deleted, at the latest 90 days after account deletion.',
+  },
+  {
+    slug: 'activity',
+    name: 'Activity',
+    purpose: 'Sync changes between devices, notify you and track what you have seen.',
+    legalBasis: 'Contract',
+    dataCategories: ['history of changes', 'notifications', 'seen items'],
+    dataSubjects: ['end users'],
+    storageLocation: 'Primary database (EU)',
+    retentionPeriod: '90 days.',
   },
   {
     slug: 'transactional_emails',
-    name: 'Transactional emails',
-    purpose: 'Send system emails such as verification and notifications.',
-    legalBasis: 'contract',
+    name: 'Emails',
+    purpose: 'Send verification, sign-in and notification emails.',
+    legalBasis: 'Contract',
     dataCategories: ['email address', 'email content', 'delivery status'],
     dataSubjects: ['end users'],
     storageLocation: 'Brevo (EU)',
-    retentionPeriod: 'Email logs retained for 30 days.',
+    retentionPeriod: 'Delivery logs: 30 days.',
+  },
+  {
+    slug: 'page_visits',
+    name: 'Page visits',
+    purpose: 'Count visits to our pages.',
+    legalBasis: 'Legitimate interest',
+    dataCategories: ['pages visited', 'referrer', 'country', 'hash of IP address and browser'],
+    dataSubjects: ['visitors', 'end users'],
+    storageLocation: 'One Dollar Stats (Finland)',
+    retentionPeriod: 'The visitor hash changes daily.',
   },
   {
     slug: 'error_data',
-    name: 'Error, performance and session data',
-    purpose: 'Collect application errors, performance metrics and masked session replays for reliability.',
-    legalBasis: 'legitimate interest',
-    dataCategories: ['error stacktraces', 'browser metadata', 'masked session recordings', 'anonymized IP addresses'],
+    name: 'Monitoring',
+    purpose: 'Find and fix errors and slow pages.',
+    legalBasis: 'Legitimate interest',
+    dataCategories: ['errors', 'performance data', 'pages visited', 'browser', 'IP address', 'user and session id in server logs'],
     dataSubjects: ['end users'],
-    storageLocation: 'Maple.dev (EU/US)',
-    retentionPeriod: 'Retained per Maple plan settings (default 30 days).',
+    storageLocation: 'Maple (US)',
+    retentionPeriod: '30 days by default.',
     optional: true,
   },
 ];
@@ -227,7 +243,7 @@ export const accessibilityReview: AccessibilityReview = {
       description: 'Short confirmation messages close by themselves after 4 seconds.',
       criteria: ['2.2.1'],
       workaround:
-        "Signed in, you can turn that off under Preferences with 'Keep messages open'. On the public pages, hover the message or press F6 to hold it.",
+        'With more contrast, turned on under Preferences or on your device, they stay until you close them. You can also hover a message or press F6 to hold it.',
     },
     {
       description: 'Setting up an authenticator app must be finished within 5 minutes.',

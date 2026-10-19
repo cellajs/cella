@@ -16,9 +16,6 @@ on:
         required: true
         type: string
 
-env:
-  NODE_VERSION: '26'
-
 # Jobs that hold secrets, and `setup`, whose outputs they interpolate, install without the pnpm cache: every job
 # saves the store under one lockfile-hashed key, so a secretless job running third-party build code could plant a
 # package there (guarded by infra/tests/unit/ci-workflows.test.ts).
@@ -47,7 +44,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: package.json
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra... --filter shared...
@@ -105,7 +102,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: package.json
 
       # Only the workspaces the deploy command runs: no app dependencies, so
       # none of their install scripts run in the one job that holds the deploy
@@ -155,7 +152,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: package.json
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --filter infra... --filter shared...

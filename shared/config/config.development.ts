@@ -24,9 +24,5 @@ export const development = {
     surfconext: { issuer: 'https://connect.test.surfconext.nl', idpMetadataUrl: 'https://metadata.test.surfconext.nl/idps-metadata.xml' },
   },
 
-  // Shared Cella Maps key is referer-restricted to official domains and rejects localhost.
-  // Leave empty locally so the contact-form map gracefully skips rendering. Set your own key to enable.
-  googleMapsKey: '',
-
   s3: { publicBucket: 'cella-shared-public', privateBucket: 'cella-shared-private' },
 } satisfies DeepPartial<typeof _default>;

@@ -3,7 +3,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import pg from 'pg';
 import { hierarchy } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
-import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { buildTestEntityHierarchyPlan, toStrictHomePlan } from 'shared/testing/entity-hierarchy';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { DocScope } from '../../constants';
@@ -22,7 +22,7 @@ const tenantId = 'yjs-revoke-tenant';
 const organizationId = '50000000-0000-4000-a000-000000000001';
 const member = randomUUID();
 const attachmentId = randomUUID();
-const plan = buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId, makeChannelId: () => randomUUID() });
+const plan = toStrictHomePlan(buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId, makeChannelId: () => randomUUID() }));
 const scope: DocScope = { entityType: 'attachment', entityId: attachmentId, tenantId, organizationId };
 
 let admin: pg.Client;

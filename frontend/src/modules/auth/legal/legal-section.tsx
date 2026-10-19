@@ -13,7 +13,7 @@ export function LegalSection({ id, label, children }: LegalSectionProps) {
 
   return (
     <section id={isOverview ? undefined : `spy-${id}`} aria-label={label ?? undefined} className={isOverview ? '' : 'mb-4 pt-4'}>
-      {label && <h3 className="font-medium">{label}</h3>}
+      {label && <h3>{label}</h3>}
       {children}
     </section>
   );

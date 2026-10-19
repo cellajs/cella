@@ -19,8 +19,8 @@ import { frontendBuildEnv } from './print-frontend-build-env';
 import { releaseEntryPrefix } from './release-files';
 import { readStandingKey, stageHandoffBundle } from './stage-generation-keys';
 
-/** The node image the builder installs and builds the workspace in: the boot image's base. */
-const NODE_IMAGE = 'node:26-bookworm-slim';
+/** The node image the builder installs and builds the workspace in: the boot image's base, at the root `engines.node`. */
+const nodeImage = (nodeVersion: string) => `node:${nodeVersion}-bookworm-slim`;
 // 8 vCPUs: the bake and the frontend build run side by side; about two cents a build.
 const BUILDER_TYPE = 'POP2-HC-8C-16G';
 const BUILDER_IMAGE = 'docker';
@@ -283,10 +283,15 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const { loadEngineConfig } = await import('../config/engine-config');
   const appConfig = await loadEngineConfig();
   const { naming, region, zone } = deriveInfra(appConfig);
-  const rootPackage = JSON.parse(await readFile(join(infraDir, '..', 'package.json'), 'utf8')) as { packageManager?: string };
+  const rootPackage = JSON.parse(await readFile(join(infraDir, '..', 'package.json'), 'utf8')) as {
+    packageManager?: string;
+    engines?: { node?: string };
+  };
   const repository = repositoryUrl();
   const pnpmVersion = rootPackage.packageManager?.match(/^pnpm@(.+)$/)?.[1];
   if (!pnpmVersion) throw new Error("the builder installs the pnpm the root package.json's 'packageManager' names");
+  const nodeVersion = rootPackage.engines?.node;
+  if (!nodeVersion) throw new Error("the builder builds on the Node the root package.json's 'engines.node' names");
 
   const registry = `rg.${region}.scw.cloud`;
   const rows = parseBuildRows(buildImagesJson);
@@ -318,10 +323,10 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
             BUNDLE_ID: bundleId,
             BOOT_AK: boot.accessKey,
             BOOT_SK: boot.secretKey,
-            NODE_IMAGE,
+            NODE_IMAGE: nodeImage(nodeVersion),
           },
           frontendEnv: frontendBucket ? frontendBuildEnv(mode, servicesJson) : {},
-          bake: bakeDefinition(rows, { registry, namespace: naming.registryNamespace, tag: sha, context: '/build', cacheTag }),
+          bake: bakeDefinition(rows, { registry, namespace: naming.registryNamespace, tag: sha, nodeVersion, context: '/build', cacheTag }),
           container: containerScript({ pnpmVersion, sha, frontendBucketUrl }),
         }),
     },

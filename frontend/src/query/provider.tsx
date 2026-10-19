@@ -7,7 +7,7 @@ import { useUIStore } from '~/modules/ui/ui-store';
 import { initChannelEnrichment } from '~/query/enrichment/init-enrichment';
 // Side-effect import: starts the auth-driven localUserDb lifecycle and eager kv hydration before any route beforeLoad runs.
 import '~/query/local-user-storage';
-import { initMutationDefaults } from '~/query/mutation-registry';
+import { initMutationDefaults, warnMutationsWithoutDefaults } from '~/query/mutation-registry';
 import { cleanupOrphanedSessions, persister, sessionPersister, shouldPersistQuery } from '~/query/persister';
 import { markCacheRestored, markReplayingMutations, queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
 import { waitForActiveCatchup } from '~/query/realtime/stream-store';
@@ -119,6 +119,7 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
       }}
       onSuccess={() => {
         markCacheRestored();
+        warnMutationsWithoutDefaults(queryClient);
         // Paused mutations resume after catchup so replays read reconciled data; no blanket invalidation, since that would refetch every cached list on startup.
         waitForActiveCatchup().then(() => {
           markReplayingMutations();

@@ -1,3 +1,4 @@
+# check=skip=InvalidDefaultArgInFrom
 # =============================================================================
 # Production Dockerfile (multi-target: backend | cdc | yjs)
 # =============================================================================
@@ -5,10 +6,10 @@
 # `--target <name>` (see `target` in infra/config/services.config.ts, threaded
 # through print-deploy-env into .github/workflows/deploy.yml). Shared stages:
 #
-#   base    : node:26-alpine + pnpm from npm, at the version the root
-#              package.json `packageManager` field pins
-#   runtime : node:26-alpine + non-root `app` user + RELEASE_SHA/NODE_ENV,
-#              the parent of every production target
+#   base    : node:<NODE_VERSION>-alpine + pnpm from npm, at the version the
+#              root package.json `packageManager` field pins
+#   runtime : node:<NODE_VERSION>-alpine + non-root `app` user +
+#              RELEASE_SHA/NODE_ENV, the parent of every production target
 #
 #   manifests: all workspace manifests + lockfile (shared by every service;
 #              `--filter` scopes each install, and lockfile changes already
@@ -18,12 +19,19 @@
 # tsup build) → `<svc>` (production target). Targets: `backend` (also reused by
 # the `mcp`, `oauth` and `jobs` services through `reusesImageOf`, each with its
 # own MODE and port), `cdc`, `yjs`. Not used in local dev.
+#
+# NODE_VERSION is the root package.json `engines.node`, so the images run the
+# Node CI tested. It has no default (the `check=skip` line on top keeps Docker
+# from warning about that); a local build passes it:
+#   docker build --build-arg NODE_VERSION="$(jq -r .engines.node package.json)" --target backend .
 # =============================================================================
+
+ARG NODE_VERSION
 
 # -----------------------------------------------------------------------------
 # Shared: base image with pnpm
 # -----------------------------------------------------------------------------
-FROM node:26-alpine AS base
+FROM node:${NODE_VERSION}-alpine AS base
 
 WORKDIR /app
 
@@ -36,7 +44,7 @@ RUN npm install -g --no-fund --no-audit "$(node -p "require('./package.json').pa
 # -----------------------------------------------------------------------------
 # Shared: production runtime base (non-root user, release metadata)
 # -----------------------------------------------------------------------------
-FROM node:26-alpine AS runtime
+FROM node:${NODE_VERSION}-alpine AS runtime
 
 RUN addgroup --system --gid 1001 app && \
     adduser --system --uid 1001 app

@@ -21,7 +21,7 @@
     "uuidv7": "^1.2.1"
   },
   "devDependencies": {
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
     "@types/ws": "^8.18.2",
     "artillery": "^2.0.34",

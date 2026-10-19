@@ -36,6 +36,17 @@ describe('findAppVocabularyFindings', () => {
     ]);
   });
 
+  it('skips a YAML marker line, in YAML only', () => {
+    const source = [`  '@babel/traverse': 7.29.0 # ${legacyTerm}: pinned until the upstream fix`, `  # ${legacyTerm}: the app's own catalog`].join(
+      '\n',
+    );
+
+    expect(findAppVocabularyFindings('pnpm-workspace.yaml', source)).toEqual([]);
+    expect(findAppVocabularyFindings('example.ts', `class A { #${legacyTerm}: string }`)).toHaveLength(1);
+    // Inside a value a `#` starts no comment
+    expect(findAppVocabularyFindings('pnpm-workspace.yaml', `key: abc#${legacyTerm}: value`)).toHaveLength(1);
+  });
+
   it('finds the term in a file path', () => {
     const findings = findAppVocabularyFindings(`src/${legacyTerm}-config.ts`, 'export {};');
 

@@ -35,8 +35,9 @@ import { syncStaleTime } from '~/query/basic/sync-stale-state';
 import type { OrgRoutableItemData } from '~/query/basic/types';
 import { addMutationRegistrar } from '~/query/mutation-registry';
 import { registerVariablesVersion } from '~/query/offline/mutation-variables';
+import { prepareProductDelete } from '~/query/offline/prepare-delete';
 import { buildPreparedHandlers, type PreparedVars } from '~/query/offline/prepared-mutation';
-import { removePausedCreates, squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
+import { squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
 import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
 import { mergeServerResponse, syncEntityToCache } from '~/query/offline/update-success-utils';
 import { resolveQueryOrgTenantIds } from '~/query/realtime/sync-priority';
@@ -291,22 +292,13 @@ export const useAttachmentDeleteMutation = (tenantId: string, organizationId: st
   const queryClient = useQueryClient();
   const mutation = useMutation(attachmentDeleteOptions(queryClient));
 
-  const prepare = (attachments: Attachment[]): PreparedVars<DeleteAttachmentVars> => {
-    const attachmentIds = attachments.map(({ id }) => id);
-    const cancelled = new Set(removePausedCreates(queryClient, keys.create, attachmentIds));
-
-    if (cancelled.size > 0) {
-      const localOnly = attachments.filter((a) => cancelled.has(a.id));
-      const localOnlyIds = localOnly.map(({ id }) => id);
-      removePendingMutations(queryClient, keys.update, localOnlyIds);
-      cacheRemove(keys.list.org(organizationId), localOnly);
-      removeDetailQueriesById(queryClient, keys.detail.base, localOnlyIds);
-    }
-
-    const remaining = attachments.filter((a) => !cancelled.has(a.id));
-    if (remaining.length === 0) return { kind: 'noop' };
-    return { kind: 'run', vars: { tenantId, organizationId, rows: remaining, stx: createStxForDelete() } };
-  };
+  const prepare = (attachments: Attachment[]): PreparedVars<DeleteAttachmentVars> =>
+    prepareProductDelete(queryClient, keys, keys.list.org(organizationId), attachments, (rows) => ({
+      tenantId,
+      organizationId,
+      rows,
+      stx: createStxForDelete(),
+    }));
 
   return { ...mutation, ...buildPreparedHandlers(mutation, prepare) };
 };

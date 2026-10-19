@@ -12,8 +12,11 @@ const detailKey = (id: string) => ['organization', 'detail', id] as const;
 const listRow: Channel = { id: 'org-1', slug: 'acme' };
 const stored: Channel = { ...listRow, included: { counts: { membership: { pending: 3 } } } };
 
-/** Resolves `acme` as a route does on entry, with the row found in a list cache and a detail fetch that answers `stored`. */
-const resolveOnEnter = (fetchDetail: () => Promise<Channel>) =>
+/**
+ * Resolves `acme` with the row found in a list cache and a detail fetch that answers `stored`: as a route does on entry,
+ * or with `revalidateIfStale: false` as on a param change within the route (`stay`).
+ */
+const resolveOnEnter = (fetchDetail: () => Promise<Channel>, revalidateIfStale = true) =>
   resolveChannelBySlug({
     idOrSlug: 'acme',
     tenantId: 'ten-1',
@@ -21,7 +24,7 @@ const resolveOnEnter = (fetchDetail: () => Promise<Channel>) =>
     detailQueryOptions: (id) => ({ queryKey: detailKey(id), queryFn: fetchDetail }),
     fetchBySlug: fetchDetail,
     slugFetchCacheKey: detailKey,
-    revalidateIfStale: true,
+    revalidateIfStale,
     params: { organizationSlug: 'acme' },
     buildSlugOverrides: (entity) => ({ organizationSlug: entity.slug }),
     routeTo: '/$organizationSlug',
@@ -35,6 +38,15 @@ describe('resolveChannelBySlug', () => {
 
     // The navigation resolves with the list row, without waiting for the fetch.
     expect(await resolveOnEnter(fetchDetail)).toEqual(listRow);
+
+    await vi.waitFor(() => expect(queryClient.getQueryData(detailKey('org-1'))).toEqual(stored));
+    expect(fetchDetail).toHaveBeenCalledTimes(1);
+  });
+
+  it('fetches the detail behind a list row it seeded on a param change within the route too', async () => {
+    const fetchDetail = vi.fn(async () => stored);
+
+    expect(await resolveOnEnter(fetchDetail, false)).toEqual(listRow);
 
     await vi.waitFor(() => expect(queryClient.getQueryData(detailKey('org-1'))).toEqual(stored));
     expect(fetchDetail).toHaveBeenCalledTimes(1);

@@ -19,7 +19,7 @@ type ResolveChannelBySlugConfig<T extends { id: string; slug: string }, P extend
   slugFetchCacheKey: (id: string) => readonly unknown[];
   /** Default true: skip the id-based read while offline, resolving to undefined. False always reads and waits for reconnection. */
   readRequiresOnline?: boolean;
-  /** Revalidate a stale cached entry in the background, for fresh navigations. */
+  /** Revalidate a stale cached entry in the background, for fresh navigations. An entry this call seeds revalidates always. */
   revalidateIfStale?: boolean;
   params: P;
   /** Builds the slug-based param overrides for `rewriteUrlToSlug` once the entity resolves. */
@@ -59,10 +59,10 @@ export async function resolveChannelBySlug<T extends { id: string; slug: string 
     const options = detailQueryOptions(id);
 
     // Seeding the detail cache lets the cache-first read below return without blocking on a fetch. The seed is a list
-    // row and no detail (no counts), so it is stamped as never fetched: the revalidation below and an observer fetch it.
-    if (cached && !queryClient.getQueryData<T>(options.queryKey)) {
-      queryClient.setQueryData<T>(options.queryKey, cached, { updatedAt: 0 });
-    }
+    // row and no detail (no counts), so it is stamped as never fetched and revalidated below whatever the navigation
+    // cause: observers do not refetch on mount.
+    const seeded = !!cached && !queryClient.getQueryData<T>(options.queryKey);
+    if (seeded) queryClient.setQueryData<T>(options.queryKey, cached, { updatedAt: 0 });
 
     // `staleTime: 'static'` returns a cached entry without blocking, whatever its age; the second read honors the
     // options' own staleTime, so a stale entry refetches behind the navigation that already resolved.
@@ -75,7 +75,7 @@ export async function resolveChannelBySlug<T extends { id: string; slug: string 
       // to the older slug lands on a channel that no longer answers to it. The server's row decides.
       const slugsDisagree = isOnline && !!cached && read.slug !== cached.slug;
       entity = slugsDisagree ? await queryClient.query({ ...options, staleTime: 0 }) : read;
-      if (!slugsDisagree && revalidateIfStale && isOnline) void queryClient.query(options).catch(() => {});
+      if (!slugsDisagree && (revalidateIfStale || seeded) && isOnline) void queryClient.query(options).catch(() => {});
     }
   } else if (isOnline) {
     entity = await fetchSlugCacheId(fetchBySlug, slugFetchCacheKey);

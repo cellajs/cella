@@ -66,7 +66,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 26
+          node-version-file: package.json
           cache: "pnpm"
 
       - name: Install dependencies
@@ -116,7 +116,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 26
+          node-version-file: package.json
           cache: "pnpm"
 
       - name: Install dependencies
@@ -143,7 +143,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 26
+          node-version-file: package.json
           cache: "pnpm"
 
       - name: Install dependencies
@@ -162,15 +162,16 @@ jobs:
           cp ./backend/.env.example ./backend/.env
           pnpm template:check
 
-  # Runs all tests (full mode with PostgreSQL). Heavy: runs on the release PR only.
+  # Runs all tests (full mode with PostgreSQL). Heavy: runs on the release PR, and in an app on the sync PR
+  # (`cella/sync/<stamp>`, the branch `pnpm cella sync` opens), where upstream changes first meet the app's code.
   # `pnpm test:full` starts the `db_test` compose container (DB_TEST_PORT) and applies
   # migrations in the Vitest global setup, so the job needs no service container.
   test:
-    # Same-repo branch only: release-please pushes its branch into this repo, so a
-    # PR from another repository (whose branch name its author fully controls)
-    # cannot spoof the prefix to trigger the heavy suites. head_ref is set only for
+    # Same-repo branch only: release-please and the sync push their branches into this
+    # repo, so a PR from another repository (whose branch name its author fully controls)
+    # cannot spoof a prefix to trigger the heavy suites. head_ref is set only for
     # pull_request events.
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release-please--branches--main')
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/sync/'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -185,7 +186,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 26
+          node-version-file: package.json
           cache: "pnpm"
 
       - name: Create .env files
@@ -246,7 +247,7 @@ jobs:
 
       - name: Build the shared base stage
         if: steps.changes.outputs.changed == 'true'
-        run: docker build --target manifests -t base-check .
+        run: docker build --build-arg NODE_VERSION="$(jq -r .engines.node package.json)" --target manifests -t base-check .
 
       - name: pnpm resolves from the pin inside the image
         if: steps.changes.outputs.changed == 'true'
@@ -254,9 +255,9 @@ jobs:
 
   # The production images are otherwise built for the first time by the release deploy (0.12.1 failed
   # there: a worker env leak and an undeclared dependency crashed every image). Build each target on
-  # the release PR, without pushing.
+  # the release PR and an app's sync PR, without pushing.
   docker-images:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release-please--branches--main')
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/sync/'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -270,7 +271,7 @@ jobs:
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Build the ${{ matrix.target }} image
-        run: docker build --target ${{ matrix.target }} -t ${{ matrix.target }}-check .
+        run: docker build --build-arg NODE_VERSION="$(jq -r .engines.node package.json)" --target ${{ matrix.target }} -t ${{ matrix.target }}-check .
 
   # Privileged infra changes (a database privilege, a VM policy rule) need an operator
   # `pnpm infra apply` before the release deploys; this read-only preview under the CI key
@@ -302,7 +303,7 @@ jobs:
         if: env.SCW_ACCESS_KEY != ''
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 26
+          node-version-file: package.json
 
       - name: Install dependencies
         if: env.SCW_ACCESS_KEY != ''
@@ -340,7 +341,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 26
+          node-version-file: package.json
           cache: "pnpm"
 
       - name: Install the head
@@ -353,10 +354,10 @@ jobs:
       - name: Say what the change owes
         run: pnpm --silent --filter infra exec tsx tasks/privileged-check.ts --base "$GITHUB_WORKSPACE/.base"
 
-  # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR only, so a
-  # story that breaks on a feature PR fails the release PR; run `pnpm test:storybook` before merging frontend work.
+  # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR and an app's sync PR,
+  # so a story that breaks on a feature PR fails the release PR; run `pnpm test:storybook` before merging frontend work.
   storybook-test:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release-please--branches--main')
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/sync/'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -371,7 +372,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: 26
+          node-version-file: package.json
           cache: "pnpm"
 
       - name: Create .env files

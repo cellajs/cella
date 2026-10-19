@@ -4,7 +4,7 @@ import { digestEmail } from '#/modules/notification/emails/digest-email';
 import { mentionEmail } from '#/modules/notification/emails/mention-email';
 import { describeDigestRow, htmlToExcerpt, renderSectionsHtml } from '#/modules/notification/helpers/render-digest-html';
 import type { SafeHtmlPolicy } from '../../emails/components/safe-html';
-import { emailPreviewFixtures } from '../../emails/preview-fixtures';
+import { emailPreviews } from '../../emails/preview-fixtures';
 import { render } from '../../emails/renderer/render';
 import { oauthVerificationEmail } from '../../emails/templates/oauth-verification';
 import { systemInviteEmail } from '../../emails/templates/system-invite';
@@ -178,9 +178,7 @@ describe('neutralizeBrevoTags', () => {
   };
 
   it('leaves every template, rendered as the mailer renders it, unchanged', async () => {
-    for (const { def } of Object.values(emailPreviewFixtures)) await expectUnchanged(def);
-    await expectUnchanged(mentionEmail);
-    await expectUnchanged(digestEmail);
+    for (const def of Object.values(emailPreviews)) await expectUnchanged(def);
   });
 
   it('keeps |safe only for a declared HTML param', () => {

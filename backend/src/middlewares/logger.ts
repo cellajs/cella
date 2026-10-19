@@ -4,7 +4,7 @@ import { requestLogger } from '#/lib/pino';
 import { isBenchTraffic } from '#/utils/logger';
 
 /**
- * Logs requests with timing, status, user id and the request id set before it; a request made through an impersonation
+ * Logs requests with timing, status, user and session id and the request id set before it; a request made through an impersonation
  * also names its admin. pino-pretty formats in dev.
  */
 export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
@@ -23,7 +23,16 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   if (isBenchTraffic(userId, ctx.get('tenantId')) && status < 500) return;
 
   const impersonatorId = ctx.get('impersonator')?.id;
-  const logData = { requestId: ctx.get('requestId'), method, url: path, status, responseTime, userId, ...(impersonatorId && { impersonatorId }) };
+  const logData = {
+    requestId: ctx.get('requestId'),
+    method,
+    url: path,
+    status,
+    responseTime,
+    userId,
+    sessionId: ctx.get('sessionId'),
+    ...(impersonatorId && { impersonatorId }),
+  };
 
   if (status >= 500) requestLogger.error(logData);
   else if (status >= 400) requestLogger.warn(logData);

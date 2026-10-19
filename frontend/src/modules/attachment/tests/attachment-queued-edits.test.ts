@@ -109,6 +109,29 @@ describe('an edit of a row whose create is queued offline', () => {
   });
 });
 
+describe('a delete of a row whose create is queued offline', () => {
+  it('cancels the create and sends only the rows the server holds', async () => {
+    seedHomeList([attachment('att-1')]);
+    goOffline(createAttachments, deleteAttachments);
+    const { create, remove } = hooks();
+    create.mutate([attachment('att-2')] as never);
+    await vi.waitFor(() => expect(queued('create')).toHaveLength(1));
+    const createCalls = createAttachments.mock.calls.length;
+
+    remove.mutate([attachment('att-1'), attachment('att-2')]);
+    await vi.waitFor(() => expect(queued('delete')).toHaveLength(1));
+    expect(mutationsOf('attachment', 'create')).toHaveLength(0);
+    expect(homeList()).toEqual([]);
+
+    deleteAttachments.mockImplementation(async () => ({ data: [], rejectedIds: [] }));
+    await goOnline();
+    await settled('delete');
+
+    expect(createAttachments).toHaveBeenCalledTimes(createCalls);
+    expect(deleteAttachments.mock.lastCall?.[0]).toMatchObject({ body: { ids: ['att-1'] } });
+  });
+});
+
 describe('a remote change of a row with a pending mutation', () => {
   it('leaves a row deleted offline out of the list when catchup reads it, and sends the delete once online', async () => {
     seedHomeList([attachment('att-1'), attachment('att-2')]);

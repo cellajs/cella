@@ -10,7 +10,7 @@ export type DocsSearchResult = {
   /** Group key: child rows (heading/text) directly follow their page row. */
   pageId: string;
   type: DocsSearchResultType;
-  /** Row text; match ranges are wrapped in `<mark>` by the engine. */
+  /** Row text: a title, or for body text a window around the first match. */
   title: string;
   /** Ancestor labels for context (page ancestors, or the operation's tag). */
   breadcrumbs: string[];

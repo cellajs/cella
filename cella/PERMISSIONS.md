@@ -227,6 +227,10 @@ Unexpected server errors include internal details in client responses only in de
 | An account-security route without a recent proof of presence | 403 `step_up_required` naming the methods | [Interoperability](./INTEROPERABILITY.md#guards) |
 | An action on the account itself while impersonating: stepping up, revoking the user's sessions, every `stepUpGuard` route and every system route, impersonating again included | 403 `impersonation_forbidden` (`refuseImpersonation`: in the step-up and session handlers, and in `stepUpGuard` and `sysAdminGuard` before their own answers) | The admin acts as the user, never on the account, its sessions or how it is protected |
 
+## What members see
+
+Users who share an organization see each other's `UserBase` fields, email address included: in member lists, through `getUser`, and in `getUsers`, whose search matches name and address. The directory is organization-wide, so a channel below the organization narrows nothing. A member also sees the addresses invited to a channel they read, never the account behind one; resending an invitation takes `update` on that channel. The privacy statement tells users the same. `member-personal-view.test.ts` and `pending-invitations.test.ts` hold both rules.
+
 ## Behavior
 
 | Scenario | Outcome |
