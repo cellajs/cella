@@ -109,8 +109,11 @@ export class TransactionBuffer {
     }
   }
 
-  /** Emits the surviving buffered changes; a second pass catches child deletes that preceded their parent. */
-  async onCommit(): Promise<void> {
+  /**
+   * Emits the surviving buffered changes; a second pass catches child deletes that preceded their parent.
+   * @param commitEndLsn - End of the commit record, from the COMMIT: the position a flush of these changes acknowledges.
+   */
+  async onCommit(commitEndLsn: string | null = null): Promise<void> {
     // Children that preceded their parent delete in WAL order; the parent-first case is already gone.
     const kept: PendingEvent[] = [];
     for (const event of this.pendingEvents) {
@@ -126,6 +129,7 @@ export class TransactionBuffer {
 
     // Deletes of embedded product A plus updates of its host B: the B updates are cascade noise.
     const surviving = suppressEmbeddingPropagation(kept);
+    for (const event of surviving) event.commitEndLsn = commitEndLsn;
     if (surviving.length > 0) await this.onSurvivingEvents(surviving);
   }
 

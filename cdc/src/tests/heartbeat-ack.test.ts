@@ -68,17 +68,17 @@ describe('a keepalive from Postgres', () => {
 
   describe('to an idle worker', () => {
     it.each([
-      { case: 'acknowledges the keepalive position, one byte back because the client adds one', acked: '0/AB', keepalive: '0/1F0', sent: '0/1EF' },
-      { case: 'borrows from the high word at a segment boundary', acked: null, keepalive: '2/0', sent: '1/FFFFFFFF' },
-    ])('$case', async ({ acked, keepalive, sent }) => {
+      { case: 'acknowledges the keepalive position itself', acked: '0/AB', keepalive: '0/1F0' },
+      { case: 'acknowledges it before anything else was acknowledged', acked: null, keepalive: '2/0' },
+    ])('$case', async ({ acked, keepalive }) => {
       const service = subscribe();
       replicationState.lastAckedLsn = acked;
       service.emit('heartbeat', keepalive, Date.now(), true);
       await settle();
 
       expect(acknowledge).toHaveBeenCalledTimes(1);
-      expect(acknowledge).toHaveBeenCalledWith(sent);
-      expect(replicationState.lastAckedLsn).toBe(sent);
+      expect(acknowledge).toHaveBeenCalledWith(keepalive);
+      expect(replicationState.lastAckedLsn).toBe(keepalive);
     });
 
     it('must not move the acknowledged position backwards for a keepalive behind it', async () => {
@@ -103,7 +103,7 @@ describe('a keepalive from Postgres', () => {
       await handleDataMessage('0/1E0', { tag: 'commit' } as never);
       await settle();
 
-      expect(acknowledge.mock.calls).toEqual([['0/1EF']]);
+      expect(acknowledge.mock.calls).toEqual([['0/1F0']]);
     });
 
     it('acknowledges past a source transaction whose rows the worker drops entirely, with one acknowledgement', async () => {
@@ -121,7 +121,7 @@ describe('a keepalive from Postgres', () => {
       service.emit('heartbeat', '0/1F0', Date.now(), false);
       await settle();
 
-      expect(acknowledge.mock.calls).toEqual([['0/1EF']]);
+      expect(acknowledge.mock.calls).toEqual([['0/1F0']]);
     });
 
     it('must not acknowledge a keepalive past messages of the same socket read that still wait for their handler', async () => {
@@ -137,8 +137,8 @@ describe('a keepalive from Postgres', () => {
       await handleDataMessage('0/E0', { tag: 'commit' } as never);
       await settle();
 
-      // The transaction waits for its flush: 0/1EF would acknowledge past it, and a crash now would lose it.
-      expect(acknowledge).not.toHaveBeenCalledWith('0/1EF');
+      // The transaction waits for its flush: 0/1F0 would acknowledge past it, and a crash now would lose it.
+      expect(acknowledge).not.toHaveBeenCalledWith('0/1F0');
     });
 
     it('forgets the keepalive position of a stream that ended', async () => {
@@ -161,7 +161,7 @@ describe('a keepalive from Postgres', () => {
       service.emit('heartbeat', '0/1F0', Date.now(), true);
       await settle();
 
-      expect(acknowledge).toHaveBeenCalledWith('0/1EF');
+      expect(acknowledge).toHaveBeenCalledWith('0/1F0');
     });
 
     it('keeps no position a stopped service did not send', async () => {
@@ -171,7 +171,7 @@ describe('a keepalive from Postgres', () => {
       service.emit('heartbeat', '0/1F0', Date.now(), false);
       await settle();
 
-      expect(acknowledge).toHaveBeenCalledWith('0/1EF');
+      expect(acknowledge).toHaveBeenCalledWith('0/1F0');
       expect(replicationState.lastAckedLsn).toBe('0/AB');
     });
   });

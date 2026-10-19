@@ -1,4 +1,4 @@
-import { BlockNoteSchema, createCodeBlockSpec, type Dictionary, defaultBlockSpecs, defaultStyleSpecs } from '@blocknote/core';
+import { BlockNoteSchema, createCodeBlockSpec, defaultBlockSpecs, defaultStyleSpecs } from '@blocknote/core';
 import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import { codeBlockConfig, withAttachmentRef } from 'shared/utils/blocknote-schema-configs';
@@ -38,7 +38,7 @@ const applyImageBox = (dom: HTMLElement | DocumentFragment, props: Record<string
 
 /** Decorates the image spec without touching config/propSchema, which must stay in lockstep with the Yjs relay schema; stays a vanilla DOM block so the headless read-only editor can render it. */
 const withImageBox = (spec: typeof defaultBlockSpecs.image) => {
-  type Render = typeof spec.implementation.render;
+  type Render = NonNullable<typeof spec.implementation.render>;
   type ToExternalHTML = NonNullable<typeof spec.implementation.toExternalHTML>;
   // render/toExternalHTML read a `this` context (blockContentDOMAttributes, propSchema), so keep them methods and forward it.
   const baseRender = spec.implementation.render as (...args: Parameters<Render>) => ReturnType<Render>;
@@ -72,7 +72,7 @@ const supportedLanguage = (language: string) =>
  * and its highlighter logs an error on every update, so that block renders and highlights as the default language and keeps its stored prop.
  */
 const withLanguageFallback = (spec: ReturnType<typeof createCodeBlockSpec>) => {
-  type Render = typeof spec.implementation.render;
+  type Render = NonNullable<typeof spec.implementation.render>;
   const baseRender = spec.implementation.render as (...args: Parameters<Render>) => ReturnType<Render>;
   const highlight: NonNullable<typeof spec.implementation.meta>['highlight'] = (block) => supportedLanguage(block.props.language);
 
@@ -104,7 +104,7 @@ export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs 
 
 export const customBlockTypeSwitchItems: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checklistItem'];
 
-export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict)];
+export const getSideMenuItems = (editor: CustomBlockNoteEditor) => [...blockTypeSelectItems(editor)];
 
 // Indexed items (max 9 for quick number-based selection)
 export const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checklistItem', 'notify'];
