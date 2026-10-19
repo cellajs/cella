@@ -109,6 +109,30 @@ export const Draft: Story = {
   },
 };
 
+/** Counts from a thousand up are compact, as in the table count columns. */
+export const LargeCounts: Story = {
+  args: {
+    entity: {
+      ...organization,
+      included: {
+        members: previews,
+        counts: {
+          membership: { [mostPrivileged]: 7, [leastPrivileged]: 1407, pending: 2, total: 1414 },
+          entities: { attachment: 21_312 },
+          activity: { attachment: { created: Date.parse('2026-10-01T12:00:00Z') } },
+        },
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(canvas.getByText(/^1\.4k members?$/i)).toBeInTheDocument();
+    await expect(canvas.getByText(/^21k/)).toBeInTheDocument();
+    await expect(canvas.queryByText(/1414|21312/)).toBeNull();
+  },
+};
+
 /** A module's own tile: a counted role, a parent chip, a description and a join action for non-members. */
 export const Composed: Story = {
   args: { entity: { ...organization, description: '<p>Supplies <b>everything</b> &amp; more.</p>' } },

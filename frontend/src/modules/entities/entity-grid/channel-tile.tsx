@@ -13,6 +13,7 @@ import { MemberAvatar } from '~/modules/user/member-avatar';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
+import { formatCount } from '~/utils/format-count';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 const ChannelTileContext = createContext<ChannelTileEntity | null>(null);
@@ -119,7 +120,7 @@ export function ChannelTileHeading({ leading, meta = <ChannelTileStats /> }: { l
 }
 
 /**
- * Member count (of `countRole`, or all members), a draft's pending invites, post counts per
+ * Compact counts (`formatCount`): members (of `countRole`, or all), a draft's pending invites, posts per
  * `memberStatProductTypes` entry and the latest post date. Without counts on the row, the creation date.
  */
 export function ChannelTileStats({ countRole }: { countRole?: EntityRole }) {
@@ -133,12 +134,12 @@ export function ChannelTileStats({ countRole }: { countRole?: EntityRole }) {
     <div className="inline-flex items-center gap-2 truncate text-muted-foreground text-sm">
       {memberCount !== undefined && (
         <span>
-          {memberCount} {t(`c:${countRole ?? 'member'}`, { count: memberCount }).toLowerCase()}
+          {formatCount(memberCount)} {t(`c:${countRole ?? 'member'}`, { count: memberCount }).toLowerCase()}
         </span>
       )}
       {isUnpublishedDraft(entity) && !!counts?.membership.pending && (
         <span>
-          · {counts.membership.pending} {t('c:pending').toLowerCase()}
+          · {formatCount(counts.membership.pending)} {t('c:pending').toLowerCase()}
         </span>
       )}
       {postTypes.length > 0 && (
@@ -150,7 +151,7 @@ export function ChannelTileStats({ countRole }: { countRole?: EntityRole }) {
             return (
               <span key={type} className="inline-flex items-center gap-1">
                 {Icon && <Icon className="size-3.5" aria-hidden />}
-                {count}
+                {formatCount(count)}
                 <span className="sr-only">{t(`c:${type}`, { count })}</span>
               </span>
             );
