@@ -18,13 +18,8 @@ import {
 } from './index';
 import type { EmailTemplateDef } from './types';
 
-/** Sample data lives on each template's `preview` field, type-checked against its own props. */
-export interface EmailPreviewFixture {
-  // biome-ignore lint/suspicious/noExplicitAny: registry holds defs with differing generic params
-  def: EmailTemplateDef<any, any>;
-  statics: Record<string, unknown>;
-  recipient: Record<string, string>;
-}
+// biome-ignore lint/suspicious/noExplicitAny: registry holds defs with differing generic params
+type AnyEmailTemplateDef = EmailTemplateDef<any, any>;
 
 // Preview slugs are stable public identifiers (URLs, Storybook) and differ from some export names.
 const previewTemplates = {
@@ -44,20 +39,11 @@ const previewTemplates = {
   mention: mentionEmail,
   comment: commentEmail,
   digest: digestEmail,
-  // biome-ignore lint/suspicious/noExplicitAny: registry holds defs with differing generic params
-} satisfies Record<string, EmailTemplateDef<any, any>>;
-
-export const emailPreviewFixtures = Object.fromEntries(
-  Object.entries(previewTemplates).map(([name, def]): [string, EmailPreviewFixture] => [
-    name,
-    {
-      def,
-      statics: def.preview.statics as unknown as Record<string, unknown>,
-      recipient: def.preview.recipient as unknown as Record<string, string>,
-    },
-  ]),
-) as Record<keyof typeof previewTemplates, EmailPreviewFixture>;
+} satisfies Record<string, AnyEmailTemplateDef>;
 
 export type EmailPreviewName = keyof typeof previewTemplates;
+
+/** Sample data lives on each template's `preview` field, type-checked against its own props. */
+export const emailPreviews: Record<EmailPreviewName, AnyEmailTemplateDef> = previewTemplates;
 
 export const emailPreviewNames = Object.keys(previewTemplates) as EmailPreviewName[];

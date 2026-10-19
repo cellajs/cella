@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import enBackend from '../../../locales/en/backend.json';
 import { i18n } from '../../emails/i18n';
-import { type EmailPreviewFixture, emailPreviewFixtures, emailPreviewNames } from '../../emails/preview-fixtures';
+import { emailPreviewNames, emailPreviews } from '../../emails/preview-fixtures';
 import { render } from '../../emails/renderer/render';
 import { accountSecurityEmail } from '../../emails/templates/account-security';
 
@@ -31,18 +31,10 @@ describe('email translation fallback', () => {
   }
 });
 
-// The cast to the loose fixture type stops the heterogeneous defs collapsing
-// `translate`'s parameter to `never` across the union.
-const templateEntries = (Object.entries(emailPreviewFixtures) as [string, EmailPreviewFixture][]).map(([name, { def, statics, recipient }]) => ({
-  name,
-  def,
-  statics,
-  recipient,
-}));
-
 /** Catches broken components, runtime errors, and keys missing from every language. */
 describe('email template rendering', () => {
-  for (const { name, def, statics, recipient } of templateEntries) {
+  for (const [name, def] of Object.entries(emailPreviews)) {
+    const { statics, recipient } = def.preview;
     for (const lng of appConfig.languages) {
       it(`${name} renders without error in ${lng}`, async () => {
         const translated = def.translate(lng, statics);
