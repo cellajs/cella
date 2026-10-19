@@ -21,6 +21,8 @@ const initOptions: InitOptions = {
   },
   react: { useSuspense: false },
   defaultNS: 'c',
+  // Locale files are flat, and a dot belongs to the key (`docs` and `docs.openapi_specification` are both keys)
+  keySeparator: false,
   backend: {
     // Processed namespaces (common + app merged into `c`), served by the vite plugin in dev and as build assets.
     loadPath: '/locales/{{lng}}/{{ns}}.json',

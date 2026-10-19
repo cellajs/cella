@@ -1,4 +1,5 @@
 import type { z } from '@hono/zod-openapi';
+import { t } from 'i18next';
 import {
   type AncestorChannelType,
   hierarchy as appHierarchy,
@@ -34,9 +35,11 @@ export interface PlacementHome {
   entity: EntityModel<ChannelEntityType>;
 }
 
-/** Where in a create-body item a placement rule is broken, relative to the item. */
+/** Where in a create-body item a placement rule is broken, relative to the item, and which rule. */
 export interface PlacementIssue {
   path: (string | number)[];
+  /** The error type a client branches on: `params: { type }` of the schema issue, the type of the thrown error. */
+  type: 'ambiguous_placement' | 'home_required';
   message: string;
 }
 
@@ -86,13 +89,10 @@ export const validatePlacement = (
   const provided = levels.filter((type) => hasId(item, type));
 
   if (provided.length > 1) {
-    return {
-      path: [entityIdColumnKey(provided[0])],
-      message: 'Ambiguous placement: send only the deepest home id (its ancestors are derived server-side)',
-    };
+    return { path: [entityIdColumnKey(provided[0])], type: 'ambiguous_placement', message: t('error:ambiguous_placement.text') };
   }
   if (provided.length === 0 && levels.length > 0 && (requireChannel || !organizationIsHome)) {
-    return { path: [entityIdColumnKey(levels[0])], message: 'Missing placement: send the id of the channel the row lives in' };
+    return { path: [entityIdColumnKey(levels[0])], type: 'home_required', message: t('error:home_required.text') };
   }
   return null;
 };
@@ -115,8 +115,8 @@ interface ResolvePlacementOptions extends HierarchyOption {
  * null) where the hierarchy allows it.
  *
  * A move resolves the new home the same way; run the create check on the row with the new columns before writing them.
- * @throws AppError 400 `invalid_request` for an input {@link validatePlacement} refuses, so the columns hold what
- * their type says without the schema check; 404 `not_found` for a home that does not exist in the request scope.
+ * @throws AppError 400 `ambiguous_placement` or `home_required` for an input {@link validatePlacement} refuses, so the
+ * columns hold what their type says without the schema check; 404 `not_found` for a home that does not exist in the request scope.
  */
 export const resolvePlacement = async <T extends ProductEntityType>(
   ctx: OrgContext,
@@ -125,7 +125,7 @@ export const resolvePlacement = async <T extends ProductEntityType>(
   { hierarchy = appHierarchy, requireChannel, resolveHome = resolveChannelInScope }: ResolvePlacementOptions = {},
 ): Promise<{ columns: ResolvedPlacement<T>; home: PlacementHome | null }> => {
   const issue = validatePlacement(entityType, input, { hierarchy, requireChannel });
-  if (issue) throw new AppError(400, 'invalid_request', 'warn', { entityType, meta: { reason: 'placement', field: String(issue.path[0]) } });
+  if (issue) throw new AppError(400, issue.type, 'warn', { entityType, meta: { field: String(issue.path[0]) } });
 
   const ancestors = hierarchy.getOrderedAncestors(entityType).filter((type) => type !== 'organization');
   const stamped: Record<string, string | null> = Object.fromEntries(ancestors.map((type) => [entityIdColumnKey(type), null]));

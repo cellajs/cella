@@ -174,9 +174,9 @@ A product's three mutations carry one shape each, whatever the product: a create
 
 A paused mutation outlives the reload that brings a new bundle. When a bundle changes the shape of a mutation's variables it declares a version and an upgrade for that mutation. Each stored mutation carries the version of its shape, and a queue stored under an older version is rewritten as it is restored, before the lenses change the rows it holds. A queued mutation this bundle cannot read (no upgrade knows it, or a newer bundle stored it) moves to the quarantine and is never replayed.
 
-Mutation defaults and versions reach the mutations restored after them, not the ones restored before: a mutation hydrated before its defaults exist replays without a mutation function and fails. The module that registers them therefore has to load with the entry, through static imports from `main.tsx`.
+Mutation defaults and versions reach the mutations restored after them, not the ones restored before: a mutation hydrated before its defaults exist replays without a mutation function and fails. The module that registers them therefore has to load with the entry: a product module's own module file imports it, and a restored mutation without a mutation function shows as a warning in the console.
 
-Idempotency is operation-specific: a product create runs `checkIdempotency(ctx, table, mutationId)`, which returns the batch the caller created under that id in the request scope (known once the CDC worker has recorded that create), so another actor reusing the id creates its own rows. Update and delete do not.
+Idempotency is operation-specific: a product create runs `checkIdempotency(ctx, table, ids)` with the ids the client gave its rows, which returns the caller's own rows under those ids in the request scope, so a replay finds its rows as soon as the first attempt committed, whatever the CDC worker has done; the create inserts only the other items. An id another actor learned finds nothing. Update and delete do not.
 
 ## Resilience
 

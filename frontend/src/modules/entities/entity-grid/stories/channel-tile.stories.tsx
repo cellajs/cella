@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { MembershipBase } from 'sdk';
+import { hierarchy } from 'shared';
 import { expect, within } from 'storybook/test';
 import {
   ChannelTile,
@@ -18,6 +19,10 @@ import type { ChannelTileEntity } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
 import { withApp } from '~/stories/with-app';
 
+/** The app's organization roles: previews show the most privileged, the stats count the least privileged. */
+const mostPrivileged = hierarchy.getMostPrivilegedRole('organization');
+const leastPrivileged = hierarchy.getLeastPrivilegedRole('organization');
+
 const previews = ['Ada Lovelace', 'Grace Hopper', 'Alan Turing'].map((name, index) => ({ id: `user-${index}`, name, thumbnailUrl: null }));
 
 /** A row as a list answers it with `include=counts,members`: the counts and the previews of the most privileged role. */
@@ -34,7 +39,7 @@ const organization: ChannelTileEntity = {
   publishedAt: '2026-01-10T09:00:00Z',
   included: {
     counts: {
-      membership: { admin: 7, member: 41, pending: 2, total: 48 },
+      membership: { [mostPrivileged]: 7, [leastPrivileged]: 41, pending: 2, total: 48 },
       entities: { attachment: 12 },
       activity: { attachment: { created: Date.parse('2026-10-01T12:00:00Z') } },
     },
@@ -42,7 +47,7 @@ const organization: ChannelTileEntity = {
   },
 };
 
-const adminMembership = { role: 'admin' } as MembershipBase;
+const adminMembership = { role: mostPrivileged } as MembershipBase;
 const parent = { ...organization, id: 'org-parent', slug: 'contoso', name: 'Contoso' };
 
 /** The channel grid tile. Each part reads the row from `ChannelTileCard`; a module composes its own tile from them or renders the default. */
@@ -69,7 +74,7 @@ export const Default: Story = {
     const canvas = within(canvasElement);
 
     await expect(canvas.getByRole('link', { name: /Northwind/ })).toBeInTheDocument();
-    // Three previews of seven admins
+    // Three previews of the seven most privileged members
     await expect(canvas.getByText('+4')).toBeInTheDocument();
     await expect(canvas.queryByRole('button', { name: /leave/ })).toBeNull();
   },
@@ -117,7 +122,7 @@ export const Composed: Story = {
           </>
         }
       >
-        <ChannelTileHeading meta={<ChannelTileStats countRole="member" />} />
+        <ChannelTileHeading meta={<ChannelTileStats countRole={leastPrivileged} />} />
       </ChannelTileBanner>
       <ChannelTileFooter>
         <ChannelTileDescription />

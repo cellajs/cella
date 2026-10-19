@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 import pg from 'pg';
 import { hierarchy } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
-import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { buildTestEntityHierarchyPlan, toStrictHomePlan } from 'shared/testing/entity-hierarchy';
 import { assumeMemberAttachmentPolicy } from 'shared/testing/member-policy';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createPgConnection, type Tx } from '#/db/create-connection';
@@ -26,8 +26,12 @@ const attachmentM = randomUUID(); // tenantA / orgA, owned by memberA
 const attachmentC = randomUUID(); // tenantB / orgC
 const deletedA = randomUUID(); // tenantA / orgA, owned by userA, soft-deleted
 
-const hierarchyA = buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId: orgA, makeChannelId: () => randomUUID() });
-const hierarchyC = buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId: orgC, makeChannelId: () => randomUUID() });
+const hierarchyA = toStrictHomePlan(
+  buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId: orgA, makeChannelId: () => randomUUID() }),
+);
+const hierarchyC = toStrictHomePlan(
+  buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId: orgC, makeChannelId: () => randomUUID() }),
+);
 
 /** The document a token asks for: attachmentA in its own scope unless overridden. */
 function requested(overrides: Partial<DocScope>): DocScope {

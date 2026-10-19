@@ -1,6 +1,8 @@
 import { PaperclipIcon } from 'lucide-react';
 import { defineFrontendModule } from '~/lib/module';
 import { ATTACHMENT_DIALOG_PARAM } from '~/modules/attachment/dialog/params';
+// Registers the mutation defaults before the cache restore, so a queued attachment mutation replays after a reload
+import '~/modules/attachment/query';
 
 defineFrontendModule({
   name: 'attachments',

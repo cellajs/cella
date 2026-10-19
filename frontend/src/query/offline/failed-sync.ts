@@ -36,19 +36,29 @@ export async function quarantineFailedSync(record: Omit<FailedSyncRecord, 'id' |
   }
 }
 
-/** List quarantined mutations, newest first. Empty while signed out. */
+/**
+ * List quarantined mutations, newest first. Empty while signed out. No UI reads the quarantine yet; this and the two
+ * below are its read and repair functions.
+ * @public
+ */
 export async function listFailedSync(): Promise<FailedSyncRecord[]> {
   const db = getLocalUserDb();
   if (!db) return [];
   return db.failedSync.orderBy('createdAt').reverse().toArray();
 }
 
-/** Remove a quarantined record once manually replayed/repaired. */
+/**
+ * Remove a quarantined record once manually replayed/repaired.
+ * @public
+ */
 export async function clearFailedSync(id: number): Promise<void> {
   await getLocalUserDb()?.failedSync.delete(id);
 }
 
-/** Export all quarantined records as a JSON string for support/repair. */
+/**
+ * Export all quarantined records as a JSON string for support/repair.
+ * @public
+ */
 export async function exportFailedSync(): Promise<string> {
   return JSON.stringify(await listFailedSync(), null, 2);
 }

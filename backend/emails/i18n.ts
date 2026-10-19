@@ -17,6 +17,7 @@ i18n.init({
   fallbackLng: appConfig.defaultLanguage,
   interpolation: { escapeValue: true },
   defaultNS: 'backend',
+  keySeparator: false,
 });
 
 /**

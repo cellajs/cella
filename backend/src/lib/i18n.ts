@@ -20,6 +20,8 @@ const initOptions: InitOptions = {
     escapeValue: false, // Texts land in JSON responses; the email templates escape through their own instance
   },
   defaultNS: 'backend',
+  // The locale files are flat: a dot is part of a key, never a path into nested objects
+  keySeparator: false,
 };
 
 /** The API's instance, for error messages and schema texts; emails use `backend/emails/i18n.ts`. */

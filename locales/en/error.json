@@ -1,4 +1,6 @@
 {
+  "ambiguous_placement": "Ambiguous placement",
+  "ambiguous_placement.text": "Name one place only, the deepest one: the places above it follow from it.",
   "auth_key_not_found": "Missing authentication key",
   "auth_key_not_found.text": "An authentication key is missing. Please contact support.",
   "bad_request_action": "Bad request: Server could not process the request",
@@ -57,6 +59,8 @@
   "form.validate": "Invalid value",
   "form.valueAsDate": "Must be a valid date",
   "form.valueAsNumber": "Must be a valid number",
+  "home_required": "No place named",
+  "home_required.text": "Name the place this belongs in.",
   "image_upload_failed": "Image upload failed. Try again later",
   "impersonation_failed": "Impersonation failed",
   "impersonation_forbidden": "Not while impersonating",

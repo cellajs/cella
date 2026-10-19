@@ -1,4 +1,8 @@
 {
+  "ambiguous_placement": "Onduidelijke plaatsing",
+  "ambiguous_placement.text": "Noem één plek, de diepste: de plekken erboven volgen daaruit.",
+  "home_required": "Geen plek genoemd",
+  "home_required.text": "Noem de plek waar dit bij hoort.",
   "sso_email_missing": "Geen e-mailadres gedeeld",
   "sso_email_missing.text": "Je instelling heeft geen e-mailadres gedeeld, dat een nieuw account nodig heeft. Vraag de helpdesk van je instelling het vrij te geven, of log op een andere manier in als je bent uitgenodigd.",
   "sso_email_exists": "Dit adres heeft al een account",

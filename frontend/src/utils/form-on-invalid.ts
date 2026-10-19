@@ -1,26 +1,37 @@
 import { t } from 'i18next';
-import { createElement } from 'react';
+import { type BaseSyntheticEvent, createElement } from 'react';
 import type { FieldError, FieldErrors, FieldValues, ValidateResult } from 'react-hook-form';
 import type { TKey } from '~/lib/i18n-locales';
 import { toaster } from '~/modules/common/toaster/toaster';
 
-export const defaultOnInvalid = <TFieldValues extends FieldValues>(errors: FieldErrors<TFieldValues>) => {
-  const messages = processErrors(errors);
+/**
+ * Toasts a refused submit. The toast lists the errors no field shows: a field rendered in the submitted form shows its
+ * own message under its input, so its error is left out, and with every error inline the toast is the headline alone.
+ * Without the submit event (a programmatic submit) every error is listed.
+ */
+export const defaultOnInvalid = <TFieldValues extends FieldValues>(errors: FieldErrors<TFieldValues>, event?: BaseSyntheticEvent) => {
+  if (Object.keys(errors).length === 0) return;
 
-  if (messages.length === 0) return;
-
-  toaster.error(t('error:form.invalid_form'), {
-    description: createElement(
-      'div',
-      null,
-      messages.map((msg, i) => createElement('p', { key: i }, msg)),
-    ),
-  });
+  // The target, since React has cleared `currentTarget` by the time an async validation ends
+  const form = event && event.target instanceof HTMLFormElement ? event.target : undefined;
+  const messages = processErrors(errors, form);
+  const description = messages.length
+    ? createElement(
+        'div',
+        null,
+        messages.map((msg, i) => createElement('p', { key: i }, msg)),
+      )
+    : undefined;
+  toaster.error(t('error:form.invalid_form'), { description });
 
   console.error('Form validation failed', errors);
 };
 
-const processErrors = <TFieldValues extends FieldValues>(errors: FieldErrors<TFieldValues>, parentFieldName?: string): string[] => {
+const processErrors = <TFieldValues extends FieldValues>(
+  errors: FieldErrors<TFieldValues>,
+  form: HTMLFormElement | undefined,
+  parentFieldName?: string,
+): string[] => {
   const messages: string[] = [];
 
   for (const [name, value] of Object.entries(errors)) {
@@ -31,6 +42,7 @@ const processErrors = <TFieldValues extends FieldValues>(errors: FieldErrors<TFi
 
     if ('message' in value || 'type' in value || 'types' in value) {
       const error = value as FieldError;
+      if (showsInline(form, fieldName)) continue;
 
       if (error.types) {
         for (const [subType, subMsg] of Object.entries(error.types)) {
@@ -42,12 +54,16 @@ const processErrors = <TFieldValues extends FieldValues>(errors: FieldErrors<TFi
         messages.push(`${label}: ${message}`);
       }
     } else {
-      messages.push(...processErrors(value as FieldErrors<TFieldValues>, fieldName));
+      messages.push(...processErrors(value as FieldErrors<TFieldValues>, form, fieldName));
     }
   }
 
   return messages;
 };
+
+/** The form renders an input of the field with a box (mounted, not `display: none`), so the field's message shows its error. */
+const showsInline = (form: HTMLFormElement | undefined, fieldName: string) =>
+  !!form && Array.from(form.querySelectorAll(`[name="${CSS.escape(fieldName)}"]`)).some((input) => input.getClientRects().length > 0);
 
 // Resolve a camelCase field name to a translated label via c:{snake_case} convention
 const resolveFieldLabel = (fieldName: string): string => {

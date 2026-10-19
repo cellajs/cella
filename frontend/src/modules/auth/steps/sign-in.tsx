@@ -21,7 +21,7 @@ import { invitationResumePath, useNavigateAfterAuth } from '~/modules/auth/use-p
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '~/modules/ui/field';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { useUserStore } from '~/modules/user/user-store';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
@@ -165,6 +165,7 @@ export function SignInStep() {
                     placeholder="name@example.com"
                   />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />

@@ -1,5 +1,4 @@
 import { eq, sql } from 'drizzle-orm';
-import { activitiesTable } from '#/modules/activities/activities-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { baseDb } from './db';
 
@@ -24,15 +23,4 @@ export const findTenantById = prepared('find_tenant_by_id', () =>
     .where(eq(tenantsTable.id, sql.placeholder('id')))
     .limit(1)
     .prepare('find_tenant_by_id'),
-);
-
-// Idempotency (sync engine)
-
-export const findActivityByMutationId = prepared('find_activity_by_mutation_id', () =>
-  baseDb
-    .select({ id: activitiesTable.id })
-    .from(activitiesTable)
-    .where(sql`${activitiesTable.stx}->>'mutationId' = ${sql.placeholder('mutationId')}`)
-    .limit(1)
-    .prepare('find_activity_by_mutation_id'),
 );

@@ -2,6 +2,7 @@ import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack
 import { appConfig, type ProductEntityType } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { resetConnectivityCache } from '~/query/offline/connectivity';
+import { quarantineFailedSync } from '~/query/offline/failed-sync';
 import { mutationRetry } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
 
@@ -38,7 +39,7 @@ export function markReplayingMutations(): void {
   }
 }
 
-/** Quarantines a replayed mutation that fails with a 4xx so no offline edit is lost after a cache bust. Best-effort, lazy-imported to avoid cycles. */
+/** Quarantines a replayed mutation that fails with a 4xx so no offline edit is lost after a cache bust. Best-effort. */
 function quarantineOnClientError(error: ApiError, vars: unknown, mutationKey: unknown): void {
   const mutationId = mutationIdOf(vars);
   if (!mutationId || !replayingMutationIds.delete(mutationId)) return;
@@ -47,18 +48,7 @@ function quarantineOnClientError(error: ApiError, vars: unknown, mutationKey: un
   if (typeof status !== 'number' || status < 400 || status >= 500) return;
 
   const entityType = entityTypeOf(mutationKey);
-  import('~/query/offline/failed-sync')
-    .then(({ quarantineFailedSync }) =>
-      quarantineFailedSync({
-        mutationId,
-        entityType,
-        clientCacheVersion: appConfig.clientCacheVersion,
-        status,
-        variables: vars,
-        error,
-      }),
-    )
-    .catch(() => {});
+  quarantineFailedSync({ mutationId, entityType, clientCacheVersion: appConfig.clientCacheVersion, status, variables: vars, error }).catch(() => {});
 }
 
 const mutationCacheConfig = {
