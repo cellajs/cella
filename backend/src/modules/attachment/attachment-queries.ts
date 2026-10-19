@@ -1,4 +1,4 @@
-import { and, asc, count, eq, getColumns, ilike, inArray, isNull, or, type SQL } from 'drizzle-orm';
+import { and, asc, count, eq, getColumns, inArray, isNull, or, type SQL } from 'drizzle-orm';
 import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import type { ActorContext, DbContext } from '#/core/context';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
@@ -10,7 +10,7 @@ import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { auditUserSelect, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
 import { getOrderColumns } from '#/utils/order-column';
 import { seqCursorFilters } from '#/utils/seq-cursor';
-import { prepareStringForILikeFilter } from '#/utils/sql';
+import { textSearchFilter } from '#/utils/sql';
 
 // Every read and write below carries the request's tenant + organization predicate, so the
 // result is the same with RLS bypassed; the RLS transaction wrappers stay the backstop.
@@ -100,13 +100,12 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
   filters.push(...seqCursorFilters(attachmentsTable.seq, seqCursor));
 
   if (q?.trim()) {
-    const queryToken = prepareStringForILikeFilter(q.trim());
     filters.push(
       or(
-        ilike(attachmentsTable.name, queryToken),
-        ilike(attachmentsTable.filename, queryToken),
-        ilike(attachmentsTable.contentType, queryToken),
-        ilike(attachmentsTable.keywords, queryToken),
+        textSearchFilter(attachmentsTable.name, q),
+        textSearchFilter(attachmentsTable.filename, q),
+        textSearchFilter(attachmentsTable.contentType, q),
+        textSearchFilter(attachmentsTable.keywords, q),
       ) as SQL,
     );
   }

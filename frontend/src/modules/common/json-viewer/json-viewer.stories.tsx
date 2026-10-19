@@ -320,7 +320,8 @@ export const ShouldShowCopyOnHover: Story = {
     await step('Copy button is faded out inside the hover group of its node', async () => {
       // The reveal is a CSS group-hover; synthetic pointer events do not set :hover, so the resting state is checked.
       await expect(copyButton).not.toBeVisible();
-      await expect(copyButton.closest('.group\\/node')).toHaveTextContent('5 items');
+      // Storybook tests run without translations, so the item count renders as its key.
+      await expect(copyButton.closest('.group\\/node')).toHaveTextContent(/item/);
     });
 
     await step('Click copies the node and shows a check', async () => {
@@ -367,9 +368,24 @@ export const ShouldHighlightSearchMatches: Story = {
   args: { value: simpleObject, searchText: 'john', defaultInspectDepth: 2, rootName: false },
   play: async ({ canvas, step }) => {
     await step('Verify search match is highlighted', async () => {
-      // The "John" text should have highlight styling applied
       const johnText = await canvas.findByText('John');
+      expect(johnText.tagName).toBe('MARK');
       expect(johnText).toBeVisible();
+    });
+  },
+};
+
+/**
+ * Tests that the row at searchMatchPath expands into view and carries the current-match marker.
+ */
+export const ShouldMarkCurrentMatch: Story = {
+  name: 'when searchMatchPath points into a collapsed node, should expand it and mark the row current',
+  tags: ['!dev', '!autodocs'],
+  args: { value: nestedObject, searchText: 'john', searchMatchPath: ['user', 'profile', 'firstName'], defaultInspectDepth: 1, rootName: false },
+  play: async ({ canvas, step }) => {
+    await step('Verify the row along the path is expanded and current', async () => {
+      const johnText = await canvas.findByText('John');
+      expect(johnText.closest('[data-match-current]')).not.toBeNull();
     });
   },
 };

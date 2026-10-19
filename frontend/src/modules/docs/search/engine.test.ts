@@ -68,14 +68,14 @@ describe('docs search engine', () => {
   it('finds a page by title and puts the page row first', async () => {
     const rows = await engine.search('architecture');
     expect(rows[0]).toMatchObject({ type: 'page', pageId: 'architecture', to: '/docs/page/$', params: { _splat: 'architecture' } });
-    expect(rows[0].title).toContain('<mark>');
+    expect(rows[0].title).toBe('Architecture');
   });
 
   it('finds body text and anchors the row to its heading', async () => {
     const rows = await engine.search('persister');
     const textRow = rows.find((row) => row.type === 'text');
     expect(textRow).toMatchObject({ pageId: 'architecture', hash: 'data-flow' });
-    expect(textRow?.title).toContain('<mark>persister</mark>');
+    expect(textRow?.title).toBe('Queries hydrate from the persister before the network answers.');
     // The parent page row precedes its child rows even though only body text matched.
     expect(rows.findIndex((row) => row.id === 'page:architecture')).toBeLessThan(rows.indexOf(textRow ?? rows[0]));
   });

@@ -33,13 +33,11 @@ export interface JsonViewerProps<T = unknown> {
   collapseStringsAfterLength?: number | false;
   /** OpenAPI mode: 'spec' enables $ref navigation, 'schema' hides required arrays and shows labels */
   openapiMode?: 'spec' | 'schema';
-  /** Search text to filter/highlight matching nodes */
+  /** Search text to highlight in keys and values */
   searchText?: string;
   /** When true, expand all nodes regardless of defaultInspectDepth */
   expandAll?: boolean;
-  /** Current match index for navigation (0-based) */
-  currentMatchIndex?: number;
-  /** Path to the current search match; nodes along it expand */
+  /** The current search match (one of `matchRowPaths`); nodes along it expand and its row scrolls into view */
   searchMatchPath?: (string | number)[] | null;
   /** Whether to show quotes around keys (default: true) */
   showKeyQuotes?: boolean;
@@ -64,8 +62,7 @@ export interface JsonViewerTheme {
   /** Type keywords other than the primitive ones (array, object) */
   structureType: string;
   required: string;
-  // Search highlight
-  searchMatch: string;
+  /** Count of matches inside a collapsed node */
   matchBadge: string;
 }
 
@@ -80,7 +77,6 @@ export const defaultTheme: JsonViewerTheme = {
   schemaType: 'font-medium italic',
   structureType: 'text-purple-600 dark:text-purple-400',
   required: 'bg-amber-100/50 dark:bg-amber-900/10 text-amber-700/60 dark:text-amber-200/60',
-  searchMatch: 'bg-yellow-200 dark:bg-yellow-700 rounded px-0.5',
   matchBadge: 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200',
 };
 

@@ -36,6 +36,7 @@ async function run(): Promise<SideEffectBlock> {
     ...new Set([...allImmutabilityTables, ...allAdminOnlyWriteTables].map((t) => t.functionName)),
     ...membershipRuleTriggers.map((t) => t.functionName),
     'apply_count_deltas',
+    'fold_search',
   ];
   const publicationTableCount = [...Object.values(entityTables), ...Object.values(resourceTables)].map(getTableName).length;
   // Draft-lifecycle product tables carry a publication row filter (the draft boundary).

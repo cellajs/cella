@@ -1,51 +1,40 @@
-import type { ReactNode } from 'react';
+import { foldText } from 'shared/utils/text-match';
 
-const containsSearchMatch = (value: unknown, searchText: string): boolean => {
-  if (!searchText) return false;
-  const lowerSearch = searchText.toLowerCase();
+export type JsonPath = (string | number)[];
 
-  if (value === null || value === undefined) return false;
-  if (typeof value === 'string') return value.toLowerCase().includes(lowerSearch);
-  if (typeof value === 'number') return String(value).includes(searchText);
-  if (typeof value === 'boolean') return String(value).toLowerCase().includes(lowerSearch);
+const contains = (value: string | number | boolean, folded: string) => foldText(String(value)).includes(folded);
 
-  if (Array.isArray(value)) {
-    return value.some((item) => containsSearchMatch(item, searchText));
-  }
+/**
+ * Paths of the rows that show `searchText`, in render order: a row is one node, matching on its
+ * key or its primitive value. The list counts the matches and drives next/previous; a collapsed
+ * node counts the rows inside it.
+ */
+export const matchRowPaths = (value: unknown, searchText: string): JsonPath[] => {
+  if (!searchText) return [];
+  const folded = foldText(searchText);
+  const paths: JsonPath[] = [];
 
-  if (typeof value === 'object') {
-    return Object.entries(value as Record<string, unknown>).some(
-      ([key, val]) => key.toLowerCase().includes(lowerSearch) || containsSearchMatch(val, searchText),
-    );
-  }
-
-  return false;
-};
-
-export const countSearchMatchesInValue = (value: unknown, searchText: string): number => {
-  if (!searchText) return 0;
-  const lowerSearch = searchText.toLowerCase();
-  let count = 0;
-
-  if (value === null || value === undefined) return 0;
-  if (typeof value === 'string') {
-    if (value.toLowerCase().includes(lowerSearch)) count++;
-  } else if (typeof value === 'number') {
-    if (String(value).includes(searchText)) count++;
-  } else if (typeof value === 'boolean') {
-    if (String(value).toLowerCase().includes(lowerSearch)) count++;
-  } else if (Array.isArray(value)) {
-    for (const item of value) {
-      count += countSearchMatchesInValue(item, searchText);
+  const visit = (node: unknown, path: JsonPath, key: string | null) => {
+    const keyMatches = key !== null && contains(key, folded);
+    if (node === null || node === undefined) {
+      if (keyMatches) paths.push(path);
+      return;
     }
-  } else if (typeof value === 'object') {
-    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
-      if (key.toLowerCase().includes(lowerSearch)) count++;
-      count += countSearchMatchesInValue(val, searchText);
+    if (Array.isArray(node)) {
+      if (keyMatches) paths.push(path);
+      for (const [index, item] of node.entries()) visit(item, [...path, index], null);
+      return;
     }
-  }
+    if (typeof node === 'object') {
+      if (keyMatches) paths.push(path);
+      for (const [childKey, child] of Object.entries(node as Record<string, unknown>)) visit(child, [...path, childKey], childKey);
+      return;
+    }
+    if (keyMatches || contains(node as string | number | boolean, folded)) paths.push(path);
+  };
 
-  return count;
+  visit(value, [], null);
+  return paths;
 };
 
 export function getValueType(value: unknown): string {
@@ -82,109 +71,3 @@ export function getTypeLabel(value: unknown, type: string): string {
 }
 
 export const JSON_SCHEMA_TYPES = new Set(['string', 'number', 'integer', 'boolean', 'array', 'object', 'null']);
-
-/** Wraps search matches in Tailwind-styled spans carrying data-search-match for scroll-to-match. */
-export const highlightText = (text: string, searchText: string, colorClass: string, searchMatchClass: string): ReactNode => {
-  if (!searchText) return <span className={colorClass}>{text}</span>;
-
-  const lowerText = text.toLowerCase();
-  const lowerSearch = searchText.toLowerCase();
-
-  const matches: number[] = [];
-  let searchIndex = 0;
-  while (true) {
-    const index = lowerText.indexOf(lowerSearch, searchIndex);
-    if (index === -1) break;
-    matches.push(index);
-    searchIndex = index + 1;
-  }
-
-  if (matches.length === 0) return <span className={colorClass}>{text}</span>;
-
-  const segments: ReactNode[] = [];
-  let lastEnd = 0;
-
-  for (let i = 0; i < matches.length; i++) {
-    const matchStart = matches[i];
-    if (matchStart > lastEnd) {
-      segments.push(text.slice(lastEnd, matchStart));
-    }
-    segments.push(
-      <span key={i} className={searchMatchClass} data-search-match="true">
-        {text.slice(matchStart, matchStart + searchText.length)}
-      </span>,
-    );
-    lastEnd = matchStart + searchText.length;
-  }
-
-  if (lastEnd < text.length) {
-    segments.push(text.slice(lastEnd));
-  }
-
-  return <span className={colorClass}>{segments}</span>;
-};
-
-/** Finds the path to the Nth (0-indexed) search match, or null when the index is out of bounds. */
-export const getPathToNthMatch = (
-  value: unknown,
-  searchText: string,
-  targetIndex: number,
-  currentPath: (string | number)[] = [],
-): { path: (string | number)[]; currentCount: number } | null => {
-  if (!searchText) return null;
-  const lowerSearch = searchText.toLowerCase();
-  let count = 0;
-
-  const search = (val: unknown, path: (string | number)[]): { path: (string | number)[]; found: boolean } | null => {
-    if (val === null || val === undefined) return null;
-
-    if (typeof val === 'string') {
-      if (val.toLowerCase().includes(lowerSearch)) {
-        if (count === targetIndex) return { path, found: true };
-        count++;
-      }
-      return null;
-    }
-
-    if (typeof val === 'number') {
-      if (String(val).includes(searchText)) {
-        if (count === targetIndex) return { path, found: true };
-        count++;
-      }
-      return null;
-    }
-
-    if (typeof val === 'boolean') {
-      if (String(val).toLowerCase().includes(lowerSearch)) {
-        if (count === targetIndex) return { path, found: true };
-        count++;
-      }
-      return null;
-    }
-
-    if (Array.isArray(val)) {
-      for (let i = 0; i < val.length; i++) {
-        const result = search(val[i], [...path, i]);
-        if (result?.found) return result;
-      }
-      return null;
-    }
-
-    if (typeof val === 'object') {
-      for (const [key, v] of Object.entries(val as Record<string, unknown>)) {
-        if (key.toLowerCase().includes(lowerSearch)) {
-          if (count === targetIndex) return { path: [...path, key], found: true };
-          count++;
-        }
-        const result = search(v, [...path, key]);
-        if (result?.found) return result;
-      }
-      return null;
-    }
-
-    return null;
-  };
-
-  const result = search(value, currentPath);
-  return result ? { path: result.path, currentCount: count } : null;
-};

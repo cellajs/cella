@@ -1,30 +1,10 @@
 import { BracesIcon, ChevronRightIcon, FileTextIcon, HashIcon } from 'lucide-react';
 import { Fragment } from 'react';
+import { HighlightText } from '~/modules/common/match-highlight';
 import { getMethodColor } from '~/modules/docs/helpers/get-method-color';
 import type { DocsSearchResult } from '~/modules/docs/search/types';
 import { Badge } from '~/modules/ui/badge';
 import { cn } from '~/utils/cn';
-
-/** Render engine-highlighted text: `<mark>` ranges become styled spans (no raw HTML). */
-function MarkedText({ text }: { text: string }) {
-  const parts = text.split(/<\/?mark>/g);
-  if (parts.length === 1) return <>{text}</>;
-  return (
-    <>
-      {parts.map((part, index) =>
-        index % 2 === 1 ? (
-          // biome-ignore lint/suspicious/noArrayIndexKey: derived from a stable string split.
-          <span key={index} className="text-primary underline underline-offset-4">
-            {part}
-          </span>
-        ) : (
-          // biome-ignore lint/suspicious/noArrayIndexKey: derived from a stable string split.
-          <Fragment key={index}>{part}</Fragment>
-        ),
-      )}
-    </>
-  );
-}
 
 function Breadcrumbs({ crumbs }: { crumbs: string[] }) {
   if (!crumbs.length) return null;
@@ -48,7 +28,7 @@ export function DocsSearchRow({ item }: { item: DocsSearchResult }) {
         <span aria-hidden="true" className="absolute -inset-y-2 left-1 w-px bg-border" />
         {item.type === 'heading' && <HashIcon className="size-3.5 shrink-0 text-muted-foreground" />}
         <span className={cn('truncate', item.type === 'text' && 'text-popover-foreground/80')}>
-          <MarkedText text={item.title} />
+          <HighlightText text={item.title} />
         </span>
       </div>
     );
@@ -66,7 +46,7 @@ export function DocsSearchRow({ item }: { item: DocsSearchResult }) {
             </Badge>
           )}
           <span className={cn('truncate font-medium', item.deprecated && 'line-through opacity-60')}>
-            <MarkedText text={item.title} />
+            <HighlightText text={item.title} />
           </span>
         </div>
       </div>
@@ -80,7 +60,7 @@ export function DocsSearchRow({ item }: { item: DocsSearchResult }) {
       <div className="flex w-full min-w-0 items-center gap-2">
         <FileTextIcon className="size-4 shrink-0 text-muted-foreground" />
         <span className="truncate font-medium">
-          <MarkedText text={item.title} />
+          <HighlightText text={item.title} />
         </span>
       </div>
     </div>

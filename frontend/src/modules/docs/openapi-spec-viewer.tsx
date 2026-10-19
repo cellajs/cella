@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { ChevronDownIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, ChevronUpIcon, CircleXIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { JsonViewer } from '~/modules/common/json-viewer';
-import { getPathToNthMatch } from '~/modules/common/json-viewer/utils';
+import { type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils';
+import { useMatchSteps } from '~/modules/common/match-highlight';
 import { SearchSpinner } from '~/modules/common/search-spinner';
 import { Spinner } from '~/modules/common/spinner';
 import { JsonActions } from '~/modules/docs/json-actions';
@@ -13,33 +14,6 @@ import { Button } from '~/modules/ui/button';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
 
-/** Counts matches recursively over both keys and primitive values. */
-function countSearchMatches(value: unknown, searchText: string): number {
-  if (!searchText) return 0;
-  const lowerSearch = searchText.toLowerCase();
-  let count = 0;
-
-  if (value === null || value === undefined) return 0;
-  if (typeof value === 'string') {
-    if (value.toLowerCase().includes(lowerSearch)) count++;
-  } else if (typeof value === 'number') {
-    if (String(value).includes(searchText)) count++;
-  } else if (typeof value === 'boolean') {
-    if (String(value).toLowerCase().includes(lowerSearch)) count++;
-  } else if (Array.isArray(value)) {
-    for (const item of value) {
-      count += countSearchMatches(item, searchText);
-    }
-  } else if (typeof value === 'object') {
-    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
-      if (key.toLowerCase().includes(lowerSearch)) count++;
-      count += countSearchMatches(val, searchText);
-    }
-  }
-
-  return count;
-}
-
 /** Full OpenAPI spec JSON, rendered by json-viewer in 'openapi' mode for $ref click-to-scroll. */
 export function OpenApiSpecViewer() {
   const { t } = useTranslation();
@@ -47,59 +21,16 @@ export function OpenApiSpecViewer() {
   const [searchText, setSearchText] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [resetKey, setResetKey] = useState(0);
-  const [currentMatchIndex, setCurrentMatchIndex] = useState(-1); // -1 = no selection
-  const [searchMatchPath, setSearchMatchPath] = useState<(string | number)[] | null>(null);
-  const viewerContainerRef = useRef<HTMLDivElement>(null);
-
-  const scrollToMatch = (index: number) => {
-    if (!viewerContainerRef.current || !data) return;
-
-    const result = getPathToNthMatch(data, searchText, index);
-    if (result) {
-      setSearchMatchPath(result.path);
-    }
-
-    // Delay scroll to allow nodes to expand first
-    setTimeout(() => {
-      if (!viewerContainerRef.current) return;
-
-      const matches = viewerContainerRef.current.querySelectorAll('[data-search-match="true"]');
-      if (matches.length === 0) return;
-
-      const prevCurrent = viewerContainerRef.current.querySelector('.json-current-match');
-      if (prevCurrent) prevCurrent.classList.remove('json-current-match');
-
-      const targetMatch = matches[index];
-      if (targetMatch) {
-        targetMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        targetMatch.classList.add('json-current-match');
-      }
-    }, 150);
-  };
+  const [searchMatchPath, setSearchMatchPath] = useState<JsonPath | null>(null);
 
   const { data, isLoading, error } = useQuery(openApiSpecQueryOptions);
 
-  const matchCount = useMemo(() => {
-    if (!data || !searchText) return 0;
-    return countSearchMatches(data, searchText);
-  }, [data, searchText]);
+  const matchPaths = useMemo(() => (data ? matchRowPaths(data, searchText) : []), [data, searchText]);
+  const steps = useMatchSteps(matchPaths, setSearchMatchPath);
 
   const handleSearchChange = (newSearch: string) => {
     setSearchText(newSearch);
-    setCurrentMatchIndex(-1);
     setSearchMatchPath(null);
-  };
-
-  const handlePrevMatch = () => {
-    const newIndex = currentMatchIndex <= 0 ? matchCount - 1 : currentMatchIndex - 1;
-    setCurrentMatchIndex(newIndex);
-    scrollToMatch(newIndex);
-  };
-
-  const handleNextMatch = () => {
-    const newIndex = currentMatchIndex < 0 || currentMatchIndex >= matchCount - 1 ? 0 : currentMatchIndex + 1;
-    setCurrentMatchIndex(newIndex);
-    scrollToMatch(newIndex);
   };
 
   if (isLoading) return <Spinner />;
@@ -143,12 +74,16 @@ export function OpenApiSpecViewer() {
                 className="flex items-center overflow-hidden"
               >
                 <span className="whitespace-nowrap px-2 text-muted-foreground text-xs">
-                  {matchCount > 0 ? (currentMatchIndex >= 0 ? `${currentMatchIndex + 1}/${matchCount}` : `${matchCount}`) : t('c:no_results')}
+                  {steps.total === 0 && t('c:no_results')}
+                  {steps.total > 0 && (steps.index >= 0 ? t('c:match_position', { current: steps.index + 1, total: steps.total }) : steps.total)}
+                </span>
+                <span className="sr-only" aria-live="polite">
+                  {steps.announcement}
                 </span>
                 <button
                   type="button"
-                  onClick={handlePrevMatch}
-                  disabled={matchCount === 0}
+                  onClick={steps.previous}
+                  disabled={steps.total === 0}
                   className="rounded p-1 hover:bg-muted disabled:opacity-30"
                   title={t('c:previous')}
                 >
@@ -156,8 +91,8 @@ export function OpenApiSpecViewer() {
                 </button>
                 <button
                   type="button"
-                  onClick={handleNextMatch}
-                  disabled={matchCount === 0}
+                  onClick={steps.next}
+                  disabled={steps.total === 0}
                   className="mr-2 rounded p-1 hover:bg-muted disabled:opacity-30"
                   title={t('c:next')}
                 >
@@ -194,7 +129,7 @@ export function OpenApiSpecViewer() {
         <JsonActions url={openApiUrl} data={data} filename="openapi.json" resourceName={t('c:docs.openapi_json')} className="max-sm:hidden" />
       </div>
 
-      <div ref={viewerContainerRef} className="overflow-x-auto rounded-lg bg-muted/30 p-4">
+      <div className="overflow-x-auto rounded-lg bg-muted/30 p-4">
         <JsonViewer
           key={resetKey}
           value={data}
@@ -206,7 +141,6 @@ export function OpenApiSpecViewer() {
           searchText={searchText}
           showKeyQuotes={false}
           expandAll={isExpanded}
-          currentMatchIndex={currentMatchIndex}
           searchMatchPath={searchMatchPath}
         />
       </div>

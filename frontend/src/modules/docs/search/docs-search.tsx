@@ -3,12 +3,14 @@ import { useNavigate } from '@tanstack/react-router';
 import { SearchIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { parseTerms } from 'shared/utils/text-match';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { MatchScope } from '~/modules/common/match-highlight';
 import { type HistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { getDocsSearchClient } from '~/modules/docs/search/client';
@@ -136,13 +138,15 @@ export function DocsSearch() {
           <ComboboxList className="h-full max-h-none overflow-visible" hidden={results === null ? !recentSearches.length : !results.length}>
             {results === null && <SearchHistoryGroup searches={recentSearches} onRemove={deleteRecentSearch} />}
             {results !== null && (
-              <div className="p-1">
-                {results.map((item) => (
-                  <ComboboxItem key={item.id} value={item} className="py-2">
-                    <DocsSearchRow item={item} />
-                  </ComboboxItem>
-                ))}
-              </div>
+              <MatchScope terms={parseTerms(debouncedValue)}>
+                <div className="p-1">
+                  {results.map((item) => (
+                    <ComboboxItem key={item.id} value={item} className="py-2">
+                      <DocsSearchRow item={item} />
+                    </ComboboxItem>
+                  ))}
+                </div>
+              </MatchScope>
             )}
           </ComboboxList>
         </ScrollArea>

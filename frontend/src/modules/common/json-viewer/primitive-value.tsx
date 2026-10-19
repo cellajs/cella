@@ -1,63 +1,34 @@
 import { useState } from 'react';
+import { HighlightText } from '~/modules/common/match-highlight';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 import { getTypeColorClass, type JsonViewerTheme } from './types';
-import { highlightText, JSON_SCHEMA_TYPES } from './utils';
+import { JSON_SCHEMA_TYPES } from './utils';
 
 interface InlinePrimitiveValueProps {
   value: unknown;
-  theme: { string: string; number: string; boolean: string; null: string; searchMatch: string };
-  searchText: string;
+  theme: { string: string; number: string; boolean: string; null: string };
 }
 
-export function InlinePrimitiveValue({ value, theme, searchText }: InlinePrimitiveValueProps) {
-  const lowerSearch = searchText?.toLowerCase() || '';
-
-  const renderWithHighlight = (text: string, colorClass: string, quote = false) => {
-    const quoteSpan = quote ? <span className="group-data-[openapi-mode=schema]/jv:hidden">"</span> : null;
-
-    if (!lowerSearch) {
-      return (
-        <span className={colorClass}>
-          {quoteSpan}
-          {text}
-          {quoteSpan}
-        </span>
-      );
-    }
-
-    const lowerText = text.toLowerCase();
-    const matchIndex = lowerText.indexOf(lowerSearch);
-
-    if (matchIndex === -1) {
-      return (
-        <span className={colorClass}>
-          {quoteSpan}
-          {text}
-          {quoteSpan}
-        </span>
-      );
-    }
-
-    const before = text.slice(0, matchIndex);
-    const match = text.slice(matchIndex, matchIndex + lowerSearch.length);
-    const after = text.slice(matchIndex + lowerSearch.length);
-
+export function InlinePrimitiveValue({ value, theme }: InlinePrimitiveValueProps) {
+  if (value === null) return <span className={theme.null}>null</span>;
+  if (typeof value === 'boolean' || typeof value === 'number') {
     return (
-      <span className={colorClass}>
-        {quoteSpan}
-        {before}
-        <span className={theme.searchMatch}>{match}</span>
-        {after}
-        {quoteSpan}
+      <span className={typeof value === 'boolean' ? theme.boolean : theme.number}>
+        <HighlightText text={String(value)} />
       </span>
     );
-  };
-
-  if (value === null) return <span className={theme.null}>null</span>;
-  if (typeof value === 'boolean') return renderWithHighlight(String(value), theme.boolean);
-  if (typeof value === 'number') return renderWithHighlight(String(value), theme.number);
-  if (typeof value === 'string') return renderWithHighlight(value, theme.string, true);
+  }
+  if (typeof value === 'string') {
+    const quote = <span className="group-data-[openapi-mode=schema]/jv:hidden">"</span>;
+    return (
+      <span className={theme.string}>
+        {quote}
+        <HighlightText text={value} />
+        {quote}
+      </span>
+    );
+  }
 
   return <span>{String(value)}</span>;
 }
@@ -65,13 +36,12 @@ export function InlinePrimitiveValue({ value, theme, searchText }: InlinePrimiti
 interface PrimitiveValueProps {
   value: unknown;
   type: string;
-  theme: Pick<JsonViewerTheme, 'string' | 'number' | 'boolean' | 'null' | 'schemaType' | 'structureType' | 'searchMatch'>;
+  theme: Pick<JsonViewerTheme, 'string' | 'number' | 'boolean' | 'null' | 'schemaType' | 'structureType'>;
   collapseStringsAfterLength: number;
-  searchText: string;
   openapiMode?: 'spec' | 'schema';
 }
 
-export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength, searchText, openapiMode }: PrimitiveValueProps) {
+export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength, openapiMode }: PrimitiveValueProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const baseClass = tw('wrap-break-word whitespace-pre-line');
 
@@ -86,11 +56,12 @@ export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength,
 
       const shouldTruncate = str.length > collapseStringsAfterLength;
       const displayValue = !isExpanded && shouldTruncate ? str.slice(0, collapseStringsAfterLength) : str;
-      const isMatch = searchText && str.toLowerCase().includes(searchText.toLowerCase());
       const text = (
         <>
           <span className="group-data-[openapi-mode=schema]/jv:hidden">"</span>
-          {isMatch ? highlightText(displayValue, searchText, theme.string, theme.searchMatch) : <span className={theme.string}>{displayValue}</span>}
+          <span className={theme.string}>
+            <HighlightText text={displayValue} />
+          </span>
           {!isExpanded && shouldTruncate && <span className="text-muted-foreground">…</span>}
           <span className="group-data-[openapi-mode=schema]/jv:hidden">"</span>
         </>
@@ -118,24 +89,18 @@ export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength,
         </span>
       );
     }
-    case 'number': {
-      const numStr = String(value);
-      const isMatch = searchText && numStr.includes(searchText);
+    case 'number':
       return (
-        <span className={baseClass}>
-          {isMatch ? highlightText(numStr, searchText, theme.number, theme.searchMatch) : <span className={theme.number}>{numStr}</span>}
+        <span className={cn(baseClass, theme.number)}>
+          <HighlightText text={String(value)} />
         </span>
       );
-    }
-    case 'boolean': {
-      const boolStr = String(value);
-      const isMatch = searchText && boolStr.toLowerCase().includes(searchText.toLowerCase());
+    case 'boolean':
       return (
-        <span className={baseClass}>
-          {isMatch ? highlightText(boolStr, searchText, theme.boolean, theme.searchMatch) : <span className={theme.boolean}>{boolStr}</span>}
+        <span className={cn(baseClass, theme.boolean)}>
+          <HighlightText text={String(value)} />
         </span>
       );
-    }
     case 'null':
       return <span className={cn(baseClass, theme.null)}>null</span>;
     case 'undefined':
