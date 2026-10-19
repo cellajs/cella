@@ -28,9 +28,12 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
     throw new AppError(429, 'restrict_by_org', 'warn', { entityType: 'attachment' });
   }
 
-  const batchStxId = input[0].stx.mutationId;
-  const existing = await checkIdempotency(ctx, attachmentsTable, batchStxId);
-  // A replay of a mutation that already created its rows: the caller gets them back, and `replayed` tells the handler this request created none.
+  const existing = await checkIdempotency(
+    ctx,
+    attachmentsTable,
+    input.map((item) => item.id),
+  );
+  // A replay of a create that already wrote its rows: the caller gets them back, and `replayed` tells the handler this request created none.
   if (existing) return { data: await withAuditUsers(ctx, existing), rejectedIds: [] as string[], replayed: true };
 
   const currentAttachments = await getOrganizationEntityCount(ctx, { organizationId: organization.id, entityType: 'attachment' });

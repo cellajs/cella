@@ -1,33 +1,25 @@
-import { and, eq, type InferSelectModel, sql } from 'drizzle-orm';
+import { and, eq, type InferSelectModel, inArray, isNull } from 'drizzle-orm';
 import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import type { ActorContext } from '#/core/context';
-import { findActivityByMutationId } from '#/db/prepared';
 import { tenantRead } from '#/db/tenant-context';
 import { requestScopeWhere } from '#/db/utils/request-scope';
 
-/**
- * Replay check on the client-generated mutation id. Prepared, since it runs on every mutation.
- * @public
- */
-export async function isTransactionProcessed(stxId: string): Promise<boolean> {
-  const existing = await findActivityByMutationId.execute({ mutationId: stxId });
-  return existing.length > 0;
-}
-
-type ProductTable = PgTable & { stx: PgColumn; createdBy: PgColumn; tenantId: PgColumn; organizationId: PgColumn };
+type ProductTable = PgTable & { id: PgColumn; createdBy: PgColumn; deletedAt: PgColumn; tenantId: PgColumn; organizationId: PgColumn };
 
 /**
- * The rows of `table` a processed transaction created, null when it is new. Mutation ids travel in sync payloads, so
- * the lookup takes the caller's own rows in the request scope: a replay by another actor finds nothing and creates
- * its own rows.
+ * The rows a replayed create already wrote, null when the create is new. A create names its rows by the ids the client
+ * gave them, so the lookup reads those rows by id and answers the same whether or not the CDC worker has processed the
+ * first attempt. Only the caller's own live rows in the request scope count: an id another actor learned finds nothing,
+ * and so does an id whose row was deleted since (the tenant read policy hides deleted rows too), whose insert then
+ * writes nothing.
+ * @param ids - The ids of the create's input rows.
  */
-export async function checkIdempotency<T extends ProductTable>(ctx: ActorContext, table: T, stxId: string): Promise<InferSelectModel<T>[] | null> {
-  if (!(await isTransactionProcessed(stxId))) return null;
-  const batch = await tenantRead(ctx, (readCtx) =>
+export async function checkIdempotency<T extends ProductTable>(ctx: ActorContext, table: T, ids: string[]): Promise<InferSelectModel<T>[] | null> {
+  const rows = await tenantRead(ctx, (readCtx) =>
     readCtx.var.db
       .select()
       .from(table as PgTable)
-      .where(and(sql`${table.stx}->>'mutationId' = ${stxId}`, eq(table.createdBy, ctx.var.actor.id), requestScopeWhere(ctx, table))),
+      .where(and(inArray(table.id, ids), eq(table.createdBy, ctx.var.actor.id), isNull(table.deletedAt), requestScopeWhere(ctx, table))),
   );
-  return batch.length > 0 ? (batch as InferSelectModel<T>[]) : null;
+  return rows.length > 0 ? (rows as InferSelectModel<T>[]) : null;
 }
