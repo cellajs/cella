@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.20.0](https://github.com/cellajs/cella/compare/0.19.0...0.20.0) (2026-10-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* replayed creates find their rows without the CDC worker, and other fixes the apps asked for ([#1416](https://github.com/cellajs/cella/issues/1416))
+
+### 🎉 New features
+
+* **search:** one text matcher for filters, database search and highlighting ([#1414](https://github.com/cellajs/cella/issues/1414)) ([b523b8f](https://github.com/cellajs/cella/commit/b523b8f4a95da4fe46c4c5171d521e1790799685))
+
+
+### 🐞 Bug fixes
+
+* replayed creates find their rows without the CDC worker, and other fixes the apps asked for ([#1416](https://github.com/cellajs/cella/issues/1416)) ([1fca2e4](https://github.com/cellajs/cella/commit/1fca2e4b3b1a338fa4ac6165ea0f09b5648441a3))
+* **search:** textSearchFilter ships as a sync-breaking note with a codemod ([#1417](https://github.com/cellajs/cella/issues/1417)) ([e9632c0](https://github.com/cellajs/cella/commit/e9632c028cb2aef93b7b20cb9c85eeca7a67b1a7))
+
+
+### 🔧 Small improvements
+
+* **emails:** the preview registry holds the templates, not a copy of their sample data ([#1420](https://github.com/cellajs/cella/issues/1420)) ([01ad792](https://github.com/cellajs/cella/commit/01ad792e97141bf7c5d49e9bcec491ac88532ffe))
+
+
+### 📖 Documentation
+
+* members of an organization see each other's email address, stated where it is decided ([#1418](https://github.com/cellajs/cella/issues/1418)) ([34a2652](https://github.com/cellajs/cella/commit/34a26521b63bb3e3510275bfe25f385a79d84458))
+
+
+### 🧹 Chores
+
+* **deps:** dependency updates ([#1419](https://github.com/cellajs/cella/issues/1419)) ([da322dc](https://github.com/cellajs/cella/commit/da322dcf6dd707e454d7cfa1323e911d265d3de7))
+
 ## [0.19.0](https://github.com/cellajs/cella/compare/0.18.1...0.19.0) (2026-10-19)
 
 
