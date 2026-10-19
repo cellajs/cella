@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { ChevronRightIcon } from 'lucide-react';
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
+import { HighlightText } from '~/modules/common/match-highlight';
 import { cn } from '~/utils/cn';
 import { CollapsedPreview } from './collapsed-preview';
 import { useJsonViewerContext } from './context';
@@ -9,7 +10,7 @@ import { KeyRenderer } from './key-renderer';
 import { InlinePrimitiveValue, PrimitiveValue } from './primitive-value';
 import { SchemaLabels } from './schema-labels';
 import type { Path } from './types';
-import { countSearchMatchesInValue, getTypeLabel, getValueType } from './utils';
+import { getTypeLabel, getValueType, matchRowPaths } from './utils';
 
 interface JsonNodeProps {
   value: unknown;
@@ -95,18 +96,27 @@ export const JsonNode = memo(
       }
     }, [isOnSearchMatchPath, searchMatchPath]);
 
+    const isCurrentMatch = isOnSearchMatchPath && path.length === searchMatchPath?.length;
+    const rowRef = useRef<HTMLDivElement>(null);
+    // Also runs on mount: a row inside a collapsed node exists only after its ancestors expanded.
+    useEffect(() => {
+      if (isCurrentMatch) rowRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, [isCurrentMatch, searchMatchPath]);
+
     const paddingLeft = effectiveVisualDepth * indentWidth * 8;
 
     for (const dataType of valueTypes) {
       if (dataType.is(value, path)) {
         const CustomComponent = dataType.Component;
         return (
-          <div className="whitespace-nowrap" style={{ paddingLeft }}>
+          <div ref={rowRef} data-match-current={isCurrentMatch || undefined} className="whitespace-nowrap" style={{ paddingLeft }}>
             {keyName !== false &&
               (typeof keyName === 'number' ? (
                 <span className={theme.index}>{keyName}</span>
               ) : (
-                <span className={cn('font-medium', theme.key)}>{showKeyQuotes ? `"${keyName}"` : keyName}</span>
+                <span className={cn('font-medium', theme.key)}>
+                  <HighlightText text={showKeyQuotes ? `"${keyName}"` : String(keyName)} />
+                </span>
               ))}
             {keyName !== false && <span className="mr-1 opacity-70">:</span>}
             <CustomComponent value={value} path={path} />
@@ -122,11 +132,11 @@ export const JsonNode = memo(
     const hasSelfRequired =
       openapiMode === 'schema' && typeof value === 'object' && value !== null && (value as Record<string, unknown>).required === true;
 
-    const keyProps = { keyName, showKeyQuotes, searchText, isObjectValue, hasSelfRequired, openapiMode, theme };
+    const keyProps = { keyName, showKeyQuotes, isObjectValue, hasSelfRequired, openapiMode, theme };
 
     if (valueType !== 'object' && valueType !== 'array') {
       return (
-        <div className="whitespace-nowrap" style={{ paddingLeft }}>
+        <div ref={rowRef} data-match-current={isCurrentMatch || undefined} className="whitespace-nowrap" style={{ paddingLeft }}>
           <KeyRenderer {...keyProps} />
           {keyName !== false && <span className="mr-1 opacity-70">:</span>}
           <PrimitiveValue
@@ -134,7 +144,6 @@ export const JsonNode = memo(
             type={valueType}
             theme={theme}
             collapseStringsAfterLength={collapseStringsAfterLength}
-            searchText={searchText}
             openapiMode={openapiMode}
           />
           {displayDataTypes && <span className="ml-2 text-muted-foreground text-sm">{getTypeLabel(value, valueType)}</span>}
@@ -270,7 +279,7 @@ export const JsonNode = memo(
 
     if (isEmpty) {
       return (
-        <div className="whitespace-nowrap" style={{ paddingLeft }}>
+        <div ref={rowRef} data-match-current={isCurrentMatch || undefined} className="whitespace-nowrap" style={{ paddingLeft }}>
           <KeyRenderer {...keyProps} />
           {keyName !== false && <span className="mr-1 opacity-70">:</span>}
           <span className={bracketClass}>{openBracket}</span>
@@ -294,14 +303,14 @@ export const JsonNode = memo(
     if (isPrimitiveArray) {
       const items = value as unknown[];
       return (
-        <div className="whitespace-nowrap" style={{ paddingLeft }}>
+        <div ref={rowRef} data-match-current={isCurrentMatch || undefined} className="whitespace-nowrap" style={{ paddingLeft }}>
           <KeyRenderer {...keyProps} />
           {keyName !== false && <span className="mr-1 opacity-70">:</span>}
           <span className={bracketClass}>[</span>
           {items.map((item, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: rendering an inline primitive array; items have no stable id.
             <span key={index}>
-              <InlinePrimitiveValue value={item} theme={theme} searchText={searchText} />
+              <InlinePrimitiveValue value={item} theme={theme} />
               {index < items.length - 1 && <span className="opacity-70">, </span>}
             </span>
           ))}
@@ -310,7 +319,7 @@ export const JsonNode = memo(
       );
     }
 
-    const hiddenMatchCount = !isExpanded && searchText ? countSearchMatchesInValue(value, searchText) : 0;
+    const hiddenMatchCount = isExpanded ? 0 : matchRowPaths(value, searchText).length;
 
     const isExpandable = hasNestedObjects;
 
@@ -322,6 +331,8 @@ export const JsonNode = memo(
         {!hideExpandHeader && (
           // biome-ignore lint/a11y/useKeyWithClickEvents: the whole row toggles for the mouse; the chevron button inside is the keyboard path.
           <div
+            ref={rowRef}
+            data-match-current={isCurrentMatch || undefined}
             className={cn(
               'group/node -mx-1 -my-px inline-flex items-center gap-0.5 rounded px-1 py-px',
               isExpandable ? 'cursor-pointer hover:bg-accent/50' : 'pointer-events-none',

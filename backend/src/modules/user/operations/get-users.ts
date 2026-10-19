@@ -1,12 +1,12 @@
 import type { z } from '@hono/zod-openapi';
-import { eq, ilike, or, type SQL } from 'drizzle-orm';
+import { eq, or, type SQL } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { usersTable } from '#/modules/user/user-db';
 import { findUsersPaginated, sharesOrgFilter } from '#/modules/user/user-queries';
 import type { userListQuerySchema } from '#/modules/user/user-schema';
-import { prepareStringForILikeFilter } from '#/utils/sql';
+import { textSearchFilter } from '#/utils/sql';
 
 type GetUsersInput = z.infer<typeof userListQuerySchema>;
 
@@ -29,10 +29,7 @@ export async function getUsersOp(ctx: UserContext, input: GetUsersInput) {
   const filters: SQL[] = [];
   if (!isSystemAdmin) filters.push(sharesOrgFilter({ var: { db } }, { myOrgIds }));
   if (role) filters.push(eq(systemRolesTable.role, role));
-  if (q) {
-    const pattern = prepareStringForILikeFilter(q);
-    filters.push(or(ilike(usersTable.name, pattern), ilike(usersTable.email, pattern))!);
-  }
+  if (q) filters.push(or(textSearchFilter(usersTable.name, q), textSearchFilter(usersTable.email, q))!);
 
   const { items, total } = await findUsersPaginated(ctx, { filters, sort, order, limit, offset });
   return { items: isSystemAdmin ? items : items.map(({ role: _role, ...user }) => user), total };
