@@ -6,7 +6,7 @@ import { getUploadToken, type UploadToken } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
-import { makeBlobKey, type UploadContext } from '~/modules/attachment/offline/attachments-db';
+import { makeBlobKey, type UploadContext, type UploadStatus } from '~/modules/attachment/offline/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { prepareFilesForOffline } from '~/modules/common/uploader/helpers/prepare-for-offline';
 import type { CustomUppy, CustomUppyFile, CustomUppyOpt } from '~/modules/common/uploader/types';
@@ -20,6 +20,8 @@ import { cleanFileName } from '~/utils/clean-file-name';
 export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, tokenQuery: UploadTokenQuery): Promise<CustomUppy> => {
   let cloudToken: UploadToken | null = null;
   let hasCloudUpload = false;
+  // Only a server without cloud storage files the upload as local-only; offline or after a failed token request it waits as pending.
+  let localStatus: UploadStatus = appConfig.has.uploadEnabled ? 'pending' : 'local-only';
 
   try {
     // Without uploadEnabled all files stay in IndexedDB
@@ -27,6 +29,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
       cloudToken = await getUploadToken({ query: tokenQuery });
       // Transloadit is configured only when both params and signature come back
       hasCloudUpload = !!(cloudToken?.params && cloudToken?.signature);
+      if (!hasCloudUpload) localStatus = 'local-only';
     }
   } catch (err) {
     if (!(err instanceof Error && err.message.includes('Failed to fetch'))) {
@@ -53,12 +56,10 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
   uppy.on('upload', async (_uploadId, uploadFiles) => {
     const filesMap = Object.fromEntries(uploadFiles.map((f) => [f.id, f]));
 
-    // 'pending' = cloud available, queue for upload; 'local-only' = no cloud, permanent local storage.
     const isOnline = onlineManager.isOnline();
-    const uploadStatus = hasCloudUpload ? 'pending' : 'local-only';
 
     if (!hasCloudUpload) {
-      const assembly = await prepareFilesForOffline(filesMap, tokenQuery, uploadStatus);
+      const assembly = await prepareFilesForOffline(filesMap, tokenQuery, localStatus);
       uppy.cancelAll();
       uppy.emit('transloadit:complete', assembly);
       return;

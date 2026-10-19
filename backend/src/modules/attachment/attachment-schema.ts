@@ -94,6 +94,12 @@ export const attachmentCreateManyStxBodySchema = attachmentContract.createItemSc
 
 export const attachmentUpdateStxBodySchema = attachmentContract.updateBodySchema;
 
+/** The storage keys a deferred upload produced, for a row created while its file was still local. */
+export const attachmentLinkKeysBodySchema = z.object({
+  keys: attachmentKeysSchema,
+  convertedContentType: z.string().max(maxLength.field).nullable().optional(),
+});
+
 export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSchema);
 
 const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'createdAt', 'contentType']);

@@ -1977,6 +1977,27 @@ export const zUpdateAttachmentQuery = z.object({
  */
 export const zUpdateAttachmentResponse = zAttachment;
 
+export const zLinkAttachmentKeysBody = z.object({
+  keys: z.object({
+    original: z.string(),
+    preview: z.string().optional(),
+    thumbnail: z.string().optional(),
+    converted: z.string().optional(),
+  }),
+  convertedContentType: z.string().max(255).nullish(),
+});
+
+export const zLinkAttachmentKeysPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * Attachment with its stored file
+ */
+export const zLinkAttachmentKeysResponse = zAttachment;
+
 export const zGetMcpProtectedResourceMetadataPath = z.object({
   tenantId: z.string().max(50),
   organizationId: z.string().max(50),

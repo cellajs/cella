@@ -1,3 +1,4 @@
+import { hierarchy } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 
 // The canonical list options build their key at call time from placement ids only, but the module
@@ -17,12 +18,17 @@ const organizationId = 'org-1';
  * actually caches, so only an assertion on the emitted query key catches a module that drifts.
  */
 describe('product canonical options cache under a splice-able home key', () => {
-  const cases = [
-    { name: 'attachment at org depth', queryKey: attachmentsCanonicalOptions({ tenantId, organizationId }).queryKey, home: organizationId },
-  ];
+  const attachmentsLiveBelowOrganization = hierarchy.possibleHomeChannels('attachment').some((type) => type !== 'organization');
+  const attachmentKey = attachmentsCanonicalOptions({ tenantId, organizationId }).queryKey;
 
-  it.each(cases)('$name', ({ queryKey, home }) => {
-    expect(matchesCanonicalHome(queryKey, organizationId, home)).toBe(true);
+  it.runIf(!attachmentsLiveBelowOrganization)('attachment at org depth', () => {
+    expect(matchesCanonicalHome(attachmentKey, organizationId, organizationId)).toBe(true);
+  });
+
+  // An org-wide list of rows homed in several channels is no home list: it must be a filtered key, which sync invalidates.
+  it.runIf(attachmentsLiveBelowOrganization)('attachment below the organization: the org-wide list under a filtered key', () => {
+    expect(matchesCanonicalHome(attachmentKey, organizationId, organizationId)).toBe(false);
+    expect(attachmentKey.slice(2).some((segment) => typeof segment === 'object' && segment !== null)).toBe(true);
   });
 
   // Negative control: an extra scope segment makes the splice skip the key without reporting it.

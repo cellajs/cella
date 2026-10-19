@@ -1,7 +1,9 @@
 import type { AssemblyResponse } from '@uppy/transloadit';
+import { t } from 'i18next';
 import { uploadTemplates } from 'shared/transloadit-config';
 import type { UploadContext, UploadStatus } from '~/modules/attachment/offline/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
+import { toaster } from '~/modules/common/toaster/toaster';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
 
@@ -13,11 +15,9 @@ type PrepareFilesForOffline = (
 
 /**
  * Prepares files for offline/local storage and returns an assembly response.
- * Stores blobs in Dexie for later upload (when online) or permanent local storage.
+ * Stores blobs in Dexie; the upload service uploads them once cloud storage is reachable.
  */
 export const prepareFilesForOffline: PrepareFilesForOffline = async (files, tokenQuery, uploadStatus = 'pending') => {
-  console.warn('Files will be stored locally in IndexedDB.');
-
   const template = uploadTemplates.attachment;
   const templateKey = template.use[0];
   const organizationId = tokenQuery.organizationId;
@@ -32,6 +32,8 @@ export const prepareFilesForOffline: PrepareFilesForOffline = async (files, toke
   for (const file of Object.values(files)) {
     await attachmentStorage.storeUploadBlob(file, organizationId, uploadStatus, uploadContext, file.meta.attachmentId);
   }
+
+  toaster.info(t('c:saved_on_this_device'));
 
   const localFiles = Object.values(files).map((el) => {
     const basename = el.meta.name?.replace(`.${el.extension}`, '');

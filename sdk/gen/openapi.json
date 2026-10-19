@@ -12003,6 +12003,166 @@
         }
       }
     },
+    "/{tenantId}/{organizationId}/attachments/{id}/keys": {
+      "put": {
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "apiKey": []
+          },
+          {
+            "oauth2": []
+          }
+        ],
+        "operationId": "linkAttachmentKeys",
+        "tags": ["attachments", "cella", "product"],
+        "summary": "Link attachment keys",
+        "description": "Stores the storage keys of a file its uploader uploaded after creating the attachment, offline or before cloud storage was configured. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.",
+        "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "keys": {
+                    "type": "object",
+                    "properties": {
+                      "original": {
+                        "type": "string"
+                      },
+                      "preview": {
+                        "type": "string"
+                      },
+                      "thumbnail": {
+                        "type": "string"
+                      },
+                      "converted": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["original"]
+                  },
+                  "convertedContentType": {
+                    "type": ["string", "null"],
+                    "maxLength": 255
+                  }
+                },
+                "required": ["keys"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Attachment with its stored file",
+            "content": {
+              "application/json": {
+                "example": {
+                  "createdAt": "2024-05-01T22:40:37.374Z",
+                  "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
+                  "entityType": "attachment",
+                  "tenantId": "t58r8f",
+                  "name": "ick_thoroughly_coincide.text",
+                  "updatedAt": "2024-05-01T22:40:37.374Z",
+                  "stx": {
+                    "mutationId": "d81d96a7-bdc8-427d-b21b-a6fd6449bad7",
+                    "sourceId": "036cee36-25c5-42eb-81ab-e93904602179",
+                    "fieldTimestamps": {}
+                  },
+                  "description": null,
+                  "keywords": "dolores cetera aetas",
+                  "createdBy": {
+                    "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+                    "name": "Francesco Littel",
+                    "slug": "francesco_littel16",
+                    "thumbnailUrl": null,
+                    "entityType": "user"
+                  },
+                  "updatedBy": {
+                    "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+                    "name": "Francesco Littel",
+                    "slug": "francesco_littel16",
+                    "thumbnailUrl": null,
+                    "entityType": "user"
+                  },
+                  "deletedAt": null,
+                  "deletedBy": null,
+                  "publicAt": null,
+                  "seq": 447,
+                  "publicBucket": false,
+                  "bucketName": "attachments",
+                  "groupId": null,
+                  "filename": "ick_thoroughly_coincide.text",
+                  "contentType": "application/epub+zip",
+                  "convertedContentType": null,
+                  "size": "7202058",
+                  "keys": {
+                    "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text"
+                  },
+                  "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Attachment"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource": {
       "get": {
         "security": [],

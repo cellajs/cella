@@ -20,14 +20,16 @@ vi.mock('sdk', async (importOriginal) => ({
 }));
 vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { info: vi.fn(), error: vi.fn() } }));
 
-const { attachmentQueryKeys, attachmentsCanonicalOptions, useAttachmentCreateMutation, useAttachmentDeleteMutation, useAttachmentUpdateMutation } =
-  await import('~/modules/attachment/query');
+const { attachmentQueryKeys, useAttachmentCreateMutation, useAttachmentDeleteMutation, useAttachmentUpdateMutation } = await import(
+  '~/modules/attachment/query'
+);
 const { initMutationDefaults } = await import('~/query/mutation-registry');
 const { upgradePersistedMutation } = await import('~/query/offline/mutation-variables');
 const { fetchRangeAndPatch } = await import('~/query/realtime/cache-ops');
 
 const ctx = { tenantId: 'ten-1', organizationId: 'org-1' };
-const homeKey = attachmentsCanonicalOptions(ctx).queryKey;
+// The rows here carry no channel id, so they splice into the organization's home list.
+const homeKey = attachmentQueryKeys.list.home(ctx.organizationId);
 
 /** A stored attachment of the organization; only the fields the mutation callbacks read. */
 const attachment = (id: string, overrides: Partial<Attachment> = {}) =>

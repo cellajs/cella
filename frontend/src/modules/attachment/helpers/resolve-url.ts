@@ -1,11 +1,12 @@
 import type { Attachment } from 'sdk';
 import { parseMediaRef } from 'shared/utils/media-ref';
 import { type CloudFileVariant, getCloudUrl, getPrivateFileUrlById, getPublicFileUrl, getVariantKey } from '~/modules/attachment/file-url';
+import { isPendingUpload, markPendingUpload, PendingUploadError } from '~/modules/attachment/helpers/pending-uploads';
 import type { BlobVariant } from '~/modules/attachment/offline/attachments-db';
 import { downloadService } from '~/modules/attachment/offline/download-service';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { PresignRejectedError } from '~/modules/attachment/presign-batch';
-import { findAttachmentInCache } from '~/modules/attachment/query';
+import { fetchAttachment, findAttachmentInCache } from '~/modules/attachment/query';
 
 interface ResolvedUrl {
   url: string;
@@ -18,9 +19,12 @@ export interface ResolveOptions {
 }
 
 /** Cloud-key fields needed to build a URL without consulting the react-query cache. */
-type AttachmentMeta = Pick<Attachment, 'keys' | 'publicBucket' | 'organizationId' | 'tenantId'>;
+type AttachmentMeta = Pick<Attachment, 'keys' | 'publicBucket' | 'organizationId' | 'tenantId'> & Partial<Pick<Attachment, 'createdBy'>>;
 
-/** Local blob first, then cloud; a cloud hit queues a background download so the next view is served locally. */
+/**
+ * Local blob first, then cloud; a cloud hit queues a background download so the next view is served locally. Throws
+ * `PendingUploadError` for a file still only on its uploader's device.
+ */
 export async function resolveAttachmentUrl(
   attachmentId: string,
   attachment: AttachmentMeta | null,
@@ -35,6 +39,11 @@ export async function resolveAttachmentUrl(
 
   const meta = attachment ?? findAttachmentInCache(attachmentId);
   if (!meta) return null;
+
+  if (isPendingUpload(meta)) {
+    markPendingUpload(attachmentId, meta.createdBy ?? findAttachmentInCache(attachmentId)?.createdBy ?? null);
+    throw new PendingUploadError(attachmentId);
+  }
 
   // Requested variant only when its key exists; private files pass id + variant since client keys are not trusted.
   const effectiveVariant = preferredVariant !== 'raw' && getVariantKey(meta, preferredVariant) ? preferredVariant : 'original';
@@ -57,6 +66,7 @@ interface RefContext {
  * Resolves a media block reference by its media grammar kind, or '' when it renders nothing: an attachment id through
  * local storage or a presigned URL, a key under the document's organization through the CDN, an asset URL as stored.
  * Local blob URLs come from the storage service's shared cache, so a ref keeps one stable URL and the service owns revocation.
+ * A file still only on its uploader's device also resolves to '', registered in `pending-uploads` for its placeholder.
  */
 export async function resolveBlockNoteFileRef(ref: string, ctx: RefContext = {}): Promise<string> {
   // Stored documents and Yjs updates are client input: a non-string would reach the renderer coerced to a URL.
@@ -75,6 +85,11 @@ export async function resolveBlockNoteFileRef(ref: string, ctx: RefContext = {})
   const localUrl = await attachmentStorage.getSharedBlobUrl(media.id, variant, true);
   if (localUrl) return localUrl;
 
+  if (cached && isPendingUpload(cached)) {
+    markPendingUpload(media.id, cached.createdBy);
+    return '';
+  }
+
   const tenantId = cached?.tenantId ?? ctx.tenantId;
   const organizationId = cached?.organizationId ?? ctx.organizationId;
   if (!tenantId || !organizationId) {
@@ -83,8 +98,11 @@ export async function resolveBlockNoteFileRef(ref: string, ctx: RefContext = {})
   }
 
   // A row that is gone or denied renders nothing, as an invalid reference does; a failed request stays an error.
-  return getPrivateFileUrlById(media.id, variant, tenantId, organizationId).catch((error) => {
-    if (error instanceof PresignRejectedError) return '';
-    throw error;
+  return getPrivateFileUrlById(media.id, variant, tenantId, organizationId).catch(async (error) => {
+    if (!(error instanceof PresignRejectedError)) throw error;
+    // An uncached row may be readable but not uploaded yet: the permission-checked read tells it apart from gone or denied.
+    const row = await fetchAttachment(tenantId, organizationId, media.id);
+    if (row && isPendingUpload(row)) markPendingUpload(media.id, row.createdBy);
+    return '';
   });
 }
