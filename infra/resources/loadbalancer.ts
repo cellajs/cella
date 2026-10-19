@@ -14,6 +14,13 @@ import { CertReadyGate, DnsPropagationGate } from './dns-cert-gates';
 import { internalLbPort, publishLbInternalAddress } from './lb-internal';
 import { privateNetworkId, privateNetworkSubnet } from './network';
 
+/**
+ * A frontend whose ACLs are `Acl` resources of their own. The provider reads a frontend's live ACLs into its `acls` field, which this program
+ * leaves empty, so a refreshing `up` would rewrite the frontend without them and delete them: a refreshing apply dropped the HTTPS redirect
+ * and the private-network rule of the internal frontend on staging. The ACLs are owned by their own resources, never by the frontend.
+ */
+const frontendWithAclResources: pulumi.CustomResourceOptions = { ignoreChanges: ['acls'] };
+
 /** Base names pinned to the shipped Pulumi URNs and Scaleway display names; renaming replaces the resources. */
 const legacyBaseNames: Partial<Record<ServiceName, string>> = { backend: 'api', frontend: 'app' };
 const baseName = (slug: ServiceName) => legacyBaseNames[slug] ?? slug;
@@ -194,12 +201,16 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     );
     internalBackends.set(`${service.slug}-internal`, internalBackend);
 
-    const internalFrontend = new scaleway.loadbalancers.Frontend(`${service.slug}-internal-frontend`, {
-      lbId: lb.id,
-      name: naming.resource(`${service.slug}-internal`),
-      backendId: internalBackend.id,
-      inboundPort: internalLbPort(internalPort),
-    });
+    const internalFrontend = new scaleway.loadbalancers.Frontend(
+      `${service.slug}-internal-frontend`,
+      {
+        lbId: lb.id,
+        name: naming.resource(`${service.slug}-internal`),
+        backendId: internalBackend.id,
+        inboundPort: internalLbPort(internalPort),
+      },
+      frontendWithAclResources,
+    );
 
     // The frontend also listens on the LB's public IP, so the ACL pair admits private-network sources and denies everything else.
     new scaleway.loadbalancers.Acl(`${service.slug}-internal-allow-pn`, {
@@ -231,6 +242,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
       certificateIds: allCertIds,
     },
     {
+      ...frontendWithAclResources,
       // Attach only certs proven `ready`: a pending or errored cert fails its own gate first, with the ACME detail.
       dependsOn: certGates,
     },
@@ -276,12 +288,16 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     });
   }
 
-  const httpFrontend = new scaleway.loadbalancers.Frontend('http-frontend', {
-    lbId: lb.id,
-    name: naming.resource('http'),
-    backendId: defaultBackend.id, // Required but never reached (ACL redirects all)
-    inboundPort: 80,
-  });
+  const httpFrontend = new scaleway.loadbalancers.Frontend(
+    'http-frontend',
+    {
+      lbId: lb.id,
+      name: naming.resource('http'),
+      backendId: defaultBackend.id, // Required but never reached (ACL redirects all)
+      inboundPort: 80,
+    },
+    frontendWithAclResources,
+  );
 
   new scaleway.loadbalancers.Acl('http-to-https', {
     frontendId: httpFrontend.id,
