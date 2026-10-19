@@ -1,6 +1,7 @@
 import { DownloadIcon } from 'lucide-react';
 import type React from 'react';
 import { Suspense } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
@@ -57,36 +58,41 @@ export function AttachmentRender({
       }
     : undefined;
 
+  const downloadPlaceholder = (
+    <ContentPlaceholder icon={getFileIcon(type)} title="c:download_to_view">
+      {/* The URL is a CDN or presigned URL online, a local blob URL offline. */}
+      <Button variant="plain" className="mt-4" disabled={isInProgress} onClick={() => download(url, filename || 'file')}>
+        {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon className="size-4" />}
+        <span>{t('c:download')}</span>
+      </Button>
+    </ContentPlaceholder>
+  );
+
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop dismiss is a mouse affordance; ESC closes the dialog for keyboard users
     <div className={containerClassName} onClick={handleBackdropClick}>
-      <Suspense fallback={<Spinner className="size-6" />}>
-        {type.includes('image') &&
-          (imagePanZoom && !isMobile ? (
-            <ReactPanZoom
-              image={url}
-              alt={altName}
-              onPanStateToggle={onPanStateToggle}
-              imageClassName={itemClassName}
-              showButtons={showButtons}
-              backdropDismiss={!!onBackdropClick}
-            />
-          ) : (
-            <img src={url} alt={altName} className={cn(itemClassName, onBackdropClick ? 'max-h-full max-w-full' : 'size-full')} />
-          ))}
-        {type.includes('audio') && <RenderAudio src={url} className="mx-auto -mt-48 h-20 w-[80vw]" />}
-        {type.includes('video') && <RenderVideo src={url} className="mx-auto max-h-full max-w-7xl" />}
-        {type.includes('pdf') && <RenderPDF file={url} className="m-auto h-full w-[95vw] max-w-280 overflow-auto" />}
-        {!['image', 'audio', 'video', 'pdf'].some((k) => type.includes(k)) && (
-          <ContentPlaceholder icon={getFileIcon(type)} title="c:download_to_view">
-            {/* The URL is always fetchable: a CDN or presigned URL online, a local blob URL offline. */}
-            <Button variant="plain" className="mt-4" disabled={isInProgress} onClick={() => download(url, filename || 'file')}>
-              {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon className="size-4" />}
-              <span>{t('c:download')}</span>
-            </Button>
-          </ContentPlaceholder>
-        )}
-      </Suspense>
+      {/* A renderer that cannot load its file throws during render (react-pdf loads through Suspense); this keeps the failure inside the viewer. */}
+      <ErrorBoundary fallback={downloadPlaceholder} resetKeys={[url]}>
+        <Suspense fallback={<Spinner className="size-6" />}>
+          {type.includes('image') &&
+            (imagePanZoom && !isMobile ? (
+              <ReactPanZoom
+                image={url}
+                alt={altName}
+                onPanStateToggle={onPanStateToggle}
+                imageClassName={itemClassName}
+                showButtons={showButtons}
+                backdropDismiss={!!onBackdropClick}
+              />
+            ) : (
+              <img src={url} alt={altName} className={cn(itemClassName, onBackdropClick ? 'max-h-full max-w-full' : 'size-full')} />
+            ))}
+          {type.includes('audio') && <RenderAudio src={url} className="mx-auto -mt-48 h-20 w-[80vw]" />}
+          {type.includes('video') && <RenderVideo src={url} className="mx-auto max-h-full max-w-7xl" />}
+          {type.includes('pdf') && <RenderPDF file={url} className="m-auto h-full w-[95vw] max-w-280 overflow-auto" />}
+          {!['image', 'audio', 'video', 'pdf'].some((k) => type.includes(k)) && downloadPlaceholder}
+        </Suspense>
+      </ErrorBoundary>
     </div>
   );
 }
