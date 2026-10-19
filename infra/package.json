@@ -31,8 +31,8 @@
     "@aws-sdk/client-s3": "^3.1152.0",
     "@inquirer/core": "^12.0.4",
     "@inquirer/prompts": "^8.7.3",
-    "@pulumi/pulumi": "^3.268.0",
-    "@pulumi/random": "^4.21.2",
+    "@pulumi/pulumi": "^3.270.0",
+    "@pulumi/random": "^4.21.4",
     "@pulumiverse/scaleway": "^1.58.0",
     "picocolors": "^1.1.1",
     "shared": "workspace:*"
@@ -43,6 +43,6 @@
     "tsup": "^9.0.0",
     "tsx": "^4.23.15",
     "typescript": "6.0.3",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.5"
   }
 }
