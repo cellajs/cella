@@ -2,6 +2,7 @@ import { useIsRestoring } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import type { Attachment } from 'sdk';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
+import { getPendingUpload, PendingUploadError } from '~/modules/attachment/helpers/pending-uploads';
 import { resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
 import { PresignRejectedError } from '~/modules/attachment/presign-batch';
 import { findAttachmentInCache } from '~/modules/attachment/query';
@@ -104,6 +105,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
             );
             return { errorId: item.id, permanent: false };
           } catch (err) {
+            if (err instanceof PendingUploadError) return { data: { ...buildItemData(item, '', false), pendingUpload: getPendingUpload(item.id) } };
             console.error(`Failed to resolve URL for attachment ${item.id}:`, err);
             // A server-rejected id (denied or deleted) will not change on retry.
             return { errorId: item.id, permanent: err instanceof PresignRejectedError };

@@ -1,5 +1,6 @@
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
+import { getPendingUpload, PendingUploadError } from '~/modules/attachment/helpers/pending-uploads';
 import { resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
@@ -23,13 +24,21 @@ export const openAttachment = async (editor: CustomBlockNoteEditor, blockNoteRef
   if (mediaBlocks.length === 0) return;
 
   // Inline blocks may reference a thumbnail, so resolve the converted variant by attachment id and fall back to the stored ref.
-  const attachments = await Promise.all(
-    mediaBlocks.map(async ({ attachmentId, ...block }) => {
-      const fullSize = attachmentId ? (await resolveAttachmentUrl(attachmentId, null, { preferredVariant: 'converted' }))?.url : undefined;
-      const url = fullSize ?? (editor.resolveFileUrl ? await editor.resolveFileUrl(block.url) : block.url);
-      return { ...block, url };
+  const resolved = await Promise.all(
+    mediaBlocks.map(async ({ attachmentId, ...block }): Promise<CarouselItemData> => {
+      try {
+        const fullSize = attachmentId ? (await resolveAttachmentUrl(attachmentId, null, { preferredVariant: 'converted' }))?.url : undefined;
+        const url = fullSize ?? (editor.resolveFileUrl ? await editor.resolveFileUrl(block.url) : block.url);
+        return { ...block, url };
+      } catch (error) {
+        if (error instanceof PendingUploadError) return { ...block, url: '', pendingUpload: getPendingUpload(error.attachmentId) };
+        return { ...block, url: '' };
+      }
     }),
   );
+  // A slide with neither a file nor a pending upload to explain would spin forever.
+  const attachments = resolved.filter(({ url, pendingUpload }) => url || pendingUpload);
+  if (attachments.length === 0) return;
 
   const attachmentIndex = clickedSrc
     ? Math.max(

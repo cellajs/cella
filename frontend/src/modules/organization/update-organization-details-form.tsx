@@ -124,9 +124,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
                     organizationId: organization.id,
                     // Private org-scoped attachments so the id the block references resolves via presigned + permission check.
                     onComplete: (attachments) =>
-                      persistAttachments(attachments, { tenantId: organization.tenantId, organizationId: organization.id }).catch(() => {
-                        toaster.error(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }));
-                      }),
+                      persistAttachments(attachments, { tenantId: organization.tenantId, organizationId: organization.id }),
                   }
                 : undefined,
             }}

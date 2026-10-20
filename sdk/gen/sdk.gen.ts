@@ -202,6 +202,9 @@ import type {
   HandleMembershipInvitationResponses,
   InvokeTokenData,
   InvokeTokenErrors,
+  LinkAttachmentKeysData,
+  LinkAttachmentKeysErrors,
+  LinkAttachmentKeysResponses,
   MarkNotificationsReadData,
   MarkNotificationsReadErrors,
   MarkNotificationsReadResponses,
@@ -445,6 +448,9 @@ import {
   zHandleMembershipInvitationPath,
   zHandleMembershipInvitationResponse,
   zInvokeTokenPath,
+  zLinkAttachmentKeysBody,
+  zLinkAttachmentKeysPath,
+  zLinkAttachmentKeysResponse,
   zMarkNotificationsReadBody,
   zMarkNotificationsReadResponse,
   zMarkSeenBody,
@@ -3906,6 +3912,60 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/{tenantId}/{organizationId}/attachments/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Link attachment keys
+ *
+ * Stores the storage keys of a file its uploader uploaded after creating the attachment, offline or before cloud storage was configured. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.
+ *
+ * **PUT /{tenantId}/{organizationId}/attachments/{id}/keys** ·· [linkAttachmentKeys](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/PUT/{tenantId}/{organizationId}/attachments/{id}/keys) ·· [linkAttachmentKeys](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/{organizationId}/attachments/{id}/keys) ·· [linkAttachmentKeys](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/PUT/{tenantId}/{organizationId}/attachments/{id}/keys) ·· _attachments_cella_product_
+ *
+ * @param {linkAttachmentKeysData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {string} options.path.id - `string`
+ * @param {object} options.body.keys - `object`
+ * @param {string | null=} options.body.convertedContentType - `string | null` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const linkAttachmentKeys = <ThrowOnError extends boolean = true>(
+  options: Options<LinkAttachmentKeysData, ThrowOnError>,
+): RequestResult<LinkAttachmentKeysResponses, LinkAttachmentKeysErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).put<LinkAttachmentKeysResponses, LinkAttachmentKeysErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zLinkAttachmentKeysBody,
+          path: zLinkAttachmentKeysPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zLinkAttachmentKeysResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+      {
+        key: 'apiKey',
+        scheme: 'bearer',
+        type: 'http',
+      },
+      {
+        key: 'oauth2',
+        scheme: 'bearer',
+        type: 'http',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/attachments/{id}/keys',
     ...options,
     headers: {
       'Content-Type': 'application/json',

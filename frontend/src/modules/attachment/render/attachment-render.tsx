@@ -1,4 +1,4 @@
-import { DownloadIcon } from 'lucide-react';
+import { CloudOffIcon, DownloadIcon } from 'lucide-react';
 import type React from 'react';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import useDownloader from 'react-use-downloader';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { getFileIcon } from '~/modules/attachment/file-placeholder';
+import { type PendingUpload, pendingUploadMessage } from '~/modules/attachment/helpers/pending-uploads';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { PageSpinner, Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
@@ -20,6 +21,7 @@ const RenderVideo = lazyNamed(() => import('~/modules/attachment/render/video'),
 interface AttachmentRenderProps {
   type: string;
   url: string;
+  pendingUpload?: PendingUpload;
   /** Used as the save name for non-renderable types (the "download to view" action). */
   filename?: string;
   altName?: string;
@@ -35,6 +37,7 @@ interface AttachmentRenderProps {
 /** Presentational only: expects an already-resolved URL. */
 export function AttachmentRender({
   url,
+  pendingUpload,
   type,
   filename,
   altName,
@@ -48,6 +51,15 @@ export function AttachmentRender({
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
   const { download, isInProgress } = useDownloader();
+
+  if (pendingUpload) {
+    const { key, params } = pendingUploadMessage(pendingUpload);
+    return (
+      <div className={containerClassName}>
+        <ContentPlaceholder icon={CloudOffIcon} title={key} titleProps={params} />
+      </div>
+    );
+  }
 
   if (!url) return <PageSpinner className="size-12" />;
 

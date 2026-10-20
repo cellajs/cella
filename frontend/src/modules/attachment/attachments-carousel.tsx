@@ -11,6 +11,7 @@ import { useLatestCallback, useLatestRef } from '~/hooks/use-latest-ref';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { ATTACHMENT_DIALOG_PARAM, attachmentDialogStageClassName, clearAttachmentDialogSearchParams } from '~/modules/attachment/dialog/params';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
+import type { PendingUpload } from '~/modules/attachment/helpers/pending-uploads';
 import { AttachmentRender } from '~/modules/attachment/render/attachment-render';
 import { CloseButton } from '~/modules/common/close-button';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -40,6 +41,8 @@ export type CarouselItemData = {
   isLocal?: boolean;
   /** Stored description blocks; the dialog shows its text as a caption. */
   description?: string | null;
+  /** The file is still only on its uploader's device: the slide shows whose, with no url. */
+  pendingUpload?: PendingUpload;
 };
 
 interface CarouselPropsBase {
@@ -236,7 +239,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       )}
 
       <CarouselContent className="h-full">
-        {items.map(({ id, url, filename, contentType = 'image', convertedContentType }, idx) => {
+        {items.map(({ id, url, filename, contentType = 'image', convertedContentType, pendingUpload }, idx) => {
           return (
             <CarouselItem
               key={id}
@@ -256,6 +259,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 imagePanZoom={isDialog}
                 showButtons={currentItemIndex === idx}
                 url={url}
+                pendingUpload={pendingUpload}
                 filename={filename}
                 altName={i18n.t('c:attachment')}
                 onPanStateToggle={toggleWatchDrag}

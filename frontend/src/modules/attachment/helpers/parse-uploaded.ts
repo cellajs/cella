@@ -6,6 +6,45 @@ import { uploadStorage } from 'shared/utils/upload-visibility';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 
+type UploadedFile = UploadedUppyFile<'attachment'>[':original'][number];
+
+const uploadIdOf = (originalId: UploadedFile['original_id']) => (Array.isArray(originalId) ? originalId[0] : originalId);
+
+const variantSteps = uploadTemplates.attachment.use.filter((step) => step !== ':original');
+
+/** The stored keys of one uploaded original: its own, plus the converted, preview and thumbnail variants made from it. */
+export const uploadedFileKeys = (
+  result: Partial<UploadedUppyFile<'attachment'>>,
+  original: UploadedFile,
+): { keys: Attachment['keys']; convertedContentType: string | null } => {
+  const keys: Attachment['keys'] = { original: original.url ?? '' };
+  let convertedContentType: string | null = null;
+
+  // Upload IDs only correlate converted and thumbnail variants with the original.
+  const uploadId = uploadIdOf(original.original_id);
+  if (!uploadId) return { keys, convertedContentType };
+
+  for (const step of variantSteps) {
+    for (const { url, mime, original_id } of result[step] ?? []) {
+      if (uploadIdOf(original_id) !== uploadId) continue;
+
+      if (step.startsWith('converted_')) {
+        if (url) keys.converted = url;
+        convertedContentType = mime ?? null;
+      }
+
+      // thumb_image_tiny writes the `thumbnail` variant and must be checked before the generic thumb_ prefix, which writes `preview`.
+      if (step === 'thumb_image_tiny') {
+        if (url) keys.thumbnail = url;
+      } else if (step.startsWith('thumb_')) {
+        if (url) keys.preview = url;
+      }
+    }
+  }
+
+  return { keys, convertedContentType };
+};
+
 export const parseUploadedAttachments = (
   result: UploadedUppyFile<'attachment'>,
   organizationId: string,
@@ -13,71 +52,34 @@ export const parseUploadedAttachments = (
   placement?: Record<string, string | null>,
 ): Attachment[] => {
   const originalFiles = result[':original'] ?? [];
-
-  const attachments: Attachment[] = [];
-  const attachmentsByUploadId = new Map<string, Attachment>();
   const groupId = originalFiles.length > 1 ? generateId() : null;
   // The row's storage follows the template, as the server stamps it; the upload's metadata has no say.
   const storage = uploadStorage('attachment');
 
-  for (const file of originalFiles) {
-    const { size, url, mime, original_name, original_id, user_meta } = file;
-
-    // Upload IDs only correlate converted and thumbnail variants with the original.
-    const uploadId = Array.isArray(original_id) ? original_id[0] : original_id;
+  return originalFiles.map((file) => {
+    const { size, mime, original_name, user_meta } = file;
 
     const filename = original_name || user_meta?.name || 'file';
     const extIndex = filename.lastIndexOf('.');
     const name = extIndex > 0 ? filename.substring(0, extIndex) : filename;
 
-    // Reuse the id minted before upload (round-tripped as user_meta) so the row matches the local blob stored under it.
-    const attachmentId = user_meta?.attachmentId;
-
     // Schema defaults, including the placeholder tx.
     const attachment = createOptimisticEntity(zAttachment, {
-      id: attachmentId,
+      // Reuse the id minted before upload (round-tripped as user_meta) so the row matches the local blob stored under it.
+      id: user_meta?.attachmentId,
       size: String(size ?? 0),
       contentType: mime ?? 'application/octet-stream',
       filename,
       name,
       description: '',
       ...storage,
-      keys: { original: url ?? '' },
+      ...uploadedFileKeys(result, file),
       groupId,
       organizationId,
       ...placement,
     });
 
-    attachments.push(attachment as Attachment);
     // Cast needed because hey-api generates non-nullable intersection for nullable refs.
-    if (uploadId) attachmentsByUploadId.set(uploadId, attachment as Attachment);
-  }
-
-  const steps = uploadTemplates.attachment.use.filter((step) => step !== ':original');
-
-  for (const step of steps) {
-    const files = result[step] ?? [];
-
-    for (const { url, mime, original_id } of files) {
-      const resolvedId = Array.isArray(original_id) ? original_id[0] : original_id;
-      if (!resolvedId) continue;
-
-      const target = attachmentsByUploadId.get(resolvedId);
-      if (!target) continue;
-
-      if (step.startsWith('converted_')) {
-        if (url) target.keys.converted = url;
-        target.convertedContentType = mime ?? null;
-      }
-
-      // thumb_image_tiny writes the `thumbnail` variant and must be checked before the generic thumb_ prefix, which writes `preview`.
-      if (step === 'thumb_image_tiny') {
-        if (url) target.keys.thumbnail = url;
-      } else if (step.startsWith('thumb_')) {
-        if (url) target.keys.preview = url;
-      }
-    }
-  }
-
-  return attachments;
+    return attachment as Attachment;
+  });
 };

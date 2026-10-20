@@ -1,3 +1,4 @@
+import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
 import {
   type AttachmentBlob,
@@ -267,6 +268,29 @@ class AttachmentStorageService {
 
   async markFailed(id: string, error: string): Promise<void> {
     await this.updateUploadStatus(id, 'failed', error);
+  }
+
+  /** Marks a deferred upload uploaded, keeping its stored keys on the blob until the attachment row has them. */
+  async markUploadedWithKeys(id: string, keys: Attachment['keys'], convertedContentType: string | null): Promise<void> {
+    await attachmentsDb.blobs.update(id, { cloudKeys: keys, cloudConvertedContentType: convertedContentType, keysLinkedAt: null, linkAttempts: 0 });
+    await this.markUploaded(id);
+  }
+
+  /** Uploaded blobs whose attachment row still lacks their keys, while attempts remain. */
+  async getUnlinkedUploads(maxAttempts: number): Promise<AttachmentBlob[]> {
+    return attachmentsDb.blobs
+      .where('uploadStatus')
+      .equals('uploaded')
+      .filter((blob) => !!blob.cloudKeys && !blob.keysLinkedAt && (blob.linkAttempts ?? 0) < maxAttempts)
+      .toArray();
+  }
+
+  async markKeysLinked(id: string): Promise<void> {
+    await attachmentsDb.blobs.update(id, { keysLinkedAt: new Date(), lastError: null });
+  }
+
+  async recordLinkFailure(id: string, error: string, attempts: number): Promise<void> {
+    await attachmentsDb.blobs.update(id, { linkAttempts: attempts, lastError: error });
   }
 
   /** Get total storage used by blobs for an organization. */

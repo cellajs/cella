@@ -6,6 +6,7 @@ import useDownloader from 'react-use-downloader';
 import type { Attachment } from 'sdk';
 import { openAttachmentDialogSearch } from '~/modules/attachment/dialog/params';
 import { getCloudUrl } from '~/modules/attachment/file-url';
+import { isPendingUpload, pendingUploadMessage } from '~/modules/attachment/helpers/pending-uploads';
 import { useAttachmentUrl } from '~/modules/attachment/hooks/use-attachment-url';
 import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-upload-status';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
@@ -36,7 +37,7 @@ export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
   };
 
   const preview = <MediaThumbnail name={filename} url={url} contentType={contentType} />;
-  const badge = <SyncStatusBadge attachmentId={id} />;
+  const badge = <SyncStatusBadge row={row} />;
 
   return (
     <Button ref={cellRef} variant="cell" size="cell" tabIndex={tabIndex} className={wrapClass} aria-label={filename} onClick={handleClick}>
@@ -46,16 +47,22 @@ export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
   );
 }
 
-function SyncStatusBadge({ attachmentId }: { attachmentId: string }) {
+/** What this device can tell about the file: its own upload's progress, or, without the file, that its uploader still holds it. */
+function SyncStatusBadge({ row }: { row: Attachment }) {
   const { t } = useTranslation();
-  const { hasLocalBlob, isUploaded, isUploading, isFailed, isPending, isLocalOnly } = useBlobUploadStatus(attachmentId);
+  const { hasLocalBlob, isUploaded, isUploading, isFailed, isPending, isLocalOnly } = useBlobUploadStatus(row.id);
 
-  if (!hasLocalBlob || isUploaded) return null;
+  if (hasLocalBlob && isUploaded) return null;
 
   let icon: React.ReactNode;
   let tooltip: string;
 
-  if (isUploading) {
+  if (!hasLocalBlob) {
+    if (!isPendingUpload(row)) return null;
+    const { key, params } = pendingUploadMessage({ uploader: row.createdBy });
+    icon = <CloudOffIcon className="size-2.5 text-background" />;
+    tooltip = t(key, params);
+  } else if (isUploading) {
     icon = <LoaderIcon className="size-2.5 animate-spin text-background" />;
     tooltip = t('c:uploading');
   } else if (isPending) {
@@ -90,6 +97,9 @@ interface DownloadCellProps {
 export function DownloadCell({ row, tabIndex }: DownloadCellProps) {
   const { t } = useTranslation();
   const { download, error, isInProgress } = useDownloader();
+  const { hasLocalBlob } = useBlobUploadStatus(row.id);
+  const pending = !hasLocalBlob && isPendingUpload(row) ? pendingUploadMessage({ uploader: row.createdBy }) : null;
+  const tooltip = pending ? t(pending.key, pending.params) : t('c:download');
 
   useEffect(() => {
     if (!error) return;
@@ -98,6 +108,7 @@ export function DownloadCell({ row, tabIndex }: DownloadCellProps) {
 
   // Local-first: a stored blob saves without the network, and the cloud URL is the fallback.
   const handleDownload = async () => {
+    if (pending) return;
     try {
       const local = await attachmentStorage.createBlobUrlWithVariant(row.id, 'original', true);
       if (local) {
@@ -122,13 +133,15 @@ export function DownloadCell({ row, tabIndex }: DownloadCellProps) {
       size="cell"
       tabIndex={tabIndex}
       disabled={isInProgress}
-      className="justify-center"
-      aria-label={t('c:download')}
+      // Not `disabled`: the tooltip says why there is nothing to download, and a disabled button would not show it.
+      aria-disabled={!!pending}
+      className={cn('justify-center', pending && 'opacity-50')}
+      aria-label={tooltip}
       data-tooltip="true"
-      data-tooltip-content={t('c:download')}
+      data-tooltip-content={tooltip}
       onClick={handleDownload}
     >
-      {isInProgress ? <Spinner className="size-4 text-foreground/80" noDelay /> : <DownloadIcon />}
+      {isInProgress ? <Spinner className="size-4 text-foreground/80" noDelay /> : pending ? <CloudOffIcon /> : <DownloadIcon />}
     </Button>
   );
 }
