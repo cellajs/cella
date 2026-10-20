@@ -88,7 +88,6 @@ export const stackItems = [
   { id: 'vite' },
   { id: 'yjs' },
   { id: 'pulumi' },
-  { id: 'artillery' },
 ];
 
 // Features page with categorised capability list (/features).

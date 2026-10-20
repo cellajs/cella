@@ -237,7 +237,7 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --no-tags --depth=1 origin "$BASE_REF"
-          if git diff --quiet "origin/$BASE_REF"...HEAD -- Dockerfile package.json pnpm-lock.yaml pnpm-workspace.yaml patches; then
+          if git diff --quiet "origin/$BASE_REF"...HEAD -- Dockerfile package.json pnpm-lock.yaml pnpm-workspace.yaml; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "Image inputs unchanged; skipping the base-stage build."
           else

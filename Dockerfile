@@ -74,7 +74,6 @@ COPY shared/package.json ./shared/
 COPY sdk/package.json ./sdk/
 COPY cdc/package.json ./cdc/
 COPY yjs/package.json ./yjs/
-COPY patches/ ./patches/
 
 # =============================================================================
 # backend: Hono API server
