@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Artillery load-testing scenarios and tooling",
   "scripts": {
-    "bench": "tsx src/bench-cli.ts",
+    "bench": "tsx --no-experimental-webstorage src/bench-cli.ts",
     "yjs-typing": "tsx src/yjs-typing.ts",
     "ts": "tsgo --pretty",
     "db:seed": "tsx src/data-setup.ts",

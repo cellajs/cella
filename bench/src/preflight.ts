@@ -1,8 +1,8 @@
 import { readdirSync } from 'node:fs';
 import pg from 'pg';
 import { appConfig } from 'shared';
-import { BASE_URL, CDC_HEALTH_PORT, COOKIE_SECRET, DB_URL, SESSION_COOKIE_NAME } from './config';
-import { sealSessionCookie, sessionToken } from './seeds/session-auth';
+import { benchCookie } from './bench-user';
+import { BASE_URL, CDC_HEALTH_PORT, DB_URL } from './config';
 
 // Only the services the scenarios use are health-checked: the API, and the cdc worker when the app runs it. Yjs and
 // mcp stay out, so a stack without them (or the test config, which turns them on) does not skip or block a run.
@@ -34,9 +34,8 @@ export async function isServiceHealthy(url: string): Promise<boolean> {
 
 /** The status `/me` answers for bench user 0's seeded session cookie, or null when the request itself fails. */
 export async function benchSignInStatus(): Promise<number | null> {
-  const value = sealSessionCookie(SESSION_COOKIE_NAME, sessionToken(0), COOKIE_SECRET, 60);
   try {
-    const res = await fetch(`${BASE_URL}/me`, { headers: { cookie: `${SESSION_COOKIE_NAME}=${encodeURIComponent(value)}` } });
+    const res = await fetch(`${BASE_URL}/me`, { headers: { cookie: benchCookie(0) } });
     return res.status;
   } catch {
     return null;

@@ -2,7 +2,7 @@ import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
 import { mockEmail, mockUser } from '#/modules/user/user-mocks';
 import { emailId, sessionId, userEmail, userId } from './ids';
 
-/** Runs in data-setup under Node.js, not in Artillery scenarios. */
+/** The seeded user row of bench user `index`. */
 export function loadtestUser(index: number): InsertUserModel {
   const id = userId(index);
   const email = userEmail(index);
@@ -23,7 +23,7 @@ export function loadtestEmail(index: number) {
   return { ...mockEmail({ id: userId(index), email: userEmail(index) } as UserModel), id: emailId(index) };
 }
 
-/** The token is deterministic per index, so the Artillery processor reconstructs the cookie without a DB query. */
+/** The token is deterministic per index, so a scenario seals the cookie without a DB query. */
 export function loadtestSession(index: number, hashedToken: string, expiresAt: string) {
   return {
     id: sessionId(index),

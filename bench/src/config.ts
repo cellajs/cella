@@ -44,10 +44,6 @@ export const YJS_TYPING = {
   docOffset: Number(process.env.YJS_DOC_OFFSET ?? 0),
 };
 
-/** Set by the bench CLI for `--short`: scenarios that run outside Artillery's phases shrink themselves. */
-// biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
-export const BENCH_SHORT = process.env.BENCH_SHORT === '1';
-
 export const SESSION_COOKIE_NAME = `${appConfig.slug}-session-${appConfig.cookieVersion}`;
 
 /** Signs the bench session cookies like the app does; read from backend/.env. */
@@ -64,14 +60,3 @@ export const SSE_SYNC_MODE = process.env.SYNC_MODE === 'immediate' ? 'immediate'
 // Admin (superuser) connection: bench seeds bypass RLS via `session_replication_role`.
 // biome-ignore lint/style/noProcessEnv: bench reads the app's DATABASE_ADMIN_URL here.
 export const DB_URL = process.env.DATABASE_ADMIN_URL ?? 'postgres://postgres:postgres@0.0.0.0:5432/postgres';
-
-/**
- * The env of every process bench starts. BASE_URL is what Artillery scenarios interpolate as
- * `$processEnvironment.BASE_URL`. DEV_PORT_OFFSET pins this checkout's port offset: Artillery bundles a processor
- * into one file, where the offset can no longer be read from the checkout, so its own fetches would go to the main
- * checkout's ports.
- */
-export function createBenchProcessEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
-  // biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
-  return { ...process.env, BASE_URL, DEV_PORT_OFFSET: String(appConfig.devPortOffset), ...overrides };
-}

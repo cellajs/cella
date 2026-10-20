@@ -1,8 +1,8 @@
 import { BENCH_TENANT_ID, BENCH_UUID_PREFIX } from 'shared/utils/bench-identity';
 
 /**
- * Deterministic UUID 00000000-0000-4000-{variant}-{index padded to 12 hex chars}, shared by data-setup and the Artillery
- * processors. An app's own entity ids build on it with a `b*` variant.
+ * Deterministic UUID 00000000-0000-4000-{variant}-{index padded to 12 hex chars}, shared by data-setup and the
+ * scenarios. An app's own entity ids build on it with a `b*` variant.
  * @public
  */
 export const benchUuid = (variant: string, i: number) => `${BENCH_UUID_PREFIX}${variant}-${i.toString(16).padStart(12, '0')}`;
