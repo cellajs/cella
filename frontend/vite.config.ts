@@ -82,6 +82,13 @@ const ON_DEMAND_APP =
  */
 const YJS_REGISTRY = /[\\/]blocknote[\\/](yjs-editor|yjs-store|yjs-tab-channel|storage-warning|parked-notices-on-boot)\./;
 
+/**
+ * The docs modules boot-time code reads: the module registration, the query registry and the search params. Every
+ * other docs module loads through a lazy route or the search and is left out of the `m-docs` boot chunk, so the code
+ * viewer's shiki and the search engine's orama load with the pages that use them.
+ */
+const DOCS_BOOT = /[\\/]src[\\/]modules[\\/]docs[\\/](docs-module|query|search-params-schemas)\./;
+
 const frontendUrl = new URL(appConfig.frontendUrl);
 
 // Imported repository docs use relative links so they also work on GitHub and in editors. When a
@@ -203,7 +210,8 @@ const viteConfig = {
             // Broadly shared vendor packages, one chunk each. Groups get an explicit
             // minSize: 0 because the top-level minSize is inherited as the group default
             // and silently drops groups that accumulate less than it.
-            { name: 'base-ui', test: /node_modules[\\/](@base-ui|@floating-ui)[\\/]/, minSize: 0 },
+            // Base UI and the Floating UI parts it uses; BlockNote's `@floating-ui/react` stays with the editor.
+            { name: 'base-ui', test: /node_modules[\\/](@base-ui[\\/]|@floating-ui[\\/](core|dom|react-dom|utils)[\\/])/, minSize: 0 },
             { name: 'tanstack', test: /node_modules[\\/]@tanstack[\\/]/, minSize: 0 },
             { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, minSize: 0 },
             { name: 'zod', test: /node_modules[\\/]zod[\\/]/, minSize: 0 },
@@ -216,7 +224,7 @@ const viteConfig = {
             // which the per-package backstop below would otherwise spend on a few hundred bytes.
             {
               name: 'vendor',
-              test: /node_modules[\\/](zustand|clsx|cnfast|dayjs|nanoid|uuidv7|dobajs|input-otp|qrcode\.react|canvas-confetti|onedollarstats|class-variance-authority|embla-carousel[\w-]*|@atlaskit[\\/]pragmatic-drag-and-drop[\w-]*|@simplewebauthn[\\/]browser|@mdx-js[\\/]react|@t3-oss[\\/]env-core|use-sync-external-store|react-error-boundary|slugify|react-i18next|i18next[\w-]*|@babel[\\/]runtime)[\\/]/,
+              test: /node_modules[\\/](zustand|clsx|cnfast|dayjs|nanoid|uuidv7|dobajs|qrcode\.react|canvas-confetti|onedollarstats|class-variance-authority|embla-carousel[\w-]*|@atlaskit[\\/]pragmatic-drag-and-drop[\w-]*|@simplewebauthn[\\/]browser|@mdx-js[\\/]react|@t3-oss[\\/]env-core|use-sync-external-store|react-error-boundary|slugify|react-i18next|i18next[\w-]*|@babel[\\/]runtime)[\\/]/,
               minSize: 0,
             },
             {
@@ -291,6 +299,7 @@ const viteConfig = {
                 // `m-common` and `m-attachment` chunks are on the boot path.
                 if (ON_DEMAND_APP.test(id)) return null;
                 const m = id.match(/[\\/]src[\\/]modules[\\/]([\w-]+)[\\/]/);
+                if (m?.[1] === 'docs' && !DOCS_BOOT.test(id)) return null;
                 return m ? `m-${m[1]}` : null;
               },
               minSize: 0,
