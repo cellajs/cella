@@ -2,7 +2,7 @@
  * How a criterion gets its evidence: `axe` rules tagged with it, a named browser `probe`, a `code` check over the
  * repository, or a `manual` pass by a person. The audit decides a row only when none of its checks is `manual`.
  */
-type Check = 'axe' | `probe:${string}` | `code:${string}` | 'manual';
+type CheckName = 'axe' | `probe:${string}` | `code:${string}` | 'manual';
 
 export interface Criterion {
   id: string;
@@ -10,10 +10,10 @@ export interface Criterion {
   level: 'A' | 'AA';
   /** EN 301 549 V3.2.1 web clause; null for criteria new in WCAG 2.2, which that version predates. */
   en301549: string | null;
-  checks: Check[];
+  checks: CheckName[];
 }
 
-const c = (id: string, name: string, level: 'A' | 'AA', checks: Check[], newIn22 = false): Criterion => ({
+const c = (id: string, name: string, level: 'A' | 'AA', checks: CheckName[], newIn22 = false): Criterion => ({
   id,
   name,
   level,
@@ -42,11 +42,11 @@ export const criteria: Criterion[] = [
   c('1.4.10', 'Reflow', 'AA', ['probe:reflow']),
   c('1.4.11', 'Non-text Contrast', 'AA', ['probe:control-contrast', 'manual']),
   c('1.4.12', 'Text Spacing', 'AA', ['probe:text-spacing']),
-  c('1.4.13', 'Content on Hover or Focus', 'AA', ['probe:hover-content', 'manual']),
+  c('1.4.13', 'Content on Hover or Focus', 'AA', ['manual']),
   c('2.1.1', 'Keyboard', 'A', ['axe', 'probe:keyboard', 'manual']),
   c('2.1.2', 'No Keyboard Trap', 'A', ['probe:keyboard']),
   c('2.1.4', 'Character Key Shortcuts', 'A', ['code:shortcuts']),
-  c('2.2.1', 'Timing Adjustable', 'A', ['code:timing']),
+  c('2.2.1', 'Timing Adjustable', 'A', ['manual']),
   c('2.2.2', 'Pause, Stop, Hide', 'A', ['code:motion', 'manual']),
   c('2.3.1', 'Three Flashes or Below Threshold', 'A', ['code:motion']),
   c('2.4.1', 'Bypass Blocks', 'A', ['axe', 'probe:landmarks']),
@@ -77,7 +77,7 @@ export const criteria: Criterion[] = [
   c('3.3.7', 'Redundant Entry', 'A', ['manual'], true),
   c('3.3.8', 'Accessible Authentication (Minimum)', 'AA', ['code:authentication', 'probe:autocomplete'], true),
   c('4.1.2', 'Name, Role, Value', 'A', ['axe', 'manual']),
-  c('4.1.3', 'Status Messages', 'AA', ['probe:status-messages', 'manual']),
+  c('4.1.3', 'Status Messages', 'AA', ['manual']),
 ];
 
 /** What the person doing the manual pass checks, for each criterion a tool cannot decide alone. */
@@ -90,13 +90,13 @@ export const manualSteps: Record<string, string> = {
   '1.3.3': 'No instruction relies only on shape, color, size, position or sound ("press the round button on the right").',
   '1.4.1': 'Color is never the only signal: links in text, required fields, errors, status badges and charts also differ in text or shape.',
   '1.4.2': 'Nothing plays sound by itself.',
-  '1.4.3':
-    'Where the audit could measure nothing (the probe says how many texts had no measurable pixels), check contrast by eye: 4.5:1, or 3:1 for large text.',
+  '1.4.3': 'Where the audit measured nothing, such as field values and placeholders, check contrast by eye: 4.5:1, or 3:1 for large text.',
   '1.4.5': 'No text is shown as an image, except logos.',
   '1.4.11': 'The audit measures form control edges. By hand: icons that carry meaning, focus indicators and chart parts reach 3:1 in both modes.',
   '1.4.13': 'Tooltips, menus and popovers that appear on hover or focus can be dismissed with Escape, hovered, and stay until dismissed.',
   '2.1.1': 'Every function works with the keyboard alone: menus, dialogs, the data grid, the editor, uploads, drag and drop, date pickers.',
-  '2.2.1': 'No time limit makes a user lose work or information they need; toasts that close by themselves repeat nothing essential.',
+  '2.2.1':
+    'No time limit makes a user lose work or information they need: the session lifetime, sign-in challenges (passkey, email link, step-up) and toasts that close by themselves.',
   '2.2.2': 'Animations that start by themselves and run longer than 5 seconds beside other content can be paused, or stop with reduced motion.',
   '2.4.3': 'The Tab order follows the visual and logical order; focus moves into a dialog when it opens and back to its trigger when it closes.',
   '2.4.4': 'Each link says where it goes, from its text or its sentence, list item or table cell.',

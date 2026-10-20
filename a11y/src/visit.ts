@@ -5,23 +5,22 @@ import { controlContrast, textContrast } from './probes/contrast.ts';
 import { formErrors, inputs } from './probes/forms.ts';
 import { keyboardWalk } from './probes/keyboard.ts';
 import { layout } from './probes/layout.ts';
-import { statusMessages, tooltips } from './probes/overlays.ts';
 import { languageSwitch, pageStructure } from './probes/page-structure.ts';
 import { removePacketFile, reviewPacket, writePacketFile } from './review-packet.ts';
-import { ensureOpen, type ScopeState } from './scope.ts';
+import type { ScopeState } from './scope.ts';
 import { type Mode, newContext, openPage, resolvePath, type Session } from './session.ts';
 
-export interface Visit {
+interface Visit {
   findings: Finding[];
-  scan: AxeScan | null;
+  scan: AxeScan;
 }
 
 /**
  * Opens one state once and runs every check on that page.
  *
- * The light visit runs them in an order that keeps each check's page intact: checks that only read come first (the
- * toast check before its toast closes), then the ones that restore what they change, and last the keyboard walk, whose
- * Escape closes the state's overlay, and the language switch, which changes the stored language.
+ * The light visit runs them in an order that keeps each check's page intact: checks that only read come first, then the
+ * ones that restore what they change, and last the keyboard walk, whose Escape closes the state's overlay, and the
+ * language switch, which changes the stored language.
  *
  * The dark visit runs what depends on the color mode: axe's contrast rule and the two contrast probes.
  *
@@ -29,7 +28,7 @@ export interface Visit {
  * `failure-<mode>.png` and `failure-<mode>.json` in the state's review packet: what the page showed, its console
  * errors, and the steps that ran on it before, since a failing step often meets what an earlier one left behind.
  */
-export async function visitState(session: Session, state: ScopeState, mode: Mode, parts: { axe: boolean; probes: boolean }): Promise<Visit> {
+export async function visitState(session: Session, state: ScopeState, mode: Mode): Promise<Visit> {
   const context = await newContext(session, { auth: state.auth, mode });
   const consoleErrors: string[] = [];
   context.on('console', (message) => {
@@ -67,27 +66,15 @@ export async function visitState(session: Session, state: ScopeState, mode: Mode
 
     if (mode === 'dark') {
       const scan = await scanPage(true);
-      if (parts.probes) {
-        await run(textContrast(scan.undecidedContrast), 'textContrast');
-        await run(controlContrast);
-      }
+      await run(textContrast(scan.undecidedContrast), 'textContrast');
+      await run(controlContrast);
       return { findings, scan };
     }
 
-    if (parts.probes) for (const check of [statusMessages, pageStructure, inputs]) await run(check);
-    const scan = parts.axe ? await scanPage() : null;
-    if (parts.probes) {
-      if (scan) await run(textContrast(scan.undecidedContrast), 'textContrast');
-      await run(controlContrast);
-      await run(reviewPacket);
-      await run(layout);
-      await run(tooltips);
-      step = 'reopen';
-      await ensureOpen(opened, state);
-      await run(formErrors);
-      await run(keyboardWalk);
-      await run(languageSwitch);
-    }
+    for (const check of [pageStructure, inputs]) await run(check);
+    const scan = await scanPage();
+    await run(textContrast(scan.undecidedContrast), 'textContrast');
+    for (const check of [controlContrast, reviewPacket, layout, formErrors, keyboardWalk, languageSwitch]) await run(check);
     return { findings, scan };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

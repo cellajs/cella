@@ -7,7 +7,7 @@ The a11y package audits the running development app against WCAG 2.2 Level A and
 `pnpm a11y:run` starts a seeded database and the app, opens every page and state once, scans it with axe, runs browser
 checks that axe cannot do, and reviews the code for the rest. Each of the 55 criteria gets its evidence and, where the
 evidence is complete, a decision. What needs a person lands on a checklist, and a person's decision survives the next
-run. The audit itself takes about two minutes; the first run also builds the frontend and seeds the database.
+run. The audit itself takes three to four minutes; every run also builds the frontend, and the first seeds the database.
 
 ## Prerequisites
 
@@ -36,7 +36,6 @@ against.
 | `pnpm a11y:run --keep` | The same, and leave the stack up to rerun states while fixing; `--stop` ends it |
 | `pnpm a11y` | Full audit against a running stack: axe, browser probes and code checks |
 | `pnpm a11y --states sign-in,org-members` | Audit some states only; writes `a11y/results/ledger-partial.json`, never the ledger |
-| `pnpm a11y --only axe` | Refresh some parts only (`axe`, `probes`, `code`); the other parts' evidence is kept |
 | `pnpm a11y --workers 2` | States audited at the same time (default 4); lower it on a busy machine |
 | `pnpm -C a11y report` | Render the ledger as a draft VPAT and a checklist for the manual pass |
 | `pnpm -C a11y report --publish` | Put the report where the app serves it and print what the statement needs; refuses a draft |
@@ -54,7 +53,8 @@ earlier one left behind, such as a page that fell into its error boundary.
 - Each state gets one visit in light mode. [visit.ts](src/visit.ts) runs every check on that one page, in an order
   that keeps the page intact for the next check: read-only checks first, then the ones that restore what they change
   (resizing, text spacing), and last the keyboard walk, whose Escape closes the state's overlay.
-- A second visit in dark mode runs axe's contrast rule only, the one rule whose result depends on the color mode.
+- A second visit in dark mode measures contrast only: axe's contrast rule, the one rule whose result depends on the
+  color mode, and the two contrast probes.
 - A check is a function of an open page that returns findings ([findings.ts](src/findings.ts)). All findings turn
   into evidence in one place, after every visit is done.
 
