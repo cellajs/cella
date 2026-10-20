@@ -17,6 +17,20 @@ describe('the main job', () => {
     expect(lines.at(-2)).toBe('exec pnpm --silent --filter infra main-job');
   });
 
+  it('ends a run that fails before the deploy task as failed: a tool exiting 2, as tar does, must not read as blocked', () => {
+    const lines = MAIN_JOB_SCRIPT.split('\n');
+    const prologue = lines.slice(0, lines.findIndex((line) => line.startsWith('trap ')) + 1).join('\n');
+    const run = spawnSync('bash', ['-c', `${prologue}\nsh -c 'exit 2'\necho unreachable`], { encoding: 'utf8' });
+    expect(run.status).toBe(MAIN_JOB_EXIT.failed);
+    expect(run.stdout).not.toContain('unreachable');
+    expect(run.stderr).toContain('the run stopped before the deploy (exit 2)');
+  });
+
+  it("installs the Pulumi CLI from its release archive without restoring owners, which a job's root may not, and pipes no script into a shell", () => {
+    expect(MAIN_JOB_SCRIPT).toContain('tar -xz --no-same-owner');
+    expect(MAIN_JOB_SCRIPT).not.toMatch(/\|\s*(ba)?sh\b/);
+  });
+
   it('reads deployed, blocked and failed from a run exit code', () => {
     expect(mainJobOutcome(MAIN_JOB_EXIT.deployed)).toBe('deployed');
     expect(mainJobOutcome(MAIN_JOB_EXIT.blocked)).toBe('blocked');

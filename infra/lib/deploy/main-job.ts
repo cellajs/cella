@@ -37,10 +37,13 @@ export const MAIN_JOB_IMAGE = 'docker.io/library/node:26-bookworm';
 /**
  * The run's first program, written into the definition at the apply: it fetches the target commit (with the repository read key for a
  * private repository, read with the deploy key), installs the engine's workspace from the frozen lockfile and the Pulumi CLI at its SDK
- * version, and hands over to the target's own `main-job` task, whose exit code is the run's. Written with String.raw: no dollar-brace may
+ * version, and hands over to the target's own `main-job` task, whose exit code is the run's; a failure before it ends the run with 1, so a
+ * tool's own exit code is never read as blocked. Written with String.raw: no dollar-brace may
  * appear, and keys are never echoed.
  */
 export const MAIN_JOB_SCRIPT = String.raw`set -euo pipefail
+# A failure before the deploy task ends the run as failed: only the task's own exit code says deployed (0) or blocked (2).
+trap 'code=$?; echo "== $(date -u +%FT%TZ) the run stopped before the deploy (exit $code)" >&2; exit 1' ERR
 : "$TARGET_SHA" "$MODE" "$REPO" "$REGION" "$DEPLOY_KEY_JSON" "$PULUMI_CONFIG_PASSPHRASE"
 export HOME=/root GIT_TERMINAL_PROMPT=0
 export SCW_ACCESS_KEY=$(node -e 'process.stdout.write(JSON.parse(process.env.DEPLOY_KEY_JSON).accessKey)')
@@ -76,8 +79,9 @@ echo "== $(date -u +%FT%TZ) install"
 npm install -g --silent "$(node -p 'require("./package.json").packageManager.replace(/\+.*$/, "")')"
 pnpm install --frozen-lockfile --filter 'infra...' --filter 'shared...'
 PULUMI_VERSION=$(node -p 'require("./infra/node_modules/@pulumi/pulumi/package.json").version')
-curl -fsSL https://get.pulumi.com | sh -s -- --version "$PULUMI_VERSION" >/dev/null
-export PATH="$HOME/.pulumi/bin:$PATH"
+# The CLI at the SDK's version, from its release archive. A job runs as root with no capability, so tar must not try to restore owners.
+curl -fsSL "https://get.pulumi.com/releases/sdk/pulumi-v$PULUMI_VERSION-linux-x64.tar.gz" | tar -xz --no-same-owner -C /usr/local
+export PATH="/usr/local/pulumi:$PATH"
 echo "== $(date -u +%FT%TZ) deploy"
 exec pnpm --silent --filter infra main-job
 `;
