@@ -19,6 +19,8 @@ minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - '@cellajs/cli'
 overrides:
+  # BlockNote's shadcn kit asks for lucide-react 0.525; with the app's copy its few icons follow LucideProvider's stroke.
+  '@blocknote/shadcn>lucide-react': ^1.59.0
   # instrumentation-pg lists these type packages as runtime dependencies, so every service image installed them.
   '@opentelemetry/instrumentation-pg>@types/pg': '-'
   '@opentelemetry/instrumentation-pg>@types/pg-pool': '-'
