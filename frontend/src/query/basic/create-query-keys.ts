@@ -17,7 +17,7 @@ type StandardEntityKeys<E extends EntityType, LF extends object = Record<string,
   delete: [E, 'delete'];
 };
 
-/** Identifies default-filter views eligible for the live canonical home list. Not valid when a feed's default response carries implicit server filters absent from delta rows. */
+/** Identifies default-filter views eligible for the live canonical home list. Not valid when a feed's default response carries implicit server filters absent from range-fetched rows. */
 export function isDefaultListView(filters: Record<string, unknown>, defaults: Record<string, unknown>): boolean {
   return Object.entries(filters).every(([key, value]) => value === undefined || value === '' || value === defaults[key]);
 }

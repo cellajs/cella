@@ -1,5 +1,5 @@
 // Two-tab realtime sync diagnosis for attachments and their descriptions. See SKILL.md for the experiment matrix.
-// Drives two signed-in tabs (shared session, real tab-coordinator semantics); captures per-tab console, seqCursor network bodies, SSE and relay connections, screenshots.
+// Drives two signed-in tabs (shared session, real tab-coordinator semantics); captures per-tab console, range fetch network bodies, SSE and relay connections, screenshots.
 // Usage, from the repo root: [EMAIL=<user email>] [ORG_PATH=<tenantId>/<orgSlug>] [OUT_DIR=...] node cella/skills/two-tab-sync-test/two-tab-driver.mjs
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -17,7 +17,7 @@ const URL_ATTACHMENTS = `${BASE}/${ORG_PATH}/organization/attachments`;
 
 const evidence = [];
 const createPosts = [];
-// Text typed into a description; a delta fetch reports whether the server row holds it yet.
+// Text typed into a description; a range fetch reports whether the server row holds it yet.
 let watchedText = null;
 const t0 = Date.now();
 const log = (tab, kind, detail) => {
@@ -45,7 +45,7 @@ function instrument(page, tab) {
   page.on('response', async (res) => {
     const u = res.url();
     const method = res.request().method();
-    if (u.includes('seqCursor')) {
+    if (u.includes('afterSeq=')) {
       let items = null;
       try {
         const body = await res.json();
@@ -57,7 +57,7 @@ function instrument(page, tab) {
           ...(watchedText && { hasWatchedText: String(i.description ?? '').includes(watchedText) }),
         }));
       } catch { /* non-json */ }
-      log(tab, 'delta-fetch', { status: res.status(), url: u.slice(u.indexOf('?')), items });
+      log(tab, 'range-fetch', { status: res.status(), url: u.slice(u.indexOf('?')), items });
     } else if (/\/yjs\/(token|pull|push)/.test(u)) {
       log(tab, 'relay-http', { status: res.status(), path: new URL(u).pathname.split('/').slice(-2).join('/') });
     } else if (method === 'POST' && /\/attachments$/.test(u.split('?')[0])) {
@@ -189,9 +189,9 @@ try {
     try {
       await deleteRowInTab(tabA, 'tabA', probeName);
       await pollFor(tabA, 'tabA', 'fresh row gone in acting tab', async () => (await rowByName(tabA, probeName).count()) === 0, 5000);
-      // tab B never showed it; watch whether a tombstone delta fetch still happens
+      // tab B never showed it; watch whether a tombstone range fetch still happens
       await tabB.waitForTimeout(8000);
-      log('tabB', 'exp3-note', { text: 'window closed; check delta-fetch entries above for tombstone of fresh row' });
+      log('tabB', 'exp3-note', { text: 'window closed; check range-fetch entries above for tombstone of fresh row' });
       await shot(tabB, '03-delete-fresh-tabB');
     } catch (err) {
       log('tabA', 'exp3-error', { message: String(err).slice(0, 300) });
@@ -225,8 +225,8 @@ try {
     await tabB.keyboard.press('Escape');
     // The relay saves the row after a quiet window (3s, at most 10s); the saved row then travels the entity path like a rename.
     // The table cell is no proof: the tab's own editor already patched it.
-    const savedRowFetched = () => evidence.some((e) => e.tab === 'tabB' && e.kind === 'delta-fetch' && e.detail.items?.some((i) => i.hasWatchedText));
-    const saved = await pollFor(tabB, 'tabB', 'EXP5 saved row with the typed text reaches observer tab (delta fetch)', async () => savedRowFetched(), 25_000);
+    const savedRowFetched = () => evidence.some((e) => e.tab === 'tabB' && e.kind === 'range-fetch' && e.detail.items?.some((i) => i.hasWatchedText));
+    const saved = await pollFor(tabB, 'tabB', 'EXP5 saved row with the typed text reaches observer tab (range fetch)', async () => savedRowFetched(), 25_000);
     await shot(tabB, `05-description-saved-tabB-${saved.ok ? 'PASS' : 'FAIL'}`);
   } catch (err) {
     log('tabA', 'exp5-error', { message: String(err).slice(0, 300) });

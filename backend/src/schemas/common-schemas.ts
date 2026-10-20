@@ -57,38 +57,64 @@ export const relatableUserIdParamSchema = z.object({ relatableUserId: validIdSch
 export const entityWithTypeQuerySchema = z.object({ entityId: validIdSchema, entityType: channelEntityTypeSchema });
 
 const limitMax = 1000;
-const integerQuerySchema = (fallback: number, error: ReturnType<typeof translatedError>) =>
-  z
-    .string()
-    .regex(/^\d+$/, error)
-    .optional()
-    .transform((value) => (value === undefined ? fallback : Number(value)))
-    .refine(Number.isSafeInteger, error);
 
-const seqCursorSchema = z
-  .string()
-  .regex(/^\d+,\d+$/)
-  .superRefine((value, ctx) => {
-    const [lower, upper] = value.split(',').map(Number);
-    if (!Number.isSafeInteger(lower) || !Number.isSafeInteger(upper)) {
-      ctx.addIssue({ code: 'custom', message: 'Sequence cursor bounds must be safe integers' });
-    } else if (lower > upper) {
-      ctx.addIssue({ code: 'custom', message: 'Sequence cursor lower bound must not exceed its upper bound' });
-    }
-  });
+/**
+ * An integer query param, `integer` in the docs and the SDK. Only a string of digits converts, so `''`, `-1` and `1.5`
+ * fail; `z.coerce` would turn `''` and null into 0.
+ */
+const integerQuerySchema = ({ min = 0, max, error }: { min?: number; max?: number; error?: ReturnType<typeof translatedError> } = {}) => {
+  const integer = z.int(error).min(min, error);
+  return z.preprocess(
+    (value) => (typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value),
+    max === undefined ? integer : integer.max(max, error),
+  );
+};
 
 export const paginationQuerySchema = z.object({
   q: z.string().max(maxLength.field).optional(),
   sort: z.enum(['createdAt']).default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
-  offset: integerQuerySchema(0, translatedError('error:invalid_offset')),
-  limit: integerQuerySchema(appConfig.requestLimits.default, translatedError('error:invalid_limit', { max: limitMax })).refine(
-    (value) => value > 0 && value <= limitMax,
-    translatedError('error:invalid_limit', { max: limitMax }),
+  offset: integerQuerySchema({ error: translatedError('error:invalid_offset') }).default(0),
+  limit: integerQuerySchema({ min: 1, max: limitMax, error: translatedError('error:invalid_limit', { max: limitMax }) }).default(
+    appConfig.requestLimits.default,
   ),
-  /** Org-sequence delta filter: bounded inclusive range "51,150" (seq >= 51 AND <= 150). */
-  seqCursor: seqCursorSchema.optional(),
 });
+
+const seqRangeShape = {
+  afterSeq: integerQuerySchema().optional().describe('Range read for sync: return the rows stamped after this sequence position. Requires untilSeq.'),
+  untilSeq: integerQuerySchema().optional().describe('Range read for sync: the last sequence position to return. Requires afterSeq.'),
+};
+
+type SeqRangeQuery = { afterSeq?: number; untilSeq?: number; q?: string; offset: number };
+
+/** A range read pairs both bounds and takes no search and no offset. */
+const refineSeqRange = ({ afterSeq, untilSeq, q, offset }: SeqRangeQuery, ctx: z.RefinementCtx) => {
+  if (afterSeq === undefined && untilSeq === undefined) return;
+  if (afterSeq === undefined || untilSeq === undefined) {
+    ctx.addIssue({ code: 'custom', path: [afterSeq === undefined ? 'afterSeq' : 'untilSeq'], message: 'A range read needs afterSeq and untilSeq' });
+  } else if (afterSeq >= untilSeq) {
+    ctx.addIssue({ code: 'custom', path: ['untilSeq'], message: 'untilSeq must be higher than afterSeq' });
+  }
+  if (q?.trim()) ctx.addIssue({ code: 'custom', path: ['q'], message: 'A range read takes no search' });
+  if (offset > 0)
+    ctx.addIssue({
+      code: 'custom',
+      path: ['offset'],
+      message: 'A range read takes no offset: the next chunk starts after the last position received',
+    });
+};
+
+/**
+ * A product list query: pagination, `afterSeq` and `untilSeq`, and the product's own params in `shape`. With both
+ * bounds it is a range read for sync: the rows stamped with a sequence position in (afterSeq, untilSeq], deleted rows
+ * included, in sequence order. A range read takes no search and no offset; the next chunk starts after the last
+ * position received. The range rules apply last, so `shape` can redefine `sort`.
+ */
+export const productListQuerySchema = <T extends z.ZodRawShape>(shape: T) =>
+  paginationQuerySchema
+    .extend({ ...seqRangeShape, ...shape })
+    // TypeScript cannot see the range and paging keys through a generic `extend`; `shape` holds the product's own params.
+    .superRefine((query, ctx) => refineSeqRange(query as SeqRangeQuery, ctx));
 
 export const excludeArchivedQuerySchema = z
   .enum(['true', 'false'])

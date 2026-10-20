@@ -5,10 +5,11 @@ import { resolveHomeChannelId, spliceEntityIntoListCaches } from '~/query/basic/
 import { cacheRemove } from '~/query/basic/cache-mutations';
 import {
   type EntityQueryKeys,
-  getEntityDeltaFetch,
   getEntityQueryKeys,
+  getEntityRangeFetch,
   getEqualityFilterKeys,
   hasEntityQueryKeys,
+  type SeqRange,
   SYNC_CHUNK_SIZE,
 } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
@@ -262,34 +263,47 @@ export interface RangeFetchResult {
 }
 
 // Product rows carry the org sequence; read it defensively (ItemData is intentionally loose).
-const seqOf = (item: ItemData): number => {
+const seqOf = (item: ItemData): number | undefined => {
   const seq = (item as { seq?: unknown }).seq;
-  return typeof seq === 'number' ? seq : 0;
+  return typeof seq === 'number' ? seq : undefined;
 };
 
 export async function fetchRangeAndPatch(
   entityType: string,
   organizationId: string | null,
   tenantId: string | null,
-  seqCursor: string,
+  range: SeqRange,
   keys: EntityQueryKeys,
   channelId?: string,
 ): Promise<RangeFetchResult> {
   if (!tenantId && organizationId) {
-    console.debug(`[CacheOps] No tenantId for ${entityType} delta fetch, falling back to invalidation`);
+    console.debug(`[CacheOps] No tenantId for ${entityType} range fetch, falling back to invalidation`);
     return { status: 'unsupported', items: [], reachedSeq: 0 };
   }
 
-  const deltaFetch = getEntityDeltaFetch(entityType);
-  if (!deltaFetch) return { status: 'unsupported', items: [], reachedSeq: 0 };
+  const rangeFetch = getEntityRangeFetch(entityType);
+  if (!rangeFetch) return { status: 'unsupported', items: [], reachedSeq: 0 };
 
+  const { afterSeq, untilSeq } = range;
+  const label = `${entityType} after ${afterSeq} until ${untilSeq}`;
   try {
-    const { items } = await deltaFetch(organizationId, tenantId, seqCursor, channelId);
+    const { items } = await rangeFetch({ organizationId, tenantId, channelId, query: { ...range, limit: SYNC_CHUNK_SIZE } });
 
     // A full chunk may truncate the range: report overflow so the caller invalidates without advancing past unseen rows.
     if (items.length >= SYNC_CHUNK_SIZE) {
-      console.debug(`[CacheOps] Delta fetch: ${entityType} window overflow (seqCursor=${seqCursor}) → invalidation`);
+      console.debug(`[CacheOps] Range fetch: ${label} overflows one chunk → invalidation`);
       return { status: 'overflow', items: [], reachedSeq: 0 };
+    }
+
+    // A server that ignored the range answers with an ordinary page: rows outside it, and no deleted rows. Patching
+    // that page would move the cursor past deletions this client never received.
+    const outside = items.find((item) => {
+      const seq = seqOf(item);
+      return seq !== undefined && (seq <= afterSeq || seq > untilSeq);
+    });
+    if (outside) {
+      console.warn(`[CacheOps] Range fetch: ${label} returned seq ${seqOf(outside)} → invalidation`);
+      return { status: 'unsupported', items: [], reachedSeq: 0 };
     }
 
     const newRows: ItemData[] = [];
@@ -301,13 +315,11 @@ export async function fetchRangeAndPatch(
     // Filtered lists filter on the server, so one invalidation per flush lets the active ones refetch and place new rows.
     if (newRows.length && organizationId) invalidateFilteredLists(entityType, keys.list.org(organizationId), newRows);
 
-    if (items.length > 0) {
-      console.debug(`[CacheOps] Delta fetch: ${entityType} patched ${items.length} entities (seqCursor=${seqCursor})`);
-    }
-    const reachedSeq = items.reduce((max, item) => Math.max(max, seqOf(item)), 0);
+    if (items.length > 0) console.debug(`[CacheOps] Range fetch: ${label} patched ${items.length} entities`);
+    const reachedSeq = items.reduce((max, item) => Math.max(max, seqOf(item) ?? 0), 0);
     return { status: 'ok', items, reachedSeq };
   } catch (error) {
-    console.warn(`[CacheOps] Delta fetch failed for ${entityType}, falling back to invalidation`, error);
+    console.warn(`[CacheOps] Range fetch failed for ${label}, falling back to invalidation`, error);
     return { status: 'error', items: [], reachedSeq: 0 };
   }
 }

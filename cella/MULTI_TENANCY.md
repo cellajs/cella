@@ -55,7 +55,7 @@ variables before product queries:
 | Variable | Current RLS effect |
 | --- | --- |
 | `app.tenant_id` | Required tenant match for protected SELECTs. Missing or empty fails closed. |
-| `app.include_deleted` | Makes soft-deleted rows visible to explicit tombstone and delta reads |
+| `app.include_deleted` | Makes soft-deleted rows visible to explicit tombstone and range reads |
 | `app.user_id` | Available to the transaction. Current RLS policies do not consult it |
 
 ### Transaction helpers

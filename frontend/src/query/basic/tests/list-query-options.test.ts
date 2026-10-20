@@ -62,7 +62,7 @@ const cases: {
     options: () => usersListQueryOptions({}),
     sdkCall: vi.mocked(sdk.getUsers),
     queryKey: ['user', 'list', { q: '', sort: 'createdAt', order: 'desc', role: undefined }],
-    request: { query: { q: '', sort: 'createdAt', order: 'desc', role: undefined, limit: '100', offset: '100' } },
+    request: { query: { q: '', sort: 'createdAt', order: 'desc', role: undefined, limit: 100, offset: 100 } },
     extra: { refetchOnMount: true },
   },
   {
@@ -70,7 +70,7 @@ const cases: {
     options: () => usersListQueryOptions({ q: 'ada', sort: 'name', order: 'asc', role: 'admin', limit: 10 }),
     sdkCall: vi.mocked(sdk.getUsers),
     queryKey: ['user', 'list', { q: 'ada', sort: 'name', order: 'asc', role: 'admin' }],
-    request: { query: { q: 'ada', sort: 'name', order: 'asc', role: 'admin', limit: '10', offset: '100' } },
+    request: { query: { q: 'ada', sort: 'name', order: 'asc', role: 'admin', limit: 10, offset: 100 } },
   },
   {
     name: 'organizations with defaults',
@@ -90,8 +90,8 @@ const cases: {
         excludeArchived: undefined,
         role: undefined,
         include: undefined,
-        limit: '40',
-        offset: '100',
+        limit: 40,
+        offset: 100,
       },
     },
     extra: { refetchOnMount: true },
@@ -110,8 +110,8 @@ const cases: {
         excludeArchived: 'true',
         role: undefined,
         include: 'counts',
-        limit: '40',
-        offset: '100',
+        limit: 40,
+        offset: 100,
       },
     },
   },
@@ -120,7 +120,7 @@ const cases: {
     options: () => tenantsListQueryOptions({ status: 'active' }),
     sdkCall: vi.mocked(sdk.getTenants),
     queryKey: ['tenant', 'list', { q: '', status: 'active', sort: 'createdAt', order: 'desc' }],
-    request: { query: { q: '', status: 'active', sort: 'createdAt', order: 'desc', limit: '100', offset: '100' } },
+    request: { query: { q: '', status: 'active', sort: 'createdAt', order: 'desc', limit: 100, offset: 100 } },
     extra: { refetchOnMount: true },
   },
   {
@@ -150,10 +150,10 @@ const cases: {
         role: 'admin',
         userIds: undefined,
         include: 'counts',
-        limit: '40',
+        limit: 40,
         entityId: 'org-1',
         entityType: 'organization',
-        offset: '100',
+        offset: 100,
       },
       path,
     },
@@ -169,7 +169,7 @@ const cases: {
       'list',
       { entityId: 'org-1', entityType: 'organization', tenantId: 'tenant-1', organizationId: 'org-1', q: '', sort: 'createdAt', order: 'desc' },
     ],
-    request: { query: { q: '', sort: 'createdAt', order: 'desc', limit: '20', entityId: 'org-1', entityType: 'organization', offset: '100' }, path },
+    request: { query: { q: '', sort: 'createdAt', order: 'desc', limit: 20, entityId: 'org-1', entityType: 'organization', offset: 100 }, path },
     extra: { refetchOnMount: true },
   },
   {
@@ -177,7 +177,7 @@ const cases: {
     options: () => requestsListQueryOptions({ q: 'mail' }),
     sdkCall: vi.mocked(sdk.getRequests),
     queryKey: ['requests', 'table', { q: 'mail', sort: 'createdAt', order: 'desc' }],
-    request: { query: { q: 'mail', sort: 'createdAt', order: 'desc', limit: '40', offset: '100' } },
+    request: { query: { q: 'mail', sort: 'createdAt', order: 'desc', limit: 40, offset: 100 } },
     extra: { refetchOnMount: true },
   },
   {
@@ -185,7 +185,7 @@ const cases: {
     options: () => attachmentsListQueryOptions(path),
     sdkCall: vi.mocked(sdk.getAttachments),
     queryKey: ['attachment', 'list', 'org-1', { q: '', sort: 'createdAt', order: 'desc' }],
-    request: { query: { q: '', sort: 'createdAt', order: 'desc', limit: '40', offset: '100' }, path },
+    request: { query: { q: '', sort: 'createdAt', order: 'desc', limit: 40, offset: 100 }, path },
     extra: { refetchOnMount: undefined, meta: { persist: false }, staleTime: syncStaleTime },
   },
 ];
@@ -210,7 +210,7 @@ describe('list query factories', () => {
   it('falls back to page times limit when a page param has no offset', async () => {
     await requestFor(usersListQueryOptions({ limit: 25 }), { page: 3 });
 
-    expect(vi.mocked(sdk.getUsers).mock.calls[0][0]).toMatchObject({ query: { limit: '25', offset: '75' } });
+    expect(vi.mocked(sdk.getUsers).mock.calls[0][0]).toMatchObject({ query: { limit: 25, offset: 75 } });
   });
 });
 
@@ -234,7 +234,7 @@ describe('export fetchers', () => {
     await fetchOrganizationsForExport({ limit: 1000, offset: 2000 });
 
     expect(sdk.getOrganizations).toHaveBeenCalledWith({
-      query: { limit: '1000', q: '', sort: 'displayOrder', order: 'asc', offset: '2000', include: 'counts,membership' },
+      query: { limit: 1000, q: '', sort: 'displayOrder', order: 'asc', offset: 2000, include: 'counts,membership' },
     });
   });
 
@@ -242,14 +242,14 @@ describe('export fetchers', () => {
     await fetchOrganizationsForExport({ limit: 1000, q: 'x', sort: 'name' });
 
     expect(sdk.getOrganizations).toHaveBeenCalledWith({
-      query: { limit: '1000', q: 'x', sort: 'name', order: 'desc', offset: '0', include: 'counts,membership' },
+      query: { limit: 1000, q: 'x', sort: 'name', order: 'desc', offset: 0, include: 'counts,membership' },
     });
   });
 
   it('requests: search defaults fill the query', async () => {
     await fetchRequestsForExport({ limit: 1000 });
 
-    expect(sdk.getRequests).toHaveBeenCalledWith({ query: { q: '', sort: 'createdAt', order: 'desc', limit: '1000', offset: '0' } });
+    expect(sdk.getRequests).toHaveBeenCalledWith({ query: { q: '', sort: 'createdAt', order: 'desc', limit: 1000, offset: 0 } });
   });
 
   it('members: the channel scopes the request, search defaults fill it and the rows include counts and the MFA setting', async () => {
@@ -261,8 +261,8 @@ describe('export fetchers', () => {
         sort: 'lastSeenAt',
         order: 'desc',
         role: memberRole,
-        limit: '1000',
-        offset: '1000',
+        limit: 1000,
+        offset: 1000,
         entityId: 'org-1',
         entityType: 'organization',
         include: 'counts,mfa',

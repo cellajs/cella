@@ -41,7 +41,7 @@ Each scenario asks one question of the stack. The first comment line of its YAML
 | `page-load` | How the read path holds when every visitor also reads data, a product list included | Responses |
 | `attachment-edit` | How many edits per second the write path takes | Responses, one activity per edit |
 | `attachment-churn` | Whether creating and deleting rows in batches keeps the books right | Responses, one activity per row, the attachment count |
-| `sse-fanout` | Whether every subscriber of an organization hears of a change and can fetch it | Responses, one activity per edit, notifications and delta fetches counted, no stream errors |
+| `sse-fanout` | Whether every subscriber of an organization hears of a change and can fetch it | Responses, one activity per edit, notifications and range fetches counted, no stream errors |
 | `yjs-typing` | How the Yjs relay holds under people typing together | Documents converged, saved and written to their rows |
 
 The checks:

@@ -34,7 +34,7 @@ const apiKeysSection = 'api-keys';
 export const serviceAccountsQueryOptions = (path: QueryOrgContext) =>
   queryOptions({
     queryKey: serviceAccountKeys.list(path),
-    queryFn: () => getServiceAccounts({ path, query: { limit: String(appConfig.requestLimits.default) } }),
+    queryFn: () => getServiceAccounts({ path, query: { limit: appConfig.requestLimits.default } }),
   });
 
 export const apiKeysQueryOptions = (path: QueryOrgContext, id: string) =>

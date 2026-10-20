@@ -57,7 +57,7 @@ export const COOKIE_SECRET = process.env.COOKIE_SECRET ?? '';
 /** How long an SSE benchmark subscriber remains connected. */
 // biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
 export const SSE_HOLD_MS = Number(process.env.HOLD_MS ?? 25_000);
-/** Whether the SSE benchmark merges notifications or fetches each delta immediately. */
+/** Whether the SSE benchmark merges notifications or fetches each range immediately. */
 // biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
 export const SSE_SYNC_MODE = process.env.SYNC_MODE === 'immediate' ? 'immediate' : 'lazy';
 

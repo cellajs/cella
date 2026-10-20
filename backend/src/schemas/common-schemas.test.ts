@@ -4,6 +4,7 @@ import {
   booleanTransformSchema,
   idsBodySchema,
   paginationQuerySchema,
+  productListQuerySchema,
   validDomainSchema,
   validEmailSchema,
   validNameSchema,
@@ -39,7 +40,6 @@ describe('paginationQuerySchema', () => {
   });
 
   it.each([
-    { offset: '' },
     { offset: '-1' },
     { offset: '1.5' },
     { offset: '12junk' },
@@ -53,13 +53,31 @@ describe('paginationQuerySchema', () => {
   ])('rejects malformed or out-of-range pagination input %j', (input) => {
     expect(paginationQuerySchema.safeParse(input).success).toBe(false);
   });
+});
 
-  it('accepts a bounded sequence cursor', () => {
-    expect(paginationQuerySchema.parse({ seqCursor: '51,150' }).seqCursor).toBe('51,150');
+describe('productListQuerySchema', () => {
+  const schema = productListQuerySchema({ sort: paginationQuerySchema.shape.sort });
+
+  it('parses a range read from the query string', () => {
+    expect(schema.parse({ afterSeq: '50', untilSeq: '150', limit: '1000' })).toMatchObject({ afterSeq: 50, untilSeq: 150, limit: 1000 });
+    expect(schema.parse({ afterSeq: '0', untilSeq: '1' })).toMatchObject({ afterSeq: 0, untilSeq: 1 });
   });
 
-  it.each(['51', '51,', 'a,150', '151,150', '0,9007199254740992'])('rejects invalid sequence cursor %s', (seqCursor) => {
-    expect(paginationQuerySchema.safeParse({ seqCursor }).success).toBe(false);
+  it('reads a normal page without bounds', () => {
+    expect(schema.parse({ q: 'report', offset: '40' })).toMatchObject({ q: 'report', offset: 40 });
+  });
+
+  it.each([
+    { afterSeq: '50' },
+    { untilSeq: '150' },
+    { afterSeq: '150', untilSeq: '150' },
+    { afterSeq: '151', untilSeq: '150' },
+    { afterSeq: '-1', untilSeq: '150' },
+    { afterSeq: '50', untilSeq: '9007199254740992' },
+    { afterSeq: '50', untilSeq: '150', q: 'report' },
+    { afterSeq: '50', untilSeq: '150', offset: '1000' },
+  ])('rejects range input %j', (input) => {
+    expect(schema.safeParse(input).success).toBe(false);
   });
 });
 

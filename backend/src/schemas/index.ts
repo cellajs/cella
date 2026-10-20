@@ -19,6 +19,7 @@ export {
   noDuplicateSlugsRefine,
   paginationQuerySchema,
   productEntityTypeSchema,
+  productListQuerySchema,
   refineWithType,
   relatableUserIdParamSchema,
   slugIncludeQuerySchema,

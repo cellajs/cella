@@ -12,20 +12,29 @@ export interface EntityQueryKeys {
   detail: { base: readonly unknown[]; byId: (id: string) => readonly unknown[] };
 }
 
-/** The backend's max limit for delta fetches: a response of exactly this size may truncate the seq window, and fetchRangeAndPatch treats that as overflow. */
+/** The backend's max limit for range fetches: a response of exactly this size may truncate the range, and fetchRangeAndPatch treats that as overflow. */
 export const SYNC_CHUNK_SIZE = 1000;
 
-/** Fetches one bounded inclusive sequence range for catchup, optionally narrowed to a subtree. Public entities omit organization; implementations limit by `SYNC_CHUNK_SIZE`. */
-export type DeltaFetchFn = (
-  organizationId: string | null,
-  tenantId: string | null,
-  seqCursor: string,
-  channelId?: string,
-) => Promise<{ items: ItemData[]; total: number }>;
+/** A range read for sync: the rows stamped with a sequence position in (afterSeq, untilSeq]. */
+export interface SeqRange {
+  afterSeq: number;
+  untilSeq: number;
+}
+
+/**
+ * Fetches one sequence range for catchup, optionally narrowed to a subtree. Public entities omit organization. `query`
+ * holds the range and the chunk limit, ready to spread into the product's list request.
+ */
+export type RangeFetchFn = (request: {
+  organizationId: string | null;
+  tenantId: string | null;
+  channelId?: string;
+  query: SeqRange & { limit: number };
+}) => Promise<{ items: ItemData[]; total: number }>;
 
 /** Registry decoupling entity modules from stream handlers: modules register keys at load time, stream/cache code looks them up by entityType. */
 const entityQueryKeysRegistry = new Map<string, EntityQueryKeys>();
-const deltaFetchRegistry = new Map<string, DeltaFetchFn>();
+const rangeFetchRegistry = new Map<string, RangeFetchFn>();
 const equalityFilterKeysRegistry = new Map<string, readonly string[]>();
 
 const SENTINEL_ORG = '__org__';
@@ -54,10 +63,10 @@ function assertKeyContract(entityType: EntityType, keys: EntityQueryKeys): void 
 }
 
 /** Canonical list data must use home keys, because live sync placement and channel observation derive from that shape; hand-written keys fail validation. */
-export function registerEntityQueryKeys(entityType: EntityType, keys: EntityQueryKeys, deltaFetch?: DeltaFetchFn): void {
+export function registerEntityQueryKeys(entityType: EntityType, keys: EntityQueryKeys, rangeFetch?: RangeFetchFn): void {
   assertKeyContract(entityType, keys);
   entityQueryKeysRegistry.set(entityType, keys);
-  if (deltaFetch) deltaFetchRegistry.set(entityType, deltaFetch);
+  if (rangeFetch) rangeFetchRegistry.set(entityType, rangeFetch);
 }
 
 /** Throws if the entity type was not registered. All types must register before stream/cache code runs. */
@@ -80,9 +89,9 @@ export function getRegisteredProductEntityTypes(): ProductEntityType[] {
   return getRegisteredEntityTypes().filter((t) => isProduct(t));
 }
 
-/** Undefined when the entity type does not support delta fetching. */
-export function getEntityDeltaFetch(entityType: string): DeltaFetchFn | undefined {
-  return deltaFetchRegistry.get(entityType);
+/** Undefined when the entity type does not support range fetching. */
+export function getEntityRangeFetch(entityType: string): RangeFetchFn | undefined {
+  return rangeFetchRegistry.get(entityType);
 }
 
 /**

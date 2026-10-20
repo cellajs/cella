@@ -23,7 +23,7 @@ function refetchSyncedQueries(): void {
 }
 
 /**
- * Readable views fetch deltas when their frontier advances; other statuses expose no summaries.
+ * Readable views fetch their gap when their frontier advances; other statuses expose no summaries.
  * Cursors advance only after ingestion, invalidation handoff, or an intentional cache-free skip.
  */
 export async function processAppCatchup(response: PostAppCatchupResponse, baselineOnly = false): Promise<void> {
@@ -87,7 +87,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       // Nothing cached means nothing to patch and mount hydration fetches fresh, so advance to stop the window being re-offered forever.
       if (!hasAnyCachedList(keys, organizationId)) {
         syncState.setOrgSeq(organizationId, entityType, frontier);
-        console.debug(`[CatchupProcessor] View ${answer.key}: no cached list → skip delta`);
+        console.debug(`[CatchupProcessor] View ${answer.key}: no cached list → skip range fetch`);
         continue;
       }
 
@@ -98,18 +98,18 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
         organizationId,
         tenantId,
         channelId: null,
-        fromSeq: clientCursor + 1,
+        afterSeq: clientCursor,
         untilSeq: frontier,
         isCreate: false,
       });
 
       if (getSyncTier(entityType, organizationId, null).min > 0) {
-        console.debug(`[CatchupProcessor] View ${answer.key}: delta=${frontier - clientCursor} → enqueued`);
+        console.debug(`[CatchupProcessor] View ${answer.key}: gap=${frontier - clientCursor} → enqueued`);
         continue;
       }
 
       const outcome = await flushChannelViewNow(entityType as ProductEntityType, organizationId, null);
-      console.debug(`[CatchupProcessor] View ${answer.key}: delta=${frontier - clientCursor} → ${outcome}`);
+      console.debug(`[CatchupProcessor] View ${answer.key}: gap=${frontier - clientCursor} → ${outcome}`);
     }
 
     // Counts compared server-to-server per (org, entityType): a changed count with a matching frontier means drift.
@@ -132,7 +132,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       if (membershipChanged && !baselineOnly) membershipOps.invalidateMemberQueries(organizationId);
     }
 
-    // Propagation runs after the delta fetch that carries the fresh embedded rows: now for the viewing org, whose flush was awaited above, and at flush for a background org whose range is still pending.
+    // Propagation runs after the range fetch that carries the fresh embedded rows: now for the viewing org, whose flush was awaited above, and at flush for a background org whose range is still pending.
     if (!baselineOnly && propagation?.length) {
       for (const hint of propagation) {
         const embeddedProduct = hint.embeddedProduct as ProductEntityType;
@@ -236,7 +236,7 @@ function splitViewKey(key: string): [string | undefined, string | undefined] {
   return [key.slice(0, idx), key.slice(idx + 1)];
 }
 
-/** Mirrors the patch target of fetchRangeAndPatch: with nothing cached a delta fetch has nothing to patch, and mount hydration resets the cursor itself. */
+/** Mirrors the patch target of fetchRangeAndPatch: with nothing cached a range fetch has nothing to patch, and mount hydration resets the cursor itself. */
 function hasAnyCachedList(keys: ReturnType<typeof getEntityQueryKeys>, organizationId: string | null): boolean {
   const prefix = organizationId ? keys.list.org(organizationId) : keys.list.base;
   return queryClient.getQueriesData({ queryKey: prefix }).some(([, data]) => data !== undefined);

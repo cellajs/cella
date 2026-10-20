@@ -31,7 +31,7 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     method: 'get',
     path: '/',
     xGuard: [actorGuard, tenantGuard, orgGuard],
-    // Sync-driven read backpressure on the delta path (template pattern for app product lists)
+    // Sync-driven read backpressure on the range-read path (template pattern for app product lists)
     xRateLimiter: [syncReadLimiter],
     xTool: {
       description: 'List attachments of the organization with optional search, sorting and paging. Returns metadata and the description as text.',

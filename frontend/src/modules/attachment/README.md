@@ -2,7 +2,7 @@
 
 Attachments are file uploads (images, video, audio, PDFs, anything else) scoped to an organization, in two distinct parts:
 
-- the **entity row**: metadata in Postgres (`Attachment` in the sdk), replicated to the client through entity sync (canonical org query + SSE + delta fetch)
+- the **entity row**: metadata in Postgres (`Attachment` in the sdk), replicated to the client through entity sync (canonical org query + SSE + range fetch)
 - the **file bytes**: in S3 via Transloadit processing, optionally mirrored into a local per-user IndexedDB blob store for offline viewing.
 
 ## File variants

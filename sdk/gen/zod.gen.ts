@@ -1297,12 +1297,8 @@ export const zGetRequestsQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['id', 'email', 'type', 'createdAt']).optional().default('createdAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
 });
 
 /**
@@ -1418,12 +1414,8 @@ export const zGetTenantsQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['createdAt', 'name']).optional().default('createdAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
   status: z.enum(['active', 'suspended', 'archived']).optional(),
 });
 
@@ -1571,12 +1563,8 @@ export const zGetUsersQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).optional().default('createdAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
   role: z.enum(['admin']).optional(),
 });
 
@@ -1715,12 +1703,8 @@ export const zGetOrganizationsQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['id', 'name', 'createdAt', 'displayOrder']).optional().default('displayOrder'),
   order: z.enum(['asc', 'desc']).optional().default('asc'),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
   relatableUserId: z.uuid().optional(),
   role: z.enum(['admin', 'member']).optional(),
   excludeArchived: z.enum(['true', 'false']).optional(),
@@ -1850,12 +1834,10 @@ export const zGetAttachmentsQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['name', 'createdAt', 'contentType']).optional().default('createdAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
+  afterSeq: z.int().gte(0).optional(),
+  untilSeq: z.int().gte(0).optional(),
   channelId: z.uuid().optional(),
 });
 
@@ -2107,12 +2089,8 @@ export const zGetMembersQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'lastPostedAt']).optional().default('lastSeenAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
   entityId: z.string().max(50),
   entityType: z.enum(['organization']),
   role: z.enum(['admin', 'member']).optional(),
@@ -2167,12 +2145,8 @@ export const zGetPendingMembershipsQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['createdAt']).optional().default('createdAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
   entityId: z.string().max(50),
   entityType: z.enum(['organization']),
 });
@@ -2228,8 +2202,8 @@ export const zGetServiceAccountsPath = z.object({
 
 export const zGetServiceAccountsQuery = z.object({
   q: z.string().max(255).optional(),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
 });
 
 /**

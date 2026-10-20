@@ -72,8 +72,8 @@ function splitStx(schema: z.ZodType): { modelSchema: z.ZodType; withServerStx: (
 }
 
 /**
- * JSON Schema for `tools/list`, the input side of the route's schemas (query strings stay strings, as the route
- * reads them); unknown keys are refused so a model cannot smuggle fields past the operation.
+ * JSON Schema for `tools/list`, the input side of the route's schemas (an integer query param is an integer, which the
+ * call writes into the query string); unknown keys are refused so a model cannot smuggle fields past the operation.
  */
 function toInputSchema(schema: z.ZodType): Record<string, unknown> {
   const json = z.toJSONSchema(schema, { io: 'input', unrepresentable: 'any' }) as Record<string, unknown>;

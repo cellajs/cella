@@ -26,7 +26,7 @@ import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
-import { registerEntityQueryKeys, SYNC_CHUNK_SIZE } from '~/query/basic/entity-query-registry';
+import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { fetchAllPages } from '~/query/basic/fetch-all-pages';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
 import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
@@ -43,7 +43,7 @@ import { mergeServerResponse, syncEntityToCache } from '~/query/offline/update-s
 import { resolveQueryOrgTenantIds } from '~/query/realtime/sync-priority';
 import { createResourceError } from '~/utils/resource-error';
 
-type AttachmentFilters = Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
+type AttachmentFilters = Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset' | 'afterSeq' | 'untilSeq'>;
 
 const baseKeys = createEntityKeys<AttachmentFilters>('attachment');
 const keys = {
@@ -53,12 +53,9 @@ const keys = {
     filtered: (organizationId: string, filters: AttachmentFilters) => ['attachment', 'list', organizationId, filters] as const,
   },
 };
-// A narrowed delta fetch names the channel that covers the due views; org-wide passes none.
-registerEntityQueryKeys('attachment', keys, (organizationId, tenantId, seqCursor, channelId) => {
-  return getAttachments({
-    path: { tenantId: tenantId!, organizationId: organizationId! },
-    query: { seqCursor, channelId, limit: String(SYNC_CHUNK_SIZE) },
-  });
+// A narrowed range fetch names the channel that covers the due views; org-wide passes none.
+registerEntityQueryKeys('attachment', keys, ({ organizationId, tenantId, channelId, query }) => {
+  return getAttachments({ path: { tenantId: tenantId!, organizationId: organizationId! }, query: { ...query, channelId } });
 });
 export const attachmentQueryKeys = keys;
 
@@ -73,7 +70,7 @@ registerDescriptionDerivation('attachment', (description) => ({ keywords: derive
 const attachmentsMutationKeyBase = ['attachment'] as const;
 const handleError = createResourceError('attachment');
 
-type AttachmentsListParams = Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'> & {
+type AttachmentsListParams = AttachmentFilters & {
   tenantId: string;
   organizationId: string;
   limit?: number;
