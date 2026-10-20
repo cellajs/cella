@@ -18,6 +18,7 @@ import { assertSurfaces } from '~/modules/common/page/tab-nav';
 import { QueryClientProvider } from '~/query/provider';
 import { canonicalOriginUrl, leaveForCanonicalOrigin } from '~/utils/canonical-origin';
 import { initFaviconBadge } from '~/utils/init-favicon-badge';
+import { initInputModality } from '~/utils/input-modality';
 import { initViewportObserver } from '~/utils/viewport-observer';
 
 // Configure the SDK client with runtime settings (credentials, error handling, etc.)
@@ -34,6 +35,8 @@ renderAscii();
 initFaviconBadge(appConfig.mode);
 
 initViewportObserver();
+
+initInputModality();
 
 // In dev server mode, unregister any lingering service workers left by `pnpm offline`.
 // `import.meta.env.DEV` is true only for the Vite dev server, not for `vite preview`.

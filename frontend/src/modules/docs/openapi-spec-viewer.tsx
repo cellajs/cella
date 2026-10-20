@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDownIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, ChevronUpIcon, CircleXIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, ChevronUpIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { JsonViewer } from '~/modules/common/json-viewer';
 import { type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils';
 import { useMatchSteps } from '~/modules/common/match-highlight';
+import { SearchClearButton } from '~/modules/common/search-clear-button';
 import { SearchSpinner } from '~/modules/common/search-spinner';
 import { Spinner } from '~/modules/common/spinner';
 import { JsonActions } from '~/modules/docs/json-actions';
@@ -102,10 +103,7 @@ export function OpenApiSpecViewer() {
             ) : null}
           </AnimatePresence>
           <InputGroupAddon align="inline-end">
-            <CircleXIcon
-              className={cn('cursor-pointer opacity-70 hover:opacity-100', searchText.length ? 'visible' : 'invisible')}
-              onClick={() => handleSearchChange('')}
-            />
+            <SearchClearButton className={cn(!searchText.length && 'invisible')} onClick={() => handleSearchChange('')} />
           </InputGroupAddon>
         </InputGroup>
 

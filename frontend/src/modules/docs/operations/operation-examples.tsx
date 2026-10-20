@@ -17,7 +17,7 @@ interface OperationExamplesProps {
 
 export function openExamplesSheet(operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) {
   useSheeter.getState().create(
-    <Suspense fallback={<Spinner className="mt-[40vh]" />}>
+    <Suspense fallback={<Spinner size="lg" className="mt-[40vh]" />}>
       <div className="container pt-3 pb-[50vh]">
         <OperationExamples operationId={operation.id} tagName={operation.tags[0]} />
       </div>

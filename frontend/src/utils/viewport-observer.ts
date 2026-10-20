@@ -1,7 +1,7 @@
 /**
- * Tracks how much of the layout viewport the on-screen keyboard hides at the bottom.
- * Fixed-to-bottom UI subscribes and writes it as `--vv-bottom` on its own element, consumed through `--bottom-inset`
- * in tailwind.css: on iOS it changes every frame while the keyboard is open, and a write on <html> restyles everything.
+ * Marks an open on-screen keyboard with a `keyboard-open` class on <body>, so fixed-to-bottom UI hides through
+ * `group-[.keyboard-open]/body:` variants. The class flips only when the state does: on iOS the measurement changes
+ * every frame while the keyboard moves, and a class write on <body> restyles everything.
  */
 
 /** Fixed elements track browser chrome (URL bar, toolbars) natively, so only a keyboard-sized occlusion counts. Smaller
@@ -9,42 +9,27 @@
  * up to its height until the browser resizes, which can be well after the last viewport event. */
 const MIN_KEYBOARD_PX = 100;
 
-let viewportBottom = 0;
-const listeners = new Set<(px: number) => void>();
-
-/** Hidden layout-viewport bottom in px, as last measured. */
-export const getViewportBottom = () => viewportBottom;
-
-/** Calls the listener on every change of the hidden bottom; returns the unsubscribe. */
-export function subscribeViewportBottom(listener: (px: number) => void): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
 export const initViewportObserver = () => {
   const viewport = window.visualViewport;
   if (!viewport) return;
 
   let rafId = 0;
+  let keyboardOpen = false;
 
   const measure = () => {
-    // Pinch zoom shrinks the visual viewport without hiding anything under it; fixed UI stays in the layout
-    // viewport, so any "occlusion" measured now would push it toward the middle of the screen.
-    if (viewport.scale > 1.01) return 0;
+    // Pinch zoom shrinks the visual viewport without hiding anything under it, which would read as a keyboard.
+    if (viewport.scale > 1.01) return false;
     // Rubber-band overscroll drives offsetTop negative, which would inflate the occlusion.
     const offsetTop = Math.max(0, viewport.offsetTop);
-    const occluded = Math.max(0, Math.round(window.innerHeight - viewport.height - offsetTop));
-    return occluded >= MIN_KEYBOARD_PX ? occluded : 0;
+    return window.innerHeight - viewport.height - offsetTop >= MIN_KEYBOARD_PX;
   };
 
   const update = () => {
     rafId = 0;
-    const hidden = measure();
-    if (hidden === viewportBottom) return;
-    viewportBottom = hidden;
-    for (const listener of listeners) listener(hidden);
+    const open = measure();
+    if (open === keyboardOpen) return;
+    keyboardOpen = open;
+    document.body.classList.toggle('keyboard-open', open);
   };
 
   const schedule = () => {

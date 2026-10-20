@@ -1,4 +1,4 @@
-import { CircleXIcon } from 'lucide-react';
+import { SearchClearButton } from '~/modules/common/search-clear-button';
 import { SearchSpinner } from '~/modules/common/search-spinner';
 import { ComboboxPrimitive } from '~/modules/ui/combobox';
 import { cn } from '~/utils/cn';
@@ -44,17 +44,7 @@ export function ComboboxSearchInput({
         }}
       />
       {showClear && value.length > 0 && (
-        <ComboboxPrimitive.Clear
-          render={
-            <button
-              type="button"
-              aria-label="Clear search"
-              className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer opacity-70 hover:opacity-100"
-            />
-          }
-        >
-          <CircleXIcon />
-        </ComboboxPrimitive.Clear>
+        <ComboboxPrimitive.Clear render={<SearchClearButton className="absolute top-1/2 right-2 -translate-y-1/2" />} />
       )}
     </div>
   );

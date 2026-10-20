@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from '~/hooks/use-in-view';
 import type { TKey } from '~/lib/i18n-locales';
-import { PageSpinner } from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { useCountUp } from '~/modules/marketing/about/counters';
 import { showcaseItems } from '~/modules/marketing/marketing-config';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -67,7 +67,7 @@ export function Showcase() {
         </div>
       </div>
       <div className="">
-        <Suspense fallback={<PageSpinner />}>
+        <Suspense fallback={<Spinner />}>
           <DeviceMockup className="" type="mobile" lightItems={lightItems} darkItems={darkItems} />
         </Suspense>
       </div>

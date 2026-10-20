@@ -2,7 +2,7 @@ import { useIsRestoring } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { PullToRefresh } from '~/modules/common/pull-to-refresh';
-import { PageSpinner } from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { queryClient } from '~/query/query-client';
 import { router } from '~/routes/router';
 
@@ -13,7 +13,7 @@ export function AppRouter() {
   const isOnline = useOnlineManager();
 
   if (isRestoring && !isOnline) {
-    return <PageSpinner className="size-12" />;
+    return <Spinner size="lg" className="mt-[45vh]" />;
   }
 
   const handleRefresh = async () => {

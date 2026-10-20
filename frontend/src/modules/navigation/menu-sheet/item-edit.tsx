@@ -1,6 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
-import { ArchiveIcon, ArchiveRestoreIcon, ArrowDownIcon, ArrowUpIcon, BellIcon, BellOffIcon } from 'lucide-react';
+import { ArchiveIcon, ArchiveRestoreIcon, BellIcon, BellOffIcon, GripVerticalIcon } from 'lucide-react';
 import { motion } from 'motion/react';
+import { type KeyboardEvent, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getRelativeOrder } from 'shared/utils/display-order';
 import { env } from '~/env';
@@ -16,7 +17,7 @@ import { cn } from '~/utils/cn';
 
 interface MenuItemEditProps {
   item: UserMenuItem;
-  /** The list this item is ordered in, sorted; the move buttons step through it. */
+  /** The list this item is ordered in, sorted; the arrow keys on the handle step through it. */
   siblings: UserMenuItem[];
   icon?: IconComponent;
 }
@@ -41,44 +42,88 @@ export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) 
     updateMembership(updatedMembership);
   };
 
-  // The drag reorder one step at a time, for the keyboard and for a pointer that cannot drag
+  const handleRef = useRef<HTMLButtonElement>(null);
+  const refocusAtOrder = useRef<number | null>(null);
+
   const index = siblings.findIndex((sibling) => sibling.id === item.id);
+  const isSortable = !item.membership.archived && siblings.length > 1;
+
   const move = (step: -1 | 1) => {
     const target = siblings[index + step];
     if (!target) return;
     const ordered = siblings.map((sibling) => ({ id: sibling.id, displayOrder: sibling.membership.displayOrder }));
+    const displayOrder = getRelativeOrder(ordered, target.membership.displayOrder, item.id, step < 0 ? 'top' : 'bottom');
+    refocusAtOrder.current = displayOrder;
     updateMembership({
       path: { id: item.membership.id, tenantId: item.tenantId, organizationId: item.membership.organizationId || item.id },
-      body: { displayOrder: getRelativeOrder(ordered, target.membership.displayOrder, item.id, step < 0 ? 'top' : 'bottom') },
+      body: { displayOrder },
       channelId: item.id,
       channelType: item.entityType,
     });
   };
+
+  // React re-inserts a row it moves down, and a removed node drops focus
+  useEffect(() => {
+    if (refocusAtOrder.current === null || refocusAtOrder.current !== item.membership.displayOrder) return;
+    refocusAtOrder.current = null;
+    handleRef.current?.focus();
+  });
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+    event.preventDefault();
+    move(event.key === 'ArrowUp' ? -1 : 1);
+  };
+
+  const avatar = (
+    <EntityAvatar
+      className="size-8 group-data-[submenu=false]/menu-options:size-6 group-data-[archived=true]/options-item:opacity-70"
+      type={item.entityType}
+      id={item.id}
+      icon={Icon}
+      name={item.name}
+      url={item.thumbnailUrl}
+    />
+  );
+  const avatarBox = 'm-2 mx-3 flex shrink-0 group-data-[submenu=false]/menu-options:mx-4 group-data-[submenu=false]/menu-options:my-1';
 
   return (
     <motion.div
       layoutId={`sheet-menu-item-${item.id}`}
       data-subitem={!item.submenu}
       data-archived={item.membership.archived}
-      className="group/options-item relative flex h-12 w-full items-center justify-start rounded-sm p-0 pr-2 ring-1 ring-muted ring-inset hover:bg-accent/50 hover:text-accent-foreground focus:outline-hidden focus-visible:ring-foreground data-[archived=false]:cursor-grab group-data-[submenu=false]/menu-options:h-10"
+      className="group/options-item relative flex h-12 w-full items-center justify-start rounded-sm p-0 pr-2 ring-1 ring-muted ring-inset hover:bg-accent/50 hover:text-accent-foreground data-[archived=false]:cursor-grab group-data-[submenu=false]/menu-options:h-10"
     >
       {status === 'pending' && onlineManager.isOnline() && (
         <div className="absolute z-10">
           <Spinner className="m-1 mr-3 size-10 p-1 text-muted-foreground group-data-[submenu=false]/menu-options:mx-3 group-data-[submenu=false]/menu-options:my-2 group-data-[submenu=false]/menu-options:size-7 group-data-[submenu=false]/menu-options:p-1" />
         </div>
       )}
-      <EntityAvatar
-        className="m-2 mx-3 size-8 group-data-[submenu=false]/menu-options:mx-4 group-data-[submenu=false]/menu-options:my-1 group-data-[submenu=false]/menu-options:size-6 group-data-[archived=true]/options-item:opacity-70"
-        type={item.entityType}
-        id={item.id}
-        icon={Icon}
-        name={item.name}
-        url={item.thumbnailUrl}
-      />
+      {isSortable ? (
+        // A pointer drags the whole row (item-edit-wrapper.tsx); the handle gives the keyboard the same reorder
+        <button
+          ref={handleRef}
+          type="button"
+          aria-roledescription={t('c:sortable')}
+          aria-label={t('c:sortable_position', { name: item.name, position: index + 1, total: siblings.length })}
+          onKeyDown={handleKeyDown}
+          className={cn('focus-effect group/drag relative cursor-grab rounded-md active:cursor-grabbing', avatarBox)}
+        >
+          <span className="inline-flex transition-[opacity,filter] group-hover/options-item:opacity-30 group-hover/options-item:blur-[1px] group-focus-visible/drag:opacity-30 group-focus-visible/drag:blur-[1px]">
+            {avatar}
+          </span>
+          <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/options-item:opacity-100 group-focus-visible/drag:opacity-100">
+            <GripVerticalIcon className="size-4" />
+          </span>
+        </button>
+      ) : (
+        <span className={avatarBox}>{avatar}</span>
+      )}
 
-      <div className="grow truncate text-left group-data-[submenu=false]/menu-options:pl-0">
+      {/* Not a clipping box: focus scrolls one to reveal a button whose box reaches past it */}
+      <div className="min-w-0 grow text-left group-data-[submenu=false]/menu-options:pl-0">
         <div className="truncate text-md leading-5 group-data-[subitem=true]/options-item:text-xs group-data-[archived=true]/options-item:opacity-70">
-          {item.name} {env.VITE_DEBUG_MODE && <span className="text-muted">#{item.membership.displayOrder}</span>}
+          {item.name} {env.VITE_DEBUG_MODE && <span className="text-muted-foreground/50">#{item.membership.displayOrder}</span>}
         </div>
         <div className="flex items-center gap-2 transition-opacity delay-500">
           <MenuItemEditButton
@@ -93,28 +138,6 @@ export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) 
             onClick={() => handleUpdateMembershipKey('muted')}
             subitem={!item.submenu}
           />
-          {!item.membership.archived && siblings.length > 1 && (
-            <>
-              <MenuItemEditButton
-                icon={ArrowUpIcon}
-                title={t('c:move_up')}
-                label={`${t('c:move_up')}: ${item.name}`}
-                onClick={() => move(-1)}
-                disabled={index <= 0}
-                iconOnly
-                subitem={!item.submenu}
-              />
-              <MenuItemEditButton
-                icon={ArrowDownIcon}
-                title={t('c:move_down')}
-                label={`${t('c:move_down')}: ${item.name}`}
-                onClick={() => move(1)}
-                disabled={index === siblings.length - 1}
-                iconOnly
-                subitem={!item.submenu}
-              />
-            </>
-          )}
         </div>
       </div>
     </motion.div>
@@ -124,31 +147,20 @@ export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) 
 interface MenuItemEditButtonProps {
   icon: React.ElementType;
   title: string;
-  /** Accessible name when it says more than the title. */
-  label?: string;
   onClick: () => void;
   subitem?: boolean;
-  /** Shows the icon alone, in a box wide enough to hit; the title stays the tooltip and the name. */
-  iconOnly?: boolean;
-  /** Stays focusable, so a move that reaches the end of the list does not drop keyboard focus. */
-  disabled?: boolean;
 }
-function MenuItemEditButton({ icon: Icon, title, label, onClick, subitem = false, iconOnly = false, disabled = false }: MenuItemEditButtonProps) {
+function MenuItemEditButton({ icon: Icon, title, onClick, subitem = false }: MenuItemEditButtonProps) {
   return (
     <Button
       variant="none"
       size="sm"
-      className={cn(
-        'link-decoration active:link-decoration-strong h-4 px-0 py-0 text-primary text-xs leading-3 opacity-80 hover:underline hover:opacity-100 focus-visible:bg-accent/50 focus-visible:ring-0 focus-visible:ring-offset-0',
-        iconOnly && 'h-6 w-6 justify-center aria-disabled:cursor-default aria-disabled:opacity-30',
-      )}
-      aria-label={label ?? `Click ${title}`}
-      aria-disabled={disabled || undefined}
-      title={iconOnly ? title : undefined}
-      onClick={() => !disabled && onClick()}
+      className="link-decoration active:link-decoration-strong focus-inset -mx-1 -my-0.5 h-5 rounded-sm px-1 py-0 text-primary text-xs leading-3 opacity-80 hover:underline hover:opacity-100"
+      aria-label={`Click ${title}`}
+      onClick={onClick}
     >
       <Icon className={subitem ? 'size-3' : 'size-3.25'} />
-      {!iconOnly && title}
+      {title}
     </Button>
   );
 }

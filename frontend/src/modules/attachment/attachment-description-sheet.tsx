@@ -15,6 +15,7 @@ import type { Member } from '~/modules/memberships/types';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { cn } from '~/utils/cn';
+import { isTouchInteraction } from '~/utils/input-modality';
 import { tw } from '~/utils/tw';
 
 const sheetId = 'attachment-description';
@@ -75,7 +76,7 @@ function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
         description={attachment.description}
         updateData={updateData}
         members={members}
-        autoFocus={canEdit}
+        autoFocus={canEdit && !isTouchInteraction()}
         waitingFallback={waitingFallback}
         className="min-h-40"
       />

@@ -17,6 +17,7 @@ import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
+import { isTouchInteraction } from '~/utils/input-modality';
 
 const emailEnabled = isStrategyEnabled('passkey');
 const isMagicLinkEnabled = isStrategyEnabled('magic');
@@ -39,8 +40,6 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
     })),
   );
   const { redirect, tokenId } = useSearch({ strict: false });
-
-  const isMobile = window.innerWidth < 640;
 
   const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: { email } });
 
@@ -76,7 +75,14 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
                 {/* Hidden on purpose: the example address is the visible cue */}
                 <FormLabel className="sr-only">{t('c:email')}</FormLabel>
                 <FormControl>
-                  <Input {...field} type="email" className="h-12" autoFocus={!isMobile} autoComplete="email" placeholder="name@example.com" />
+                  <Input
+                    {...field}
+                    type="email"
+                    className="h-12"
+                    autoFocus={!isTouchInteraction()}
+                    autoComplete="email"
+                    placeholder="name@example.com"
+                  />
                 </FormControl>
                 <FormMessage className="mt-2" />
               </FormItem>

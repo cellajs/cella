@@ -141,7 +141,7 @@ export function DownloadCell({ row, tabIndex }: DownloadCellProps) {
       data-tooltip-content={tooltip}
       onClick={handleDownload}
     >
-      {isInProgress ? <Spinner className="size-4 text-foreground/80" noDelay /> : pending ? <CloudOffIcon /> : <DownloadIcon />}
+      {isInProgress ? <Spinner size="sm" className="text-foreground/80" noDelay /> : pending ? <CloudOffIcon /> : <DownloadIcon />}
     </Button>
   );
 }

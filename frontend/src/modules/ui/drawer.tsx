@@ -83,6 +83,12 @@ function DrawerContent({
               'data-[swipe-direction=up]:max-h-[80vh] data-[swipe-direction=up]:w-full data-[swipe-direction=up]:rounded-b-lg',
               'data-[swipe-direction=right]:w-[95vw] data-[swipe-direction=right]:lg:max-w-4xl',
               'data-[swipe-direction=left]:w-[95vw] data-[swipe-direction=left]:lg:max-w-4xl',
+              // Bleed: a swipe away from the close direction lifts the popup off its screen edge (damped, ~30px).
+              // A background-colored shadow on that edge fills the gap. Unlike margin/padding bleed it leaves layout and scroll alone.
+              'data-[swipe-direction=down]:shadow-[0_3rem_0_var(--color-background)]',
+              'data-[swipe-direction=up]:shadow-[0_-3rem_0_var(--color-background)]',
+              'data-[swipe-direction=right]:shadow-[3rem_0_0_var(--color-background)]',
+              'data-[swipe-direction=left]:shadow-[-3rem_0_0_var(--color-background)]',
               // Swipe transforms - idle position using CSS vars
               'data-[swipe-direction=down]:transform-[translateY(calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)))]',
               'data-[swipe-direction=up]:transform-[translateY(calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)))]',

@@ -11,16 +11,56 @@ interface ViewportRowsArgs<R> {
   scrollTop: number;
   enableVirtualization: boolean;
   measured: boolean;
+  /** Height a rendered row was measured at; rows without one are positioned at their estimate. */
+  getMeasuredHeight?: (row: R, rowIdx: number) => number | undefined;
 }
 
-export function useViewportRows<R>({ rows, rowHeight, clientHeight, scrollTop, enableVirtualization, measured }: ViewportRowsArgs<R>) {
-  const { totalRowHeight, gridTemplateRows, getRowTop, getRowHeight, findRowIdx } = useMemo(() => {
+interface RowPosition {
+  top: number;
+  height: number;
+  estimate: number;
+}
+
+/** Run-length encoded track list, so rows of equal height share one `repeat()`. */
+function buildTemplate(tracks: Iterable<string>) {
+  let template = '';
+  let run: string | null = null;
+  let count = 0;
+  const flush = () => {
+    if (run === null) return;
+    template += count > 1 ? `repeat(${count},${run}) ` : `${run} `;
+  };
+  for (const track of tracks) {
+    if (track === run) {
+      count++;
+      continue;
+    }
+    flush();
+    run = track;
+    count = 1;
+  }
+  flush();
+  return template;
+}
+
+export function useViewportRows<R>({
+  rows,
+  rowHeight,
+  clientHeight,
+  scrollTop,
+  enableVirtualization,
+  measured,
+  getMeasuredHeight,
+}: ViewportRowsArgs<R>) {
+  const layout = useMemo(() => {
     if (typeof rowHeight === 'number') {
       return {
+        positions: null,
+        fixedTemplate: ` repeat(${rows.length}, ${rowHeight}px)`,
         totalRowHeight: rowHeight * rows.length,
-        gridTemplateRows: ` repeat(${rows.length}, ${rowHeight}px)`,
         getRowTop: (rowIdx: number) => rowIdx * rowHeight,
         getRowHeight: () => rowHeight,
+        getRowEstimate: () => rowHeight,
         findRowIdx: (offset: number) => floor(offset / rowHeight),
       };
     }
@@ -28,41 +68,11 @@ export function useViewportRows<R>({ rows, rowHeight, clientHeight, scrollTop, e
     // Computing all row heights upfront is an accepted performance cost. For a variable-height
     // indexing approach, see https://github.com/bvaughn/react-window/blob/b0a470cc264e9100afcaa1b78ed59d88f7914ad4/src/VariableSizeList.js#L68
     let totalRowHeight = 0;
-    let gridTemplateRows = '';
-    let currentHeight: number | null = null;
-    let repeatCount = 0;
-
-    // minmax(Xpx, max-content) lets rendered rows grow past the estimate while non-rendered rows keep the minimum.
-    const flushRun = (height: number, count: number) => {
-      const track = `minmax(${height}px,max-content)`;
-      if (count > 1) {
-        gridTemplateRows += `repeat(${count},${track}) `;
-      } else {
-        gridTemplateRows += `${track} `;
-      }
-    };
-
-    const rowPositions = rows.map((row, index) => {
-      const currentRowHeight = rowHeight(row);
-
-      const position = { top: totalRowHeight, height: currentRowHeight };
-      totalRowHeight += currentRowHeight;
-
-      if (currentHeight === null) {
-        currentHeight = currentRowHeight;
-        repeatCount = 1;
-      } else if (currentHeight === currentRowHeight) {
-        repeatCount++;
-      } else {
-        flushRun(currentHeight, repeatCount);
-        currentHeight = currentRowHeight;
-        repeatCount = 1;
-      }
-
-      if (index === rows.length - 1) {
-        flushRun(currentHeight!, repeatCount);
-      }
-
+    const positions = rows.map((row, rowIdx): RowPosition => {
+      const estimate = rowHeight(row);
+      const height = getMeasuredHeight?.(row, rowIdx) ?? estimate;
+      const position = { top: totalRowHeight, height, estimate };
+      totalRowHeight += height;
       return position;
     });
 
@@ -71,16 +81,18 @@ export function useViewportRows<R>({ rows, rowHeight, clientHeight, scrollTop, e
     };
 
     return {
+      positions,
+      fixedTemplate: null,
       totalRowHeight,
-      gridTemplateRows,
-      getRowTop: (rowIdx: number) => rowPositions[validateRowIdx(rowIdx)].top,
-      getRowHeight: (rowIdx: number) => rowPositions[validateRowIdx(rowIdx)].height,
+      getRowTop: (rowIdx: number) => positions[validateRowIdx(rowIdx)].top,
+      getRowHeight: (rowIdx: number) => positions[validateRowIdx(rowIdx)].height,
+      getRowEstimate: (rowIdx: number) => positions[validateRowIdx(rowIdx)].estimate,
       findRowIdx(offset: number) {
         let start = 0;
-        let end = rowPositions.length - 1;
+        let end = positions.length - 1;
         while (start <= end) {
           const middle = start + floor((end - start) / 2);
-          const currentOffset = rowPositions[middle].top;
+          const currentOffset = positions[middle].top;
 
           if (currentOffset === offset) return middle;
 
@@ -95,7 +107,9 @@ export function useViewportRows<R>({ rows, rowHeight, clientHeight, scrollTop, e
         return 0;
       },
     };
-  }, [rowHeight, rows]);
+  }, [rowHeight, rows, getMeasuredHeight]);
+
+  const { positions, fixedTemplate, findRowIdx } = layout;
 
   let rowOverscanStartIdx = 0;
   let rowOverscanEndIdx = rows.length - 1;
@@ -113,5 +127,20 @@ export function useViewportRows<R>({ rows, rowHeight, clientHeight, scrollTop, e
     }
   }
 
-  return { rowOverscanStartIdx, rowOverscanEndIdx, totalRowHeight, gridTemplateRows, getRowTop, getRowHeight, findRowIdx };
+  // With measurement the template follows the render window: rendered rows may grow past their estimate
+  // (minmax with max-content), the others hold the height they were measured at, so leaving the window moves nothing.
+  const isMeasuring = getMeasuredHeight !== undefined;
+  const windowStart = isMeasuring ? rowOverscanStartIdx : 0;
+  const windowEnd = isMeasuring ? rowOverscanEndIdx : rows.length - 1;
+  const gridTemplateRows = useMemo(() => {
+    if (positions === null) return fixedTemplate ?? '';
+    return buildTemplate(
+      positions.map(({ height, estimate }, rowIdx) =>
+        rowIdx >= windowStart && rowIdx <= windowEnd ? `minmax(${estimate}px,max-content)` : `${height}px`,
+      ),
+    );
+  }, [positions, fixedTemplate, windowStart, windowEnd]);
+
+  const { totalRowHeight, getRowTop, getRowHeight, getRowEstimate } = layout;
+  return { rowOverscanStartIdx, rowOverscanEndIdx, totalRowHeight, gridTemplateRows, getRowTop, getRowHeight, getRowEstimate, findRowIdx };
 }

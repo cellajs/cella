@@ -58,16 +58,23 @@ const pickCleanOrder = (prev: number, next: number, taken: Set<number>): number 
 export const getRelativeOrder = (items: OrderedItem[], targetOrder: number, sourceId: string, edge: string, ascending = true): number => {
   const insertBefore = ascending ? edge === 'top' : edge === 'bottom';
 
+  const sourceOrder = items.find((item) => item.id === sourceId)?.displayOrder;
   const sorted = items.filter((item) => item.id !== sourceId).toSorted((a, b) => a.displayOrder - b.displayOrder);
   const taken = new Set(sorted.map((i) => i.displayOrder));
 
   const targetIdx = sorted.findIndex((item) => item.displayOrder === targetOrder);
-  // Target absent: extend past it on the requested side, snapped to an integer.
   if (targetIdx === -1) {
+    // Dropped on itself
+    if (sourceOrder === targetOrder) return sourceOrder;
+    // Target absent: extend past it on the requested side, snapped to an integer.
     return insertBefore ? Math.floor(targetOrder) - orderGap : Math.ceil(targetOrder) + orderGap;
   }
 
   const [prev, next] = insertBefore ? [sorted[targetIdx - 1]?.displayOrder, targetOrder] : [targetOrder, sorted[targetIdx + 1]?.displayOrder];
+
+  // Dropped on the edge facing it: the slot is unchanged, so a new order would only churn a write
+  const staysInSlot = sourceOrder !== undefined && (prev === undefined || prev < sourceOrder) && (next === undefined || sourceOrder < next);
+  if (staysInSlot) return sourceOrder;
 
   // One neighbor: extend past it to a clean integer, even when targetOrder is fractional.
   if (prev === undefined && next !== undefined) return Math.floor(next) - orderGap;

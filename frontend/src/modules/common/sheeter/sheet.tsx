@@ -1,12 +1,12 @@
 import { AnimatePresence, motion } from 'motion/react';
-import type { ReactNode } from 'react';
-import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { type ReactNode, useRef } from 'react';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { cn } from '~/utils/cn';
+import { isTouchInteraction } from '~/utils/input-modality';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
 export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExited?: () => void }) {
@@ -29,7 +29,7 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
     autoScrollOnDrag,
   } = sheet;
 
-  const isMobile = useBreakpointBelow('sm', false);
+  const popupRef = useRef<HTMLDivElement>(null);
   const containerElement = container?.ref?.current ?? null;
 
   // The provider keeps the removed sheet rendered until it has slid out
@@ -96,12 +96,14 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
       disablePointerDismissal={disablePointerDismissal}
     >
       <SheetContent
+        ref={popupRef}
         id={String(id)}
         side={side}
         overlay={modal === true}
         container={containerElement}
         className={cn('items-start', className, containerElement && 'z-40')}
-        initialFocus={isMobile ? false : undefined}
+        // Opened from code, so Base UI cannot see a touch open: on touch the popup takes focus, as Base UI's own touch default does.
+        initialFocus={() => (isTouchInteraction() ? popupRef.current : true)}
         finalFocus={finalFocus}
         autoScrollOnDrag={autoScrollOnDrag}
       >

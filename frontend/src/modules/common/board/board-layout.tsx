@@ -37,6 +37,8 @@ interface BoardLayoutProps {
   autoHeight?: boolean;
   reorderable?: boolean;
   onPanelReorder?: (newOrder: string[], sourcePanelId: string) => void;
+  /** `marked` when panel content carries `hintFadeOut`, so frames and avatars stay solid through a collapse hint */
+  panelFade?: 'all' | 'marked';
   className?: string;
   groupClassName?: string;
   separatorClassName?: string;
@@ -53,6 +55,7 @@ export function BoardLayout({
   autoHeight,
   reorderable,
   onPanelReorder,
+  panelFade,
   className,
   groupClassName,
   separatorClassName,
@@ -141,7 +144,7 @@ export function BoardLayout({
           {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'left' && (
             <DropIndicator edge="left" gap={i === 0 ? 0 : 0.6} />
           )}
-          <ResizablePanel id={panelId} minWidth={PANEL_MIN_WIDTH} collapsedWidth={COLLAPSED_PANEL_MIN_WIDTH} collapsible>
+          <ResizablePanel id={panelId} minWidth={PANEL_MIN_WIDTH} collapsedWidth={COLLAPSED_PANEL_MIN_WIDTH} collapsible fade={panelFade}>
             {reorderable ? (
               <PanelDragWrapper
                 panelId={panelId}
@@ -164,7 +167,7 @@ export function BoardLayout({
             <ResizableSeparator
               index={i}
               className={cn(
-                'mx-[0.02rem] w-1.5 rounded border border-background bg-transparent transition-all hover:bg-primary/50 focus-visible:bg-primary data-[separator=drag]:bg-primary',
+                'mx-[0.02rem] w-1.5 rounded border border-background bg-transparent transition-colors hover:bg-primary/50 focus-visible:bg-primary data-[separator=drag]:bg-primary',
                 separatorClassName,
               )}
             />

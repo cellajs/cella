@@ -2,7 +2,6 @@ import { ChevronDownIcon, PlusIcon, Settings2Icon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
 import { widenMotion } from '~/modules/navigation/menu-sheet/helpers/widen-motion';
@@ -38,9 +37,6 @@ export function MenuSectionButton({
 
   const createButtonRef = useRef(null);
 
-  const isMobile = useBreakpointBelow('sm', false);
-  const widen = widenMotion(isMobile);
-
   return (
     <div className="sticky top-0 z-10">
       <div className="z-10 flex items-center bg-card py-2">
@@ -74,9 +70,9 @@ export function MenuSectionButton({
             {isSectionVisible && !!data.length && (
               <motion.div
                 key={`settings-${options.entityType}`}
-                {...widen}
+                {...widenMotion}
                 transition={{ bounce: 0, duration: 0.2 }}
-                className="ml-2 shrink-0 max-sm:hidden"
+                className="shrink-0 max-sm:hidden"
               >
                 <TooltipButton toolTipContent={t('c:manage_content')} side="bottom" sideOffset={10}>
                   <Button className="w-10 px-2 shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={() => toggleIsEditing()}>
@@ -89,7 +85,7 @@ export function MenuSectionButton({
 
           <AnimatePresence initial={false}>
             {isSectionVisible && handleCreateAction && (
-              <motion.div key={`create-${options.entityType}`} {...widen} transition={{ bounce: 0, duration: 0.2 }} className="ml-2 shrink-0">
+              <motion.div key={`create-${options.entityType}`} {...widenMotion} transition={{ bounce: 0, duration: 0.2 }} className="shrink-0">
                 <TooltipButton toolTipContent={t('c:create')} sideOffset={22} side="right">
                   <Button
                     ref={createButtonRef}

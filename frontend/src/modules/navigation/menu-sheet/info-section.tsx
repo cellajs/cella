@@ -118,8 +118,14 @@ export function InfoContent() {
             </Button>
           )}
         </div>
-        <div className={cn('gap-2 pt-1', allHealthy ? 'flex flex-col' : 'grid grid-cols-2')}>
-          {allHealthy ? (
+        <div className={cn('gap-2 pt-1', allHealthy || isPending ? 'flex flex-col' : 'grid grid-cols-2')}>
+          {/* The first check holds the healthy card's height, so the panel doesn't grow while it opens */}
+          {isPending ? (
+            <div className={cn(statusCardClass, 'text-muted-foreground')}>
+              <span className="inline-block size-2 shrink-0 rounded-full bg-muted-foreground/40" aria-hidden="true" />
+              {t('c:loading')}
+            </div>
+          ) : allHealthy ? (
             <div className={statusCardClass}>
               <StatusDot status="healthy" />
               {t('c:all_systems_healthy')}

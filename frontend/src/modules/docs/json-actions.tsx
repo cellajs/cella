@@ -90,7 +90,7 @@ export function JsonActions({ url, data, filename = 'data.json', resourceName, c
           disabled={isInProgress}
           onClick={handleDownload}
         >
-          {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon />}
+          {isInProgress ? <Spinner size="sm" noDelay /> : <DownloadIcon />}
           {!smallMode && <span className="max-lg:hidden">{t('c:download')}</span>}
         </Button>
       </TooltipButton>

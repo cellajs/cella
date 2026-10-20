@@ -14,6 +14,7 @@ import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
+import { isTouchInteraction } from '~/utils/input-modality';
 
 const emailEnabled = isStrategyEnabled('passkey');
 
@@ -27,7 +28,6 @@ export function CheckEmailStep() {
   const setRestrictedMode = useAuthStore((state) => state.setRestrictedMode);
   const inviteOtherAccount = useAuthStore((state) => state.inviteOtherAccount);
 
-  const isMobile = window.innerWidth < 640;
   const title = inviteOtherAccount ? t('c:invite_sign_in') : appConfig.has.selfRegistration ? t('c:sign_in_or_up') : t('c:sign_in');
 
   const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: { email: '' } });
@@ -68,7 +68,14 @@ export function CheckEmailStep() {
                 {/* Hidden on purpose: the example address is the visible cue */}
                 <FormLabel className="sr-only">{t('c:email')}</FormLabel>
                 <FormControl>
-                  <Input {...field} className="h-12" type="email" autoFocus={!isMobile} autoComplete="email" placeholder="name@example.com" />
+                  <Input
+                    {...field}
+                    className="h-12"
+                    type="email"
+                    autoFocus={!isTouchInteraction()}
+                    autoComplete="email"
+                    placeholder="name@example.com"
+                  />
                 </FormControl>
                 <FormMessage className="mt-2" />
               </FormItem>

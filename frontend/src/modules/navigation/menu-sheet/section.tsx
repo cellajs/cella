@@ -58,7 +58,6 @@ export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
   };
 
   const archiveToggleClick = () => toggleSection(archivedSectionType);
-  const collapse = collapseMotion(isMobile);
 
   return (
     <div className="group/menu-section px-3" data-visible={isSectionVisible}>
@@ -75,7 +74,7 @@ export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
         {isEditing && (
           <motion.div
             key="alert"
-            {...collapse}
+            {...collapseMotion}
             transition={{ height: { duration: 0.3 }, opacity: { delay: 0.3, duration: 0.2 } }}
             className="overflow-hidden"
           >
@@ -87,7 +86,7 @@ export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
       </AnimatePresence>
       <AnimatePresence initial={false}>
         {isSectionVisible && (
-          <motion.ul key={options.entityType} {...collapse} transition={{ duration: 0.2, ease: 'easeInOut' }} className="overflow-hidden">
+          <motion.ul key={options.entityType} {...collapseMotion} transition={{ duration: 0.2, ease: 'easeInOut' }} className="overflow-hidden">
             {isEditing ? (
               <MenuSheetItemsEdit data={data} isArchived={false} options={options} />
             ) : (
@@ -106,7 +105,7 @@ export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
                   {isArchivedVisible && (
                     <motion.ul
                       key={`${options.entityType}-archived`}
-                      {...collapse}
+                      {...collapseMotion}
                       transition={{ duration: 0.2, ease: 'easeInOut' }}
                       className="overflow-hidden"
                     >
