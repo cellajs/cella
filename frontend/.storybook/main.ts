@@ -4,14 +4,11 @@ import { appConfig } from 'shared';
 import type { Plugin } from 'vite';
 import { docsFrontmatter } from '../vite/docs-frontmatter.ts';
 
-// The PWA plugin is app-only; stories get a service-worker hook that never reports an update.
-const pwaRegisterStub: Plugin = {
-  name: 'storybook-pwa-register-stub',
-  resolveId: (id) => (id === 'virtual:pwa-register/react' ? '\0pwa-register-stub' : undefined),
-  load: (id) =>
-    id === '\0pwa-register-stub'
-      ? 'export const useRegisterSW = () => ({ needRefresh: [false, () => {}], offlineReady: [false, () => {}], updateServiceWorker: async () => {} });'
-      : undefined,
+// The service worker plugin is app-only; stories get no service worker.
+const serwistStub: Plugin = {
+  name: 'storybook-serwist-stub',
+  resolveId: (id) => (id === 'virtual:serwist' ? '\0serwist-stub' : undefined),
+  load: (id) => (id === '\0serwist-stub' ? 'export const getSerwist = async () => undefined;' : undefined),
 };
 
 const config: StorybookConfig = {
@@ -47,7 +44,7 @@ const config: StorybookConfig = {
     const hasTailwind = (config.plugins ?? []).flat(2).some((plugin) => plugin && 'name' in plugin && plugin.name.startsWith('@tailwindcss/vite'));
     // Every virtual module the app imports must resolve: an unresolved import fails Vite's dependency scan, so
     // dependencies are found mid-run and each discovery reloads the tests.
-    config.plugins = [...(config.plugins ?? []), ...(hasTailwind ? [] : [tailwindcss()]), docsFrontmatter(), pwaRegisterStub];
+    config.plugins = [...(config.plugins ?? []), ...(hasTailwind ? [] : [tailwindcss()]), docsFrontmatter(), serwistStub];
     // The email stories render backend HTML: proxy the dev preview route so their fetch stays same-origin.
     config.server = {
       ...config.server,

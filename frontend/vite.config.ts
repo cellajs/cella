@@ -3,6 +3,7 @@ import path from 'node:path';
 import mdx from '@mdx-js/rollup';
 import babel from '@rolldown/plugin-babel';
 import terser from '@rollup/plugin-terser';
+import { serwist } from '@serwist/vite';
 import rehypeShiki from '@shikijs/rehype';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
@@ -15,7 +16,6 @@ import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, type Plugin, type UserConfig } from 'vite';
 import { createHtmlPlugin } from 'vite-plugin-html';
-import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import svgr from 'vite-plugin-svgr';
 import rootPkg from '../package.json' with { type: 'json' };
@@ -476,35 +476,48 @@ const viteConfig = {
   },
 } satisfies UserConfig;
 
-// Setup PWA with custom service worker (injectManifest) for push delivery and app-badge updates
-viteConfig.plugins?.push(
-  VitePWA({
-    disable: !appConfig.has.pwa,
-    strategies: 'injectManifest',
-    srcDir: 'src/lib',
-    filename: 'sw.ts',
-    devOptions: { enabled: false, navigateFallback: 'index.html', suppressWarnings: true },
-    manifest: {
-      name: appConfig.name,
-      short_name: appConfig.name,
-      description: appConfig.description,
-      theme_color: '#222222',
-      icons: [
-        { src: '/static/common/icons/favicon-192x192.png', sizes: '192x192', type: 'image/png' },
-        { src: '/static/common/icons/favicon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-        { src: '/static/common/icons/icon-512x512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
-        { src: '/static/common/icons/maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-      ],
+// PWA: the web app manifest, and the service worker (lib/sw.ts, push delivery and app-badge updates) with the build's
+// precache list injected at `self.__SW_MANIFEST`.
+if (appConfig.has.pwa && !isStorybook) {
+  viteConfig.plugins?.push(
+    {
+      name: 'web-manifest',
+      apply: 'build',
+      generateBundle() {
+        const manifest = {
+          name: appConfig.name,
+          short_name: appConfig.name,
+          description: appConfig.description,
+          start_url: '/',
+          display: 'standalone',
+          background_color: '#ffffff',
+          theme_color: '#222222',
+          lang: 'en',
+          scope: '/',
+          icons: [
+            { src: '/static/common/icons/favicon-192x192.png', sizes: '192x192', type: 'image/png' },
+            { src: '/static/common/icons/favicon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+            { src: '/static/common/icons/icon-512x512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
+            { src: '/static/common/icons/maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          ],
+        };
+        this.emitFile({ type: 'asset', fileName: 'manifest.webmanifest', source: `${JSON.stringify(manifest)}\n` });
+      },
+      transformIndexHtml: () => [{ tag: 'link', attrs: { rel: 'manifest', href: '/manifest.webmanifest' }, injectTo: 'head' }],
     },
-    injectManifest: {
-      globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+    ...serwist({
+      swSrc: 'src/lib/sw.ts',
+      swDest: 'sw.js',
+      globDirectory: path.resolve(import.meta.dirname, 'dist'),
+      globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,webmanifest}'],
       // `grammars-*` is the codeSplitting group for shiki/tm-grammars: runtime-loaded, not precached.
       // `replay-*` is Maple's session replay with rrweb, loaded only when replay is on.
-      globIgnores: ['**/grammars-*.js', '**/replay-*.js', '**/static/common/flags/**/*'],
+      // `gleap-*` (support chat) and `maps-*` (map tiles) need the network to do anything.
+      globIgnores: ['**/grammars-*.js', '**/replay-*.js', '**/gleap-*.js', '**/maps-*.{js,css}', '**/static/common/flags/**/*'],
       maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
-    },
-  }),
-);
+    }),
+  );
+}
 
 // Enable HTTPS only when serving https on localhost directly. Tunnel mode is https at
 // the public origin, but ngrok terminates TLS and forwards plain HTTP to Vite.
