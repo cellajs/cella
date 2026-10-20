@@ -77,7 +77,7 @@ pnpm infra
 
 ## Bench CLI
 
-Artillery load tests against the dev stack ([bench guide](../bench/README.md)).
+Load tests against the dev stack ([bench guide](../bench/README.md)).
 
 ```bash
 pnpm bench

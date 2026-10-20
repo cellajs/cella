@@ -1,4 +1,3 @@
-import { writeFileSync } from 'node:fs';
 import { monitorEventLoopDelay, performance } from 'node:perf_hooks';
 import process from 'node:process';
 import * as decoding from 'lib0/decoding';
@@ -8,22 +7,9 @@ import { BENCH_UUID_PREFIX } from 'shared/utils/bench-identity';
 import WebSocket from 'ws';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
-import {
-  BACKEND_PORT,
-  BASE_URL,
-  BENCH_SHORT,
-  CDC_HEALTH_PORT,
-  CDC_HEALTH_URL,
-  COOKIE_SECRET,
-  DB_URL,
-  SESSION_COOKIE_NAME,
-  YJS_HEALTH_URL,
-  YJS_PORT,
-  YJS_TYPING,
-  YJS_URL,
-} from './config';
+import { benchCookie } from './bench-user';
+import { BACKEND_PORT, BASE_URL, CDC_HEALTH_PORT, CDC_HEALTH_URL, DB_URL, YJS_HEALTH_URL, YJS_PORT, YJS_TYPING, YJS_URL } from './config';
 import { attachmentId, ORG_ID, TENANT_ID } from './seeds/ids';
-import { sealSessionCookie, sessionToken } from './seeds/session-auth';
 import { TOTAL_USERS } from './seeds/user-constants';
 import { type DbCounters, startStackSampler, type WindowSummary, walBytesBetween } from './stack-sampler';
 
@@ -38,7 +24,7 @@ const WARMUP_MS = 10_000;
 /** pg_stat counters reach pg_stat_* when a backend idles, at least every ten seconds: the tail snapshot waits past that. */
 const STATS_FLUSH_MS = 12_000;
 
-interface YjsTypingOptions {
+export interface YjsTypingOptions {
   docs: number;
   typers: number;
   durationMs: number;
@@ -56,10 +42,10 @@ interface YjsTypingOptions {
   settleMs: number;
 }
 
-/** The scenario shape from YJS_* variables; `--short` shrinks it to a smoke run. */
-function yjsTypingOptions(): YjsTypingOptions {
+/** The scenario shape from YJS_* variables; a short run shrinks it to a smoke run. */
+export function yjsTypingOptions(short: boolean): YjsTypingOptions {
   const base = { docOffset: YJS_TYPING.docOffset, staggerMs: YJS_TYPING.staggerS * 1000, userOffset: 600, keystrokeMs: YJS_TYPING.keystrokeMs };
-  if (BENCH_SHORT) return { ...base, docs: 2, typers: 2, durationMs: 5000, sseViewers: 1, settleMs: 20_000 };
+  if (short) return { ...base, docs: 2, typers: 2, durationMs: 5000, sseViewers: 1, settleMs: 20_000 };
   return {
     ...base,
     docs: YJS_TYPING.docs,
@@ -70,11 +56,14 @@ function yjsTypingOptions(): YjsTypingOptions {
   };
 }
 
-/** Every latency sample of a run, for Artillery's histograms: `--samples` adds them to the JSON report. */
-export interface YjsTypingSamples {
-  peerMs: number[];
-  savedMs: number[];
-  notifyDelayMs: number[];
+/** The latencies the driver records as they happen, in milliseconds. */
+export const YJS_HISTOGRAMS = ['yjs.peer_latency_ms', 'yjs.saved_latency_ms', 'yjs.notify_delay_ms'] as const;
+export type YjsHistogram = (typeof YJS_HISTOGRAMS)[number];
+
+/** Where the driver sends samples while it runs, so a live display shows them. */
+export interface YjsTypingSink {
+  histogram(name: YjsHistogram, ms: number): void;
+  keystroke(): void;
 }
 
 interface Percentiles {
@@ -95,6 +84,7 @@ type Phase = 'setup' | 'typing' | 'settle';
 
 /** Shared state of one run: what the clients measure, and counters by name. */
 interface RunState {
+  sink: YjsTypingSink;
   phase: Phase;
   /** Send time of each typed character, by `clientId:clock`, until the document's viewer receives it. */
   sentAt: Map<string, number>;
@@ -120,12 +110,9 @@ interface Client {
   generation: string | null;
 }
 
-const cookieFor = (userIndex: number) =>
-  `${SESSION_COOKIE_NAME}=${encodeURIComponent(sealSessionCookie(SESSION_COOKIE_NAME, sessionToken(userIndex), COOKIE_SECRET, 3600))}`;
-
 async function mintToken(docIndex: number, userIndex: number): Promise<string> {
   const url = `${BASE_URL}/${TENANT_ID}/${ORG_ID}/yjs/token?entityType=attachment&entityId=${attachmentId(docIndex)}`;
-  const res = await fetch(url, { headers: { cookie: cookieFor(userIndex) } });
+  const res = await fetch(url, { headers: { cookie: benchCookie(userIndex) } });
   if (!res.ok) throw new Error(`token for attachment ${docIndex} answered ${res.status}: ${(await res.text()).slice(0, 200)}`);
   return ((await res.json()) as { token: string }).token;
 }
@@ -204,7 +191,10 @@ function openClient(run: RunState, role: Client['role'], docIndex: number, token
   provider.messageHandlers[MESSAGE.saved] = () => {
     client.saved++;
     const sentAt = client.unsaved.shift();
-    if (sentAt !== undefined && run.phase !== 'setup') run.savedMs.push(performance.now() - sentAt);
+    if (sentAt === undefined || run.phase === 'setup') return;
+    const savedMs = performance.now() - sentAt;
+    run.savedMs.push(savedMs);
+    run.sink.histogram('yjs.saved_latency_ms', savedMs);
   };
   provider.on('connection-close', (event) => {
     if (event) bump(run, `yjs.close.${event.code}`);
@@ -226,6 +216,7 @@ function openClient(run: RunState, role: Client['role'], docIndex: number, token
           if (sentAt === undefined) continue;
           run.sentAt.delete(key);
           run.peerMs.push(now - sentAt);
+          run.sink.histogram('yjs.peer_latency_ms', now - sentAt);
         }
       }
     });
@@ -315,6 +306,7 @@ function typeOnce(run: RunState, typer: Typer): void {
   const cursor = Y.relativePositionToJSON(typer.cursor);
   provider.awareness.setLocalStateField('cursor', { anchor: cursor, head: cursor });
   bump(run, 'yjs.keystrokes');
+  run.sink.keystroke();
 }
 
 /** An SSE change notification: `product` with `productType` and `subjectId` since the entity rename, `entity` before. */
@@ -330,7 +322,7 @@ interface StreamChange {
  */
 async function watchStream(run: RunState, userIndex: number, signal: AbortSignal): Promise<void> {
   try {
-    const res = await fetch(`${BASE_URL}/entities/app/stream`, { headers: { cookie: cookieFor(userIndex), accept: 'text/event-stream' }, signal });
+    const res = await fetch(`${BASE_URL}/entities/app/stream`, { headers: { cookie: benchCookie(userIndex), accept: 'text/event-stream' }, signal });
     if (!res.ok || !res.body) return bump(run, `sse.error.${res.status}`);
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
@@ -461,14 +453,14 @@ function counterDeltas(from: DbCounters, to: DbCounters) {
  * fan-out they cause, the stack's CPU, memory and DB connections, and whether every edit was saved, converged and
  * written to the entity row after typing stops.
  */
-async function runYjsTyping(options: YjsTypingOptions): Promise<{ report: YjsTypingReport; samples: YjsTypingSamples }> {
+export async function runYjsTyping(options: YjsTypingOptions, sink: YjsTypingSink): Promise<YjsTypingReport> {
   const { docs, typers, durationMs, keystrokeMs, sseViewers, docOffset, staggerMs, userOffset, settleMs } = options;
   const usersNeeded = docs * (typers + 1) + sseViewers;
   if (userOffset + usersNeeded > TOTAL_USERS) throw new Error(`yjs-typing needs ${usersNeeded} bench users from ${userOffset}; ${TOTAL_USERS} exist`);
   if (!(await fetchJson<RelayHealth>(YJS_HEALTH_URL)))
     throw new Error(`The Yjs relay is not reachable at ${YJS_HEALTH_URL}: start it with \`pnpm dev\``);
 
-  const run: RunState = { phase: 'setup', sentAt: new Map(), peerMs: [], savedMs: [], notifyDelayMs: [], counters: {} };
+  const run: RunState = { sink, phase: 'setup', sentAt: new Map(), peerMs: [], savedMs: [], notifyDelayMs: [], counters: {} };
   const admin = new pg.Pool({ connectionString: DB_URL, max: 2 });
   // Per-user connection and stream budgets span runs.
   await admin.query("DELETE FROM rate_limits WHERE key LIKE 'password_%' OR strpos(key, $1) > 0", [BENCH_UUID_PREFIX]).catch(() => undefined);
@@ -499,7 +491,10 @@ async function runYjsTyping(options: YjsTypingOptions): Promise<{ report: YjsTyp
   listener.on('notification', ({ channel, payload }) => {
     if (channel !== LOG_CHANNEL) return;
     if (payload?.startsWith('{"probe"')) {
-      if (run.phase === 'typing') run.notifyDelayMs.push(performance.now() - (JSON.parse(payload) as { probe: number }).probe);
+      if (run.phase !== 'typing') return;
+      const delayMs = performance.now() - (JSON.parse(payload) as { probe: number }).probe;
+      run.notifyDelayMs.push(delayMs);
+      sink.histogram('yjs.notify_delay_ms', delayMs);
       return;
     }
     bump(run, `notify.${run.phase}`);
@@ -744,17 +739,18 @@ async function runYjsTyping(options: YjsTypingOptions): Promise<{ report: YjsTyp
     },
   };
 
-  return { report, samples: { peerMs: run.peerMs, savedMs: run.savedMs, notifyDelayMs: run.notifyDelayMs } };
+  return report;
 }
 
 const fmt = (n: number, digits = 1) => (Number.isFinite(n) ? n.toFixed(digits) : '-');
 const lat = (p: Percentiles) =>
   p.count === 0 ? pc.dim('n/a') : `p50 ${fmt(p.p50)}  p95 ${fmt(p.p95)}  p99 ${fmt(p.p99)}  max ${fmt(p.max)} ms  (${p.count})`;
 
-function printYjsTypingReport(r: YjsTypingReport): void {
+/** The driver's own report: latencies, the log channel, materializations, the stack and what happened after typing. */
+export function formatYjsTypingReport(r: YjsTypingReport): string {
   const o = r.options;
-  const row = (label: string, value: string) => console.info(`  ${label.padEnd(24)}${value}`);
-  console.info(`\n${pc.bold('yjs-typing')} ${pc.dim(`${o.docs} docs x ${o.typers} typers + 1 viewer, ${o.durationMs / 1000}s, ${r.relay}`)}`);
+  const lines = [`${pc.bold('yjs-typing')} ${pc.dim(`${o.docs} docs x ${o.typers} typers + 1 viewer, ${o.durationMs / 1000}s, ${r.relay}`)}`];
+  const row = (label: string, value: string) => lines.push(`  ${label.padEnd(24)}${value}`);
   row('keystrokes', `${r.keystrokes} (${fmt(r.keystrokesPerSec)}/s)`);
   row('peer latency', lat(r.peerLatencyMs));
   row('saved latency', r.savedFrames ? lat(r.savedLatencyMs) : pc.dim('relay sends no Saved'));
@@ -795,20 +791,5 @@ function printYjsTypingReport(r: YjsTypingReport): void {
     ([k]) => k.includes('close') || k.includes('error') || k.includes('reconnect') || k.includes('unsynced') || k.includes('generation'),
   );
   row('errors and closes', issues.length ? issues.map(([k, v]) => `${k}=${v}`).join(', ') : 'none');
-  console.info();
+  return lines.join('\n');
 }
-
-/** `tsx src/yjs-typing.ts [--out report.json] [--samples]`, with the shape from YJS_* variables. The Artillery processor runs it too. */
-async function main(): Promise<void> {
-  const outIndex = process.argv.indexOf('--out');
-  const { report, samples } = await runYjsTyping(yjsTypingOptions());
-  printYjsTypingReport(report);
-  const json = process.argv.includes('--samples') ? { ...report, samples } : report;
-  if (outIndex > 0 && process.argv[outIndex + 1]) writeFileSync(process.argv[outIndex + 1], `${JSON.stringify(json, null, 2)}\n`);
-  process.exit(0);
-}
-
-main().catch((error) => {
-  console.error(pc.red('yjs-typing failed:'), error);
-  process.exit(1);
-});

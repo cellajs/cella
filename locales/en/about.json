@@ -225,8 +225,6 @@
   "showcase.text_1": "An issue tracker to manage multiple app projects from a single page view. Built for speed & fun.",
   "showcase.title_1": "raak.dev",
   "showcase.from_cella": "Of all code is from Cella",
-  "stack.artillery": "artillery",
-  "stack.artillery.text": "Load testing for critical flows has been made easy.",
   "stack.baseui": "base-ui & motion",
   "stack.baseui.text": "Accessible components with BaseUI, Tailwind and Motion.",
   "stack.drizzle": "postgres & drizzle",

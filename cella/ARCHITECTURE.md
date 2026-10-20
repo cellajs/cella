@@ -101,5 +101,5 @@ Flat-root monorepo:
 ├── infra         Pulumi deployment and operational CLI
 ├── cella         Architecture, guides, changelog, and upgrade migrations
 ├── locales       Translations
-└── bench         Artillery load tests
+└── bench         Load tests with their own runner
 ```
