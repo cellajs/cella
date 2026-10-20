@@ -10,7 +10,7 @@ import { removePacketFile, reviewPacket, writePacketFile } from './review-packet
 import type { ScopeState } from './scope.ts';
 import { type Mode, newContext, openPage, resolvePath, type Session } from './session.ts';
 
-export interface Visit {
+interface Visit {
   findings: Finding[];
   scan: AxeScan;
 }

@@ -53,7 +53,8 @@ earlier one left behind, such as a page that fell into its error boundary.
 - Each state gets one visit in light mode. [visit.ts](src/visit.ts) runs every check on that one page, in an order
   that keeps the page intact for the next check: read-only checks first, then the ones that restore what they change
   (resizing, text spacing), and last the keyboard walk, whose Escape closes the state's overlay.
-- A second visit in dark mode runs axe's contrast rule only, the one rule whose result depends on the color mode.
+- A second visit in dark mode measures contrast only: axe's contrast rule, the one rule whose result depends on the
+  color mode, and the two contrast probes.
 - A check is a function of an open page that returns findings ([findings.ts](src/findings.ts)). All findings turn
   into evidence in one place, after every visit is done.
 

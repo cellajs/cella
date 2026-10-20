@@ -2,7 +2,7 @@
  * How a criterion gets its evidence: `axe` rules tagged with it, a named browser `probe`, a `code` check over the
  * repository, or a `manual` pass by a person. The audit decides a row only when none of its checks is `manual`.
  */
-type Check = 'axe' | `probe:${string}` | `code:${string}` | 'manual';
+type CheckName = 'axe' | `probe:${string}` | `code:${string}` | 'manual';
 
 export interface Criterion {
   id: string;
@@ -10,10 +10,10 @@ export interface Criterion {
   level: 'A' | 'AA';
   /** EN 301 549 V3.2.1 web clause; null for criteria new in WCAG 2.2, which that version predates. */
   en301549: string | null;
-  checks: Check[];
+  checks: CheckName[];
 }
 
-const c = (id: string, name: string, level: 'A' | 'AA', checks: Check[], newIn22 = false): Criterion => ({
+const c = (id: string, name: string, level: 'A' | 'AA', checks: CheckName[], newIn22 = false): Criterion => ({
   id,
   name,
   level,
@@ -90,8 +90,7 @@ export const manualSteps: Record<string, string> = {
   '1.3.3': 'No instruction relies only on shape, color, size, position or sound ("press the round button on the right").',
   '1.4.1': 'Color is never the only signal: links in text, required fields, errors, status badges and charts also differ in text or shape.',
   '1.4.2': 'Nothing plays sound by itself.',
-  '1.4.3':
-    'Where the audit could measure nothing (the probe says how many texts had no measurable pixels), check contrast by eye: 4.5:1, or 3:1 for large text.',
+  '1.4.3': 'Where the audit measured nothing, such as field values and placeholders, check contrast by eye: 4.5:1, or 3:1 for large text.',
   '1.4.5': 'No text is shown as an image, except logos.',
   '1.4.11': 'The audit measures form control edges. By hand: icons that carry meaning, focus indicators and chart parts reach 3:1 in both modes.',
   '1.4.13': 'Tooltips, menus and popovers that appear on hover or focus can be dismissed with Escape, hovered, and stay until dismissed.',
