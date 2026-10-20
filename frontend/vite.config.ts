@@ -398,7 +398,8 @@ const viteConfig = {
     // Dev-only write-back endpoint so the pages table can edit frontmatter and
     // reparent pages by rewriting/moving the md/mdx files (apply: 'serve').
     docsEditor(),
-    // `*.svg?react` imports become React components (jsx only, no svgo pass). Must run before react().
+    // `*.svg?react` imports become React components (jsx only, no svgo pass). Must run before react(). Cella has no such
+    // import; apps do (projectcampus renders its marketing art this way), so the plugin stays.
     svgr({ include: '**/*.svg?react' }),
     react(),
     // A regex: the plugin matches `include` against absolute module ids, which a relative glob with braces never matches.

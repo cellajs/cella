@@ -40,7 +40,6 @@
     "pino-abstract-transport": "^3.0.0"
   },
   "devDependencies": {
-    "@blocknote/server-util": "^0.56.0",
     "@hono/node-server": "^2.1.5",
     "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
