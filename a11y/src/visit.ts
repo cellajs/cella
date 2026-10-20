@@ -5,10 +5,9 @@ import { controlContrast, textContrast } from './probes/contrast.ts';
 import { formErrors, inputs } from './probes/forms.ts';
 import { keyboardWalk } from './probes/keyboard.ts';
 import { layout } from './probes/layout.ts';
-import { statusMessages, tooltips } from './probes/overlays.ts';
 import { languageSwitch, pageStructure } from './probes/page-structure.ts';
 import { removePacketFile, reviewPacket, writePacketFile } from './review-packet.ts';
-import { ensureOpen, type ScopeState } from './scope.ts';
+import type { ScopeState } from './scope.ts';
 import { type Mode, newContext, openPage, resolvePath, type Session } from './session.ts';
 
 export interface Visit {
@@ -19,9 +18,9 @@ export interface Visit {
 /**
  * Opens one state once and runs every check on that page.
  *
- * The light visit runs them in an order that keeps each check's page intact: checks that only read come first (the
- * toast check before its toast closes), then the ones that restore what they change, and last the keyboard walk, whose
- * Escape closes the state's overlay, and the language switch, which changes the stored language.
+ * The light visit runs them in an order that keeps each check's page intact: checks that only read come first, then the
+ * ones that restore what they change, and last the keyboard walk, whose Escape closes the state's overlay, and the
+ * language switch, which changes the stored language.
  *
  * The dark visit runs what depends on the color mode: axe's contrast rule and the two contrast probes.
  *
@@ -74,16 +73,13 @@ export async function visitState(session: Session, state: ScopeState, mode: Mode
       return { findings, scan };
     }
 
-    if (parts.probes) for (const check of [statusMessages, pageStructure, inputs]) await run(check);
+    if (parts.probes) for (const check of [pageStructure, inputs]) await run(check);
     const scan = parts.axe ? await scanPage() : null;
     if (parts.probes) {
       if (scan) await run(textContrast(scan.undecidedContrast), 'textContrast');
       await run(controlContrast);
       await run(reviewPacket);
       await run(layout);
-      await run(tooltips);
-      step = 'reopen';
-      await ensureOpen(opened, state);
       await run(formErrors);
       await run(keyboardWalk);
       await run(languageSwitch);

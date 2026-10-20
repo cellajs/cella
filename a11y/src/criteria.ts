@@ -42,7 +42,7 @@ export const criteria: Criterion[] = [
   c('1.4.10', 'Reflow', 'AA', ['probe:reflow']),
   c('1.4.11', 'Non-text Contrast', 'AA', ['probe:control-contrast', 'manual']),
   c('1.4.12', 'Text Spacing', 'AA', ['probe:text-spacing']),
-  c('1.4.13', 'Content on Hover or Focus', 'AA', ['probe:hover-content', 'manual']),
+  c('1.4.13', 'Content on Hover or Focus', 'AA', ['manual']),
   c('2.1.1', 'Keyboard', 'A', ['axe', 'probe:keyboard', 'manual']),
   c('2.1.2', 'No Keyboard Trap', 'A', ['probe:keyboard']),
   c('2.1.4', 'Character Key Shortcuts', 'A', ['code:shortcuts']),
@@ -77,7 +77,7 @@ export const criteria: Criterion[] = [
   c('3.3.7', 'Redundant Entry', 'A', ['manual'], true),
   c('3.3.8', 'Accessible Authentication (Minimum)', 'AA', ['code:authentication', 'probe:autocomplete'], true),
   c('4.1.2', 'Name, Role, Value', 'A', ['axe', 'manual']),
-  c('4.1.3', 'Status Messages', 'AA', ['probe:status-messages', 'manual']),
+  c('4.1.3', 'Status Messages', 'AA', ['manual']),
 ];
 
 /** What the person doing the manual pass checks, for each criterion a tool cannot decide alone. */
