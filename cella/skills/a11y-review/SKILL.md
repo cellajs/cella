@@ -94,7 +94,7 @@ From the packets alone:
 | 3.2.3, 3.2.4, 3.2.6 | Navigation, repeated controls and help across states | Same order, same names, help in the same place | |
 | 3.3.2 Labels or Instructions | `facts.fields` | Each field has a visible label; required and format are stated | A search field with a labelled button |
 
-From the source, with the tools' notes as the starting point: 1.2.1 to 1.2.5 and 1.4.2 (does the app publish media, or only play what users upload?), 2.2.1 (time limits), 2.2.2 (motion that starts by itself), 2.5.1 and 2.5.7 (is there a button for every gesture and drag?), 2.5.2 (do actions fire on release?).
+From the source, with the tools' notes as the starting point: 1.2.1 to 1.2.5 and 1.4.2 (does the app publish media, or only play what users upload?), 2.2.1 (time limits: the session lifetime, sign-in challenges, toasts that close by themselves), 2.2.2 (motion that starts by itself), 2.5.1 and 2.5.7 (is there a button for every gesture and drag?), 2.5.2 (do actions fire on release?).
 
 By driving the browser (the `verify` skill explains how to launch, sign in and drive): 3.2.2 (change each kind of field, nothing navigates), 3.3.3 (do error messages say how to fix the input?), 3.3.4 (can destructive actions be confirmed or undone?), 3.3.7 (multi-step flows), 2.1.1 (each function by keyboard: menus, dialogs, the grid, the editor, uploads), 1.4.11 (the audit measures the edge of form controls; measure icons that carry meaning and focus indicators at 3:1), 1.4.13 (hover a tooltip or card, press Escape: it closes, and the sheet or dialog around it stays), 2.5.8 (targets axe could not decide).
 

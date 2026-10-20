@@ -46,7 +46,7 @@ export const criteria: Criterion[] = [
   c('2.1.1', 'Keyboard', 'A', ['axe', 'probe:keyboard', 'manual']),
   c('2.1.2', 'No Keyboard Trap', 'A', ['probe:keyboard']),
   c('2.1.4', 'Character Key Shortcuts', 'A', ['code:shortcuts']),
-  c('2.2.1', 'Timing Adjustable', 'A', ['code:timing']),
+  c('2.2.1', 'Timing Adjustable', 'A', ['manual']),
   c('2.2.2', 'Pause, Stop, Hide', 'A', ['code:motion', 'manual']),
   c('2.3.1', 'Three Flashes or Below Threshold', 'A', ['code:motion']),
   c('2.4.1', 'Bypass Blocks', 'A', ['axe', 'probe:landmarks']),
@@ -96,7 +96,8 @@ export const manualSteps: Record<string, string> = {
   '1.4.11': 'The audit measures form control edges. By hand: icons that carry meaning, focus indicators and chart parts reach 3:1 in both modes.',
   '1.4.13': 'Tooltips, menus and popovers that appear on hover or focus can be dismissed with Escape, hovered, and stay until dismissed.',
   '2.1.1': 'Every function works with the keyboard alone: menus, dialogs, the data grid, the editor, uploads, drag and drop, date pickers.',
-  '2.2.1': 'No time limit makes a user lose work or information they need; toasts that close by themselves repeat nothing essential.',
+  '2.2.1':
+    'No time limit makes a user lose work or information they need: the session lifetime, sign-in challenges (passkey, email link, step-up) and toasts that close by themselves.',
   '2.2.2': 'Animations that start by themselves and run longer than 5 seconds beside other content can be paused, or stop with reduced motion.',
   '2.4.3': 'The Tab order follows the visual and logical order; focus moves into a dialog when it opens and back to its trigger when it closes.',
   '2.4.4': 'Each link says where it goes, from its text or its sentence, list item or table cell.',
