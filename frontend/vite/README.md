@@ -15,3 +15,5 @@ Development builds add `docs-editor.ts`, which lets the pages table rewrite fron
 `locales-plugin.ts` is separate from the docs pipeline: it builds and serves the merged locale namespaces (`../../locales/README.md`) and sends `i18next-hmr:update` on locale changes so the client reloads resources without a full refresh.
 
 `react-compiler-guard.ts` fails a production build when no module imports `react/compiler-runtime`, so a babel `include` that stops matching files cannot switch the React Compiler off unnoticed.
+
+`jspdf-optional-stub.ts` is what jspdf's `.html()` and SVG image paths import: the table export uses neither, so their packages (`canvg`, `html2canvas`) are not installed and `vite.config.ts` aliases them here.

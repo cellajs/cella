@@ -443,7 +443,13 @@ const viteConfig = {
     // package READMEs compiled by the mdx plugin) resolve their jsx runtime and MDX
     // provider imports to the frontend's copies.
     dedupe: ['yjs', 'react', 'react-dom', '@mdx-js/react'],
-    alias: { '#json': path.resolve(import.meta.dirname, '../json'), '~': path.resolve(import.meta.dirname, './src') },
+    alias: {
+      '#json': path.resolve(import.meta.dirname, '../json'),
+      '~': path.resolve(import.meta.dirname, './src'),
+      // jspdf's optional packages are not installed (ignoredOptionalDependencies); its dynamic imports of them land here.
+      canvg: path.resolve(import.meta.dirname, './vite/jspdf-optional-stub.ts'),
+      html2canvas: path.resolve(import.meta.dirname, './vite/jspdf-optional-stub.ts'),
+    },
   },
   define: {
     // The bundle re-evaluates shared/src/config-builder/app-config.ts in the

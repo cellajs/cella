@@ -1,10 +1,16 @@
 ---
 allowBuilds:
   '@evilmartians/lefthook': true
-  core-js: false
   esbuild: true
   protobufjs: false
 blockExoticSubdeps: true
+# Optional dependencies of code paths the app never runs: jspdf's .html() and SVG rendering (canvg, html2canvas,
+# core-js) and pdfjs's Node canvas (PDFs render in the browser).
+ignoredOptionalDependencies:
+  - '@napi-rs/canvas'
+  - canvg
+  - core-js
+  - html2canvas
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - '@cellajs/cli'

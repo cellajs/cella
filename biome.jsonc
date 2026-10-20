@@ -166,7 +166,9 @@
         "backend/tests/global-setup.ts",
         "yjs/src/tests/integration/global-setup.ts",
         // The bench CLI loads each scenario module's default export.
-        "bench/scenarios/*.ts"
+        "bench/scenarios/*.ts",
+        // jspdf calls the default export of the packages this stands in for.
+        "frontend/vite/jspdf-optional-stub.ts"
       ],
       "linter": {
         "rules": {
