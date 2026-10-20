@@ -215,8 +215,8 @@ export async function runScenario(scenario: AnyScenario, options: RunOptions): P
           errors[code] ??= { message: error instanceof Error ? error.message : String(error) };
         },
       )
-      .finally(() => {
-        client.close();
+      .finally(async () => {
+        await client.close();
         for (const socket of sockets) socket.close();
         active--;
         if (active === 0) onIdle?.();

@@ -89,6 +89,18 @@ describe('runScenario', () => {
     expect(existsSync(baselineFile(dataDir, 'failing'))).toBe(false);
   });
 
+  it('lets a request the VU did not await finish before its connection closes', async () => {
+    const scenario = defineScenario({
+      description: 'fire and forget',
+      phases: [{ name: 'two', duration: 1, arrivalCount: 2 }],
+      async vu(vu) {
+        void vu.http.get('/ok', { name: 'GET /ok' });
+      },
+    });
+    const result = await runScenario(scenario, { name: 'forget', target, dataDir, output });
+    expect(result.summary.endpoints['GET /ok']).toMatchObject({ requests: 2, codes: { 200: 2 }, errors: 0 });
+  });
+
   it('plays each role once in a short run, reads streams, and adds the app checks', async () => {
     const seen: string[] = [];
     const scenario = defineScenario({

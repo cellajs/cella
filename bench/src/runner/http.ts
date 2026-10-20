@@ -29,7 +29,7 @@ function defaultLabel(method: string, url: URL): string {
  * to its end. `http.response_time` is the time from the request's last byte sent to the response's first byte, the
  * time to first byte as Artillery measures it; `http.total_time` runs from the call to the last body byte.
  */
-export function createHttpClient(target: string, metrics: Metrics, signal: AbortSignal): HttpClient & { close(): void } {
+export function createHttpClient(target: string, metrics: Metrics, signal: AbortSignal): HttpClient & { close(): Promise<void> } {
   const agents = new Map<string, http.Agent>();
   const agentFor = (url: URL) => {
     let agent = agents.get(url.protocol);
@@ -40,7 +40,9 @@ export function createHttpClient(target: string, metrics: Metrics, signal: Abort
     return agent;
   };
 
-  const request = (method: string, path: string, options: HttpRequestOptions = {}): Promise<HttpResponse> => {
+  /** Requests not settled yet, a VU's fire-and-forget ones included. */
+  const inFlight = new Set<Promise<unknown>>();
+  const send = (method: string, path: string, options: HttpRequestOptions = {}): Promise<HttpResponse> => {
     const url = new URL(/^https?:\/\//.test(path) ? path : `${target}${path}`);
     const label = options.name ?? defaultLabel(method, url);
     const stats = metrics.endpoint(label);
@@ -118,6 +120,16 @@ export function createHttpClient(target: string, metrics: Metrics, signal: Abort
     });
   };
 
+  const request = (method: string, path: string, options?: HttpRequestOptions) => {
+    const pending = send(method, path, options);
+    const settled: Promise<void> = pending.then(
+      () => void inFlight.delete(settled),
+      () => void inFlight.delete(settled),
+    );
+    inFlight.add(settled);
+    return pending;
+  };
+
   return {
     request,
     get: (url, options) => request('GET', url, options),
@@ -125,7 +137,9 @@ export function createHttpClient(target: string, metrics: Metrics, signal: Abort
     put: (url, options) => request('PUT', url, options),
     patch: (url, options) => request('PATCH', url, options),
     delete: (url, options) => request('DELETE', url, options),
-    close: () => {
+    /** Closes the connections once every request has settled: destroying a socket would reset a request still on it. */
+    close: async () => {
+      await Promise.all(inFlight);
       for (const agent of agents.values()) agent.destroy();
     },
   };
