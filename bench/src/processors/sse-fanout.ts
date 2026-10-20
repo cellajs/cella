@@ -43,15 +43,17 @@ export async function subscribeAndReact(context: { vars: Record<string, unknown>
   const pending = new Map<string, { from: number; until: number; timer?: NodeJS.Timeout }>();
   const timers = new Set<NodeJS.Timeout>();
 
-  const deltaFetch = async (from: number, until: number) => {
+  const rangeFetch = async (from: number, until: number) => {
     const started = Date.now();
     try {
-      const res = await fetch(`${BASE_URL}/${TENANT_ID}/${ORG_ID}/attachments?seqCursor=${from},${until}&limit=1000`, { headers: { cookie } });
+      const res = await fetch(`${BASE_URL}/${TENANT_ID}/${ORG_ID}/attachments?afterSeq=${from - 1}&untilSeq=${until}&limit=1000`, {
+        headers: { cookie },
+      });
       // The fetches here bypass Artillery's HTTP engine: their statuses are counted by hand, for the CLI's check on rejected responses.
       events.emit('counter', `fetch.codes.${res.status}`, 1);
       await res.json();
       events.emit('histogram', 'sync.fetch_ms', Date.now() - started);
-      events.emit('counter', 'sync.delta_fetches', 1);
+      events.emit('counter', 'sync.range_fetches', 1);
       if (!res.ok) events.emit('counter', 'sse.errors', 1);
     } catch {
       events.emit('counter', 'sse.errors', 1);
@@ -66,7 +68,7 @@ export async function subscribeAndReact(context: { vars: Record<string, unknown>
 
     if (SSE_SYNC_MODE === 'immediate') {
       events.emit('histogram', 'sync.reaction_delay_ms', 0);
-      void deltaFetch(n.seq, until);
+      void rangeFetch(n.seq, until);
       return;
     }
 
@@ -88,7 +90,7 @@ export async function subscribeAndReact(context: { vars: Record<string, unknown>
     const timer = setTimeout(() => {
       pending.delete(scope);
       timers.delete(timer);
-      void deltaFetch(created.from, created.until);
+      void rangeFetch(created.from, created.until);
     }, delay);
     timers.add(timer);
     pending.set(scope, { ...created, timer });
@@ -143,6 +145,6 @@ export async function subscribeAndReact(context: { vars: Record<string, unknown>
     const leftovers = [...pending.values()];
     for (const timer of timers) clearTimeout(timer);
     pending.clear();
-    await Promise.all(leftovers.map((range) => deltaFetch(range.from, range.until)));
+    await Promise.all(leftovers.map((range) => rangeFetch(range.from, range.until)));
   }
 }

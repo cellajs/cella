@@ -17,7 +17,7 @@ export const baseInfiniteQueryOptions = {
 };
 
 /** The limit and offset query params of one page. */
-export const pageQuery = (limit: number, offset: number) => ({ limit: String(limit), offset: String(offset) });
+export const pageQuery = (limit: number, offset: number) => ({ limit, offset });
 
 /** Offset paging over an `{ items, total }` endpoint: the queryFn fetches the page starting at the page param's offset. */
 export const offsetPaging = <TPage extends QueryData<unknown>>(

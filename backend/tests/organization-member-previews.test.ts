@@ -27,7 +27,7 @@ describe('Organization member previews (include=members)', async () => {
   const extraAdminIds: string[] = [];
   let memberUserId: string;
 
-  const listOrganizations = async (query: Record<string, string> = {}) => {
+  const listOrganizations = async (query: Record<string, string | number> = {}) => {
     const result = await call(getOrganizations, { query, headers: { ...defaultHeaders, Cookie: tenant.sessionCookie } });
     const data = result.data as { items: OrgListItem[]; total: number } | undefined;
     return { status: result.response.status, items: data?.items ?? [], total: data?.total ?? 0 };
@@ -115,7 +115,7 @@ describe('Organization member previews (include=members)', async () => {
   });
 
   it('M5: an empty page preserves the total count', async () => {
-    const result = await listOrganizations({ limit: '1', offset: '2' });
+    const result = await listOrganizations({ limit: 1, offset: 2 });
 
     expect(result.status).toBe(200);
     expect(result.items).toEqual([]);

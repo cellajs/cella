@@ -142,7 +142,7 @@ describe('a remote change of a row with a pending mutation', () => {
 
     // Catchup after a reconnect reads the row: the server still holds it, since the queued delete has not been sent.
     getAttachments.mockResolvedValue({ items: [attachment('att-1', { name: 'Renamed elsewhere' })], total: 1 });
-    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, '1,2', attachmentQueryKeys);
+    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
     expect(homeList().map(({ id }) => id)).toEqual(['att-2']);
 
     deleteAttachments.mockImplementation(async () => ({ data: [], rejectedIds: [] }));
@@ -161,7 +161,7 @@ describe('a remote change of a row with a pending mutation', () => {
 
     // A rename from elsewhere arrives while the delete waits, and is kept from the cache.
     getAttachments.mockResolvedValue({ items: [attachment('att-1', { name: 'Renamed elsewhere' })], total: 1 });
-    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, '1,2', attachmentQueryKeys);
+    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
 
     deleteAttachments.mockImplementation(async () => ({ data: [], rejectedIds: ['att-1'] }));
     await goOnline();
@@ -183,7 +183,7 @@ describe('a remote change of a row with a pending mutation', () => {
     await vi.waitFor(() => expect(queued('create')).toHaveLength(1));
 
     getAttachments.mockResolvedValue({ items: [attachment('att-1', { name: 'From the server' })], total: 1 });
-    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, '1,2', attachmentQueryKeys);
+    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
 
     expect(homeList()).toMatchObject([{ id: 'att-1', name: 'Typed offline' }]);
   });
@@ -192,7 +192,7 @@ describe('a remote change of a row with a pending mutation', () => {
     seedHomeList([attachment('att-1')]);
 
     getAttachments.mockResolvedValue({ items: [attachment('att-1', { name: 'Renamed elsewhere' })], total: 1 });
-    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, '1,2', attachmentQueryKeys);
+    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
 
     expect(homeList()).toMatchObject([{ id: 'att-1', name: 'Renamed elsewhere' }]);
   });

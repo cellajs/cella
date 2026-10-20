@@ -61,7 +61,7 @@ interface SyncStoreState {
   getKnownSeq: (channelViewId: string, entityType: string) => number;
   /**
    * Register a grant-boundary view. Identity is prefix set plus entity types plus depth, and any identity change resets the cursor to 0:
-   * a grown prefix set has history predating the cursor that a delta fetch would skip.
+   * a grown prefix set has history predating the cursor that a range fetch would skip.
    */
   declareSyncView: (key: string, view: Omit<RegisteredSyncView, 'cursor'>) => void;
   removeSyncView: (key: string) => void;

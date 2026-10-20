@@ -56,7 +56,7 @@ describe('realtime cache ops', () => {
       total: 1,
     });
 
-    const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', '4,4', keys);
+    const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', { afterSeq: 3, untilSeq: 4 }, keys);
 
     expect(status).toBe('ok');
     expect(queryClient.getQueryData(keys.detail.byId('attachment-1'))).toBeUndefined();
@@ -75,7 +75,7 @@ describe('realtime cache ops', () => {
       total: 1,
     });
 
-    const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', '7,7', keys);
+    const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', { afterSeq: 6, untilSeq: 7 }, keys);
 
     expect(status).toBe('ok');
     const list = queryClient.getQueryData<{ items: { id: string }[]; total: number }>(keys.list.home('org-1'));
@@ -94,7 +94,7 @@ describe('realtime cache ops', () => {
     queryClient.setQueryData(keys.list.home('org-1', 'project-2'), { items: [], total: 0 });
     queryClient.setQueryData(keys.list.home('org-1'), { items: [], total: 0 });
 
-    const { status } = await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '3,3', keys);
+    const { status } = await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 2, untilSeq: 3 }, keys);
 
     expect(status).toBe('ok');
     const home = queryClient.getQueryData<{ items: { id: string }[] }>(keys.list.home('org-1', 'project-1'));
@@ -114,7 +114,7 @@ describe('realtime cache ops', () => {
     queryClient.setQueryData(keys.list.home('org-1'), { items: [], total: 0 });
     queryClient.setQueryData(keys.list.home('org-1', 'project-1'), { items: [], total: 0 });
 
-    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '4,4', keys);
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 3, untilSeq: 4 }, keys);
 
     const orgHome = queryClient.getQueryData<{ items: { id: string }[] }>(keys.list.home('org-1'));
     expect(orgHome?.items.map((i) => i.id)).toEqual(['task-2']);
@@ -132,7 +132,7 @@ describe('realtime cache ops', () => {
     // Canonical data cached at the org PREFIX (a key-shape bug: prefixes are never data keys).
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
-    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
 
     expect(queryClient.getQueryData(keys.list.org('org-1'))).toEqual({ items: [], total: 0 });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('landed in no list cache'));
@@ -148,7 +148,7 @@ describe('realtime cache ops', () => {
     const filteredKey = [...keys.list.org('org-1'), { q: '', sort: 'createdAt', order: 'desc' }];
     queryClient.setQueryData(filteredKey, { items: [{ id: 'attachment-1', organizationId: 'org-1' }], total: 1 });
 
-    await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', '7,7', keys);
+    await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', { afterSeq: 6, untilSeq: 7 }, keys);
 
     // Row is NOT inserted into the filtered list, but the list is marked stale to refetch.
     const filtered = queryClient.getQueryData<{ items: { id: string }[] }>(filteredKey);
@@ -169,7 +169,7 @@ describe('realtime cache ops', () => {
       total: 1,
     });
 
-    await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', '8,8', keys);
+    await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', { afterSeq: 7, untilSeq: 8 }, keys);
 
     const filtered = queryClient.getQueryData<{ items: { id: string; name: string }[]; total: number }>(filteredKey);
     expect(filtered?.items[0]?.name).toBe('renamed');
@@ -177,26 +177,44 @@ describe('realtime cache ops', () => {
     expect(queryClient.getQueryState(filteredKey)?.isInvalidated).toBe(false);
   });
 
-  it('reports overflow when the seq window overflows one response: no silent 1000-row delta cap', async () => {
+  it('reports overflow when the seq window overflows one response: no silent 1000-row range cap', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     // A full SYNC_CHUNK_SIZE response means more changes may remain beyond this window
     const items = Array.from({ length: 1000 }, (_, i) => ({ id: `att-${i + 1}`, organizationId: 'org-1', seq: i + 1 }));
     registerEntityQueryKeys('attachment', keys, async () => ({ items, total: 1500 }));
 
-    const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', '1', keys);
+    const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', { afterSeq: 0, untilSeq: 1500 }, keys);
 
     // The caller invalidates because patching a truncated window would drop the remainder.
     expect(status).toBe('overflow');
     expect(queryClient.getQueryData(keys.detail.byId('att-1'))).toBeUndefined();
   });
 
-  it('reports a transient error on a rejected delta fetch so callers may retry or invalidate', async () => {
+  it.each([4, 8])('reports a row at seq %i outside (4, 7] as unsupported: the server ignored the range', async (seq) => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    registerEntityQueryKeys('attachment', keys, async () => ({
+      items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'renamed', seq }],
+      total: 1,
+    }));
+    const cached = { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'old' }], total: 1 };
+    queryClient.setQueryData(keys.list.home('org-1'), cached);
+
+    const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 7 }, keys);
+
+    // The caller invalidates: an ordinary page lacks the deleted rows a range read returns.
+    expect(status).toBe('unsupported');
+    expect(queryClient.getQueryData(keys.list.home('org-1'))).toEqual(cached);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(`returned seq ${seq}`));
+  });
+
+  it('reports a transient error on a rejected range fetch so callers may retry or invalidate', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     registerEntityQueryKeys('attachment', keys, async () => {
       throw new Error('network down');
     });
 
-    const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', '5', keys);
+    const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
 
     expect(status).toBe('error');
   });
@@ -259,7 +277,7 @@ describe('filtered list refetch for a new row', () => {
     registerComments([newComment, { id: 'comment-3', organizationId: 'org-1', itemId: 'item-3' }]);
     seedLists({ ...lists, thirdItem: { itemId: 'item-3' } });
 
-    await fetchRangeAndPatch(COMMENT, 'org-1', 'tenant-1', '9,10', commentKeys);
+    await fetchRangeAndPatch(COMMENT, 'org-1', 'tenant-1', { afterSeq: 8, untilSeq: 10 }, commentKeys);
 
     expect(isInvalidated(lists.otherItem)).toBe(false);
     expect(isInvalidated(lists.sameItem)).toBe(true);
@@ -272,7 +290,7 @@ describe('filtered list refetch for a new row', () => {
     registerComments([{ id: 'comment-4', organizationId: 'org-1' }]);
     seedLists({ otherItem: lists.otherItem });
 
-    await fetchRangeAndPatch(COMMENT, 'org-1', 'tenant-1', '11,11', commentKeys);
+    await fetchRangeAndPatch(COMMENT, 'org-1', 'tenant-1', { afterSeq: 10, untilSeq: 11 }, commentKeys);
 
     expect(isInvalidated(lists.otherItem)).toBe(true);
   });
@@ -286,7 +304,7 @@ describe('filtered list refetch for a new row', () => {
     const otherItemKey = [...keys.list.org('org-1'), { itemId: 'item-2' }];
     queryClient.setQueryData(otherItemKey, { items: [], total: 0 });
 
-    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '12,12', keys);
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 11, untilSeq: 12 }, keys);
 
     expect(queryClient.getQueryState(otherItemKey)?.isInvalidated).toBe(true);
   });

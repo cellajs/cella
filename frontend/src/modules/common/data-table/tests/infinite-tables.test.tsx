@@ -137,7 +137,7 @@ describe.each(pagedTables)('$name table paging', ({ Table, props }) => {
 
     await act(async () => lastTable().fetchMore?.());
     await vi.waitFor(() => expect(ids(lastTable().rows)).toEqual(['r0', 'r1', 'r2', 'r3']));
-    expect(pagedFetch).toHaveBeenLastCalledWith(expect.objectContaining({ query: expect.objectContaining({ offset: '2' }) }));
+    expect(pagedFetch).toHaveBeenLastCalledWith(expect.objectContaining({ query: expect.objectContaining({ offset: 2 }) }));
   });
 
   it('ignores fetchMore while a page is loading and once every page is in', async () => {

@@ -147,7 +147,7 @@ export type StreamNotification = {
    */
   count: number | null;
   /**
-   * Server-suggested spread window (ms) for the lazy delta fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds
+   * Server-suggested spread window (ms) for the lazy range fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds
    */
   spreadWindow: number | null;
   /**
@@ -3747,9 +3747,8 @@ export type GetRequestsData = {
     q?: string;
     sort?: 'id' | 'email' | 'type' | 'createdAt';
     order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    seqCursor?: string;
+    offset?: number;
+    limit?: number;
   };
   url: '/requests';
 };
@@ -4128,9 +4127,8 @@ export type GetTenantsData = {
     q?: string;
     sort?: 'createdAt' | 'name';
     order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    seqCursor?: string;
+    offset?: number;
+    limit?: number;
     /**
      * Filter by status
      */
@@ -4529,9 +4527,8 @@ export type GetUsersData = {
     q?: string;
     sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt';
     order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    seqCursor?: string;
+    offset?: number;
+    limit?: number;
     role?: 'admin';
   };
   url: '/users/users';
@@ -4847,9 +4844,8 @@ export type GetOrganizationsData = {
     q?: string;
     sort?: 'id' | 'name' | 'createdAt' | 'displayOrder';
     order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    seqCursor?: string;
+    offset?: number;
+    limit?: number;
     relatableUserId?: string;
     role?: 'admin' | 'member';
     excludeArchived?: 'true' | 'false';
@@ -5106,9 +5102,16 @@ export type GetAttachmentsData = {
     q?: string;
     sort?: 'name' | 'createdAt' | 'contentType';
     order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    seqCursor?: string;
+    offset?: number;
+    limit?: number;
+    /**
+     * Range read for sync: return the rows stamped after this sequence position. Requires untilSeq.
+     */
+    afterSeq?: number;
+    /**
+     * Range read for sync: the last sequence position to return. Requires afterSeq.
+     */
+    untilSeq?: number;
     channelId?: string;
   };
   url: '/{tenantId}/{organizationId}/attachments';
@@ -5792,9 +5795,8 @@ export type GetMembersData = {
     q?: string;
     sort?: 'id' | 'name' | 'email' | 'role' | 'createdAt' | 'lastSeenAt' | 'lastPostedAt';
     order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    seqCursor?: string;
+    offset?: number;
+    limit?: number;
     entityId: string;
     entityType: 'organization';
     role?: 'admin' | 'member';
@@ -5886,9 +5888,8 @@ export type GetPendingMembershipsData = {
     q?: string;
     sort?: 'createdAt';
     order?: 'asc' | 'desc';
-    offset?: string;
-    limit?: string;
-    seqCursor?: string;
+    offset?: number;
+    limit?: number;
     entityId: string;
     entityType: 'organization';
   };
@@ -6064,8 +6065,8 @@ export type GetServiceAccountsData = {
   };
   query?: {
     q?: string;
-    offset?: string;
-    limit?: string;
+    offset?: number;
+    limit?: number;
   };
   url: '/{tenantId}/{organizationId}/service-accounts';
 };

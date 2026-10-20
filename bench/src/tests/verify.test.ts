@@ -3,7 +3,7 @@ import { counterFindings, type PipelineSnapshot, pipelineFindings, readDirective
 
 const scenario = `# SSE fan-out: notify-then-fetch under many live subscribers.
 #
-# expect: sse.notifications, sync.delta_fetches
+# expect: sse.notifications, sync.range_fetches
 # forbid: sse.errors
 config:
   target: "x"
@@ -11,16 +11,16 @@ config:
 
 describe('scenario directives', () => {
   it('reads the counters a scenario expects and forbids from its header comments', () => {
-    expect(readDirectives(scenario)).toEqual({ expect: ['sse.notifications', 'sync.delta_fetches'], forbid: ['sse.errors'] });
+    expect(readDirectives(scenario)).toEqual({ expect: ['sse.notifications', 'sync.range_fetches'], forbid: ['sse.errors'] });
     expect(readDirectives('config:\n  target: "x"\n')).toEqual({ expect: [], forbid: [] });
   });
 
   it('accepts a report that counted what is expected and nothing forbidden', () => {
-    expect(counterFindings(scenario, { 'sse.notifications': 510, 'sync.delta_fetches': 16, 'sse.errors': 0 })).toEqual([]);
+    expect(counterFindings(scenario, { 'sse.notifications': 510, 'sync.range_fetches': 16, 'sse.errors': 0 })).toEqual([]);
   });
 
   it('names an expected counter that stayed at 0 and a forbidden one that counted', () => {
-    expect(counterFindings(scenario, { 'sync.delta_fetches': 16, 'sse.errors': 3 })).toEqual([
+    expect(counterFindings(scenario, { 'sync.range_fetches': 16, 'sse.errors': 3 })).toEqual([
       'sse.notifications stayed at 0',
       'sse.errors counted 3',
     ]);

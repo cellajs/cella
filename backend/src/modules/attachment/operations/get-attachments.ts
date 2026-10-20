@@ -11,12 +11,14 @@ import { coalesceAuditUsers } from '#/modules/user/helpers/audit-user';
 import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
+import { seqRangeOf } from '#/utils/seq-range';
 
 type GetAttachmentsInput = z.infer<typeof attachmentListQuerySchema>;
 
 export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInput) {
   const organizationId = ctx.var.organization.id;
-  const { q, sort, order, limit, offset, seqCursor, channelId } = input;
+  const { q, sort, order, limit, offset, channelId } = input;
+  const range = seqRangeOf(input);
 
   const actor = actorFrom(ctx);
   const readFilter = resolveCollectionReadFilter(ctx.var.actor.bindings, 'attachment', organizationId, actor);
@@ -38,7 +40,8 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
   const subtreeWhere = narrowed ? buildSubtreeCoverWhere(attachmentsTable, 'attachment', channelId) : undefined;
   if (subtreeWhere) filters.push(subtreeWhere);
 
-  const read = seqCursor ? tenantReadIncludingDeleted : tenantRead;
+  // A range read returns deleted rows too, so caches drop them.
+  const read = range ? tenantReadIncludingDeleted : tenantRead;
   const { items: rawItems, total } = await read(ctx, (readCtx) =>
     findAttachmentsPaginated(readCtx, {
       organizationId,
@@ -49,7 +52,7 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
       order,
       limit,
       offset,
-      seqCursor,
+      range,
     }),
   );
 

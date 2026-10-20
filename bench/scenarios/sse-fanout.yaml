@@ -8,14 +8,14 @@
 #   SYNC_MODE=lazy      pnpm bench sse-fanout   (default: merged + spread)
 #   SYNC_MODE=immediate pnpm bench sse-fanout   (fetch per notification)
 #
-# Key custom metrics: sse.notifications vs sync.delta_fetches (merge factor),
-# sync.reaction_delay_ms (spread distribution), sync.fetch_ms (delta fetch latency).
+# Key custom metrics: sse.notifications vs sync.range_fetches (merge factor),
+# sync.reaction_delay_ms (spread distribution), sync.fetch_ms (range fetch latency).
 #
 # NOTE: the CLI's HTTP table (Requests / Req/s / latency) reflects ONLY the writer PUTs.
-# Subscriber traffic (SSE connects + delta fetches) runs through native fetch() inside the
+# Subscriber traffic (SSE connects + range fetches) runs through native fetch() inside the
 # processor and appears exclusively in the custom metrics above. Low Req/s is by design.
 #
-# expect: sse.notifications, sync.delta_fetches
+# expect: sse.notifications, sync.range_fetches
 # forbid: sse.errors
 config:
   target: "{{ $processEnvironment.BASE_URL }}"
