@@ -1,17 +1,22 @@
-import { useIsFetching } from '@tanstack/react-query';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useRouterState } from '@tanstack/react-router';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { useDebounce } from '~/hooks/use-debounce';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Logo } from '~/modules/common/logo';
-import { Spinner } from '~/modules/common/spinner';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { Spinner } from '~/modules/ui/spinner';
 import { cn } from '~/utils/cn';
+
+// Requests have no client timeout, so one that never settles (often after a phone wakes) would keep the spinner going.
+const LOADING_BREAKER_MS = 15_000;
 
 /** Brand intro on first load, then the item's icon, swapped for a spinner while queries or navigation are in flight. */
 export function AppNavLoader({ className, icon: Icon }: { className?: string; icon: IconComponent }) {
+  const queryClient = useQueryClient();
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [breakerOpen, setBreakerOpen] = useState(false);
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
 
   useEffect(() => {
@@ -25,8 +30,25 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
   const navLoading = useRouterState({ select: (state) => state.status === 'pending' });
   const isLoadingRaw = isFetching > 0 || navLoading;
 
+  // Back to the icon after LOADING_BREAKER_MS of unbroken loading; the spinner returns once everything has settled.
+  useEffect(() => {
+    if (!isLoadingRaw) {
+      setBreakerOpen(false);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      setBreakerOpen(true);
+      const stuckQueries = queryClient
+        .getQueryCache()
+        .findAll({ fetchStatus: 'fetching' })
+        .map((query) => query.queryKey);
+      console.warn(`[AppNavLoader] Still loading after ${LOADING_BREAKER_MS / 1000}s, spinner hidden`, { navLoading, stuckQueries });
+    }, LOADING_BREAKER_MS);
+    return () => clearTimeout(timeout);
+  }, [isLoadingRaw, navLoading, queryClient]);
+
   // Delays showing the spinner, hides it instantly.
-  const isLoading = useDebounce(isLoadingRaw, 300, { immediateValue: false });
+  const isLoading = useDebounce(isLoadingRaw && !breakerOpen, 300, { immediateValue: false });
 
   const showLogo = !hasLoaded && navSheetOpen !== 'menu';
 
@@ -63,7 +85,7 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
             className="absolute"
           >
             {isLoading ? (
-              <Spinner className={cn('size-5', className)} noDelay />
+              <Spinner strokeWidth={1.8} className={cn('size-5', className)} />
             ) : (
               <div className="transition-transform group-hover:scale-110">
                 <Icon strokeWidth={1.8} className={cn('size-5 min-h-5 min-w-5', className)} />

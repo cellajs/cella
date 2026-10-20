@@ -32,7 +32,7 @@ export function SheeterDrawer({ sheet, onExited }: { sheet: InternalSheet; onExi
     >
       <DrawerContent id={String(id)} className={className}>
         <DrawerHeader sticky className={cn(headerClassName, !(description || title) && 'hidden')}>
-          {title && <DrawerTitle className="font-medium">{titleContent}</DrawerTitle>}
+          {title && <DrawerTitle>{titleContent}</DrawerTitle>}
           {description && <DrawerDescription className="text-muted-foreground">{description}</DrawerDescription>}
         </DrawerHeader>
         <ContentKeyTransition contentKey={contentKey}>{content}</ContentKeyTransition>

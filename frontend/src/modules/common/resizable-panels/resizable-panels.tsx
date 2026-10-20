@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, type Ref, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, type ReactNode, type Ref, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { cn } from '~/utils/cn';
@@ -18,9 +18,13 @@ interface PanelEntry extends PanelConfig {
 
 interface HintState {
   panelId: string;
+  /** The panel's side that faces the dragged separator */
   side: 'left' | 'right';
-  mode: 'collapse' | 'expand';
+  /** `cover`: the neighbour of an expanding panel, which the curtain covers by the width that panel takes */
+  mode: 'collapse' | 'expand' | 'cover';
   progress: number;
+  /** Curtain width at full progress in px; 0 draws none */
+  reach: number;
 }
 
 interface LayoutResult {
@@ -108,7 +112,10 @@ function resolveLayout(
   if (growPanel && collapsedAtStart.has(growPanel.id) && growPanel.collapsible) {
     const expandThreshold = growPanel.minWidth - growPanel.collapsedWidth;
     if (absDx < expandThreshold) {
-      hints.push({ panelId: growPanel.id, side: draggingLeft ? 'left' : 'right', mode: 'expand', progress: absDx / expandThreshold });
+      const progress = absDx / expandThreshold;
+      hints.push({ panelId: growPanel.id, side: draggingLeft ? 'left' : 'right', mode: 'expand', progress, reach: 0 });
+      const neighbour = panels[draggingLeft ? separatorIndex : separatorIndex + 1];
+      if (neighbour) hints.push({ panelId: neighbour.id, side: draggingLeft ? 'right' : 'left', mode: 'cover', progress, reach: expandThreshold });
       return { widths: { ...initialWidths }, hints };
     }
   }
@@ -171,7 +178,13 @@ function resolveLayout(
         // Collapse hint (G4)
         const progress = collapseProgress(victim, rawWidth);
         if (progress > 0) {
-          hints.push({ panelId: victim.id, side: draggingLeft ? 'right' : 'left', mode: 'collapse', progress });
+          hints.push({
+            panelId: victim.id,
+            side: draggingLeft ? 'right' : 'left',
+            mode: 'collapse',
+            progress,
+            reach: victim.minWidth - victim.collapsedWidth,
+          });
         }
 
         if (clampedWidth <= victim.collapsedWidth) {
@@ -227,7 +240,13 @@ function resolveLayout(
         // Collapse hint (G4)
         const progress = collapseProgress(victim, rawWidth);
         if (progress > 0) {
-          hints.push({ panelId: victim.id, side: draggingLeft ? 'right' : 'left', mode: 'collapse', progress });
+          hints.push({
+            panelId: victim.id,
+            side: draggingLeft ? 'right' : 'left',
+            mode: 'collapse',
+            progress,
+            reach: victim.minWidth - victim.collapsedWidth,
+          });
         }
 
         if (clampedWidth <= victim.collapsedWidth) {
@@ -267,67 +286,74 @@ function resolveLayout(
   return { widths, hints, expandSnapped: isExpandingFromCollapsed };
 }
 
-const HINT_TRANSFORM = [
-  'translateY(-50%)',
-  'translateX(calc(-1 * var(--hint-flip, 1) * var(--hint-progress, 0) * 12px))',
-  'scale(calc(0.5 + var(--hint-progress, 0) * 0.5))',
-  'scaleX(var(--hint-flip, 1))',
-].join(' ');
+/** Panel content the other collapse state lacks: fades out with a resize hint, and fades in when its panel opens. For `fade="marked"` panels. */
+export const hintFadeOut = 'opacity-[var(--content-opacity,1)] in-data-opening:animate-in in-data-opening:fade-in';
 
+/** Content only the collapsed state shows, previewed in the expanded panel: fades in with a collapse hint. */
+export const hintFadeIn = 'opacity-[calc(1_-_var(--content-opacity,1))]';
+
+const CURTAIN_PLEATS = 'repeating-linear-gradient(90deg, transparent 0 9px, color-mix(in oklch, var(--foreground) 4%, transparent) 9px 14px)';
+
+// A curtain drawn from the dragged separator, its leading edge lit at the pointer's height
 function ResizeHint() {
   return (
     <div
       data-resize-hint=""
-      className="pointer-events-none absolute top-1/2 z-999 flex items-center justify-center"
-      style={{ left: 'var(--hint-left, auto)', right: 'var(--hint-right, auto)', opacity: 'var(--hint-progress, 0)', transform: HINT_TRANSFORM }}
+      className="pointer-events-none absolute inset-y-0 right-0 z-999 flex data-[side=left]:right-auto data-[side=left]:left-0 data-[side=left]:flex-row-reverse"
+      style={{ opacity: 'var(--hint-strength, 0)' }}
     >
+      {/* Grows into the handle it hands over to: at the snap the dragged separator lands on this edge */}
       <div
-        className="absolute h-24 w-18 rounded-full"
-        style={{
-          background: 'radial-gradient(ellipse, var(--background) 30%, color-mix(in oklch, var(--background) 60%, transparent) 60%, transparent 80%)',
-        }}
-      />
-      <svg
-        className="relative text-muted-foreground"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        aria-hidden="true"
-        strokeLinejoin="round"
+        className="relative shrink-0 rounded bg-primary"
+        style={{ width: 'calc(2px + (var(--separator-width, 2px) - 2px) * var(--hint-strength, 0))' }}
       >
-        <path d="m12 19-7-7 7-7" />
-        <path d="M19 12H5" />
-      </svg>
+        <div
+          className="absolute top-(--hint-y) left-1/2 h-40 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ background: 'radial-gradient(closest-side, color-mix(in oklch, var(--primary) 35%, transparent), transparent)' }}
+        />
+      </div>
+      <div className="grow" style={{ backgroundColor: 'color-mix(in oklch, var(--card) 92%, transparent)', backgroundImage: CURTAIN_PLEATS }} />
     </div>
   );
 }
 
-function showResizeHint(element: HTMLDivElement, side: 'left' | 'right', mode: 'collapse' | 'expand', progress: number) {
-  const attr = `${mode}-${side}`;
-  const s = element.style;
-  if (element.getAttribute('data-resizing') !== attr) {
-    element.setAttribute('data-resizing', attr);
-    const shouldFlip = (mode === 'collapse') === (side === 'left');
-    s.setProperty('--hint-flip', shouldFlip ? '-1' : '1');
-    s.setProperty('--hint-left', side === 'left' ? '8px' : 'auto');
-    s.setProperty('--hint-right', side === 'right' ? '8px' : 'auto');
-  }
-  s.setProperty('--hint-progress', `${progress}`);
-  s.setProperty('--content-opacity', `${1 - progress}`);
+// Eased so the curtain answers the first pixels of the zone and settles as it nears its reach
+const curtainProgress = (hint: HintState) => (hint.reach ? 1 - (1 - hint.progress) ** 2 : 0);
+
+function showResizeHint(element: HTMLDivElement, hint: HintState, clientY: number) {
+  element.setAttribute('data-resizing', `${hint.mode}-${hint.side}`);
+  if (hint.mode !== 'cover') element.style.setProperty('--content-opacity', `${1 - hint.progress}`);
+
+  const curtain = element.querySelector<HTMLElement>(':scope > [data-resize-hint]');
+  if (!curtain) return;
+  const strength = curtainProgress(hint);
+  curtain.dataset.side = hint.side;
+  curtain.style.width = `${strength * hint.reach}px`;
+  curtain.style.setProperty('--hint-strength', `${strength}`);
+  curtain.style.setProperty('--hint-y', `${clientY - element.getBoundingClientRect().top}px`);
 }
 
 function clearResizeHint(element: HTMLDivElement) {
+  if (!element.hasAttribute('data-resizing')) return;
   element.removeAttribute('data-resizing');
-  const s = element.style;
-  s.removeProperty('--hint-progress');
-  s.removeProperty('--hint-flip');
-  s.removeProperty('--hint-left');
-  s.removeProperty('--hint-right');
-  s.removeProperty('--content-opacity');
+  element.style.removeProperty('--content-opacity');
+  const curtain = element.querySelector<HTMLElement>(':scope > [data-resize-hint]');
+  if (!curtain) return;
+  curtain.style.removeProperty('width');
+  curtain.style.removeProperty('--hint-strength');
+  curtain.style.removeProperty('--hint-y');
+}
+
+const openingTimers = new WeakMap<HTMLElement, number>();
+
+// The window outlasts the render that swaps in the expanded content, so hintFadeOut content mounts while it is set
+function markOpening(element: HTMLElement) {
+  clearTimeout(openingTimers.get(element));
+  element.setAttribute('data-opening', '');
+  openingTimers.set(
+    element,
+    window.setTimeout(() => element.removeAttribute('data-opening'), 300),
+  );
 }
 
 export interface PanelGroupApi {
@@ -371,22 +397,24 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
       panel.element.style.width = `${w}px`;
       panel.element.style.flexShrink = '0';
     }
+    updateSeparatorAria();
   };
 
   const setWidth = (panel: PanelEntry, width: number) => {
     const prevWidth = widthsRef.current[panel.id] ?? panel.minWidth;
     widthsRef.current[panel.id] = width;
 
-    if (onCollapseChangeRef.current && panel.collapsible) {
-      const wasCollapsed = prevWidth <= panel.collapsedWidth;
-      const isCollapsed = width <= panel.collapsedWidth;
-      if (wasCollapsed !== isCollapsed) onCollapseChangeRef.current(panel.id, isCollapsed);
+    const wasCollapsed = prevWidth <= panel.collapsedWidth;
+    const isCollapsed = width <= panel.collapsedWidth;
+    if (panel.collapsible && wasCollapsed !== isCollapsed) {
+      onCollapseChangeRef.current?.(panel.id, isCollapsed);
+      if (!isCollapsed) markOpening(panel.element);
     }
 
     if (width > panel.collapsedWidth) expandedWidthsRef.current[panel.id] = width;
   };
 
-  const applyLayoutResult = (result: LayoutResult) => {
+  const applyLayoutResult = (result: LayoutResult, clientY: number) => {
     for (const panel of panelsRef.current) {
       const newW = result.widths[panel.id];
       if (newW !== undefined) setWidth(panel, newW);
@@ -396,10 +424,14 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
     for (const panel of panelsRef.current) {
       if (!hintedPanelIds.has(panel.id)) clearResizeHint(panel.element);
     }
+    let handoff = 0;
     for (const hint of result.hints) {
       const panel = panelsRef.current.find((p) => p.id === hint.panelId);
-      if (panel) showResizeHint(panel.element, hint.side, hint.mode, hint.progress);
+      if (panel) showResizeHint(panel.element, hint, clientY);
+      handoff = Math.max(handoff, curtainProgress(hint));
     }
+    const drag = dragRef.current;
+    if (drag) separatorsRef.current.get(drag.separatorIndex)?.style.setProperty('--hint-strength', `${handoff}`);
 
     applyWidths();
   };
@@ -421,6 +453,7 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
   };
 
   const applyKeyboardStep = (separatorIndex: number, delta: number) => {
+    sortPanels();
     // Compute mode before mutating widths so getBoundingClientRect is fresh
     const autoFill = computeAutoFill();
 
@@ -494,11 +527,13 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
   };
 
   const toggleCollapseAtSeparator = (separatorIndex: number) => {
+    sortPanels();
     const leftPanel = panelsRef.current[separatorIndex];
     if (leftPanel) togglePanel(leftPanel.id);
   };
 
   const startDrag = (separatorIndex: number, startX: number) => {
+    sortPanels();
     const collapsedAtStart = new Set<string>();
     const snapshot: Record<string, number> = {};
 
@@ -541,6 +576,10 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
       perPanelCascade,
     };
 
+    // clientWidth leaves out the border, which the board draws in the background color
+    const separatorWidth = separatorsRef.current.get(separatorIndex)?.clientWidth;
+    if (separatorWidth) containerRef.current?.style.setProperty('--separator-width', `${separatorWidth}px`);
+
     setCursorOverride('col-resize');
   };
 
@@ -548,7 +587,9 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
     dragRef.current = null;
     prevContainerWidthRef.current = 0; // Force observer to redistribute after drag
     clearCursorOverride();
+    containerRef.current?.style.removeProperty('--separator-width');
     for (const panel of panelsRef.current) clearResizeHint(panel.element);
+    for (const separator of separatorsRef.current.values()) separator.style.removeProperty('--hint-strength');
   };
 
   const endDrag = () => {
@@ -570,6 +611,7 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
     updateContainerWidth();
   };
 
+  // Reordering moves panel elements without re-registering them, so every separator-index lookup re-sorts first.
   const sortPanels = () => {
     panelsRef.current.sort((a, b) => {
       const pos = a.element.compareDocumentPosition(b.element);
@@ -606,10 +648,26 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
     delete widthsRef.current[panelId];
     if (dragRef.current) abortDrag();
     updateContainerWidth();
+    updateSeparatorAria();
   };
 
   const registerSeparator = (index: number, element: HTMLDivElement) => {
     separatorsRef.current.set(index, element);
+    updateSeparatorAria();
+  };
+
+  // Separators render before panels register and resizes bypass React, so their value and neighbours are written here.
+  const updateSeparatorAria = () => {
+    sortPanels();
+    for (const [index, element] of separatorsRef.current) {
+      const left = panelsRef.current[index];
+      if (!left) continue;
+      const right = panelsRef.current[index + 1];
+      element.setAttribute('aria-controls', right ? `${left.element.id} ${right.element.id}` : left.element.id);
+      element.setAttribute('aria-valuemin', `${left.collapsible ? left.collapsedWidth : left.minWidth}`);
+      element.setAttribute('aria-valuemax', `${left.minWidth * 2}`);
+      element.setAttribute('aria-valuenow', `${Math.round(widthsRef.current[left.id] ?? left.minWidth)}`);
+    }
   };
 
   const unregisterSeparator = (index: number) => {
@@ -753,6 +811,9 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
     onReadyRef.current?.({ expandPanel, togglePanel });
   }, []);
 
+  // A reorder re-renders the group but registers nothing
+  useEffect(() => updateSeparatorAria());
+
   useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
       const drag = dragRef.current;
@@ -761,7 +822,7 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
       const ppc = dx < 0 ? drag.perPanelCascade.left : drag.perPanelCascade.right;
       const result = resolveLayout(panelsRef.current, drag.separatorIndex, drag.initialWidths, drag.collapsedAtStart, dx, drag.autoFill, ppc);
 
-      applyLayoutResult(result);
+      applyLayoutResult(result, e.clientY);
     };
 
     const handlePointerUp = () => {
@@ -785,13 +846,7 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
   const [registry] = useState(() => ({ registerPanel, unregisterPanel, registerSeparator, unregisterSeparator }));
   const ctxValue = useMemo<PanelGroupContextValue>(() => ({ groupId: id, ...registry }), [id, registry]);
 
-  const dragCtx: SeparatorDragContextValue = {
-    startDrag,
-    applyKeyboardStep,
-    toggleCollapseAtSeparator,
-    getPanels: () => panelsRef.current,
-    getWidths: () => widthsRef.current,
-  };
+  const dragCtx: SeparatorDragContextValue = { startDrag, applyKeyboardStep, toggleCollapseAtSeparator };
 
   return (
     <PanelGroupContext.Provider value={ctxValue}>
@@ -813,15 +868,28 @@ interface PanelProps {
   collapsedWidth?: number;
   /** Whether the panel can be collapsed by dragging past the halfway point */
   collapsible?: boolean;
+  /** What a resize hint fades: all content (default), or only elements carrying `hintFadeOut` / `hintFadeIn` */
+  fade?: 'all' | 'marked';
   className?: string;
   children?: ReactNode;
   ref?: Ref<HTMLDivElement>;
   [key: `data-${string}`]: string | undefined;
 }
 
-export function ResizablePanel({ id, minWidth, collapsedWidth = 0, collapsible = false, className, children, ref, ...rest }: PanelProps) {
+export function ResizablePanel({
+  id,
+  minWidth,
+  collapsedWidth = 0,
+  collapsible = false,
+  fade = 'all',
+  className,
+  children,
+  ref,
+  ...rest
+}: PanelProps) {
   const ctx = useContext(PanelGroupContext);
   const internalRef = useRef<HTMLDivElement | null>(null);
+  const domId = useId();
 
   const setRef = (el: HTMLDivElement | null) => {
     internalRef.current = el;
@@ -840,13 +908,14 @@ export function ResizablePanel({ id, minWidth, collapsedWidth = 0, collapsible =
   return (
     <div
       ref={setRef}
+      id={domId}
       className={className}
       data-panel={id}
       // clip, not hidden: hidden makes this a scroll container and captures the panel's sticky elements
       style={{ overflow: 'clip', position: 'relative', flexShrink: 0 }}
       {...rest}
     >
-      <div className="h-full" style={{ opacity: 'var(--content-opacity, 1)' }}>
+      <div className="h-full" style={fade === 'all' ? { opacity: 'var(--content-opacity, 1)' } : undefined}>
         {children}
       </div>
       <ResizeHint />
@@ -858,8 +927,6 @@ interface SeparatorDragContextValue {
   startDrag: (separatorIndex: number, startX: number) => void;
   applyKeyboardStep: (separatorIndex: number, delta: number) => void;
   toggleCollapseAtSeparator: (separatorIndex: number) => void;
-  getPanels: () => PanelEntry[];
-  getWidths: () => Record<string, number>;
 }
 
 const SeparatorDragContext = createContext<SeparatorDragContextValue | null>(null);
@@ -945,33 +1012,26 @@ export function ResizableSeparator({ index, className, children, 'aria-label': a
     }
   };
 
-  const panels = dragCtx?.getPanels() ?? [];
-  const widths = dragCtx?.getWidths() ?? {};
-  const leftPanel = panels[index];
-  const rightPanel = panels[index + 1];
-  const leftId = leftPanel?.id;
-  const rightId = rightPanel?.id;
-  const ariaControls = [leftId, rightId].filter(Boolean).join(' ');
-  const currentLeftWidth = leftId ? (widths[leftId] ?? 0) : 0;
-  const minVal = leftPanel?.collapsible ? leftPanel.collapsedWidth : (leftPanel?.minWidth ?? 0);
-  const maxVal = leftPanel ? leftPanel.minWidth * 2 : 0;
-
   return (
     <div
       ref={ref}
+      // biome-ignore lint/a11y/useAriaPropsForRole: the group writes aria-valuenow once panels register (updateSeparatorAria)
       role="separator"
       aria-label={ariaLabel ?? t('c:resize_panels')}
       // The bar stands upright between two side-by-side panels and moves left and right
       aria-orientation="vertical"
-      aria-valuemin={minVal}
-      aria-valuemax={maxVal === Number.POSITIVE_INFINITY ? undefined : maxVal}
-      aria-valuenow={Math.round(currentLeftWidth)}
-      aria-controls={ariaControls || undefined}
       tabIndex={0}
       data-separator="inactive"
       // Consumers draw focus in the bar's own color: a ring has no room between panels. outline-hidden keeps the forced-colors outline.
       className={cn('select-none outline-hidden', className)}
-      style={{ touchAction: 'none', cursor: 'col-resize', flexShrink: 0 }}
+      style={{
+        touchAction: 'none',
+        cursor: 'col-resize',
+        flexShrink: 0,
+        // The curtain's leading edge ends where this separator lands after the snap, so the separator yields to it
+        opacity: 'calc(1 - 0.65 * var(--hint-strength, 0))',
+        scale: 'calc(1 - 0.6 * var(--hint-strength, 0)) 1',
+      }}
       onPointerDown={handlePointerDown}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}

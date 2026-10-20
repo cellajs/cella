@@ -4,6 +4,12 @@
   opacity: 0.5;
 }
 
+/* The loading message holds the app's own spinner, which brings its own position and opacity. */
+.react-pdf__message--loading {
+  margin-top: 0;
+  opacity: 1;
+}
+
 /* The page wrapper is a block with a white background; hug the canvas and center it so a page narrower than
    the container never shows as a full-width white slab. */
 .react-pdf__Page {

@@ -16,6 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { Input } from '~/modules/ui/input';
 import { cn } from '~/utils/cn';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
+import { isTouchInteraction } from '~/utils/input-modality';
 
 const formSchema = zCreateRequestBody;
 
@@ -34,8 +35,6 @@ interface WaitlistFormProps {
 export function WaitlistForm({ email, inputClassName, buttonContent, buttonClassName, dialog: isDialog, callback, className }: WaitlistFormProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-
-  const isMobile = window.innerWidth < 640;
 
   const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
@@ -72,7 +71,7 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
                   {...field}
                   className={cn('block', inputClassName)}
                   type="email"
-                  autoFocus={!isMobile}
+                  autoFocus={!isTouchInteraction()}
                   disabled={!!email}
                   readOnly={!!email}
                   placeholder={t('c:email')}

@@ -25,6 +25,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '~/modules/ui/input';
 import { useUserStore } from '~/modules/user/user-store';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
+import { isTouchInteraction } from '~/utils/input-modality';
 
 const emailEnabled = isStrategyEnabled('passkey');
 const isMagicLinkEnabled = isStrategyEnabled('magic');
@@ -52,7 +53,6 @@ export function SignInStep() {
   const navigateAfterAuth = useNavigateAfterAuth();
   const navigate = useNavigate();
 
-  const isMobile = window.innerWidth < 640;
   const abortRef = useRef<AbortController | null>(null);
   const [conditionalMediationSupported, setConditionalMediationSupported] = useState(false);
 
@@ -160,7 +160,7 @@ export function SignInStep() {
                     disabled={!restrictedMode}
                     type="email"
                     className="h-12"
-                    autoFocus={restrictedMode && !isMobile}
+                    autoFocus={restrictedMode && !isTouchInteraction()}
                     autoComplete={restrictedMode ? 'email' : 'off'}
                     placeholder="name@example.com"
                   />

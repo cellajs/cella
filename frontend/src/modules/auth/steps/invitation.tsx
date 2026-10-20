@@ -58,7 +58,7 @@ export function InvitationStep({ tokenData, federations }: Props) {
     onError: () => toaster.error(t('error:reported_try_later')),
   });
 
-  if (isEntryLoading) return <Spinner className="size-10" />;
+  if (isEntryLoading) return <Spinner size="lg" />;
 
   const emailWay = (emailEnabled || isMagicLinkEnabled) && (
     <>

@@ -60,7 +60,19 @@ The panel on the shrinking side of the separator is the victim, the growing side
 
 ## G4: Resize hints
 
-A hint (arrow + radial glow) shows in collapse and expand zones: `collapse` -> inward arrow, `expand` -> outward arrow, progress 0->1.
+In collapse and expand zones a curtain grows from the dragged separator with progress 0->1. Its leading edge is lit at the pointer's height.
+
+- `collapse`: the curtain covers the panel up to its collapsed width, the part that leaves.
+- `expand`: the curtain covers the neighbour across the separator by the width the panel takes.
+
+The leading edge ends where the dragged separator lands after the snap. As the curtain grows, the edge widens to the separator's width while the separator thins and fades, so at the snap the separator takes the edge's place.
+
+As progress grows, the panel content fades out:
+
+- `fade="all"` (default): all content fades.
+- `fade="marked"`: only content the other state lacks fades, so whatever both states show (frame, avatar, counts) stays solid. Content that only the collapsed state shows can fade in at its collapsed position, so a collapse hint at full progress already shows the collapsed panel.
+
+When a panel opens, its marked content fades in.
 
 ## G5: Keyboard
 

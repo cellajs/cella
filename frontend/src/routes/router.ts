@@ -64,6 +64,14 @@ router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
   setSkipPageEnter(!!fromLeafId && fromLeafId === toLeafId && isForward);
 });
 
+// The router scrolls a hash link only to a target the page renders and skips its scroll to top whenever a hash is set,
+// so a forward link to a page without that target would keep the previous page's scroll.
+router.subscribe('onRendered', ({ pathChanged, toLocation }) => {
+  const isForward = lastHistoryAction === 'PUSH' || lastHistoryAction === 'REPLACE';
+  if (!pathChanged || !isForward || !toLocation.hash || document.getElementById(toLocation.hash)) return;
+  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+});
+
 // Type registration must live in the file that creates the router.
 declare module '@tanstack/react-router' {
   interface Register {

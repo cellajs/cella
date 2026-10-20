@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useLatestRef } from '~/hooks/use-latest-ref';
@@ -6,6 +7,7 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
+import { isTouchInteraction } from '~/utils/input-modality';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
 export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
@@ -57,6 +59,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   };
 
   const finalFocusRef = useLatestRef(triggerRef?.current ?? null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   return (
     <Dialog key={id} open={open} onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete} modal={inline ? 'trap-focus' : true}>
@@ -70,11 +73,13 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
           <div className={cn('fixed inset-0 z-30 bg-background/75 duration-200', open ? 'fade-in-0 animate-in' : 'fade-out-0 animate-out')} />
         ))}
       <DialogContent
+        ref={popupRef}
         id={String(id)}
         container={containerElement}
         outsideScroll={outsideScroll}
         className={cn(className, containerElement && 'in-[.sheeter-open]:z-40 z-40')}
-        initialFocus={isMobile ? false : undefined}
+        // Opened from code, so Base UI cannot see a touch open: on touch the popup takes focus, as Base UI's own touch default does.
+        initialFocus={() => (isTouchInteraction() ? popupRef.current : true)}
         finalFocus={triggerRef?.current ? finalFocusRef : undefined}
       >
         {/* An empty header would overlap the content, e.g. in the fullscreen attachment dialog */}

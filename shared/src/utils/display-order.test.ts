@@ -178,6 +178,37 @@ describe('getRelativeOrder (descending)', () => {
   });
 });
 
+describe('getRelativeOrder drop that leaves the source in its slot', () => {
+  const items = [
+    { id: 'a', displayOrder: 10 },
+    { id: 'b', displayOrder: 20 },
+    { id: 'c', displayOrder: 30 },
+  ];
+
+  it('keeps the order when dropped on itself', () => {
+    expect(getRelativeOrder(items, 20, 'b', 'top')).toBe(20);
+    expect(getRelativeOrder(items, 20, 'b', 'bottom', false)).toBe(20);
+  });
+
+  it('keeps the order when dropped on the neighbor edge facing it', () => {
+    expect(getRelativeOrder(items, 30, 'b', 'top')).toBe(20);
+    expect(getRelativeOrder(items, 10, 'b', 'bottom')).toBe(20);
+    expect(getRelativeOrder(items, 30, 'b', 'bottom', false)).toBe(20);
+    expect(getRelativeOrder(items, 10, 'b', 'top', false)).toBe(20);
+  });
+
+  it('keeps the order of an edge item dropped beside its only neighbor', () => {
+    expect(getRelativeOrder(items, 20, 'a', 'top')).toBe(10);
+    expect(getRelativeOrder(items, 20, 'c', 'top', false)).toBe(30);
+  });
+
+  it('still moves the source when the slot changes', () => {
+    expect(getRelativeOrder(items, 10, 'b', 'top')).toBe(0);
+    expect(getRelativeOrder(items, 30, 'b', 'bottom')).toBe(40);
+    expect(getRelativeOrder(items, 30, 'a', 'top')).toBe(25);
+  });
+});
+
 describe('getRelativeOrder collision fallback', () => {
   it('falls back to ±gap when neighbors are too close to split', () => {
     const items = [

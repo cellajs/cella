@@ -22,7 +22,7 @@ export function SsoEntryPage() {
   const { data, error, isPending } = useQuery(ssoEntryQueryOptions(connectionId));
 
   if (error) return <ErrorNotice error={error as ErrorNoticeError} boundary="public" />;
-  if (isPending || !data) return <Spinner className="size-10" />;
+  if (isPending || !data) return <Spinner size="lg" />;
 
   const { institution, organization, federation, status } = data;
   const organizationName = organization?.name ?? appConfig.name;

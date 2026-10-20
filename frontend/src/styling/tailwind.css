@@ -528,12 +528,10 @@
 }
 
 @layer base {
-  /* Bottom inset for fixed-to-bottom UI: device safe area (home indicator, requires viewport-fit=cover) + the
-     layout-viewport bottom hidden behind the on-screen keyboard, which FloatingNav writes as --vv-bottom on
-     #floating-nav only (see viewport-observer.ts). */
-  :root,
-  #floating-nav {
-    --bottom-inset: calc(var(--vv-bottom, 0px) + env(safe-area-inset-bottom, 0px));
+  /* Bottom inset for fixed-to-bottom UI: the device safe area (home indicator, requires viewport-fit=cover). Under an
+     on-screen keyboard that UI hides (keyboard-open, see viewport-observer.ts). */
+  :root {
+    --bottom-inset: env(safe-area-inset-bottom, 0px);
   }
 
   /* Small screens enlarge everything through the rem root: 112.5% is 18px at the default size and follows the user's setting.

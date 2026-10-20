@@ -39,7 +39,7 @@ export function OAuthConsentPage() {
 
   // An expired or unknown interaction is an answer, not a wait.
   if (error && !unauthenticated) return <ErrorNotice error={error as ErrorNoticeError} boundary="public" />;
-  if (isPending || !data) return <Spinner className="size-10" />;
+  if (isPending || !data) return <Spinner size="lg" />;
 
   const { client, scopes, refusal, target } = data;
 

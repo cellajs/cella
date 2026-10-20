@@ -18,12 +18,13 @@ const dropdown = (triggerId: string, data: Partial<DropdownData> = {}): Dropdown
 });
 
 const isActive = (ref: RefObject<HTMLButtonElement | null>) => ref.current?.hasAttribute('data-dropdowner-active');
+const isDone = (ref: RefObject<HTMLButtonElement | null>) => ref.current?.hasAttribute('data-dropdowner-done');
 
 describe('dropdowner store', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(10_000);
-    useDropdowner.setState({ dropdown: null, lastRemovedTriggerId: null, lastRemovedAt: 0 });
+    useDropdowner.setState({ dropdown: null, lastRemovedTriggerId: null, lastRemovedAt: 0, done: null });
     fallbackContentRef.current = null;
   });
   afterEach(() => {
@@ -141,6 +142,49 @@ describe('dropdowner store', () => {
 
     expect(useDropdowner.getState()).toMatchObject({ dropdown: null, lastRemovedTriggerId: 't1', lastRemovedAt: 10_000 });
     expect(isActive(data.triggerRef)).toBe(false);
+  });
+
+  it('marks the trigger done after a completion, until 1.4 s have passed', () => {
+    const data = dropdown('t1');
+    useDropdowner.getState().create(null, data);
+
+    useDropdowner.getState().complete('Copied');
+
+    expect(isActive(data.triggerRef)).toBe(false);
+    expect(isDone(data.triggerRef)).toBe(true);
+    expect(useDropdowner.getState().done).toMatchObject({ trigger: data.triggerRef.current, label: 'Copied', open: true });
+
+    vi.advanceTimersByTime(1399);
+    expect(isDone(data.triggerRef)).toBe(true);
+    vi.advanceTimersByTime(1);
+    expect(isDone(data.triggerRef)).toBe(false);
+    expect(useDropdowner.getState().done).toMatchObject({ label: 'Copied', open: false });
+  });
+
+  it('leaves the trigger unmarked after a plain removal', () => {
+    const data = dropdown('t1');
+    useDropdowner.getState().create(null, data);
+
+    useDropdowner.getState().remove();
+
+    expect(isDone(data.triggerRef)).toBe(false);
+    expect(useDropdowner.getState().done).toBeNull();
+  });
+
+  it('ends a done mark as soon as a dropdown opens, and marks the next one on its own', () => {
+    const first = dropdown('t1');
+    const second = dropdown('t2');
+    useDropdowner.getState().create(null, first);
+    useDropdowner.getState().complete('Copied');
+
+    useDropdowner.getState().create(null, second);
+    expect(isDone(first.triggerRef)).toBe(false);
+    expect(useDropdowner.getState().done?.open).toBe(false);
+
+    useDropdowner.getState().complete('Link copied');
+    expect(isDone(first.triggerRef)).toBe(false);
+    expect(isDone(second.triggerRef)).toBe(true);
+    expect(useDropdowner.getState().done).toMatchObject({ trigger: second.triggerRef.current, label: 'Link copied', open: true });
   });
 
   it('calls onClose once when the dropdown is removed, toggled closed or replaced', () => {

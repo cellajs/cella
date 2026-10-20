@@ -45,6 +45,7 @@ export function TooltipContent({
   align,
   hideWhenDetached,
   container,
+  anchor,
   children,
   ...props
 }: {
@@ -55,12 +56,14 @@ export function TooltipContent({
   hideWhenDetached?: boolean;
   // `container` is part of @blocknote/shadcn's component contract: BlockNote portals tooltips into the element usePortalElement() returns
   container?: TooltipPrimitive.Portal.Props['container'];
+  /** The element to position against, for a tooltip opened from code without a trigger. */
+  anchor?: TooltipPrimitive.Positioner.Props['anchor'];
   children?: ReactNode;
   hidden?: boolean;
 } & Omit<ComponentPropsWithoutRef<'div'>, 'className'>) {
   return (
     <TooltipPrimitive.Portal container={container}>
-      <TooltipPrimitive.Positioner side={side} sideOffset={sideOffset} align={align} className="z-200">
+      <TooltipPrimitive.Positioner side={side} sideOffset={sideOffset} align={align} anchor={anchor} className="z-200">
         <TooltipPrimitive.Popup
           data-slot="tooltip-content"
           className={cn(

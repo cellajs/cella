@@ -24,7 +24,7 @@ export type ChannelRouteEntry = {
   subitemOf?: { entityType: ChannelEntityType; searchParam: string };
 };
 
-/** Nav hint for entity links: lands forward navigation on the header (`id="pt"`); back/forward keeps cached scroll. */
+/** Nav hint for entity links: lands forward navigation on the header (`id="pt"`), or on top for a page without one; back/forward keeps cached scroll. */
 export const pageTopHashNav: { hash: string; hashScrollIntoView: ScrollIntoViewOptions } = {
   hash: 'pt',
   hashScrollIntoView: { block: 'start', behavior: 'instant' },

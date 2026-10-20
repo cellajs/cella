@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
-import { PageSpinner } from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
@@ -18,7 +18,7 @@ export function MarketingLayout({ title, children }: MarketingLayoutProps) {
   return (
     <div>
       <MarketingNav />
-      <Suspense fallback={<PageSpinner />}>
+      <Suspense fallback={<Spinner size="lg" className="mt-[45vh]" />}>
         <main className="max-w-none px-0">
           {/* Gradient keeps the hero's height, centered and clipped, so a short header shows its middle instead of a squashed copy */}
           <section className="rich-gradient relative overflow-hidden py-14 pb-16 after:top-1/2 after:h-[max(100%,90vh)] after:-translate-y-1/2 sm:min-h-40 sm:py-20">

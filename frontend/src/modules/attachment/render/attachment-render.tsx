@@ -8,7 +8,7 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { getFileIcon } from '~/modules/attachment/file-placeholder';
 import { type PendingUpload, pendingUploadMessage } from '~/modules/attachment/helpers/pending-uploads';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { PageSpinner, Spinner } from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -61,7 +61,7 @@ export function AttachmentRender({
     );
   }
 
-  if (!url) return <PageSpinner className="size-12" />;
+  if (!url) return <Spinner size="lg" className="mt-[45vh]" />;
 
   // Only the container itself is the backdrop: clicks on media or controls bubble here but fail the target check.
   const handleBackdropClick = onBackdropClick
@@ -74,7 +74,7 @@ export function AttachmentRender({
     <ContentPlaceholder icon={getFileIcon(type)} title="c:download_to_view">
       {/* The URL is a CDN or presigned URL online, a local blob URL offline. */}
       <Button variant="plain" className="mt-4" disabled={isInProgress} onClick={() => download(url, filename || 'file')}>
-        {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon className="size-4" />}
+        {isInProgress ? <Spinner size="sm" noDelay /> : <DownloadIcon className="size-4" />}
         <span>{t('c:download')}</span>
       </Button>
     </ContentPlaceholder>
@@ -85,7 +85,7 @@ export function AttachmentRender({
     <div className={containerClassName} onClick={handleBackdropClick}>
       {/* A renderer that cannot load its file throws during render (react-pdf loads through Suspense); this keeps the failure inside the viewer. */}
       <ErrorBoundary fallback={downloadPlaceholder} resetKeys={[url]}>
-        <Suspense fallback={<Spinner className="size-6" />}>
+        <Suspense fallback={<Spinner size="lg" />}>
           {type.includes('image') &&
             (imagePanZoom && !isMobile ? (
               <ReactPanZoom

@@ -1,4 +1,5 @@
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { DropdownerDoneTip } from '~/modules/common/dropdowner/done-tip';
 import { DropdownerDrawer } from '~/modules/common/dropdowner/drawer';
 import { DropdownerDropdown } from '~/modules/common/dropdowner/dropdown';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
@@ -13,7 +14,10 @@ export function Dropdowner() {
 
   useOverlayLock('dropdowner', !!dropdown);
 
-  if (!dropdown) return null;
-  if (isMobile) return <DropdownerDrawer dropdown={dropdown} />;
-  return <DropdownerDropdown dropdown={dropdown} />;
+  return (
+    <>
+      {dropdown && (isMobile ? <DropdownerDrawer dropdown={dropdown} /> : <DropdownerDropdown dropdown={dropdown} />)}
+      <DropdownerDoneTip />
+    </>
+  );
 }

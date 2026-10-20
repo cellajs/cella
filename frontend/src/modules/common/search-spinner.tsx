@@ -21,7 +21,7 @@ export function SearchSpinner({ isSearching, value, appearDelay = 0.3 }: SearchS
           animate={{ opacity: 1, transition: { delay: appearDelay } }} // appear with delay
           exit={{ opacity: 0, transition: { delay: 0 } }} // disappear immediately
         >
-          <Spinner className="mr-2 size-4 h-auto shrink-0 group-[.text-lg]:size-5" noDelay />
+          <Spinner size="sm" className="mr-2 h-auto shrink-0 group-[.text-lg]:size-5" noDelay />
         </motion.div>
       ) : (
         <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

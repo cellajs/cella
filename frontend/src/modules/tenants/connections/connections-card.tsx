@@ -98,7 +98,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
   return (
     <ToolCard label="c:connection_other" description={t('c:connections.text')} unsaved id={formContainerId} className={className}>
       {isPending ? (
-        <Spinner className="size-6" />
+        <Spinner />
       ) : (
         <div className="flex flex-col gap-6 text-sm">
           {sso.map((connection) => (

@@ -564,6 +564,65 @@ export const ShouldVirtualizeRows: Story = {
   },
 };
 
+// The wrapping column turns row heights into estimates; the stacked cell grows rows past them, as a list of labels does.
+const growingRowColumns: Column<Person>[] = [
+  { key: 'firstName', name: 'First Name', width: 120, wrapText: 2 },
+  {
+    key: 'tags',
+    name: 'Tags',
+    width: 160,
+    renderCell: ({ row }) => (
+      <div className="flex flex-col">
+        {Array.from({ length: (row.id % 4) + 1 }, (_, index) => (
+          <span key={index}>tag {index + 1}</span>
+        ))}
+      </div>
+    ),
+  },
+];
+
+const nextFrames = async () => {
+  for (let frame = 0; frame < 3; frame++) await new Promise((resolve) => requestAnimationFrame(resolve));
+};
+
+export const ShouldKeepGrownRowHeights: Story = {
+  name: 'when virtualized rows outgrow their estimate, should scroll without jumps',
+  tags: ['!dev', '!autodocs'],
+  render: function Render(args) {
+    return (
+      // h-auto: the grid grows and the container scrolls, as in DataTable. Without scroll anchoring, which hides a jump
+      // by moving the scroll position in some layouts but not in others.
+      <div style={{ height: 300, overflow: 'auto', overflowAnchor: 'none' }} data-testid="scroll-container">
+        <DataGrid {...args} rows={largeData} enableVirtualization className="h-auto" />
+      </div>
+    );
+  },
+  args: { columns: growingRowColumns },
+  play: async ({ canvas, step }) => {
+    const container = canvas.getByTestId('scroll-container');
+    const grid = canvas.getByRole('grid');
+
+    await step('Content should move exactly as far as the container scrolls', async () => {
+      await waitFor(() => expect(grid.querySelectorAll('[role="row"][aria-rowindex]').length).toBeGreaterThan(1));
+      await nextFrames();
+
+      for (let scrollStep = 0; scrollStep < 20; scrollStep++) {
+        const rows = [...grid.querySelectorAll<HTMLElement>('[role="row"][aria-rowindex]')];
+        const reference = rows[Math.floor(rows.length / 2)];
+        const rowIndex = reference.getAttribute('aria-rowindex');
+        const before = reference.getBoundingClientRect().top;
+
+        container.scrollTop += 100;
+        await nextFrames();
+
+        const after = grid.querySelector(`[role="row"][aria-rowindex="${rowIndex}"]`)?.getBoundingClientRect().top;
+        expect(after).toBeDefined();
+        expect(Math.round((before - (after ?? 0)) * 10) / 10).toBe(100);
+      }
+    });
+  },
+};
+
 export const ShouldResizeColumn: Story = {
   name: 'when Ctrl+Arrow is pressed on a resizable header, should resize column',
   tags: ['!dev', '!autodocs'],
