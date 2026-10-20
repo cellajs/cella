@@ -7,7 +7,7 @@ The a11y package audits the running development app against WCAG 2.2 Level A and
 `pnpm a11y:run` starts a seeded database and the app, opens every page and state once, scans it with axe, runs browser
 checks that axe cannot do, and reviews the code for the rest. Each of the 55 criteria gets its evidence and, where the
 evidence is complete, a decision. What needs a person lands on a checklist, and a person's decision survives the next
-run. The audit itself takes about two minutes; the first run also builds the frontend and seeds the database.
+run. The audit itself takes three to four minutes; every run also builds the frontend, and the first seeds the database.
 
 ## Prerequisites
 
