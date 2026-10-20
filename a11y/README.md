@@ -36,7 +36,6 @@ against.
 | `pnpm a11y:run --keep` | The same, and leave the stack up to rerun states while fixing; `--stop` ends it |
 | `pnpm a11y` | Full audit against a running stack: axe, browser probes and code checks |
 | `pnpm a11y --states sign-in,org-members` | Audit some states only; writes `a11y/results/ledger-partial.json`, never the ledger |
-| `pnpm a11y --only axe` | Refresh some parts only (`axe`, `probes`, `code`); the other parts' evidence is kept |
 | `pnpm a11y --workers 2` | States audited at the same time (default 4); lower it on a busy machine |
 | `pnpm -C a11y report` | Render the ledger as a draft VPAT and a checklist for the manual pass |
 | `pnpm -C a11y report --publish` | Put the report where the app serves it and print what the statement needs; refuses a draft |

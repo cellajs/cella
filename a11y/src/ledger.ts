@@ -92,16 +92,16 @@ const family = (check: string) => check.split(':')[0];
 const automated = (evidence: Evidence[]) => evidence.filter((item) => family(item.check) !== 'review');
 
 /**
- * Builds the ledger from fresh evidence for the check families that ran (`axe`, `probe`, `code`); evidence of the other
- * families carries over from the previous ledger. A row a reviewer decided keeps that decision, unless the audit now
- * finds a failure on a row the reviewer called Supports or Not Applicable.
+ * Builds the ledger from the run's evidence; a reviewer's findings carry over from the previous ledger. A row a reviewer
+ * decided keeps that decision, unless the audit now finds a failure on a row the reviewer called Supports or Not
+ * Applicable.
  */
-export function writeLedger(evidenceById: Map<string, Evidence[]>, scope: string[], ran: string[], target = ledgerPath) {
+export function writeLedger(evidenceById: Map<string, Evidence[]>, scope: string[], target = ledgerPath) {
   const previous = new Map((readLedger()?.criteria ?? []).map((row) => [row.id, row]));
 
   const rows = criteria.map((criterion): LedgerRow => {
     const before = previous.get(criterion.id);
-    const kept = (before?.evidence ?? []).filter((item) => !ran.includes(family(item.check)));
+    const kept = (before?.evidence ?? []).filter((item) => family(item.check) === 'review');
     const evidence = [...kept, ...(evidenceById.get(criterion.id) ?? [])];
     const byAudit = decide(criterion, automated(evidence));
     const reviewed = before?.decidedBy === 'agent' || before?.decidedBy === 'human';

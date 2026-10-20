@@ -12,7 +12,7 @@ import { type Mode, newContext, openPage, resolvePath, type Session } from './se
 
 export interface Visit {
   findings: Finding[];
-  scan: AxeScan | null;
+  scan: AxeScan;
 }
 
 /**
@@ -28,7 +28,7 @@ export interface Visit {
  * `failure-<mode>.png` and `failure-<mode>.json` in the state's review packet: what the page showed, its console
  * errors, and the steps that ran on it before, since a failing step often meets what an earlier one left behind.
  */
-export async function visitState(session: Session, state: ScopeState, mode: Mode, parts: { axe: boolean; probes: boolean }): Promise<Visit> {
+export async function visitState(session: Session, state: ScopeState, mode: Mode): Promise<Visit> {
   const context = await newContext(session, { auth: state.auth, mode });
   const consoleErrors: string[] = [];
   context.on('console', (message) => {
@@ -66,24 +66,15 @@ export async function visitState(session: Session, state: ScopeState, mode: Mode
 
     if (mode === 'dark') {
       const scan = await scanPage(true);
-      if (parts.probes) {
-        await run(textContrast(scan.undecidedContrast), 'textContrast');
-        await run(controlContrast);
-      }
+      await run(textContrast(scan.undecidedContrast), 'textContrast');
+      await run(controlContrast);
       return { findings, scan };
     }
 
-    if (parts.probes) for (const check of [pageStructure, inputs]) await run(check);
-    const scan = parts.axe ? await scanPage() : null;
-    if (parts.probes) {
-      if (scan) await run(textContrast(scan.undecidedContrast), 'textContrast');
-      await run(controlContrast);
-      await run(reviewPacket);
-      await run(layout);
-      await run(formErrors);
-      await run(keyboardWalk);
-      await run(languageSwitch);
-    }
+    for (const check of [pageStructure, inputs]) await run(check);
+    const scan = await scanPage();
+    await run(textContrast(scan.undecidedContrast), 'textContrast');
+    for (const check of [controlContrast, reviewPacket, layout, formErrors, keyboardWalk, languageSwitch]) await run(check);
     return { findings, scan };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
