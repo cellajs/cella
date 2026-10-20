@@ -19,6 +19,11 @@ function DrawerClose({ ...props }: DrawerPrimitive.Close.Props) {
   return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />;
 }
 
+/** Seats a bottom sheet with text fields on the on-screen keyboard. Wraps `DrawerContent`, which renders the portal. */
+function DrawerVirtualKeyboardProvider({ ...props }: DrawerPrimitive.VirtualKeyboardProvider.Props) {
+  return <DrawerPrimitive.VirtualKeyboardProvider {...props} />;
+}
+
 function DrawerOverlay({ className, ...props }: DrawerPrimitive.Backdrop.Props & React.RefAttributes<HTMLDivElement>) {
   return (
     <DrawerPrimitive.Backdrop
@@ -63,6 +68,8 @@ function DrawerContent({
         <DrawerPrimitive.Viewport
           className={cn(
             'fixed inset-0 z-118 flex group-has-data-[overlay=dialog]/drawer-portal:z-126 group-has-data-[overlay=dropdown]/drawer-portal:z-300',
+            // The on-screen keyboard overlays the layout viewport without resizing it, so DrawerVirtualKeyboardProvider's inset lifts the sheet.
+            'pb-(--drawer-keyboard-inset,0px)',
             // Viewport handles Popup positioning via flex alignment, using :has() to detect swipe direction
             'has-data-[swipe-direction=down]:items-end has-data-[swipe-direction=down]:justify-center',
             'has-data-[swipe-direction=up]:items-start has-data-[swipe-direction=up]:justify-center',
@@ -79,7 +86,7 @@ function DrawerContent({
               'transition-discrete transition-transform duration-300 ease-out will-change-transform',
               'data-swiping:select-none data-swiping:transition-none!',
               // Sizing by swipe direction (Viewport flex handles placement)
-              'data-[swipe-direction=down]:max-h-[80vh] data-[swipe-direction=down]:w-full data-[swipe-direction=down]:rounded-t-lg',
+              'data-[swipe-direction=down]:max-h-[min(80vh,calc(100%-1.25rem))] data-[swipe-direction=down]:w-full data-[swipe-direction=down]:rounded-t-lg',
               'data-[swipe-direction=up]:max-h-[80vh] data-[swipe-direction=up]:w-full data-[swipe-direction=up]:rounded-b-lg',
               'data-[swipe-direction=right]:w-[95vw] data-[swipe-direction=right]:lg:max-w-4xl',
               'data-[swipe-direction=left]:w-[95vw] data-[swipe-direction=left]:lg:max-w-4xl',
@@ -158,4 +165,14 @@ function DrawerDescription({ className, ...props }: DrawerPrimitive.Description.
   return <DrawerPrimitive.Description data-slot="drawer-description" className={cn('text-muted-foreground text-sm', className)} {...props} />;
 }
 
-export { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger };
+export {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+  DrawerVirtualKeyboardProvider,
+};

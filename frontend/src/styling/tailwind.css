@@ -17,8 +17,8 @@
   --font-sans: "Open Sans", ui-sans-serif, sans-serif;
   /* Headings share the sans stack; an app with a heading font sets it here. */
   --font-heading: var(--font-sans);
-  /* Exactly 16px at the 18px mobile root. */
-  --text-md: 0.888rem;
+  /* 16px at the 18px mobile root, rounded up: iOS zooms into a focused field below 16px. */
+  --text-md: 0.889rem;
   /* Badge and counter text. */
   --text-2xs: 0.6rem;
   --transition-property-spacing: margin, padding;
@@ -565,7 +565,7 @@
   }
 
   body {
-    @apply bg-background text-foreground min-h-full overscroll-none overflow-x-clip;
+    @apply bg-background text-foreground min-h-full overscroll-none overflow-x-clip antialiased;
   }
 
   .container {
