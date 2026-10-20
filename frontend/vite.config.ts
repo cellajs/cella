@@ -2,7 +2,6 @@ import { execSync } from 'node:child_process';
 import path from 'node:path';
 import mdx from '@mdx-js/rollup';
 import babel from '@rolldown/plugin-babel';
-import terser from '@rollup/plugin-terser';
 import { serwist } from '@serwist/vite';
 import rehypeShiki from '@shikijs/rehype';
 import tailwindcss from '@tailwindcss/vite';
@@ -15,17 +14,17 @@ import remarkGfm from 'remark-gfm';
 import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, type Plugin, type UserConfig } from 'vite';
-import { createHtmlPlugin } from 'vite-plugin-html';
-import { viteStaticCopy } from 'vite-plugin-static-copy';
 import svgr from 'vite-plugin-svgr';
 import rootPkg from '../package.json' with { type: 'json' };
 import { appConfig } from '../shared/index.ts';
 import { docsEditor } from './vite/docs-editor.ts';
 import { docsFrontmatter } from './vite/docs-frontmatter.ts';
+import { indexHtml } from './vite/index-html.ts';
 import { localesPlugin } from './vite/locales-plugin.ts';
 import { reactCompilerGuard } from './vite/react-compiler-guard.ts';
 import { remarkLinkRepoPaths } from './vite/remark-link-repo-paths.ts';
 import { routerOptions } from './vite/router-options.ts';
+import { sdkStatic } from './vite/sdk-static.ts';
 import { sdkWatch } from './vite/sdk-watch.ts';
 
 // Repo docs (cella/*.md) start with an h1 for GitHub readers, but the docs page view
@@ -162,6 +161,8 @@ const viteConfig = {
   preview: { port: devPort },
   build: {
     rollupOptions: {
+      // The minifier drops console.debug calls along with other unused pure code.
+      treeshake: { manualPureFunctions: ['console.debug'] },
       output: {
         // Rolldown ignores `manualChunks` when `codeSplitting` is set, so all grouping lives here
         codeSplitting: {
@@ -330,7 +331,7 @@ const viteConfig = {
     // events and session replays readable. Switch to 'hidden' if the frontend ever closes source.
     sourcemap: !isDev,
     manifest: true,
-    minify: isDev ? false : 'esbuild',
+    minify: isDev ? false : 'oxc',
   },
   // Exclude workspace SDK from pre-bundling so regenerated types are picked up without restart.
   // react-scan is loaded on demand from the debug menu and stays out of the pre-bundle.
@@ -404,38 +405,17 @@ const viteConfig = {
       merge: { target: 'c', sources: ['common', 'app'] },
       verbose: false,
     }),
-    viteStaticCopy({
-      targets: [
-        // Generated API docs assets: single source of truth in sdk/gen, served (not bundled) at /static.
-        // stripBase: 2 drops the `sdk/gen` prefix so files land at /static/... (and /static/docs.gen/...).
-        { src: '../sdk/gen/openapi.json', dest: 'static', rename: { stripBase: 2 } },
-        { src: '../sdk/gen/zod.gen.ts', dest: 'static', rename: { stripBase: 2 } },
-        { src: '../sdk/gen/types.gen.ts', dest: 'static', rename: { stripBase: 2 } },
-        { src: '../sdk/gen/docs.gen/**/*', dest: 'static', rename: { stripBase: 2 } },
-      ],
+    // Generated API docs assets: single source of truth in sdk/gen, served (not bundled) at /static.
+    sdkStatic(),
+    ...indexHtml({
+      title: appConfig.name,
+      description: appConfig.description,
+      keywords: appConfig.keywords,
+      author: appConfig.company.name,
+      color: appConfig.themeColor,
+      url: appConfig.frontendUrl,
+      apiUrl: appConfig.backendUrl,
     }),
-    createHtmlPlugin({
-      template: './index.html',
-      inject: {
-        data: {
-          title: appConfig.name,
-          description: appConfig.description,
-          keywords: appConfig.keywords,
-          author: appConfig.company.name,
-          color: appConfig.themeColor,
-          url: appConfig.frontendUrl,
-          apiUrl: appConfig.backendUrl,
-        },
-      },
-    }),
-    // Terser removes console.debug. Skip in dev for faster builds.
-    ...(isDev
-      ? []
-      : [
-          terser({
-            compress: { pure_funcs: ['console.debug'] },
-          }) as Plugin,
-        ]),
     ...(isAnalyze ? [visualizer({ filename: 'stats/bundle.html', template: 'treemap', gzipSize: true, brotliSize: true }) as Plugin] : []),
   ],
   resolve: {
