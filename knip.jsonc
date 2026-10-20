@@ -38,7 +38,9 @@
       ],
       // The service image installs only `dependencies` (shared/src/keep-on-disk.ts). shared/src imports these, and the
       // bundle loads them from disk or by name (pino transports), so they are listed here without an import in this workspace.
-      "ignoreDependencies": ["@opentelemetry/.+", "^pino(-.+)?$"]
+      "ignoreDependencies": ["@opentelemetry/.+", "^pino(-.+)?$"],
+      // `pnpm tunnel` runs the ngrok CLI, installed with `brew install ngrok`.
+      "ignoreBinaries": ["ngrok"]
     },
     "bench": {
       // The CLI imports every scenarios/*.ts; data-setup imports every *.bench.ts.

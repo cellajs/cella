@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { encodeBase32UpperCaseNoPadding } from '@oslojs/encoding';
+import { encodeBase32 } from '#/utils/base32';
 
 /** Generates an RFC 4226 HOTP code for a `counter` value using HMAC-SHA1 and dynamic truncation. */
 const generateHOTP = (key: Uint8Array, counter: bigint, digits: number): string => {
@@ -53,7 +53,7 @@ export const matchTOTPStep = (
 /** Builds an `otpauth://` provisioning URI for authenticator apps (QR code or deep link). */
 export const createTOTPKeyURI = (issuer: string, accountName: string, key: Uint8Array, periodInSeconds: number, digits: number): string => {
   const params = new URLSearchParams({
-    secret: encodeBase32UpperCaseNoPadding(key),
+    secret: encodeBase32(key, { padding: false }),
     issuer,
     algorithm: 'SHA1',
     digits: digits.toString(),

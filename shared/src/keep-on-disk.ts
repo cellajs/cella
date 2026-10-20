@@ -14,7 +14,7 @@
  *
  * A service image installs only the service's `dependencies` (`pnpm install --prod`), so `dependencies` holds packages
  * kept on disk and every inlined package is a devDependency. A `dependencies` entry the bundle would inline throws here.
- * A package kept on disk that production never loads, such as the dev tunnel's @ngrok/ngrok, stays a devDependency.
+ * A package kept on disk that production never loads stays a devDependency.
  */
 const sharedPatterns = [String.raw`pg(?:\/|$)`, String.raw`@opentelemetry\/`, String.raw`pino(?:-|\/|$)`];
 

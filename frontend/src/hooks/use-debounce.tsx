@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useDebouncedCallback } from 'use-debounce';
 
 type UseDebounceOptions<T> = {
   /** Value that bypasses debounce and applies immediately (e.g., `false` for loading states). */
@@ -9,19 +8,16 @@ type UseDebounceOptions<T> = {
 /** Debounces a value, applying `immediateValue` at once when the value matches it. */
 export function useDebounce<T>(value: T, delay = 1000, options?: UseDebounceOptions<T>): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  const debouncedSet = useDebouncedCallback((val: T) => {
-    setDebouncedValue(val);
-  }, delay);
+  const immediateValue = options?.immediateValue;
 
   useEffect(() => {
-    if (options?.immediateValue !== undefined && value === options.immediateValue) {
-      debouncedSet.cancel();
+    if (immediateValue !== undefined && value === immediateValue) {
       setDebouncedValue(value);
       return;
     }
-    debouncedSet(value);
-  }, [value, options?.immediateValue, debouncedSet]);
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay, immediateValue]);
 
   return debouncedValue;
 }

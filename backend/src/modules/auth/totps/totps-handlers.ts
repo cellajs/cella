@@ -1,5 +1,4 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { encodeBase32UpperCase } from '@oslojs/encoding';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -11,6 +10,7 @@ import { createTOTPKeyURI } from '#/modules/auth/totps/helpers/totp-core';
 import { verifyTotp } from '#/modules/auth/totps/operations/verify-totp';
 import { deleteTotp, findTotp, insertTotp } from '#/modules/auth/totps/totps-queries';
 import { authTotpsRoutes } from '#/modules/auth/totps/totps-routes';
+import { encodeBase32 } from '#/utils/base32';
 import { defaultHook } from '#/utils/default-hook';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -24,7 +24,7 @@ app.openapi(authTotpsRoutes.generateTotpKey, async (ctx) => {
   // Generate a 20-byte random secret and encode it as Base32
   const secretBytes = crypto.getRandomValues(new Uint8Array(20));
 
-  const manualKey = encodeBase32UpperCase(secretBytes);
+  const manualKey = encodeBase32(secretBytes);
 
   await setAuthCookie(ctx, 'totp-challenge', manualKey, new TimeSpan(5, 'm'));
 
