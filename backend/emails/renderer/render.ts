@@ -1,42 +1,13 @@
-import { htmlToText } from 'html-to-text';
 import { rehype } from 'rehype';
 import stringify from 'rehype-stringify';
 import { getConditionalPlugin } from './conditional.js';
 import { jsxToString } from './jsx-to-string.js';
 import { getMovePlugin } from './move-style.js';
-import { getRawPlugin, unescapeForRawComponent } from './raw.js';
-import type { PlainTextOptions, RenderOptions } from './types.js';
+import { getRawPlugin } from './raw.js';
 
 const jsxEmailTags = ['jsx-email-cond'];
 
-const renderPlainText = async (component: React.ReactElement, options?: PlainTextOptions) => {
-  const { formatters, selectors } = options || {};
-
-  const result = await jsxToString(component);
-  return htmlToText(result, {
-    formatters: {
-      raw: (elem, _walk, builder) => {
-        if (elem.children.length && elem.children[0].type === 'comment') {
-          builder.addInline(unescapeForRawComponent(elem.children[0].data!.trim()));
-        }
-      },
-      ...formatters,
-    },
-
-    selectors: [
-      { format: 'skip', selector: 'img' },
-      { format: 'skip', selector: '[data-skip="true"]' },
-      { options: { linkBrackets: false }, selector: 'a' },
-      { format: 'raw', options: {}, selector: 'jsx-email-raw' },
-      ...(selectors || []),
-    ],
-    ...options,
-  });
-};
-
-export const render = async (component: React.ReactElement, options?: RenderOptions) => {
-  if (options?.plainText) return renderPlainText(component, typeof options.plainText === 'object' ? options.plainText : {});
-
+export const render = async (component: React.ReactElement) => {
   const html = await jsxToString(component);
   return processHtml(html);
 };

@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import { trace } from '@opentelemetry/api';
 import pino from 'pino';
 import type { Severity } from '../types.ts';
@@ -69,6 +70,16 @@ const serializeError = (err: unknown): unknown => {
   return serialized;
 };
 
+/** Whether pino can load transport target `name`, which it resolves from this module. */
+const resolvable = (name: string) => {
+  try {
+    createRequire(import.meta.url).resolve(name);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const createLogger = ({
   level,
   isProduction,
@@ -81,13 +92,15 @@ export const createLogger = ({
   serviceVersion,
   destination: injectedDestination,
 }: CreateLoggerOptions): pino.Logger => {
-  // Console target: human-readable pretty in dev, raw JSON on stdout in production/containers.
-  const consoleTarget: pino.TransportTargetOptions = isProduction
-    ? { target: 'pino/file', options: { destination: 1 } }
-    : {
-        target: 'pino-pretty',
-        options: { colorize: true, singleLine: true, ignore: 'pid,hostname', ...transportOptions },
-      };
+  // Console target: human-readable pretty in dev, raw JSON on stdout in production/containers. pino-pretty is a
+  // devDependency, so an image started outside production mode logs JSON too.
+  const consoleTarget: pino.TransportTargetOptions =
+    isProduction || !resolvable('pino-pretty')
+      ? { target: 'pino/file', options: { destination: 1 } }
+      : {
+          target: 'pino-pretty',
+          options: { colorize: true, singleLine: true, ignore: 'pid,hostname', ...transportOptions },
+        };
 
   // pino-opentelemetry-transport runs in a worker thread with its own OTLP exporter, so it is handed the
   // sink's options. Enabled in dev too, so logs reach the sink in the production shape while the console
