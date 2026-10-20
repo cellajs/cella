@@ -1,7 +1,11 @@
 ---
 allowBuilds:
-  '@evilmartians/lefthook': true
+  # `@evilmartians/lefthook` bundles every platform's binary, `lefthook` installs one. A checkout installed before the
+  # switch still holds the old package, and pnpm fails its next install without a verdict on it. Remove once every
+  # checkout has reinstalled.
+  '@evilmartians/lefthook': false
   esbuild: true
+  lefthook: true
   protobufjs: false
 blockExoticSubdeps: true
 # Optional dependencies of code paths the app never runs: jspdf's .html() and SVG rendering (canvg, html2canvas,

@@ -7,8 +7,8 @@
     ".": {
       // `pnpm cella migrate` runs each migration's codemod by path, so nothing imports them.
       "entry": ["cella/cella.config.ts", "cella/skills/**/*.mjs", "cella/migrations/*/*.ts"],
-      // Git hooks run lefthook; migration READMEs run their codemods with `pnpm exec tsx` from the root.
-      "ignoreDependencies": ["@evilmartians/lefthook", "tsx"],
+      // Migration READMEs run their codemods with `pnpm exec tsx` from the root.
+      "ignoreDependencies": ["tsx"],
       // `pnpm -C a11y stack` runs the a11y workspace's script of that name. `cwebp` is the system WebP encoder the
       // screenshots driver calls, installed with `brew install webp`.
       "ignoreBinaries": ["stack", "cwebp"]
