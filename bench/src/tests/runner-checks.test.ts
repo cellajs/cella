@@ -39,7 +39,7 @@ describe('evaluateChecks', () => {
   it('compares thresholds with any recorded histogram, and skips them in a short run', () => {
     const checks = { thresholds: { 'http.response_time.p95': 500, 'yjs.peer_latency_ms.p99': 10 } };
     const distributions = { 'http.response_time': dist(400), 'yjs.peer_latency_ms': dist(20) };
-    expect(failed(evaluateChecks(checks, { counters: {}, distributions, short: false }))).toEqual(['yjs.peer_latency_ms.p99 30 ms > 10 ms']);
+    expect(failed(evaluateChecks(checks, { counters: {}, distributions, short: false }))).toEqual(['yjs.peer_latency_ms.p99 30ms > 10ms']);
     expect(evaluateChecks(checks, { counters: {}, distributions, short: true })).toEqual([]);
     expect(failed(evaluateChecks(checks, { counters: {}, distributions: {}, short: false }))).toEqual([
       'http.response_time.p95: nothing recorded',

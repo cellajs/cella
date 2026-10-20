@@ -14,7 +14,7 @@ export interface Distribution {
 /** Histograms hold integers: values are recorded in microseconds, so sub-millisecond latencies keep their precision. */
 const toMicros = (ms: number) => Math.max(1, Math.round(ms * 1000));
 
-export function distribution(histogram: RecordableHistogram): Distribution {
+function distribution(histogram: RecordableHistogram): Distribution {
   if (histogram.count === 0) return { count: 0, min: 0, mean: 0, p50: 0, p95: 0, p99: 0, max: 0 };
   const ms = (micros: number) => micros / 1000;
   return {

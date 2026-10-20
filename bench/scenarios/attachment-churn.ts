@@ -16,11 +16,8 @@ const parseBatch = (text: string): BatchResponse => {
 };
 
 /**
- * Whether the insert and delete path holds its books under load. Creates and deletes arrive as multi-row statements,
- * so the CDC worker handles them as batches, and the organization's attachment count moves with every one of them.
- * Each VU creates a batch of 10 and deletes it, 5 times (100 rows written per VU). Steps up 5 → 10 arrivals/s (~1000
- * rows/s peak). The CLI checks after the run that the worker recorded one activity per row, and that the attachment
- * count is back where it was.
+ * Whether the insert and delete path holds its books under load: multi-row creates and deletes reach the CDC worker as
+ * batches. Each VU creates a batch of 10 and deletes it, 5 times. Steps up 5 → 10 arrivals/s (~1000 rows/s peak).
  */
 export default defineScenario({
   description: 'Attachment churn: batches of 10 attachments are created and deleted again.',

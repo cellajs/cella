@@ -1,5 +1,3 @@
-export { type BaselineEntry, RUNNER_EPOCH } from './baseline';
-export { acquireLock, benchDataDir, type LockInfo } from './lock';
-export { count, ms, paint } from './report';
+export { acquireLock, benchDataDir } from './lock';
 export { defineScenario, type RunResult, runScenario } from './run';
-export type { CheckResult, Phase, Scenario, SseEvent, Vu } from './types';
+export type { CheckResult, Scenario } from './types';

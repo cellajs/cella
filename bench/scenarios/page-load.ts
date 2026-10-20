@@ -2,10 +2,8 @@ import { benchUser, ORG_PATH } from '../src/bench-user';
 import { defineScenario } from '../src/runner';
 
 /**
- * How the read path holds when every visitor also reads data. On top of /me, /me/memberships and /organizations, each
- * load fetches the first page of the organization's attachments: a product read, which runs in a row-level-security
- * transaction. Each VU loads the page 15 times. Steps up 10 → 15 → 20 arrivals/s (150 → 300 page loads/s, ~1200 req/s
- * peak), about two thirds of what one API process serves on a laptop.
+ * How the read path holds when every visitor also reads data: the attachment page is a product read in an RLS
+ * transaction. Each VU loads the page 15 times. Steps up 10 → 15 → 20 arrivals/s (~1200 req/s peak).
  */
 export default defineScenario({
   description: 'Page load: what a tab fetches when it opens an organization.',

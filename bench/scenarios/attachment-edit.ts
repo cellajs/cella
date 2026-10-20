@@ -3,10 +3,8 @@ import { benchUser } from '../src/bench-user';
 import { defineScenario } from '../src/runner';
 
 /**
- * How many edits per second the mutation path takes (guard chain, RLS transaction, per-field merge), and whether the
- * CDC worker records every one of them. Each VU edits its own attachment 20 times; VUs that share a row are rare.
- * Steps up 25 → 50 → 75 → 100 arrivals/s (~1200 req/s peak), past what a laptop that also runs the stack takes. The
- * CLI checks after the run that the worker recorded one activity per accepted edit.
+ * How many edits per second the mutation path takes (guard chain, RLS transaction, per-field merge). Each VU edits its
+ * own attachment 20 times. Steps up 25 → 50 → 75 → 100 arrivals/s (~1200 req/s peak), past what a laptop takes.
  */
 export default defineScenario({
   description: 'Attachment edit: the write path under a step-up, one rename per request.',

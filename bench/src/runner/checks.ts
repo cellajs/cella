@@ -1,4 +1,5 @@
 import type { Distribution } from './metrics';
+import { count, ms } from './report';
 import type { CheckResult, Checks, Stat } from './types';
 
 /** What the checks read of a finished run. */
@@ -41,7 +42,7 @@ export function evaluateChecks(checks: Checks<string, string>, { counters, distr
     results.push({
       id: 'responses',
       ok,
-      text: `${rejectedCount} of ${responses} responses not 2xx, ${pct((rejectedCount / responses) * 100)} ${ok ? '≤' : '>'} ${maxRejected}%${detail}`,
+      text: `${count(rejectedCount)} of ${count(responses)} responses not 2xx, ${pct((rejectedCount / responses) * 100)} ${ok ? '≤' : '>'} ${maxRejected}%${detail}`,
     });
   }
 
@@ -53,7 +54,7 @@ export function evaluateChecks(checks: Checks<string, string>, { counters, distr
     results.push({
       id: 'errorRate',
       ok,
-      text: `VU failures ${pct(rate)} ${ok ? '≤' : '>'} ${checks.maxErrorRate}% (${created - completed} of ${created})`,
+      text: `VU failures ${pct(rate)} ${ok ? '≤' : '>'} ${checks.maxErrorRate}% (${count(created - completed)} of ${count(created)})`,
     });
   }
 
@@ -69,17 +70,17 @@ export function evaluateChecks(checks: Checks<string, string>, { counters, distr
         continue;
       }
       const ok = value <= limit;
-      results.push({ id: 'threshold', ok, text: `${key} ${Math.round(value)} ms ${ok ? '≤' : '>'} ${limit} ms` });
+      results.push({ id: 'threshold', ok, text: `${key} ${ms(value)} ${ok ? '≤' : '>'} ${ms(limit)}` });
     }
     for (const name of checks.expect ?? []) {
       const n = counters[name] ?? 0;
-      results.push({ id: 'expect', ok: n > 0, text: n > 0 ? `${name} counted ${n}` : `${name} stayed at 0` });
+      results.push({ id: 'expect', ok: n > 0, text: n > 0 ? `${name} counted ${count(n)}` : `${name} stayed at 0` });
     }
   }
 
   for (const name of checks.forbid ?? []) {
     const n = counters[name] ?? 0;
-    results.push({ id: 'forbid', ok: n === 0, text: n === 0 ? `${name} stayed at 0` : `${name} counted ${n}` });
+    results.push({ id: 'forbid', ok: n === 0, text: n === 0 ? `${name} stayed at 0` : `${name} counted ${count(n)}` });
   }
 
   return results;

@@ -29,10 +29,8 @@ function hashSpread(key: string): number {
 }
 
 /**
- * Whether every subscriber of one organization is told about each change and can fetch it. Nine in ten VUs subscribe
- * to the app stream and react like the frontend's lazy-sync scheduler (merge per scope, then a slot in the spread
- * window the server sends); one in ten writes attachment edits to generate CDC events. `SYNC_MODE=immediate` fetches
- * per notification for comparison. Read `sse.notifications` against `sync.range_fetches` for the merge factor.
+ * Nine in ten VUs subscribe and react like the frontend's lazy-sync scheduler (merge per scope, then a slot in the
+ * server's spread window); one in ten writes edits. `SYNC_MODE=immediate` fetches per notification for comparison.
  */
 export default defineScenario({
   description: 'SSE fan-out: notify-then-fetch under many live subscribers.',

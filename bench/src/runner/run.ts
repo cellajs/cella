@@ -30,7 +30,7 @@ export interface RunOptions {
   /** Holds `baselines/` and `logs/`. */
   dataDir: string;
   short?: boolean;
-  /** One result line at the end instead of the full summary. */
+  /** One result line at the end, no full summary. */
   quiet?: boolean;
   /** History of another runner to carry into a scenario's first baseline file. */
   legacyBaselineFile?: string;
@@ -204,7 +204,8 @@ export async function runScenario(scenario: AnyScenario, options: RunOptions): P
     };
     metrics.counter('vusers.created');
     active++;
-    fn(vu)
+    Promise.resolve()
+      .then(() => fn(vu))
       .then(
         () => metrics.counter('vusers.completed'),
         (error: unknown) => {
@@ -277,13 +278,19 @@ export async function runScenario(scenario: AnyScenario, options: RunOptions): P
   if (active > 0) {
     if (!scenario.run) phaseName = 'drain';
     const drainS = scenario.drainTimeout ?? (scenario.run ? Number.POSITIVE_INFINITY : DEFAULT_DRAIN_TIMEOUT_S);
-    const idle = new Promise<void>((resolve) => (onIdle = resolve));
-    const timedOut = Number.isFinite(drainS) ? delay(drainS * 1000).then(() => 'timeout' as const) : new Promise<never>(() => {});
+    const idle = new Promise<void>((resolve) => {
+      onIdle = resolve;
+    });
+    // The timers are cancelled once the VUs are done: a pending one would keep the process alive.
+    const timers = new AbortController();
+    const wait = (seconds: number) => delay(seconds * 1000, 'timeout' as const, { signal: timers.signal }).catch(() => null);
+    const timedOut = Number.isFinite(drainS) ? wait(drainS) : new Promise<never>(() => {});
     if ((await Promise.race([idle, timedOut])) === 'timeout') {
       display.log(`  ⚠ ${active} VUs still running after ${drainS} s: aborted`);
       stop.abort();
-      await Promise.race([idle, delay(ABORT_GRACE_S * 1000)]);
+      await Promise.race([idle, wait(ABORT_GRACE_S)]);
     }
+    timers.abort();
   }
   clearInterval(ticker);
   tick();

@@ -5,10 +5,8 @@ const sumOf = (counters: Record<string, number>, prefix: string) =>
   Object.entries(counters).reduce((sum, [name, n]) => (name.startsWith(prefix) ? sum + n : sum), 0);
 
 /**
- * How the Yjs relay holds under people typing together. One run drives real y-websocket clients (`src/yjs-typing.ts`):
- * each document is a bench attachment with typing clients, one character every 200-300 ms, and one idle viewer; users
- * on the SSE stream watch as non-editing viewers. The shape comes from `YJS_*` variables (bench README). The driver's
- * full report prints at the end and goes to the log under `yjs-typing`.
+ * One run drives real y-websocket clients (`src/yjs-typing.ts`), shaped by the `YJS_*` variables in the bench README.
+ * The driver's full report prints at the end and goes to the log under `yjs-typing`.
  */
 export default defineScenario({
   description: 'Yjs typing: documents x typing clients on the relay; peer and Saved latency, pg_notify, materializations, fan-out.',
