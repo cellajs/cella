@@ -168,7 +168,9 @@
         // The bench CLI loads each scenario module's default export.
         "bench/scenarios/*.ts",
         // jspdf calls the default export of the packages this stands in for.
-        "frontend/vite/jspdf-optional-stub.ts"
+        "frontend/vite/jspdf-optional-stub.ts",
+        // pino calls a transport module's default export.
+        "shared/src/otel-log-transport.ts"
       ],
       "linter": {
         "rules": {

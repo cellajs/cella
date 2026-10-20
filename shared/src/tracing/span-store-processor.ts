@@ -1,5 +1,5 @@
 import type { Context } from '@opentelemetry/api';
-import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base';
+import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace';
 import type { SpanData, SpanStore } from './tracing.ts';
 
 export interface SpanStoreProcessorOptions {

@@ -1,8 +1,10 @@
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import { trace } from '@opentelemetry/api';
 import pino from 'pino';
 import type { Severity } from '../types.ts';
 import { appConfig } from './config-builder/app-config.ts';
+import type { OtelLogTransportOptions } from './otel-log-transport.ts';
 import { type OtlpSink, resolveOtlpSink } from './otlp-sink.ts';
 import { failedQueryReason, isFailedQueryMessage, replaceInStack } from './utils/failed-query.ts';
 import { scrubText, scrubUrl } from './utils/scrub-url.ts';
@@ -70,6 +72,9 @@ const serializeError = (err: unknown): unknown => {
   return serialized;
 };
 
+/** The OTLP log transport: next to this module in source, and its own entry next to the bundle in a service build. */
+const otelLogTransportPath = fileURLToPath(new URL(`./otel-log-transport.${import.meta.url.endsWith('.ts') ? 'ts' : 'js'}`, import.meta.url));
+
 /** Whether pino can load transport target `name`, which it resolves from this module. */
 const resolvable = (name: string) => {
   try {
@@ -102,13 +107,12 @@ export const createLogger = ({
           options: { colorize: true, singleLine: true, ignore: 'pid,hostname', ...transportOptions },
         };
 
-  // pino-opentelemetry-transport runs in a worker thread with its own OTLP exporter, so it is handed the
-  // sink's options. Enabled in dev too, so logs reach the sink in the production shape while the console
-  // keeps pretty output.
+  // The OTLP log transport runs in a worker thread with its own exporter, so it is handed the sink's options.
+  // Enabled in dev too, so logs reach the sink in the production shape while the console keeps pretty output.
   const otelTarget: pino.TransportTargetOptions | undefined =
     !injectedDestination && !isTest && sink
       ? {
-          target: 'pino-opentelemetry-transport',
+          target: otelLogTransportPath,
           options: {
             resourceAttributes: {
               ...(serviceName && { 'service.name': serviceName }),
@@ -116,14 +120,8 @@ export const createLogger = ({
               // OTel semantic convention: deploy environment (development/staging/production/…).
               'deployment.environment.name': appConfig.mode,
             },
-            logRecordProcessorOptions: {
-              recordProcessorType: 'batch',
-              exporterOptions: {
-                protocol: 'http',
-                httpExporterOptions: sink('logs'),
-              },
-            },
-          },
+            exporterOptions: sink('logs'),
+          } satisfies OtelLogTransportOptions,
         }
       : undefined;
 
@@ -149,8 +147,8 @@ export const createLogger = ({
         return spanContext?.traceId ? { trace_id: spanContext.traceId, span_id: spanContext.spanId, trace_flags: spanContext.traceFlags } : {};
       },
       formatters: {
-        // Keep `level` numeric (10–60) when exporting to OTel so pino-opentelemetry-transport can
-        // map it to an OTel severity; otherwise stringify it for nicer human-facing JSON.
+        // Keep `level` numeric (10–60) when exporting to OTel so the OTel transport can map it to
+        // an OTel severity; otherwise stringify it for nicer human-facing JSON.
         ...(!otelTarget && { level: (label) => ({ level: label.toUpperCase() }) }),
         ...formatters,
       },

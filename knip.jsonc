@@ -78,7 +78,7 @@
     },
     "shared": {
       // pino resolves transport targets by name.
-      "ignoreDependencies": ["pino-opentelemetry-transport", "pino-pretty"]
+      "ignoreDependencies": ["pino-pretty"]
     },
     "yjs": {
       "entry": ["src/tests/integration/global-setup.ts"],

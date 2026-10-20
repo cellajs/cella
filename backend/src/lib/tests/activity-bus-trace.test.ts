@@ -1,5 +1,5 @@
 import { context, propagation, trace } from '@opentelemetry/api';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { createOtelSDK } from 'shared/otel';
 import { collectingExporter } from 'shared/testing/telemetry';
 import { backendSpanNames } from 'shared/tracing';
