@@ -1,7 +1,6 @@
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 import mdx from '@mdx-js/rollup';
-import reactScan from '@react-scan/vite-plugin-react-scan';
 import babel from '@rolldown/plugin-babel';
 import terser from '@rollup/plugin-terser';
 import rehypeShiki from '@shikijs/rehype';
@@ -333,8 +332,9 @@ const viteConfig = {
     manifest: true,
     minify: isDev ? false : 'esbuild',
   },
-  // Exclude workspace SDK from pre-bundling so regenerated types are picked up without restart
-  optimizeDeps: { exclude: ['sdk'] },
+  // Exclude workspace SDK from pre-bundling so regenerated types are picked up without restart.
+  // react-scan is loaded on demand from the debug menu and stays out of the pre-bundle.
+  optimizeDeps: { exclude: ['sdk', 'react-scan'] },
   clearScreen: false,
   plugins: [
     // Generates src/routes/routeTree.gen.ts from file-based routes. Must run before react().
@@ -508,7 +508,7 @@ if (frontendUrl.protocol === 'https:' && !isTunneled) {
 
 // Enable additional plugins only in development mode
 if (appConfig.mode === 'development' && !isStorybook) {
-  viteConfig.plugins?.push(sdkWatch(), reactScan({ enable: false, scanOptions: { showToolbar: false } }));
+  viteConfig.plugins?.push(sdkWatch());
 }
 
 // https://vitejs.dev/config/
