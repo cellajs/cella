@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Highlighting fails, so the viewer takes its plain-text fallback.
 vi.mock('@shikijs/core', () => ({ createHighlighterCore: () => Promise.reject(new Error('highlighter unavailable')) }));
-vi.mock('@shikijs/engine-javascript', () => ({ createJavaScriptRegexEngine: () => ({}) }));
+vi.mock('@shikijs/engine-javascript/raw', () => ({ createJavaScriptRawEngine: () => ({}) }));
 
 const { CodeViewer } = await import('~/modules/docs/code-viewer');
 

@@ -1,6 +1,6 @@
 import { SyntaxHighlightingExtension } from '@blocknote/core/extensions';
 import { createBundledHighlighter, type DynamicImportLanguageRegistration } from '@shikijs/core';
-import { createJavaScriptRegexEngine } from '@shikijs/engine-javascript';
+import { createJavaScriptRawEngine } from '@shikijs/engine-javascript/raw';
 import type { codeBlockConfig } from 'shared/utils/blocknote-schema-configs';
 
 /** BlockNote never asks a grammar for plain text, so every other language `codeBlockConfig` allows needs one here. */
@@ -23,7 +23,7 @@ const createHighlighter = createBundledHighlighter({
     'github-dark-default': () => import('@shikijs/themes/github-dark-default'),
     'github-light-default': () => import('@shikijs/themes/github-light-default'),
   },
-  engine: () => createJavaScriptRegexEngine(),
+  engine: () => createJavaScriptRawEngine(),
 });
 
 /** Highlights code blocks with the theme pair of the docs and the code viewer. */

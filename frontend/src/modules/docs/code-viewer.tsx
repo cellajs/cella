@@ -1,5 +1,5 @@
 import { createHighlighterCore } from '@shikijs/core';
-import { createJavaScriptRegexEngine } from '@shikijs/engine-javascript';
+import { createJavaScriptRawEngine } from '@shikijs/engine-javascript/raw';
 import { useEffect, useState } from 'react';
 import { useUIStore } from '~/modules/ui/ui-store';
 
@@ -10,15 +10,15 @@ interface CodeViewerProps {
 
 /**
  * One grammar and two themes, each imported by path so the build emits only those chunks. The grammar comes with
- * its regular expressions precompiled for the JavaScript engine; the app CSP allows no WebAssembly, which shiki's
- * Oniguruma engine needs. Same grammar and themes as the editor's code blocks.
+ * its regular expressions precompiled, so the raw JavaScript engine runs it without a regex compiler; the app CSP
+ * allows no WebAssembly, which shiki's Oniguruma engine needs. Same grammar and themes as the editor's code blocks.
  */
 let highlighterPromise: ReturnType<typeof createHighlighterCore> | null = null;
 const getHighlighter = () => {
   highlighterPromise ??= createHighlighterCore({
     themes: [import('@shikijs/themes/github-dark-default'), import('@shikijs/themes/github-light-default')],
     langs: [import('@shikijs/langs-precompiled/typescript')],
-    engine: createJavaScriptRegexEngine(),
+    engine: createJavaScriptRawEngine(),
   });
   return highlighterPromise;
 };
