@@ -74,8 +74,7 @@ const defaultDeps: PushSendDeps = {
     if (!vapidDetails) throw new Error('Push sending is off');
     await webpush.sendNotification({ endpoint, keys: { p256dh, auth } }, payload, { TTL: 60 * 60 * 24, timeout: sendTimeoutMs, vapidDetails });
   },
-  // Registration checks the host too; this covers a row stored before its host left `pushServiceHosts`.
-  findSubscriptions: async (userIds) => (await findSubscriptionsByUserIds(userIds)).filter((row) => isPushServiceEndpoint(row.endpoint)),
+  findSubscriptions: (userIds) => findSubscriptionsByUserIds(userIds),
   pruneEndpoints: (endpoints) => deleteSubscriptionsByEndpoints(endpoints),
   // A live SSE connection means the client is provably current: its inbox refreshes off
   // onChangeEvent, so a push would only spend the browser's silent-push budget.
@@ -96,7 +95,8 @@ export async function sendNotificationPush(userIds: string[], payload: Notificat
     const offline = userIds.filter((userId) => !deps.isOnline(userId));
     if (offline.length === 0) return;
 
-    const subscriptions = await deps.findSubscriptions(offline);
+    // Registration checks the host too; this covers rows stored under an earlier host list or check, whatever `deps` reads.
+    const subscriptions = (await deps.findSubscriptions(offline)).filter((row) => isPushServiceEndpoint(row.endpoint));
     if (subscriptions.length === 0) return;
 
     const body = JSON.stringify(payload);
