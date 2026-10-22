@@ -42,7 +42,7 @@ export function MfaPage() {
     <>
       <AuthHeader title={t('c:mfa_header')}>
         <AuthEmailButton email={lastUser.email} onClick={handleCancelMfa} />
-        <p className="space-x-1">{t('c:mfa_subheader.text')}</p>
+        <p>{t('c:mfa_subheader.text')}</p>
       </AuthHeader>
 
       {!isTotpActive && <PasskeyStrategy type="mfa" />}

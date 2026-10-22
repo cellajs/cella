@@ -70,7 +70,7 @@ export function TotpConfirmationForm({ onSubmit, onCancel, loading, label }: Tot
           )}
         />
 
-        <div className="flex w-full flex-col items-stretch gap-2">
+        <div className="flex flex-col gap-2">
           <SubmitButton disabled={!isValid} loading={loading}>
             {t('c:confirm')}
           </SubmitButton>

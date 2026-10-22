@@ -19,7 +19,7 @@ export function AuthLayout() {
   if (!isSignInPage) authFooterLinks.unshift({ id: 'sign_in', href: '/auth/authenticate' });
 
   return (
-    <div className="group rich-gradient container flex min-h-[90svh] flex-col items-center overflow-y-clip pt-8 pb-40 before:fixed after:fixed sm:min-h-svh">
+    <div className="group/auth-layout rich-gradient container flex min-h-[90svh] flex-col items-center overflow-y-clip pt-8 pb-40 before:fixed after:fixed sm:min-h-svh">
       {/* Dividing-colony mark behind the auth card; the module lays it out as the page background and brings it in */}
       <Suspense fallback={null}>
         {/* overscan below 1 zooms in: the colony stays larger than the viewport at every stage, so the window always crops it, and a phone zooms in further */}
@@ -35,13 +35,13 @@ export function AuthLayout() {
           <div className="rich-veil-background" />
         </div>
 
-        <div className="mx-auto flex w-[90vw] xs:w-80 translate-y-4 starting:scale-95 flex-col justify-center gap-4 starting:opacity-0 transition-[opacity,transform] duration-500 ease-out will-change-transform has-[.error-notice]:w-[90vw] sm:w-lg has-[.error-notice]:sm:w-200">
+        <div className="flex w-[90vw] xs:w-80 translate-y-4 starting:scale-95 flex-col gap-4 starting:opacity-0 transition-[opacity,scale] duration-500 ease-out will-change-transform has-[.error-notice]:w-[90vw] sm:w-lg has-[.error-notice]:sm:w-200">
           <main className="flex flex-col gap-4">
             <Outlet />
           </main>
 
           {/* An error notice brings a footer of its own, so the layout's logo and links step aside for it */}
-          <div className="contents group-has-[.error-notice]:hidden">
+          <div className="contents group-has-[.error-notice]/auth-layout:hidden">
             <Link
               to="/about"
               className="focus-effect active:press mx-auto rounded-md p-4 transition-transform sm:hover:scale-105"

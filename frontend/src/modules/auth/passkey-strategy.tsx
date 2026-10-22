@@ -9,7 +9,6 @@ import type { PasskeyVerifyType } from '~/modules/auth/types';
 import { useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
-import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 interface PasskeyStrategyProps {
@@ -19,7 +18,6 @@ interface PasskeyStrategyProps {
 export function PasskeyStrategy({ type }: PasskeyStrategyProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const mode = useUIStore((state) => state.mode);
 
   const navigateAfterAuth = useNavigateAfterAuth();
 
@@ -38,20 +36,18 @@ export function PasskeyStrategy({ type }: PasskeyStrategyProps) {
     },
   });
 
+  // The auth backdrop shows through plain's tint, so here the button brings a surface of its own
   return (
-    <div data-mode={mode} className="group flex flex-col gap-2">
-      {/* The auth backdrop shows through plain's tint, so here the button brings a surface of its own */}
-      <Button
-        type="button"
-        variant={type === 'mfa' ? 'default' : 'plain'}
-        onClick={() => passkeySignIn()}
-        className={cn('w-full gap-1.5 truncate', type !== 'mfa' && 'bg-secondary/60 hover:bg-secondary/80')}
-      >
-        <FingerprintPatternIcon />
-        <span className="truncate">
-          {t('c:sign_in')} {t('c:with').toLowerCase()} {t('c:passkey').toLowerCase()}
-        </span>
-      </Button>
-    </div>
+    <Button
+      type="button"
+      variant={type === 'mfa' ? 'default' : 'plain'}
+      onClick={() => passkeySignIn()}
+      className={cn('w-full gap-1.5', type !== 'mfa' && 'bg-secondary/60 hover:bg-secondary/80')}
+    >
+      <FingerprintPatternIcon />
+      <span className="truncate">
+        {t('c:sign_in')} {t('c:with').toLowerCase()} {t('c:passkey').toLowerCase()}
+      </span>
+    </Button>
   );
 }

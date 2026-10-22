@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { type LegalSubject, legalConfig } from '~/modules/auth/legal/legal-config';
 import { legalOverviewId } from '~/modules/auth/legal/legal-types';
+import { cn } from '~/utils/cn';
 
 interface LegalSectionProps<S extends LegalSubject> {
   subject: S;
@@ -15,7 +16,7 @@ export function LegalSection<S extends LegalSubject>({ subject, id, children }: 
   const isOverview = id === legalOverviewId;
 
   return (
-    <section id={isOverview ? undefined : `spy-${id}`} aria-label={label ?? undefined} className={isOverview ? '' : 'mb-4 pt-4'}>
+    <section id={isOverview ? undefined : `spy-${id}`} aria-label={label ?? undefined} className={cn(!isOverview && 'mb-4 pt-4')}>
       {label && <h3>{label}</h3>}
       {children}
     </section>

@@ -18,8 +18,8 @@ export function MagicLinkSentStep() {
       <AuthHeader
         image={
           <div className="relative">
-            <MailIcon strokeWidth={1} className="size-30 text-foreground" />
-            <SuccessCheckmark className="absolute top-[60px] left-1/2 ml-4" />
+            <MailIcon strokeWidth={1} className="size-30" />
+            <SuccessCheckmark className="absolute top-15 left-1/2 ml-4" />
           </div>
         }
         title={t('c:magic_link_check_email')}
@@ -27,12 +27,10 @@ export function MagicLinkSentStep() {
         <p>{t(isSignup ? 'c:magic_link_check_email.signup.text' : 'c:magic_link_check_email.text', { email })}</p>
       </AuthHeader>
       {!isSignup && (
-        <div className="mt-2 flex flex-col gap-2">
-          <Button type="button" variant="plain" onClick={resetAuthStore}>
-            <ArrowLeftIcon />
-            {t('c:try_another_way')}
-          </Button>
-        </div>
+        <Button type="button" variant="plain" onClick={resetAuthStore} className="mt-2">
+          <ArrowLeftIcon />
+          {t('c:try_another_way')}
+        </Button>
       )}
     </>
   );

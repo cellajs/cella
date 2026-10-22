@@ -23,9 +23,9 @@ export function LegalContact({ addressOnly = false, className }: { addressOnly?:
   const vatNumber = appConfig.company.vatNumber;
 
   return (
-    <div className={cn('not-prose flex', className)}>
-      <span className="mr-6 flex flex-col items-center">
-        <BuildingIcon className="mt-1 shrink-0" />
+    <div className={cn('not-prose flex gap-6', className)}>
+      <span className="flex flex-col items-center">
+        <BuildingIcon className="mt-1" />
         <span className="mt-1 w-px grow bg-border" />
       </span>
       <ul>

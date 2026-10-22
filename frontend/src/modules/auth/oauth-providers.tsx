@@ -8,7 +8,7 @@ import type { AuthStep } from '~/modules/auth/types';
 import { invitationResumePath } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { cn } from '~/utils/cn';
 
 const oauthProviders = [
   { id: 'github', name: 'GitHub' },
@@ -28,7 +28,6 @@ export const enabledOAuthProviders = appConfig.enabledOAuthProviders.flatMap((id
  */
 export function OAuthProviders({ authStep }: { authStep: AuthStep }) {
   const { t } = useTranslation();
-  const mode = useUIStore((state) => state.mode);
   const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
   const inviteOtherAccount = useAuthStore((state) => state.inviteOtherAccount);
 
@@ -68,16 +67,10 @@ export function OAuthProviders({ authStep }: { authStep: AuthStep }) {
   if (!enabledOAuthProviders.length) return null;
 
   return (
-    <div data-mode={mode} className="group flex flex-col gap-2">
+    <div className="flex flex-col gap-2">
       {enabledOAuthProviders.map(({ id, name }) => (
         <Button loading={loadingProvider === id} key={id} type="button" variant="plain" onClick={() => authenticateWithProvider(id)}>
-          <img
-            data-provider={id}
-            src={`/static/auth/${id}-icon.svg`}
-            alt={id}
-            className="size-4 data-[provider=github]:group-data-[mode=dark]:invert"
-            loading="lazy"
-          />
+          <img src={`/static/auth/${id}-icon.svg`} alt={id} className={cn('size-4', id === 'github' && 'dark:invert')} loading="lazy" />
           <span>
             {actionText} {t('c:with').toLowerCase()} {name}
           </span>

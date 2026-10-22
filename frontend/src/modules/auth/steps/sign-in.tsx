@@ -163,7 +163,7 @@ function NewHere({ onStep }: { onStep: (step: 'signUp' | 'waitlist') => void }) 
   if (!appConfig.has.selfRegistration) return <SignUpDisabled onRequest={() => onStep('waitlist')} />;
 
   return (
-    <p className="text-center">
+    <p>
       {t('c:new_here')} <InlineLinkButton onClick={() => onStep('signUp')}>{t('c:sign_up')}</InlineLinkButton>
     </p>
   );
