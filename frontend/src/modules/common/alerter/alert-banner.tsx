@@ -54,7 +54,7 @@ export function AlertBanner({
   const showAlert = !downAlert && !seenAlerts.includes(id);
 
   const alertContent = (
-    <Alert variant={variant} onClose={setAsSeen} className={cn('relative', !animate && className)}>
+    <Alert variant={variant} onClose={setAsSeen} className={animate ? undefined : className}>
       {Icon && <Icon />}
       {title && <AlertTitle className="pr-8">{t(title)}</AlertTitle>}
       {children && <AlertDescription className="pr-8">{children}</AlertDescription>}

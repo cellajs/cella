@@ -82,7 +82,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
               <CardTitle level={1} className="mb-2 justify-center font-normal text-2xl">
                 {title}
               </CardTitle>
-              <CardDescription className="flex-col gap-2 p-0 text-base text-foreground">
+              <CardDescription className="text-base text-foreground">
                 <span className="block">{message}</span>
                 <span className="mt-2 block">
                   <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
@@ -96,10 +96,10 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                   variant="link"
                   size="sm"
                   onClick={() => setShowDetails((prev) => !prev)}
-                  className="flex w-full items-center whitespace-pre-wrap text-destructive"
+                  className="flex w-full whitespace-pre-wrap text-destructive"
                 >
                   <span>{showDetails ? t('c:hide_details') : t('c:show_details')}</span>
-                  <ChevronUpIcon className={cn('transition-transform', showDetails ? 'rotate-0' : 'rotate-180')} />
+                  <ChevronUpIcon className={cn('transition-transform', !showDetails && 'rotate-180')} />
                 </Button>
 
                 <AnimatePresence>
@@ -131,7 +131,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                 </AnimatePresence>
               </CardContent>
             )}
-            <CardFooter className="mt-8 flex flex-wrap justify-center gap-2 p-0 max-sm:flex-col max-sm:items-stretch">
+            <CardFooter className="mt-8 flex-wrap justify-center gap-2 p-0 max-sm:flex-col max-sm:items-stretch">
               {typeof ssoConnectionId === 'string' && (
                 <Button
                   render={<Link to="/auth/sso/$connectionId" params={{ connectionId: ssoConnectionId }} search={{ redirect: location.pathname }} />}

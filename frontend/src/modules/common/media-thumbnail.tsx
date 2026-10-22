@@ -20,14 +20,14 @@ export function MediaThumbnail({ url, contentType, name, className }: MediaThumb
   if (!isImage) return fallback;
 
   return (
-    <Avatar className={cn('size-8 rounded-md bg-muted', className)}>
+    <Avatar className={cn('rounded-md bg-muted', className)}>
       <AvatarImage
         src={url ?? undefined}
         alt={name}
         draggable={false}
-        className="group-active/cell-button:press object-cover group-hover/cell-button:opacity-80"
+        className="group-active/cell-button:press group-hover/cell-button:opacity-80"
       />
-      <AvatarFallback className="rounded-md bg-muted">{fallback}</AvatarFallback>
+      <AvatarFallback>{fallback}</AvatarFallback>
     </Avatar>
   );
 }

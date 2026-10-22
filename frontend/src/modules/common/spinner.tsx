@@ -15,7 +15,7 @@ export function Spinner({ size = 'md', className, noDelay = false }: SpinnerProp
   const { hasStarted } = useMountedState();
 
   return (
-    <div data-started={hasStarted} data-delay={noDelay} className="transition-all duration-300 data-[started=false]:data-[delay=false]:opacity-0">
+    <div data-started={hasStarted} data-delay={noDelay} className="transition-opacity duration-300 data-[started=false]:data-[delay=false]:opacity-0">
       <SpinnerIcon className={cn('mx-auto text-foreground opacity-50', sizes[size], className)} />
     </div>
   );

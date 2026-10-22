@@ -31,7 +31,7 @@ export function DebugDropdown({ className }: DebugDropdownProps) {
       <DropdownMenuTrigger render={<Button variant="ghost" className={cn('size-12', className)} aria-label="toggle debug toolbar" />}>
         🐞
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="right" align="end" sideOffset={24} positionerClassName="z-300" className="w-48 p-1">
+      <DropdownMenuContent side="right" align="end" sideOffset={24} positionerClassName="z-300" className="w-48">
         {debugOptions.map(({ id, icon, onSelect }) => (
           <DropdownMenuItem key={id} onClick={onSelect}>
             <span>{icon}</span>

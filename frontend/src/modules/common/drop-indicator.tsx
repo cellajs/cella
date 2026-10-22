@@ -18,12 +18,7 @@ export function DropIndicator({ edge, className = '', gap = 0 }: DropIndicatorPr
   return (
     <div
       style={dropIndicatorEdgeStyles[edge]}
-      className={cn(
-        'absolute z-100 w-full rounded-sm bg-primary',
-        ['top', 'bottom'].includes(edge) ? 'left-0 h-1 w-full' : 'top-0 h-full w-1',
-        `${edge}-0`,
-        className,
-      )}
+      className={cn('absolute z-100 rounded-sm bg-primary', ['top', 'bottom'].includes(edge) ? 'left-0 h-1 w-full' : 'top-0 h-full w-1', className)}
     />
   );
 }

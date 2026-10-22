@@ -41,7 +41,7 @@ export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwa
       {!expanded && items.length > initialDisplayCount && (
         <Button
           variant="ghost"
-          className="group flex w-full items-center"
+          className="group/expandable-list flex w-full"
           onClick={() => {
             hasExpandedOnceRef.current = true;
             setExpanded(true);
@@ -51,7 +51,7 @@ export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwa
             {items.length - initialDisplayCount}
           </Badge>
           {t(expandText)}
-          <ChevronDownIcon className="opacity-50 transition-opacity group-hover:opacity-100" />
+          <ChevronDownIcon className="opacity-50 transition-opacity group-hover/expandable-list:opacity-100" />
         </Button>
       )}
     </>

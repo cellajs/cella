@@ -20,7 +20,7 @@ export function ScopeBadges({ scopes, withLabels = false }: { scopes: string[]; 
     <ul className="flex flex-wrap items-center gap-1">
       {scopes.map((scope) => (
         <li key={scope} className="flex items-center gap-2">
-          <Badge variant="secondary" className="font-mono text-xs">
+          <Badge variant="secondary" className="font-mono">
             {scope}
           </Badge>
           {withLabels && <span className="text-sm">{scopeLabel(t, scope)}</span>}

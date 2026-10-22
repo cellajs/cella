@@ -48,8 +48,8 @@ export function DownAlert() {
   const textKey = downAlert === 'offline' && offlineAccess ? 'c:offline_access.offline' : (`${titleKey}.text` as const);
 
   return (
-    <div className="pointer-events-auto fixed right-4 left-4 z-2000 justify-center max-sm:top-4 sm:bottom-4">
-      <Alert variant={variant} onClose={dismissAlert} className="w-auto">
+    <div className="pointer-events-auto fixed right-4 left-4 z-2000 max-sm:top-4 sm:bottom-4">
+      <Alert variant={variant} onClose={dismissAlert}>
         <Icon />
         <AlertDescription className="pr-8">
           <span className="font-bold">{t(titleKey)}</span>

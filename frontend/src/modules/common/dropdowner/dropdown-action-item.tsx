@@ -34,7 +34,7 @@ export function DropdownActionItem({
   if (isMobile ?? isDrawer) {
     return (
       <div className="sm:p-1">
-        <Button onClick={onSelect} variant={variant} className={cn('flex w-full items-center', className)}>
+        <Button onClick={onSelect} variant={variant} className={cn('flex w-full', className)}>
           {Icon && <Icon />}
           {children}
         </Button>

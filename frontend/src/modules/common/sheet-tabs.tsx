@@ -29,11 +29,12 @@ export function SheetTabs({ tabs }: SheetTabsProps) {
             <div key={tab.id} className="relative">
               <Button
                 variant="none"
+                press={false}
                 data-current={currentTab.id === tab.id}
-                className="peer group opacity-80 hover:opacity-100 data-[current=true]:opacity-100"
+                className="group/sheet-tab opacity-80 hover:opacity-100 data-[current=true]:opacity-100"
                 onClick={() => setCurrentId(tab.id)}
               >
-                <span className="group-active:press block">{t(tab.label)}</span>
+                <span className="group-active/sheet-tab:press block">{t(tab.label)}</span>
                 {currentTab.id === tab.id && (
                   <motion.span
                     initial={false}

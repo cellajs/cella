@@ -26,7 +26,6 @@ export function SuccessCheckmark({ className, size = 50 }: SuccessCheckmarkProps
           cx="26"
           cy="26"
           r="25"
-          fill="none"
         />
         <path
           className="origin-center animate-[checkmark-stroke_.3s_cubic-bezier(0.65,0,0.45,1)_1.1s_forwards] stroke-4 stroke-success [stroke-dasharray:48] [stroke-dashoffset:48]"

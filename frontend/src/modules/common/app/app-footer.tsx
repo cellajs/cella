@@ -26,7 +26,7 @@ function AppFooterLink({ id, href }: FooterLinkProps) {
 
   return (
     <li>
-      <Button size="xs" variant="ghost" className="" render={<Link to={href} draggable={false} />}>
+      <Button size="xs" variant="ghost" render={<Link to={href} draggable={false} />}>
         {t(`c:${id}` as TKey)}
       </Button>
     </li>
@@ -50,14 +50,7 @@ export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: A
         <AppFooterLink key={link.id} id={link.id} href={link.href} />
       ))}
       <li>
-        <Button
-          ref={contactButtonRef}
-          variant="ghost"
-          className=""
-          size="xs"
-          aria-label="Open contact form"
-          onClick={() => contactFormHandler(contactButtonRef)}
-        >
+        <Button ref={contactButtonRef} variant="ghost" size="xs" aria-label="Open contact form" onClick={() => contactFormHandler(contactButtonRef)}>
           {t('c:contact')}
         </Button>
       </li>
