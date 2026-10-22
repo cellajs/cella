@@ -18,6 +18,27 @@ import { tw } from '~/utils/tw';
 
 const avatarBoxClass = tw('mx-3 my-2 flex shrink-0 group-data-[subitem=true]/options-item:mx-4 group-data-[subitem=true]/options-item:my-1');
 
+interface MembershipFlagButtonProps {
+  icon: IconComponent;
+  title: string;
+  onClick: () => void;
+}
+
+function MembershipFlagButton({ icon: Icon, title, onClick }: MembershipFlagButtonProps) {
+  return (
+    <Button
+      variant="none"
+      size="sm"
+      className="link-decoration active:link-decoration-strong focus-inset -mx-1 -my-0.5 h-5 rounded-sm px-1 text-primary text-xs leading-3 opacity-80 hover:underline hover:opacity-100"
+      aria-label={`Click ${title}`}
+      onClick={onClick}
+    >
+      <Icon className="size-3.25 group-data-[subitem=true]/options-item:size-3" />
+      {title}
+    </Button>
+  );
+}
+
 interface MenuSheetItemEditProps {
   item: UserMenuItem;
   /** The list this item is ordered in, sorted; the arrow keys on the handle step through it. */
@@ -129,25 +150,5 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
         </div>
       </div>
     </motion.div>
-  );
-}
-
-interface MembershipFlagButtonProps {
-  icon: React.ElementType;
-  title: string;
-  onClick: () => void;
-}
-function MembershipFlagButton({ icon: Icon, title, onClick }: MembershipFlagButtonProps) {
-  return (
-    <Button
-      variant="none"
-      size="sm"
-      className="link-decoration active:link-decoration-strong focus-inset -mx-1 -my-0.5 h-5 rounded-sm px-1 text-primary text-xs leading-3 opacity-80 hover:underline hover:opacity-100"
-      aria-label={`Click ${title}`}
-      onClick={onClick}
-    >
-      <Icon className="size-3.25 group-data-[subitem=true]/options-item:size-3" />
-      {title}
-    </Button>
   );
 }

@@ -25,7 +25,7 @@ interface NavigationStoreState {
   toggleSection: (sectionKey: string) => void;
   resetSections: () => void;
 
-  menuSheetPanel: string | null; // Open bottom panel in the menu sheet; at most one
+  menuSheetPanel: string | null; // Open bottom panel of a nav sheet; at most one
   toggleMenuSheetPanel: (panel: string) => void;
 
   floatingNavActive: boolean; // Floating nav is visible, which hides the bottom bar

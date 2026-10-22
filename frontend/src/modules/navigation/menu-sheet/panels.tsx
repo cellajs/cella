@@ -1,6 +1,6 @@
 import { ChevronDownIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { type KeyboardEvent, type ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { FocusTrap } from '~/modules/common/focus-trap';
@@ -51,7 +51,7 @@ function MenuSheetPanel({ id, label, children }: MenuSheetPanelProps) {
 /** Same length as the panel collapse, so the bar and the panel under it arrive together. */
 const pinGlideTiming: KeyframeAnimationOptions = { duration: 200, easing: 'ease-in-out' };
 
-/** Sticks to the bottom of the menu sheet and overlays its content while a panel is expanded. */
+/** Sticks to the bottom of its nav sheet and overlays the sheet's content while a panel is expanded. */
 export function MenuSheetPanels() {
   const menuSheetPanel = useNavigationStore((state) => state.menuSheetPanel);
   const toggleMenuSheetPanel = useNavigationStore((state) => state.toggleMenuSheetPanel);
@@ -84,16 +84,13 @@ export function MenuSheetPanels() {
     glideRef.current = Math.abs(offset) >= 1 ? bar.animate([{ transform: `translateY(${offset}px)` }, { transform: 'none' }], pinGlideTiming) : null;
   }, [hasOpenPanel]);
 
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      // An open hover card takes the Escape first; the next one closes the panel
-      if (event.key === 'Escape' && hasOpenPanel && !isHoverContentOpen()) {
-        event.stopPropagation();
-        toggleMenuSheetPanel(menuSheetPanel);
-      }
-    },
-    [hasOpenPanel, menuSheetPanel, toggleMenuSheetPanel],
-  );
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    // An open hover card takes the Escape first; the next one closes the panel
+    if (event.key === 'Escape' && hasOpenPanel && !isHoverContentOpen()) {
+      event.stopPropagation();
+      toggleMenuSheetPanel(menuSheetPanel);
+    }
+  };
 
   return (
     <div ref={barRef} className={cn('relative z-20 mt-auto', hasOpenPanel && 'sticky bottom-0')} onKeyDown={handleKeyDown}>

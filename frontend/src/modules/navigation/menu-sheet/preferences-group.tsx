@@ -20,7 +20,7 @@ export function PreferencesGroup({ title, help, className, children }: Preferenc
     <div data-help-open={helpOpen} className={cn('group/prefs flex flex-col gap-4', className)}>
       <div className="flex items-center gap-2 px-3">
         <PanelHeading>{title}</PanelHeading>
-        {help && <HelpToggle open={helpOpen} onToggle={() => setHelpOpen(!helpOpen)} className="-my-1" />}
+        {help && <HelpToggle open={helpOpen} onToggle={() => setHelpOpen((prev) => !prev)} className="-my-1" />}
       </div>
       {children}
     </div>
@@ -36,10 +36,7 @@ interface PreferenceSwitchProps {
   className?: string;
 }
 
-/**
- * A switch with its label and an optional description. The description follows its group's help toggle through the
- * `group/prefs` data attribute, so the row needs no help state of its own.
- */
+/** A labelled switch whose description follows its group's help toggle through `group/prefs`, so the row holds no help state. */
 export function PreferenceSwitch({ id, label, description, checked, onCheckedChange, className }: PreferenceSwitchProps) {
   const descriptionId = `${id}-description`;
 

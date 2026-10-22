@@ -27,12 +27,11 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
   const offlineAccess = useUIStore((state) => state.offlineAccess);
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
 
-  const canAccess = offlineAccess ? (isOnline ? true : !item.membership.archived) : true;
+  const canAccess = !offlineAccess || isOnline || !item.membership.archived;
   const isSubitem = !item.submenu;
 
-  // Own count for grouping channels, plus submenu aggregation when sub-rows don't render their own badges
-  // (detailedMenu off, or an archived item whose submenu is never rendered).
-  const aggregateSubmenu = !!item.submenu?.length && (!detailedMenu || !!item.membership.archived);
+  // Own count for grouping channels, plus the submenu's when its rows are not rendered (detailedMenu off, or an archived item)
+  const aggregateSubmenu = !!item.submenu?.length && (!detailedMenu || item.membership.archived);
   const channelIds = [
     ...(seenGroupingChannelTypes.has(item.entityType) ? [item.id] : []),
     ...(aggregateSubmenu && item.submenu ? item.submenu.map((sub) => sub.id) : []),
@@ -63,7 +62,7 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
         className,
       )}
     >
-      <span className="absolute top-3 left-0 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
+      <span className="absolute inset-y-3 left-0 w-1 rounded-lg bg-primary opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
       <span className="relative z-1 mx-3 my-2 size-8 shrink-0 rounded-full bg-card group-data-[subitem=true]/menu-sheet-item:mx-4 group-data-[subitem=true]/menu-sheet-item:size-6">
         <EntityAvatar
           className="size-8 bg-card group-hover/menu-sheet-item:opacity-100 group-data-[subitem=true]/menu-sheet-item:size-6 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80"

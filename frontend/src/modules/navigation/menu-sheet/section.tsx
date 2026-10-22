@@ -32,7 +32,7 @@ interface MenuSheetSectionProps {
 export function MenuSheetSection({ items, options }: MenuSheetSectionProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
-  const { toggleSection } = useNavigationStore.getState();
+  const toggleSection = useNavigationStore((state) => state.toggleSection);
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -40,7 +40,7 @@ export function MenuSheetSection({ items, options }: MenuSheetSectionProps) {
   const archivedSectionKey = `${options.entityType}-archived`;
   const isArchivedVisible = useNavigationStore((state) => state.activeSections?.[archivedSectionKey] ?? true);
   const isSectionVisible = useNavigationStore((state) => state.activeSections?.[options.entityType] ?? true);
-  const archivedItems = items.filter((item) => item.membership?.archived);
+  const archivedItems = items.filter((item) => item.membership.archived);
   const archivedCount = archivedItems.length;
   const activeChannelIds = collectChannelIds(items, { archived: false });
   const archivedChannelIds = collectChannelIds(items, { archived: true });
@@ -50,9 +50,7 @@ export function MenuSheetSection({ items, options }: MenuSheetSectionProps) {
     options.createAction?.(ref);
   };
 
-  const handleToggleEditing = () => {
-    setIsEditing(!isEditing);
-  };
+  const handleToggleEditing = () => setIsEditing((prev) => !prev);
 
   const handleToggleArchived = () => toggleSection(archivedSectionKey);
 
@@ -96,7 +94,7 @@ export function MenuSheetSection({ items, options }: MenuSheetSectionProps) {
                 )}
                 <AnimatePresence initial={false}>
                   {isArchivedVisible && (
-                    <motion.ul key={`${options.entityType}-archived`} {...collapseMotion} className="overflow-hidden">
+                    <motion.ul key={archivedSectionKey} {...collapseMotion} className="overflow-hidden">
                       {isEditing ? (
                         <MenuSheetItemsListEdit items={items} isArchived={true} options={options} />
                       ) : (

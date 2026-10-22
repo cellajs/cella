@@ -12,7 +12,6 @@ function buildInitialMenu<const T extends readonly { entityType: ChannelEntityTy
 
 const baseMenu = buildInitialMenu(appConfig.menuStructure);
 
-/** Builds a user menu from a map of channel entity types to their items; `opts` enables detailed submenus. */
 export function buildMenu(byType: Map<MenuSection['entityType'] | MenuSection['subentityType'], UserMenuItem[]>, menuStructure: MenuSection[]) {
   const menu = { ...baseMenu };
 

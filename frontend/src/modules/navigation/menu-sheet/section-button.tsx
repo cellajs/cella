@@ -36,7 +36,7 @@ export function MenuSheetSectionButton({
   // Cumulative over the section's non-archived, non-muted items.
   const sectionUnseenCount = useUnseenCount(channelIds);
 
-  const createButtonRef = useRef(null);
+  const createButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <div className="sticky top-0 z-10">
@@ -69,7 +69,7 @@ export function MenuSheetSectionButton({
             {isSectionVisible && !!items.length && (
               <motion.div key={`settings-${options.entityType}`} {...widenMotion} className="shrink-0 max-sm:hidden">
                 <TooltipButton toolTipContent={t('c:manage_content')} side="bottom" sideOffset={10}>
-                  <Button className="shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={() => onToggleEditing()}>
+                  <Button className="shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={onToggleEditing}>
                     <Settings2Icon className="size-5" />
                   </Button>
                 </TooltipButton>

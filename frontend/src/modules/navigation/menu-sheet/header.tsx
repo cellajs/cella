@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { BellIcon } from 'lucide-react';
-import { type RefObject, useRef } from 'react';
+import { type ReactNode, type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { Logo } from '~/modules/common/logo';
@@ -16,7 +16,7 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
 
 /** Stacks a nav sheet over the menu sheet; floating-nav layouts have no bottom bar to open it from. */
-function openStackedNavSheet(id: NavItemId, content: React.ReactNode, triggerRef: RefObject<HTMLButtonElement | null>) {
+function openStackedNavSheet(id: NavItemId, content: ReactNode, triggerRef: RefObject<HTMLButtonElement | null>) {
   useNavigationStore.getState().setNavSheetOpen(id);
   useSheeter.getState().create(content, { ...navSheetOptions(id, triggerRef), id: `${id}-sheet`, side: 'left', disablePointerDismissal: true });
 }
@@ -24,8 +24,8 @@ function openStackedNavSheet(id: NavItemId, content: React.ReactNode, triggerRef
 export function MenuSheetHeader() {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  const notificationsButtonRef = useRef<HTMLButtonElement | null>(null);
-  const accountButtonRef = useRef<HTMLButtonElement | null>(null);
+  const notificationsButtonRef = useRef<HTMLButtonElement>(null);
+  const accountButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <div className="h-14 p-3 pb-1">

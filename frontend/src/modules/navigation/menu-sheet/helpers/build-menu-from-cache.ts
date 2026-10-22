@@ -6,7 +6,7 @@ import { flattenInfiniteData } from '~/query/basic/flatten';
 import { queryClient } from '~/query/query-client';
 
 /** Entity types referenced by the menu structure (entity + subentity) */
-const menuEntityTypes = Array.from(
+export const menuEntityTypes = Array.from(
   new Set(appConfig.menuStructure.flatMap((section) => [section.entityType, section.subentityType].filter(Boolean))),
 ) as ChannelEntityType[];
 
@@ -14,7 +14,7 @@ const menuEntityTypes = Array.from(
 export const menuItemsFromList = (data: unknown): UserMenuItem[] => {
   // biome-ignore lint/suspicious/noExplicitAny: query data shape is heterogeneous across entity types.
   const items = data ? flattenInfiniteData<any>(data as any) : [];
-  return items.filter((item): item is UserMenuItem => !!(item as Partial<UserMenuItem>).membership);
+  return items.filter((item: Partial<UserMenuItem>): item is UserMenuItem => !!item.membership);
 };
 
 /** Assumes entity lists were already enriched with memberships by the cache subscriber (initChannelEnrichment). */
@@ -28,5 +28,3 @@ export function buildMenuFromCache(userId: string): UserMenu {
 
   return buildMenu(byType, appConfig.menuStructure);
 }
-
-export { menuEntityTypes };

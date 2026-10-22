@@ -17,8 +17,8 @@ interface NavItemButtonProps {
 
 export const navIconStrokeWidth = 1.8;
 
-// Larger below sm, where the bottom bar shows them.
-const navItemIconClass = tw('size-6 shrink-0 transition-transform group-hover:scale-110 sm:size-5');
+/** A nav icon's classes; larger below sm, where the bottom bar shows them. */
+export const navItemIconClass = tw('size-6 shrink-0 transition-transform group-hover:scale-110 sm:size-5');
 
 function NavItemIcon({ navItem }: { navItem: NavItem }) {
   if (navItem.iconSlot) {

@@ -1,4 +1,3 @@
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { useEffect } from 'react';
@@ -21,8 +20,8 @@ export function MenuSheet() {
 
   const { menu, isLoading } = useMenu(user?.id);
 
-  useEffect(() => {
-    const cleanups = [
+  useEffect(
+    () =>
       monitorForElements({
         canMonitor({ source }) {
           return isMenuItemDragData(source.data) && !source.data.item.membership.archived;
@@ -51,10 +50,8 @@ export function MenuSheet() {
           await updateMembership(buildMembershipUpdate(sourceItem, { displayOrder: newOrder }));
         },
       }),
-    ];
-
-    return combine(...cleanups);
-  }, [menu]);
+    [menu],
+  );
 
   if (isLoading || !user) return <Spinner />;
 

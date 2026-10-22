@@ -56,7 +56,7 @@ function AccountButton(props: AccountButtonProps) {
         ) : undefined
       }
     >
-      <Icon className="size-4" aria-hidden="true" />
+      <Icon className="size-4" />
       {label}
     </Button>
   );
@@ -76,7 +76,7 @@ export function AccountSheet() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const frameRef = useRef<HTMLDivElement | null>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const { hasStarted } = useMountedState();
 
   useEffect(() => {
@@ -85,8 +85,7 @@ export function AccountSheet() {
     firstRow?.focus();
   }, []);
 
-  // Unless the nav is kept open, the nav sheets (this one, or the menu with this one stacked on it in a floating-nav
-  // layout) close like they do for the links below; the profile sheet then returns focus to the nav button
+  // Unless keepNavOpen, every sheet closes, a menu sheet under this one too; the profile sheet then returns focus to the nav button
   const openProfile = () => {
     if (!useNavigationStore.getState().keepNavOpen) {
       const navTrigger = useSheeter.getState().get('nav-sheet')?.triggerRef.current;

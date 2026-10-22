@@ -73,7 +73,7 @@ interface InfoButtonProps {
 function InfoButton({ icon: Icon, label, ...props }: InfoButtonProps) {
   return (
     <Button variant="ghost" className="w-full justify-start text-left font-normal" {...props}>
-      <Icon className="size-4" aria-hidden="true" />
+      <Icon className="size-4" />
       {label}
     </Button>
   );
@@ -81,8 +81,8 @@ function InfoButton({ icon: Icon, label, ...props }: InfoButtonProps) {
 
 export function InfoContent() {
   const { t } = useTranslation();
-  const supportRef = useRef<HTMLButtonElement | null>(null);
-  const contactRef = useRef<HTMLButtonElement | null>(null);
+  const supportRef = useRef<HTMLButtonElement>(null);
+  const contactRef = useRef<HTMLButtonElement>(null);
   const { data: health, isError, isPending } = useQuery(healthQueryOptions());
   const statusEntries = isPending ? [] : gradeStatusEntries(isError ? undefined : health);
   const allHealthy = statusEntries.length > 0 && statusEntries.every(({ status }) => status === 'healthy');
@@ -111,7 +111,7 @@ export function InfoContent() {
               className="gap-1 text-xs opacity-50 hover:opacity-70"
               onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}
             >
-              <ExternalLinkIcon className="size-3" aria-hidden="true" />
+              <ExternalLinkIcon className="size-3" />
               {t('c:details')}
             </Button>
           )}

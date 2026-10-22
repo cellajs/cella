@@ -1,5 +1,4 @@
-import type { CSSProperties } from 'react';
-import { Suspense } from 'react';
+import { type CSSProperties, Suspense } from 'react';
 import { appConfig } from 'shared';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
@@ -25,7 +24,6 @@ interface SidebarNavProps {
   onNavItemClick: TriggerNavItemFn;
 }
 
-/** Widths are set as CSS custom properties; data attributes drive opacity, position and pointer-events. */
 export function SidebarNav({ onNavItemClick }: SidebarNavProps) {
   const { hasStarted } = useMountedState();
   const isDesktop = useBreakpointAbove('2xl');

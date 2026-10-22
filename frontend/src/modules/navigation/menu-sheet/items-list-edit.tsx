@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetDraggableItem } from '~/modules/navigation/menu-sheet/draggable-item';
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
+import { MenuSheetNoItems } from '~/modules/navigation/menu-sheet/items-list';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
@@ -13,13 +13,10 @@ interface MenuSheetItemsListEditProps {
 }
 
 export function MenuSheetItemsListEdit({ items, isArchived, options }: MenuSheetItemsListEditProps) {
-  const { t } = useTranslation();
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
   const [submenuArchivedVisible, setSubmenuArchivedVisible] = useState<Record<string, boolean>>({});
 
-  if (options && items.length === 0) {
-    return <li className="py-2 text-center text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: options.entityType })}</li>;
-  }
+  if (options && items.length === 0) return <MenuSheetNoItems entityType={options.entityType} />;
 
   const filteredItems = sortAndFilterMenu(items, isArchived);
 

@@ -1,5 +1,5 @@
 import type { LinkComponentProps } from '@tanstack/react-router';
-import type { RefObject } from 'react';
+import type { ComponentType, ReactNode, RefObject } from 'react';
 import type { IconComponent } from '~/modules/common/icons/types';
 import type { UserMenuItem } from '~/modules/me/types';
 import type { navItems } from '~/modules/navigation/nav-items';
@@ -9,20 +9,20 @@ export type MenuItemDragData = DraggableItemData<UserMenuItem, 'menuItem'>;
 
 export type NavItemId = (typeof navItems)[number]['id'];
 
-export type TriggerNavItemFn = (id: NavItemId, ref?: React.RefObject<HTMLButtonElement | null>) => void | Promise<void>;
+export type TriggerNavItemFn = (id: NavItemId, ref?: RefObject<HTMLButtonElement | null>) => void | Promise<void>;
 
 export type NavItem = {
   id: NavItemId;
   icon: IconComponent;
   type: 'base' | 'floating' | 'footer' | 'hidden';
-  sheet?: () => React.ReactNode;
+  sheet?: () => ReactNode;
   action?: (ref: RefObject<HTMLButtonElement | null>) => void;
   href?: string;
   mirrorOnMobile?: boolean;
   /** Replaces the default `icon` rendering (e.g. avatar, loader); receives the base icon classes and the item's `icon`. */
-  iconSlot?: React.ComponentType<{ className?: string; icon: IconComponent }>;
+  iconSlot?: ComponentType<{ className?: string; icon: IconComponent }>;
   /** Renders over the button (e.g. an unseen counter); receives position classes per bar. */
-  badgeSlot?: React.ComponentType<{ isActive: boolean; className?: string }>;
+  badgeSlot?: ComponentType<{ isActive: boolean; className?: string }>;
 };
 
 export type EntityRoute = { to: LinkComponentProps['to']; params: LinkComponentProps['params']; search: LinkComponentProps['search'] };

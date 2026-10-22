@@ -47,12 +47,11 @@ type SearchSelection = EnrichedChannel | UserBase | HistoryEntry;
 export function AppSearch() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const scrollAreaRef = useRef<HTMLDivElement | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const [searchValue, setSearchValue] = useState('');
-  // Debounced so a request does not fire on every keystroke.
   const debouncedSearchValue = useDebounce(searchValue, 300, { immediateValue: '' });
-  // Group collapse state lives here so it persists across reloads while typing; it resets with the dialog.
+  // Collapse state lives here, so it survives result reloads while typing; it resets with the dialog.
   const [collapsedTypes, setCollapsedTypes] = useState<Partial<Record<string, boolean>>>({});
   const toggleCollapsed = (entityType: string) => setCollapsedTypes((prev) => ({ ...prev, [entityType]: !prev[entityType] }));
 
@@ -72,7 +71,6 @@ export function AppSearch() {
 
   const saveRecentSearch = (value: string) => {
     useNavigationStore.setState((state) => {
-      // Most recent on top, with normalized containment dedupe (shared with docs search).
       const searches = addRecentSearch(state.recentSearches, value);
       return searches === state.recentSearches ? state : { ...state, recentSearches: searches };
     });
@@ -106,12 +104,11 @@ export function AppSearch() {
   const firstTypeWithResults = searchableEntityTypes.find((entityType) => (resultsByType[entityType] ?? []).length > 0);
   // The debounce gap counts as loading, so the skeleton shows in place of the empty state.
   const isDebouncePending = searchValue.length > 0 && searchValue !== debouncedSearchValue;
-  // The gap is included here too, keeping the input spinner visible while typing. Query activity only counts
-  // while there is a query: an empty q shares its cache key with default list pages, whose refetches would
-  // otherwise keep the spinner alive after the input is cleared.
+  // Counts only with a query: an empty q shares its cache key with the default list pages, whose refetches would hold the spinner.
   const isQueryFetching = hasQuery && queries.some((query) => query.isFetching);
   const isFetching = isDebouncePending || isQueryFetching;
   const isLoading = searchValue.length > 0 && (isDebouncePending || queries.some((query) => query.isLoading));
+  const hasHistoryToShow = !searchValue.length && recentSearches.length > 0;
 
   const openItem = (item: EnrichedChannel | UserBase) => {
     saveRecentSearch(searchValue);
@@ -155,17 +152,17 @@ export function AppSearch() {
         />
         {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h and overflow are cleared. */}
         <ScrollArea id="item-search" ref={scrollAreaRef} className="sm:h-[40vh]">
-          {!isLoading && notFound && !(!searchValue.length && !!recentSearches.length) && (
+          {!isLoading && notFound && !hasHistoryToShow && (
             <ComboboxEmpty className="h-full sm:h-[36vh]">
               <ContentPlaceholder
                 icon={SearchIcon}
-                title={debouncedSearchValue.length ? 'c:no_resource_found' : 'c:global_search.text'}
+                title={hasQuery ? 'c:no_resource_found' : 'c:global_search.text'}
                 titleProps={{ resource: t('c:results').toLowerCase(), appName: appConfig.name }}
               />
             </ComboboxEmpty>
           )}
           {isLoading && <SearchResultsSkeleton />}
-          <ComboboxList className="h-full max-h-none overflow-visible" hidden={notFound ? !!searchValue.length || !recentSearches.length : isLoading}>
+          <ComboboxList className="h-full max-h-none overflow-visible" hidden={notFound ? !hasHistoryToShow : isLoading}>
             {notFound && <SearchHistoryGroup searches={recentSearches} onRemove={removeRecentSearch} />}
             {!notFound && (
               <div className="p-1">

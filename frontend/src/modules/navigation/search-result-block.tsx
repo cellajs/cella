@@ -15,7 +15,6 @@ interface SearchResultBlockProps {
   entityType: ChannelEntityType | 'user';
   /** Hide the leading separator (used for the first visible group). */
   hideSeparator?: boolean;
-  /** Owned by the search dialog so it survives result reloads while typing. */
   collapsed: boolean;
   onToggleCollapsed: () => void;
 }
@@ -27,7 +26,7 @@ export function SearchResultBlock({ results, entityType, hideSeparator = false, 
   if (!results.length) return null;
 
   return (
-    <div key={entityType} className="flex w-full flex-col gap-1">
+    <div className="flex w-full flex-col gap-1">
       {!hideSeparator && <ComboboxSeparator className="h-0 border-t border-dashed bg-transparent" />}
       <ComboboxGroup>
         <button
@@ -40,31 +39,29 @@ export function SearchResultBlock({ results, entityType, hideSeparator = false, 
           <span className="grow" />
           <ChevronDownIcon className={cn('size-4 transition-transform', !collapsed && 'rotate-180')} />
         </button>
-        {results.map((item: SearchResult) => {
-          return (
-            <ComboboxItem
-              key={item.id}
-              value={item}
-              disabled={isChannelType && 'membership' in item && item.membership === null}
-              data-already-member={isChannelType && 'membership' in item && item.membership !== null}
-              className={cn('group justify-between', collapsed && 'hidden')}
-            >
-              <div className="flex items-center gap-2">
-                <EntityAvatar type={entityType} className="size-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
-                <span className="link-decoration group-data-[already-member=true]:active:link-decoration-strong truncate font-medium group-data-[already-member=true]:hover:underline">
-                  {item.name}
-                </span>
-              </div>
+        {results.map((item) => (
+          <ComboboxItem
+            key={item.id}
+            value={item}
+            disabled={isChannelType && 'membership' in item && item.membership === null}
+            data-already-member={isChannelType && 'membership' in item && item.membership !== null}
+            className={cn('group justify-between', collapsed && 'hidden')}
+          >
+            <div className="flex items-center gap-2">
+              <EntityAvatar type={entityType} className="size-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
+              <span className="link-decoration group-data-[already-member=true]:active:link-decoration-strong truncate font-medium group-data-[already-member=true]:hover:underline">
+                {item.name}
+              </span>
+            </div>
 
-              <div className="flex items-center">
-                <Badge size="sm" variant="plain" className="hidden gap-1 group-data-[already-member=true]:flex">
-                  <UserIcon />
-                  <span className="max-sm:hidden">{t('c:member')}</span>
-                </Badge>
-              </div>
-            </ComboboxItem>
-          );
-        })}
+            <div className="flex items-center">
+              <Badge size="sm" variant="plain" className="hidden gap-1 group-data-[already-member=true]:flex">
+                <UserIcon />
+                <span className="max-sm:hidden">{t('c:member')}</span>
+              </Badge>
+            </div>
+          </ComboboxItem>
+        ))}
       </ComboboxGroup>
     </div>
   );

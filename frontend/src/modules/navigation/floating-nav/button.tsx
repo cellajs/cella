@@ -12,7 +12,7 @@ export interface FloatingNavItem {
   ariaLabel?: string;
   /** Defaults to true. */
   visible?: boolean;
-  /** Defaults to 'right'; with several items the first visible one defaults to 'left'. */
+  /** Defaults to 'right'. */
   direction?: 'left' | 'right';
   /** Text shown after the icon while `labelVisible`, expanding the circle into a pill (e.g. a first-visit hint). */
   label?: string;

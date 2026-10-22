@@ -33,6 +33,7 @@ export function AppNav() {
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
+  const setKeepNavOpen = useNavigationStore((state) => state.setKeepNavOpen);
 
   const triggerNavItem: TriggerNavItemFn = (id, ref) => {
     const triggerRef = ref || { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null };
@@ -73,13 +74,10 @@ export function AppNav() {
     ['Alt + M', () => triggerNavItem('menu')],
   ]);
 
-  // keepNavOpen is pinned only on desktop, with the preference set and a sheet open.
   useEffect(() => {
     const shouldPin = isDesktop && keepOpenPreference && !!navSheetOpen;
-    if (useNavigationStore.getState().keepNavOpen !== shouldPin) {
-      useNavigationStore.getState().setKeepNavOpen(shouldPin);
-    }
-  }, [isDesktop, keepOpenPreference, navSheetOpen]);
+    if (useNavigationStore.getState().keepNavOpen !== shouldPin) setKeepNavOpen(shouldPin);
+  }, [isDesktop, keepOpenPreference, navSheetOpen, setKeepNavOpen]);
 
   // A primitive select: matches are new objects on every router write, so selecting them would re-render on each URL change.
   const floatingNavConfigJson = useRouterState({ select: (state) => serializeFloatingNavConfig(state.matches) });

@@ -45,14 +45,10 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
     return () => clearTimeout(timeout);
   }, [hasExpandedLabel]);
 
-  // Count items that could be visible (for body class and empty check)
-  const visibleItems = items.filter((item) => item.visible !== false);
-  const isActive = isMobile && visibleItems.length > 0;
+  const isActive = isMobile && items.some((item) => item.visible !== false);
 
-  // Keep body class for CSS consumers (app-layout, menu-sheet header)
+  // The active flag reaches CSS through the body class (app-layout, menu sheet header) and React through the store (bottom bar)
   useBodyClass({ [bodyClass]: isActive });
-
-  // Sync to store for direct React consumers (bottom-bar-nav)
   useEffect(() => {
     setFloatingNavActive(isActive);
     return () => setFloatingNavActive(false);
@@ -63,7 +59,6 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
   return (
     <nav id="floating-nav">
       {items.map((item) => {
-        // Combine global showButtons (held while a label collapses) with individual item visibility
         const isItemVisible = (showButtons || isLabelCollapsing) && item.visible !== false;
         return (
           <FloatingNavButton
@@ -73,7 +68,7 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
             icon={item.icon}
             onClick={item.onClick}
             ariaLabel={item.ariaLabel}
-            direction={item.direction ?? 'right'}
+            direction={item.direction}
             label={item.label}
             labelVisible={item.labelVisible}
           />

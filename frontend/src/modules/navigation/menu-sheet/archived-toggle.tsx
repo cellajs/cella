@@ -40,5 +40,3 @@ export function MenuSheetArchivedToggle({ onToggle, archivedCount, archivedChann
     </div>
   );
 }
-
-MenuSheetArchivedToggle.displayName = 'MenuSheetArchivedToggle';

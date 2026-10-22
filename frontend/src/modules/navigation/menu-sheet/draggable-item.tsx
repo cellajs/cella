@@ -1,9 +1,7 @@
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
-import { attachClosestEdge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { useEffect, useRef, useState } from 'react';
-import type { EntityType } from 'shared';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetArchivedToggle } from '~/modules/navigation/menu-sheet/archived-toggle';
@@ -12,8 +10,6 @@ import { MenuSheetItemEdit } from '~/modules/navigation/menu-sheet/item-edit';
 import { MenuSheetItemsListEdit } from '~/modules/navigation/menu-sheet/items-list-edit';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { getDraggableItemData } from '~/utils/get-draggable-item-data';
-
-type DragDropData = { item: UserMenuItem; itemType: EntityType };
 
 interface MenuSheetDraggableItemProps {
   item: UserMenuItem;
@@ -34,17 +30,14 @@ export function MenuSheetDraggableItem({
   detailedMenu,
   onToggleSubmenuArchived,
 }: MenuSheetDraggableItemProps) {
-  const dragRef = useRef(null);
+  const dragRef = useRef<HTMLDivElement>(null);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
-  const canDropItem = (sourceData: DragDropData) => {
-    return (
-      isMenuItemDragData(sourceData) &&
-      sourceData.item.id !== item.id &&
-      sourceData.itemType === item.entityType &&
-      siblings.some((sibling) => sibling.id === sourceData.item.id)
-    );
-  };
+  const canDropItem = (sourceData: Record<string | symbol, unknown>) =>
+    isMenuItemDragData(sourceData) &&
+    sourceData.item.id !== item.id &&
+    sourceData.itemType === item.entityType &&
+    siblings.some((sibling) => sibling.id === sourceData.item.id);
 
   useEffect(() => {
     const element = dragRef.current;
@@ -54,7 +47,7 @@ export function MenuSheetDraggableItem({
       draggable({ element, dragHandle: element, canDrag: () => !item.membership.archived, getInitialData: () => data }),
       dropTargetForElements({
         element,
-        canDrop: ({ source }) => canDropItem(source.data as DragDropData),
+        canDrop: ({ source }) => canDropItem(source.data),
         getIsSticky: () => true,
         getData: ({ input }) => attachClosestEdge(data, { element, input, allowedEdges: ['top', 'bottom'] }),
         onDrag: ({ self }) => setClosestEdge(extractClosestEdge(self.data)),

@@ -10,6 +10,13 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
+/** The row a section shows while it has no items. */
+export function MenuSheetNoItems({ entityType }: { entityType: ChannelEntityType }) {
+  const { t } = useTranslation();
+
+  return <li className="py-2 text-center text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: t(entityType).toLowerCase() })}</li>;
+}
+
 interface MenuSheetItemsListProps {
   items: UserMenuItem[];
   entityType: ChannelEntityType;
@@ -22,10 +29,12 @@ export function MenuSheetItemsList({ items, entityType, isArchived, options, cla
   const { t } = useTranslation();
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
 
-  const createButtonRef = useRef(null);
+  const createButtonRef = useRef<HTMLButtonElement>(null);
 
-  const renderNoItems = () =>
-    options?.createAction ? (
+  if (items.length === 0) {
+    if (!options?.createAction) return <MenuSheetNoItems entityType={entityType} />;
+
+    return (
       <li className="flex items-center">
         <Button ref={createButtonRef} className="w-full" variant="ghost" onClick={() => options.createAction?.(createButtonRef)}>
           <PlusIcon className="size-3.5" />
@@ -34,27 +43,17 @@ export function MenuSheetItemsList({ items, entityType, isArchived, options, cla
           </span>
         </Button>
       </li>
-    ) : (
-      <li className="py-2 text-center text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: t(entityType).toLowerCase() })}</li>
     );
+  }
 
-  const renderItems = () => {
-    const filteredItems = sortAndFilterMenu(items, isArchived);
-    return (
-      <>
-        {filteredItems.map((item) => (
-          <li className={cn('my-1', !!item.submenu?.length && detailedMenu && 'submenu-section relative')} key={item.id}>
-            <MenuSheetItem item={item} className={className} icon={options?.icon} />
-            {!item.membership.archived && !!item.submenu?.length && detailedMenu && (
-              <ul>
-                <MenuSheetItemsList entityType={item.submenu[0].entityType} items={item.submenu} isArchived={false} />
-              </ul>
-            )}
-          </li>
-        ))}
-      </>
-    );
-  };
-
-  return items.length === 0 ? renderNoItems() : renderItems();
+  return sortAndFilterMenu(items, isArchived).map((item) => (
+    <li className={cn('my-1', !!item.submenu?.length && detailedMenu && 'submenu-section relative')} key={item.id}>
+      <MenuSheetItem item={item} className={className} icon={options?.icon} />
+      {!item.membership.archived && !!item.submenu?.length && detailedMenu && (
+        <ul>
+          <MenuSheetItemsList entityType={item.submenu[0].entityType} items={item.submenu} isArchived={false} />
+        </ul>
+      )}
+    </li>
+  ));
 }
