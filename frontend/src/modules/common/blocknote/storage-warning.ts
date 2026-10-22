@@ -28,7 +28,7 @@ function markWarned() {
   }
 }
 
-/** Whether an estimate says the device runs low: under 100 MB free, or over 90% of the quota used. Unknown sizes are not low. */
+/** Whether an estimate says the device runs low on storage; unknown sizes are not low. */
 export function isStorageLow({ usage, quota }: StorageEstimate): boolean {
   if (usage === undefined || !quota) return false;
   return quota - usage < storageLowFreeBytes || usage / quota > storageLowUsedRatio;

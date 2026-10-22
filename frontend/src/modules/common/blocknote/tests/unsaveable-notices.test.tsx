@@ -172,7 +172,7 @@ describe('parking edits that can never be saved', () => {
     await vi.waitFor(async () => expect(await db.unsaveableYDocs.count()).toBe(0));
   });
 
-  it('a clean document parks nothing: its stored copy goes, silently', async () => {
+  it('a clean document parks nothing: its stored copy goes, with no notice', async () => {
     const writer = fakeWriter();
 
     parkUnsaveable({ yDoc: documentWith('Saved'), writer, unsynced: false, generation: 'gen-1' }, scope, 'deleted');

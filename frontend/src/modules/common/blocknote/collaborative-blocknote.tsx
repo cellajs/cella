@@ -49,11 +49,9 @@ function SyncStatus({ text }: SyncStatusProps) {
 }
 
 /**
- * BlockNote host for an entity description, with one save mode fixed by config. With Yjs on, edits save through the
- * relay, or through the API's HTTP routes while the relay is out of reach: the live editor shows once its connection is
- * ready (synced, or loaded from storage), and until then the static, with a status saying why (connecting, offline).
- * Lost edit rights, a deleted entity and a refused document show the static, saying so. With Yjs off, a standalone
- * editor writes through `updateData`. Without edit rights, the static alone.
+ * BlockNote host for an entity description, with one save mode fixed by config: with Yjs on, a collaborative editor that
+ * saves through the relay (or the API's HTTP routes); with Yjs off, a standalone one writing through `updateData`.
+ * Without edit rights, the static alone.
  */
 export function CollaborativeBlockNote({
   entityType,
@@ -108,7 +106,6 @@ function CollaborativeHost({ scope, updateData, staticView, ...blockNoteProps }:
   // Stable random color for cursor labels
   const [userColor] = useState(getRandomColor);
 
-  // The token names this entity only; the relay closes the socket when it expires, and the refreshed token reconnects it.
   const { token, denied: tokenDenied, deleted: tokenDeleted } = useYjsToken({ ...scope, enabled: isOnline });
 
   // A stored document opens without a token, offline too: its editor mounts from storage.
@@ -124,7 +121,6 @@ function CollaborativeHost({ scope, updateData, staticView, ...blockNoteProps }:
   const deleted = tokenDeleted || (connection?.deleted ?? false);
   // Edit rights withdrawn: the token or HTTP routes answered 403, or the relay closed with 4003.
   const denied = tokenDenied || stopReason === 'denied';
-  const stoppedText = stopReason === 'expired' ? t('error:sync_token_expired.text') : t('c:collaboration_stopped.text');
   // Not ready yet, or ready from storage before either transport synced it.
   const connecting = isOnline && !denied && !deleted && !stopped && (!connection?.ready || connection.transport === 'none');
   const [connectingNoticed, setConnectingNoticed] = useState(false);
@@ -137,21 +133,18 @@ function CollaborativeHost({ scope, updateData, staticView, ...blockNoteProps }:
     };
   }, [connecting]);
 
-  // Not ready yet, or a reseeded document syncing afresh: nothing was typed into it, so the editor that replaces the
-  // static once it is ready loses nothing. A deleted entity, lost rights or a refused document leave nothing to edit:
-  // edits the server never saved are offered as a copy, outside the editor.
+  const statusText = () => {
+    if (deleted) return t('c:deleted');
+    if (denied) return t('c:read_only');
+    if (stopped) return stopReason === 'expired' ? t('error:sync_token_expired.text') : t('c:collaboration_stopped.text');
+    if (!isOnline) return t(connection?.ready && connection.unsynced ? 'c:collaboration_offline.text' : 'c:offline');
+    if (connection?.transport === 'http') return t('c:sync_limited.text');
+    return connectingNoticed ? t('c:connecting') : null;
+  };
+  const status = statusText();
+
+  // Not ready (nothing typed into it yet), or nothing left to edit: unsaved edits are offered as a copy, outside the editor.
   if (!connection?.ready || deleted || denied || stopReason === 'refused') {
-    const status = deleted
-      ? t('c:deleted')
-      : denied
-        ? t('c:read_only')
-        : stopped
-          ? stoppedText
-          : !isOnline
-            ? t('c:offline')
-            : connectingNoticed
-              ? t('c:connecting')
-              : null;
     return (
       <>
         {status && <SyncStatus text={status} />}
@@ -160,21 +153,9 @@ function CollaborativeHost({ scope, updateData, staticView, ...blockNoteProps }:
     );
   }
 
-  // Nothing typed after the session ended could reach a server, so the editor stops taking edits. Offline, it takes
-  // them, and the connection keeps them until a server saved them. Over HTTP, peers' edits arrive with each pull.
-  const status = stopped
-    ? stoppedText
-    : !isOnline
-      ? t(connection.unsynced ? 'c:collaboration_offline.text' : 'c:offline')
-      : connection.transport === 'http'
-        ? t('c:sync_limited.text')
-        : connectingNoticed
-          ? t('c:connecting')
-          : null;
   return (
     <>
       {status && <SyncStatus text={status} />}
-      {/* Storing failed for good: unsynced edits live in this page only, and the unload warning asks. */}
       {connection.storageFailed && <SyncStatus text={t('c:storage_unavailable.text')} />}
       <BlockNote
         // New per rebuilt document, so the editor binds the fresh fragment.
@@ -183,11 +164,11 @@ function CollaborativeHost({ scope, updateData, staticView, ...blockNoteProps }:
         updateData={(blocks) => void updateData(blocks, true)}
         collaboration={{ provider: { awareness: connection.awareness }, fragment: connection.fragment, user: { name: user.name, color: userColor } }}
         {...blockNoteProps}
-        // Opened for editing: from the first focus on, the document is stored and stays editable offline.
         onFocus={() => {
           connection.markStored();
           blockNoteProps.onFocus?.();
         }}
+        // Nothing typed after the session ended could reach a server; offline, edits are kept until a server saved them.
         editable={blockNoteProps.editable !== false && !stopped}
       />
     </>

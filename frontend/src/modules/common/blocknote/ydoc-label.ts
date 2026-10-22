@@ -16,7 +16,7 @@ export function firstLineOf(node: Y.XmlFragment | Y.XmlElement): string | null {
   for (const child of node.toArray()) {
     let text: string | null = null;
     if (child instanceof Y.XmlText) {
-      const delta = child.toDelta() as { insert?: unknown }[];
+      const delta: { insert?: unknown }[] = child.toDelta();
       text =
         delta
           .map((op) => (typeof op.insert === 'string' ? op.insert : ''))
@@ -30,7 +30,6 @@ export function firstLineOf(node: Y.XmlFragment | Y.XmlElement): string | null {
   return null;
 }
 
-/** The first line of the document the updates build. */
 export function firstLineOfUpdates(updates: Uint8Array[]): string | null {
   const doc = new Y.Doc();
   try {

@@ -12,10 +12,9 @@ type DescribedEntity = { id: string; organizationId: string; description: string
 type DescriptionMutation = (ops: { description: string }) => Promise<unknown>;
 
 /**
- * Collaborative-session half of description persistence: the relay owns the write (materializing through the same
- * update op), and card and list views render from the query cache, not the Y.Doc, so the detail and the list row are
- * patched until the relay's row arrives over SSE. The patch carries the type's registered derivation; `extra` fields
- * apply after it, so a caller can override them.
+ * Collaborative half of description persistence: the relay writes the row through the same update operation, and card
+ * and list views render from the query cache, not the Y.Doc, so the detail and the list row are patched until the
+ * relay's row arrives over SSE. The patch carries the type's registered derivation; `extra` fields override it.
  */
 export function patchCollaborativeDescription(
   entityType: ProductEntityType,
@@ -31,9 +30,8 @@ export function patchCollaborativeDescription(
 }
 
 /**
- * Standalone half, for an app with Yjs off: the prepared update mutation, skipped for an unchanged
- * body and for a row deleted meanwhile, because an unmount flush would resurrect it. With Yjs on, an
- * editor never writes a description through REST.
+ * Standalone half, for an app with Yjs off: the prepared update mutation, skipped for an unchanged body and for a row
+ * deleted meanwhile, because an unmount flush would resurrect it. With Yjs on, an editor never writes one through REST.
  */
 export async function persistStandaloneDescription(
   entityType: ProductEntityType,

@@ -22,13 +22,10 @@ function encodeSyncStep1(doc: Y.Doc) {
 }
 
 /**
- * Self-healing for a lost update. When an inbound update depends on one that never arrived, Yjs
- * parks it and everything after it in `store.pendingStructs`: edits stop propagating while the
- * connection looks healthy, and nothing else notices. A fresh Step1 on the live socket clears it:
- * the relay answers it as it answers a handshake, with exactly the missing range, then asks for what
- * it lacks itself. The watch polls the store and sends one once the park has lasted
- * `parkedGraceMs` while connected, with a cooldown so a gap the relay itself cannot fill does not
- * turn into a resync storm. The socket stays open, so a resync costs no upgrade or authorization.
+ * Resyncs a document stuck on a lost update. Yjs parks an inbound update whose dependency never arrived, and everything
+ * after it, in `store.pendingStructs`: edits stop while the connection looks healthy. A fresh Step1 on the open socket
+ * clears it, with no upgrade or authorization: the relay answers it as a handshake, with exactly the missing range, and
+ * asks for what it lacks. The cooldown keeps a gap the relay cannot fill from turning into a resync storm.
  */
 export function watchPendingStructs(doc: Y.Doc, provider: ResyncableProvider, now: () => number = Date.now): () => void {
   let parkedSince = 0;

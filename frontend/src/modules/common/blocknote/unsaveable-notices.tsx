@@ -26,8 +26,8 @@ type ParkSource = Pick<YjsConnection, 'yDoc' | 'writer' | 'unsynced' | 'generati
 
 /**
  * Takes a document out of sync for good: unsynced edits are parked through its writer and offered in a notice to copy,
- * and a clean document's stored copy goes silently. The document is read before this returns, so the caller may destroy
- * it right after. Without a writer, or when parking fails, the notice holds the state in memory.
+ * and a clean document's stored copy is deleted with no notice. The document is read before this returns, so the caller
+ * may destroy it right after. Without a writer, or when parking fails, the notice holds the state in memory.
  */
 export function parkUnsaveable(source: ParkSource, scope: YjsDocScope, reason: UnsaveableReason): void {
   const { writer, yDoc } = source;
@@ -123,7 +123,7 @@ async function discardUnsaveable(record: UnsaveableYDocRecord, toastId: string) 
 interface NoticeActionsProps {
   /** Resolves whether the clipboard took the text; null when the parked edits could not be read. */
   onCopy: (() => Promise<boolean>) | null;
-  onDiscard: () => Promise<void>;
+  onDiscard: () => void;
 }
 
 function NoticeActions({ onCopy, onDiscard }: NoticeActionsProps) {
@@ -138,7 +138,7 @@ function NoticeActions({ onCopy, onDiscard }: NoticeActionsProps) {
           <CopiedIcon copied={!!copied} icon={CopyIcon} />
           {copied ? t('c:copied') : copied === false ? t('c:copy_failed') : t('c:copy_text')}
         </Button>
-        <Button variant="ghost" size="xs" onClick={() => void onDiscard()}>
+        <Button variant="ghost" size="xs" onClick={onDiscard}>
           {t('c:discard')}
         </Button>
       </div>

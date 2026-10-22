@@ -68,7 +68,7 @@ describe('useYjsToken refusals', () => {
     expect(getYjsToken).toHaveBeenCalledOnce();
   });
 
-  it('a token the route issues is neither, and lands in the user store (positive control)', async () => {
+  it('a token the route issues is neither, and goes into the user store (positive control)', async () => {
     vi.mocked(getYjsToken).mockResolvedValue({ token: 'token-v2' } as never);
 
     expect(await renderToken()).toEqual({ token: 'token-v2', denied: false, deleted: false });

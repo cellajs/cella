@@ -469,7 +469,7 @@ describe('yjs connection: token refusals', () => {
     await act(async () => provider.emit('status', { status: 'connected' }));
     await close(provider, 4001);
   };
-  /** The refetch a refusal starts lands a new token before the next attempt. */
+  /** The refetch a refusal starts stores a new token before the next attempt. */
   const fetchToken = (tokenKey: string, token: string) => act(async () => userStore.getState().setYjsToken(tokenKey, token));
 
   it('must not stop syncing via an API outage at token refresh: an expired token refused again never counts', async () => {
@@ -737,7 +737,7 @@ describe('yjs connection: a write from outside the relay', () => {
     await relaySaved(provider);
     await editLocally(provider);
 
-    // The write lands while this tab holds an edit the relay has not saved, and again after a reconnect.
+    // The write arrives while this tab holds an edit the relay has not saved, and again after a reconnect.
     const opened = providers.length;
     await relayUpdate(provider);
     await act(async () => provider.dropSocket());

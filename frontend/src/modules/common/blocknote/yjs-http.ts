@@ -1,9 +1,3 @@
-/**
- * Yjs over HTTP: when the relay's socket has not synced a few seconds after starting while the API answers, a
- * connection pulls peers' edits and posts its own through the API's pull and push routes, and hands back to the
- * socket at its first sync.
- */
-
 import * as Y from 'yjs';
 import { ApiError } from '~/lib/api';
 import { pullYjsDiff, pushYjsDiff } from '~/modules/common/blocknote/query';
@@ -39,7 +33,7 @@ export interface HttpLinkHandlers {
   onEnd(reason: UnsaveableReason): void;
 }
 
-/** A connection's HTTP transport while the relay is out of reach. */
+/** A connection's HTTP transport while the relay is out of reach: it pulls peers' edits and posts its own through the API's routes. */
 export interface HttpLink {
   /**
    * Pulls, then posts the handshake update when unsynced. Resolves true once a pull answered; a failed pull is retried
@@ -166,8 +160,7 @@ export function createHttpLink(conn: YjsConnection, handlers: HttpLinkHandlers):
     try {
       const answer = await pullYjsDiff(conn.scope, Y.encodeStateVector(doc));
       if (!isCurrent(session)) return false;
-      // The first answer names the document's generation, as the relay's `Generation` frame does; another one later
-      // means the server reseeded the document.
+      // The first answer names the generation, as the relay's `Generation` frame does; another one later is a reseed.
       if (conn.generation === null) conn.generation = answer.generation;
       else if (answer.generation !== conn.generation) {
         finish('replaced');

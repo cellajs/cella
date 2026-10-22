@@ -193,7 +193,7 @@ export function useDescriptionSlot({
     return () => cancelAnimationFrame(frame);
   }, [editing, flushCursor]);
 
-  // A frame after ready: the editor's first effect pass is over, so a remount of its view in dev StrictMode no longer drops
+  // A frame after ready, once the editor's first effect pass is over: a remount of its view in dev StrictMode would drop
   // the focus and selection the cursor flush places.
   const readyFrameRef = useRef(0);
   const onEditorReady = useCallback(() => {
@@ -212,7 +212,7 @@ export function useDescriptionSlot({
       const { editing, canEdit, cursorAtPoint } = optionsRef.current;
       if (editing || !canEdit) return;
 
-      const checkboxWrapper = (event.target as Element).closest('.checklist-checkbox-wrapper');
+      const checkboxWrapper = event.target instanceof Element ? event.target.closest('.checklist-checkbox-wrapper') : null;
       const checkboxId = checkboxWrapper?.querySelector<HTMLInputElement>('input.checklist-checkbox')?.dataset.checkboxId;
       if (checkboxId) {
         // The editor toggles it, so the static's input stays as rendered and the click starts no editing.

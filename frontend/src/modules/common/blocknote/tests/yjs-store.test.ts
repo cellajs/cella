@@ -242,7 +242,7 @@ describe('yjs store: proofs', () => {
   const otherTabRow = (text: string) => {
     const doc = new Y.Doc();
     doc.getText('t').insert(0, text);
-    return db.yDocUpdates.add({ ...key, update: Y.encodeStateAsUpdate(doc), local: 1, tabId: 'closed-tab' }) as Promise<number>;
+    return db.yDocUpdates.add({ ...key, update: Y.encodeStateAsUpdate(doc), local: 1, tabId: 'closed-tab' });
   };
 
   it("a clean proof clears only this page's local rows; unsynced stays while another's are left", async () => {
@@ -504,7 +504,7 @@ describe('yjs store: quota', () => {
     expect(broadcasts.at(-1)).toMatchObject({ rowId: null });
     spy.mockRestore();
 
-    // Later edits are no longer stored, but still broadcast.
+    // Once storing failed, later edits are not stored, but still broadcast.
     editLocally(doc, writer, ' more');
     await flushYjsStore();
     expect(await rows()).toHaveLength(0);

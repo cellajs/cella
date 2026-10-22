@@ -1,14 +1,9 @@
-/**
- * The app's own channel between tabs for collaborative documents: one BroadcastChannel per user, carrying each message
- * with the document's generation, so a tab never merges another generation's edits. It follows the per-user database:
- * open on the bound user's name, shut while none is bound (signed out, or impersonating).
- */
-
 import { getLocalUserDb, subscribeOwnerChange, type YDocKey } from '~/query/local-user-db';
 
 /**
- * A message between tabs. `update` carries a local edit and the row id its tab stored it under, null when that write
- * failed; `hello` follows a load, and peers answer it with an `update` holding what `vector` lacks.
+ * A message on the app's channel between tabs, one BroadcastChannel per user. Each carries the document's generation, so
+ * a tab never merges another generation's edits. `update` carries a local edit and the row id its tab stored it under,
+ * null when that write failed; `hello` follows a load, and peers answer it with an `update` holding what `vector` lacks.
  */
 export type TabMessage =
   | { t: 'update'; key: string; generation: string; update: Uint8Array; rowId: number | null }
@@ -20,7 +15,7 @@ export const yDocKeyString = (key: YDocKey) => `${key.entityType}:${key.entityId
 const handlers = new Set<(message: TabMessage) => void>();
 let channel: BroadcastChannel | null = null;
 
-/** The channel of the bound user's database, opened on first use; null while no database is bound. */
+/** The channel of the bound user's database, opened on first use; null while none is bound (signed out, or impersonating). */
 function currentChannel(): BroadcastChannel | null {
   const name = getLocalUserDb()?.name;
   if (!name || typeof BroadcastChannel === 'undefined') {

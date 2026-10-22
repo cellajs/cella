@@ -1,13 +1,8 @@
-/**
- * Stores collaborative documents opened for editing in the per-user database (the Yjs tables of local-user-db.ts), so
- * they load before the provider connects and stay editable offline. A `local` row holds an edit no server answer has
- * proven saved, and only a proof clears it.
- */
-
 import { onlineManager } from '@tanstack/react-query';
 import { liveQuery } from 'dexie';
 import { useEffect, useState } from 'react';
 import { appConfig, type ProductEntityType } from 'shared';
+import { isRecord } from 'shared/utils/as-record';
 import type * as Y from 'yjs';
 import type { YjsDocScope } from '~/modules/common/blocknote/query';
 import { warnOnStoragePressure } from '~/modules/common/blocknote/storage-warning';
@@ -85,7 +80,10 @@ export interface StoreScope {
 /** The proof that the server holds a document's local rows: a saved handshake, or a connection that turned clean. */
 export type StoreProof = { kind: 'handshake'; applied: AppliedRows; vector: Uint8Array } | { kind: 'clean' };
 
-/** Writes one connection's document to the store. */
+/**
+ * Writes the document of a connection opened for editing to the per-user database, so it loads before the provider
+ * connects and stays editable offline. A `local` row holds an edit no server answer proved saved; only a proof clears it.
+ */
 export interface YDocWriter {
   /** Starts storing: a full snapshot, plus a local row when `unsynced`. Idempotent. */
   start(doc: Y.Doc, scope: StoreScope, unsynced: boolean): void;
@@ -147,8 +145,8 @@ function track(task: Promise<void>): Promise<void> {
 
 /** True for the browser's quota error, which Dexie may wrap. */
 function isQuotaError(error: unknown): boolean {
-  const names = [(error as Error | undefined)?.name, (error as { inner?: Error } | undefined)?.inner?.name];
-  return names.includes('QuotaExceededError');
+  if (!isRecord(error)) return false;
+  return error.name === 'QuotaExceededError' || (isRecord(error.inner) && error.inner.name === 'QuotaExceededError');
 }
 
 /** Deletes a document's metadata, base and rows; inside a `rw` transaction over the three tables. */
@@ -319,8 +317,7 @@ class StoreWriter implements YDocWriter {
     const scope = this.scope;
     this.close();
     // Before `start` the writer knows no generation, so `doc` may hold another history: the stored state alone. After
-    // it, `doc` is read now, since the caller destroys it right after; Yjs is loaded by then, as the writer's first
-    // write loaded it.
+    // it, `doc` is read now, since the caller destroys it next; the writer's first write loaded Yjs.
     const state = scope && yjsLoaded ? yjsLoaded.encodeStateAsUpdate(doc) : null;
     return this.enqueueTask(async () => {
       const Yjs = await loadYjs();
@@ -346,7 +343,6 @@ class StoreWriter implements YDocWriter {
     });
   }
 
-  /** The document was destroyed with its connection: flush what it holds, and no longer count it as open. */
   private release() {
     this.released = true;
     void this.flush();
@@ -448,8 +444,7 @@ class StoreWriter implements YDocWriter {
         record = undefined;
       }
 
-      const addRow = (update: Uint8Array, isLocal: boolean) =>
-        db.yDocUpdates.add({ ...key, update, local: isLocal ? 1 : 0, tabId: storeTabId }) as Promise<number>;
+      const addRow = (update: Uint8Array, isLocal: boolean) => db.yDocUpdates.add({ ...key, update, local: isLocal ? 1 : 0, tabId: storeTabId });
 
       if (!record) {
         // First stored, or deleted under this tab: the whole document, with one local row of it when unsynced. Own
@@ -604,10 +599,9 @@ function scheduleEviction() {
 const openKeys = () => new Set([...writers].filter((writer) => !writer.released).map((writer) => yDocKeyString(writer.key)));
 
 /**
- * Deletes the least recently opened documents while more than `maxStoredDocs` are stored or more than
- * `maxStoredBytes` in all, and in session mode every one not opened within `sessionKeepMs`. Never one with
- * unsynced edits, one open in this tab, or one opened within `evictMinAgeMs` (which may be open in another);
- * parked edits are never evicted. Then warns when the device's storage runs low, or the limits stay reached.
+ * Deletes the least recently opened documents past `maxStoredDocs` or `maxStoredBytes`, and in session mode past
+ * `sessionKeepMs`: never one with unsynced edits, open in this tab or opened within `evictMinAgeMs`, and never parked
+ * edits. Then warns when the device's storage runs low, or the limits stay reached.
  */
 export async function evictYDocs(): Promise<void> {
   const db = getLocalUserDb();
@@ -643,10 +637,8 @@ export async function evictYDocs(): Promise<void> {
   await warnOnStoragePressure({ limitsReached: count > maxStoredDocs || bytes > maxStoredBytes });
 }
 
-/** Stored documents with unsynced edits. */
 const listUnsyncedYDocs = (db: LocalUserDatabase) => db.yDocs.filter((record) => record.unsynced === 1).toArray();
 
-/** Stored documents with unsynced edits, then parked ones. */
 async function readUnsaved(db: LocalUserDatabase): Promise<UnsavedYDoc[]> {
   return db.transaction('r', db.yDocs, db.unsaveableYDocs, async () => {
     const stored = await listUnsyncedYDocs(db);
@@ -687,7 +679,7 @@ function watchLocalUserDb<T>(query: (db: LocalUserDatabase) => Promise<T>, empty
   };
 }
 
-/** Stored rows with unsynced edits plus parked ones, live; for the sign-out dialog. */
+/** The unsaved documents, live, for the sign-out dialog. */
 export function watchUnsavedYDocs(onChange: (docs: UnsavedYDoc[]) => void): () => void {
   return watchLocalUserDb(readUnsaved, [], onChange);
 }
