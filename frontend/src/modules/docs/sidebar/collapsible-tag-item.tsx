@@ -68,10 +68,8 @@ function CollapsibleTagItemBase<T>({
   const collapseOnClick = isExpanded && isAtTag;
 
   return (
-    <Collapsible open={isExpanded} render={<SidebarMenuItem className="group/tag relative" data-expanded={isExpanded} data-active={isActive} />}>
-      <div className="pointer-events-none absolute top-4.5 bottom-3 left-2.5 hidden flex-col items-center group-data-[expanded=true]/tag:flex">
-        <div className="w-px flex-1 bg-muted-foreground/30" />
-      </div>
+    <Collapsible open={isExpanded} render={<SidebarMenuItem className="group/tag" data-expanded={isExpanded} data-active={isActive} />}>
+      <div className="pointer-events-none absolute top-4.5 bottom-3 left-2.5 hidden w-px bg-muted-foreground/30 group-data-[expanded=true]/tag:block" />
       <CollapsibleTrigger
         render={
           <Link
@@ -83,8 +81,7 @@ function CollapsibleTagItemBase<T>({
             draggable={false}
             className={cn(
               buttonVariants({ variant: 'ghost' }),
-              'group focus-inset h-8 w-full pl-5 font-normal opacity-80',
-              'group-data-[active=true]/tag:bg-accent group-data-[active=true]/tag:font-medium group-data-[expanded=true]/tag:opacity-100',
+              'group focus-inset h-8 w-full pl-5 font-normal opacity-80 group-data-[active=true]/tag:bg-accent group-data-[active=true]/tag:font-medium group-data-[expanded=true]/tag:opacity-100',
               triggerClassName,
             )}
             onMouseEnter={!isExpanded ? onPrerender : undefined}
@@ -98,10 +95,10 @@ function CollapsibleTagItemBase<T>({
         <span className="text-muted-foreground text-xs opacity-0 transition-opacity group-data-[expanded=true]/tag:hidden sm:group-hover:opacity-100">
           {tag.count}
         </span>
-        <ChevronDownIcon className="invisible ml-auto size-4 opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/tag:rotate-180" />
+        <ChevronDownIcon className="invisible ml-auto opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/tag:rotate-180" />
       </CollapsibleTrigger>
       <CollapsibleContent className={collapsiblePanelClass}>
-        <div className="relative flex flex-col px-0 py-1">
+        <div className="relative flex flex-col py-1">
           <ActiveIndicator activeIndex={activeItemIndex} layoutId={layoutId} isMobile={isMobile} />
           {items.map((item, index) => (
             <div key={itemKey(item)}>{renderItem(item, activeItemIndex === index)}</div>

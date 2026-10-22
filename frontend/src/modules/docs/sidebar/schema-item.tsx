@@ -10,8 +10,8 @@ interface SchemaItemProps {
 
 function SchemaItemBase({ schema, isActive }: SchemaItemProps) {
   return (
-    <SidebarHashItem to="/docs/schemas" hash={schemaAnchor(schema)} isActive={isActive} className="justify-start">
-      <span className="truncate text-sm">{schema.name}</span>
+    <SidebarHashItem to="/docs/schemas" hash={schemaAnchor(schema)} isActive={isActive}>
+      <span className="truncate">{schema.name}</span>
     </SidebarHashItem>
   );
 }

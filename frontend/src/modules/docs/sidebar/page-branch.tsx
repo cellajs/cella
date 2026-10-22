@@ -41,7 +41,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
   return (
     <Collapsible
       open={hasChildren && isExpanded}
-      render={<SidebarMenuItem className={cn('relative', isRoot ? 'group/page-root' : 'group/page-parent')} data-expanded={isExpanded} />}
+      render={<SidebarMenuItem className={isRoot ? 'group/page-root' : 'group/page-parent'} data-expanded={isExpanded} />}
     >
       {/* Vertical guideline (parent tier only), reads expanded state from the row scope */}
       {!isRoot && hasChildren && (
@@ -60,10 +60,10 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
           data-expanded={isExpanded}
           className={cn(
             buttonVariants({ variant: 'ghost' }),
-            'group w-full justify-start gap-2 pl-5 text-left lowercase',
+            'w-full justify-start text-left lowercase',
             isRoot
-              ? 'px-3 font-medium data-[active=true]:bg-accent data-[active=true]:font-semibold'
-              : 'focus-inset h-8 font-normal opacity-80 data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:opacity-100 data-[expanded=true]:opacity-100',
+              ? 'data-[active=true]:bg-accent data-[active=true]:font-semibold'
+              : 'focus-inset h-8 pl-5 font-normal opacity-80 data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:opacity-100 data-[expanded=true]:opacity-100',
           )}
           onClick={(event) => {
             if (isModifiedClick(event)) return;
@@ -94,7 +94,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
           {hasChildren && (
             <ChevronDownIcon
               className={cn(
-                'ml-auto size-4 shrink-0 opacity-40 transition-transform duration-200',
+                'ml-auto shrink-0 opacity-40 transition-transform duration-200',
                 isRoot ? 'group-data-[expanded=true]/page-root:rotate-180' : 'group-data-[expanded=true]/page-parent:rotate-180',
               )}
             />
@@ -106,7 +106,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
         <CollapsibleContent className={collapsiblePanelClass}>
           {isRoot ? (
             // A <ul> keeps the nested SidebarMenuItem <li> rows off this row's own <li> (invalid HTML)
-            <ul className="flex list-none flex-col gap-1 py-1">
+            <ul className="flex flex-col gap-1 py-1">
               {children.map((child) => (
                 <PageBranch
                   key={child.page.id}
@@ -119,7 +119,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
               ))}
             </ul>
           ) : (
-            <div className="relative flex flex-col px-0 py-0.5">
+            <div className="relative flex flex-col py-0.5">
               <ActiveIndicator activeIndex={activeChildIndex} layoutId={layoutId} isMobile={isMobile} />
               {children.map((child) => (
                 <PageLeaf key={child.page.id} page={child.page} isActive={child.page.id === activePageId} />
@@ -138,7 +138,7 @@ function PageLeaf({ page, isActive }: { page: DocPage; isActive: boolean }) {
     <Button
       variant="ghost"
       size="sm"
-      className={cn(sidebarLeafClass, 'justify-start data-[active=true]:bg-accent')}
+      className={cn(sidebarLeafClass, 'data-[active=true]:bg-accent')}
       render={
         <Link
           to="/docs/page/$"
@@ -150,7 +150,7 @@ function PageLeaf({ page, isActive }: { page: DocPage; isActive: boolean }) {
         />
       }
     >
-      <span className="truncate text-sm">{page.name}</span>
+      <span className="truncate">{page.name}</span>
     </Button>
   );
 }

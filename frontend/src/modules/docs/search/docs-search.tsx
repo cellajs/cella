@@ -21,7 +21,6 @@ import { docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { docsConfig } from '~/modules/page/content';
 import { Combobox, ComboboxItem, ComboboxList } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { cn } from '~/utils/cn';
 import { resolveSearchInput } from '~/utils/recent-searches';
 
 type SearchSelection = DocsSearchResult | HistoryEntry;
@@ -162,10 +161,7 @@ export function DocsSearch() {
               tabIndex={-1}
               aria-pressed={scope === chip.value}
               onClick={() => setScope(chip.value)}
-              className={cn(
-                'rounded-md border px-2 py-0.5 font-medium text-xs transition-colors',
-                scope === chip.value ? 'border-input bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent/50',
-              )}
+              className="rounded-md border px-2 py-0.5 font-medium text-muted-foreground text-xs transition-colors hover:bg-accent/50 aria-pressed:border-input aria-pressed:bg-accent aria-pressed:text-accent-foreground"
             >
               {chip.label}
             </button>

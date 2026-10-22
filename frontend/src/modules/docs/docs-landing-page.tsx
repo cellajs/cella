@@ -43,10 +43,11 @@ export function DocsLandingPage() {
   );
 }
 
+const cardClass = tw('group flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-accent/50');
+
 /** Landing tile; internal targets go through the router. */
 function DocsTileCard({ tile }: { tile: DocsTile }) {
   const isInternal = tile.to.startsWith('/');
-  const cardClass = tw('group flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-accent/50');
   const TrailingIcon = isInternal ? ChevronRightIcon : ExternalLinkIcon;
   const inner = (
     <>

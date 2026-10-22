@@ -84,7 +84,7 @@ export function TagBadges({ values }: { values: string[] }) {
   return (
     <div className="flex flex-wrap gap-1">
       {values.map((tag) => (
-        <Badge key={tag} variant="outline" className="text-xs">
+        <Badge key={tag} variant="outline">
           {tag}
         </Badge>
       ))}

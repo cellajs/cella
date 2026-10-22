@@ -58,7 +58,7 @@ export function OperationsTableBar({ total, searchVars, setSearch, columns, setC
           value={searchVars.tag ?? 'all'}
           onChange={(value) => setSearch({ tag: value === 'all' ? undefined : value })}
           title={t('c:filter')}
-          className="h-10 w-auto sm:min-w-32"
+          className="sm:min-w-32"
         />
       }
       controls={<ViewModeToggle />}

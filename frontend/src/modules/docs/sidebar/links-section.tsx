@@ -13,7 +13,7 @@ interface LinksSectionProps {
   label: string;
 }
 
-const rowClass = tw('w-full justify-start px-3 font-medium lowercase');
+const rowClass = tw('w-full justify-start lowercase');
 
 export function LinksSection({ label }: LinksSectionProps) {
   const { t } = useTranslation();
@@ -41,7 +41,7 @@ export function LinksSection({ label }: LinksSectionProps) {
       {hasLlmsPage && (
         <Button
           variant="ghost"
-          className="w-full justify-start px-3 font-medium"
+          className={rowClass}
           render={<Link to="/docs/page/$" params={{ _splat: 'llms' }} draggable={false} onClick={closeSidebarSheetAndNavigate} />}
         >
           llms.txt

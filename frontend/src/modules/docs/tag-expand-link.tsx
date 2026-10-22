@@ -35,9 +35,9 @@ export function TagExpandLink({ isOpen, tagName, loading, to, search, hash, onMo
       >
         {text}
         {loading ? (
-          <LoaderCircleIcon className="size-4 animate-spin opacity-50" />
+          <LoaderCircleIcon className="animate-spin opacity-50" />
         ) : (
-          <ChevronDownIcon className={cn('size-4 opacity-50 transition-transform duration-200', isOpen && 'rotate-180')} />
+          <ChevronDownIcon className={cn('opacity-50 transition-transform duration-200', isOpen && 'rotate-180')} />
         )}
       </Link>
     </div>

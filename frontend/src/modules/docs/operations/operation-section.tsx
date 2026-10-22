@@ -17,8 +17,8 @@ export function OperationSection({ title, children }: OperationSectionProps) {
         nativeButton
         render={
           <Button variant="ghost" size="sm" className="group/operation-section w-full justify-start gap-2">
-            <span className="font-medium text-sm">{title}</span>
-            <ChevronDownIcon className="size-4 opacity-40 transition-transform duration-200 group-hover/operation-section:opacity-70 group-data-panel-open/operation-section:rotate-180" />
+            <span>{title}</span>
+            <ChevronDownIcon className="opacity-40 transition-transform duration-200 group-hover/operation-section:opacity-70 group-data-panel-open/operation-section:rotate-180" />
           </Button>
         }
       />

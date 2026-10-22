@@ -174,7 +174,7 @@ function DocsLayout() {
           onPointerDown={startSidebarResize}
           onDoubleClick={() => setResizedSidebarWidth(null)}
           onKeyDown={resizeSidebarByKey}
-          className="absolute top-0 right-0 z-30 h-full w-px cursor-col-resize bg-border transition-colors after:absolute after:inset-y-0 after:-right-1.5 after:w-3 after:content-[''] hover:bg-primary/50 focus-visible:bg-primary"
+          className="absolute top-0 right-0 z-30 h-full w-px cursor-col-resize bg-border transition-colors after:absolute after:inset-y-0 after:-right-1.5 after:w-3 hover:bg-primary/50 focus-visible:bg-primary"
         />
       </aside>
       <main className="focus-view-scope ml-(--docs-sidebar-width) pb-[70vh] focus-view:ml-0">

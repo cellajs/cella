@@ -67,7 +67,7 @@ export function CodeViewer({ code }: CodeViewerProps) {
 
   return (
     <div
-      className="text-sm [&_code]:bg-transparent! [&_pre]:bg-transparent!"
+      className="text-sm [&_pre]:bg-transparent!"
       // biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki output is safe
       dangerouslySetInnerHTML={{ __html: html }}
     />

@@ -101,7 +101,7 @@ function ApiReferenceGroup({ to, label, count, isActive, isOpen, onClick, onPref
   return (
     <Collapsible open={isOpen}>
       {/* Sticky tier-1 row: opaque bg so section content passes underneath */}
-      <div className="group/menu-item relative sticky top-2 z-10 bg-card">
+      <div className="sticky top-2 z-10 bg-card">
         <CollapsibleTrigger
           render={
             <Link
@@ -113,7 +113,7 @@ function ApiReferenceGroup({ to, label, count, isActive, isOpen, onClick, onPref
               onClick={onClick}
               className={cn(
                 buttonVariants({ variant: 'ghost' }),
-                'group w-full justify-start px-3 font-medium lowercase',
+                'group/api-reference-group w-full justify-start lowercase',
                 isActive && 'bg-accent font-semibold',
               )}
             />
@@ -121,7 +121,7 @@ function ApiReferenceGroup({ to, label, count, isActive, isOpen, onClick, onPref
         >
           <span>{label}</span>
           {!isOpen && <span className="text-muted-foreground text-xs">{count}</span>}
-          <ChevronDownIcon className={cn('ml-auto size-4 opacity-40 transition-transform duration-200', isOpen && 'rotate-180')} />
+          <ChevronDownIcon className="ml-auto opacity-40 transition-transform duration-200 group-data-panel-open/api-reference-group:rotate-180" />
         </CollapsibleTrigger>
       </div>
       <CollapsibleContent className={collapsiblePanelClass}>

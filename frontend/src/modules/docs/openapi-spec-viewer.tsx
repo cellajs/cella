@@ -43,7 +43,7 @@ export function OpenApiSpecViewer() {
         data={data}
         filename="openapi.json"
         resourceName={t('c:docs.openapi_json')}
-        className="mb-2 w-full *:flex-1! sm:hidden"
+        className="mb-2 w-full *:flex-1 sm:hidden"
       />
 
       <div className="sticky top-0 z-10 -mt-2 mb-2 flex w-full items-center gap-2 bg-background/60 py-2 backdrop-blur-xs max-sm:flex-col">
@@ -102,7 +102,7 @@ export function OpenApiSpecViewer() {
 
         <Button
           variant="outline"
-          className="gap-2 max-sm:hidden"
+          className="max-sm:hidden"
           aria-label={isExpanded ? 'Reset to default' : 'Expand all'}
           onClick={() => {
             if (isExpanded) {

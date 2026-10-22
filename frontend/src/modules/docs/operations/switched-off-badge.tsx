@@ -26,7 +26,7 @@ export function SwitchedOffBadge({ enabledBy, withReason }: SwitchedOffBadgeProp
     <>
       <Badge
         variant="outline"
-        className="shrink-0 text-muted-foreground"
+        className="text-muted-foreground"
         data-tooltip={withReason ? undefined : 'true'}
         data-tooltip-content={withReason ? undefined : reason}
       >

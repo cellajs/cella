@@ -10,8 +10,8 @@ interface OperationItemProps {
 
 function OperationItemBase({ operation, isActive }: OperationItemProps) {
   return (
-    <SidebarHashItem to="/docs/operations" hash={operation.hash} isActive={isActive} className="justify-between">
-      <span className="flex-1 truncate text-sm lowercase">{operation.summary || operation.id}</span>
+    <SidebarHashItem to="/docs/operations" hash={operation.hash} isActive={isActive}>
+      <span className="flex-1 truncate lowercase">{operation.summary || operation.id}</span>
       <MethodLabel method={operation.method} />
     </SidebarHashItem>
   );

@@ -129,13 +129,13 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
             size="cell"
             tabIndex={tabIndex}
             title={row.path}
-            className="w-full min-w-0 justify-start font-mono text-xs"
+            className="min-w-0 font-mono text-xs"
             onClick={(event) => openOperationSheet(row, event.currentTarget)}
           >
             {/* The underline sits on the path alone: on the button it would reach the badge too */}
             <span
               dir="rtl"
-              className="group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong block min-w-0 flex-1 truncate text-left group-hover/cell-button:underline"
+              className="group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong min-w-0 flex-1 truncate text-left group-hover/cell-button:underline"
             >
               &lrm;{row.path}
             </span>
@@ -150,21 +150,21 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         width: 50,
         renderCell: ({ row, tabIndex }) => {
           // No response body means examples are not applicable
-          if (!row.hasResponseBody) return <span className="block w-full text-center text-muted-foreground text-xs">na</span>;
+          if (!row.hasResponseBody) return <span className="w-full text-center text-muted-foreground text-xs">na</span>;
           // Has response body but no example yet
-          if (!row.hasExample) return <span className="block w-full text-center text-muted-foreground">-</span>;
+          if (!row.hasExample) return <span className="w-full text-center text-muted-foreground">-</span>;
           return (
             <Button
               variant="cell"
               size="cell"
               tabIndex={tabIndex}
-              className="justify-center opacity-60 hover:opacity-100"
+              className="justify-center opacity-60"
               aria-label={t('c:docs.view_example')}
               data-tooltip="true"
               data-tooltip-content={t('c:docs.view_example')}
               onClick={(event) => openExamplesSheet(row, event.currentTarget)}
             >
-              <BirdIcon className="size-4" />
+              <BirdIcon />
             </Button>
           );
         },
@@ -177,7 +177,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         resizable: true,
         width: 200,
         minWidth: 120,
-        renderCell: ({ row }) => <code className="truncate font-mono text-muted-foreground text-xs">{row.id}</code>,
+        renderCell: ({ row }) => <code className="truncate text-muted-foreground text-xs">{row.id}</code>,
       },
       {
         key: 'summary',

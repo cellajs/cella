@@ -36,7 +36,7 @@ function operationColumns(tagName: string): ColumnOrColumnGroup<GenOperationSumm
       minBreakpoint: 'md',
 
       width: 200,
-      renderCell: ({ row }) => <code className="truncate font-mono text-muted-foreground text-xs">{row.id}</code>,
+      renderCell: ({ row }) => <code className="truncate text-muted-foreground text-xs">{row.id}</code>,
     },
   ];
 }

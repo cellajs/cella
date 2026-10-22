@@ -75,7 +75,7 @@ function OperationDetail({ operation, detail: detailProp, className }: Operation
       <CardContent>
         <div className="mb-4 flex items-center gap-4 max-sm:flex-col max-sm:items-start max-sm:gap-1">
           <MethodLabel method={operation.method} size="md" />
-          <code className="break-all font-mono text-muted-foreground sm:text-lg">{operation.path}</code>
+          <code className="break-all text-muted-foreground sm:text-lg">{operation.path}</code>
           {operation.deprecated && (
             <Badge variant="outline" className="border-warning text-warning">
               {t('c:deprecated')}
