@@ -6,10 +6,10 @@ describe('keepOnDisk', () => {
     const { external } = keepOnDisk(['pg-logical-replication'], {});
     const isExternal = (name: string) => external.some((pattern) => pattern.test(name));
 
-    for (const name of ['pg', 'pg/lib/client', '@opentelemetry/api', 'pino-pretty', 'jsdom', 'pg-logical-replication']) {
+    for (const name of ['pg', 'pg/lib/client', '@opentelemetry/api', 'pino-pretty', 'thread-stream', 'pg-logical-replication']) {
       expect(isExternal(name), name).toBe(true);
     }
-    for (const name of ['pg-boss', 'hono', 'jsdom-extra']) expect(isExternal(name), name).toBe(false);
+    for (const name of ['pg-boss', 'hono', 'jsdom', 'thread-stream-extra']) expect(isExternal(name), name).toBe(false);
   });
 
   it('accepts dependencies the bundle loads from disk', () => {

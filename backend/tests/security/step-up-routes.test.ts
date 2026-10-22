@@ -1,4 +1,3 @@
-import { encodeBase32UpperCase } from '@oslojs/encoding';
 import { eq } from 'drizzle-orm';
 import {
   createApiKey,
@@ -21,6 +20,7 @@ import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { usersTable } from '#/modules/user/user-db';
+import { encodeBase32 } from '#/utils/base32';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import {
   authCookie,
@@ -100,7 +100,7 @@ describe('account-security routes need a step-up', async () => {
   it('must not set up an authenticator app via a stale session', async () => {
     const user = await createTestUser('setup-totp@security-test.com');
     const session = await insertStaleSession(user);
-    const secret = encodeBase32UpperCase(crypto.getRandomValues(new Uint8Array(20)));
+    const secret = encodeBase32(crypto.getRandomValues(new Uint8Array(20)));
     const withChallenge = { ...defaultHeaders, Cookie: `${session.cookie}; ${authCookie('totp-challenge', secret)}` };
     const totpsOf = () => db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
 

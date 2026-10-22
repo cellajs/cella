@@ -7,8 +7,8 @@
     ".": {
       // `pnpm cella migrate` runs each migration's codemod by path, so nothing imports them.
       "entry": ["cella/cella.config.ts", "cella/skills/**/*.mjs", "cella/migrations/*/*.ts"],
-      // Git hooks run lefthook; migration READMEs run their codemods with `pnpm exec tsx` from the root.
-      "ignoreDependencies": ["@evilmartians/lefthook", "tsx"],
+      // Migration READMEs run their codemods with `pnpm exec tsx` from the root.
+      "ignoreDependencies": ["tsx"],
       // `pnpm -C a11y stack` runs the a11y workspace's script of that name. `cwebp` is the system WebP encoder the
       // screenshots driver calls, installed with `brew install webp`.
       "ignoreBinaries": ["stack", "cwebp"]
@@ -38,7 +38,9 @@
       ],
       // The service image installs only `dependencies` (shared/src/keep-on-disk.ts). shared/src imports these, and the
       // bundle loads them from disk or by name (pino transports), so they are listed here without an import in this workspace.
-      "ignoreDependencies": ["@opentelemetry/.+", "^pino(-.+)?$"]
+      "ignoreDependencies": ["@opentelemetry/.+", "^pino(-.+)?$"],
+      // `pnpm tunnel` runs the ngrok CLI, installed with `brew install ngrok`.
+      "ignoreBinaries": ["ngrok"]
     },
     "bench": {
       // The CLI imports every scenarios/*.ts; data-setup imports every *.bench.ts.
@@ -66,7 +68,11 @@
         "src/utils/clean-url.ts",
         "src/utils/date-full.ts",
         "src/utils/in-numbers-array.ts",
-        "src/utils/stable-array.ts"
+        "src/utils/stable-array.ts",
+        // vite.config.ts aliases jspdf's optional packages to it.
+        "vite/jspdf-optional-stub.ts",
+        // The service worker, which @serwist/vite builds from vite.config.ts.
+        "src/lib/sw.ts"
       ]
     },
     "infra": {
@@ -74,7 +80,7 @@
     },
     "shared": {
       // pino resolves transport targets by name.
-      "ignoreDependencies": ["pino-opentelemetry-transport", "pino-pretty"]
+      "ignoreDependencies": ["pino-pretty"]
     },
     "yjs": {
       "entry": ["src/tests/integration/global-setup.ts"],

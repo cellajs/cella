@@ -72,11 +72,13 @@ function serialiseCellValue(value: unknown) {
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
-function downloadFile(fileName: string, data: Blob) {
+/** Saves a blob as a file through a download link. */
+export function downloadFile(fileName: string, data: Blob) {
   const downloadLink = document.createElement('a');
   downloadLink.download = fileName;
   const url = URL.createObjectURL(data);
   downloadLink.href = url;
   downloadLink.click();
-  URL.revokeObjectURL(url);
+  // Safari aborts a download whose blob URL is revoked in the same task.
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }

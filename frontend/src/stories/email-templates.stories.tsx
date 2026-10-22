@@ -50,7 +50,7 @@ const meta = {
   title: 'Emails/Email templates',
   component: EmailPreview,
   tags: ['!test', '!autodocs'],
-  parameters: { layout: 'fullscreen', chromatic: { disableSnapshot: true } },
+  parameters: { layout: 'fullscreen' },
   argTypes: {
     name: { table: { disable: true } },
     lng: { options: appConfig.languages, control: { type: 'radio' } },

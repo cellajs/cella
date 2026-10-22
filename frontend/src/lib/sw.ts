@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { CacheFirst, ExpirationPlugin, type PrecacheEntry, Serwist, StaleWhileRevalidate } from 'serwist';
 
-declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: (PrecacheEntry | string)[] };
+declare const self: ServiceWorkerGlobalScope & { __SW_MANIFEST: (PrecacheEntry | string)[] };
 
 declare const __BACKEND_URL__: string;
 
@@ -11,7 +11,7 @@ const navigationDenylist = apiPathPrefix ? [new RegExp(`^${apiPathPrefix.replace
 
 // `skipWaiting: false` keeps the update prompt: Serwist listens for the client's `{type: 'SKIP_WAITING'}` message.
 const serwist = new Serwist({
-  precacheEntries: self.__WB_MANIFEST,
+  precacheEntries: self.__SW_MANIFEST,
   skipWaiting: false,
   clientsClaim: true,
   precacheOptions: {

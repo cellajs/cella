@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { context, propagation, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
-import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base';
+import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createOtelSDK } from './otel.ts';
 import { resolveOtlpSink } from './otlp-sink.ts';
@@ -19,7 +19,7 @@ describe('createOtelSDK', () => {
     propagation.disable();
   });
 
-  it('creates sdk when spanProcessors are provided (no Maple key)', () => {
+  it('creates the trace pipeline when spanProcessors are provided (no Maple key)', () => {
     const mockProcessor = {
       onStart: vi.fn(),
       onEnd: vi.fn(),
@@ -29,7 +29,7 @@ describe('createOtelSDK', () => {
 
     const otel = createOtelSDK({ serviceName: 'test-service', spanProcessors: [mockProcessor], autoInstrumentations: false });
 
-    expect(otel.sdk).toBeDefined();
+    expect(otel.tracerProvider).toBeDefined();
   });
 
   it('normalizes metric interval below exporter timeout', () => {
@@ -43,7 +43,7 @@ describe('createOtelSDK', () => {
     ).not.toThrow();
   });
 
-  it('shutdown does not throw when sdk is undefined', async () => {
+  it('shutdown does not throw without a trace pipeline', async () => {
     const otel = createOtelSDK({ serviceName: 'test-service' });
     await expect(otel.shutdown()).resolves.toBeUndefined();
   });

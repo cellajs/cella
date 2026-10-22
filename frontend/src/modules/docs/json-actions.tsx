@@ -1,9 +1,9 @@
 import { Link } from '@tanstack/react-router';
 import { CopyCheckIcon, CopyIcon, DownloadIcon, ExternalLinkIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import useDownloader from 'react-use-downloader';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
+import { useDownloader } from '~/hooks/use-downloader';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';

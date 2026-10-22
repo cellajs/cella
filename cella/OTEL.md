@@ -78,7 +78,7 @@ Every worker needs OTel setup, logging, graceful shutdown, and, if it serves HTT
 | File | Role | What to know |
 | --- | --- | --- |
 | [tracing.ts](../cdc/src/lib/tracing.ts) | `createOtelSDK()` from `shared/otel`: `serviceName` (`appConfig.slug` plus worker suffix), `serviceVersion: env.RELEASE_SHA`, `sink: resolveOtlpSink(env)`, `autoInstrumentations: false` | `autoInstrumentations: true` only for HTTP servers. Add a `SpanStoreProcessor` to `spanProcessors` for local span debugging. |
-| [pino.ts](../cdc/src/lib/pino.ts) | `createWorkerLog('<worker>', env)` from `shared/pino`, which calls `createLogger()` with the same sink, service name and version | With a sink, logs also ship there via `pino-opentelemetry-transport` in dev and production alike. The console keeps `pino-pretty` in dev and raw JSON in production. |
+| [pino.ts](../cdc/src/lib/pino.ts) | `createWorkerLog('<worker>', env)` from `shared/pino`, which calls `createLogger()` with the same sink, service name and version | With a sink, logs also ship there through the OTLP log transport ([otel-log-transport.ts](../shared/src/otel-log-transport.ts)) in dev and production alike. The console keeps `pino-pretty` in dev and raw JSON in production. |
 | [index.ts](../cdc/src/index.ts) | `otel.start()`, then `setupGracefulShutdown({ name, log, cleanup })` from `shared/utils/worker-lifecycle` | `cleanup` closes servers and connections and awaits `otel.shutdown()`. It handles SIGINT/SIGTERM, double-signal force exit, a timeout (default 10s), and uncaught exceptions. |
 
 ### Health endpoint (if HTTP)

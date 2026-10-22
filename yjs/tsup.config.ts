@@ -6,7 +6,8 @@ import pkg from './package.json' with { type: 'json' };
 const { noExternal, external } = keepOnDisk(appKeepOnDisk, pkg.dependencies);
 
 export default defineConfig({
-  entry: ['src/yjs-worker.ts'],
+  // pino starts the OTLP log transport by path from the bundle's folder (shared/src/pino.ts).
+  entry: { 'yjs-worker': 'src/yjs-worker.ts', 'otel-log-transport': '../shared/src/otel-log-transport.ts' },
   splitting: false,
   sourcemap: true,
   clean: true,

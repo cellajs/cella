@@ -1,5 +1,5 @@
 import type { Attributes, AttributeValue } from '@opentelemetry/api';
-import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base';
+import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace';
 import { isFailedQueryMessage, redactedFailedQuery, replaceInStack } from '../utils/failed-query.ts';
 import { scrubText, scrubUrl } from '../utils/scrub-url.ts';
 
