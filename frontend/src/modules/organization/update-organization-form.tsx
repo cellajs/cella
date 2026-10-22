@@ -70,7 +70,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <AvatarFormField
           form={form}
           label={t('c:resource_logo', { resource: t('c:organization') })}

@@ -70,7 +70,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
 
   return (
     <Form {...form} labelDirection={labelDirection}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <InputFormField
           control={form.control}
           name="name"

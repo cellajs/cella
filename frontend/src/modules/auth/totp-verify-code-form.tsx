@@ -38,7 +38,7 @@ export function TotpConfirmationForm({ onSubmit, onCancel, label, isPending }: P
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit, defaultOnInvalid)}>
+      <form noValidate onSubmit={form.handleSubmit(handleSubmit, defaultOnInvalid)}>
         <FormField
           control={form.control}
           name="code"

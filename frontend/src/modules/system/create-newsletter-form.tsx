@@ -90,7 +90,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} id="newsletter-form" className="flex h-max flex-col gap-6 pb-8">
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} id="newsletter-form" className="flex h-max flex-col gap-6 pb-8">
         <InputFormField
           control={form.control}
           inputClassName="font-bold"

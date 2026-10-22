@@ -168,7 +168,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
 
           {sso.length === 0 && federationKeys.length > 0 && (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+              <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
                 <FormField
                   control={form.control}
                   name="issuer"

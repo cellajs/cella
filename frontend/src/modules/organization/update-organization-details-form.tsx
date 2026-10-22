@@ -105,7 +105,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <Suspense fallback={<Spinner className="my-16" noDelay />}>
           <LazyBlockNoteContentFormField
             key={editorKey}
