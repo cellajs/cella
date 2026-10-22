@@ -32,7 +32,7 @@ export const Default: Story = {
     const [emails, setEmails] = useState(['user@example.com', 'test@domain.org']);
     return (
       <div className="w-80">
-        <SelectEmails emails={emails} onValueChange={setEmails} placeholder="Add email addresses..." />
+        <SelectEmails value={emails} onChange={setEmails} placeholder="Add email addresses..." />
       </div>
     );
   },
@@ -46,7 +46,7 @@ export const Empty: Story = {
     const [emails, setEmails] = useState<string[]>([]);
     return (
       <div className="w-80">
-        <SelectEmails emails={emails} onValueChange={setEmails} placeholder="Enter email addresses..." />
+        <SelectEmails value={emails} onChange={setEmails} placeholder="Enter email addresses..." />
       </div>
     );
   },
@@ -61,7 +61,7 @@ export const PasteMultiple: Story = {
     const [emails, setEmails] = useState<string[]>([]);
     return (
       <div className="w-96">
-        <SelectEmails emails={emails} onValueChange={setEmails} placeholder="Paste multiple emails..." />
+        <SelectEmails value={emails} onChange={setEmails} placeholder="Paste multiple emails..." />
         <p className="mt-2 text-muted-foreground text-xs">Try pasting: test1@example.com, test2@example.com; test3@example.com</p>
       </div>
     );
@@ -81,7 +81,7 @@ function InviteEmailsField({ initial = [] }: { initial?: string[] }) {
         setSubmits((count) => count + 1);
       }}
     >
-      <SelectEmails placeholder="Add an email" emails={emails} onValueChange={setEmails} inputProps={{ autoComplete: 'off' }} />
+      <SelectEmails placeholder="Add an email" value={emails} onChange={setEmails} inputProps={{ autoComplete: 'off' }} />
       <output>value: {JSON.stringify(emails)}</output>
       <p>submits: {submits}</p>
       <button type="submit">Invite</button>

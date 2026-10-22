@@ -3,36 +3,36 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type UploadTemplateId } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { createBaseTransloaditUppy, registerUppyPlugins } from '~/modules/common/uploader/helpers/uppy-helpers';
-import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/common/uploader/types';
+import { createUppy, registerUppyPlugins } from '~/modules/common/uploader/helpers/uppy-helpers';
+import type { CustomUppy, CustomUppyOptions, UploadResults } from '~/modules/common/uploader/types';
 import { uploader, useUploader } from '~/modules/common/uploader/use-uploader';
 
-const uppyRestrictions = appConfig.uppy.defaultRestrictions;
+const defaultRestrictions = appConfig.uppy.defaultRestrictions;
 
-export function useUploadUppy() {
+export function useUppyUpload() {
   const { t } = useTranslation();
-  const uploaderData = useUploader((state) => state.uploaderConfig);
+  const uploadData = useUploader((state) => state.uploadData);
 
   const [uppy, setUppy] = useState<CustomUppy | null>(null);
 
   useEffect(() => {
-    if (!uploaderData) return;
+    if (!uploadData) return;
 
     let isMounted = true;
     let localUppy: CustomUppy | null = null;
 
-    const { templateId, organizationId, restrictions, plugins = [], statusEventHandler = {} } = uploaderData;
+    const { templateId, organizationId, restrictions, plugins = [], onComplete } = uploadData;
 
     const isOnline = onlineManager.isOnline();
     const isUploadFullyEnabled = appConfig.has.uploadEnabled && isOnline;
 
-    const allowedFileTypes = isOnline ? (restrictions?.allowedFileTypes ?? uppyRestrictions.allowedFileTypes) : ['image/*'];
+    const allowedFileTypes = isOnline ? (restrictions?.allowedFileTypes ?? defaultRestrictions.allowedFileTypes) : ['image/*'];
 
-    const uppyOptions: CustomUppyOpt = { restrictions: { ...uppyRestrictions, ...restrictions, allowedFileTypes } };
+    const uppyOptions: CustomUppyOptions = { restrictions: { ...defaultRestrictions, ...restrictions, allowedFileTypes } };
 
     const initializeUppy = async () => {
       try {
-        localUppy = await createBaseTransloaditUppy(uppyOptions, { templateId, organizationId });
+        localUppy = await createUppy(uppyOptions, { templateId, organizationId });
 
         localUppy
           .on('file-editor:complete', (file) => {
@@ -43,7 +43,6 @@ export function useUploadUppy() {
           })
           .on('error', (error) => {
             console.error('Upload error:', error);
-            statusEventHandler.onError?.(error);
           })
           .on('transloadit:complete', (assembly) => {
             // A failed assembly reports through the error event
@@ -51,9 +50,9 @@ export function useUploadUppy() {
             console.info('Upload complete:', assembly);
             // Inside the chain, so a handler that throws at once also reaches the toast
             Promise.resolve()
-              .then(() => statusEventHandler.onComplete?.(assembly.results as UploadedUppyFile<UploadTemplateId>))
-              .catch((err) => {
-                console.error('onComplete handler failed:', err);
+              .then(() => onComplete?.(assembly.results as UploadResults<UploadTemplateId>))
+              .catch((error) => {
+                console.error('onComplete handler failed:', error);
                 toaster.error(t('c:upload_failed'));
               });
           });
@@ -66,8 +65,8 @@ export function useUploadUppy() {
           return;
         }
         setUppy(localUppy);
-      } catch (err) {
-        console.error('Failed to initialize upload:', err);
+      } catch (error) {
+        console.error('Failed to initialize upload:', error);
         if (!isMounted) return;
         toaster.error(t('c:upload_failed'));
         uploader.getState().remove();
@@ -81,7 +80,7 @@ export function useUploadUppy() {
       setUppy(null);
       if (localUppy) localUppy.destroy();
     };
-  }, [uploaderData]);
+  }, [uploadData]);
 
-  return { uppy, uploaderData };
+  return { uppy, uploadData };
 }

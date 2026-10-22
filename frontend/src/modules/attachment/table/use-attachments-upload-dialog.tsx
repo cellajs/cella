@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
 import { useAttachmentCreateMutation } from '~/modules/attachment/query';
 import { toaster } from '~/modules/common/toaster/toaster';
-import type { UploadedUppyFile } from '~/modules/common/uploader/types';
+import type { UploadResults } from '~/modules/common/uploader/types';
 import { uploader } from '~/modules/common/uploader/use-uploader';
 
 const maxNumberOfFiles = 20;
@@ -18,7 +18,7 @@ export const useAttachmentsUploadDialog = (
   const createAttachments = useAttachmentCreateMutation(tenantId, organizationId);
 
   const open = () => {
-    const onComplete = async (result: UploadedUppyFile<'attachment'>) => {
+    const onComplete = async (result: UploadResults<'attachment'>) => {
       const attachments = parseUploadedAttachments(result, organizationId, placement);
 
       // Close the uploader either way; the optimistic row is what the user watches from here.
@@ -41,7 +41,7 @@ export const useAttachmentsUploadDialog = (
       templateId: 'attachment',
       restrictions: { maxNumberOfFiles, maxTotalFileSize, allowedFileTypes: ['*/*'] },
       plugins: ['webcam', 'image-editor', 'screen-capture', 'audio', 'url'],
-      statusEventHandler: { onComplete },
+      onComplete,
       title: t('c:upload_item', { item }),
       description: t('c:upload_multiple.text', { item, count: maxNumberOfFiles }),
     });

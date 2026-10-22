@@ -11,26 +11,26 @@ export interface RoleGroupProps {
   className?: string;
 }
 
-interface SelectRoleProps extends RoleGroupProps {
-  onValueChange: (value: EntityRole[]) => void;
+interface SelectRolesProps extends RoleGroupProps {
+  onChange: (value: EntityRole[]) => void;
   value?: EntityRole[];
 }
 
 interface RoleOptionProps {
   role: EntityRole;
   /** The option's control, named by the label with this id. */
-  control: (labelId: string) => ReactNode;
+  renderControl: (labelId: string) => ReactNode;
 }
 
 /** A role with its control. Inside a form Field every control would take the field's label; the role's own label id keeps its name. */
-export function RoleOption({ role, control }: RoleOptionProps) {
+export function RoleOption({ role, renderControl }: RoleOptionProps) {
   const { t } = useTranslation();
   const labelId = useId();
 
   return (
     // biome-ignore lint/a11y/noLabelWithoutControl: the Base UI control renders the hidden input this label wraps
     <label className="inline-flex cursor-pointer items-center gap-2">
-      {control(labelId)}
+      {renderControl(labelId)}
       <span id={labelId} className="font-normal text-sm leading-none peer-data-disabled:cursor-not-allowed peer-data-disabled:opacity-70">
         {t(role)}
       </span>
@@ -40,12 +40,12 @@ export function RoleOption({ role, control }: RoleOptionProps) {
 
 const emptyRoles: EntityRole[] = [];
 
-export function SelectRoles({ onValueChange, value = emptyRoles, label, className }: SelectRoleProps) {
-  const handleCheckboxChange = (role: EntityRole) => {
-    const newValue = value.includes(role)
+export function SelectRoles({ onChange, value = emptyRoles, label, className }: SelectRolesProps) {
+  const toggleRole = (role: EntityRole) => {
+    const next = value.includes(role)
       ? value.filter((selectedRole) => selectedRole !== role) // Remove role if it already exists
       : [...value, role];
-    onValueChange(newValue);
+    onChange(next);
   };
 
   return (
@@ -56,13 +56,8 @@ export function SelectRoles({ onValueChange, value = emptyRoles, label, classNam
           <RoleOption
             key={role}
             role={role}
-            control={(labelId) => (
-              <Checkbox
-                checked={value.includes(role)}
-                onCheckedChange={() => handleCheckboxChange(role)}
-                aria-labelledby={labelId}
-                className="size-5"
-              />
+            renderControl={(labelId) => (
+              <Checkbox checked={value.includes(role)} onCheckedChange={() => toggleRole(role)} aria-labelledby={labelId} className="size-5" />
             )}
           />
         ))}

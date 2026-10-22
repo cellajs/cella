@@ -11,8 +11,8 @@ const delimiter = /[,;\s]+/;
 export const isInviteEmail = (value: string) => zMembershipInviteBody.shape.emails.element.safeParse(value).success;
 
 interface SelectEmailsProps {
-  emails?: string[];
-  onValueChange?: (emails: string[]) => void;
+  value?: string[];
+  onChange?: (value: string[]) => void;
   placeholder?: string;
   inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
 }
@@ -21,7 +21,7 @@ interface SelectEmailsProps {
  * Email chip input. Enter, comma, semicolon, space, paste and blur turn the typed text into chips. An address that
  * already is a chip in any letter case is skipped; text that is not an address stays in the input with a warning.
  */
-export function SelectEmails({ emails = [], onValueChange, placeholder, inputProps }: SelectEmailsProps) {
+export function SelectEmails({ value: emails = [], onChange, placeholder, inputProps }: SelectEmailsProps) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState('');
@@ -35,13 +35,13 @@ export function SelectEmails({ emails = [], onValueChange, placeholder, inputPro
     }
 
     if (rejected.length) toaster.warning(t('error:invalid_email'), { description: rejected.join(', ') });
-    if (next.length > emails.length) onValueChange?.(next);
+    if (next.length > emails.length) onChange?.(next);
     setText(rejected.join(' '));
   };
 
-  const remove = (email: string) => onValueChange?.(emails.filter((chip) => chip !== email));
+  const remove = (email: string) => onChange?.(emails.filter((chip) => chip !== email));
 
-  const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       // Also on an empty input, so Enter never submits the surrounding form.
       event.preventDefault();
@@ -70,7 +70,7 @@ export function SelectEmails({ emails = [], onValueChange, placeholder, inputPro
         value={text}
         {...inputProps}
         onChange={({ target }) => (delimiter.test(target.value) ? commit(target.value) : setText(target.value))}
-        onKeyDown={onKeyDown}
+        onKeyDown={handleKeyDown}
         onBlur={() => text.trim() && commit(text)}
         className="-my-px h-8 w-auto min-w-32 grow basis-32 border-0 bg-transparent px-0 py-0 shadow-none focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0"
       />

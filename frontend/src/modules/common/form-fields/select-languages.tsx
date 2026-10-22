@@ -26,7 +26,7 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
 
   const toggleLanguage = (language: Language) => {
     if (selected.includes(language) && selected.length === 1) return;
-    const next = selected.includes(language) ? selected.filter((l) => l !== language) : [...selected, language];
+    const next = selected.includes(language) ? selected.filter((lang) => lang !== language) : [...selected, language];
     setSelected(next);
     onChange(next);
   };
@@ -46,9 +46,9 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
             aria-selected={selected.includes(option.value)}
             className="relative flex cursor-pointer select-none items-center justify-between rounded-md px-2 py-1.5 text-sm leading-normal outline-hidden hover:bg-accent hover:text-accent-foreground aria-selected:font-medium"
             onClick={() => toggleLanguage(option.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
                 toggleLanguage(option.value);
               }
             }}

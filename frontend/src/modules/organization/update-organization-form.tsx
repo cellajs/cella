@@ -11,8 +11,8 @@ import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { AvatarFormField } from '~/modules/common/form-fields/avatar';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
-import { SelectCountry } from '~/modules/common/form-fields/select-combobox/country';
-import { SelectTimezone } from '~/modules/common/form-fields/select-combobox/timezone';
+import { CountryFormField } from '~/modules/common/form-fields/select-combobox/country';
+import { TimezoneFormField } from '~/modules/common/form-fields/select-combobox/timezone';
 import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SelectLanguages } from '~/modules/common/form-fields/select-languages';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
@@ -122,8 +122,8 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
         />
         <DefaultLanguageField form={form} />
 
-        <SelectCountry control={form.control} name="country" label={t('c:country')} />
-        <SelectTimezone control={form.control} name="timezone" label={t('c:timezone')} />
+        <CountryFormField control={form.control} name="country" label={t('c:country')} />
+        <TimezoneFormField control={form.control} name="timezone" label={t('c:timezone')} />
 
         {/* NOT IN USE ATM <Collapsible>
           <CollapsibleTrigger asChild>

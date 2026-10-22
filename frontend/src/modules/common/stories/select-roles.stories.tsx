@@ -16,50 +16,50 @@ type Story = StoryObj<typeof meta>;
 export const Empty: Story = {
   args: {
     value: [],
-    onValueChange: () => {},
+    onChange: () => {},
   },
   render: function Render() {
     const [value, setValue] = useState<EntityRole[]>([]);
 
-    return <SelectRoles value={value} onValueChange={setValue} />;
+    return <SelectRoles value={value} onChange={setValue} />;
   },
 };
 
 export const Preselected: Story = {
   args: {
     value: [memberRole],
-    onValueChange: () => {},
+    onChange: () => {},
   },
   render: function Render() {
     const [value, setValue] = useState<EntityRole[]>([memberRole]);
 
-    return <SelectRoles value={value} onValueChange={setValue} />;
+    return <SelectRoles value={value} onChange={setValue} />;
   },
 };
 
 export const MultipleSelected: Story = {
   args: {
     value: [memberRole, 'admin'],
-    onValueChange: () => {},
+    onChange: () => {},
   },
   render: function Render() {
     const [value, setValue] = useState<EntityRole[]>([memberRole, 'admin']);
 
-    return <SelectRoles value={value} onValueChange={setValue} />;
+    return <SelectRoles value={value} onChange={setValue} />;
   },
 };
 
 export const WrappedLayout: Story = {
   args: {
     value: [memberRole],
-    onValueChange: () => {},
+    onChange: () => {},
   },
   render: function Render() {
     const [value, setValue] = useState<EntityRole[]>([memberRole]);
 
     return (
       <div className="w-64 rounded-lg border p-4">
-        <SelectRoles value={value} onValueChange={setValue} className="flex-wrap items-start" />
+        <SelectRoles value={value} onChange={setValue} className="flex-wrap items-start" />
       </div>
     );
   },

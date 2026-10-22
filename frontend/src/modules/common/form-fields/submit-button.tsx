@@ -14,12 +14,12 @@ export function SubmitButton({ onClick, children, allowOfflineDelete = false, lo
 
   const showOfflineWarning = !allowOfflineDelete && !isOnline;
 
-  const handleClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
+  const handleClick: React.MouseEventHandler<HTMLButtonElement> = (event) => {
     if (showOfflineWarning) {
-      e.preventDefault();
+      event.preventDefault();
       return toastOffline();
     }
-    onClick?.(e);
+    onClick?.(event);
   };
 
   const leadingIcon = icon && loading ? <LoaderCircleIcon className="animate-spin" /> : showOfflineWarning ? <TriangleAlertIcon /> : icon;

@@ -12,16 +12,11 @@ type TemplateStepKeys<T extends UploadTemplateId> = (typeof uploadTemplates)[T][
 
 export type CustomUppy = Uppy<UppyMeta, UppyBody>;
 export type CustomUppyFile = UppyFile<UppyMeta, UppyBody>;
-export type CustomUppyOpt = UppyOptions<UppyMeta, UppyBody>;
+export type CustomUppyOptions = UppyOptions<UppyMeta, UppyBody>;
 
 export type Plugins = ('webcam' | 'image-editor' | 'audio' | 'screen-capture' | 'url' | string)[];
 
-export type StatusEventHandlers = {
-  onError?: (error: Error) => void;
-  onComplete?: (mappedResult: UploadedUppyFile<UploadTemplateId>) => void | Promise<void>;
-};
-
-export type UploadedUppyFile<T extends UploadTemplateId, K = UserMeta> = {
+export type UploadResults<T extends UploadTemplateId, K = UserMeta> = {
   [key in TemplateStepKeys<T>]: UploadedFile<K>[];
 };
 

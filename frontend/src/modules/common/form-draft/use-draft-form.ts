@@ -13,9 +13,9 @@ import { defaultOnInvalid } from '~/utils/form-on-invalid';
 // biome-ignore lint/suspicious/noExplicitAny: Can be any form context
 export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues, TContext = any>(
   formId: string,
-  opt?: { formOptions?: UseFormProps<TFieldValues, TContext>; formContainerId?: string },
+  options?: { formOptions?: UseFormProps<TFieldValues, TContext>; formContainerId?: string },
 ): UseFormReturn<TFieldValues, TContext, TFieldValues> & { isDirty: boolean; loading: boolean } {
-  const { formOptions, formContainerId } = opt || {};
+  const { formOptions, formContainerId } = options || {};
 
   const getDraftForm = useDraftStore((state) => state.getForm);
   const setDraftForm = useDraftStore((state) => state.setForm);
@@ -25,7 +25,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
   const form = useForm<TFieldValues, TContext, TFieldValues>(formOptions);
 
   const [loading, setLoading] = useState(true);
-  const isResetting = useRef(false);
+  const isResettingRef = useRef(false);
   const draftTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Only subscribes to isDirty, a binary state change with minimal re-renders.
@@ -42,9 +42,9 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
   isDirtyRef.current = isDirty;
 
   const toggleUnsavedBadge = (show: boolean) => {
-    const el = document.getElementById(formContainerId || formId);
-    if (!el) return;
-    el.classList.toggle('unsaved-changes', show);
+    const container = document.getElementById(formContainerId || formId);
+    if (!container) return;
+    container.classList.toggle('unsaved-changes', show);
   };
 
   /** Save the current values (or clear the draft when clean). Reads only refs and stable store actions. */
@@ -52,7 +52,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     const id = formIdRef.current;
     if (isDirtyRef.current) {
       const values = form.getValues();
-      const cleaned = Object.fromEntries(Object.entries(values).filter(([_, v]) => v !== undefined));
+      const cleaned = Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined));
       if (Object.keys(cleaned).length > 0) setDraftForm(id, cleaned);
     } else {
       resetDraftForm(id);
@@ -62,7 +62,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
   // Subscribe directly to form changes so debounced persistence does not rerender the form tree.
   useEffect(() => {
     const subscription = form.watch(() => {
-      if (isResetting.current) return;
+      if (isResettingRef.current) return;
 
       clearTimeout(draftTimeoutRef.current);
       draftTimeoutRef.current = setTimeout(() => {
@@ -91,15 +91,15 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
       flushPendingDraft();
       flushKvWrites();
     };
-    const onVisibilityChange = () => {
+    const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') flushOnHide();
     };
-    document.addEventListener('visibilitychange', onVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('pagehide', flushOnHide);
 
     return () => {
       subscription.unsubscribe();
-      document.removeEventListener('visibilitychange', onVisibilityChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('pagehide', flushOnHide);
       // Flush draft on cleanup (unmount or dep change) to prevent data loss
       flushPendingDraft();
@@ -134,14 +134,14 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     handleSubmit: (onValid, onInvalid = defaultOnInvalid) => form.handleSubmit(onValid, onInvalid),
     // Reset also clears the draft and the badge
     reset: (values, keepStateOptions) => {
-      isResetting.current = true;
+      isResettingRef.current = true;
       clearTimeout(draftTimeoutRef.current);
       draftTimeoutRef.current = undefined;
       resetDraftForm(formId);
       toggleUnsavedBadge(false);
       form.reset(values, keepStateOptions);
       // reset() has notified its watchers synchronously; re-arm so later edits persist again.
-      isResetting.current = false;
+      isResettingRef.current = false;
     },
   };
 }

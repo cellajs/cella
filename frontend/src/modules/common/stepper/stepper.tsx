@@ -39,11 +39,11 @@ export function Stepper({ children, className, initialStep = 0, steps, onClickSt
 }
 
 export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 }: StepProps & { index?: number }) {
-  const { steps, activeStep, isLastStep: isOnLastStep, onClickStep, setStep } = useStepper();
+  const { steps, activeStep, isLastStep, onClickStep, setStep } = useStepper();
 
   const isCompletedStep = index < activeStep;
   const isCurrentStep = index === activeStep;
-  const clickable = !!onClickStep;
+  const isClickable = !!onClickStep;
 
   return (
     <div
@@ -54,7 +54,7 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
         'not-last:after:absolute not-last:after:inset-x-[calc(var(--step-icon-size)/2)]',
         'not-last:after:top-[calc(var(--step-icon-size)+var(--step-gap))] not-last:after:bottom-(--step-gap)',
         'not-last:after:transition-all not-last:after:duration-200',
-        isOnLastStep && 'gap-(--step-gap)',
+        isLastStep && 'gap-(--step-gap)',
       )}
       data-completed={isCompletedStep}
     >
@@ -63,19 +63,19 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
           <Button
             variant="ghost"
             type="button"
-            tabIndex={clickable ? 0 : -1}
+            tabIndex={isClickable ? 0 : -1}
             className={cn(
               'pointer-events-none rounded-full p-0',
               'size-(--step-icon-size)',
               'flex items-center justify-center rounded-full border-2',
               'data-[clickable=true]:pointer-events-auto',
-              'data-[active=true]:border-primary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground',
+              'data-[completed=true]:border-primary data-[completed=true]:bg-primary data-[completed=true]:text-primary-foreground',
               'data-[current=true]:border-primary data-[current=true]:bg-secondary',
             )}
             aria-current={isCurrentStep ? 'step' : undefined}
             data-current={isCurrentStep}
-            data-active={isCompletedStep}
-            data-clickable={clickable}
+            data-completed={isCompletedStep}
+            data-clickable={isClickable}
             onClick={() => onClickStep?.(index, setStep)}
           >
             {isCompletedStep ? <Check className="size-4" /> : <span className="text-center font-medium text-md">{index + 1}</span>}

@@ -22,7 +22,7 @@ export const prepareFilesForOffline = async (
   { organizationId, templateId }: UploadTokenQuery,
   uploadStatus: UploadStatus,
 ): Promise<AssemblyResponse> => {
-  const templateKey = uploadTemplates.attachment.use[0];
+  const [resultStep] = uploadTemplates.attachment.use;
 
   if (!organizationId) {
     throw new Error('organizationId required for local storage');
@@ -32,43 +32,43 @@ export const prepareFilesForOffline = async (
 
   toaster.info(t('c:saved_on_this_device'));
 
-  const localFiles = files.map((el) => {
-    const basename = el.meta.name?.replace(`.${el.extension}`, '');
-    const type = el.type?.split('/')[0] || 'file';
+  const localFiles = files.map((file) => {
+    const basename = file.meta.name?.replace(`.${file.extension}`, '');
+    const type = file.type?.split('/')[0] || 'file';
 
-    const user_meta = Object.fromEntries(Object.entries(el.meta || {}).map(([key, value]) => [key, String(value)]));
+    const userMeta = Object.fromEntries(Object.entries(file.meta || {}).map(([key, value]) => [key, String(value)]));
 
     return {
       as: '',
       basename,
       cost: 0,
       exec_time: 0,
-      ext: el.extension,
+      ext: file.extension,
       field: 'file',
       from_batch_import: false,
-      id: el.id,
+      id: file.id,
       is_temp_url: false,
       is_tus_file: false,
       md5hash: '',
       meta: {},
-      mime: el.type,
-      name: el.meta.name,
-      original_id: el.id,
+      mime: file.type,
+      name: file.meta.name,
+      original_id: file.id,
       original_basename: basename,
-      original_name: el.meta.name,
+      original_name: file.meta.name,
       original_md5hash: '',
       original_path: '',
       queue: '',
       queue_time: 0,
       execTime: 0,
       queueTime: 0,
-      localId: el.id,
-      size: el.size || el.data?.size || 0,
-      url: el.preview!,
-      ssl_url: el.preview!,
+      localId: file.id,
+      size: file.size || file.data?.size || 0,
+      url: file.preview!,
+      ssl_url: file.preview!,
       tus_upload_url: '',
       type,
-      user_meta,
+      user_meta: userMeta,
     };
   });
 
@@ -84,6 +84,6 @@ export const prepareFilesForOffline = async (
     bytes_received: totalBytes,
     bytes_expected: totalBytes,
     uploads: localFiles,
-    results: { [templateKey]: localFiles },
+    results: { [resultStep]: localFiles },
   };
 };

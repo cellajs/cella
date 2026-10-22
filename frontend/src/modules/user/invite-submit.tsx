@@ -74,7 +74,7 @@ export function InviteFormFooter({ form, channel, count, isPending, onCancel, ch
           name="role"
           render={({ field: { value, onChange } }) => (
             <FormItem className="ml-3 flex-row items-center gap-4">
-              <SelectRoleRadio value={value} onValueChange={onChange} entityType={channel.entityType} label={t('c:role')} />
+              <SelectRoleRadio value={value} onChange={onChange} entityType={channel.entityType} label={t('c:role')} />
               <FormMessage />
             </FormItem>
           )}

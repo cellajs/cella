@@ -7,9 +7,9 @@ vi.mock('~/modules/user/user-store', () => ({
 
 import { uploadStorage } from 'shared/utils/upload-visibility';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
-import type { UploadedFile, UploadedUppyFile } from '~/modules/common/uploader/types';
+import type { UploadedFile, UploadResults } from '~/modules/common/uploader/types';
 
-type AttachmentResult = UploadedUppyFile<'attachment'>;
+type AttachmentResult = UploadResults<'attachment'>;
 
 /** A Transloadit `:original` result. `user_meta` carries the id minted in `onBeforeFileAdded`. */
 function makeOriginal(overrides: Record<string, unknown> = {}) {

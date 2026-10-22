@@ -14,7 +14,7 @@ import '~/modules/common/contact-form/contact-form-map.css';
 import { errorNoticeFallback } from '~/modules/common/error-notice';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
-import Logo from '/static/common/logo/logo-icon-only.svg';
+import logoUrl from '/static/common/logo/logo-icon-only.svg';
 
 // MapLibre looks for its worker next to its own module, a path bundling does not keep, so Vite builds the worker.
 setWorkerUrl(mapWorkerUrl);
@@ -43,7 +43,7 @@ function CompanyMarker() {
         </div>
       )}
       <button type="button" onClick={() => setCardOpen(true)} className="block cursor-pointer" title={appConfig.company.name}>
-        <img src={Logo} width="30" height="30" alt={appConfig.name} />
+        <img src={logoUrl} width="30" height="30" alt={appConfig.name} />
       </button>
     </div>
   );

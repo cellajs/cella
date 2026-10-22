@@ -34,7 +34,7 @@ export function InviteEmailForm({ channel, dialog: isDialog, children }: Props) 
           name="emails"
           render={({ field: { onChange, value } }) => (
             <FormItem>
-              <SelectEmails placeholder={t('c:add_email')} emails={value} onValueChange={onChange} inputProps={{ autoComplete: 'off' }} />
+              <SelectEmails placeholder={t('c:add_email')} value={value} onChange={onChange} inputProps={{ autoComplete: 'off' }} />
               <FormMessage />
             </FormItem>
           )}

@@ -2,7 +2,7 @@ import type { Attachment } from 'sdk';
 import type { UploadTemplateId } from 'shared';
 import { uploadTemplates } from 'shared/transloadit-config';
 import type { BlockNoteMediaMode } from '~/modules/common/blocknote/types';
-import type { UploadedUppyFile } from '~/modules/common/uploader/types';
+import type { UploadResults } from '~/modules/common/uploader/types';
 
 /** Props of a completed upload's block; `measuredId` keys the image size measured while uploading. */
 export type FileBlockProps = { name: string; url: string; attachmentId?: string; measuredId?: string };
@@ -20,7 +20,7 @@ export const attachmentBlockProps = (attachment: Attachment, isImage: boolean, m
 };
 
 /** Files a template without an attachment row stored: each block keeps the stored key of the exported image. */
-export const storedFileBlockProps = (results: Partial<UploadedUppyFile<UploadTemplateId>>, templateId: UploadTemplateId): FileBlockProps[] => {
+export const storedFileBlockProps = (results: Partial<UploadResults<UploadTemplateId>>, templateId: UploadTemplateId): FileBlockProps[] => {
   const [exported] = uploadTemplates[templateId].use;
   return (results[exported] ?? []).map((file) => ({
     name: file.original_name ?? file.name ?? '',

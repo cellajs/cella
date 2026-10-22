@@ -15,7 +15,7 @@ import { makeBlobKey, type UploadStatus } from '~/modules/attachment/offline/att
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { getImageEditorOptions, isImageTemplate } from '~/modules/common/uploader/helpers/image-editor-options';
 import { prepareFilesForOffline, storeUploadBlobs } from '~/modules/common/uploader/helpers/prepare-for-offline';
-import type { CustomUppy, CustomUppyFile, CustomUppyOpt, Plugins } from '~/modules/common/uploader/types';
+import type { CustomUppy, CustomUppyFile, CustomUppyOptions, Plugins } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
 import { cleanFileName } from '~/utils/clean-file-name';
 
@@ -23,7 +23,7 @@ import { cleanFileName } from '~/utils/clean-file-name';
  * Local-first Uppy instance: the blob is stored in IndexedDB first, then uploaded when Transloadit
  * is configured and the app is online. Offline uploads queue as pending.
  */
-export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, tokenQuery: UploadTokenQuery): Promise<CustomUppy> => {
+export const createUppy = async (uppyOptions: CustomUppyOptions, tokenQuery: UploadTokenQuery): Promise<CustomUppy> => {
   let cloudToken: UploadToken | null = null;
   let hasCloudUpload = false;
   // Only a server without cloud storage files the upload as local-only; offline or after a failed token request it waits as pending.
@@ -37,9 +37,9 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
       hasCloudUpload = !!(cloudToken?.params && cloudToken?.signature);
       if (!hasCloudUpload) localStatus = 'local-only';
     }
-  } catch (err) {
-    if (!(err instanceof Error && err.message.includes('Failed to fetch'))) {
-      console.error('Failed to get upload token:', err);
+  } catch (error) {
+    if (!(error instanceof Error && error.message.includes('Failed to fetch'))) {
+      console.error('Failed to get upload token:', error);
     }
   }
 
@@ -84,7 +84,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
       if (assembly.ok !== 'ASSEMBLY_COMPLETED') return;
 
       for (const upload of assembly.uploads || []) {
-        const attachmentId = uploadAttachmentId(upload);
+        const attachmentId = attachmentIdOf(upload);
         if (attachmentId) await attachmentStorage.markUploaded(makeBlobKey(attachmentId, 'raw'));
       }
     });
@@ -92,7 +92,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
     uppy.on('transloadit:assembly-error', async (assembly, error) => {
       const errorMessage = error?.message || 'Upload failed';
       for (const upload of assembly.uploads || []) {
-        const attachmentId = uploadAttachmentId(upload);
+        const attachmentId = attachmentIdOf(upload);
         if (attachmentId) await attachmentStorage.markFailed(makeBlobKey(attachmentId, 'raw'), errorMessage);
       }
     });
@@ -105,7 +105,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
  * The attachment id an assembly upload carries. Minted in `onBeforeFileAdded` and round-tripped
  * through Transloadit as `user_meta`, so it is the same id the blob was stored under.
  */
-const uploadAttachmentId = (upload: { user_meta?: Record<string, unknown> }): string | undefined => {
+const attachmentIdOf = (upload: { user_meta?: Record<string, unknown> }): string | undefined => {
   const id = upload.user_meta?.attachmentId;
   return typeof id === 'string' && id.length > 0 ? id : undefined;
 };

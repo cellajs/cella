@@ -5,23 +5,23 @@ import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
+import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
 import { Button } from '~/modules/ui/button';
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, ComboboxPrimitive } from '~/modules/ui/combobox';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
-export interface ComboBoxOption {
+export interface ComboboxOption {
   value: string;
   label: string;
   url?: string | null;
 }
 
 export interface ComboboxSelectProps {
-  options: ComboBoxOption[];
+  options: ComboboxOption[];
   value: string;
-  onChange: (newValue: string) => void;
-  renderOption?: (option: ComboBoxOption) => React.ReactNode;
-  renderAvatar?: boolean;
+  onChange: (value: string) => void;
+  renderOption?: (option: ComboboxOption) => React.ReactNode;
+  showAvatar?: boolean;
   clearable?: boolean;
   disabled?: boolean;
   searchableTrigger?: boolean;
@@ -34,7 +34,7 @@ export function ComboboxSelect({
   value,
   onChange,
   renderOption,
-  renderAvatar = false,
+  showAvatar = false,
   clearable = false,
   disabled = false,
   searchableTrigger = false,
@@ -52,18 +52,18 @@ export function ComboboxSelect({
   const resource = t(placeholders.resource).toLowerCase();
   const triggerText = t(placeholders.trigger, { resource });
 
-  const selectedOption = options.find((o) => o.value === value) ?? null;
+  const selectedOption = options.find((option) => option.value === value) ?? null;
   const anchorRef = React.useRef<HTMLDivElement>(null);
 
-  const optionLabel = (option: ComboBoxOption, avatarClassName?: string) => (
+  const optionLabel = (option: ComboboxOption, avatarClassName?: string) => (
     <>
-      {renderAvatar && <EntityAvatar className={avatarClassName} id={option.value} name={option.label} url={option.url} />}
+      {showAvatar && <EntityAvatar className={avatarClassName} id={option.value} name={option.label} url={option.url} />}
       {renderOption ? renderOption(option) : <span className="truncate">{option.label}</span>}
     </>
   );
 
   return (
-    <Combobox<ComboBoxOption>
+    <Combobox<ComboboxOption>
       items={options}
       itemToStringLabel={(item) => item.label}
       itemToStringValue={(item) => item.value}

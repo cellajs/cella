@@ -11,7 +11,7 @@ import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/offline
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { isUploadCandidate } from '~/modules/attachment/offline/upload-retry';
 import { findAttachmentInCache } from '~/modules/attachment/query';
-import type { UploadedUppyFile } from '~/modules/common/uploader/types';
+import type { UploadResults } from '~/modules/common/uploader/types';
 import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
 import { getLocalUserDb } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
@@ -157,7 +157,7 @@ class AttachmentUploadService {
       }
 
       if (result.successful && result.successful.length > 0) {
-        const results = completed.assembly?.results as UploadedUppyFile<'attachment'> | undefined;
+        const results = completed.assembly?.results as UploadResults<'attachment'> | undefined;
         const [original] = results?.[':original'] ?? [];
         // Only the attachment template has a row to link; other templates' files are referenced by their own forms.
         if (templateId !== 'attachment' || !results || !original) {

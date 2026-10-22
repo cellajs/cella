@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 import type { FieldValues } from 'react-hook-form';
-import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
+import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { Textarea } from '~/modules/ui/textarea';
 import { cn } from '~/utils/cn';
 
-type InputFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
+type InputFormFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   description?: string;
   type?: Parameters<typeof Input>[0]['type'] | 'textarea';
   placeholder?: string;
@@ -17,7 +17,7 @@ type InputFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFie
   autoFocus?: boolean;
   inputClassName?: string;
   labelClassName?: string;
-  autocomplete?: string;
+  autoComplete?: string;
 };
 
 export function InputFormField<TFieldValues extends FieldValues>({
@@ -36,8 +36,8 @@ export function InputFormField<TFieldValues extends FieldValues>({
   autoFocus,
   inputClassName,
   labelClassName,
-  autocomplete = 'off',
-}: InputFieldProps<TFieldValues>) {
+  autoComplete = 'off',
+}: InputFormFieldProps<TFieldValues>) {
   const InputComponent = type === 'textarea' ? Textarea : Input;
 
   return (
@@ -72,7 +72,7 @@ export function InputFormField<TFieldValues extends FieldValues>({
                   onBlur?.();
                 }}
                 readOnly={readOnly}
-                autoComplete={autocomplete}
+                autoComplete={autoComplete}
                 autoFocus={autoFocus}
                 value={formFieldValue || ''}
                 disabled={disabled}

@@ -23,12 +23,10 @@ export const openImageUpload = ({ templateId, organizationId, title, onUploaded 
     ...(organizationId ? { organizationId, personalUpload: false } : { personalUpload: true }),
     plugins: ['webcam', 'image-editor', 'url'],
     templateId,
-    statusEventHandler: {
-      onComplete(result) {
-        const key = result[resultStep][0].url;
-        if (key) onUploaded(getPublicFileUrl(key));
-        uploader.getState().remove();
-      },
+    onComplete(results) {
+      const key = results[resultStep][0].url;
+      if (key) onUploaded(getPublicFileUrl(key));
+      uploader.getState().remove();
     },
     title,
   });

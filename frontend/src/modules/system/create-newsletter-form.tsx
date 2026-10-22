@@ -122,7 +122,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
             <FormItem>
               <SelectRoles
                 value={value}
-                onValueChange={onChange}
+                onChange={onChange}
                 label={
                   <>
                     {t('c:roles')}

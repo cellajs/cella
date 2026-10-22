@@ -52,13 +52,13 @@ export function ResponsiveSelect({
   const isMobile = useBreakpointBelow('sm');
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const selectedOption = options.find((o) => o.value === value);
+  const selectedOption = options.find((option) => option.value === value);
   const selectedLabel = selectedOption ? labelOf(selectedOption) : placeholder;
   const ariaLabel = title ? `${title}: ${selectedOption?.label ?? placeholder}` : undefined;
 
   // Title and value read as one item, the value in the weight of the buttons beside it. The title is dimmed at rest
   // (still above 4.5:1 on a field); increased contrast gives it the full muted text color.
-  const display =
+  const triggerContent =
     showTitle && title ? (
       <span className="flex min-w-0 items-center gap-2">
         <span className="more-contrast:text-muted-foreground more-contrast:opacity-100 opacity-60">{title}</span>
@@ -79,7 +79,7 @@ export function ResponsiveSelect({
           aria-label={ariaLabel}
           onClick={() => setDrawerOpen(true)}
         >
-          <span className="truncate text-sm">{display}</span>
+          <span className="truncate text-sm">{triggerContent}</span>
           <ChevronDownIcon className="size-4 shrink-0 opacity-70" />
         </Button>
 
@@ -117,7 +117,7 @@ export function ResponsiveSelect({
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger disabled={disabled} className={cn('w-auto', className)} aria-label={ariaLabel}>
         {selectedOption?.icon}
-        {display}
+        {triggerContent}
       </SelectTrigger>
       <SelectContent align={align}>
         {options.map((option) => (

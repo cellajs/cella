@@ -1,13 +1,13 @@
 import type { UploadTemplateId } from 'shared';
 import { create } from 'zustand';
-import type { CustomUppyOpt, Plugins, StatusEventHandlers } from '~/modules/common/uploader/types';
+import type { CustomUppyOptions, Plugins, UploadResults } from '~/modules/common/uploader/types';
 
 type CommonUploadData = {
   id: number | string;
   templateId: UploadTemplateId;
   plugins?: Plugins;
-  restrictions?: Partial<CustomUppyOpt['restrictions']>;
-  statusEventHandler?: StatusEventHandlers;
+  restrictions?: Partial<CustomUppyOptions['restrictions']>;
+  onComplete?: (results: UploadResults<UploadTemplateId>) => void | Promise<void>;
   // Dialog props
   title?: string;
   description?: string;
@@ -18,21 +18,21 @@ type UploadData =
   | (CommonUploadData & { personalUpload: false; organizationId: string });
 
 interface UploadStoreState {
-  uploaderConfig: UploadData | null;
+  uploadData: UploadData | null;
 
   create: (data: UploadData) => void;
   remove: () => void;
 }
 
 export const useUploader = create<UploadStoreState>((set) => ({
-  uploaderConfig: null,
+  uploadData: null,
 
   create: (data) => {
-    set({ uploaderConfig: data });
+    set({ uploadData: data });
   },
 
   remove: () => {
-    set({ uploaderConfig: null });
+    set({ uploadData: null });
   },
 }));
 

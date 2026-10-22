@@ -7,7 +7,7 @@ import { openImageUpload } from '~/modules/common/uploader/open-image-upload';
 import { Button } from '~/modules/ui/button';
 import { FormField, FormItem, FormLabel } from '~/modules/ui/field';
 
-interface Props {
+interface AvatarFormFieldProps {
   // biome-ignore lint/suspicious/noExplicitAny: Accept any form shape
   form: UseFormReturn<any>;
   name: string;
@@ -16,15 +16,15 @@ interface Props {
   type: EntityAvatarProps['type'];
 }
 
-export function AvatarFormField({ form, label, name, entity, type }: Props) {
+export function AvatarFormField({ form, label, name, entity, type }: AvatarFormFieldProps) {
   const { t } = useTranslation();
 
   const setUrl = (url: string | null) => form.setValue(name, url, { shouldDirty: true });
 
   const openUploadDialog = () => {
     // A user has a profile picture, any other entity a logo.
-    const image = type && type !== 'user' ? t('c:resource_logo', { resource: t(type) }) : t('c:profile_picture');
-    openImageUpload({ templateId: 'avatar', title: t('c:upload_item', { item: image.toLowerCase() }), onUploaded: setUrl });
+    const imageName = type && type !== 'user' ? t('c:resource_logo', { resource: t(type) }) : t('c:profile_picture');
+    openImageUpload({ templateId: 'avatar', title: t('c:upload_item', { item: imageName.toLowerCase() }), onUploaded: setUrl });
   };
 
   return (

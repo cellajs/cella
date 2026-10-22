@@ -2,7 +2,7 @@ import type { FieldValues } from 'react-hook-form';
 import countries from '#json/countries.json';
 import { CountryFlag } from '~/modules/common/country-flag';
 import { ComboboxFormField, type ComboboxSelectProps } from '~/modules/common/form-fields/select-combobox/combobox-select';
-import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
+import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
 
 const options = countries.map(({ code, name }) => ({ value: code, label: name }));
 
@@ -13,7 +13,7 @@ const renderCountryOption: ComboboxSelectProps['renderOption'] = ({ value, label
   </div>
 );
 
-export function SelectCountry<TFieldValues extends FieldValues>(props: BaseFormFieldProps<TFieldValues>) {
+export function CountryFormField<TFieldValues extends FieldValues>(props: BaseFormFieldProps<TFieldValues>) {
   return (
     <ComboboxFormField
       {...props}

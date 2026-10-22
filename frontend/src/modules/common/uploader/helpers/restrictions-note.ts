@@ -1,6 +1,6 @@
 import i18n, { t } from 'i18next';
 import type { TKey } from '~/lib/i18n-locales';
-import type { CustomUppyOpt } from '~/modules/common/uploader/types';
+import type { CustomUppyOptions } from '~/modules/common/uploader/types';
 
 /** File kinds by the types that name them; any other type is a file. */
 const kindTypes: [TKey, string[]][] = [
@@ -16,7 +16,7 @@ const formatList = (kinds: TKey[], type: Intl.ListFormatType) =>
   new Intl.ListFormat(i18n.resolvedLanguage, { type }).format(kinds.map((kind) => t(kind)));
 
 /** The Dashboard note: the file kinds, the number of files and the size each may have. */
-export const generateRestrictionNote = ({ allowedFileTypes, maxNumberOfFiles, maxFileSize }: Partial<CustomUppyOpt['restrictions']>) => {
+export const generateRestrictionNote = ({ allowedFileTypes, maxNumberOfFiles, maxFileSize }: Partial<CustomUppyOptions['restrictions']>) => {
   const kinds = allowedFileTypes?.includes('*/*') ? everyKind : [...new Set((allowedFileTypes ?? []).map(kindOf))];
 
   const parts: string[] = [];

@@ -30,7 +30,7 @@ type FormValues = z.infer<typeof formSchema>;
 export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  const isMediumScreen = useBreakpointAbove('lg');
+  const isLargeScreen = useBreakpointAbove('lg');
   const emailLabel = t('c:email').toLowerCase();
   const messageLabel = t('c:message').toLowerCase();
 
@@ -64,7 +64,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             label={t('c:email')}
             labelClassName="max-sm:sr-only"
             type="email"
-            autocomplete="email"
+            autoComplete="email"
             placeholder={t('c:placeholder.your_input', { inputLabel: emailLabel })}
             icon={<MailIcon />}
             required
@@ -87,13 +87,14 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
           </div>
         </form>
       </Form>
-      {!isMediumScreen && <LegalContact className="my-4 w-full sm:my-0" addressOnly />}
-      {isMediumScreen && (
+      {isLargeScreen ? (
         <div className="w-full overflow-hidden rounded-md bg-accent md:mb-12">
           <Suspense>
             <ContactFormMap />
           </Suspense>
         </div>
+      ) : (
+        <LegalContact className="my-4 w-full sm:my-0" addressOnly />
       )}
     </div>
   );

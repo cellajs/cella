@@ -9,13 +9,13 @@ import type { ChannelEntityType } from 'shared';
 import slugify from 'slugify';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { ApiError } from '~/lib/api';
-import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
+import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
 import { Button } from '~/modules/ui/button';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
 
-type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<TFieldValues>, 'name'> & {
+type SlugFormFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<TFieldValues>, 'name'> & {
   entityType: ChannelEntityType | 'user';
   tenantId?: string;
   nameValue?: string;
@@ -24,9 +24,11 @@ type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<
   prefix?: string;
 };
 
+/** An entity's slug: derived from `nameValue` until edited, checked for availability, required unless `required` is false. */
 export function SlugFormField<TFieldValues extends FieldValues>({
   control,
   label,
+  required = true,
   disabled,
   previousSlug,
   description,
@@ -34,27 +36,27 @@ export function SlugFormField<TFieldValues extends FieldValues>({
   entityType,
   tenantId,
   prefix: customPrefix,
-}: SlugFieldProps<TFieldValues>) {
+}: SlugFormFieldProps<TFieldValues>) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
   const name = 'slug';
 
-  const [isDeviating, setDeviating] = useState(false);
+  const [isDeviating, setIsDeviating] = useState(false);
   // Appended to a derived slug that is too short or taken, so the user never has to fix a field they did not type in
   const [suffix] = useState(() => Math.random().toString(36).slice(2, 6));
   const isDerived = !previousSlug && !isDeviating;
-  const [isSlugAvailable, setSlugAvailable] = useState<'available' | 'blank' | 'notAvailable'>('blank');
+  const [availability, setAvailability] = useState<'available' | 'blank' | 'notAvailable'>('blank');
   // Availability responses for a value the user has since replaced are ignored.
   const latestSlugRef = useRef('');
 
   const prefix = customPrefix;
 
   // Repeated on the group's focus state, whose own ring color would hide the answer while the user types
-  const inputClassName = cn(
-    isSlugAvailable !== 'blank' && 'ring-2',
-    isSlugAvailable === 'available' && 'ring-success focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-success',
-    isSlugAvailable === 'notAvailable' && 'ring-destructive focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-destructive',
+  const availabilityRingClass = cn(
+    availability !== 'blank' && 'ring-2',
+    availability === 'available' && 'ring-success focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-success',
+    availability === 'notAvailable' && 'ring-destructive focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-destructive',
   );
 
   const form = useFormContext<{ slug: string }>();
@@ -73,14 +75,14 @@ export function SlugFormField<TFieldValues extends FieldValues>({
       if (variables.slug !== latestSlugRef.current) return;
       // Only the manual availability error is ours to clear; resolver errors on the value stay.
       if (form.getFieldState(name).error?.type === 'manual') form.clearErrors(name);
-      setSlugAvailable('available');
+      setAvailability('available');
     },
     onError: (error, variables) => {
       if (variables.slug !== latestSlugRef.current) return;
-      if (error.status !== 409) return setSlugAvailable('blank');
+      if (error.status !== 409) return setAvailability('blank');
       if (isDerived && !variables.slug.endsWith(`-${suffix}`)) return form.setValue(name, `${variables.slug}-${suffix}`);
       form.setError(name, { type: 'manual', message: t('error:slug_exists') });
-      setSlugAvailable('notAvailable');
+      setAvailability('notAvailable');
     },
   });
 
@@ -94,11 +96,11 @@ export function SlugFormField<TFieldValues extends FieldValues>({
     const value = slug ?? '';
     latestSlugRef.current = value;
 
-    if (value.length < 2 || value === previousSlug) return setSlugAvailable('blank');
-    if (!isValidSlug(value)) return setSlugAvailable('notAvailable');
+    if (value.length < 2 || value === previousSlug) return setAvailability('blank');
+    if (!isValidSlug(value)) return setAvailability('notAvailable');
 
     // Valid: neutral until a check answers; user slugs are globally unique and checked by the update API.
-    setSlugAvailable('blank');
+    setAvailability('blank');
     if (!isOnline || entityType === 'user' || !tenantId) return;
     checkAvailability({ slug: value, entityType });
   }, [slug]);
@@ -122,13 +124,13 @@ export function SlugFormField<TFieldValues extends FieldValues>({
       name={name as Path<TFieldValues>}
       render={({ field: { value: formFieldValue, onChange, ...rest } }) => (
         <FormItem name={name} disabled={disabled}>
-          <FormLabel help={description} required>
+          <FormLabel help={description} required={required}>
             {label}
           </FormLabel>
-          <InputGroup className={inputClassName}>
+          <InputGroup className={availabilityRingClass}>
             <FormControl>
               <InputGroupInput
-                onFocus={() => setDeviating(true)}
+                onFocus={() => setIsDeviating(true)}
                 value={formFieldValue || ''}
                 onChange={(event) => onChange(event.target.value.toLowerCase())}
                 {...rest}

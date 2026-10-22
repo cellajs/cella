@@ -86,8 +86,8 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
         <AvatarFormField form={form} label={children ? '' : t('c:profile_picture')} type="user" name="thumbnailUrl" entity={user} />
         {isSelf && (
           <div className="grid gap-6 sm:grid-cols-2 sm:gap-4">
-            <InputFormField inputClassName="border" control={form.control} name="firstName" label={t('c:first_name')} autocomplete="given-name" />
-            <InputFormField inputClassName="border" control={form.control} name="lastName" label={t('c:last_name')} autocomplete="family-name" />
+            <InputFormField inputClassName="border" control={form.control} name="firstName" label={t('c:first_name')} autoComplete="given-name" />
+            <InputFormField inputClassName="border" control={form.control} name="lastName" label={t('c:last_name')} autoComplete="family-name" />
           </div>
         )}
 

@@ -69,7 +69,7 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
           name="role"
           render={({ field: { value, onChange } }) => (
             <FormItem className="flex-row items-center gap-4">
-              <SelectRoleRadio value={value} onValueChange={onChange} entityType={channel.entityType} label={`${t('c:role')}:`} />
+              <SelectRoleRadio value={value} onChange={onChange} entityType={channel.entityType} label={`${t('c:role')}:`} />
               <FormMessage />
             </FormItem>
           )}

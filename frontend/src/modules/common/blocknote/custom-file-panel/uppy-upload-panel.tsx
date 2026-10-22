@@ -11,8 +11,8 @@ import { attachmentBlockProps, storedFileBlockProps } from '~/modules/common/blo
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import type { BaseUppyFilePanelProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { Spinner } from '~/modules/common/spinner';
-import { createBaseTransloaditUppy, registerUppyPlugins } from '~/modules/common/uploader/helpers/uppy-helpers';
-import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/common/uploader/types';
+import { createUppy, registerUppyPlugins } from '~/modules/common/uploader/helpers/uppy-helpers';
+import type { CustomUppy, CustomUppyOptions, UploadResults } from '~/modules/common/uploader/types';
 import { UploadDashboard } from '~/modules/common/uploader/upload-dashboard';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 
@@ -79,7 +79,7 @@ export function UppyFilePanel({
     return block && block.type in basicBlockTypes ? (block.type as keyof typeof basicBlockTypes) : 'file';
   }, [blockId]);
 
-  const uppyOptions: CustomUppyOpt = useMemo(
+  const uppyOptions: CustomUppyOptions = useMemo(
     () => ({ restrictions: { ...appConfig.uppy.defaultRestrictions, allowedFileTypes: basicBlockTypes[blockType].allowedFileTypes } }),
     [blockType],
   );
@@ -111,7 +111,7 @@ export function UppyFilePanel({
 
     const initializeUppy = async () => {
       try {
-        localUppy = await createBaseTransloaditUppy(uppyOptions, {
+        localUppy = await createUppy(uppyOptions, {
           templateId,
           // A system upload belongs to no organization, so its token request names none.
           organizationId: isSystemUploadTemplate(templateId) ? undefined : organizationId,
@@ -135,7 +135,7 @@ export function UppyFilePanel({
             if (assembly.error) return;
 
             setOpen(false);
-            const results = assembly.results as UploadedUppyFile<UploadTemplateId>;
+            const results = assembly.results as UploadResults<UploadTemplateId>;
             // Parse once so the block reference and the persisted entity share the same id.
             const attachments = ownTemplateId ? [] : parseUploadedAttachments(results, organizationId);
             const fileBlocks = ownTemplateId

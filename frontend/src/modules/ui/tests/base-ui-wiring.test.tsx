@@ -266,7 +266,7 @@ describe('role selectors in a form field', () => {
           name="role"
           render={({ field: { value, onChange } }) => (
             <FormItem name="role">
-              <SelectRoleRadio value={value} onValueChange={onChange} label="Role" />
+              <SelectRoleRadio value={value} onChange={onChange} label="Role" />
             </FormItem>
           )}
         />
@@ -301,7 +301,7 @@ describe('role selectors in a form field', () => {
             name="roles"
             render={({ field: { value, onChange } }) => (
               <FormItem name="roles">
-                <SelectRoles value={value} onValueChange={onChange} label="Roles" />
+                <SelectRoles value={value} onChange={onChange} label="Roles" />
               </FormItem>
             )}
           />

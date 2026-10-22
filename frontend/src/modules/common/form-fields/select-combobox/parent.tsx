@@ -4,11 +4,11 @@ import type { ChannelBase } from 'sdk';
 import type { ChannelEntityType } from 'shared';
 import { getChannelListQuery } from '~/lib/entity-modules';
 import { ComboboxFormField, type ComboboxSelectProps } from '~/modules/common/form-fields/select-combobox/combobox-select';
-import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
+import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
 import { useCurrentUser } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 
-type SelectParentProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
+type SelectParentFormFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   parentType: ChannelEntityType;
   /** Restrict the offered parents to one organization (e.g. sub-channels of the picked org). */
   organizationId?: string;
@@ -37,15 +37,15 @@ export function SelectParentFormField<TFieldValues extends FieldValues>({
   control,
   name,
   label,
-  options: opts,
+  options: passedOptions,
   onSelect,
   required,
   disabled,
   clearable,
-}: SelectParentProps<TFieldValues>) {
+}: SelectParentFormFieldProps<TFieldValues>) {
   const { items } = useParentChannels(parentType, organizationId, !disabled);
 
-  const options = opts ?? items.map((i) => ({ value: i.id, label: i.name, url: i.thumbnailUrl ?? undefined }));
+  const options = passedOptions ?? items.map((item) => ({ value: item.id, label: item.name, url: item.thumbnailUrl ?? undefined }));
 
   return (
     <ComboboxFormField
@@ -60,7 +60,7 @@ export function SelectParentFormField<TFieldValues extends FieldValues>({
         if (selectedItem && onSelect) onSelect(selectedItem);
       }}
       clearable={clearable}
-      renderAvatar
+      showAvatar
       placeholders={{ trigger: 'c:select_resource', resource: `c:${parentType}` }}
     />
   );
