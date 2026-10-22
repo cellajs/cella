@@ -357,7 +357,7 @@
   z-index: 111;
 }
 
-/* Keep mobile prose at text-md (about 17px) rather than the 19px root. Unlayered rules outrank typography utilities. */
+/* Mobile prose stays at text-md (about 17px), a step below the 19px root. Unlayered rules outrank typography utilities. */
 .prose {
   @apply max-sm:text-md;
 }
