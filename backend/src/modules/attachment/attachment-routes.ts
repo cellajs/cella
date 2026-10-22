@@ -5,6 +5,7 @@ import { bulkPointsLimiter, presignedUrlLimiter, singlePointsLimiter, syncReadLi
 import {
   attachmentCreateManyStxBodySchema,
   attachmentCreateResponseSchema,
+  attachmentLinkKeysBodySchema,
   attachmentListQuerySchema,
   attachmentSchema,
   attachmentUpdateStxBodySchema,
@@ -31,7 +32,7 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     method: 'get',
     path: '/',
     xGuard: [actorGuard, tenantGuard, orgGuard],
-    // Sync-driven read backpressure on the delta path (template pattern for app product lists)
+    // Sync-driven read backpressure on the range-read path (template pattern for app product lists)
     xRateLimiter: [syncReadLimiter],
     xTool: {
       description: 'List attachments of the organization with optional search, sorting and paging. Returns metadata and the description as text.',
@@ -90,6 +91,17 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     description: 'Updates metadata of an attachment, such as its name or associated entity.',
     request: { params: idInTenantOrgParamSchema, query: fullResponseQuerySchema, body: jsonBody(attachmentUpdateStxBodySchema) },
     responses: { 200: json('Attachment was updated', attachmentSchema, mockAttachmentResponse()) },
+  }),
+  linkAttachmentKeys: xRoute({
+    method: 'put',
+    path: '/{id}/keys',
+    xGuard: [actorGuard, tenantGuard, orgGuard],
+    xRateLimiter: [singlePointsLimiter],
+    summary: 'Link attachment keys',
+    description:
+      'Stores the storage keys of a file its uploader uploaded after creating the attachment, offline or before cloud storage was configured. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.',
+    request: { params: idInTenantOrgParamSchema, body: jsonBody(attachmentLinkKeysBodySchema) },
+    responses: { 200: json('Attachment with its stored file', attachmentSchema, mockAttachmentResponse()) },
   }),
   deleteAttachments: xRoute({
     method: 'delete',

@@ -17,6 +17,7 @@ import {
   useColumnWidths,
   useDragAutoScroll,
   useGridDimensions,
+  useMeasuredRowHeights,
   useNearEnd,
   useViewportRows,
 } from './hooks';
@@ -405,6 +406,19 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     return (row: R) => computeWrapTextRowHeight(scaledBase, wrapColumns, row, getRenderedWidth) + slotExtra;
   }, [baseRowHeight, columns, isMobileBreakpoint, renderedColumnWidths]);
 
+  const getMeasuredRowKey = useLatestCallback((row: R, rowIdx: number): unknown => (typeof rowKeyGetter === 'function' ? rowKeyGetter(row) : rowIdx));
+  const { getMeasuredHeight, renderWindowRef } = useMeasuredRowHeights({
+    gridRef,
+    rows,
+    rowHeight,
+    // Only estimated heights can be wrong; a fixed height is exact, and without virtualization every row is rendered
+    enabled: enableRowVirtualization && typeof rowHeight === 'function',
+    headerRowsCount,
+    getRowKey: getMeasuredRowKey,
+    // Not rowHeight or columns themselves: a consumer passing them inline would reset the cache on every render
+    resetKeys: [renderedColumnWidths, isMobileBreakpoint, typeof baseRowHeight === 'number' ? baseRowHeight : null],
+  });
+
   const groupedColumnHeaderRowsCount = headerRowsCount - 1;
   const minRowIdx = -headerRowsCount;
   const mainHeaderRowIdx = minRowIdx + groupedColumnHeaderRowsCount;
@@ -449,13 +463,19 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     return { isRowSelected: hasSelectedRow && !hasUnselectedRow, isIndeterminate: hasSelectedRow && hasUnselectedRow };
   }, [rows, effectiveSelectedRows, rowKeyGetter, isSelectable]);
 
-  const { rowOverscanStartIdx, rowOverscanEndIdx, totalRowHeight, gridTemplateRows, getRowTop, getRowHeight, findRowIdx } = useViewportRows({
-    rows,
-    rowHeight,
-    clientHeight,
-    scrollTop,
-    enableVirtualization: enableRowVirtualization,
-    measured,
+  const { rowOverscanStartIdx, rowOverscanEndIdx, totalRowHeight, gridTemplateRows, getRowTop, getRowHeight, getRowEstimate, findRowIdx } =
+    useViewportRows({
+      rows,
+      rowHeight,
+      clientHeight,
+      scrollTop,
+      enableVirtualization: enableRowVirtualization,
+      measured,
+      getMeasuredHeight,
+    });
+
+  useLayoutEffect(() => {
+    renderWindowRef.current = [rowOverscanStartIdx, rowOverscanEndIdx];
   });
 
   const {
@@ -1002,7 +1022,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
           rowClass,
           animateReorder,
           gridRowStart,
-          height: getRowHeight(rowIdx),
+          // The estimate, not the measured height: a cell sized from --rdg-row-height would otherwise hold the row at its tallest
+          height: getRowEstimate(rowIdx),
           selectedCellIdx: selectedRowIdx === rowIdx ? selectedIdx : undefined,
           lastFrozenColumnIndex,
           onRowChange: handleFormatterRowChangeLatest,

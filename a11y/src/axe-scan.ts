@@ -61,10 +61,9 @@ export async function axeScan(page: Page, where: string, contrastOnly = false): 
 
 /**
  * Evidence per criterion from all scans, plus the raw report for fixing: every failing element per rule and state.
- * With `contrastMeasured`, what axe could not decide about contrast is the text-contrast probe's to judge, so it
- * leaves no review note here.
+ * What axe could not decide about contrast is the text-contrast probe's to judge, so it leaves no review note here.
  */
-export function summarizeAxe(scans: AxeScan[], contrastMeasured = false) {
+export function summarizeAxe(scans: AxeScan[]) {
   const rules = new Map<string, AxeRule & { failed: Map<string, AxeNode[]>; review: string[]; passed: number }>();
   const advisories = new Map<string, { help: string; where: string[] }>();
   const tally = (rule: AxeRule) => {
@@ -88,7 +87,7 @@ export function summarizeAxe(scans: AxeScan[], contrastMeasured = false) {
     const elements = [...rule.failed.values()].reduce((sum, nodes) => sum + nodes.length, 0);
     const item: Evidence = failedWhere.length
       ? { check: 'axe', result: 'fail', summary: `axe ${rule.id}: ${rule.help} (${elements} elements).`, where: failedWhere }
-      : rule.review.length && !(contrastMeasured && rule.id === contrastRule)
+      : rule.review.length && rule.id !== contrastRule
         ? {
             check: 'axe',
             result: 'review',

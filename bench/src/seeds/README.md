@@ -4,7 +4,7 @@ How load-test seed data is defined, registered, and cleaned up.
 
 ## Self-registration
 
-Each `*.bench.ts` file here calls `registerBenchSeed()` as an import side effect (same pattern as `shared/src/module-registry.ts`). `data-setup.ts` auto-imports every `*.bench.ts` under `seeds/` in Node.js (not inside Artillery scenarios), so an app adds a load-test table by dropping in one file, with no barrel or `data-setup.ts` edit.
+Each `*.bench.ts` file here calls `registerBenchSeed()` as an import side effect (same pattern as `shared/src/module-registry.ts`). `data-setup.ts` auto-imports every `*.bench.ts` under `seeds/`, so an app adds a load-test table by dropping in one file, with no barrel or `data-setup.ts` edit.
 
 ## Seed kinds
 

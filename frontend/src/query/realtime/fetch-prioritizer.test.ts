@@ -57,30 +57,30 @@ describe('fetch-prioritizer', () => {
   });
 
   it('merges notifications in the window into ONE fetch and advances the caught-up seq after success', async () => {
-    enqueueRange({ ...base, fromSeq: 5, untilSeq: 8 });
-    enqueueRange({ ...base, fromSeq: 9, untilSeq: 12 });
+    enqueueRange({ ...base, afterSeq: 4, untilSeq: 8 });
+    enqueueRange({ ...base, afterSeq: 8, untilSeq: 12 });
     expect(fetchRangeAndPatch).not.toHaveBeenCalled(); // background tier: nothing yet
 
     await vi.advanceTimersByTimeAsync(30_000);
 
     expect(fetchRangeAndPatch).toHaveBeenCalledTimes(1);
-    expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('5,12'); // merged range
+    expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 4, untilSeq: 12 }); // merged range
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
   });
 
   it('flushes viewing-tier channel views immediately (single events keep live behavior)', async () => {
     getSyncTier.mockReturnValue(VIEWING);
-    enqueueRange({ ...base, fromSeq: 3, untilSeq: 3 });
+    enqueueRange({ ...base, afterSeq: 2, untilSeq: 3 });
 
     await vi.advanceTimersByTimeAsync(0);
 
     expect(fetchRangeAndPatch).toHaveBeenCalledTimes(1);
-    expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('3,3');
+    expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 2, untilSeq: 3 });
   });
 
   it('records the known seq but never fetches for muted channel views', async () => {
     getSyncTier.mockReturnValue(ON_OPEN);
-    enqueueRange({ ...base, channelId: 'project-9', fromSeq: 4, untilSeq: 7 });
+    enqueueRange({ ...base, channelId: 'project-9', afterSeq: 3, untilSeq: 7 });
 
     await vi.advanceTimersByTimeAsync(60_000);
 
@@ -90,29 +90,29 @@ describe('fetch-prioritizer', () => {
 
   it('self-heals a small live gap by anchoring at caught-up+1', async () => {
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
-    enqueueRange({ ...base, fromSeq: 6, untilSeq: 8 }); // seq 5 was missed
+    enqueueRange({ ...base, afterSeq: 5, untilSeq: 8 }); // seq 5 was missed
 
     await flushAllNow();
 
-    expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('5,8');
+    expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 4, untilSeq: 8 });
   });
 
   it('org-homed channel views (wire channelId === orgId) share ONE watermark slot with catchup', async () => {
     // Catchup advanced the org slot; the live notification carries channelId = orgId.
     syncStore.getState().setOrgSeq('org-1', 'attachment', 6);
-    enqueueRange({ ...base, channelId: 'org-1', fromSeq: 3, untilSeq: 9 });
+    enqueueRange({ ...base, channelId: 'org-1', afterSeq: 2, untilSeq: 9 });
 
     await flushAllNow();
 
     // Anchors at the org slot (7,9) and advances that same slot after success.
-    expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('7,9');
+    expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 6, untilSeq: 9 });
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
     expect(syncStore.getState().getChannelSeq('org-1', 'org-1', 'attachment')).toBe(9);
   });
 
   it('retries transient errors with backoff, then invalidates and advances so the range cannot loop', async () => {
     fetchRangeAndPatch.mockResolvedValue({ status: 'error', items: [] });
-    enqueueRange({ ...base, fromSeq: 2, untilSeq: 2 });
+    enqueueRange({ ...base, afterSeq: 1, untilSeq: 2 });
 
     await vi.advanceTimersByTimeAsync(30_000); // first attempt
     await vi.advanceTimersByTimeAsync(2_000); // retry 1
@@ -125,7 +125,7 @@ describe('fetch-prioritizer', () => {
 
   it('invalidates immediately on overflow (no retries)', async () => {
     fetchRangeAndPatch.mockResolvedValue({ status: 'overflow', items: [] });
-    enqueueRange({ ...base, fromSeq: 1, untilSeq: 900 });
+    enqueueRange({ ...base, afterSeq: 0, untilSeq: 900 });
 
     await flushAllNow();
 
@@ -138,8 +138,8 @@ describe('fetch-prioritizer', () => {
     const off = onSyncedRows(syncedRows);
     const items = [{ id: 'a1' }, { id: 'a2' }];
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items });
-    enqueueRange({ ...base, fromSeq: 5, untilSeq: 6, isCreate: true });
-    enqueueRange({ ...base, fromSeq: 7, untilSeq: 9, isCreate: true });
+    enqueueRange({ ...base, afterSeq: 4, untilSeq: 6, isCreate: true });
+    enqueueRange({ ...base, afterSeq: 6, untilSeq: 9, isCreate: true });
 
     await flushAllNow();
     off();
@@ -153,7 +153,7 @@ describe('fetch-prioritizer', () => {
     const syncedRows = vi.fn();
     const off = onSyncedRows(syncedRows);
     fetchRangeAndPatch.mockResolvedValue({ status: 'overflow', items: [] });
-    enqueueRange({ ...base, fromSeq: 1, untilSeq: 900, isCreate: true });
+    enqueueRange({ ...base, afterSeq: 0, untilSeq: 900, isCreate: true });
 
     await flushAllNow();
     off();
@@ -165,7 +165,7 @@ describe('fetch-prioritizer', () => {
 
   it('fires collected propagation hints after the flush', async () => {
     const hint = { embeddedProduct: 'label', hostProduct: 'task', hostColumn: 'labels', update: ['l1'], remove: [] };
-    enqueueRange({ ...base, fromSeq: 5, untilSeq: 6, propagation: hint as never });
+    enqueueRange({ ...base, afterSeq: 4, untilSeq: 6, propagation: hint as never });
 
     await flushAllNow();
 
@@ -174,7 +174,7 @@ describe('fetch-prioritizer', () => {
 
   it('skips ranges the client already has (untilSeq <= caught-up)', async () => {
     syncStore.getState().setOrgSeq('org-1', 'attachment', 10);
-    enqueueRange({ ...base, fromSeq: 8, untilSeq: 10 });
+    enqueueRange({ ...base, afterSeq: 7, untilSeq: 10 });
 
     await vi.advanceTimersByTimeAsync(60_000);
 
@@ -183,21 +183,21 @@ describe('fetch-prioritizer', () => {
 
   it('covers all due channels of one org with ONE fetch and advances each to the shared bound', async () => {
     syncStore.getState().setOrgSeq('org-1', 'attachment', 0);
-    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 5, untilSeq: 8 });
-    enqueueRange({ ...base, channelId: 'proj-b', fromSeq: 9, untilSeq: 12 });
+    enqueueRange({ ...base, channelId: 'proj-a', afterSeq: 4, untilSeq: 8 });
+    enqueueRange({ ...base, channelId: 'proj-b', afterSeq: 8, untilSeq: 12 });
 
     await flushAllNow();
 
     // One merged org fetch covers both channels; rows route by home during patch.
     expect(fetchRangeAndPatch).toHaveBeenCalledTimes(1);
-    expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('5,12');
+    expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 4, untilSeq: 12 });
     // Per-view advance accounting: both channels advance to the covered upper bound.
     expect(syncStore.getState().getChannelSeq('org-1', 'proj-a', 'attachment')).toBe(12);
     expect(syncStore.getState().getChannelSeq('org-1', 'proj-b', 'attachment')).toBe(12);
   });
 
   it('scopes the covering fetch to the channel id for a single viewed channel (no path lookup)', async () => {
-    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 5, untilSeq: 8 });
+    enqueueRange({ ...base, channelId: 'proj-a', afterSeq: 4, untilSeq: 8 });
 
     await flushAllNow();
 
@@ -208,8 +208,8 @@ describe('fetch-prioritizer', () => {
 
   it('narrows the covering fetch to the least-common-ancestor channel id when due channels diverge', async () => {
     resolveChannelPath.mockImplementation((_type, channelId) => (channelId === 'proj-a' ? 'org-1/course-1/proj-a' : 'org-1/course-1/proj-b'));
-    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 5, untilSeq: 8 });
-    enqueueRange({ ...base, channelId: 'proj-b', fromSeq: 9, untilSeq: 12 });
+    enqueueRange({ ...base, channelId: 'proj-a', afterSeq: 4, untilSeq: 8 });
+    enqueueRange({ ...base, channelId: 'proj-b', afterSeq: 8, untilSeq: 12 });
 
     await flushAllNow();
 
@@ -219,8 +219,8 @@ describe('fetch-prioritizer', () => {
 
   it('widens to the whole org when any due channel path is unknown', async () => {
     resolveChannelPath.mockImplementation((_type, channelId) => (channelId === 'proj-a' ? 'org-1/course-1/proj-a' : null));
-    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 5, untilSeq: 8 });
-    enqueueRange({ ...base, channelId: 'proj-b', fromSeq: 9, untilSeq: 12 });
+    enqueueRange({ ...base, channelId: 'proj-a', afterSeq: 4, untilSeq: 8 });
+    enqueueRange({ ...base, channelId: 'proj-b', afterSeq: 8, untilSeq: 12 });
 
     await flushAllNow();
 
@@ -230,7 +230,7 @@ describe('fetch-prioritizer', () => {
   it('short delivery: keeps the cursor honest, invalidates the view, and degrades sync trust', async () => {
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: 0 });
     syncStore.getState().setChannelSeq('org-1', 'proj-a', 'attachment', 3);
-    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 4, untilSeq: 7 });
+    enqueueRange({ ...base, channelId: 'proj-a', afterSeq: 3, untilSeq: 7 });
 
     await flushAllNow();
 
@@ -242,7 +242,7 @@ describe('fetch-prioritizer', () => {
   it('full delivery advances and stays trusted', async () => {
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [{ id: 'x', seq: 7 }], reachedSeq: 7 });
     syncStore.getState().setChannelSeq('org-1', 'proj-a', 'attachment', 3);
-    enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 4, untilSeq: 7 });
+    enqueueRange({ ...base, channelId: 'proj-a', afterSeq: 3, untilSeq: 7 });
 
     await flushAllNow();
 
@@ -251,7 +251,7 @@ describe('fetch-prioritizer', () => {
   });
 
   it('flushes a pending channel view when its channel gains an observer (catch-up-on-open without navigation)', async () => {
-    enqueueRange({ ...base, fromSeq: 5, untilSeq: 8 }); // background tier: waits for the spread slot
+    enqueueRange({ ...base, afterSeq: 4, untilSeq: 8 }); // background tier: waits for the spread slot
     expect(fetchRangeAndPatch).not.toHaveBeenCalled();
 
     // The channel view's view mounts: its list query gains an observer and the tier turns live.
@@ -262,7 +262,7 @@ describe('fetch-prioritizer', () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(fetchRangeAndPatch).toHaveBeenCalledTimes(1);
-    expect(fetchRangeAndPatch.mock.calls[0][3]).toBe('5,8');
+    expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 4, untilSeq: 8 });
 
     unsubscribe();
     queryClient.clear();

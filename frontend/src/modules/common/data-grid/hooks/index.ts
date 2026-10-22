@@ -2,6 +2,7 @@ export * from './use-calculated-columns';
 export * from './use-column-widths';
 export * from './use-drag-auto-scroll';
 export * from './use-grid-dimensions';
+export * from './use-measured-row-heights';
 export * from './use-near-end';
 export * from './use-roving-tab-index';
 export * from './use-row-selection';

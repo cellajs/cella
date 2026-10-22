@@ -33,25 +33,52 @@ export type InternalDropdown = DropdownData & {
   kind: DropdownKind;
 };
 
+/** How long a trigger shows that the action picked from its dropdown worked. */
+const DONE_DURATION = 1400;
+
 interface DropdownStoreState {
   dropdown: InternalDropdown | null;
   lastRemovedTriggerId: string | null;
   lastRemovedAt: number;
+  /** The trigger of a dropdown closed by an action that worked, e.g. a copy, and what to confirm there. */
+  done: { trigger: HTMLElement; label: string; open: boolean; key: number } | null;
 
   create: (content: ReactNode, data: DropdownData) => string | number;
   update: (updates: Partial<InternalDropdown>) => void;
   remove: () => void;
+  /** Closes the dropdown after the action picked from it worked: its trigger shows a check and a `label` tip for a moment. */
+  complete: (label: string) => void;
   get: () => InternalDropdown | null;
+}
+
+let doneTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** Keeps the mark with `open: false`, so the tip can animate out from its trigger. */
+function endDone() {
+  clearTimeout(doneTimer);
+  const { done } = useDropdowner.getState();
+  if (!done?.open) return;
+  done.trigger.removeAttribute('data-dropdowner-done');
+  useDropdowner.setState({ done: { ...done, open: false } });
+}
+
+function markDone(trigger: HTMLElement, label: string) {
+  endDone();
+  trigger.setAttribute('data-dropdowner-done', '');
+  useDropdowner.setState({ done: { trigger, label, open: true, key: Date.now() } });
+  doneTimer = setTimeout(endDone, DONE_DURATION);
 }
 
 export const useDropdowner = create<DropdownStoreState>((set, get) => ({
   dropdown: null,
   lastRemovedTriggerId: null,
   lastRemovedAt: 0,
+  done: null,
 
   create: (content, data) => {
     const current = get().dropdown;
 
+    endDone();
     current?.triggerRef.current?.removeAttribute('data-dropdowner-active');
 
     // The same trigger toggles the dropdown closed
@@ -96,6 +123,12 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
     current?.triggerRef.current?.removeAttribute('data-dropdowner-active');
     set({ dropdown: null, lastRemovedTriggerId: current?.triggerId ?? null, lastRemovedAt: Date.now() });
     current?.onClose?.();
+  },
+
+  complete: (label) => {
+    const trigger = get().dropdown?.triggerRef.current;
+    get().remove();
+    if (trigger) markDone(trigger, label);
   },
 
   get: () => get().dropdown,

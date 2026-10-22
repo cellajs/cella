@@ -5,6 +5,7 @@ import { type InternalDropdown, useDropdowner } from '~/modules/common/dropdowne
 import { FocusTrap } from '~/modules/common/focus-trap';
 import { Popover, PopoverContent } from '~/modules/ui/popover';
 import { cn } from '~/utils/cn';
+import { isTouchInteraction } from '~/utils/input-modality';
 
 export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown }) {
   const triggerEl = dropdown.triggerRef?.current;
@@ -104,6 +105,8 @@ function PanelDropdown({ dropdown, triggerEl }: { dropdown: InternalDropdown; tr
         align={dropdown.align}
         positionerClassName="z-301"
         className="p-0"
+        // After touch the focus trap places the initial focus: opened from code, Base UI cannot see a touch open and would focus a text field.
+        initialFocus={() => !isTouchInteraction()}
         finalFocus={triggerFocusRef}
         aria-label={dropdown.triggerLabel}
       >

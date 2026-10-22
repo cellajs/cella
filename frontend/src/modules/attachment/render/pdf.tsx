@@ -2,6 +2,7 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { useEffect, useRef, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
+import { Spinner } from '~/modules/common/spinner';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import '~/modules/attachment/render/react-pdf.css';
@@ -9,6 +10,13 @@ import '~/modules/attachment/render/react-pdf.css';
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 const options = { cMapUrl: '/cmaps/' };
+
+// Centered over the viewer stage, where the Suspense fallback before it stood.
+const loadingSpinner = (
+  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+    <Spinner size="lg" noDelay />
+  </div>
+);
 
 const PAGE_PADDING = 20; // Breathing room around each page (px)
 
@@ -72,7 +80,7 @@ export function RenderPDF({ file, className, fitMode = 'width' }: RenderPDFProps
 
   return (
     <div ref={containerRef} className={className}>
-      <Document file={file} options={options} onLoadSuccess={onDocumentLoad}>
+      <Document file={file} options={options} loading={loadingSpinner} onLoadSuccess={onDocumentLoad}>
         {container.width > 0 &&
           pageSizes.map((size, index) => {
             const scale = getScale(size);

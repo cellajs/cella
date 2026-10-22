@@ -298,9 +298,25 @@
             "required": false,
             "enum": ["asc", "desc"]
           },
-          "offset": { "type": "string", "required": false },
-          "limit": { "type": "string", "required": false },
-          "seqCursor": { "type": "string", "required": false },
+          "offset": { "type": "integer", "required": false, "minimum": 0 },
+          "limit": {
+            "type": "integer",
+            "required": false,
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "afterSeq": {
+            "type": "integer",
+            "required": false,
+            "description": "Range read for sync: return the rows stamped after this sequence position. Requires untilSeq.",
+            "minimum": 0
+          },
+          "untilSeq": {
+            "type": "integer",
+            "required": false,
+            "description": "Range read for sync: the last sequence position to return. Requires afterSeq.",
+            "minimum": 0
+          },
           "channelId": { "type": "string", "required": false, "format": "uuid" }
         }
       }
@@ -1682,6 +1698,260 @@
               }
             },
             "ref": "#/components/schemas/StxBase"
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "linkAttachmentKeys",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Attachment with its stored file",
+        "name": "Attachment",
+        "ref": "#/components/schemas/Attachment",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
+          "properties": {
+            "createdAt": { "type": "string", "required": true },
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "entityType": {
+              "type": "string",
+              "required": true,
+              "enum": ["attachment"]
+            },
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "name": { "type": "string", "required": true, "maxLength": 255 },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "stx": {
+              "type": "object",
+              "required": true,
+              "description": "The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.",
+              "properties": {
+                "mutationId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Unique mutation ID",
+                  "maxLength": 36
+                },
+                "sourceId": {
+                  "type": "string",
+                  "required": true,
+                  "description": "Tab/instance identifier for echo prevention",
+                  "maxLength": 64
+                },
+                "fieldTimestamps": {
+                  "type": "object",
+                  "required": true,
+                  "description": "Per-field HLC timestamps for scalar fields being changed",
+                  "additionalProperties": { "type": "string", "required": false }
+                },
+                "replayed": {
+                  "type": "boolean",
+                  "required": false,
+                  "description": "Set on a paused offline mutation being replayed: its field timestamps then arbitrate as intent time"
+                }
+              },
+              "ref": "#/components/schemas/StxBase"
+            },
+            "description": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 1000000
+            },
+            "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
+            "createdBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "ref": "#/components/schemas/UserMinimalBase",
+              "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
+            },
+            "updatedBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "ref": "#/components/schemas/UserMinimalBase",
+              "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
+            },
+            "deletedAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "deletedBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "publicAt": {
+              "type": ["string", "null"],
+              "required": true
+            },
+            "seq": {
+              "type": "integer",
+              "required": true,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "publicBucket": {
+              "type": "boolean",
+              "required": true,
+              "description": "When true, the file is stored in the public bucket and served from the CDN without a presigned URL."
+            },
+            "bucketName": { "type": "string", "required": true, "maxLength": 255 },
+            "groupId": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "filename": { "type": "string", "required": true, "maxLength": 255 },
+            "contentType": {
+              "type": "string",
+              "required": true,
+              "description": "MIME type of the uploaded file (e.g. image/png).",
+              "maxLength": 255
+            },
+            "convertedContentType": {
+              "type": ["string", "null"],
+              "required": true,
+              "description": "MIME type of the server-converted variant; null when none.",
+              "maxLength": 255
+            },
+            "size": { "type": "string", "required": true, "maxLength": 255 },
+            "keys": {
+              "type": "object",
+              "required": true,
+              "description": "Storage object keys per variant, keyed by variant name; only generated variants are present.",
+              "properties": {
+                "original": { "type": "string", "required": true },
+                "preview": { "type": "string", "required": false },
+                "thumbnail": { "type": "string", "required": false },
+                "converted": { "type": "string", "required": false }
+              }
+            },
+            "organizationId": { "type": "string", "required": true, "format": "uuid" },
+            "viewCount": { "type": "integer", "required": false, "minimum": 0 }
+          },
+          "ref": "#/components/schemas/Attachment",
+          "contentType": "application/json"
+        },
+        "example": {
+          "createdAt": "2024-05-01T22:40:37.374Z",
+          "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
+          "entityType": "attachment",
+          "tenantId": "t58r8f",
+          "name": "ick_thoroughly_coincide.text",
+          "updatedAt": "2024-05-01T22:40:37.374Z",
+          "stx": {
+            "mutationId": "d81d96a7-bdc8-427d-b21b-a6fd6449bad7",
+            "sourceId": "036cee36-25c5-42eb-81ab-e93904602179",
+            "fieldTimestamps": {}
+          },
+          "description": null,
+          "keywords": "dolores cetera aetas",
+          "createdBy": {
+            "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+            "name": "Francesco Littel",
+            "slug": "francesco_littel16",
+            "thumbnailUrl": null,
+            "entityType": "user"
+          },
+          "updatedBy": {
+            "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+            "name": "Francesco Littel",
+            "slug": "francesco_littel16",
+            "thumbnailUrl": null,
+            "entityType": "user"
+          },
+          "deletedAt": null,
+          "deletedBy": null,
+          "publicAt": null,
+          "seq": 447,
+          "publicBucket": false,
+          "bucketName": "attachments",
+          "groupId": null,
+          "filename": "ick_thoroughly_coincide.text",
+          "contentType": "application/epub+zip",
+          "convertedContentType": null,
+          "size": "7202058",
+          "keys": { "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text" },
+          "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "keys": {
+            "type": "object",
+            "required": true,
+            "properties": {
+              "original": { "type": "string", "required": true },
+              "preview": { "type": "string", "required": false },
+              "thumbnail": { "type": "string", "required": false },
+              "converted": { "type": "string", "required": false }
+            }
+          },
+          "convertedContentType": {
+            "type": ["string", "null"],
+            "required": false,
+            "maxLength": 255
           }
         },
         "required": true,

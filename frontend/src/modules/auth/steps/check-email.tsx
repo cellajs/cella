@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -14,6 +13,8 @@ import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
+import { formResolver } from '~/utils/form-resolver';
+import { isTouchInteraction } from '~/utils/input-modality';
 
 const emailEnabled = isStrategyEnabled('passkey');
 
@@ -27,10 +28,9 @@ export function CheckEmailStep() {
   const setRestrictedMode = useAuthStore((state) => state.setRestrictedMode);
   const inviteOtherAccount = useAuthStore((state) => state.inviteOtherAccount);
 
-  const isMobile = window.innerWidth < 640;
   const title = inviteOtherAccount ? t('c:invite_sign_in') : appConfig.has.selfRegistration ? t('c:sign_in_or_up') : t('c:sign_in');
 
-  const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: { email: '' } });
+  const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { email: '' } });
 
   // A browser that never signed in to the address gets the step that does not say whether it has an account.
   const { mutate: _checkEmail, isPending } = useMutation<CheckEmailResponse, ApiError, CheckEmailData['body']>({
@@ -58,7 +58,7 @@ export function CheckEmailStep() {
       )}
 
       {emailEnabled && (
-        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
+        <form noValidate onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
           <FormField
             control={form.control}
             name="email"
@@ -68,7 +68,14 @@ export function CheckEmailStep() {
                 {/* Hidden on purpose: the example address is the visible cue */}
                 <FormLabel className="sr-only">{t('c:email')}</FormLabel>
                 <FormControl>
-                  <Input {...field} className="h-12" type="email" autoFocus={!isMobile} autoComplete="email" placeholder="name@example.com" />
+                  <Input
+                    {...field}
+                    className="h-12"
+                    type="email"
+                    autoFocus={!isTouchInteraction()}
+                    autoComplete="email"
+                    placeholder="name@example.com"
+                  />
                 </FormControl>
                 <FormMessage className="mt-2" />
               </FormItem>

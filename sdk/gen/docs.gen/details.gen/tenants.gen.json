@@ -235,9 +235,13 @@
             "required": false,
             "enum": ["asc", "desc"]
           },
-          "offset": { "type": "string", "required": false },
-          "limit": { "type": "string", "required": false },
-          "seqCursor": { "type": "string", "required": false },
+          "offset": { "type": "integer", "required": false, "minimum": 0 },
+          "limit": {
+            "type": "integer",
+            "required": false,
+            "minimum": 1,
+            "maximum": 1000
+          },
           "status": {
             "type": "string",
             "required": false,
@@ -432,7 +436,7 @@
           "name": {
             "type": "string",
             "required": true,
-            "minLength": 2,
+            "minLength": 1,
             "maxLength": 255
           }
         },
@@ -630,7 +634,7 @@
           "name": {
             "type": "string",
             "required": false,
-            "minLength": 2,
+            "minLength": 1,
             "maxLength": 255
           },
           "status": {

@@ -27,7 +27,7 @@ Only product entities sync. A **channel** (`ChannelEntityType`) is a container: 
 | **View** | The slice of the stream a client tracks (prefixes, entity types, depth, cursor). The unit catchup authorizes and answers. |
 | **Cursor** | Latest sequence position a view has ingested |
 | **Stream cursor** | ID of the last activity a connection received. Sent back in the catchup request; the server's `offset` event tells the client to start catchup. |
-| **Range fetch** | Ordinary list request bounded by `seqCursor` |
+| **Range fetch** | Ordinary list request bounded by `afterSeq` and `untilSeq` |
 | **Tombstone** | Soft-deleted row that remains fetchable so absent clients learn the deletion |
 | **`stx`** | Envelope on every product write (mutation ID, source ID, per-field HLC timestamps) for merge arbitration and echo recognition |
 
@@ -42,7 +42,7 @@ Renaming attachment `a42` inside `org1`:
 5. Dispatch checks the full row with the permission engine used by REST reads. Allowed subscribers receive an SSE notification with entity ID, path, sequence range, and `stx`.
 6. The originating tab recognizes its `sourceId` in a single-row notification and patches only cached `stx`. Other clients, and a tab whose own edit arrived in a batch, fetch the notified range through the list endpoint and patch their caches.
 
-Reconnect uses the same path: cursor `3` and frontier `7` become `seqCursor=4,7`, and the cursor advances to `7` only after ingest.
+Reconnect uses the same path: cursor `3` and frontier `7` become `afterSeq=3&untilSeq=7`, and the cursor advances to `7` only after ingest.
 
 ## Server
 
@@ -299,7 +299,7 @@ interface CatchupChangeSummary {
 
 `signals.membership` is the organization's bump-only membership signal: every membership and invitation change in the organization moves it, and a client whose stored value differs invalidates its member queries.
 
-`seqCursor=51,150` is the inclusive bounded range and the only form. Range fetches may carry `channelId` to narrow the read to one channel subtree. In hierarchies deeper than `organization -> channel`, a read covered by a `channelId` must AND a subtree predicate over the denormalized ancestor id columns on top of the permission-derived scope (`buildSubtreeCoverWhere`, `backend/src/db/utils/subtree-cover.ts`). Never fold the covering id into the permission scope, or an intermediate grant widens the read past the subtree.
+`afterSeq=50&untilSeq=150` reads the rows stamped after position 50 up to and including 150, deleted rows included, in sequence order. Both bounds are required. A range read takes no search and no offset: a response capped by `limit` is a prefix of the range, and the next request starts after the last position received. A client that gets a row outside the range back treats the server as one that ignored it and invalidates its lists. Range fetches may carry `channelId` to narrow the read to one channel subtree. In hierarchies deeper than `organization -> channel`, a read covered by a `channelId` must AND a subtree predicate over the denormalized ancestor id columns on top of the permission-derived scope (`buildSubtreeCoverWhere`, `backend/src/db/utils/subtree-cover.ts`). Never fold the covering id into the permission scope, or an intermediate grant widens the read past the subtree.
 
 ### Detail cache
 

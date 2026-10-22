@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { CreateServiceAccountData, CreateServiceAccountResponse } from 'sdk';
@@ -12,6 +11,7 @@ import { useCreateServiceAccountMutation } from '~/modules/service-accounts/quer
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
 import type { QueryOrgContext } from '~/query/types';
+import { formResolver } from '~/utils/form-resolver';
 
 export const createApiKeyDialogId = 'create-api-key';
 
@@ -38,7 +38,7 @@ export function CreateApiKeyForm({ path, onCreated }: CreateApiKeyFormProps) {
   const { t } = useTranslation();
   const { mutateAsync: create, isPending } = useCreateServiceAccountMutation();
 
-  const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: { name: '' } });
+  const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { name: '' } });
   const { isDirty } = useFormState({ control: form.control });
 
   const closeDialog = () => useDialoger.getState().remove(createApiKeyDialogId);
@@ -58,7 +58,7 @@ export function CreateApiKeyForm({ path, onCreated }: CreateApiKeyFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <InputFormField
           control={form.control}
           name="name"

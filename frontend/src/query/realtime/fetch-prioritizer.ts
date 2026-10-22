@@ -25,7 +25,7 @@ export interface EnqueueInput {
   organizationId: string;
   tenantId: string | null;
   channelId: string | null;
-  fromSeq: number;
+  afterSeq: number;
   untilSeq: number;
   isCreate: boolean;
   spreadWindowMs?: number;
@@ -37,7 +37,7 @@ interface DirtyEntry {
   organizationId: string;
   tenantId: string | null;
   channelId: string | null;
-  fromSeq: number;
+  afterSeq: number;
   untilSeq: number;
   dueAt: number;
   hasCreates: boolean;
@@ -85,7 +85,7 @@ export function enqueueCatchupRange(input: EnqueueInput): void {
 }
 
 function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }): void {
-  const { entityType, organizationId, tenantId, channelId, fromSeq, untilSeq, isCreate, propagation } = input;
+  const { entityType, organizationId, tenantId, channelId, afterSeq, untilSeq, isCreate, propagation } = input;
   const store = syncStore.getState();
   const channelViewId = channelId ?? organizationId;
 
@@ -97,15 +97,15 @@ function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }
   const caughtUp = channelId ? store.getChannelSeq(organizationId, channelId, entityType) : store.getOrgSeq(organizationId, entityType);
   if (untilSeq <= caughtUp) return; // already have this range
 
-  // Anchoring at caught-up+1 heals missed-notification gaps and trims already-ingested overlap; with no baseline, trust the notification's own range.
-  const anchoredFrom = caughtUp > 0 ? caughtUp + 1 : fromSeq;
+  // Anchoring after the caught-up position heals missed-notification gaps and trims already-ingested overlap; with no baseline, trust the notification's own range.
+  const anchoredAfter = caughtUp > 0 ? caughtUp : afterSeq;
 
   const key = entryKey(entityType, organizationId, channelId);
   const dueAt = Date.now() + negotiatedDelay(tier, key, input.spreadWindowMs ?? DEFAULT_SPREAD_WINDOW_MS);
 
   const existing = dirty.get(key);
   if (existing) {
-    existing.fromSeq = Math.min(existing.fromSeq, anchoredFrom);
+    existing.afterSeq = Math.min(existing.afterSeq, anchoredAfter);
     existing.untilSeq = Math.max(existing.untilSeq, untilSeq);
     existing.dueAt = Math.min(existing.dueAt, dueAt); // more news never postpones
     existing.hasCreates ||= isCreate;
@@ -116,7 +116,7 @@ function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }
       organizationId,
       tenantId,
       channelId,
-      fromSeq: anchoredFrom,
+      afterSeq: anchoredAfter,
       untilSeq,
       dueAt,
       hasCreates: isCreate,
@@ -159,7 +159,7 @@ export async function flushChannelViewNow(
   return flushGroup([{ ...entry, attempts: MAX_FLUSH_ATTEMPTS - 1 }]);
 }
 
-/** Clear all pending work. Called when catchup starts: it recomputes channel-view deltas itself. */
+/** Clear all pending work. Called when catchup starts: it recomputes channel-view gaps itself. */
 export function resetFetchPrioritizer(): void {
   dirty.clear();
   if (timer) {
@@ -201,7 +201,7 @@ async function flushDue(): Promise<void> {
   armTimer();
 }
 
-/** Common channel covering due views for one narrowed delta fetch; org-level, unresolved, or root-divergent paths widen to the whole organization. */
+/** Common channel covering due views for one narrowed range fetch; org-level, unresolved, or root-divergent paths widen to the whole organization. */
 function coveringChannelId(entries: DirtyEntry[]): string | undefined {
   const ids = new Set<string>();
   for (const entry of entries) {
@@ -244,11 +244,11 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
     return 'requeued';
   }
 
-  const fromSeq = Math.min(...entries.map((entry) => entry.fromSeq));
+  const afterSeq = Math.min(...entries.map((entry) => entry.afterSeq));
   const untilSeq = Math.max(...entries.map((entry) => entry.untilSeq));
   const keys = getEntityQueryKeys(entityType);
   const channelId = coveringChannelId(entries);
-  const result = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, `${fromSeq},${untilSeq}`, keys, channelId);
+  const result = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, { afterSeq, untilSeq }, keys, channelId);
 
   if (result.status === 'error' && entries.some((entry) => entry.attempts + 1 < MAX_FLUSH_ATTEMPTS)) {
     for (const entry of entries) requeue({ ...entry, attempts: entry.attempts + 1 }, RETRY_BASE_MS * 2 ** entry.attempts);
@@ -261,7 +261,7 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
       cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
       enterBasicFetchMode({ entityType, organizationId, promisedSeq: untilSeq, reachedSeq: result.reachedSeq });
     } else {
-      // The fetch covered [fromSeq, untilSeq] for every channel under the covering prefix, so each due channel advances to the shared upper bound.
+      // The fetch covered (afterSeq, untilSeq] for every channel under the covering prefix, so each due channel advances to the shared upper bound.
       for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
     }
     // Row contents for subscribers that derive state from them; the org id is the fallback home for rows without ancestor ids.
@@ -298,7 +298,7 @@ function requeue(entry: DirtyEntry, delayMs: number): void {
   const existing = dirty.get(key);
   if (existing) {
     // A newer notification re-enqueued this channel view mid-flight: merge our range back into it.
-    existing.fromSeq = Math.min(existing.fromSeq, entry.fromSeq);
+    existing.afterSeq = Math.min(existing.afterSeq, entry.afterSeq);
     existing.untilSeq = Math.max(existing.untilSeq, entry.untilSeq);
     existing.hasCreates ||= entry.hasCreates;
     existing.propagations.push(...entry.propagations);

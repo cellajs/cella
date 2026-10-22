@@ -13,16 +13,25 @@ const getPresignedUrlBatched = vi.fn(async (attachmentId: string) => {
   await presignGate;
   return `https://signed.example.test/${attachmentId}`;
 });
-vi.mock('~/modules/attachment/presign-batch', () => ({ getPresignedUrlBatched: (attachmentId: string) => getPresignedUrlBatched(attachmentId) }));
+class PresignRejectedError extends Error {}
+vi.mock('~/modules/attachment/presign-batch', () => ({
+  getPresignedUrlBatched: (attachmentId: string) => getPresignedUrlBatched(attachmentId),
+  PresignRejectedError,
+}));
 vi.mock('~/modules/attachment/offline/storage-service', () => ({
   attachmentStorage: { getSharedBlobUrl: async () => null, createBlobUrlWithVariant: async () => null },
 }));
 vi.mock('~/modules/attachment/offline/download-service', () => ({ downloadService: { queueForDownload: vi.fn() } }));
-vi.mock('~/modules/attachment/query', () => ({ findAttachmentInCache: () => undefined }));
+const cachedRows = new Map<string, { id: string; keys: { original: string }; createdBy: { id: string; name: string } | null }>();
+vi.mock('~/modules/attachment/query', () => ({
+  findAttachmentInCache: (id: string) => cachedRows.get(id),
+  fetchAttachment: async () => null,
+}));
 vi.mock('~/modules/attachment/dialog/open-attachment-dialog', () => ({ openAttachmentDialog: vi.fn() }));
 
 const { BlockNoteFullHtml } = await import('~/modules/common/blocknote/full-html');
 const { useStaticDocumentsReady } = await import('~/modules/common/blocknote/lazy-full-html');
+const { clearStoredUploads } = await import('~/modules/attachment/helpers/pending-uploads');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -96,6 +105,36 @@ describe('BlockNoteFullHtml media', () => {
     expect(imageBlockCount()).toBe(2);
     // No render pass, first or resolved, ever held an <img> for a refused reference.
     expect(watcher.sources.filter((src) => bypasses.some((ref) => src?.includes(ref)))).toEqual([]);
+  });
+
+  it('shows whose device holds a file not uploaded yet, renders nothing for a gone one, and shows the file once it arrives', async () => {
+    releasePresign();
+    const pendingId = '0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1b01';
+    const goneId = '0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1b02';
+    const localKey = 'blob:http://localhost:3000/0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2f';
+    cachedRows.set(pendingId, { id: pendingId, keys: { original: localKey }, createdBy: { id: 'user-2', name: 'Ada Lovelace' } });
+    getPresignedUrlBatched.mockImplementation(async (id) => {
+      if (id === goneId) throw new PresignRejectedError();
+      return `https://signed.example.test/${id}`;
+    });
+
+    const document = JSON.stringify([image(goneId, 'gone'), image(pendingId, 'pending'), paragraph('text survives')]);
+    await act(async () => root.render(<BlockNoteFullHtml id="doc" defaultValue={document} tenantId="tenant-1" organizationId={organizationId} />));
+
+    const placeholder = () => container.querySelector('.bn-pending-upload');
+    await vi.waitFor(() => expect(placeholder()).not.toBeNull());
+    expect(container.querySelectorAll('[data-content-type="image"]')).toHaveLength(1);
+    expect(container.querySelector('.bn-add-file-button')).toBeNull();
+    expect(container.querySelector('img')).toBeNull();
+    expect(getPresignedUrlBatched).not.toHaveBeenCalledWith(pendingId);
+
+    cachedRows.set(pendingId, { id: pendingId, keys: { original: `${organizationId}/user-2/arrived.png` }, createdBy: null });
+    await act(async () => clearStoredUploads((id) => id === pendingId));
+    await vi.waitFor(() => expect(container.querySelector('img')?.getAttribute('src')).toBe(`https://signed.example.test/${pendingId}`));
+    expect(container.querySelectorAll('img')).toHaveLength(1);
+    expect(placeholder()).toBeNull();
+    cachedRows.clear();
+    getPresignedUrlBatched.mockReset();
   });
 
   it('must not crash on, or load media from, a malformed stored document', async () => {

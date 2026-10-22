@@ -64,7 +64,7 @@ vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { match
 stubLocalStorage();
 
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
-const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
+const { registerEntityQueryKeys, SYNC_CHUNK_SIZE } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
 const { syncStore } = await import('~/query/realtime/sync-store');
 const { flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');
@@ -72,6 +72,14 @@ const { processAppCatchup } = await import('./catchup-processor');
 
 // The real fetch prioritizer holds module state (dirty map, timer), cleared between tests.
 afterEach(() => resetFetchPrioritizer());
+
+/** The org-wide range fetch request for org-1 the catchup should make. */
+const rangeRequest = (afterSeq: number, untilSeq: number) => ({
+  organizationId: 'org-1',
+  tenantId: 'tenant-1',
+  channelId: undefined,
+  query: { afterSeq, untilSeq, limit: SYNC_CHUNK_SIZE },
+});
 
 /** Views-contract response with one org view answer for attachment. */
 const okViewResponse = (frontier: number, count = 1, key = 'org-1:attachment'): PostAppCatchupResponse =>
@@ -90,11 +98,11 @@ describe('catchup processor (view-driven)', () => {
 
   it('uses the pre-catchup org-view cursor for the delta fetch', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({
+    const rangeFetch = vi.fn(async () => ({
       items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'fresh', seq: 6 }],
       total: 1,
     }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
@@ -106,7 +114,7 @@ describe('catchup processor (view-driven)', () => {
 
     await processAppCatchup(okViewResponse(6));
 
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,6', undefined);
+    expect(rangeFetch).toHaveBeenCalledWith(rangeRequest(4, 6));
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
     expect(queryClient.getQueryData(keys.detail.byId('attachment-1'))).toMatchObject({ name: 'fresh' });
     expect(queryClient.getQueryData(keys.list.org('org-1'))).toEqual({
@@ -117,11 +125,11 @@ describe('catchup processor (view-driven)', () => {
 
   it('fetches the gap of the tab that processes the answer: a follower behind the leader reads from its own cursor', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({
+    const rangeFetch = vi.fn(async () => ({
       items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'fresh', seq: 6 }],
       total: 1,
     }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
     const staleList = { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'stale' }], total: 1 };
     const answer = okViewResponse(6);
 
@@ -130,28 +138,28 @@ describe('catchup processor (view-driven)', () => {
     syncStore.getState().setOrgSeq('org-1', 'attachment', 5);
     queryClient.setQueryData(keys.list.org('org-1'), staleList);
     await processAppCatchup(answer);
-    expect(deltaFetch).toHaveBeenLastCalledWith('org-1', 'tenant-1', '6,6', undefined);
+    expect(rangeFetch).toHaveBeenLastCalledWith(rangeRequest(5, 6));
 
     // A follower's store and cache: it missed more than the leader did, and the same answer is all it gets.
     syncStore.getState().setOrgSeq('org-1', 'attachment', 2);
     queryClient.setQueryData(keys.list.org('org-1'), staleList);
     await processAppCatchup(answer);
 
-    expect(deltaFetch).toHaveBeenLastCalledWith('org-1', 'tenant-1', '3,6', undefined);
+    expect(rangeFetch).toHaveBeenLastCalledWith(rangeRequest(2, 6));
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
     expect(queryClient.getQueryData(keys.list.org('org-1'))).toMatchObject({ items: [{ id: 'attachment-1', name: 'fresh' }] });
   });
 
   it('an org view subsumes child-homed rows: one fetch patches rows from any channel', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({
+    const rangeFetch = vi.fn(async () => ({
       items: [
         { id: 'att-org', organizationId: 'org-1', name: 'fresh-org', seq: 11 },
         { id: 'att-proj', organizationId: 'org-1', projectId: 'proj-9', name: 'fresh-proj', seq: 12 },
       ],
       total: 2,
     }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 10);
@@ -161,18 +169,18 @@ describe('catchup processor (view-driven)', () => {
     await processAppCatchup(okViewResponse(12, 2));
 
     // ONE org-wide fetch, no per-channel drill-down needed.
-    expect(deltaFetch).toHaveBeenCalledTimes(1);
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '11,12', undefined);
+    expect(rangeFetch).toHaveBeenCalledTimes(1);
+    expect(rangeFetch).toHaveBeenCalledWith(rangeRequest(10, 12));
     expect(queryClient.getQueryData(keys.detail.byId('att-proj'))).toMatchObject({ name: 'fresh-proj' });
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
   });
 
   it('never advances the cursor silently: a failed delta fetch invalidates before advancing', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => {
+    const rangeFetch = vi.fn(async () => {
       throw new Error('network down');
     });
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
@@ -188,8 +196,8 @@ describe('catchup processor (view-driven)', () => {
   it('short delivery (ok but empty window) holds the cursor, invalidates, and degrades trust', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     // ok status but no rows reach the promised frontier: the delivery fell short.
-    const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     setSyncDeliveryTrusted(true);
     syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
@@ -200,7 +208,7 @@ describe('catchup processor (view-driven)', () => {
     await processAppCatchup(okViewResponse(9));
 
     // Fetched the window, but reachedSeq (0) < frontier (9): the cursor must not advance.
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9', undefined);
+    expect(rangeFetch).toHaveBeenCalledWith(rangeRequest(4, 9));
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
     expect(isSyncDeliveryTrusted()).toBe(false);
@@ -208,38 +216,38 @@ describe('catchup processor (view-driven)', () => {
 
   it('skips the delta fetch for orgs with nothing cached (scope-symmetry guard), still advancing', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
 
     await processAppCatchup(okViewResponse(6));
 
-    expect(deltaFetch).not.toHaveBeenCalled();
+    expect(rangeFetch).not.toHaveBeenCalled();
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(6);
   });
 
   it('a baseline view (cursor 0) stores the frontier without fetching', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     await processAppCatchup(okViewResponse(42));
 
-    expect(deltaFetch).not.toHaveBeenCalled();
+    expect(rangeFetch).not.toHaveBeenCalled();
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(42);
   });
 
   it('a first connection refetches a list that was read before its stream was live, and stores the frontier', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
     // The route loader was first: its rows are from before the subscription, so the frontier cannot vouch for them.
     queryClient.setQueryData(keys.list.org('org-1'), { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'loaded' }], total: 1 });
 
     await processAppCatchup(okViewResponse(42), true);
 
-    expect(deltaFetch).not.toHaveBeenCalled();
+    expect(rangeFetch).not.toHaveBeenCalled();
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(42);
     expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
   });
@@ -247,8 +255,8 @@ describe('catchup processor (view-driven)', () => {
   it('a caught-up view (frontier <= cursor) neither fetches nor invalidates the cached list', async () => {
     // Reload contract: a cursor at the frontier confirms the warm cache without refetching. A fresh org avoids count-drift comparison in the module-level tracker.
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     syncStore.getState().setOrgTenantId('org-caughtup', 'tenant-1');
     syncStore.getState().setOrgSeq('org-caughtup', 'attachment', 6);
@@ -258,15 +266,15 @@ describe('catchup processor (view-driven)', () => {
     // Server frontier equals the ingested cursor: no new sequence positions since last sync.
     await processAppCatchup(okViewResponse(6, 0, 'org-caughtup:attachment'));
 
-    expect(deltaFetch).not.toHaveBeenCalled();
+    expect(rangeFetch).not.toHaveBeenCalled();
     expect(invalidateSpy).not.toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-caughtup') }));
     expect(syncStore.getState().getOrgSeq('org-caughtup', 'attachment')).toBe(6);
   });
 
   it('an opaque view falls back to invalidation of cached lists, no numbers consumed', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
@@ -278,7 +286,7 @@ describe('catchup processor (view-driven)', () => {
       views: [{ key: 'org-1:attachment', status: 'opaque' }],
     } as unknown as PostAppCatchupResponse);
 
-    expect(deltaFetch).not.toHaveBeenCalled();
+    expect(rangeFetch).not.toHaveBeenCalled();
     expect(invalidateSpy).toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-1') }));
     // Cursor untouched: opaque answers carry no frontier to advance to.
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
@@ -286,8 +294,8 @@ describe('catchup processor (view-driven)', () => {
 
   it('invalidates org lists when a server count CHANGES between catchups (never vs cached totals)', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     syncStore.getState().setOrgSeq('org-1', 'attachment', 6);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 5 });
@@ -325,8 +333,8 @@ describe('catchup after the server rebuilt its sync books', () => {
   it('must not fetch a range from a cursor of the old books: it refetches what is cached and takes the frontier as its baseline', async () => {
     vi.useFakeTimers();
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({ items: [], total: 0 }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
     syncStore.getState().adoptGeneration(1);
     syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
     // Sequence values were handed out again after the rebuild: 40 says nothing about the books the frontier 12 belongs to.
@@ -336,7 +344,7 @@ describe('catchup after the server rebuilt its sync books', () => {
     await processAppCatchup({ ...okViewResponse(12), generation: 2 });
     await vi.advanceTimersByTimeAsync(10_000);
 
-    expect(deltaFetch).not.toHaveBeenCalled();
+    expect(rangeFetch).not.toHaveBeenCalled();
     expect(syncStore.getState().generation).toBe(2);
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
     expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
@@ -345,8 +353,8 @@ describe('catchup after the server rebuilt its sync books', () => {
 
   it('fetches the range as always while the generation is the one it holds (positive control)', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({ items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'fresh', seq: 6 }], total: 1 }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    const rangeFetch = vi.fn(async () => ({ items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'fresh', seq: 6 }], total: 1 }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
     syncStore.getState().adoptGeneration(2);
     syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
@@ -354,7 +362,7 @@ describe('catchup after the server rebuilt its sync books', () => {
 
     await processAppCatchup({ ...okViewResponse(6), generation: 2 });
 
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,6', undefined);
+    expect(rangeFetch).toHaveBeenCalledWith(rangeRequest(4, 6));
     expect(queryClient.getQueryState(keys.detail.byId('attachment-1'))?.isInvalidated).toBe(false);
   });
 });
@@ -433,8 +441,8 @@ describe('catchup → fetch prioritizer fold', () => {
     vi.mocked(getSyncTier).mockReturnValue({ min: 2000, max: 30_000 });
 
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    const rangeFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
@@ -443,11 +451,11 @@ describe('catchup → fetch prioritizer fold', () => {
     await processAppCatchup(okViewResponse(9));
 
     // Advance-at-flush: the fetch prioritizer owns the cursor for enqueued ranges.
-    expect(deltaFetch).not.toHaveBeenCalled();
+    expect(rangeFetch).not.toHaveBeenCalled();
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(4);
 
     await flushAllNow();
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9', undefined);
+    expect(rangeFetch).toHaveBeenCalledWith(rangeRequest(4, 9));
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
   });
 
@@ -456,8 +464,8 @@ describe('catchup → fetch prioritizer fold', () => {
     vi.mocked(getSyncTier).mockReturnValue({ min: 2000, max: 30_000 });
 
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    const rangeFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
@@ -468,11 +476,11 @@ describe('catchup → fetch prioritizer fold', () => {
     await processAppCatchup(response);
 
     // The hint waits for the range that carries the fresh embedded rows.
-    expect(deltaFetch).not.toHaveBeenCalled();
+    expect(rangeFetch).not.toHaveBeenCalled();
     expect(propagateEmbeddingsSpy).not.toHaveBeenCalled();
 
     await flushAllNow();
-    expect(deltaFetch).toHaveBeenCalledTimes(1);
+    expect(rangeFetch).toHaveBeenCalledTimes(1);
     expect(propagateEmbeddingsSpy).toHaveBeenCalledTimes(1);
     expect(propagateEmbeddingsSpy).toHaveBeenCalledWith(hint);
   });
@@ -482,8 +490,8 @@ describe('catchup → fetch prioritizer fold', () => {
     vi.mocked(getSyncTier).mockReturnValue({ min: 0, max: 0 });
 
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
+    const rangeFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
@@ -493,7 +501,7 @@ describe('catchup → fetch prioritizer fold', () => {
     const response = { ...okViewResponse(9), changes: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;
     await processAppCatchup(response);
 
-    expect(deltaFetch).toHaveBeenCalledTimes(1);
+    expect(rangeFetch).toHaveBeenCalledTimes(1);
     expect(propagateEmbeddingsSpy).toHaveBeenCalledTimes(1);
   });
 });

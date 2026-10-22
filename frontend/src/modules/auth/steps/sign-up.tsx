@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { MailIcon } from 'lucide-react';
@@ -17,6 +16,8 @@ import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
+import { formResolver } from '~/utils/form-resolver';
+import { isTouchInteraction } from '~/utils/input-modality';
 
 const emailEnabled = isStrategyEnabled('passkey');
 const isMagicLinkEnabled = isStrategyEnabled('magic');
@@ -40,9 +41,7 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
   );
   const { redirect, tokenId } = useSearch({ strict: false });
 
-  const isMobile = window.innerWidth < 640;
-
-  const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: { email } });
+  const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { email } });
 
   const { mutate: sendMagic, isPending } = useMutation({
     mutationFn: () => {
@@ -67,7 +66,7 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
       <LegalNotice email={email || form.getValues('email')} mode="signup" />
 
       {(emailEnabled || isMagicLinkEnabled) && (
-        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
+        <form noValidate onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
           <FormField
             control={form.control}
             name="email"
@@ -76,7 +75,14 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
                 {/* Hidden on purpose: the example address is the visible cue */}
                 <FormLabel className="sr-only">{t('c:email')}</FormLabel>
                 <FormControl>
-                  <Input {...field} type="email" className="h-12" autoFocus={!isMobile} autoComplete="email" placeholder="name@example.com" />
+                  <Input
+                    {...field}
+                    type="email"
+                    className="h-12"
+                    autoFocus={!isTouchInteraction()}
+                    autoComplete="email"
+                    placeholder="name@example.com"
+                  />
                 </FormControl>
                 <FormMessage className="mt-2" />
               </FormItem>

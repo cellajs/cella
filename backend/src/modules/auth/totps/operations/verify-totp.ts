@@ -1,4 +1,3 @@
-import { decodeBase32 } from '@oslojs/encoding';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
@@ -8,6 +7,7 @@ import { settleTotpAttempt, type TotpUser, takeTotpAttempt } from '#/modules/aut
 import { matchTOTPStep } from '#/modules/auth/totps/helpers/totp-core';
 import { decryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { findTotp, updateTotpLastUsedStep } from '#/modules/auth/totps/totps-queries';
+import { decodeBase32 } from '#/utils/base32';
 
 const { intervalInSeconds, digits, gracePeriodInSeconds } = appConfig.totp;
 

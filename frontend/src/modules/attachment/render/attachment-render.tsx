@@ -1,13 +1,14 @@
-import { DownloadIcon } from 'lucide-react';
+import { CloudOffIcon, DownloadIcon } from 'lucide-react';
 import type React from 'react';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
-import useDownloader from 'react-use-downloader';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { useDownloader } from '~/hooks/use-downloader';
 import { getFileIcon } from '~/modules/attachment/file-placeholder';
+import { type PendingUpload, pendingUploadMessage } from '~/modules/attachment/helpers/pending-uploads';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { PageSpinner, Spinner } from '~/modules/common/spinner';
+import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -20,6 +21,7 @@ const RenderVideo = lazyNamed(() => import('~/modules/attachment/render/video'),
 interface AttachmentRenderProps {
   type: string;
   url: string;
+  pendingUpload?: PendingUpload;
   /** Used as the save name for non-renderable types (the "download to view" action). */
   filename?: string;
   altName?: string;
@@ -35,6 +37,7 @@ interface AttachmentRenderProps {
 /** Presentational only: expects an already-resolved URL. */
 export function AttachmentRender({
   url,
+  pendingUpload,
   type,
   filename,
   altName,
@@ -49,7 +52,16 @@ export function AttachmentRender({
   const isMobile = useBreakpointBelow('sm');
   const { download, isInProgress } = useDownloader();
 
-  if (!url) return <PageSpinner className="size-12" />;
+  if (pendingUpload) {
+    const { key, params } = pendingUploadMessage(pendingUpload);
+    return (
+      <div className={containerClassName}>
+        <ContentPlaceholder icon={CloudOffIcon} title={key} titleProps={params} />
+      </div>
+    );
+  }
+
+  if (!url) return <Spinner size="lg" className="mt-[45vh]" />;
 
   // Only the container itself is the backdrop: clicks on media or controls bubble here but fail the target check.
   const handleBackdropClick = onBackdropClick
@@ -62,7 +74,7 @@ export function AttachmentRender({
     <ContentPlaceholder icon={getFileIcon(type)} title="c:download_to_view">
       {/* The URL is a CDN or presigned URL online, a local blob URL offline. */}
       <Button variant="plain" className="mt-4" disabled={isInProgress} onClick={() => download(url, filename || 'file')}>
-        {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon className="size-4" />}
+        {isInProgress ? <Spinner size="sm" noDelay /> : <DownloadIcon className="size-4" />}
         <span>{t('c:download')}</span>
       </Button>
     </ContentPlaceholder>
@@ -73,7 +85,7 @@ export function AttachmentRender({
     <div className={containerClassName} onClick={handleBackdropClick}>
       {/* A renderer that cannot load its file throws during render (react-pdf loads through Suspense); this keeps the failure inside the viewer. */}
       <ErrorBoundary fallback={downloadPlaceholder} resetKeys={[url]}>
-        <Suspense fallback={<Spinner className="size-6" />}>
+        <Suspense fallback={<Spinner size="lg" />}>
           {type.includes('image') &&
             (imagePanZoom && !isMobile ? (
               <ReactPanZoom

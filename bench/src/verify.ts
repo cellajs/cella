@@ -66,33 +66,9 @@ export async function settlePipeline(
 }
 
 /**
- * What a scenario's YAML header asks of its report, in comment lines: `# expect: a, b` names counters that must have
- * counted, `# forbid: c` counters that must not.
- */
-export function readDirectives(source: string): { expect: string[]; forbid: string[] } {
-  const directives = { expect: [] as string[], forbid: [] as string[] };
-  for (const line of source.split('\n')) {
-    const match = /^#\s*(expect|forbid):\s*(.+)$/.exec(line.trim());
-    if (!match) continue;
-    const names = match[2].split(',').map((name) => name.trim());
-    directives[match[1] as 'expect' | 'forbid'].push(...names.filter(Boolean));
-  }
-  return directives;
-}
-
-/** The directives of a scenario that its report does not meet. A short run's single VU cannot be asked for `expect`: it plays one role of a scenario only. */
-export function counterFindings(source: string, counters: Record<string, number>, short = false): string[] {
-  const { expect, forbid } = readDirectives(source);
-  return [
-    ...(short ? [] : expect).filter((name) => !(counters[name] > 0)).map((name) => `${name} stayed at 0`),
-    ...forbid.filter((name) => counters[name] > 0).map((name) => `${name} counted ${counters[name]}`),
-  ];
-}
-
-/**
- * Where the CDC worker's record of a run differs from what its processors counted: `bench.rows_written` against the
+ * Where the CDC worker's record of a run differs from what its scenario counted: `bench.rows_written` against the
  * activities recorded, and `bench.rows_created.<type>` minus `bench.rows_deleted.<type>` against the change of the
- * organization's `<type>` count. A processor that counts neither is not checked.
+ * organization's `<type>` count. A scenario that counts neither is not checked.
  */
 export function pipelineFindings(before: PipelineSnapshot, after: PipelineSnapshot, counters: Record<string, number>): string[] {
   const findings: string[] = [];

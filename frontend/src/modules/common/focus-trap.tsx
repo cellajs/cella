@@ -1,4 +1,5 @@
 import { type ReactNode, type RefObject, useEffect, useRef } from 'react';
+import { isTouchInteraction } from '~/utils/input-modality';
 
 const candidateSelector = 'a[href], button, textarea, input, select, [tabindex], [contenteditable="true"]';
 
@@ -45,7 +46,7 @@ export function FocusTrap({
   mainElementId?: string;
   active?: boolean;
   disableInactive?: boolean;
-  /** Move focus into the trap when activated (true = first element, ref = specific element) */
+  /** Move focus into the trap when activated (true = first element, or the trap itself after touch; ref = specific element) */
   initialFocus?: boolean | RefObject<HTMLElement | null>;
   /** Restore focus to the earlier focused element on deactivation. */
   returnFocus?: boolean;
@@ -78,8 +79,9 @@ export function FocusTrap({
         }
         // A `data-autofocus` element wins, so a confirmation can start on its safe option.
         const preferred = trap.querySelector<HTMLElement>('[data-autofocus]');
-        const focusable = getFocusableElements(trap);
-        (preferred ?? focusable[0] ?? trap).focus({ preventScroll: true });
+        // After touch the first element may be a text field, whose focus opens the on-screen keyboard.
+        const first = isTouchInteraction() ? trap : getFocusableElements(trap)[0];
+        (preferred ?? first ?? trap).focus({ preventScroll: true });
       });
     }
 

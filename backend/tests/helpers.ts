@@ -1,5 +1,4 @@
 import type { z } from '@hono/zod-openapi';
-import { decodeBase32 } from '@oslojs/encoding';
 import { and, eq } from 'drizzle-orm';
 import { appConfig, type EntityRole, type TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -26,6 +25,7 @@ import { type UserModel, usersTable } from '#/modules/user/user-db';
 import { mockEmail, mockUser } from '#/modules/user/user-mocks';
 import { insertUsers } from '#/modules/user/user-queries';
 import type { apiErrorSchema } from '#/schemas';
+import { decodeBase32 } from '#/utils/base32';
 import { hashToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders } from './fixtures';
 

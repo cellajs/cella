@@ -20,14 +20,16 @@ vi.mock('sdk', async (importOriginal) => ({
 }));
 vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { info: vi.fn(), error: vi.fn() } }));
 
-const { attachmentQueryKeys, attachmentsCanonicalOptions, useAttachmentCreateMutation, useAttachmentDeleteMutation, useAttachmentUpdateMutation } =
-  await import('~/modules/attachment/query');
+const { attachmentQueryKeys, useAttachmentCreateMutation, useAttachmentDeleteMutation, useAttachmentUpdateMutation } = await import(
+  '~/modules/attachment/query'
+);
 const { initMutationDefaults } = await import('~/query/mutation-registry');
 const { upgradePersistedMutation } = await import('~/query/offline/mutation-variables');
 const { fetchRangeAndPatch } = await import('~/query/realtime/cache-ops');
 
 const ctx = { tenantId: 'ten-1', organizationId: 'org-1' };
-const homeKey = attachmentsCanonicalOptions(ctx).queryKey;
+// The rows here carry no channel id, so they splice into the organization's home list.
+const homeKey = attachmentQueryKeys.list.home(ctx.organizationId);
 
 /** A stored attachment of the organization; only the fields the mutation callbacks read. */
 const attachment = (id: string, overrides: Partial<Attachment> = {}) =>
@@ -142,7 +144,7 @@ describe('a remote change of a row with a pending mutation', () => {
 
     // Catchup after a reconnect reads the row: the server still holds it, since the queued delete has not been sent.
     getAttachments.mockResolvedValue({ items: [attachment('att-1', { name: 'Renamed elsewhere' })], total: 1 });
-    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, '1,2', attachmentQueryKeys);
+    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
     expect(homeList().map(({ id }) => id)).toEqual(['att-2']);
 
     deleteAttachments.mockImplementation(async () => ({ data: [], rejectedIds: [] }));
@@ -161,7 +163,7 @@ describe('a remote change of a row with a pending mutation', () => {
 
     // A rename from elsewhere arrives while the delete waits, and is kept from the cache.
     getAttachments.mockResolvedValue({ items: [attachment('att-1', { name: 'Renamed elsewhere' })], total: 1 });
-    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, '1,2', attachmentQueryKeys);
+    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
 
     deleteAttachments.mockImplementation(async () => ({ data: [], rejectedIds: ['att-1'] }));
     await goOnline();
@@ -183,7 +185,7 @@ describe('a remote change of a row with a pending mutation', () => {
     await vi.waitFor(() => expect(queued('create')).toHaveLength(1));
 
     getAttachments.mockResolvedValue({ items: [attachment('att-1', { name: 'From the server' })], total: 1 });
-    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, '1,2', attachmentQueryKeys);
+    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
 
     expect(homeList()).toMatchObject([{ id: 'att-1', name: 'Typed offline' }]);
   });
@@ -192,7 +194,7 @@ describe('a remote change of a row with a pending mutation', () => {
     seedHomeList([attachment('att-1')]);
 
     getAttachments.mockResolvedValue({ items: [attachment('att-1', { name: 'Renamed elsewhere' })], total: 1 });
-    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, '1,2', attachmentQueryKeys);
+    await fetchRangeAndPatch('attachment', ctx.organizationId, ctx.tenantId, { afterSeq: 0, untilSeq: 2 }, attachmentQueryKeys);
 
     expect(homeList()).toMatchObject([{ id: 'att-1', name: 'Renamed elsewhere' }]);
   });

@@ -53,8 +53,7 @@ withRestoredPaths([swappedPath], () => {
   }
   execFileSync('pnpm', ['docker:test'], { cwd: repoRoot, stdio: 'inherit' });
   try {
-    // The bench smoke test is left out: with a dev stack up it would start a bench run.
-    execFileSync('pnpm', ['exec', 'cross-env', 'TEST_MODE=core', 'vitest', 'run', '--silent=passed-only', '--exclude', '**/all-scenarios.test.ts'], {
+    execFileSync('pnpm', ['exec', 'cross-env', 'TEST_MODE=core', 'vitest', 'run', '--silent=passed-only'], {
       cwd: repoRoot,
       stdio: 'inherit',
     });

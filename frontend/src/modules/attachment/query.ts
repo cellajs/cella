@@ -3,8 +3,9 @@ import { infiniteQueryOptions, queryOptions, useMutation, useQuery, useQueryClie
 import i18n from 'i18next';
 import { type Attachment, type GetAttachmentsData, getAttachment, getAttachments } from 'sdk';
 import { zAttachment } from 'sdk/zod.gen';
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import { deriveDocument } from 'shared/utils/derive-description-core';
+import { clearStoredUploads, hasPendingUploads, isPendingUpload } from '~/modules/attachment/helpers/pending-uploads';
 import type {
   CreateAttachmentInput,
   CreateAttachmentVars,
@@ -26,7 +27,7 @@ import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
-import { registerEntityQueryKeys, SYNC_CHUNK_SIZE } from '~/query/basic/entity-query-registry';
+import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { fetchAllPages } from '~/query/basic/fetch-all-pages';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
 import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
@@ -40,10 +41,11 @@ import { buildPreparedHandlers, type PreparedVars } from '~/query/offline/prepar
 import { squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
 import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
 import { mergeServerResponse, syncEntityToCache } from '~/query/offline/update-success-utils';
+import { queryClient } from '~/query/query-client';
 import { resolveQueryOrgTenantIds } from '~/query/realtime/sync-priority';
 import { createResourceError } from '~/utils/resource-error';
 
-type AttachmentFilters = Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'>;
+type AttachmentFilters = Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset' | 'afterSeq' | 'untilSeq'>;
 
 const baseKeys = createEntityKeys<AttachmentFilters>('attachment');
 const keys = {
@@ -53,12 +55,9 @@ const keys = {
     filtered: (organizationId: string, filters: AttachmentFilters) => ['attachment', 'list', organizationId, filters] as const,
   },
 };
-// A narrowed delta fetch names the channel that covers the due views; org-wide passes none.
-registerEntityQueryKeys('attachment', keys, (organizationId, tenantId, seqCursor, channelId) => {
-  return getAttachments({
-    path: { tenantId: tenantId!, organizationId: organizationId! },
-    query: { seqCursor, channelId, limit: String(SYNC_CHUNK_SIZE) },
-  });
+// A narrowed range fetch names the channel that covers the due views; org-wide passes none.
+registerEntityQueryKeys('attachment', keys, ({ organizationId, tenantId, channelId, query }) => {
+  return getAttachments({ path: { tenantId: tenantId!, organizationId: organizationId! }, query: { ...query, channelId } });
 });
 export const attachmentQueryKeys = keys;
 
@@ -73,7 +72,7 @@ registerDescriptionDerivation('attachment', (description) => ({ keywords: derive
 const attachmentsMutationKeyBase = ['attachment'] as const;
 const handleError = createResourceError('attachment');
 
-type AttachmentsListParams = Omit<NonNullable<GetAttachmentsData['query']>, 'limit' | 'offset'> & {
+type AttachmentsListParams = AttachmentFilters & {
   tenantId: string;
   organizationId: string;
   limit?: number;
@@ -103,9 +102,15 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
   });
 };
 
+/**
+ * Where attachments live below the organization, a row enters its channel's home list, so the org-wide list spans homes:
+ * it takes a filtered key, which live sync invalidates and refetches (`create-query-keys.ts`).
+ */
+const orgListSpansHomes = hierarchy.possibleHomeChannels('attachment').some((type) => type !== 'organization');
+
 export const attachmentsCanonicalOptions = ({ organizationId, tenantId }: { organizationId: string; tenantId: string }) => {
   return queryOptions({
-    queryKey: keys.list.home(organizationId),
+    queryKey: orgListSpansHomes ? keys.list.filtered(organizationId, { channelId: organizationId }) : keys.list.home(organizationId),
     queryFn: async () => {
       return fetchAllPages(({ limit, offset }) => getAttachments({ path: { tenantId, organizationId }, query: { limit, offset } }), 1000);
     },
@@ -120,6 +125,10 @@ export const attachmentQueryOptions = (tenantId: string, organizationId: string,
 });
 
 export const findAttachmentInCache = createCacheFinder<Attachment>('attachment');
+
+/** An attachment by id from the cache, else from the permission-checked endpoint; null when it is gone or denied. */
+export const fetchAttachment = (tenantId: string, organizationId: string, id: string) =>
+  queryClient.ensureQueryData(attachmentQueryOptions(tenantId, organizationId, id)).catch(() => null);
 
 export function useGroupAttachments(tenantId: string | undefined, organizationId: string | undefined, groupId: string | undefined) {
   const { data } = useQuery({
@@ -140,7 +149,7 @@ type UpdateData = Awaited<ReturnType<typeof updateAttachmentMutationFn>>;
 type DeleteData = Awaited<ReturnType<typeof deleteAttachmentsMutationFn>>;
 
 /** Shared by the live hook and the offline-replay defaults: callbacks take the QueryClient and derive the org key from durable variables, since onMutate does not re-run on replay. */
-const attachmentCreateOptions = (
+export const attachmentCreateOptions = (
   queryClient: QueryClient,
 ): UseMutationOptions<CreateData, Error, CreateAttachmentVars, { optimisticAttachments: OrgRoutableItemData[] }> => ({
   mutationKey: keys.create,
@@ -162,6 +171,8 @@ const attachmentCreateOptions = (
     const orgKey = keys.list.org(variables.organizationId);
     if (context?.optimisticAttachments) cacheRemove(orgKey, context.optimisticAttachments);
     insertEntitiesIntoHome(queryClient, result.data);
+    // The own-create echo only patches rows already cached, so a list that spans homes refetches here.
+    if (orgListSpansHomes) queryClient.invalidateQueries({ queryKey: attachmentsCanonicalOptions(variables).queryKey });
   },
   onSettled: (_data, error, variables) => {
     if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.org(variables.organizationId));
@@ -317,6 +328,15 @@ addMutationRegistrar((queryClient: QueryClient) => {
   queryClient.setMutationDefaults(keys.create, attachmentCreateOptions(queryClient));
   queryClient.setMutationDefaults(keys.update, attachmentUpdateOptions(queryClient));
   queryClient.setMutationDefaults(keys.delete, attachmentDeleteOptions(queryClient));
+
+  // A placeholder turns into its file once a row with stored keys reaches the cache: from sync, a create or a key link.
+  queryClient.getQueryCache().subscribe((event) => {
+    if (event.type !== 'updated' || event.query.queryKey[0] !== 'attachment' || !hasPendingUploads()) return;
+    clearStoredUploads((id) => {
+      const row = findAttachmentInCache(id);
+      return !!row && !isPendingUpload(row);
+    });
+  });
 });
 
 // Version 2 of a delete carries its rows under `rows`; a bundle of version 1 queued them as `attachments`.

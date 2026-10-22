@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { CopyIcon, TrashIcon } from 'lucide-react';
 import type { UseFormProps } from 'react-hook-form';
@@ -26,6 +25,7 @@ import { Label } from '~/modules/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { Switch } from '~/modules/ui/switch';
 import { Textarea } from '~/modules/ui/textarea';
+import { formResolver } from '~/utils/form-resolver';
 
 const federationKeys = Object.keys(appConfig.federations);
 const statuses = ['pending', 'active', 'disabled'] as const;
@@ -61,7 +61,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
   const { mutate: remove } = useConnectionDeleteMutation();
 
   const formOptions: UseFormProps<FormValues> = {
-    resolver: zodResolver(formSchema),
+    resolver: formResolver(formSchema),
     defaultValues: { issuer: federationKeys[0] ?? '', displayName: '', claimValues: '', idpEntityIds: '' },
   };
 
@@ -98,7 +98,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
   return (
     <ToolCard label="c:connection_other" description={t('c:connections.text')} unsaved id={formContainerId} className={className}>
       {isPending ? (
-        <Spinner className="size-6" />
+        <Spinner />
       ) : (
         <div className="flex flex-col gap-6 text-sm">
           {sso.map((connection) => (
@@ -168,7 +168,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
 
           {sso.length === 0 && federationKeys.length > 0 && (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+              <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
                 <FormField
                   control={form.control}
                   name="issuer"

@@ -9,6 +9,7 @@ import type { MediaRefContext } from 'shared/utils/media-ref';
 import { childNodes, isDocumentNode, isRefusedMediaBlock } from 'shared/utils/validate-block-media-urls';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
+import { getBlockPendingUpload, subscribePendingUploads } from '~/modules/attachment/helpers/pending-uploads';
 import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-url';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { findClickedMedia, getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
@@ -110,25 +111,30 @@ async function processBlocks(
   const media: CarouselItemData[] = [];
 
   async function walk(blocks: CustomBlock[]): Promise<CustomBlock[]> {
-    return Promise.all(
-      blocks.map(async (block) => {
+    const walked = await Promise.all(
+      blocks.map(async (block): Promise<CustomBlock[]> => {
         let props = block.props;
+        const children = block.children?.length ? await walk(block.children as CustomBlock[]) : block.children;
 
         // renderableBlocks ran first: a media block here holds a props object.
         if (mediaBlockTypes.has(block.type) && 'url' in props && props.url) {
           const rawUrl = props.url as string;
           const resolvedUrl = await resolveUrl(rawUrl);
-          props = { ...props, url: resolvedUrl };
 
-          const filename = ('name' in props ? (props.name as string) : '') || '';
-          media.push({ id: block.id, url: resolvedUrl, filename, contentType: block.type });
+          if (resolvedUrl) {
+            props = { ...props, url: resolvedUrl };
+            const filename = ('name' in props ? (props.name as string) : '') || '';
+            media.push({ id: block.id, url: resolvedUrl, filename, contentType: block.type });
+          } else if (!getBlockPendingUpload(props)) {
+            // A gone or denied file renders nothing, as a refused ref does; a pending one keeps its ref for the placeholder.
+            return (children as CustomBlock[] | undefined) ?? [];
+          }
         }
 
-        const children = block.children?.length ? await walk(block.children as CustomBlock[]) : block.children;
-
-        return { ...block, props, children } as CustomBlock;
+        return [{ ...block, props, children } as CustomBlock];
       }),
     );
+    return walked.flat();
   }
 
   const resolved = await walk(blocks);
@@ -155,6 +161,10 @@ function BlockNoteFullHtml({
     const cached = firstPassHtmlCache.get(firstPassKey(defaultValue, propOrganizationId));
     return { html: cached ?? '', mediaItems: [], ready: cached !== undefined };
   });
+
+  // Bumped when a pending upload's file arrives, so the resolved pass swaps its placeholder for the file.
+  const [uploadsArrived, setUploadsArrived] = useState(0);
+  useEffect(() => subscribePendingUploads(() => setUploadsArrived((count) => count + 1)), []);
 
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
@@ -205,7 +215,7 @@ function BlockNoteFullHtml({
     return () => {
       cancelled = true;
     };
-  }, [defaultValue, propTenantId, propOrganizationId]);
+  }, [defaultValue, propTenantId, propOrganizationId, uploadsArrived]);
 
   const handleClick: MouseEventHandler = (event) => {
     if (!clickOpensPreview || renderState.mediaItems.length === 0) return;

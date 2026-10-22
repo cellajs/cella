@@ -1,16 +1,16 @@
 import { eq } from 'drizzle-orm';
-import { createAttachments, type GetPresignedUrlsResponse, getPresignedUrls, getUploadToken } from 'sdk';
+import { createAttachments, type GetPresignedUrlsResponse, getPresignedUrls, getUploadToken, linkAttachmentKeys } from 'sdk';
 import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders } from '../fixtures';
 import { adminDb, expectRefusal } from '../helpers';
 import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
+import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -186,5 +186,73 @@ describe('Attachment storage keys', async () => {
     });
     expect(own.response.status).toBe(200);
     expect((own.data as { sub: string }).sub).toBe(`${attacker.organization.id}/${attacker.user.id}`);
+  });
+
+  describe('linking the keys of a deferred upload', () => {
+    const localKey = 'blob:http://localhost:3000/0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2c';
+
+    const link = (id: string, keys: { original: string; preview?: string }, cookie = attacker.sessionCookie) =>
+      call(linkAttachmentKeys, {
+        path: { tenantId: attacker.tenantId, organizationId: attacker.organization.id, id },
+        body: { keys },
+        headers: { ...defaultHeaders, Cookie: cookie },
+      });
+
+    const keysOf = async (id: string) =>
+      (await adminDb.select({ keys: attachmentsTable.keys }).from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0]?.keys;
+
+    const createLocal = async () => {
+      const id = generateId();
+      expect((await create(bodyFor(id, { original: localKey }))).response.status).toBe(201);
+      return id;
+    };
+
+    it("links the uploader's keys once; the same keys again are a no-op (positive control)", async () => {
+      const id = await createLocal();
+      const keys = { original: keyOf(attacker, 'late.png'), preview: keyOf(attacker, 'late-preview.png') };
+
+      expect((await link(id, keys)).response.status).toBe(200);
+      expect(await keysOf(id)).toEqual(keys);
+      expect((await link(id, keys)).response.status).toBe(200);
+
+      const { response, error } = await link(id, { original: keyOf(attacker, 'other.png') });
+      await expectRefusal({ response, error }, 409, 'invalid_request');
+      expect(await keysOf(id)).toEqual(keys);
+    });
+
+    it('must not let anyone but the uploader link keys, an organization admin included', async () => {
+      const id = await createLocal();
+      const coAdmin = await createOrgUser(call, attacker.tenantId, attacker.organization.id, 'storage-co-admin', adminRole);
+      const keys = { original: `${attacker.organization.id}/${coAdmin.id}/theirs.png` };
+
+      const { response, error } = await link(id, keys, coAdmin.sessionCookie);
+      await expectRefusal({ response, error }, 403, 'forbidden');
+      expect(await keysOf(id)).toEqual({ original: localKey });
+    });
+
+    it("must not link a key outside the uploader's own prefix, or a local key", async () => {
+      const id = await createLocal();
+      const coMember = await createOrgUser(call, attacker.tenantId, attacker.organization.id, 'storage-co-member');
+      const refused = [
+        keyOf(victim, 'contract.pdf'),
+        `${attacker.organization.id}/${coMember.id}/theirs.png`,
+        `${attacker.organization.id}/${attacker.user.id}/../${coMember.id}/theirs.png`,
+        localKey,
+        '',
+      ];
+      for (const original of refused) {
+        const { response, error } = await link(id, { original });
+        await expectRefusal({ response, error }, 400, 'invalid_request', original);
+      }
+      expect(await keysOf(id)).toEqual({ original: localKey });
+    });
+
+    it('must not link keys to a deleted attachment', async () => {
+      const id = await createLocal();
+      await adminDb.update(attachmentsTable).set({ deletedAt: new Date().toISOString() }).where(eq(attachmentsTable.id, id));
+
+      const { response, error } = await link(id, { original: keyOf(attacker, 'late.png') });
+      await expectRefusal({ response, error }, 404, 'not_found');
+    });
   });
 });

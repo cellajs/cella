@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
-import { CacheFirst, ExpirationPlugin, type PrecacheEntry, Serwist, StaleWhileRevalidate } from 'serwist';
+import { ExpirationPlugin, type PrecacheEntry, Serwist, StaleWhileRevalidate } from 'serwist';
 
-declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: (PrecacheEntry | string)[] };
+declare const self: ServiceWorkerGlobalScope & { __SW_MANIFEST: (PrecacheEntry | string)[] };
 
 declare const __BACKEND_URL__: string;
 
@@ -9,9 +9,12 @@ declare const __BACKEND_URL__: string;
 const apiPathPrefix = new URL(__BACKEND_URL__, self.location.origin).pathname.replace(/\/+$/, '');
 const navigationDenylist = apiPathPrefix ? [new RegExp(`^${apiPathPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`)] : [];
 
+/** Docs files outside docs.gen/: the OpenAPI spec, and the type and zod indexes the docs code view reads. */
+const docsFiles = new Set(['/static/openapi.json', '/static/types.gen.ts', '/static/zod.gen.ts']);
+
 // `skipWaiting: false` keeps the update prompt: Serwist listens for the client's `{type: 'SKIP_WAITING'}` message.
 const serwist = new Serwist({
-  precacheEntries: self.__WB_MANIFEST,
+  precacheEntries: self.__SW_MANIFEST,
   skipWaiting: false,
   clientsClaim: true,
   precacheOptions: {
@@ -24,19 +27,10 @@ const serwist = new Serwist({
   runtimeCaching: [
     {
       // Docs files keep stable names per release; the app appends ?v=<sha> so each release keys fresh cache entries.
-      matcher: ({ url }) =>
-        url.origin === self.location.origin && (url.pathname.startsWith('/static/docs.gen/') || url.pathname === '/static/openapi.json'),
+      matcher: ({ url }) => url.origin === self.location.origin && (url.pathname.startsWith('/static/docs.gen/') || docsFiles.has(url.pathname)),
       handler: new StaleWhileRevalidate({
         cacheName: 'docs-gen',
         plugins: [new ExpirationPlugin({ maxEntries: 40 })],
-      }),
-    },
-    {
-      // Grammar/theme chunks are excluded from the precache (globIgnores in vite.config.ts) and content-hashed.
-      matcher: ({ url }) => url.origin === self.location.origin && /^\/assets\/grammars-/.test(url.pathname),
-      handler: new CacheFirst({
-        cacheName: 'grammars',
-        plugins: [new ExpirationPlugin({ maxEntries: 80 })],
       }),
     },
   ],

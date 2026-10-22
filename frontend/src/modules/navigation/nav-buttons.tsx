@@ -15,7 +15,8 @@ interface NavButtonProps {
 }
 
 function AppNavIcon({ navItem, className }: { navItem: NavItem; className?: string }) {
-  const iconClass = cn('size-5 min-h-5 min-w-5 shrink-0 transition-transform group-hover:scale-110', className);
+  // Larger below sm, where the bottom bar shows them.
+  const iconClass = cn('size-6 min-h-6 min-w-6 shrink-0 transition-transform group-hover:scale-110 sm:size-5 sm:min-h-5 sm:min-w-5', className);
 
   if (navItem.iconSlot) {
     const IconSlot = navItem.iconSlot;

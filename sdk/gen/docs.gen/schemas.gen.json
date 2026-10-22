@@ -525,7 +525,7 @@
         "spreadWindow": {
           "type": ["integer", "null"],
           "required": true,
-          "description": "Server-suggested spread window (ms) for the lazy delta fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds"
+          "description": "Server-suggested spread window (ms) for the lazy range fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds"
         },
         "propagation": {
           "type": ["object", "null"],
@@ -1523,8 +1523,7 @@
         "id": { "type": "string", "required": true, "format": "uuid" },
         "message": {
           "type": ["string", "null"],
-          "required": true,
-          "maxLength": 255
+          "required": true
         },
         "email": { "type": "string", "required": true, "maxLength": 255 },
         "type": {

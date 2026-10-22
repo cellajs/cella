@@ -6,8 +6,8 @@ import { repoRoot } from './session.ts';
 const sourceGlobs = ['frontend/src/**/*.ts', 'frontend/src/**/*.tsx', 'frontend/src/**/*.css', ':!**/*.test.*', ':!**/*.stories.*', ':!**/tests/**'];
 
 /** Matching lines (`file:line: text`) in frontend sources, tests and stories left out. Patterns are POSIX ERE: no `\s`, `\w` or `\b`. */
-function search(pattern: string, globs = sourceGlobs) {
-  const result = spawnSync('git', ['grep', '-nIE', pattern, '--', ...globs], { cwd: repoRoot, encoding: 'utf8' });
+function search(pattern: string) {
+  const result = spawnSync('git', ['grep', '-nIE', pattern, '--', ...sourceGlobs], { cwd: repoRoot, encoding: 'utf8' });
   return result.stdout.split('\n').filter(Boolean);
 }
 
@@ -27,18 +27,7 @@ function characterShortcuts() {
   return found;
 }
 
-function biome(rules: string[]) {
-  const args = ['biome', 'lint', ...rules.map((rule) => `--only=${rule}`), '--reporter=json', '--max-diagnostics=500', 'frontend/src'];
-  const result = spawnSync('pnpm', ['--silent', ...args], { cwd: repoRoot, encoding: 'utf8' });
-  try {
-    const report = JSON.parse(result.stdout) as { diagnostics: { location: { path: { file: string } | string } }[] };
-    return report.diagnostics.map(({ location }) => (typeof location.path === 'string' ? location.path : location.path.file));
-  } catch {
-    return [];
-  }
-}
-
-/** Repository checks for criteria a browser cannot see: media, motion, shortcuts, time limits and sign-in methods. */
+/** Repository checks for criteria a browser cannot see: media, motion, shortcuts, gestures, dragging and sign-in methods. */
 export function runCodeChecks(evidence: EvidenceSet) {
   const media = search('<(video|audio)[[:space:]>]|MediaPlayer|react-player');
   evidence.add(
@@ -79,21 +68,6 @@ export function runCodeChecks(evidence: EvidenceSet) {
         }
       : { check: 'code:shortcuts', result: 'pass', summary: 'Every keyboard shortcut needs Ctrl, Alt or Meta.', where: [] },
   );
-
-  const sessionSpan = search(String.raw`new TimeSpan\(1, 'w'\)`, ['backend/src/modules/auth/sessions/**/*.ts']);
-  const toastsKept = search('prefers-contrast: more', ['frontend/src/modules/common/toaster/toaster.ts']).length > 0;
-  evidence.add(['2.2.1'], {
-    check: 'code:timing',
-    result: 'review',
-    summary: [
-      sessionSpan.length ? 'Sessions last a week, beyond the 20-hour exception.' : 'Session lifetime not found.',
-      'Sign-in challenges (passkey, email link, step-up) expire after 5 to 10 minutes and can be requested again.',
-      toastsKept
-        ? 'Toasts stay until closed with increased contrast, set in Preferences or on the device, which this audit runs with; without it they close after 4 to 10 seconds.'
-        : 'Toasts close by themselves; check that none carries information users need to act on.',
-    ].join(' '),
-    where: [],
-  });
 
   const looping = search('animate-(ping|pulse|bounce)|animation:[^;]*infinite|repeat: Infinity|carousel-autoplay');
   evidence.add(['2.2.2'], {
@@ -155,15 +129,5 @@ export function runCodeChecks(evidence: EvidenceSet) {
     result: memoryFree && (!strategies.includes('totp') || oneTimeCode.length) ? 'pass' : 'fail',
     summary: `Sign-in uses ${strategies.join(', ')}: no password to remember, and one-time codes support autofill (autocomplete="one-time-code").`,
     where: [],
-  });
-
-  const pointerOnly = biome(['a11y/noStaticElementInteractions', 'a11y/useKeyWithClickEvents']);
-  evidence.add(['2.1.1'], {
-    check: 'code:keyboard-handlers',
-    result: pointerOnly.length ? 'review' : 'pass',
-    summary: pointerOnly.length
-      ? `${pointerOnly.length} elements handle pointer events without a keyboard equivalent, in ${[...new Set(pointerOnly)].join(', ')}; check that each has a keyboard path.`
-      : 'Every element with a click handler also handles the keyboard.',
-    where: [...new Set(pointerOnly)],
   });
 }

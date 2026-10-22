@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zCreateTotpBody } from 'sdk/zod.gen';
@@ -9,6 +8,7 @@ import { Button } from '~/modules/ui/button';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '~/modules/ui/totp';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
+import { formResolver } from '~/utils/form-resolver';
 
 const formSchema = zCreateTotpBody;
 type FormValues = z.infer<typeof formSchema>;
@@ -23,7 +23,7 @@ interface Props {
 export function TotpConfirmationForm({ onSubmit, onCancel, label, isPending }: Props) {
   const { t } = useTranslation();
 
-  const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: { code: '' } });
+  const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { code: '' } });
 
   const { isValid, isDirty } = useFormState({ control: form.control });
 
@@ -38,7 +38,7 @@ export function TotpConfirmationForm({ onSubmit, onCancel, label, isPending }: P
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit, defaultOnInvalid)}>
+      <form noValidate onSubmit={form.handleSubmit(handleSubmit, defaultOnInvalid)}>
         <FormField
           control={form.control}
           name="code"

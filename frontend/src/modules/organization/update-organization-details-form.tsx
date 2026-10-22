@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { type MouseEvent, Suspense, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +20,7 @@ import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
+import { formResolver } from '~/utils/form-resolver';
 
 const formSchema = zUpdateOrganizationBody;
 
@@ -41,7 +41,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
     (appConfig.attachmentUploadTargets as readonly string[]).includes('organization') && organization.can?.attachment?.create === true;
 
   const formOptions: UseFormProps<FormValues> = {
-    resolver: zodResolver(formSchema),
+    resolver: formResolver(formSchema),
     defaultValues: { welcomeText: organization.welcomeText || '' },
   };
 
@@ -105,8 +105,8 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
-        <Suspense fallback={<Spinner className="my-16 size-6 opacity-50" noDelay />}>
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        <Suspense fallback={<Spinner className="my-16" noDelay />}>
           <LazyBlockNoteContentFormField
             key={editorKey}
             control={form.control}
@@ -124,9 +124,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
                     organizationId: organization.id,
                     // Private org-scoped attachments so the id the block references resolves via presigned + permission check.
                     onComplete: (attachments) =>
-                      persistAttachments(attachments, { tenantId: organization.tenantId, organizationId: organization.id }).catch(() => {
-                        toaster.error(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }));
-                      }),
+                      persistAttachments(attachments, { tenantId: organization.tenantId, organizationId: organization.id }),
                   }
                 : undefined,
             }}

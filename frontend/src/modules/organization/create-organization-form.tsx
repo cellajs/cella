@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import type React from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +16,7 @@ import { useOrganizationCreateMutation } from '~/modules/organization/query';
 import { useSelfCreateTenantMutation } from '~/modules/tenants/query';
 import { Button } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/field';
+import { formResolver } from '~/utils/form-resolver';
 
 interface Props {
   dialog?: boolean;
@@ -35,7 +35,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
   const { nextStep } = useStepper();
   const nameLabel = t('c:name').toLowerCase();
 
-  const formOptions: UseFormProps<FormValues> = { resolver: zodResolver(formSchema), defaultValues: { name: '', slug: '' } };
+  const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: { name: '', slug: '' } };
 
   const formContainerId = 'create-organization';
   const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
@@ -70,7 +70,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
 
   return (
     <Form {...form} labelDirection={labelDirection}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <InputFormField
           control={form.control}
           name="name"

@@ -46,6 +46,9 @@ export function SlugFormField<TFieldValues extends FieldValues>({
   const name = 'slug';
 
   const [isDeviating, setDeviating] = useState(false);
+  // Appended to a derived slug that is too short or taken, so the user never has to fix a field they did not type in
+  const [suffix] = useState(() => Math.random().toString(36).slice(2, 6));
+  const isDerived = !previousSlug && !isDeviating;
   const [isSlugAvailable, setSlugAvailable] = useState<'available' | 'blank' | 'notAvailable'>('blank');
   // Availability responses for a value the user has since replaced are ignored.
   const latestSlugRef = useRef('');
@@ -79,6 +82,7 @@ export function SlugFormField<TFieldValues extends FieldValues>({
     onError: (error, variables) => {
       if (variables.slug !== latestSlugRef.current) return;
       if (error.status !== 409) return setSlugAvailable('blank');
+      if (isDerived && !variables.slug.endsWith(`-${suffix}`)) return form.setValue(name, `${variables.slug}-${suffix}`);
       form.setError(name, { type: 'manual', message: t('error:slug_exists') });
       setSlugAvailable('notAvailable');
     },
@@ -105,8 +109,11 @@ export function SlugFormField<TFieldValues extends FieldValues>({
 
   // Create forms derive the slug from the name until the user edits it
   useEffect(() => {
-    if (previousSlug || isDeviating) return;
-    form.setValue(name, slugify(nameValue || '', { lower: true, strict: true }));
+    if (!isDerived) return;
+    const derived = slugify(nameValue || '', { lower: true, strict: true });
+    // A name of one letter, or of letters slugify cannot spell (Chinese, Arabic), still gets a valid slug
+    const fallback = `${derived || slugify(entityType, { lower: true })}-${suffix}`;
+    form.setValue(name, derived.length >= 2 || !nameValue?.trim() ? derived : fallback);
   }, [nameValue]);
 
   const revertSlug = () => {

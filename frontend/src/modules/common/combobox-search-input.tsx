@@ -1,4 +1,4 @@
-import { CircleXIcon } from 'lucide-react';
+import { SearchClearButton } from '~/modules/common/search-clear-button';
 import { SearchSpinner } from '~/modules/common/search-spinner';
 import { ComboboxPrimitive } from '~/modules/ui/combobox';
 import { cn } from '~/utils/cn';
@@ -29,10 +29,14 @@ export function ComboboxSearchInput({
       <ComboboxPrimitive.Input
         data-slot="combobox-search-input"
         className={cn(
-          'flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-search-cancel-button]:hidden',
+          // text-md is at least 16px on phones: iOS zooms into a focused field below that.
+          'flex h-10 w-full rounded-md bg-transparent py-3 text-md outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm [&::-webkit-search-cancel-button]:hidden',
           className,
         )}
         value={value}
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
         data-1p-ignore
         data-lpignore="true"
         {...props}
@@ -44,17 +48,7 @@ export function ComboboxSearchInput({
         }}
       />
       {showClear && value.length > 0 && (
-        <ComboboxPrimitive.Clear
-          render={
-            <button
-              type="button"
-              aria-label="Clear search"
-              className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer opacity-70 hover:opacity-100"
-            />
-          }
-        >
-          <CircleXIcon />
-        </ComboboxPrimitive.Clear>
+        <ComboboxPrimitive.Clear render={<SearchClearButton className="absolute top-1/2 right-2 -translate-y-1/2" />} />
       )}
     </div>
   );

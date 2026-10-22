@@ -22,7 +22,7 @@ import {
 } from '~/modules/auth/steps';
 import type { TokenData } from '~/modules/auth/types';
 import { useGetTokenData } from '~/modules/auth/use-get-token-data';
-import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { EntityChip } from '~/modules/common/entity-chip';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { meQueryOptions } from '~/modules/me/query';
@@ -114,7 +114,7 @@ export function AuthenticatePage() {
   if (isLoading || isHealthLoading || signedIn) {
     return (
       <>
-        <Spinner className="size-10" />
+        <Spinner size="lg" />
         {showSlowWarning && (
           <Alert variant="warning">
             <TriangleAlertIcon />
@@ -180,9 +180,8 @@ function InvitationChip({ invitation }: { invitation: NonNullable<TokenData['inv
   const { t } = useTranslation();
 
   return (
-    <div className="mx-auto flex max-w-full items-center gap-2 rounded-full border border-primary/20 bg-primary/5 py-1 pr-3 pl-1 text-sm">
-      <EntityAvatar type={invitation.entityType} name={invitation.entityName} className="size-6 shrink-0" />
-      <span className="truncate">{t('c:invitation_to', { name: invitation.entityName })}</span>
-    </div>
+    <EntityChip type={invitation.entityType} name={invitation.entityName} size="lg" className="mx-auto border-primary/20 bg-primary/5 pr-3">
+      {t('c:invitation_to', { name: invitation.entityName })}
+    </EntityChip>
   );
 }

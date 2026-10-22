@@ -247,6 +247,28 @@ li:has(.is-focused) {
   width: 100% !important;
 }
 
+/* A media block whose file is still on its uploader's device: the image keeps its measured box, other types a row. */
+.bn-file-block-content-wrapper:has(> .bn-pending-upload) {
+  width: 100% !important;
+  max-width: 100%;
+}
+.bn-pending-upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  text-align: center;
+  white-space: normal;
+}
+
 .bn-toolbar.bn-formatting-toolbar button {
   height: 2.25rem;
   width: 2.25rem;

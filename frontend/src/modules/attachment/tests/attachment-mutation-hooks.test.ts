@@ -11,12 +11,11 @@ const { createAttachments, updateAttachment } = vi.hoisted(() => ({
 vi.mock('sdk', async (importOriginal) => ({ ...(await importOriginal<typeof import('sdk')>()), createAttachments, updateAttachment }));
 vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { info: vi.fn(), error: vi.fn() } }));
 
-const { attachmentQueryKeys, attachmentsCanonicalOptions, useAttachmentCreateMutation, useAttachmentUpdateMutation } = await import(
-  '~/modules/attachment/query'
-);
+const { attachmentQueryKeys, useAttachmentCreateMutation, useAttachmentUpdateMutation } = await import('~/modules/attachment/query');
 
 const ctx = { tenantId: 'ten-1', organizationId: 'org-1' };
-const homeKey = attachmentsCanonicalOptions(ctx).queryKey;
+// The rows here carry no channel id, so they splice into the organization's home list.
+const homeKey = attachmentQueryKeys.list.home(ctx.organizationId);
 
 /** A stored attachment of the organization; only the fields the mutation callbacks read. */
 const attachment = (id: string, overrides: Partial<Attachment> = {}) =>

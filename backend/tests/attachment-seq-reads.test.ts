@@ -18,16 +18,18 @@ const attachmentIds = { seq10: generateId(), seq20: generateId(), seq30Deleted: 
 
 const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-describe('Attachment seq reads', async () => {
+describe('Attachment range reads', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
   let plan: TestEntityHierarchyPlan;
 
-  const listAttachments = async (query: Record<string, string | number>) => {
+  // Skipping the SDK's request validation sends a query it would refuse, so the server's own rules answer.
+  const listAttachments = async (query: Record<string, string | number>, { validate = true } = {}) => {
     const result = await call(getAttachments, {
       path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId },
       query,
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+      ...(validate ? {} : { requestValidator: undefined }),
     });
     const data = result.data as { items: { id: string; seq: number; deletedAt: string | null }[] } | undefined;
     return { status: result.response.status, items: data?.items ?? [] };
@@ -64,53 +66,64 @@ describe('Attachment seq reads', async () => {
     await clearSecurityTestData();
   });
 
-  it('B1: seqCursor reads are seq-ascending; a capped response is a clean prefix', async () => {
-    // sort/order params must NOT override seq ordering on seq reads
-    const result = await listAttachments({ seqCursor: '1,999999', limit: '2', sort: 'createdAt', order: 'desc' });
+  it('B1: range reads are seq-ascending; a capped response is a clean prefix', async () => {
+    // sort/order params must NOT override seq ordering on range reads
+    const result = await listAttachments({ afterSeq: 0, untilSeq: 999999, limit: 2, sort: 'createdAt', order: 'desc' });
 
     expect(result.status).toBe(200);
     // Rows in seq order are 10, 20, 30 (tombstone), 40, 50; the cap takes the two lowest.
     expect(result.items.map((a) => a.seq)).toEqual([10, 20]);
   });
 
-  it('B2: seqCursor reads include tombstones; normal reads never do', async () => {
-    // Delta read: tombstones flow through so client caches can drop soft-deleted rows
-    const delta = await listAttachments({ seqCursor: '1,999999', limit: '100' });
-    expect(delta.items.map((a) => a.seq)).toEqual([10, 20, 30, 40, 50]);
-    const tombstone = delta.items.find((a) => a.seq === 30);
+  it('B2: range reads include tombstones; normal reads never do', async () => {
+    // Range read: tombstones flow through so client caches can drop soft-deleted rows
+    const range = await listAttachments({ afterSeq: 0, untilSeq: 999999, limit: 100 });
+    expect(range.items.map((a) => a.seq)).toEqual([10, 20, 30, 40, 50]);
+    const tombstone = range.items.find((a) => a.seq === 30);
     expect(tombstone?.deletedAt).not.toBeNull();
 
-    const normal = await listAttachments({ limit: '100' });
+    const normal = await listAttachments({ limit: 100 });
     expect(normal.items.some((a) => a.id === attachmentIds.seq30Deleted)).toBe(false);
   });
 
   it('B3: limit above 1000 is rejected, not clamped', async () => {
     // Validation failures are malformed requests: 400 via the app's defaultHook, never 403
-    const result = await listAttachments({ limit: '1001' });
+    const result = await listAttachments({ limit: 1001 }, { validate: false });
     expect(result.status).toBe(400);
     expect(result.items).toEqual([]);
   });
 
-  it('B4: bounded seqCursor respects both bounds (seq-filter OR-group regression)', async () => {
-    const result = await listAttachments({ seqCursor: '20,40', limit: '100' });
+  it('B4: a range excludes afterSeq and includes untilSeq (seq-filter OR-group regression)', async () => {
+    const result = await listAttachments({ afterSeq: 10, untilSeq: 40, limit: 100 });
 
     expect(result.status).toBe(200);
-    // Regression guard: "20,40" must not join the OR'd search group as (seq >= 20 OR seq <= 40).
+    // Regression guard: the bounds must not join an OR'd search group as (seq > 10 OR seq <= 40).
     expect(result.items.map((a) => a.seq)).toEqual([20, 30, 40]);
   });
 
   it('B5: channelId narrows to the rows homed at or below that channel', async () => {
     const live = [10, 20, 40, 50];
     const seqs = async (channelId: string) =>
-      (await listAttachments({ channelId, limit: '100', sort: 'createdAt' })).items.map((a) => a.seq).sort((a, b) => a - b);
+      (await listAttachments({ channelId, limit: 100, sort: 'createdAt' })).items.map((a) => a.seq).sort((a, b) => a - b);
 
     // The organization covers every row, and so does each channel between it and the rows' home.
     expect(await seqs(tenant.organization.id)).toEqual(live);
     for (const channelId of Object.values(plan.channelIdColumns)) expect(await seqs(channelId)).toEqual(live);
 
     // A channel no row lives under is an empty page, not a refusal.
-    const elsewhere = await listAttachments({ channelId: generateId(), limit: '100' });
+    const elsewhere = await listAttachments({ channelId: generateId(), limit: 100 });
     expect(elsewhere.status).toBe(200);
     expect(elsewhere.items).toEqual([]);
+  });
+
+  it.each([
+    ['one bound', { afterSeq: 10 }],
+    ['an empty range', { afterSeq: 40, untilSeq: 40 }],
+    ['a search', { afterSeq: 10, untilSeq: 40, q: 'seq' }],
+    ['an offset', { afterSeq: 10, untilSeq: 40, offset: 2 }],
+    ['a non-integer bound', { afterSeq: '10.5', untilSeq: 40 }],
+  ])('B6: a range read with %s is rejected', async (_, query) => {
+    const result = await listAttachments(query, { validate: false });
+    expect(result.status).toBe(400);
   });
 });

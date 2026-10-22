@@ -9,24 +9,21 @@ import { EvidenceSet, type Finding } from './findings.ts';
 import { ledgerPath, writeLedger } from './ledger.ts';
 import { acrossStates } from './probes/page-structure.ts';
 import { scope } from './scope.ts';
-import { baseUrl, type Mode, repoRoot, startSession } from './session.ts';
+import { baseUrl, repoRoot, startSession } from './session.ts';
 import { visitState } from './visit.ts';
 
 /**
  * Audits the running development app against WCAG 2.2 A/AA and writes the conformance ledger.
  *
- * Usage: pnpm a11y [--email <admin email>] [--states id,id] [--only axe,probes,code] [--workers 4]
+ * Usage: pnpm a11y [--email <admin email>] [--states id,id] [--workers 4]
  */
 const { values } = parseArgs({
   options: {
     email: { type: 'string', default: process.env.ADMIN_EMAIL ?? defaultAdminUser.email },
     states: { type: 'string' },
-    only: { type: 'string', default: 'axe,probes,code' },
     workers: { type: 'string', default: '4' },
   },
 });
-const only = values.only.split(',');
-const parts = { axe: only.includes('axe'), probes: only.includes('probes'), code: only.includes('code') };
 
 const startedAt = Date.now();
 const seconds = (since: number) => `${((Date.now() - since) / 1000).toFixed(1)}s`;
@@ -50,10 +47,8 @@ const findings: Finding[] = [];
 const scans: AxeScan[] = [];
 const errors: Record<string, string> = {};
 
-/** One visit: a state in a color mode. Dark visits exist for axe's contrast rule only. */
-const visits: { state: (typeof states)[number]; mode: Mode }[] = [];
-if (parts.axe || parts.probes) for (const state of states) visits.push({ state, mode: 'light' });
-if (parts.axe) for (const state of states) visits.push({ state, mode: 'dark' });
+/** One visit: a state in a color mode. Dark visits measure contrast only. */
+const visits = (['light', 'dark'] as const).flatMap((mode) => states.map((state) => ({ state, mode })));
 
 /** Takes visits from the shared queue until it is empty. */
 const worker = async () => {
@@ -61,9 +56,9 @@ const worker = async () => {
     const { state, mode } = visit;
     const visitStartedAt = Date.now();
     try {
-      const result = await visitState(session, state, mode, parts);
+      const result = await visitState(session, state, mode);
       findings.push(...result.findings);
-      if (result.scan) scans.push(result.scan);
+      scans.push(result.scan);
       console.info(`${state.id} (${mode}) ${seconds(visitStartedAt)}`);
     } catch (error) {
       errors[`${state.id} (${mode})`] = error instanceof Error ? error.message.split('\n')[0] : String(error);
@@ -85,22 +80,18 @@ scans.sort((a, b) => Number(a.where.endsWith('(dark)')) - Number(b.where.endsWit
 
 const evidence = new EvidenceSet();
 mkdirSync(resultsDir, { recursive: true });
-if (parts.axe) {
-  const axe = summarizeAxe(scans, parts.probes);
-  for (const [id, items] of axe.evidence) for (const item of items) evidence.add([id], item);
-  writeFileSync(path.join(resultsDir, 'axe.json'), `${JSON.stringify({ ...axe.report, errors }, null, 2)}\n`);
-}
-if (parts.probes) evidence.addFindings(acrossStates(findings));
-if (parts.code) runCodeChecks(evidence);
+const axe = summarizeAxe(scans);
+for (const [id, items] of axe.evidence) for (const item of items) evidence.add([id], item);
+writeFileSync(path.join(resultsDir, 'axe.json'), `${JSON.stringify({ ...axe.report, errors }, null, 2)}\n`);
+evidence.addFindings(acrossStates(findings));
+runCodeChecks(evidence);
 
 // The ledger describes the whole scope, so a run that covered only part of it writes a separate file
 const skipped = Object.keys(errors).length;
 const target = chosen || skipped ? path.join(resultsDir, 'ledger-partial.json') : ledgerPath;
-const families = only.map((part) => (part === 'probes' ? 'probe' : part));
 const ledger = writeLedger(
   evidence.byCriterion,
   states.map((state) => state.id),
-  families,
   target,
 );
 

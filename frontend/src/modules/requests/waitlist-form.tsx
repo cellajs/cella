@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { ArrowRightIcon } from 'lucide-react';
@@ -16,6 +15,8 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/u
 import { Input } from '~/modules/ui/input';
 import { cn } from '~/utils/cn';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
+import { formResolver } from '~/utils/form-resolver';
+import { isTouchInteraction } from '~/utils/input-modality';
 
 const formSchema = zCreateRequestBody;
 
@@ -35,11 +36,11 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const isMobile = window.innerWidth < 640;
-
   const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
-  const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: { email, type: 'waitlist', message: null } });
+  const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { email: email ?? '', type: 'waitlist', message: null } });
+  // An address carried over from the sign-in step stays editable until it is a valid one
+  const prefilled = formSchema.shape.email.safeParse(email).success;
 
   const onSubmit = (body: FormValues) => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
@@ -59,6 +60,7 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
   return (
     <Form {...form}>
       <form
+        noValidate
         onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)}
         className={cn('flex items-end gap-4 max-sm:flex-col max-xs:min-w-full', className)}
       >
@@ -66,15 +68,15 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className={cn('w-full grow gap-0', email && 'hidden')}>
+            <FormItem className={cn('w-full grow gap-0', prefilled && 'hidden')}>
               <FormControl>
                 <Input
                   {...field}
                   className={cn('block', inputClassName)}
                   type="email"
-                  autoFocus={!isMobile}
-                  disabled={!!email}
-                  readOnly={!!email}
+                  autoFocus={!isTouchInteraction()}
+                  disabled={prefilled}
+                  readOnly={prefilled}
                   placeholder={t('c:email')}
                 />
               </FormControl>

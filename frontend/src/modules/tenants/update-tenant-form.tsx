@@ -1,6 +1,5 @@
 import { CheckboxGroup } from '@base-ui/react/checkbox-group';
 import { Field } from '@base-ui/react/field';
-import { zodResolver } from '@hookform/resolvers/zod';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Tenant, UpdateTenantData } from 'sdk';
@@ -20,6 +19,7 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { FieldContent, FieldLabel, FieldLayout, FieldTitle, Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
+import { formResolver } from '~/utils/form-resolver';
 
 const formSchema = zUpdateTenantBody.pick({ name: true, status: true, authStrategies: true });
 
@@ -52,7 +52,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
   const { mutate, isPending } = useTenantUpdateMutation();
 
   const formOptions: UseFormProps<FormValues> = {
-    resolver: zodResolver(formSchema),
+    resolver: formResolver(formSchema),
     defaultValues: { name: tenant.name, status: tenant.status, authStrategies: tenant.authStrategies },
   };
 
@@ -79,7 +79,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <InputFormField control={form.control} name="name" label={t('c:name')} required />
         <FormField
           control={form.control}

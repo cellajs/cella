@@ -1,24 +1,7 @@
 import { appConfig } from 'shared';
-import { isUuid } from 'shared/utils/entity-id';
 import { isOrganizationKey } from 'shared/utils/media-ref';
+import { isLocalStorageKey } from 'shared/utils/storage-key';
 import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
-
-/**
- * A local blob URL as a browser mints it for a file not yet uploaded: `blob:`, an http(s) origin and a UUID path, in
- * canonical form, so no dot segment, userinfo or query rides along. It names no stored object.
- */
-const isLocalBlobUrl = (key: string): boolean => {
-  if (!key.startsWith('blob:')) return false;
-  try {
-    const url = new URL(key.slice('blob:'.length));
-    return (url.protocol === 'http:' || url.protocol === 'https:') && isUuid(url.pathname.slice(1)) && key === `blob:${url.origin}${url.pathname}`;
-  } catch {
-    return false;
-  }
-};
-
-/** An offline upload keeps its local blob URL, or nothing, until it syncs: neither names a stored object. */
-const isLocalKey = (key: string) => key === '' || isLocalBlobUrl(key);
 
 /**
  * Whether every variant key of an attachment names its own organization's storage: local, or under the organization's
@@ -26,7 +9,7 @@ const isLocalKey = (key: string) => key === '' || isLocalBlobUrl(key);
  * tenant's object.
  */
 export function namesOwnStorage(keys: AttachmentKeys, organizationId: string): boolean {
-  return Object.values(keys).every((key) => key === undefined || isLocalKey(key) || isOrganizationKey(key, organizationId));
+  return Object.values(keys).every((key) => key === undefined || isLocalStorageKey(key) || isOrganizationKey(key, organizationId));
 }
 
 /**
@@ -36,4 +19,12 @@ export function namesOwnStorage(keys: AttachmentKeys, organizationId: string): b
 export function isSignableKey(key: string, bucketName: string, organizationId: string): boolean {
   const appBuckets = [appConfig.s3.privateBucket, appConfig.s3.publicBucket];
   return appBuckets.includes(bucketName) && isOrganizationKey(key, organizationId);
+}
+
+/**
+ * Whether every variant key names a stored object under the uploader's own prefix, `<organizationId>/<userId>`: the
+ * storage path the upload token signs. Stricter than `namesOwnStorage`, for keys linked to an existing row.
+ */
+export function namesUploaderStorage(keys: AttachmentKeys, organizationId: string, userId: string): boolean {
+  return Object.values(keys).every((key) => key === undefined || isOrganizationKey(key, `${organizationId}/${userId}`));
 }

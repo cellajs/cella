@@ -27,6 +27,7 @@ function createTabIndicator() {
   let glide: Animation | null = null;
   let observer: ResizeObserver | null = null;
   let observedSlot: HTMLElement | null = null;
+  let revealed = false;
 
   const place = (animate: boolean) => {
     if (!bar) return;
@@ -82,6 +83,11 @@ function createTabIndicator() {
       shown = shown.filter((item) => item !== slot);
       if (carried) place(true);
     },
+    // A bar's first tab is scrolled to at once: a bar that replaces another (a skeleton's) would replay the glide from the track's start
+    reveal: (tab: HTMLElement) => {
+      tab.scrollIntoView({ behavior: revealed ? 'smooth' : 'instant', inline: 'center', block: 'nearest' });
+      revealed = true;
+    },
   };
 }
 
@@ -119,8 +125,9 @@ export function ActiveTabMarker({ indicator }: { indicator: TabIndicator }) {
   }, [indicator]);
 
   useEffect(() => {
-    ref.current?.parentElement?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }, []);
+    const tab = ref.current?.parentElement;
+    if (tab) indicator.reveal(tab);
+  }, [indicator]);
 
   return <span ref={ref} className="pointer-events-none absolute inset-x-2 bottom-0" />;
 }

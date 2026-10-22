@@ -10,6 +10,6 @@ export const Default: Story = {};
 
 export const NoDelay: Story = { args: { noDelay: true } };
 
-export const Small: Story = { args: { className: 'size-4' } };
+export const Small: Story = { args: { size: 'sm' } };
 
-export const Large: Story = { args: { className: 'size-12' } };
+export const Large: Story = { args: { size: 'lg' } };

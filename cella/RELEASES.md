@@ -11,7 +11,7 @@ published.
 
 ## How it works
 
-1. Merge work into `main` with Conventional Commit messages (a lefthook `commit-msg` hook runs commitlint locally). `feat:` bumps minor and `fix:` bumps patch. A `!` (`feat!:`) or a `BREAKING CHANGE:` footer forces a breaking-change section and a larger bump. Types and their changelog sections: [release-please-config.json](../.github/release-please-config.json).
+1. Merge work into `main` with Conventional Commit messages (a lefthook `commit-msg` hook checks the header locally with `shared/scripts/check-commit-msg.ts`). `feat:` bumps minor and `fix:` bumps patch. A `!` (`feat!:`) or a `BREAKING CHANGE:` footer forces a breaking-change section and a larger bump. Types and their changelog sections: [release-please-config.json](../.github/release-please-config.json).
 2. release-please keeps an open **release PR**, updating the proposed version bump and generated [Changelog](./CHANGELOG.md) on every merge.
 3. Merging the release PR bumps the version, updates the changelog, tags, and publishes the GitHub Release, which triggers the production deploy ([CI deploys](./DEPLOYMENT.md#ci-deploys)).
 

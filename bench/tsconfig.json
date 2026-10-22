@@ -15,6 +15,6 @@
       "#json/*": ["../json/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "scenarios/**/*"],
   "exclude": ["**/node_modules", "**/dist", "**/.*/", "../backend/tests"]
 }

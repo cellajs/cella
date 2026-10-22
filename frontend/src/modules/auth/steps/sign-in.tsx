@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ArrowRightIcon, MailIcon } from 'lucide-react';
@@ -25,6 +24,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '~/modules/ui/input';
 import { useUserStore } from '~/modules/user/user-store';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
+import { formResolver } from '~/utils/form-resolver';
+import { isTouchInteraction } from '~/utils/input-modality';
 
 const emailEnabled = isStrategyEnabled('passkey');
 const isMagicLinkEnabled = isStrategyEnabled('magic');
@@ -52,11 +53,10 @@ export function SignInStep() {
   const navigateAfterAuth = useNavigateAfterAuth();
   const navigate = useNavigate();
 
-  const isMobile = window.innerWidth < 640;
   const abortRef = useRef<AbortController | null>(null);
   const [conditionalMediationSupported, setConditionalMediationSupported] = useState(false);
 
-  const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: { email } });
+  const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { email } });
 
   useEffect(() => {
     if (!isStrategyEnabled('passkey')) return;
@@ -146,7 +146,7 @@ export function SignInStep() {
       )}
 
       {(emailEnabled || isMagicLinkEnabled) && (
-        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
+        <form noValidate onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
           <FormField
             control={form.control}
             name="email"
@@ -160,7 +160,7 @@ export function SignInStep() {
                     disabled={!restrictedMode}
                     type="email"
                     className="h-12"
-                    autoFocus={restrictedMode && !isMobile}
+                    autoFocus={restrictedMode && !isTouchInteraction()}
                     autoComplete={restrictedMode ? 'email' : 'off'}
                     placeholder="name@example.com"
                   />

@@ -1,16 +1,36 @@
 import process from 'node:process';
+import { context, DiagConsoleLogger, diag, propagation, trace } from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import {
+  CompositePropagator,
+  diagLogLevelFromString,
+  getNumberFromEnv,
+  getStringFromEnv,
+  W3CBaggagePropagator,
+  W3CTraceContextPropagator,
+} from '@opentelemetry/core';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
-import { resourceFromAttributes } from '@opentelemetry/resources';
+import { detectResources, envDetector, hostDetector, processDetector, resourceFromAttributes } from '@opentelemetry/resources';
 import { LoggerProvider, type LogRecordExporter, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import type { MeterProvider } from '@opentelemetry/sdk-metrics';
 import { PeriodicExportingMetricReader, MeterProvider as SdkMeterProvider } from '@opentelemetry/sdk-metrics';
-import { NodeSDK } from '@opentelemetry/sdk-node';
-import { BatchSpanProcessor, type SpanExporter, type SpanProcessor } from '@opentelemetry/sdk-trace-base';
+import {
+  AlwaysOffSampler,
+  AlwaysOnSampler,
+  BatchSpanProcessor,
+  ParentBasedSampler,
+  type Sampler,
+  type SpanExporter,
+  type SpanProcessor,
+  TraceIdRatioBasedSampler,
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { appConfig } from './config-builder/app-config.ts';
 import type { OtlpSignal, OtlpSink } from './otlp-sink.ts';
@@ -31,6 +51,30 @@ const instrumentations = () => [new HttpInstrumentation(), new UndiciInstrumenta
 
 const EXPORT_OFF_MSG = '[otel] no OTEL_EXPORTER_OTLP_ENDPOINT or MAPLE_SECRET_INGEST_KEY set: telemetry export is off';
 
+/** The sampler `OTEL_TRACES_SAMPLER` and `OTEL_TRACES_SAMPLER_ARG` name; unset, the provider's default (parent-based, always on). */
+const samplerFromEnv = (): Sampler | undefined => {
+  const ratio = () => {
+    const value = getNumberFromEnv('OTEL_TRACES_SAMPLER_ARG');
+    return value !== undefined && value >= 0 && value <= 1 ? value : 1;
+  };
+  switch (getStringFromEnv('OTEL_TRACES_SAMPLER')) {
+    case 'always_on':
+      return new AlwaysOnSampler();
+    case 'always_off':
+      return new AlwaysOffSampler();
+    case 'parentbased_always_on':
+      return new ParentBasedSampler({ root: new AlwaysOnSampler() });
+    case 'parentbased_always_off':
+      return new ParentBasedSampler({ root: new AlwaysOffSampler() });
+    case 'traceidratio':
+      return new TraceIdRatioBasedSampler(ratio());
+    case 'parentbased_traceidratio':
+      return new ParentBasedSampler({ root: new TraceIdRatioBasedSampler(ratio()) });
+    default:
+      return undefined;
+  }
+};
+
 export interface OtelSDKOptions {
   serviceName: string;
   /** Release identifier reported as `service.version`; left off the resource when absent. */
@@ -50,7 +94,8 @@ export interface OtelSDKOptions {
 }
 
 export interface OtelSDK {
-  sdk: NodeSDK | undefined;
+  /** The trace pipeline; absent when nothing is exported and no local span processor is set. */
+  tracerProvider: TracerProvider | undefined;
   meterProvider: MeterProvider;
   start: () => void;
   shutdown: () => Promise<void>;
@@ -58,7 +103,10 @@ export interface OtelSDK {
 }
 
 /**
- * NodeSDK plus MeterProvider for one service. Backend, CDC and YJS share this exporter configuration.
+ * Tracer provider plus MeterProvider for one service. Backend, CDC and YJS share this exporter configuration.
+ * `start()` registers what the OpenTelemetry Node SDK registers for this setup: the instrumentations, an
+ * AsyncLocalStorage context, W3C trace-context and baggage propagation, and the provider with the host and process
+ * resource attributes. Logs reach the sink through the pino transport (`otel-log-transport.ts`).
  *
  * @example
  * const otel = createOtelSDK({ serviceName: 'raak-development-api', sink: resolveOtlpSink(env) });
@@ -103,10 +151,10 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
 
   const traceExporter = options.traceExporter ?? (exporterOptions ? new OTLPTraceExporter(exporterOptions('traces')) : undefined);
 
-  // Skip NodeSDK startup when there is nothing to export and no local span processor.
+  // No trace pipeline when there is nothing to export and no local span processor.
   if (!traceExporter && spanProcessors.length === 0) {
     return {
-      sdk: undefined,
+      tracerProvider: undefined,
       meterProvider,
       start: () => {},
       shutdown: () => (flushOnShutdown ? meterProvider.shutdown() : Promise.resolve()),
@@ -116,6 +164,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     };
   }
 
+  // Probes the log path in `verifyConnection`; the logs themselves go out through the pino transport.
   const logExporter = exporterOptions ? new OTLPLogExporter(exporterOptions('logs')) : undefined;
 
   // Stable HTTP semantic attributes, chosen before instrumentation is constructed and never
@@ -125,20 +174,31 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     process.env.OTEL_SEMCONV_STABILITY_OPT_IN ??= 'http';
   }
 
-  const sdk = new NodeSDK({
-    resource,
-    // Redaction runs first, so every later processor and the exporter read the scrubbed span. NodeSDK ignores
-    // `traceExporter` whenever `spanProcessors` is set, so the exporter gets its own batch processor, last.
-    spanProcessors: [createRedactingSpanProcessor(), ...spanProcessors, ...(traceExporter ? [new BatchSpanProcessor(traceExporter)] : [])],
-    logRecordProcessors: logExporter ? [new SimpleLogRecordProcessor({ exporter: logExporter })] : [],
-    // Metrics are owned by the explicit meterProvider above. Without this, NodeSDK
-    // creates a second env-driven OTLP metrics reader that can block hot restarts.
-    metricReaders: [],
-    instrumentations: autoInstrumentations ? instrumentations() : [],
+  const otelLogLevel = getStringFromEnv('OTEL_LOG_LEVEL');
+  if (otelLogLevel) diag.setLogger(new DiagConsoleLogger(), { logLevel: diagLogLevelFromString(otelLogLevel) });
+
+  // Constructed now so they hook module loading before the services import http, undici and pg.
+  const instrumentationList = autoInstrumentations ? instrumentations() : [];
+
+  const tracerProvider = new TracerProvider({
+    // The host, process and OTEL_RESOURCE_ATTRIBUTES attributes, over the service's own.
+    resource: resource.merge(detectResources({ detectors: [envDetector, processDetector, hostDetector] })),
+    sampler: samplerFromEnv(),
+    // Redaction runs first, so every later processor and the exporter read the scrubbed span.
+    spanProcessors: [
+      createRedactingSpanProcessor(),
+      ...spanProcessors,
+      ...(traceExporter ? [new BatchSpanProcessor({ exporter: traceExporter })] : []),
+    ],
   });
 
   function start(): void {
-    sdk.start();
+    registerInstrumentations({ instrumentations: instrumentationList });
+    const contextManager = new AsyncLocalStorageContextManager();
+    contextManager.enable();
+    context.setGlobalContextManager(contextManager);
+    propagation.setGlobalPropagator(new CompositePropagator({ propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()] }));
+    trace.setGlobalTracerProvider(tracerProvider);
   }
 
   async function runWithTimeout(operation: Promise<unknown>, label: string): Promise<void> {
@@ -165,7 +225,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
 
   async function shutdown(): Promise<void> {
     if (!flushOnShutdown) return;
-    await runWithTimeout(Promise.all([sdk.shutdown(), meterProvider.shutdown()]), 'shutdown');
+    await runWithTimeout(Promise.all([tracerProvider.shutdown(), meterProvider.shutdown()]), 'shutdown');
   }
 
   async function verifyConnection(): Promise<void> {
@@ -191,7 +251,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
           processors: [new SimpleLogRecordProcessor({ exporter: probeExporter })],
         });
         verifyLogProvider.getLogger(serviceName).emit({
-          // Matches pino-opentelemetry-transport (lowercase label plus numeric severity), so the sink
+          // Matches the pino transport (lowercase label plus numeric severity), so the sink
           // groups these probes with application logs. 9 is OTel SeverityNumber.INFO, inlined to
           // avoid a runtime dependency on @opentelemetry/api-logs.
           severityNumber: 9,
@@ -206,5 +266,5 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     }
   }
 
-  return { sdk, meterProvider, start, shutdown, verifyConnection };
+  return { tracerProvider, meterProvider, start, shutdown, verifyConnection };
 }

@@ -24,7 +24,7 @@ function LegalDialog({ initialSubject }: { initialSubject: LegalSubject }) {
 
   return (
     <LegalDialogNavProvider value={setSubject}>
-      <Suspense fallback={<Spinner className="mt-10 size-10" />}>
+      <Suspense fallback={<Spinner size="lg" className="mt-10" />}>
         <LegalText subject={subject} />
       </Suspense>
     </LegalDialogNavProvider>

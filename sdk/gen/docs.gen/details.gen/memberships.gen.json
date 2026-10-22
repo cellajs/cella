@@ -750,9 +750,13 @@
             "required": false,
             "enum": ["asc", "desc"]
           },
-          "offset": { "type": "string", "required": false },
-          "limit": { "type": "string", "required": false },
-          "seqCursor": { "type": "string", "required": false },
+          "offset": { "type": "integer", "required": false, "minimum": 0 },
+          "limit": {
+            "type": "integer",
+            "required": false,
+            "minimum": 1,
+            "maximum": 1000
+          },
           "entityId": { "type": "string", "required": true, "maxLength": 50 },
           "entityType": {
             "type": "string",
@@ -908,9 +912,13 @@
             "required": false,
             "enum": ["asc", "desc"]
           },
-          "offset": { "type": "string", "required": false },
-          "limit": { "type": "string", "required": false },
-          "seqCursor": { "type": "string", "required": false },
+          "offset": { "type": "integer", "required": false, "minimum": 0 },
+          "limit": {
+            "type": "integer",
+            "required": false,
+            "minimum": 1,
+            "maximum": 1000
+          },
           "entityId": { "type": "string", "required": true, "maxLength": 50 },
           "entityType": {
             "type": "string",

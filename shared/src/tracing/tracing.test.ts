@@ -1,5 +1,5 @@
 import { context, propagation, trace } from '@opentelemetry/api';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createOtelSDK } from '../otel.ts';
 import { collectingExporter } from '../testing/telemetry.ts';

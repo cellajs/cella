@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { isTouchInteraction } from '~/utils/input-modality';
 
 interface UseFocusByRefOptions {
   /** When provided, focuses the element when trigger becomes true */
@@ -7,20 +8,20 @@ interface UseFocusByRefOptions {
   delay?: number;
 }
 
-/** Focuses an input ref on mount or when `trigger` flips true, only at viewport width >= 640px. */
+/** Focuses an input ref on mount or when `trigger` flips true, unless the latest input was touch. */
 export function useFocusByRef(options?: UseFocusByRefOptions) {
   const { trigger, delay = 0 } = options ?? {};
   const focusRef = useRef<HTMLInputElement | null>(null);
 
   const setFocus = () => {
-    if (focusRef.current && window.innerWidth >= 640) {
+    if (focusRef.current && !isTouchInteraction()) {
       focusRef.current.focus();
     }
   };
 
   useEffect(() => {
     if (trigger === undefined) {
-      if (window.innerWidth >= 640) setFocus();
+      setFocus();
     } else if (trigger) {
       if (delay) {
         const timer = setTimeout(setFocus, delay);

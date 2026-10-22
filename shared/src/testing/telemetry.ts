@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace-base';
+import type { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace';
 import { createLogger } from '../pino.ts';
 
 /** An exporter that keeps every span it receives; unlike InMemorySpanExporter, shutting the SDK down keeps them. */

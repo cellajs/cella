@@ -5,7 +5,7 @@ import { createInsertSchema, createSelectSchema, describeFields } from '#/db/uti
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { productViewCountSchema } from '#/modules/entities/entities-schema';
 import { placementFieldsSchema, validatePlacement } from '#/permissions/product-placement';
-import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
+import { batchResponseSchema, maxLength, productListQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
 import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
 import { mockAttachmentResponse } from './attachment-mocks';
 
@@ -94,11 +94,17 @@ export const attachmentCreateManyStxBodySchema = attachmentContract.createItemSc
 
 export const attachmentUpdateStxBodySchema = attachmentContract.updateBodySchema;
 
+/** The storage keys a deferred upload produced, for a row created while its file was still local. */
+export const attachmentLinkKeysBodySchema = z.object({
+  keys: attachmentKeysSchema,
+  convertedContentType: z.string().max(maxLength.field).nullable().optional(),
+});
+
 export const attachmentCreateResponseSchema = batchResponseSchema(attachmentSchema);
 
 const attachmentSortKeys = attachmentSelectSchema.keyof().extract(['name', 'createdAt', 'contentType']);
 
-export const attachmentListQuerySchema = paginationQuerySchema.extend({
+export const attachmentListQuerySchema = productListQuerySchema({
   sort: attachmentSortKeys.default('createdAt').optional(),
   // Narrows the list to the rows homed at or below one channel; omitted or the organization itself reads org-wide.
   channelId: validUuidSchema.optional(),

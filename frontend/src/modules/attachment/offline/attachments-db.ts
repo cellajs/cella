@@ -1,4 +1,5 @@
 import type { Dexie } from 'dexie';
+import type { Attachment } from 'sdk';
 import type { UploadTemplateId } from 'shared';
 import { getLocalUserDb } from '~/query/local-user-db';
 
@@ -54,6 +55,13 @@ export interface AttachmentBlob {
 
   /** Last error message (source='upload' only) */
   lastError?: string | null;
+
+  /** Keys a deferred upload stored, kept until the attachment row has them (source='upload' only). */
+  cloudKeys?: Attachment['keys'];
+  cloudConvertedContentType?: string | null;
+  /** Set once the row holds `cloudKeys`; until then the upload service retries linking them. */
+  keysLinkedAt?: Date | null;
+  linkAttempts?: number;
 
   storedAt: Date;
 }

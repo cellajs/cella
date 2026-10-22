@@ -1,16 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { createRequire } from 'node:module';
-import { type Context, context, propagation, trace } from '@opentelemetry/api';
+import { context, propagation, trace } from '@opentelemetry/api';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createOtelSDK } from './otel.ts';
+import { toLogRecord } from './otel-log-transport.ts';
 import { createLog } from './pino.ts';
 import { collectingLogger, failedLookup } from './testing/telemetry.ts';
-
-type LogRecord = { attributes?: Record<string, unknown> };
-// The transport's own step from a log line's fields to the record it exports; it has no public entry.
-const { loadContext } = createRequire(import.meta.url)('pino-opentelemetry-transport/lib/otlp-logger-shim.js') as {
-  loadContext: (record: LogRecord) => LogRecord & { context: Context };
-};
 
 describe('createLogger', () => {
   it('must not leak a secret via a logged key or a logged url', () => {
@@ -93,13 +87,14 @@ describe('trace link on exported logs', () => {
     await otel.shutdown();
 
     const [inside = {}, outside = {}] = parsed();
-    const record = loadContext({ attributes: inside });
+    const pinoConfig = { messageKey: 'msg', levels: logger.levels };
+    const record = toLogRecord(inside, pinoConfig);
     expect(trace.getSpanContext(record.context)).toMatchObject({ traceId: spanContext.traceId, spanId: spanContext.spanId });
     // The ids move from the attributes into the record's own trace fields.
     expect(record.attributes).not.toHaveProperty('trace_id');
     // Positive control: a line outside a span carries no ids and gets no link.
     expect(outside).not.toHaveProperty('trace_id');
-    expect(trace.getSpanContext(loadContext({ attributes: outside }).context)).toBeUndefined();
+    expect(trace.getSpanContext(toLogRecord(outside, pinoConfig).context)).toBeUndefined();
   });
 });
 

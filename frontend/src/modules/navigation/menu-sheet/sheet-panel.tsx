@@ -1,14 +1,13 @@
 import { ChevronDownIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
 import { FocusTrap } from '~/modules/common/focus-trap';
 import { collapseMotion } from '~/modules/navigation/menu-sheet/helpers/collapse-motion';
 import { InfoContent } from '~/modules/navigation/menu-sheet/info-section';
 import { PreferencesContent } from '~/modules/navigation/menu-sheet/preferences-section';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
@@ -21,7 +20,6 @@ interface MenuSheetPanelProps {
 
 function MenuSheetPanel({ id, label, children }: MenuSheetPanelProps) {
   const { t } = useTranslation();
-  const isMobile = useBreakpointBelow('sm', false);
   const menuSheetPanel = useNavigationStore((state) => state.menuSheetPanel);
   const toggleMenuSheetPanel = useNavigationStore((state) => state.toggleMenuSheetPanel);
 
@@ -41,7 +39,7 @@ function MenuSheetPanel({ id, label, children }: MenuSheetPanelProps) {
 
       <AnimatePresence initial={false}>
         {isOpen && (
-          <motion.div key={`panel-${id}`} {...collapseMotion(isMobile)} transition={{ duration: 0.2, ease: 'easeInOut' }} className="overflow-hidden">
+          <motion.div key={`panel-${id}`} {...collapseMotion} transition={{ duration: 0.2, ease: 'easeInOut' }} className="overflow-hidden">
             {children}
           </motion.div>
         )}
@@ -50,6 +48,9 @@ function MenuSheetPanel({ id, label, children }: MenuSheetPanelProps) {
   );
 }
 
+/** Same length as the panel collapse, so the bar and the panel under it arrive together. */
+const pinGlideTiming: KeyframeAnimationOptions = { duration: 200, easing: 'ease-in-out' };
+
 /** Sticks to the bottom of the menu sheet and overlays its content while a panel is expanded. */
 export function MenuSheetPanels() {
   const menuSheetPanel = useNavigationStore((state) => state.menuSheetPanel);
@@ -57,10 +58,30 @@ export function MenuSheetPanels() {
 
   const hasOpenPanel = !!menuSheetPanel;
 
-  // Stays sticky through the exit animation, cleared on its completion.
-  const [isSticky, setIsSticky] = useState(false);
-  useEffect(() => {
-    if (hasOpenPanel) setIsSticky(true);
+  const barRef = useRef<HTMLDivElement>(null);
+  const glideRef = useRef<Animation | null>(null);
+  const paintedTop = useRef<number | null>(null);
+
+  // In a menu longer than the screen, the bar's place at its end lies lower than the sheet's bottom edge, where it pins.
+  // Pinning and unpinning glide over that distance with a transform, on the compositor. The store
+  // write comes before React's commit, so the listener reads where the bar is painted, a running glide included.
+  useEffect(
+    () =>
+      navigationStore.subscribe((state, prev) => {
+        if (!state.menuSheetPanel !== !prev.menuSheetPanel) paintedTop.current = barRef.current?.getBoundingClientRect().top ?? null;
+      }),
+    [],
+  );
+
+  useLayoutEffect(() => {
+    const bar = barRef.current;
+    const from = paintedTop.current;
+    paintedTop.current = null;
+    if (!bar || from === null) return;
+
+    glideRef.current?.cancel();
+    const offset = from - bar.getBoundingClientRect().top;
+    glideRef.current = Math.abs(offset) >= 1 ? bar.animate([{ transform: `translateY(${offset}px)` }, { transform: 'none' }], pinGlideTiming) : null;
   }, [hasOpenPanel]);
 
   const onKeyDown = useCallback(
@@ -75,8 +96,8 @@ export function MenuSheetPanels() {
   );
 
   return (
-    <div className={cn('relative z-20 mt-auto', isSticky && 'sticky bottom-0')} onKeyDown={onKeyDown}>
-      <AnimatePresence onExitComplete={() => setIsSticky(false)}>
+    <div ref={barRef} className={cn('relative z-20 mt-auto', hasOpenPanel && 'sticky bottom-0')} onKeyDown={onKeyDown}>
+      <AnimatePresence>
         {hasOpenPanel && (
           <motion.div
             key="panel-overlay"

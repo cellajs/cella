@@ -5,7 +5,7 @@ import process from 'node:process';
 import { chromium } from 'playwright';
 import { appConfig } from 'shared';
 import { manualSteps, screenReaderSteps } from './criteria.ts';
-import { type LedgerRow, product, readLedger } from './ledger.ts';
+import { automated, type LedgerRow, product, readLedger } from './ledger.ts';
 import { repoRoot } from './session.ts';
 
 /**
@@ -32,15 +32,12 @@ const statusLabel: Record<string, string> = {
   'not-applicable': 'Not Applicable',
 };
 
-/** The audit's own evidence on a row, without a reviewer's findings. */
-const automated = (r: LedgerRow) => r.evidence.filter((e) => !e.check.startsWith('review:'));
-
 /** Text made safe for a Markdown table cell; backslashes first, so the escapes added after them stay intact. */
 const cell = (text: string) => text.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ');
 
 /** A row's remarks for the reader; a failing row also names what the audit found. */
 function remarksOf(r: LedgerRow) {
-  const failures = automated(r)
+  const failures = automated(r.evidence)
     .filter((e) => e.result === 'fail')
     .map((e) => e.summary);
   return r.status === 'partially-supports' && failures.length ? `${r.remarks} ${failures.join(' ')}` : r.remarks;

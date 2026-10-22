@@ -36,7 +36,7 @@ From the repo root:
   node cella/skills/two-tab-sync-test/two-tab-driver.mjs
 ```
 
-Writes `evidence.json` (every console line / delta fetch / assert, ms timestamps) and `shots/*.png`. Tab A acts, tab B observes. Asserts print PASS/FAIL live. The first line, `target`, names the URL and cookie in use: check it against the stack you mean to test.
+Writes `evidence.json` (every console line / range fetch / assert, ms timestamps) and `shots/*.png`. Tab A acts, tab B observes. Asserts print PASS/FAIL live. The first line, `target`, names the URL and cookie in use: check it against the stack you mean to test.
 
 ```
 [EMAIL=<editor>] [EMAIL_B=<editor>] [EMAIL_VIEWER=<member>] [ORG_PATH=<tenantId>/<orgSlug>] \
@@ -56,8 +56,8 @@ A relay change in a worktree runs beside the main stack, with no stack of its ow
 | `[TabCoordinator] Acquired leader lock` in one tab, `[AppStream] Not leader, listening to broadcasts only` in the other | election ran; only the leader opens SSE (`sse-connect` GET; the POST on the same path is catchup) |
 | `[handleEntityNotification] attachment:<action> viewing=<bool>` in tab B console | notification crossed SSE + BroadcastChannel |
 | `Echo: patched stx, skipped data fetch` in tab A | acting tab suppressed its own event (correct; `sourceId` is per-tab, uuidv7 at page load) |
-| `[CacheOps] Delta fetch: … patched N entities (seqCursor=a,b)` + network `GET …?seqCursor=a,b` | prioritizer flushed and fetched |
-| delta response `items` (id, name, `deletedAt`, seq) | payload truth; soft-delete tombstones DO ride the delta (backend drops the `deletedAt` filter under `seqCursor`) |
+| `[CacheOps] Range fetch: <type> after a until b patched N entities` + network `GET …?afterSeq=a&untilSeq=b` | prioritizer flushed and fetched |
+| range response `items` (id, name, `deletedAt`, seq) | payload truth; soft-delete tombstones DO ride the range read (backend drops the `deletedAt` filter for `afterSeq`/`untilSeq`) |
 
 Decision rule: **no console notification line and the API's `cdc` component is not healthy** (its `reason` says why: `setup_problems`, `worker_stuck`, `reading_again`, `api_away`) → the worker (read its log), not the client; **no console notification line otherwise** → SSE/leader/broadcast layer; **notification but no fetch** → fetch prioritizer/cursor (check the org and view seqs in `syncStore`, `frontend/src/query/realtime/sync-store.ts`); **fetch contains the row but UI unchanged** → cache-patch layer (`fetchRangeAndPatch` in `frontend/src/query/realtime/cache-ops.ts`).
 
@@ -74,12 +74,12 @@ Typing does not ride the entity path. Keystrokes go editor → relay socket (`/y
 | `relay-http yjs/token` 200, then `relay-connect ws://…/yjs/<id>` in both tabs | each editor got a token and joined the document |
 | EXP5 live: the typed text in tab B's editor | the relay broadcasts |
 | `relay-http yjs/pull` or `yjs/push` | the socket is out of reach; the editor syncs over HTTP through the API |
-| EXP5 saved: a `delta-fetch` item with `hasWatchedText: true` | the relay wrote the row and it crossed CDC → SSE → fetch |
+| EXP5 saved: a `range-fetch` item with `hasWatchedText: true` | the relay wrote the row and it crossed CDC → SSE → fetch |
 | `descriptionSaved` after the reload | server truth |
 
 Decision rule: **no `relay-connect`** → token or socket (the `yjs/token` status, the relay process, the `/yjs` proxy); **connected but no live text** → relay session and broadcast (`yjs/src/sync/relay.ts`); **live text but no saved row** → compaction and materialization (`yjs/src/sync/compaction.ts`, the backend's `/internal/yjs/materialize`); **saved row fetched but the cell is stale** → the cache rule for Yjs-owned fields (`registerYjsOwnedFields`).
 
-The table cell of an editing tab proves no save: its own editor already patched the cache. Only the delta fetch and the reload show the server row.
+The table cell of an editing tab proves no save: its own editor already patched the cache. Only the range fetch and the reload show the server row.
 
 The description driver's experiments, by their `ONLY` name:
 

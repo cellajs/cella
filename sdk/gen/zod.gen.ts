@@ -365,7 +365,7 @@ export const zConnectedApp = z.object({
 export const zRequest = z.object({
   createdAt: z.string(),
   id: z.uuid(),
-  message: z.string().max(255).nullable(),
+  message: z.string().nullable(),
   email: z.string().max(255),
   type: z.enum(['waitlist', 'newsletter', 'contact']),
   wasInvited: z.boolean(),
@@ -1019,15 +1019,15 @@ export const zUpdateMeBody = z.object({
   description: z.string().max(1000000).nullish(),
   firstName: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .nullish(),
   lastName: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .nullish(),
   language: z.enum(['en', 'nl']).optional(),
   newsletter: z.boolean().optional(),
@@ -1297,12 +1297,8 @@ export const zGetRequestsQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['id', 'email', 'type', 'createdAt']).optional().default('createdAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
 });
 
 /**
@@ -1316,7 +1312,7 @@ export const zGetRequestsResponse = z.object({
 export const zCreateRequestBody = z.object({
   email: z.email().min(4).max(255),
   type: z.enum(['waitlist', 'newsletter', 'contact']),
-  message: z.string().max(255).nullable(),
+  message: z.string().max(5000).nullable(),
 });
 
 /**
@@ -1362,15 +1358,15 @@ export const zUpdateUserBody = z.object({
   description: z.string().max(1000000).nullish(),
   firstName: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .nullish(),
   lastName: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .nullish(),
   language: z.enum(['en', 'nl']).optional(),
   newsletter: z.boolean().optional(),
@@ -1418,12 +1414,8 @@ export const zGetTenantsQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['createdAt', 'name']).optional().default('createdAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
   status: z.enum(['active', 'suspended', 'archived']).optional(),
 });
 
@@ -1438,9 +1430,9 @@ export const zGetTenantsResponse = z.object({
 export const zSelfCreateTenantBody = z.object({
   name: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u),
+    .regex(/^[^\p{Cc}<>]+$/u),
 });
 
 /**
@@ -1451,9 +1443,9 @@ export const zSelfCreateTenantResponse = zTenant;
 export const zUpdateTenantBody = z.object({
   name: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .optional(),
   status: z.enum(['active', 'suspended', 'archived']).optional(),
   subscriptionId: z.string().max(255).nullish(),
@@ -1495,9 +1487,9 @@ export const zCreateConnectionBody = z.object({
   issuer: z.enum(['surfconext']),
   displayName: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u),
+    .regex(/^[^\p{Cc}<>]+$/u),
   claimValues: z
     .array(
       z
@@ -1536,9 +1528,9 @@ export const zDeleteConnectionResponse = zConnection;
 export const zUpdateConnectionBody = z.object({
   displayName: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .optional(),
   claimValues: z
     .array(
@@ -1571,12 +1563,8 @@ export const zGetUsersQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt']).optional().default('createdAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
   role: z.enum(['admin']).optional(),
 });
 
@@ -1652,9 +1640,9 @@ export const zCreateOrganizationsBody = z
         .regex(/^temp-/),
       name: z
         .string()
-        .min(2)
+        .min(1)
         .max(255)
-        .regex(/^[\p{L}\d\-., '&()]+$/u),
+        .regex(/^[^\p{Cc}<>]+$/u),
       slug: z
         .string()
         .min(2)
@@ -1715,12 +1703,8 @@ export const zGetOrganizationsQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['id', 'name', 'createdAt', 'displayOrder']).optional().default('displayOrder'),
   order: z.enum(['asc', 'desc']).optional().default('asc'),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
   relatableUserId: z.uuid().optional(),
   role: z.enum(['admin', 'member']).optional(),
   excludeArchived: z.enum(['true', 'false']).optional(),
@@ -1762,15 +1746,15 @@ export const zUpdateOrganizationBody = z.object({
     .optional(),
   name: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .optional(),
   shortName: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .nullish(),
   country: z.string().max(255).nullish(),
   timezone: z.string().max(255).nullish(),
@@ -1850,12 +1834,10 @@ export const zGetAttachmentsQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['name', 'createdAt', 'contentType']).optional().default('createdAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
+  afterSeq: z.int().gte(0).optional(),
+  untilSeq: z.int().gte(0).optional(),
   channelId: z.uuid().optional(),
 });
 
@@ -1976,6 +1958,27 @@ export const zUpdateAttachmentQuery = z.object({
  * Attachment was updated
  */
 export const zUpdateAttachmentResponse = zAttachment;
+
+export const zLinkAttachmentKeysBody = z.object({
+  keys: z.object({
+    original: z.string(),
+    preview: z.string().optional(),
+    thumbnail: z.string().optional(),
+    converted: z.string().optional(),
+  }),
+  convertedContentType: z.string().max(255).nullish(),
+});
+
+export const zLinkAttachmentKeysPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * Attachment with its stored file
+ */
+export const zLinkAttachmentKeysResponse = zAttachment;
 
 export const zGetMcpProtectedResourceMetadataPath = z.object({
   tenantId: z.string().max(50),
@@ -2107,12 +2110,8 @@ export const zGetMembersQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'lastPostedAt']).optional().default('lastSeenAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
   entityId: z.string().max(50),
   entityType: z.enum(['organization']),
   role: z.enum(['admin', 'member']).optional(),
@@ -2167,12 +2166,8 @@ export const zGetPendingMembershipsQuery = z.object({
   q: z.string().max(255).optional(),
   sort: z.enum(['createdAt']).optional().default('createdAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  seqCursor: z
-    .string()
-    .regex(/^\d+,\d+$/)
-    .optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
   entityId: z.string().max(50),
   entityType: z.enum(['organization']),
 });
@@ -2228,8 +2223,8 @@ export const zGetServiceAccountsPath = z.object({
 
 export const zGetServiceAccountsQuery = z.object({
   q: z.string().max(255).optional(),
-  offset: z.string().regex(/^\d+$/).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
+  offset: z.int().gte(0).optional().default(0),
+  limit: z.int().gte(1).lte(1000).optional().default(40),
 });
 
 /**
@@ -2243,17 +2238,17 @@ export const zGetServiceAccountsResponse = z.object({
 export const zCreateServiceAccountBody = z.object({
   name: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u),
+    .regex(/^[^\p{Cc}<>]+$/u),
   role: z.enum(['admin', 'member']),
   key: z
     .object({
       name: z
         .string()
-        .min(2)
+        .min(1)
         .max(255)
-        .regex(/^[\p{L}\d\-., '&()]+$/u),
+        .regex(/^[^\p{Cc}<>]+$/u),
       scopes: z
         .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
         .min(1)
@@ -2285,9 +2280,9 @@ export const zCreateServiceAccountResponse = z.object({
 export const zUpdateServiceAccountBody = z.object({
   name: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .optional(),
   status: z.enum(['active', 'disabled']).optional(),
 });
@@ -2319,9 +2314,9 @@ export const zGetApiKeysResponse = z.object({
 export const zCreateApiKeyBody = z.object({
   name: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u),
+    .regex(/^[^\p{Cc}<>]+$/u),
   scopes: z
     .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
     .min(1)

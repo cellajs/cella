@@ -142,8 +142,8 @@ describe('MCP on the substrate (Phase E)', async () => {
       expect.arrayContaining(['getAttachments', 'getAttachment', 'createAttachments', 'updateAttachment', 'deleteAttachments']),
     );
 
-    // Query values are strings, as the route reads them.
-    const read = await toolCall(ctx, 'getAttachments', { limit: '5' });
+    // An integer query param takes a number; the call writes it into the query string.
+    const read = await toolCall(ctx, 'getAttachments', { limit: 5 });
     expect(read.response.status).toBe(200);
     expect(toolResult(read).structuredContent).toMatchObject({ items: [], total: 0 });
 

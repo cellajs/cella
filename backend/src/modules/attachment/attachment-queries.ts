@@ -1,4 +1,4 @@
-import { and, asc, count, eq, getColumns, inArray, isNull, or, type SQL } from 'drizzle-orm';
+import { and, count, eq, getColumns, inArray, isNull, or, type SQL } from 'drizzle-orm';
 import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import type { ActorContext, DbContext } from '#/core/context';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
@@ -9,7 +9,7 @@ import { getOrganizationEntityCount, productViewCountJoin, productViewCountSelec
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { auditUserSelect, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
 import { getOrderColumns } from '#/utils/order-column';
-import { seqCursorFilters } from '#/utils/seq-cursor';
+import { type SeqRange, seqRangeRead } from '#/utils/seq-range';
 import { textSearchFilter } from '#/utils/sql';
 
 // Every read and write below carries the request's tenant + organization predicate, so the
@@ -75,29 +75,25 @@ interface FindAttachmentsPaginatedOpts {
   order?: 'asc' | 'desc';
   limit: number;
   offset: number;
-  /** A delta read: tombstones included, ordered by seq, total from the page length. */
-  seqCursor?: string;
+  /** A range read for sync: deleted rows included, in sequence order, total from the page length. */
+  range?: SeqRange;
 }
 
 /**
- * A page of attachments with their audit users and view counts. Normal reads hide tombstones and every read hides
- * unpublished drafts; a delta read passes tombstones through so caches can drop rows. The total is the page length for
- * a delta read, the `e:c:attachment` counter for an org-wide read without search, else a COUNT.
+ * A page of attachments with their audit users and view counts. Normal reads hide deleted rows and every read hides
+ * unpublished drafts; a range read passes deleted rows through so caches can drop them. The total is the page length
+ * for a range read, the `e:c:attachment` counter for an org-wide read without search, else a COUNT.
  */
 export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAttachmentsPaginatedOpts) => {
   const { db } = ctx.var;
-  const { organizationId, orgWide, q, sort, order, limit, offset, seqCursor } = opts;
-  const filters = [...opts.filters];
+  const { organizationId, orgWide, q, sort, order, limit, offset, range } = opts;
+  const rangeRead = seqRangeRead(attachmentsTable, range);
+  const filters = [...opts.filters, ...rangeRead.where];
 
-  // Hide tombstones for normal reads; delta sync passes them through so caches can drop rows.
-  if (!seqCursor) filters.push(isNull(attachmentsTable.deletedAt));
-
-  // Unpublished drafts stay out of every read, deltas included. A no-op for attachments, which
+  // Unpublished drafts stay out of every read, range reads included. A no-op for attachments, which
   // carry no publishedAt; kept as the pattern app-specific entity queries copy.
   const publishedOnly = publishedRowsPredicate(attachmentsTable);
   if (publishedOnly) filters.push(publishedOnly);
-
-  filters.push(...seqCursorFilters(attachmentsTable.seq, seqCursor));
 
   if (q?.trim()) {
     filters.push(
@@ -110,15 +106,15 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
     );
   }
 
-  const orderBy = seqCursor
-    ? [asc(attachmentsTable.seq), asc(attachmentsTable.id)]
-    : getOrderColumns({
-        sort,
-        order,
-        fallback: ['createdAt', 'desc'],
-        columns: { name: attachmentsTable.name, createdAt: attachmentsTable.createdAt, contentType: attachmentsTable.contentType },
-        tieBreaker: attachmentsTable.id,
-      });
+  const orderBy =
+    rangeRead.orderBy ??
+    getOrderColumns({
+      sort,
+      order,
+      fallback: ['createdAt', 'desc'],
+      columns: { name: attachmentsTable.name, createdAt: attachmentsTable.createdAt, contentType: attachmentsTable.contentType },
+      tieBreaker: attachmentsTable.id,
+    });
 
   const whereClause = and(...filters);
   const { createdBy: _cb, updatedBy: _mb, ...attachmentCols } = getColumns(attachmentsTable);
@@ -134,9 +130,9 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
     .limit(limit)
     .offset(offset);
 
-  // Delta reads discard `total`; an org-wide read with no search maps to the pre-computed
+  // Range reads discard `total`; an org-wide read with no search maps to the pre-computed
   // `e:c:attachment` channel counter; anything narrower needs COUNT(*).
-  const totalSource: ListTotalSource = seqCursor
+  const totalSource: ListTotalSource = range
     ? { kind: 'pageLength' }
     : orgWide && !q?.trim()
       ? { kind: 'counter', getTotal: () => getOrganizationEntityCount(ctx, { organizationId, entityType: 'attachment' }) }

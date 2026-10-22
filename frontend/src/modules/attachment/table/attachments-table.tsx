@@ -74,7 +74,7 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
   const isDefaultView = isDefaultListView({ q, sort, order }, attachmentsSearchDefaults);
 
   const canonicalOptions = attachmentsCanonicalOptions({ tenantId: channel.tenantId, organizationId: channel.id });
-  const canonical = useQuery({ ...canonicalOptions, enabled: isDefaultView, select: selectDefaultViewRows });
+  const canonical = useQuery({ ...canonicalOptions, enabled: isDefaultView, refetchOnMount: true, select: selectDefaultViewRows });
 
   const queryOptions = attachmentsListQueryOptions({ tenantId: channel.tenantId, organizationId: channel.id, q, sort, order, limit });
   const filtered = useInfiniteQuery({

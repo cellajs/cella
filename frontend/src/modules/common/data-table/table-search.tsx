@@ -1,11 +1,11 @@
 import { useIsFetching } from '@tanstack/react-query';
-import { CircleXIcon } from 'lucide-react';
 import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { TableFilterBarContext } from '~/modules/common/data-table/table-filter-bar';
+import { SearchClearButton } from '~/modules/common/search-clear-button';
 import { SearchSpinner } from '~/modules/common/search-spinner';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
@@ -56,8 +56,8 @@ export function TableSearch({ name, value = '', allowOfflineSearch = false, setQ
       </InputGroupAddon>
 
       <InputGroupAddon className="pr-2 max-sm:hidden" align="inline-end">
-        <CircleXIcon
-          className={cn('cursor-pointer opacity-70 hover:opacity-100', inputValue.length ? 'visible' : 'invisible')}
+        <SearchClearButton
+          className={cn(!inputValue.length && 'invisible')}
           onClick={() => {
             setInputValue('');
             setQuery('');

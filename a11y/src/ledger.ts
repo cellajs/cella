@@ -35,7 +35,7 @@ export interface LedgerRow {
   evidence: Evidence[];
 }
 
-export interface Ledger {
+interface Ledger {
   /** Name of the app the results are about. A ledger of another app (a fresh scaffold carries the template's) is never read. */
   product: string;
   edition: string;
@@ -56,7 +56,7 @@ export const product = (JSON.parse(readFileSync(path.join(repoRoot, 'package.jso
  * Decides a row from its evidence. Any failure makes it Partially Supports; only rows whose checks all ran and passed
  * become Supports. Everything else stays undecided with the open checks listed.
  */
-function decide(criterion: Criterion, evidence: Evidence[]): Pick<LedgerRow, 'status' | 'remarks' | 'decidedBy' | 'open'> {
+function decideByAudit(criterion: Criterion, evidence: Evidence[]): Pick<LedgerRow, 'status' | 'remarks' | 'decidedBy' | 'open'> {
   const ran = new Set(evidence.map((e) => e.check));
   const open: string[] = criterion.checks.filter((check) => check === 'manual' || !ran.has(check));
   if (evidence.some((e) => e.result === 'review')) open.push('review');
@@ -89,21 +89,21 @@ export function readLedger(): Ledger | null {
 const family = (check: string) => check.split(':')[0];
 
 /** Evidence the audit produced itself; a reviewer's findings are left out. */
-const automated = (evidence: Evidence[]) => evidence.filter((item) => family(item.check) !== 'review');
+export const automated = (evidence: Evidence[]) => evidence.filter((item) => family(item.check) !== 'review');
 
 /**
- * Builds the ledger from fresh evidence for the check families that ran (`axe`, `probe`, `code`); evidence of the other
- * families carries over from the previous ledger. A row a reviewer decided keeps that decision, unless the audit now
- * finds a failure on a row the reviewer called Supports or Not Applicable.
+ * Builds the ledger from the run's evidence; a reviewer's findings carry over from the previous ledger. A row a reviewer
+ * decided keeps that decision, unless the audit now finds a failure on a row the reviewer called Supports or Not
+ * Applicable.
  */
-export function writeLedger(evidenceById: Map<string, Evidence[]>, scope: string[], ran: string[], target = ledgerPath) {
+export function writeLedger(evidenceById: Map<string, Evidence[]>, scope: string[], target = ledgerPath) {
   const previous = new Map((readLedger()?.criteria ?? []).map((row) => [row.id, row]));
 
   const rows = criteria.map((criterion): LedgerRow => {
     const before = previous.get(criterion.id);
-    const kept = (before?.evidence ?? []).filter((item) => !ran.includes(family(item.check)));
+    const kept = (before?.evidence ?? []).filter((item) => family(item.check) === 'review');
     const evidence = [...kept, ...(evidenceById.get(criterion.id) ?? [])];
-    const byAudit = decide(criterion, automated(evidence));
+    const byAudit = decideByAudit(criterion, automated(evidence));
     const reviewed = before?.decidedBy === 'agent' || before?.decidedBy === 'human';
     const contradicted = byAudit.status === 'partially-supports' && (before?.status === 'supports' || before?.status === 'not-applicable');
     const decision =

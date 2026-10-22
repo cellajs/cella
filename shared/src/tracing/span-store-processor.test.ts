@@ -1,5 +1,5 @@
 import { SpanStatusCode } from '@opentelemetry/api';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { describe, expect, it, vi } from 'vitest';
 import { createSpanStoreProcessor } from './span-store-processor.ts';
 import { createSpanStore } from './tracing.ts';

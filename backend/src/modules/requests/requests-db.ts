@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { index, snakeCase, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, snakeCase, text, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -12,7 +12,7 @@ export const requestsTable = snakeCase.table(
   {
     createdAt: timestampColumns.createdAt,
     id: uuid().primaryKey().$defaultFn(generateId),
-    message: varchar({ length: maxLength.field }),
+    message: text(),
     email: varchar({ length: maxLength.field }).notNull(),
     type: varchar({ enum: requestTypeEnum }).notNull(),
     /** When an invitation first went out to a waitlist request's address; responses carry it as `wasInvited`. */

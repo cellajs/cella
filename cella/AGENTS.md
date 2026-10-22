@@ -181,6 +181,7 @@ A child-side host FK (nullable `<host>Id` column on one product pointing at anot
 
 ## Testing
 
+- **When to add a test.** Verify every change (a Playwright run, a measurement, a hand check the PR description reports); committing a test is a separate decision. A test earns its place when it proves an attack fails ([Testing](./TESTING.md#goals)), reproduces a bug that shipped, pins a contract another module or an app depends on, or checks a table-driven rule too wide to eyeball. One `it` per new method or branch restates the code: don't. The default for a perf, UI or refactor PR is zero new tests. Per test ask what has to change for it to fail; if the answer is "the implementation", drop it. In review, missing coverage outside those four reasons is not a finding; a test that mirrors its implementation is.
 - Test modes: [Testing](/docs/page/guides/testing).
 - The authorization server runs in-process for tests: `backend/tests/oauth-helpers.ts` (`startTestOauthServer`, `clientCredentialsToken`, `authorizationCodeToken` through the consent routes).
 
@@ -204,7 +205,7 @@ Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control objec
 
 - Use `git` and `gh` CLI. Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`.
 - PRs: concise description, linked issues, passing checks, scoped changes.
-- **PR size**: a PR that adds more lines than it removes ends its description with a `## Size` section. It holds the table that `pnpm cella stats --since origin/main --md` prints, then one line per kind that grew (source, tests, stories, generated, json, docs) saying what those lines are for; for source, also how much of it is comments. Lines that have no reason are the first to cut.
+- **PR size**: a PR that adds more lines than it removes ends its description with a `## Size` section. It holds the table that `pnpm cella stats --since origin/main --md` prints, then one line per kind that grew (source, tests, stories, generated, json, docs) saying what those lines are for; for source, also how much of it is comments; for tests, which of the four reasons in [Testing](#testing) each new test file serves. Lines that have no reason are the first to cut.
 - Breaking OpenAPI diffs: [Cache-bust](./SCHEMA_EVOLUTION.md#cache-bust-interim).
 
 ## Commands

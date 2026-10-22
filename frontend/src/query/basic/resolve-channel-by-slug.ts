@@ -24,7 +24,6 @@ type ResolveChannelBySlugConfig<T extends { id: string; slug: string }, P extend
   params: P;
   /** Builds the slug-based param overrides for `rewriteUrlToSlug` once the entity resolves. */
   buildSlugOverrides: (entity: T) => Partial<Record<keyof P, string>>;
-  routeTo: string;
 };
 
 /**
@@ -45,7 +44,6 @@ export async function resolveChannelBySlug<T extends { id: string; slug: string 
     revalidateIfStale,
     params,
     buildSlugOverrides,
-    routeTo,
   } = config;
 
   const isOnline = onlineManager.isOnline();
@@ -83,7 +81,7 @@ export async function resolveChannelBySlug<T extends { id: string; slug: string 
 
   redirectOnMissing(entity);
 
-  rewriteUrlToSlug(params, buildSlugOverrides(entity), routeTo);
+  rewriteUrlToSlug(params, buildSlugOverrides(entity));
 
   return entity;
 }

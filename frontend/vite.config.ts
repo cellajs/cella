@@ -1,9 +1,8 @@
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 import mdx from '@mdx-js/rollup';
-import reactScan from '@react-scan/vite-plugin-react-scan';
 import babel from '@rolldown/plugin-babel';
-import terser from '@rollup/plugin-terser';
+import { serwist } from '@serwist/vite';
 import rehypeShiki from '@shikijs/rehype';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
@@ -15,18 +14,17 @@ import remarkGfm from 'remark-gfm';
 import remarkMdxFrontmatter from 'remark-mdx-frontmatter';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, type Plugin, type UserConfig } from 'vite';
-import { createHtmlPlugin } from 'vite-plugin-html';
-import { VitePWA } from 'vite-plugin-pwa';
-import { viteStaticCopy } from 'vite-plugin-static-copy';
 import svgr from 'vite-plugin-svgr';
 import rootPkg from '../package.json' with { type: 'json' };
 import { appConfig } from '../shared/index.ts';
 import { docsEditor } from './vite/docs-editor.ts';
 import { docsFrontmatter } from './vite/docs-frontmatter.ts';
+import { indexHtml } from './vite/index-html.ts';
 import { localesPlugin } from './vite/locales-plugin.ts';
 import { reactCompilerGuard } from './vite/react-compiler-guard.ts';
 import { remarkLinkRepoPaths } from './vite/remark-link-repo-paths.ts';
 import { routerOptions } from './vite/router-options.ts';
+import { sdkStatic } from './vite/sdk-static.ts';
 import { sdkWatch } from './vite/sdk-watch.ts';
 
 // Repo docs (cella/*.md) start with an h1 for GitHub readers, but the docs page view
@@ -83,6 +81,13 @@ const ON_DEMAND_APP =
  * mounts. Each loads Yjs or BlockNote only on demand, so the boot path stays free of the editor chunk.
  */
 const YJS_REGISTRY = /[\\/]blocknote[\\/](yjs-editor|yjs-store|yjs-tab-channel|storage-warning|parked-notices-on-boot)\./;
+
+/**
+ * The docs modules boot-time code reads: the module registration, the query registry and the search params. Every
+ * other docs module loads through a lazy route or the search and is left out of the `m-docs` boot chunk, so the code
+ * viewer's shiki and the search engine's orama load with the pages that use them.
+ */
+const DOCS_BOOT = /[\\/]src[\\/]modules[\\/]docs[\\/](docs-module|query|search-params-schemas)\./;
 
 const frontendUrl = new URL(appConfig.frontendUrl);
 
@@ -163,6 +168,8 @@ const viteConfig = {
   preview: { port: devPort },
   build: {
     rollupOptions: {
+      // The minifier drops console.debug calls along with other unused pure code.
+      treeshake: { manualPureFunctions: ['console.debug'] },
       output: {
         // Rolldown ignores `manualChunks` when `codeSplitting` is set, so all grouping lives here
         codeSplitting: {
@@ -179,23 +186,18 @@ const viteConfig = {
             // The app groups after them follow the same rule in the direction dependencies point:
             // foundational first, on-demand last, because the editor imports the UI primitives.
 
-            // One chunk per grammar/theme module: each language stays its own lazily
-            // loadable chunk, and the grammars- prefix keeps all of them out of the SW
-            // precache (globIgnores). The name encodes the package variant so the
-            // plain and precompiled builds of a language never merge into one chunk.
-            // The shiki core engine is untouched and stays in precached chunks.
+            // One chunk per grammar and theme module, so a code block loads only its own language. Dependencies are
+            // not captured: html embeds the javascript and css grammars and imports them from their own chunks, and
+            // the regex helper every grammar imports (oniguruma-to-es) is left for the per-package backstop below.
             {
               name: (id: string) => {
-                // The oniguruma WASM engine is dynamically importable but unused: the app
-                // CSP has no 'unsafe-eval', so the JavaScript regex engine is always used
-                if (/node_modules[\\/]@shikijs[\\/]engine-oniguruma[\\/]/.test(id)) return 'grammars-wasm';
-                const m = id.match(/node_modules[\\/]@shikijs[\\/](langs|langs-precompiled|themes)[\\/]dist[\\/]([\w.+-]+?)\.m?js$/);
+                const m = id.match(/node_modules[\\/]@shikijs[\\/](langs-precompiled|themes)[\\/]dist[\\/]([\w.+-]+?)\.m?js$/);
                 if (!m || m[2] === 'index') return null;
-                const variant = m[1] === 'langs-precompiled' ? 'pc-' : m[1] === 'themes' ? 'theme-' : '';
-                return `grammars-${variant}${m[2].replace(/[^\w-]/g, '-')}`;
+                return `grammars-${m[1] === 'themes' ? 'theme-' : ''}${m[2].replace(/[^\w-]/g, '-')}`;
               },
-              // The top-level minSize is inherited as the group default and would silently
-              // drop languages smaller than it back to automatic (precached) chunking
+              includeDependenciesRecursively: false,
+              // The top-level minSize is inherited as the group default and would drop the small grammars and the
+              // themes to the per-package backstop, which puts each package in one chunk
               minSize: 0,
             },
             // Merge all lucide icon modules into one shared chunk to keep request count low
@@ -203,7 +205,8 @@ const viteConfig = {
             // Broadly shared vendor packages, one chunk each. Groups get an explicit
             // minSize: 0 because the top-level minSize is inherited as the group default
             // and silently drops groups that accumulate less than it.
-            { name: 'base-ui', test: /node_modules[\\/](@base-ui|@floating-ui)[\\/]/, minSize: 0 },
+            // Base UI and the Floating UI parts it uses; BlockNote's `@floating-ui/react` stays with the editor.
+            { name: 'base-ui', test: /node_modules[\\/](@base-ui[\\/]|@floating-ui[\\/](core|dom|react-dom|utils)[\\/])/, minSize: 0 },
             { name: 'tanstack', test: /node_modules[\\/]@tanstack[\\/]/, minSize: 0 },
             { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, minSize: 0 },
             { name: 'zod', test: /node_modules[\\/]zod[\\/]/, minSize: 0 },
@@ -216,7 +219,7 @@ const viteConfig = {
             // which the per-package backstop below would otherwise spend on a few hundred bytes.
             {
               name: 'vendor',
-              test: /node_modules[\\/](zustand|clsx|cnfast|dayjs|nanoid|uuidv7|dobajs|input-otp|qrcode\.react|canvas-confetti|onedollarstats|react-use-downloader|class-variance-authority|embla-carousel[\w-]*|@atlaskit[\\/]pragmatic-drag-and-drop[\w-]*|@simplewebauthn[\\/]browser|@mdx-js[\\/]react|@t3-oss[\\/]env-core|use-sync-external-store|use-debounce|react-error-boundary|slugify|react-i18next|i18next[\w-]*|@babel[\\/]runtime)[\\/]/,
+              test: /node_modules[\\/](zustand|clsx|cnfast|dayjs|nanoid|uuidv7|dobajs|qrcode\.react|canvas-confetti|onedollarstats|class-variance-authority|embla-carousel[\w-]*|@atlaskit[\\/]pragmatic-drag-and-drop[\w-]*|@simplewebauthn[\\/]browser|@mdx-js[\\/]react|@t3-oss[\\/]env-core|use-sync-external-store|react-error-boundary|slugify|react-i18next|i18next[\w-]*|@babel[\\/]runtime)[\\/]/,
               minSize: 0,
             },
             {
@@ -291,6 +294,7 @@ const viteConfig = {
                 // `m-common` and `m-attachment` chunks are on the boot path.
                 if (ON_DEMAND_APP.test(id)) return null;
                 const m = id.match(/[\\/]src[\\/]modules[\\/]([\w-]+)[\\/]/);
+                if (m?.[1] === 'docs' && !DOCS_BOOT.test(id)) return null;
                 return m ? `m-${m[1]}` : null;
               },
               minSize: 0,
@@ -331,10 +335,11 @@ const viteConfig = {
     // events and session replays readable. Switch to 'hidden' if the frontend ever closes source.
     sourcemap: !isDev,
     manifest: true,
-    minify: isDev ? false : 'esbuild',
+    minify: isDev ? false : 'oxc',
   },
-  // Exclude workspace SDK from pre-bundling so regenerated types are picked up without restart
-  optimizeDeps: { exclude: ['sdk'] },
+  // Exclude workspace SDK from pre-bundling so regenerated types are picked up without restart.
+  // react-scan is loaded on demand from the debug menu and stays out of the pre-bundle.
+  optimizeDeps: { exclude: ['sdk', 'react-scan'] },
   clearScreen: false,
   plugins: [
     // Generates src/routes/routeTree.gen.ts from file-based routes. Must run before react().
@@ -388,7 +393,8 @@ const viteConfig = {
     // Dev-only write-back endpoint so the pages table can edit frontmatter and
     // reparent pages by rewriting/moving the md/mdx files (apply: 'serve').
     docsEditor(),
-    // `*.svg?react` imports become React components (jsx only, no svgo pass). Must run before react().
+    // `*.svg?react` imports become React components (jsx only, no svgo pass). Must run before react(). Cella has no such
+    // import; apps do (projectcampus renders its marketing art this way), so the plugin stays.
     svgr({ include: '**/*.svg?react' }),
     react(),
     // A regex: the plugin matches `include` against absolute module ids, which a relative glob with braces never matches.
@@ -404,38 +410,17 @@ const viteConfig = {
       merge: { target: 'c', sources: ['common', 'app'] },
       verbose: false,
     }),
-    viteStaticCopy({
-      targets: [
-        // Generated API docs assets: single source of truth in sdk/gen, served (not bundled) at /static.
-        // stripBase: 2 drops the `sdk/gen` prefix so files land at /static/... (and /static/docs.gen/...).
-        { src: '../sdk/gen/openapi.json', dest: 'static', rename: { stripBase: 2 } },
-        { src: '../sdk/gen/zod.gen.ts', dest: 'static', rename: { stripBase: 2 } },
-        { src: '../sdk/gen/types.gen.ts', dest: 'static', rename: { stripBase: 2 } },
-        { src: '../sdk/gen/docs.gen/**/*', dest: 'static', rename: { stripBase: 2 } },
-      ],
+    // Generated API docs assets: single source of truth in sdk/gen, served (not bundled) at /static.
+    sdkStatic(),
+    ...indexHtml({
+      title: appConfig.name,
+      description: appConfig.description,
+      keywords: appConfig.keywords,
+      author: appConfig.company.name,
+      color: appConfig.themeColor,
+      url: appConfig.frontendUrl,
+      apiUrl: appConfig.backendUrl,
     }),
-    createHtmlPlugin({
-      template: './index.html',
-      inject: {
-        data: {
-          title: appConfig.name,
-          description: appConfig.description,
-          keywords: appConfig.keywords,
-          author: appConfig.company.name,
-          color: appConfig.themeColor,
-          url: appConfig.frontendUrl,
-          apiUrl: appConfig.backendUrl,
-        },
-      },
-    }),
-    // Terser removes console.debug. Skip in dev for faster builds.
-    ...(isDev
-      ? []
-      : [
-          terser({
-            compress: { pure_funcs: ['console.debug'] },
-          }) as Plugin,
-        ]),
     ...(isAnalyze ? [visualizer({ filename: 'stats/bundle.html', template: 'treemap', gzipSize: true, brotliSize: true }) as Plugin] : []),
   ],
   resolve: {
@@ -443,7 +428,13 @@ const viteConfig = {
     // package READMEs compiled by the mdx plugin) resolve their jsx runtime and MDX
     // provider imports to the frontend's copies.
     dedupe: ['yjs', 'react', 'react-dom', '@mdx-js/react'],
-    alias: { '#json': path.resolve(import.meta.dirname, '../json'), '~': path.resolve(import.meta.dirname, './src') },
+    alias: {
+      '#json': path.resolve(import.meta.dirname, '../json'),
+      '~': path.resolve(import.meta.dirname, './src'),
+      // jspdf's optional packages are not installed (ignoredOptionalDependencies); its dynamic imports of them land here.
+      canvg: path.resolve(import.meta.dirname, './vite/jspdf-optional-stub.ts'),
+      html2canvas: path.resolve(import.meta.dirname, './vite/jspdf-optional-stub.ts'),
+    },
   },
   define: {
     // The bundle re-evaluates shared/src/config-builder/app-config.ts in the
@@ -470,35 +461,48 @@ const viteConfig = {
   },
 } satisfies UserConfig;
 
-// Setup PWA with custom service worker (injectManifest) for push delivery and app-badge updates
-viteConfig.plugins?.push(
-  VitePWA({
-    disable: !appConfig.has.pwa,
-    strategies: 'injectManifest',
-    srcDir: 'src/lib',
-    filename: 'sw.ts',
-    devOptions: { enabled: false, navigateFallback: 'index.html', suppressWarnings: true },
-    manifest: {
-      name: appConfig.name,
-      short_name: appConfig.name,
-      description: appConfig.description,
-      theme_color: '#222222',
-      icons: [
-        { src: '/static/common/icons/favicon-192x192.png', sizes: '192x192', type: 'image/png' },
-        { src: '/static/common/icons/favicon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-        { src: '/static/common/icons/icon-512x512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
-        { src: '/static/common/icons/maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-      ],
+// PWA: the web app manifest, and the service worker (lib/sw.ts, push delivery and app-badge updates) with the build's
+// precache list injected at `self.__SW_MANIFEST`.
+if (appConfig.has.pwa && !isStorybook) {
+  viteConfig.plugins?.push(
+    {
+      name: 'web-manifest',
+      apply: 'build',
+      generateBundle() {
+        const manifest = {
+          name: appConfig.name,
+          short_name: appConfig.name,
+          description: appConfig.description,
+          start_url: '/',
+          display: 'standalone',
+          background_color: '#ffffff',
+          theme_color: '#222222',
+          lang: 'en',
+          scope: '/',
+          icons: [
+            { src: '/static/common/icons/favicon-192x192.png', sizes: '192x192', type: 'image/png' },
+            { src: '/static/common/icons/favicon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+            { src: '/static/common/icons/icon-512x512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
+            { src: '/static/common/icons/maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          ],
+        };
+        this.emitFile({ type: 'asset', fileName: 'manifest.webmanifest', source: `${JSON.stringify(manifest)}\n` });
+      },
+      transformIndexHtml: () => [{ tag: 'link', attrs: { rel: 'manifest', href: '/manifest.webmanifest' }, injectTo: 'head' }],
     },
-    injectManifest: {
-      globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-      // `grammars-*` is the codeSplitting group for shiki/tm-grammars: runtime-loaded, not precached.
+    ...serwist({
+      swSrc: 'src/lib/sw.ts',
+      swDest: 'sw.js',
+      globDirectory: path.resolve(import.meta.dirname, 'dist'),
+      globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,webmanifest}'],
       // `replay-*` is Maple's session replay with rrweb, loaded only when replay is on.
-      globIgnores: ['**/grammars-*.js', '**/replay-*.js', '**/static/common/flags/**/*'],
+      // `gleap-*` (support chat) and `maps-*` (map tiles) need the network to do anything.
+      // The `grammars-*` chunks are precached, so code blocks and the docs code view highlight offline.
+      globIgnores: ['**/replay-*.js', '**/gleap-*.js', '**/maps-*.{js,css}', '**/static/common/flags/**/*'],
       maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
-    },
-  }),
-);
+    }),
+  );
+}
 
 // Enable HTTPS only when serving https on localhost directly. Tunnel mode is https at
 // the public origin, but ngrok terminates TLS and forwards plain HTTP to Vite.
@@ -508,7 +512,7 @@ if (frontendUrl.protocol === 'https:' && !isTunneled) {
 
 // Enable additional plugins only in development mode
 if (appConfig.mode === 'development' && !isStorybook) {
-  viteConfig.plugins?.push(sdkWatch(), reactScan({ enable: false, scanOptions: { showToolbar: false } }));
+  viteConfig.plugins?.push(sdkWatch());
 }
 
 // https://vitejs.dev/config/

@@ -36,7 +36,7 @@ export const streamNotificationSchema = z
       .int()
       .nullable()
       .describe(
-        'Server-suggested spread window (ms) for the lazy delta fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds',
+        'Server-suggested spread window (ms) for the lazy range fetch; scales with channel audience and load, and the client clamps it between its priority tier bounds',
       ),
     propagation: propagationHintSchema.nullable().describe('Embedded-product propagation hint for cross-product cache invalidation'),
   })

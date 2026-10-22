@@ -202,6 +202,9 @@ import type {
   HandleMembershipInvitationResponses,
   InvokeTokenData,
   InvokeTokenErrors,
+  LinkAttachmentKeysData,
+  LinkAttachmentKeysErrors,
+  LinkAttachmentKeysResponses,
   MarkNotificationsReadData,
   MarkNotificationsReadErrors,
   MarkNotificationsReadResponses,
@@ -445,6 +448,9 @@ import {
   zHandleMembershipInvitationPath,
   zHandleMembershipInvitationResponse,
   zInvokeTokenPath,
+  zLinkAttachmentKeysBody,
+  zLinkAttachmentKeysPath,
+  zLinkAttachmentKeysResponse,
   zMarkNotificationsReadBody,
   zMarkNotificationsReadResponse,
   zMarkSeenBody,
@@ -2681,9 +2687,8 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.seqcursor - `string` (optional)
+ * @param {integer=} options.query.offset - `integer` (optional)
+ * @param {integer=} options.query.limit - `integer` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const getRequests = <ThrowOnError extends boolean = true>(
@@ -2965,9 +2970,8 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.seqcursor - `string` (optional)
+ * @param {integer=} options.query.offset - `integer` (optional)
+ * @param {integer=} options.query.limit - `integer` (optional)
  * @param {enum=} options.query.status - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
@@ -3261,9 +3265,8 @@ export const updateConnection = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.seqcursor - `string` (optional)
+ * @param {integer=} options.query.offset - `integer` (optional)
+ * @param {integer=} options.query.limit - `integer` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
@@ -3451,9 +3454,8 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.seqcursor - `string` (optional)
+ * @param {integer=} options.query.offset - `integer` (optional)
+ * @param {integer=} options.query.limit - `integer` (optional)
  * @param {string=} options.query.relatableuserid - `string` (optional)
  * @param {enum=} options.query.role - `enum` (optional)
  * @param {enum=} options.query.excludearchived - `enum` (optional)
@@ -3669,9 +3671,10 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.seqcursor - `string` (optional)
+ * @param {integer=} options.query.offset - `integer` (optional)
+ * @param {integer=} options.query.limit - `integer` (optional)
+ * @param {integer=} options.query.afterseq - `integer` (optional)
+ * @param {integer=} options.query.untilseq - `integer` (optional)
  * @param {string=} options.query.channelid - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
@@ -3909,6 +3912,60 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/{tenantId}/{organizationId}/attachments/{id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Link attachment keys
+ *
+ * Stores the storage keys of a file its uploader uploaded after creating the attachment, offline or before cloud storage was configured. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.
+ *
+ * **PUT /{tenantId}/{organizationId}/attachments/{id}/keys** ·· [linkAttachmentKeys](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/PUT/{tenantId}/{organizationId}/attachments/{id}/keys) ·· [linkAttachmentKeys](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/{organizationId}/attachments/{id}/keys) ·· [linkAttachmentKeys](https://www.cellajs.com/docs/operations?operationTag=product#tag/product/PUT/{tenantId}/{organizationId}/attachments/{id}/keys) ·· _attachments_cella_product_
+ *
+ * @param {linkAttachmentKeysData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {string} options.path.id - `string`
+ * @param {object} options.body.keys - `object`
+ * @param {string | null=} options.body.convertedContentType - `string | null` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const linkAttachmentKeys = <ThrowOnError extends boolean = true>(
+  options: Options<LinkAttachmentKeysData, ThrowOnError>,
+): RequestResult<LinkAttachmentKeysResponses, LinkAttachmentKeysErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).put<LinkAttachmentKeysResponses, LinkAttachmentKeysErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zLinkAttachmentKeysBody,
+          path: zLinkAttachmentKeysPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zLinkAttachmentKeysResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+      {
+        key: 'apiKey',
+        scheme: 'bearer',
+        type: 'http',
+      },
+      {
+        key: 'oauth2',
+        scheme: 'bearer',
+        type: 'http',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/attachments/{id}/keys',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -4171,9 +4228,8 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.seqcursor - `string` (optional)
+ * @param {integer=} options.query.offset - `integer` (optional)
+ * @param {integer=} options.query.limit - `integer` (optional)
  * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`
  * @param {enum=} options.query.role - `enum` (optional)
@@ -4219,9 +4275,8 @@ export const getMembers = <ThrowOnError extends boolean = true>(
  * @param {string=} options.query.q - `string` (optional)
  * @param {enum=} options.query.sort - `enum` (optional)
  * @param {enum=} options.query.order - `enum` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
- * @param {string=} options.query.seqcursor - `string` (optional)
+ * @param {integer=} options.query.offset - `integer` (optional)
+ * @param {integer=} options.query.limit - `integer` (optional)
  * @param {string} options.query.entityid - `string`
  * @param {enum} options.query.entitytype - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -4343,8 +4398,8 @@ export const markSeen = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.organizationid - `string`
  * @param {string=} options.query.q - `string` (optional)
- * @param {string=} options.query.offset - `string` (optional)
- * @param {string=} options.query.limit - `string` (optional)
+ * @param {integer=} options.query.offset - `integer` (optional)
+ * @param {integer=} options.query.limit - `integer` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const getServiceAccounts = <ThrowOnError extends boolean = true>(

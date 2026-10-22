@@ -15,6 +15,8 @@ type SelectParentProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TF
   organizationId?: string;
   options?: ComboboxSelectProps['options'];
   onSelect?: (item: ChannelBase) => void;
+  /** Offers a clear button on a picked parent, for a field that may stay empty; clearing sets an empty string. */
+  clearable?: boolean;
 };
 
 /** Channels the user can pick as a parent; shares its cache with the picker's own list query. */
@@ -40,6 +42,7 @@ export function SelectParentFormField<TFieldValues extends FieldValues>({
   onSelect,
   required,
   disabled,
+  clearable,
 }: SelectParentProps<TFieldValues>) {
   const { items } = useParentChannels(parentType, organizationId, !disabled);
 
@@ -66,6 +69,7 @@ export function SelectParentFormField<TFieldValues extends FieldValues>({
               if (selectedItem && onSelect) onSelect(selectedItem);
             }}
             disabled={disabled}
+            clearable={clearable}
             searchableTrigger
             renderAvatar
             placeholders={{

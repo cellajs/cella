@@ -2103,6 +2103,31 @@
     "tool": { "description": "Rename an attachment or replace its description.", "approvalRequired": true, "entity": "attachment" }
   },
   {
+    "id": "linkAttachmentKeys",
+    "hash": "tag/attachments/PUT/{tenantId}/{organizationId}/attachments/{id}/keys",
+    "method": "put",
+    "path": "/{tenantId}/{organizationId}/attachments/{id}/keys",
+    "tags": ["attachments"],
+    "summary": "Link attachment keys",
+    "description": "Stores the storage keys of a file its uploader uploaded after creating the attachment, offline or before cloud storage was configured. Only the uploader may link them, under their own upload prefix, and only while the attachment has no stored file. Repeating the same keys returns the attachment unchanged.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["actorGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["attachments"],
+      "owner": ["cella"],
+      "entity": ["product"]
+    },
+    "entityType": "attachment"
+  },
+  {
     "id": "getMcpProtectedResourceMetadata",
     "hash": "tag/mcp/GET/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource",
     "method": "get",

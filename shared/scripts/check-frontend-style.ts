@@ -1,7 +1,7 @@
 /**
- * Enforces frontend conventions Biome cannot express reliably: components are named function declarations, component
- * values are typed `ComponentType<Props>`, zustand stores and route context are read through a selector, a Button turns
- * its press nudge off with `press={false}`. Each check below states its rule.
+ * Enforces frontend conventions Biome cannot express reliably: named function components, `ComponentType<Props>` values,
+ * stores and route context read through a selector, `press={false}` on a Button, `formResolver` and `noValidate` on a
+ * form. Each check below states its rule.
  */
 import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
@@ -133,6 +133,26 @@ function checkButtonPressCancel(sourceFile: ts.SourceFile, node: ts.Node, report
 }
 
 /**
+ * A form react-hook-form validates shows why a field is refused under that field. Without `noValidate` the browser
+ * refuses an email or web address first, in a bubble of its own and in the browser's language.
+ */
+function checkFormNoValidate(sourceFile: ts.SourceFile, node: ts.Node, report: Report): void {
+  if ((!ts.isJsxOpeningElement(node) && !ts.isJsxSelfClosingElement(node)) || node.tagName.getText(sourceFile) !== 'form') return;
+  const attributes = node.attributes.properties.filter(ts.isJsxAttribute);
+  const onSubmit = attributes.find((attribute) => attribute.name.getText(sourceFile) === 'onSubmit');
+  if (!onSubmit?.initializer?.getText(sourceFile).includes('handleSubmit(')) return;
+  if (attributes.some((attribute) => attribute.name.getText(sourceFile) === 'noValidate')) return;
+  report(node, 'form-no-validate', 'a form react-hook-form validates takes noValidate, so its fields say what is wrong, not the browser');
+}
+
+/** A form resolves through `formResolver`, which leaves a cleared optional field unset; it is the one reader of `zodResolver`. */
+function checkFormResolver(file: string, node: ts.Node, report: Report): void {
+  if (file === 'frontend/src/utils/form-resolver.ts' || !ts.isImportDeclaration(node) || !ts.isStringLiteral(node.moduleSpecifier)) return;
+  if (node.moduleSpecifier.text !== '@hookform/resolvers/zod') return;
+  report(node, 'form-resolver', 'resolve a form with formResolver from ~/utils/form-resolver, which leaves a cleared optional field unset');
+}
+
+/**
  * A memo whose dependency array names a value its callback never reads. The React Compiler memoizes on what the callback
  * reads, so that value stops triggering a recompute and the result goes stale; derive the result from the value itself.
  */
@@ -191,6 +211,8 @@ export function frontendFindings(file: string, source: string, stores: Set<strin
     checkStoreSelector(node, stores, report);
     checkRouteContextSelector(node, report);
     checkButtonPressCancel(sourceFile, node, report);
+    checkFormNoValidate(sourceFile, node, report);
+    checkFormResolver(file, node, report);
     checkMemoDependencies(node, report);
     node.forEachChild(visit);
   });
