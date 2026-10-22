@@ -13,9 +13,9 @@ key, the esbuild override rewrite, new overrides and `ignoredOptionalDependencie
 ## What & why
 
 react-scan's CLI linter stack, a second service-worker toolchain (vite-plugin-pwa and workbox), NodeSDK's gRPC
-exporters, the AWS SDK presigner and a dozen single-file libraries are gone, and service images no longer install
-sibling workspaces' dependencies. Replacements: `@serwist/vite`, a tracer provider plus `shared/src/otel-log-transport.ts`,
-own SigV4 (`presign-get-object.ts`), `shared/scripts/check-commit-msg.ts`, `vite/index-html.ts`, `vite/sdk-static.ts`.
+exporters and a dozen single-file libraries are gone, and service images no longer install sibling workspaces'
+dependencies. Replacements: `@serwist/vite`, a tracer provider plus `shared/src/otel-log-transport.ts`,
+`shared/scripts/check-commit-msg.ts`, `vite/index-html.ts`, `vite/sdk-static.ts`.
 
 ## Blast radius
 
