@@ -66,7 +66,7 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
       <span className="absolute top-3 left-0 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
       <span className="relative z-1 mx-3 my-2 size-8 shrink-0 rounded-full bg-card group-data-[subitem=true]/menu-sheet-item:mx-4 group-data-[subitem=true]/menu-sheet-item:size-6">
         <EntityAvatar
-          className="size-8 items-center bg-card group-hover/menu-sheet-item:font-bold group-hover/menu-sheet-item:opacity-100 group-data-[subitem=true]/menu-sheet-item:size-6 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80"
+          className="size-8 bg-card group-hover/menu-sheet-item:opacity-100 group-data-[subitem=true]/menu-sheet-item:size-6 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80"
           type={item.entityType}
           id={item.id}
           icon={Icon}

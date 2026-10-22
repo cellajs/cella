@@ -6,6 +6,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { Logo } from '~/modules/common/logo';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
+import { navIconStrokeWidth } from '~/modules/navigation/nav-buttons';
 import { navSheetOptions } from '~/modules/navigation/nav-sheet';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import type { NavItemId } from '~/modules/navigation/types';
@@ -49,7 +50,7 @@ export function MenuSheetHeader() {
               onClick={() => openStackedNavSheet('notifications', <NotificationsSheet />, notificationsButtonRef)}
               className="relative"
             >
-              <BellIcon className="size-5" strokeWidth={1.8} />
+              <BellIcon className="size-5" strokeWidth={navIconStrokeWidth} />
               <UnreadCountBadge className="absolute top-1 right-1" />
             </Button>
             <Button

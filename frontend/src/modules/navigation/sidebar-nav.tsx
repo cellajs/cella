@@ -60,7 +60,7 @@ export function SidebarNav({ onNavItemClick }: SidebarNavProps) {
       <div
         data-slot="sidebar-spacer"
         data-started={hasStarted}
-        className="w-(--spacer-w) focus-view:hidden data-[started=true]:transition-[width] data-[started=true]:duration-300 data-[started=true]:ease-out"
+        className="w-(--spacer-w) transition-[width] duration-300 ease-out focus-view:hidden data-[started=false]:transition-none"
       />
       <Sidebar
         id="sidebar-nav"

@@ -69,7 +69,7 @@ export function MenuSheetSectionButton({
             {isSectionVisible && !!items.length && (
               <motion.div key={`settings-${options.entityType}`} {...widenMotion} className="shrink-0 max-sm:hidden">
                 <TooltipButton toolTipContent={t('c:manage_content')} side="bottom" sideOffset={10}>
-                  <Button className="px-2 shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={() => onToggleEditing()}>
+                  <Button className="shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={() => onToggleEditing()}>
                     <Settings2Icon className="size-5" />
                   </Button>
                 </TooltipButton>
@@ -81,7 +81,7 @@ export function MenuSheetSectionButton({
             {isSectionVisible && onCreate && (
               <motion.div key={`create-${options.entityType}`} {...widenMotion} className="shrink-0">
                 <TooltipButton toolTipContent={t('c:create')} sideOffset={22} side="right">
-                  <Button ref={createButtonRef} className="px-2" variant="ghost" size="icon" onClick={() => onCreate(createButtonRef)}>
+                  <Button ref={createButtonRef} variant="ghost" size="icon" onClick={() => onCreate(createButtonRef)}>
                     <PlusIcon className="size-5" />
                   </Button>
                 </TooltipButton>

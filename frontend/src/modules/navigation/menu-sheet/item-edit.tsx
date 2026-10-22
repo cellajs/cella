@@ -16,7 +16,7 @@ import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
-const avatarBoxClass = tw('mx-3 my-2 flex shrink-0 group-data-[submenu=false]/menu-options:mx-4 group-data-[submenu=false]/menu-options:my-1');
+const avatarBoxClass = tw('mx-3 my-2 flex shrink-0 group-data-[subitem=true]/options-item:mx-4 group-data-[subitem=true]/options-item:my-1');
 
 interface MenuSheetItemEditProps {
   item: UserMenuItem;
@@ -68,7 +68,7 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
 
   const avatar = (
     <EntityAvatar
-      className="size-8 group-data-[submenu=false]/menu-options:size-6 group-data-[archived=true]/options-item:opacity-70"
+      className="size-8 group-data-[subitem=true]/options-item:size-6 group-data-[archived=true]/options-item:opacity-70"
       type={item.entityType}
       id={item.id}
       icon={Icon}
@@ -82,11 +82,11 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
       layoutId={`sheet-menu-item-${item.id}`}
       data-subitem={!item.submenu}
       data-archived={item.membership.archived}
-      className="group/options-item relative flex h-12 w-full items-center rounded-sm pr-2 ring-1 ring-muted ring-inset hover:bg-accent/50 hover:text-accent-foreground data-[archived=false]:cursor-grab group-data-[submenu=false]/menu-options:h-10"
+      className="group/options-item relative flex h-12 w-full items-center rounded-sm pr-2 ring-1 ring-muted ring-inset hover:bg-accent/50 hover:text-accent-foreground data-[subitem=true]:h-10 data-[archived=false]:cursor-grab"
     >
       {status === 'pending' && onlineManager.isOnline() && (
         <div className="absolute z-10">
-          <Spinner className="m-1 mr-3 size-10 p-1 text-muted-foreground group-data-[submenu=false]/menu-options:mx-3 group-data-[submenu=false]/menu-options:my-2 group-data-[submenu=false]/menu-options:size-7" />
+          <Spinner className="m-1 mr-3 size-10 p-1 text-muted-foreground group-data-[subitem=true]/options-item:mx-3 group-data-[subitem=true]/options-item:my-2 group-data-[subitem=true]/options-item:size-7" />
         </div>
       )}
       {isSortable ? (

@@ -15,8 +15,10 @@ interface NavItemButtonProps {
   onClick: TriggerNavItemFn;
 }
 
-// Larger below sm (bottom bar); in the sidebar `[&>svg]:size-4` outranks `size-*`, so the min-h/min-w pair sizes it.
-const navItemIconClass = tw('size-6 min-h-6 min-w-6 shrink-0 transition-transform group-hover:scale-110 sm:size-5 sm:min-h-5 sm:min-w-5');
+export const navIconStrokeWidth = 1.8;
+
+// Larger below sm, where the bottom bar shows them.
+const navItemIconClass = tw('size-6 shrink-0 transition-transform group-hover:scale-110 sm:size-5');
 
 function NavItemIcon({ navItem }: { navItem: NavItem }) {
   if (navItem.iconSlot) {
@@ -25,7 +27,7 @@ function NavItemIcon({ navItem }: { navItem: NavItem }) {
   }
 
   const Icon = navItem.icon;
-  return <Icon className={navItemIconClass} strokeWidth={1.8} />;
+  return <Icon className={navItemIconClass} strokeWidth={navIconStrokeWidth} />;
 }
 
 function NavItemBadge({ navItem, isActive, className }: { navItem: NavItem; isActive: boolean; className?: string }) {
@@ -60,7 +62,7 @@ export function SidebarNavButton({ label, isCollapsed, onClick, isActive, ref, c
         onClick={onClick}
         isActive={isActive}
         className={cn(
-          'group h-14 justify-center text-sidebar-foreground ring-inset transition-[width] duration-200 ease-linear hover:bg-background/30 data-[collapsed=true]:w-16',
+          'group h-14 justify-center text-sidebar-foreground ring-inset transition-[width] duration-200 ease-linear hover:bg-background/30 data-[collapsed=true]:w-16 [&>svg]:size-5',
           className,
         )}
       >

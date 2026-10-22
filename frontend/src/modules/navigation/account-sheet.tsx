@@ -107,7 +107,7 @@ export function AccountSheet() {
 
   return (
     <NavSheetFrame ref={frameRef} panels>
-      <div className="flex items-center px-3 pt-3">
+      <div className="px-3 pt-3">
         <h2 className="p-2 font-semibold text-base">{t('c:account')}</h2>
       </div>
       <button type="button" tabIndex={-1} onClick={openProfile} className="mt-3 w-full">

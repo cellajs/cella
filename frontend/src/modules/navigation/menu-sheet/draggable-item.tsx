@@ -67,7 +67,7 @@ export function MenuSheetDraggableItem({
   const archivedSubitemCount = item.submenu?.filter((sub) => sub.membership.archived).length ?? 0;
 
   return (
-    <li data-submenu={!!item.submenu} className="group/menu-options relative my-1">
+    <li className="relative my-1">
       <div ref={dragRef}>
         <MenuSheetItemEdit item={item} siblings={siblings} icon={options?.icon} />
         {!item.membership.archived && !!item.submenu?.length && detailedMenu && (
@@ -89,7 +89,7 @@ export function MenuSheetDraggableItem({
           </div>
         )}
       </div>
-      {closestEdge && <DropIndicator className="h-0.5 w-full" edge={closestEdge} gap={0.35} />}
+      {closestEdge && <DropIndicator className="h-0.5" edge={closestEdge} gap={0.35} />}
     </li>
   );
 }

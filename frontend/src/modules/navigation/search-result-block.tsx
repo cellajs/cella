@@ -28,7 +28,7 @@ export function SearchResultBlock({ results, entityType, hideSeparator = false, 
 
   return (
     <div key={entityType} className="flex w-full flex-col gap-1">
-      {!hideSeparator && <ComboboxSeparator className="h-0 border-border border-t border-dashed bg-transparent" />}
+      {!hideSeparator && <ComboboxSeparator className="h-0 border-t border-dashed bg-transparent" />}
       <ComboboxGroup>
         <button
           type="button"
