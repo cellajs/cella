@@ -21,13 +21,20 @@ export const indexHtml = (data: Record<string, string>): Plugin[] => [
     apply: 'build',
     transformIndexHtml: {
       order: 'post',
-      handler: (html) =>
-        html
-          .replace(/<!--[\s\S]*?-->/g, '')
+      handler: (html) => {
+        let sanitized = html;
+        let previous: string;
+        do {
+          previous = sanitized;
+          sanitized = sanitized.replace(/<!--[\s\S]*?-->/g, '');
+        } while (sanitized !== previous);
+
+        return sanitized
           .replace(/>\s+</g, '><')
           .replace(/>\s+([^<>]*?)\s+</g, '>$1<')
           .replace(/\s+\/>/g, '/>')
-          .trim(),
+          .trim();
+      },
     },
   },
 ];
