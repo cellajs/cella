@@ -133,12 +133,12 @@ function NoticeActions({ onCopy, onDiscard }: NoticeActionsProps) {
   return (
     <div className="flex flex-col gap-2">
       <p>{t('c:unsaveable_edits.text')}</p>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="xs" className="text-foreground" disabled={!onCopy} onClick={() => onCopy?.().then(setCopied)}>
+      <div className="flex flex-wrap gap-2 text-foreground">
+        <Button variant="outline" size="xs" disabled={!onCopy} onClick={() => onCopy?.().then(setCopied)}>
           <CopiedIcon copied={!!copied} icon={CopyIcon} />
           {copied ? t('c:copied') : copied === false ? t('c:copy_failed') : t('c:copy_text')}
         </Button>
-        <Button variant="ghost" size="xs" className="text-foreground" onClick={() => void onDiscard()}>
+        <Button variant="ghost" size="xs" onClick={() => void onDiscard()}>
           {t('c:discard')}
         </Button>
       </div>
