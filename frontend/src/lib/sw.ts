@@ -9,6 +9,9 @@ declare const __BACKEND_URL__: string;
 const apiPathPrefix = new URL(__BACKEND_URL__, self.location.origin).pathname.replace(/\/+$/, '');
 const navigationDenylist = apiPathPrefix ? [new RegExp(`^${apiPathPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`)] : [];
 
+/** Docs files outside docs.gen/: the OpenAPI spec, and the type and zod indexes the docs code view reads. */
+const docsFiles = new Set(['/static/openapi.json', '/static/types.gen.ts', '/static/zod.gen.ts']);
+
 // `skipWaiting: false` keeps the update prompt: Serwist listens for the client's `{type: 'SKIP_WAITING'}` message.
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
@@ -24,8 +27,7 @@ const serwist = new Serwist({
   runtimeCaching: [
     {
       // Docs files keep stable names per release; the app appends ?v=<sha> so each release keys fresh cache entries.
-      matcher: ({ url }) =>
-        url.origin === self.location.origin && (url.pathname.startsWith('/static/docs.gen/') || url.pathname === '/static/openapi.json'),
+      matcher: ({ url }) => url.origin === self.location.origin && (url.pathname.startsWith('/static/docs.gen/') || docsFiles.has(url.pathname)),
       handler: new StaleWhileRevalidate({
         cacheName: 'docs-gen',
         plugins: [new ExpirationPlugin({ maxEntries: 40 })],
