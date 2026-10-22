@@ -1,30 +1,29 @@
-import { t } from 'i18next';
+import i18n, { t } from 'i18next';
 import { type BaseSyntheticEvent, createElement } from 'react';
 import type { FieldError, FieldErrors, FieldValues, ValidateResult } from 'react-hook-form';
 import type { TKey } from '~/lib/i18n-locales';
 import { toaster } from '~/modules/common/toaster/toaster';
 
 /**
- * Toasts a refused submit. The toast lists the errors no field shows: a field rendered in the submitted form shows its
- * own message under its input, so its error is left out, and with every error inline the toast is the headline alone.
+ * Toasts the errors of a refused submit that no field shows. A field rendered in the submitted form shows its own
+ * message under its input and takes focus, so its error is left out, and with every error inline there is no toast.
  * Without the submit event (a programmatic submit) every error is listed.
  */
 export const defaultOnInvalid = <TFieldValues extends FieldValues>(errors: FieldErrors<TFieldValues>, event?: BaseSyntheticEvent) => {
   if (Object.keys(errors).length === 0) return;
+  console.error('Form validation failed', errors);
 
   // The target, since React has cleared `currentTarget` by the time an async validation ends
   const form = event && event.target instanceof HTMLFormElement ? event.target : undefined;
   const messages = processErrors(errors, form);
-  const description = messages.length
-    ? createElement(
-        'div',
-        null,
-        messages.map((msg, i) => createElement('p', { key: i }, msg)),
-      )
-    : undefined;
-  toaster.error(t('error:form.invalid_form'), { description });
+  if (!messages.length) return;
 
-  console.error('Form validation failed', errors);
+  const description = createElement(
+    'div',
+    null,
+    messages.map((msg, i) => createElement('p', { key: i }, msg)),
+  );
+  toaster.error(t('error:form.invalid_form'), { description });
 };
 
 const processErrors = <TFieldValues extends FieldValues>(
@@ -44,15 +43,8 @@ const processErrors = <TFieldValues extends FieldValues>(
       const error = value as FieldError;
       if (showsInline(form, fieldName)) continue;
 
-      if (error.types) {
-        for (const [subType, subMsg] of Object.entries(error.types)) {
-          const message = resolveErrorMessage(subType, subMsg);
-          messages.push(`${label}: ${message}`);
-        }
-      } else {
-        const message = resolveErrorMessage(error.type, error.message);
-        messages.push(`${label}: ${message}`);
-      }
+      const own = error.types ? Object.values(error.types) : [error.message];
+      for (const message of own) messages.push(`${label}: ${resolveErrorMessage(message)}`);
     } else {
       messages.push(...processErrors(value as FieldErrors<TFieldValues>, form, fieldName));
     }
@@ -74,11 +66,8 @@ const resolveFieldLabel = (fieldName: string): string => {
   return translated !== key && translated !== `c:${key}` ? translated : fieldName;
 };
 
-/** Rule types whose author writes the message (a zod refinement, a `validate` rule): shown as written. */
-const authoredRuleTypes = ['custom', 'validate'];
-
-const resolveErrorMessage = (type?: string, message?: ValidateResult): string => {
-  const own = typeof message === 'string' && message ? message : undefined;
-  if (own && (!type || authoredRuleTypes.includes(type))) return own;
-  return type ? t(`error:form.${type}`, own ?? 'Unknown') : 'Unknown';
+/** The message as the field shows it: zod's are already plain words (`formErrorMessage`), a `setError` may pass a translation key. */
+const resolveErrorMessage = (message?: ValidateResult): string => {
+  if (typeof message !== 'string' || !message) return t('error:form.not_accepted');
+  return i18n.exists(message) ? t(message as TKey) : message;
 };

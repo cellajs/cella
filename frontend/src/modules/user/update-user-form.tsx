@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { User } from 'sdk';
@@ -24,6 +23,7 @@ import { Input } from '~/modules/ui/input';
 import { Label } from '~/modules/ui/label';
 import { useUserUpdateMutation } from '~/modules/user/query';
 import { useCurrentUser } from '~/modules/user/user-store';
+import { formResolver } from '~/utils/form-resolver';
 
 const formSchema = zUpdateUserBody;
 
@@ -51,7 +51,7 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
   const updateUser = useUserUpdateMutation();
   const isPending = updateSelf.isPending || updateUser.isPending;
 
-  const formOptions: UseFormProps<FormValues> = { resolver: zodResolver(formSchema), defaultValues: user };
+  const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: user };
 
   const formContainerId = 'update-user';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${user.id}`, { formOptions, formContainerId });
@@ -82,26 +82,12 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex w-full flex-col gap-6">
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex w-full flex-col gap-6">
         <AvatarFormField form={form} label={children ? '' : t('c:profile_picture')} type="user" name="thumbnailUrl" entity={user} />
         {isSelf && (
           <div className="grid gap-6 sm:grid-cols-2 sm:gap-4">
-            <InputFormField
-              inputClassName="border"
-              control={form.control}
-              name="firstName"
-              label={t('c:first_name')}
-              autocomplete="given-name"
-              required
-            />
-            <InputFormField
-              inputClassName="border"
-              control={form.control}
-              name="lastName"
-              label={t('c:last_name')}
-              autocomplete="family-name"
-              required
-            />
+            <InputFormField inputClassName="border" control={form.control} name="firstName" label={t('c:first_name')} autocomplete="given-name" />
+            <InputFormField inputClassName="border" control={form.control} name="lastName" label={t('c:last_name')} autocomplete="family-name" />
           </div>
         )}
 

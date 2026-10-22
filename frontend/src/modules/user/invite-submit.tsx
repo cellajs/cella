@@ -57,14 +57,13 @@ interface InviteFormFooterProps {
   channel?: EnrichedChannel;
   count: number;
   isPending: boolean;
-  disabled?: boolean;
   onCancel: () => void;
   /** Takes the place of the cancel button, as the onboarding footer does. */
   children?: React.ReactNode;
 }
 
 /** Role choice for a channel invite, then the submit button with the address count. */
-export function InviteFormFooter({ form, channel, count, isPending, disabled, onCancel, children }: InviteFormFooterProps) {
+export function InviteFormFooter({ form, channel, count, isPending, onCancel, children }: InviteFormFooterProps) {
   const { t } = useTranslation();
 
   return (
@@ -83,7 +82,7 @@ export function InviteFormFooter({ form, channel, count, isPending, disabled, on
       )}
 
       <div className="flex flex-col gap-2 sm:flex-row">
-        <SubmitButton disabled={disabled} loading={isPending} className="relative">
+        <SubmitButton disabled={!count} loading={isPending} className="relative">
           {!!count && (
             <Badge variant="secondary" context="button">
               {count}

@@ -199,12 +199,15 @@ export const validUrlSchema = z
   .superRefine(refineWithType((url: string) => url.startsWith('https://'), 'invalid_url'))
   .transform((str) => lowercaseSchemeAndHost(str.trim()));
 
+/** A name is free text: anything a person types except a control character (line break, tab) and the angle brackets of markup. */
+const namePattern = /^[^\p{Cc}<>]+$/u;
 export const validNameSchema = z
   .string()
-  .min(2, translatedError('error:invalid_between_num', { name: 'Name', min: 2, max: maxLength.field }))
-  .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Name', min: 2, max: maxLength.field }))
-  .regex(/^[\p{L}\d\-., '&()]+$/u, translatedError('error:invalid_name'))
-  .superRefine(refineWithType((s) => /^[\p{L}\d\-., '&()]+$/u.test(s), 'invalid_name'));
+  .trim()
+  .min(1, translatedError('error:invalid_between_num', { name: 'Name', min: 1, max: maxLength.field }))
+  .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Name', min: 1, max: maxLength.field }))
+  .regex(namePattern, translatedError('error:invalid_name'))
+  .superRefine(refineWithType((s) => namePattern.test(s), 'invalid_name'));
 
 export const validEmailSchema = z
   .string()

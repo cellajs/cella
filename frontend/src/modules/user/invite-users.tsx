@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { AtSignIcon, ChevronRightIcon, InfoIcon, SearchIcon } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
@@ -16,6 +15,7 @@ import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { InviteBulkEmailForm } from '~/modules/user/invite-bulk-email-form';
 import { InviteEmailForm } from '~/modules/user/invite-email-form';
 import { InviteSearchForm } from '~/modules/user/invite-search-form';
+import { formResolver } from '~/utils/form-resolver';
 
 const InviteFormSchema = zMembershipInviteBody;
 export type InviteFormValues = z.infer<typeof InviteFormSchema>;
@@ -28,7 +28,7 @@ export function useInviteFormDraft(entityId?: string, entityType?: ChannelEntity
   return useFormWithDraft<InviteFormValues>(`invite-users${entityId ? `-${entityId}` : ''}`, {
     formContainerId: 'invite-users',
     formOptions: {
-      resolver: zodResolver(InviteFormSchema),
+      resolver: formResolver(InviteFormSchema),
       defaultValues: { emails: [], role: defaultInviteRole(entityType) },
     },
   });

@@ -1,4 +1,5 @@
 import { SendIcon } from 'lucide-react';
+import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
@@ -22,6 +23,7 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
 
   const form = useInviteFormDraft(channel?.id, channel?.entityType);
   const { mutate: invite, isPending } = useInviteMemberMutation();
+  const count = useWatch({ control: form.control, name: 'emails' })?.length ?? 0;
 
   if (!channel) return null;
 
@@ -51,7 +53,7 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
   if (form.loading) return null;
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <FormField
           control={form.control}
           name="emails"
@@ -73,10 +75,10 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
           )}
         />
         <div className="flex flex-col gap-2 sm:flex-row">
-          <SubmitButton loading={isPending} className="relative">
-            {!!form.getValues('emails')?.length && (
+          <SubmitButton disabled={!count} loading={isPending} className="relative">
+            {!!count && (
               <Badge variant="secondary" context="button">
-                {form.getValues('emails')?.length}
+                {count}
               </Badge>
             )}
             <SendIcon />

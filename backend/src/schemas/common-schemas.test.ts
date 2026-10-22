@@ -102,6 +102,20 @@ describe('normalized input schemas', () => {
   );
 });
 
+describe('validNameSchema', () => {
+  it.each(['Q3: Roadmap', 'R&D / Ops', 'José’s project', 'C#', 'Launch!', '李', 'X'])('takes the name %j', (name) => {
+    expect(validNameSchema.safeParse(name).success).toBe(true);
+  });
+
+  it.each(['', '   ', '<b>Acme</b>', 'line\nbreak', 'tab\there'])('refuses %j', (name) => {
+    expect(validNameSchema.safeParse(name).success).toBe(false);
+  });
+
+  it('stores the name without surrounding spaces', () => {
+    expect(validNameSchema.parse('  Acme  ')).toBe('Acme');
+  });
+});
+
 describe('validUrlSchema', () => {
   it('lowercases the scheme and host only: userinfo, path, query and fragment keep their case', () => {
     expect(validUrlSchema.parse('https://Example.COM/Path/To?Q=Mixed#Frag')).toBe('https://example.com/Path/To?Q=Mixed#Frag');
@@ -120,7 +134,7 @@ describe('validation messages', () => {
   it('translates a message when a value fails, after i18n initialized', () => {
     expect(messageOf(paginationQuerySchema.safeParse({ offset: 'x' }))).toBe(i18n.t('error:invalid_offset'));
     expect(messageOf(paginationQuerySchema.safeParse({ limit: '0' }))).toBe(i18n.t('error:invalid_limit', { max: 1000 }));
-    expect(messageOf(validNameSchema.safeParse('x'))).toBe(i18n.t('error:invalid_between_num', { name: 'Name', min: 2, max: 255 }));
+    expect(messageOf(validNameSchema.safeParse(' '))).toBe(i18n.t('error:invalid_between_num', { name: 'Name', min: 1, max: 255 }));
     expect(messageOf(validUrlSchema.safeParse('http://example.com'))).toBe(i18n.t('error:invalid_url'));
     expect(messageOf(idsBodySchema().safeParse({ ids: [] }))).toBe(i18n.t('error:invalid_min_items', { min: 'one', name: 'ID' }));
   });
