@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, spyOn, userEvent, waitFor } from 'storybook/test';
-import { JsonViewer } from '../json-viewer';
+import { JsonViewer } from '~/modules/common/json-viewer/json-viewer';
 
 // Sample data for stories
 const simpleObject = { name: 'John Doe', age: 30, email: 'john@example.com', active: true, role: null };

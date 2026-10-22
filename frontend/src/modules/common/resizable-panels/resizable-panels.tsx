@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, type Ref, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { cn } from '~/utils/cn';
@@ -30,8 +30,6 @@ interface HintState {
 interface LayoutResult {
   widths: Record<string, number>;
   hints: HintState[];
-  /** G12: true when the expand threshold (G3) has been passed this frame */
-  expandSnapped?: boolean;
 }
 
 interface DragState {
@@ -40,8 +38,6 @@ interface DragState {
   autoFill: boolean;
   initialWidths: Record<string, number>;
   collapsedAtStart: Set<string>;
-  /** G11: per-panel cascade when last victim is off-screen (keyed by drag direction) */
-  perPanelCascade: { left: boolean; right: boolean };
 }
 
 interface PanelGroupContextValue {
@@ -50,6 +46,9 @@ interface PanelGroupContextValue {
   unregisterPanel: (id: string) => void;
   registerSeparator: (index: number, element: HTMLDivElement) => void;
   unregisterSeparator: (index: number) => void;
+  startDrag: (separatorIndex: number, startX: number) => void;
+  applyKeyboardStep: (separatorIndex: number, delta: number) => void;
+  toggleCollapseAtSeparator: (separatorIndex: number) => void;
 }
 
 const PanelGroupContext = createContext<PanelGroupContextValue | null>(null);
@@ -71,31 +70,24 @@ function clearCursorOverride() {
   }
 }
 
-function snapWidth(panel: PanelConfig, width: number): number {
-  if (!panel.collapsible) return Math.max(panel.minWidth, Math.min(panel.minWidth * 2, width));
-  const halfwayPoint = (panel.collapsedWidth + panel.minWidth) / 2.2;
-  if (width < halfwayPoint) return panel.collapsedWidth;
-  if (width < panel.minWidth) return panel.minWidth;
-  return Math.min(panel.minWidth * 2, width);
-}
+/**
+ * The ideal width of an expanded panel, as a factor of its `minWidth` (G6).
+ * @public
+ */
+export const idealWidthFactor = 1.25;
+
+// G2: past this width a shrinking victim collapses; before it, it holds minWidth
+const collapseSnapPoint = (panel: PanelConfig) => (panel.collapsedWidth + panel.minWidth) / 2.2;
 
 function collapseProgress(panel: PanelConfig, rawWidth: number): number {
-  if (!panel.collapsible) return 0;
-  const halfwayPoint = (panel.collapsedWidth + panel.minWidth) / 2.2;
-  if (rawWidth >= panel.minWidth || rawWidth <= halfwayPoint) return 0;
-  return (panel.minWidth - rawWidth) / (panel.minWidth - halfwayPoint);
+  const snapPoint = collapseSnapPoint(panel);
+  if (rawWidth >= panel.minWidth || rawWidth <= snapPoint) return 0;
+  return (panel.minWidth - rawWidth) / (panel.minWidth - snapPoint);
 }
 
 // Idempotent and DOM-free: dragging backward re-evaluates from initialWidths and reverses.
-function resolveLayout(
-  panels: PanelConfig[],
-  separatorIndex: number,
-  initialWidths: Record<string, number>,
-  collapsedAtStart: Set<string>,
-  dx: number,
-  autoFill: boolean,
-  perPanelCascade = false,
-): LayoutResult {
+function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number): LayoutResult {
+  const { separatorIndex, initialWidths, collapsedAtStart, autoFill } = drag;
   const widths = { ...initialWidths };
   const hints: HintState[] = [];
 
@@ -106,21 +98,18 @@ function resolveLayout(
 
   // Grow side: opposite side of separator from shrink direction
   const growIndex = draggingLeft ? separatorIndex + 1 : separatorIndex;
-  const growPanel = panels[growIndex];
+  const growPanel: PanelConfig | undefined = panels[growIndex];
+  const isExpandingFromCollapsed = !!growPanel?.collapsible && collapsedAtStart.has(growPanel.id);
+  const expandCost = growPanel && isExpandingFromCollapsed ? growPanel.minWidth - growPanel.collapsedWidth : 0;
 
   // Expand threshold (G3)
-  if (growPanel && collapsedAtStart.has(growPanel.id) && growPanel.collapsible) {
-    const expandThreshold = growPanel.minWidth - growPanel.collapsedWidth;
-    if (absDx < expandThreshold) {
-      const progress = absDx / expandThreshold;
-      hints.push({ panelId: growPanel.id, side: draggingLeft ? 'left' : 'right', mode: 'expand', progress, reach: 0 });
-      const neighbour = panels[draggingLeft ? separatorIndex : separatorIndex + 1];
-      if (neighbour) hints.push({ panelId: neighbour.id, side: draggingLeft ? 'right' : 'left', mode: 'cover', progress, reach: expandThreshold });
-      return { widths: { ...initialWidths }, hints };
-    }
+  if (isExpandingFromCollapsed && absDx < expandCost) {
+    const progress = absDx / expandCost;
+    hints.push({ panelId: growPanel.id, side: draggingLeft ? 'left' : 'right', mode: 'expand', progress, reach: 0 });
+    const neighbour = panels[draggingLeft ? separatorIndex : separatorIndex + 1];
+    if (neighbour) hints.push({ panelId: neighbour.id, side: draggingLeft ? 'right' : 'left', mode: 'cover', progress, reach: expandCost });
+    return { widths, hints };
   }
-
-  const isExpandingFromCollapsed = !!(growPanel && collapsedAtStart.has(growPanel.id) && growPanel.collapsible);
 
   // Victim list (G1, G9)
   const victimIndices: number[] = [];
@@ -131,8 +120,7 @@ function resolveLayout(
   }
 
   let remaining = absDx;
-  const expandCost = isExpandingFromCollapsed && growPanel ? growPanel.minWidth - growPanel.collapsedWidth : 0;
-  // Overflow mode funds the expand from trailing gap (O1); autoFill makes victims fund it.
+  // Overflow mode funds the expand from trailing gap (O2); autoFill makes victims fund it.
   if (expandCost > 0 && !autoFill) {
     remaining -= expandCost;
   }
@@ -144,128 +132,59 @@ function resolveLayout(
 
   const growInitial = growPanel ? (initialWidths[growPanel.id] ?? growPanel.minWidth) : 0;
 
-  if (perPanelCascade) {
-    // G11 phase 1: shrink all victims to minWidth, nearest first
+  // G9 phase 1: shrink all victims toward minWidth
+  for (const vi of victimIndices) {
+    const victim = panels[vi];
+    if (!victim || remaining <= 0) break;
+    if (collapsedAtStart.has(victim.id)) continue;
+
+    const initialW = initialWidths[victim.id] ?? victim.minWidth;
+    const shrinkRoom = initialW - victim.minWidth;
+    if (shrinkRoom <= 0) continue;
+
+    const consumed = Math.min(shrinkRoom, remaining);
+    widths[victim.id] = initialW - consumed;
+    remaining -= consumed;
+    totalFreed += consumed;
+  }
+
+  // G9 phase 2: collapse victims nearest first, only once all are at min
+  if (remaining > 0) {
     for (const vi of victimIndices) {
       const victim = panels[vi];
       if (!victim || remaining <= 0) break;
       if (collapsedAtStart.has(victim.id)) continue;
+      if (!victim.collapsible) continue;
 
-      const initialW = initialWidths[victim.id] ?? victim.minWidth;
-      const shrinkRoom = initialW - victim.minWidth;
-      if (shrinkRoom <= 0) continue;
+      // G10: overflow gets a free expand from trailing gap, so the block is autoFill only
+      if (autoFill && isExpandingFromCollapsed && vi === directVictimIndex && totalFreed < expandCost) {
+        continue;
+      }
 
-      const consumed = Math.min(shrinkRoom, remaining);
-      widths[victim.id] = initialW - consumed;
-      remaining -= consumed;
-      totalFreed += consumed;
-    }
+      const rawWidth = victim.minWidth - remaining;
 
-    // G11 phase 2: per-panel collapse, nearest first
-    if (remaining > 0) {
-      for (const vi of victimIndices) {
-        const victim = panels[vi];
-        if (!victim || remaining <= 0) break;
-        if (collapsedAtStart.has(victim.id)) continue;
-        if (!victim.collapsible) continue;
+      // Collapse hint (G4)
+      const progress = collapseProgress(victim, rawWidth);
+      if (progress > 0) {
+        hints.push({
+          panelId: victim.id,
+          side: draggingLeft ? 'right' : 'left',
+          mode: 'collapse',
+          progress,
+          reach: victim.minWidth - victim.collapsedWidth,
+        });
+      }
 
-        // G10: in autoFill, block direct-victim collapse until shrinking funds the expand
-        if (autoFill && isExpandingFromCollapsed && vi === directVictimIndex && totalFreed < expandCost) continue;
-
-        const rawWidth = victim.minWidth - remaining;
-        const clampedWidth = snapWidth(victim, rawWidth);
-
-        // Collapse hint (G4)
-        const progress = collapseProgress(victim, rawWidth);
-        if (progress > 0) {
-          hints.push({
-            panelId: victim.id,
-            side: draggingLeft ? 'right' : 'left',
-            mode: 'collapse',
-            progress,
-            reach: victim.minWidth - victim.collapsedWidth,
-          });
-        }
-
-        if (clampedWidth <= victim.collapsedWidth) {
-          const consumed = victim.minWidth - victim.collapsedWidth;
-          widths[victim.id] = victim.collapsedWidth;
-          remaining -= consumed;
-          collapseFreed += consumed;
-          continue;
-        }
-
-        if (clampedWidth >= victim.minWidth) {
-          widths[victim.id] = victim.minWidth;
-          break;
-        }
-
-        widths[victim.id] = clampedWidth;
+      if (rawWidth >= collapseSnapPoint(victim)) {
+        // Layout freezes at minWidth inside the collapse zone
+        widths[victim.id] = victim.minWidth;
         break;
       }
-    }
-  } else {
-    // G9 phase 1: shrink all victims toward minWidth
-    for (const vi of victimIndices) {
-      const victim = panels[vi];
-      if (!victim || remaining <= 0) break;
-      if (collapsedAtStart.has(victim.id)) continue;
 
-      const initialW = initialWidths[victim.id] ?? victim.minWidth;
-      const shrinkRoom = initialW - victim.minWidth;
-      if (shrinkRoom <= 0) continue;
-
-      const consumed = Math.min(shrinkRoom, remaining);
-      widths[victim.id] = initialW - consumed;
+      const consumed = victim.minWidth - victim.collapsedWidth;
+      widths[victim.id] = victim.collapsedWidth;
       remaining -= consumed;
-      totalFreed += consumed;
-    }
-
-    // G9 phase 2: collapse victims, only once all are at min
-    if (remaining > 0) {
-      for (const vi of victimIndices) {
-        const victim = panels[vi];
-        if (!victim || remaining <= 0) break;
-        if (collapsedAtStart.has(victim.id)) continue;
-        if (!victim.collapsible) continue;
-
-        // G10: overflow gets a free expand from trailing gap, so the block is autoFill only
-        if (autoFill && isExpandingFromCollapsed && vi === directVictimIndex && totalFreed < expandCost) {
-          continue;
-        }
-
-        const rawWidth = victim.minWidth - remaining;
-        const clampedWidth = snapWidth(victim, rawWidth);
-
-        // Collapse hint (G4)
-        const progress = collapseProgress(victim, rawWidth);
-        if (progress > 0) {
-          hints.push({
-            panelId: victim.id,
-            side: draggingLeft ? 'right' : 'left',
-            mode: 'collapse',
-            progress,
-            reach: victim.minWidth - victim.collapsedWidth,
-          });
-        }
-
-        if (clampedWidth <= victim.collapsedWidth) {
-          const consumed = victim.minWidth - victim.collapsedWidth;
-          widths[victim.id] = victim.collapsedWidth;
-          remaining -= consumed;
-          collapseFreed += consumed;
-          continue;
-        }
-
-        if (clampedWidth >= victim.minWidth) {
-          // Layout freezes at minWidth inside the collapse zone
-          widths[victim.id] = victim.minWidth;
-          break;
-        }
-
-        widths[victim.id] = clampedWidth;
-        break;
-      }
+      collapseFreed += consumed;
     }
   }
 
@@ -283,7 +202,7 @@ function resolveLayout(
     }
   }
 
-  return { widths, hints, expandSnapped: isExpandingFromCollapsed };
+  return { widths, hints };
 }
 
 /** Panel content the other collapse state lacks: fades out with a resize hint, and fades in when its panel opens. For `fade="marked"` panels. */
@@ -385,33 +304,38 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
   const expandedWidthsRef = useRef<Record<string, number>>({});
   const separatorsRef = useRef<Map<number, HTMLDivElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
-  const prevContainerWidthRef = useRef(0);
   const onLayoutChangedRef = useLatestRef(onLayoutChanged);
   const onCollapseChangeRef = useLatestRef(onCollapseChange);
   const onReadyRef = useLatestRef(onReady);
   const defaultLayoutRef = useLatestRef(defaultLayout);
 
+  const widthOf = (panel: PanelConfig) => widthsRef.current[panel.id] ?? panel.minWidth;
+  const isCollapsed = (panel: PanelConfig, width = widthOf(panel)) => panel.collapsible && width <= panel.collapsedWidth;
+
   const applyWidths = () => {
-    for (const panel of panelsRef.current) {
-      const w = widthsRef.current[panel.id] ?? panel.minWidth;
-      panel.element.style.width = `${w}px`;
-      panel.element.style.flexShrink = '0';
-    }
+    for (const panel of panelsRef.current) panel.element.style.width = `${widthOf(panel)}px`;
     updateSeparatorAria();
   };
 
   const setWidth = (panel: PanelEntry, width: number) => {
-    const prevWidth = widthsRef.current[panel.id] ?? panel.minWidth;
+    const wasCollapsed = isCollapsed(panel);
     widthsRef.current[panel.id] = width;
 
-    const wasCollapsed = prevWidth <= panel.collapsedWidth;
-    const isCollapsed = width <= panel.collapsedWidth;
-    if (panel.collapsible && wasCollapsed !== isCollapsed) {
-      onCollapseChangeRef.current?.(panel.id, isCollapsed);
-      if (!isCollapsed) markOpening(panel.element);
+    const collapsed = isCollapsed(panel, width);
+    if (wasCollapsed !== collapsed) {
+      onCollapseChangeRef.current?.(panel.id, collapsed);
+      if (!collapsed) markOpening(panel.element);
     }
 
     if (width > panel.collapsedWidth) expandedWidthsRef.current[panel.id] = width;
+  };
+
+  // Writes the widths, refits the container and reports the settled layout
+  const commitLayout = () => {
+    applyWidths();
+    updateContainerWidth();
+    redistributePanels();
+    onLayoutChangedRef.current?.(getWidths());
   };
 
   const applyLayoutResult = (result: LayoutResult, clientY: number) => {
@@ -438,9 +362,7 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
 
   const getWidths = (): Record<string, number> => {
     const result: Record<string, number> = {};
-    for (const panel of panelsRef.current) {
-      result[panel.id] = widthsRef.current[panel.id] ?? panel.minWidth;
-    }
+    for (const panel of panelsRef.current) result[panel.id] = widthOf(panel);
     return result;
   };
 
@@ -465,14 +387,13 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
     const grower = panels[growIndex];
     if (!victim || !grower) return;
 
-    const victimCurrent = widthsRef.current[victim.id] ?? victim.minWidth;
-    const growerCurrent = widthsRef.current[grower.id] ?? grower.minWidth;
+    const victimCurrent = widthOf(victim);
+    const growerCurrent = widthOf(grower);
     const step = Math.abs(delta);
 
     let victimShrunk = 0;
-    const victimIsCollapsed = victim.collapsible && victimCurrent <= victim.collapsedWidth;
 
-    if (!victimIsCollapsed) {
+    if (!isCollapsed(victim, victimCurrent)) {
       // Keyboard steps clamp without snap-collapse; Enter collapses
       const floor = victim.collapsible ? victim.collapsedWidth : victim.minWidth;
       const newVictimW = Math.max(floor, victimCurrent - step);
@@ -482,7 +403,7 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
 
     // Zero-sum: the grower only takes what the victim freed
     if (victimShrunk > 0) {
-      if (growerCurrent <= grower.collapsedWidth && grower.collapsible) {
+      if (isCollapsed(grower, growerCurrent)) {
         // Expand-on-reverse: collapsed grower snaps to minWidth
         setWidth(grower, grower.minWidth);
       } else {
@@ -491,39 +412,20 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
       }
     }
 
-    applyWidths();
-    updateContainerWidth();
-    redistributePanels();
-    onLayoutChangedRef.current?.(getWidths());
-  };
-
-  const expandPanel = (panelId: string) => {
-    const panel = panelsRef.current.find((p) => p.id === panelId);
-    if (!panel?.collapsible) return;
-
-    const currentWidth = widthsRef.current[panelId] ?? panel.minWidth;
-    if (currentWidth > panel.collapsedWidth) return; // already expanded
-
-    const targetWidth = expandedWidthsRef.current[panelId] ?? panel.minWidth;
-    setWidth(panel, targetWidth);
-    applyWidths();
-    updateContainerWidth();
-    redistributePanels();
-    onLayoutChangedRef.current?.(getWidths());
+    commitLayout();
   };
 
   const togglePanel = (panelId: string) => {
     const panel = panelsRef.current.find((p) => p.id === panelId);
     if (!panel?.collapsible) return;
 
-    const currentWidth = widthsRef.current[panelId] ?? panel.minWidth;
-    const isCollapsed = currentWidth <= panel.collapsedWidth;
-    setWidth(panel, isCollapsed ? (expandedWidthsRef.current[panelId] ?? panel.minWidth) : panel.collapsedWidth);
+    setWidth(panel, isCollapsed(panel) ? (expandedWidthsRef.current[panelId] ?? panel.minWidth) : panel.collapsedWidth);
+    commitLayout();
+  };
 
-    applyWidths();
-    updateContainerWidth();
-    redistributePanels();
-    onLayoutChangedRef.current?.(getWidths());
+  const expandPanel = (panelId: string) => {
+    const panel = panelsRef.current.find((p) => p.id === panelId);
+    if (panel && isCollapsed(panel)) togglePanel(panelId);
   };
 
   const toggleCollapseAtSeparator = (separatorIndex: number) => {
@@ -538,43 +440,11 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
     const snapshot: Record<string, number> = {};
 
     for (const panel of panelsRef.current) {
-      const w = widthsRef.current[panel.id] ?? panel.minWidth;
-      snapshot[panel.id] = w;
-      if (panel.collapsible && w <= panel.collapsedWidth) collapsedAtStart.add(panel.id);
+      snapshot[panel.id] = widthOf(panel);
+      if (isCollapsed(panel)) collapsedAtStart.add(panel.id);
     }
 
-    // G11: check if last victim in each direction is off-screen
-    const perPanelCascade = { left: false, right: false };
-    const isAutoFill = computeAutoFill();
-    if (!isAutoFill) {
-      const scrollParent = containerRef.current?.parentElement;
-      if (scrollParent) {
-        const parentRect = scrollParent.getBoundingClientRect();
-
-        // Dragging left: the farthest victim is panel 0
-        const leftLastVictim = panelsRef.current[0];
-        if (leftLastVictim && !collapsedAtStart.has(leftLastVictim.id)) {
-          const r = leftLastVictim.element.getBoundingClientRect();
-          if (r.left < parentRect.left) perPanelCascade.left = true;
-        }
-
-        // Dragging right: the farthest victim is the last panel
-        const rightLastVictim = panelsRef.current[panelsRef.current.length - 1];
-        if (rightLastVictim && !collapsedAtStart.has(rightLastVictim.id)) {
-          const r = rightLastVictim.element.getBoundingClientRect();
-          if (r.right > parentRect.right) perPanelCascade.right = true;
-        }
-      }
-    }
-
-    dragRef.current = {
-      separatorIndex,
-      startX,
-      autoFill: isAutoFill,
-      initialWidths: snapshot,
-      collapsedAtStart,
-      perPanelCascade,
-    };
+    dragRef.current = { separatorIndex, startX, autoFill: computeAutoFill(), initialWidths: snapshot, collapsedAtStart };
 
     // clientWidth leaves out the border, which the board draws in the background color
     const separatorWidth = separatorsRef.current.get(separatorIndex)?.clientWidth;
@@ -585,19 +455,19 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
 
   const cleanupDrag = () => {
     dragRef.current = null;
-    prevContainerWidthRef.current = 0; // Force observer to redistribute after drag
     clearCursorOverride();
     containerRef.current?.style.removeProperty('--separator-width');
     for (const panel of panelsRef.current) clearResizeHint(panel.element);
-    for (const separator of separatorsRef.current.values()) separator.style.removeProperty('--hint-strength');
+    for (const separator of separatorsRef.current.values()) {
+      separator.style.removeProperty('--hint-strength');
+      separator.removeAttribute('data-separator');
+    }
   };
 
   const endDrag = () => {
     if (!dragRef.current) return;
     cleanupDrag();
-    updateContainerWidth();
-    redistributePanels();
-    onLayoutChangedRef.current?.(getWidths());
+    commitLayout();
   };
 
   const abortDrag = () => {
@@ -624,10 +494,7 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
     const width = dl?.[entry.id] ?? expandedWidthsRef.current[entry.id] ?? entry.minWidth;
     widthsRef.current[entry.id] = width;
 
-    if (onCollapseChangeRef.current && entry.collapsible) {
-      const isCollapsed = width <= entry.collapsedWidth;
-      onCollapseChangeRef.current(entry.id, isCollapsed);
-    }
+    if (entry.collapsible) onCollapseChangeRef.current?.(entry.id, isCollapsed(entry, width));
     if (width > entry.collapsedWidth) expandedWidthsRef.current[entry.id] = width;
   };
 
@@ -663,10 +530,13 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
       const left = panelsRef.current[index];
       if (!left) continue;
       const right = panelsRef.current[index + 1];
+      const leftWidth = widthOf(left);
+      // The most the left panel takes from its right neighbour: the neighbour shrinks to its collapsed or minimum width
+      const maxWidth = right ? leftWidth + widthOf(right) - (right.collapsible ? right.collapsedWidth : right.minWidth) : leftWidth;
       element.setAttribute('aria-controls', right ? `${left.element.id} ${right.element.id}` : left.element.id);
       element.setAttribute('aria-valuemin', `${left.collapsible ? left.collapsedWidth : left.minWidth}`);
-      element.setAttribute('aria-valuemax', `${left.minWidth * 2}`);
-      element.setAttribute('aria-valuenow', `${Math.round(widthsRef.current[left.id] ?? left.minWidth)}`);
+      element.setAttribute('aria-valuemax', `${Math.round(maxWidth)}`);
+      element.setAttribute('aria-valuenow', `${Math.round(leftWidth)}`);
     }
   };
 
@@ -685,16 +555,13 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
 
   const getPanelSum = () => {
     let sum = 0;
-    for (const p of panelsRef.current) sum += widthsRef.current[p.id] ?? p.minWidth;
+    for (const p of panelsRef.current) sum += widthOf(p);
     return sum;
   };
 
   const getIdealPanelSum = () => {
     let sum = 0;
-    for (const p of panelsRef.current) {
-      const w = widthsRef.current[p.id] ?? p.minWidth;
-      sum += p.collapsible && w <= p.collapsedWidth ? p.collapsedWidth : p.minWidth * 1.25;
-    }
+    for (const p of panelsRef.current) sum += isCollapsed(p) ? p.collapsedWidth : p.minWidth * idealWidthFactor;
     return sum;
   };
 
@@ -708,7 +575,7 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
     }
 
     const sepSpace = getSeparatorSpace();
-    // max(ideal, actual) prevents force-shrinking panels already grown beyond 1.5×.
+    // max(ideal, actual) keeps panels that grew past their ideal width from being shrunk.
     const targetWidth = Math.max(getIdealPanelSum(), getPanelSum()) + sepSpace;
     container.style.minWidth = `${Math.ceil(targetWidth)}px`;
   };
@@ -728,8 +595,7 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
 
     let changed = false;
     for (const panel of panelsRef.current) {
-      const w = widthsRef.current[panel.id] ?? panel.minWidth;
-      if (w > viewportWidth && viewportWidth >= panel.minWidth) {
+      if (widthOf(panel) > viewportWidth && viewportWidth >= panel.minWidth) {
         widthsRef.current[panel.id] = viewportWidth;
         if (viewportWidth > panel.collapsedWidth) expandedWidthsRef.current[panel.id] = viewportWidth;
         changed = true;
@@ -752,10 +618,8 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
     let allocated = 0;
     const resizable: PanelEntry[] = [];
     for (const panel of panelsRef.current) {
-      const w = widthsRef.current[panel.id] ?? panel.minWidth;
-      const isCollapsed = panel.collapsible && w <= panel.collapsedWidth;
-      if (isCollapsed) {
-        allocated += w;
+      if (isCollapsed(panel)) {
+        allocated += widthOf(panel);
       } else {
         resizable.push(panel);
       }
@@ -765,7 +629,7 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
     let distributed = 0;
     for (let i = 0; i < resizable.length; i++) {
       const panel = resizable[i];
-      const w = widthsRef.current[panel.id] ?? panel.minWidth;
+      const w = widthOf(panel);
       const isLast = i === resizable.length - 1;
       // Last panel absorbs rounding remainder to keep total exact
       let newW = Math.max(panel.minWidth, isLast ? target - distributed : Math.floor(w * ratio));
@@ -818,43 +682,36 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
     const handlePointerMove = (e: PointerEvent) => {
       const drag = dragRef.current;
       if (!drag) return;
-      const dx = e.clientX - drag.startX;
-      const ppc = dx < 0 ? drag.perPanelCascade.left : drag.perPanelCascade.right;
-      const result = resolveLayout(panelsRef.current, drag.separatorIndex, drag.initialWidths, drag.collapsedAtStart, dx, drag.autoFill, ppc);
-
-      applyLayoutResult(result, e.clientY);
-    };
-
-    const handlePointerUp = () => {
-      endDrag();
-      for (const sep of separatorsRef.current.values()) {
-        sep.setAttribute('data-separator', 'inactive');
-      }
+      applyLayoutResult(resolveLayout(panelsRef.current, drag, e.clientX - drag.startX), e.clientY);
     };
 
     document.addEventListener('pointermove', handlePointerMove);
-    document.addEventListener('pointerup', handlePointerUp);
+    document.addEventListener('pointerup', endDrag);
     return () => {
       document.removeEventListener('pointermove', handlePointerMove);
-      document.removeEventListener('pointerup', handlePointerUp);
+      document.removeEventListener('pointerup', endDrag);
       clearCursorOverride();
     };
   }, []);
 
   // Panels and separators re-register whenever this value changes, which re-measures and aborts a running drag.
   // The functions only touch refs, so the first render's copies stay valid and the value follows `id` alone.
-  const [registry] = useState(() => ({ registerPanel, unregisterPanel, registerSeparator, unregisterSeparator }));
-  const ctxValue = useMemo<PanelGroupContextValue>(() => ({ groupId: id, ...registry }), [id, registry]);
-
-  const dragCtx: SeparatorDragContextValue = { startDrag, applyKeyboardStep, toggleCollapseAtSeparator };
+  const [actions] = useState(() => ({
+    registerPanel,
+    unregisterPanel,
+    registerSeparator,
+    unregisterSeparator,
+    startDrag,
+    applyKeyboardStep,
+    toggleCollapseAtSeparator,
+  }));
+  const ctxValue = useMemo<PanelGroupContextValue>(() => ({ groupId: id, ...actions }), [id, actions]);
 
   return (
     <PanelGroupContext.Provider value={ctxValue}>
-      <SeparatorDragContext.Provider value={dragCtx}>
-        <div ref={containerRef} className={className} data-panel-group={id} style={{ display: 'flex', overflow: 'visible' }}>
-          {children}
-        </div>
-      </SeparatorDragContext.Provider>
+      <div ref={containerRef} className={className} style={{ display: 'flex', overflow: 'visible' }}>
+        {children}
+      </div>
     </PanelGroupContext.Provider>
   );
 }
@@ -870,35 +727,16 @@ interface PanelProps {
   collapsible?: boolean;
   /** What a resize hint fades: all content (default), or only elements carrying `hintFadeOut` / `hintFadeIn` */
   fade?: 'all' | 'marked';
-  className?: string;
   children?: ReactNode;
-  ref?: Ref<HTMLDivElement>;
-  [key: `data-${string}`]: string | undefined;
 }
 
-export function ResizablePanel({
-  id,
-  minWidth,
-  collapsedWidth = 0,
-  collapsible = false,
-  fade = 'all',
-  className,
-  children,
-  ref,
-  ...rest
-}: PanelProps) {
+export function ResizablePanel({ id, minWidth, collapsedWidth = 0, collapsible = false, fade = 'all', children }: PanelProps) {
   const ctx = useContext(PanelGroupContext);
-  const internalRef = useRef<HTMLDivElement | null>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
   const domId = useId();
 
-  const setRef = (el: HTMLDivElement | null) => {
-    internalRef.current = el;
-    if (typeof ref === 'function') ref(el);
-    else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = el;
-  };
-
   useEffect(() => {
-    const el = internalRef.current;
+    const el = ref.current;
     if (!el || !ctx) return;
     const entry: PanelEntry = { id, element: el, minWidth, collapsedWidth, collapsible };
     ctx.registerPanel(entry);
@@ -907,13 +745,11 @@ export function ResizablePanel({
 
   return (
     <div
-      ref={setRef}
+      ref={ref}
       id={domId}
-      className={className}
       data-panel={id}
       // clip, not hidden: hidden makes this a scroll container and captures the panel's sticky elements
       style={{ overflow: 'clip', position: 'relative', flexShrink: 0 }}
-      {...rest}
     >
       <div className="h-full" style={fade === 'all' ? { opacity: 'var(--content-opacity, 1)' } : undefined}>
         {children}
@@ -923,30 +759,19 @@ export function ResizablePanel({
   );
 }
 
-interface SeparatorDragContextValue {
-  startDrag: (separatorIndex: number, startX: number) => void;
-  applyKeyboardStep: (separatorIndex: number, delta: number) => void;
-  toggleCollapseAtSeparator: (separatorIndex: number) => void;
-}
-
-const SeparatorDragContext = createContext<SeparatorDragContextValue | null>(null);
-
 const keyboardStep = 20;
 
 interface SeparatorProps {
   /** The index of this separator among siblings (0-based). Required for drag targeting. */
   index: number;
   className?: string;
-  children?: ReactNode;
   /** Accessible name; defaults to a generic "resize panels". Pass one that names the panel it resizes. */
   'aria-label'?: string;
-  [key: `data-${string}`]: string | undefined;
 }
 
-export function ResizableSeparator({ index, className, children, 'aria-label': ariaLabel, ...rest }: SeparatorProps) {
+export function ResizableSeparator({ index, className, 'aria-label': ariaLabel }: SeparatorProps) {
   const { t } = useTranslation();
   const ctx = useContext(PanelGroupContext);
-  const dragCtx = useContext(SeparatorDragContext);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -959,13 +784,13 @@ export function ResizableSeparator({ index, className, children, 'aria-label': a
   const lastPointerDownRef = useRef(0);
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragCtx || !ref.current) return;
+    if (!ctx || !ref.current) return;
     e.preventDefault();
 
     const now = Date.now();
     if (now - lastPointerDownRef.current < 300) {
       lastPointerDownRef.current = 0;
-      dragCtx.toggleCollapseAtSeparator(index);
+      ctx.toggleCollapseAtSeparator(index);
       return;
     }
     lastPointerDownRef.current = now;
@@ -973,42 +798,32 @@ export function ResizableSeparator({ index, className, children, 'aria-label': a
     ref.current.setPointerCapture(e.pointerId);
     ref.current.setAttribute('data-separator', 'drag');
     ref.current.focus();
-    dragCtx.startDrag(index, e.clientX);
+    ctx.startDrag(index, e.clientX);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!dragCtx) return;
+    if (!ctx) return;
     switch (e.key) {
       case 'ArrowLeft':
         e.preventDefault();
-        dragCtx.applyKeyboardStep(index, -keyboardStep);
+        ctx.applyKeyboardStep(index, -keyboardStep);
         break;
       case 'ArrowRight':
         e.preventDefault();
-        dragCtx.applyKeyboardStep(index, keyboardStep);
+        ctx.applyKeyboardStep(index, keyboardStep);
         break;
       case 'Home':
         e.preventDefault();
-        dragCtx.applyKeyboardStep(index, -10000);
+        ctx.applyKeyboardStep(index, -10000);
         break;
       case 'End':
         e.preventDefault();
-        dragCtx.applyKeyboardStep(index, 10000);
+        ctx.applyKeyboardStep(index, 10000);
         break;
       case 'Enter':
         e.preventDefault();
-        dragCtx.toggleCollapseAtSeparator(index);
+        ctx.toggleCollapseAtSeparator(index);
         break;
-    }
-  };
-
-  const handlePointerEnter = () => {
-    ref.current?.setAttribute('data-separator', 'hover');
-  };
-
-  const handlePointerLeave = () => {
-    if (ref.current?.getAttribute('data-separator') !== 'drag') {
-      ref.current?.setAttribute('data-separator', 'inactive');
     }
   };
 
@@ -1021,7 +836,6 @@ export function ResizableSeparator({ index, className, children, 'aria-label': a
       // The bar stands upright between two side-by-side panels and moves left and right
       aria-orientation="vertical"
       tabIndex={0}
-      data-separator="inactive"
       // Consumers draw focus in the bar's own color: a ring has no room between panels. outline-hidden keeps the forced-colors outline.
       className={cn('select-none outline-hidden', className)}
       style={{
@@ -1033,12 +847,7 @@ export function ResizableSeparator({ index, className, children, 'aria-label': a
         scale: 'calc(1 - 0.6 * var(--hint-strength, 0)) 1',
       }}
       onPointerDown={handlePointerDown}
-      onPointerEnter={handlePointerEnter}
-      onPointerLeave={handlePointerLeave}
       onKeyDown={handleKeyDown}
-      {...rest}
-    >
-      {children}
-    </div>
+    />
   );
 }

@@ -1,8 +1,13 @@
+import { isRecord } from 'shared/utils/as-record';
 import { foldText } from 'shared/utils/text-match';
 
 export type JsonPath = (string | number)[];
 
-const contains = (value: string | number | boolean, folded: string) => foldText(String(value)).includes(folded);
+/** Whether `path` is `target` or leads to it. */
+export const isPathPrefix = (path: JsonPath, target: JsonPath | null) =>
+  !!target?.length && path.length <= target.length && path.every((segment, index) => String(segment) === String(target[index]));
+
+const contains = (value: unknown, folded: string) => foldText(String(value)).includes(folded);
 
 /**
  * Paths of the rows that show `searchText`, in render order: a row is one node, matching on its
@@ -25,12 +30,12 @@ export const matchRowPaths = (value: unknown, searchText: string): JsonPath[] =>
       for (const [index, item] of node.entries()) visit(item, [...path, index], null);
       return;
     }
-    if (typeof node === 'object') {
+    if (isRecord(node)) {
       if (keyMatches) paths.push(path);
-      for (const [childKey, child] of Object.entries(node as Record<string, unknown>)) visit(child, [...path, childKey], childKey);
+      for (const [childKey, child] of Object.entries(node)) visit(child, [...path, childKey], childKey);
       return;
     }
-    if (keyMatches || contains(node as string | number | boolean, folded)) paths.push(path);
+    if (keyMatches || contains(node, folded)) paths.push(path);
   };
 
   visit(value, [], null);

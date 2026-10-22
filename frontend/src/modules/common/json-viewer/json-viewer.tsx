@@ -1,11 +1,9 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { foldText } from 'shared/utils/text-match';
+import { JsonViewerContext, type JsonViewerContextValue } from '~/modules/common/json-viewer/context';
+import { JsonNode } from '~/modules/common/json-viewer/json-node';
+import type { DataType, JsonViewerProps } from '~/modules/common/json-viewer/types';
 import { MatchScope } from '~/modules/common/match-highlight';
-import { cn } from '~/utils/cn';
-import { JsonViewerContext, type JsonViewerContextValue } from './context';
-import { JsonNode } from './json-node';
-import type { DataType, JsonViewerProps } from './types';
-import { defaultTheme } from './types';
 
 const emptyValueTypes: DataType[] = [];
 
@@ -15,39 +13,7 @@ function parseRefPath(refPath: string): string[] {
   return refPath.slice(2).split('/');
 }
 
-function scrollToRef(containerRef: React.RefObject<HTMLDivElement | null>, refPath: string) {
-  if (!containerRef.current) return;
-
-  const schemaName = refPath.split('/').pop() || refPath;
-
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      if (!containerRef.current) return;
-
-      const walker = document.createTreeWalker(containerRef.current, NodeFilter.SHOW_TEXT, null);
-
-      let node: Node | null = walker.nextNode();
-      while (node) {
-        const text = node.textContent?.trim();
-        if (text === `"${schemaName}"` || text === schemaName) {
-          const parentEl = node.parentElement;
-          if (parentEl) {
-            parentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-            parentEl.classList.add('json-ref-highlight');
-            setTimeout(() => {
-              parentEl.classList.remove('json-ref-highlight');
-            }, 3000);
-            return;
-          }
-        }
-        node = walker.nextNode();
-      }
-    }, 150);
-  });
-}
-
-function createRefDataType(onNavigate: (targetPath: string) => void): DataType<string> {
+function createRefDataType(onNavigate: (targetPath: string[]) => void): DataType<string> {
   return {
     is: (value, path) => {
       const lastKey = path[path.length - 1];
@@ -59,7 +25,7 @@ function createRefDataType(onNavigate: (targetPath: string) => void): DataType<s
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          onNavigate(value);
+          onNavigate(parseRefPath(value));
         }}
         className="link-decoration active:link-decoration-strong cursor-pointer font-mono text-primary text-sm hover:underline"
         title={`Go to ${value}`}
@@ -78,7 +44,6 @@ export function JsonViewer({
   enableClipboard = false,
   indentWidth = 2,
   valueTypes = emptyValueTypes,
-  className,
   collapseStringsAfterLength = 200,
   openapiMode,
   searchText = '',
@@ -88,20 +53,10 @@ export function JsonViewer({
   expandChildrenDepth = 1,
 }: JsonViewerProps) {
   const maxStringLength = collapseStringsAfterLength === false ? Number.MAX_VALUE : collapseStringsAfterLength;
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const [targetPath, setTargetPath] = useState<string[] | null>(null);
 
-  const handleRefNavigate = useCallback((refPath: string) => {
-    const pathParts = parseRefPath(refPath);
-    setTargetPath(pathParts);
-
-    setTimeout(() => {
-      scrollToRef(containerRef, refPath);
-    }, 200);
-  }, []);
-
-  const refDataType = useMemo(() => (openapiMode === 'spec' ? createRefDataType(handleRefNavigate) : null), [openapiMode, handleRefNavigate]);
+  const refDataType = useMemo(() => (openapiMode === 'spec' ? createRefDataType(setTargetPath) : null), [openapiMode]);
 
   const combinedValueTypes = useMemo(() => {
     if (refDataType) {
@@ -111,7 +66,6 @@ export function JsonViewer({
   }, [refDataType, valueTypes]);
 
   const contextValue: JsonViewerContextValue = {
-    theme: defaultTheme,
     indentWidth,
     defaultInspectDepth,
     displayDataTypes,
@@ -129,26 +83,8 @@ export function JsonViewer({
 
   return (
     <JsonViewerContext.Provider value={contextValue}>
-      <style>
-        {`
-          .json-ref-highlight {
-            background-color: rgb(251 191 36) !important;
-            border-radius: 4px;
-            box-shadow: 0 0 0 2px rgb(251 191 36);
-            animation: json-highlight-fade 3s ease-out forwards;
-          }
-          @keyframes json-highlight-fade {
-            0%, 70% { background-color: rgb(251 191 36); box-shadow: 0 0 0 2px rgb(251 191 36); }
-            100% { background-color: transparent; box-shadow: none; }
-          }
-        `}
-      </style>
       <MatchScope terms={searchText ? [foldText(searchText)] : []}>
-        <div
-          ref={containerRef}
-          data-openapi-mode={openapiMode}
-          className={cn('group/jv font-mono text-foreground text-sm leading-relaxed', className)}
-        >
+        <div data-openapi-mode={openapiMode} className="group/jv font-mono text-foreground text-sm leading-relaxed">
           <JsonNode value={value} path={[]} keyName={rootName} depth={0} />
         </div>
       </MatchScope>

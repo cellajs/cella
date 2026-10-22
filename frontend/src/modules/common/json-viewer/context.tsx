@@ -1,17 +1,15 @@
 import { createContext, useContext } from 'react';
-import type { DataType, JsonViewerTheme } from './types';
-import { defaultTheme } from './types';
-import type { JsonPath } from './utils';
+import type { DataType } from '~/modules/common/json-viewer/types';
+import type { JsonPath } from '~/modules/common/json-viewer/utils';
 
 export interface JsonViewerContextValue {
-  theme: JsonViewerTheme;
   indentWidth: number;
   defaultInspectDepth: number;
   displayDataTypes: boolean;
   enableClipboard: boolean;
   valueTypes: DataType[];
   collapseStringsAfterLength: number;
-  /** Path from $ref navigation; nodes along it expand */
+  /** Path from $ref navigation; nodes along it expand, the node at its end scrolls into view and flashes */
   targetPath: string[] | null;
   /** The current search match: nodes along it expand, the row at its end scrolls into view */
   searchMatchPath: JsonPath | null;
@@ -22,21 +20,10 @@ export interface JsonViewerContextValue {
   openapiMode?: 'spec' | 'schema';
 }
 
-export const JsonViewerContext = createContext<JsonViewerContextValue>({
-  theme: defaultTheme,
-  indentWidth: 2,
-  defaultInspectDepth: 3,
-  displayDataTypes: false,
-  enableClipboard: false,
-  valueTypes: [],
-  collapseStringsAfterLength: 50,
-  targetPath: null,
-  searchMatchPath: null,
-  searchText: '',
-  expandAll: false,
-  showKeyQuotes: true,
-  expandChildrenDepth: 1,
-  openapiMode: undefined,
-});
+export const JsonViewerContext = createContext<JsonViewerContextValue | null>(null);
 
-export const useJsonViewerContext = () => useContext(JsonViewerContext);
+export function useJsonViewerContext() {
+  const context = useContext(JsonViewerContext);
+  if (!context) throw new Error('useJsonViewerContext must be used within a <JsonViewer />');
+  return context;
+}

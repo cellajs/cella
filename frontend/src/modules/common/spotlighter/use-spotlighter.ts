@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { create } from 'zustand';
+import { useLatestCallback } from '~/hooks/use-latest-ref';
 
 /**
  * Spotlighter: one page-dim overlay for in-place spotlight states (an expanded composer, a card
@@ -37,14 +38,12 @@ export const useSpotlighter = create<SpotlighterState>((set) => ({
  * @public
  */
 export function useSpotlight(id: string, active: boolean, onClose: () => void) {
-  // Ref'd so a re-rendered closure never re-registers (and close always sees fresh state).
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  const handleClose = useLatestCallback(onClose);
   useEffect(() => {
     if (!active) return;
-    useSpotlighter.getState().open({ id, onClose: () => onCloseRef.current() });
+    useSpotlighter.getState().open({ id, onClose: handleClose });
     return () => useSpotlighter.getState().close(id);
-  }, [id, active]);
+  }, [id, active, handleClose]);
 }
 
 /**

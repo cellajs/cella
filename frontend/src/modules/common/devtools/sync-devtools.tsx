@@ -1,11 +1,11 @@
 /**
  * Floating dev-only panel for debugging the sync flow: real-time spans, latencies, and
- * connection state. Renders only when `VITE_DEBUG_MODE=true`.
+ * connection state.
  */
 
 import { useEffect, useState } from 'react';
-import { isDebugMode } from '~/env';
-import { clearSpans, getSpanStats, getSpans, type SpanData, subscribeToSpans } from '~/lib/tracing';
+import { computeSpanStats } from 'shared/tracing';
+import { clearSpans, getSpans, type SpanData, subscribeToSpans } from '~/lib/tracing';
 
 interface SyncDevtoolsState {
   activeTab: 'spans' | 'stats' | 'timeline';
@@ -26,6 +26,8 @@ function formatTimeAgo(timestamp: number): string {
   if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
   return `${Math.floor(diff / 3600000)}h ago`;
 }
+
+const newestFirst = (spans: SpanData[], limit: number) => [...spans].sort((a, b) => b.startTime - a.startTime).slice(0, limit);
 
 function getStatusColor(status: SpanData['status']): string {
   switch (status) {
@@ -148,11 +150,9 @@ function SpanList({ spans, filter }: { spans: SpanData[]; filter: string }) {
     return <div style={styles.empty}>No spans recorded yet</div>;
   }
 
-  const sorted = [...filtered].reverse().slice(0, 50);
-
   return (
     <div>
-      {sorted.map((span) => (
+      {newestFirst(filtered, 50).map((span) => (
         <div key={span.spanId} style={styles.spanRow}>
           <div style={{ ...styles.spanDot, background: getStatusColor(span.status) }} />
           <div style={{ ...styles.spanName, color: getCategoryColor(span.name) }} title={span.name}>
@@ -166,8 +166,26 @@ function SpanList({ spans, filter }: { spans: SpanData[]; filter: string }) {
   );
 }
 
-function StatsView({ spans: _spans }: { spans: SpanData[] }) {
-  const stats = getSpanStats();
+interface PrefixRowsProps {
+  values: Record<string, number>;
+  format?: (value: number) => string;
+}
+
+function PrefixRows({ values, format = String }: PrefixRowsProps) {
+  return (
+    <div style={{ marginTop: '8px' }}>
+      {Object.entries(values).map(([prefix, value]) => (
+        <div key={prefix} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: '#e2e8f0' }}>
+          <span style={{ color: getCategoryColor(prefix) }}>{prefix}</span>
+          <span>{format(value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StatsView({ spans }: { spans: SpanData[] }) {
+  const stats = computeSpanStats(spans);
 
   return (
     <div>
@@ -184,26 +202,12 @@ function StatsView({ spans: _spans }: { spans: SpanData[] }) {
 
       <div style={styles.statCard}>
         <div style={styles.statLabel}>Spans by Type</div>
-        <div style={{ marginTop: '8px' }}>
-          {Object.entries(stats.byPrefix).map(([prefix, count]) => (
-            <div key={prefix} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: '#e2e8f0' }}>
-              <span style={{ color: getCategoryColor(prefix) }}>{prefix}</span>
-              <span>{count}</span>
-            </div>
-          ))}
-        </div>
+        <PrefixRows values={stats.byPrefix} />
       </div>
 
       <div style={styles.statCard}>
         <div style={styles.statLabel}>Avg Duration by Type</div>
-        <div style={{ marginTop: '8px' }}>
-          {Object.entries(stats.avgDurationMs).map(([prefix, avgMs]) => (
-            <div key={prefix} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: '#e2e8f0' }}>
-              <span style={{ color: getCategoryColor(prefix) }}>{prefix}</span>
-              <span>{formatDuration(avgMs)}</span>
-            </div>
-          ))}
-        </div>
+        <PrefixRows values={stats.avgDurationMs} format={formatDuration} />
       </div>
     </div>
   );
@@ -222,11 +226,9 @@ function TimelineView({ spans }: { spans: SpanData[] }) {
     );
   }
 
-  const recent = [...spansWithLatency].sort((a, b) => b.startTime - a.startTime).slice(0, 20);
-
-  const latencies = recent.map((s) => Number(s.attributes['sync.e2e_latency_ms']) || 0);
-  const maxLatency = Math.max(...latencies, 100);
-  const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+  const recent = newestFirst(spansWithLatency, 20).map((span) => ({ span, latency: Number(span.attributes['sync.e2e_latency_ms']) || 0 }));
+  const maxLatency = Math.max(...recent.map(({ latency }) => latency), 100);
+  const avgLatency = recent.reduce((sum, { latency }) => sum + latency, 0) / recent.length;
 
   return (
     <div>
@@ -238,8 +240,7 @@ function TimelineView({ spans }: { spans: SpanData[] }) {
       <div style={styles.statCard}>
         <div style={styles.statLabel}>Recent Messages (CDC → Frontend)</div>
         <div style={{ marginTop: '12px' }}>
-          {recent.map((span) => {
-            const latency = Number(span.attributes['sync.e2e_latency_ms']) || 0;
+          {recent.map(({ span, latency }) => {
             const width = (latency / maxLatency) * 100;
 
             return (
@@ -281,8 +282,6 @@ export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
     const unsubscribe = subscribeToSpans(setSpans);
     return unsubscribe;
   }, []);
-
-  if (!isDebugMode) return null;
 
   return (
     <div style={styles.container}>

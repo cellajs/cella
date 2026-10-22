@@ -1,6 +1,7 @@
 import { fragmentSource, vertexSource } from '~/modules/common/morph-animation/shader';
 
 export type MorphVariant = 'single' | 'colony';
+export type MorphStamp = 'square' | 'plus';
 
 // The grain look tolerates a low render resolution, so touch devices get a lower cap to save battery
 const maxPixelRatio = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches ? 1.25 : 1.75;
@@ -19,6 +20,8 @@ const melt = 0.8;
 const cycleSeconds = 60;
 /** Entrance length in real seconds, whatever the instance speed: the mark condenses out of a dusted frame. */
 const enterSeconds = 2.4;
+/** Reduced motion slows the piece to this fraction of its speed and skips the entrance; the piece never freezes. */
+const reducedMotionSpeed = 0.2;
 
 const uniformNames = [
   'uRes',
@@ -63,9 +66,9 @@ function splitProgress(t: number): [number, number, number, number] {
 
 /**
  * Drives the morph shader on a transparent WebGL2 canvas: one fullscreen pass per
- * frame, no textures and no feedback buffers. The clock advances by `timeScale`,
+ * frame, no textures and no feedback buffers. The clock advances at the instance speed,
  * which is how reduced motion works here: everything slows down, nothing freezes.
- * The first drawn seconds play the entrance once, unless `skipEntrance` ran first.
+ * The first drawn seconds play the entrance once, unless reduced motion is on.
  * Browsers without WebGL2 get an empty transparent canvas.
  */
 export class MorphRenderer {
@@ -76,7 +79,9 @@ export class MorphRenderer {
   private frameHandle = 0;
   private lastNow = 0;
   private time = Math.random() * 1000;
+  private speed = 1;
   private timeScale = 1;
+  private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   private enter = 0;
   private grid = 96;
   private shortSide = 0;
@@ -91,16 +96,15 @@ export class MorphRenderer {
     event.preventDefault();
     cancelAnimationFrame(this.frameHandle);
   };
-  private onContextRestored = () => {
-    this.initGl();
-    this.resume();
-  };
+  private onContextRestored = () => this.start();
+  private onMotionChange = () => this.applyMotion();
 
   constructor(canvas: HTMLCanvasElement, variant: MorphVariant) {
     this.canvas = canvas;
     this.variant = variant;
     canvas.addEventListener('webglcontextlost', this.onContextLost);
     canvas.addEventListener('webglcontextrestored', this.onContextRestored);
+    this.reducedMotion.addEventListener('change', this.onMotionChange);
   }
 
   start() {
@@ -110,40 +114,31 @@ export class MorphRenderer {
 
   setDark(dark: boolean) {
     this.dark = dark;
-    if (this.paused) this.drawFrame(0); // repaint the resting frame in the new theme
   }
 
-  setTimeScale(scale: number) {
-    this.timeScale = scale;
-  }
-
-  /** Jump to the resting piece: called before `start` the entrance never plays, called during it ends it. */
-  skipEntrance() {
-    this.enter = 1;
+  setSpeed(speed: number) {
+    this.speed = speed;
+    this.applyMotion();
   }
 
   /** Pixel-grid density in cells across the canvas; lower is chunkier. A small canvas draws fewer: see `minGrainPx`. */
   setGrid(grid: number) {
     this.grid = grid;
-    if (this.paused) this.drawFrame(0);
   }
 
   /** A phone-sized viewport gets the larger grain floor: see `minGrainPxPhone`. */
   setPhone(phone: boolean) {
     this.minGrain = phone ? minGrainPxPhone : minGrainPx;
-    if (this.paused) this.drawFrame(0);
   }
 
-  /** Grain stamp: 0 draws squares, 1 draws small plus signs. */
-  setStamp(stamp: number) {
-    this.stamp = stamp;
-    if (this.paused) this.drawFrame(0);
+  /** Grain stamp: squares, or small plus signs. */
+  setStamp(stamp: MorphStamp) {
+    this.stamp = stamp === 'plus' ? 1 : 0;
   }
 
   /** Margin factor around the shape: the canvas is this much wider than the blob, so warp and grain tails never clip. */
   setOverscan(overscan: number) {
     this.overscan = overscan;
-    if (this.paused) this.drawFrame(0);
   }
 
   setPaused(paused: boolean) {
@@ -160,7 +155,13 @@ export class MorphRenderer {
     cancelAnimationFrame(this.frameHandle);
     this.canvas.removeEventListener('webglcontextlost', this.onContextLost);
     this.canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
+    this.reducedMotion.removeEventListener('change', this.onMotionChange);
     this.gl = null;
+  }
+
+  private applyMotion() {
+    this.timeScale = this.speed * (this.reducedMotion.matches ? reducedMotionSpeed : 1);
+    if (this.reducedMotion.matches) this.enter = 1;
   }
 
   private initGl() {

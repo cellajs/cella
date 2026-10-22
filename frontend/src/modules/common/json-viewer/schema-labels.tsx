@@ -1,5 +1,5 @@
+import { getTypeColorClass, jsonViewerTheme } from '~/modules/common/json-viewer/theme';
 import { cn } from '~/utils/cn';
-import { getTypeColorClass, type JsonViewerTheme } from './types';
 
 interface SchemaLabelsProps {
   typeValue: string | string[] | null;
@@ -8,10 +8,9 @@ interface SchemaLabelsProps {
   hasAnyOf?: boolean;
   hasOneOf?: boolean;
   constraints?: { maxLength?: number; minLength?: number; maximum?: number; minimum?: number } | null;
-  theme: Pick<JsonViewerTheme, 'string' | 'number' | 'boolean' | 'null' | 'schemaType' | 'structureType'>;
 }
 
-export function SchemaLabels({ typeValue, refValue, contentTypeValue, hasAnyOf, hasOneOf, constraints, theme }: SchemaLabelsProps) {
+export function SchemaLabels({ typeValue, refValue, contentTypeValue, hasAnyOf, hasOneOf, constraints }: SchemaLabelsProps) {
   if (!typeValue && !refValue && !contentTypeValue && !hasAnyOf && !hasOneOf && !constraints) return null;
 
   const typeValues = typeValue ? (Array.isArray(typeValue) ? typeValue : [typeValue]) : [];
@@ -23,7 +22,7 @@ export function SchemaLabels({ typeValue, refValue, contentTypeValue, hasAnyOf, 
     <>
       {typeValues.map((type, index) => (
         <span key={type}>
-          <span className={cn('ml-0.5 rounded px-1 py-0.5 font-medium text-xs opacity-70', theme.schemaType, getTypeColorClass(type, theme))}>
+          <span className={cn('ml-0.5 rounded px-1 py-0.5 font-medium text-xs opacity-70', jsonViewerTheme.schemaType, getTypeColorClass(type))}>
             {type}
           </span>
           {index < typeValues.length - 1 && <span className="mx-1 text-muted-foreground">|</span>}

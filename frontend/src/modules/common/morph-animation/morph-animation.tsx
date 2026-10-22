@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { MorphRenderer, type MorphVariant } from '~/modules/common/morph-animation/renderer';
+import { useLatestRef } from '~/hooks/use-latest-ref';
+import { MorphRenderer, type MorphStamp, type MorphVariant } from '~/modules/common/morph-animation/renderer';
 import { fragmentSource } from '~/modules/common/morph-animation/shader';
 import { uiStore, useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
@@ -31,7 +32,7 @@ export function MorphAnimation({
   grid?: number;
   speed?: number;
   overscan?: number;
-  stamp?: 'square' | 'plus';
+  stamp?: MorphStamp;
   className?: string;
 }) {
   const mode = useUIStore((state) => state.mode);
@@ -40,8 +41,7 @@ export function MorphAnimation({
   const [faded, setFaded] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<MorphRenderer | null>(null);
-  const propsRef = useRef({ grid, speed, overscan, stamp, isPhone });
-  propsRef.current = { grid, speed, overscan, stamp, isPhone };
+  const propsRef = useLatestRef({ grid, speed, overscan, stamp, isPhone });
 
   // fragmentSource in the deps only changes under HMR, where it forces a rebuild so shader edits apply live
   useEffect(() => {
@@ -54,16 +54,8 @@ export function MorphAnimation({
     renderer.setGrid(propsRef.current.grid);
     renderer.setPhone(propsRef.current.isPhone);
     renderer.setOverscan(propsRef.current.overscan);
-    renderer.setStamp(propsRef.current.stamp === 'plus' ? 1 : 0);
-
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    /* reduced motion slows to a fifth of the instance speed and opens at rest; the piece never freezes */
-    const applyMotion = () => {
-      renderer.setTimeScale(propsRef.current.speed * (reducedMotion.matches ? 0.2 : 1));
-      if (reducedMotion.matches) renderer.skipEntrance();
-    };
-    applyMotion();
-    reducedMotion.addEventListener('change', applyMotion);
+    renderer.setStamp(propsRef.current.stamp);
+    renderer.setSpeed(propsRef.current.speed);
 
     const observer = new IntersectionObserver(([entry]) => renderer.setPaused(!entry.isIntersecting));
     observer.observe(canvas);
@@ -73,7 +65,6 @@ export function MorphAnimation({
 
     return () => {
       cancelAnimationFrame(fadeFrame);
-      reducedMotion.removeEventListener('change', applyMotion);
       observer.disconnect();
       renderer.dispose();
       rendererRef.current = null;
@@ -93,8 +84,7 @@ export function MorphAnimation({
   }, [isPhone]);
 
   useEffect(() => {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    rendererRef.current?.setTimeScale(speed * (reduced ? 0.2 : 1));
+    rendererRef.current?.setSpeed(speed);
   }, [speed]);
 
   useEffect(() => {
@@ -102,7 +92,7 @@ export function MorphAnimation({
   }, [overscan]);
 
   useEffect(() => {
-    rendererRef.current?.setStamp(stamp === 'plus' ? 1 : 0);
+    rendererRef.current?.setStamp(stamp);
   }, [stamp]);
 
   // The shader's entrance brings the piece in; under reduced motion the canvas crossfades while the shader opens at rest

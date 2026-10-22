@@ -1,5 +1,5 @@
 import { type Span, SpanStatusCode } from '@opentelemetry/api';
-import type { IncomingTraceContext, SpanData, SpanStats, TraceContext } from 'shared/tracing';
+import type { IncomingTraceContext, SpanData, TraceContext } from 'shared/tracing';
 import { frontendSpanNames } from 'shared/tracing';
 import { isDebugMode } from '~/env';
 import { spanStore, tracer } from './otel';
@@ -19,10 +19,6 @@ export function subscribeToSpans(callback: (spans: SpanData[]) => void): () => v
 
 export function clearSpans(): void {
   spanStore.clear();
-}
-
-export function getSpanStats(): SpanStats {
-  return spanStore.getStats();
 }
 
 // Span attribute helpers

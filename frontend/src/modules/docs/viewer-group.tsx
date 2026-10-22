@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenRequest, GenSchema } from 'sdk/docs-types';
-import { JsonViewer } from '~/modules/common/json-viewer';
+import { JsonViewer } from '~/modules/common/json-viewer/json-viewer';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { lazyNamed } from '~/utils/lazy-named';
 

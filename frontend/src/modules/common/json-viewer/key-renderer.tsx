@@ -1,41 +1,50 @@
+import type { Ref } from 'react';
+import { jsonViewerTheme } from '~/modules/common/json-viewer/theme';
 import { HighlightText } from '~/modules/common/match-highlight';
 import { cn } from '~/utils/cn';
 
 interface KeyRendererProps {
-  keyName?: string | number | false;
+  keyName: string | number | false;
   showKeyQuotes: boolean;
   isObjectValue: boolean;
   hasSelfRequired: boolean;
   openapiMode?: 'spec' | 'schema';
-  theme: { key: string; index: string; required: string };
+  ref?: Ref<HTMLSpanElement>;
 }
 
-export function KeyRenderer({ keyName, showKeyQuotes, isObjectValue, hasSelfRequired, openapiMode, theme }: KeyRendererProps) {
-  if (keyName === false || keyName === undefined) return null;
+const colon = <span className="mr-1 opacity-70">:</span>;
 
-  const keyStr = String(keyName);
-
-  // Dictionary key from additionalProperties, written as [key].
-  const isDictionaryKey = openapiMode === 'schema' && keyStr.startsWith('[') && keyStr.endsWith(']');
-
-  const requiredLabel = hasSelfRequired && <span className={cn('ml-1.5 rounded px-1 py-0.5 font-medium text-xs', theme.required)}>required</span>;
+export function KeyRenderer({ keyName, showKeyQuotes, isObjectValue, hasSelfRequired, openapiMode, ref }: KeyRendererProps) {
+  if (keyName === false) return null;
 
   if (typeof keyName === 'number') {
-    return <span className={theme.index}>{keyName}</span>;
+    return (
+      <>
+        <span ref={ref} className={jsonViewerTheme.index}>
+          {keyName}
+        </span>
+        {colon}
+      </>
+    );
   }
+
+  // Dictionary key from additionalProperties, written as [key].
+  const isDictionaryKey = openapiMode === 'schema' && keyName.startsWith('[') && keyName.endsWith(']');
 
   return (
     <>
       <span
+        ref={ref}
         className={cn(
           'font-medium',
-          theme.key,
+          jsonViewerTheme.key,
           isDictionaryKey ? 'text-muted-foreground! italic' : openapiMode === 'schema' && !isObjectValue ? 'text-muted-foreground!' : '',
         )}
       >
         <HighlightText text={showKeyQuotes && !isDictionaryKey ? `"${keyName}"` : keyName} />
       </span>
-      {requiredLabel}
+      {hasSelfRequired && <span className={cn('ml-1.5 rounded px-1 py-0.5 font-medium text-xs', jsonViewerTheme.required)}>required</span>}
+      {colon}
     </>
   );
 }

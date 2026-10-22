@@ -92,7 +92,7 @@ describe('ResizableSeparator', () => {
     expect(separator.getAttribute('aria-controls')).toBe(`${domId('a')} ${domId('b')}`);
     expect(separator.getAttribute('aria-valuenow')).toBe('400');
     expect(separator.getAttribute('aria-valuemin')).toBe('50');
-    expect(separator.getAttribute('aria-valuemax')).toBe('600');
+    expect(separator.getAttribute('aria-valuemax')).toBe('650');
 
     await act(async () => root?.render(group(['b', 'a'])));
     expect(container.querySelector('[role="separator"]')).toBe(separator);
