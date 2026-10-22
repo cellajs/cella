@@ -258,7 +258,7 @@ export function FormLabel({
       {...props}
     >
       {children}
-      {required && <span className="ml-1 opacity-50">*</span>}
+      {required && <span className="ml-1 text-muted-foreground/70">*</span>}
     </Field.Label>
   );
 

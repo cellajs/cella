@@ -126,7 +126,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
                 label={
                   <>
                     {t('c:roles')}
-                    <span className="ml-1 opacity-50">*</span>
+                    <span className="ml-1 text-muted-foreground/70">*</span>
                   </>
                 }
               />

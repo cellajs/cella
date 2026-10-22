@@ -9,7 +9,7 @@ export function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) 
       data-slot="checkbox"
       className={cn(
         // Transparent ::before extends the hit area just past the 4px focus/selection ring so edge clicks register.
-        'peer focus-effect relative inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] border border-input shadow-xs transition-shadow before:absolute before:-inset-1.25 before:content-[""] aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-disabled:cursor-not-allowed data-checked:border-primary data-indeterminate:border-primary data-checked:bg-primary data-disabled:bg-muted data-indeterminate:bg-primary data-checked:text-primary-foreground data-indeterminate:text-primary-foreground data-disabled:opacity-50 dark:aria-invalid:ring-destructive/40',
+        'peer focus-effect relative inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] border border-input shadow-xs transition-shadow before:absolute before:-inset-1.25 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-disabled:cursor-not-allowed data-checked:border-primary data-indeterminate:border-primary data-checked:bg-primary data-disabled:bg-muted data-indeterminate:bg-primary data-checked:text-primary-foreground data-indeterminate:text-primary-foreground data-disabled:opacity-50 dark:aria-invalid:ring-destructive/40',
         className,
       )}
       {...props}

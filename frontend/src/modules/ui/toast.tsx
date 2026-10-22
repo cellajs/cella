@@ -24,7 +24,7 @@ const toastRootClassName = cn(
   '[--gap:0.75rem] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-dir)*-1*(var(--toast-offset-y)+var(--toast-index)*var(--gap))+var(--toast-swipe-movement-y))] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.1)))] [--shrink:calc(1-var(--scale))]',
   'h-(--height) [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-var(--toast-dir)*(var(--toast-index)*var(--peek)+var(--shrink)*var(--height))))_scale(var(--scale))] [transition:transform_500ms_cubic-bezier(0.22,1,0.36,1),opacity_500ms,height_150ms]',
   // Bridges the gap to the next toast so the expanded stack stays hovered
-  "after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full after:content-[''] group-data-[position=top]/toast-viewport:after:top-auto group-data-[position=top]/toast-viewport:after:bottom-full",
+  'after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full group-data-[position=top]/toast-viewport:after:top-auto group-data-[position=top]/toast-viewport:after:bottom-full',
   'data-expanded:h-(--toast-height) data-expanded:[transform:translateX(var(--toast-swipe-movement-x))_translateY(var(--offset-y))]',
   'data-limited:opacity-0 data-starting-style:[transform:translateY(calc(var(--toast-dir)*150%))]',
   '[&[data-ending-style]:not([data-limited]):not([data-swipe-direction])]:[transform:translateY(calc(var(--toast-dir)*150%))]',
@@ -62,7 +62,7 @@ function ToastList({ position }: { position: ToastPosition }) {
           data-slot="toast-close"
           aria-label={t('c:close')}
           render={<Button variant="ghost" size="xs" />}
-          className="relative shrink-0 text-muted-foreground after:absolute after:-inset-2 after:content-[''] hover:text-foreground"
+          className="relative shrink-0 text-muted-foreground after:absolute after:-inset-2 hover:text-foreground"
         >
           <XIcon />
         </ToastPrimitive.Close>

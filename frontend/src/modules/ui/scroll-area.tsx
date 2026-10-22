@@ -67,10 +67,7 @@ export function ScrollArea({
         id={id ? `${id}-viewport` : undefined}
         ref={viewportRef}
         tabIndex={focusableViewport ? undefined : -1}
-        className={cn(
-          'size-full touch-manipulation rounded-[inherit] outline-hidden focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset',
-          viewportClassName,
-        )}
+        className={cn('focus-effect focus-inset size-full touch-manipulation rounded-[inherit] outline-hidden', viewportClassName)}
       >
         <ScrollAreaPrimitive.Content style={{ display: 'flex', flexDirection: 'column', height: '100%', minWidth: horizontalScroll ? undefined : 0 }}>
           {children}
