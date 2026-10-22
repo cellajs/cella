@@ -243,7 +243,11 @@ const bootDiagBucket = new scaleway.object.Bucket(
     tags: tagsAsMap,
     forceDestroy: !isProduction,
     versioning: { enabled: false },
-    lifecycleRules: [{ id: 'expire-boot-diag', enabled: true, expiration: { days: 30 }, prefix: 'boot-diag/' }],
+    // Run records keep as long as Scaleway keeps the job runs they describe (D25).
+    lifecycleRules: [
+      { id: 'expire-boot-diag', enabled: true, expiration: { days: 30 }, prefix: 'boot-diag/' },
+      { id: 'expire-runs', enabled: true, expiration: { days: 60 }, prefix: 'runs/' },
+    ],
   },
   { protect: isProduction },
 );
