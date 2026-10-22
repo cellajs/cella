@@ -9,11 +9,7 @@ interface DateTooltipProps {
   side?: 'top' | 'bottom' | 'left' | 'right';
 }
 
-/**
- * Wraps a rendered timestamp (a timeago or shortened date) so hovering reveals the exact date and
- * time. The trigger span is the tooltip trigger itself, so no extra layout box is introduced beyond
- * the span callers already rendered around their date text.
- */
+/** A timestamp (timeago or short date) in a span that shows the exact date and time on hover; the span is the only box it adds. */
 export function DateTooltip({ date, children, className, side = 'bottom' }: DateTooltipProps) {
   const content = dateFull(date);
   if (!content) return <span className={className}>{children}</span>;

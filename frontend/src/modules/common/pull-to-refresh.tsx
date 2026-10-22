@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { useUIStore } from '~/modules/ui/ui-store';
@@ -37,6 +38,7 @@ interface PullToRefreshProps {
 }
 
 export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLength = 200, isDisabled = false }: PullToRefreshProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [pullPosition, setPullPosition] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -87,7 +89,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
       if (!touch || touch.clientY > window.innerHeight * 0.4 || window.scrollY > 0) return;
 
       // Only start at the top of the touch target's scroll parent; the walk reads styles, so it runs last
-      const scrollParent = getScrollingAncestor(event.target as Element | null);
+      const scrollParent = getScrollingAncestor(event.target instanceof Element ? event.target : null);
       if (scrollParent && scrollParent.scrollTop > 0) return;
 
       setPhase('idle'); // cancel any in-progress exit animation
@@ -176,7 +178,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
   const isExiting = phase === 'exiting';
   // Moved by transform, so the release and exit glides run on the compositor while the refresh re-renders the page
   const offset = isExiting ? -20 : isRefreshing ? 48 : Math.min(pullPosition / 1.5, 120);
-  const opacity = isExiting ? 0 : isActive || pullPosition > 0 ? 1 : 0;
+  const opacity = isExiting ? 0 : isActive || isPulling ? 1 : 0;
   const transition = isDraggingRef.current
     ? 'none'
     : isExiting
@@ -196,7 +198,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
         viewBox="0 0 40 40"
         style={isActive ? { transition: 'none' } : { transform: `rotate(${pullPosition * 2}deg)`, transition: 'transform 0.1s ease-out' }}
       >
-        <title>Pull to refresh</title>
+        <title>{t('c:pull_to_refresh')}</title>
         <circle
           cx="20"
           cy="20"

@@ -1,18 +1,18 @@
-import type * as React from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import type { EntityType } from 'shared';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { Chip, type Removable } from '~/modules/ui/chip';
 import { cn } from '~/utils/cn';
 
-type EntityChipProps = Omit<React.ComponentProps<'span'>, 'children'> & {
+type EntityChipProps = Omit<ComponentProps<'span'>, 'children'> & {
   type: EntityType;
   id?: string;
   name: string;
   url?: string | null;
   size?: 'default' | 'lg';
   /** Text in place of the name, such as a sentence that names the entity. */
-  children?: React.ReactNode;
-  end?: React.ReactNode;
+  children?: ReactNode;
+  end?: ReactNode;
 } & Removable;
 
 /** An entity as a chip that starts with its avatar. A user's chip is a pill like its avatar, any other entity's has rounded corners. */

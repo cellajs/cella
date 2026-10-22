@@ -24,7 +24,6 @@ export function DownAlert() {
   const setDownAlert = useAlertStore((state) => state.setDownAlert);
   const [dismissedAlerts, setDismissedAlerts] = useState<Partial<Record<AlertKey, boolean>>>({});
 
-  // Derives the debounced UI offline state from onlineManager
   useUIOffline();
 
   const dismissAlert = () => {
@@ -43,7 +42,7 @@ export function DownAlert() {
     if (isOnline) setDismissedAlerts((prev) => ({ ...prev, offline: false }));
   }, [isOnline]);
 
-  if (!downAlert || dismissedAlerts[downAlert] || !(downAlert in downAlertConfig)) return null; // Nothing to show
+  if (!downAlert || dismissedAlerts[downAlert] || !(downAlert in downAlertConfig)) return null;
   const { icon: Icon, titleKey, variant } = downAlertConfig[downAlert];
   const textKey = downAlert === 'offline' && offlineAccess ? 'c:offline_access.offline' : (`${titleKey}.text` as const);
 

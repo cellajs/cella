@@ -88,8 +88,7 @@ export function ReloadPrompt() {
         },
       });
 
-    // The gap between click and reload is the new service worker's activate phase, so the
-    // button spins until the page goes away. A hard reload follows if nothing happens in 5s.
+    // The button spins through the new worker's activate phase; a hard reload follows if nothing happens in 5s
     const reload = () => {
       showPrompt(true);
       setTimeout(() => window.location.reload(), 5000);

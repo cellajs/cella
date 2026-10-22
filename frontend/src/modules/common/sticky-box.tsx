@@ -1,4 +1,4 @@
-import { type ComponentProps, useEffect, useRef, useState } from 'react';
+import { type ComponentProps, type CSSProperties, useEffect, useRef, useState } from 'react';
 import { isProgrammaticScroll } from '~/hooks/use-scroll-spy-store';
 
 /** Nearest scrolling ancestor of `node`, or `window` when none is found before `document.body`. */
@@ -23,7 +23,7 @@ const viewportTopOf = (scrollParent: HTMLElement | Window) => (scrollParent inst
 
 const passiveArg = { passive: true } as const;
 
-type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
+interface StickyBoxProps extends Omit<ComponentProps<'div'>, 'ref'> {
   /** Offset (px) from the top of the scroll container at which the bar pins. */
   offsetTop?: number;
   /** Release the bar this many px before the bottom of its containing block (e.g. to clear a footer). */
@@ -37,15 +37,8 @@ type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
   hideWhenOutOfView?: boolean;
   /** CSS custom property the bar publishes its height to on the parent, e.g. `--sticky-stack-nav`. */
   publishVar?: string;
-};
+}
 
-/**
- * Pins a header within its scroll container using CSS sticky positioning. Tall sidebars should
- * use plain sticky CSS. The bar pins at the larger of `--sticky-stack-top` (section bars, which
- * fold the nav offset in) and `--sticky-stack-nav` (page tabs), plus `offsetTop`. A bar that
- * publishes one of those variables never consumes it, since it would inherit its own value back
- * from the parent it publishes on. Variable changes animate with the ancestor bar's transition.
- */
 const stackVars = ['--sticky-stack-nav', '--sticky-stack-top'] as const;
 
 /** Offset (px) the stack variables add to the bar's pin line, leaving out the one it publishes itself. */
@@ -67,6 +60,14 @@ export function stackOffsetCss(publishVar?: string) {
  * slid back out, `parked` just above the pin line without having animated there (its place had scrolled off anyway).
  */
 type HidePhase = 'flow' | 'parked' | 'pinned' | 'hidden';
+
+/**
+ * Pins a header within its scroll container using CSS sticky positioning. Tall sidebars should
+ * use plain sticky CSS. The bar pins at the larger of `--sticky-stack-top` (section bars, which
+ * fold the nav offset in) and `--sticky-stack-nav` (page tabs), plus `offsetTop`. A bar that
+ * publishes one of those variables never consumes it, since it would inherit its own value back
+ * from the parent it publishes on. Variable changes animate with the ancestor bar's transition.
+ */
 export function StickyBox({
   enabled = true,
   offsetTop = 0,
@@ -212,7 +213,7 @@ export function StickyBox({
   }
 
   // `top` must never transition: it would interpolate the stuck/released switch and park at stale offsets
-  const barStyle: React.CSSProperties = { ...style, position: 'sticky', top: `calc(${stackOffsetCss(publishVar)} + ${offsetTop}px)` };
+  const barStyle: CSSProperties = { ...style, position: 'sticky', top: `calc(${stackOffsetCss(publishVar)} + ${offsetTop}px)` };
   if (clampedTop !== null) {
     barStyle.position = 'relative';
     barStyle.top = clampedTop;

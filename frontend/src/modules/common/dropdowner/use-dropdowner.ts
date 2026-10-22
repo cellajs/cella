@@ -31,7 +31,7 @@ export type InternalDropdown = DropdownData & {
   kind: DropdownKind;
 };
 
-/** How long a trigger shows that the action picked from its dropdown worked. */
+/** How long (ms) a trigger shows that the action picked from its dropdown worked. */
 const doneDuration = 1400;
 
 interface DropdownStoreState {
@@ -131,8 +131,7 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
   get: () => get().dropdown,
 }));
 
-/** Whether a dropdown is open: an overlay under it then ignores outside presses, which land on the dropdown. */
+/** Whether a dropdown is open: an overlay under it then ignores outside presses, which belong to the dropdown. */
 export const isDropdownOpen = () => !!useDropdowner.getState().dropdown;
 
-// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
 export { useDropdowner as dropdowner };

@@ -126,5 +126,4 @@ export const useNavigationStore = create<NavigationStoreState>()(
   ),
 );
 
-// Non-hook alias for use outside React components, e.g. navigationStore.getState()
 export { useNavigationStore as navigationStore };

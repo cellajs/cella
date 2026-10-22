@@ -11,7 +11,11 @@ function removeIfCurrent(key: number) {
   if (dropdowner.getState().dropdown?.key === key) dropdowner.getState().remove();
 }
 
-export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown }) {
+interface DropdownerDropdownProps {
+  dropdown: InternalDropdown;
+}
+
+export function DropdownerDropdown({ dropdown }: DropdownerDropdownProps) {
   const trigger = dropdown.triggerRef?.current;
   const triggerFocusRef = useLatestRef(trigger ?? null);
 
@@ -33,7 +37,7 @@ export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown })
     const onScroll = () => {
       if (released) return;
       if (scroller.scrollTop !== pinned.top || scroller.scrollLeft !== pinned.left) {
-        scroller.scrollTo({ top: pinned.top, left: pinned.left, behavior: 'instant' as ScrollBehavior });
+        scroller.scrollTo({ top: pinned.top, left: pinned.left, behavior: 'instant' });
       }
     };
 
@@ -70,7 +74,7 @@ export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown })
 
   if (dropdown.kind === 'menu') {
     return (
-      <DropdownMenu key={dropdown.key} open={true} onOpenChange={handleOpenChange} modal={false}>
+      <DropdownMenu key={dropdown.key} open onOpenChange={handleOpenChange} modal={false}>
         <DropdownMenuContent
           anchor={trigger}
           align={dropdown.align}
@@ -85,7 +89,7 @@ export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown })
   }
 
   return (
-    <Popover key={dropdown.key} open={true} onOpenChange={handleOpenChange} modal={false}>
+    <Popover key={dropdown.key} open onOpenChange={handleOpenChange} modal={false}>
       <PopoverContent
         anchor={trigger}
         align={dropdown.align}

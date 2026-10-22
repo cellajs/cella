@@ -9,7 +9,12 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
-export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExited?: () => void }) {
+interface SheeterSheetProps {
+  sheet: InternalSheet;
+  onExited?: () => void;
+}
+
+export function SheeterSheet({ sheet, onExited }: SheeterSheetProps) {
   const {
     id,
     modal,
@@ -48,7 +53,7 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
     }
 
     if (eventDetails.reason === 'outside-press') {
-      // An outside press landing on a dropdown or dialog must not close the sheet
+      // An outside press on a dropdown or dialog must not close the sheet
       if (isDropdownOpen() || dialoger.getState().dialogs.some((dialog) => dialog.open)) return;
 
       // The nav button's own click handler toggles the nav sheet; closing here makes it reopen
@@ -56,11 +61,8 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
         const navState = navigationStore.getState();
         if (navState.keepNavOpen && navState.navSheetOpen) return;
 
-        const target = eventDetails.event?.target as Node | null;
-        if (target && (target as Element).nodeType === 1) {
-          const element = target as Element;
-          if (element.closest('#sidebar-nav, #bottom-bar-nav')) return;
-        }
+        const target = eventDetails.event?.target;
+        if (target instanceof Element && target.closest('#sidebar-nav, #bottom-bar-nav')) return;
       }
     }
 

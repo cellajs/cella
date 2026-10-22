@@ -42,7 +42,6 @@ function OperationsPage() {
     const hash = window.location.hash.slice(1);
     if (hash && tagSectionIds.includes(hash)) scrollToSectionById(hash);
     // Mount only. Re-running on tag changes would fight user scrolling.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

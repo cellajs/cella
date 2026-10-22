@@ -21,7 +21,6 @@ export function withDefaults<D extends object, T extends object>(defaults: D, da
   return merged as D & T;
 }
 
-/** `items` with the entry of `id` merged with `updates`. */
 export function updateById<T extends { id: unknown }>(items: T[], id: T['id'], updates: Partial<T>): T[] {
   return items.map((item) => (item.id === id ? { ...item, ...updates } : item));
 }
@@ -69,7 +68,7 @@ export function finalFocusFor(triggerRef: TriggerRef | undefined, popupId: strin
 /**
  * Lets a user-dismissed overlay play its exit animation: `close` runs `hide` (set `open: false`) and the entry is
  * removed when Base UI reports the overlay closed. Pass `onOpenChangeComplete` to the Base UI root. Closes made
- * through the store (`update`, `remove`, route changes) behave as before.
+ * through the store (`update`, `remove`, route changes) do not pass through it.
  */
 export function useRemoveAfterExit(hide: () => void, remove: () => void) {
   const pendingRemovalRef = useRef(false);

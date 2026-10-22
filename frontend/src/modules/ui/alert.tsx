@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { XIcon } from 'lucide-react';
 import type * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '~/utils/cn';
 
 export const alertVariants = cva(
@@ -38,6 +39,8 @@ export function Alert({
   children,
   ...props
 }: React.ComponentProps<'div'> & VariantProps<typeof alertVariants> & { onClose?: () => void }) {
+  const { t } = useTranslation();
+
   return (
     <div data-slot="alert" role="alert" className={cn(alertVariants({ variant, soft }), onClose && 'pr-12', className)} {...props}>
       {onClose && (
@@ -47,7 +50,7 @@ export function Alert({
           className="focus-effect absolute top-2 right-2 rounded-sm p-1 opacity-70 transition-opacity hover:bg-accent hover:opacity-100 disabled:pointer-events-none"
         >
           <XIcon className="size-5" strokeWidth={1.5} />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">{t('c:close')}</span>
         </button>
       )}
       {children}

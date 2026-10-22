@@ -1,6 +1,9 @@
 import { motion } from 'motion/react';
 
-type TextEffectProps = { text: string; className?: string };
+interface TextEffectProps {
+  text: string;
+  className?: string;
+}
 
 export function TextEffect({ text, className }: TextEffectProps) {
   const variants = {

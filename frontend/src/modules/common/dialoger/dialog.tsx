@@ -6,7 +6,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
-export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
+interface DialogerDialogProps {
+  dialog: InternalDialog;
+}
+
+export function DialogerDialog({ dialog }: DialogerDialogProps) {
   const {
     id,
     content,

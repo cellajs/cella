@@ -107,7 +107,6 @@ export const useUserStore = create<UserStoreState>()(
   ),
 );
 
-// Non-hook alias for reading the store outside React components
 export { useUserStore as userStore };
 
 const signedOutMessage =

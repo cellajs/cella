@@ -11,7 +11,7 @@ import { Button } from '~/modules/ui/button';
 interface SelectionActionBarProps {
   /** Number of selected items; shown as a badge on the bar's edge, the bar is hidden while zero. */
   count: number;
-  /** Clears the selection (wired to the built-in clear button). */
+  /** Clears the selection; the bar's own clear button calls it. */
   onClear: () => void;
   /** Bulk action buttons acting on the selection. */
   children: ReactNode;

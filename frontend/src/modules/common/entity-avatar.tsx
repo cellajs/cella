@@ -15,7 +15,7 @@ export interface EntityAvatarProps extends AvatarProps {
   icon?: IconComponent;
 }
 
-function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props }: EntityAvatarProps) {
+export const EntityAvatar = memo(function EntityAvatar({ type, id, name, icon: Icon, url, className, ...props }: EntityAvatarProps) {
   if (Icon)
     return (
       <Avatar
@@ -50,6 +50,4 @@ function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props
       </AvatarFallback>
     </Avatar>
   );
-}
-
-export const EntityAvatar = memo(EntityAvatarBase);
+});

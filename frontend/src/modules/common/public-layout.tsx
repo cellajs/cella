@@ -14,10 +14,7 @@ import { lazyNamed } from '~/utils/lazy-named';
 const DebugDropdown =
   __DEV_TOOLS__ && appConfig.mode === 'development' ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown') : () => null;
 
-/**
- * Layout for all public (unauthenticated) routes. The public SSE stream is mounted by `PublicContentLayout`
- * (a sublayout) only on routes that render synced public entities, so auth/error/marketing routes don't open one.
- */
+/** Layout of the public routes, which need no sign-in: their own overlay hosts, alerts and error boundary. */
 export function PublicLayout() {
   return (
     <div>

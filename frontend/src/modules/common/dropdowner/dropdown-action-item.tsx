@@ -13,10 +13,7 @@ interface DropdownActionItemProps {
   children: ReactNode;
   variant?: ButtonProps['variant'];
   className?: ButtonProps['className'];
-  /**
-   * Close the menu after selection (desktop only). Defaults to true; pass false when the item
-   * swaps in a confirmation panel via `useDropdowner.update`.
-   */
+  /** Close the menu after selection (desktop only, default true); false for an item that opens a confirmation (`openPopConfirm`). */
   closeOnSelect?: boolean;
 }
 

@@ -12,12 +12,15 @@ export type AlertKey = 'offline' | 'backend_not_ready' | 'maintenance' | 'auth_u
 const alertPriority: Record<AlertKey, number> = { maintenance: 3, backend_not_ready: 2, auth_unavailable: 1, offline: 0 };
 
 interface AlertStoreState {
-  alertsSeen: string[]; // Seen alert IDs (to prevent duplicate notifications)
-  downAlert: AlertKey | null; // Down alert type
+  /** Ids of the banners the user dismissed, which stay hidden. */
+  alertsSeen: string[];
+  downAlert: AlertKey | null;
 
-  setAlertSeen: (alertId: string) => void; // Adds an alert to the seen list
-  setDownAlert: (downAlert: AlertKey | null) => void; // Sets the current down alert type
-  reset: () => void; // Resets in-memory state to initial (call on sign-out)
+  /** Adds one id to `alertsSeen`. */
+  setAlertSeen: (alertId: string) => void;
+  setDownAlert: (downAlert: AlertKey | null) => void;
+  /** Back to the initial state, on sign-out. */
+  reset: () => void;
 }
 
 let recoveryController: AbortController | null = null;
@@ -38,10 +41,7 @@ const startRecovery = (onRecovered: () => void) => {
 
 const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = { downAlert: appConfig.maintenance ? 'maintenance' : null, alertsSeen: [] };
 
-/**
- * Store for app-wide alerts and UI specific alerts in `alertsSeen`.
- * Owns recovery lifecycle: when a recoverable alert is set, auto-polls /health.
- */
+/** The current down alert and the dismissed banners; a recoverable down alert polls /health until it clears. */
 export const useAlertStore = create<AlertStoreState>()(
   devtools(
     immer(
@@ -65,7 +65,6 @@ export const useAlertStore = create<AlertStoreState>()(
               state.downAlert = downAlert;
             });
 
-            // Auto-recovery: poll /health for recoverable alerts
             if (downAlert === 'offline' && navigator.onLine) startRecovery(forceOnline);
             else if (downAlert === 'backend_not_ready') {
               startRecovery(() =>
@@ -93,5 +92,4 @@ export const useAlertStore = create<AlertStoreState>()(
   ),
 );
 
-// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
 export { useAlertStore as alertStore };

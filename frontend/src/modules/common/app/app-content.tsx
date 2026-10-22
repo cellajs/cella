@@ -7,8 +7,7 @@ import { FocusTarget } from '~/modules/navigation/focus-bridge';
 import { getSkipPageEnter } from '~/utils/nav-transition';
 
 export function AppContent() {
-  // The curtain holds the background over the content area to mask scroll-to-header travel on
-  // entity navigation. Same-base forward nav (org to org) has no scroll delta and skips it.
+  // The curtain masks the scroll-to-header travel of an entity navigation; a same-base forward nav (org to org) has none
   const channelKey = usePageChannelKey();
   const showCurtain = !!channelKey && !getSkipPageEnter();
 
@@ -18,7 +17,7 @@ export function AppContent() {
         id="app-content"
         className="relative flex min-h-svh min-w-0 flex-1 flex-col max-sm:not-in-[.floating-nav]:min-h-[calc(100svh-4rem-env(safe-area-inset-bottom,0px))]"
       >
-        <main id="app-content-inner" className="focus-view-scope flex flex-1 flex-col focus:outline-hidden" aria-label="Main Content">
+        <main id="app-content-inner" className="focus-view-scope flex flex-1 flex-col focus:outline-hidden">
           <FocusTarget target="content" />
           <Alerter mode="app" />
           <Outlet />

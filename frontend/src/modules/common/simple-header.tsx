@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHasScrolled } from '~/hooks/use-has-scrolled';
 import type { TKey } from '~/lib/i18n-locales';
@@ -7,7 +8,7 @@ interface SimpleHeaderProps {
   /** i18n key or already-translated text (t() renders non-keys verbatim). */
   heading?: string;
   text?: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
   className?: string;
   textClassName?: string;
   /** Collapses the text after a scroll while a `group/sticky` ancestor carries `data-sticky="true"`, as a stuck `StickyBox` does. */

@@ -8,8 +8,8 @@ export type SheetData = {
   id: string;
   triggerRef: TriggerRef;
   side: 'bottom' | 'top' | 'right' | 'left';
-  title?: string | ReactNode;
-  titleContent?: string | ReactNode;
+  title?: ReactNode;
+  titleContent?: ReactNode;
   description?: ReactNode;
   className?: string;
   headerClassName?: string;
@@ -60,7 +60,7 @@ interface SheetStoreState {
   get(id: string): InternalSheet | undefined;
 }
 
-// Manages one or multiple sheets; on mobile they render as drawers.
+/** Store of the open sheets, which `Sheeter` renders. */
 export const useSheeter = create<SheetStoreState>()((set, get) => ({
   sheets: [],
 
@@ -117,5 +117,4 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
   get: (id) => get().sheets.find((sheet) => sheet.id === id),
 }));
 
-// Non-hook alias for use outside React components, e.g. sheeter.getState()
 export { useSheeter as sheeter };

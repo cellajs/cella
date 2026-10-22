@@ -28,8 +28,8 @@ export function toggleSyncDevtools() {
 }
 
 /**
- * Devtools panels, mounted once at the root. Inside a sheet, the drawer's transform would contain their
- * fixed-position panels and add blank scroll to it.
+ * Devtools panels, mounted once at the root, not next to the `DebugDropdown` that toggles them: inside a sheet, the
+ * drawer's transform would contain their fixed-position panels and add blank scroll to it.
  */
 export function Devtools() {
   const syncDevtoolsOpen = useSyncDevtoolsStore((state) => state.open);

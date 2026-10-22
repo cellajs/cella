@@ -59,7 +59,6 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
     const grid = gridRef.current;
 
     // Don't break in Node.js (SSR), jsdom, and browsers that don't support ResizeObserver
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (ResizeObserver == null || grid == null) return;
 
     const scrollContainer = scrollContainerRef?.current ?? getScrollParent(grid);

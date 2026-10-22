@@ -3,12 +3,10 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Spinner } from '~/modules/common/spinner';
 import { cn } from '~/utils/cn';
 
-/**
- * @param appearDelay - Seconds to wait before fading in the spinner (default: 0.3 to avoid flicker on fast responses). Pass 0 to show it immediately.
- */
 interface SearchSpinnerProps {
   isSearching: boolean;
   value: string;
+  /** Seconds before the spinner fades in (default 0.3, so a fast response shows no flicker); 0 shows it at once. */
   appearDelay?: number;
 }
 
@@ -19,8 +17,8 @@ export function SearchSpinner({ isSearching, value, appearDelay = 0.3 }: SearchS
         <motion.div
           key="spinner"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1, transition: { delay: appearDelay } }} // appear with delay
-          exit={{ opacity: 0, transition: { delay: 0 } }} // disappear immediately
+          animate={{ opacity: 1, transition: { delay: appearDelay } }}
+          exit={{ opacity: 0, transition: { delay: 0 } }}
         >
           <Spinner size="sm" className="mr-2 h-auto group-[.text-lg]/search-input:size-5" noDelay />
         </motion.div>

@@ -4,9 +4,7 @@ import { DialogerDrawer } from '~/modules/common/dialoger/drawer';
 import { dialoger, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useOnPathChange, useOverlayLock } from '~/modules/common/overlay-store-helpers';
 
-/**
- * Renders drawers on mobile and dialogs on other screens, from the useDialoger store.
- */
+/** Renders the dialoger store's dialogs: as drawers on mobile unless `drawerOnMobile` is false. */
 export function Dialoger() {
   const isMobile = useBreakpointBelow('sm');
   const dialogs = useDialoger((state) => state.dialogs);

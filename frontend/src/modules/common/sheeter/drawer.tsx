@@ -5,19 +5,23 @@ import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } f
 
 const sideToSwipeDirection = { top: 'up', bottom: 'down', left: 'left', right: 'right' } as const;
 
-export function SheeterDrawer({ sheet, onExited }: { sheet: InternalSheet; onExited?: () => void }) {
-  // Drawers on mobile are always modal (overlay + outside click to close)
+interface SheeterDrawerProps {
+  sheet: InternalSheet;
+  onExited?: () => void;
+}
+
+export function SheeterDrawer({ sheet, onExited }: SheeterDrawerProps) {
   const { id, side, description, title, titleContent = title, headerClassName, className, content, contentKey, keepMounted, open = true } = sheet;
 
   const isDropdownOpen = useDropdowner((state) => !!state.dropdown);
 
   return (
     <Drawer
+      // Always modal on mobile: an overlay, and an outside press closes it
       modal
       open={open}
       disablePointerDismissal={isDropdownOpen}
       swipeDirection={sideToSwipeDirection[side]}
-      // The provider keeps the removed drawer rendered until it has slid out
       onOpenChange={() => sheeter.getState().remove(sheet.id)}
       onOpenChangeComplete={(isOpen) => !isOpen && onExited?.()}
     >

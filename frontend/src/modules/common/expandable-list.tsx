@@ -1,6 +1,6 @@
 import { ChevronDownIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useRef, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { collapseMotion } from '~/modules/common/collapse-motion';
@@ -9,7 +9,7 @@ import { Button } from '~/modules/ui/button';
 
 interface ExpandableListProps<T> {
   items: T[];
-  renderItem: (item: T, index: number) => React.ReactNode;
+  renderItem: (item: T, index: number) => ReactNode;
   initialDisplayCount: number;
   alwaysShowAll?: boolean;
   expandText: TKey;

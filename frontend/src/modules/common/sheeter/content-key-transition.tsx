@@ -7,11 +7,16 @@ function scrollToTop(element: HTMLElement | null) {
   if (scroller) scroller.scrollTop = 0;
 }
 
+interface ContentKeyTransitionProps {
+  contentKey?: string;
+  children: ReactNode;
+}
+
 /**
  * Slides in new content when `contentKey` changes; without a key the content renders as is. The old content leaves
  * first, at its own scroll position, and the new content then starts at the top.
  */
-export function ContentKeyTransition({ contentKey, children }: { contentKey?: string; children: ReactNode }) {
+export function ContentKeyTransition({ contentKey, children }: ContentKeyTransitionProps) {
   if (!contentKey) return children;
 
   return (

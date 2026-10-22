@@ -40,7 +40,7 @@ interface AppFooterLinksProps {
 
 export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: AppFooterLinksProps) {
   const { t } = useTranslation();
-  const contactButtonRef = useRef(null);
+  const contactButtonRef = useRef<HTMLButtonElement>(null);
   const statusUrl = appConfig.statusUrl?.trim();
   const footerLinks = statusUrl ? [...links, { id: 'status', href: statusUrl }] : links;
 
@@ -50,7 +50,7 @@ export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: A
         <AppFooterLink key={link.id} id={link.id} href={link.href} />
       ))}
       <li>
-        <Button ref={contactButtonRef} variant="ghost" size="xs" aria-label="Open contact form" onClick={() => contactFormHandler(contactButtonRef)}>
+        <Button ref={contactButtonRef} variant="ghost" size="xs" onClick={() => contactFormHandler(contactButtonRef)}>
           {t('c:contact')}
         </Button>
       </li>
@@ -58,7 +58,11 @@ export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: A
   );
 }
 
-export function AppFooter({ className = '' }) {
+interface AppFooterProps {
+  className?: string;
+}
+
+export function AppFooter({ className = '' }: AppFooterProps) {
   const { t } = useTranslation();
   return (
     <footer className={cn('flex flex-col gap-2', className)}>

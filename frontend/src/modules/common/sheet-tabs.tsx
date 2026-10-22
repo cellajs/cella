@@ -1,10 +1,10 @@
 import { motion } from 'motion/react';
-import { Suspense, useId, useState } from 'react';
+import { type ReactNode, Suspense, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { Button } from '~/modules/ui/button';
 
-export type SheetTab = { id: string; label: TKey; element: React.ReactNode };
+export type SheetTab = { id: string; label: TKey; element: ReactNode };
 
 interface SheetTabsProps {
   tabs: SheetTab[];
@@ -18,8 +18,6 @@ export function SheetTabs({ tabs }: SheetTabsProps) {
   // The id, so a sheet update that passes new tabs shows their element
   const [currentId, setCurrentId] = useState(tabs[0].id);
   const currentTab = tabs.find((tab) => tab.id === currentId) ?? tabs[0];
-
-  const renderPage = () => currentTab.element;
 
   return (
     <div className="mb-20">
@@ -48,7 +46,7 @@ export function SheetTabs({ tabs }: SheetTabsProps) {
         </nav>
       )}
       <div className="container">
-        <Suspense>{renderPage()}</Suspense>
+        <Suspense>{currentTab.element}</Suspense>
       </div>
     </div>
   );

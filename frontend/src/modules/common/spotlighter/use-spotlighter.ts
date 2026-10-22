@@ -62,5 +62,4 @@ export const spotlightLift = 'relative z-111';
  */
 export const spotlightLiftRow = 'spotlight-lift-row';
 
-// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
 export { useSpotlighter as spotlighter };

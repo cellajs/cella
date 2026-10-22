@@ -1,7 +1,7 @@
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { BuildingIcon, ChevronUpIcon, HouseIcon, MessageCircleQuestionMarkIcon, RefreshCwIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, type ReactNode, useEffect, useRef, useState } from 'react';
 import type { FallbackProps } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '~/lib/api';
@@ -21,9 +21,24 @@ export type { ErrorNoticeError } from '~/utils/get-error-info';
 interface ErrorNoticeProps {
   boundary: BoundaryType;
   error?: ErrorNoticeError;
-  children?: React.ReactNode;
+  children?: ReactNode;
   resetErrorBoundary?: () => void;
   homePath?: string;
+}
+
+function errorDetailRows(error: ApiError) {
+  return [
+    ['c:request_id', error.requestId],
+    // A server error carries the moment it was raised; one made in the browser shows the time it renders.
+    ['c:timestamp', new Date(error.timestamp ?? Date.now()).toUTCString()],
+    ['c:message', error.message],
+    ['c:type', error.type],
+    ['c:resource_type', error.entityType],
+    ['c:http_status', error.status],
+    ['c:severity', error.severity],
+    ['c:user_id', error.userId],
+    ['c:organization_id', error.organizationId],
+  ] as const;
 }
 
 /**
@@ -49,12 +64,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
   const ssoConnectionId = apiError?.type === 'sso_required' ? apiError.meta?.connectionId : undefined;
 
   // Reset before a route change so the error state is not retained
-  useEffect(() => {
-    const unsub = router.subscribe('onBeforeRouteMount', () => {
-      resetErrorBoundary?.();
-    });
-    return unsub;
-  }, [router, resetErrorBoundary]);
+  useEffect(() => router.subscribe('onBeforeRouteMount', () => resetErrorBoundary?.()), [router, resetErrorBoundary]);
 
   const handleReload = () => {
     resetErrorBoundary?.();
@@ -106,23 +116,10 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                   {showDetails && (
                     <motion.div {...collapseMotion} className="overflow-hidden">
                       <div className="grid grid-cols-[auto_1fr] place-items-start gap-1 pb-4 text-sm">
-                        {(
-                          [
-                            ['c:request_id', apiError.requestId],
-                            // A server error carries the moment it was raised; one made in the browser shows the time it renders.
-                            ['c:timestamp', new Date(apiError.timestamp ?? Date.now()).toUTCString()],
-                            ['c:message', apiError.message],
-                            ['c:type', apiError.type],
-                            ['c:resource_type', apiError.entityType],
-                            ['c:http_status', apiError.status],
-                            ['c:severity', apiError.severity],
-                            ['c:user_id', apiError.userId],
-                            ['c:organization_id', apiError.organizationId],
-                          ] as const
-                        ).map(([label, value]) => (
+                        {errorDetailRows(apiError).map(([label, value]) => (
                           <Fragment key={label}>
                             <div className="place-self-end pr-4 font-medium">{t(label)}</div>
-                            <div>{value || 'na'}</div>
+                            <div>{value || '-'}</div>
                           </Fragment>
                         ))}
                       </div>

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/mod
 interface ToolCardProps {
   /** i18n key for the card title. */
   label: TKey;
-  /** Optional resource i18n key interpolated into the title. */
+  /** Interpolated into the title as `resource`, lowercased. */
   resource?: TKey;
   description?: ReactNode;
   /** Shows the unsaved-changes badge in the title. */

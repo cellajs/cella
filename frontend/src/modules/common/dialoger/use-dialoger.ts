@@ -17,8 +17,8 @@ export type DialogData = {
   className?: string;
   headerClassName?: string;
   container?: DialogContainerOptions;
-  title?: string | ReactNode;
-  titleContent?: string | ReactNode;
+  title?: ReactNode;
+  titleContent?: ReactNode;
   onClose?: (isCleanup?: boolean) => void;
 };
 
@@ -34,7 +34,7 @@ interface DialogStoreState {
   scrollToTop: (id: number | string) => void;
 }
 
-// Manages one or multiple dialogs; on mobile they render as drawers.
+/** Store of the open dialogs, which `Dialoger` renders. */
 export const useDialoger = create<DialogStoreState>((set, get) => ({
   dialogs: [],
 
@@ -66,5 +66,4 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
   },
 }));
 
-// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
 export { useDialoger as dialoger };

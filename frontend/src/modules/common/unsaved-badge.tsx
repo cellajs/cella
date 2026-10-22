@@ -1,8 +1,13 @@
 import { SquarePenIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '~/modules/ui/badge';
 
-export function UnsavedBadge({ title }: { title?: string | React.ReactNode }) {
+interface UnsavedBadgeProps {
+  title?: ReactNode;
+}
+
+export function UnsavedBadge({ title }: UnsavedBadgeProps) {
   const { t } = useTranslation();
   return (
     <>

@@ -40,5 +40,4 @@ export const useAuthStore = create<State & Actions>((set) => ({
   resetSteps: () => set(() => ({ ...initial })),
 }));
 
-// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
 export { useAuthStore as authStore };

@@ -22,7 +22,7 @@ export function Root() {
     () => (appConfig.has.chatSupport && isOnline ? import('~/modules/common/gleap-support') : Promise.resolve({ GleapSupport: NoChatSupport })),
     'GleapSupport',
     5000,
-  ); // 5 seconds delay
+  );
 
   useEffect(() => {
     configure({ trackLocalhostAs: null });

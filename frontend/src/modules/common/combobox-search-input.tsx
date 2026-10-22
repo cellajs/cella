@@ -3,6 +3,14 @@ import { SearchSpinner } from '~/modules/common/search-spinner';
 import { ComboboxPrimitive } from '~/modules/ui/combobox';
 import { cn } from '~/utils/cn';
 
+interface ComboboxSearchInputProps extends Omit<ComboboxPrimitive.Input.Props, 'value'> {
+  value: string;
+  wrapClassName?: string;
+  isSearching?: boolean;
+  spinnerDelay?: number;
+  showClear?: boolean;
+}
+
 /** Search-styled combobox input for the command palette and dropdowner. */
 export function ComboboxSearchInput({
   className,
@@ -13,13 +21,7 @@ export function ComboboxSearchInput({
   value,
   ref,
   ...props
-}: Omit<ComboboxPrimitive.Input.Props, 'value'> & {
-  value: string;
-  wrapClassName?: string;
-  isSearching?: boolean;
-  spinnerDelay?: number;
-  showClear?: boolean;
-}) {
+}: ComboboxSearchInputProps) {
   return (
     <div
       data-slot="combobox-search-input-wrapper"

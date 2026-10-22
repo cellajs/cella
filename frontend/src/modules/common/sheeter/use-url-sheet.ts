@@ -1,7 +1,6 @@
 import { useMatch, useNavigate, useSearch } from '@tanstack/react-router';
 import { type ReactNode, useEffect } from 'react';
-import type { SheetData } from '~/modules/common/sheeter/use-sheeter';
-import { sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { type SheetData, sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
 interface UseUrlSheetConfig {
@@ -23,10 +22,7 @@ function useCloseOverlay(searchParamKey: string) {
   };
 }
 
-/**
- * Manages a URL-driven sheet overlay.
- * Opens a sheet when the search param is present, closes it when removed.
- */
+/** Opens a sheet while the search param `searchParamKey` is present and closes it when the param goes. */
 export function useUrlSheet(config: UseUrlSheetConfig) {
   const { searchParamKey, renderContent, onAfterClose, options } = config;
 

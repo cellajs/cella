@@ -4,7 +4,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { alertStore } from '~/modules/common/alerter/alert-store';
 import { revalidateConnectivity } from '~/query/offline/connectivity';
 
-// Sustained-offline duration required before the UI toast appears (ms).
+// How long the connection must stay lost before the offline alert shows (ms).
 const showDelay = 2000;
 
 /**
@@ -30,7 +30,7 @@ export const useUIOffline = () => {
   useEffect(() => {
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return;
-      if (onlineManager.isOnline()) return; // not offline, nothing stale to clear
+      if (onlineManager.isOnline()) return;
       revalidateConnectivity();
     };
     document.addEventListener('visibilitychange', onVisible);
