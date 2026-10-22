@@ -17,7 +17,6 @@ export const Preview: JsxEmailComponent<PreviewProps> = ({ children = '', ...pro
 
   return (
     <div
-      data-skip="true"
       style={{
         display: 'none',
         lineHeight: '1px',
