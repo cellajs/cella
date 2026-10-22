@@ -1,12 +1,11 @@
 import { createExtension, getBlockInfoFromSelection } from '@blocknote/core';
 import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { type BlockTypeSelectItem, createReactBlockSpec } from '@blocknote/react';
+import i18n from 'i18next';
 import { SquareCheckBigIcon } from 'lucide-react';
 import { checklistItemConfig } from 'shared/utils/blocknote-schema-configs';
 import { ChecklistItemRender, ChecklistItemView, newCheckboxId } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-render';
 import type { AnyBlockNoteEditor, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
-
-const checklistTitle = 'Todos';
 
 /** Empty item becomes a paragraph, a non-empty item splits into a fresh checklist item below; returns true when it handled the key. */
 export const handleChecklistItemEnter = (editor: AnyBlockNoteEditor): boolean => {
@@ -34,8 +33,7 @@ export const handleChecklistItemEnter = (editor: AnyBlockNoteEditor): boolean =>
       { type: info.content.node.type, attrs: { checkboxId: newCheckboxId() } },
     ]);
   });
-  // The browser caret only follows once React renders the new block, so defer; the hop through prevBlock forces a
-  // real move, because re-setting the block ProseMirror already reports as current would not sync the DOM selection.
+  // Deferred until React renders the new block; the hop through prevBlock forces a real move, so the DOM selection follows.
   const { block: newItem, prevBlock } = editor.getTextCursorPosition();
   setTimeout(() => {
     if (prevBlock) editor.setTextCursorPosition(prevBlock, 'end');
@@ -54,8 +52,7 @@ const convertToChecklistItem = (editor: AnyBlockNoteEditor): boolean => {
 
 const checklistShortcutsExtension = createExtension({
   key: 'checklist-item-shortcuts' as const,
-  // The default schema keeps BlockNote's own checkListItem, whose shortcuts and input rules match the same keys
-  // and text; running first makes them create this block.
+  // BlockNote's own checkListItem stays in the schema, with shortcuts and input rules for the same keys; running first makes them create this block.
   runsBefore: ['check-list-item-shortcuts'],
   keyboardShortcuts: { Enter: ({ editor }) => handleChecklistItemEnter(editor), 'Mod-Shift-9': ({ editor }) => convertToChecklistItem(editor) },
   inputRules: [
@@ -88,15 +85,14 @@ export const checklistItemBlock = createReactBlockSpec(
 );
 
 /** The side menu's type-switch entry: BlockNote's own items name only its `checkListItem`. */
-export const checklistTypeItem: BlockTypeSelectItem = { name: checklistTitle, type: 'checklistItem', icon: SquareCheckBigIcon };
+export const getChecklistTypeItem = (): BlockTypeSelectItem => ({ name: i18n.t('c:todos'), type: 'checklistItem', icon: SquareCheckBigIcon });
 
 export const getChecklistSlashItem = (editor: CustomBlockNoteEditor) => ({
-  title: checklistTitle,
+  title: i18n.t('c:todos'),
   key: 'checklistItem',
   onItemClick: () => {
     insertOrUpdateBlockForSlashMenu(editor, { type: 'checklistItem' as const, props: { checkboxId: newCheckboxId() } });
   },
   aliases: ['checklist', 'checkbox', 'todo', 'task', 'check', 'todos'],
-  group: 'Basic blocks',
   icon: <SquareCheckBigIcon />,
 });

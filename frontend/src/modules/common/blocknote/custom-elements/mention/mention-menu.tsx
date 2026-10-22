@@ -31,7 +31,7 @@ export function MentionMenu({ members, editor }: MentionMenuProps) {
   if (!members?.length) return null;
   return (
     <GridSuggestionMenuController
-      triggerCharacter={'@'}
+      triggerCharacter="@"
       getItems={async (query) => getMentionMenuItems(members, editor, query)}
       columns={2}
       minQueryLength={0}

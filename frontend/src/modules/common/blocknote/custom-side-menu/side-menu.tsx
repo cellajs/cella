@@ -1,7 +1,7 @@
 import { SideMenuExtension } from '@blocknote/core/extensions';
 import { SideMenu, SideMenuController, useComponentsContext, useExtension, useExtensionState, usePortalElement } from '@blocknote/react';
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { type DragEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BlockTypeItems } from '~/modules/common/blocknote/custom-side-menu/block-type-items';
 import type { CustomBlock, CustomBlockNoteEditor, CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
@@ -43,7 +43,7 @@ function DragHandle({ block, editor, allowedTypes, headingLevels, pinTitleBlock 
   const [menuOpen, setMenuOpen] = useState(false);
   const isDraggingRef = useRef(false);
 
-  const handleDragStart = (event: React.DragEvent<HTMLButtonElement>) => {
+  const handleDragStart = (event: DragEvent<HTMLButtonElement>) => {
     isDraggingRef.current = true;
     setMenuOpen(false);
     sideMenu.blockDragStart(event, block);
@@ -59,12 +59,10 @@ function DragHandle({ block, editor, allowedTypes, headingLevels, pinTitleBlock 
 
   const handleClick = () => {
     if (isDraggingRef.current) return;
-    setMenuOpen((prev) => {
-      const next = !prev;
-      if (next) sideMenu.freezeMenu();
-      else sideMenu.unfreezeMenu();
-      return next;
-    });
+    const open = !menuOpen;
+    if (open) sideMenu.freezeMenu();
+    else sideMenu.unfreezeMenu();
+    setMenuOpen(open);
   };
 
   const gripButton = (

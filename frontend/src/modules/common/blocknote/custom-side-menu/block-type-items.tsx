@@ -2,7 +2,7 @@ import { SideMenuExtension } from '@blocknote/core/extensions';
 import { type BlockTypeSelectItem, useComponentsContext, useExtension } from '@blocknote/react';
 import { getBlockTypeItems, isCurrentBlockType } from '~/modules/common/blocknote/blocknote-schema';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
-import type { CustomBlock, CustomBlockNoteMenuProps, CustomBlockTypes } from '~/modules/common/blocknote/types';
+import type { CustomBlock, CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
 interface BlockTypeItemsProps extends CustomBlockNoteMenuProps {
   block: CustomBlock;
@@ -16,7 +16,7 @@ export function BlockTypeItems({ editor, block, allowedTypes, headingLevels }: B
   if (!editor.isEditable || !items.some((item) => item.type === block.type)) return null;
 
   const switchType = (item: BlockTypeSelectItem) => {
-    editor.updateBlock(block, { type: item.type as Exclude<CustomBlockTypes, 'emoji'>, props: item.props });
+    editor.updateBlock(block, { type: item.type as CustomBlock['type'], props: item.props });
     sideMenu.unfreezeMenu();
     // Refocus the editor so the open side menu does not block the blur update.
     setTimeout(() => focusEditor(editor, block.id), 0);

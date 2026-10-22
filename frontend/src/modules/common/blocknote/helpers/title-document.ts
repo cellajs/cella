@@ -1,5 +1,3 @@
-// Title documents: block 0 of a stored description is its title. Editors seed it from a template and label it with
-// `titlePlaceholder`, nothing enforces it, and both sides read the title with `titleFromDocument` (shared/blocknote).
 import { getInlineTextFromBlock, parseBlocks } from 'shared/blocknote';
 import type { TitleLevel } from '~/modules/common/blocknote/types';
 
@@ -14,6 +12,10 @@ type LooseBlock = { type: string; props?: Record<string, unknown>; content?: unk
 /** True when a block renders nothing: no text, no children, and not a media/void block. */
 const isEmptyTextBlock = (block: LooseBlock): boolean => Array.isArray(block.content) && !getInlineTextFromBlock(block) && !block.children?.length;
 
+/**
+ * Block 0 of a title document, its title. Editors seed it from a template and label it with `titlePlaceholder`; nothing enforces
+ * it, and both sides read the title with `titleFromDocument` (shared/blocknote).
+ */
 const titleBlock = (name: string, level: TitleLevel) => ({
   type: 'heading',
   props: { level },

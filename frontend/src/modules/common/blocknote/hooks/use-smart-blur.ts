@@ -5,13 +5,11 @@ import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
 interface UseSmartBlurOptions {
   editor: CustomBlockNoteEditor;
-  /** Editor root for detecting focus moves to a child element. */
   containerRef: RefObject<HTMLDivElement | null>;
-  /** Called when the blur is "real" (not into a menu/toolbar/file panel). */
   onBlur: () => void;
 }
 
-/** Fires only when focus leaves the editor, ignoring moves into BlockNote's own UI and into container descendants. */
+/** A blur handler that calls `onBlur` only when focus leaves the editor, not when it moves into BlockNote's own UI or within the container. */
 export function useSmartBlur({ editor, containerRef, onBlur }: UseSmartBlurOptions): FocusEventHandler {
   const sideMenuShown = useExtensionState(SideMenuExtension, { editor, selector: (state) => state?.show ?? false });
   const suggestionMenu = useExtension(SuggestionMenu, { editor });
@@ -19,10 +17,7 @@ export function useSmartBlur({ editor, containerRef, onBlur }: UseSmartBlurOptio
   const filePanelShown = !!useExtensionState(FilePanelExtension, { editor });
 
   return (event) => {
-    if (sideMenuShown) return;
-    if (formattingToolbarShown) return;
-    if (suggestionMenu.shown()) return;
-    if (filePanelShown) return;
+    if (sideMenuShown || formattingToolbarShown || suggestionMenu.shown() || filePanelShown) return;
 
     const nextFocused = event.relatedTarget;
     if (nextFocused && containerRef.current?.contains(nextFocused)) return;

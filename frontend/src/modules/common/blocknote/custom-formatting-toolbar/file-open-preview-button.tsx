@@ -1,10 +1,12 @@
 import { useBlockNoteEditor, useComponentsContext, useSelectedBlocks } from '@blocknote/react';
 import { ScalingIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { isMediaBlock } from '~/modules/common/blocknote/types';
 
 export function FileOpenPreviewButton() {
+  const { t } = useTranslation();
   const editor = useBlockNoteEditor(customSchema);
   const Components = useComponentsContext()!;
 
@@ -14,10 +16,10 @@ export function FileOpenPreviewButton() {
 
   return (
     <Components.FormattingToolbar.Button
-      className={'bn-button'}
+      className="bn-button"
       onClick={() => openAttachment(editor, block.id)}
-      mainTooltip={'Open attachment preview'}
-      label={'Open attachment preview'}
+      mainTooltip={t('c:open_attachment_preview')}
+      label={t('c:open_attachment_preview')}
       icon={<ScalingIcon className="size-3.5" />}
     />
   );

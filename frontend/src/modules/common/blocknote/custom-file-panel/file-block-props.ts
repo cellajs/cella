@@ -8,7 +8,7 @@ import type { UploadResults } from '~/modules/common/uploader/types';
 export type FileBlockProps = { name: string; url: string; attachmentId?: string; measuredId?: string };
 
 /**
- * An attachment as a block: referenced by id, or by cloud key in a public mode whose upload landed in the public bucket
+ * An attachment as a block: referenced by id, or by cloud key in a public mode whose upload is in the public bucket
  * (images the mid-size preview, other types the converted variant, never the full-size file).
  */
 export const attachmentBlockProps = (attachment: Attachment, isImage: boolean, mediaMode: BlockNoteMediaMode): FileBlockProps => {

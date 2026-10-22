@@ -309,7 +309,7 @@ describe('CollaborativeBlockNote with Yjs off', () => {
 
     await edit();
     const edited = contentApi.current?.getContent();
-    // The edit's own write landed in the description: nothing is left to write.
+    // The edit's own write is in the description already: nothing is left to write.
     await renderHost({ description: edited, updateData });
     await navigate();
 

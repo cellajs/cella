@@ -190,8 +190,7 @@ li:has(.is-focused) {
   font-weight: 600;
 }
 
-/* The handle must fit inside a 1.5rem left inset (the grip glyph's own transparent margin
-   supplies the visual gap), so hosts need no extra gutter beyond their ordinary padding. */
+/* The handle fits a 1.5rem left inset (the grip glyph's transparent margin gives the gap), so hosts need no extra gutter. */
 .bn-shadcn .bn-side-menu {
   position: relative;
   left: -0.125rem;
@@ -351,6 +350,10 @@ li:has(.is-focused) {
 
 .bn-shadcn th {
   border: 0.05rem solid var(--border);
+}
+/* `.bn-shadcn p` sets weight 400 on the paragraph inside each cell, so a header cell's text takes the header's bold again. */
+.bn-shadcn th p {
+  font-weight: inherit;
 }
 .bn-shadcn td {
   padding: 4px;

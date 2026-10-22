@@ -1,19 +1,17 @@
 import type { KeyboardEventHandler } from 'react';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
-// Hoisted so the map is not rebuilt per keystroke.
 const wrappingChars: Record<string, string> = { '[': ']', '{': '}', '(': ')', '`': '`', '"': '"', "'": "'" };
 
 interface UseEditorKeyboardOptions {
   editor: CustomBlockNoteEditor;
-  /** Called on Escape and Cmd/Ctrl+Enter, after the data has been committed. */
   onEscapeClick?: () => void;
   onEnterClick?: () => void;
-  /** Commits the editor's current document (parent decides what "commit" means, including whether an empty one counts). */
+  /** Commits the current document; the caller decides what that writes, and whether an empty document counts. */
   commit: () => void;
 }
 
-/** Handle selection wrapping plus commit-and-close shortcuts without bubbling form submission. */
+/** Wraps a selection in brackets or quotes; Escape and Cmd/Ctrl+Enter commit, then call their callback; Cmd+Enter does not bubble to a form. */
 export function useEditorKeyboard({ editor, onEscapeClick, onEnterClick, commit }: UseEditorKeyboardOptions): KeyboardEventHandler {
   return (event) => {
     const { metaKey, ctrlKey, key } = event;

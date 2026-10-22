@@ -9,7 +9,7 @@ export function CustomSlashMenu({ editor, allowedTypes, headingLevels }: CustomB
 
   return (
     <SuggestionMenuController
-      triggerCharacter={'/'}
+      triggerCharacter="/"
       getItems={async (query) => filterSuggestionItems(slashMenuItems, query)}
       suggestionMenuComponent={(props) => <SlashMenuList {...props} originalItemCount={slashMenuItems.length} allowedTypes={allowedTypes} />}
     />

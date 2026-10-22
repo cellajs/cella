@@ -5,10 +5,7 @@ import { hasUntrustedMediaUrls } from 'shared/utils/validate-block-media-urls';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { toaster } from '~/modules/common/toaster/toaster';
 
-/**
- * Warns once per run of media the grammar refuses (pasted from another site, say), which renders nothing and fails the
- * save: the flag resets once the document is clean, so a later occurrence warns again.
- */
+/** Warns once per run of media the grammar refuses (it renders nothing and fails the save); a clean document re-arms the warning. */
 export function useUntrustedMediaWarning(ctx: MediaRefContext) {
   const hasWarnedRef = useRef(false);
 

@@ -14,7 +14,8 @@ export const getHeadlessEditor = () => {
 };
 
 /** Block id of the media a click in rendered content hit, or null. `includeWrapped` also matches nested media and file blocks without a preview. */
-export const findClickedMediaBlockId = (target: HTMLElement, { includeWrapped = false } = {}): string | null => {
+export const findClickedMediaBlockId = (target: EventTarget, { includeWrapped = false } = {}): string | null => {
+  if (!(target instanceof Element)) return null;
   const media =
     target.closest('img, video, audio') ??
     (includeWrapped ? (target.querySelector('img, video, audio') ?? target.closest('.bn-file-block-content-wrapper')) : null);

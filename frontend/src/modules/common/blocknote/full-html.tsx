@@ -13,16 +13,15 @@ import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-ur
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { findClickedMediaBlockId, getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import { openMediaCarousel } from '~/modules/common/blocknote/helpers/open-attachment';
-import { type CustomBlock, isMediaBlock } from '~/modules/common/blocknote/types';
+import { type CommonBlockNoteProps, type CustomBlock, isMediaBlock } from '~/modules/common/blocknote/types';
 import { cn } from '~/utils/cn';
 
 // DOMPurify's default URI policy strips `blob:`, which this render needs for locally cached images; all other schemes keep the default.
 const allowedUriRegexp = /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i;
 
 /**
- * First-pass HTML (unresolved media refs) per organization and document string. Layout-identical to the
- * resolved pass (media boxes are reserved via aspect-ratio), so a cache hit lets the first commit paint the
- * document at full height synchronously; lists that measure rows (virtualizers) see the real height at once.
+ * First-pass HTML (media refs unresolved) per organization and document. It lays out like the resolved pass (aspect-ratio
+ * media boxes), so a cache hit paints the document at full height in the first commit, as row-measuring lists need.
  */
 const firstPassHtmlCache = new Map<string, string>();
 const firstPassCacheMax = 300;
@@ -73,9 +72,8 @@ const toFullHtml = (blocks: CustomBlock[]): string | null => {
 };
 
 /**
- * Computes a document's first-pass HTML into the cache ahead of render, so the component's first
- * commit is synchronous; never throws, so one document cannot stop a batch. Calls blocksToFullHTML
- * (flushSync inside): never call during React render or commit; an effect's async continuation is safe.
+ * Computes a document's first-pass HTML into the cache ahead of render, so the component's first commit is synchronous; never
+ * throws, so one document cannot stop a batch. It calls blocksToFullHTML (flushSync): never during React render or commit.
  */
 export function precomputeDocumentHtml(document: string, organizationId?: string): void {
   const key = firstPassKey(document, organizationId);
@@ -85,17 +83,13 @@ export function precomputeDocumentHtml(document: string, organizationId?: string
   cacheFirstPass(key, toFullHtml(renderableBlocks(blocks, { organizationId })) ?? '');
 }
 
-interface BlockNoteFullHtmlProps {
-  id: string;
+interface BlockNoteFullHtmlProps extends Pick<CommonBlockNoteProps, 'id' | 'className' | 'dense' | 'clickOpensPreview'> {
   defaultValue: string;
-  className?: string;
-  dense?: boolean;
   /**
    * Lays the document out as inline text, so what follows it (a badge, a button) stays on its last line: for a one-block summary.
    * The surrounding block then sets the line height.
    */
   inline?: boolean;
-  clickOpensPreview?: boolean;
   /** Needed to resolve private (id-referenced) inline media via presigned URLs. */
   tenantId?: string;
   organizationId?: string;
@@ -124,7 +118,7 @@ async function resolveMediaBlocks(
             mediaItems.push({ id: block.id, url: resolvedUrl, filename: block.props.name, contentType: block.type });
           } else if (!getBlockPendingUpload(props)) {
             // A gone or denied file renders nothing, as a refused ref does; a pending one keeps its ref for the placeholder.
-            return (children as CustomBlock[] | undefined) ?? [];
+            return children;
           }
         }
 
@@ -138,7 +132,7 @@ async function resolveMediaBlocks(
   return { resolved, mediaItems };
 }
 
-function BlockNoteFullHtml({
+export function BlockNoteFullHtml({
   id,
   defaultValue,
   className,
@@ -153,7 +147,6 @@ function BlockNoteFullHtml({
 
   // `ready` once a first pass is computed, an empty one included: an empty document has nothing to wait for.
   const [renderState, setRenderState] = useState<{ html: string; mediaItems: CarouselItemData[]; ready: boolean }>(() => {
-    // A precomputed first pass paints the document at full height in the first commit (no pop-in).
     const cached = firstPassHtmlCache.get(firstPassKey(defaultValue, organizationId));
     return { html: cached ?? '', mediaItems: [], ready: cached !== undefined };
   });
@@ -214,7 +207,7 @@ function BlockNoteFullHtml({
   const handleClick: MouseEventHandler = (event) => {
     if (!clickOpensPreview || renderState.mediaItems.length === 0) return;
 
-    const blockId = findClickedMediaBlockId(event.target as HTMLElement);
+    const blockId = findClickedMediaBlockId(event.target);
     if (!blockId) return;
 
     event.preventDefault();
@@ -239,5 +232,3 @@ function BlockNoteFullHtml({
     </div>
   );
 }
-
-export { BlockNoteFullHtml };
