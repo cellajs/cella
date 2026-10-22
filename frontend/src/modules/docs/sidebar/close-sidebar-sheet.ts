@@ -1,5 +1,5 @@
 import type { MouseEvent } from 'react';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { getRouter } from '~/routes/-router-instance';
 
 /**
@@ -9,9 +9,9 @@ import { getRouter } from '~/routes/-router-instance';
 export function closeSidebarSheetAndNavigate(e: MouseEvent<HTMLAnchorElement>) {
   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
-  const sheet = useSheeter.getState().get('docs-sidebar');
+  const sheet = sheeter.getState().get('docs-sidebar');
   if (!sheet || sheet.open === false) return;
-  useSheeter.getState().remove('docs-sidebar');
+  sheeter.getState().remove('docs-sidebar');
 
   const href = e.currentTarget.getAttribute('href');
   if (!href) return;

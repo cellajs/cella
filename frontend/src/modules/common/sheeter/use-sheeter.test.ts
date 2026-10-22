@@ -158,53 +158,53 @@ describe('sheeter store', () => {
 });
 
 describe('keepMounted sheets', () => {
-  beforeEach(() => useSheeter.setState({ sheets: [] }));
+  beforeEach(() => sheeter.setState({ sheets: [] }));
 
-  const openStates = () => useSheeter.getState().sheets.map((s) => [s.id, s.open]);
+  const openStates = () => sheeter.getState().sheets.map((s) => [s.id, s.open]);
 
   it('closes in place on remove and runs onClose once', () => {
     const onClose = vi.fn();
-    useSheeter.getState().create(null, sheet('a', { keepMounted: true, onClose }));
+    sheeter.getState().create(null, sheet('a', { keepMounted: true, onClose }));
 
-    useSheeter.getState().remove('a');
-    useSheeter.getState().remove('a');
+    sheeter.getState().remove('a');
+    sheeter.getState().remove('a');
 
     expect(openStates()).toEqual([['a', false]]);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('closes in place when every sheet or the route-bound sheets close', () => {
-    useSheeter.getState().create(null, sheet('kept', { keepMounted: true }));
-    useSheeter.getState().create(null, sheet('plain'));
+    sheeter.getState().create(null, sheet('kept', { keepMounted: true }));
+    sheeter.getState().create(null, sheet('plain'));
 
-    useSheeter.getState().remove();
+    sheeter.getState().remove();
     expect(openStates()).toEqual([['kept', false]]);
 
-    useSheeter.getState().create(null, sheet('kept', { keepMounted: true }));
-    useSheeter.getState().removeOnRouteChange();
+    sheeter.getState().create(null, sheet('kept', { keepMounted: true }));
+    sheeter.getState().removeOnRouteChange();
     expect(openStates()).toEqual([['kept', false]]);
   });
 
   it('mounts closed, leaves an existing sheet alone and opens on create', () => {
-    useSheeter.getState().mount('first', sheet('a'));
-    expect(useSheeter.getState().get('a')).toMatchObject({ content: 'first', open: false, keepMounted: true, modal: true });
+    sheeter.getState().mount('first', sheet('a'));
+    expect(sheeter.getState().get('a')).toMatchObject({ content: 'first', open: false, keepMounted: true, modal: true });
 
-    useSheeter.getState().mount('second', sheet('a'));
-    expect(useSheeter.getState().get('a')).toMatchObject({ content: 'first' });
+    sheeter.getState().mount('second', sheet('a'));
+    expect(sheeter.getState().get('a')).toMatchObject({ content: 'first' });
 
-    useSheeter.getState().create('third', sheet('a', { keepMounted: true }));
-    expect(useSheeter.getState().get('a')).toMatchObject({ content: 'third', open: true });
+    sheeter.getState().create('third', sheet('a', { keepMounted: true }));
+    expect(sheeter.getState().get('a')).toMatchObject({ content: 'third', open: true });
   });
 
   it('unmounts a closed sheet without onClose, an open one with a cleanup onClose', () => {
     const onClose = vi.fn();
-    useSheeter.getState().mount(null, sheet('closed', { onClose }));
-    useSheeter.getState().create(null, sheet('open', { keepMounted: true, onClose }));
+    sheeter.getState().mount(null, sheet('closed', { onClose }));
+    sheeter.getState().create(null, sheet('open', { keepMounted: true, onClose }));
 
-    useSheeter.getState().unmount('closed');
+    sheeter.getState().unmount('closed');
     expect(onClose).not.toHaveBeenCalled();
 
-    useSheeter.getState().unmount('open');
+    sheeter.getState().unmount('open');
     expect(onClose.mock.calls).toEqual([[true]]);
     expect(openIds()).toEqual([]);
   });
