@@ -3,10 +3,7 @@ import { useCloseOnEscape } from '~/hooks/use-close-on-escape';
 import type { PositionedContentProps } from '~/modules/ui/popover';
 import { cn } from '~/utils/cn';
 
-/**
- * Preview of the content behind a link, shown on hover or keyboard focus of the trigger (Base UI Preview Card).
- * Escape closes it from anywhere, also when the pointer opened it and focus is elsewhere.
- */
+/** Previews the content behind a link on hover or keyboard focus of its trigger; Escape closes it from anywhere. */
 export function HoverCard({ open, defaultOpen, onOpenChange, ...props }: PreviewCardPrimitive.Root.Props) {
   const openState = useCloseOnEscape({ open, defaultOpen, onOpenChange });
 

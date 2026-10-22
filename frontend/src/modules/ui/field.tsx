@@ -268,7 +268,7 @@ export function FormLabel({
     <div className="flex flex-col">
       <div className="flex items-center gap-2">
         {label}
-        <HelpToggle open={helpOpen} onToggle={() => setHelpOpen(!helpOpen)} className="-my-1" />
+        <HelpToggle open={helpOpen} onToggle={() => setHelpOpen((open) => !open)} className="-my-1" />
       </div>
       <HelpCollapse open={helpOpen}>
         <Field.Description render={<div />}>{help}</Field.Description>

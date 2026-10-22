@@ -3,9 +3,7 @@ import { CheckIcon, ChevronDownIcon, XIcon } from 'lucide-react';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
 
-// Styled base-ui Combobox primitives
-
-// The first match is highlighted while typing, so type-then-Enter picks without arrow keys
+/** The first match is highlighted while typing, so type-then-Enter picks without arrow keys. */
 function Combobox<Value, Multiple extends boolean | undefined = false>(props: ComboboxPrimitive.Root.Props<Value, Multiple>) {
   return <ComboboxPrimitive.Root autoHighlight {...props} />;
 }

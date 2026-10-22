@@ -1,15 +1,14 @@
 import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
-import type { ReactNode } from 'react';
 import { useCloseOnEscape } from '~/hooks/use-close-on-escape';
 import type { PositionedContentProps } from '~/modules/ui/popover';
 import { cn } from '~/utils/cn';
 
-export function TooltipProvider({ delay = 200, timeout = 400, ...props }: { children: ReactNode; delay?: number; timeout?: number }) {
-  return <TooltipPrimitive.Provider data-slot="tooltip-provider" delay={delay} timeout={timeout} {...props} />;
+export function TooltipProvider({ delay = 200, ...props }: TooltipPrimitive.Provider.Props) {
+  return <TooltipPrimitive.Provider data-slot="tooltip-provider" delay={delay} {...props} />;
 }
 
 /** Escape closes the tooltip from anywhere, also inside a sheet or dialog. */
-export function Tooltip({ open, defaultOpen, onOpenChange, ...props }: Omit<TooltipPrimitive.Root.Props, 'children'> & { children?: ReactNode }) {
+export function Tooltip({ open, defaultOpen, onOpenChange, ...props }: TooltipPrimitive.Root.Props) {
   const openState = useCloseOnEscape({ open, defaultOpen, onOpenChange });
 
   return <TooltipPrimitive.Root data-slot="tooltip" {...openState} {...props} />;

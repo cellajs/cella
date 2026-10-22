@@ -1,7 +1,7 @@
 import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
 import { cn } from '~/utils/cn';
 
-/** Props cella adds to the positioned popups; the select and the tooltip take `container` only. */
+/** Props the positioned popups add to Base UI's; the select and the tooltip take `container` only. */
 export interface PositionedContentProps {
   /** Part of @blocknote/shadcn's component contract: BlockNote portals the popup into the element usePortalElement() returns. */
   container?: PopoverPrimitive.Portal.Props['container'];

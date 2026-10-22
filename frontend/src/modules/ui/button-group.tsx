@@ -1,6 +1,6 @@
 import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
-import type React from 'react';
+import type * as React from 'react';
 import { Separator } from '~/modules/ui/separator';
 import { cn } from '~/utils/cn';
 

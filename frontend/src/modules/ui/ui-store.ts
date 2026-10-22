@@ -11,31 +11,40 @@ export type Mode = 'light' | 'dark';
 export type Contrast = User['contrast'];
 
 interface UIStoreState {
+  /** Persists the query cache to IndexedDB, so it survives a restart; a build without `appConfig.has.pwa` turns it off. */
   offlineAccess: boolean;
   toggleOfflineAccess: () => void;
 
-  mode: Mode; // Current color mode (default to system preference)
+  /** Defaults to the browser's `prefers-color-scheme`. */
+  mode: Mode;
   setMode: (mode: Mode) => void;
 
-  theme: Theme; // Selected theme ('none' for default)
+  /** `'none'` is the default theme. */
+  theme: Theme;
   setTheme: (theme: Theme) => void;
 
-  contrast: Contrast; // 'system' follows prefers-contrast, 'more' forces the raised tokens and keeps toasts open
+  /** `'more'` forces the raised tokens and keeps toasts open. */
+  contrast: Contrast;
   setContrast: (contrast: Contrast) => void;
 
-  publicAlertsSeen: string[]; // Public route alert IDs dismissed before a user DB exists
+  /** Public route alert IDs dismissed before a user DB exists. */
+  publicAlertsSeen: string[];
   setPublicAlertSeen: (alertId: string) => void;
 
-  hintsSeen: string[]; // One-time UI hint IDs already shown (e.g. floating nav menu label)
+  /** One-time UI hint IDs already shown (e.g. floating nav menu label). */
+  hintsSeen: string[];
   setHintSeen: (hintId: string) => void;
 
+  /** Hides non-essential UI; not persisted. */
   focusView: boolean;
   setFocusView: (focusView: boolean) => void;
 
-  uiLocks: string[]; // Active UI lock sources
+  /** Overlay kinds open now, such as `'sheeter'`; pull-to-refresh pauses while any is held. */
+  uiLocks: string[];
   lockUI: (source: string) => void;
   unlockUI: (source: string) => void;
 
+  /** Clears `offlineAccess` only; every other field keeps its value. */
   reset: () => void;
 }
 
@@ -109,7 +118,6 @@ export const useUIStore = create<UIStoreState>()(
             }
           });
         },
-        // Partial reset (not `set(initStore)`): only the session flag is cleared; mode/theme/contrast/uiLocks persist.
         reset: () => set(() => ({ offlineAccess: false })),
       })),
       {

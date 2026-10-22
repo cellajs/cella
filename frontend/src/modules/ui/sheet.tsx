@@ -48,7 +48,6 @@ export function SheetContent({
   side?: 'top' | 'right' | 'bottom' | 'left';
   overlay?: boolean;
   container?: HTMLElement | null;
-  /** Enable auto-scrolling when dragging elements near edges. */
   autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
   /** Passed to the Base UI portal: the closed popup stays in the DOM, hidden. */
   keepMounted?: boolean;

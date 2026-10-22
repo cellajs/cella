@@ -2,16 +2,12 @@ import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { PanelLeftIcon } from 'lucide-react';
 import type * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
 import { cn } from '~/utils/cn';
-
-/**
- * Collapsible sidebar backed by the navigation store.
- * @link https://ui.shadcn.com/docs/components/sidebar
- */
 
 type SidebarState = 'expanded' | 'collapsed';
 
@@ -51,11 +47,7 @@ function SidebarWrapper({ className, style, children, ...props }: React.Componen
   );
 }
 
-/**
- * Mounts no `TooltipProvider`, unlike the shadcn source: upstream's `delayDuration={0}` for an icon rail shadowed the
- * app-wide delay from `root.tsx`, firing every nav tooltip on the briefest pass of the cursor. Inheriting that provider
- * keeps the nav in one delay group, so the first tooltip waits and the buttons next to it still answer instantly.
- */
+/** Mounts no `TooltipProvider`, so the nav tooltips share the app-wide delay group of `root.tsx`: the first waits, its neighbors open at once. */
 function Sidebar({
   side = 'left',
   variant = 'sidebar',
@@ -126,6 +118,7 @@ function Sidebar({
 }
 
 function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<typeof Button>) {
+  const { t } = useTranslation();
   const { toggleSidebar } = useSidebar();
 
   return (
@@ -142,7 +135,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       {...props}
     >
       <PanelLeftIcon />
-      <span className="sr-only">Toggle Sidebar</span>
+      <span className="sr-only">{t('c:toggle_menu')}</span>
     </Button>
   );
 }

@@ -49,8 +49,7 @@ export const buttonVariants = cva(
       {
         variant: ['default', 'brand', 'destructive', 'success', 'warning'],
         soft: true,
-        // The strong steps (not plain soft-bg) so the button stays legible on a soft-tinted surface;
-        // hover deepens all three: fill, text and frame.
+        // The strong steps keep the button legible on a soft-tinted surface.
         className:
           'soft-bg-strong soft-border-medium hover:soft-bg-stronger hover:soft-border-strong soft-text-strong hover:soft-text-stronger border shadow-none',
       },
@@ -69,10 +68,7 @@ export interface ButtonProps extends React.ComponentProps<'button'>, VariantProp
   render?: useRender.RenderProp;
 }
 
-/**
- * `loading` disables the button and overlays a spinner on its transparent content, so the width stays put and the
- * content still names the button. Native buttons default to `type="button"`.
- */
+/** `loading` disables the button and overlays a spinner, keeping its width and its name; native buttons default to `type="button"`. */
 export function Button({ className, variant, soft, size, press, render, loading, disabled, children, ...props }: ButtonProps) {
   const content = loading ? (
     <span className="relative inline-flex items-center justify-center gap-[inherit]">

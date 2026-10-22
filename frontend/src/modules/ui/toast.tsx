@@ -1,7 +1,7 @@
 import { Toast as ToastPrimitive } from '@base-ui/react/toast';
-import { t } from 'i18next';
 import { CircleCheckIcon, InfoIcon, LoaderCircleIcon, OctagonXIcon, TriangleAlertIcon, XIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
@@ -16,8 +16,7 @@ const toastIcons: Record<string, ReactNode> = {
   loading: <LoaderCircleIcon className="animate-spin" />,
 };
 
-// Stacking and swipe transforms follow the shadcn base toast. `--toast-dir` (1 for bottom, -1 for top, set on the
-// viewport) flips every vertical offset, so one class list serves both edges.
+// `--toast-dir` (1 for bottom, -1 for top, set on the viewport) flips every vertical offset, so one class list serves both edges.
 const toastRootClassName = cn(
   'group/toast focus-effect pointer-events-auto absolute right-0 bottom-0 z-[calc(1000-var(--toast-index))] w-full origin-bottom select-none rounded-lg border bg-popover text-popover-foreground shadow-lg will-change-transform',
   'group-data-[position=top]/toast-viewport:top-0 group-data-[position=top]/toast-viewport:bottom-auto group-data-[position=top]/toast-viewport:origin-top',
@@ -39,6 +38,7 @@ const toastRootClassName = cn(
 );
 
 function ToastList({ position }: { position: ToastPosition }) {
+  const { t } = useTranslation();
   const { toasts } = ToastPrimitive.useToastManager();
   const swipeDirection: ToastPrimitive.Root.Props['swipeDirection'] = position === 'top' ? ['up', 'right'] : ['down', 'right'];
 
@@ -71,10 +71,7 @@ function ToastList({ position }: { position: ToastPosition }) {
   ));
 }
 
-/**
- * Renders the toasts of `toastManager` in a stack at the top or bottom edge. Toasts carry their own
- * icon per `type`, a close button and an optional action. Ported from the shadcn base toast.
- */
+/** Stacks the toasts of `toastManager`, each with its `type` icon, a close button and an optional action; ported from the shadcn base toast. */
 export function Toaster({ children, position = 'bottom', ...props }: ToastPrimitive.Provider.Props & { position?: ToastPosition }) {
   return (
     <ToastPrimitive.Provider {...props}>

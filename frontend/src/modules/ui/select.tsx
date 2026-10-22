@@ -4,16 +4,15 @@ import { createContext, useContext, useState } from 'react';
 import type { PositionedContentProps } from '~/modules/ui/popover';
 import { cn } from '~/utils/cn';
 
-// Context to pass the current value from Select to SelectItem for reliable checkmarks.
-// Works around a Base UI timing issue where ItemIndicator can show stale selection state.
+// Hands the value to SelectItem for its check: Base UI's ItemIndicator can show a stale selection.
 const SelectValueContext = createContext<string | null | undefined>(undefined);
 
-// Override onValueChange to narrow Base UI's (string | null) to string for all consumers.
-// Pass `items` when labels differ from values: SelectValue reads them before the popup has ever mounted.
 interface SelectProps extends Omit<SelectPrimitive.Root.Props<string>, 'onValueChange'> {
+  /** Skips Base UI's `null` value, so a consumer always gets a string. */
   onValueChange?: (value: string) => void;
 }
 
+/** Pass `items` when labels differ from values: SelectValue reads them before the popup has ever mounted. */
 function Select({ onValueChange, value, defaultValue, ...props }: SelectProps) {
   // Mirrors an uncontrolled value, so its item shows the check too
   const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);

@@ -55,22 +55,11 @@ function DrawerContent({
     <DrawerPortal keepMounted={keepMounted}>
       <div className="group/drawer-portal contents">
         <DrawerOverlay />
-        <DrawerPrimitive.Viewport
-          className={cn(
-            'fixed inset-0 z-118 flex group-has-data-[overlay=dialog]/drawer-portal:z-126 group-has-data-[overlay=dropdown]/drawer-portal:z-300',
-            // The on-screen keyboard overlays the layout viewport without resizing it, so DrawerVirtualKeyboardProvider's inset lifts the sheet.
-            'pb-(--drawer-keyboard-inset,0px)',
-            // Viewport handles Popup positioning via flex alignment, using :has() to detect swipe direction
-            'has-data-[swipe-direction=down]:items-end has-data-[swipe-direction=down]:justify-center',
-            'has-data-[swipe-direction=up]:items-start has-data-[swipe-direction=up]:justify-center',
-            'has-data-[swipe-direction=right]:items-stretch has-data-[swipe-direction=right]:justify-end',
-            'has-data-[swipe-direction=left]:items-stretch has-data-[swipe-direction=left]:justify-start',
-          )}
-        >
+        {/* The on-screen keyboard overlays the layout viewport without resizing it, so DrawerVirtualKeyboardProvider's inset lifts the sheet. */}
+        <DrawerPrimitive.Viewport className="fixed inset-0 z-118 flex pb-(--drawer-keyboard-inset,0px) has-data-[swipe-direction=up]:items-start has-data-[swipe-direction=down]:items-end has-data-[swipe-direction=left]:items-stretch has-data-[swipe-direction=right]:items-stretch has-data-[swipe-direction=left]:justify-start has-data-[swipe-direction=right]:justify-end has-data-[swipe-direction=down]:justify-center has-data-[swipe-direction=up]:justify-center group-has-data-[overlay=dialog]/drawer-portal:z-126 group-has-data-[overlay=dropdown]/drawer-portal:z-300">
           <DrawerPrimitive.Popup
             data-slot="drawer-content"
             className={cn(
-              // Popup is a flex child of Viewport and scrolls via overflow-y-auto.
               'group/drawer-content flex touch-auto flex-col overflow-y-auto overscroll-contain bg-background focus-visible:outline-hidden',
               'transition-discrete transition-transform duration-300 ease-out will-change-transform',
               'data-swiping:select-none data-swiping:transition-none!',
@@ -80,12 +69,12 @@ function DrawerContent({
               'data-[swipe-direction=right]:w-[95vw] data-[swipe-direction=right]:lg:max-w-4xl',
               'data-[swipe-direction=left]:w-[95vw] data-[swipe-direction=left]:lg:max-w-4xl',
               // Bleed: a swipe away from the close direction lifts the popup off its screen edge (damped, ~30px).
-              // A background-colored shadow on that edge fills the gap. Unlike margin/padding bleed it leaves layout and scroll alone.
+              // A background-colored shadow on that edge fills the gap without touching layout or scroll.
               'data-[swipe-direction=down]:shadow-[0_3rem_0_var(--color-background)]',
               'data-[swipe-direction=up]:shadow-[0_-3rem_0_var(--color-background)]',
               'data-[swipe-direction=right]:shadow-[3rem_0_0_var(--color-background)]',
               'data-[swipe-direction=left]:shadow-[-3rem_0_0_var(--color-background)]',
-              // Swipe transforms - idle position using CSS vars
+              // Position at rest and while dragged, from Base UI's snap-point and swipe variables.
               'data-[swipe-direction=down]:transform-[translateY(calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)))]',
               'data-[swipe-direction=up]:transform-[translateY(calc(var(--drawer-snap-point-offset,0px)+var(--drawer-swipe-movement-y,0px)))]',
               'data-[swipe-direction=right]:transform-[translateX(var(--drawer-swipe-movement-x,0px))]',
@@ -112,7 +101,7 @@ function DrawerContent({
             <div className="sticky top-0 z-20 flex shrink-0 cursor-grab items-center justify-center bg-background active:cursor-grabbing group-data-[swipe-direction=up]/drawer-content:sticky group-data-[swipe-direction=up]/drawer-content:top-auto group-data-[swipe-direction=up]/drawer-content:bottom-0 group-data-[swipe-direction=up]/drawer-content:order-last group-data-[swipe-direction=left]/drawer-content:hidden group-data-[swipe-direction=right]/drawer-content:hidden group-data-[swipe-direction=down]/drawer-content:py-2 group-data-[swipe-direction=up]/drawer-content:py-2">
               <div className="h-1 w-20 rounded-full bg-muted" />
             </div>
-            {/* shrink-0 prevents flex from collapsing Content. Children grow naturally, Popup scrolls when overflow. */}
+            {/* shrink-0 keeps flex from collapsing Content, so the popup scrolls it. */}
             <DrawerPrimitive.Content className="shrink-0">{children}</DrawerPrimitive.Content>
           </DrawerPrimitive.Popup>
         </DrawerPrimitive.Viewport>

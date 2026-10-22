@@ -19,7 +19,6 @@ export const alertVariants = cva(
       },
       soft: { true: '', false: '' },
     },
-    // Solid fills gated on `soft: false`, so the soft form never emits `text-<intent>-foreground`
     compoundVariants: [
       { variant: ['brand', 'destructive', 'success', 'warning'], soft: true, className: 'soft-bg soft-border soft-text' },
       { variant: 'brand', soft: false, className: 'bg-brand text-brand-foreground' },

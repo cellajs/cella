@@ -39,32 +39,25 @@ interface AvatarGroupContextValue {
 
 const AvatarGroupContext = React.createContext<AvatarGroupContextValue>({});
 
-function AvatarGroupProvider({ children, limit }: { children?: React.ReactNode; limit?: number }) {
-  const [count, setCount] = React.useState<number>(0);
-
-  return <AvatarGroupContext.Provider value={{ count, setCount, limit }}>{children}</AvatarGroupContext.Provider>;
-}
-
-function useAvatarGroupContext() {
-  return React.useContext(AvatarGroupContext);
-}
-
 export interface AvatarGroupProps extends React.ComponentProps<'div'> {
+  /** Most items shown, the overflow pill included. */
   limit?: number;
 }
 
 export function AvatarGroup({ children, className, limit, ...props }: AvatarGroupProps) {
+  const [count, setCount] = React.useState(0);
+
   return (
-    <AvatarGroupProvider limit={limit}>
+    <AvatarGroupContext.Provider value={{ count, setCount, limit }}>
       <div className={cn('relative flex items-center justify-end -space-x-2', className)} {...props}>
         {children}
       </div>
-    </AvatarGroupProvider>
+    </AvatarGroupContext.Provider>
   );
 }
 
 export function AvatarGroupList({ children }: { children?: React.ReactNode }) {
-  const { limit, setCount } = useAvatarGroupContext();
+  const { limit, setCount } = React.useContext(AvatarGroupContext);
 
   const childArray = React.Children.toArray(children);
   const count = childArray.length;
@@ -81,7 +74,7 @@ export function AvatarGroupList({ children }: { children?: React.ReactNode }) {
 }
 
 export function AvatarOverflowIndicator({ className, ...props }: React.ComponentProps<'span'>) {
-  const { limit, count } = useAvatarGroupContext();
+  const { limit, count } = React.useContext(AvatarGroupContext);
   if (!limit || !count || count <= limit) return null;
   return (
     <span className={cn('relative flex size-10 shrink-0 items-center justify-center rounded-full bg-background shadow-xs', className)} {...props}>

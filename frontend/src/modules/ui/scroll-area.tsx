@@ -17,13 +17,13 @@ export function ScrollArea({
 }: ScrollAreaPrimitive.Root.Props & {
   viewportRef?: React.RefObject<HTMLDivElement | null>;
   viewportClassName?: string;
-  /** Enable horizontal scrolling (min-width: fit-content on content). Defaults to false. */
+  /** Enable horizontal scrolling (min-width: fit-content on content). */
   horizontalScroll?: boolean;
   /** Enable auto-scrolling when dragging elements near edges (uses @atlaskit/pragmatic-drag-and-drop). */
   autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
   /** Disable clicking the scrollbar track to jump scroll position. Only the thumb remains draggable. */
   disableTrackClick?: boolean;
-  /** Keep the viewport out of the tab order. Only for content that has its own tab stops, which already scroll it. */
+  /** `false` takes the viewport out of the tab order: only for content with its own tab stops, which scroll it already. */
   focusableViewport?: boolean;
 }) {
   const internalViewportRef = React.useRef<HTMLDivElement | null>(null);

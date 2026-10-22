@@ -1,5 +1,5 @@
 import { XIcon } from 'lucide-react';
-import type * as React from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
@@ -11,18 +11,17 @@ export type Removable =
       removeLabel: string;
     };
 
-type ChipProps = Omit<React.ComponentProps<'span'>, 'children'> & {
-  children: React.ReactNode;
+type ChipProps = Omit<ComponentProps<'span'>, 'children'> & {
+  children: ReactNode;
   /** Media as tall as the chip, such as an avatar. It covers the chip's start edge and border, so the two read as one piece. */
-  start?: React.ReactNode;
+  start?: ReactNode;
   /** Keeps its width while the text truncates, such as a count. */
-  end?: React.ReactNode;
+  end?: ReactNode;
 } & Removable;
 
 /**
- * A selected value shown as a pill, such as an email or a label, with an optional remove button. The remove button is a
- * real button, so it cannot sit inside another button: a picker that shows its chips lays its own trigger behind them
- * and sets `pointer-events-none` on the chip row, which the remove button opts back out of.
+ * A selected value as a pill, with an optional remove button. That button cannot sit inside another button, so a picker
+ * lays its own trigger behind its chips and sets `pointer-events-none` on their row, which the remove button opts out of.
  */
 export function Chip({ className, children, start, end, onRemove, removeLabel, ...props }: ChipProps) {
   return (
