@@ -1,7 +1,7 @@
 import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
-import type * as React from 'react';
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useState } from 'react';
+import type { PositionedContentProps } from '~/modules/ui/popover';
 import { cn } from '~/utils/cn';
 
 // Context to pass the current value from Select to SelectItem for reliable checkmarks.
@@ -12,33 +12,35 @@ const SelectValueContext = createContext<string | null | undefined>(undefined);
 // Pass `items` when labels differ from values: SelectValue reads them before the popup has ever mounted.
 type SelectProps = Omit<SelectPrimitive.Root.Props<string>, 'onValueChange'> & { onValueChange?: (value: string) => void };
 
-function Select({ onValueChange, value, ...props }: SelectProps) {
+function Select({ onValueChange, value, defaultValue, ...props }: SelectProps) {
+  // Mirrors an uncontrolled value, so its item shows the check too
+  const [ownValue, setOwnValue] = useState(defaultValue);
+
   return (
-    <SelectValueContext.Provider value={value}>
+    <SelectValueContext.Provider value={value === undefined ? ownValue : value}>
       <SelectPrimitive.Root
         data-slot="select"
         value={value}
-        onValueChange={onValueChange as SelectPrimitive.Root.Props<string>['onValueChange']}
+        defaultValue={defaultValue}
+        onValueChange={(nextValue) => {
+          setOwnValue(nextValue);
+          if (nextValue !== null) onValueChange?.(nextValue);
+        }}
         {...props}
       />
     </SelectValueContext.Provider>
   );
 }
 
-function SelectGroup({ ...props }: SelectPrimitive.Group.Props & React.RefAttributes<HTMLDivElement>) {
+function SelectGroup({ ...props }: SelectPrimitive.Group.Props) {
   return <SelectPrimitive.Group data-slot="select-group" {...props} />;
 }
 
-function SelectValue({ ...props }: SelectPrimitive.Value.Props & React.RefAttributes<HTMLSpanElement>) {
+function SelectValue({ ...props }: SelectPrimitive.Value.Props) {
   return <SelectPrimitive.Value data-slot="select-value" {...props} />;
 }
 
-function SelectTrigger({
-  className,
-  size = 'default',
-  children,
-  ...props
-}: SelectPrimitive.Trigger.Props & React.RefAttributes<HTMLButtonElement> & { size?: 'sm' | 'default' }) {
+function SelectTrigger({ className, size = 'default', children, ...props }: SelectPrimitive.Trigger.Props & { size?: 'sm' | 'default' }) {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
@@ -58,34 +60,24 @@ function SelectTrigger({
 function SelectContent({
   className,
   children,
-  position = 'popper',
   align = 'center',
   side = 'bottom',
-  sideOffset,
+  sideOffset = 1,
   alignOffset,
-  alignItemWithTrigger,
+  alignItemWithTrigger = false,
   container,
   ...props
-}: React.HTMLAttributes<HTMLDivElement> & {
-  className?: string;
-  children?: React.ReactNode;
-  position?: 'popper' | 'item-aligned';
-  align?: 'start' | 'center' | 'end';
-  side?: 'top' | 'bottom' | 'left' | 'right';
-  sideOffset?: number;
-  alignOffset?: number;
-  alignItemWithTrigger?: boolean;
-  // `container` is part of @blocknote/shadcn's component contract: BlockNote portals selects into the element usePortalElement() returns
-  container?: SelectPrimitive.Portal.Props['container'];
-}) {
+}: SelectPrimitive.Popup.Props &
+  Pick<SelectPrimitive.Positioner.Props, 'side' | 'align' | 'sideOffset' | 'alignOffset' | 'alignItemWithTrigger'> &
+  Pick<PositionedContentProps, 'container'>) {
   return (
     <SelectPrimitive.Portal container={container}>
       <SelectPrimitive.Positioner
         align={align}
         side={side}
-        sideOffset={position === 'popper' ? (sideOffset ?? 1) : sideOffset}
+        sideOffset={sideOffset}
         alignOffset={alignOffset}
-        alignItemWithTrigger={alignItemWithTrigger ?? position !== 'popper'}
+        alignItemWithTrigger={alignItemWithTrigger}
         className="z-270"
       >
         <SelectPrimitive.Popup
@@ -97,9 +89,7 @@ function SelectContent({
           {...props}
         >
           <SelectScrollUpButton />
-          <SelectPrimitive.List className={cn('p-1', position === 'popper' && 'w-full min-w-(--anchor-width) scroll-my-1')}>
-            {children}
-          </SelectPrimitive.List>
+          <SelectPrimitive.List className="w-full min-w-(--anchor-width) scroll-my-1 p-1">{children}</SelectPrimitive.List>
           <SelectScrollDownButton />
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>
@@ -107,11 +97,11 @@ function SelectContent({
   );
 }
 
-function SelectLabel({ className, ...props }: SelectPrimitive.GroupLabel.Props & React.RefAttributes<HTMLDivElement>) {
+function SelectLabel({ className, ...props }: SelectPrimitive.GroupLabel.Props) {
   return <SelectPrimitive.GroupLabel data-slot="select-label" className={cn('px-2 py-1.5 text-muted-foreground text-xs', className)} {...props} />;
 }
 
-function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Props & React.RefAttributes<HTMLDivElement>) {
+function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Props) {
   const selectValue = useContext(SelectValueContext);
   const isSelected = selectValue !== undefined && props.value !== undefined && selectValue === props.value;
 
@@ -133,13 +123,13 @@ function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Prop
   );
 }
 
-function SelectSeparator({ className, ...props }: SelectPrimitive.Separator.Props & React.RefAttributes<HTMLHRElement>) {
+function SelectSeparator({ className, ...props }: SelectPrimitive.Separator.Props) {
   return (
     <SelectPrimitive.Separator data-slot="select-separator" className={cn('pointer-events-none -mx-1 my-1 h-px bg-border', className)} {...props} />
   );
 }
 
-function SelectScrollUpButton({ className, ...props }: Partial<SelectPrimitive.ScrollUpArrow.Props> & React.RefAttributes<HTMLDivElement>) {
+function SelectScrollUpButton({ className, ...props }: Partial<SelectPrimitive.ScrollUpArrow.Props>) {
   return (
     <SelectPrimitive.ScrollUpArrow
       data-slot="select-scroll-up-button"
@@ -151,7 +141,7 @@ function SelectScrollUpButton({ className, ...props }: Partial<SelectPrimitive.S
   );
 }
 
-function SelectScrollDownButton({ className, ...props }: Partial<SelectPrimitive.ScrollDownArrow.Props> & React.RefAttributes<HTMLDivElement>) {
+function SelectScrollDownButton({ className, ...props }: Partial<SelectPrimitive.ScrollDownArrow.Props>) {
   return (
     <SelectPrimitive.ScrollDownArrow
       data-slot="select-scroll-down-button"

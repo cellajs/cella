@@ -1,17 +1,16 @@
-import { autoScrollForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { Drawer as DrawerPrimitive } from '@base-ui/react/drawer';
-import * as React from 'react';
+import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 function Drawer({ ...props }: DrawerPrimitive.Root.Props) {
   return <DrawerPrimitive.Root data-slot="drawer" {...props} />;
 }
 
-function DrawerTrigger({ ...props }: DrawerPrimitive.Trigger.Props & React.RefAttributes<HTMLElement>) {
+function DrawerTrigger({ ...props }: DrawerPrimitive.Trigger.Props) {
   return <DrawerPrimitive.Trigger data-slot="drawer-trigger" {...props} />;
 }
 
-function DrawerPortal({ ...props }: DrawerPrimitive.Portal.Props & React.RefAttributes<HTMLDivElement>) {
+function DrawerPortal({ ...props }: DrawerPrimitive.Portal.Props) {
   return <DrawerPrimitive.Portal data-slot="drawer-portal" {...props} />;
 }
 
@@ -24,7 +23,7 @@ function DrawerVirtualKeyboardProvider({ ...props }: DrawerPrimitive.VirtualKeyb
   return <DrawerPrimitive.VirtualKeyboardProvider {...props} />;
 }
 
-function DrawerOverlay({ className, ...props }: DrawerPrimitive.Backdrop.Props & React.RefAttributes<HTMLDivElement>) {
+function DrawerOverlay({ className, ...props }: DrawerPrimitive.Backdrop.Props) {
   return (
     <DrawerPrimitive.Backdrop
       data-slot="drawer-overlay"
@@ -46,24 +45,12 @@ function DrawerOverlay({ className, ...props }: DrawerPrimitive.Backdrop.Props &
 function DrawerContent({
   className,
   children,
-  autoScrollOnDrag,
   keepMounted,
   ...props
-}: DrawerPrimitive.Popup.Props &
-  React.RefAttributes<HTMLDivElement> & {
-    /** Enable auto-scrolling when dragging elements near edges. */
-    autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
-    /** Keeps the closed drawer in the DOM with the `hidden` attribute, so reopening it skips the mount. */
-    keepMounted?: boolean;
-  }) {
-  const popupRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    if (!autoScrollOnDrag || !popupRef.current) return;
-    const axis = typeof autoScrollOnDrag === 'string' ? autoScrollOnDrag : undefined;
-    return autoScrollForElements({ element: popupRef.current, ...(axis && { getAllowedAxis: () => axis as 'vertical' | 'horizontal' }) });
-  }, [autoScrollOnDrag]);
-
+}: DrawerPrimitive.Popup.Props & {
+  /** Keeps the closed drawer in the DOM with the `hidden` attribute, so reopening it skips the mount. */
+  keepMounted?: boolean;
+}) {
   return (
     <DrawerPortal keepMounted={keepMounted}>
       <div className="group/drawer-portal contents">
@@ -81,7 +68,6 @@ function DrawerContent({
           )}
         >
           <DrawerPrimitive.Popup
-            ref={popupRef}
             data-slot="drawer-content"
             className={cn(
               // Popup is a flex child of Viewport and scrolls via overflow-y-auto.

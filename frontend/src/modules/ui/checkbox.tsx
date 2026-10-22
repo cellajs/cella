@@ -1,10 +1,9 @@
 import { Checkbox as CheckboxPrimitive } from '@base-ui/react/checkbox';
 import { CheckIcon, MinusIcon } from 'lucide-react';
-import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 /** Pass `indeterminate` for a mixed state (e.g. "select all" with some rows selected): it shows a minus and reads as mixed. */
-export function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
+export function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
   return (
     <CheckboxPrimitive.Root
       data-slot="checkbox"

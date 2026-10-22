@@ -1,6 +1,5 @@
 import { Tabs as TabsPrimitive } from '@base-ui/react/tabs';
 import { cva, type VariantProps } from 'class-variance-authority';
-import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 const TabsListVariants = cva('inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-none p-[3px] text-muted-foreground', {
@@ -10,17 +9,17 @@ const TabsListVariants = cva('inline-flex h-9 w-full items-center justify-center
   defaultVariants: { variant: 'default' },
 });
 
-export function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
+export function Tabs({ className, ...props }: TabsPrimitive.Root.Props) {
   return <TabsPrimitive.Root data-slot="tabs" className={cn('flex flex-col gap-2', className)} {...props} />;
 }
 
-type TabsListProps = React.ComponentProps<typeof TabsPrimitive.List> & VariantProps<typeof TabsListVariants>;
+type TabsListProps = TabsPrimitive.List.Props & VariantProps<typeof TabsListVariants>;
 
 export function TabsList({ className, variant, ...props }: TabsListProps) {
   return <TabsPrimitive.List data-slot="tabs-list" className={cn(TabsListVariants({ variant, className }))} {...props} />;
 }
 
-type TabsTriggerProps = React.ComponentProps<typeof TabsPrimitive.Tab>;
+type TabsTriggerProps = TabsPrimitive.Tab.Props;
 
 export function TabsTrigger({ className, ...props }: TabsTriggerProps) {
   return (
@@ -35,6 +34,6 @@ export function TabsTrigger({ className, ...props }: TabsTriggerProps) {
   );
 }
 
-export function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Panel>) {
+export function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   return <TabsPrimitive.Panel data-slot="tabs-content" className={cn('flex-1 outline-hidden', className)} {...props} />;
 }

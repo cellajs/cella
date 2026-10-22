@@ -1,6 +1,5 @@
 import { Toggle as TogglePrimitive } from '@base-ui/react/toggle';
 import { cva, type VariantProps } from 'class-variance-authority';
-import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 export const toggleVariants = cva(
@@ -32,8 +31,7 @@ export function Toggle({
   size,
   value,
   ...props
-}: Omit<React.ComponentProps<typeof TogglePrimitive>, 'value'> &
-  VariantProps<typeof toggleVariants> & { value?: string | number | readonly string[] }) {
+}: Omit<TogglePrimitive.Props, 'value'> & VariantProps<typeof toggleVariants> & { value?: string | number | readonly string[] }) {
   return (
     <TogglePrimitive
       data-slot="toggle"

@@ -92,8 +92,11 @@ export const ShouldSelectOption: Story = {
 
     await step('verify the selected option', async () => {
       await userEvent.click(select);
-      expect(await canvasBody.findByRole('option', { name: /banana/i })).toHaveAttribute('data-selected');
-      await userEvent.click(await canvasBody.findByRole('option', { name: /banana/i }));
+      const option = await canvasBody.findByRole('option', { name: /banana/i });
+      expect(option).toHaveAttribute('data-selected');
+      // The check mark shows in an uncontrolled select too
+      expect(option.querySelector('svg')).not.toBeNull();
+      await userEvent.click(option);
     });
   },
 };

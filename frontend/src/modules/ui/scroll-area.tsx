@@ -14,7 +14,7 @@ export function ScrollArea({
   disableTrackClick,
   focusableViewport = true,
   ...props
-}: React.ComponentProps<typeof ScrollAreaPrimitive.Root> & {
+}: ScrollAreaPrimitive.Root.Props & {
   viewportRef?: React.RefObject<HTMLDivElement | null>;
   viewportClassName?: string;
   /** Enable horizontal scrolling (min-width: fit-content on content). Defaults to false. */
@@ -87,7 +87,7 @@ export function ScrollBar({
   orientation = 'vertical',
   disableTrackClick,
   ...props
-}: React.ComponentProps<typeof ScrollAreaPrimitive.Scrollbar> & { disableTrackClick?: boolean }) {
+}: ScrollAreaPrimitive.Scrollbar.Props & { disableTrackClick?: boolean }) {
   return (
     <ScrollAreaPrimitive.Scrollbar
       data-slot="scroll-area-scrollbar"

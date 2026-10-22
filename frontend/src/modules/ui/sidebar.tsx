@@ -17,8 +17,6 @@ type SidebarState = 'expanded' | 'collapsed';
 
 type UseSidebarReturn = {
   state: SidebarState;
-  open: boolean;
-  setOpen: (open: boolean) => void;
   isMobile: boolean;
   toggleSidebar: () => void;
 };
@@ -37,7 +35,7 @@ function useSidebar(): UseSidebarReturn {
   // Nested sidebars pin the outer bar to 'collapsed' (icons only); the content panel tracks its own visibility.
   const state: SidebarState = 'collapsed';
 
-  return { state, open: keepNavOpen, setOpen: setKeepNavOpen, isMobile, toggleSidebar };
+  return { state, isMobile, toggleSidebar };
 }
 
 function SidebarWrapper({ className, style, children, ...props }: React.ComponentProps<'div'>) {

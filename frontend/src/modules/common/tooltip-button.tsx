@@ -1,5 +1,5 @@
 import { Children, cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
-import { Tooltip, TooltipContent, TooltipPortal, TooltipTrigger } from '~/modules/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
 
 interface TooltipButtonProps {
   children: ReactElement<{ 'aria-label'?: string; children?: ReactNode }>;
@@ -8,7 +8,6 @@ interface TooltipButtonProps {
   side?: 'top' | 'bottom' | 'left' | 'right';
   sideOffset?: number;
   hideWhenDetached?: boolean;
-  portal?: boolean;
   className?: string;
 }
 
@@ -28,24 +27,19 @@ export function TooltipButton({
   sideOffset = 8,
   className,
   hideWhenDetached,
-  portal = true,
 }: TooltipButtonProps) {
   // An icon-only trigger takes its accessible name from the tooltip; visible text stays the name otherwise
   const { 'aria-label': ownLabel, children: triggerContent } = children.props;
   const labelled = ownLabel !== undefined || hasText(triggerContent) ? children : cloneElement(children, { 'aria-label': toolTipContent });
-
-  const content = (
-    <TooltipContent side={side} sideOffset={sideOffset} hideWhenDetached={hideWhenDetached}>
-      {toolTipContent}
-    </TooltipContent>
-  );
 
   const trigger = disabled ? (
     labelled
   ) : (
     <Tooltip>
       <TooltipTrigger render={labelled} />
-      {portal ? <TooltipPortal>{content}</TooltipPortal> : content}
+      <TooltipContent side={side} sideOffset={sideOffset} hideWhenDetached={hideWhenDetached}>
+        {toolTipContent}
+      </TooltipContent>
     </Tooltip>
   );
 

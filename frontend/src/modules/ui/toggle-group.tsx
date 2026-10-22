@@ -9,20 +9,21 @@ import { cn } from '~/utils/cn';
 
 const ToggleGroupContext = React.createContext<VariantProps<typeof toggleVariants>>({ size: 'default', variant: 'default' });
 
-interface ToggleGroupProps
-  extends Omit<React.ComponentProps<typeof ToggleGroupPrimitive>, 'value' | 'defaultValue' | 'onValueChange'>,
-    VariantProps<typeof toggleVariants> {
+interface ToggleGroupProps extends Omit<ToggleGroupPrimitive.Props, 'value' | 'defaultValue' | 'onValueChange'>, VariantProps<typeof toggleVariants> {
   type?: 'single' | 'multiple';
   value?: string | string[];
   defaultValue?: string | string[];
   onValueChange?: (value: string | string[]) => void;
 }
 
+/** Base UI's group value is always an array; a single value of `''` means none. */
+function toGroupValue(value: string | string[] | undefined) {
+  if (value === undefined || Array.isArray(value)) return value;
+  return value ? [value] : [];
+}
+
 export function ToggleGroup({ className, variant, size, children, type = 'single', value, defaultValue, onValueChange, ...props }: ToggleGroupProps) {
   const multiple = type === 'multiple';
-
-  const normalizedValue = value === undefined ? undefined : Array.isArray(value) ? value : value ? [value] : [];
-  const normalizedDefault = defaultValue === undefined ? undefined : Array.isArray(defaultValue) ? defaultValue : defaultValue ? [defaultValue] : [];
 
   const handleValueChange = onValueChange
     ? (groupValue: string[]) => {
@@ -36,8 +37,8 @@ export function ToggleGroup({ className, variant, size, children, type = 'single
       data-variant={variant}
       data-size={size}
       multiple={multiple}
-      value={normalizedValue}
-      defaultValue={normalizedDefault}
+      value={toGroupValue(value)}
+      defaultValue={toGroupValue(defaultValue)}
       onValueChange={handleValueChange}
       className={cn('group/toggle-group flex w-fit items-center rounded-md', className)}
       {...props}
@@ -49,12 +50,12 @@ export function ToggleGroup({ className, variant, size, children, type = 'single
 
 export function ToggleGroupItem({
   className,
-  children,
   variant,
   size,
-  asChild = false,
+  render,
+  nativeButton = !render,
   ...props
-}: React.ComponentProps<typeof TogglePrimitive> & VariantProps<typeof toggleVariants> & { asChild?: boolean }) {
+}: TogglePrimitive.Props & VariantProps<typeof toggleVariants>) {
   const context = React.useContext(ToggleGroupContext);
 
   return (
@@ -67,11 +68,9 @@ export function ToggleGroupItem({
         'min-w-0 flex-none shrink-0 rounded-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l',
         className,
       )}
-      nativeButton={!asChild}
-      render={asChild && React.isValidElement(children) ? (children as React.ReactElement<Record<string, unknown>>) : undefined}
+      nativeButton={nativeButton}
+      render={render}
       {...props}
-    >
-      {asChild ? undefined : children}
-    </TogglePrimitive>
+    />
   );
 }

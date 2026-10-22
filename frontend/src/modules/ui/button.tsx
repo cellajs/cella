@@ -64,7 +64,7 @@ export const buttonVariants = cva(
   },
 );
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
+export interface ButtonProps extends React.ComponentProps<'button'>, VariantProps<typeof buttonVariants> {
   loading?: boolean;
   render?: useRender.RenderProp;
 }
@@ -73,18 +73,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
  * `loading` disables the button and overlays a spinner on its transparent content, so the width stays put and the
  * content still names the button. Native buttons default to `type="button"`.
  */
-export function Button({
-  className,
-  variant,
-  soft,
-  size,
-  press,
-  render,
-  loading,
-  disabled,
-  children,
-  ...props
-}: React.ComponentProps<'button'> & ButtonProps) {
+export function Button({ className, variant, soft, size, press, render, loading, disabled, children, ...props }: ButtonProps) {
   const content = loading ? (
     <span className="relative inline-flex items-center justify-center gap-[inherit]">
       <span className="inline-flex items-center gap-[inherit] opacity-0">{children}</span>

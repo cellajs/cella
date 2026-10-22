@@ -2,7 +2,7 @@ import { Switch as SwitchPrimitive } from '@base-ui/react/switch';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-interface SwitchProps extends React.ComponentProps<typeof SwitchPrimitive.Root> {
+interface SwitchProps extends SwitchPrimitive.Root.Props {
   size?: 'sm' | 'default';
   thumb?: React.ReactElement<{ className?: string }>;
 }

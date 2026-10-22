@@ -14,15 +14,11 @@ export function ViewModeToggle({ size = 'default' }: ViewModeToggleProps) {
 
   return (
     <ToggleGroup type="single" size={size} variant="outline" value={viewMode}>
-      <ToggleGroupItem value="list" size={size} aria-label={t('c:list_view')} asChild>
-        <Link to="/docs/operations">
-          <ListIcon className="size-4" />
-        </Link>
+      <ToggleGroupItem value="list" size={size} aria-label={t('c:list_view')} render={<Link to="/docs/operations" />}>
+        <ListIcon className="size-4" />
       </ToggleGroupItem>
-      <ToggleGroupItem value="table" size={size} aria-label={t('c:table_view')} asChild>
-        <Link to="/docs/operations/table">
-          <TableIcon className="size-4" />
-        </Link>
+      <ToggleGroupItem value="table" size={size} aria-label={t('c:table_view')} render={<Link to="/docs/operations/table" />}>
+        <TableIcon className="size-4" />
       </ToggleGroupItem>
     </ToggleGroup>
   );

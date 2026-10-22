@@ -1,6 +1,6 @@
 import { Dialog as SheetPrimitive } from '@base-ui/react/dialog';
-import { XIcon } from 'lucide-react';
 import type * as React from 'react';
+import { HeaderClose } from '~/modules/ui/dialog';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
@@ -8,19 +8,19 @@ export function Sheet({ ...props }: SheetPrimitive.Root.Props) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />;
 }
 
-export function SheetTrigger({ ...props }: SheetPrimitive.Trigger.Props & React.RefAttributes<HTMLElement>) {
+export function SheetTrigger({ ...props }: SheetPrimitive.Trigger.Props) {
   return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />;
 }
 
-export function SheetClose({ ...props }: SheetPrimitive.Close.Props & React.RefAttributes<HTMLButtonElement>) {
+export function SheetClose({ ...props }: SheetPrimitive.Close.Props) {
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
 }
 
-function SheetPortal({ ...props }: SheetPrimitive.Portal.Props & React.RefAttributes<HTMLDivElement>) {
+function SheetPortal({ ...props }: SheetPrimitive.Portal.Props) {
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
 }
 
-function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props & React.RefAttributes<HTMLDivElement>) {
+function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
   return (
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
@@ -41,28 +41,21 @@ export function SheetContent({
   side = 'right',
   overlay = true,
   container,
-  initialFocus,
-  finalFocus,
   autoScrollOnDrag,
   keepMounted,
   ...props
-}: SheetPrimitive.Popup.Props &
-  React.RefAttributes<HTMLDivElement> & {
-    side?: 'top' | 'right' | 'bottom' | 'left';
-    overlay?: boolean;
-    container?: HTMLElement | null;
-    initialFocus?: SheetPrimitive.Popup.Props['initialFocus'];
-    finalFocus?: SheetPrimitive.Popup.Props['finalFocus'];
-    /** Enable auto-scrolling when dragging elements near edges. */
-    autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
-    /** Passed to the Base UI portal: the closed popup stays in the DOM, hidden. */
-    keepMounted?: boolean;
-  }) {
+}: SheetPrimitive.Popup.Props & {
+  side?: 'top' | 'right' | 'bottom' | 'left';
+  overlay?: boolean;
+  container?: HTMLElement | null;
+  /** Enable auto-scrolling when dragging elements near edges. */
+  autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
+  /** Passed to the Base UI portal: the closed popup stays in the DOM, hidden. */
+  keepMounted?: boolean;
+}) {
   const content = (
     <SheetPrimitive.Popup
       data-slot="sheet-content"
-      initialFocus={initialFocus}
-      finalFocus={finalFocus}
       className={cn(
         'flex flex-col bg-background shadow-lg focus-visible:outline-hidden',
         !container && 'fixed z-114 transition data-closed:animate-out data-open:animate-in data-closed:duration-300 data-open:duration-300',
@@ -109,13 +102,7 @@ export function SheetHeader({ className, sticky, children, ...props }: React.Com
       {...props}
     >
       {children}
-      <SheetPrimitive.Close
-        data-slot="sheet-close"
-        className="focus-effect absolute top-0 right-0 hidden rounded-sm p-1 opacity-70 transition-opacity hover:bg-accent hover:opacity-100 group-[.with-close-btn]/header:block data-disabled:pointer-events-none"
-      >
-        <XIcon className="size-5" strokeWidth={1.5} />
-        <span className="sr-only">Close</span>
-      </SheetPrimitive.Close>
+      <HeaderClose />
     </div>
   );
 }
@@ -124,10 +111,10 @@ export function SheetFooter({ className, ...props }: React.ComponentProps<'div'>
   return <div data-slot="sheet-footer" className={cn('mt-auto flex flex-col gap-2 p-4', className)} {...props} />;
 }
 
-export function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props & React.RefAttributes<HTMLParagraphElement>) {
+export function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
   return <SheetPrimitive.Title data-slot="sheet-title" className={cn('font-semibold text-foreground', className)} {...props} />;
 }
 
-export function SheetDescription({ className, ...props }: SheetPrimitive.Description.Props & React.RefAttributes<HTMLParagraphElement>) {
+export function SheetDescription({ className, ...props }: SheetPrimitive.Description.Props) {
   return <SheetPrimitive.Description data-slot="sheet-description" className={cn('text-muted-foreground text-sm', className)} {...props} />;
 }
