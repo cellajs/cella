@@ -27,7 +27,7 @@ export function BlockTypeItems({ editor, block, allowedTypes, headingLevels }: B
       className="bn-menu-item"
       key={item.name}
       onClick={() => switchType(item)}
-      icon={<item.icon />}
+      icon={<item.icon className="size-4" />}
       checked={isCurrentBlockType(item, block)}
     >
       {item.name}

@@ -126,7 +126,7 @@ function MoveBlockItems({ editor, block, canMoveUp, onMoved }: MoveBlockItemsPro
       {canMoveUp && (
         <Components.Generic.Menu.Item
           className="bn-menu-item"
-          icon={<ArrowUpIcon />}
+          icon={<ArrowUpIcon className="size-4" />}
           onClick={() => {
             editor.moveBlocksUp(block);
             onMoved();
@@ -137,7 +137,7 @@ function MoveBlockItems({ editor, block, canMoveUp, onMoved }: MoveBlockItemsPro
       )}
       <Components.Generic.Menu.Item
         className="bn-menu-item"
-        icon={<ArrowDownIcon />}
+        icon={<ArrowDownIcon className="size-4" />}
         onClick={() => {
           editor.moveBlocksDown(block);
           onMoved();

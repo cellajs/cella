@@ -280,12 +280,9 @@ li:has(.is-focused) {
   background-color: var(--muted);
 }
 
+/* Unlayered, so it outranks the gap-1 that @blocknote/shadcn appends to a checkable menu item. */
 .bn-menu-item {
-  display: flex;
-  flex-direction: row;
   gap: 14px;
-  justify-content: flex-start;
-  align-items: center;
 }
 
 .notify {
@@ -367,13 +364,6 @@ li:has(.is-focused) {
 .notify .inline-content {
   font-size: 0.888rem;
   line-height: 1.4;
-}
-
-.bn-block-content[data-content-type="checklistItem"] > input {
-  margin: 0;
-  margin-inline-end: 0.5em;
-  margin-bottom: 0.4em;
-  cursor: pointer;
 }
 
 .bn-shadcn th {

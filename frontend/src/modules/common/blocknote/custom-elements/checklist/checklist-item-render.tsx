@@ -4,7 +4,6 @@ import type { checklistItemConfig } from 'shared/utils/blocknote-schema-configs'
 import { nanoid } from 'shared/utils/nanoid';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import { updateBlockWithoutHistory } from '~/modules/common/blocknote/helpers/blocknote-helpers';
-import { cn } from '~/utils/cn';
 
 type ChecklistItemRenderProps = ReactCustomBlockRenderProps<typeof checklistItemConfig>;
 
@@ -25,7 +24,7 @@ export function ChecklistItemView({ checked, checkboxId, contentRef, input }: Ch
       <div contentEditable={false} className="checklist-checkbox-wrapper">
         <input type="checkbox" checked={checked} data-checkbox-id={checkboxId} className="checklist-checkbox" {...input} />
       </div>
-      <p className={cn('checklist-content', checked && 'checklist-checked')} ref={contentRef} />
+      <p className="checklist-content" ref={contentRef} />
     </div>
   );
 }

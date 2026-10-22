@@ -80,7 +80,7 @@ const blockTypes = Object.keys(customSchema.blockSpecs) as CustomBlockTypes[];
 
 function BlockNote({
   id,
-  className = '',
+  className,
   defaultValue = '', // stringified blocks
   trailingBlock = true,
   clickOpensPreview = false,
@@ -277,7 +277,6 @@ function BlockNote({
       className={cn(dense && 'bn-dense', titlePlaceholder && 'bn-title-placeholder', className)}
       // The block-0 title placeholder rides a CSS var: BlockNote's own placeholders are per block type (styles.css)
       {...(titlePlaceholder && { style: { '--bn-title-placeholder': JSON.stringify(titlePlaceholder) } as React.CSSProperties })}
-      data-color-scheme={mode}
       shadCNComponents={shadCNComponents}
       sideMenu={false}
       slashMenu={false}

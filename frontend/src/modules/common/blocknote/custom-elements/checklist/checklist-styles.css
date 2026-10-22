@@ -63,7 +63,7 @@ p.checklist-content {
   padding-bottom: 0.125rem;
 }
 
-.checklist-checked {
+.checklist-item[data-checked="true"] > .checklist-content {
   text-decoration: line-through;
   opacity: 0.6;
 }

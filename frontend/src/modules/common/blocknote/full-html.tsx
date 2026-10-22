@@ -142,7 +142,7 @@ async function resolveMediaBlocks(
 function BlockNoteFullHtml({
   id,
   defaultValue,
-  className = '',
+  className,
   dense = false,
   inline = false,
   clickOpensPreview = false,
