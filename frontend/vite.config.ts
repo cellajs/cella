@@ -186,23 +186,18 @@ const viteConfig = {
             // The app groups after them follow the same rule in the direction dependencies point:
             // foundational first, on-demand last, because the editor imports the UI primitives.
 
-            // One chunk per grammar/theme module: each language stays its own lazily
-            // loadable chunk, and the grammars- prefix keeps all of them out of the SW
-            // precache (globIgnores). The name encodes the package variant so the
-            // plain and precompiled builds of a language never merge into one chunk.
-            // The shiki core engine is untouched and stays in precached chunks.
+            // One chunk per grammar and theme module, so a code block loads only its own language. Dependencies are
+            // not captured: html embeds the javascript and css grammars and imports them from their own chunks, and
+            // the regex helper every grammar imports (oniguruma-to-es) is left for the per-package backstop below.
             {
               name: (id: string) => {
-                // The oniguruma WASM engine is dynamically importable but unused: the app
-                // CSP has no 'unsafe-eval', so the JavaScript regex engine is always used
-                if (/node_modules[\\/]@shikijs[\\/]engine-oniguruma[\\/]/.test(id)) return 'grammars-wasm';
-                const m = id.match(/node_modules[\\/]@shikijs[\\/](langs|langs-precompiled|themes)[\\/]dist[\\/]([\w.+-]+?)\.m?js$/);
+                const m = id.match(/node_modules[\\/]@shikijs[\\/](langs-precompiled|themes)[\\/]dist[\\/]([\w.+-]+?)\.m?js$/);
                 if (!m || m[2] === 'index') return null;
-                const variant = m[1] === 'langs-precompiled' ? 'pc-' : m[1] === 'themes' ? 'theme-' : '';
-                return `grammars-${variant}${m[2].replace(/[^\w-]/g, '-')}`;
+                return `grammars-${m[1] === 'themes' ? 'theme-' : ''}${m[2].replace(/[^\w-]/g, '-')}`;
               },
-              // The top-level minSize is inherited as the group default and would silently
-              // drop languages smaller than it back to automatic (precached) chunking
+              includeDependenciesRecursively: false,
+              // The top-level minSize is inherited as the group default and would drop the small grammars and the
+              // themes to the per-package backstop, which puts each package in one chunk
               minSize: 0,
             },
             // Merge all lucide icon modules into one shared chunk to keep request count low
@@ -500,10 +495,10 @@ if (appConfig.has.pwa && !isStorybook) {
       swDest: 'sw.js',
       globDirectory: path.resolve(import.meta.dirname, 'dist'),
       globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,webmanifest}'],
-      // `grammars-*` is the codeSplitting group for shiki/tm-grammars: runtime-loaded, not precached.
       // `replay-*` is Maple's session replay with rrweb, loaded only when replay is on.
       // `gleap-*` (support chat) and `maps-*` (map tiles) need the network to do anything.
-      globIgnores: ['**/grammars-*.js', '**/replay-*.js', '**/gleap-*.js', '**/maps-*.{js,css}', '**/static/common/flags/**/*'],
+      // The `grammars-*` chunks are precached, so code blocks and the docs code view highlight offline.
+      globIgnores: ['**/replay-*.js', '**/gleap-*.js', '**/maps-*.{js,css}', '**/static/common/flags/**/*'],
       maximumFileSizeToCacheInBytes: 100 * 1024 * 1024, // 100MB
     }),
   );

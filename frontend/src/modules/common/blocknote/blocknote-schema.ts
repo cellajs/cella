@@ -175,12 +175,17 @@ const withPendingUpload = <S extends { implementation: { render?: unknown } }>(s
   return { ...spec, implementation: { ...spec.implementation, render } } as S;
 };
 
-const supportedLanguage = (language: string) =>
-  Object.hasOwn(codeBlockConfig.supportedLanguages, language) ? language : codeBlockConfig.defaultLanguage;
+/** The `supportedLanguages` key a language id names by key or alias, matched as BlockNote matches a typed fence. */
+const supportedLanguage = (language: string) => {
+  const id = language.trim().toLowerCase();
+  const entry = Object.entries(codeBlockConfig.supportedLanguages).find(([key, { aliases }]) => key === id || aliases.includes(id));
+  return entry?.[0] ?? codeBlockConfig.defaultLanguage;
+};
 
 /**
- * A VS Code paste or a typed fence stores any language id. Outside `supportedLanguages`, BlockNote's language select throws
- * and its highlighter logs an error on every update, so that block renders and highlights as the default language and keeps its stored prop.
+ * A VS Code paste or a typed fence stores any language id, and a pasted Markdown or HTML fence stores its alias (`ts`). Outside the
+ * `supportedLanguages` keys, BlockNote's language select throws and its highlighter logs an error on every update, so that block
+ * renders and highlights as the language its alias names, else the default language, and keeps its stored prop.
  */
 const withLanguageFallback = (spec: ReturnType<typeof createCodeBlockSpec>) => {
   type Render = NonNullable<typeof spec.implementation.render>;
