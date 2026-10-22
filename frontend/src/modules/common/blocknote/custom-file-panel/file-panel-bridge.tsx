@@ -4,8 +4,12 @@ import { useEffect } from 'react';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import type { UploadHostApi } from '~/modules/common/blocknote/custom-file-panel/upload-host';
 
+interface FilePanelBridgeProps {
+  host: UploadHostApi;
+}
+
 /** Reports the block that opened the file panel and the live editor up to `UploadHostProvider`; closing is host-driven. */
-export function FilePanelBridge({ host }: { host: UploadHostApi }) {
+export function FilePanelBridge({ host }: FilePanelBridgeProps) {
   const editor = useBlockNoteEditor(customSchema);
   const filePanel = useExtension(FilePanelExtension);
   const activeBlockId = useExtensionState(FilePanelExtension);

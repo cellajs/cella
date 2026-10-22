@@ -3,8 +3,8 @@ import { SideMenu, SideMenuController, useComponentsContext, useExtension, useEx
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ResetBlockTypeItem } from '~/modules/common/blocknote/custom-side-menu/reset-block-type';
-import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
+import { BlockTypeItems } from '~/modules/common/blocknote/custom-side-menu/block-type-items';
+import type { CustomBlock, CustomBlockNoteEditor, CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
 interface CustomSideMenuProps extends CustomBlockNoteMenuProps {
@@ -20,64 +20,45 @@ export function CustomSideMenu({ editor, allowedTypes, headingLevels, pinTitleBl
 }
 
 function BlockSideMenu({ editor, allowedTypes, headingLevels, pinTitleBlock }: CustomSideMenuProps) {
-  const sideMenu = useExtension(SideMenuExtension);
   const block = useExtensionState(SideMenuExtension, { editor, selector: (state) => state?.block });
   if (block === undefined) return null;
   // A pinned title is not moved, so it gets no handle (TypeCellOS/BlockNote#709).
   if (pinTitleBlock && block.id === editor.document[0]?.id) return null;
   return (
     <SideMenu>
-      <DragHandle
-        sideMenu={sideMenu}
-        block={block}
-        editor={editor}
-        allowedTypes={allowedTypes}
-        headingLevels={headingLevels}
-        pinTitleBlock={pinTitleBlock}
-      />
+      <DragHandle block={block} editor={editor} allowedTypes={allowedTypes} headingLevels={headingLevels} pinTitleBlock={pinTitleBlock} />
     </SideMenu>
   );
 }
 
+interface DragHandleProps extends CustomSideMenuProps {
+  block: CustomBlock;
+}
+
 // Controlled click-only state keeps a drag mousedown from opening Base UI's menu.
-function DragHandle({
-  sideMenu,
-  block,
-  editor,
-  allowedTypes,
-  headingLevels,
-  pinTitleBlock,
-}: {
-  // biome-ignore lint/suspicious/noExplicitAny: BlockNote extension instance type is not exported
-  sideMenu: any;
-  // biome-ignore lint/suspicious/noExplicitAny: Block type depends on editor schema
-  block: any;
-  editor: CustomBlockNoteMenuProps['editor'];
-  allowedTypes: CustomBlockNoteMenuProps['allowedTypes'];
-  headingLevels: CustomBlockNoteMenuProps['headingLevels'];
-  pinTitleBlock?: boolean;
-}) {
+function DragHandle({ block, editor, allowedTypes, headingLevels, pinTitleBlock }: DragHandleProps) {
   const { t } = useTranslation();
   const portalElement = usePortalElement();
+  const sideMenu = useExtension(SideMenuExtension);
   const [menuOpen, setMenuOpen] = useState(false);
-  const isDragging = useRef(false);
+  const isDraggingRef = useRef(false);
 
-  const handleDragStart = (e: React.DragEvent<HTMLButtonElement>) => {
-    isDragging.current = true;
+  const handleDragStart = (event: React.DragEvent<HTMLButtonElement>) => {
+    isDraggingRef.current = true;
     setMenuOpen(false);
-    sideMenu.blockDragStart(e, block);
+    sideMenu.blockDragStart(event, block);
   };
 
   const handleDragEnd = () => {
     sideMenu.blockDragEnd();
     // Delay reset so a residual click after drag doesn't reopen the menu
     requestAnimationFrame(() => {
-      isDragging.current = false;
+      isDraggingRef.current = false;
     });
   };
 
   const handleClick = () => {
-    if (isDragging.current) return;
+    if (isDraggingRef.current) return;
     setMenuOpen((prev) => {
       const next = !prev;
       if (next) sideMenu.freezeMenu();
@@ -121,25 +102,21 @@ function DragHandle({
             sideMenu.unfreezeMenu();
           }}
         />
-        <ResetBlockTypeItem editor={editor} block={block} allowedTypes={allowedTypes} headingLevels={headingLevels} />
+        <BlockTypeItems editor={editor} block={block} allowedTypes={allowedTypes} headingLevels={headingLevels} />
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
-/** Moves the block one place, for a pointer that cannot drag; the keyboard has the editor's own shortcut. */
-function MoveBlockItems({
-  editor,
-  block,
-  canMoveUp,
-  onMoved,
-}: {
-  editor: CustomBlockNoteMenuProps['editor'];
-  // biome-ignore lint/suspicious/noExplicitAny: Block type depends on editor schema
-  block: any;
+interface MoveBlockItemsProps {
+  editor: CustomBlockNoteEditor;
+  block: CustomBlock;
   canMoveUp: boolean;
   onMoved: () => void;
-}) {
+}
+
+/** Moves the block one place, for a pointer that cannot drag; the keyboard has the editor's own shortcut. */
+function MoveBlockItems({ editor, block, canMoveUp, onMoved }: MoveBlockItemsProps) {
   const { t } = useTranslation();
   const Components = useComponentsContext()!;
   if (!editor.isEditable) return null;

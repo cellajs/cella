@@ -50,11 +50,11 @@ export const copyBlocksToClipboard = async (strBlocks: string | null): Promise<b
 /** The outer `transact` carries `addToHistory: false`, which covers both the Yjs UndoManager and ProseMirror history. */
 export const updateBlockWithoutHistory = <TEditor extends AnyBlockNoteEditor>(
   editor: TEditor,
-  blockId: Parameters<TEditor['updateBlock']>[0],
+  block: Parameters<TEditor['updateBlock']>[0],
   update: Parameters<TEditor['updateBlock']>[1],
 ) => {
   editor.transact((tr: { setMeta: (key: string, value: boolean) => void }) => {
     tr.setMeta('addToHistory', false);
-    editor.updateBlock(blockId, update);
+    editor.updateBlock(block, update);
   });
 };

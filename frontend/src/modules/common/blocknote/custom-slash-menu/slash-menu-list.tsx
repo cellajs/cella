@@ -4,37 +4,29 @@ import { useEventListener } from '~/hooks/use-event-listener';
 import { customSlashIndexedItems } from '~/modules/common/blocknote/blocknote-schema';
 import type { CustomBlockTypes } from '~/modules/common/blocknote/types';
 
-interface CustomSlashMenuComponentProps extends SuggestionMenuProps<DefaultReactSuggestionItem> {
+interface SlashMenuListProps extends SuggestionMenuProps<DefaultReactSuggestionItem> {
   originalItemCount: number;
   allowedTypes: CustomBlockTypes[];
 }
 
-export function CustomSlashMenuComponent({
-  items,
-  loadingState,
-  selectedIndex,
-  onItemClick,
-  originalItemCount,
-  allowedTypes,
-}: CustomSlashMenuComponentProps) {
+export function SlashMenuList({ items, loadingState, selectedIndex, onItemClick, originalItemCount, allowedTypes }: SlashMenuListProps) {
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
-  const indexedItemCount = customSlashIndexedItems.filter((item) => allowedTypes.includes(item)).length;
+  const indexedItemCount = customSlashIndexedItems.filter((type) => allowedTypes.includes(type)).length;
 
-  const handleKeyPress = (e: KeyboardEvent) => {
-    const { key: pressedKey } = e;
-    const itemIndex = Number.parseInt(pressedKey, 10) - 1;
+  const handleKeyDown = (event: KeyboardEvent) => {
+    const itemIndex = Number.parseInt(event.key, 10) - 1;
 
     if (items.length !== originalItemCount || Number.isNaN(itemIndex) || itemIndex < 0 || itemIndex >= indexedItemCount) return;
 
     const item = items[itemIndex];
     if (!item) return;
 
-    e.preventDefault();
+    event.preventDefault();
     onItemClick?.(item);
   };
 
-  useEventListener('keydown', handleKeyPress, { enabled: loadingState === 'loaded' });
+  useEventListener('keydown', handleKeyDown, { enabled: loadingState === 'loaded' });
 
   // Scroll within the menu container only, never the page.
   useEffect(() => {
@@ -64,8 +56,8 @@ export function CustomSlashMenuComponent({
         <div key={item.title}>
           {index === indexedItemCount && items.length === originalItemCount && <hr className="my-1" />}
           <button
-            ref={(el) => {
-              itemRefs.current[index] = el;
+            ref={(element) => {
+              itemRefs.current[index] = element;
             }}
             role="option"
             type="button"

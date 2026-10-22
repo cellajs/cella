@@ -8,10 +8,6 @@ import { mediaBlockTypes } from 'shared/blocknote';
 import type { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import type { Member } from '~/modules/memberships/types';
 
-export interface ExtendableBlockNoteTypes {
-  SlashKeys: DefaultSuggestionItem['key'] | 'notify' | 'checklistItem';
-}
-
 export type CustomBlockNoteEditor = typeof customSchema.BlockNoteEditor;
 export type CustomBlock = typeof customSchema.Block;
 
@@ -27,17 +23,7 @@ export const isMediaBlockType = (type: CustomBlockTypes): type is CustomBlockFil
 
 export const isMediaBlock = (block: CustomBlock): block is Extract<CustomBlock, { type: CustomBlockFileTypes }> => mediaBlockTypes.has(block.type);
 
-export type SlashItemKeys = ExtendableBlockNoteTypes['SlashKeys'];
-export interface CustomFormatToolBarConfig {
-  blockTypeSelect?: boolean;
-  blockStyleSelect?: boolean;
-  blockAlignSelect?: boolean;
-  textColorSelect?: boolean;
-  blockNestingSelect?: boolean;
-  fileCaption?: boolean;
-  openPreview?: boolean;
-  createLink?: boolean;
-}
+export type SlashItemKeys = DefaultSuggestionItem['key'] | 'notify' | 'checklistItem';
 
 type MaxNineItems<T extends string> =
   | [T]
@@ -102,11 +88,11 @@ export type CommonBlockNoteProps = {
   | { filePanel?: never; baseFilePanelProps?: never }
 );
 
-export type CustomBlockNoteMenuProps = {
+export interface CustomBlockNoteMenuProps {
   editor: CustomBlockNoteEditor;
   allowedTypes: CustomBlockTypes[];
   headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>;
-};
+}
 
 /** Heading level of a title document's block 0 (helpers/title-document). */
 export type TitleLevel = 1 | 2 | 3;

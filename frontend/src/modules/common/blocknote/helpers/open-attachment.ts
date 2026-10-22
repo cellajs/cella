@@ -5,8 +5,8 @@ import { getPendingUpload, PendingUploadError } from '~/modules/attachment/helpe
 import { resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
 import { type CustomBlockNoteEditor, isMediaBlock } from '~/modules/common/blocknote/types';
 
-/** Collected media block plus the attachment ID for resolving its full-size variant. */
-type MediaBlock = CarouselItemData & { attachmentId?: string };
+/** A media block's carousel item, plus the attachment id that resolves its full-size variant. */
+type MediaSlide = CarouselItemData & { attachmentId?: string };
 
 /** Opens the carousel at the item of block `blockId`, else at the first. */
 export const openMediaCarousel = (attachments: CarouselItemData[], blockId?: string, triggerRef?: RefObject<HTMLDivElement | null>) => {
@@ -19,30 +19,30 @@ export const openMediaCarousel = (attachments: CarouselItemData[], blockId?: str
 
 /** Opens editor media in a carousel starting at the media of block `blockId`. */
 export const openAttachment = async (editor: CustomBlockNoteEditor, blockId?: string, triggerRef?: RefObject<HTMLDivElement | null>) => {
-  const mediaBlocks: MediaBlock[] = [];
+  const slides: MediaSlide[] = [];
 
   editor.forEachBlock((block) => {
     if (!isMediaBlock(block) || !block.props.url) return true;
 
     const { id, type: contentType, props } = block;
     const attachmentId = 'attachmentId' in props && typeof props.attachmentId === 'string' ? props.attachmentId : undefined;
-    mediaBlocks.push({ id, url: props.url, filename: props.name, name: props.name, contentType, attachmentId });
+    slides.push({ id, url: props.url, filename: props.name, name: props.name, contentType, attachmentId });
 
     return true;
   });
 
-  if (mediaBlocks.length === 0) return;
+  if (slides.length === 0) return;
 
   // Inline blocks may reference a thumbnail, so resolve the converted variant by attachment id and fall back to the stored ref.
   const resolved = await Promise.all(
-    mediaBlocks.map(async ({ attachmentId, ...block }): Promise<CarouselItemData> => {
+    slides.map(async ({ attachmentId, ...slide }): Promise<CarouselItemData> => {
       try {
         const fullSize = attachmentId ? (await resolveAttachmentUrl(attachmentId, null, { preferredVariant: 'converted' }))?.url : undefined;
-        const url = fullSize ?? (editor.resolveFileUrl ? await editor.resolveFileUrl(block.url) : block.url);
-        return { ...block, url };
+        const url = fullSize ?? (editor.resolveFileUrl ? await editor.resolveFileUrl(slide.url) : slide.url);
+        return { ...slide, url };
       } catch (error) {
-        if (error instanceof PendingUploadError) return { ...block, url: '', pendingUpload: getPendingUpload(error.attachmentId) };
-        return { ...block, url: '' };
+        if (error instanceof PendingUploadError) return { ...slide, url: '', pendingUpload: getPendingUpload(error.attachmentId) };
+        return { ...slide, url: '' };
       }
     }),
   );

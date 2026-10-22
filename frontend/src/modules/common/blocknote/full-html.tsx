@@ -104,11 +104,11 @@ interface BlockNoteFullHtmlProps {
   onReady?: () => void;
 }
 
-async function processBlocks(
+async function resolveMediaBlocks(
   blocks: CustomBlock[],
   resolveUrl: (key: string) => Promise<string>,
-): Promise<{ resolved: CustomBlock[]; media: CarouselItemData[] }> {
-  const media: CarouselItemData[] = [];
+): Promise<{ resolved: CustomBlock[]; mediaItems: CarouselItemData[] }> {
+  const mediaItems: CarouselItemData[] = [];
 
   async function walk(blocks: CustomBlock[]): Promise<CustomBlock[]> {
     const walked = await Promise.all(
@@ -122,7 +122,7 @@ async function processBlocks(
 
           if (resolvedUrl) {
             props = { ...props, url: resolvedUrl };
-            media.push({ id: block.id, url: resolvedUrl, filename: block.props.name, contentType: block.type });
+            mediaItems.push({ id: block.id, url: resolvedUrl, filename: block.props.name, contentType: block.type });
           } else if (!getBlockPendingUpload(props)) {
             // A gone or denied file renders nothing, as a refused ref does; a pending one keeps its ref for the placeholder.
             return (children as CustomBlock[] | undefined) ?? [];
@@ -136,7 +136,7 @@ async function processBlocks(
   }
 
   const resolved = await walk(blocks);
-  return { resolved, media };
+  return { resolved, mediaItems };
 }
 
 function BlockNoteFullHtml({
@@ -146,8 +146,8 @@ function BlockNoteFullHtml({
   dense = false,
   inline = false,
   clickOpensPreview = false,
-  tenantId: propTenantId,
-  organizationId: propOrganizationId,
+  tenantId,
+  organizationId,
   onReady,
 }: BlockNoteFullHtmlProps) {
   const mode = useUIStore((state) => state.mode);
@@ -156,7 +156,7 @@ function BlockNoteFullHtml({
   // `ready` once a first pass is computed, an empty one included: an empty document has nothing to wait for.
   const [renderState, setRenderState] = useState<{ html: string; mediaItems: CarouselItemData[]; ready: boolean }>(() => {
     // A precomputed first pass paints the document at full height in the first commit (no pop-in).
-    const cached = firstPassHtmlCache.get(firstPassKey(defaultValue, propOrganizationId));
+    const cached = firstPassHtmlCache.get(firstPassKey(defaultValue, organizationId));
     return { html: cached ?? '', mediaItems: [], ready: cached !== undefined };
   });
 
@@ -180,8 +180,8 @@ function BlockNoteFullHtml({
       setRenderState({ html: '', mediaItems: [], ready: true });
       return;
     }
-    const blocks = renderableBlocks(parsed, { organizationId: propOrganizationId });
-    const cacheKey = firstPassKey(defaultValue, propOrganizationId);
+    const blocks = renderableBlocks(parsed, { organizationId });
+    const cacheKey = firstPassKey(defaultValue, organizationId);
 
     let cancelled = false;
 
@@ -199,20 +199,19 @@ function BlockNoteFullHtml({
     }
 
     async function resolveUrls(blocks: CustomBlock[]) {
-      const resolveUrl = (ref: string): Promise<string> =>
-        resolveBlockNoteFileRef(ref, { tenantId: propTenantId, organizationId: propOrganizationId });
+      const resolveUrl = (ref: string): Promise<string> => resolveBlockNoteFileRef(ref, { tenantId, organizationId });
 
-      const { resolved, media } = await processBlocks(blocks, resolveUrl);
+      const { resolved, mediaItems } = await resolveMediaBlocks(blocks, resolveUrl);
       if (cancelled) return;
 
-      setRenderState({ html: toFullHtml(resolved) ?? '', mediaItems: media, ready: true });
+      setRenderState({ html: toFullHtml(resolved) ?? '', mediaItems, ready: true });
     }
 
     resolveUrls(blocks);
     return () => {
       cancelled = true;
     };
-  }, [defaultValue, propTenantId, propOrganizationId, uploadsArrived]);
+  }, [defaultValue, tenantId, organizationId, uploadsArrived]);
 
   const handleClick: MouseEventHandler = (event) => {
     if (!clickOpensPreview || renderState.mediaItems.length === 0) return;

@@ -15,7 +15,7 @@ import { useLatestRef } from '~/hooks/use-latest-ref';
 import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-url';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
-import { Mention } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
+import { MentionMenu } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
 import { pinnedTitleDropPosition, pinnedTitleExtension } from '~/modules/common/blocknote/custom-elements/pinned-title/pinned-title-extension';
 import { FilePanelBridge } from '~/modules/common/blocknote/custom-file-panel/file-panel-bridge';
 import { useUploadHost } from '~/modules/common/blocknote/custom-file-panel/upload-host';
@@ -120,7 +120,7 @@ function BlockNote({
   const uploadHost = useUploadHost();
 
   const collaborative = !!collaboration;
-  const blockNoteRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const uppyUpload = !!baseFilePanelProps && appConfig.has.uploadEnabled;
   // Without an upload path the menus offer no media blocks: BlockNote's own panel can only embed a URL, which the media
@@ -242,7 +242,7 @@ function BlockNote({
 
   const handleBlur = useSmartBlur({
     editor,
-    containerRef: blockNoteRef,
+    containerRef,
     onBlur: () => {
       if (!commitOnEveryChange) commitDocument();
     },
@@ -256,7 +256,7 @@ function BlockNote({
     if (!blockId) return;
 
     event.preventDefault();
-    openAttachment(editor, blockId, blockNoteRef);
+    openAttachment(editor, blockId, containerRef);
   };
 
   useEffect(() => {
@@ -273,7 +273,7 @@ function BlockNote({
       editor={editor}
       editable={editable}
       autoFocus={autoFocus}
-      ref={blockNoteRef}
+      ref={containerRef}
       className={cn(dense && 'bn-dense', titlePlaceholder && 'bn-title-placeholder', className)}
       // The block-0 title placeholder rides a CSS var: BlockNote's own placeholders are per block type (styles.css)
       {...(titlePlaceholder && { style: { '--bn-title-placeholder': JSON.stringify(titlePlaceholder) } as React.CSSProperties })}
@@ -292,11 +292,11 @@ function BlockNote({
     >
       {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} />}
 
-      {!isMobile && formattingToolbar && <CustomFormattingToolbar allowedTypes={allowedBlockTypes} headingLevels={headingLevels} />}
+      {!isMobile && formattingToolbar && <CustomFormattingToolbar />}
 
       {sideMenu && <CustomSideMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} pinTitleBlock={pinTitleBlock} />}
 
-      <Mention members={members} editor={editor} />
+      <MentionMenu members={members} editor={editor} />
 
       {emojis && <GridSuggestionMenuController triggerCharacter={':'} columns={8} minQueryLength={1} />}
 

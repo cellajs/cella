@@ -14,17 +14,10 @@ import {
   checklistTypeItem,
   getChecklistSlashItem,
 } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
-import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
+import { mentionInlineContent } from '~/modules/common/blocknote/custom-elements/mention/mention-inline-content';
 import { getNotifySlashItem, notifyBlock } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
 import { baseBlockNoteTypeToKeys } from '~/modules/common/blocknote/type-to-keys';
-import type {
-  CommonBlockNoteProps,
-  CustomBlock,
-  CustomBlockNoteEditor,
-  CustomBlockTypes,
-  CustomFormatToolBarConfig,
-  SlashIndexedItems,
-} from '~/modules/common/blocknote/types';
+import type { CommonBlockNoteProps, CustomBlock, CustomBlockNoteEditor, CustomBlockTypes, SlashIndexedItems } from '~/modules/common/blocknote/types';
 
 // Drop color inline styles so pasted content cannot carry colors that render invisible against the app theme.
 const { textColor: _textColor, backgroundColor: _backgroundColor, ...safeStyleSpecs } = defaultStyleSpecs;
@@ -220,7 +213,7 @@ export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs 
     notify: notifyBlock(),
     codeBlock: withLanguageFallback(createCodeBlockSpec(codeBlockConfig)),
   },
-  inlineContentSpecs: { mention: MentionSchema },
+  inlineContentSpecs: { mention: mentionInlineContent },
 });
 
 const blockTypeSwitchTypes: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checklistItem'];
@@ -254,7 +247,7 @@ export const getSlashMenuItems = (
 ): DefaultReactSuggestionItem[] => {
   const baseItems = [...getDefaultReactSlashMenuItems(editor), getNotifySlashItem(editor), getChecklistSlashItem(editor)];
 
-  const { heading, ...restTypeToKeys } = { ...baseBlockNoteTypeToKeys };
+  const { heading, ...restTypeToKeys } = baseBlockNoteTypeToKeys;
   const filteredHeading = heading.filter((key) => {
     const match = key.match(/(?:_)?(\d)$/);
     const level = match ? Number.parseInt(match[1], 10) : 1;
@@ -278,19 +271,8 @@ export const getSlashMenuItems = (
   return baseItems
     .filter((item): item is DefaultSuggestionItem => 'key' in item && allowedKeys.has(item.key as string))
     .sort(({ key: first }, { key: second }) => {
-      const aIndex = sortOrder.get(first) ?? Number.POSITIVE_INFINITY;
-      const bIndex = sortOrder.get(second) ?? Number.POSITIVE_INFINITY;
-      return aIndex - bIndex;
+      const firstIndex = sortOrder.get(first) ?? Number.POSITIVE_INFINITY;
+      const secondIndex = sortOrder.get(second) ?? Number.POSITIVE_INFINITY;
+      return firstIndex - secondIndex;
     });
-};
-
-export const customFormattingToolBarConfig: CustomFormatToolBarConfig = {
-  blockTypeSelect: false,
-  blockStyleSelect: true,
-  blockAlignSelect: false,
-  textColorSelect: false,
-  blockNestingSelect: false,
-  fileCaption: true,
-  openPreview: true,
-  createLink: true,
 };

@@ -52,7 +52,7 @@ const convertToChecklistItem = (editor: AnyBlockNoteEditor): boolean => {
   return true;
 };
 
-const checklistExtensions = createExtension({
+const checklistShortcutsExtension = createExtension({
   key: 'checklist-item-shortcuts' as const,
   // The default schema keeps BlockNote's own checkListItem, whose shortcuts and input rules match the same keys
   // and text; running first makes them create this block.
@@ -70,8 +70,6 @@ const checklistExtensions = createExtension({
   ],
 });
 
-export { checklistItemConfig };
-
 export const checklistItemBlock = createReactBlockSpec(
   checklistItemConfig,
   {
@@ -86,7 +84,7 @@ export const checklistItemBlock = createReactBlockSpec(
       />
     ),
   },
-  [checklistExtensions],
+  [checklistShortcutsExtension],
 );
 
 /** The side menu's type-switch entry: BlockNote's own items name only its `checkListItem`. */

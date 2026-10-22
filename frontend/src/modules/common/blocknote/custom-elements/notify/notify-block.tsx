@@ -2,7 +2,7 @@ import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { createReactBlockSpec } from '@blocknote/react';
 import { MessageCircleIcon } from 'lucide-react';
 import { notifyConfig } from 'shared/utils/blocknote-schema-configs';
-import { notifyTypes } from '~/modules/common/blocknote/custom-elements/notify/notify-options';
+import { notifyOptions } from '~/modules/common/blocknote/custom-elements/notify/notify-options';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import {
   DropdownMenu,
@@ -17,8 +17,7 @@ import { cn } from '~/utils/cn';
 
 export const notifyBlock = createReactBlockSpec(notifyConfig, {
   render: ({ block, editor, contentRef }) => {
-    const notifyType = notifyTypes.find((a) => a.value === block.props.type)!;
-    const Icon = notifyType.icon;
+    const { icon: Icon } = notifyOptions.find((option) => option.value === block.props.type)!;
     return (
       <div className={'notify'} data-notify-type={block.props.type}>
         <DropdownMenu modal={false}>
@@ -32,7 +31,7 @@ export const notifyBlock = createReactBlockSpec(notifyConfig, {
             <DropdownMenuGroup>
               <DropdownMenuLabel>Notify Type</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {notifyTypes.map(({ icon: Icon, title, value }) => {
+              {notifyOptions.map(({ icon: Icon, title, value }) => {
                 return (
                   <DropdownMenuItem
                     key={value}

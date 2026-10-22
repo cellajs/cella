@@ -288,11 +288,6 @@ li:has(.is-focused) {
   align-items: center;
 }
 
-.bn-dropdown-button {
-  display: inline-flex;
-  gap: 0.15rem;
-}
-
 .notify {
   display: flex;
   justify-content: center;
@@ -333,10 +328,6 @@ li:has(.is-focused) {
 
 [data-color-scheme="dark"] .notify[data-notify-type="success"] {
   background-color: #208020;
-}
-
-.no-hover-bg:hover {
-  background-color: transparent;
 }
 
 .notify-icon-wrapper {

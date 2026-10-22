@@ -4,7 +4,7 @@ import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 // Hoisted so the map is not rebuilt per keystroke.
 const wrappingChars: Record<string, string> = { '[': ']', '{': '}', '(': ')', '`': '`', '"': '"', "'": "'" };
 
-interface UseEditorKeyboardArgs {
+interface UseEditorKeyboardOptions {
   editor: CustomBlockNoteEditor;
   /** Called on Escape and Cmd/Ctrl+Enter, after the data has been committed. */
   onEscapeClick?: () => void;
@@ -14,7 +14,7 @@ interface UseEditorKeyboardArgs {
 }
 
 /** Handle selection wrapping plus commit-and-close shortcuts without bubbling form submission. */
-export function useEditorKeyboard({ editor, onEscapeClick, onEnterClick, commit }: UseEditorKeyboardArgs): KeyboardEventHandler {
+export function useEditorKeyboard({ editor, onEscapeClick, onEnterClick, commit }: UseEditorKeyboardOptions): KeyboardEventHandler {
   return (event) => {
     const { metaKey, ctrlKey, key } = event;
     const isEscape = key === 'Escape';

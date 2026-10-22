@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emptyTitleDocument, splitTitleBlocks, titleDocumentHasBody } from './title-document';
+import { emptyTitleDocument, splitTitleBlocks, titleDocumentHasBody } from '~/modules/common/blocknote/helpers/title-document';
 
 const text = (t: string) => ({ type: 'text', text: t, styles: {} });
 const heading = (t: string, level = 1) => ({ type: 'heading', props: { level }, content: t ? [text(t)] : [] });
