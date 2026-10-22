@@ -21,7 +21,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 
 const magicLinkEnabled = isStrategyEnabled('magic');
 
-interface Props {
+interface InvitationStepProps {
   tokenData: TokenData;
   federations?: GetAuthHealthResponse['federations'];
 }
@@ -32,7 +32,7 @@ interface Props {
  * organization comes first when it has one. A membership invitation can also be answered with an account on another
  * address: the visitor signs in first and the confirm step follows.
  */
-export function InvitationStep({ tokenData, federations }: Props) {
+export function InvitationStep({ tokenData, federations }: InvitationStepProps) {
   const { t } = useTranslation();
   const { setStep, setMagicLinkSent, setInviteOtherAccount } = useAuthStore(
     useShallow((state) => ({

@@ -9,7 +9,7 @@ import { InlineLinkButton } from '~/modules/auth/inline-link-button';
 import { getPasskeyStepUpCredential } from '~/modules/auth/passkey-credentials';
 import { authKeys } from '~/modules/auth/query';
 import { StepUpDismissed, type StepUpMethod } from '~/modules/auth/step-up-retry';
-import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
+import { TotpConfirmationForm } from '~/modules/auth/totp-confirmation-form';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -38,7 +38,7 @@ function StepUpDialog({ methods, section, onStepUp }: StepUpDialogProps) {
     onSuccess: onStepUp,
   });
 
-  const withPasskey = async () => {
+  const confirmWithPasskey = async () => {
     try {
       proveFactor({ passkeyData: await getPasskeyStepUpCredential() });
     } catch {
@@ -55,15 +55,15 @@ function StepUpDialog({ methods, section, onStepUp }: StepUpDialogProps) {
 
   // One mail per dialog, also where React runs a mount effect twice.
   const mailsLink = methods.includes('email');
-  const asked = useRef(false);
+  const askedRef = useRef(false);
   useEffect(() => {
-    if (!mailsLink || asked.current) return;
-    asked.current = true;
+    if (!mailsLink || askedRef.current) return;
+    askedRef.current = true;
     sendLink();
   }, [mailsLink, sendLink]);
 
   // Opening the mailed link in this browser steps this session up; the dialog then carries on by itself.
-  const { data: state } = useQuery({
+  const { data: stepUpState } = useQuery({
     queryKey: authKeys.stepUp(sentAt),
     queryFn: () => getStepUp(),
     enabled: sentAt !== null,
@@ -76,8 +76,8 @@ function StepUpDialog({ methods, section, onStepUp }: StepUpDialogProps) {
     meta: { persist: false },
   });
   useEffect(() => {
-    if (sentAt !== null && state?.steppedUp) onStepUp();
-  }, [sentAt, state?.steppedUp, onStepUp]);
+    if (sentAt !== null && stepUpState?.steppedUp) onStepUp();
+  }, [sentAt, stepUpState?.steppedUp, onStepUp]);
 
   const signInAgain = async () => {
     const redirect = returnPath(section);
@@ -87,14 +87,7 @@ function StepUpDialog({ methods, section, onStepUp }: StepUpDialogProps) {
   };
 
   if (view === 'totp') {
-    return (
-      <TotpConfirmationForm
-        label={t('c:totp_verify')}
-        isPending={proving}
-        onSubmit={({ code }) => proveFactor({ totpCode: code })}
-        onCancel={() => setView('options')}
-      />
-    );
+    return <TotpConfirmationForm loading={proving} onSubmit={({ code }) => proveFactor({ totpCode: code })} onCancel={() => setView('options')} />;
   }
 
   // An impersonation never steps up: the admin acts as the user, not on how the account is protected.
@@ -125,7 +118,7 @@ function StepUpDialog({ methods, section, onStepUp }: StepUpDialogProps) {
   return (
     <div className="flex flex-col gap-2">
       {methods.includes('passkey') && (
-        <Button variant="plain" className="w-full gap-1.5" loading={proving} onClick={withPasskey}>
+        <Button variant="plain" className="w-full gap-1.5" loading={proving} onClick={confirmWithPasskey}>
           <FingerprintPatternIcon />
           {t('c:confirm')} {t('c:with').toLowerCase()} {t('c:passkey').toLowerCase()}
         </Button>

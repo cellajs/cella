@@ -42,8 +42,6 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
     onSuccess: (_, signUpEmail) => setMagicLinkSent(signUpEmail, 'signup'),
   });
 
-  const onSubmit = (body: EmailFormValues) => sendMagic(body.email);
-
   return (
     <Form {...form}>
       <AuthHeader title={t('c:sign_up')} />
@@ -51,7 +49,7 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
       <LegalNotice email={typedEmail} mode="signup" />
 
       {magicLinkEnabled && (
-        <form noValidate onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
+        <form noValidate onSubmit={form.handleSubmit((body) => sendMagic(body.email), defaultOnInvalid)} className="flex flex-col gap-4">
           <EmailField control={form.control} className="-mb-2" />
 
           <SubmitButton loading={isPending} icon={<MailIcon />} className="w-full">

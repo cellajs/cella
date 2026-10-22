@@ -11,7 +11,7 @@ import type { MeUser } from '~/modules/me/types';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 
-interface Props {
+interface AcceptInvitationStepProps {
   tokenData: TokenData;
   user: MeUser;
 }
@@ -20,7 +20,7 @@ interface Props {
  * Confirm step for a signed-in visitor holding an invitation token. Accepting joins as the signed-in account, also when
  * the invitation was sent to another address, so nothing happens without an explicit click and both identities are named.
  */
-export function AcceptInvitationStep({ tokenData, user }: Props) {
+export function AcceptInvitationStep({ tokenData, user }: AcceptInvitationStepProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 

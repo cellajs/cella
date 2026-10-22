@@ -16,7 +16,7 @@ const UnsavedEditsGate = lazyNamed(() => import('~/modules/auth/unsaved-edits-di
  * Signs out, after asking while some edits no server holds would go with the session: the dialog lists them live, and
  * sign-out continues by itself once they all saved. `force` (the account is gone) skips the question: nothing can save.
  */
-export function SignOut() {
+export function SignOutPage() {
   const router = useRouter();
 
   const { force } = useSearch({ from: '/_public/auth/sign-out' });
@@ -32,12 +32,12 @@ export function SignOut() {
 
   const [unsaved, setUnsaved] = useState<UnsavedEdit[]>();
   const [confirmed, setConfirmed] = useState(false);
-  const proceed = !!force || confirmed || unsaved?.length === 0;
+  const canSignOut = !!force || confirmed || unsaved?.length === 0;
 
   const signOutTriggeredRef = useRef(false);
 
   useEffect(() => {
-    if (!proceed || signOutTriggeredRef.current) return;
+    if (!canSignOut || signOutTriggeredRef.current) return;
 
     signOutTriggeredRef.current = true;
 
@@ -54,7 +54,7 @@ export function SignOut() {
     };
 
     handleSignOut();
-  }, [proceed]);
+  }, [canSignOut]);
 
   const keepEditing = () => {
     if (router.history.canGoBack()) router.history.back();
@@ -66,7 +66,7 @@ export function SignOut() {
       <ContentPlaceholder className="h-svh" icon={HeartIcon} title="c:signing_out" />
       {!force && flushed && (
         <Suspense fallback={null}>
-          <UnsavedEditsGate onChange={setUnsaved} open={!proceed} onConfirm={() => setConfirmed(true)} onCancel={keepEditing} />
+          <UnsavedEditsGate onChange={setUnsaved} open={!canSignOut} onConfirm={() => setConfirmed(true)} onCancel={keepEditing} />
         </Suspense>
       )}
     </>

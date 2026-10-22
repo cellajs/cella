@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Unsubscribed as UnsubscribedPage } from '~/modules/auth/unsubscribed-page';
+import { UnsubscribedPage } from '~/modules/auth/unsubscribed-page';
 import { appTitle } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_public/auth/unsubscribed')({

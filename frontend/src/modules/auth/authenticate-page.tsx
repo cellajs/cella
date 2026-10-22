@@ -49,7 +49,7 @@ export function AuthenticatePage() {
   const tokenQuery = tokenDataQueryOptions('invitation', tokenId);
   const {
     data: tokenData,
-    isLoading,
+    isLoading: isTokenLoading,
     isError: isTokenError,
   } = useQuery({ ...tokenQuery, meta: { ...tokenQuery.meta, suppressGlobalErrorToast: !!signedInUser } });
 
@@ -87,14 +87,14 @@ export function AuthenticatePage() {
   }, [tokenData, lastUser, restrictedMode, step, inviteOtherAccount]);
 
   // Signed in, but the token is spent, expired or not a membership invitation: nothing to confirm, so leave the auth pages.
-  const nothingToConfirm = !!signedInUser && !!tokenId && !isLoading && !tokenData?.inactiveMembershipId;
+  const nothingToConfirm = !!signedInUser && !!tokenId && !isTokenLoading && !tokenData?.inactiveMembershipId;
   useEffect(() => {
     if (!nothingToConfirm) return;
     if (isTokenError) toaster.info(t('c:invite_link_spent'));
     navigate({ to: appConfig.defaultRedirectPath, replace: true });
   }, [nothingToConfirm]);
 
-  if (isLoading || isHealthLoading || signedIn) {
+  if (isTokenLoading || isHealthLoading || signedIn) {
     return (
       <>
         <Spinner size="lg" />

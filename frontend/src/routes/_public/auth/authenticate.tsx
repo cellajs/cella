@@ -13,7 +13,7 @@ export const Route = createFileRoute('/_public/auth/authenticate')({
   staticData: { isAuth: false },
   head: () => ({ meta: [{ title: appTitle('Authenticate') }] }),
   beforeLoad: async ({ cause, search }) => {
-    authStore.getState().resetSteps();
+    authStore.getState().reset();
 
     // Invitation flow: a signed-in visitor stays to confirm the invitation as their account. Probed on every pass,
     // so a sign-in made on this page lands on the confirm step too.

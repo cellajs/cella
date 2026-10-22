@@ -9,7 +9,7 @@ import {
 } from '@simplewebauthn/browser';
 import { generatePasskeyChallenge, getStepUpPasskeyChallenge } from 'sdk';
 import { appConfig } from 'shared';
-import type { PasskeyCredentialProps } from '~/modules/auth/types';
+import type { PasskeyChallengeBody, PasskeyVerifyType } from '~/modules/auth/types';
 import { getCurrentUser } from '~/modules/user/user-store';
 
 const isDevelopment = appConfig.mode === 'development';
@@ -75,12 +75,12 @@ export const getPasskeyRegistrationCredential = async () => {
  * Returns the passkey verify credential (assertion plus the challenge type). Only an MFA challenge lists the account's
  * passkeys; otherwise the browser offers its discoverable ones.
  */
-export const getPasskeyVerifyCredential = async (query: { type: Exclude<PasskeyCredentialProps['type'], 'registration'> }) => {
-  const { challenge, credentialIds } = await getChallenge(query);
+export const getPasskeyVerifyCredential = async ({ type }: { type: PasskeyVerifyType }) => {
+  const { challenge, credentialIds } = await getChallenge({ type });
 
   const assertion = await startAuthentication({ optionsJSON: requestOptions(challenge, credentialIds) });
 
-  return { assertion, ...query };
+  return { assertion, type };
 };
 
 /** A passkey assertion for a step-up of the signed-in session: its challenge is bound to the account. */
@@ -91,7 +91,7 @@ export const getPasskeyStepUpCredential = async () => {
 };
 
 // Fetch a base64url challenge from BE; it doubles as the WebAuthn JSON options value
-const getChallenge = (body: PasskeyCredentialProps) => generatePasskeyChallenge({ body });
+const getChallenge = (body: PasskeyChallengeBody) => generatePasskeyChallenge({ body });
 
 const generatePasskeyName = () => {
   const nouns = [

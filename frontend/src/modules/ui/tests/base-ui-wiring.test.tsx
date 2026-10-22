@@ -19,7 +19,7 @@ const { Textarea } = await import('~/modules/ui/textarea');
 const { Form, FormField, FormItem } = await import('~/modules/ui/field');
 const { SelectRoleRadio } = await import('~/modules/common/form-fields/select-role-radio');
 const { SelectRoles } = await import('~/modules/common/form-fields/select-roles');
-const { TotpConfirmationForm } = await import('~/modules/auth/totp-verify-code-form');
+const { TotpConfirmationForm } = await import('~/modules/auth/totp-confirmation-form');
 const { useForm } = await import('react-hook-form');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;

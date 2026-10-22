@@ -8,7 +8,7 @@ import { Button } from '~/modules/ui/button';
 export function MagicLinkSentStep() {
   const { t } = useTranslation();
   const email = useAuthStore((state) => state.email);
-  const resetSteps = useAuthStore((state) => state.resetSteps);
+  const resetAuthStore = useAuthStore((state) => state.reset);
   const magicLinkMode = useAuthStore((state) => state.magicLinkMode);
 
   const isSignup = magicLinkMode === 'signup';
@@ -28,7 +28,7 @@ export function MagicLinkSentStep() {
       </AuthHeader>
       {!isSignup && (
         <div className="mt-2 flex flex-col gap-2">
-          <Button type="button" variant="plain" onClick={resetSteps}>
+          <Button type="button" variant="plain" onClick={resetAuthStore}>
             <ArrowLeftIcon />
             {t('c:try_another_way')}
           </Button>

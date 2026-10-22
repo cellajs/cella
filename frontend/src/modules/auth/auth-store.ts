@@ -1,25 +1,27 @@
 import { create } from 'zustand';
 import type { AuthStep } from '~/modules/auth/types';
 
-type State = {
+type MagicLinkMode = 'signin' | 'signup';
+
+interface AuthStoreState {
   step: AuthStep;
   email: string;
   restrictedMode: boolean; // Neutral step: silent on whether the address has an account (unknown browser or limited IP)
   signedIn: boolean; // True after successful sign-in, prevents UI flash during route transition
-  magicLinkMode: 'signin' | 'signup'; // Which flow triggered the magicLinkSent step, used for contextual copy
+  magicLinkMode: MagicLinkMode; // Which flow triggered the magicLinkSent step, used for contextual copy
   inviteOtherAccount: boolean; // Invitation in hand, and the visitor chose to answer it with another account than the invited address
-};
+}
 
-type Actions = {
+interface AuthStoreActions {
   setStep: (step: AuthStep, email: string) => void;
-  setRestrictedMode: (restricted: boolean) => void;
+  setRestrictedMode: (restrictedMode: boolean) => void;
   setSignedIn: (signedIn: boolean) => void;
-  setMagicLinkSent: (email: string, mode: 'signin' | 'signup') => void;
+  setMagicLinkSent: (email: string, magicLinkMode: MagicLinkMode) => void;
   setInviteOtherAccount: (inviteOtherAccount: boolean) => void;
-  resetSteps: () => void;
-};
+  reset: () => void;
+}
 
-const initial: State = {
+const initStore: AuthStoreState = {
   step: 'checkEmail',
   email: '',
   restrictedMode: false,
@@ -28,14 +30,14 @@ const initial: State = {
   inviteOtherAccount: false,
 };
 
-export const useAuthStore = create<State & Actions>((set) => ({
-  ...initial,
+export const useAuthStore = create<AuthStoreState & AuthStoreActions>((set) => ({
+  ...initStore,
   setStep: (step, email) => set(() => ({ step, email })),
   setRestrictedMode: (restrictedMode) => set(() => ({ restrictedMode })),
   setSignedIn: (signedIn) => set(() => ({ signedIn })),
   setMagicLinkSent: (email, magicLinkMode) => set(() => ({ step: 'magicLinkSent', email, magicLinkMode })),
   setInviteOtherAccount: (inviteOtherAccount) => set(() => ({ inviteOtherAccount })),
-  resetSteps: () => set(() => ({ ...initial })),
+  reset: () => set(() => ({ ...initStore })),
 }));
 
 export { useAuthStore as authStore };

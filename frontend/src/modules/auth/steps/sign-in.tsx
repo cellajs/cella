@@ -30,10 +30,10 @@ const magicLinkEnabled = isStrategyEnabled('magic');
 
 export function SignInStep() {
   const { t } = useTranslation();
-  const { email, resetSteps, restrictedMode, setStep, setMagicLinkSent, inviteOtherAccount } = useAuthStore(
+  const { email, resetAuthStore, restrictedMode, setStep, setMagicLinkSent, inviteOtherAccount } = useAuthStore(
     useShallow((state) => ({
       email: state.email,
-      resetSteps: state.resetSteps,
+      resetAuthStore: state.reset,
       restrictedMode: state.restrictedMode,
       setStep: state.setStep,
       setMagicLinkSent: state.setMagicLinkSent,
@@ -111,7 +111,7 @@ export function SignInStep() {
     // Answering an invitation with another account: back to choosing the address, the invitation stays in hand.
     if (inviteOtherAccount) return setStep('checkEmail', '');
     clearUserStore();
-    resetSteps();
+    resetAuthStore();
   };
 
   const getTitle = () => {

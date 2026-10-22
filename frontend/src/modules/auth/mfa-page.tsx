@@ -19,7 +19,7 @@ export function MfaPage() {
   const clearUserStore = useUserStore((state) => state.reset);
   const signedIn = useAuthStore((state) => state.signedIn);
 
-  const [isActive, setIsActive] = useState(false);
+  const [isTotpActive, setIsTotpActive] = useState(false);
 
   const handleCancelMfa = async () => {
     try {
@@ -45,8 +45,8 @@ export function MfaPage() {
         <p className="space-x-1">{t('c:mfa_subheader.text')}</p>
       </AuthHeader>
 
-      {!isActive && <PasskeyStrategy type="mfa" />}
-      <TotpStrategy isActive={isActive} setIsActive={setIsActive} />
+      {!isTotpActive && <PasskeyStrategy type="mfa" />}
+      <TotpStrategy active={isTotpActive} onActiveChange={setIsTotpActive} />
     </>
   );
 }

@@ -10,11 +10,11 @@ export function WaitlistStep() {
   const { t } = useTranslation();
 
   const email = useAuthStore((state) => state.email);
-  const resetSteps = useAuthStore((state) => state.resetSteps);
+  const resetAuthStore = useAuthStore((state) => state.reset);
 
   return (
     <>
-      <AuthHeader title={t('c:request_access')}>{email.length > 0 && <AuthEmailButton email={email} onClick={resetSteps} />}</AuthHeader>
+      <AuthHeader title={t('c:request_access')}>{email.length > 0 && <AuthEmailButton email={email} onClick={resetAuthStore} />}</AuthHeader>
       <LegalNotice email={email} mode="waitlist" />
       {/* Stacked like the email step; the form's own row layout serves the pricing dialog */}
       <WaitlistForm

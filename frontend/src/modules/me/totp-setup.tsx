@@ -7,7 +7,7 @@ import type { ApiError, CreateTotpData, CreateTotpResponses, MeAuthData } from '
 import { createTotp, generateTotpKey } from 'sdk';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { withStepUp } from '~/modules/auth/step-up';
-import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
+import { TotpConfirmationForm } from '~/modules/auth/totp-confirmation-form';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { meKeys } from '~/modules/me/query';
@@ -95,13 +95,7 @@ export function SetupTotp() {
           </Button>
         </div>
       ) : (
-        <TotpConfirmationForm
-          key={formVersion}
-          label={t('c:totp_verify')}
-          onSubmit={onSubmit}
-          isPending={isPending}
-          onCancel={() => dialoger.getState().remove('setup-totp')}
-        />
+        <TotpConfirmationForm key={formVersion} onSubmit={onSubmit} loading={isPending} onCancel={() => dialoger.getState().remove('setup-totp')} />
       )}
     </div>
   );

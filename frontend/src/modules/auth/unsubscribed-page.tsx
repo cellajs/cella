@@ -4,7 +4,7 @@ import { AuthHeader } from '~/modules/auth/auth-header';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
 
-export function Unsubscribed() {
+export function UnsubscribedPage() {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
 

@@ -60,7 +60,7 @@ vi.mock('~/modules/common/content-placeholder', () => ({ ContentPlaceholder: () 
 vi.mock('i18next', () => ({ default: { t: (key: string) => key } }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 
-const { SignOut } = await import('~/modules/auth/sign-out');
+const { SignOutPage } = await import('~/modules/auth/sign-out-page');
 const { queryClient } = await import('~/query/query-client');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -71,7 +71,7 @@ async function renderSignOut() {
   const container = document.createElement('div');
   document.body.append(container);
   root = createRoot(container);
-  await act(async () => root?.render(<SignOut />));
+  await act(async () => root?.render(<SignOutPage />));
 }
 
 const emitStored = (docs: UnsavedYDoc[]) => act(async () => seen.stored?.(docs));

@@ -12,7 +12,7 @@ const MorphAnimation = lazyNamed(() => import('~/modules/common/morph-animation/
 export function AuthLayout() {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
-  const isSignInPage = useRouterState({ select: (s) => (s.resolvedLocation ?? s.location).pathname === '/auth/authenticate' });
+  const isSignInPage = useRouterState({ select: (state) => (state.resolvedLocation ?? state.location).pathname === '/auth/authenticate' });
 
   const authFooterLinks: FooterLinkProps[] = [{ id: 'about', href: appConfig.aboutUrl }];
 

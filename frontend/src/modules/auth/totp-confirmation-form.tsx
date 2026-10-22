@@ -13,23 +13,21 @@ import { formResolver } from '~/utils/form-resolver';
 const formSchema = zCreateTotpBody;
 type FormValues = z.infer<typeof formSchema>;
 
-interface Props {
+interface TotpConfirmationFormProps {
   onSubmit: (data: FormValues) => void;
   onCancel: () => void;
-  isPending?: boolean;
+  /** While the code is checked: the field is disabled and Confirm shows its spinner. */
+  loading?: boolean;
+  /** Defaults to `c:totp_verify`. */
   label?: string;
 }
 
-export function TotpConfirmationForm({ onSubmit, onCancel, label, isPending }: Props) {
+export function TotpConfirmationForm({ onSubmit, onCancel, loading, label }: TotpConfirmationFormProps) {
   const { t } = useTranslation();
 
   const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { code: '' } });
 
   const { isValid, isDirty } = useFormState({ control: form.control });
-
-  const handleSubmit = (data: FormValues) => {
-    onSubmit(data);
-  };
 
   const clearOrCancel = () => {
     if (isDirty) form.reset();
@@ -38,20 +36,20 @@ export function TotpConfirmationForm({ onSubmit, onCancel, label, isPending }: P
 
   return (
     <Form {...form}>
-      <form noValidate onSubmit={form.handleSubmit(handleSubmit, defaultOnInvalid)}>
+      <form noValidate onSubmit={form.handleSubmit((data) => onSubmit(data), defaultOnInvalid)}>
         <FormField
           control={form.control}
           name="code"
           render={({ field: { value, onChange, onBlur, name, ref } }) => (
             <FormItem name="code" className="mb-6">
-              {label && <FormLabel className="mb-1 self-center">{label}</FormLabel>}
+              <FormLabel className="mb-1 self-center">{label ?? t('c:totp_verify')}</FormLabel>
               {/* OTPField reads the surrounding Field itself, so it binds to the form value directly. */}
               <InputOTP
                 name={name}
                 value={value || ''}
                 onValueChange={onChange}
                 onBlur={onBlur}
-                disabled={isPending}
+                disabled={loading}
                 length={appConfig.totp.digits}
                 className="justify-center"
               >
@@ -73,7 +71,7 @@ export function TotpConfirmationForm({ onSubmit, onCancel, label, isPending }: P
         />
 
         <div className="flex w-full flex-col items-stretch gap-2">
-          <SubmitButton disabled={!isValid} loading={isPending}>
+          <SubmitButton disabled={!isValid} loading={loading}>
             {t('c:confirm')}
           </SubmitButton>
 

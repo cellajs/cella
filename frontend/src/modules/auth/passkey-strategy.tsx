@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { type SignInWithPasskeyResponse, signInWithPasskey } from 'sdk';
 import { ApiError } from '~/lib/api';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
-import type { PasskeyCredentialProps } from '~/modules/auth/types';
+import type { PasskeyVerifyType } from '~/modules/auth/types';
 import { useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
@@ -13,7 +13,7 @@ import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 interface PasskeyStrategyProps {
-  type: Exclude<PasskeyCredentialProps['type'], 'registration'>;
+  type: PasskeyVerifyType;
 }
 
 export function PasskeyStrategy({ type }: PasskeyStrategyProps) {
@@ -23,7 +23,7 @@ export function PasskeyStrategy({ type }: PasskeyStrategyProps) {
 
   const navigateAfterAuth = useNavigateAfterAuth();
 
-  const { mutate: passkeyAuth } = useMutation<SignInWithPasskeyResponse, ApiError | Error, void>({
+  const { mutate: passkeySignIn } = useMutation<SignInWithPasskeyResponse, ApiError | Error, void>({
     mutationFn: async () => {
       const body = await getPasskeyVerifyCredential({ type });
       return await signInWithPasskey({ body });
@@ -44,7 +44,7 @@ export function PasskeyStrategy({ type }: PasskeyStrategyProps) {
       <Button
         type="button"
         variant={type === 'mfa' ? 'default' : 'plain'}
-        onClick={() => passkeyAuth()}
+        onClick={() => passkeySignIn()}
         className={cn('w-full gap-1.5 truncate', type !== 'mfa' && 'bg-secondary/60 hover:bg-secondary/80')}
       >
         <FingerprintPatternIcon />

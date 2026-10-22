@@ -10,15 +10,15 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
 
-const mapOAuthProviders = [
-  { id: 'github', name: 'Github' },
+const oauthProviders = [
+  { id: 'github', name: 'GitHub' },
   { id: 'google', name: 'Google' },
   { id: 'microsoft', name: 'Microsoft' },
 ] as const;
 
 /** The providers the app config enables, in its order. */
 export const enabledOAuthProviders = appConfig.enabledOAuthProviders.flatMap((id) =>
-  mapOAuthProviders.filter((provider) => provider.id === id).map(({ name }) => ({ id, name })),
+  oauthProviders.filter((provider) => provider.id === id).map(({ name }) => ({ id, name })),
 );
 
 /**

@@ -29,7 +29,7 @@ export function CheckEmailStep() {
   const form = useForm<EmailFormValues>({ resolver: formResolver(emailFormSchema), defaultValues: { email: '' } });
 
   // A browser that never signed in to the address gets the step that does not say whether it has an account.
-  const { mutate: _checkEmail, isPending } = useMutation<CheckEmailResponse, ApiError, CheckEmailData['body']>({
+  const { mutate: submitEmail, isPending } = useMutation<CheckEmailResponse, ApiError, CheckEmailData['body']>({
     mutationFn: (body) => checkEmail({ body }),
     onSuccess: ({ recognized }) => {
       if (!recognized) setRestrictedMode(true);
@@ -42,8 +42,6 @@ export function CheckEmailStep() {
     },
   });
 
-  const onSubmit = (body: EmailFormValues) => _checkEmail(body);
-
   return (
     <Form {...form}>
       <AuthHeader title={title}>
@@ -53,7 +51,7 @@ export function CheckEmailStep() {
       </AuthHeader>
 
       {(passkeyEnabled || magicLinkEnabled) && (
-        <form noValidate onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
+        <form noValidate onSubmit={form.handleSubmit((body) => submitEmail(body), defaultOnInvalid)} className="flex flex-col gap-4">
           <EmailField control={form.control} />
           <SubmitButton loading={isPending} className="w-full">
             {t('c:continue')}
