@@ -8,6 +8,7 @@ import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 interface MenuSheetItemsListProps {
   items: UserMenuItem[];
@@ -42,7 +43,7 @@ export function MenuSheetItemsList({ items, entityType, isArchived, options, cla
     return (
       <>
         {filteredItems.map((item) => (
-          <li className={item.submenu?.length && detailedMenu ? 'submenu-section relative my-1' : 'my-1'} key={item.id}>
+          <li className={cn('my-1', !!item.submenu?.length && detailedMenu && 'submenu-section relative')} key={item.id}>
             <MenuSheetItem item={item} className={className} icon={options?.icon} />
             {!item.membership.archived && !!item.submenu?.length && detailedMenu && (
               <ul>

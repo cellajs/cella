@@ -43,17 +43,16 @@ export function SidebarNav({ onNavItemClick }: SidebarNavProps) {
   const isOverlay = !isDesktop || !keepNavOpen;
 
   // The spacer includes the sheet width when the sheet is open and not overlaying.
-  const iconBarWidth = isExpanded ? sidebarWidthExpanded : sidebarWidthCollapsed;
-  const sidebarWidth = iconBarWidth;
+  const sidebarWidth = isExpanded ? sidebarWidthExpanded : sidebarWidthCollapsed;
   const spacerWidth = isOverlay
     ? hasSidebarTextLabels && isDesktop
       ? sidebarWidthExpanded
       : sidebarWidthCollapsed
     : navSheetExists
-      ? `calc(${iconBarWidth} + ${sheetPanelWidth})`
-      : iconBarWidth;
+      ? `calc(${sidebarWidth} + ${sheetPanelWidth})`
+      : sidebarWidth;
 
-  const cssVars = { '--icon-bar-w': iconBarWidth, '--sidebar-w': sidebarWidth, '--spacer-w': spacerWidth } as CSSProperties;
+  const cssVars = { '--sidebar-w': sidebarWidth, '--spacer-w': spacerWidth } as CSSProperties;
 
   return (
     <div className="contents" style={cssVars}>
@@ -61,7 +60,7 @@ export function SidebarNav({ onNavItemClick }: SidebarNavProps) {
       <div
         data-slot="sidebar-spacer"
         data-started={hasStarted}
-        className="relative w-(--spacer-w) bg-transparent focus-view:hidden data-[started=true]:transition-[width] data-[started=true]:duration-300 data-[started=true]:ease-out"
+        className="w-(--spacer-w) focus-view:hidden data-[started=true]:transition-[width] data-[started=true]:duration-300 data-[started=true]:ease-out"
       />
       <Sidebar
         id="sidebar-nav"
@@ -69,11 +68,11 @@ export function SidebarNav({ onNavItemClick }: SidebarNavProps) {
         data-started={hasStarted}
         data-collapsed={isCollapsed}
         data-overlay={isOverlay}
-        className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) border-r-0 transition-[width] duration-200 ease-linear focus-view:hidden focus:outline-hidden data-[started=false]:-translate-x-full"
+        className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) transition-[width] duration-200 ease-linear focus-view:hidden focus:outline-hidden data-[started=false]:-translate-x-full"
       >
         <FocusTarget target="sidebar" />
-        <div className="relative flex h-full flex-row">
-          <div className="flex h-full w-(--icon-bar-w) flex-col overflow-hidden transition-[width] duration-200 ease-linear">
+        <div className="relative flex h-full">
+          <div className="flex h-full w-(--sidebar-w) flex-col overflow-hidden transition-[width] duration-200 ease-linear">
             <SidebarContent className="gap-1">
               <SidebarGroup className="p-0">
                 <SidebarGroupContent>
@@ -91,7 +90,7 @@ export function SidebarNav({ onNavItemClick }: SidebarNavProps) {
                 </SidebarGroupContent>
               </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="gap-2 p-0">
+            <SidebarFooter className="p-0">
               <Suspense>
                 <DebugDropdown className="mx-2" />
               </Suspense>
@@ -107,7 +106,7 @@ export function SidebarNav({ onNavItemClick }: SidebarNavProps) {
                   />
                 ))}
               </SidebarMenu>
-              <FocusBridge direction="to-sheet" className="focus:relative focus:m-2" />
+              <FocusBridge direction="to-sheet" className="focus:m-2" />
             </SidebarFooter>
           </div>
         </div>

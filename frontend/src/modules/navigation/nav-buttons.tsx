@@ -4,6 +4,7 @@ import { appConfig } from 'shared';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 const { hasSidebarTextLabels } = appConfig.theme.navigation;
 
@@ -14,17 +15,17 @@ interface NavItemButtonProps {
   onClick: TriggerNavItemFn;
 }
 
-function NavItemIcon({ navItem, className }: { navItem: NavItem; className?: string }) {
-  // Larger below sm, where the bottom bar shows them.
-  const iconClass = cn('size-6 min-h-6 min-w-6 shrink-0 transition-transform group-hover:scale-110 sm:size-5 sm:min-h-5 sm:min-w-5', className);
+// Larger below sm (bottom bar); in the sidebar `[&>svg]:size-4` outranks `size-*`, so the min-h/min-w pair sizes it.
+const navItemIconClass = tw('size-6 min-h-6 min-w-6 shrink-0 transition-transform group-hover:scale-110 sm:size-5 sm:min-h-5 sm:min-w-5');
 
+function NavItemIcon({ navItem }: { navItem: NavItem }) {
   if (navItem.iconSlot) {
     const IconSlot = navItem.iconSlot;
-    return <IconSlot className={iconClass} icon={navItem.icon} />;
+    return <IconSlot className={navItemIconClass} icon={navItem.icon} />;
   }
 
   const Icon = navItem.icon;
-  return <Icon className={iconClass} strokeWidth={1.8} />;
+  return <Icon className={navItemIconClass} strokeWidth={1.8} />;
 }
 
 function NavItemBadge({ navItem, isActive, className }: { navItem: NavItem; isActive: boolean; className?: string }) {
@@ -50,7 +51,7 @@ export function SidebarNavButton({ label, isCollapsed, onClick, isActive, ref, c
   const showTooltip = isCollapsed || !hasSidebarTextLabels;
 
   return (
-    <SidebarMenuItem className="flex grow-0 justify-start pb-2">
+    <SidebarMenuItem className="flex pb-2">
       <SidebarMenuButton
         ref={ref}
         size="lg"
@@ -59,7 +60,7 @@ export function SidebarNavButton({ label, isCollapsed, onClick, isActive, ref, c
         onClick={onClick}
         isActive={isActive}
         className={cn(
-          'group h-14 w-full justify-center text-sidebar-foreground ring-inset transition-[width] duration-200 ease-linear hover:bg-background/30 focus-visible:ring-offset-0 data-[collapsed=true]:w-16',
+          'group h-14 justify-center text-sidebar-foreground ring-inset transition-[width] duration-200 ease-linear hover:bg-background/30 data-[collapsed=true]:w-16',
           className,
         )}
       >
@@ -67,7 +68,7 @@ export function SidebarNavButton({ label, isCollapsed, onClick, isActive, ref, c
         {!hasSidebarTextLabels && <span className="sr-only">{label}</span>}
         {badge}
         {hasSidebarTextLabels && (
-          <span className="w-auto overflow-hidden whitespace-nowrap pl-1.5 font-medium opacity-100 transition-[opacity,width] duration-200 ease-linear group-data-[collapsed=true]:w-0 group-data-[collapsed=true]:opacity-0">
+          <span className="overflow-hidden whitespace-nowrap pl-1.5 font-medium transition-[opacity,width] duration-200 ease-linear group-data-[collapsed=true]:w-0 group-data-[collapsed=true]:opacity-0">
             {label}
           </span>
         )}
@@ -107,11 +108,7 @@ export function BottomBarNavItemButton({ navItem, isActive, onClick }: Omit<NavI
       id={`${navItem.id}-nav`}
       data-active={isActive}
       onClick={() => onClick(navItem.id, buttonRef)}
-      className={cn(
-        'group relative flex size-14 items-center justify-center rounded-md ring-inset focus-visible:ring-offset-0',
-        'hover:bg-background/30 data-[active=true]:bg-background/50',
-        'text-sidebar-foreground',
-      )}
+      className="group relative flex size-14 items-center justify-center rounded-md text-sidebar-foreground hover:bg-background/30 data-[active=true]:bg-background/50"
     >
       <NavItemIcon navItem={navItem} />
       <span className="sr-only">{t(`c:${navItem.id}`)}</span>

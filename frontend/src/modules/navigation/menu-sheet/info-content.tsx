@@ -7,6 +7,7 @@ import { appConfig } from 'shared';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { handleAskForHelp } from '~/modules/common/error-helpers';
 import type { IconComponent } from '~/modules/common/icons/types';
+import { PanelHeading } from '~/modules/navigation/menu-sheet/panel-heading';
 import { type HealthStatus, healthQueryOptions } from '~/modules/navigation/menu-sheet/query';
 import { type GradedStatusEntry, gradeStatusEntries } from '~/modules/navigation/menu-sheet/status-entries';
 import { Button, type ButtonProps } from '~/modules/ui/button';
@@ -91,7 +92,7 @@ export function InfoContent() {
   return (
     <div className="flex flex-col gap-6 pt-3 pb-8">
       <div className="flex flex-col gap-1">
-        <h3 className="px-3 font-medium text-muted-foreground text-sm lowercase">{t('c:support')}</h3>
+        <PanelHeading className="px-3">{t('c:support')}</PanelHeading>
         <InfoButton icon={InfoIcon} label={t('c:about')} render={<Link to={appConfig.aboutUrl} draggable={false} />} />
         <InfoButton icon={BookOpenIcon} label={t('c:api_docs')} render={<Link to="/docs" draggable={false} />} />
         {appConfig.has.chatSupport && (
@@ -102,7 +103,7 @@ export function InfoContent() {
 
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2 px-3">
-          <h3 className="font-medium text-muted-foreground text-sm lowercase">{t('c:status')}</h3>
+          <PanelHeading>{t('c:status')}</PanelHeading>
           {hasStatusPage && (
             <Button
               variant="link"

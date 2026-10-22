@@ -14,7 +14,7 @@ interface NavSheetFrameProps {
 /** Shell of every nav sheet: card column, the sheet focus target first, optional panels, and the bottom focus bridges. */
 export function NavSheetFrame({ children, panels = false, ref, className }: NavSheetFrameProps) {
   return (
-    <div ref={ref} className={cn('group/menu flex min-h-dvh w-full flex-col bg-card', className)}>
+    <div ref={ref} className={cn('flex min-h-dvh w-full flex-col bg-card', className)}>
       <FocusTarget target="sheet" />
       {children}
       {panels && (
@@ -24,8 +24,8 @@ export function NavSheetFrame({ children, panels = false, ref, className }: NavS
         </>
       )}
       <div className={cn('flex flex-col focus-within:p-3', !panels && 'mt-auto')}>
-        <FocusBridge direction="to-content" className="focus:relative" />
-        <FocusBridge direction="to-sidebar" className="focus:relative" />
+        <FocusBridge direction="to-content" />
+        <FocusBridge direction="to-sidebar" />
       </div>
     </div>
   );

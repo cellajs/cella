@@ -1,4 +1,5 @@
 import { type ReactNode, useState } from 'react';
+import { PanelHeading } from '~/modules/navigation/menu-sheet/panel-heading';
 import { HelpToggle } from '~/modules/ui/help-toggle';
 import { Switch } from '~/modules/ui/switch';
 import { cn } from '~/utils/cn';
@@ -18,7 +19,7 @@ export function PreferencesGroup({ title, help, className, children }: Preferenc
   return (
     <div data-help-open={helpOpen} className={cn('group/prefs flex flex-col gap-4', className)}>
       <div className="flex items-center gap-2 px-3">
-        <h3 className="font-medium text-muted-foreground text-sm lowercase">{title}</h3>
+        <PanelHeading>{title}</PanelHeading>
         {help && <HelpToggle open={helpOpen} onToggle={() => setHelpOpen(!helpOpen)} className="-my-1" />}
       </div>
       {children}
@@ -58,12 +59,7 @@ export function PreferenceSwitch({ id, label, description, checked, onCheckedCha
         </label>
         {description && (
           // The grid row animates from `0fr` to `1fr`, as HelpCollapse does, so the text opens and closes smoothly.
-          <div
-            className={cn(
-              'grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-200 motion-reduce:transition-none',
-              'group-data-[help-open=true]/prefs:grid-rows-[1fr] group-data-[help-open=true]/prefs:opacity-100',
-            )}
-          >
+          <div className="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-200 group-data-[help-open=true]/prefs:grid-rows-[1fr] group-data-[help-open=true]/prefs:opacity-100 motion-reduce:transition-none">
             <p id={descriptionId} className="overflow-hidden text-muted-foreground text-xs">
               <span className="block pt-1">{description}</span>
             </p>

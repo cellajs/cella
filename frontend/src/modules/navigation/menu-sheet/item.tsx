@@ -59,13 +59,12 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
       activeOptions={{ exact: false, includeHash: false, includeSearch: isSubitem }}
       activeProps={{ 'data-link-active': true }}
       className={cn(
-        'group/menu-sheet-item relative flex h-12 w-full items-start justify-start gap-1 rounded-sm p-0 ring-2 ring-transparent ring-inset focus:outline-hidden focus-visible:ring-foreground data-[subitem=true]:h-10 sm:hover:bg-accent/30 sm:hover:text-accent-foreground',
-        'data-[link-active=true]:ring-transparent data-[link-active=true]:focus-visible:ring-foreground',
+        'group/menu-sheet-item relative flex h-12 w-full items-start gap-1 rounded-sm ring-2 ring-transparent ring-inset focus:outline-hidden focus-visible:ring-foreground data-[subitem=true]:h-10 sm:hover:bg-accent/30 sm:hover:text-accent-foreground',
         className,
       )}
     >
       <span className="absolute top-3 left-0 h-[calc(100%-1.5rem)] w-1 rounded-lg bg-primary opacity-0 transition-opacity group-data-[link-active=true]/menu-sheet-item:opacity-100" />
-      <span className="relative z-1 m-2 mx-3 size-8 shrink-0 rounded-full bg-card group-data-[subitem=true]/menu-sheet-item:mx-4 group-data-[subitem=true]/menu-sheet-item:my-2 group-data-[subitem=true]/menu-sheet-item:size-6">
+      <span className="relative z-1 mx-3 my-2 size-8 shrink-0 rounded-full bg-card group-data-[subitem=true]/menu-sheet-item:mx-4 group-data-[subitem=true]/menu-sheet-item:size-6">
         <EntityAvatar
           className="size-8 items-center bg-card group-hover/menu-sheet-item:font-bold group-hover/menu-sheet-item:opacity-100 group-data-[subitem=true]/menu-sheet-item:size-6 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80"
           type={item.entityType}
@@ -75,20 +74,13 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
           url={item.thumbnailUrl}
         />
         {item.membership.muted && (
-          <span className="absolute right-0 bottom-0 flex size-3.5 items-center justify-center rounded-tl-lg rounded-tr-none rounded-br-none rounded-bl-none bg-card opacity-80">
+          <span className="absolute right-0 bottom-0 flex size-3.5 items-center justify-center rounded-tl-lg bg-card opacity-80">
             <BellOffIcon className="size-2.5" strokeWidth={2} />
           </span>
         )}
       </span>
-      <div className="flex grow flex-col justify-center truncate pr-2 text-left group-hover/menu-sheet-item:opacity-100 group-data-[subitem=true]/menu-sheet-item:pl-0 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80">
-        <div
-          className={cn(
-            'truncate pt-1 text-md leading-5 transition-spacing duration-100 ease-in-out group-hover/menu-sheet-item:delay-300',
-            'pt-3.5 group-data-[subitem=true]/menu-sheet-item:pt-2',
-            isSubitem ? 'sm:group-hover/menu-sheet-item:pt-[0.06rem]!' : 'sm:group-hover/menu-sheet-item:pt-[0.3rem]!',
-            'group-data-[link-active=true]/menu-sheet-item:font-medium group-data-[subitem=true]/menu-sheet-item:text-sm',
-          )}
-        >
+      <div className="flex grow flex-col justify-center truncate pr-2 text-left group-hover/menu-sheet-item:opacity-100 group-data-[link-active=true]/menu-sheet-item:opacity-100 sm:opacity-80">
+        <div className="truncate pt-3.5 text-md leading-5 transition-spacing duration-100 ease-in-out group-hover/menu-sheet-item:delay-300 group-data-[subitem=true]/menu-sheet-item:pt-2 group-data-[link-active=true]/menu-sheet-item:font-medium group-data-[subitem=true]/menu-sheet-item:text-sm sm:group-hover/menu-sheet-item:pt-[0.3rem] sm:group-data-[subitem=true]/menu-sheet-item:group-hover/menu-sheet-item:pt-[0.06rem]">
           {item.name}
         </div>
         <div className="pointer-events-none text-muted-foreground text-xs">

@@ -70,9 +70,9 @@ export function FloatingNavButton({
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchCancel}
       className={cn(
-        'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 flex items-center rounded-full bg-secondary opacity-100 shadow-xl transition-[translate,scale,opacity] duration-300 ease-in-out hover:bg-secondary active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
+        'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 rounded-full shadow-xl transition-[translate,scale,opacity] duration-300 ease-in-out hover:bg-secondary active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
         // With a label the width is content-driven: the icon keeps its centered-in-circle offset via pl-4, the pill grows to the right
-        label ? 'h-14 w-auto min-w-14 justify-start gap-0 pl-4' : 'size-14 justify-center',
+        label ? 'h-14 w-auto min-w-14 justify-start gap-0 pl-4' : 'size-14',
         // Animate out while the floating selection action bar or the on-screen keyboard is shown; hiding moves by translate, which skips layout
         'group-[.selection-active]/body:pointer-events-none group-[.selection-active]/body:translate-y-16 group-[.selection-active]/body:scale-50 group-[.selection-active]/body:opacity-0',
         'group-[.keyboard-open]/body:pointer-events-none group-[.keyboard-open]/body:translate-y-16 group-[.keyboard-open]/body:scale-50 group-[.keyboard-open]/body:opacity-0',

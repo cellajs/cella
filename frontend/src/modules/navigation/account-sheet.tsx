@@ -36,7 +36,7 @@ function AccountButton(props: AccountButtonProps) {
       variant="ghost"
       size="lg"
       id={id}
-      className="focus-effect w-full justify-start text-left hover:bg-accent/50 data-[destructive=true]:text-destructive"
+      className="w-full justify-start text-left hover:bg-accent/50 data-[destructive=true]:text-destructive"
       data-destructive={destructive}
       onClick={'onClick' in props ? props.onClick : undefined}
       render={
@@ -107,10 +107,10 @@ export function AccountSheet() {
 
   return (
     <NavSheetFrame ref={frameRef} panels>
-      <div className="flex items-center justify-between px-3 pt-3">
+      <div className="flex items-center px-3 pt-3">
         <h2 className="p-2 font-semibold text-base">{t('c:account')}</h2>
       </div>
-      <button type="button" tabIndex={-1} onClick={openProfile} className="relative mt-3 w-full">
+      <button type="button" tabIndex={-1} onClick={openProfile} className="mt-3 w-full">
         <div
           className={cn(
             'relative h-32 bg-center bg-cover shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] transition-all duration-300',
@@ -124,13 +124,7 @@ export function AccountSheet() {
             transition={{ duration: 0.3, ease: 'easeOut' }}
             className="absolute top-6 left-1/2 -ml-10"
           >
-            <EntityAvatar
-              className="size-20 rounded-full shadow-[0_0_0_4px_rgba(0,0,0,0.1)]"
-              type="user"
-              id={user.id}
-              name={user.name}
-              url={user.thumbnailUrl}
-            />
+            <EntityAvatar className="size-20 rounded-full ring-4 ring-black/10" type="user" id={user.id} name={user.name} url={user.thumbnailUrl} />
           </motion.div>
         </div>
       </button>

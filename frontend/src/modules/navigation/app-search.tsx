@@ -21,7 +21,6 @@ import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { usersListQueryOptions } from '~/modules/user/query';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
-import { cn } from '~/utils/cn';
 import { addRecentSearch, resolveSearchInput } from '~/utils/recent-searches';
 
 const searchableEntityTypes = ['user', ...appConfig.channelEntityTypes] as const;
@@ -31,7 +30,7 @@ function SearchResultsSkeleton() {
   const { hasStarted } = useMountedState();
 
   return (
-    <div className={cn('flex flex-col gap-4 p-4 transition-opacity duration-300', hasStarted ? 'opacity-100' : 'opacity-0')}>
+    <div data-started={hasStarted} className="flex flex-col gap-4 p-4 transition-opacity duration-300 data-[started=false]:opacity-0">
       {Array.from({ length: 3 }).map((_, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder.
         <div key={i} className="flex items-center gap-3 py-1.5">
@@ -155,7 +154,7 @@ export function AppSearch() {
           placeholder={t('c:placeholder.search')}
         />
         {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h and overflow are cleared. */}
-        <ScrollArea id={'item-search'} ref={scrollAreaRef} className="sm:h-[40vh]">
+        <ScrollArea id="item-search" ref={scrollAreaRef} className="sm:h-[40vh]">
           {!isLoading && notFound && !(!searchValue.length && !!recentSearches.length) && (
             <ComboboxEmpty className="h-full sm:h-[36vh]">
               <ContentPlaceholder

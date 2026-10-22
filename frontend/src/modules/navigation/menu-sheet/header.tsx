@@ -27,7 +27,7 @@ export function MenuSheetHeader() {
   const accountButtonRef = useRef<HTMLButtonElement | null>(null);
 
   return (
-    <div className="relative h-14 p-3 pb-1">
+    <div className="h-14 p-3 pb-1">
       <div className="flex h-10 items-center justify-between">
         <Link
           to="/home"
@@ -40,14 +40,14 @@ export function MenuSheetHeader() {
 
         {/* Only shown inside a floating-nav layout. */}
         {user && (
-          <div className="group/actions in-[.floating-nav]:flex hidden items-center gap-1">
+          <div className="in-[.floating-nav]:flex hidden items-center gap-1">
             <Button
               ref={notificationsButtonRef}
               size="icon"
               variant="ghost"
               aria-label={t('c:notifications')}
               onClick={() => openStackedNavSheet('notifications', <NotificationsSheet />, notificationsButtonRef)}
-              className="relative size-10"
+              className="relative"
             >
               <BellIcon className="size-5" strokeWidth={1.8} />
               <UnreadCountBadge className="absolute top-1 right-1" />
@@ -58,7 +58,6 @@ export function MenuSheetHeader() {
               variant="ghost"
               aria-label={t('c:account')}
               onClick={() => openStackedNavSheet('account', <AccountSheet />, accountButtonRef)}
-              className="size-10"
             >
               <EntityAvatar
                 className="size-7 rounded-full border-[0.1rem] border-current"

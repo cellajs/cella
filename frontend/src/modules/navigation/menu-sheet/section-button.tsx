@@ -42,7 +42,7 @@ export function MenuSheetSectionButton({
     <div className="sticky top-0 z-10">
       <div className="z-10 flex items-center bg-card py-2">
         <div className="flex w-full items-center">
-          <Button onClick={() => toggleSection(options.entityType)} className="min-w-0 flex-1 justify-between shadow-none" variant="ghost">
+          <Button onClick={() => toggleSection(options.entityType)} className="min-w-0 flex-1 justify-between" variant="ghost">
             <div className="flex items-center">
               <span className="mr-1 flex items-center">{t(options.label)}</span>
               {/* Unseen count, or the item count while the section is collapsed. */}
@@ -69,7 +69,7 @@ export function MenuSheetSectionButton({
             {isSectionVisible && !!items.length && (
               <motion.div key={`settings-${options.entityType}`} {...widenMotion} className="shrink-0 max-sm:hidden">
                 <TooltipButton toolTipContent={t('c:manage_content')} side="bottom" sideOffset={10}>
-                  <Button className="w-10 px-2 shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={() => onToggleEditing()}>
+                  <Button className="px-2 shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={() => onToggleEditing()}>
                     <Settings2Icon className="size-5" />
                   </Button>
                 </TooltipButton>
@@ -81,13 +81,7 @@ export function MenuSheetSectionButton({
             {isSectionVisible && onCreate && (
               <motion.div key={`create-${options.entityType}`} {...widenMotion} className="shrink-0">
                 <TooltipButton toolTipContent={t('c:create')} sideOffset={22} side="right">
-                  <Button
-                    ref={createButtonRef}
-                    className="w-10 px-2 shadow-none"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onCreate(createButtonRef)}
-                  >
+                  <Button ref={createButtonRef} className="px-2" variant="ghost" size="icon" onClick={() => onCreate(createButtonRef)}>
                     <PlusIcon className="size-5" />
                   </Button>
                 </TooltipButton>

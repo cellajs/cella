@@ -56,7 +56,7 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
   const skipInitialAnimation = !hasLoaded && navSheetOpen === 'menu';
 
   return (
-    <div className="relative flex size-10 items-center justify-center overflow-visible">
+    <div className="relative flex size-10 items-center justify-center">
       <AnimatePresence>
         {showLogo && (
           <motion.div
@@ -88,7 +88,7 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
               <Spinner strokeWidth={1.8} className={cn('size-5', className)} />
             ) : (
               <div className="transition-transform group-hover:scale-110">
-                <Icon strokeWidth={1.8} className={cn('size-5 min-h-5 min-w-5', className)} />
+                <Icon strokeWidth={1.8} className={cn('size-5', className)} />
               </div>
             )}
           </motion.div>

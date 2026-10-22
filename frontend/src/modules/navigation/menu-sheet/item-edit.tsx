@@ -14,6 +14,9 @@ import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { buildMembershipUpdate } from '~/modules/navigation/menu-sheet/helpers/build-membership-update';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
+
+const avatarBoxClass = tw('mx-3 my-2 flex shrink-0 group-data-[submenu=false]/menu-options:mx-4 group-data-[submenu=false]/menu-options:my-1');
 
 interface MenuSheetItemEditProps {
   item: UserMenuItem;
@@ -73,18 +76,17 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
       url={item.thumbnailUrl}
     />
   );
-  const avatarBoxClass = 'm-2 mx-3 flex shrink-0 group-data-[submenu=false]/menu-options:mx-4 group-data-[submenu=false]/menu-options:my-1';
 
   return (
     <motion.div
       layoutId={`sheet-menu-item-${item.id}`}
       data-subitem={!item.submenu}
       data-archived={item.membership.archived}
-      className="group/options-item relative flex h-12 w-full items-center justify-start rounded-sm p-0 pr-2 ring-1 ring-muted ring-inset hover:bg-accent/50 hover:text-accent-foreground data-[archived=false]:cursor-grab group-data-[submenu=false]/menu-options:h-10"
+      className="group/options-item relative flex h-12 w-full items-center rounded-sm pr-2 ring-1 ring-muted ring-inset hover:bg-accent/50 hover:text-accent-foreground data-[archived=false]:cursor-grab group-data-[submenu=false]/menu-options:h-10"
     >
       {status === 'pending' && onlineManager.isOnline() && (
         <div className="absolute z-10">
-          <Spinner className="m-1 mr-3 size-10 p-1 text-muted-foreground group-data-[submenu=false]/menu-options:mx-3 group-data-[submenu=false]/menu-options:my-2 group-data-[submenu=false]/menu-options:size-7 group-data-[submenu=false]/menu-options:p-1" />
+          <Spinner className="m-1 mr-3 size-10 p-1 text-muted-foreground group-data-[submenu=false]/menu-options:mx-3 group-data-[submenu=false]/menu-options:my-2 group-data-[submenu=false]/menu-options:size-7" />
         </div>
       )}
       {isSortable ? (
@@ -95,7 +97,7 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
           aria-roledescription={t('c:sortable')}
           aria-label={t('c:sortable_position', { name: item.name, position: index + 1, total: siblings.length })}
           onKeyDown={handleKeyDown}
-          className={cn('focus-effect group/drag relative cursor-grab rounded-md active:cursor-grabbing', avatarBoxClass)}
+          className={cn(avatarBoxClass, 'focus-effect group/drag relative cursor-grab rounded-md active:cursor-grabbing')}
         >
           <span className="inline-flex transition-[opacity,filter] group-hover/options-item:opacity-30 group-hover/options-item:blur-[1px] group-focus-visible/drag:opacity-30 group-focus-visible/drag:blur-[1px]">
             {avatar}
@@ -109,22 +111,20 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
       )}
 
       {/* Not a clipping box: focus scrolls one to reveal a button whose box reaches past it */}
-      <div className="min-w-0 grow text-left group-data-[submenu=false]/menu-options:pl-0">
+      <div className="min-w-0 grow text-left">
         <div className="truncate text-md leading-5 group-data-[subitem=true]/options-item:text-xs group-data-[archived=true]/options-item:opacity-70">
           {item.name} {env.VITE_DEBUG_MODE && <span className="text-muted-foreground/50">#{item.membership.displayOrder}</span>}
         </div>
-        <div className="flex items-center gap-2 transition-opacity delay-500">
+        <div className="flex items-center gap-2">
           <MembershipFlagButton
             icon={item.membership.archived ? ArchiveRestoreIcon : ArchiveIcon}
             title={item.membership.archived ? t('c:restore') : t('c:archive')}
             onClick={() => toggleMembershipFlag('archived')}
-            isSubitem={!item.submenu}
           />
           <MembershipFlagButton
             icon={item.membership.muted ? BellIcon : BellOffIcon}
             title={item.membership.muted ? t('c:unmute') : t('c:mute')}
             onClick={() => toggleMembershipFlag('muted')}
-            isSubitem={!item.submenu}
           />
         </div>
       </div>
@@ -136,18 +136,17 @@ interface MembershipFlagButtonProps {
   icon: React.ElementType;
   title: string;
   onClick: () => void;
-  isSubitem?: boolean;
 }
-function MembershipFlagButton({ icon: Icon, title, onClick, isSubitem = false }: MembershipFlagButtonProps) {
+function MembershipFlagButton({ icon: Icon, title, onClick }: MembershipFlagButtonProps) {
   return (
     <Button
       variant="none"
       size="sm"
-      className="link-decoration active:link-decoration-strong focus-inset -mx-1 -my-0.5 h-5 rounded-sm px-1 py-0 text-primary text-xs leading-3 opacity-80 hover:underline hover:opacity-100"
+      className="link-decoration active:link-decoration-strong focus-inset -mx-1 -my-0.5 h-5 rounded-sm px-1 text-primary text-xs leading-3 opacity-80 hover:underline hover:opacity-100"
       aria-label={`Click ${title}`}
       onClick={onClick}
     >
-      <Icon className={isSubitem ? 'size-3' : 'size-3.25'} />
+      <Icon className="size-3.25 group-data-[subitem=true]/options-item:size-3" />
       {title}
     </Button>
   );

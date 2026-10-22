@@ -21,11 +21,11 @@ export function BottomBarNav({ onNavItemClick }: BottomBarNavProps) {
     <nav
       id="bottom-bar-nav"
       data-started={hasStarted}
-      className="fixed bottom-0 z-100 flex w-full flex-row justify-between bg-sidebar pb-[env(safe-area-inset-bottom,0px)] shadow-xs transition-transform ease-out focus-view:hidden group-[.keyboard-open]/body:translate-y-full group-[.selection-active]/body:translate-y-full data-[started=false]:translate-y-full"
+      className="fixed bottom-0 z-100 flex w-full bg-sidebar pb-[env(safe-area-inset-bottom,0px)] shadow-xs transition-transform ease-out focus-view:hidden group-[.keyboard-open]/body:translate-y-full group-[.selection-active]/body:translate-y-full data-[started=false]:translate-y-full"
     >
-      <ul className="flex w-full flex-row justify-between p-1 px-2">
+      <ul className="flex w-full justify-between p-1 px-2">
         {baseNavItems.map((navItem) => (
-          <li key={navItem.id} className="flex justify-start">
+          <li key={navItem.id} className="flex">
             <BottomBarNavItemButton navItem={navItem} isActive={navSheetOpen === navItem.id} onClick={onNavItemClick} />
           </li>
         ))}
