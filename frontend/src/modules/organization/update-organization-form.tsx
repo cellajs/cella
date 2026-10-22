@@ -1,5 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import i18n from 'i18next';
 import type { UseFormProps } from 'react-hook-form';
 import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -24,18 +22,12 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { Button } from '~/modules/ui/button';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { formResolver } from '~/utils/form-resolver';
 
-// welcomeText belongs to the details form; empty optional strings are stored as null.
+// welcomeText belongs to the details form
 const formSchema = zUpdateOrganizationBody.omit({ welcomeText: true }).extend({
   languages: z.array(z.enum(appConfig.languages)).min(1),
-  websiteUrl: z
-    .string()
-    .max(2048)
-    // Translated on failure: at module load the language may not be loaded yet, and it can change later.
-    .refine((v) => v === '' || v.startsWith('https://'), { error: () => i18n.t('error:invalid_url') })
-    .transform((v) => (v.trim() === '' ? null : v))
-    .nullable()
-    .optional(),
+  websiteUrl: z.string().max(2048).startsWith('https://').nullish(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -53,7 +45,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
   const notificationEmailLabel = t('c:notification_email').toLowerCase();
 
   const formOptions: UseFormProps<FormValues> = {
-    resolver: zodResolver(formSchema),
+    resolver: formResolver(formSchema),
     defaultValues: { ...organization, languages: organization.languages || [] },
   };
 
@@ -98,7 +90,6 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
           name="shortName"
           label={t('c:short_name')}
           placeholder={t('c:placeholder.type_input', { inputLabel: shortNameLabel })}
-          required
         />
         <SlugFormField
           control={form.control}

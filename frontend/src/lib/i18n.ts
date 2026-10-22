@@ -6,6 +6,7 @@ import { appConfig } from 'shared';
 import { z } from 'zod';
 import { env } from '~/env';
 import { locales } from '~/lib/i18n-locales';
+import { formErrorMessage } from '~/utils/form-error-message';
 
 /** i18n options: bundled preload for the default language, HTTP-loaded namespaces for the rest. */
 const initOptions: InitOptions = {
@@ -38,8 +39,8 @@ instance.on('languageChanged', (lng) => {
 
 instance.init(initOptions);
 
-// The validator's own text for a wrong email only says it is invalid; ours shows the expected form. A message set on a schema still wins.
-z.config({ customError: (issue) => (issue.code === 'invalid_format' && issue.format === 'email' ? i18n.t('error:invalid_email') : undefined) });
+// Every validation message in the user's language and in plain words; a message set on a schema still wins.
+z.config({ customError: formErrorMessage });
 
 // HMR for lazy-loaded locales (non-bundled languages and HTTP-loaded namespaces)
 if (import.meta.hot) {

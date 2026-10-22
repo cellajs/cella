@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { InfoIcon, SendIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -25,8 +24,10 @@ import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import type { MutationData } from '~/query/types';
+import { formResolver } from '~/utils/form-resolver';
 
-const formSchema = zSendNewsletterBody;
+// A newsletter goes out to every member it picks, so it never leaves without a subject
+const formSchema = zSendNewsletterBody.extend({ subject: zSendNewsletterBody.shape.subject.trim().min(1) });
 
 type FormValues = z.infer<typeof formSchema>;
 interface CreateNewsletterFormProps {
@@ -41,7 +42,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
   const [testOnly, setTestOnly] = useState<boolean>(false);
 
   const formOptions: UseFormProps<FormValues> = {
-    resolver: zodResolver(formSchema),
+    resolver: formResolver(formSchema),
     defaultValues: { organizationIds, subject: '', roles: [], content: '' },
   };
 

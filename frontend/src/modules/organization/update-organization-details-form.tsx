@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod';
 import { type MouseEvent, Suspense, useState } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +20,7 @@ import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
+import { formResolver } from '~/utils/form-resolver';
 
 const formSchema = zUpdateOrganizationBody;
 
@@ -41,7 +41,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
     (appConfig.attachmentUploadTargets as readonly string[]).includes('organization') && organization.can?.attachment?.create === true;
 
   const formOptions: UseFormProps<FormValues> = {
-    resolver: zodResolver(formSchema),
+    resolver: formResolver(formSchema),
     defaultValues: { welcomeText: organization.welcomeText || '' },
   };
 
