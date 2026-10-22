@@ -16,7 +16,7 @@ interface SidebarHashItemProps {
 
 /** Class of a leaf row in the sidebar, under a tag or a parent page. */
 export const sidebarLeafClass = tw(
-  'focus-inset h-8 w-full justify-start gap-2 pl-5 text-left font-normal opacity-70 hover:bg-accent/50 data-[active=true]:font-medium data-[active=true]:opacity-100',
+  'focus-inset h-8 w-full justify-start gap-2 pl-5 font-normal opacity-70 hover:bg-accent/50 data-[active=true]:font-medium data-[active=true]:opacity-100',
 );
 
 /** Sidebar row for a section of an API reference page: scrolls to it and closes the mobile sidebar sheet. */

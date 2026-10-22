@@ -60,7 +60,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
           data-expanded={isExpanded}
           className={cn(
             buttonVariants({ variant: 'ghost' }),
-            'w-full justify-start text-left lowercase',
+            'w-full justify-start lowercase',
             isRoot
               ? 'data-[active=true]:bg-accent data-[active=true]:font-semibold'
               : 'focus-inset h-8 pl-5 font-normal opacity-80 data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:opacity-100 data-[expanded=true]:opacity-100',
@@ -119,7 +119,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
               ))}
             </ul>
           ) : (
-            <div className="relative flex flex-col py-0.5">
+            <div className="relative flex flex-col py-1">
               <ActiveIndicator activeIndex={activeChildIndex} layoutId={layoutId} isMobile={isMobile} />
               {children.map((child) => (
                 <PageLeaf key={child.page.id} page={child.page} isActive={child.page.id === activePageId} />

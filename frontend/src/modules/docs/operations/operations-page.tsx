@@ -39,7 +39,7 @@ function OperationsPage() {
   }, []);
 
   return (
-    <div>
+    <>
       <div className="container">
         <DocsPageHeader title={t('c:operation', { count: 2 })} className="pb-2" />
       </div>
@@ -68,7 +68,7 @@ function OperationsPage() {
           />
         ))}
       </div>
-    </div>
+    </>
   );
 }
 

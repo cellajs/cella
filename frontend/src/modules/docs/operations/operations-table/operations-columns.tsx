@@ -27,10 +27,10 @@ interface LabelItem {
 /** Comma-separated labels; one with a tooltip gets a dotted underline that brightens on hover. */
 function LabelList({ items }: { items: LabelItem[] }) {
   return (
-    <div className="truncate text-foreground/75 text-xs">
+    <div className="truncate text-muted-foreground text-xs">
       {items.map(({ key, label, tooltip }, index) => (
         <Fragment key={key}>
-          {index > 0 && <span className="opacity-60">, </span>}
+          {index > 0 && <span className="text-muted-foreground/70">, </span>}
           <span
             className={cn(
               'cursor-default',

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { SimpleHeader } from '~/modules/common/simple-header';
+import { DocsPageHeader } from '~/modules/docs/docs-page-header';
 import { OpenApiSpecViewer } from '~/modules/docs/openapi-spec-viewer';
 import { OverviewTable } from '~/modules/docs/overview-table';
 
@@ -8,7 +8,7 @@ function OverviewPage() {
 
   return (
     <div className="container">
-      <SimpleHeader className="mt-6 mb-8" heading={t('c:docs.openapi_specification')} />
+      <DocsPageHeader title={t('c:docs.openapi_specification')} className="pb-8" />
       <OverviewTable />
       <OpenApiSpecViewer />
     </div>

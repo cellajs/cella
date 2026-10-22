@@ -38,22 +38,14 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
   }
 
   return (
-    <Accordion className="w-full" defaultValue={examplesOnly ? [String(responses[0].status)] : undefined}>
+    <Accordion defaultValue={examplesOnly ? [String(responses[0].status)] : undefined}>
       {responses.map((response) => {
         const schema = resolveResponseSchema(response, schemas);
         return (
           <AccordionItem key={response.status} value={String(response.status)}>
             <AccordionTrigger className="py-2 opacity-80 hover:opacity-100 group-data-open/accordion-header:opacity-100">
               <div className="flex w-full items-center justify-between gap-3 pr-2">
-                <div
-                  className={cn(
-                    'rounded px-2 py-0.5 font-mono font-semibold',
-                    !examplesOnly && 'decoration-transparent',
-                    getStatusColor(response.status),
-                  )}
-                >
-                  {response.status}
-                </div>
+                <div className={cn('rounded px-2 py-0.5 font-mono font-semibold', getStatusColor(response.status))}>{response.status}</div>
                 <div
                   className={cn(
                     'grow',

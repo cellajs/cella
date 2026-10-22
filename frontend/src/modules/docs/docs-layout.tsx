@@ -13,6 +13,7 @@ import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import { docsSidebarSheetId, isDocsSidebarOpen } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { cn } from '~/utils/cn';
 import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
 import { tw } from '~/utils/tw';
 
@@ -145,39 +146,33 @@ function DocsLayout() {
     },
   ];
 
-  if (!isDesktop) {
-    return (
-      <div>
-        <FloatingNav items={floatingNavItems} bodyClass="docs-floating-nav" resetTrigger={isSidebarOpen} />
-        <main className="focus-view-scope pt-4 pb-[70vh]">
-          <Outlet />
-        </main>
-      </div>
-    );
-  }
-
   const sidebarWidthStyle = resizedSidebarWidth === null ? undefined : ({ '--docs-sidebar-width': `${resizedSidebarWidth}px` } as CSSProperties);
 
+  // One root at every width, so `main` and the page in it stay mounted when the window crosses `md`
   return (
     <div ref={wrapperRef} className="contents [--docs-sidebar-width:clamp(220px,24vw,288px)]" style={sidebarWidthStyle}>
-      <aside ref={sidebarRef} className="fixed inset-y-0 left-0 z-30 flex w-(--docs-sidebar-width) bg-background focus-view:hidden">
-        <ScrollArea className="size-full">{sidebarContent}</ScrollArea>
-        {/* biome-ignore lint/a11y/useSemanticElements: a focusable resize handle, which `<hr>`, a static rule, is not */}
-        <div
-          role="separator"
-          aria-label={i18n.t('c:resize_sidebar')}
-          aria-orientation="vertical"
-          aria-valuenow={resizedSidebarWidth ?? getDefaultSidebarWidth()}
-          aria-valuemin={minSidebarWidth}
-          aria-valuemax={maxSidebarWidth}
-          tabIndex={0}
-          onPointerDown={startSidebarResize}
-          onDoubleClick={() => setResizedSidebarWidth(null)}
-          onKeyDown={resizeSidebarByKey}
-          className="absolute top-0 right-0 z-30 h-full w-px cursor-col-resize bg-border transition-colors after:absolute after:inset-y-0 after:-right-1.5 after:w-3 hover:bg-primary/50 focus-visible:bg-primary"
-        />
-      </aside>
-      <main className="focus-view-scope ml-(--docs-sidebar-width) pb-[70vh] focus-view:ml-0">
+      {isDesktop ? (
+        <aside ref={sidebarRef} className="fixed inset-y-0 left-0 z-30 flex w-(--docs-sidebar-width) bg-background focus-view:hidden">
+          <ScrollArea className="size-full">{sidebarContent}</ScrollArea>
+          {/* biome-ignore lint/a11y/useSemanticElements: a focusable resize handle, which `<hr>`, a static rule, is not */}
+          <div
+            role="separator"
+            aria-label={i18n.t('c:resize_sidebar')}
+            aria-orientation="vertical"
+            aria-valuenow={resizedSidebarWidth ?? getDefaultSidebarWidth()}
+            aria-valuemin={minSidebarWidth}
+            aria-valuemax={maxSidebarWidth}
+            tabIndex={0}
+            onPointerDown={startSidebarResize}
+            onDoubleClick={() => setResizedSidebarWidth(null)}
+            onKeyDown={resizeSidebarByKey}
+            className="absolute top-0 right-0 z-30 h-full w-px cursor-col-resize bg-border transition-colors after:absolute after:inset-y-0 after:-right-1.5 after:w-3 hover:bg-primary/50 focus-visible:bg-primary"
+          />
+        </aside>
+      ) : (
+        <FloatingNav items={floatingNavItems} bodyClass="docs-floating-nav" resetTrigger={isSidebarOpen} />
+      )}
+      <main className={cn('focus-view-scope pb-[70vh]', isDesktop ? 'ml-(--docs-sidebar-width) focus-view:ml-0' : 'pt-4')}>
         <Outlet />
       </main>
     </div>

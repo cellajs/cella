@@ -39,11 +39,9 @@ function SchemasPage() {
     <div className="container">
       <DocsPageHeader title={t('c:schema', { count: 2 })} />
 
-      <div className="flex items-center gap-3 py-5">
-        <span className="text-muted-foreground text-sm">
-          {schemaCount} {t('c:schema', { count: schemaCount })}
-        </span>
-      </div>
+      <p className="py-5 text-muted-foreground text-sm lowercase">
+        {schemaCount} {t('c:schema', { count: schemaCount })}
+      </p>
 
       <div className="flex flex-col gap-12 lg:gap-20">
         {schemaTags.map((tag) => (

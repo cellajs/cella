@@ -10,20 +10,17 @@ import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
-import { tw } from '~/utils/tw';
 
 const tagTypeConfig = {
   operations: {
     linkTo: '/docs/operations' as const,
     getHash: (name: string) => `tag/${name}`,
     getSearch: (collapse: boolean, name: string) => ({ operationTag: collapse ? undefined : name }),
-    triggerClassName: 'text-left',
   },
   schemas: {
     linkTo: '/docs/schemas' as const,
     getHash: (name: string) => name,
     getSearch: (collapse: boolean, name: string) => ({ schemaTag: collapse ? undefined : name }),
-    triggerClassName: tw('justify-start lowercase'),
   },
 };
 
@@ -61,7 +58,7 @@ function CollapsibleTagItemBase<T>({
 }: CollapsibleTagItemProps<T>) {
   // Sheet-mode threshold (below `md`), where the active indicator moves by transform
   const isMobile = useBreakpointBelow('md', false);
-  const { linkTo, getSearch, getHash, triggerClassName } = tagTypeConfig[type];
+  const { linkTo, getSearch, getHash } = tagTypeConfig[type];
   const hash = getHash(tag.name);
   // Collapsing is a re-click at the tag itself. While expanded but at one of its items or scrolled
   // elsewhere, the click jumps to this section and leaves it open.
@@ -81,8 +78,7 @@ function CollapsibleTagItemBase<T>({
             draggable={false}
             className={cn(
               buttonVariants({ variant: 'ghost' }),
-              'group focus-inset h-8 w-full pl-5 font-normal opacity-80 group-data-[active=true]/tag:bg-accent group-data-[active=true]/tag:font-medium group-data-[expanded=true]/tag:opacity-100',
-              triggerClassName,
+              'group focus-inset h-8 w-full justify-start pl-5 font-normal opacity-80 group-data-[active=true]/tag:bg-accent group-data-[active=true]/tag:font-medium group-data-[expanded=true]/tag:opacity-100',
             )}
             onMouseEnter={!isExpanded ? onPrerender : undefined}
             // Leaves the mobile sheet open, so expanding a tag shows its items

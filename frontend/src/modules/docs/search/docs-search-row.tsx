@@ -26,7 +26,7 @@ export function DocsSearchRow({ item }: { item: DocsSearchResult }) {
       <div className="relative flex w-full min-w-0 items-center gap-1.5 ps-4">
         <span aria-hidden="true" className="absolute -inset-y-2 left-1 w-px bg-border" />
         {item.type === 'heading' && <HashIcon className="size-3.5 text-muted-foreground" />}
-        <span className={cn('truncate', item.type === 'text' && 'text-popover-foreground/80')}>
+        <span className={cn('truncate', item.type === 'text' && 'text-muted-foreground')}>
           <HighlightText text={item.title} />
         </span>
       </div>

@@ -21,7 +21,7 @@ export function DocsSidebar() {
 
   return (
     <SidebarContent className="min-h-dvh flex-none overflow-visible bg-card pt-2 pb-12">
-      <div aria-hidden="true" className="sticky top-0 z-20 -mb-4 h-2 shrink-0 bg-card" />
+      <div aria-hidden="true" className="sticky top-0 z-20 -mb-4 h-2 bg-card" />
 
       <div className="my-2 flex items-center gap-2 px-4 pt-2">
         <TooltipButton toolTipContent={t('c:go_to_about')}>

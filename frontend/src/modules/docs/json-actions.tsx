@@ -1,7 +1,8 @@
-import { CopyCheckIcon, CopyIcon, DownloadIcon, ExternalLinkIcon } from 'lucide-react';
+import { CopyIcon, DownloadIcon, ExternalLinkIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useDownloader } from '~/hooks/use-downloader';
+import { CopiedIcon } from '~/modules/common/copied-icon';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -41,7 +42,7 @@ export function JsonActions({ url, data, filename, resourceName, className }: Js
       </TooltipButton>
       <TooltipButton toolTipContent={t('c:copy')}>
         <Button variant="outline" aria-label={t('c:copy')} onClick={handleCopy}>
-          {copied ? <CopyCheckIcon /> : <CopyIcon />}
+          <CopiedIcon copied={copied} icon={CopyIcon} />
           <span className="max-lg:hidden">{t('c:copy')}</span>
         </Button>
       </TooltipButton>
