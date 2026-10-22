@@ -62,37 +62,25 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
   const isPropertiesNode = openapiMode === 'schema' && keyName === 'properties';
   const isCompositionNode = openapiMode === 'schema' && (keyName === 'anyOf' || keyName === 'oneOf');
   const isFlattenedNode = isPropertiesNode || isCompositionNode;
-
   const isRootInSchemaMode = openapiMode === 'schema' && depth === 0;
+  // 'items' nodes keep their header, so the array item structure stays visible.
+  const hideExpandHeader = isFlattenedNode || isRootInSchemaMode;
 
-  const getDefaultExpanded = () => {
-    if (isFlattenedNode || isRootInSchemaMode) return true;
-    if (expandAll) return true;
-    return depth < defaultInspectDepth;
-  };
-
-  const [isExpanded, setIsExpanded] = useState(getDefaultExpanded);
+  const [isExpanded, setIsExpanded] = useState(hideExpandHeader || expandAll || depth < defaultInspectDepth);
 
   const isOnTargetPath = isPathPrefix(path, targetPath);
   const isOnSearchMatchPath = isPathPrefix(path, searchMatchPath);
 
   useEffect(() => {
-    if (expandAll && !isExpanded) {
-      setIsExpanded(true);
-    }
+    if (expandAll) setIsExpanded(true);
   }, [expandAll]);
 
-  // Expanding along the target path leaves other nodes untouched.
   useEffect(() => {
-    if (isOnTargetPath && !isExpanded) {
-      setIsExpanded(true);
-    }
+    if (isOnTargetPath) setIsExpanded(true);
   }, [isOnTargetPath, targetPath]);
 
   useEffect(() => {
-    if (isOnSearchMatchPath && !isExpanded) {
-      setIsExpanded(true);
-    }
+    if (isOnSearchMatchPath) setIsExpanded(true);
   }, [isOnSearchMatchPath, searchMatchPath]);
 
   const isCurrentMatch = isOnSearchMatchPath && path.length === searchMatchPath?.length;
@@ -184,10 +172,9 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
   const additionalProperties = keywords?.additionalProperties;
   const additionalPropertiesSchema = additionalProperties && typeof additionalProperties === 'object' ? additionalProperties : null;
 
-  // Array schemas hoist items.properties.
   const isArraySchema = schemaRecord?.type === 'array';
 
-  const rawEntries = isArray ? value.map((item, index) => [index, item] as [number, unknown]) : Object.entries(value);
+  const rawEntries: [string | number, unknown][] = isArray ? value.map((item, index) => [index, item]) : Object.entries(value);
 
   // Hide schema keys promoted into labels and hoist array-item properties.
   const filteredEntries =
@@ -212,7 +199,7 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
       : filteredEntries;
 
   if (additionalPropertiesSchema) {
-    entries.push(['[key]', additionalPropertiesSchema] as [string, unknown]);
+    entries.push(['[key]', additionalPropertiesSchema]);
   }
 
   // Counts the children a reader actually sees.
@@ -269,9 +256,6 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
 
   const hiddenMatchCount = isExpanded ? 0 : matchRowPaths(value, searchText).length;
 
-  // Items nodes keep their header so the array item structure stays visible.
-  const hideExpandHeader = isFlattenedNode || isRootInSchemaMode;
-
   return (
     <div>
       {!hideExpandHeader && (
@@ -282,7 +266,7 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProp
             'group/node -mx-1 -my-px inline-flex items-center gap-0.5 rounded py-px pr-1',
             isExpandable ? 'cursor-pointer hover:bg-accent/50' : 'pointer-events-none',
           )}
-          onClick={isExpandable ? () => setIsExpanded(!isExpanded) : undefined}
+          onClick={isExpandable ? () => setIsExpanded((prev) => !prev) : undefined}
         >
           {isExpandable ? (
             // No handler of its own: its click bubbles to the row, so Enter and Space toggle the node as a mouse click does.

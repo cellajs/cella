@@ -7,28 +7,19 @@ import { uiStore, useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 interface MorphAnimationProps {
+  /** `single` fills the container it is given (hero); `colony` positions itself as a fixed page background (auth) */
   variant?: MorphVariant;
+  /** Grain cells across the canvas (default: 96); lower is chunkier */
   grid?: number;
+  /** Clock scale (default: 0.7); 1 is the pace the piece was tuned at */
   speed?: number;
+  /** Canvas margin around the shape (default: 1.2); below 1 it magnifies */
   overscan?: number;
   stamp?: MorphStamp;
   className?: string;
 }
 
-/**
- * Generative mark animation on a transparent canvas; mount it lazily with a
- * `null` Suspense fallback. `single` is one resting cell that fills its
- * container (hero). `colony` divides 1-2-3-5 and flows back together as the
- * auth page background: it lays itself out behind the page, so the auth
- * layout renders it bare and an app's own background decides its own look.
- * It enters by condensing out of a dusted frame. Pauses off-screen;
- * `prefers-reduced-motion` swaps that entrance for a plain fade and slows the
- * whole piece down, and nothing ever freezes. `grid` is the pixel density in
- * cells across the canvas (lower is chunkier, higher is finer), which a small
- * canvas lowers by itself so its grains stay readable, and a phone-sized
- * viewport lowers further; `speed` scales the clock, 1 being the pace the
- * piece was tuned at.
- */
+/** Generative mark animation on a transparent canvas; mount it lazily with a `null` Suspense fallback. */
 export function MorphAnimation({ variant = 'single', grid = 96, speed = 0.7, overscan = 1.2, stamp = 'square', className }: MorphAnimationProps) {
   const mode = useUIStore((state) => state.mode);
   const isPhone = useBreakpointBelow('sm');

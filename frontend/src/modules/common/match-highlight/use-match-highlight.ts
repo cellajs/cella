@@ -20,7 +20,7 @@ const rangesIn = (container: HTMLElement, terms: string[]): StaticRange[] => {
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   const nodes: { node: Text; start: number }[] = [];
   let text = '';
-  for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text | null) {
+  for (let node = walker.nextNode(); node instanceof Text; node = walker.nextNode()) {
     nodes.push({ node, start: text.length });
     text += node.data;
   }
@@ -43,10 +43,8 @@ const rangesIn = (container: HTMLElement, terms: string[]): StaticRange[] => {
 };
 
 /**
- * Paints the scope's terms over the element's text with the CSS Custom Highlight API, which adds
- * no DOM nodes: for HTML the app sets itself (sanitized documents, code). Text React renders takes
- * `HighlightText`. Repaints once per frame after the element's content changes, since the ranges
- * are static and a replaced text node drops them. A browser without the API gets no highlight.
+ * Paints the scope's terms over HTML the app sets itself (sanitized documents, code) with the CSS Custom Highlight API,
+ * which adds no DOM nodes. Text React renders takes `HighlightText`.
  */
 export function useMatchHighlight(elementRef: RefObject<HTMLElement | null>): void {
   const terms = useMatchScope();
@@ -64,6 +62,7 @@ export function useMatchHighlight(elementRef: RefObject<HTMLElement | null>): vo
     };
 
     let frame = 0;
+    // A replaced text node drops its static ranges, so content changes repaint, once per frame
     const observer = new MutationObserver(() => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(paint);

@@ -1,4 +1,5 @@
-import { createContext, type ReactNode, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
+import type { KeyboardEventHandler, PointerEventHandler, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { cn } from '~/utils/cn';
@@ -23,6 +24,7 @@ interface HintData {
   side: 'left' | 'right';
   /** `cover`: the neighbour of an expanding panel, which the curtain covers by the width that panel takes */
   mode: 'collapse' | 'expand' | 'cover';
+  /** 0 to 1 across the hint's zone */
   progress: number;
   /** Curtain width at full progress in px; 0 draws none */
   reach: number;
@@ -36,6 +38,7 @@ interface LayoutResult {
 interface DragState {
   separatorIndex: number;
   startX: number;
+  /** The mode (G6), fixed at drag start; false is overflow */
   autoFill: boolean;
   initialWidths: Record<string, number>;
   collapsedAtStart: Set<string>;
@@ -97,13 +100,13 @@ function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number): Layo
   const draggingLeft = dx < 0;
   const absDx = Math.abs(dx);
 
-  // Grow side: opposite side of separator from shrink direction
+  // G1: the panel the separator moves away from grows
   const growerIndex = draggingLeft ? separatorIndex + 1 : separatorIndex;
   const grower: PanelConfig | undefined = panels[growerIndex];
   const isExpandingFromCollapsed = !!grower?.collapsible && collapsedAtStart.has(grower.id);
   const expandCost = grower && isExpandingFromCollapsed ? grower.minWidth - grower.collapsedWidth : 0;
 
-  // Expand threshold (G3)
+  // Expand gate (G3)
   if (isExpandingFromCollapsed && absDx < expandCost) {
     const progress = absDx / expandCost;
     hints.push({ panelId: grower.id, side: draggingLeft ? 'left' : 'right', mode: 'expand', progress, reach: 0 });
@@ -221,7 +224,7 @@ function ResizeHint() {
       data-resize-hint=""
       className="pointer-events-none absolute inset-y-0 right-0 z-999 flex opacity-(--hint-strength,0) data-[side=left]:right-auto data-[side=left]:left-0 data-[side=left]:flex-row-reverse"
     >
-      {/* Grows into the handle it hands over to: at the snap the dragged separator lands on this edge */}
+      {/* Widens to the separator's width: at the snap the dragged separator stops on this edge (G4) */}
       <div
         className="relative shrink-0 rounded bg-primary"
         style={{ width: 'calc(2px + (var(--separator-width, 2px) - 2px) * var(--hint-strength, 0))' }}
@@ -276,20 +279,19 @@ function markOpening(element: HTMLElement) {
 }
 
 export interface PanelGroupApi {
-  /** Expand a collapsed panel by its id. No-op if already expanded. */
+  /** No-op when the panel is already expanded */
   expandPanel: (panelId: string) => void;
-  /** Toggle a panel between collapsed and expanded by its id. */
   togglePanel: (panelId: string) => void;
 }
 
 interface ResizablePanelGroupProps {
-  /** Unique identifier for the group */
+  /** A new id re-registers every panel against `defaultLayout` */
   id: string;
-  /** Initial panel widths as { panelId: pixels }. Applied on first mount only. */
+  /** Widths as { panelId: pixels }, read whenever a panel registers */
   defaultLayout?: Record<string, number>;
   /** Fired after drag ends or keyboard resize, with the final { panelId: pixels } layout */
   onLayoutChanged?: (layout: Record<string, number>) => void;
-  /** Called when a panel's collapsed state changes. Derived from width <= collapsedWidth. */
+  /** Fires with a collapsible panel's state when it registers and on each change; collapsed is width <= collapsedWidth */
   onCollapseChange?: (panelId: string, collapsed: boolean) => void;
   /** Called after mount with imperative methods for external panel control. */
   onReady?: (api: PanelGroupApi) => void;
@@ -672,7 +674,7 @@ export function ResizablePanelGroup({
       }
     };
 
-    const observer = new ResizeObserver(() => handleResize());
+    const observer = new ResizeObserver(handleResize);
     observer.observe(container);
     if (container.parentElement) observer.observe(container.parentElement);
     return () => observer.disconnect();
@@ -739,7 +741,7 @@ interface ResizablePanelProps {
 
 export function ResizablePanel({ id, minWidth, collapsedWidth = 0, collapsible = false, fade = 'all', children }: ResizablePanelProps) {
   const context = useContext(PanelGroupContext);
-  const panelRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const domId = useId();
 
   useEffect(() => {
@@ -767,7 +769,7 @@ export function ResizablePanel({ id, minWidth, collapsedWidth = 0, collapsible =
 const keyboardStep = 20;
 
 interface ResizableSeparatorProps {
-  /** The index of this separator among siblings (0-based). Required for drag targeting. */
+  /** 0-based among the separators: separator i sits between panels i and i + 1 */
   index: number;
   className?: string;
   /** Accessible name; defaults to a generic "resize panels". Pass one that names the panel it resizes. */
@@ -777,7 +779,7 @@ interface ResizableSeparatorProps {
 export function ResizableSeparator({ index, className, 'aria-label': ariaLabel }: ResizableSeparatorProps) {
   const { t } = useTranslation();
   const context = useContext(PanelGroupContext);
-  const separatorRef = useRef<HTMLDivElement | null>(null);
+  const separatorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const element = separatorRef.current;
@@ -788,7 +790,7 @@ export function ResizableSeparator({ index, className, 'aria-label': ariaLabel }
 
   const lastPointerDownRef = useRef(0);
 
-  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerDown: PointerEventHandler<HTMLDivElement> = (event) => {
     if (!context || !separatorRef.current) return;
     event.preventDefault();
 
@@ -806,7 +808,7 @@ export function ResizableSeparator({ index, className, 'aria-label': ariaLabel }
     context.startDrag(index, event.clientX);
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown: KeyboardEventHandler<HTMLDivElement> = (event) => {
     if (!context) return;
     switch (event.key) {
       case 'ArrowLeft':
@@ -844,7 +846,7 @@ export function ResizableSeparator({ index, className, 'aria-label': ariaLabel }
       // Consumers draw focus in the bar's own color: a ring has no room between panels. outline-hidden keeps the forced-colors outline.
       className={cn('shrink-0 cursor-col-resize touch-none select-none outline-hidden', className)}
       style={{
-        // The curtain's leading edge ends where this separator lands after the snap, so the separator yields to it
+        // Thins and fades while the curtain's leading edge widens to take its place (G4)
         opacity: 'calc(1 - 0.65 * var(--hint-strength, 0))',
         scale: 'calc(1 - 0.6 * var(--hint-strength, 0)) 1',
       }}

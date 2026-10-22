@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { useState } from 'react';
 import { getTypeColorClass, jsonViewerTheme } from '~/modules/common/json-viewer/theme';
 import { jsonSchemaTypes } from '~/modules/common/json-viewer/utils';
@@ -69,7 +70,7 @@ export function PrimitiveValue({ value, type, collapseStringsAfterLength, openap
       );
       if (!shouldTruncate) return <span className={stringClass}>{text}</span>;
 
-      const toggle = () => setIsExpanded(!isExpanded);
+      const toggle = () => setIsExpanded((prev) => !prev);
       return (
         // biome-ignore lint/a11y/useSemanticElements: text inside a real button cannot be selected to copy, so the string stays a span.
         <span
@@ -83,7 +84,7 @@ export function PrimitiveValue({ value, type, collapseStringsAfterLength, openap
             event.preventDefault();
             toggle();
           }}
-          title={isExpanded ? 'Click to collapse' : 'Click to expand'}
+          title={i18n.t(isExpanded ? 'c:collapse' : 'c:expand')}
         >
           {text}
         </span>

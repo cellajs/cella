@@ -9,7 +9,7 @@ const maxPixelRatio = typeof window !== 'undefined' && window.matchMedia?.('(poi
 const gridSpan = 1.25;
 // Smaller than this in CSS pixels a grain reads as noise, not as a pixel by design, so a small canvas gets fewer, larger grains
 const minGrainPx = 3;
-// A phone shows the same grain smaller, so its floor sits well above the size a desktop draws
+// A phone shows the same grain smaller, so its minimum sits well above the size a desktop draws
 const minGrainPxPhone = 6;
 // The mark's true half-width is 0.0372; drawn a bit thicker here, which narrows the gap between the bands
 const bandHalfWidth = 0.05;
@@ -64,13 +64,7 @@ function splitProgress(t: number): [number, number, number, number] {
   ];
 }
 
-/**
- * Drives the morph shader on a transparent WebGL2 canvas: one fullscreen pass per
- * frame, no textures and no feedback buffers. The clock advances at the instance speed,
- * which is how reduced motion works here: everything slows down, nothing freezes.
- * The first drawn seconds play the entrance once, unless reduced motion is on.
- * Browsers without WebGL2 get an empty transparent canvas.
- */
+/** Drives the morph shader on a transparent WebGL2 canvas; without WebGL2 the canvas stays empty. */
 export class MorphRenderer {
   private canvas: HTMLCanvasElement;
   private variant: MorphVariant;
@@ -121,17 +115,16 @@ export class MorphRenderer {
     this.applyMotion();
   }
 
-  /** Pixel-grid density in cells across the canvas; lower is chunkier. A small canvas draws fewer: see `minGrainPx`. */
+  /** A small canvas draws fewer cells than this: see `minGrainPx`. */
   setGrid(grid: number) {
     this.grid = grid;
   }
 
-  /** A phone-sized viewport gets the larger grain floor: see `minGrainPxPhone`. */
+  /** A phone-sized viewport gets the larger minimum grain: see `minGrainPxPhone`. */
   setPhone(isPhone: boolean) {
     this.minGrain = isPhone ? minGrainPxPhone : minGrainPx;
   }
 
-  /** Grain stamp: squares, or small plus signs. */
   setStamp(stamp: MorphStamp) {
     this.stamp = stamp === 'plus' ? 1 : 0;
   }
@@ -149,8 +142,7 @@ export class MorphRenderer {
   }
 
   dispose() {
-    // Never force-lose the context here: the canvas element survives a React
-    // strict-mode remount, and a remount would then inherit a dead context.
+    // Never force-lose the context: the canvas element survives a strict-mode remount, which would then inherit a dead context
     this.disposed = true;
     cancelAnimationFrame(this.frameHandle);
     this.canvas.removeEventListener('webglcontextlost', this.handleContextLost);
@@ -256,7 +248,6 @@ export class MorphRenderer {
     gl.uniform1f(u.uGrid, Math.max(1, Math.min(this.grid, this.shortSide / (gridSpan * this.minGrain))));
     gl.uniform1i(u.uStamp, this.stamp);
     gl.uniform1f(u.uEnter, this.enter);
-    if (this.variant !== 'colony') gl.uniform1f(u.uZoom, this.overscan);
 
     if (this.variant === 'colony') {
       const [g1, g2, g3, g4] = splitProgress(this.time);
@@ -286,6 +277,8 @@ export class MorphRenderer {
       gl.uniform1f(u.uCellScale, cellScale);
       gl.uniform1f(u.uWidth, bandHalfWidth * (0.7 + 0.3 * cellScale));
       gl.uniform1f(u.uZoom, this.overscan * (1 + 0.16 * g1 + 0.12 * g2 + 0.09 * g3 + 0.09 * g4));
+    } else {
+      gl.uniform1f(u.uZoom, this.overscan);
     }
 
     gl.drawArrays(gl.TRIANGLES, 0, 3);

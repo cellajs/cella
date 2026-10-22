@@ -1,4 +1,5 @@
 import { CopyIcon } from 'lucide-react';
+import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { CopiedIcon } from '~/modules/common/copied-icon';
@@ -11,7 +12,7 @@ export function CopyNodeButton({ value }: CopyNodeButtonProps) {
   const { t } = useTranslation();
   const { copied, copyToClipboard } = useCopyToClipboard(2000);
 
-  const handleCopy = (event: React.MouseEvent) => {
+  const handleCopy = (event: MouseEvent) => {
     event.stopPropagation();
     copyToClipboard(JSON.stringify(value, null, 2));
   };

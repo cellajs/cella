@@ -1,8 +1,3 @@
-/**
- * Floating dev-only panel for debugging the sync flow: real-time spans, latencies, and
- * connection state.
- */
-
 import { XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,11 +5,6 @@ import { computeSpanStats } from 'shared/tracing';
 import { clearSpans, getSpans, type SpanData, subscribeToSpans } from '~/lib/tracing';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
-
-interface SyncDevtoolsState {
-  activeTab: 'spans' | 'stats' | 'timeline';
-  filter: string;
-}
 
 function formatDuration(ms: number | null): string {
   if (ms === null) return '...';
@@ -184,33 +174,33 @@ function TimelineView({ spans }: SpansViewProps) {
   );
 }
 
+const tabs = ['spans', 'stats', 'timeline'] as const;
+
 interface SyncDevtoolsProps {
   onClose: () => void;
 }
 
+/** Dev-only floating panel for the sync flow: recent spans, their stats and end-to-end latencies. */
 export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
   const { t } = useTranslation();
-  const [state, setState] = useState<SyncDevtoolsState>({ activeTab: 'spans', filter: '' });
-
-  // Mounted only while open, so seed from the buffer: subscribers get no replay
+  const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>('spans');
+  const [filter, setFilter] = useState('');
+  // Seeded from the buffer, so the first render is not empty before the subscription replays it
   const [spans, setSpans] = useState<SpanData[]>(getSpans);
 
-  useEffect(() => {
-    const unsubscribe = subscribeToSpans(setSpans);
-    return unsubscribe;
-  }, []);
+  useEffect(() => subscribeToSpans(setSpans), []);
 
   return (
     <div className="fixed right-4 bottom-4 z-[99999] flex max-h-125 w-105 flex-col overflow-hidden rounded-lg border border-slate-700 bg-slate-900 font-mono text-xs shadow-2xl">
       <div className="flex items-center justify-between border-slate-700 border-b bg-slate-800 p-3">
         <div className="font-semibold text-slate-100 text-sm">⚡ Sync Devtools</div>
         <div className="flex gap-1">
-          {(['spans', 'stats', 'timeline'] as const).map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab}
               type="button"
-              className={cn(tabClass, state.activeTab === tab && 'bg-slate-700 text-slate-100')}
-              onClick={() => setState((prev) => ({ ...prev, activeTab: tab }))}
+              className={cn(tabClass, activeTab === tab && 'bg-slate-700 text-slate-100')}
+              onClick={() => setActiveTab(tab)}
             >
               {tab}
             </button>
@@ -222,9 +212,9 @@ export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
       </div>
 
       <div className="flex-1 overflow-auto p-2">
-        {state.activeTab === 'spans' && <SpanList spans={spans} filter={state.filter} />}
-        {state.activeTab === 'stats' && <StatsView spans={spans} />}
-        {state.activeTab === 'timeline' && <TimelineView spans={spans} />}
+        {activeTab === 'spans' && <SpanList spans={spans} filter={filter} />}
+        {activeTab === 'stats' && <StatsView spans={spans} />}
+        {activeTab === 'timeline' && <TimelineView spans={spans} />}
       </div>
 
       <div className="flex gap-2 border-slate-700 border-t p-2">
@@ -232,10 +222,10 @@ export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
           type="text"
           placeholder="Filter spans..."
           className="flex-1 rounded border border-slate-700 bg-slate-800 px-2 py-1.5 text-slate-200 outline-none"
-          value={state.filter}
-          onChange={(event) => setState((prev) => ({ ...prev, filter: event.target.value }))}
+          value={filter}
+          onChange={(event) => setFilter(event.target.value)}
         />
-        <button type="button" className="cursor-pointer rounded bg-slate-700 px-3 py-1.5 text-slate-200" onClick={() => clearSpans()}>
+        <button type="button" className="cursor-pointer rounded bg-slate-700 px-3 py-1.5 text-slate-200" onClick={clearSpans}>
           Clear
         </button>
       </div>

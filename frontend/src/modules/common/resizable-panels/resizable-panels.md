@@ -65,7 +65,7 @@ In collapse and expand zones a curtain grows from the dragged separator with pro
 - `collapse`: the curtain covers the panel up to its collapsed width, the part that leaves.
 - `expand`: the curtain covers the neighbour across the separator by the width the panel takes.
 
-The leading edge ends where the dragged separator lands after the snap. As the curtain grows, the edge widens to the separator's width while the separator thins and fades, so at the snap the separator takes the edge's place.
+The leading edge ends where the dragged separator stops after the snap. As the curtain grows, the edge widens to the separator's width while the separator thins and fades, so at the snap the separator takes the edge's place.
 
 As progress grows, the panel content fades out:
 

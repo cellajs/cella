@@ -7,7 +7,6 @@ export const jsonViewerTheme = {
   boolean: tw('text-rose-700 dark:text-rose-400'),
   null: tw('text-muted-foreground'),
   key: tw('text-emerald-700 dark:text-emerald-400'),
-  /** Hidden in schema mode */
   bracket: tw('font-medium text-gray-700 group-data-[openapi-mode=schema]/json-viewer:hidden dark:text-gray-300'),
   index: tw('text-muted-foreground text-xs'),
   schemaType: tw('font-medium italic'),
@@ -20,7 +19,7 @@ export const jsonViewerTheme = {
   matchBadge: tw('bg-yellow-200 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200'),
 };
 
-/** Color class for a JSON Schema type keyword, shared by schema labels and schema-mode values. */
+/** Color class for a JSON Schema type keyword. */
 export function getTypeColorClass(type: string): string {
   if (type === 'string') return jsonViewerTheme.string;
   if (type === 'number' || type === 'integer') return jsonViewerTheme.number;

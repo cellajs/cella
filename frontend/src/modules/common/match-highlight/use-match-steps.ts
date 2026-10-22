@@ -2,11 +2,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /**
- * Next/previous over the matching items of a view, in the order the view shows them. The ids come
- * from data, so items a virtualized list has not rendered still count. A current id that leaves
- * the list (the query changed) resets the position. Pass `currentId` when the view already tracks
- * its current item (a focused card); without it the hook keeps the position. Render `announcement`
- * in a polite live region.
+ * Next/previous over a view's matching ids in view order; the ids come from data, so unrendered virtualized items count.
+ * Pass `currentId` when the view tracks its current item (a focused card); otherwise the hook does. An id that leaves the list resets the position.
  */
 export function useMatchSteps<Id>(ids: readonly Id[], onStep: (id: Id) => void, currentId?: Id | null) {
   const { t } = useTranslation();
@@ -30,6 +27,7 @@ export function useMatchSteps<Id>(ids: readonly Id[], onStep: (id: Id) => void, 
     /** 0-based; -1 before the first step. */
     index,
     total,
+    /** For a polite live region */
     announcement,
     next: () => step(1),
     previous: () => step(-1),

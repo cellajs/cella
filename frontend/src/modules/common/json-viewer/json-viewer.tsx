@@ -28,7 +28,6 @@ function createRefDataType(onNavigate: (targetPath: string[]) => void): DataType
           onNavigate(parseRefPath(value));
         }}
         className="link-decoration active:link-decoration-strong cursor-pointer text-primary text-sm hover:underline"
-        title={`Go to ${value}`}
       >
         "{value}"
       </button>
@@ -54,14 +53,9 @@ export function JsonViewer({
 
   const [targetPath, setTargetPath] = useState<string[] | null>(null);
 
+  // Memoized: each call creates a new Component, which would remount every $ref button
   const refDataType = useMemo(() => (openapiMode === 'spec' ? createRefDataType(setTargetPath) : null), [openapiMode]);
-
-  const combinedValueTypes = useMemo(() => {
-    if (refDataType) {
-      return [refDataType, ...valueTypes];
-    }
-    return valueTypes;
-  }, [refDataType, valueTypes]);
+  const combinedValueTypes = refDataType ? [refDataType, ...valueTypes] : valueTypes;
 
   const contextValue: JsonViewerContextValue = {
     indentWidth,

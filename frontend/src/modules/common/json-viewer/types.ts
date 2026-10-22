@@ -16,14 +16,17 @@ export interface DataType<T = any> {
 // biome-ignore lint/suspicious/noExplicitAny: Allows typed DataType definitions
 export const defineDataType = <T = any>(config: DataType<T>): DataType<T> => config;
 
-export interface JsonViewerProps<T = unknown> {
-  value: T;
+export interface JsonViewerProps {
+  value: unknown;
+  /** Levels expanded on first render (default: 3) */
   defaultInspectDepth?: number;
-  /** Root name to display (false to hide) */
+  /** Key shown for the root (default: 'root'); false hides it */
   rootName?: string | false;
+  /** A copy button on each object and array row (default: false) */
   enableClipboard?: boolean;
   /** Indent width in characters (default: 2) */
   indentWidth?: number;
+  /** Custom renderers; the first whose `is` matches renders the value */
   valueTypes?: DataType[];
   /** Collapse strings after this length (default: 200, false to disable) */
   collapseStringsAfterLength?: number | false;

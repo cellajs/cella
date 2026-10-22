@@ -9,11 +9,7 @@ export const isPathPrefix = (path: JsonPath, target: JsonPath | null) =>
 
 const contains = (value: unknown, folded: string) => foldText(String(value)).includes(folded);
 
-/**
- * Paths of the rows that show `searchText`, in render order: a row is one node, matching on its
- * key or its primitive value. The list counts the matches and drives next/previous; a collapsed
- * node counts the rows inside it.
- */
+/** Paths of the rows that show `searchText`, in render order; a row is one node, matched on its key or its primitive value. */
 export const matchRowPaths = (value: unknown, searchText: string): JsonPath[] => {
   if (!searchText) return [];
   const folded = foldText(searchText);
