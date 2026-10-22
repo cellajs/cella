@@ -1,10 +1,11 @@
-import { onlineManager } from '@tanstack/react-query';
+import { matchMutation, matchQuery, onlineManager } from '@tanstack/react-query';
 import { liveQuery, type Subscription } from 'dexie';
 import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
 import { type CloudFileVariant, getCloudUrl, getVariantKey } from '~/modules/attachment/file-url';
 import { attachmentsDb } from '~/modules/attachment/offline/attachments-db';
 import { downloadQueue, skipReasonNoOriginalKey } from '~/modules/attachment/offline/download-queue';
+import { groupBy } from '~/modules/attachment/offline/group-by';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { attachmentQueryKeys, findAttachmentInCache } from '~/modules/attachment/query';
 import { isPersisted } from '~/modules/attachment/types';
@@ -22,12 +23,6 @@ const variantFetchTimeoutMs = 30_000;
 /** Result of attempting to download a single variant. */
 type VariantResult = 'stored' | 'skipped' | 'failed-auth' | 'failed-other';
 
-/** True when `key` starts with every segment of `prefix` (react-query's own key-matching rule). */
-function matchesKeyPrefix(key: unknown, prefix: readonly unknown[]): boolean {
-  if (!Array.isArray(key)) return false;
-  return prefix.every((segment, i) => key[i] === segment);
-}
-
 class AttachmentDownloadService {
   private processing = false;
   private wakeScheduled = false;
@@ -42,7 +37,7 @@ class AttachmentDownloadService {
   }
 
   start(): void {
-    if (!this.config?.enabled) {
+    if (!this.config.enabled) {
       console.debug('[DownloadService] Local blob storage disabled');
       return;
     }
@@ -60,10 +55,8 @@ class AttachmentDownloadService {
     });
 
     this.cacheUnsubscribe = queryClient.getQueryCache().subscribe((event) => {
-      if (event.type !== 'updated') return;
-      if (event.action.type !== 'success') return;
-
-      if (!matchesKeyPrefix(event.query.queryKey, attachmentQueryKeys.list.base)) return;
+      if (event.type !== 'updated' || event.action.type !== 'success') return;
+      if (!matchQuery({ queryKey: attachmentQueryKeys.list.base }, event.query)) return;
 
       const attachments = flattenInfiniteData<Attachment>(event.query.state.data);
       if (attachments.length > 0) {
@@ -72,10 +65,7 @@ class AttachmentDownloadService {
     });
 
     this.mutationUnsubscribe = queryClient.getMutationCache().subscribe((event) => {
-      if (event.type !== 'updated') return;
-      if (event.mutation.state.status !== 'success') return;
-
-      if (!matchesKeyPrefix(event.mutation.options.mutationKey, attachmentQueryKeys.delete)) return;
+      if (event.type !== 'updated' || !matchMutation({ mutationKey: attachmentQueryKeys.delete, status: 'success' }, event.mutation)) return;
 
       // Drop blobs and queue rows: a deleted attachment is never re-downloaded and its row would grow the dedupe registry.
       const ids = entityIdsOf(event.mutation.state.variables);
@@ -106,26 +96,16 @@ class AttachmentDownloadService {
   }
 
   stop(): void {
-    if (this.queueSubscription) {
-      this.queueSubscription.unsubscribe();
-      this.queueSubscription = null;
-    }
-    if (this.onlineUnsubscribe) {
-      this.onlineUnsubscribe();
-      this.onlineUnsubscribe = null;
-    }
-    if (this.cacheUnsubscribe) {
-      this.cacheUnsubscribe();
-      this.cacheUnsubscribe = null;
-    }
-    if (this.mutationUnsubscribe) {
-      this.mutationUnsubscribe();
-      this.mutationUnsubscribe = null;
-    }
-    if (this.ownerUnsubscribe) {
-      this.ownerUnsubscribe();
-      this.ownerUnsubscribe = null;
-    }
+    this.queueSubscription?.unsubscribe();
+    this.queueSubscription = null;
+    this.onlineUnsubscribe?.();
+    this.onlineUnsubscribe = null;
+    this.cacheUnsubscribe?.();
+    this.cacheUnsubscribe = null;
+    this.mutationUnsubscribe?.();
+    this.mutationUnsubscribe = null;
+    this.ownerUnsubscribe?.();
+    this.ownerUnsubscribe = null;
     console.debug('[DownloadService] Stopped');
   }
 
@@ -140,17 +120,13 @@ class AttachmentDownloadService {
   }
 
   async queueForDownload(attachments: Attachment[]): Promise<void> {
-    if (!this.config?.enabled) return;
-    if (!attachments.length) return;
+    if (!this.config.enabled) return;
 
     // Skip transient optimistic rows; queue only persisted attachments.
     const queueable = attachments.filter(isPersisted);
     if (!queueable.length) return;
 
-    const organizationId = queueable[0]?.organizationId;
-    if (!organizationId) return;
-
-    await downloadQueue.enqueue(queueable, organizationId);
+    await downloadQueue.enqueue(queueable, queueable[0].organizationId);
 
     // Call directly as well: enqueue may add no pending rows for the liveQuery to observe.
     if (onlineManager.isOnline()) {
@@ -159,7 +135,7 @@ class AttachmentDownloadService {
   }
 
   async processQueue(): Promise<void> {
-    if (!this.config?.enabled) return;
+    if (!this.config.enabled) return;
     if (this.processing) return;
     if (!onlineManager.isOnline()) return;
     if (!getLocalUserDb()) return; // Signed out, no per-user queue to process.
@@ -167,30 +143,19 @@ class AttachmentDownloadService {
     this.processing = true;
 
     try {
-      const concurrency = this.config.downloadConcurrency ?? 2;
-
       // Table scan is fine for this small table.
       const pendingAll = await attachmentsDb.downloadQueue.filter((e) => e.status === 'pending').toArray();
 
       if (pendingAll.length === 0) return;
 
-      const byOrg = new Map<string, typeof pendingAll>();
-      for (const entry of pendingAll) {
-        const existing = byOrg.get(entry.organizationId) || [];
-        existing.push(entry);
-        byOrg.set(entry.organizationId, existing);
-      }
-
-      for (const [organizationId, entries] of byOrg) {
+      for (const [organizationId, entries] of groupBy(pendingAll, (entry) => entry.organizationId)) {
         const used = await attachmentStorage.getStorageUsed(organizationId);
-        const maxTotal = this.config.maxTotalSize ?? 100 * 1024 * 1024;
-
-        if (used >= maxTotal) {
+        if (used >= this.config.maxTotalSize) {
           console.debug(`[DownloadService] Storage limit reached for org ${organizationId}`);
           continue;
         }
 
-        const sorted = entries.sort((a, b) => a.priority - b.priority).slice(0, concurrency);
+        const sorted = entries.sort((a, b) => a.priority - b.priority).slice(0, this.config.downloadConcurrency);
 
         await Promise.all(sorted.map((entry) => this.downloadAttachment(entry.id, organizationId)));
       }
@@ -210,13 +175,8 @@ class AttachmentDownloadService {
       return;
     }
 
-    if (!attachment.keys?.original) {
+    if (!attachment.keys.original) {
       await downloadQueue.transition(attachmentId, 'skipped', skipReasonNoOriginalKey);
-      return;
-    }
-
-    if (!attachment.tenantId || !attachment.organizationId) {
-      await downloadQueue.transition(attachmentId, 'skipped', 'Missing tenantId or organizationId');
       return;
     }
 
@@ -265,9 +225,6 @@ class AttachmentDownloadService {
 
     // Already have it locally.
     if (await attachmentStorage.hasVariant(attachment.id, variant)) return 'skipped';
-
-    // Guarded above in downloadAttachment, but keep narrow types happy.
-    if (!attachment.tenantId || !attachment.organizationId) return 'failed-other';
 
     try {
       const url = await getCloudUrl(attachment, variant);

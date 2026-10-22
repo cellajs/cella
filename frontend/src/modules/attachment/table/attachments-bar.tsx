@@ -2,8 +2,9 @@ import { InfoIcon, TrashIcon, UploadIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig } from 'shared';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
+import { useCanDeleteAttachment } from '~/modules/attachment/table/attachments-columns';
 import type { AttachmentsTableProps } from '~/modules/attachment/table/attachments-table';
 import { useAttachmentsUploadDialog } from '~/modules/attachment/table/use-attachments-upload-dialog';
 import type { AttachmentsRouteSearchParams } from '~/modules/attachment/types';
@@ -13,7 +14,6 @@ import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { useResolveCan } from '~/modules/entities/use-resolve-can';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type AttachmentsTableBarProps = AttachmentsTableProps & BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>;
@@ -35,11 +35,11 @@ export function AttachmentsTableBar({
   // A sub-organization channel homes its uploads on itself; the organization row is the
   // org. Publication is row-local, so the channel's `publicAt` is only the default a new row starts with.
   const isOrganization = channel.entityType === 'organization';
-  const organizationId = !isOrganization && 'organizationId' in channel ? String(channel.organizationId) : channel.id;
+  const organizationId = channel.organizationId ?? channel.id;
   const publicAt = 'publicAt' in channel && typeof channel.publicAt === 'string' ? channel.publicAt : null;
   const placement = { ...(!isOrganization && { [appConfig.entityIdColumnKeys[channel.entityType]]: channel.id }), publicAt };
   const { open } = useAttachmentsUploadDialog(channel.tenantId, organizationId, placement);
-  const resolveCan = useResolveCan();
+  const canDelete = useCanDeleteAttachment(channel);
 
   const deleteButtonRef = useRef(null);
 
@@ -48,9 +48,7 @@ export function AttachmentsTableBar({
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '' } });
 
   // Bulk delete acts only on rows this user may delete; the badge shows that count when it differs from the selection.
-  const deletable = selected.filter((row) =>
-    resolveCan(channel.can?.attachment?.delete, row.createdBy, { row: hierarchy.resolveDeepestAncestorId('attachment', row), channel: channel.id }),
-  );
+  const deletable = selected.filter(canDelete);
 
   const openDeleteDialog = () => {
     createDialog(<DeleteAttachments dialog attachments={deletable} callback={clearSelection} />, {
@@ -63,7 +61,7 @@ export function AttachmentsTableBar({
           i18nKey="c:confirm.delete_counted_resource"
           values={{
             count: deletable.length,
-            resource: deletable.length > 1 ? t('c:attachment_other').toLowerCase() : t('c:attachment').toLowerCase(),
+            resource: t('c:attachment', { count: deletable.length }).toLowerCase(),
           }}
         />
       ),

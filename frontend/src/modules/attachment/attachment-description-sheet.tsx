@@ -1,9 +1,9 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import i18n from 'i18next';
 import { Suspense } from 'react';
 import type { Attachment } from 'sdk';
 import { hierarchy, isChannel } from 'shared';
-import { useAttachmentUpdateMutation } from '~/modules/attachment/query';
+import { attachmentsCanonicalOptions, useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import { LazyCollaborativeBlockNote } from '~/modules/common/blocknote/lazy-collaborative-blocknote';
 import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
 import { useDescriptionUpdate } from '~/modules/common/blocknote/use-description-update';
@@ -27,8 +27,14 @@ const sheetId = 'attachment-description';
  * permission; the relay persists collaborative sessions, the update mutation the editor of an app
  * with Yjs off.
  */
-function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
-  const { tenantId, organizationId } = attachment;
+function AttachmentDescriptionForm({ attachment: openedRow }: { attachment: Attachment }) {
+  const { tenantId, organizationId } = openedRow;
+  // The sheet content is built once, so the row is read live: the editor and the save compare with the stored text.
+  const { data: liveRow } = useQuery({
+    ...attachmentsCanonicalOptions({ tenantId, organizationId }),
+    select: ({ items }) => items.find((item) => item.id === openedRow.id),
+  });
+  const attachment = liveRow ?? openedRow;
   const [deepest] = hierarchy.resolveNonNullAncestors('attachment', attachment);
   const home = deepest && isChannel(deepest.type) ? { id: deepest.id, type: deepest.type } : null;
   const homeId = home?.id ?? organizationId;

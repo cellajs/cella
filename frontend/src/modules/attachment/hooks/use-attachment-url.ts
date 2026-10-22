@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Attachment } from 'sdk';
-import { type ResolveOptions, resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
+import { type AttachmentMeta, type ResolveOptions, resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
 import type { BlobVariant } from '~/modules/attachment/offline/attachments-db';
 
 interface UseAttachmentUrlResult {
@@ -13,7 +13,7 @@ interface UseAttachmentUrlResult {
 
 /** Resolves an attachment URL local-first, falling back to a cloud URL. */
 export function useAttachmentUrl(
-  attachment: Pick<Attachment, 'id' | 'keys' | 'publicBucket' | 'tenantId' | 'organizationId'> | null | undefined,
+  attachment: (AttachmentMeta & Pick<Attachment, 'id'>) | null | undefined,
   { preferredVariant }: ResolveOptions = {},
 ): UseAttachmentUrlResult {
   const [result, setResult] = useState<UseAttachmentUrlResult>({

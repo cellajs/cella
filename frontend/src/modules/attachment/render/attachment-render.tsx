@@ -18,13 +18,16 @@ const RenderAudio = lazyNamed(() => import('~/modules/attachment/render/audio'),
 const RenderPDF = lazyNamed(() => import('~/modules/attachment/render/pdf'), 'RenderPDF');
 const RenderVideo = lazyNamed(() => import('~/modules/attachment/render/video'), 'RenderVideo');
 
+/** The renderers, matched by substring of the content type in this order; any other type gets the download placeholder. */
+const renderKinds = ['image', 'audio', 'video', 'pdf'] as const;
+
 interface AttachmentRenderProps {
   type: string;
   url: string;
   pendingUpload?: PendingUpload;
   /** Used as the save name for non-renderable types (the "download to view" action). */
   filename?: string;
-  altName?: string;
+  alt?: string;
   imagePanZoom?: boolean;
   showButtons?: boolean;
   itemClassName?: string;
@@ -40,7 +43,7 @@ export function AttachmentRender({
   pendingUpload,
   type,
   filename,
-  altName,
+  alt,
   showButtons,
   imagePanZoom = false,
   itemClassName,
@@ -62,6 +65,8 @@ export function AttachmentRender({
   }
 
   if (!url) return <Spinner size="lg" className="mt-[45vh]" />;
+
+  const kind = renderKinds.find((renderKind) => type.includes(renderKind));
 
   // Only the container itself is the backdrop: clicks on media or controls bubble here but fail the target check.
   const handleBackdropClick = onBackdropClick
@@ -86,23 +91,23 @@ export function AttachmentRender({
       {/* A renderer that cannot load its file throws during render (react-pdf loads through Suspense); this keeps the failure inside the viewer. */}
       <ErrorBoundary fallback={downloadPlaceholder} resetKeys={[url]}>
         <Suspense fallback={<Spinner size="lg" />}>
-          {type.includes('image') &&
+          {kind === 'image' &&
             (imagePanZoom && !isMobile ? (
               <ReactPanZoom
                 image={url}
-                alt={altName}
+                alt={alt}
                 onPanStateToggle={onPanStateToggle}
                 imageClassName={itemClassName}
                 showButtons={showButtons}
                 backdropDismiss={!!onBackdropClick}
               />
             ) : (
-              <img src={url} alt={altName} className={cn(itemClassName, onBackdropClick ? 'max-h-full max-w-full' : 'size-full')} />
+              <img src={url} alt={alt} className={cn(itemClassName, onBackdropClick ? 'max-h-full max-w-full' : 'size-full')} />
             ))}
-          {type.includes('audio') && <RenderAudio src={url} className="mx-auto -mt-48 h-20 w-[80vw]" />}
-          {type.includes('video') && <RenderVideo src={url} className="mx-auto max-h-full max-w-7xl" />}
-          {type.includes('pdf') && <RenderPDF file={url} className="m-auto h-full w-[95vw] max-w-280 overflow-auto" />}
-          {!['image', 'audio', 'video', 'pdf'].some((k) => type.includes(k)) && downloadPlaceholder}
+          {kind === 'audio' && <RenderAudio src={url} className="mx-auto -mt-48 h-20 w-[80vw]" />}
+          {kind === 'video' && <RenderVideo src={url} className="mx-auto max-h-full max-w-7xl" />}
+          {kind === 'pdf' && <RenderPDF file={url} className="m-auto h-full w-[95vw] max-w-280 overflow-auto" />}
+          {!kind && downloadPlaceholder}
         </Suspense>
       </ErrorBoundary>
     </div>

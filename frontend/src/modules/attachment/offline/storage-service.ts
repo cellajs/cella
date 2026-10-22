@@ -243,8 +243,7 @@ class AttachmentStorageService {
           updates.uploadAttempts = attempts + 1;
           updates.lastError = error ?? blob.lastError ?? 'Upload failed';
 
-          const config = appConfig.localBlobStorage;
-          const delays = config?.uploadRetryDelays ?? [60000, 300000, 900000];
+          const delays = appConfig.localBlobStorage.uploadRetryDelays;
           const delay = delays[Math.min(attempts, delays.length - 1)];
           updates.nextRetryAt = new Date(Date.now() + delay);
         }

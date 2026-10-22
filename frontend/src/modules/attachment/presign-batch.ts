@@ -1,6 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { getPresignedUrls } from 'sdk/sdk.gen';
 import type { CloudFileVariant } from '~/modules/attachment/file-url';
+import { groupBy } from '~/modules/attachment/offline/group-by';
 import { subscribeOwnerChange } from '~/query/local-user-storage';
 
 /** The server rejected this attachment id, denied or nonexistent; permanent for this session, so retrying will not help. */
@@ -76,15 +77,7 @@ function flush() {
   const batch = pending;
   pending = [];
 
-  const byScope = new Map<string, PendingRequest[]>();
-  for (const request of batch) {
-    const scope = `${request.tenantId}:${request.organizationId}`;
-    const requests = byScope.get(scope) ?? [];
-    requests.push(request);
-    byScope.set(scope, requests);
-  }
-
-  for (const requests of byScope.values()) {
+  for (const requests of groupBy(batch, (request) => `${request.tenantId}:${request.organizationId}`).values()) {
     for (let i = 0; i < requests.length; i += maxItemsPerCall) {
       void sendChunk(requests.slice(i, i + maxItemsPerCall));
     }

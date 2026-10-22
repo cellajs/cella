@@ -20,16 +20,6 @@ export function getPublicFileUrl(key: string): string {
   return `${appConfig.s3.publicCDNUrl}/${key}`;
 }
 
-/** Presigned URL by id + variant: the server signs the key, and concurrent calls coalesce into one memoized batch request. */
-export async function getPrivateFileUrlById(
-  attachmentId: string,
-  variant: CloudFileVariant,
-  tenantId: string,
-  organizationId: string,
-): Promise<string> {
-  return getPresignedUrlBatched(attachmentId, variant, tenantId, organizationId);
-}
-
 /** Cloud URL for a variant: public keys become CDN URLs, private ones are signed server-side by id. Null when the variant has no cloud key. */
 export async function getCloudUrl(
   attachment: CloudKeyFields & Pick<Attachment, 'id' | 'tenantId' | 'organizationId'>,
@@ -39,5 +29,5 @@ export async function getCloudUrl(
   if (!key) return null;
 
   if (attachment.publicBucket) return getPublicFileUrl(key);
-  return getPrivateFileUrlById(attachment.id, variant, attachment.tenantId, attachment.organizationId);
+  return getPresignedUrlBatched(attachment.id, variant, attachment.tenantId, attachment.organizationId);
 }

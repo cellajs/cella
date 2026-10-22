@@ -69,8 +69,18 @@ registerYjsOwnedFields('attachment', ['description', ...descriptionDerivedKeys])
 // The derivation `update-attachment.ts` runs on every description write.
 registerDescriptionDerivation('attachment', (description) => ({ keywords: deriveDocument(description).keywords }));
 
-const attachmentsMutationKeyBase = ['attachment'] as const;
 const handleError = createResourceError('attachment');
+
+/** Refetches the organization's lists once no other attachment mutation is pending. */
+const invalidateOrgLists = (queryClient: QueryClient, organizationId: string) =>
+  invalidateIfLastMutation(queryClient, keys.all, keys.list.org(organizationId));
+
+/** Writes an edit into the cached row of the org lists and the detail. */
+const patchCachedAttachment = (queryClient: QueryClient, organizationId: string, row: Attachment, ops: UpdateAttachmentVars['ops']) => {
+  const patched = { ...row, ...ops, updatedAt: new Date().toISOString() };
+  cacheUpdate(keys.list.org(organizationId), [patched]);
+  queryClient.setQueryData(keys.detail.byId(row.id), patched);
+};
 
 type AttachmentsListParams = AttachmentFilters & {
   tenantId: string;
@@ -79,14 +89,12 @@ type AttachmentsListParams = AttachmentFilters & {
 };
 
 export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
-  const defaults = attachmentsSearchDefaults;
-
   const {
     tenantId,
     organizationId,
-    q = defaults.q,
-    sort = defaults.sort,
-    order = defaults.order,
+    q = attachmentsSearchDefaults.q,
+    sort = attachmentsSearchDefaults.sort,
+    order = attachmentsSearchDefaults.order,
     limit = appConfig.requestLimits.attachments,
   } = params;
 
@@ -118,17 +126,18 @@ export const attachmentsCanonicalOptions = ({ organizationId, tenantId }: { orga
   });
 };
 
-export const attachmentQueryOptions = (tenantId: string, organizationId: string, id: string) => ({
-  queryKey: keys.detail.byId(id),
-  queryFn: () => getAttachment({ path: { tenantId, organizationId, id } }),
-  initialData: () => findAttachmentInCache(id),
-});
+export const attachmentQueryOptions = (tenantId: string, organizationId: string, id: string) =>
+  queryOptions({
+    queryKey: keys.detail.byId(id),
+    queryFn: () => getAttachment({ path: { tenantId, organizationId, id } }),
+    initialData: () => findAttachmentInCache(id),
+  });
 
 export const findAttachmentInCache = createCacheFinder<Attachment>('attachment');
 
 /** An attachment by id from the cache, else from the permission-checked endpoint; null when it is gone or denied. */
 export const fetchAttachment = (tenantId: string, organizationId: string, id: string) =>
-  queryClient.ensureQueryData(attachmentQueryOptions(tenantId, organizationId, id)).catch(() => null);
+  queryClient.query({ ...attachmentQueryOptions(tenantId, organizationId, id), staleTime: 'static' }).catch(() => null);
 
 export function useGroupAttachments(tenantId: string | undefined, organizationId: string | undefined, groupId: string | undefined) {
   const { data } = useQuery({
@@ -175,7 +184,7 @@ export const attachmentCreateOptions = (
     if (orgListSpansHomes) queryClient.invalidateQueries({ queryKey: attachmentsCanonicalOptions(variables).queryKey });
   },
   onSettled: (_data, error, variables) => {
-    if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.org(variables.organizationId));
+    if (error) invalidateOrgLists(queryClient, variables.organizationId);
   },
 });
 
@@ -187,16 +196,11 @@ const attachmentUpdateOptions = (
   mutationFn: updateAttachmentMutationFn,
   meta: { suppressGlobalErrorToast: true },
   onMutate: async ({ organizationId, id, ops }) => {
-    const orgKey = keys.list.org(organizationId);
-    await queryClient.cancelQueries({ queryKey: orgKey });
+    await queryClient.cancelQueries({ queryKey: keys.list.org(organizationId) });
     await queryClient.cancelQueries({ queryKey: keys.detail.byId(id) });
 
     const previousAttachment = findAttachmentInCache(id);
-    if (previousAttachment) {
-      const optimisticAttachment = { ...previousAttachment, ...ops, updatedAt: new Date().toISOString() };
-      cacheUpdate(orgKey, [optimisticAttachment]);
-      queryClient.setQueryData(keys.detail.byId(id), optimisticAttachment);
-    }
+    if (previousAttachment) patchCachedAttachment(queryClient, organizationId, previousAttachment, ops);
     return { previousAttachment };
   },
   onError: (error, variables, context) => {
@@ -222,7 +226,7 @@ const attachmentUpdateOptions = (
     syncEntityToCache({ entity: merged, listKey: orgKey, detailKey, queryClient });
   },
   onSettled: (_data, error, variables) => {
-    if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.org(variables.organizationId));
+    if (error) invalidateOrgLists(queryClient, variables.organizationId);
   },
 });
 
@@ -258,8 +262,7 @@ const attachmentDeleteOptions = (
   },
   onSettled: (data, error, variables) => {
     // A row put back is as the delete held it: remote changes were kept from the cache while it was pending.
-    if (error || data?.rejectedIds?.length)
-      invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.org(variables.organizationId));
+    if (error || data?.rejectedIds?.length) invalidateOrgLists(queryClient, variables.organizationId);
   },
 });
 
@@ -282,11 +285,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
   const prepare = ({ id, ops }: UpdateAttachmentVars): PreparedVars<UpdateAttachmentFullVars> => {
     if (squashIntoPendingCreate(queryClient, keys.create, id, ops, attachmentCreateKeys)) {
       const cached = findAttachmentInCache(id);
-      if (cached) {
-        const optimisticAttachment = { ...cached, ...ops, updatedAt: new Date().toISOString() };
-        cacheUpdate(keys.list.org(organizationId), [optimisticAttachment]);
-        queryClient.setQueryData(keys.detail.byId(id), optimisticAttachment);
-      }
+      if (cached) patchCachedAttachment(queryClient, organizationId, cached, ops);
       return { kind: 'coalesced' };
     }
 

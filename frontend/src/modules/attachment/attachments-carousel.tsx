@@ -1,9 +1,9 @@
-import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useNavigate } from '@tanstack/react-router';
 import Autoplay from 'embla-carousel-autoplay';
 import i18n from 'i18next';
 import { ChevronUpIcon, DownloadIcon, ExternalLinkIcon, InfoIcon, PauseIcon, PlayIcon } from 'lucide-react';
 import { useReducedMotion } from 'motion/react';
-import { useCallback, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { textFromDocument } from 'shared/blocknote';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { useDownloader } from '~/hooks/use-downloader';
@@ -60,42 +60,39 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
   const removeDialog = useDialoger((state) => state.remove);
   const { download, isInProgress } = useDownloader();
 
-  const attachmentDialogId = useSearch({ strict: false, select: (s) => s.attachmentDialogId });
-
-  const nextButtonRef = useRef(null);
+  const nextButtonRef = useRef<HTMLButtonElement>(null);
   const [watchDrag, setWatchDrag] = useState(items.length > 1);
   const [descriptionOpen, setDescriptionOpen] = useState(false);
 
-  const currentItem = items.find((item) => item.id === attachmentDialogId) ?? items[itemIndex] ?? null;
+  // The slide Embla shows, kept by id so a change in the item set keeps it.
+  const [selectedId, setSelectedId] = useState<string | undefined>(items[itemIndex]?.id);
+  const selectedIndex = items.findIndex((item) => item.id === selectedId);
+  const currentItemIndex = selectedIndex === -1 ? itemIndex : selectedIndex;
+  const currentItem = items[currentItemIndex] ?? null;
   // Editing lives in the attachments table; the dialog only shows the text, so the toggle needs something to show.
   const descriptionText = textFromDocument(currentItem?.description);
 
-  const currentItemIndex = (() => {
-    const index = items.findIndex((item) => item.id === currentItem?.id);
-    return index !== -1 ? index : itemIndex;
-  })();
+  // Embla restarts on `startIndex` whenever its options change, so it moves only with the item count and the drag toggle.
+  const [start, setStart] = useState({ index: currentItemIndex, count: items.length });
+  if (start.count !== items.length) setStart({ index: currentItemIndex, count: items.length });
 
-  // A stable start index stops Embla reinitializing (flashing) on slide nav; it re-syncs only on item count change.
-  const startIndexRef = useRef<number | null>(null);
-  const itemCountRef = useRef(items.length);
-  if (startIndexRef.current === null || itemCountRef.current !== items.length) {
-    startIndexRef.current = currentItemIndex;
-    itemCountRef.current = items.length;
-  }
-
-  const updateSearchParam = (newItem: CarouselItemData | undefined) => {
+  const selectSlide = (item: CarouselItemData | undefined) => {
+    if (item) setSelectedId(item.id);
     if (!saveInSearchParams) return;
 
-    if (!newItem) {
+    if (!item) {
       clearAttachmentDialogSearchParams();
       removeDialog();
       return;
     }
 
-    navigate({ to: '.', replace: true, resetScroll: false, search: (prev) => ({ ...prev, [attachmentDialogParam]: newItem.id }) });
+    navigate({ to: '.', replace: true, resetScroll: false, search: (prev) => ({ ...prev, [attachmentDialogParam]: item.id }) });
   };
 
-  const toggleWatchDrag = (enabled: boolean) => setWatchDrag(enabled && items.length > 1);
+  const toggleWatchDrag = (enabled: boolean) => {
+    setWatchDrag(enabled && items.length > 1);
+    setStart({ index: currentItemIndex, count: items.length });
+  };
 
   // Slides stay still for a reader who asked for reduced motion, who gets the control to start them; everyone else gets
   // slides that hold while the pointer or the keyboard is on them and carry on once it leaves.
@@ -108,28 +105,25 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
     else autoplay?.play();
   };
 
-  // Stable setApi registers Embla's `select` listener once; an inline one stacks duplicate listeners.
+  // The carousel calls setApi once per Embla instance, so the listeners read the latest items and handler.
   const itemsRef = useLatestRef(items);
-  const handleSelect = useLatestCallback(updateSearchParam);
-  const handleSetApi = useCallback(
-    (api: CarouselApi) => {
-      if (!api) return;
-      api.on('select', () => handleSelect(itemsRef.current[api.selectedScrollSnap()]));
+  const handleSelect = useLatestCallback(selectSlide);
+  const handleSetApi = (api: CarouselApi) => {
+    if (!api) return;
+    api.on('select', () => handleSelect(itemsRef.current[api.selectedScrollSnap()]));
 
-      // The plugin emits before it flips its own flag, so the event names the new state and `isPlaying()` only seeds it.
-      apiRef.current = api;
-      api.on('autoplay:play', () => setAutoplaying(true)).on('autoplay:stop', () => setAutoplaying(false));
-      setAutoplaying(api.plugins().autoplay?.isPlaying() ?? false);
-    },
-    [itemsRef, handleSelect],
-  );
+    // The plugin emits before it flips its own flag, so the event names the new state and `isPlaying()` only seeds it.
+    apiRef.current = api;
+    api.on('autoplay:play', () => setAutoplaying(true)).on('autoplay:stop', () => setAutoplaying(false));
+    setAutoplaying(api.plugins().autoplay?.isPlaying() ?? false);
+  };
 
   if (!items.length || !currentItem) return null;
 
   return (
     <BaseCarousel
       isDialog={isDialog}
-      opts={{ duration: 20, loop: true, startIndex: startIndexRef.current ?? 0, watchDrag }}
+      opts={{ duration: 20, loop: true, startIndex: start.index, watchDrag }}
       plugins={
         isDialog
           ? []
@@ -148,7 +142,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       setApi={handleSetApi}
     >
       {/* z-20 matches the zoom controls: at z-10 the viewer, a flex item with the same index, paints over the title. */}
-      {currentItem && isDialog && (
+      {isDialog && (
         <div className="fixed top-0 left-0 z-20 flex w-full flex-col bg-background/60 p-3 backdrop-blur-xs">
           <div className="flex w-full gap-2 text-center sm:text-left">
             {/* The visible name is the dialog's accessible name; with no name, a screen-reader-only title labels it. */}
@@ -239,7 +233,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       )}
 
       <CarouselContent className="h-full">
-        {items.map(({ id, url, filename, contentType = 'image', convertedContentType, pendingUpload }, idx) => {
+        {items.map(({ id, url, name, filename, contentType = 'image', convertedContentType, pendingUpload }, idx) => {
           return (
             <CarouselItem
               key={id}
@@ -261,7 +255,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 url={url}
                 pendingUpload={pendingUpload}
                 filename={filename}
-                altName={i18n.t('c:attachment')}
+                alt={name || filename || i18n.t('c:attachment')}
                 onPanStateToggle={toggleWatchDrag}
                 onBackdropClick={isDialog ? () => removeDialog() : undefined}
               />

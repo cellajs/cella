@@ -2,10 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useMatch, useSearch } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { FlameKindlingIcon } from 'lucide-react';
-import { useRef } from 'react';
-import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/attachments-carousel';
-import { attachmentDialogContentClassName } from '~/modules/attachment/dialog/params';
-import { useResolvedAttachments } from '~/modules/attachment/hooks/use-resolved-attachments';
+import { useState } from 'react';
+import { AttachmentsCarousel } from '~/modules/attachment/attachments-carousel';
+import { attachmentDialogContentClassName, attachmentDialogParam, attachmentGroupParam } from '~/modules/attachment/dialog/params';
+import { type ResolvableItem, useResolvedAttachments } from '~/modules/attachment/hooks/use-resolved-attachments';
 import { attachmentQueryOptions, useGroupAttachments } from '~/modules/attachment/query';
 import { CloseButton } from '~/modules/common/close-button';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
@@ -13,27 +13,19 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 
-/** Dialog input: url is optional because it may still need resolving. */
-type AttachmentDialogItem = Partial<CarouselItemData> & { id: string };
-
 export function AttachmentDialog() {
   const removeDialog = useDialoger((state) => state.remove);
   // Primitive selects: the match object is rebuilt on every carousel URL write.
   const tenantId = useMatch({ from: '/_app/$tenantId/$organizationSlug', shouldThrow: false, select: (m) => m.params.tenantId });
   const organizationId = useMatch({ from: '/_app/$tenantId/$organizationSlug', shouldThrow: false, select: (m) => m.context.organization?.id });
 
-  const groupId = useSearch({ strict: false, select: (s) => (s as { groupId?: string }).groupId });
+  const groupId = useSearch({ strict: false, select: (s) => s[attachmentGroupParam] });
 
   // Capture the initial attachment id once so carousel URL updates cannot re-render this component.
-  const initialAttachmentIdRef = useRef<string | null>(null);
-  if (initialAttachmentIdRef.current === null) {
-    const params = new URLSearchParams(window.location.search);
-    initialAttachmentIdRef.current = params.get('attachmentDialogId') ?? '';
-  }
-  const initialAttachmentId = initialAttachmentIdRef.current;
+  const [initialAttachmentId] = useState(() => new URLSearchParams(window.location.search).get(attachmentDialogParam) ?? '');
 
   // Once the carousel has rendered, never fall back to the spinner: Embla and <img> stay mounted across refetches.
-  const hasRenderedRef = useRef(false);
+  const [carouselShown, setCarouselShown] = useState(false);
 
   const groupAttachments = useGroupAttachments(tenantId, organizationId, groupId);
 
@@ -48,15 +40,15 @@ export function AttachmentDialog() {
   // Wait for group data: growing from 1 item to N reinits Embla and flashes other slides.
   const awaitingGroup = !!groupId && !groupAttachments;
 
-  const attachments: AttachmentDialogItem[] = groupAttachments ?? [singleAttachment ?? { id: initialAttachmentId }];
+  const attachments: ResolvableItem[] = groupAttachments ?? [singleAttachment ?? { id: initialAttachmentId }];
 
-  const { items: resolvedItems, isLoading, hasErrors, errorIds } = useResolvedAttachments(attachments);
+  const { items: resolvedItems, isLoading, errorIds } = useResolvedAttachments(attachments);
 
   const index = resolvedItems.findIndex(({ id }) => id === initialAttachmentId);
   const itemIndex = index === -1 ? 0 : index;
 
   const blocking = isLoading || awaitingContext || awaitingGroup || isFetchingSingle;
-  if (blocking && !hasRenderedRef.current) {
+  if (blocking && !carouselShown) {
     return (
       <div className="flex h-dvh items-center justify-center">
         <Spinner size="lg" />
@@ -64,7 +56,7 @@ export function AttachmentDialog() {
     );
   }
 
-  if (!resolvedItems.length || (hasErrors && errorIds.includes(initialAttachmentId))) {
+  if (!resolvedItems.length || errorIds.includes(initialAttachmentId)) {
     return (
       <>
         <div className="fixed top-0 left-0 z-20 flex w-full gap-2 bg-background/60 p-3 backdrop-blur-xs">
@@ -80,7 +72,7 @@ export function AttachmentDialog() {
     );
   }
 
-  hasRenderedRef.current = true;
+  if (!carouselShown) setCarouselShown(true);
   return (
     <div className={attachmentDialogContentClassName}>
       <AttachmentsCarousel items={resolvedItems} isDialog itemIndex={itemIndex} saveInSearchParams />

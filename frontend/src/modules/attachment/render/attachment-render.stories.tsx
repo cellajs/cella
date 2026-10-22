@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { AttachmentRender } from '~/modules/attachment/render/attachment-render';
-import { maxZoom, minZoom } from '~/modules/attachment/render/image-zoom';
+import { maxZoom, minZoom } from '~/modules/attachment/render/use-pan-zoom';
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#4f46e5"/></svg>`;
 const imageUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
@@ -20,7 +20,7 @@ const meta = {
   args: {
     type: 'image/svg+xml',
     url: imageUrl,
-    altName: 'attachment',
+    alt: 'attachment',
     imagePanZoom: true,
     showButtons: true,
     itemClassName: 'object-contain',

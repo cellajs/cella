@@ -5,8 +5,8 @@ import { tw } from '~/utils/tw';
 /** Search param holding the open attachment's id. Its presence is the dialog's open state. */
 export const attachmentDialogParam = 'attachmentDialogId';
 
-/** Params cleared alongside the dialog id when it closes. */
-const attachmentDialogExtraParams = ['groupId'] as const;
+/** Search param holding the upload group the dialog pages through, cleared with the dialog id. */
+export const attachmentGroupParam = 'groupId';
 
 /** Chrome shared by both ways of opening the carousel (URL-driven and imperative). */
 const attachmentDialogClassName = tw('mt-0 flex h-dvh max-h-dvh min-w-full flex-col rounded-none border-0 p-0');
@@ -22,13 +22,11 @@ export const attachmentDialogContentClassName = tw('relative -z-1 flex h-dvh gro
 export const attachmentDialogStageClassName = tw('pt-12 sm:pb-14');
 
 export function openAttachmentDialogSearch(attachmentId: string, groupId?: string | null) {
-  return (prev: Record<string, unknown>) => ({ ...prev, [attachmentDialogParam]: attachmentId, groupId: groupId || undefined });
+  return (prev: Record<string, unknown>) => ({ ...prev, [attachmentDialogParam]: attachmentId, [attachmentGroupParam]: groupId || undefined });
 }
 
 export function clearAttachmentDialogSearch(prev: Record<string, unknown>) {
-  const next: Record<string, unknown> = { ...prev };
-  for (const key of [attachmentDialogParam, ...attachmentDialogExtraParams]) next[key] = undefined;
-  return next;
+  return { ...prev, [attachmentDialogParam]: undefined, [attachmentGroupParam]: undefined };
 }
 
 /** Clears the dialog search params through the router instance, where `to: '.'` resolves against the current location. */

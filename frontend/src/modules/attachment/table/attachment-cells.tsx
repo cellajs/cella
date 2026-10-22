@@ -1,6 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
 import { CircleAlertIcon, CloudOffIcon, CloudUploadIcon, DownloadIcon, LoaderIcon } from 'lucide-react';
-import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
 import { useDownloader } from '~/hooks/use-downloader';
@@ -25,7 +24,6 @@ interface ThumbnailCellProps {
 export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
   const { id, filename, contentType, groupId } = row;
   const navigate = useNavigate();
-  const cellRef = useRef<HTMLButtonElement | null>(null);
 
   const wrapClass = tw('relative flex size-full items-center justify-center gap-2');
 
@@ -40,7 +38,7 @@ export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
   const badge = <SyncStatusBadge row={row} />;
 
   return (
-    <Button ref={cellRef} variant="cell" size="cell" tabIndex={tabIndex} className={wrapClass} aria-label={filename} onClick={handleClick}>
+    <Button variant="cell" size="cell" tabIndex={tabIndex} className={wrapClass} aria-label={filename} onClick={handleClick}>
       {preview}
       {badge}
     </Button>
@@ -96,15 +94,10 @@ interface DownloadCellProps {
 
 export function DownloadCell({ row, tabIndex }: DownloadCellProps) {
   const { t } = useTranslation();
-  const { download, error, isInProgress } = useDownloader();
+  const { download, isInProgress } = useDownloader();
   const { hasLocalBlob } = useBlobUploadStatus(row.id);
   const pending = !hasLocalBlob && isPendingUpload(row) ? pendingUploadMessage({ uploader: row.createdBy }) : null;
   const tooltip = pending ? t(pending.key, pending.params) : t('c:download');
-
-  useEffect(() => {
-    if (!error) return;
-    toaster.error(t('error:download_failed'));
-  }, [error, t]);
 
   // Local-first: a stored blob saves without the network, and the cloud URL is the fallback.
   const handleDownload = async () => {

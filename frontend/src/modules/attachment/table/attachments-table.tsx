@@ -1,6 +1,6 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { PaperclipIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
@@ -15,11 +15,10 @@ import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { isDefaultListView } from '~/query/basic/create-query-keys';
-
-const requestLimit = appConfig.requestLimits.attachments;
 
 /** Defined outside the component so the getter identity stays stable. */
 function rowKeyGetter(row: Attachment) {
@@ -46,18 +45,14 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  const updateAttachment = useAttachmentUpdateMutation(channel.tenantId, channel.id);
+  // A sub-organization channel carries its organization's id; an organization is its own.
+  const organizationId = channel.organizationId ?? channel.id;
+  const updateAttachment = useAttachmentUpdateMutation(channel.tenantId, organizationId);
 
-  // Table state
   const { q, sort, order } = search;
-  const limit = requestLimit;
 
-  const columnsFromHook = useColumns(channel, isSheet);
   const [hiddenOverrides, setHiddenOverrides] = useState<Record<string, boolean>>({});
-  const columns = useMemo(
-    () => columnsFromHook.map((col) => ({ ...col, hidden: hiddenOverrides[col.key] ?? col.hidden })),
-    [columnsFromHook, hiddenOverrides],
-  );
+  const columns = useColumns(channel, isSheet).map((col) => ({ ...col, hidden: hiddenOverrides[col.key] ?? col.hidden }));
   const setColumns: React.Dispatch<React.SetStateAction<ColumnOrColumnGroup<Attachment>[]>> = (updater) => {
     const newCols = typeof updater === 'function' ? updater(columns) : updater;
     setHiddenOverrides((prev) => {
@@ -73,20 +68,15 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
   // Default view (no search, default sort) reads the canonical org query that SyncService prefetches; any other filter uses the infinite query.
   const isDefaultView = isDefaultListView({ q, sort, order }, attachmentsSearchDefaults);
 
-  const canonicalOptions = attachmentsCanonicalOptions({ tenantId: channel.tenantId, organizationId: channel.id });
+  const canonicalOptions = attachmentsCanonicalOptions({ tenantId: channel.tenantId, organizationId });
   const canonical = useQuery({ ...canonicalOptions, enabled: isDefaultView, refetchOnMount: true, select: selectDefaultViewRows });
 
-  const queryOptions = attachmentsListQueryOptions({ tenantId: channel.tenantId, organizationId: channel.id, q, sort, order, limit });
-  const filtered = useInfiniteQuery({
-    ...queryOptions,
-    enabled: !isDefaultView,
-    refetchOnMount: true,
-    select: ({ pages }) => pages.flatMap(({ items }) => items),
-  });
+  const queryOptions = attachmentsListQueryOptions({ tenantId: channel.tenantId, organizationId, q, sort, order });
+  const filtered = useInfiniteRows({ ...queryOptions, enabled: !isDefaultView, refetchOnMount: true });
 
-  const { data: rows, isLoading, isFetching, error } = isDefaultView ? canonical : filtered;
+  const { isLoading, isFetching, error } = isDefaultView ? canonical : filtered;
+  const rows = isDefaultView ? canonical.data : filtered.rows;
   const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
-  const hasNextPage = isDefaultView ? false : filtered.hasNextPage;
 
   const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
     if (column.key !== 'name') return;
@@ -95,11 +85,6 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
       const attachment = changedRows[index];
       updateAttachment.mutate({ id: attachment.id, ops: { name: attachment.name } });
     }
-  };
-
-  const fetchMore = async () => {
-    if (!hasNextPage || isLoading || isFetching) return;
-    await filtered.fetchNextPage();
   };
 
   const NoRowsComponent = (
@@ -111,7 +96,7 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
       <AttachmentsTableBar
         channel={channel}
         selected={selected}
-        searchVars={{ ...search, limit }}
+        searchVars={{ ...search, limit: appConfig.requestLimits.attachments }}
         setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
@@ -132,8 +117,8 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
           isLoading,
           isFetching,
           isFiltered: !!q,
-          hasNextPage,
-          fetchMore,
+          hasNextPage: !isDefaultView && filtered.hasNextPage,
+          fetchMore: filtered.fetchMore,
           selectedRows: selectedRowIds,
           onSelectedRowsChange,
           sortColumns,

@@ -45,7 +45,7 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
   if (!attachments.length) return;
 
   const config = appConfig.localBlobStorage;
-  if (!config?.enabled) return;
+  if (!config.enabled) return;
 
   try {
     const ids = attachments.map((a) => a.id);
@@ -66,7 +66,7 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
       }
 
       // Already stored locally as a processed variant.
-      const storedVariants = (await attachmentStorage.getStoredVariants(attachment.id)) ?? [];
+      const storedVariants = await attachmentStorage.getStoredVariants(attachment.id);
       if (storedVariants.some((v) => v !== 'raw')) continue;
 
       const skipReason = shouldSkipDownload(attachment, config);
@@ -106,9 +106,9 @@ async function addNew(entries: DownloadQueueEntry[]): Promise<void> {
 }
 
 /** Whether an existing entry goes back to `pending`; other rows stay untouched so the table acts as the dedupe registry. */
-function shouldRevive(entry: DownloadQueueEntry, attachment: Attachment, config: NonNullable<typeof appConfig.localBlobStorage>): boolean {
+function shouldRevive(entry: DownloadQueueEntry, attachment: Attachment, config: typeof appConfig.localBlobStorage): boolean {
   // Queued before its keys had synced; now they have.
-  if (entry.status === 'skipped' && entry.skipReason === skipReasonNoOriginalKey && attachment.keys?.original) {
+  if (entry.status === 'skipped' && entry.skipReason === skipReasonNoOriginalKey && attachment.keys.original) {
     return true;
   }
 
@@ -129,14 +129,12 @@ async function remove(ids: string[]): Promise<void> {
 }
 
 function shouldSkipDownload(attachment: Attachment, config: typeof appConfig.localBlobStorage): string | null {
-  if (!config) return 'Config not available';
-
   const fileSize = attachment.size ? Number(attachment.size) : 0;
   if (config.maxFileSize && fileSize && fileSize > config.maxFileSize) {
     return `File too large (${Math.round(fileSize / 1024 / 1024)}MB > ${Math.round(config.maxFileSize / 1024 / 1024)}MB)`;
   }
 
-  if (config.excludedContentTypes?.length && attachment.contentType) {
+  if (config.excludedContentTypes.length && attachment.contentType) {
     for (const pattern of config.excludedContentTypes) {
       if (matchesMimePattern(attachment.contentType, pattern)) {
         return `Content type excluded: ${attachment.contentType}`;
@@ -144,8 +142,8 @@ function shouldSkipDownload(attachment: Attachment, config: typeof appConfig.loc
     }
   }
 
-  if (config.allowedContentTypes?.length && attachment.contentType) {
-    const allowed = config.allowedContentTypes.some((pattern) => matchesMimePattern(attachment.contentType!, pattern));
+  if (config.allowedContentTypes.length && attachment.contentType) {
+    const allowed = config.allowedContentTypes.some((pattern) => matchesMimePattern(attachment.contentType, pattern));
     if (!allowed) {
       return `Content type not allowed: ${attachment.contentType}`;
     }

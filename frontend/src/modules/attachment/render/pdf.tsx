@@ -20,18 +20,15 @@ const loadingSpinner = (
 
 const pagePadding = 20; // Breathing room around each page (px)
 
-type PageSize = { width: number; height: number };
-
-/** `fitMode`: `width` fits each page to container width and scrolls vertically; `contain` fits a whole page inside the container. */
+/** Fits each page to the container width; the pages scroll vertically. */
 interface RenderPDFProps {
   file: string;
   className?: string;
-  fitMode?: 'width' | 'contain';
 }
 
-export function RenderPDF({ file, className, fitMode = 'width' }: RenderPDFProps) {
-  const [pageSizes, setPageSizes] = useState<PageSize[]>([]);
-  const [container, setContainer] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+export function RenderPDF({ file, className }: RenderPDFProps) {
+  const [pageWidths, setPageWidths] = useState<number[]>([]);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -39,62 +36,37 @@ export function RenderPDF({ file, className, fitMode = 'width' }: RenderPDFProps
     const node = containerRef.current;
     if (!node) return;
 
-    // An unchanged size, such as the observer's first callback repeating the measurement below, skips the render.
-    const update = (width: number, height: number) =>
-      setContainer((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
-
-    update(node.clientWidth, node.clientHeight);
-
-    const resizeObserver = new ResizeObserver(([entry]) => {
-      update(entry.contentRect.width, entry.contentRect.height);
-    });
+    setContainerWidth(node.clientWidth);
+    const resizeObserver = new ResizeObserver(([entry]) => setContainerWidth(entry.contentRect.width));
 
     resizeObserver.observe(node);
 
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Read each page's dimensions so landscape, A4, legal and mixed-orientation pages render correctly.
+  // Each page's own width, so landscape, A4, legal and mixed-orientation pages each fit.
   const onDocumentLoad = async (pdf: PDFDocumentProxy) => {
-    const sizes = await Promise.all(
-      Array.from({ length: pdf.numPages }, async (_, i) => {
-        const page = await pdf.getPage(i + 1);
-        const { width, height } = page.getViewport({ scale: 1 });
-        return { width, height };
-      }),
+    const widths = await Promise.all(
+      Array.from({ length: pdf.numPages }, async (_, i) => (await pdf.getPage(i + 1)).getViewport({ scale: 1 }).width),
     );
-    setPageSizes(sizes);
+    setPageWidths(widths);
   };
 
-  const getScale = ({ width, height }: PageSize) => {
-    const availableWidth = container.width - pagePadding;
-    if (availableWidth <= 0) return null;
-
-    const widthScale = availableWidth / width;
-    if (fitMode === 'width') return widthScale;
-
-    const availableHeight = container.height - pagePadding;
-    if (availableHeight <= 0) return widthScale;
-    return Math.min(widthScale, availableHeight / height);
-  };
+  const availableWidth = containerWidth - pagePadding;
 
   return (
     <div ref={containerRef} className={className}>
       <Document file={file} options={options} loading={loadingSpinner} onLoadSuccess={onDocumentLoad}>
-        {container.width > 0 &&
-          pageSizes.map((size, index) => {
-            const scale = getScale(size);
-            if (scale == null) return null;
-            return (
-              <Page
-                // biome-ignore lint/suspicious/noArrayIndexKey: PDF page numbers are stable and ordered.
-                key={`page_${index + 1}`}
-                pageNumber={index + 1}
-                scale={scale}
-                devicePixelRatio={window.devicePixelRatio}
-              />
-            );
-          })}
+        {availableWidth > 0 &&
+          pageWidths.map((width, index) => (
+            <Page
+              // biome-ignore lint/suspicious/noArrayIndexKey: PDF page numbers are stable and ordered.
+              key={`page_${index + 1}`}
+              pageNumber={index + 1}
+              scale={availableWidth / width}
+              devicePixelRatio={window.devicePixelRatio}
+            />
+          ))}
       </Document>
     </div>
   );

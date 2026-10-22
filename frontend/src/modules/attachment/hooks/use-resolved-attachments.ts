@@ -1,16 +1,14 @@
 import { useIsRestoring } from '@tanstack/react-query';
+import i18n from 'i18next';
 import { useEffect, useRef, useState } from 'react';
-import type { Attachment } from 'sdk';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { getPendingUpload, PendingUploadError } from '~/modules/attachment/helpers/pending-uploads';
-import { resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
+import { type AttachmentMeta, resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
 import { PresignRejectedError } from '~/modules/attachment/presign-batch';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 
-type AttachmentMetaFields = Pick<Attachment, 'keys' | 'publicBucket' | 'organizationId' | 'tenantId'>;
-
 /** A carousel item that may already carry its own attachment metadata (group/single items do). */
-type ResolvableItem = Partial<CarouselItemData> & Partial<AttachmentMetaFields> & { id: string };
+export type ResolvableItem = Partial<CarouselItemData> & Partial<AttachmentMeta> & { id: string };
 
 /** Transient failures (blob mid-download, cache mid-sync) get a few retries before "not found". */
 const resolveRetryLimit = 3;
@@ -19,17 +17,16 @@ const resolveRetryDelayMs = 600;
 interface ResolvedAttachmentsResult {
   items: CarouselItemData[];
   isLoading: boolean;
-  hasErrors: boolean;
   errorIds: string[];
 }
 
-function buildItemData(item: Partial<CarouselItemData> & { id: string }, url: string, isLocal: boolean): CarouselItemData {
+function buildItemData(item: ResolvableItem, url: string, isLocal: boolean): CarouselItemData {
   const cached = findAttachmentInCache(item.id);
   return {
     id: item.id,
     url,
     isLocal,
-    name: item.name ?? cached?.name ?? item.filename ?? 'Attachment',
+    name: item.name ?? cached?.name ?? item.filename ?? i18n.t('c:attachment'),
     filename: item.filename ?? cached?.filename,
     contentType: item.contentType ?? cached?.contentType,
     convertedContentType: item.convertedContentType || cached?.convertedContentType || null,
@@ -48,7 +45,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
   // Bumped to re-run resolution after a transient failure; reset when the item set changes.
   const [retrySignal, setRetrySignal] = useState(0);
   const retryCountRef = useRef(0);
-  const itemsKey = items.map((i) => `${i.id}:${i.url ?? ''}:${i.name ?? ''}`).join(',');
+  const itemsKey = items.map((i) => `${i.id}:${i.url ?? ''}`).join(',');
 
   useEffect(() => {
     retryCountRef.current = 0;
@@ -91,7 +88,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
           try {
             // The list cache holds fresher metadata; group and single items carry full keys as fallback.
             const cachedMeta = findAttachmentInCache(item.id);
-            const meta = cachedMeta ?? (item.keys?.original ? (item as AttachmentMetaFields) : null);
+            const meta = cachedMeta ?? (item.keys?.original ? (item as AttachmentMeta) : null);
 
             const result = await resolveAttachmentUrl(item.id, meta, { preferredVariant: 'converted' });
             if (result) {
@@ -149,5 +146,11 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
     };
   }, []);
 
-  return { items: resolvedItems, isLoading, hasErrors: errorIds.length > 0, errorIds };
+  // Name and description follow the input items as they change; the items key covers only what resolves a URL.
+  const liveItems = resolvedItems.map((resolved) => {
+    const item = items.find(({ id }) => id === resolved.id);
+    return { ...resolved, name: item?.name ?? resolved.name, description: item?.description ?? resolved.description };
+  });
+
+  return { items: liveItems, isLoading, errorIds };
 }

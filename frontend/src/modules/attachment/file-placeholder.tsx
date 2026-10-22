@@ -1,12 +1,13 @@
 import { FileArchiveIcon, FileHeadphoneIcon, FileIcon, FileImageIcon, FilePlayIcon, FileSpreadsheetIcon, FileTextIcon } from 'lucide-react';
 
+/** The first match wins, so every family comes before the document catch-all (`vnd`, `text`). */
 const contentTypeMap = [
+  { match: ['spreadsheet', 'excel', 'csv'], icon: FileSpreadsheetIcon },
+  { match: ['zip', 'rar'], icon: FileArchiveIcon },
   { match: ['image'], icon: FileImageIcon },
   { match: ['video'], icon: FilePlayIcon },
-  { match: ['pdf', 'msword', 'vnd', 'text'], icon: FileTextIcon },
   { match: ['audio'], icon: FileHeadphoneIcon },
-  { match: ['csv', 'xslx'], icon: FileSpreadsheetIcon },
-  { match: ['zip', 'rar'], icon: FileArchiveIcon },
+  { match: ['pdf', 'msword', 'vnd', 'text'], icon: FileTextIcon },
 ];
 
 export function getFileIcon(contentType?: string) {

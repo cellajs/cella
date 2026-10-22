@@ -12,7 +12,6 @@ interface BlobUploadInfo {
   isFailed: boolean;
   isPending: boolean;
   isLocalOnly: boolean;
-  lastError: string | null;
 }
 
 /** No local blob means the attachment is cloud-only, which is the "done" state for the UI. */
@@ -23,10 +22,9 @@ const defaultUploadInfo: BlobUploadInfo = {
   isFailed: false,
   isPending: false,
   isLocalOnly: false,
-  lastError: null,
 };
 
-function toUploadInfo(uploadStatus: UploadStatus, lastError: string | null | undefined): BlobUploadInfo {
+function toUploadInfo(uploadStatus: UploadStatus): BlobUploadInfo {
   return {
     hasLocalBlob: true,
     isUploaded: uploadStatus === 'uploaded',
@@ -34,12 +32,10 @@ function toUploadInfo(uploadStatus: UploadStatus, lastError: string | null | und
     isFailed: uploadStatus === 'failed',
     isPending: uploadStatus === 'pending',
     isLocalOnly: uploadStatus === 'local-only',
-    lastError: lastError ?? null,
   };
 }
 
-/** Marking a blob uploaded clears its lastError, and downloaded blobs never carry one. */
-const uploadedInfo = toUploadInfo('uploaded', null);
+const uploadedInfo = toUploadInfo('uploaded');
 
 const sameInfo = (a: BlobUploadInfo, b: BlobUploadInfo) => (Object.keys(a) as (keyof BlobUploadInfo)[]).every((key) => a[key] === b[key]);
 
@@ -64,7 +60,7 @@ async function readUploadInfos(): Promise<Map<string, BlobUploadInfo>> {
 
   for (const [attachmentId, id] of primaryIds) {
     const blob = syncingById.get(id);
-    infos.set(attachmentId, blob ? toUploadInfo(blob.uploadStatus, blob.lastError) : uploadedInfo);
+    infos.set(attachmentId, blob ? toUploadInfo(blob.uploadStatus) : uploadedInfo);
   }
   return infos;
 }
