@@ -44,6 +44,7 @@ export function SheetContent({
   initialFocus,
   finalFocus,
   autoScrollOnDrag,
+  keepMounted,
   ...props
 }: SheetPrimitive.Popup.Props &
   React.RefAttributes<HTMLDivElement> & {
@@ -54,6 +55,8 @@ export function SheetContent({
     finalFocus?: SheetPrimitive.Popup.Props['finalFocus'];
     /** Enable auto-scrolling when dragging elements near edges. */
     autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
+    /** Passed to the Base UI portal: the closed popup stays in the DOM, hidden. */
+    keepMounted?: boolean;
   }) {
   const content = (
     <SheetPrimitive.Popup
@@ -83,11 +86,15 @@ export function SheetContent({
   );
 
   if (container) {
-    return <SheetPortal container={container}>{content}</SheetPortal>;
+    return (
+      <SheetPortal container={container} keepMounted={keepMounted}>
+        {content}
+      </SheetPortal>
+    );
   }
 
   return (
-    <SheetPortal>
+    <SheetPortal keepMounted={keepMounted}>
       {overlay && <SheetOverlay />}
       {content}
     </SheetPortal>

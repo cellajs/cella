@@ -27,6 +27,7 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
     container,
     contentKey,
     autoScrollOnDrag,
+    keepMounted,
   } = sheet;
 
   const popupRef = useRef<HTMLDivElement>(null);
@@ -106,6 +107,7 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
         initialFocus={() => (isTouchInteraction() ? popupRef.current : true)}
         finalFocus={finalFocus}
         autoScrollOnDrag={autoScrollOnDrag}
+        keepMounted={keepMounted}
       >
         <SheetHeader sticky className={cn(headerClassName, !(title || description) && 'hidden')}>
           {title && <SheetTitle className="h-6 leading-6">{titleContent}</SheetTitle>}

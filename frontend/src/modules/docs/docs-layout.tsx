@@ -8,7 +8,7 @@ import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { useFirstTimeHint } from '~/hooks/use-first-time-hint';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useScrolledPast } from '~/hooks/use-scrolled-past';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { type SheetData, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { tagsQueryOptions } from '~/modules/docs/query';
 import { toggleDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
@@ -18,6 +18,13 @@ import { tw } from '~/utils/tw';
 
 const MIN_SIDEBAR_WIDTH = 220;
 const MAX_SIDEBAR_WIDTH = 400;
+
+// Safari has no requestIdleCallback
+const scheduleIdle =
+  typeof requestIdleCallback === 'function'
+    ? (cb: () => void) => requestIdleCallback(cb, { timeout: 2000 })
+    : (cb: () => void) => window.setTimeout(cb, 1000);
+const cancelIdle = typeof cancelIdleCallback === 'function' ? cancelIdleCallback : clearTimeout;
 
 function DocsLayout() {
   const navigate = useNavigate();
@@ -75,15 +82,29 @@ function DocsLayout() {
 
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);
 
-  const sidebarOpen = useSheeter((state) => state.sheets.some((s) => s.id === 'docs-sidebar'));
+  const sidebarOpen = useSheeter((state) => state.sheets.some((s) => s.id === 'docs-sidebar' && s.open !== false));
 
   const sidebarContent = <DocsSidebar tags={tags} />;
+  const sidebarSheet: SheetData = {
+    id: 'docs-sidebar',
+    side: 'left',
+    triggerRef,
+    title: i18n.t('c:docs'),
+    headerClassName: 'hidden',
+    className: tw('w-72 p-0'),
+    closeSheetOnRouteChange: false,
+    keepMounted: true,
+  };
 
+  // Below `md` the sheet mounts closed at idle, so a menu tap only slides it in. Leaving the docs or reaching `md` unmounts it.
   useEffect(() => {
-    if (isDesktop && sidebarOpen) {
-      useSheeter.getState().remove('docs-sidebar');
-    }
-  }, [isDesktop, sidebarOpen]);
+    if (isDesktop) return;
+    const handle = scheduleIdle(() => useSheeter.getState().mount(sidebarContent, sidebarSheet));
+    return () => {
+      cancelIdle(handle);
+      useSheeter.getState().unmount('docs-sidebar');
+    };
+  }, [isDesktop]);
 
   // Search on ⌘K/Ctrl-K, collapse on ESC
   useHotkeys([
@@ -104,15 +125,7 @@ function DocsLayout() {
     if (sidebarOpen) {
       useSheeter.getState().remove('docs-sidebar');
     } else {
-      useSheeter.getState().create(sidebarContent, {
-        id: 'docs-sidebar',
-        side: 'left',
-        triggerRef,
-        title: i18n.t('c:docs'),
-        headerClassName: 'hidden',
-        className: tw('w-72 p-0'),
-        closeSheetOnRouteChange: false,
-      });
+      useSheeter.getState().create(sidebarContent, sidebarSheet);
     }
   };
 

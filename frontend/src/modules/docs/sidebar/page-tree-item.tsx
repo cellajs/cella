@@ -10,6 +10,7 @@ import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
 import { ActiveIndicator } from './active-indicator';
+import { closeSidebarSheetAndNavigate } from './close-sidebar-sheet';
 
 export type PageNode = { page: DocPage; children: PageNode[] };
 
@@ -80,7 +81,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
             }
             if (hasChildren && !isExpanded) onToggle(page.id);
             // On mobile the sheet closes only on leaf navigation, so children revealed by an expand stay visible
-            if (!hasChildren) useSheeter.getState().remove('docs-sidebar');
+            if (!hasChildren) closeSidebarSheetAndNavigate(e);
           }}
         >
           {/* Leading dot (parent tier only) */}
@@ -146,10 +147,7 @@ function PageLeaf({ page, isActive }: { page: DocPage; isActive: boolean }) {
           preload="intent"
           draggable={false}
           data-active={isActive}
-          onClick={(e) => {
-            if (e.metaKey || e.ctrlKey) return;
-            useSheeter.getState().remove('docs-sidebar');
-          }}
+          onClick={closeSidebarSheetAndNavigate}
         />
       }
     >

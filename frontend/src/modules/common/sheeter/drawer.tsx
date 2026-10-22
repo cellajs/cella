@@ -8,7 +8,7 @@ const sideToSwipeDirection = { top: 'up', bottom: 'down', left: 'left', right: '
 
 export function SheeterDrawer({ sheet, onExited }: { sheet: InternalSheet; onExited?: () => void }) {
   // Drawers on mobile are always modal (overlay + outside click to close)
-  const { id, side, description, title, titleContent = title, headerClassName, className, content, contentKey, open = true } = sheet;
+  const { id, side, description, title, titleContent = title, headerClassName, className, content, contentKey, keepMounted, open = true } = sheet;
 
   const updateSheet = sheeter.getState().update;
 
@@ -30,7 +30,7 @@ export function SheeterDrawer({ sheet, onExited }: { sheet: InternalSheet; onExi
       onOpenChange={onOpenChange}
       onOpenChangeComplete={(isOpen) => !isOpen && onExited?.()}
     >
-      <DrawerContent id={String(id)} className={className}>
+      <DrawerContent id={String(id)} className={className} keepMounted={keepMounted}>
         <DrawerHeader sticky className={cn(headerClassName, !(description || title) && 'hidden')}>
           {title && <DrawerTitle>{titleContent}</DrawerTitle>}
           {description && <DrawerDescription className="text-muted-foreground">{description}</DrawerDescription>}
