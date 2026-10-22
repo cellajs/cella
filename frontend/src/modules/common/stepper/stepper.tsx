@@ -25,15 +25,7 @@ export function Stepper({ children, className, initialStep = 0, steps, onClickSt
         setStep: setActiveStep,
       }}
     >
-      <div
-        className={cn(
-          'flex w-full flex-col flex-wrap [--step-gap:0.5rem] [--step-icon-size:2rem]',
-          items.length === 1 ? 'justify-end' : 'justify-between',
-          className,
-        )}
-      >
-        {items}
-      </div>
+      <div className={cn('flex w-full flex-col [--step-gap:0.5rem] [--step-icon-size:2rem]', className)}>{items}</div>
     </StepperContext.Provider>
   );
 }
@@ -48,12 +40,9 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
   return (
     <div
       className={cn(
-        'relative flex flex-col transition-all duration-200 data-[completed=true]:not-last:after:bg-primary',
-        'not-last:gap-(--step-gap) not-last:pb-(--step-gap)',
-        "not-last:after:w-0.5 not-last:after:bg-border not-last:after:content-['']",
-        'not-last:after:absolute not-last:after:inset-x-[calc(var(--step-icon-size)/2)]',
-        'not-last:after:top-[calc(var(--step-icon-size)+var(--step-gap))] not-last:after:bottom-(--step-gap)',
-        'not-last:after:transition-all not-last:after:duration-200',
+        'group/step relative flex flex-col not-last:gap-(--step-gap) not-last:pb-(--step-gap)',
+        // The connector from this step's icon down to the next step's icon
+        "not-last:after:absolute not-last:after:inset-x-[calc(var(--step-icon-size)/2)] not-last:after:top-[calc(var(--step-icon-size)+var(--step-gap))] not-last:after:bottom-(--step-gap) not-last:after:w-0.5 not-last:after:bg-border not-last:after:transition-colors not-last:after:duration-200 not-last:after:content-[''] data-[completed=true]:not-last:after:bg-primary",
         isLastStep && 'gap-(--step-gap)',
       )}
       data-completed={isCompletedStep}
@@ -64,30 +53,23 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
             variant="ghost"
             type="button"
             tabIndex={isClickable ? 0 : -1}
-            className={cn(
-              'pointer-events-none rounded-full p-0',
-              'size-(--step-icon-size)',
-              'flex items-center justify-center rounded-full border-2',
-              'data-[clickable=true]:pointer-events-auto',
-              'data-[completed=true]:border-primary data-[completed=true]:bg-primary data-[completed=true]:text-primary-foreground',
-              'data-[current=true]:border-primary data-[current=true]:bg-secondary',
-            )}
+            className="pointer-events-none size-(--step-icon-size) rounded-full border-2 p-0 data-[clickable=true]:pointer-events-auto data-[completed=true]:border-primary data-[current=true]:border-primary data-[completed=true]:bg-primary data-[current=true]:bg-secondary data-[completed=true]:text-primary-foreground"
             aria-current={isCurrentStep ? 'step' : undefined}
             data-current={isCurrentStep}
             data-completed={isCompletedStep}
             data-clickable={isClickable}
             onClick={() => onClickStep?.(index, setStep)}
           >
-            {isCompletedStep ? <Check className="size-4" /> : <span className="text-center font-medium text-md">{index + 1}</span>}
+            {isCompletedStep ? <Check className="size-4" /> : <span className="text-md">{index + 1}</span>}
           </Button>
           {!!label && (
-            <div className="ms-2 flex flex-col" style={{ opacity: isCurrentStep || isCompletedStep ? 1 : 0.8 }}>
+            <div className={cn('ms-2 flex flex-col', index > activeStep && 'opacity-80')}>
               <span className="text-sm">{label}</span>
             </div>
           )}
         </div>
       )}
-      <div className={cn(index !== steps.length - 1 && 'min-h-4', 'max-sm:relative max-sm:z-1 sm:ps-(--step-icon-size)')}>
+      <div className="group-not-last/step:min-h-4 max-sm:relative max-sm:z-1 sm:ps-(--step-icon-size)">
         <Collapsible open={isCurrentStep}>
           <CollapsibleContent className="overflow-hidden data-closed:animate-collapsible-up data-open:animate-collapsible-down">
             {children}

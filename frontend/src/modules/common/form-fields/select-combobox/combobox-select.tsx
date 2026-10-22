@@ -84,7 +84,7 @@ export function ComboboxSelect({
           render={<Button variant="input" aria-haspopup="listbox" className="w-full justify-between truncate font-normal" disabled={disabled} />}
         >
           {selectedOption ? (
-            <div className="flex items-center gap-2 truncate">{optionLabel(selectedOption, 'size-6 shrink-0')}</div>
+            <div className="flex items-center gap-2 truncate">{optionLabel(selectedOption, 'size-6')}</div>
           ) : (
             <span className="truncate text-muted-foreground">{triggerText}</span>
           )}

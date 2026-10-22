@@ -88,7 +88,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
         </form>
       </Form>
       {isLargeScreen ? (
-        <div className="w-full overflow-hidden rounded-md bg-accent md:mb-12">
+        <div className="mb-12 w-full overflow-hidden rounded-md bg-accent">
           <Suspense>
             <ContactFormMap />
           </Suspense>

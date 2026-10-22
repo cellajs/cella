@@ -7,8 +7,8 @@ import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
 const options = countries.map(({ code, name }) => ({ value: code, label: name }));
 
 const renderCountryOption: ComboboxSelectProps['renderOption'] = ({ value, label }) => (
-  <div className="flex flex-nowrap items-center truncate">
-    <CountryFlag countryCode={value} imgType="png" className="mr-2 shrink-0" />
+  <div className="flex items-center gap-2 truncate">
+    <CountryFlag countryCode={value} imgType="png" className="shrink-0" />
     <span className="truncate">{label}</span>
   </div>
 );

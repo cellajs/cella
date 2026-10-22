@@ -54,17 +54,17 @@ export function InputFormField<TFieldValues extends FieldValues>({
               <span
                 aria-hidden="true"
                 className={cn(
-                  'pointer-events-none absolute left-3 flex size-4 items-center justify-center text-xs',
+                  'pointer-events-none absolute left-3 flex size-4 items-center justify-center',
                   type === 'textarea' ? 'top-3' : 'top-1/2 -translate-y-1/2',
+                  !formFieldValue && 'opacity-50',
                 )}
-                style={{ opacity: formFieldValue ? 1 : 0.5 }}
               >
                 {icon}
               </span>
             )}
             <FormControl>
               <InputComponent
-                className={cn(inputClassName, icon && 'pl-10')}
+                className={cn(icon && 'pl-10', inputClassName)}
                 placeholder={placeholder}
                 onFocus={onFocus}
                 onBlur={() => {

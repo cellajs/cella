@@ -54,9 +54,8 @@ export function SlugFormField<TFieldValues extends FieldValues>({
 
   // Repeated on the group's focus state, whose own ring color would hide the answer while the user types
   const availabilityRingClass = cn(
-    availability !== 'blank' && 'ring-2',
-    availability === 'available' && 'ring-success focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-success',
-    availability === 'notAvailable' && 'ring-destructive focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-destructive',
+    availability === 'available' && 'ring-2 ring-success focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-success',
+    availability === 'notAvailable' && 'ring-2 ring-destructive focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-destructive',
   );
 
   const form = useFormContext<{ slug: string }>();
@@ -138,9 +137,7 @@ export function SlugFormField<TFieldValues extends FieldValues>({
             </FormControl>
             {prefix && (
               <InputGroupAddon>
-                <InputGroupText className="text-xs" style={{ opacity: formFieldValue ? 1 : 0.5 }}>
-                  {prefix}
-                </InputGroupText>
+                <InputGroupText className={cn('text-xs', !formFieldValue && 'opacity-50')}>{prefix}</InputGroupText>
               </InputGroupAddon>
             )}
 

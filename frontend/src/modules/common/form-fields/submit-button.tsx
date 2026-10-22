@@ -9,7 +9,7 @@ import { Button, type ButtonProps } from '~/modules/ui/button';
 type SubmitButtonProps = Omit<ButtonProps, 'type'> & { allowOfflineDelete?: boolean; icon?: React.ReactNode };
 
 /** Form submit button that warns when offline; `icon` swaps to a spinner on loading, otherwise the spinner overlays the button. */
-export function SubmitButton({ onClick, children, allowOfflineDelete = false, loading, disabled, icon, className, ...props }: SubmitButtonProps) {
+export function SubmitButton({ onClick, children, allowOfflineDelete = false, loading, disabled, icon, ...props }: SubmitButtonProps) {
   const isOnline = useOnlineManager();
 
   const showOfflineWarning = !allowOfflineDelete && !isOnline;
@@ -25,15 +25,7 @@ export function SubmitButton({ onClick, children, allowOfflineDelete = false, lo
   const leadingIcon = icon && loading ? <LoaderCircleIcon className="animate-spin" /> : showOfflineWarning ? <TriangleAlertIcon /> : icon;
 
   const buttonContent = (
-    <Button
-      type="submit"
-      onClick={handleClick}
-      disabled={disabled || loading}
-      aria-busy={loading || undefined}
-      loading={!icon && loading}
-      className={className}
-      {...props}
-    >
+    <Button type="submit" onClick={handleClick} disabled={disabled || loading} aria-busy={loading || undefined} loading={!icon && loading} {...props}>
       {leadingIcon}
       {children}
     </Button>

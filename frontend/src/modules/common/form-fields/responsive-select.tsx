@@ -75,11 +75,11 @@ export function ResponsiveSelect({
           type="button"
           variant="input"
           disabled={disabled}
-          className={cn('w-auto justify-between gap-2 font-normal', className)}
+          className={cn('justify-between font-normal', className)}
           aria-label={ariaLabel}
           onClick={() => setDrawerOpen(true)}
         >
-          <span className="truncate text-sm">{triggerContent}</span>
+          <span className="truncate">{triggerContent}</span>
           <ChevronDownIcon className="size-4 shrink-0 opacity-70" />
         </Button>
 

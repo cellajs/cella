@@ -57,7 +57,7 @@ export function SelectRoles({ onChange, value = emptyRoles, label, className }: 
             key={role}
             role={role}
             renderControl={(labelId) => (
-              <Checkbox checked={value.includes(role)} onCheckedChange={() => toggleRole(role)} aria-labelledby={labelId} className="size-5" />
+              <Checkbox checked={value.includes(role)} onCheckedChange={() => toggleRole(role)} aria-labelledby={labelId} />
             )}
           />
         ))}
