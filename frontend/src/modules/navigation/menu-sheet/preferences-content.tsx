@@ -13,10 +13,10 @@ export function PreferencesContent() {
 
   const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
-  const toggleDetailedMenu = useNavigationStore((state) => state.toggleDetailedMenu);
-  const toggleKeepOpenPreference = useNavigationStore((state) => state.toggleKeepOpenPreference);
+  const setDetailedMenu = useNavigationStore((state) => state.setDetailedMenu);
+  const setKeepOpenPreference = useNavigationStore((state) => state.setKeepOpenPreference);
 
-  const showDesktopMenuOption = appConfig.menuStructure.some(({ subentityType }) => subentityType);
+  const showDetailedMenuOption = appConfig.menuStructure.some(({ subentityType }) => subentityType);
 
   const mode = useUIStore((state) => state.mode);
   const setMode = useUIStore((state) => state.setMode);
@@ -26,7 +26,7 @@ export function PreferencesContent() {
   const { mutate: updateSelf } = useUpdateSelfMutation();
 
   // Applied before the round trip, so the page answers the switch at once; the column is what makes it follow the user.
-  const toggleContrast = (checked: boolean) => {
+  const handleContrastChange = (checked: boolean) => {
     const next = checked ? 'more' : 'system';
     setContrast(next);
     updateSelf({ contrast: next });
@@ -47,7 +47,7 @@ export function PreferencesContent() {
           label={t('c:increase_contrast')}
           description={t('c:increase_contrast.text')}
           checked={contrast === 'more'}
-          onCheckedChange={toggleContrast}
+          onCheckedChange={handleContrastChange}
         />
         {/* Shown from 2xl only: below it the nav sheet never pins (see `isDesktop` in app-nav). */}
         <PreferenceSwitch
@@ -55,16 +55,16 @@ export function PreferencesContent() {
           label={t('c:keep_nav_open')}
           description={t('c:keep_nav_open.text')}
           checked={keepOpenPreference}
-          onCheckedChange={(checked) => toggleKeepOpenPreference(checked)}
+          onCheckedChange={setKeepOpenPreference}
           className="max-2xl:hidden"
         />
-        {showDesktopMenuOption && (
+        {showDetailedMenuOption && (
           <PreferenceSwitch
             id="detailedMenu"
             label={t('c:detailed_menu')}
             description={t('c:detailed_menu.text')}
             checked={detailedMenu}
-            onCheckedChange={toggleDetailedMenu}
+            onCheckedChange={setDetailedMenu}
           />
         )}
       </PreferencesGroup>

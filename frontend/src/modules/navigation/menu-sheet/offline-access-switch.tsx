@@ -9,10 +9,10 @@ export function OfflineAccessSwitch() {
   const offlineAccess = useUIStore((state) => state.offlineAccess);
   const toggleOfflineAccess = useUIStore((state) => state.toggleOfflineAccess);
 
-  const onCheckedChange = (isOffline: boolean) => {
+  const handleCheckedChange = (checked: boolean) => {
     // Delay the toast until after the switch state updates through QueryProvider.
     setTimeout(() => {
-      toaster.info(t(`c:offline_access_${isOffline ? 'on' : 'off'}.text`, { appName: appConfig.name }));
+      toaster.info(t(`c:offline_access_${checked ? 'on' : 'off'}.text`, { appName: appConfig.name }));
     }, 0);
 
     toggleOfflineAccess();
@@ -24,7 +24,7 @@ export function OfflineAccessSwitch() {
       label={t('c:offline_access')}
       description={t('c:offline_access.text')}
       checked={offlineAccess}
-      onCheckedChange={onCheckedChange}
+      onCheckedChange={handleCheckedChange}
     />
   );
 }

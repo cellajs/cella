@@ -6,43 +6,43 @@ import { useEffect, useRef, useState } from 'react';
 import type { EntityType } from 'shared';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import type { UserMenuItem } from '~/modules/me/types';
-import { isPageData } from '~/modules/navigation/menu-sheet/helpers/is-page-data';
-import { MenuItemEdit } from '~/modules/navigation/menu-sheet/item-edit';
-import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
+import { MenuSheetArchivedToggle } from '~/modules/navigation/menu-sheet/archived-toggle';
+import { isMenuItemDragData } from '~/modules/navigation/menu-sheet/helpers/is-menu-item-drag-data';
+import { MenuSheetItemEdit } from '~/modules/navigation/menu-sheet/item-edit';
+import { MenuSheetItemsListEdit } from '~/modules/navigation/menu-sheet/items-list-edit';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
-import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
 import { getDraggableItemData } from '~/utils/get-draggable-item-data';
 
 type DragDropData = { item: UserMenuItem; itemType: EntityType };
 
-interface MenuItemEditWrapperProps {
+interface MenuSheetDraggableItemProps {
   item: UserMenuItem;
-  unarchiveItems: UserMenuItem[];
+  siblings: UserMenuItem[];
   isArchived: boolean;
   detailedMenu: boolean;
   options?: MenuSectionOptions;
   isSubmenuArchivedVisible?: boolean;
-  toggleSubmenuVisibility: (id: string) => void;
+  onToggleSubmenuArchived: (id: string) => void;
 }
 
-export function MenuItemEditWrapper({
+export function MenuSheetDraggableItem({
   item,
-  unarchiveItems,
+  siblings,
   isArchived,
   options,
   isSubmenuArchivedVisible = false,
   detailedMenu,
-  toggleSubmenuVisibility,
-}: MenuItemEditWrapperProps) {
+  onToggleSubmenuArchived,
+}: MenuSheetDraggableItemProps) {
   const dragRef = useRef(null);
   const [closestEdge, setClosestEdge] = useState<Edge | null>(null);
 
-  const handleCanDrop = (sourceData: DragDropData) => {
+  const canDropItem = (sourceData: DragDropData) => {
     return (
-      isPageData(sourceData) &&
+      isMenuItemDragData(sourceData) &&
       sourceData.item.id !== item.id &&
       sourceData.itemType === item.entityType &&
-      unarchiveItems.some((i) => i.id === sourceData.item.id)
+      siblings.some((sibling) => sibling.id === sourceData.item.id)
     );
   };
 
@@ -54,7 +54,7 @@ export function MenuItemEditWrapper({
       draggable({ element, dragHandle: element, canDrag: () => !item.membership.archived, getInitialData: () => data }),
       dropTargetForElements({
         element,
-        canDrop: ({ source }) => handleCanDrop(source.data as DragDropData),
+        canDrop: ({ source }) => canDropItem(source.data as DragDropData),
         getIsSticky: () => true,
         getData: ({ input }) => attachClosestEdge(data, { element, input, allowedEdges: ['top', 'bottom'] }),
         onDrag: ({ self }) => setClosestEdge(extractClosestEdge(self.data)),
@@ -62,14 +62,14 @@ export function MenuItemEditWrapper({
         onDragLeave: () => setClosestEdge(null),
       }),
     );
-  }, [item, unarchiveItems]);
+  }, [item, siblings]);
 
-  const archivedSubitemCount = item.submenu?.filter((i) => i.membership.archived).length ?? 0;
+  const archivedSubitemCount = item.submenu?.filter((sub) => sub.membership.archived).length ?? 0;
 
   return (
     <li data-submenu={!!item.submenu} className="group/menu-options relative my-1">
       <div ref={dragRef}>
-        <MenuItemEdit item={item} siblings={unarchiveItems} icon={options?.icon} />
+        <MenuSheetItemEdit item={item} siblings={siblings} icon={options?.icon} />
         {!item.membership.archived && !!item.submenu?.length && detailedMenu && (
           <div
             data-has-archived={!!archivedSubitemCount}
@@ -78,12 +78,12 @@ export function MenuItemEditWrapper({
             className="group/archived"
           >
             <ul>
-              <MenuSheetItemsEdit data={item.submenu} isArchived={isArchived} />
+              <MenuSheetItemsListEdit items={item.submenu} isArchived={isArchived} />
             </ul>
-            <SectionArchiveButton archiveToggleClick={() => toggleSubmenuVisibility(item.id)} archivedCount={archivedSubitemCount} />
+            <MenuSheetArchivedToggle onToggle={() => onToggleSubmenuArchived(item.id)} archivedCount={archivedSubitemCount} />
             {isSubmenuArchivedVisible && (
               <ul>
-                <MenuSheetItemsEdit data={item.submenu} isArchived={true} />
+                <MenuSheetItemsListEdit items={item.submenu} isArchived={true} />
               </ul>
             )}
           </div>

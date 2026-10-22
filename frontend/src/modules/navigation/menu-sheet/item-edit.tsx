@@ -15,19 +15,19 @@ import { buildMembershipUpdate } from '~/modules/navigation/menu-sheet/helpers/b
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-interface MenuItemEditProps {
+interface MenuSheetItemEditProps {
   item: UserMenuItem;
   /** The list this item is ordered in, sorted; the arrow keys on the handle step through it. */
   siblings: UserMenuItem[];
   icon?: IconComponent;
 }
 
-export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) {
+export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemEditProps) {
   const { t } = useTranslation();
 
   const { mutate: updateMembership, status } = useMemberUpdateMutation();
 
-  const handleUpdateMembershipKey = (key: 'archived' | 'muted') => {
+  const toggleMembershipFlag = (key: 'archived' | 'muted') => {
     if (key === 'archived' && item.membership.archived && !onlineManager.isOnline()) {
       return toaster.warning(t('c:action.offline.text'));
     }
@@ -35,8 +35,8 @@ export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) 
     updateMembership(buildMembershipUpdate(item, key === 'archived' ? { archived: !item.membership.archived } : { muted: !item.membership.muted }));
   };
 
-  const handleRef = useRef<HTMLButtonElement>(null);
-  const refocusAtOrder = useRef<number | null>(null);
+  const dragHandleRef = useRef<HTMLButtonElement>(null);
+  const refocusAtOrderRef = useRef<number | null>(null);
 
   const index = siblings.findIndex((sibling) => sibling.id === item.id);
   const isSortable = !item.membership.archived && siblings.length > 1;
@@ -46,15 +46,15 @@ export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) 
     if (!target) return;
     const ordered = siblings.map((sibling) => ({ id: sibling.id, displayOrder: sibling.membership.displayOrder }));
     const displayOrder = getRelativeOrder(ordered, target.membership.displayOrder, item.id, step < 0 ? 'top' : 'bottom');
-    refocusAtOrder.current = displayOrder;
+    refocusAtOrderRef.current = displayOrder;
     updateMembership(buildMembershipUpdate(item, { displayOrder }));
   };
 
   // React re-inserts a row it moves down, and a removed node drops focus
   useEffect(() => {
-    if (refocusAtOrder.current === null || refocusAtOrder.current !== item.membership.displayOrder) return;
-    refocusAtOrder.current = null;
-    handleRef.current?.focus();
+    if (refocusAtOrderRef.current === null || refocusAtOrderRef.current !== item.membership.displayOrder) return;
+    refocusAtOrderRef.current = null;
+    dragHandleRef.current?.focus();
   });
 
   const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
@@ -73,7 +73,7 @@ export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) 
       url={item.thumbnailUrl}
     />
   );
-  const avatarBox = 'm-2 mx-3 flex shrink-0 group-data-[submenu=false]/menu-options:mx-4 group-data-[submenu=false]/menu-options:my-1';
+  const avatarBoxClass = 'm-2 mx-3 flex shrink-0 group-data-[submenu=false]/menu-options:mx-4 group-data-[submenu=false]/menu-options:my-1';
 
   return (
     <motion.div
@@ -88,14 +88,14 @@ export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) 
         </div>
       )}
       {isSortable ? (
-        // A pointer drags the whole row (item-edit-wrapper.tsx); the handle gives the keyboard the same reorder
+        // A pointer drags the whole row (draggable-item.tsx); the handle gives the keyboard the same reorder
         <button
-          ref={handleRef}
+          ref={dragHandleRef}
           type="button"
           aria-roledescription={t('c:sortable')}
           aria-label={t('c:sortable_position', { name: item.name, position: index + 1, total: siblings.length })}
           onKeyDown={handleKeyDown}
-          className={cn('focus-effect group/drag relative cursor-grab rounded-md active:cursor-grabbing', avatarBox)}
+          className={cn('focus-effect group/drag relative cursor-grab rounded-md active:cursor-grabbing', avatarBoxClass)}
         >
           <span className="inline-flex transition-[opacity,filter] group-hover/options-item:opacity-30 group-hover/options-item:blur-[1px] group-focus-visible/drag:opacity-30 group-focus-visible/drag:blur-[1px]">
             {avatar}
@@ -105,7 +105,7 @@ export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) 
           </span>
         </button>
       ) : (
-        <span className={avatarBox}>{avatar}</span>
+        <span className={avatarBoxClass}>{avatar}</span>
       )}
 
       {/* Not a clipping box: focus scrolls one to reveal a button whose box reaches past it */}
@@ -114,17 +114,17 @@ export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) 
           {item.name} {env.VITE_DEBUG_MODE && <span className="text-muted-foreground/50">#{item.membership.displayOrder}</span>}
         </div>
         <div className="flex items-center gap-2 transition-opacity delay-500">
-          <MenuItemEditButton
+          <MembershipFlagButton
             icon={item.membership.archived ? ArchiveRestoreIcon : ArchiveIcon}
             title={item.membership.archived ? t('c:restore') : t('c:archive')}
-            onClick={() => handleUpdateMembershipKey('archived')}
-            subitem={!item.submenu}
+            onClick={() => toggleMembershipFlag('archived')}
+            isSubitem={!item.submenu}
           />
-          <MenuItemEditButton
+          <MembershipFlagButton
             icon={item.membership.muted ? BellIcon : BellOffIcon}
             title={item.membership.muted ? t('c:unmute') : t('c:mute')}
-            onClick={() => handleUpdateMembershipKey('muted')}
-            subitem={!item.submenu}
+            onClick={() => toggleMembershipFlag('muted')}
+            isSubitem={!item.submenu}
           />
         </div>
       </div>
@@ -132,13 +132,13 @@ export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) 
   );
 }
 
-interface MenuItemEditButtonProps {
+interface MembershipFlagButtonProps {
   icon: React.ElementType;
   title: string;
   onClick: () => void;
-  subitem?: boolean;
+  isSubitem?: boolean;
 }
-function MenuItemEditButton({ icon: Icon, title, onClick, subitem = false }: MenuItemEditButtonProps) {
+function MembershipFlagButton({ icon: Icon, title, onClick, isSubitem = false }: MembershipFlagButtonProps) {
   return (
     <Button
       variant="none"
@@ -147,7 +147,7 @@ function MenuItemEditButton({ icon: Icon, title, onClick, subitem = false }: Men
       aria-label={`Click ${title}`}
       onClick={onClick}
     >
-      <Icon className={subitem ? 'size-3' : 'size-3.25'} />
+      <Icon className={isSubitem ? 'size-3' : 'size-3.25'} />
       {title}
     </Button>
   );

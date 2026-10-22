@@ -1,6 +1,6 @@
 import type { ReactNode, Ref } from 'react';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
-import { MenuSheetPanels } from '~/modules/navigation/menu-sheet/sheet-panel';
+import { MenuSheetPanels } from '~/modules/navigation/menu-sheet/panels';
 import { cn } from '~/utils/cn';
 
 interface NavSheetFrameProps {

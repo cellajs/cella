@@ -5,7 +5,7 @@ import type { UserMenuItem } from '~/modules/me/types';
 import type { navItems } from '~/modules/navigation/nav-items';
 import type { DraggableItemData } from '~/utils/get-draggable-item-data';
 
-export type PageDraggableItemData = DraggableItemData<UserMenuItem, 'menuItem'>;
+export type MenuItemDragData = DraggableItemData<UserMenuItem, 'menuItem'>;
 
 export type NavItemId = (typeof navItems)[number]['id'];
 

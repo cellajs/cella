@@ -11,25 +11,25 @@ import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { Button } from '~/modules/ui/button';
 
-interface MenuSectionButtonProps {
+interface MenuSheetSectionButtonProps {
   options: MenuSectionOptions;
   isEditing: boolean;
   isSectionVisible: boolean;
-  data: UserMenuItem[];
+  items: UserMenuItem[];
   channelIds: string[];
-  toggleIsEditing: () => void;
-  handleCreateAction?: (ref: RefObject<HTMLButtonElement | null>) => void;
+  onToggleEditing: () => void;
+  onCreate?: (ref: RefObject<HTMLButtonElement | null>) => void;
 }
 
-export function MenuSectionButton({
-  data,
+export function MenuSheetSectionButton({
+  items,
   channelIds,
   options,
   isEditing,
   isSectionVisible,
-  handleCreateAction,
-  toggleIsEditing,
-}: MenuSectionButtonProps) {
+  onCreate,
+  onToggleEditing,
+}: MenuSheetSectionButtonProps) {
   const { t } = useTranslation();
   const toggleSection = useNavigationStore((state) => state.toggleSection);
 
@@ -56,7 +56,7 @@ export function MenuSectionButton({
                 {sectionUnseenCount > 0 ? (
                   <CountBadge count={sectionUnseenCount} className="inline-flex" />
                 ) : (
-                  data.filter((i) => !i.membership.archived).length
+                  items.filter((item) => !item.membership.archived).length
                 )}
               </motion.span>
             </div>
@@ -66,10 +66,10 @@ export function MenuSectionButton({
 
           {/* initial={false} so opening the sheet doesn't widen every open section at once, only a toggle does */}
           <AnimatePresence initial={false}>
-            {isSectionVisible && !!data.length && (
+            {isSectionVisible && !!items.length && (
               <motion.div key={`settings-${options.entityType}`} {...widenMotion} className="shrink-0 max-sm:hidden">
                 <TooltipButton toolTipContent={t('c:manage_content')} side="bottom" sideOffset={10}>
-                  <Button className="w-10 px-2 shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={() => toggleIsEditing()}>
+                  <Button className="w-10 px-2 shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={() => onToggleEditing()}>
                     <Settings2Icon className="size-5" />
                   </Button>
                 </TooltipButton>
@@ -78,7 +78,7 @@ export function MenuSectionButton({
           </AnimatePresence>
 
           <AnimatePresence initial={false}>
-            {isSectionVisible && handleCreateAction && (
+            {isSectionVisible && onCreate && (
               <motion.div key={`create-${options.entityType}`} {...widenMotion} className="shrink-0">
                 <TooltipButton toolTipContent={t('c:create')} sideOffset={22} side="right">
                   <Button
@@ -86,7 +86,7 @@ export function MenuSectionButton({
                     className="w-10 px-2 shadow-none"
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleCreateAction(createButtonRef)}
+                    onClick={() => onCreate(createButtonRef)}
                   >
                     <PlusIcon className="size-5" />
                   </Button>

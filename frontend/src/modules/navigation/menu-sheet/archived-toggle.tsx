@@ -4,22 +4,22 @@ import { CountBadge } from '~/modules/common/count-badge';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { Button } from '~/modules/ui/button';
 
-interface SectionArchiveButtonProps {
-  archiveToggleClick: () => void;
+interface MenuSheetArchivedToggleProps {
+  onToggle: () => void;
   archivedCount: number;
   archivedChannelIds?: string[];
 }
 
 const EMPTY_CHANNEL_IDS: string[] = [];
 
-export function SectionArchiveButton({ archiveToggleClick, archivedCount, archivedChannelIds = EMPTY_CHANNEL_IDS }: SectionArchiveButtonProps) {
+export function MenuSheetArchivedToggle({ onToggle, archivedCount, archivedChannelIds = EMPTY_CHANNEL_IDS }: MenuSheetArchivedToggleProps) {
   const { t } = useTranslation();
   const archivedUnseenCount = useUnseenCount(archivedChannelIds);
 
   return (
     <div>
       <Button
-        onClick={archiveToggleClick}
+        onClick={onToggle}
         disabled={archivedCount < 1}
         variant="secondary"
         className="group focus-effect w-full gap-0 bg-transparent p-0 shadow-none ring-inset ring-offset-0 transition duration-300 hover:bg-accent/50 hover:text-accent-foreground group-data-[submenu=true]/archived:h-8"
@@ -41,4 +41,4 @@ export function SectionArchiveButton({ archiveToggleClick, archivedCount, archiv
   );
 }
 
-SectionArchiveButton.displayName = 'SectionArchiveButton';
+MenuSheetArchivedToggle.displayName = 'MenuSheetArchivedToggle';

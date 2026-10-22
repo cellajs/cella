@@ -9,7 +9,7 @@ import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { MenuSheetHeader } from '~/modules/navigation/menu-sheet/header';
 import { buildMembershipUpdate } from '~/modules/navigation/menu-sheet/helpers/build-membership-update';
 import { getRelativeItemOrder } from '~/modules/navigation/menu-sheet/helpers/get-relative-item-order';
-import { isPageData } from '~/modules/navigation/menu-sheet/helpers/is-page-data';
+import { isMenuItemDragData } from '~/modules/navigation/menu-sheet/helpers/is-menu-item-drag-data';
 import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
@@ -17,7 +17,7 @@ import { useUserStore } from '~/modules/user/user-store';
 
 export function MenuSheet() {
   const user = useUserStore((state) => state.user);
-  const { mutateAsync } = useMemberUpdateMutation();
+  const { mutateAsync: updateMembership } = useMemberUpdateMutation();
 
   const { menu, isLoading } = useMenu(user?.id);
 
@@ -25,7 +25,7 @@ export function MenuSheet() {
     const cleanups = [
       monitorForElements({
         canMonitor({ source }) {
-          return isPageData(source.data) && !source.data.item.membership.archived;
+          return isMenuItemDragData(source.data) && !source.data.item.membership.archived;
         },
         async onDrop({ source, location }) {
           const target = location.current.dropTargets[0];
@@ -33,7 +33,7 @@ export function MenuSheet() {
 
           const sourceData = source.data;
           const targetData = target.data;
-          if (!isPageData(targetData) || !isPageData(sourceData)) return;
+          if (!isMenuItemDragData(targetData) || !isMenuItemDragData(sourceData)) return;
 
           const { item: sourceItem } = sourceData;
           const edge: Edge | null = extractClosestEdge(targetData);
@@ -48,7 +48,7 @@ export function MenuSheet() {
 
           if (newOrder === sourceItem.membership.displayOrder) return;
 
-          await mutateAsync(buildMembershipUpdate(sourceItem, { displayOrder: newOrder }));
+          await updateMembership(buildMembershipUpdate(sourceItem, { displayOrder: newOrder }));
         },
       }),
     ];
@@ -60,13 +60,13 @@ export function MenuSheet() {
 
   const renderedSections = appConfig.menuStructure
     .map(({ entityType }) => {
-      const menuData = menu[entityType];
+      const items = menu[entityType];
       const menuSection = getMenuSection(entityType);
       if (!menuSection) return null;
 
-      return <MenuSheetSection key={entityType} options={menuSection} data={menuData} />;
+      return <MenuSheetSection key={entityType} options={menuSection} items={items} />;
     })
-    .filter((el) => el !== null);
+    .filter((section) => section !== null);
 
   return (
     <NavSheetFrame panels>

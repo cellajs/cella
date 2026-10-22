@@ -5,9 +5,9 @@ import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { FocusTrap } from '~/modules/common/focus-trap';
 import { collapseMotion } from '~/modules/navigation/menu-sheet/helpers/collapse-motion';
-import { InfoContent } from '~/modules/navigation/menu-sheet/info-section';
-import { PreferencesContent } from '~/modules/navigation/menu-sheet/preferences-section';
-import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
+import { InfoContent } from '~/modules/navigation/menu-sheet/info-content';
+import { PreferencesContent } from '~/modules/navigation/menu-sheet/preferences-content';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
@@ -60,23 +60,23 @@ export function MenuSheetPanels() {
 
   const barRef = useRef<HTMLDivElement>(null);
   const glideRef = useRef<Animation | null>(null);
-  const paintedTop = useRef<number | null>(null);
+  const paintedTopRef = useRef<number | null>(null);
 
   // In a menu longer than the screen, the bar's place at its end lies lower than the sheet's bottom edge, where it pins.
   // Pinning and unpinning glide over that distance with a transform, on the compositor. The store
   // write comes before React's commit, so the listener reads where the bar is painted, a running glide included.
   useEffect(
     () =>
-      navigationStore.subscribe((state, prev) => {
-        if (!state.menuSheetPanel !== !prev.menuSheetPanel) paintedTop.current = barRef.current?.getBoundingClientRect().top ?? null;
+      useNavigationStore.subscribe((state, prev) => {
+        if (!state.menuSheetPanel !== !prev.menuSheetPanel) paintedTopRef.current = barRef.current?.getBoundingClientRect().top ?? null;
       }),
     [],
   );
 
   useLayoutEffect(() => {
     const bar = barRef.current;
-    const from = paintedTop.current;
-    paintedTop.current = null;
+    const from = paintedTopRef.current;
+    paintedTopRef.current = null;
     if (!bar || from === null) return;
 
     glideRef.current?.cancel();
@@ -84,11 +84,11 @@ export function MenuSheetPanels() {
     glideRef.current = Math.abs(offset) >= 1 ? bar.animate([{ transform: `translateY(${offset}px)` }, { transform: 'none' }], pinGlideTiming) : null;
   }, [hasOpenPanel]);
 
-  const onKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
       // An open hover card takes the Escape first; the next one closes the panel
-      if (e.key === 'Escape' && hasOpenPanel && !isHoverContentOpen()) {
-        e.stopPropagation();
+      if (event.key === 'Escape' && hasOpenPanel && !isHoverContentOpen()) {
+        event.stopPropagation();
         toggleMenuSheetPanel(menuSheetPanel);
       }
     },
@@ -96,7 +96,7 @@ export function MenuSheetPanels() {
   );
 
   return (
-    <div ref={barRef} className={cn('relative z-20 mt-auto', hasOpenPanel && 'sticky bottom-0')} onKeyDown={onKeyDown}>
+    <div ref={barRef} className={cn('relative z-20 mt-auto', hasOpenPanel && 'sticky bottom-0')} onKeyDown={handleKeyDown}>
       <AnimatePresence>
         {hasOpenPanel && (
           <motion.div

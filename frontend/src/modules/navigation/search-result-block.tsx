@@ -8,19 +8,19 @@ import { Badge } from '~/modules/ui/badge';
 import { ComboboxGroup, ComboboxItem, ComboboxSeparator } from '~/modules/ui/combobox';
 import { cn } from '~/utils/cn';
 
-type SearchBlockResult = EnrichedChannel | UserBase;
+type SearchResult = EnrichedChannel | UserBase;
 
-type SearchBlockProps = {
-  results: SearchBlockResult[];
+interface SearchResultBlockProps {
+  results: SearchResult[];
   entityType: ChannelEntityType | 'user';
   /** Hide the leading separator (used for the first visible group). */
   hideSeparator?: boolean;
   /** Owned by the search dialog so it survives result reloads while typing. */
   collapsed: boolean;
   onToggleCollapsed: () => void;
-};
+}
 
-export function SearchResultBlock({ results, entityType, hideSeparator = false, collapsed, onToggleCollapsed }: SearchBlockProps) {
+export function SearchResultBlock({ results, entityType, hideSeparator = false, collapsed, onToggleCollapsed }: SearchResultBlockProps) {
   const { t } = useTranslation();
   const isChannelType = isChannel(entityType);
 
@@ -40,7 +40,7 @@ export function SearchResultBlock({ results, entityType, hideSeparator = false, 
           <span className="grow" />
           <ChevronDownIcon className={cn('size-4 transition-transform', !collapsed && 'rotate-180')} />
         </button>
-        {results.map((item: SearchBlockResult) => {
+        {results.map((item: SearchResult) => {
           return (
             <ComboboxItem
               key={item.id}

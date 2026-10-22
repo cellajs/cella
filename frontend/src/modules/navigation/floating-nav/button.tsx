@@ -37,20 +37,20 @@ export function FloatingNavButton({
   // so touch taps run on touchend. preventDefault there stops the synthesized click entirely, since
   // it would otherwise hit-test against whatever onClick just mounted (e.g. a drawer overlay) and
   // dismiss it. Touchcancel (scroll takeover) and the slop check keep drags from triggering.
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const handleTouchStart = (event: TouchEvent<HTMLButtonElement>) => {
     const touch = event.touches.length === 1 ? event.touches[0] : null;
-    touchStart.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+    touchStartRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
   };
 
   const handleTouchCancel = () => {
-    touchStart.current = null;
+    touchStartRef.current = null;
   };
 
   const handleTouchEnd = (event: TouchEvent<HTMLButtonElement>) => {
-    const start = touchStart.current;
-    touchStart.current = null;
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
     const touch = event.changedTouches[0];
     if (!start || !touch) return;
     if (Math.hypot(touch.clientX - start.x, touch.clientY - start.y) > TAP_SLOP_PX) return;

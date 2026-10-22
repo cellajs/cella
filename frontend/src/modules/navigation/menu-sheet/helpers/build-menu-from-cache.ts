@@ -7,7 +7,7 @@ import { queryClient } from '~/query/query-client';
 
 /** Entity types referenced by the menu structure (entity + subentity) */
 const menuEntityTypes = Array.from(
-  new Set(appConfig.menuStructure.flatMap((s) => [s.entityType, s.subentityType].filter(Boolean))),
+  new Set(appConfig.menuStructure.flatMap((section) => [section.entityType, section.subentityType].filter(Boolean))),
 ) as ChannelEntityType[];
 
 /** Menu items of one entity type from its list query data: the entities that carry the user's membership. */

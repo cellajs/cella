@@ -14,8 +14,8 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { type HistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import { SearchResultBlock } from '~/modules/navigation/menu-sheet/search-result-block';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { SearchResultBlock } from '~/modules/navigation/search-result-block';
 import { Combobox, ComboboxEmpty, ComboboxList } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Skeleton } from '~/modules/ui/skeleton';
@@ -61,17 +61,17 @@ export function AppSearch() {
 
   const { focusRef } = useFocusByRef();
 
-  const deleteItemFromList = (item: string) => {
+  const removeRecentSearch = (search: string) => {
     useNavigationStore.setState((state) => {
       const searches = [...state.recentSearches];
-      const index = searches.indexOf(item);
+      const index = searches.indexOf(search);
       if (index === -1) return;
       searches.splice(index, 1);
       return { ...state, recentSearches: searches };
     });
   };
 
-  const updateRecentSearches = (value: string) => {
+  const saveRecentSearch = (value: string) => {
     useNavigationStore.setState((state) => {
       // Most recent on top, with normalized containment dedupe (shared with docs search).
       const searches = addRecentSearch(state.recentSearches, value);
@@ -81,7 +81,7 @@ export function AppSearch() {
 
   const hasQuery = debouncedSearchValue.length > 0;
 
-  const userQ = useInfiniteQuery({ ...usersListQueryOptions({ q: debouncedSearchValue }), enabled: hasQuery });
+  const userQuery = useInfiniteQuery({ ...usersListQueryOptions({ q: debouncedSearchValue }), enabled: hasQuery });
 
   const channelQueries = Object.entries(getChannelListQueries()).map(([entityType, queryOptions]) => ({
     entityType,
@@ -91,20 +91,20 @@ export function AppSearch() {
       enabled: hasQuery,
     }),
   }));
-  const queries = [userQ, ...channelQueries.map(({ query }) => query)];
+  const queries = [userQuery, ...channelQueries.map(({ query }) => query)];
 
-  const data: Record<string, (EnrichedChannel | UserBase)[]> = {
-    user: hasQuery ? (userQ.data?.pages.flatMap((p) => p.items) ?? []) : [],
+  const resultsByType: Record<string, (EnrichedChannel | UserBase)[]> = {
+    user: hasQuery ? (userQuery.data?.pages.flatMap((page) => page.items) ?? []) : [],
     ...Object.fromEntries(
       channelQueries.map(({ entityType, query }) => [
         entityType,
         // biome-ignore lint/suspicious/noExplicitAny: query data types vary per entity
-        hasQuery ? ((query.data as any)?.pages.flatMap((p: any) => p.items) ?? []) : [],
+        hasQuery ? ((query.data as any)?.pages.flatMap((page: any) => page.items) ?? []) : [],
       ]),
     ),
   };
-  const notFound = Object.values(data).every((items) => items.length === 0);
-  const firstWithResults = searchableEntityTypes.find((entityType) => (data[entityType] ?? []).length > 0);
+  const notFound = Object.values(resultsByType).every((items) => items.length === 0);
+  const firstTypeWithResults = searchableEntityTypes.find((entityType) => (resultsByType[entityType] ?? []).length > 0);
   // The debounce gap counts as loading, so the skeleton shows in place of the empty state.
   const isDebouncePending = searchValue.length > 0 && searchValue !== debouncedSearchValue;
   // The gap is included here too, keeping the input spinner visible while typing. Query activity only counts
@@ -114,8 +114,8 @@ export function AppSearch() {
   const isFetching = isDebouncePending || isQueryFetching;
   const isLoading = searchValue.length > 0 && (isDebouncePending || queries.some((query) => query.isLoading));
 
-  const onSelectItem = (item: EnrichedChannel | UserBase) => {
-    updateRecentSearches(searchValue);
+  const openItem = (item: EnrichedChannel | UserBase) => {
+    saveRecentSearch(searchValue);
 
     if (item.entityType === 'user') {
       navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: item.id }), resetScroll: false });
@@ -138,7 +138,7 @@ export function AppSearch() {
           setSearchValue(selection.value);
           return;
         }
-        onSelectItem(selection as EnrichedChannel | UserBase);
+        openItem(selection as EnrichedChannel | UserBase);
       }}
       inputValue={searchValue}
       onInputValueChange={(value) => setSearchValue(resolveSearchInput(searchValue, value, recentSearches))}
@@ -167,15 +167,15 @@ export function AppSearch() {
           )}
           {isLoading && <SearchResultsSkeleton />}
           <ComboboxList className="h-full max-h-none overflow-visible" hidden={notFound ? !!searchValue.length || !recentSearches.length : isLoading}>
-            {notFound && <SearchHistoryGroup searches={recentSearches} onRemove={deleteItemFromList} />}
+            {notFound && <SearchHistoryGroup searches={recentSearches} onRemove={removeRecentSearch} />}
             {!notFound && (
               <div className="p-1">
                 {searchableEntityTypes.map((entityType) => (
                   <SearchResultBlock
                     key={entityType}
-                    results={data[entityType] ?? []}
+                    results={resultsByType[entityType] ?? []}
                     entityType={entityType}
-                    hideSeparator={entityType === firstWithResults}
+                    hideSeparator={entityType === firstTypeWithResults}
                     collapsed={!!collapsedTypes[entityType]}
                     onToggleCollapsed={() => toggleCollapsed(entityType)}
                   />

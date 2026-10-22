@@ -14,14 +14,14 @@ import type { NavItem, NavItemId, TriggerNavItemFn } from '~/modules/navigation/
 type FloatingNavConfig = { left: NavItemId[]; right: NavItemId[]; ownerPathname?: string };
 
 /** Floating nav buttons across matches, plus the owning route's path, which resets the floating nav on page change. */
-const serializeFloatingNav = (matches: { pathname: string; staticData: StaticDataRouteOption }[]) => {
+const serializeFloatingNavConfig = (matches: { pathname: string; staticData: StaticDataRouteOption }[]) => {
   const left = new Set<NavItemId>();
   const right = new Set<NavItemId>();
   for (const { staticData } of matches) {
     if (staticData.floatingNavButtons?.left) left.add(staticData.floatingNavButtons.left);
     if (staticData.floatingNavButtons?.right) right.add(staticData.floatingNavButtons.right);
   }
-  const ownerPathname = matches.findLast((m) => m.staticData.floatingNavButtons)?.pathname;
+  const ownerPathname = matches.findLast((match) => match.staticData.floatingNavButtons)?.pathname;
   return JSON.stringify({ left: [...left], right: [...right], ownerPathname } satisfies FloatingNavConfig);
 };
 
@@ -82,23 +82,23 @@ export function AppNav() {
   }, [isDesktop, keepOpenPreference, navSheetOpen]);
 
   // A primitive select: matches are new objects on every router write, so selecting them would re-render on each URL change.
-  const floatingNavKey = useRouterState({ select: (s) => serializeFloatingNav(s.matches) });
-  const floatingConfig: FloatingNavConfig = JSON.parse(floatingNavKey);
+  const floatingNavConfigJson = useRouterState({ select: (state) => serializeFloatingNavConfig(state.matches) });
+  const floatingNavConfig: FloatingNavConfig = JSON.parse(floatingNavConfigJson);
   const floatingItems: FloatingNavItem[] = [];
 
   if (isMobile) {
     for (const direction of ['left', 'right'] as const) {
-      for (const id of floatingConfig[direction]) {
-        const item = navItems.find((n) => n.id === id);
-        if (item) floatingItems.push({ id: item.id, icon: item.icon, onClick: () => triggerNavItem(item.id), direction });
+      for (const id of floatingNavConfig[direction]) {
+        const navItem = navItems.find((item) => item.id === id);
+        if (navItem) floatingItems.push({ id: navItem.id, icon: navItem.icon, onClick: () => triggerNavItem(navItem.id), direction });
       }
     }
   }
 
   return (
     <>
-      <FloatingNav items={floatingItems} resetTrigger={floatingConfig.ownerPathname} />
-      {isMobile ? <BottomBarNav triggerNavItem={triggerNavItem} /> : <SidebarNav triggerNavItem={triggerNavItem} />}
+      <FloatingNav items={floatingItems} resetTrigger={floatingNavConfig.ownerPathname} />
+      {isMobile ? <BottomBarNav onNavItemClick={triggerNavItem} /> : <SidebarNav onNavItemClick={triggerNavItem} />}
     </>
   );
 }

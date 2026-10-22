@@ -6,7 +6,7 @@ import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
-import { NavButton } from '~/modules/navigation/nav-buttons';
+import { SidebarNavItemButton } from '~/modules/navigation/nav-buttons';
 import { navItems } from '~/modules/navigation/nav-items';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { StopImpersonation } from '~/modules/navigation/stop-impersonation';
@@ -22,18 +22,18 @@ const baseNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type ===
 const footerNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'footer');
 
 interface SidebarNavProps {
-  triggerNavItem: TriggerNavItemFn;
+  onNavItemClick: TriggerNavItemFn;
 }
 
 /** Widths are set as CSS custom properties; data attributes drive opacity, position and pointer-events. */
-export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
+export function SidebarNav({ onNavItemClick }: SidebarNavProps) {
   const { hasStarted } = useMountedState();
   const isDesktop = useBreakpointAbove('2xl');
 
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const keepNavOpen = useNavigationStore((state) => state.keepNavOpen);
 
-  const navSheetExists = useSheeter((state) => state.sheets.some((s) => s.id === 'nav-sheet' && s.open));
+  const navSheetExists = useSheeter((state) => state.sheets.some((sheet) => sheet.id === 'nav-sheet' && sheet.open));
 
   useBodyClass({ 'keep-nav-open': keepNavOpen });
   useBodyClass({ 'nav-sheet-open': navSheetExists });
@@ -79,12 +79,12 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
                 <SidebarGroupContent>
                   <SidebarMenu className="gap-1">
                     {baseNavItems.map((navItem) => (
-                      <NavButton
+                      <SidebarNavItemButton
                         key={navItem.id}
                         navItem={navItem}
                         isActive={navSheetOpen === navItem.id}
                         isCollapsed={!isExpanded}
-                        onClick={triggerNavItem}
+                        onClick={onNavItemClick}
                       />
                     ))}
                   </SidebarMenu>
@@ -98,12 +98,12 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
               <SidebarMenu className="gap-1">
                 <StopImpersonation isCollapsed={!isExpanded} />
                 {footerNavItems.map((navItem) => (
-                  <NavButton
+                  <SidebarNavItemButton
                     key={navItem.id}
                     navItem={navItem}
                     isActive={navSheetOpen === navItem.id}
                     isCollapsed={!isExpanded}
-                    onClick={triggerNavItem}
+                    onClick={onNavItemClick}
                   />
                 ))}
               </SidebarMenu>

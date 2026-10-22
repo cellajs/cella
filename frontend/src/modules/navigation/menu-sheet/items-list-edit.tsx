@@ -1,36 +1,42 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserMenuItem } from '~/modules/me/types';
+import { MenuSheetDraggableItem } from '~/modules/navigation/menu-sheet/draggable-item';
 import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
-import { MenuItemEditWrapper } from '~/modules/navigation/menu-sheet/item-edit-wrapper';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
-export function MenuSheetItemsEdit({ data, isArchived, options }: { data: UserMenuItem[]; options?: MenuSectionOptions; isArchived: boolean }) {
+interface MenuSheetItemsListEditProps {
+  items: UserMenuItem[];
+  options?: MenuSectionOptions;
+  isArchived: boolean;
+}
+
+export function MenuSheetItemsListEdit({ items, isArchived, options }: MenuSheetItemsListEditProps) {
   const { t } = useTranslation();
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
-  const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
+  const [submenuArchivedVisible, setSubmenuArchivedVisible] = useState<Record<string, boolean>>({});
 
-  if (options && data.length === 0) {
+  if (options && items.length === 0) {
     return <li className="py-2 text-center text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: options.entityType })}</li>;
   }
 
-  const filteredItems = sortAndFilterMenu(data, isArchived);
+  const filteredItems = sortAndFilterMenu(items, isArchived);
 
-  const toggleSubmenuVisibility = (itemId: string) => {
-    setSubmenuVisibility((prevState) => ({ ...prevState, [itemId]: !prevState[itemId] }));
+  const toggleSubmenuArchived = (itemId: string) => {
+    setSubmenuArchivedVisible((prev) => ({ ...prev, [itemId]: !prev[itemId] }));
   };
 
   return filteredItems.map((item) => (
-    <MenuItemEditWrapper
+    <MenuSheetDraggableItem
       key={item.id}
-      unarchiveItems={filteredItems}
+      siblings={filteredItems}
       item={item}
       options={options}
       isArchived={isArchived}
       detailedMenu={detailedMenu}
-      isSubmenuArchivedVisible={submenuVisibility[item.id]}
-      toggleSubmenuVisibility={toggleSubmenuVisibility}
+      isSubmenuArchivedVisible={submenuArchivedVisible[item.id]}
+      onToggleSubmenuArchived={toggleSubmenuArchived}
     />
   ));
 }

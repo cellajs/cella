@@ -7,14 +7,14 @@ import { cn } from '~/utils/cn';
 
 const { hasSidebarTextLabels } = appConfig.theme.navigation;
 
-interface NavButtonProps {
+interface NavItemButtonProps {
   navItem: NavItem;
   isActive: boolean;
   isCollapsed: boolean;
   onClick: TriggerNavItemFn;
 }
 
-function AppNavIcon({ navItem, className }: { navItem: NavItem; className?: string }) {
+function NavItemIcon({ navItem, className }: { navItem: NavItem; className?: string }) {
   // Larger below sm, where the bottom bar shows them.
   const iconClass = cn('size-6 min-h-6 min-w-6 shrink-0 transition-transform group-hover:scale-110 sm:size-5 sm:min-h-5 sm:min-w-5', className);
 
@@ -23,11 +23,11 @@ function AppNavIcon({ navItem, className }: { navItem: NavItem; className?: stri
     return <IconSlot className={iconClass} icon={navItem.icon} />;
   }
 
-  const NavItemIcon = navItem.icon;
-  return <NavItemIcon className={iconClass} strokeWidth={1.8} />;
+  const Icon = navItem.icon;
+  return <Icon className={iconClass} strokeWidth={1.8} />;
 }
 
-function AppNavBadge({ navItem, isActive, className }: { navItem: NavItem; isActive: boolean; className?: string }) {
+function NavItemBadge({ navItem, isActive, className }: { navItem: NavItem; isActive: boolean; className?: string }) {
   if (!navItem.badgeSlot) return null;
   const BadgeSlot = navItem.badgeSlot;
   return <BadgeSlot isActive={isActive} className={className} />;
@@ -40,12 +40,13 @@ interface SidebarNavButtonProps {
   isActive?: boolean;
   ref?: Ref<HTMLButtonElement>;
   className?: string;
-  /** The icon, then anything that renders before the text label. */
+  /** The icon. */
   children: ReactNode;
+  badge?: ReactNode;
 }
 
 /** A sidebar nav button: tooltip while collapsed or without text labels, and the text label when the theme shows one. */
-export function SidebarNavButton({ label, isCollapsed, onClick, isActive, ref, className, children }: SidebarNavButtonProps) {
+export function SidebarNavButton({ label, isCollapsed, onClick, isActive, ref, className, children, badge }: SidebarNavButtonProps) {
   const showTooltip = isCollapsed || !hasSidebarTextLabels;
 
   return (
@@ -63,6 +64,8 @@ export function SidebarNavButton({ label, isCollapsed, onClick, isActive, ref, c
         )}
       >
         {children}
+        {!hasSidebarTextLabels && <span className="sr-only">{label}</span>}
+        {badge}
         {hasSidebarTextLabels && (
           <span className="w-auto overflow-hidden whitespace-nowrap pl-1.5 font-medium opacity-100 transition-[opacity,width] duration-200 ease-linear group-data-[collapsed=true]:w-0 group-data-[collapsed=true]:opacity-0">
             {label}
@@ -73,7 +76,7 @@ export function SidebarNavButton({ label, isCollapsed, onClick, isActive, ref, c
   );
 }
 
-export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButtonProps) {
+export function SidebarNavItemButton({ navItem, isActive, isCollapsed, onClick }: NavItemButtonProps) {
   const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const label = t(`c:${navItem.id}`);
@@ -86,15 +89,14 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
       isActive={isActive}
       onClick={() => onClick(navItem.id, buttonRef)}
       className="relative data-[active=true]:bg-background/50"
+      badge={<NavItemBadge navItem={navItem} isActive={isActive} className="top-2 left-8" />}
     >
-      <AppNavIcon navItem={navItem} />
-      {!hasSidebarTextLabels && <span className="sr-only">{label}</span>}
-      <AppNavBadge navItem={navItem} isActive={isActive} className="top-2 left-8" />
+      <NavItemIcon navItem={navItem} />
     </SidebarNavButton>
   );
 }
 
-export function BottomBarNavButton({ navItem, isActive, onClick }: Omit<NavButtonProps, 'isCollapsed'>) {
+export function BottomBarNavItemButton({ navItem, isActive, onClick }: Omit<NavItemButtonProps, 'isCollapsed'>) {
   const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -111,9 +113,9 @@ export function BottomBarNavButton({ navItem, isActive, onClick }: Omit<NavButto
         'text-sidebar-foreground',
       )}
     >
-      <AppNavIcon navItem={navItem} />
+      <NavItemIcon navItem={navItem} />
       <span className="sr-only">{t(`c:${navItem.id}`)}</span>
-      <AppNavBadge navItem={navItem} isActive={isActive} className="top-1 right-1" />
+      <NavItemBadge navItem={navItem} isActive={isActive} className="top-1 right-1" />
     </button>
   );
 }

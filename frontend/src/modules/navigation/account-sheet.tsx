@@ -20,13 +20,13 @@ import { fallbackContentRef } from '~/utils/fallback-content-ref';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 /** An `onClick` row acts in place; a `to` row links, and while offline it warns and stays put unless `offlineAccess`. */
-type AccountButtonProps = { icon: IconComponent; label: string; id: string } & (
+type AccountButtonProps = { icon: IconComponent; label: string; id: string; destructive?: boolean } & (
   | { onClick: () => void }
   | ({ to: string } & ({ offlineAccess: false; isOnline: boolean } | { offlineAccess: true; isOnline?: never }))
 );
 
 function AccountButton(props: AccountButtonProps) {
-  const { icon: Icon, label, id } = props;
+  const { icon: Icon, label, id, destructive } = props;
   const { t } = useTranslation();
 
   const isDisabled = 'to' in props && !props.offlineAccess && !props.isOnline;
@@ -36,8 +36,8 @@ function AccountButton(props: AccountButtonProps) {
       variant="ghost"
       size="lg"
       id={id}
-      className="focus-effect w-full justify-start text-left hover:bg-accent/50 data-[sign-out=true]:text-destructive"
-      data-sign-out={id === 'btn-signout'}
+      className="focus-effect w-full justify-start text-left hover:bg-accent/50 data-[destructive=true]:text-destructive"
+      data-destructive={destructive}
       onClick={'onClick' in props ? props.onClick : undefined}
       render={
         'to' in props ? (
@@ -76,12 +76,12 @@ export function AccountSheet() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const buttonWrapper = useRef<HTMLDivElement | null>(null);
+  const frameRef = useRef<HTMLDivElement | null>(null);
   const { hasStarted } = useMountedState();
 
   useEffect(() => {
     if (isMobile) return;
-    const firstRow = buttonWrapper.current?.querySelector<HTMLElement>('#btn-profile');
+    const firstRow = frameRef.current?.querySelector<HTMLElement>('#btn-profile');
     firstRow?.focus();
   }, []);
 
@@ -106,7 +106,7 @@ export function AccountSheet() {
   };
 
   return (
-    <NavSheetFrame ref={buttonWrapper} panels>
+    <NavSheetFrame ref={frameRef} panels>
       <div className="flex items-center justify-between px-3 pt-3">
         <h2 className="p-2 font-semibold text-base">{t('c:account')}</h2>
       </div>
@@ -146,7 +146,15 @@ export function AccountSheet() {
           <AccountButton offlineAccess={false} isOnline={isOnline} icon={WrenchIcon} id="btn-system" label={t('c:system_panel')} to="/system" />
         )}
         {isInstalledApp() && <AccountButton icon={RefreshCwIcon} id="btn-refresh" label={t('c:refresh')} onClick={refresh} />}
-        <AccountButton offlineAccess={false} isOnline={isOnline} icon={LogOutIcon} id="btn-signout" label={t('c:sign_out')} to="/auth/sign-out" />
+        <AccountButton
+          offlineAccess={false}
+          isOnline={isOnline}
+          icon={LogOutIcon}
+          id="btn-signout"
+          label={t('c:sign_out')}
+          to="/auth/sign-out"
+          destructive
+        />
       </div>
     </NavSheetFrame>
   );

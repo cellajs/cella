@@ -14,10 +14,10 @@ export function FocusTarget({ target }: { target: keyof typeof focusTargets }) {
 
 /** Adds `tabindex=-1` when needed, so portaled content can take focus. */
 function focusById(id: string) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
-  el.focus();
+  const element = document.getElementById(id);
+  if (!element) return;
+  if (!element.hasAttribute('tabindex')) element.setAttribute('tabindex', '-1');
+  element.focus();
 }
 
 /** Where each bridge sends focus, and its label while it has focus. */

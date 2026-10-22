@@ -29,8 +29,8 @@ export function useMenu(userId: string | undefined) {
     return buildMenu(itemsByType, appConfig.menuStructure);
   }, [lists, results]);
 
-  const isLoading = results.some((r) => r.isLoading || r.isPending);
-  const error = results.find((r) => r.error)?.error;
+  const isLoading = results.some((result) => result.isLoading || result.isPending);
+  const error = results.find((result) => result.error)?.error;
 
   return { menu, isLoading, error };
 }

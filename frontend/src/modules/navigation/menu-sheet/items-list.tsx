@@ -9,36 +9,36 @@ import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 
-interface MenuSheetItemsProps {
-  data: UserMenuItem[];
-  type: ChannelEntityType;
+interface MenuSheetItemsListProps {
+  items: UserMenuItem[];
+  entityType: ChannelEntityType;
   isArchived: boolean;
   options?: MenuSectionOptions;
   className?: string;
 }
 
-export function MenuSheetItems({ data, type, isArchived, options, className }: MenuSheetItemsProps) {
+export function MenuSheetItemsList({ items, entityType, isArchived, options, className }: MenuSheetItemsListProps) {
   const { t } = useTranslation();
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
 
-  const buttonRef = useRef(null);
+  const createButtonRef = useRef(null);
 
   const renderNoItems = () =>
     options?.createAction ? (
       <li className="flex items-center">
-        <Button ref={buttonRef} className="w-full" variant="ghost" onClick={() => options.createAction?.(buttonRef)}>
+        <Button ref={createButtonRef} className="w-full" variant="ghost" onClick={() => options.createAction?.(createButtonRef)}>
           <PlusIcon className="size-3.5" />
           <span className="text-sm">
-            {t('c:create_your_first')} {t(type).toLowerCase()}
+            {t('c:create_your_first')} {t(entityType).toLowerCase()}
           </span>
         </Button>
       </li>
     ) : (
-      <li className="py-2 text-center text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: t(type).toLowerCase() })}</li>
+      <li className="py-2 text-center text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: t(entityType).toLowerCase() })}</li>
     );
 
   const renderItems = () => {
-    const filteredItems = sortAndFilterMenu(data, isArchived);
+    const filteredItems = sortAndFilterMenu(items, isArchived);
     return (
       <>
         {filteredItems.map((item) => (
@@ -46,7 +46,7 @@ export function MenuSheetItems({ data, type, isArchived, options, className }: M
             <MenuSheetItem item={item} className={className} icon={options?.icon} />
             {!item.membership.archived && !!item.submenu?.length && detailedMenu && (
               <ul>
-                <MenuSheetItems type={item.submenu[0].entityType} data={item.submenu} isArchived={false} />
+                <MenuSheetItemsList entityType={item.submenu[0].entityType} items={item.submenu} isArchived={false} />
               </ul>
             )}
           </li>
@@ -55,5 +55,5 @@ export function MenuSheetItems({ data, type, isArchived, options, className }: M
     );
   };
 
-  return data.length === 0 ? renderNoItems() : renderItems();
+  return items.length === 0 ? renderNoItems() : renderItems();
 }

@@ -1,5 +1,5 @@
 import { useMountedState } from '~/hooks/use-mounted-state';
-import { BottomBarNavButton } from '~/modules/navigation/nav-buttons';
+import { BottomBarNavItemButton } from '~/modules/navigation/nav-buttons';
 import { navItems } from '~/modules/navigation/nav-items';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
@@ -7,10 +7,10 @@ import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 const baseNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'base');
 
 interface BottomBarNavProps {
-  triggerNavItem: TriggerNavItemFn;
+  onNavItemClick: TriggerNavItemFn;
 }
 
-export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
+export function BottomBarNav({ onNavItemClick }: BottomBarNavProps) {
   const { hasStarted } = useMountedState();
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const floatingNavActive = useNavigationStore((state) => state.floatingNavActive);
@@ -26,7 +26,7 @@ export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
       <ul className="flex w-full flex-row justify-between p-1 px-2">
         {baseNavItems.map((navItem) => (
           <li key={navItem.id} className="flex justify-start">
-            <BottomBarNavButton navItem={navItem} isActive={navSheetOpen === navItem.id} onClick={triggerNavItem} />
+            <BottomBarNavItemButton navItem={navItem} isActive={navSheetOpen === navItem.id} onClick={onNavItemClick} />
           </li>
         ))}
       </ul>

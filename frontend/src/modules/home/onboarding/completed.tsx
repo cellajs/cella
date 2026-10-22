@@ -17,7 +17,7 @@ import { flattenInfiniteData } from '~/query/basic/flatten';
 export function OnboardingCompleted() {
   const { t } = useTranslation();
   const user = useCurrentUser();
-  const setSectionsDefault = useNavigationStore((state) => state.setSectionsDefault);
+  const resetSections = useNavigationStore((state) => state.resetSections);
 
   const { mutate } = useUpdateSelfFlagsMutation();
 
@@ -39,8 +39,8 @@ export function OnboardingCompleted() {
 
     didRun.current = true;
     mutate({ userFlags: { finishedOnboarding: true } });
-    if (hasOrganization) setSectionsDefault();
-  }, [mutate, setSectionsDefault, hasOrganization, orgQuery.isFetching]);
+    if (hasOrganization) resetSections();
+  }, [mutate, resetSections, hasOrganization, orgQuery.isFetching]);
 
   return (
     <div className="relative z-1 mx-auto flex h-svh min-w-full max-w-3xl flex-col items-center justify-center gap-6 p-4 text-center">
