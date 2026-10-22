@@ -8,6 +8,7 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { AvatarFormField } from '~/modules/common/form-fields/avatar';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
@@ -16,7 +17,6 @@ import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useStepper } from '~/modules/common/stepper/stepper';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
-import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
@@ -68,7 +68,7 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
       form.reset(updatedUser);
       if (isSheet) sheeter.getState().remove(formContainerId);
 
-      nextStep?.();
+      nextStep();
 
       callback?.({ data: updatedUser, status: 'success' });
     };
@@ -113,10 +113,7 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
                   name="language"
                   render={({ field }) => (
                     <FormItem name="language">
-                      <FormLabel>
-                        {t('c:language')}
-                        <span className="ml-1 opacity-50">*</span>
-                      </FormLabel>
+                      <FormLabel required>{t('c:language')}</FormLabel>
                       <SelectLanguage options={[...appConfig.languages]} value={field.value ?? appConfig.defaultLanguage} onChange={field.onChange} />
                       <FormMessage />
                     </FormItem>
@@ -143,11 +140,7 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
           <SubmitButton disabled={!compact && (!form.isDirty || Object.keys(form.formState.errors).length > 0)} loading={isPending}>
             {t(`c:${compact ? 'continue' : 'save_changes'}`)}
           </SubmitButton>
-          {!children && (
-            <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.isDirty ? '' : 'invisible'}>
-              {t('c:cancel')}
-            </Button>
-          )}
+          {!children && <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />}
           {children}
         </div>
       </form>

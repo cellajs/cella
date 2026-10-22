@@ -61,7 +61,7 @@ function StepperlessForm() {
       <p>optional: {String(isOptionalStep)}</p>
       <Button
         onClick={() => {
-          nextStep?.();
+          nextStep();
           setSubmitted(true);
         }}
       >

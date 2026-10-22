@@ -6,6 +6,7 @@ import type { Connection, Tenant } from 'sdk';
 import { appConfig } from 'shared';
 import { z } from 'zod';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { HelpText } from '~/modules/common/help-text';
 import { Spinner } from '~/modules/common/spinner';
@@ -241,9 +242,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
                   <SubmitButton disabled={!form.isDirty} loading={creating}>
                     {t('c:create_resource', { resource: t('c:connection').toLowerCase() })}
                   </SubmitButton>
-                  <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.isDirty ? '' : 'invisible'}>
-                    {t('c:cancel')}
-                  </Button>
+                  <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />
                 </div>
               </form>
             </Form>

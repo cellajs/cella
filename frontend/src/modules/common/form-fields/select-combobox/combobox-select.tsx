@@ -1,11 +1,14 @@
 import { ChevronDownIcon, SearchIcon } from 'lucide-react';
 import * as React from 'react';
+import type { FieldValues } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { Button } from '~/modules/ui/button';
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, ComboboxPrimitive } from '~/modules/ui/combobox';
+import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
 export interface ComboBoxOption {
   value: string;
@@ -46,9 +49,18 @@ export function ComboboxSelect({
     resource: 'c:item' as TKey,
     ...passedPlaceholders,
   };
+  const resource = t(placeholders.resource).toLowerCase();
+  const triggerText = t(placeholders.trigger, { resource });
 
   const selectedOption = options.find((o) => o.value === value) ?? null;
   const anchorRef = React.useRef<HTMLDivElement>(null);
+
+  const optionLabel = (option: ComboBoxOption, avatarClassName?: string) => (
+    <>
+      {renderAvatar && <EntityAvatar className={avatarClassName} id={option.value} name={option.label} url={option.url} />}
+      {renderOption ? renderOption(option) : <span className="truncate">{option.label}</span>}
+    </>
+  );
 
   return (
     <Combobox<ComboBoxOption>
@@ -64,13 +76,7 @@ export function ComboboxSelect({
     >
       {searchableTrigger ? (
         <div ref={anchorRef}>
-          <ComboboxInput
-            placeholder={t(placeholders.trigger, { resource: t(placeholders.resource).toLowerCase() })}
-            showTrigger
-            showClear={clearable && !!selectedOption}
-            disabled={disabled}
-            className="w-full"
-          />
+          <ComboboxInput placeholder={triggerText} showTrigger showClear={clearable && !!selectedOption} disabled={disabled} className="w-full" />
         </div>
       ) : (
         <ComboboxPrimitive.Trigger
@@ -78,14 +84,9 @@ export function ComboboxSelect({
           render={<Button variant="input" aria-haspopup="listbox" className="w-full justify-between truncate font-normal" disabled={disabled} />}
         >
           {selectedOption ? (
-            <div className="flex items-center gap-2 truncate">
-              {renderAvatar && (
-                <EntityAvatar className="size-6 shrink-0" id={selectedOption.value} name={selectedOption.label} url={selectedOption.url} />
-              )}
-              {renderOption ? renderOption(selectedOption) : <span className="truncate">{selectedOption.label}</span>}
-            </div>
+            <div className="flex items-center gap-2 truncate">{optionLabel(selectedOption, 'size-6 shrink-0')}</div>
           ) : (
-            <span className="truncate text-muted-foreground">{t(placeholders.trigger, { resource: t(placeholders.resource).toLowerCase() })}</span>
+            <span className="truncate text-muted-foreground">{triggerText}</span>
           )}
           <ChevronDownIcon className="size-4 shrink-0 opacity-50" />
         </ComboboxPrimitive.Trigger>
@@ -95,17 +96,58 @@ export function ComboboxSelect({
         <ComboboxList>
           {(item) => (
             <ComboboxItem key={item.value} value={item}>
-              <div className="flex items-center gap-2">
-                {renderAvatar && <EntityAvatar id={item.value} name={item.label} url={item.url} />}
-                {renderOption ? renderOption(item) : <span className="truncate">{item.label}</span>}
-              </div>
+              <div className="flex items-center gap-2">{optionLabel(item)}</div>
             </ComboboxItem>
           )}
         </ComboboxList>
         <ComboboxEmpty>
-          <ContentPlaceholder icon={SearchIcon} title={placeholders.notFound} titleProps={{ resource: t(placeholders.resource).toLowerCase() }} />
+          <ContentPlaceholder icon={SearchIcon} title={placeholders.notFound} titleProps={{ resource }} />
         </ComboboxEmpty>
       </ComboboxContent>
     </Combobox>
+  );
+}
+
+type ComboboxFormFieldProps<TFieldValues extends FieldValues> = Pick<BaseFormFieldProps<TFieldValues>, 'control' | 'name' | 'disabled'> &
+  Omit<ComboboxSelectProps, 'value' | 'onChange' | 'disabled' | 'searchableTrigger'> & {
+    /** Without one the field renders an empty label. */
+    label?: string;
+    /** Marks the label as required. */
+    required?: boolean;
+    /** Runs after the field takes the picked value, an empty string once cleared. */
+    onSelect?: (value: string) => void;
+  };
+
+/** `ComboboxSelect` with a searchable trigger, as a labelled form field. */
+export function ComboboxFormField<TFieldValues extends FieldValues>({
+  control,
+  name,
+  label,
+  required,
+  disabled,
+  onSelect,
+  ...comboboxProps
+}: ComboboxFormFieldProps<TFieldValues>) {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field: { value, onChange } }) => (
+        <FormItem name={name} disabled={disabled}>
+          <FormLabel required={required}>{label}</FormLabel>
+          <ComboboxSelect
+            {...comboboxProps}
+            value={value}
+            onChange={(nextValue) => {
+              onChange(nextValue);
+              onSelect?.(nextValue);
+            }}
+            disabled={disabled}
+            searchableTrigger
+          />
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   );
 }

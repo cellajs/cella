@@ -1,14 +1,14 @@
 import type { ImageEditorOptions } from '@uppy/image-editor';
 import type { UploadTemplateId } from 'shared';
 
+/** Templates that take one cropped image, by the aspect ratio they crop to. */
+const imageAspectRatios: Partial<Record<UploadTemplateId, number>> = { avatar: 1, cover: 3 };
+
+export const isImageTemplate = (templateId: UploadTemplateId) => templateId in imageAspectRatios;
+
 const baseCropperOptions = {
-  croppedCanvasOptions: {},
-  background: false,
-  autoCropArea: 1,
-  responsive: true,
   guides: false,
   center: false,
-  Highlight: false,
   movable: false,
   rotatable: false,
   scalable: false,
@@ -29,13 +29,8 @@ const baseActions = {
   cropWidescreenVertical: false,
 };
 
-export const getImageEditorOptions = (mode: UploadTemplateId | undefined): ImageEditorOptions => {
-  const options: ImageEditorOptions = { quality: 0.9, actions: baseActions, cropperOptions: baseCropperOptions };
-
-  if (!options.cropperOptions) return options;
-
-  if (mode === 'cover') options.cropperOptions.aspectRatio = 3 / 1;
-  if (mode === 'avatar') options.cropperOptions.aspectRatio = 1;
-
-  return options;
-};
+export const getImageEditorOptions = (templateId: UploadTemplateId): ImageEditorOptions => ({
+  quality: 0.9,
+  actions: baseActions,
+  cropperOptions: { ...baseCropperOptions, aspectRatio: imageAspectRatios[templateId] },
+});

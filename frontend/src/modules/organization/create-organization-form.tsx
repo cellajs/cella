@@ -7,6 +7,7 @@ import { generateId } from 'shared/utils/entity-id';
 import type { z } from 'zod';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
@@ -14,7 +15,6 @@ import { useStepper } from '~/modules/common/stepper/stepper';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationCreateMutation } from '~/modules/organization/query';
 import { useSelfCreateTenantMutation } from '~/modules/tenants/query';
-import { Button } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/field';
 import { formResolver } from '~/utils/form-resolver';
 
@@ -49,7 +49,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
     form.reset();
     toaster.success(t('c:success.create_resource', { resource: t('c:organization') }));
     callback?.({ data: createdOrganization, status: 'success' });
-    nextStep?.();
+    nextStep();
   };
 
   const onSubmit = async (values: FormValues) => {
@@ -94,11 +94,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
           </SubmitButton>
           {children}
 
-          {!children && (
-            <Button type="reset" variant="secondary" className={form.isDirty ? '' : 'invisible'} onClick={() => form.reset()}>
-              {t('c:cancel')}
-            </Button>
-          )}
+          {!children && <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />}
         </div>
       </form>
     </Form>

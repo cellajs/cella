@@ -81,11 +81,7 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
             {isCompletedStep ? <Check className="size-4" /> : <span className="text-center font-medium text-md">{index + 1}</span>}
           </Button>
           {!!label && (
-            <div
-              aria-current={isCurrentStep ? 'step' : undefined}
-              className="ms-2 flex flex-col"
-              style={{ opacity: isCurrentStep || isCompletedStep ? 1 : 0.8 }}
-            >
+            <div className="ms-2 flex flex-col" style={{ opacity: isCurrentStep || isCompletedStep ? 1 : 0.8 }}>
               <span className="text-sm">{label}</span>
             </div>
           )}

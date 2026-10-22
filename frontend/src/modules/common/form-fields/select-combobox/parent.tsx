@@ -3,9 +3,8 @@ import type { FieldValues } from 'react-hook-form';
 import type { ChannelBase } from 'sdk';
 import type { ChannelEntityType } from 'shared';
 import { getChannelListQuery } from '~/lib/entity-modules';
-import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/common/form-fields/select-combobox/combobox-select';
+import { ComboboxFormField, type ComboboxSelectProps } from '~/modules/common/form-fields/select-combobox/combobox-select';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
-import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { useCurrentUser } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 
@@ -49,40 +48,20 @@ export function SelectParentFormField<TFieldValues extends FieldValues>({
   const options = opts ?? items.map((i) => ({ value: i.id, label: i.name, url: i.thumbnailUrl ?? undefined }));
 
   return (
-    <FormField
+    <ComboboxFormField
       control={control}
       name={name}
-      render={({ field: { value, onChange } }) => (
-        <FormItem name={name} aria-disabled={disabled}>
-          <FormLabel>
-            {label}
-            {required && <span className="ml-1 opacity-50">*</span>}
-          </FormLabel>
-
-          <ComboboxSelect
-            options={options}
-            value={value}
-            onChange={(nextValue) => {
-              onChange(nextValue);
-
-              const selectedItem = items.find((item) => item.id === nextValue);
-              if (selectedItem && onSelect) onSelect(selectedItem);
-            }}
-            disabled={disabled}
-            clearable={clearable}
-            searchableTrigger
-            renderAvatar
-            placeholders={{
-              trigger: 'c:select_resource',
-              search: 'c:placeholder.search',
-              notFound: 'c:no_resource_found',
-              resource: `c:${parentType}`,
-            }}
-          />
-
-          <FormMessage />
-        </FormItem>
-      )}
+      label={label}
+      required={required}
+      disabled={disabled}
+      options={options}
+      onSelect={(nextValue) => {
+        const selectedItem = items.find((item) => item.id === nextValue);
+        if (selectedItem && onSelect) onSelect(selectedItem);
+      }}
+      clearable={clearable}
+      renderAvatar
+      placeholders={{ trigger: 'c:select_resource', resource: `c:${parentType}` }}
     />
   );
 }

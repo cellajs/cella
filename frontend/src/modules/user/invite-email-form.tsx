@@ -23,7 +23,7 @@ export function InviteEmailForm({ channel, dialog: isDialog, children }: Props) 
 
   const { onSubmit, isPending } = useInviteSubmit(channel, isDialog, () => {
     form.reset(undefined, { keepDirtyValues: true });
-    nextStep?.();
+    nextStep();
   });
 
   return (

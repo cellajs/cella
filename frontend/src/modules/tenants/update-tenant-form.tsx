@@ -10,12 +10,12 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import type { TKey } from '~/lib/i18n-locales';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useTenantUpdateMutation } from '~/modules/tenants/query';
-import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { FieldContent, FieldLabel, FieldLayout, FieldTitle, Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
@@ -139,9 +139,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
             {t('c:save_changes')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.isDirty ? '' : 'invisible'}>
-            {t('c:cancel')}
-          </Button>
+          <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />
         </div>
       </form>
     </Form>

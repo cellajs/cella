@@ -1,41 +1,38 @@
 import type { AssemblyResponse } from '@uppy/transloadit';
 import { t } from 'i18next';
+import type { UploadTemplateId } from 'shared';
 import { uploadTemplates } from 'shared/transloadit-config';
-import type { UploadContext, UploadStatus } from '~/modules/attachment/offline/attachments-db';
+import type { UploadStatus } from '~/modules/attachment/offline/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
 
-type PrepareFilesForOffline = (
-  files: Record<string, CustomUppyFile>,
-  tokenQuery: UploadTokenQuery,
-  uploadStatus?: UploadStatus,
-) => Promise<AssemblyResponse>;
+/** Stores each file's blob locally, under the id its attachment row will be created with. */
+export const storeUploadBlobs = async (files: CustomUppyFile[], organizationId: string, templateId: UploadTemplateId, status: UploadStatus) => {
+  for (const file of files) await attachmentStorage.storeUploadBlob(file, organizationId, status, { templateId }, file.meta.attachmentId);
+};
 
 /**
  * Prepares files for offline/local storage and returns an assembly response.
  * Stores blobs in Dexie; the upload service uploads them once cloud storage is reachable.
  */
-export const prepareFilesForOffline: PrepareFilesForOffline = async (files, tokenQuery, uploadStatus = 'pending') => {
-  const template = uploadTemplates.attachment;
-  const templateKey = template.use[0];
-  const organizationId = tokenQuery.organizationId;
+export const prepareFilesForOffline = async (
+  files: CustomUppyFile[],
+  { organizationId, templateId }: UploadTokenQuery,
+  uploadStatus: UploadStatus,
+): Promise<AssemblyResponse> => {
+  const templateKey = uploadTemplates.attachment.use[0];
 
   if (!organizationId) {
     throw new Error('organizationId required for local storage');
   }
 
-  const uploadContext: UploadContext = { templateId: tokenQuery.templateId };
-
-  // Store each file blob locally, under the id its attachment row will be created with.
-  for (const file of Object.values(files)) {
-    await attachmentStorage.storeUploadBlob(file, organizationId, uploadStatus, uploadContext, file.meta.attachmentId);
-  }
+  await storeUploadBlobs(files, organizationId, templateId, uploadStatus);
 
   toaster.info(t('c:saved_on_this_device'));
 
-  const localFiles = Object.values(files).map((el) => {
+  const localFiles = files.map((el) => {
     const basename = el.meta.name?.replace(`.${el.extension}`, '');
     const type = el.type?.split('/')[0] || 'file';
 
@@ -75,6 +72,8 @@ export const prepareFilesForOffline: PrepareFilesForOffline = async (files, toke
     };
   });
 
+  const totalBytes = localFiles.reduce((total, file) => total + file.size, 0);
+
   return {
     ok: 'ASSEMBLY_COMPLETED',
     assembly_id: `offline_${Date.now()}`,
@@ -82,8 +81,8 @@ export const prepareFilesForOffline: PrepareFilesForOffline = async (files, toke
     assembly_ssl_url: '',
     start_date: new Date().toISOString(),
     execution_duration: 0,
-    bytes_received: localFiles.reduce((total, file) => total + (file.size || 0), 0),
-    bytes_expected: localFiles.reduce((total, file) => total + (file.size || 0), 0),
+    bytes_received: totalBytes,
+    bytes_expected: totalBytes,
     uploads: localFiles,
     results: { [templateKey]: localFiles },
   };

@@ -14,13 +14,13 @@ import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { blocknoteFieldIsDirty } from '~/modules/common/blocknote/helpers/blocknote-field-is-dirty';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SelectRoles } from '~/modules/common/form-fields/select-roles';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import type { MutationData } from '~/query/types';
@@ -71,8 +71,6 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
     const body = { ...data, organizationIds, content: blocksToHTML(data.content) };
     _sendNewsletter({ body, query: { toSelf: !!testOnly } });
   };
-
-  const cancel = () => form.reset();
 
   const canSend = () => {
     if (!form.isDirty) return false;
@@ -147,9 +145,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
           <SubmitButton disabled={!canSend()} loading={isPending} icon={<SendIcon />}>
             {testOnly ? t('c:send_test_email') : t('c:send')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" className={isDirty() ? '' : 'invisible'} aria-label={t('c:cancel')} onClick={cancel}>
-            {t('c:cancel')}
-          </Button>
+          <CancelButton dirty={isDirty()} onClick={() => form.reset()} />
           <div className="flex items-center gap-2 max-sm:mt-2">
             <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="ml-4 size-4" />
             <label htmlFor="testOnly" className="items-center text-sm">

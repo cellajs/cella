@@ -1,4 +1,3 @@
-import { Field } from '@base-ui/react/field';
 import { useMutation } from '@tanstack/react-query';
 import { UndoIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -12,7 +11,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import type { ApiError } from '~/lib/api';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { Button } from '~/modules/ui/button';
-import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
 
@@ -25,14 +24,10 @@ type SlugFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<
   prefix?: string;
 };
 
-/** Field.Control wrapper, for automatic label and aria association. */
-function SlugInput(props: React.ComponentProps<typeof InputGroupInput>) {
-  return <Field.Control render={<InputGroupInput {...props} />} />;
-}
-
 export function SlugFormField<TFieldValues extends FieldValues>({
   control,
   label,
+  disabled,
   previousSlug,
   description,
   nameValue,
@@ -55,11 +50,12 @@ export function SlugFormField<TFieldValues extends FieldValues>({
 
   const prefix = customPrefix;
 
-  const inputClassName = cn({
-    'ring-2 focus-ring:focus-visible:ring-2': isSlugAvailable !== 'blank',
-    'ring-success focus-visible:ring-success': isSlugAvailable === 'available',
-    'ring-destructive focus-visible:ring-destructive': isSlugAvailable === 'notAvailable',
-  });
+  // Repeated on the group's focus state, whose own ring color would hide the answer while the user types
+  const inputClassName = cn(
+    isSlugAvailable !== 'blank' && 'ring-2',
+    isSlugAvailable === 'available' && 'ring-success focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-success',
+    isSlugAvailable === 'notAvailable' && 'ring-destructive focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-destructive',
+  );
 
   const form = useFormContext<{ slug: string }>();
 
@@ -125,22 +121,22 @@ export function SlugFormField<TFieldValues extends FieldValues>({
       control={control}
       name={name as Path<TFieldValues>}
       render={({ field: { value: formFieldValue, onChange, ...rest } }) => (
-        <FormItem name={name}>
-          <FormLabel help={description}>
+        <FormItem name={name} disabled={disabled}>
+          <FormLabel help={description} required>
             {label}
-            <span className="ml-1 opacity-50">*</span>
           </FormLabel>
           <InputGroup className={inputClassName}>
-            <SlugInput
-              type={entityType}
-              onFocus={() => setDeviating(true)}
-              value={formFieldValue || ''}
-              onChange={(event) => onChange(event.target.value.toLowerCase())}
-              {...rest}
-            />
+            <FormControl>
+              <InputGroupInput
+                onFocus={() => setDeviating(true)}
+                value={formFieldValue || ''}
+                onChange={(event) => onChange(event.target.value.toLowerCase())}
+                {...rest}
+              />
+            </FormControl>
             {prefix && (
               <InputGroupAddon>
-                <InputGroupText id="slug-prefix" className="text-xs" style={{ opacity: formFieldValue ? 1 : 0.5 }}>
+                <InputGroupText className="text-xs" style={{ opacity: formFieldValue ? 1 : 0.5 }}>
                   {prefix}
                 </InputGroupText>
               </InputGroupAddon>

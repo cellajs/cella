@@ -10,6 +10,7 @@ import { persistAttachments } from '~/modules/attachment/helpers/persist-attachm
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { PopConfirm } from '~/modules/common/popconfirm';
@@ -135,9 +136,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
             {t('c:save_changes')}
           </SubmitButton>
-          <Button variant="secondary" onClick={openDiscardConfirm} className={form.isDirty ? '' : 'invisible'}>
-            {t('c:cancel')}
-          </Button>
+          <CancelButton type="button" dirty={form.isDirty} onClick={openDiscardConfirm} />
         </div>
       </form>
     </Form>

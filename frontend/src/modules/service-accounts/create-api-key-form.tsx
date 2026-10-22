@@ -5,10 +5,10 @@ import { zCreateServiceAccountBody } from 'sdk/zod.gen';
 import { hierarchy } from 'shared';
 import type { z } from 'zod';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useCreateServiceAccountMutation } from '~/modules/service-accounts/query';
-import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
 import type { QueryOrgContext } from '~/query/types';
 import { formResolver } from '~/utils/form-resolver';
@@ -69,9 +69,7 @@ export function CreateApiKeyForm({ path, onCreated }: CreateApiKeyFormProps) {
 
         <div className="flex flex-col gap-2 sm:flex-row">
           <SubmitButton loading={isPending}>{t('c:create')}</SubmitButton>
-          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={isDirty ? '' : 'invisible'}>
-            {t('c:cancel')}
-          </Button>
+          <CancelButton dirty={isDirty} onClick={() => form.reset()} />
         </div>
       </form>
     </Form>

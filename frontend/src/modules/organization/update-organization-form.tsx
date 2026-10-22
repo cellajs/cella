@@ -9,6 +9,7 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { AvatarFormField } from '~/modules/common/form-fields/avatar';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectCountry } from '~/modules/common/form-fields/select-combobox/country';
 import { SelectTimezone } from '~/modules/common/form-fields/select-combobox/timezone';
@@ -20,7 +21,6 @@ import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
-import { Button } from '~/modules/ui/button';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { formResolver } from '~/utils/form-resolver';
 
@@ -114,10 +114,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
           name="languages"
           render={({ field }) => (
             <FormItem name="languages">
-              <FormLabel>
-                {t('c:languages')}
-                <span className="ml-1 opacity-50">*</span>
-              </FormLabel>
+              <FormLabel required>{t('c:languages')}</FormLabel>
               <SelectLanguages value={field.value ?? []} onChange={field.onChange} />
               <FormMessage />
             </FormItem>
@@ -147,9 +144,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
             {t('c:save_changes')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.isDirty ? '' : 'invisible'}>
-            {t('c:cancel')}
-          </Button>
+          <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />
         </div>
       </form>
     </Form>
@@ -171,9 +166,8 @@ function DefaultLanguageField({ form }: { form: ReturnType<typeof useFormWithDra
 
         return (
           <FormItem name="defaultLanguage">
-            <FormLabel help={t('c:default_language.text')}>
+            <FormLabel help={t('c:default_language.text')} required>
               {t('c:default_language')}
-              <span className="ml-1 opacity-50">*</span>
             </FormLabel>
             <SelectLanguage options={languages} value={correctValue} onChange={(val) => field.onChange(val)} />
             <FormMessage />

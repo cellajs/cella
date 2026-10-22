@@ -1,23 +1,17 @@
-import Dashboard from '@uppy/react/dashboard';
 import { useTranslation } from 'react-i18next';
-import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restrictions-note';
+import { isImageTemplate } from '~/modules/common/uploader/helpers/image-editor-options';
+import { UploadDashboard } from '~/modules/common/uploader/upload-dashboard';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { useUploadUppy } from '~/modules/common/uploader/use-uppy-upload';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
-import { useUIStore } from '~/modules/ui/ui-store';
-
-import '~/modules/common/uploader/uppy-styles';
 
 export function Uploader() {
   const { t } = useTranslation();
-  const mode = useUIStore((state) => state.mode);
   const remove = useUploader((state) => state.remove);
 
-  const { uppy, error, uploaderData } = useUploadUppy();
+  const { uppy, uploaderData } = useUploadUppy();
 
   if (!uppy || !uploaderData) return null;
-
-  if (error) return <div className="py-3 text-destructive">{error}</div>;
 
   return (
     <Dialog
@@ -31,15 +25,7 @@ export function Uploader() {
           <DialogTitle className={uploaderData.title ? 'h-6 leading-6' : 'sr-only'}>{uploaderData.title || t('c:upload')}</DialogTitle>
           {uploaderData.description && <DialogDescription>{uploaderData.description}</DialogDescription>}
         </DialogHeader>
-        <Dashboard
-          uppy={uppy}
-          autoOpen={['cover', 'avatar'].includes(uploaderData.templateId) ? 'imageEditor' : null}
-          width="100%"
-          height="400px"
-          theme={mode}
-          note={generateRestrictionNote(uploaderData.restrictions)}
-          proudlyDisplayPoweredByUppy={false}
-        />
+        <UploadDashboard uppy={uppy} autoOpen={isImageTemplate(uploaderData.templateId) ? 'imageEditor' : null} />
       </DialogContent>
     </Dialog>
   );

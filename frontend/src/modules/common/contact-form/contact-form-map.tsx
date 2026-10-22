@@ -1,14 +1,15 @@
-import { ArrowUpRightIcon, MilestoneIcon, MinusIcon, PlusIcon, XIcon } from 'lucide-react';
+import { ArrowUpRightIcon, MilestoneIcon, MinusIcon, PlusIcon } from 'lucide-react';
 import { Map as MapLibreMap, Marker, setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useMountedState } from '~/hooks/use-mounted-state';
+import { CloseButton } from '~/modules/common/close-button';
 import '~/modules/common/contact-form/contact-form-map.css';
 import { errorNoticeFallback } from '~/modules/common/error-notice';
 import { Button } from '~/modules/ui/button';
@@ -29,9 +30,7 @@ function CompanyMarker() {
         <div className="absolute bottom-full left-1/2 mb-3 min-w-36 -translate-x-1/2 rounded-md border bg-popover p-2 text-popover-foreground text-xs shadow-md">
           <div className="flex items-center justify-between gap-2">
             <strong className="text-sm">{appConfig.company.name}</strong>
-            <Button onClick={() => setCardOpen(false)} size="micro" variant="ghost" aria-label={t('c:close')}>
-              <XIcon className="size-3.5" />
-            </Button>
+            <CloseButton onClick={() => setCardOpen(false)} size="sm" />
           </div>
           <span className="block">{appConfig.company.streetAddress}</span>
           <span className="block">{appConfig.company.country}</span>
@@ -52,6 +51,7 @@ function CompanyMarker() {
 
 /** Interactive map centred on the company, drawn with the style for the current color mode. */
 function CompanyMap({ styleUrl }: { styleUrl: string }) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [markerNode] = useState(() => document.createElement('div'));
@@ -79,10 +79,22 @@ function CompanyMap({ styleUrl }: { styleUrl: string }) {
       <div ref={containerRef} className="size-full" />
       {createPortal(<CompanyMarker />, markerNode)}
       <div className="absolute bottom-0 left-0 m-2 flex flex-col p-1">
-        <Button onClick={() => map?.zoomTo(map.getZoom() + 0.5)} size="micro" variant="outlineGhost" className="rounded-b-none border-b-0">
+        <Button
+          onClick={() => map?.zoomTo(map.getZoom() + 0.5)}
+          size="micro"
+          variant="outlineGhost"
+          className="rounded-b-none border-b-0"
+          aria-label={t('c:zoom_in')}
+        >
           <PlusIcon className="size-3.5" />
         </Button>
-        <Button onClick={() => map?.zoomTo(map.getZoom() - 0.5)} size="micro" variant="outlineGhost" className="rounded-t-none">
+        <Button
+          onClick={() => map?.zoomTo(map.getZoom() - 0.5)}
+          size="micro"
+          variant="outlineGhost"
+          className="rounded-t-none"
+          aria-label={t('c:zoom_out')}
+        >
           <MinusIcon className="size-3.5" />
         </Button>
       </div>
@@ -100,20 +112,11 @@ function ContactFormMap() {
     <ErrorBoundary fallbackRender={errorNoticeFallback('app')}>
       <div className="size-full">
         <div className="size-full overflow-hidden rounded-sm bg-accent">
-          <AnimatePresence>
-            {hasStarted && (
-              <motion.div
-                key="map"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5, delay: 1 }}
-                className="size-full"
-              >
-                <CompanyMap styleUrl={styleUrl} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {hasStarted && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 1 }} className="size-full">
+              <CompanyMap styleUrl={styleUrl} />
+            </motion.div>
+          )}
         </div>
       </div>
     </ErrorBoundary>

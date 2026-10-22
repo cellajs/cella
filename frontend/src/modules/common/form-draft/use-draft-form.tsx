@@ -14,7 +14,7 @@ import { defaultOnInvalid } from '~/utils/form-on-invalid';
 export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues, TContext = any>(
   formId: string,
   opt?: { formOptions?: UseFormProps<TFieldValues, TContext>; formContainerId?: string },
-): UseFormReturn<TFieldValues, TContext, TFieldValues> & { unsavedChanges: boolean; isDirty: boolean; loading: boolean } {
+): UseFormReturn<TFieldValues, TContext, TFieldValues> & { isDirty: boolean; loading: boolean } {
   const { formOptions, formContainerId } = opt || {};
 
   const getDraftForm = useDraftStore((state) => state.getForm);
@@ -128,7 +128,6 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
 
   return {
     ...form,
-    unsavedChanges: isDirty,
     isDirty,
     loading,
     // Always route `onInvalid` through a fallback handler
@@ -139,7 +138,6 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
       clearTimeout(draftTimeoutRef.current);
       draftTimeoutRef.current = undefined;
       resetDraftForm(formId);
-      setFormDirty(formId, false);
       toggleUnsavedBadge(false);
       form.reset(values, keepStateOptions);
       // reset() has notified its watchers synchronously; re-arm so later edits persist again.

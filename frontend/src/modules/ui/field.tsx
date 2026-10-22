@@ -179,14 +179,13 @@ type FormProps<TFieldValues extends FieldValues, TContext = unknown, TTransforme
   TFieldValues,
   TContext,
   TTransformedValues
-> & { unsavedChanges?: boolean; labelDirection?: LabelDirectionType };
+> & { labelDirection?: LabelDirectionType };
 
 export function Form<TFieldValues extends FieldValues, TContext = unknown, TTransformedValues extends FieldValues = TFieldValues>({
   children,
-  unsavedChanges,
   labelDirection = 'top',
   ...props
-}: FormProps<TFieldValues, TContext, TTransformedValues> & { unsavedChanges?: boolean }) {
+}: FormProps<TFieldValues, TContext, TTransformedValues>) {
   return (
     <FormProvider {...props}>
       <LabelDirectionContext.Provider value={labelDirection}>{children}</LabelDirectionContext.Provider>
@@ -218,7 +217,7 @@ export function FormField<TFieldValues extends FieldValues = FieldValues, TName 
   );
 }
 
-export function FormItem({ className, name, ...props }: Omit<React.ComponentProps<'div'>, 'name'> & { name?: string }) {
+export function FormItem({ className, name, ...props }: Omit<React.ComponentProps<'div'>, 'name'> & { name?: string; disabled?: boolean }) {
   const labelDirection = React.useContext(LabelDirectionContext);
   const { invalid, isDirty, isTouched } = useFieldState();
 
@@ -240,9 +239,15 @@ export function FormLabel({
   className,
   nativeLabel = true,
   help,
+  required,
   children,
   ...props
-}: React.ComponentProps<'label'> & { nativeLabel?: boolean; help?: React.ReactNode }) {
+}: React.ComponentProps<'label'> & {
+  nativeLabel?: boolean;
+  help?: React.ReactNode;
+  /** Puts a star after the label. */
+  required?: boolean;
+}) {
   const [helpOpen, setHelpOpen] = React.useState(false);
 
   const label = (
@@ -253,6 +258,7 @@ export function FormLabel({
       {...props}
     >
       {children}
+      {required && <span className="ml-1 opacity-50">*</span>}
     </Field.Label>
   );
 

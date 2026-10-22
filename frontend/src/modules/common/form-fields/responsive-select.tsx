@@ -17,6 +17,13 @@ interface ResponsiveSelectOption {
 
 const labelOf = (option: ResponsiveSelectOption) => (option.lang ? <span lang={option.lang}>{option.label}</span> : option.label);
 
+const optionRow = (option: ResponsiveSelectOption) => (
+  <span className="flex items-center gap-2">
+    {option.icon}
+    {labelOf(option)}
+  </span>
+);
+
 interface ResponsiveSelectProps {
   options: ResponsiveSelectOption[];
   value: string;
@@ -47,6 +54,7 @@ export function ResponsiveSelect({
 
   const selectedOption = options.find((o) => o.value === value);
   const selectedLabel = selectedOption ? labelOf(selectedOption) : placeholder;
+  const ariaLabel = title ? `${title}: ${selectedOption?.label ?? placeholder}` : undefined;
 
   // Title and value read as one item, the value in the weight of the buttons beside it. The title is dimmed at rest
   // (still above 4.5:1 on a field); increased contrast gives it the full muted text color.
@@ -68,7 +76,7 @@ export function ResponsiveSelect({
           variant="input"
           disabled={disabled}
           className={cn('w-auto justify-between gap-2 font-normal', className)}
-          aria-label={title ? `${title}: ${selectedOption?.label ?? placeholder}` : undefined}
+          aria-label={ariaLabel}
           onClick={() => setDrawerOpen(true)}
         >
           <span className="truncate text-sm">{display}</span>
@@ -77,11 +85,9 @@ export function ResponsiveSelect({
 
         <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
           <DrawerContent>
-            {title && (
-              <DrawerHeader>
-                <DrawerTitle>{title}</DrawerTitle>
-              </DrawerHeader>
-            )}
+            <DrawerHeader className={cn(!title && 'sr-only')}>
+              <DrawerTitle>{title ?? placeholder}</DrawerTitle>
+            </DrawerHeader>
             <div className="flex flex-col gap-0.5 p-2 pb-6">
               {options.map((option) => (
                 <button
@@ -96,10 +102,7 @@ export function ResponsiveSelect({
                     setDrawerOpen(false);
                   }}
                 >
-                  <span className="flex items-center gap-2">
-                    {option.icon}
-                    {labelOf(option)}
-                  </span>
+                  {optionRow(option)}
                   {option.value === value && <CheckIcon strokeWidth={3} className="text-success" />}
                 </button>
               ))}
@@ -112,21 +115,14 @@ export function ResponsiveSelect({
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger
-        disabled={disabled}
-        className={cn('w-auto', className)}
-        aria-label={title ? `${title}: ${selectedOption?.label ?? placeholder}` : undefined}
-      >
+      <SelectTrigger disabled={disabled} className={cn('w-auto', className)} aria-label={ariaLabel}>
         {selectedOption?.icon}
         {display}
       </SelectTrigger>
       <SelectContent align={align}>
         {options.map((option) => (
           <SelectItem key={option.value} value={option.value}>
-            <span className="flex items-center gap-2">
-              {option.icon}
-              {labelOf(option)}
-            </span>
+            {optionRow(option)}
           </SelectItem>
         ))}
       </SelectContent>

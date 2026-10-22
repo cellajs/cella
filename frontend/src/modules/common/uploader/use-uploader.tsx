@@ -20,24 +20,20 @@ type UploadData =
 interface UploadStoreState {
   uploaderConfig: UploadData | null;
 
-  create: (data: UploadData) => string | number;
+  create: (data: UploadData) => void;
   remove: () => void;
-  get: () => UploadData | null;
 }
 
-export const useUploader = create<UploadStoreState>((set, get) => ({
+export const useUploader = create<UploadStoreState>((set) => ({
   uploaderConfig: null,
 
   create: (data) => {
     set({ uploaderConfig: data });
-    return data.id;
   },
 
   remove: () => {
     set({ uploaderConfig: null });
   },
-
-  get: () => get().uploaderConfig,
 }));
 
 // Non-hook alias for accessing store outside of React components / as a value (e.g. getState)

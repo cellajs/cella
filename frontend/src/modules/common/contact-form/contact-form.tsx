@@ -8,17 +8,24 @@ import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { LegalContact } from '~/modules/auth/legal/legal-contact';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useCreateRequestMutation } from '~/modules/requests/query';
-import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
 import { useUserStore } from '~/modules/user/user-store';
 import { formResolver } from '~/utils/form-resolver';
 import { lazyNamed } from '~/utils/lazy-named';
 
 const ContactFormMap = lazyNamed(() => import('~/modules/common/contact-form/contact-form-map'), 'ContactFormMap');
+
+export const contactFormDialogId = 'contact-form';
+
+// The request stores an email and a message; a contact request without a message says nothing
+const formSchema = zCreateRequestBody.extend({ message: zCreateRequestBody.shape.message.unwrap().trim().min(1) });
+
+type FormValues = z.infer<typeof formSchema>;
 
 export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const { t } = useTranslation();
@@ -27,21 +34,12 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const emailLabel = t('c:email').toLowerCase();
   const messageLabel = t('c:message').toLowerCase();
 
-  // The request stores an email and a message; a contact request without a message says nothing
-  const formSchema = zCreateRequestBody.extend({ message: zCreateRequestBody.shape.message.unwrap().trim().min(1) });
-
-  type FormValues = z.infer<typeof formSchema>;
-
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
     defaultValues: { email: user?.email ?? '', message: '', type: 'contact' },
   };
 
   const form = useFormWithDraft<FormValues>('contact-form', { formOptions });
-
-  const cancel = () => {
-    form.reset();
-  };
 
   const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
@@ -50,7 +48,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
       onSuccess: () => {
         toaster.success(t('c:message_sent.text'));
 
-        if (isDialog) dialoger.getState().remove();
+        if (isDialog) dialoger.getState().remove(contactFormDialogId);
         form.reset();
       },
     });
@@ -85,9 +83,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             <SubmitButton loading={isPending} icon={<SendIcon />}>
               {t('c:send')}
             </SubmitButton>
-            <Button type="reset" variant="secondary" onClick={cancel} className={form.isDirty ? '' : 'invisible'}>
-              {t('c:cancel')}
-            </Button>
+            <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />
           </div>
         </form>
       </Form>

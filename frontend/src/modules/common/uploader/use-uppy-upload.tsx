@@ -1,19 +1,11 @@
 import { onlineManager } from '@tanstack/react-query';
-import Audio from '@uppy/audio';
-import type { Body, Meta } from '@uppy/core';
-import ImageEditor from '@uppy/image-editor';
-import ScreenCapture from '@uppy/screen-capture';
-import { COMPANION_ALLOWED_HOSTS, COMPANION_URL } from '@uppy/transloadit';
-import Url from '@uppy/url';
-import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type UploadTemplateId } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { getImageEditorOptions } from '~/modules/common/uploader/helpers/image-editor-options';
-import { createBaseTransloaditUppy } from '~/modules/common/uploader/helpers/uppy-helpers';
+import { createBaseTransloaditUppy, registerUppyPlugins } from '~/modules/common/uploader/helpers/uppy-helpers';
 import type { CustomUppy, CustomUppyOpt, UploadedUppyFile } from '~/modules/common/uploader/types';
-import { useUploader } from '~/modules/common/uploader/use-uploader';
+import { uploader, useUploader } from '~/modules/common/uploader/use-uploader';
 
 const uppyRestrictions = appConfig.uppy.defaultRestrictions;
 
@@ -22,7 +14,6 @@ export function useUploadUppy() {
   const uploaderData = useUploader((state) => state.uploaderConfig);
 
   const [uppy, setUppy] = useState<CustomUppy | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!uploaderData) return;
@@ -30,11 +21,12 @@ export function useUploadUppy() {
     let isMounted = true;
     let localUppy: CustomUppy | null = null;
 
-    const { templateId = 'attachment', organizationId, restrictions, plugins = [], statusEventHandler = {} } = uploaderData;
+    const { templateId, organizationId, restrictions, plugins = [], statusEventHandler = {} } = uploaderData;
 
-    const isUploadFullyEnabled = appConfig.has.uploadEnabled && onlineManager.isOnline();
+    const isOnline = onlineManager.isOnline();
+    const isUploadFullyEnabled = appConfig.has.uploadEnabled && isOnline;
 
-    const allowedFileTypes = onlineManager.isOnline() ? (restrictions?.allowedFileTypes ?? uppyRestrictions.allowedFileTypes) : ['image/*'];
+    const allowedFileTypes = isOnline ? (restrictions?.allowedFileTypes ?? uppyRestrictions.allowedFileTypes) : ['image/*'];
 
     const uppyOptions: CustomUppyOpt = { restrictions: { ...uppyRestrictions, ...restrictions, allowedFileTypes } };
 
@@ -52,33 +44,22 @@ export function useUploadUppy() {
           .on('error', (error) => {
             console.error('Upload error:', error);
             statusEventHandler.onError?.(error);
-            throw new Error(error.message ?? 'Upload error');
           })
           .on('transloadit:complete', (assembly) => {
-            if (assembly?.error) throw new Error(assembly?.error);
+            // A failed assembly reports through the error event
+            if (assembly.error) return;
             console.info('Upload complete:', assembly);
-            Promise.resolve(statusEventHandler.onComplete?.(assembly.results as UploadedUppyFile<UploadTemplateId>)).catch((err) => {
-              console.error('onComplete handler failed:', err);
-              toaster.error(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }));
-            });
+            // Inside the chain, so a handler that throws at once also reaches the toast
+            Promise.resolve()
+              .then(() => statusEventHandler.onComplete?.(assembly.results as UploadedUppyFile<UploadTemplateId>))
+              .catch((err) => {
+                console.error('onComplete handler failed:', err);
+                toaster.error(t('c:upload_failed'));
+              });
           });
-        const imageEditorOptions = getImageEditorOptions(templateId);
-        const webcamOptions: WebcamOptions<Meta, Body> = {
-          videoConstraints: { width: 1280, height: 720 },
-          preferredVideoMimeType: 'video/webm;codecs=vp9',
-        };
 
-        if (['cover', 'avatar'].includes(templateId)) webcamOptions.modes = ['picture'];
-
-        if (plugins.includes('webcam')) localUppy.use(Webcam, webcamOptions);
-        if (plugins.includes('image-editor')) localUppy.use(ImageEditor, imageEditorOptions);
-        if (plugins.includes('audio') && isUploadFullyEnabled) localUppy.use(Audio);
-        if (plugins.includes('url')) {
-          localUppy.use(Url, { companionUrl: COMPANION_URL, companionAllowedHosts: COMPANION_ALLOWED_HOSTS });
-        }
-        if (plugins.includes('screen-capture') && isUploadFullyEnabled) {
-          localUppy.use(ScreenCapture, { preferredVideoMimeType: 'video/webm;codecs=vp9' });
-        }
+        const sourcePlugins = isUploadFullyEnabled ? plugins : plugins.filter((plugin) => plugin !== 'audio' && plugin !== 'screen-capture');
+        registerUppyPlugins(localUppy, sourcePlugins, templateId);
 
         if (!isMounted) {
           localUppy.destroy();
@@ -87,8 +68,9 @@ export function useUploadUppy() {
         setUppy(localUppy);
       } catch (err) {
         console.error('Failed to initialize upload:', err);
-        const message = err instanceof Error ? err.message : 'Failed to initialize upload';
-        setError(message);
+        if (!isMounted) return;
+        toaster.error(t('c:upload_failed'));
+        uploader.getState().remove();
       }
     };
 
@@ -101,5 +83,5 @@ export function useUploadUppy() {
     };
   }, [uploaderData]);
 
-  return { uppy, error, uploaderData };
+  return { uppy, uploaderData };
 }

@@ -32,6 +32,7 @@ function BlockNoteContentFormField<TFieldValues extends FieldValues>({
         const editorProps = {
           commitOnEveryChange: true,
           autoFocus,
+          editable: !disabled,
           defaultValue: value,
           excludeBlockTypes,
           updateData: onChange,
@@ -39,13 +40,8 @@ function BlockNoteContentFormField<TFieldValues extends FieldValues>({
           ...restBlockNoteProps,
         };
         return (
-          <FormItem name={name} aria-disabled={disabled} className={containerClassName}>
-            {typeof label === 'string' && (
-              <FormLabel>
-                {label}
-                {required && <span className="ml-1 opacity-50">*</span>}
-              </FormLabel>
-            )}
+          <FormItem name={name} disabled={disabled} className={containerClassName}>
+            {typeof label === 'string' && <FormLabel required={required}>{label}</FormLabel>}
             {/* The filePanel/baseFilePanelProps union needs two branches: a conditional spread widens it */}
             {baseFilePanelProps ? <BlockNote {...editorProps} baseFilePanelProps={baseFilePanelProps} /> : <BlockNote {...editorProps} />}
             <FormMessage />
