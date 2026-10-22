@@ -4,7 +4,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { exportToCsv, exportToPdf } from '~/lib/export';
 import { fetchAllRows } from '~/modules/common/data-table/fetch-all-rows';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -26,7 +26,7 @@ export function Export<R extends Record<string, any>>({ filename, columns, selec
   const mode = uiStore.getState().mode;
 
   const exportDefault = async (type: 'csv' | 'pdf') => {
-    if (!isOnline) return toaster.warning(t('c:action.offline.text'));
+    if (!isOnline) return toastOffline();
     const rows = await fetchAllRows(fetchRows);
     const filenameWithExtension = `${filename}.${type}`;
 
@@ -40,7 +40,7 @@ export function Export<R extends Record<string, any>>({ filename, columns, selec
 
     if (type === 'csv') return exportToCsv(columns, selectedRows, filenameWithExtension);
 
-    if (!isOnline) toaster.warning(t('c:action.offline.text'));
+    if (!isOnline) toastOffline();
     return exportToPdf(columns, selectedRows, filenameWithExtension, getRouter().state.location.pathname, mode);
   };
 

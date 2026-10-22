@@ -7,7 +7,7 @@ import type { ApiError, ResendInvitationWithTokenData, ResendInvitationWithToken
 import { resendInvitationWithToken } from 'sdk';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 
@@ -41,7 +41,7 @@ export function ResendInvitationButton({ resendData, wrapperClassName, buttonPro
   });
 
   const resendInvitationClick = () => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
 
     setDisabledResend(true);
     resend(resendData);

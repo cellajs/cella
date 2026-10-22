@@ -7,7 +7,7 @@ import { updateMe } from 'sdk';
 import { appConfig, type Language } from 'shared';
 import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
 import { cn } from '~/utils/cn';
@@ -25,7 +25,7 @@ export function UserLanguage({ triggerClassName = '' }: Props) {
   const language = user?.language || i18n.languages[0];
 
   const changeLanguage = (lng: Language) => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
     if (window.Gleap) window.Gleap.setLanguage(lng);
     i18n.changeLanguage(lng);
     useDropdowner.getState().remove();

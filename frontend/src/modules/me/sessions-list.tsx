@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { MeAuthData } from 'sdk';
 import { revokeMySessions } from 'sdk';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { SessionTile } from '~/modules/me/session-tile';
 import type { Session } from '~/modules/me/types';
@@ -58,7 +58,7 @@ export function SessionsList() {
   });
 
   const handleRevoke = (ids: string[]) => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
     revoke(ids);
   };
 

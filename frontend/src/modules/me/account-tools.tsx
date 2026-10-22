@@ -11,7 +11,7 @@ import { withStepUp } from '~/modules/auth/step-up';
 import { ConfirmText } from '~/modules/common/confirm-text';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { HelpText } from '~/modules/common/help-text';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
 import { ConnectedAppsList } from '~/modules/me/connected-apps-list';
 import { DeleteSelf } from '~/modules/me/delete-self';
@@ -92,7 +92,7 @@ export function AccountAuthenticationCard() {
   });
 
   const authenticateWithProvider = (provider: EnabledOAuthProvider) => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
     connectProvider(provider);
   };
 
@@ -232,7 +232,7 @@ export function AccountAuthenticationCard() {
                       variant={institution.connectionId === toConnect?.connectionId ? 'default' : 'plain'}
                       loading={connectingTo === institution.connectionId}
                       onClick={() => {
-                        if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+                        if (!onlineManager.isOnline()) return toastOffline();
                         connectInstitution(institution.connectionId);
                       }}
                     >

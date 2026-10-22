@@ -2,7 +2,7 @@ import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { FingerprintPatternIcon, PlusIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { PasskeyTile } from '~/modules/me/passkeys/tile';
 import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
@@ -22,7 +22,7 @@ export function PasskeysList() {
   const hasPasskey = passkeys.length > 0;
 
   const handleDeletePasskey = (id: string) => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
     if (user.mfaRequired && passkeys.length <= 1) return toaster.info(t('c:delete_mfa_last', { method: 'the last passkey' }));
     deletePasskey({ path: { id } });
   };

@@ -9,7 +9,7 @@ import type { z } from 'zod';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { useCreateRequestMutation } from '~/modules/requests/query';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
@@ -43,7 +43,7 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
   const prefilled = formSchema.shape.email.safeParse(email).success;
 
   const onSubmit = (body: FormValues) => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
 
     // Every submission gets the same answer; an address with an account hears it by email.
     createRequest(body, {

@@ -37,7 +37,7 @@ vi.mock('~/modules/common/dialoger/use-dialoger', () => {
   const useDialoger = (select: (s: typeof state) => unknown) => select(state);
   return { useDialoger: Object.assign(useDialoger, { getState: () => state }) };
 });
-vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { warning: (message: string) => seen.events.push(`warning ${message}`) } }));
+vi.mock('~/modules/common/toaster/toaster', () => ({ toastOffline: () => seen.events.push('offline warning') }));
 vi.mock('~/modules/user/query', () => ({ useUserDeleteMutation: deleteMutation }));
 vi.mock('~/modules/organization/query', () => ({ useOrganizationDeleteMutation: deleteMutation }));
 vi.mock('~/modules/requests/query', () => ({ useDeleteRequestMutation: deleteMutation }));
@@ -100,7 +100,7 @@ describe('DeleteUsers', () => {
     await act(async () => form.onDelete());
 
     expect(seen.mutations).toEqual([]);
-    expect(seen.events).toEqual(['warning c:action.offline.text']);
+    expect(seen.events).toEqual(['offline warning']);
   });
 
   it('cancel settles, then closes only in a dialog', async () => {

@@ -3,7 +3,7 @@ import { UploadIcon } from 'lucide-react';
 import { memo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
@@ -33,7 +33,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
   };
 
   const openUploadDialog = () => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
     createUpload({
       id: 'page-cover',
       ...(organizationId ? { organizationId, personalUpload: false } : { personalUpload: true }),

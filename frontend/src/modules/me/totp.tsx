@@ -4,7 +4,7 @@ import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ensureStepUp } from '~/modules/auth/step-up';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions, useDeleteTotpMutation } from '~/modules/me/query';
 import { SetupTotp } from '~/modules/me/totp-setup';
 import { Button } from '~/modules/ui/button';
@@ -45,7 +45,7 @@ export function Totp() {
   };
 
   const handleDeleteTOTP = () => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
     if (user.mfaRequired) return toaster.info(t('c:delete_mfa_last', { method: 'TOTP' }));
 
     deleteTotp();

@@ -5,7 +5,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { EntityAvatar, type EntityAvatarProps } from '~/modules/common/entity-avatar';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { Button } from '~/modules/ui/button';
 import { FormField, FormItem, FormLabel } from '~/modules/ui/field';
@@ -34,7 +34,7 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
   };
 
   const openUploadDialog = () => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
     // A user has a profile picture, any other entity a logo.
     const image = type && type !== 'user' ? t('c:resource_logo', { resource: t(type) }) : t('c:profile_picture');
     createUpload({

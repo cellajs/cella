@@ -6,7 +6,7 @@ import { ensureStepUp } from '~/modules/auth/step-up';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { CreateApiKeyForm, type CreatedApiKey, createApiKeyDialogId } from '~/modules/service-accounts/create-api-key-form';
@@ -29,7 +29,7 @@ export function ApiKeysCard({ organization }: { organization: EnrichedOrganizati
   const [secrets, setSecrets] = useState<Record<string, string>>({});
 
   const openCreateDialog = async () => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
 
     // Minting a key needs a stepped-up session: the user proves it before the form opens, so the form submits once.
     const steppedUp = await ensureStepUp().then(

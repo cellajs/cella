@@ -10,7 +10,7 @@ import { DateTooltip } from '~/modules/common/date-tooltip';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { PopConfirm } from '~/modules/common/popconfirm';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { apiKeysQueryOptions, useRevokeApiKeyMutation } from '~/modules/service-accounts/query';
 import { Badge } from '~/modules/ui/badge';
@@ -36,7 +36,7 @@ export function ServiceAccountTile({ account, path, secrets }: ServiceAccountTil
   const role = account.bindings[0]?.role;
 
   const handleRevoke = (apiKey: ApiKey) => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
     revoke({ path: { ...path, id: account.id, keyId: apiKey.id } });
   };
 

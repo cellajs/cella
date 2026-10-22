@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { type ChannelBase, deleteMyMembership } from 'sdk';
 import { appConfig } from 'shared';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 import { cacheRemove } from '~/query/basic/cache-mutations';
 import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
@@ -54,7 +54,7 @@ export function useLeaveChannel(channel: ChannelBase, { redirectPath = appConfig
 
   const leave = () => {
     if (!onlineManager.isOnline()) {
-      toaster.warning(t('c:action.offline.text'));
+      toastOffline();
       return;
     }
     mutate();
