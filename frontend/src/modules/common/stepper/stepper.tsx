@@ -31,7 +31,7 @@ export function Stepper({ children, className, initialStep = 0, steps, onClickSt
 }
 
 export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 }: StepProps & { index?: number }) {
-  const { steps, activeStep, isLastStep, onClickStep, setStep } = useStepper();
+  const { steps, activeStep, onClickStep, setStep } = useStepper();
 
   const isCompletedStep = index < activeStep;
   const isCurrentStep = index === activeStep;
@@ -43,7 +43,7 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
         'group/step relative flex flex-col not-last:gap-(--step-gap) not-last:pb-(--step-gap)',
         // The connector from this step's icon down to the next step's icon
         "not-last:after:absolute not-last:after:inset-x-[calc(var(--step-icon-size)/2)] not-last:after:top-[calc(var(--step-icon-size)+var(--step-gap))] not-last:after:bottom-(--step-gap) not-last:after:w-0.5 not-last:after:bg-border not-last:after:transition-colors not-last:after:duration-200 not-last:after:content-[''] data-[completed=true]:not-last:after:bg-primary",
-        isLastStep && 'gap-(--step-gap)',
+        isCurrentStep && 'gap-(--step-gap)',
       )}
       data-completed={isCompletedStep}
     >
@@ -62,11 +62,7 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
           >
             {isCompletedStep ? <Check className="size-4" /> : <span className="text-md">{index + 1}</span>}
           </Button>
-          {!!label && (
-            <div className={cn('ms-2 flex flex-col', index > activeStep && 'opacity-80')}>
-              <span className="text-sm">{label}</span>
-            </div>
-          )}
+          {!!label && <div className={cn('ms-2 text-sm', index > activeStep && 'opacity-80')}>{label}</div>}
         </div>
       )}
       <div className="group-not-last/step:min-h-4 max-sm:relative max-sm:z-1 sm:ps-(--step-icon-size)">

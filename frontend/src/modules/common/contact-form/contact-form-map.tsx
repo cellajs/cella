@@ -34,10 +34,15 @@ function CompanyMarker() {
           </div>
           <span className="block">{appConfig.company.streetAddress}</span>
           <span className="block">{appConfig.company.country}</span>
-          <a href={appConfig.company.directionsUrl} target="_blank" className="focus-effect mt-1 flex rounded-md p-1 font-semibold" rel="noreferrer">
-            <MilestoneIcon strokeWidth={2.5} className="mr-1 size-3" />
+          <a
+            href={appConfig.company.directionsUrl}
+            target="_blank"
+            className="focus-effect mt-1 flex items-center gap-1 rounded-md p-1 font-semibold"
+            rel="noreferrer"
+          >
+            <MilestoneIcon strokeWidth={2.5} className="size-3" />
             {t('c:get_directions')}
-            <ArrowUpRightIcon className="ml-1 size-3 opacity-50" />
+            <ArrowUpRightIcon className="size-3 opacity-50" />
           </a>
           <span className="absolute top-full left-1/2 -mt-1.5 size-3 -translate-x-1/2 rotate-45 border-r border-b bg-popover" />
         </div>
@@ -110,15 +115,11 @@ function ContactFormMap() {
 
   return (
     <ErrorBoundary fallbackRender={errorNoticeFallback('app')}>
-      <div className="size-full">
-        <div className="size-full overflow-hidden rounded-sm bg-accent">
-          {hasStarted && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 1 }} className="size-full">
-              <CompanyMap styleUrl={styleUrl} />
-            </motion.div>
-          )}
-        </div>
-      </div>
+      {hasStarted && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 1 }} className="size-full">
+          <CompanyMap styleUrl={styleUrl} />
+        </motion.div>
+      )}
     </ErrorBoundary>
   );
 }

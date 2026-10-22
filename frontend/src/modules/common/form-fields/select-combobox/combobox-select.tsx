@@ -1,12 +1,12 @@
-import { ChevronDownIcon, SearchIcon } from 'lucide-react';
+import { SearchIcon } from 'lucide-react';
 import * as React from 'react';
 import type { FieldValues } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { InputTriggerButton } from '~/modules/common/form-fields/input-trigger-button';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
-import { Button } from '~/modules/ui/button';
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, ComboboxPrimitive } from '~/modules/ui/combobox';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
@@ -81,14 +81,13 @@ export function ComboboxSelect({
       ) : (
         <ComboboxPrimitive.Trigger
           data-slot="combobox-trigger"
-          render={<Button variant="input" aria-haspopup="listbox" className="w-full justify-between truncate font-normal" disabled={disabled} />}
+          render={<InputTriggerButton aria-haspopup="listbox" className="w-full truncate" disabled={disabled} />}
         >
           {selectedOption ? (
             <div className="flex items-center gap-2 truncate">{optionLabel(selectedOption, 'size-6')}</div>
           ) : (
             <span className="truncate text-muted-foreground">{triggerText}</span>
           )}
-          <ChevronDownIcon className="size-4 shrink-0 opacity-50" />
         </ComboboxPrimitive.Trigger>
       )}
       <ComboboxContent anchor={searchableTrigger ? anchorRef : undefined}>

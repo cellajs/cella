@@ -1,8 +1,8 @@
-import { CheckIcon, ChevronDownIcon } from 'lucide-react';
+import { CheckIcon } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { Button } from '~/modules/ui/button';
+import { InputTriggerButton } from '~/modules/common/form-fields/input-trigger-button';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '~/modules/ui/select';
 import { cn } from '~/utils/cn';
@@ -32,6 +32,8 @@ interface ResponsiveSelectProps {
   title?: string;
   /** Shows the title before the value ("Role All"), for a select that stands without a label, as in a filter bar. */
   showTitle?: boolean;
+  /** Shows only the selected option's icon; the title names the trigger. */
+  iconOnly?: boolean;
   className?: string;
   disabled?: boolean;
   align?: 'start' | 'center' | 'end';
@@ -45,6 +47,7 @@ export function ResponsiveSelect({
   placeholder,
   title,
   showTitle,
+  iconOnly,
   className,
   disabled = false,
   align = 'end',
@@ -71,17 +74,10 @@ export function ResponsiveSelect({
   if (isMobile) {
     return (
       <>
-        <Button
-          type="button"
-          variant="input"
-          disabled={disabled}
-          className={cn('justify-between font-normal', className)}
-          aria-label={ariaLabel}
-          onClick={() => setDrawerOpen(true)}
-        >
-          <span className="truncate">{triggerContent}</span>
-          <ChevronDownIcon className="size-4 shrink-0 opacity-70" />
-        </Button>
+        <InputTriggerButton disabled={disabled} className={className} aria-label={ariaLabel} onClick={() => setDrawerOpen(true)}>
+          {selectedOption?.icon}
+          {!iconOnly && <span className="truncate">{triggerContent}</span>}
+        </InputTriggerButton>
 
         <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
           <DrawerContent>
@@ -103,7 +99,7 @@ export function ResponsiveSelect({
                   }}
                 >
                   {optionRow(option)}
-                  {option.value === value && <CheckIcon strokeWidth={3} className="text-success" />}
+                  {option.value === value && <CheckIcon className="text-success" />}
                 </button>
               ))}
             </div>
@@ -117,7 +113,7 @@ export function ResponsiveSelect({
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger disabled={disabled} className={cn('w-auto', className)} aria-label={ariaLabel}>
         {selectedOption?.icon}
-        {triggerContent}
+        {!iconOnly && triggerContent}
       </SelectTrigger>
       <SelectContent align={align}>
         {options.map((option) => (

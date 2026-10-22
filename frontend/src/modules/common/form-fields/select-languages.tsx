@@ -1,10 +1,10 @@
-import { CheckIcon, ChevronDownIcon } from 'lucide-react';
+import { CheckIcon } from 'lucide-react';
 import { type CSSProperties, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type Language } from 'shared';
 import { useMeasure } from '~/hooks/use-measure';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { Button } from '~/modules/ui/button';
+import { InputTriggerButton } from '~/modules/common/form-fields/input-trigger-button';
 
 interface SelectLanguagesProps {
   value: Language[];
@@ -34,34 +34,30 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
     <div
       role="listbox"
       aria-multiselectable="true"
-      className="overflow-hidden rounded-lg sm:w-(--trigger-width)"
+      className="max-h-[30vh] overflow-y-auto rounded-lg p-1 sm:w-(--trigger-width)"
       style={{ '--trigger-width': `${triggerWidth}px` } as CSSProperties}
     >
-      <div className="max-h-[30vh] overflow-y-auto p-1">
-        {options.map((option) => (
-          <div
-            key={option.value}
-            role="option"
-            aria-selected={selected.includes(option.value)}
-            className="group/language-option flex cursor-pointer select-none items-center justify-between rounded-md px-2 py-1.5 text-sm leading-normal outline-hidden hover:bg-accent hover:text-accent-foreground aria-selected:font-medium"
-            onClick={() => toggleLanguage(option.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                toggleLanguage(option.value);
-              }
-            }}
-            tabIndex={0}
-          >
-            <div className="flex items-center truncate">
-              <span className="truncate" lang={option.value}>
-                {option.label}
-              </span>
-            </div>
-            <CheckIcon strokeWidth={3} className="invisible text-success group-aria-selected/language-option:visible" />
-          </div>
-        ))}
-      </div>
+      {options.map((option) => (
+        <div
+          key={option.value}
+          role="option"
+          aria-selected={selected.includes(option.value)}
+          className="group/language-option flex cursor-pointer select-none items-center justify-between rounded-md px-2 py-1.5 text-sm leading-normal outline-hidden hover:bg-accent hover:text-accent-foreground aria-selected:font-medium"
+          onClick={() => toggleLanguage(option.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              toggleLanguage(option.value);
+            }
+          }}
+          tabIndex={0}
+        >
+          <span className="truncate" lang={option.value}>
+            {option.label}
+          </span>
+          <CheckIcon className="invisible text-success group-aria-selected/language-option:visible" />
+        </div>
+      ))}
     </div>
   );
 }
@@ -79,13 +75,11 @@ export function SelectLanguages({ value, onChange }: SelectLanguagesProps) {
   };
 
   return (
-    <Button
-      type="button"
+    <InputTriggerButton
       ref={triggerRef}
       disabled={appConfig.languages.length < 2}
-      variant="input"
       aria-label={`${t('c:placeholder.select_languages')}: ${value.map((lang) => t(`c:${lang}`)).join(', ')}`}
-      className="w-full justify-between font-normal data-dropdowner-active:ring-1 data-dropdowner-active:ring-ring"
+      className="w-full data-dropdowner-active:ring-1 data-dropdowner-active:ring-ring"
       onClick={openDropdown}
     >
       {value.length > 0 ? (
@@ -95,14 +89,13 @@ export function SelectLanguages({ value, onChange }: SelectLanguagesProps) {
               <span className="truncate" lang={lang}>
                 {t(`c:${lang}`)}
               </span>
-              {index !== value.length - 1 && <span className="ml-1">,</span>}
+              {index !== value.length - 1 && ','}
             </span>
           ))}
         </div>
       ) : (
         <span className="text-muted-foreground">{t('c:placeholder.select_languages')}</span>
       )}
-      <ChevronDownIcon className="size-4 shrink-0 opacity-50" />
-    </Button>
+    </InputTriggerButton>
   );
 }

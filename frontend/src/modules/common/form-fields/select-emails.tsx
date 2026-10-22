@@ -72,7 +72,7 @@ export function SelectEmails({ value: emails = [], onChange, placeholder, inputP
         onChange={({ target }) => (delimiter.test(target.value) ? commit(target.value) : setText(target.value))}
         onKeyDown={handleKeyDown}
         onBlur={() => text.trim() && commit(text)}
-        className="-my-px h-8 w-auto min-w-32 grow basis-32 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="-my-px h-8 min-w-32 grow basis-32 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
       />
     </div>
   );
