@@ -58,11 +58,13 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
     attachmentContract.assertBlockFields(att, organization.id);
 
     // The ancestor columns come from the home channel's own row; a row in the organization carries none.
-    const { columns: placement } = await resolvePlacement(ctx, 'attachment', att);
+    const { columns: placement, home } = await resolvePlacement(ctx, 'attachment', att);
 
     const attachment = {
       ...att,
       ...storage,
+      // Public read is the home channel's decision, copied onto the row; a client cannot widen it.
+      public: home ? home.entity.public : organization.public,
       convertedContentType: att.convertedContentType || null,
       groupId: att.groupId || null,
       ...placement,

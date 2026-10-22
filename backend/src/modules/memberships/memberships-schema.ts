@@ -14,6 +14,7 @@ import {
   validUuidSchema,
 } from '#/schemas';
 import { nullableActorRefSchema } from '#/schemas/actor-ref';
+import { auditShape } from '#/schemas/entity-base';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { mockInactiveMembershipResponse, mockMembershipBase, mockMembershipResponse } from './memberships-mocks';
 
@@ -22,6 +23,7 @@ const entityRoleSchema = z.enum(roles.all);
 const membershipSchema = z
   .object({
     ...createSelectSchema(membershipsTable).shape,
+    ...auditShape,
     // Override enum columns with explicit schemas to preserve literal types
     role: entityRoleSchema,
     channelType: channelEntityTypeSchema,

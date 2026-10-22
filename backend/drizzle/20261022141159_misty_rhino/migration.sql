@@ -56,7 +56,6 @@ ALTER TABLE "signing_keys" ALTER COLUMN "retired_at" SET DATA TYPE timestamp wit
 ALTER TABLE "organizations" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone USING "created_at" AT TIME ZONE 'UTC';--> statement-breakpoint
 ALTER TABLE "organizations" ALTER COLUMN "updated_at" SET DATA TYPE timestamp with time zone USING "updated_at" AT TIME ZONE 'UTC';--> statement-breakpoint
 ALTER TABLE "organizations" ALTER COLUMN "published_at" SET DATA TYPE timestamp with time zone USING "published_at" AT TIME ZONE 'UTC';--> statement-breakpoint
-ALTER TABLE "organizations" ALTER COLUMN "published_at" DROP DEFAULT;--> statement-breakpoint
 ALTER TABLE "push_subscriptions" ALTER COLUMN "expiration_time" SET DATA TYPE timestamp with time zone USING "expiration_time" AT TIME ZONE 'UTC';--> statement-breakpoint
 ALTER TABLE "push_subscriptions" ALTER COLUMN "created_at" SET DATA TYPE timestamp with time zone USING "created_at" AT TIME ZONE 'UTC';--> statement-breakpoint
 ALTER TABLE "push_subscriptions" ALTER COLUMN "last_seen_at" SET DATA TYPE timestamp with time zone USING "last_seen_at" AT TIME ZONE 'UTC';--> statement-breakpoint
@@ -83,9 +82,7 @@ ALTER TABLE "tenants" ADD CONSTRAINT "tenants_created_by_actors_id_fkey" FOREIGN
 ALTER TABLE "tenants" ADD CONSTRAINT "tenants_updated_by_actors_id_fkey" FOREIGN KEY ("updated_by") REFERENCES "actors"("id") ON DELETE SET NULL;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_updated_by_actors_id_fkey" FOREIGN KEY ("updated_by") REFERENCES "actors"("id") ON DELETE SET NULL;--> statement-breakpoint
 CREATE POLICY "attachments_select_policy" ON "attachments" AS PERMISSIVE FOR SELECT TO public USING (
-    
   COALESCE(current_setting('app.tenant_id', true), '') != ''
   AND "attachments"."tenant_id" = current_setting('app.tenant_id', true)::text
-
-    AND ("attachments"."deleted_at" IS NULL OR current_setting('app.include_deleted', true) = 'true')
-  );
+  AND ("attachments"."deleted_at" IS NULL OR current_setting('app.include_deleted', true) = 'true')
+);

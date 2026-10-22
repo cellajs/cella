@@ -135,8 +135,11 @@ const mockMembership = (key = 'membership:default', options: MockMembershipBaseO
     return { ...base, createdAt, createdBy: base.userId, updatedAt: createdAt, updatedBy: null };
   });
 
-/** Membership response example; its wire shape matches the stored membership shape. */
-export const mockMembershipResponse = mockMembership;
+/** Membership response example: the stored row with its writers resolved to references. */
+export const mockMembershipResponse = (key = 'membership:default', options: MockMembershipBaseOptions = {}) => {
+  const membership = mockMembership(key, options);
+  return { ...membership, createdBy: mockActorRef(`${key}:created-by`, membership.createdBy ?? undefined), updatedBy: null };
+};
 
 /** Deterministic stored inactive-membership row. */
 const mockInactiveMembership = (key = 'inactive-membership:default', options: MockMembershipBaseOptions = {}): InactiveMembershipModel =>

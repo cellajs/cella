@@ -6,13 +6,15 @@ import { type AnyPgTable, PgTimestampString, PgTimestampStringBuilder } from 'dr
  */
 const driverTimestamp = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})(?:\.(\d+))?(?:([+-]\d{2})(?::?(\d{2}))?)?$/;
 
-/** The one timestamp text of the app, UTC to the millisecond: `2026-10-22T10:00:00.123Z`. Driver text and ISO text both parse. */
+/**
+ * The one timestamp text of the app, UTC to the millisecond: `2026-10-22T10:00:00.123Z`. Driver text and ISO text
+ * both parse; text that is no instant (`infinity`) passes through unchanged, so the row still maps.
+ */
 export const toIsoTimestamp = (value: string): string => {
   const match = driverTimestamp.exec(value);
-  if (!match) return new Date(value).toISOString();
-  const [, date, time, fraction = '', hours, minutes = '00'] = match;
-  const zone = hours ? `${hours}:${minutes}` : 'Z';
-  return new Date(`${date}T${time}.${fraction.padEnd(3, '0').slice(0, 3)}${zone}`).toISOString();
+  const [, date, time, fraction = '', hours, minutes = '00'] = match ?? [];
+  const parsed = match ? new Date(`${date}T${time}.${fraction.padEnd(3, '0').slice(0, 3)}${hours ? `${hours}:${minutes}` : 'Z'}`) : new Date(value);
+  return Number.isNaN(parsed.getTime()) ? value : parsed.toISOString();
 };
 
 /** Drizzle's string mode hands the driver text through; this column hands out {@link toIsoTimestamp} text. */

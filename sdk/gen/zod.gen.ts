@@ -246,7 +246,6 @@ export const zUser = z.object({
     finishedOnboarding: z.boolean(),
   }),
   updatedAt: z.string().nullable(),
-  updatedBy: z.uuid().nullable(),
   lastSeenAt: z.string().nullable(),
   lastSignInAt: z.string().nullable(),
 });
@@ -430,9 +429,9 @@ export const zConnection = z.object({
     logoUrl: z.url().max(255).optional(),
   }),
   createdAt: z.string(),
-  createdBy: z.uuid().nullable(),
+  createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
-  updatedBy: z.uuid().nullable(),
+  updatedBy: zActorRef.nullable(),
 });
 
 /**
@@ -1876,7 +1875,6 @@ export const zCreateAttachmentsBody = z
       }),
       groupId: z.uuid().nullish(),
       convertedContentType: z.string().max(255).nullish(),
-      public: z.boolean().optional(),
       stx: zStxBase,
     }),
   )
@@ -2093,9 +2091,9 @@ export const zUpdateMembershipResponse = z.object({
   channelId: z.uuid(),
   userId: z.uuid(),
   role: z.enum(['admin', 'member']),
-  createdBy: z.uuid().nullable(),
+  createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
-  updatedBy: z.uuid().nullable(),
+  updatedBy: zActorRef.nullable(),
   organizationId: z.uuid(),
   archived: z.boolean().optional(),
   muted: z.boolean().optional(),

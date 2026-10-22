@@ -10,7 +10,6 @@ import { insertMemberships } from '#/modules/memberships/operations/insert-membe
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { countOrganizationsByTenant, insertOrganizations } from '#/modules/organization/organization-queries';
 import { organizationContract } from '#/modules/organization/organization-schema';
-import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { filterWithRejection, takeWithRestriction } from '#/utils/rejection-utils';
 import { defaultWelcomeText } from '#json/text-blocks.json';
@@ -64,8 +63,6 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOr
       welcomeText: defaultWelcomeText,
       defaultLanguage: appConfig.defaultLanguage,
       createdBy: user.id,
-      // Live at once; a draft channel, which holds its invitations until publish, is an app's choice.
-      publishedAt: getIsoDate(),
     })),
   });
 

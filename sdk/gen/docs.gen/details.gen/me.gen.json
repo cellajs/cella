@@ -74,11 +74,6 @@
                   "type": ["string", "null"],
                   "required": true
                 },
-                "updatedBy": {
-                  "type": ["string", "null"],
-                  "required": true,
-                  "format": "uuid"
-                },
                 "lastSeenAt": {
                   "type": ["string", "null"],
                   "required": true
@@ -246,11 +241,6 @@
             "updatedAt": {
               "type": ["string", "null"],
               "required": true
-            },
-            "updatedBy": {
-              "type": ["string", "null"],
-              "required": true,
-              "format": "uuid"
             },
             "lastSeenAt": {
               "type": ["string", "null"],
@@ -508,11 +498,6 @@
             "updatedAt": {
               "type": ["string", "null"],
               "required": true
-            },
-            "updatedBy": {
-              "type": ["string", "null"],
-              "required": true,
-              "format": "uuid"
             },
             "lastSeenAt": {
               "type": ["string", "null"],

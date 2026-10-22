@@ -4,7 +4,7 @@ import type { ToolsConfig } from 'shared/tools-config';
 import { maxLength } from '#/db/utils/constraints';
 import { channelPathColumn } from '#/db/utils/path-column';
 import { publicColumn } from '#/db/utils/public-column';
-import { publishedColumn } from '#/db/utils/published-column';
+import { channelPublishedColumn } from '#/db/utils/published-column';
 import { tenantEntityColumns } from '#/db/utils/tenant-entity-columns';
 
 export const channelColumns = <T extends ChannelEntityType>(entityType: T) => ({
@@ -12,7 +12,7 @@ export const channelColumns = <T extends ChannelEntityType>(entityType: T) => ({
   slug: varchar({ length: maxLength.field }).unique().notNull(),
   thumbnailUrl: varchar({ length: maxLength.url }),
   bannerUrl: varchar({ length: maxLength.url }),
-  ...publishedColumn,
+  ...channelPublishedColumn,
   ...publicColumn,
   /** Per-channel tool arrangement per placement slot. Stored sparse: a missing slot renders manifest defaults. */
   toolsConfig: jsonb().$type<ToolsConfig>().notNull().default({}),

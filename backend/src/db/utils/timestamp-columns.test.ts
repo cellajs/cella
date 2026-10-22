@@ -13,7 +13,8 @@ describe('toIsoTimestamp', () => {
     expect(toIsoTimestamp('2026-10-22 10:00:00.5')).toBe('2026-10-22T10:00:00.500Z');
   });
 
-  it('hands ISO text through unchanged', () => {
+  it('hands ISO text through unchanged, and text that is no instant', () => {
     expect(toIsoTimestamp('2026-10-22T10:00:00.123Z')).toBe('2026-10-22T10:00:00.123Z');
+    expect(toIsoTimestamp('infinity')).toBe('infinity');
   });
 });

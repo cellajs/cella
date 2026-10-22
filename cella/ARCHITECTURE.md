@@ -60,7 +60,7 @@ Every row answers who wrote it and when with the same few columns, written one w
 | `createdAt`, `createdBy` | moment, actor | Set once at insert. The immutability trigger refuses a change on entity tables. |
 | `updatedAt`, `updatedBy` | moment, actor | The row's last write by any actor for any reason: an edit, a publish and a soft delete all move them. Null until the first write after insert. |
 | `deletedAt`, `deletedBy` | moment, actor | The tombstone of a synced product row, which stays so caches drop it. |
-| `publishedAt` | moment | Null is a draft. On a channel the draft holds its invitations and shows to its own members; on a product it is the author's alone and outside sync. Stamped at publish, never a default. |
+| `publishedAt` | moment | Null is a draft. On a channel the draft holds its invitations and shows to its own members; on a product it is the author's alone and outside sync. A channel is live at insert unless its create passes null; a product table opts in and starts as a draft. |
 | `public` | boolean | Reversible, so a flag: the row reads for any actor once its entity declares `publicRead()`. |
 | `<verb>At`, `<verb>By` | moment, actor | A one-way act of a resource: `revokedAt`, `invokedAt`, `rejectedAt`. A reversible state is a boolean (`archived`, `muted`) or a status. |
 

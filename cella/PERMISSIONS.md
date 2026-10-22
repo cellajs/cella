@@ -169,7 +169,7 @@ export type RowConditionName = "own" | "public"; // this union IS the contract
 
 **Public read** (`shared/src/permissions/public-read.ts`) makes rows whose own `public` flag is set readable by any actor, anonymous included, independent of memberships. Declared per subject with `publicRead()`, it widens `read` only. It is not a policy cell, but it resolves through the same `'public'` row condition and parity test.
 
-Two row columns sit beside the engine: drafts (`publishedAt`) are checked before the engine. A product draft is visible to its author alone ([Drafts](./SYNC_ENGINE.md#drafts)); a channel draft to its own members and to a grant above it that also holds `update` on the type, in a list and by id alike (`draftChannelVisibleTo`). Visibility (`publicAt`) is row-local, set by the client on create, and never cascades.
+Two row columns sit beside the engine: drafts (`publishedAt`) are checked before the engine. A product draft is visible to its author alone ([Drafts](./SYNC_ENGINE.md#drafts)); a channel draft to its own members and to a grant above it that also holds `update` on the type, in a list and by id alike (`draftChannelVisibleTo`). Public read (`public`) is row-local: the server copies the home channel's flag onto a new row, and never cascades.
 
 ## Frontend map
 

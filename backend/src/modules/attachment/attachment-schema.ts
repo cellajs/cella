@@ -58,8 +58,6 @@ const attachmentCreateBodySchema = attachmentInsertSchema
     keys: true,
     groupId: true,
     convertedContentType: true,
-    // Row-local public read: client-sent, the template client copies the home channel's flag.
-    public: true,
   })
   .extend({
     id: validUuidSchema,

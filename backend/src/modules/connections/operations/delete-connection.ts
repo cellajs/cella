@@ -1,5 +1,6 @@
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { withActorRef } from '#/modules/actors/actor-refs';
 import { deleteConnection } from '#/modules/connections/connections-queries';
 import { log } from '#/utils/logger';
 
@@ -14,5 +15,5 @@ export async function deleteConnectionOp(ctx: UserContext, id: string) {
 
   log.info('Connection deleted', { connectionId: id, tenantId: ctx.var.tenantId });
 
-  return deleted;
+  return withActorRef(ctx, deleted);
 }

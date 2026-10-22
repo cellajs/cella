@@ -312,7 +312,6 @@ export type User = {
     finishedOnboarding: boolean;
   };
   updatedAt: string | null;
-  updatedBy: string | null;
   lastSeenAt: string | null;
   lastSignInAt: string | null;
 };
@@ -507,9 +506,9 @@ export type Connection = {
     logoUrl?: string;
   };
   createdAt: string;
-  createdBy: string | null;
+  createdBy: ActorRef | null;
   updatedAt: string | null;
-  updatedBy: string | null;
+  updatedBy: ActorRef | null;
 };
 
 /**
@@ -5190,7 +5189,6 @@ export type CreateAttachmentsData = {
      * MIME type of the server-converted variant; null when none.
      */
     convertedContentType?: string | null;
-    public?: boolean;
     stx: StxBase;
   }>;
   path: {
@@ -5793,9 +5791,9 @@ export type UpdateMembershipResponses = {
     channelId: string;
     userId: string;
     role: 'admin' | 'member';
-    createdBy: string | null;
+    createdBy: ActorRef | null;
     updatedAt: string | null;
-    updatedBy: string | null;
+    updatedBy: ActorRef | null;
     organizationId: string;
     archived?: boolean;
     muted?: boolean;

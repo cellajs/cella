@@ -328,18 +328,20 @@
         },
         "createdAt": { "type": "string", "required": true },
         "createdBy": {
-          "type": ["string", "null"],
+          "type": ["object", "null"],
           "required": true,
-          "format": "uuid"
+          "ref": "#/components/schemas/ActorRef",
+          "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
         },
         "updatedAt": {
           "type": ["string", "null"],
           "required": true
         },
         "updatedBy": {
-          "type": ["string", "null"],
+          "type": ["object", "null"],
           "required": true,
-          "format": "uuid"
+          "ref": "#/components/schemas/ActorRef",
+          "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
         }
       }
     },
@@ -362,9 +364,16 @@
       "config": {
         "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
       },
-      "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
-      "createdAt": "2024-08-25T16:44:28.368Z",
-      "updatedAt": "2024-10-28T09:20:16.614Z"
+      "createdBy": {
+        "id": "67b5bbbb-1dbd-49a5-af29-8ff28c16ce92",
+        "kind": "user",
+        "name": "Celestino Cummings",
+        "slug": "celestino.cummings",
+        "thumbnailUrl": null
+      },
+      "updatedBy": null,
+      "createdAt": "2024-10-20T17:01:42.197Z",
+      "updatedAt": "2024-10-28T06:23:25.886Z"
     }
   },
   {
@@ -713,11 +722,6 @@
             "updatedAt": {
               "type": ["string", "null"],
               "required": true
-            },
-            "updatedBy": {
-              "type": ["string", "null"],
-              "required": true,
-              "format": "uuid"
             },
             "lastSeenAt": {
               "type": ["string", "null"],
@@ -1861,10 +1865,10 @@
       "subscriptionId": null,
       "subscriptionStatus": "none",
       "subscriptionPlan": null,
-      "createdAt": "2024-12-13T14:51:04.197Z",
-      "updatedAt": "2024-12-19T07:52:53.171Z",
+      "createdAt": "2024-06-17T21:04:44.959Z",
+      "updatedAt": "2024-08-27T08:36:44.038Z",
       "organization": {
-        "id": "d1f6a5c0-34bb-485f-ab20-4e8f386efc6f",
+        "id": "b5556f70-5f9d-421f-98fc-6736b39230cc",
         "name": "Lubowitz, Waters and Haley",
         "slug": "lubowitz-waters-and-haley",
         "thumbnailUrl": null,
@@ -1935,11 +1939,6 @@
         "updatedAt": {
           "type": ["string", "null"],
           "required": true
-        },
-        "updatedBy": {
-          "type": ["string", "null"],
-          "required": true,
-          "format": "uuid"
         },
         "lastSeenAt": {
           "type": ["string", "null"],

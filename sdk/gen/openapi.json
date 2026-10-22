@@ -1313,10 +1313,6 @@
           "updatedAt": {
             "type": ["string", "null"]
           },
-          "updatedBy": {
-            "type": ["string", "null"],
-            "format": "uuid"
-          },
           "lastSeenAt": {
             "type": ["string", "null"]
           },
@@ -1342,7 +1338,6 @@
           "contrast",
           "userFlags",
           "updatedAt",
-          "updatedBy",
           "lastSeenAt",
           "lastSignInAt"
         ],
@@ -2005,10 +2000,10 @@
           "subscriptionId": null,
           "subscriptionStatus": "none",
           "subscriptionPlan": null,
-          "createdAt": "2024-12-13T14:51:04.197Z",
-          "updatedAt": "2024-12-19T07:52:53.171Z",
+          "createdAt": "2024-06-17T21:04:44.959Z",
+          "updatedAt": "2024-08-27T08:36:44.038Z",
           "organization": {
-            "id": "d1f6a5c0-34bb-485f-ab20-4e8f386efc6f",
+            "id": "b5556f70-5f9d-421f-98fc-6736b39230cc",
             "name": "Lubowitz, Waters and Haley",
             "slug": "lubowitz-waters-and-haley",
             "thumbnailUrl": null,
@@ -2077,15 +2072,27 @@
             "type": "string"
           },
           "createdBy": {
-            "type": ["string", "null"],
-            "format": "uuid"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActorRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "updatedAt": {
             "type": ["string", "null"]
           },
           "updatedBy": {
-            "type": ["string", "null"],
-            "format": "uuid"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActorRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -2116,9 +2123,16 @@
           "config": {
             "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
           },
-          "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
-          "createdAt": "2024-08-25T16:44:28.368Z",
-          "updatedAt": "2024-10-28T09:20:16.614Z"
+          "createdBy": {
+            "id": "67b5bbbb-1dbd-49a5-af29-8ff28c16ce92",
+            "kind": "user",
+            "name": "Celestino Cummings",
+            "slug": "celestino.cummings",
+            "thumbnailUrl": null
+          },
+          "updatedBy": null,
+          "createdAt": "2024-10-20T17:01:42.197Z",
+          "updatedAt": "2024-10-28T06:23:25.886Z"
         },
         "x-tags": ["data", "connections", "cella"]
       },
@@ -8389,10 +8403,10 @@
                       "subscriptionId": null,
                       "subscriptionStatus": "none",
                       "subscriptionPlan": null,
-                      "createdAt": "2024-05-30T05:01:57.952Z",
-                      "updatedAt": "2024-11-28T02:58:13.875Z",
+                      "createdAt": "2024-06-22T23:38:33.553Z",
+                      "updatedAt": "2024-07-04T17:56:58.275Z",
                       "organization": {
-                        "id": "bdd95bd4-2d0f-4669-bce9-94d4e950e6b7",
+                        "id": "7cd5ad47-e201-48ea-b309-ef48abaebe5b",
                         "name": "Predovic, Bahringer and Morar",
                         "slug": "predovic-bahringer-and-morar",
                         "thumbnailUrl": null,
@@ -8428,10 +8442,10 @@
                       "subscriptionId": null,
                       "subscriptionStatus": "none",
                       "subscriptionPlan": null,
-                      "createdAt": "2024-07-17T20:33:58.664Z",
-                      "updatedAt": "2024-08-13T21:05:00.748Z",
+                      "createdAt": "2024-02-16T14:15:54.160Z",
+                      "updatedAt": "2024-11-28T17:48:18.551Z",
                       "organization": {
-                        "id": "826b268e-9337-4427-86a6-c0b65978f12a",
+                        "id": "e43d172f-91aa-40ab-9aec-1508c5398200",
                         "name": "Crooks, Kuphal and Roob-Blick",
                         "slug": "crooks-kuphal-and-roob-blick",
                         "thumbnailUrl": null,
@@ -8547,10 +8561,10 @@
                   "subscriptionId": null,
                   "subscriptionStatus": "none",
                   "subscriptionPlan": null,
-                  "createdAt": "2024-02-01T00:12:08.765Z",
-                  "updatedAt": "2024-09-03T00:30:32.301Z",
+                  "createdAt": "2024-12-10T00:53:14.894Z",
+                  "updatedAt": "2024-12-24T22:04:41.481Z",
                   "organization": {
-                    "id": "71988d86-5e53-4c1f-b901-1d2b5998b423",
+                    "id": "21733856-e51b-4ba5-bb3f-3966112e2405",
                     "name": "Lubowitz, Waters and Haley",
                     "slug": "lubowitz-waters-and-haley",
                     "thumbnailUrl": null,
@@ -8710,10 +8724,10 @@
                   "subscriptionId": null,
                   "subscriptionStatus": "none",
                   "subscriptionPlan": null,
-                  "createdAt": "2024-04-08T13:43:15.807Z",
-                  "updatedAt": "2024-12-15T19:48:12.108Z",
+                  "createdAt": "2024-09-08T01:11:27.806Z",
+                  "updatedAt": "2024-10-21T16:53:27.252Z",
                   "organization": {
-                    "id": "61a88054-8a0e-440a-b2ed-d053b2c6139b",
+                    "id": "50c74a4f-2a15-40cf-b145-e0a8c02c130c",
                     "name": "Lubowitz, Waters and Haley",
                     "slug": "lubowitz-waters-and-haley",
                     "thumbnailUrl": null,
@@ -8793,9 +8807,16 @@
                     "config": {
                       "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
                     },
-                    "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
-                    "createdAt": "2024-08-25T16:44:28.368Z",
-                    "updatedAt": "2024-10-28T09:20:16.614Z"
+                    "createdBy": {
+                      "id": "67b5bbbb-1dbd-49a5-af29-8ff28c16ce92",
+                      "kind": "user",
+                      "name": "Celestino Cummings",
+                      "slug": "celestino.cummings",
+                      "thumbnailUrl": null
+                    },
+                    "updatedBy": null,
+                    "createdAt": "2024-10-31T15:48:56.884Z",
+                    "updatedAt": "2024-11-19T11:29:25.819Z"
                   }
                 ],
                 "schema": {
@@ -8932,9 +8953,16 @@
                   "config": {
                     "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
                   },
-                  "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
-                  "createdAt": "2024-08-25T16:44:28.368Z",
-                  "updatedAt": "2024-10-28T09:20:16.614Z"
+                  "createdBy": {
+                    "id": "67b5bbbb-1dbd-49a5-af29-8ff28c16ce92",
+                    "kind": "user",
+                    "name": "Celestino Cummings",
+                    "slug": "celestino.cummings",
+                    "thumbnailUrl": null
+                  },
+                  "updatedBy": null,
+                  "createdAt": "2024-12-21T03:26:20.206Z",
+                  "updatedAt": "2024-12-28T16:31:51.990Z"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Connection"
@@ -9072,9 +9100,16 @@
                   "config": {
                     "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
                   },
-                  "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
-                  "createdAt": "2024-08-25T16:44:28.368Z",
-                  "updatedAt": "2024-10-28T09:20:16.614Z"
+                  "createdBy": {
+                    "id": "67b5bbbb-1dbd-49a5-af29-8ff28c16ce92",
+                    "kind": "user",
+                    "name": "Celestino Cummings",
+                    "slug": "celestino.cummings",
+                    "thumbnailUrl": null
+                  },
+                  "updatedBy": null,
+                  "createdAt": "2024-10-13T13:52:54.656Z",
+                  "updatedAt": "2024-10-29T03:34:07.508Z"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Connection"
@@ -9155,9 +9190,16 @@
                   "config": {
                     "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
                   },
-                  "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
-                  "createdAt": "2024-08-25T16:44:28.368Z",
-                  "updatedAt": "2024-10-28T09:20:16.614Z"
+                  "createdBy": {
+                    "id": "67b5bbbb-1dbd-49a5-af29-8ff28c16ce92",
+                    "kind": "user",
+                    "name": "Celestino Cummings",
+                    "slug": "celestino.cummings",
+                    "thumbnailUrl": null
+                  },
+                  "updatedBy": null,
+                  "createdAt": "2024-01-25T15:49:41.571Z",
+                  "updatedAt": "2024-11-18T07:00:20.193Z"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Connection"
@@ -11181,9 +11223,6 @@
                       "maxLength": 255,
                       "description": "MIME type of the server-converted variant; null when none."
                     },
-                    "public": {
-                      "type": "boolean"
-                    },
                     "stx": {
                       "$ref": "#/components/schemas/StxBase"
                     }
@@ -12794,7 +12833,13 @@
                   "muted": false,
                   "archived": false,
                   "createdAt": "2024-10-28T10:38:59.996Z",
-                  "createdBy": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
+                  "createdBy": {
+                    "id": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
+                    "kind": "user",
+                    "name": "Marquis Hudson",
+                    "slug": "marquis.hudson73",
+                    "thumbnailUrl": null
+                  },
                   "updatedAt": "2024-10-28T10:38:59.996Z",
                   "updatedBy": null
                 },
@@ -12829,15 +12874,27 @@
                       "enum": ["admin", "member"]
                     },
                     "createdBy": {
-                      "type": ["string", "null"],
-                      "format": "uuid"
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/ActorRef"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "updatedAt": {
                       "type": ["string", "null"]
                     },
                     "updatedBy": {
-                      "type": ["string", "null"],
-                      "format": "uuid"
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/ActorRef"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "organizationId": {
                       "type": "string",

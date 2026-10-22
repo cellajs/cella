@@ -5,6 +5,7 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { withActorRef } from '#/modules/actors/actor-refs';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships/memberships-queries';
 import { type membershipUpdateBodySchema, personalViewKeys } from '#/modules/memberships/memberships-schema';
@@ -73,5 +74,5 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
 
   log.info('Membership updated', { userId: updatedMembership.userId, membershipId: updatedMembership.id });
 
-  return membershipAsSeenBy(updatedMembership, actorId);
+  return withActorRef(ctx, membershipAsSeenBy(updatedMembership, actorId));
 }

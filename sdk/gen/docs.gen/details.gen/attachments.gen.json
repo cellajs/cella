@@ -896,7 +896,6 @@
               "description": "MIME type of the server-converted variant; null when none.",
               "maxLength": 255
             },
-            "public": { "type": "boolean", "required": false },
             "stx": {
               "type": "object",
               "required": true,

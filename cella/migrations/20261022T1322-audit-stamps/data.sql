@@ -12,3 +12,12 @@ CREATE POLICY "attachments_select_policy" ON "attachments" AS PERMISSIVE FOR SEL
   AND "attachments"."tenant_id" = current_setting('app.tenant_id', true)::text
   AND ("attachments"."deleted_at" IS NULL OR current_setting('app.include_deleted', true) = 'true')
 );--> statement-breakpoint
+
+-- The same refusal for a publication row filter: a draft-capable product table (`WHERE (published_at IS NOT NULL)`)
+-- leaves the publication before its retype and comes back with its filter after. The worker is down during a deploy,
+-- so the slot sees no gap. One pair per such table; projectcampus has items and comments:
+ALTER PUBLICATION cdc_pub DROP TABLE "items";--> statement-breakpoint
+ALTER PUBLICATION cdc_pub ADD TABLE "items" WHERE ("published_at" IS NOT NULL);--> statement-breakpoint
+
+-- Every `SET DATA TYPE timestamp with time zone` casts the stored wall time as UTC, whatever the session's zone:
+-- ALTER TABLE "<table>" ALTER COLUMN "<column>" SET DATA TYPE timestamp with time zone USING "<column>" AT TIME ZONE 'UTC';

@@ -15,6 +15,9 @@ function isStampedSource(file: string): boolean {
   );
 }
 
+/** A stamp value written by hand: the clock, a local holding it, or a sibling stamp. */
+const stampValue = String.raw`(?:getIsoDate\(\)|new Date\b[^,}]*|sql\x60now\(\)\x60|now\b|deletedAt\b|at\b)`;
+
 const rules: { pattern: RegExp; rule: string; message: string }[] = [
   {
     pattern: /new Date\(\)\.toISOString\(\)/g,
@@ -22,10 +25,13 @@ const rules: { pattern: RegExp; rule: string; message: string }[] = [
     message: 'use getIsoDate() for the current moment',
   },
   {
-    pattern:
-      /\b(?:updatedAt|deletedAt):\s*(?:new Date\b|sql`now\(\)`|deletedAt\b|now\b)|\bdeletedAt:\s*getIsoDate\(\)|\bupdatedBy:\s*(?:ctx\.|actorId\b|user\.id\b|deletedBy\b)/g,
+    // The pair in one object literal, in either order: a lone `updatedBy` in an option bag is not a write.
+    pattern: new RegExp(
+      String.raw`\bupdatedAt:\s*${stampValue}\s*,\s*updatedBy:|\bupdatedBy:\s*[\w.]+\s*,\s*updatedAt:\s*${stampValue}|\bdeletedAt:\s*${stampValue}\s*,\s*deletedBy:|\bdeletedBy:\s*[\w.]+\s*,\s*deletedAt:\s*${stampValue}`,
+      'g',
+    ),
     rule: 'stamp-pair',
-    message: 'spread updateStamps(actorId) or deleteStamps(actorId) instead of writing the stamp by hand',
+    message: 'spread updateStamps(actorId) or deleteStamps(actorId) instead of writing the pair by hand',
   },
 ];
 

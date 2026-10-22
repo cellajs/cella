@@ -1,4 +1,4 @@
-import { eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, or, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
@@ -13,7 +13,10 @@ const actorRefSelect = {
   thumbnailUrl: usersTable.thumbnailUrl,
 };
 
-/** The references of the given actors, resolved through the supertable so a service account comes back named. */
+/**
+ * The references of the given actors, resolved through the supertable so a service account comes back named. A
+ * deleted user leaves its `actors` row behind, so an actor without a kind row is absent here and resolves to null.
+ */
 async function findActorRefsByIds(ctx: DbContext, ids: string[]): Promise<ActorRef[]> {
   if (ids.length === 0) return [];
   return ctx.var.db
@@ -21,7 +24,7 @@ async function findActorRefsByIds(ctx: DbContext, ids: string[]): Promise<ActorR
     .from(actorsTable)
     .leftJoin(usersTable, eq(usersTable.id, actorsTable.id))
     .leftJoin(serviceAccountsTable, eq(serviceAccountsTable.id, actorsTable.id))
-    .where(inArray(actorsTable.id, ids));
+    .where(and(inArray(actorsTable.id, ids), or(isNotNull(usersTable.id), isNotNull(serviceAccountsTable.id))));
 }
 
 const actorKeys = ['createdBy', 'updatedBy', 'deletedBy'] as const;
