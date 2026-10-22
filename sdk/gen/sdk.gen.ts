@@ -2597,7 +2597,7 @@ export const deletePushSubscription = <ThrowOnError extends boolean = true>(
 /**
  * Register a Web Push subscription
  *
- * Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row.
+ * Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service.
  *
  * **POST /push/subscriptions** ·· [createPushSubscription](https://www.cellajs.com/docs/operations?operationTag=push#tag/push/POST/push/subscriptions) ·· _push_
  *

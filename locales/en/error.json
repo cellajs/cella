@@ -78,6 +78,7 @@
   "invalid_offset": "Offset must be number, that greater or equal to 0",
   "invalid_param": "Invalid parameters",
   "invalid_param.text": "If you copied a URL, please check if it is correct and complete.",
+  "invalid_push_endpoint": "The subscription does not come from a known push service",
   "invalid_request": "Invalid request",
   "invalid_request.text": "Request could not be processed due to missing or wrong data.",
   "invalid_role": "Not allowed",
