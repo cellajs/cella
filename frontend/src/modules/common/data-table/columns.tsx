@@ -63,6 +63,7 @@ export const countColumn = <T,>(key: string, { name, icon: Icon = BoxIcon, hidde
   minBreakpoint: 'md',
   minWidth: 60,
   maxWidth: 120,
+  cellClass: 'gap-2',
   renderCell: ({ row }) => {
     const count = get(row);
     const text = typeof count === 'number' ? formatCount(count) : '-';
@@ -70,7 +71,7 @@ export const countColumn = <T,>(key: string, { name, icon: Icon = BoxIcon, hidde
 
     return (
       <>
-        <Icon className="mr-2 opacity-50" />
+        <Icon className="opacity-50" />
         <span {...(isAbbreviated && { 'data-tooltip': 'true', 'data-tooltip-content': count })}>{text}</span>
       </>
     );
@@ -95,7 +96,7 @@ export const emailColumn = <T extends { email?: string | null }>(options: EmailC
       <a
         href={`mailto:${row.email}`}
         tabIndex={tabIndex}
-        className="active:press link-decoration active:link-decoration-strong truncate opacity-80 outline-0 ring-0 hover:underline hover:opacity-100"
+        className="active:press link-decoration active:link-decoration-strong truncate opacity-80 outline-0 hover:underline hover:opacity-100"
       >
         {row.email}
       </a>

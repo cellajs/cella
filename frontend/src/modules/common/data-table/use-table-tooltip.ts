@@ -1,9 +1,14 @@
 import { useEffect, useRef } from 'react';
+import { tw } from '~/utils/tw';
 
 /** Delay before a tooltip first appears on hover (ms). */
 const showDelay = 400;
 /** After a tooltip hides, the next one appears without delay within this window (ms). */
 const skipDelayWindow = 500;
+
+const tooltipClass = tw(
+  'pointer-events-none fixed z-200 hidden rounded-md bg-muted-foreground px-3 py-1.5 text-primary-foreground text-xs max-md:invisible',
+);
 
 const positionTooltip = (reference: HTMLElement, tooltip: HTMLElement, gap = 4) => {
   const rect = reference.getBoundingClientRect();
@@ -25,8 +30,7 @@ export function useTableTooltip(gridElement: HTMLDivElement | null) {
     // A tap fires compatibility mousemoves, so hover only counts for a pointer that can hover (jsdom has no matchMedia).
     const hoverQuery = window.matchMedia?.('(hover: hover)');
 
-    tooltip.className =
-      'max-md:invisible bg-muted-foreground text-primary-foreground fixed pointer-events-none hidden rounded-md text-xs px-3 py-1.5 z-200';
+    tooltip.className = tooltipClass;
     document.body.appendChild(tooltip);
     tooltipRef.current = tooltip;
 

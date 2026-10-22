@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { ChevronRightIcon, HouseIcon } from 'lucide-react';
+import { HouseIcon } from 'lucide-react';
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelBase, UserBase } from 'sdk';
@@ -34,16 +34,13 @@ export function PageHeader({ entity, panel, subline, parents, parent, ...coverPr
     <div className="relative w-full">
       <PageCover id={entity.id} url={entity.bannerUrl} {...coverProps} />
 
-      <div
-        className="absolute bottom-0 flex min-h-18 w-full bg-background/50 px-1 py-1 backdrop-blur-xs dark:bg-background/75"
-        id={pageTopHashNav.hash}
-      >
+      <div className="absolute bottom-0 flex min-h-18 w-full bg-background/50 p-1 backdrop-blur-xs dark:bg-background/75" id={pageTopHashNav.hash}>
         <EntityAvatar
           id={entity.id}
           name={entity.name}
           type={entity.entityType}
           url={entity.thumbnailUrl}
-          className={entity.entityType === 'user' ? 'mx-3 -mt-13 size-26 rounded-full shadow-[0_0_0_4px_rgba(0,0,0,0.1)]' : 'm-2 size-12'}
+          className={entity.entityType === 'user' ? 'mx-3 -mt-13 size-26 ring-4 ring-black/10' : 'm-2 size-12'}
         />
 
         <div className="flex flex-col truncate py-1.5 pl-1">
@@ -55,35 +52,31 @@ export function PageHeader({ entity, panel, subline, parents, parent, ...coverPr
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem className="max-sm:hidden">
-                    <BreadcrumbLink className="focus-inset -m-1 flex items-center p-1 text-muted-foreground" render={<Link to="/home" />}>
+                    <BreadcrumbLink className="focus-inset -m-1 flex items-center p-1" render={<Link to="/home" />}>
                       <HouseIcon className="size-3.5" />
                       <span className="sr-only">{t('c:home')}</span>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
-                  <BreadcrumbSeparator className="text-muted-foreground/70 max-sm:hidden">
-                    <ChevronRightIcon className="size-3" />
-                  </BreadcrumbSeparator>
+                  <BreadcrumbSeparator className="text-muted-foreground/70 max-sm:hidden" />
                   {crumbs.map((crumb) => {
                     const crumbRoute = getChannelRoute(crumb);
                     return (
                       <Fragment key={crumb.id}>
                         <BreadcrumbItem className="max-sm:hidden">
                           <BreadcrumbLink
-                            className="flex items-center text-muted-foreground"
+                            className="flex items-center"
                             render={<Link to={crumbRoute.to} params={crumbRoute.params} {...pageTopHashNav} />}
                           >
                             <span className="truncate">{crumb.name}</span>
                           </BreadcrumbLink>
                         </BreadcrumbItem>
-                        <BreadcrumbSeparator className="text-muted-foreground/70 max-sm:hidden">
-                          <ChevronRightIcon className="size-3" />
-                        </BreadcrumbSeparator>
+                        <BreadcrumbSeparator className="text-muted-foreground/70 max-sm:hidden" />
                       </Fragment>
                     );
                   })}
-                  <BreadcrumbItem className="flex items-center text-muted-foreground">
+                  <BreadcrumbItem>
                     <span>{t(`c:${entity.entityType}`).toLowerCase()}</span>
-                    {appConfig.mode === 'development' && <span className="ml-2 text-muted-foreground text-xs max-sm:hidden">{entity.id}</span>}
+                    {appConfig.mode === 'development' && <span className="ml-2 text-xs max-sm:hidden">{entity.id}</span>}
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>

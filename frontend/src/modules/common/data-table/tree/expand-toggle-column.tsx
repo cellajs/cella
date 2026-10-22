@@ -2,6 +2,7 @@ import { RenderExpandToggle } from '~/modules/common/data-grid/cell-renderers';
 import type { TreeRow } from '~/modules/common/data-table/tree/build-tree';
 import { useTreeContext } from '~/modules/common/data-table/tree/tree-context';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { cn } from '~/utils/cn';
 
 const expandToggleColumnKey = 'expand-toggle-column';
 
@@ -34,9 +35,11 @@ const column: ColumnOrColumnGroup<AnyTreeRow> = {
   maxWidth: 36,
   // Focus ring moves to the toggle button; leaf rows keep the cell outline.
   cellClass: (row) =>
-    row._hasChildren
-      ? 'flex items-center justify-center p-0! aria-selected:outline-hidden aria-selected:[&_[data-slot=expand-toggle]]:ring-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-ring aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-background'
-      : 'flex items-center justify-center p-0!',
+    cn(
+      'justify-center p-0',
+      row._hasChildren &&
+        'aria-selected:outline-hidden aria-selected:[&_[data-slot=expand-toggle]]:ring-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-ring aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-background',
+    ),
   renderCell: ({ row, tabIndex }) => <ExpandToggleCell row={row} tabIndex={tabIndex} />,
 };
 

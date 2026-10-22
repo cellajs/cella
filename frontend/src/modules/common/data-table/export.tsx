@@ -61,7 +61,7 @@ export function Export<TData extends Record<string, any>>({ filename, columns, s
           <span className="max-xl:hidden">{t('c:export')}</span>
         </DropdownMenuTrigger>
       </TooltipButton>
-      <DropdownMenuContent align="end" className="p-1">
+      <DropdownMenuContent align="end">
         {isOnline && (
           <>
             {/* Label the full-export pair so it reads apart from the selected-rows pair below */}

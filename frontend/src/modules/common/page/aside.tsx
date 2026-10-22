@@ -35,11 +35,8 @@ export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus 
 
   return (
     <div className={cn('flex w-full flex-col gap-1', className)}>
-      {tabs.map(({ id, label, icon, resource }, index) => {
+      {tabs.map(({ id, label, icon: Icon, resource }, index) => {
         const destructive = id.includes('delete');
-        // The ghost hover swaps the text color, so a destructive row restates its own
-        const btnClass = cn(destructive && 'text-destructive hover:text-destructive', 'w-full justify-start text-left hover:bg-accent/50');
-        const Icon = icon;
         return (
           <Button
             key={id}
@@ -47,14 +44,14 @@ export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus 
             size="lg"
             data-spy-link={id}
             className={cn(
-              btnClass,
+              'w-full justify-start text-left hover:bg-accent/50',
+              // The ghost hover swaps the text color, so a destructive row restates its own
+              destructive && 'text-destructive hover:text-destructive',
               // Rows at rest sit back like the page tabs; hover, focus and the active row come forward. Dimmed, destructive text drops below 4.5:1
               !destructive && 'opacity-70',
-              'transition-[color,background-color,opacity] hover:opacity-100 focus-visible:opacity-100 data-spy-active:opacity-100',
-              'more-contrast:opacity-100',
+              'more-contrast:opacity-100 transition-[color,background-color,opacity] hover:opacity-100 focus-visible:opacity-100 data-spy-active:opacity-100',
               // Fill and weight carry the active row; the ring is an edge only a reader who asked for contrast needs
-              'data-spy-active:bg-secondary data-spy-active:font-semibold',
-              'more-contrast:data-spy-active:inset-ring more-contrast:data-spy-active:inset-ring-input',
+              'more-contrast:data-spy-active:inset-ring more-contrast:data-spy-active:inset-ring-input data-spy-active:bg-secondary data-spy-active:font-semibold',
             )}
             render={
               <Link
@@ -73,7 +70,8 @@ export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus 
               />
             }
           >
-            {Icon && <Icon className="size-5" />} {t(label, { resource: resource ? t(resource).toLowerCase() : '' })}
+            {Icon && <Icon className="size-5" />}
+            {t(label, { resource: resource ? t(resource).toLowerCase() : '' })}
           </Button>
         );
       })}

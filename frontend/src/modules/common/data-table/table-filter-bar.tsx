@@ -27,7 +27,7 @@ export function FilterBarActions({ children, className = '' }: FilterBarChildPro
     <motion.div
       animate={{ opacity: isFilterActive ? 0 : 1, x: isFilterActive ? -20 : 0 }}
       transition={{ duration: 0.15 }}
-      className={cn('flex items-center gap-3 max-sm:shrink-0', className, isFilterActive && 'max-sm:pointer-events-none')}
+      className={cn('flex items-center gap-3 max-sm:shrink-0', isFilterActive && 'max-sm:pointer-events-none', className)}
     >
       {children}
     </motion.div>
@@ -100,7 +100,7 @@ export function TableFilterBar({ onResetFilters, isFiltered, children }: TableFi
         size="icon"
         onClick={toggleFilter}
         aria-label={isFilterActive ? t('c:cancel') : t('c:search')}
-        className="relative ml-auto size-10 sm:hidden"
+        className="ml-auto sm:hidden"
       >
         <AnimatePresence mode="wait">
           {isFilterActive ? (

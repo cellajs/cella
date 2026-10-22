@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { hintFadeIn, hintFadeOut } from '~/modules/common/resizable-panels/resizable-panels';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 interface BoardPanelHeaderProps {
   leading?: ReactNode;
@@ -11,9 +12,9 @@ interface BoardPanelHeaderProps {
 
 export function BoardPanelHeader({ leading, actions, isCollapsed, className }: BoardPanelHeaderProps) {
   return (
-    <div className={cn('z-50 flex min-h-13 flex-row items-center gap-2 rounded-lg rounded-b-none border border-b-0 p-2 max-sm:hidden', className)}>
+    <div className={cn('z-50 flex min-h-13 items-center gap-2 rounded-lg rounded-b-none border border-b-0 p-2 max-sm:hidden', className)}>
       {leading}
-      {!isCollapsed && actions && <div className={cn('flex grow items-center justify-end gap-2', hintFadeOut)}>{actions}</div>}
+      {!isCollapsed && actions && <div className={cn(hintFadeOut, 'flex grow items-center justify-end gap-2')}>{actions}</div>}
     </div>
   );
 }
@@ -42,7 +43,7 @@ export function BoardPanelBody({
   return (
     <div
       className={cn(
-        'group/panel relative flex max-w-full flex-1 shrink-0 snap-center flex-col rounded-b-none bg-transparent opacity-100 sm:border',
+        'relative flex max-w-full flex-1 shrink-0 snap-center flex-col sm:border',
         // Highlight the border when an ancestor wrapper is a hovered drop target
         'group-data-[highlighted=true]/paneldrop:border-primary',
         !windowScroll && 'sm:h-[calc(100dvh-var(--board-panel-offset,146px))]',
@@ -77,14 +78,14 @@ interface CollapsedPanelViewProps {
 const emptySections: CollapsedSection[] = [];
 
 // w-12 is a collapsed panel inside its border, so the expanded preview sits where the collapsed count does
-const collapsedCountClass = 'absolute top-[calc(50%-0.5rem)] left-0 w-12 text-center text-muted-foreground text-xs';
+const collapsedCountClass = tw('absolute top-[calc(50%-0.5rem)] left-0 w-12 text-center text-muted-foreground text-xs');
 
 export function CollapsedPanelView({ mainCount, sections = emptySections }: CollapsedPanelViewProps) {
   const topSections = sections.filter((section) => section.position === 'top');
   const bottomSections = sections.filter((section) => section.position === 'bottom');
 
   return (
-    <div className="relative flex flex-1 snap-center flex-col bg-transparent group-data-[highlighted=true]/paneldrop:border-primary sm:border">
+    <div className="relative flex flex-1 snap-center flex-col group-data-[highlighted=true]/paneldrop:border-primary sm:border">
       {topSections.map((section, i) => (
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: static sections

@@ -13,13 +13,13 @@ export type TabNavAvatar = { id: string; thumbnailUrl?: string | null; name: str
 
 /** A tab of either bar: a link in PageTabNav, a button in LocalTabNav. */
 export const tabNavItemClass = tw(
-  'focus-effect group relative rounded-sm px-2 py-3 font-medium opacity-70 ring-inset ring-offset-0 transition-opacity last:mr-4 hover:opacity-100 data-[active=true]:opacity-100 lg:px-4',
+  'focus-effect focus-inset group/tab relative rounded-sm px-2 py-3 font-medium opacity-70 transition-opacity last:mr-4 hover:opacity-100 data-[active=true]:opacity-100 lg:px-4',
 );
 
 /** A tab's label, shortened in the middle past 20 characters. */
 export function TabNavLabel({ label }: { label: TKey }) {
   const { t } = useTranslation();
-  return <span className="group-active:press block">{truncateMiddle(t(label), 20)}</span>;
+  return <span className="group-active/tab:press block">{truncateMiddle(t(label), 20)}</span>;
 }
 
 interface TabNavShellProps {
@@ -43,7 +43,7 @@ export function TabNavShell({ title, avatar, className, indicator, children }: T
   return (
     <StickyBox
       publishVar="--sticky-stack-nav"
-      className={cn('group/sticky @container/tab-nav z-80 grid grid-cols-[1fr_auto_1fr] border-b bg-background/75 backdrop-blur-xs', className)}
+      className={cn('group/sticky @container z-80 grid grid-cols-[1fr_auto_1fr] border-b bg-background/75 backdrop-blur-xs', className)}
     >
       <div className="col-start-1 hidden min-w-max items-center starting:opacity-0 transition-opacity duration-300 @2xl:group-data-[sticky=true]/sticky:flex">
         {avatar && (
@@ -51,7 +51,7 @@ export function TabNavShell({ title, avatar, className, indicator, children }: T
         )}
         {title && <div className="@4xl:block hidden max-w-42 truncate font-semibold text-sm leading-5">{title}</div>}
       </div>
-      <div className="scrollbar-none col-start-2 min-w-0 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+      <div className="no-scrollbar col-start-2 min-w-0 overflow-x-auto">
         <div className="justify-center-safe relative flex min-w-max gap-1 px-1">
           {indicator && <TabIndicatorBar indicator={indicator} />}
           {children}

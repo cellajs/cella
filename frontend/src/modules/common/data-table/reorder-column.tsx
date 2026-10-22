@@ -96,7 +96,7 @@ export function reorderColumn<TRow>({ getName, onMove, rowCount, cellClass }: Re
     name: '',
     width: 36,
     maxWidth: 36,
-    cellClass: cn('flex items-center justify-center', cellClass),
+    cellClass: cn('justify-center', cellClass),
     rowDragHandle: true,
     renderHeaderCell: () => <SrOnlyHeader label="c:order" />,
     renderCell: ({ row, rowIdx }) => (

@@ -145,7 +145,7 @@ export function DataTable<TData>({
           columnCount={columns.filter((column) => !column.hidden).length}
         />
       ) : error && !rows?.length ? (
-        <div className="flex size-full flex-col items-center justify-center bg-background text-muted-foreground">
+        <div className="flex size-full flex-col items-center justify-center bg-background">
           <div className="my-8 text-center text-destructive text-sm">{error.message}</div>
         </div>
       ) : !rows?.length ? (

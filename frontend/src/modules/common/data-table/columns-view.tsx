@@ -23,13 +23,13 @@ export function ColumnsView<TData>({ columns, setColumns, className = '', childr
     <DropdownMenu>
       <TooltipButton className={className} toolTipContent={t('c:columns_view')}>
         <DropdownMenuTrigger render={<Button variant="outline" className="relative flex" />}>
-          {namedColumns.some((column) => column.hidden) && <Badge className="absolute -top-1 -right-1 z-10 flex size-2 justify-center p-0" />}
-          <SlidersHorizontalIcon className="size-4" />
+          {namedColumns.some((column) => column.hidden) && <Badge className="absolute -top-1 -right-1 z-10 size-2 p-0" />}
+          <SlidersHorizontalIcon />
           <span className="max-xl:hidden">{t('c:view')}</span>
           {namedColumns.some((column) => column.hidden) && <span className="sr-only">{t('c:columns_hidden')}</span>}
         </DropdownMenuTrigger>
       </TooltipButton>
-      <DropdownMenuContent align="end" className="min-w-56 p-1" collisionPadding={16}>
+      <DropdownMenuContent align="end" className="min-w-56" collisionPadding={16}>
         {namedColumns.map((column) => (
           <DropdownMenuCheckboxItem
             key={column.key}
@@ -40,7 +40,7 @@ export function ColumnsView<TData>({ columns, setColumns, className = '', childr
             {column.name}
           </DropdownMenuCheckboxItem>
         ))}
-        <DropdownMenuSeparator className="my-1 border-t last:hidden" />
+        <DropdownMenuSeparator className="last:hidden" />
         {children}
       </DropdownMenuContent>
     </DropdownMenu>
