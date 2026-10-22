@@ -3,7 +3,6 @@
  * @license MIT
  */
 import type { CSSProperties } from 'react';
-import { escapeString } from './escape-string.js';
 
 const UPPERCASE = /([A-Z])/g;
 
@@ -43,7 +42,7 @@ function hyphenateString(prop: string) {
   return prop.replace(UPPERCASE, hyphenateChar).replace(MS, '-ms-');
 }
 
-/** Based on Hyperon's [`stringifyStyles`](https://github.com/i-like-robots/hyperons/blob/main/src/stringify-styles.js). */
+/** The caller escapes the result as an attribute value. Based on Hyperon's [`stringifyStyles`](https://github.com/i-like-robots/hyperons/blob/main/src/stringify-styles.js). */
 export function stringifyStyles(styles: CSSProperties) {
   const parts = [];
   for (const key of Object.keys(styles) as ReadonlyArray<keyof typeof styles>) {
@@ -51,7 +50,7 @@ export function stringifyStyles(styles: CSSProperties) {
     if (value != null) {
       const unit = typeof value === 'number' && value !== 0 && !UNITLESS_PROPS.has(key) ? 'px' : '';
       const normalized = CACHE[key] || (CACHE[key] = hyphenateString(key));
-      parts.push(`${normalized}:${typeof value === 'number' ? value : escapeString(value)}${unit}`);
+      parts.push(`${normalized}:${value}${unit}`);
     }
   }
 

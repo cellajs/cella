@@ -62,3 +62,9 @@ export function escapeString(string: string) {
 
   return lastIndex !== index ? html + str.slice(lastIndex, index) : html;
 }
+
+/** Text content: `&` and `<` are the only characters that can start markup. */
+export const escapeText = (value: string) => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;');
+
+/** A double-quoted attribute value: `&` and `"` are the only characters that can end or alter it. */
+export const escapeAttribute = (value: string) => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;');

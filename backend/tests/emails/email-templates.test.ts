@@ -122,6 +122,6 @@ describe('new sign-in notice location line', () => {
 
     expect(html).not.toContain('Location');
     expect(html).not.toContain('unknown');
-    expect(html).toContain('<strong>Browser:</strong> Firefox on macOS<br><strong>Method:</strong> Passkey');
+    expect(html).toContain('<strong>Browser:</strong> Firefox on macOS<br /><strong>Method:</strong> Passkey');
   });
 });

@@ -11,7 +11,6 @@ interface EmailContainerProps {
 export const EmailContainer = ({ previewText, bodyStyle, containerStyle, headChildren, children }: EmailContainerProps) => (
   <Html>
     <Head>{headChildren}</Head>
-    <Preview>{previewText}</Preview>
     <Body
       style={{
         backgroundColor: '#f5f5f5',
@@ -21,6 +20,7 @@ export const EmailContainer = ({ previewText, bodyStyle, containerStyle, headChi
         ...bodyStyle,
       }}
     >
+      <Preview>{previewText}</Preview>
       <Container style={{ maxWidth: '30rem', width: '100%', margin: '0 auto', ...containerStyle }}>{children}</Container>
     </Body>
   </Html>
