@@ -39,7 +39,7 @@ export function Alert({
   ...props
 }: React.ComponentProps<'div'> & VariantProps<typeof alertVariants> & { onClose?: () => void }) {
   return (
-    <div data-slot="alert" role="alert" className={cn(alertVariants({ variant, soft }), className)} {...props}>
+    <div data-slot="alert" role="alert" className={cn(alertVariants({ variant, soft }), onClose && 'pr-12', className)} {...props}>
       {onClose && (
         <button
           type="button"

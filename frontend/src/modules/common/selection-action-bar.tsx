@@ -4,8 +4,8 @@ import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useBodyClass } from '~/hooks/use-body-class';
+import { CountBadge } from '~/modules/common/count-badge';
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
 interface SelectionActionBarProps {
@@ -37,7 +37,7 @@ export function SelectionActionBar({ count, onClear, children }: SelectionAction
           transition={{ bounce: 0, duration: 0.2, ease: 'easeOut' }}
           className="fixed inset-x-0 bottom-4 z-110 mx-auto flex w-fit items-center gap-2 rounded-lg bg-card/50 p-2 shadow-lg backdrop-blur-xs"
         >
-          <Badge className="absolute -top-2 -right-2 min-w-5 px-1 py-0 shadow-sm">{count}</Badge>
+          <CountBadge count={count} className="absolute -top-2 -right-2" />
 
           <div className="flex items-center gap-2">{children}</div>
 

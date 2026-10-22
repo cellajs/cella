@@ -56,8 +56,8 @@ export function AlertBanner({
   const alertContent = (
     <Alert variant={variant} onClose={setAsSeen} className={animate ? undefined : className}>
       {Icon && <Icon />}
-      {title && <AlertTitle className="pr-8">{t(title)}</AlertTitle>}
-      {children && <AlertDescription className="pr-8">{children}</AlertDescription>}
+      {title && <AlertTitle>{t(title)}</AlertTitle>}
+      {children && <AlertDescription>{children}</AlertDescription>}
     </Alert>
   );
 

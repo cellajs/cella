@@ -2,7 +2,6 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { ContentKeyTransition } from '~/modules/common/sheeter/content-key-transition';
 import { type InternalSheet, sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
-import { cn } from '~/utils/cn';
 
 const sideToSwipeDirection = { top: 'up', bottom: 'down', left: 'left', right: 'right' } as const;
 
@@ -23,10 +22,12 @@ export function SheeterDrawer({ sheet, onExited }: { sheet: InternalSheet; onExi
       onOpenChangeComplete={(isOpen) => !isOpen && onExited?.()}
     >
       <DrawerContent id={String(id)} className={className} keepMounted={keepMounted}>
-        <DrawerHeader sticky className={cn(headerClassName, !(description || title) && 'hidden')}>
-          {title && <DrawerTitle>{titleContent}</DrawerTitle>}
-          {description && <DrawerDescription>{description}</DrawerDescription>}
-        </DrawerHeader>
+        {(title || description) && (
+          <DrawerHeader sticky className={headerClassName}>
+            {title && <DrawerTitle>{titleContent}</DrawerTitle>}
+            {description && <DrawerDescription>{description}</DrawerDescription>}
+          </DrawerHeader>
+        )}
         <ContentKeyTransition contentKey={contentKey}>{content}</ContentKeyTransition>
       </DrawerContent>
     </Drawer>

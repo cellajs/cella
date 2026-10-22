@@ -1,6 +1,6 @@
-import { HistoryIcon, XIcon } from 'lucide-react';
+import { HistoryIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '~/modules/ui/button';
+import { CloseButton } from '~/modules/common/close-button';
 import { ComboboxGroup, ComboboxGroupLabel, ComboboxItem } from '~/modules/ui/combobox';
 
 /** A picked history row, which re-runs its query in place. */
@@ -30,18 +30,14 @@ export function SearchHistoryGroup({ searches, onRemove }: SearchHistoryGroupPro
           </div>
           <div className="flex items-center">
             <span className="mx-3 text-muted-foreground text-xs max-sm:hidden">{index}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('c:remove')}
-              className="size-6"
+            <CloseButton
+              size="sm"
+              label="c:remove"
               onClick={(event) => {
                 event.stopPropagation();
                 onRemove(search);
               }}
-            >
-              <XIcon className="size-4 opacity-70 hover:opacity-100" />
-            </Button>
+            />
           </div>
         </ComboboxItem>
       ))}

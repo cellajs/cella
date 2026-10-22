@@ -26,25 +26,24 @@ export function SheetTabs({ tabs }: SheetTabsProps) {
       {tabs.length > 1 && (
         <nav className="flex justify-center gap-2 pb-4">
           {tabs.map((tab) => (
-            <div key={tab.id} className="relative">
-              <Button
-                variant="none"
-                press={false}
-                data-current={currentTab.id === tab.id}
-                className="group/sheet-tab opacity-80 hover:opacity-100 data-[current=true]:opacity-100"
-                onClick={() => setCurrentId(tab.id)}
-              >
-                <span className="group-active/sheet-tab:press block">{t(tab.label)}</span>
-                {currentTab.id === tab.id && (
-                  <motion.span
-                    initial={false}
-                    layoutId={layoutId}
-                    transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                    className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary"
-                  />
-                )}
-              </Button>
-            </div>
+            <Button
+              key={tab.id}
+              variant="none"
+              press={false}
+              data-current={currentTab.id === tab.id}
+              className="group/sheet-tab relative opacity-80 hover:opacity-100 data-[current=true]:opacity-100"
+              onClick={() => setCurrentId(tab.id)}
+            >
+              <span className="group-active/sheet-tab:press block">{t(tab.label)}</span>
+              {currentTab.id === tab.id && (
+                <motion.span
+                  initial={false}
+                  layoutId={layoutId}
+                  transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
+                  className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary"
+                />
+              )}
+            </Button>
           ))}
         </nav>
       )}

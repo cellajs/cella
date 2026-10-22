@@ -10,7 +10,7 @@ interface SimpleHeaderProps {
   children?: React.ReactNode;
   className?: string;
   textClassName?: string;
-  /** When true, text collapses when parent has data-sticky="true" (use with group class on parent) */
+  /** Collapses the text after a scroll while a `group/sticky` ancestor carries `data-sticky="true"`, as a stuck `StickyBox` does. */
   collapseText?: boolean;
 }
 
@@ -29,7 +29,7 @@ export function SimpleHeader({ heading, text, children, className = '', textClas
             collapseText && 'mt-2 max-h-24 transition-[max-height,opacity,margin] duration-300 ease-in-out md:mt-3',
             collapseText &&
               hasScrolled &&
-              'overflow-hidden group-data-[sticky=true]:mt-0 group-data-[sticky=true]:max-h-0 group-data-[sticky=true]:opacity-0',
+              'overflow-hidden group-data-[sticky=true]/sticky:mt-0 group-data-[sticky=true]/sticky:max-h-0 group-data-[sticky=true]/sticky:opacity-0',
             textClassName,
           )}
         >

@@ -4,7 +4,7 @@ import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 
 export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
-  const { id, content, open, description, title, titleContent = title, className, headerClassName = '' } = dialog;
+  const { id, content, open, description, title, titleContent = title, className, headerClassName } = dialog;
 
   const updateDialog = useDialoger((state) => state.update);
 
@@ -22,11 +22,13 @@ export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
 
   return (
     <Drawer open={open} disablePointerDismissal={isDropdownOpen} onOpenChange={closeDialog} onOpenChangeComplete={onOpenChangeComplete}>
-      <DrawerContent id={String(id)} className={className}>
-        <DrawerHeader data-overlay="dialog" className={title || description ? headerClassName : 'hidden'}>
-          {title && <DrawerTitle>{titleContent}</DrawerTitle>}
-          {description && <DrawerDescription>{description}</DrawerDescription>}
-        </DrawerHeader>
+      <DrawerContent id={String(id)} data-overlay="dialog" className={className}>
+        {(title || description) && (
+          <DrawerHeader className={headerClassName}>
+            {title && <DrawerTitle>{titleContent}</DrawerTitle>}
+            {description && <DrawerDescription>{description}</DrawerDescription>}
+          </DrawerHeader>
+        )}
         <div className="px-3 pb-3">{content}</div>
       </DrawerContent>
     </Drawer>

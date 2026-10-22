@@ -86,10 +86,12 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
         autoScrollOnDrag={autoScrollOnDrag}
         keepMounted={keepMounted}
       >
-        <SheetHeader sticky className={cn(headerClassName, !(title || description) && 'hidden')}>
-          {title && <SheetTitle className="h-6 leading-6">{titleContent}</SheetTitle>}
-          {description && <SheetDescription>{description}</SheetDescription>}
-        </SheetHeader>
+        {(title || description) && (
+          <SheetHeader sticky className={headerClassName}>
+            {title && <SheetTitle className="h-6 leading-6">{titleContent}</SheetTitle>}
+            {description && <SheetDescription>{description}</SheetDescription>}
+          </SheetHeader>
+        )}
         <ContentKeyTransition contentKey={contentKey}>{content}</ContentKeyTransition>
       </SheetContent>
     </Sheet>

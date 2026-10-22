@@ -51,7 +51,7 @@ export function DownAlert() {
     <div className="pointer-events-auto fixed right-4 left-4 z-2000 max-sm:top-4 sm:bottom-4">
       <Alert variant={variant} onClose={dismissAlert}>
         <Icon />
-        <AlertDescription className="pr-8">
+        <AlertDescription>
           <span className="font-bold">{t(titleKey)}</span>
           <span className="mx-2">&#183;</span>
           <Trans

@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { collapseMotion } from '~/modules/common/collapse-motion';
-import { Badge } from '~/modules/ui/badge';
+import { CountBadge } from '~/modules/common/count-badge';
 import { Button } from '~/modules/ui/button';
 
 interface ExpandableListProps<T> {
@@ -47,9 +47,7 @@ export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwa
             setExpanded(true);
           }}
         >
-          <Badge size="sm" className="aspect-square px-1 py-0">
-            {items.length - initialDisplayCount}
-          </Badge>
+          <CountBadge count={items.length - initialDisplayCount} />
           {t(expandText)}
           <ChevronDownIcon className="opacity-50 transition-opacity group-hover/expandable-list:opacity-100" />
         </Button>
