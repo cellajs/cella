@@ -29,7 +29,7 @@ export function DescriptionCell({ row, editable }: DescriptionCellProps) {
     : (event: MouseEvent<HTMLSpanElement>) => openDescriptionSheetFromCell(row.id, event.currentTarget.closest<HTMLElement>('[role="gridcell"]'));
 
   return (
-    <span className="flex size-full items-center opacity-80" onDoubleClick={handleDoubleClick}>
+    <span className="flex size-full items-center text-muted-foreground" onDoubleClick={handleDoubleClick}>
       <span className="truncate">{text}</span>
     </span>
   );

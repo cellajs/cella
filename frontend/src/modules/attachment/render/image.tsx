@@ -38,9 +38,10 @@ interface ControlButtonProps {
   icon: IconComponent;
 }
 function ControlButton({ tooltipContent, onClick, icon: Icon }: ControlButtonProps) {
+  // The bar floats over the image: a solid hover fill in dark mode too, where outline's own is translucent.
   return (
     <TooltipButton toolTipContent={tooltipContent}>
-      <Button onClick={onClick} className="border border-input bg-background text-accent-foreground hover:bg-accent">
+      <Button variant="outline" onClick={onClick} className="dark:hover:bg-accent">
         <Icon className="size-3.5" />
       </Button>
     </TooltipButton>

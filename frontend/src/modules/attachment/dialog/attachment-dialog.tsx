@@ -3,7 +3,7 @@ import { useMatch, useSearch } from '@tanstack/react-router';
 import { t } from 'i18next';
 import { FlameKindlingIcon } from 'lucide-react';
 import { useState } from 'react';
-import { AttachmentsCarousel } from '~/modules/attachment/attachments-carousel';
+import { AttachmentsCarousel, headerButtonClass } from '~/modules/attachment/attachments-carousel';
 import { attachmentDialogContentClassName, attachmentDialogParam, attachmentGroupParam } from '~/modules/attachment/dialog/params';
 import { type ResolvableItem, useResolvedAttachments } from '~/modules/attachment/hooks/use-resolved-attachments';
 import { attachmentQueryOptions, useGroupAttachments } from '~/modules/attachment/query';
@@ -60,7 +60,7 @@ export function AttachmentDialog() {
     return (
       <>
         <div className="fixed top-0 left-0 z-20 flex w-full justify-end bg-background/60 p-3 backdrop-blur-xs">
-          <CloseButton onClick={() => removeDialog()} size="lg" className="-my-1" />
+          <CloseButton onClick={() => removeDialog()} className={headerButtonClass} />
         </div>
         <ContentPlaceholder icon={FlameKindlingIcon} title="error:not_found.text">
           <Button variant="secondary" onClick={() => removeDialog()}>

@@ -29,6 +29,7 @@ import {
 import { DialogTitle } from '~/modules/ui/dialog';
 import { HelpCollapse } from '~/modules/ui/help-toggle';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 export type CarouselItemData = {
   id: string;
@@ -45,6 +46,9 @@ export type CarouselItemData = {
   /** The file is still only on its uploader's device: the slide shows whose, with no url. */
   pendingUpload?: PendingUpload;
 };
+
+/** The viewer header's icon buttons: `-my-1` keeps the header at the stage's 3rem inset, `shrink-0` keeps a long title from squeezing them. */
+export const headerButtonClass = tw('-my-1 size-8 shrink-0 opacity-70 hover:opacity-100');
 
 type AttachmentsCarouselProps = {
   items: CarouselItemData[];
@@ -140,8 +144,8 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
     >
       {/* z-20 matches the zoom controls: at z-10 the viewer, a flex item with the same index, paints over the title. */}
       {isDialog && (
-        <div className="fixed top-0 left-0 z-20 flex w-full flex-col bg-background/60 p-3 backdrop-blur-xs">
-          <div className="flex w-full gap-2 text-center sm:text-left">
+        <div className="fixed top-0 left-0 z-20 w-full bg-background/60 p-3 backdrop-blur-xs">
+          <div className="flex gap-2">
             {/* The visible name is the dialog's accessible name; with no name, a screen-reader-only title labels it. */}
             {currentItem.name ? (
               <DialogTitle className="ml-1 flex h-6 min-w-0 items-center gap-2 truncate text-base leading-6 tracking-tight max-sm:text-sm">
@@ -157,7 +161,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 size="icon"
                 aria-expanded={descriptionOpen}
                 aria-label={i18n.t('c:description')}
-                className="group/description-toggle -my-1 size-8 shrink-0 opacity-70 hover:opacity-100"
+                className={cn(headerButtonClass, 'group/description-toggle')}
                 press={false}
                 onClick={() => setDescriptionOpen(!descriptionOpen)}
               >
@@ -173,7 +177,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 variant="ghost"
                 size="icon"
                 aria-label={i18n.t('c:open')}
-                className="-my-1 size-8 opacity-70 hover:opacity-100"
+                className={headerButtonClass}
                 onClick={() => window.open(currentItem.url, '_blank')}
               >
                 <ExternalLinkIcon className="size-5" />
@@ -187,18 +191,18 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 size="icon"
                 disabled={isInProgress}
                 aria-label={i18n.t('c:download')}
-                className="-my-1 size-8 opacity-70 hover:opacity-100"
+                className={headerButtonClass}
                 onClick={() => download(currentItem.url, currentItem.filename || 'file')}
               >
                 {isInProgress ? <Spinner className="size-5 text-foreground/80" noDelay /> : <DownloadIcon className="size-5" />}
               </Button>
             )}
 
-            <CloseButton onClick={() => removeDialog()} size="lg" className="-my-1" />
+            <CloseButton onClick={() => removeDialog()} className={headerButtonClass} />
           </div>
           {descriptionText && (
             <HelpCollapse open={descriptionOpen}>
-              <p className="mt-2 ml-1 max-w-3xl max-sm:mx-auto">{descriptionText}</p>
+              <p className="mt-2 ml-1 max-w-3xl">{descriptionText}</p>
             </HelpCollapse>
           )}
         </div>

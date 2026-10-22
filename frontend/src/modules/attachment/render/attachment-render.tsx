@@ -79,7 +79,7 @@ export function AttachmentRender({
     <ContentPlaceholder icon={getFileIcon(type)} title="c:download_to_view">
       {/* The URL is a CDN or presigned URL online, a local blob URL offline. */}
       <Button variant="plain" className="mt-4" disabled={isInProgress} onClick={() => download(url, filename || 'file')}>
-        {isInProgress ? <Spinner size="sm" noDelay /> : <DownloadIcon className="size-4" />}
+        {isInProgress ? <Spinner size="sm" noDelay /> : <DownloadIcon />}
         <span>{t('c:download')}</span>
       </Button>
     </ContentPlaceholder>

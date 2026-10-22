@@ -139,10 +139,10 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
 
         return (
           <span
-            className="inline-flex size-full items-center"
+            className="inline-flex size-full items-center gap-2"
             {...(outsideSeenWindow && { 'data-tooltip': 'true', 'data-tooltip-content': t('c:views_retention_hint') })}
           >
-            <UserIcon className="mr-2 opacity-50" />
+            <UserIcon className="text-muted-foreground/70" />
             <span className={cn(outsideSeenWindow && 'text-muted-foreground')}>{row.viewCount ?? 0}</span>
           </span>
         );
