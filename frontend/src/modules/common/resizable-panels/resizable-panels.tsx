@@ -2,6 +2,7 @@ import { createContext, type ReactNode, useContext, useEffect, useId, useMemo, u
 import { useTranslation } from 'react-i18next';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 // Rules & visual examples → resizable-panels.md
 
@@ -206,10 +207,10 @@ function resolveLayout(panels: PanelConfig[], drag: DragState, dx: number): Layo
 }
 
 /** Panel content the other collapse state lacks: fades out with a resize hint, and fades in when its panel opens. For `fade="marked"` panels. */
-export const hintFadeOut = 'opacity-[var(--content-opacity,1)] in-data-opening:animate-in in-data-opening:fade-in';
+export const hintFadeOut = tw('in-data-opening:fade-in in-data-opening:animate-in opacity-(--content-opacity,1)');
 
 /** Content only the collapsed state shows, previewed in the expanded panel: fades in with a collapse hint. */
-export const hintFadeIn = 'opacity-[calc(1_-_var(--content-opacity,1))]';
+export const hintFadeIn = tw('opacity-[calc(1_-_var(--content-opacity,1))]');
 
 const curtainPleats = 'repeating-linear-gradient(90deg, transparent 0 9px, color-mix(in oklch, var(--foreground) 4%, transparent) 9px 14px)';
 
@@ -218,8 +219,7 @@ function ResizeHint() {
   return (
     <div
       data-resize-hint=""
-      className="pointer-events-none absolute inset-y-0 right-0 z-999 flex data-[side=left]:right-auto data-[side=left]:left-0 data-[side=left]:flex-row-reverse"
-      style={{ opacity: 'var(--hint-strength, 0)' }}
+      className="pointer-events-none absolute inset-y-0 right-0 z-999 flex opacity-(--hint-strength,0) data-[side=left]:right-auto data-[side=left]:left-0 data-[side=left]:flex-row-reverse"
     >
       {/* Grows into the handle it hands over to: at the snap the dragged separator lands on this edge */}
       <div
@@ -227,7 +227,7 @@ function ResizeHint() {
         style={{ width: 'calc(2px + (var(--separator-width, 2px) - 2px) * var(--hint-strength, 0))' }}
       >
         <div
-          className="absolute top-(--hint-y) left-1/2 h-40 w-12 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          className="absolute top-(--hint-y) left-1/2 h-40 w-12 -translate-x-1/2 -translate-y-1/2"
           style={{ background: 'radial-gradient(closest-side, color-mix(in oklch, var(--primary) 35%, transparent), transparent)' }}
         />
       </div>
@@ -716,7 +716,7 @@ export function ResizablePanelGroup({
 
   return (
     <PanelGroupContext.Provider value={contextValue}>
-      <div ref={containerRef} className={className} style={{ display: 'flex', overflow: 'visible' }}>
+      <div ref={containerRef} className={cn('flex', className)}>
         {children}
       </div>
     </PanelGroupContext.Provider>
@@ -756,11 +756,9 @@ export function ResizablePanel({ id, minWidth, collapsedWidth = 0, collapsible =
       id={domId}
       data-panel={id}
       // clip, not hidden: hidden makes this a scroll container and captures the panel's sticky elements
-      style={{ overflow: 'clip', position: 'relative', flexShrink: 0 }}
+      className="relative shrink-0 overflow-clip"
     >
-      <div className="h-full" style={fade === 'all' ? { opacity: 'var(--content-opacity, 1)' } : undefined}>
-        {children}
-      </div>
+      <div className={cn('h-full', fade === 'all' && 'opacity-(--content-opacity,1)')}>{children}</div>
       <ResizeHint />
     </div>
   );
@@ -844,11 +842,8 @@ export function ResizableSeparator({ index, className, 'aria-label': ariaLabel }
       aria-orientation="vertical"
       tabIndex={0}
       // Consumers draw focus in the bar's own color: a ring has no room between panels. outline-hidden keeps the forced-colors outline.
-      className={cn('select-none outline-hidden', className)}
+      className={cn('shrink-0 cursor-col-resize touch-none select-none outline-hidden', className)}
       style={{
-        touchAction: 'none',
-        cursor: 'col-resize',
-        flexShrink: 0,
         // The curtain's leading edge ends where this separator lands after the snap, so the separator yields to it
         opacity: 'calc(1 - 0.65 * var(--hint-strength, 0))',
         scale: 'calc(1 - 0.6 * var(--hint-strength, 0)) 1',

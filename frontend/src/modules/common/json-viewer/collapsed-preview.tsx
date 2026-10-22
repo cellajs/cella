@@ -15,7 +15,7 @@ export function CollapsedPreview({ itemCount, closeBracket, hiddenMatchCount }: 
       <span className="mx-1.5 whitespace-nowrap text-muted-foreground text-xs italic">{t('c:item', { count: itemCount }).toLowerCase()}</span>
       <span className={jsonViewerTheme.bracket}>{closeBracket}</span>
       {hiddenMatchCount > 0 && (
-        <span className={cn('ml-1.5 rounded px-1.5 py-0.5 font-medium text-sm', jsonViewerTheme.matchBadge)} title={t('c:matches_collapsed.text')}>
+        <span className={cn(jsonViewerTheme.matchBadge, 'ml-1.5 rounded px-1.5 py-0.5 font-medium text-sm')} title={t('c:matches_collapsed.text')}>
           {t('c:matches', { count: hiddenMatchCount })}
         </span>
       )}

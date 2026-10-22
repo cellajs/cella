@@ -30,20 +30,14 @@ export function NodeKey({ keyName, showKeyQuotes, isObjectValue, hasSelfRequired
 
   // Dictionary key from additionalProperties, written as [key].
   const isDictionaryKey = openapiMode === 'schema' && keyName.startsWith('[') && keyName.endsWith(']');
+  const isMuted = isDictionaryKey || (openapiMode === 'schema' && !isObjectValue);
 
   return (
     <>
-      <span
-        ref={ref}
-        className={cn(
-          'font-medium',
-          jsonViewerTheme.key,
-          isDictionaryKey ? 'text-muted-foreground! italic' : openapiMode === 'schema' && !isObjectValue ? 'text-muted-foreground!' : '',
-        )}
-      >
+      <span ref={ref} className={cn('font-medium', isMuted ? 'text-muted-foreground' : jsonViewerTheme.key, isDictionaryKey && 'italic')}>
         <HighlightText text={showKeyQuotes && !isDictionaryKey ? `"${keyName}"` : keyName} />
       </span>
-      {hasSelfRequired && <span className={cn('ml-1.5 rounded px-1 py-0.5 font-medium text-xs', jsonViewerTheme.required)}>required</span>}
+      {hasSelfRequired && <span className={cn(jsonViewerTheme.badge, jsonViewerTheme.required, 'ml-1.5')}>required</span>}
       {colon}
     </>
   );

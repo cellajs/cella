@@ -29,16 +29,14 @@ export function SchemaLabels({ typeValue, refValue, contentTypeValue, hasAnyOf, 
     <>
       {typeValues.map((type, index) => (
         <span key={type}>
-          <span className={cn('ml-0.5 rounded px-1 py-0.5 font-medium text-xs opacity-70', jsonViewerTheme.schemaType, getTypeColorClass(type))}>
-            {type}
-          </span>
+          <span className={cn(jsonViewerTheme.schemaType, getTypeColorClass(type), 'ml-0.5 px-1 py-0.5 text-xs opacity-70')}>{type}</span>
           {index < typeValues.length - 1 && <span className="mx-1 text-muted-foreground">|</span>}
         </span>
       ))}
       {compositionLabel && (
-        <span className="ml-0.5 rounded bg-amber-500/10 px-1 py-0.5 font-medium text-amber-600 text-xs dark:text-amber-400">{compositionLabel}</span>
+        <span className={cn(jsonViewerTheme.badge, 'ml-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400')}>{compositionLabel}</span>
       )}
-      {refValue && <span className="ml-0.5 rounded bg-primary/10 px-1 py-0.5 font-medium text-primary text-xs">{refValue}</span>}
+      {refValue && <span className={cn(jsonViewerTheme.badge, 'ml-0.5 bg-primary/10 text-primary')}>{refValue}</span>}
       {contentTypeValue && <span className="ml-1 text-muted-foreground text-xs italic">{contentTypeValue}</span>}
       {constraints && (
         <span className="ml-1.5 text-muted-foreground text-xs">

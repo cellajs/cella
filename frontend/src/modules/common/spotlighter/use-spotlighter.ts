@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { useLatestCallback } from '~/hooks/use-latest-ref';
+import { tw } from '~/utils/tw';
 
 /**
  * Spotlighter: one page-dim overlay for in-place spotlight states (an expanded composer, a card
@@ -50,7 +51,7 @@ export function useSpotlight(id: string, active: boolean, onClose: () => void) {
  * Raises an element above the overlay. Apply to the outermost element of the spotlit region.
  * @public
  */
-export const spotlightLift = 'relative z-111';
+export const spotlightLift = tw('relative z-111');
 
 /**
  * Lift for a row inside a virtualized list: virtua's row wrappers have `contain: layout style`

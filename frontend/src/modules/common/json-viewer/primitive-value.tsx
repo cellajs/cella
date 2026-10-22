@@ -7,6 +7,9 @@ import { tw } from '~/utils/tw';
 
 const quote = <span className="group-data-[openapi-mode=schema]/json-viewer:hidden">"</span>;
 
+const baseClass = tw('wrap-break-word whitespace-pre-line');
+const stringClass = cn(baseClass, 'inline-block max-w-[600px] align-top');
+
 interface InlinePrimitiveValueProps {
   value: unknown;
 }
@@ -42,7 +45,6 @@ interface PrimitiveValueProps {
 
 export function PrimitiveValue({ value, type, collapseStringsAfterLength, openapiMode }: PrimitiveValueProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const baseClass = tw('wrap-break-word whitespace-pre-line');
 
   switch (type) {
     case 'string': {
@@ -65,7 +67,6 @@ export function PrimitiveValue({ value, type, collapseStringsAfterLength, openap
           {quote}
         </>
       );
-      const stringClass = cn(baseClass, 'inline-block max-w-[600px] align-top');
       if (!shouldTruncate) return <span className={stringClass}>{text}</span>;
 
       const toggle = () => setIsExpanded(!isExpanded);

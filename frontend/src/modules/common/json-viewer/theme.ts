@@ -1,19 +1,23 @@
+import { tw } from '~/utils/tw';
+
 /** Tailwind classes of the viewer's parts. */
 export const jsonViewerTheme = {
-  string: 'text-foreground',
-  number: 'text-amber-700 dark:text-amber-400',
-  boolean: 'text-rose-700 dark:text-rose-400',
-  null: 'text-muted-foreground',
-  key: 'text-emerald-700 dark:text-emerald-400',
+  string: tw('text-foreground'),
+  number: tw('text-amber-700 dark:text-amber-400'),
+  boolean: tw('text-rose-700 dark:text-rose-400'),
+  null: tw('text-muted-foreground'),
+  key: tw('text-emerald-700 dark:text-emerald-400'),
   /** Hidden in schema mode */
-  bracket: 'font-medium text-gray-700 group-data-[openapi-mode=schema]/json-viewer:hidden dark:text-gray-300',
-  index: 'text-muted-foreground text-xs',
-  schemaType: 'font-medium italic',
+  bracket: tw('font-medium text-gray-700 group-data-[openapi-mode=schema]/json-viewer:hidden dark:text-gray-300'),
+  index: tw('text-muted-foreground text-xs'),
+  schemaType: tw('font-medium italic'),
   /** Type keywords other than the primitive ones (array, object) */
-  structureType: 'text-purple-600 dark:text-purple-400',
-  required: 'bg-amber-100/50 dark:bg-amber-900/10 text-amber-700/60 dark:text-amber-200/60',
+  structureType: tw('text-purple-600 dark:text-purple-400'),
+  /** Shape of the schema keyword badges: composition, ref and required */
+  badge: tw('rounded px-1 py-0.5 font-medium text-xs'),
+  required: tw('bg-amber-100/50 text-amber-700/60 dark:bg-amber-900/10 dark:text-amber-200/60'),
   /** Count of matches inside a collapsed node */
-  matchBadge: 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200',
+  matchBadge: tw('bg-yellow-200 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200'),
 };
 
 /** Color class for a JSON Schema type keyword, shared by schema labels and schema-mode values. */
