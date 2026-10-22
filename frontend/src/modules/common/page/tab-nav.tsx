@@ -197,7 +197,7 @@ export function useNavTabRedirect(parentRouteId: string, options: ResolvePlaceme
   }, [navigate, targetId]);
 }
 
-interface Props extends ResolvePlacementOptions {
+interface PageTabNavProps extends ResolvePlacementOptions {
   /** Explicit tabs array - if provided, takes precedence over parentRouteId */
   tabs?: PageTab[];
   /** Parent route ID to auto-generate tabs from child routes with staticData.navTab */
@@ -208,7 +208,7 @@ interface Props extends ResolvePlacementOptions {
   className?: string;
 }
 
-export function PageTabNav({ tabs: explicitTabs, parentRouteId, title, avatar, fallbackToFirst, className, ...placementOptions }: Props) {
+export function PageTabNav({ tabs: explicitTabs, parentRouteId, title, avatar, fallbackToFirst, className, ...placementOptions }: PageTabNavProps) {
   const isMobile = useBreakpointBelow('sm', false);
   const { hasStarted } = useMountedState();
 

@@ -8,9 +8,9 @@ import {
   type DataGridProps,
   type RenderRowProps,
 } from '~/modules/common/data-grid';
+import { DataTableSkeleton } from '~/modules/common/data-table/data-table-skeleton';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import { NoRows } from '~/modules/common/data-table/no-rows';
-import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useFetchMoreOnDemand } from '~/modules/common/data-table/use-fetch-more-on-demand';
 import { useTableTooltip } from '~/modules/common/data-table/use-table-tooltip';
@@ -110,7 +110,7 @@ export function DataTable<TData>({
 
   // Virtualized tables use the grid's near-end state; fully rendered tables use InfiniteLoader observation.
   const [nearEnd, setNearEnd] = useState(false);
-  useFetchMoreOnDemand({ demand: !!enableVirtualization && nearEnd, hasNextPage, isFetching: !!isFetching, error: !!error, fetchMore });
+  useFetchMoreOnDemand({ demand: !!enableVirtualization && nearEnd, hasNextPage, isFetching: !!isFetching, hasError: !!error, fetchMore });
 
   // Memoized because `DataGrid` passes it to memoized rows; a fresh function each render defeats that memo.
   const handleSelectedRowsChange = useCallback(
@@ -139,7 +139,7 @@ export function DataTable<TData>({
       {/* A failed first load has no rows, so the skeleton shows only while no error is known. */}
       {(isLoading || !rows) && !error ? (
         <DataTableSkeleton
-          cellsWidths={['3rem', '10rem', '4rem']}
+          cellWidths={['3rem', '10rem', '4rem']}
           cellHeight={rowHeight}
           // Count only visible columns so the skeleton matches what the grid renders.
           columnCount={columns.filter((column) => !column.hidden).length}
@@ -149,7 +149,7 @@ export function DataTable<TData>({
           <div className="my-8 text-center text-destructive text-sm">{error.message}</div>
         </div>
       ) : !rows?.length ? (
-        <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
+        <NoRows isFiltered={isFiltered} isFetching={isFetching} emptyContent={NoRowsComponent} />
       ) : (
         <div className="relative grid" ref={setGridElement}>
           <DataGrid

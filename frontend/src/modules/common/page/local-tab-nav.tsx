@@ -6,7 +6,7 @@ import { getScrollParent } from '~/modules/common/sticky-box';
 
 export type LocalTab = { id: string; label: TKey };
 
-interface Props {
+interface LocalTabNavProps {
   tabs: LocalTab[];
   activeId: string;
   onTabChange: (id: string) => void;
@@ -16,17 +16,17 @@ interface Props {
 }
 
 /**
- * Routeless twin of PageTabNav for surfaces without URL state, such as a profile sheet: the same
+ * Routeless twin of PageTabNav for views without URL state, such as a profile sheet: the same
  * visual shell, with tabs as plain buttons driven by `activeId` and `onTabChange`.
  */
-export function LocalTabNav({ tabs, activeId, onTabChange, title, avatar, className }: Props) {
+export function LocalTabNav({ tabs, activeId, onTabChange, title, avatar, className }: LocalTabNavProps) {
   const indicator = useTabIndicator();
   // Zero-height sentinel above the bar: the scroll-reset target inside a sheet, where the
   // window-scoped useScrollReset() has no effect.
-  const resetRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const scrollToReset = () => {
-    const sentinel = resetRef.current;
+    const sentinel = sentinelRef.current;
     if (!sentinel) return;
     const scrollParent = getScrollParent(sentinel);
     const containerTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top;
@@ -43,7 +43,7 @@ export function LocalTabNav({ tabs, activeId, onTabChange, title, avatar, classN
 
   return (
     <>
-      <div ref={resetRef} aria-hidden className="h-0" />
+      <div ref={sentinelRef} aria-hidden className="h-0" />
       <TabNavShell title={title} avatar={avatar} className={className} indicator={indicator}>
         {tabs.map(({ id, label }) => {
           const isActive = id === activeId;

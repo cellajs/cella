@@ -80,22 +80,20 @@ export function TableFilterBar({ onResetFilters, isFiltered, children }: TableFi
   const { t } = useTranslation();
   const isDesktop = useBreakpointAbove('sm');
 
-  const [isFilterActive, setFilterActive] = useState<boolean>(!!isFiltered);
-
-  const effectiveFilterActive = isDesktop ? false : isFilterActive;
+  const [isFilterActive, setIsFilterActive] = useState<boolean>(!!isFiltered);
 
   const toggleFilter = () => {
     if (isFilterActive) {
       if (isFiltered) onResetFilters();
-      setFilterActive(false);
+      setIsFilterActive(false);
     } else {
-      setFilterActive(true);
+      setIsFilterActive(true);
     }
   };
 
   return (
     <div className="flex w-full items-center gap-2 max-sm:relative max-sm:flex-1">
-      <TableFilterBarContext.Provider value={{ isFilterActive: effectiveFilterActive }}>{children}</TableFilterBarContext.Provider>
+      <TableFilterBarContext.Provider value={{ isFilterActive: !isDesktop && isFilterActive }}>{children}</TableFilterBarContext.Provider>
 
       <Button
         variant="secondary"

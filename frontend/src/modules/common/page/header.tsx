@@ -10,7 +10,7 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 
-type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
+interface PageHeaderProps extends Omit<PageCoverProps, 'id' | 'url'> {
   entity: ChannelBase | UserBase;
   panel?: React.ReactNode;
   /** Takes the place of the crumb row below the name, for an entity that sits in no hierarchy. */
@@ -19,7 +19,7 @@ type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
   parents?: EnrichedChannel[];
   /** @deprecated Use `parents`. */
   parent?: EnrichedChannel;
-};
+}
 
 /**
  * Page header. Role visibility belongs to the panel's role-labeled membership button.

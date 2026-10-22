@@ -13,14 +13,14 @@ export type EllipsisOption<T> = {
   onSelect: (row: T, triggerRef: RefObject<HTMLButtonElement | null>) => void;
 };
 
-interface Props<T> {
+interface TableEllipsisProps<T> {
   row: T;
   tabIndex: number;
   options: EllipsisOption<T>[];
 }
 
 /** Ellipsis cell button opening a dropdown, or a drawer on mobile. */
-export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options }: Props<T>) {
+export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options }: TableEllipsisProps<T>) {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 

@@ -22,7 +22,7 @@ export function TabNavLabel({ label }: { label: TKey }) {
   return <span className="group-active:press block">{truncateMiddle(t(label), 20)}</span>;
 }
 
-interface Props {
+interface TabNavShellProps {
   title?: string;
   avatar?: TabNavAvatar;
   className?: string;
@@ -39,7 +39,7 @@ interface Props {
  * from the first tab with `justify-center-safe`. Container queries size the left cell, so the
  * same shell works inside a sheet: avatar from `@2xl`, title from `@4xl`.
  */
-export function TabNavShell({ title, avatar, className, indicator, children }: Props) {
+export function TabNavShell({ title, avatar, className, indicator, children }: TabNavShellProps) {
   return (
     <StickyBox
       publishVar="--sticky-stack-nav"

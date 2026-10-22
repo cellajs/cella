@@ -9,17 +9,18 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-interface PageTab extends PlacementDescriptor {
+interface PageAsideItem extends PlacementDescriptor {
   icon?: IconComponent;
 }
 
 interface PageAsideProps<T> {
-  tabs: T[] | readonly T[];
+  tabs: readonly T[];
   className?: string;
-  setFocus?: boolean;
+  /** Focuses the first row on mount, from sm up. */
+  autoFocus?: boolean;
 }
 
-export function PageAside<T extends PageTab>({ tabs, className, setFocus }: PageAsideProps<T>) {
+export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus }: PageAsideProps<T>) {
   const isMobile = useBreakpointBelow('sm', false);
   const { t } = useTranslation();
 
@@ -29,7 +30,7 @@ export function PageAside<T extends PageTab>({ tabs, className, setFocus }: Page
   const firstTabRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
-    if (!isMobile && setFocus) firstTabRef.current?.focus();
+    if (!isMobile && autoFocus) firstTabRef.current?.focus();
   }, []);
 
   return (
@@ -63,9 +64,9 @@ export function PageAside<T extends PageTab>({ tabs, className, setFocus }: Page
                 // Every link points at this page: without the hash, each would announce itself as the current page.
                 activeOptions={{ includeHash: true }}
                 draggable={false}
-                onClick={(e) => {
-                  if (e.metaKey || e.ctrlKey) return;
-                  e.preventDefault();
+                onClick={(event) => {
+                  if (event.metaKey || event.ctrlKey) return;
+                  event.preventDefault();
                   scrollToSectionById(id);
                 }}
                 replace

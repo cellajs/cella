@@ -7,9 +7,16 @@ import { Badge } from '~/modules/ui/badge';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-type Props = { icon: IconComponent; label: TKey; badge?: ReactNode } & ButtonProps;
+interface TableBarButtonProps extends ButtonProps {
+  icon: IconComponent;
+  label: TKey;
+  badge?: ReactNode;
+}
 
-export const TableBarButton = forwardRef<HTMLButtonElement, Props>(function TableBarButton({ icon: Icon, label, badge, className, ...props }, ref) {
+export const TableBarButton = forwardRef<HTMLButtonElement, TableBarButtonProps>(function TableBarButton(
+  { icon: Icon, label, badge, className, ...props },
+  ref,
+) {
   const { t } = useTranslation();
   return (
     <Button

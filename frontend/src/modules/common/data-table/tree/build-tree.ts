@@ -29,8 +29,8 @@ interface BuildTreeOptions {
 export function buildTree<T extends TreeItem>(items: T[], { toggledIds, defaultExpanded = false }: BuildTreeOptions): TreeRow<T>[] {
   const childrenMap = new Map<string | null, T[]>();
   for (const item of items) {
-    const list = childrenMap.get(item.parentId);
-    if (list) list.push(item);
+    const siblings = childrenMap.get(item.parentId);
+    if (siblings) siblings.push(item);
     else childrenMap.set(item.parentId, [item]);
   }
 
@@ -50,8 +50,8 @@ export function buildTree<T extends TreeItem>(items: T[], { toggledIds, defaultE
     }
     let max = 0;
     for (const child of children) {
-      const h = computeSubtreeHeight(child.id);
-      if (h > max) max = h;
+      const childHeight = computeSubtreeHeight(child.id);
+      if (childHeight > max) max = childHeight;
     }
     const height = max + 1;
     subtreeHeightCache.set(itemId, height);

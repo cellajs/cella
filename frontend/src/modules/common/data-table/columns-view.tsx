@@ -7,35 +7,35 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
-interface Props<TData> {
+interface ColumnsViewProps<TData> {
   columns: ColumnOrColumnGroup<TData>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<TData>[]>>;
   className?: string;
   children?: ReactNode;
 }
 
-export function ColumnsView<TData>({ columns, setColumns, className = '', children }: Props<TData>) {
+export function ColumnsView<TData>({ columns, setColumns, className = '', children }: ColumnsViewProps<TData>) {
   const { t } = useTranslation();
   // Columns without a text name (checkbox, ellipsis) have nothing to list
-  const filteredColumns = columns.filter((column) => typeof column.name === 'string' && column.name);
+  const namedColumns = columns.filter((column) => typeof column.name === 'string' && column.name);
 
   return (
     <DropdownMenu>
       <TooltipButton className={className} toolTipContent={t('c:columns_view')}>
         <DropdownMenuTrigger render={<Button variant="outline" className="relative flex" />}>
-          {filteredColumns.some((column) => column.hidden) && <Badge className="absolute -top-1 -right-1 z-10 flex size-2 justify-center p-0" />}
+          {namedColumns.some((column) => column.hidden) && <Badge className="absolute -top-1 -right-1 z-10 flex size-2 justify-center p-0" />}
           <SlidersHorizontalIcon className="size-4" />
           <span className="max-xl:hidden">{t('c:view')}</span>
-          {filteredColumns.some((column) => column.hidden) && <span className="sr-only">{t('c:columns_hidden')}</span>}
+          {namedColumns.some((column) => column.hidden) && <span className="sr-only">{t('c:columns_hidden')}</span>}
         </DropdownMenuTrigger>
       </TooltipButton>
       <DropdownMenuContent align="end" className="min-w-56 p-1" collisionPadding={16}>
-        {filteredColumns.map((column) => (
+        {namedColumns.map((column) => (
           <DropdownMenuCheckboxItem
             key={column.key}
             className="min-h-8"
             checked={!column.hidden}
-            onCheckedChange={() => setColumns((columns) => columns.map((c) => (c.key === column.key ? { ...c, hidden: !c.hidden } : c)))}
+            onCheckedChange={() => setColumns((prev) => prev.map((item) => (item.key === column.key ? { ...item, hidden: !item.hidden } : item)))}
           >
             {column.name}
           </DropdownMenuCheckboxItem>

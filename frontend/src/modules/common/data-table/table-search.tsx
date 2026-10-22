@@ -21,12 +21,12 @@ export function TableSearch({ name, value = '', allowOfflineSearch = false, setQ
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
   const { isFilterActive } = useContext(TableFilterBarContext);
-  const tableFetchingCount = useIsFetching();
+  const appFetchingCount = useIsFetching();
 
   const { focusRef: inputRef, setFocus } = useFocusByRef({ trigger: isFilterActive, delay: 50 });
   const [inputValue, setInputValue] = useState(value);
 
-  const isSearching = tableFetchingCount > 0 && !!inputValue.length;
+  const isSearching = appFetchingCount > 0 && !!inputValue.length;
   const debouncedQuery = useDebounce(inputValue, 250);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export function TableSearch({ name, value = '', allowOfflineSearch = false, setQ
         placeholder={t('c:placeholder.search')}
         name={name}
         value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
+        onChange={(event) => setInputValue(event.target.value)}
         ref={inputRef}
         aria-label={t('c:placeholder.search')}
       />

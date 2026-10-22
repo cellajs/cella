@@ -19,7 +19,7 @@ function UserAccountPage() {
       <div className="mx-auto max-md:hidden md:mt-3 md:w-3/10 md:min-w-48">
         <StickyBox offsetTop={12} className="group/sticky z-10 max-h-[calc(100dvh-1.5rem)] overflow-y-auto px-1">
           <SimpleHeader className="p-3" heading="c:settings" text="c:settings.text" collapseText />
-          <PageAside tabs={sections} className="py-2" setFocus />
+          <PageAside tabs={sections} className="py-2" autoFocus />
         </StickyBox>
       </div>
 

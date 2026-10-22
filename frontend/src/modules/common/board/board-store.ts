@@ -6,7 +6,7 @@ import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface BoardUIState {
   panelCollapseState: Record<string, boolean>;
-  togglePanelCollapsedState: (panelId: string, newState: boolean) => void;
+  togglePanelCollapsedState: (panelId: string, collapsed: boolean) => void;
 
   activeBoardId: string | null;
   activeBoardType: string | null;
@@ -47,11 +47,11 @@ export const useBoardStore = create<BoardUIState>()(
       immer((set, get) => ({
         ...initStore,
 
-        togglePanelCollapsedState: (panelId, newState) => {
+        togglePanelCollapsedState: (panelId, collapsed) => {
           set((state) => {
             const current = state.panelCollapseState[panelId] ?? false;
-            if (newState === current) return;
-            state.panelCollapseState[panelId] = newState;
+            if (collapsed === current) return;
+            state.panelCollapseState[panelId] = collapsed;
           });
         },
 
@@ -77,18 +77,18 @@ export const useBoardStore = create<BoardUIState>()(
 
         setPanelOrder: (boardId, panelId, displayOrder) => {
           set((state) => {
-            const map = state.boardPanelOrders[boardId] ?? {};
-            if (map[panelId] === displayOrder) return;
-            map[panelId] = displayOrder;
-            state.boardPanelOrders[boardId] = map;
+            const orders = state.boardPanelOrders[boardId] ?? {};
+            if (orders[panelId] === displayOrder) return;
+            orders[panelId] = displayOrder;
+            state.boardPanelOrders[boardId] = orders;
           });
         },
 
         prunePanelOrders: (boardId, knownPanelIds) => {
-          const map = get().boardPanelOrders[boardId];
-          if (!map) return;
+          const orders = get().boardPanelOrders[boardId];
+          if (!orders) return;
           const known = new Set(knownPanelIds);
-          const stale = Object.keys(map).filter((panelId) => !known.has(panelId));
+          const stale = Object.keys(orders).filter((panelId) => !known.has(panelId));
           if (stale.length === 0) return;
           set((state) => {
             const target = state.boardPanelOrders[boardId];

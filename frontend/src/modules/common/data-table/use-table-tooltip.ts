@@ -12,7 +12,7 @@ const positionTooltip = (reference: HTMLElement, tooltip: HTMLElement, gap = 4) 
 };
 
 /** Data grid tooltip driven by DOM listeners outside React, so hovering never re-renders the grid. */
-export function useTableTooltip(gridEl: HTMLDivElement | null) {
+export function useTableTooltip(gridElement: HTMLDivElement | null) {
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const lastShownCellRef = useRef<HTMLElement | null>(null);
@@ -20,10 +20,10 @@ export function useTableTooltip(gridEl: HTMLDivElement | null) {
   const observerRef = useRef<MutationObserver | null>(null);
 
   useEffect(() => {
-    if (!gridEl) return;
+    if (!gridElement) return;
     const tooltip = document.createElement('div');
     // A tap fires compatibility mousemoves, so hover only counts for a pointer that can hover (jsdom has no matchMedia).
-    const canHover = window.matchMedia?.('(hover: hover)');
+    const hoverQuery = window.matchMedia?.('(hover: hover)');
 
     tooltip.className =
       'max-md:invisible bg-muted-foreground text-primary-foreground fixed pointer-events-none hidden rounded-md text-xs px-3 py-1.5 z-200';
@@ -47,7 +47,7 @@ export function useTableTooltip(gridEl: HTMLDivElement | null) {
         positionTooltip(cell, tooltip);
       });
       observerRef.current.observe(cell, { attributes: true, attributeFilter: ['data-tooltip-content'] });
-      observerRef.current.observe(gridEl, { childList: true, subtree: true });
+      observerRef.current.observe(gridElement, { childList: true, subtree: true });
     };
 
     // `data-tooltip="true"` always qualifies; `data-tooltip="compact"` only inside a compacted grid.
@@ -58,9 +58,9 @@ export function useTableTooltip(gridEl: HTMLDivElement | null) {
       return cell;
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (canHover && !canHover.matches) return;
-      const cell = resolveTooltipCell(e.target as HTMLElement);
+    const handleMouseMove = (event: MouseEvent) => {
+      if (hoverQuery && !hoverQuery.matches) return;
+      const cell = resolveTooltipCell(event.target as HTMLElement);
       if (!cell) return clearTooltip();
 
       if (lastShownCellRef.current === cell) return;
@@ -76,8 +76,8 @@ export function useTableTooltip(gridEl: HTMLDivElement | null) {
       }
     };
 
-    const handleFocus = (e: FocusEvent) => {
-      const cell = resolveTooltipCell(e.target as HTMLElement);
+    const handleFocus = (event: FocusEvent) => {
+      const cell = resolveTooltipCell(event.target as HTMLElement);
       if (cell) showTooltip(cell);
     };
 
@@ -96,29 +96,29 @@ export function useTableTooltip(gridEl: HTMLDivElement | null) {
     };
 
     // Window capture sees every scroll: the grid's own (or a nested one) clears, an ancestor's moves the tooltip with its cell.
-    const handleScroll = (e: Event) => {
-      if (e.target instanceof Node && gridEl.contains(e.target)) return clearTooltip();
+    const handleScroll = (event: Event) => {
+      if (event.target instanceof Node && gridElement.contains(event.target)) return clearTooltip();
       const cell = lastShownCellRef.current;
       if (cell) positionTooltip(cell, tooltip);
     };
 
-    gridEl.addEventListener('mousemove', handleMouseMove);
-    gridEl.addEventListener('mouseleave', handleMouseLeave);
-    gridEl.addEventListener('focusin', handleFocus);
-    gridEl.addEventListener('focusout', clearTooltip);
+    gridElement.addEventListener('mousemove', handleMouseMove);
+    gridElement.addEventListener('mouseleave', handleMouseLeave);
+    gridElement.addEventListener('focusin', handleFocus);
+    gridElement.addEventListener('focusout', clearTooltip);
     window.addEventListener('scroll', handleScroll, { capture: true, passive: true });
 
     return () => {
-      gridEl.removeEventListener('mousemove', handleMouseMove);
-      gridEl.removeEventListener('mouseleave', handleMouseLeave);
-      gridEl.removeEventListener('focusin', handleFocus);
-      gridEl.removeEventListener('focusout', clearTooltip);
+      gridElement.removeEventListener('mousemove', handleMouseMove);
+      gridElement.removeEventListener('mouseleave', handleMouseLeave);
+      gridElement.removeEventListener('focusin', handleFocus);
+      gridElement.removeEventListener('focusout', clearTooltip);
       window.removeEventListener('scroll', handleScroll, { capture: true });
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       observerRef.current?.disconnect();
       tooltip.remove();
     };
-  }, [gridEl]);
+  }, [gridElement]);
 
   return { tooltipRef };
 }

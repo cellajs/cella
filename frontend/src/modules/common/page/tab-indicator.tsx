@@ -5,8 +5,8 @@ const glideTiming: KeyframeAnimationOptions = { duration: 400, easing: 'ease' };
 
 type Geometry = { x: number; width: number };
 
-/** The line's place in the track: the slot's box, offset by the tab that holds it. */
-const measure = (slot: HTMLElement): Geometry => ({ x: (slot.parentElement?.offsetLeft ?? 0) + slot.offsetLeft, width: slot.offsetWidth });
+/** The line's place in the track: the marker's box, offset by the tab that holds it. */
+const measure = (marker: HTMLElement): Geometry => ({ x: (marker.parentElement?.offsetLeft ?? 0) + marker.offsetLeft, width: marker.offsetWidth });
 
 /** The bar's geometry as painted, mid-glide included. */
 function paintedGeometry(bar: HTMLElement): Geometry {
@@ -15,33 +15,33 @@ function paintedGeometry(bar: HTMLElement): Geometry {
 }
 
 /**
- * One underline bar per tab track, placed on the active tab's line slot and moved with `transform` only:
+ * One underline bar per tab track, placed on the active tab's marker and moved with `transform` only:
  * the glide then runs on the compositor and keeps presenting while the tab switch mounts the next page.
  * A switch sets the bar's width once and animates from the painted geometry through `scaleX`.
  */
 function createTabIndicator() {
   let bar: HTMLElement | null = null;
-  // Line slots of the tabs that mounted an ActiveTabMarker, in mount order; the last one carries the bar
+  // Markers of the tabs that mounted an ActiveTabMarker, in mount order; the last one carries the bar
   let shown: HTMLElement[] = [];
   let placed: Geometry | null = null;
   let glide: Animation | null = null;
   let observer: ResizeObserver | null = null;
-  let observedSlot: HTMLElement | null = null;
+  let observedMarker: HTMLElement | null = null;
   let revealed = false;
 
   const place = (animate: boolean) => {
     if (!bar) return;
-    const slot = shown.at(-1);
-    bar.style.opacity = slot ? '1' : '0';
-    if (!slot) return;
+    const marker = shown.at(-1);
+    bar.style.opacity = marker ? '1' : '0';
+    if (!marker) return;
 
-    if (slot !== observedSlot) {
-      if (observedSlot) observer?.unobserve(observedSlot);
-      observer?.observe(slot);
-      observedSlot = slot;
+    if (marker !== observedMarker) {
+      if (observedMarker) observer?.unobserve(observedMarker);
+      observer?.observe(marker);
+      observedMarker = marker;
     }
 
-    const next = measure(slot);
+    const next = measure(marker);
     const from = animate && placed && typeof bar.animate === 'function' ? paintedGeometry(bar) : null;
     glide?.cancel();
     glide = null;
@@ -55,10 +55,10 @@ function createTabIndicator() {
   };
 
   // Viewport, font and label changes shift the offsets: follow them without a glide
-  const onResize = () => {
-    const slot = shown.at(-1);
-    if (!slot || !placed) return;
-    const next = measure(slot);
+  const handleResize = () => {
+    const marker = shown.at(-1);
+    if (!marker || !placed) return;
+    const next = measure(marker);
     if (next.x !== placed.x || next.width !== placed.width) place(false);
   };
 
@@ -66,21 +66,21 @@ function createTabIndicator() {
     setBar: (el: HTMLElement | null) => {
       observer?.disconnect();
       observer = null;
-      observedSlot = null;
+      observedMarker = null;
       bar = el;
       if (!el) return;
-      observer = new ResizeObserver(onResize);
+      observer = new ResizeObserver(handleResize);
       if (el.parentElement) observer.observe(el.parentElement);
       place(false);
     },
-    show: (slot: HTMLElement) => {
-      shown = [...shown.filter((item) => item !== slot), slot];
+    show: (marker: HTMLElement) => {
+      shown = [...shown.filter((item) => item !== marker), marker];
       place(true);
     },
-    // A switch hides the old slot before showing the new one in the same commit, so the bar glides on
-    hide: (slot: HTMLElement) => {
-      const carried = shown.at(-1) === slot;
-      shown = shown.filter((item) => item !== slot);
+    // A switch hides the old marker before showing the new one in the same commit, so the bar glides on
+    hide: (marker: HTMLElement) => {
+      const carried = shown.at(-1) === marker;
+      shown = shown.filter((item) => item !== marker);
       if (carried) place(true);
     },
     // A bar's first tab is scrolled to at once: a bar that replaces another (a skeleton's) would replay the glide from the track's start
@@ -113,21 +113,21 @@ export function TabIndicatorBar({ indicator }: { indicator: TabIndicator }) {
   );
 }
 
-/** Rendered inside the active tab as the line's slot: the bar takes its box, and the tab scrolls into view. */
+/** Rendered inside the active tab: the bar takes this marker's box, and the tab scrolls into view. */
 export function ActiveTabMarker({ indicator }: { indicator: TabIndicator }) {
-  const ref = useRef<HTMLSpanElement>(null);
+  const markerRef = useRef<HTMLSpanElement>(null);
 
   useLayoutEffect(() => {
-    const slot = ref.current;
-    if (!slot) return;
-    indicator.show(slot);
-    return () => indicator.hide(slot);
+    const marker = markerRef.current;
+    if (!marker) return;
+    indicator.show(marker);
+    return () => indicator.hide(marker);
   }, [indicator]);
 
   useEffect(() => {
-    const tab = ref.current?.parentElement;
+    const tab = markerRef.current?.parentElement;
     if (tab) indicator.reveal(tab);
   }, [indicator]);
 
-  return <span ref={ref} className="pointer-events-none absolute inset-x-2 bottom-0" />;
+  return <span ref={markerRef} className="pointer-events-none absolute inset-x-2 bottom-0" />;
 }

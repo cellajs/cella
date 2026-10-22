@@ -10,7 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { uiStore } from '~/modules/ui/ui-store';
 import { getRouter } from '~/routes/-router-instance';
 
-interface Props<TData> {
+interface ExportProps<TData> {
   filename: string;
   columns: ColumnOrColumnGroup<TData>[];
   selectedRows?: TData[];
@@ -38,12 +38,12 @@ function ExportItem({ format, note, disabled, onClick }: ExportItemProps) {
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: any is required here
-export function Export<R extends Record<string, any>>({ filename, columns, selectedRows, fetchRows, className = '' }: Props<R>) {
+export function Export<TData extends Record<string, any>>({ filename, columns, selectedRows, fetchRows, className = '' }: ExportProps<TData>) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
   // Only online menus offer the full export and the PDF, so neither handler checks the connection
-  const download = (format: ExportFormat, rows: R[]) => {
+  const download = (format: ExportFormat, rows: TData[]) => {
     const file = `${filename}.${format}`;
     if (format === 'csv') return exportToCsv(columns, rows, file);
     return exportToPdf(columns, rows, file, getRouter().state.location.pathname, uiStore.getState().mode);

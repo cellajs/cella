@@ -12,12 +12,12 @@ interface TableBarContainerProps {
 export function TableBarContainer({ children, className, searchVars }: TableBarContainerProps) {
   const scrollToReset = useScrollReset();
 
-  const isInitialRender = useRef(true);
+  const isInitialRenderRef = useRef(true);
   const serialized = searchVars ? JSON.stringify(searchVars) : undefined;
 
   useEffect(() => {
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
+    if (isInitialRenderRef.current) {
+      isInitialRenderRef.current = false;
       return;
     }
     scrollToReset();

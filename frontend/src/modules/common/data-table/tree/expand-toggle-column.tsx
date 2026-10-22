@@ -26,7 +26,7 @@ function ExpandToggleCell({ row, tabIndex }: { row: AnyTreeRow; tabIndex: number
   );
 }
 
-const def: ColumnOrColumnGroup<AnyTreeRow> = {
+const column: ColumnOrColumnGroup<AnyTreeRow> = {
   key: expandToggleColumnKey,
   name: '',
   width: 36,
@@ -42,4 +42,4 @@ const def: ColumnOrColumnGroup<AnyTreeRow> = {
 
 /** Drop-in tree-table column using {@link TreeProvider} handlers and rows from {@link useTreeRows}. */
 // biome-ignore lint/suspicious/noExplicitAny: column is structurally compatible with any TreeRow<T>; the cast keeps consumers from needing a factory.
-export const ExpandToggleColumn = def as ColumnOrColumnGroup<any>;
+export const ExpandToggleColumn = column as ColumnOrColumnGroup<any>;

@@ -16,7 +16,7 @@ export function TreeProvider({ value, children }: { value: TreeContextValue; chi
 }
 
 export function useTreeContext(): TreeContextValue {
-  const v = useContext(TreeContext);
-  if (!v) throw new Error('useTreeContext: missing <TreeProvider>. Wrap your tree-style DataTable in <TreeProvider>.');
-  return v;
+  const context = useContext(TreeContext);
+  if (!context) throw new Error('useTreeContext: missing <TreeProvider>. Wrap your tree-style DataTable in <TreeProvider>.');
+  return context;
 }

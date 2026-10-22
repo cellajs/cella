@@ -80,8 +80,8 @@ const emptySections: CollapsedSection[] = [];
 const collapsedCountClass = 'absolute top-[calc(50%-0.5rem)] left-0 w-12 text-center text-muted-foreground text-xs';
 
 export function CollapsedPanelView({ mainCount, sections = emptySections }: CollapsedPanelViewProps) {
-  const topSections = sections.filter((s) => s.position === 'top');
-  const bottomSections = sections.filter((s) => s.position === 'bottom');
+  const topSections = sections.filter((section) => section.position === 'top');
+  const bottomSections = sections.filter((section) => section.position === 'bottom');
 
   return (
     <div className="relative flex flex-1 snap-center flex-col bg-transparent group-data-[highlighted=true]/paneldrop:border-primary sm:border">
