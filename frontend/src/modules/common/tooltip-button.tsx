@@ -29,9 +29,8 @@ export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps
 ) {
   // An icon-only trigger takes its accessible name from the tooltip; visible text stays the name otherwise
   const { 'aria-label': ownLabel, children: triggerContent } = children.props as { 'aria-label'?: string; children?: React.ReactNode };
-  const ariaLabel = ownLabel ?? (hasText(triggerContent) ? undefined : toolTipContent);
-
-  if (disabled) return ariaLabel && !ownLabel ? React.cloneElement(children, { 'aria-label': ariaLabel } as object) : children;
+  const labelled =
+    ownLabel !== undefined || hasText(triggerContent) ? children : React.cloneElement(children, { 'aria-label': toolTipContent } as object);
 
   const content = (
     <TooltipContent side={side} {...props} sideOffset={sideOffset} hideWhenDetached={hideWhenDetached}>
@@ -39,9 +38,11 @@ export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps
     </TooltipContent>
   );
 
-  const trigger = (
+  const trigger = disabled ? (
+    labelled
+  ) : (
     <Tooltip>
-      <TooltipTrigger render={children} aria-label={ariaLabel} />
+      <TooltipTrigger render={labelled} />
       {portal ? <TooltipPortal>{content}</TooltipPortal> : content}
     </Tooltip>
   );

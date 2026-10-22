@@ -17,8 +17,8 @@ const dropdown = (triggerId: string, data: Partial<DropdownData> = {}): Dropdown
   ...data,
 });
 
-const isActive = (ref: RefObject<HTMLButtonElement | null>) => ref.current?.hasAttribute('data-dropdowner-active');
-const isDone = (ref: RefObject<HTMLButtonElement | null>) => ref.current?.hasAttribute('data-dropdowner-done');
+const isActive = (ref: RefObject<HTMLElement | null>) => ref.current?.hasAttribute('data-dropdowner-active');
+const isDone = (ref: RefObject<HTMLElement | null>) => ref.current?.hasAttribute('data-dropdowner-done');
 
 describe('dropdowner store', () => {
   beforeEach(() => {
@@ -38,20 +38,20 @@ describe('dropdowner store', () => {
     const id = dropdowner.getState().create('menu', data);
 
     expect(id).toBe('t1');
-    expect(dropdowner.getState().get()).toMatchObject({ triggerId: 't1', content: 'menu', align: 'start', modal: true, kind: 'panel' });
+    expect(dropdowner.getState().get()).toMatchObject({ triggerId: 't1', content: 'menu', align: 'start', kind: 'panel' });
     expect(isActive(data.triggerRef)).toBe(true);
   });
 
   it('lets data override the defaults', () => {
-    dropdowner.getState().create(null, dropdown('t1', { align: 'end', modal: false, kind: 'menu' }));
+    dropdowner.getState().create(null, dropdown('t1', { align: 'end', kind: 'menu' }));
 
-    expect(dropdowner.getState().dropdown).toMatchObject({ align: 'end', modal: false, kind: 'menu' });
+    expect(dropdowner.getState().dropdown).toMatchObject({ align: 'end', kind: 'menu' });
   });
 
   it('keeps the defaults for options passed as undefined', () => {
-    dropdowner.getState().create(null, dropdown('t1', { align: undefined, modal: undefined, kind: undefined }));
+    dropdowner.getState().create(null, dropdown('t1', { align: undefined, kind: undefined }));
 
-    expect(dropdowner.getState().dropdown).toMatchObject({ align: 'start', modal: true, kind: 'panel' });
+    expect(dropdowner.getState().dropdown).toMatchObject({ align: 'start', kind: 'panel' });
   });
 
   it('closes when the same trigger opens it again', () => {

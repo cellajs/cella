@@ -1,5 +1,4 @@
-import { motion, useInView } from 'motion/react';
-import { useRef } from 'react';
+import { motion } from 'motion/react';
 import { cn } from '~/utils/cn';
 
 type TextEffectProps = { text: string; className?: string };
@@ -11,18 +10,9 @@ export function TextEffect({ text, className = '' }: TextEffectProps) {
   };
 
   const letters = text.split('');
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
 
   return (
-    <motion.div
-      ref={ref}
-      initial="hidden"
-      animate={isInView ? 'show' : ''}
-      variants={variants}
-      viewport={{ once: true }}
-      className={cn('', className)}
-    >
+    <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={variants} className={cn('', className)}>
       {letters.map((word, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
         <motion.span key={`${word}-${i}`} variants={variants} custom={i}>

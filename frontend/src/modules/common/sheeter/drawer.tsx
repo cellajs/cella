@@ -10,24 +10,16 @@ export function SheeterDrawer({ sheet, onExited }: { sheet: InternalSheet; onExi
   // Drawers on mobile are always modal (overlay + outside click to close)
   const { id, side, description, title, titleContent = title, headerClassName, className, content, contentKey, keepMounted, open = true } = sheet;
 
-  const updateSheet = sheeter.getState().update;
-
   const isDropdownOpen = useDropdowner((state) => !!state.dropdown);
-
-  // The provider keeps the removed drawer rendered until it has slid out
-  const onOpenChange = (open: boolean) => {
-    if (open) updateSheet(sheet.id, { open });
-    else sheeter.getState().remove(sheet.id);
-  };
 
   return (
     <Drawer
-      key={id}
       modal
       open={open}
       disablePointerDismissal={isDropdownOpen}
       swipeDirection={sideToSwipeDirection[side]}
-      onOpenChange={onOpenChange}
+      // The provider keeps the removed drawer rendered until it has slid out
+      onOpenChange={() => sheeter.getState().remove(sheet.id)}
       onOpenChangeComplete={(isOpen) => !isOpen && onExited?.()}
     >
       <DrawerContent id={String(id)} className={className} keepMounted={keepMounted}>

@@ -16,7 +16,6 @@ interface AlertStoreState {
   downAlert: AlertKeys | null; // Down alert type
 
   setAlertSeen: (alertSeen: string) => void; // Adds an alert to the seen list
-  resetAlertSeen: (alertSeen: string[]) => void; // Resets seen alerts to a new array
   setDownAlert: (downLevel: AlertKeys | null) => void; // Sets the current down alert type
   reset: () => void; // Resets in-memory state to initial (call on sign-out)
 }
@@ -26,6 +25,15 @@ let recoveryController: AbortController | null = null;
 const cancelRecovery = () => {
   recoveryController?.abort();
   recoveryController = null;
+};
+
+/** Polls /health and runs `onRecovered` once it answers, unless a newer alert or a reset cancelled the poll first. */
+const startRecovery = (onRecovered: () => void) => {
+  recoveryController = new AbortController();
+  const { signal } = recoveryController;
+  awaitRecovery({ signal, factor: 1 }).then((recovered) => {
+    if (recovered && !signal.aborted) onRecovered();
+  });
 };
 
 const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = { downAlert: appConfig.maintenance ? 'maintenance' : null, alertsSeen: [] };
@@ -58,26 +66,14 @@ export const useAlertStore = create<AlertStoreState>()(
             });
 
             // Auto-recovery: poll /health for recoverable alerts
-            if (alert === 'offline' && navigator.onLine) {
-              recoveryController = new AbortController();
-              awaitRecovery({ signal: recoveryController.signal, factor: 1 }).then((recovered) => {
-                if (recovered && !recoveryController?.signal.aborted) forceOnline();
-              });
-            } else if (alert === 'backend_not_ready') {
-              recoveryController = new AbortController();
-              awaitRecovery({ signal: recoveryController.signal, factor: 1 }).then((recovered) => {
-                if (recovered && !recoveryController?.signal.aborted) {
-                  set((state) => {
-                    state.downAlert = null;
-                  });
-                }
-              });
+            if (alert === 'offline' && navigator.onLine) startRecovery(forceOnline);
+            else if (alert === 'backend_not_ready') {
+              startRecovery(() =>
+                set((state) => {
+                  state.downAlert = null;
+                }),
+              );
             }
-          },
-          resetAlertSeen: (alertsSeen) => {
-            set((state) => {
-              state.alertsSeen = alertsSeen;
-            });
           },
           reset: () => {
             cancelRecovery();

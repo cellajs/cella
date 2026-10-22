@@ -20,13 +20,8 @@ export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
     () => dialoger.getState().remove(dialog.id),
   );
 
-  const onOpenChange = (open: boolean) => {
-    if (open) updateDialog(dialog.id, { open });
-    else closeDialog();
-  };
-
   return (
-    <Drawer key={id} open={open} disablePointerDismissal={isDropdownOpen} onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete}>
+    <Drawer open={open} disablePointerDismissal={isDropdownOpen} onOpenChange={closeDialog} onOpenChangeComplete={onOpenChangeComplete}>
       <DrawerContent id={String(id)} className={className}>
         <DrawerHeader data-overlay="dialog" className={title || description ? headerClassName : 'hidden'}>
           {title && <DrawerTitle>{titleContent}</DrawerTitle>}

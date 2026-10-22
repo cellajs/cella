@@ -5,7 +5,8 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { cn } from '~/utils/cn';
 
 interface Props {
-  isMobile: boolean;
+  /** Passed on to `DropdownActionItem`. */
+  isMobile?: boolean;
   selected: boolean;
   onSelect: () => void;
   icon?: IconComponent;
@@ -20,11 +21,8 @@ export function DropdownSelectItem({ isMobile, selected, onSelect, icon, childre
   return (
     <DropdownActionItem isMobile={isMobile} icon={icon} onSelect={onSelect}>
       <span className="min-w-0 grow truncate text-left">{children}</span>
-      <span
-        aria-hidden="true"
-        className={cn('pointer-events-none ml-auto flex size-4 items-center justify-center text-success', !selected && 'invisible')}
-      >
-        <CheckIcon className="size-4" />
+      <span aria-hidden="true" className={cn('pointer-events-none ml-auto flex size-4 items-center justify-center', !selected && 'invisible')}>
+        <CheckIcon className="size-4 text-success" />
       </span>
     </DropdownActionItem>
   );

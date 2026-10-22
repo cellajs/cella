@@ -1,12 +1,12 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useRef } from 'react';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
-import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { isDropdownOpen } from '~/modules/common/dropdowner/use-dropdowner';
+import { finalFocusFor, type OverlayCloseDetails, touchInitialFocus } from '~/modules/common/overlay-store-helpers';
 import { type InternalSheet, navSheetId, sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { cn } from '~/utils/cn';
-import { isTouchInteraction } from '~/utils/input-modality';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
 export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExited?: () => void }) {
@@ -24,14 +24,12 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
     content,
     closeSheetOnEsc = true,
     disablePointerDismissal,
-    container,
     contentKey,
     autoScrollOnDrag,
     keepMounted,
   } = sheet;
 
   const popupRef = useRef<HTMLDivElement>(null);
-  const containerElement = container?.ref?.current ?? null;
 
   // The provider keeps the removed sheet rendered until it has slid out
   const closeSheet = () => {
@@ -42,20 +40,16 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
     for (const dialog of dialogs) dialoger.getState().remove(dialog.id);
   };
 
-  const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string; event?: Event }) => {
-    if (!nextOpen && eventDetails.reason === 'escape-key') {
+  const onOpenChange = (_nextOpen: boolean, eventDetails: OverlayCloseDetails) => {
+    if (eventDetails.reason === 'escape-key') {
       if (!closeSheetOnEsc || isHoverContentOpen()) return;
       closeSheet();
       return;
     }
 
-    if (!nextOpen && eventDetails.reason === 'outside-press') {
+    if (eventDetails.reason === 'outside-press') {
       // An outside press landing on a dropdown or dialog must not close the sheet
-      const dropdown = dropdowner.getState().dropdown;
-      if (dropdown) return;
-
-      const dialogs = dialoger.getState().dialogs;
-      if (dialogs.some((d) => d.open)) return;
+      if (isDropdownOpen() || dialoger.getState().dialogs.some((d) => d.open)) return;
 
       // The nav button's own click handler toggles the nav sheet; closing here makes it reopen
       if (sheet.id === navSheetId) {
@@ -68,25 +62,10 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
           if (el.closest('#sidebar-nav, #bottom-bar-nav')) return;
         }
       }
-
-      closeSheet();
-      return;
     }
 
-    if (nextOpen) {
-      if (modal) sheeter.getState().update(id, { open: nextOpen });
-    } else closeSheet();
+    closeSheet();
   };
-
-  // Resolved once the exit ends: a trigger inside a grid is replaced by a new node once cell edit mode ends. Focus that
-  // left the sheet while it slid out (a focus bridge, the page after a route change) stays where it went.
-  const finalFocus = triggerRef
-    ? () => {
-        const active = document.activeElement;
-        if (active && active !== document.body && !document.getElementById(String(id))?.contains(active)) return false;
-        return triggerRef.current ?? true;
-      }
-    : undefined;
 
   return (
     <Sheet
@@ -101,11 +80,9 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
         id={String(id)}
         side={side}
         overlay={modal === true}
-        container={containerElement}
-        className={cn('items-start', className, containerElement && 'z-40')}
-        // Opened from code, so Base UI cannot see a touch open: on touch the popup takes focus, as Base UI's own touch default does.
-        initialFocus={() => (isTouchInteraction() ? popupRef.current : true)}
-        finalFocus={finalFocus}
+        className={cn('items-start', className)}
+        initialFocus={touchInitialFocus(popupRef)}
+        finalFocus={finalFocusFor(triggerRef, String(id))}
         autoScrollOnDrag={autoScrollOnDrag}
         keepMounted={keepMounted}
       >

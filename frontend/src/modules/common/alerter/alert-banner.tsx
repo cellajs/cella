@@ -4,6 +4,7 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
+import { collapseMotion } from '~/modules/common/collapse-motion';
 import type { IconComponent } from '~/modules/common/icons/types';
 import type { alertVariants } from '~/modules/ui/alert';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
@@ -61,13 +62,7 @@ export function AlertBanner({
     return (
       <AnimatePresence initial={false}>
         {showAlert && (
-          <motion.div
-            key={id}
-            className={className}
-            initial={{ height: 0, opacity: 0, overflow: 'hidden' }}
-            animate={{ height: 'auto', opacity: 1, overflow: 'visible', transitionEnd: { overflow: 'visible' } }}
-            exit={{ height: 0, opacity: 0, overflow: 'hidden' }}
-          >
+          <motion.div key={id} {...collapseMotion} className={cn('overflow-hidden', className)}>
             {alertContent}
           </motion.div>
         )}

@@ -4,36 +4,22 @@ import type { SheetData } from '~/modules/common/sheeter/use-sheeter';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
-type SheetOptions = Omit<SheetData, 'id' | 'triggerRef' | 'onClose'>;
-
-interface OverlayConfig<TOptions> {
+interface UseUrlSheetConfig {
   /** The search param key to watch (e.g., 'userSheetId') */
   searchParamKey: string;
   /** Render overlay content. Receives the search param value and org ID from URL context. */
   renderContent: (id: string, organizationId: string | undefined) => ReactNode;
   /** Called after close (not during cleanup). Receives the search param value. */
   onAfterClose?: (id: string) => void;
-  options: TOptions;
+  options: Omit<SheetData, 'id' | 'triggerRef' | 'onClose'>;
 }
 
-type UseUrlSheetConfig = OverlayConfig<SheetOptions>;
-
-/** Clears the search params by replacing the current history entry. */
-function useCloseOverlay(searchParamKey: string, additionalParamKeys: string[] = []) {
+/** Clears the search param by replacing the current history entry. */
+function useCloseOverlay(searchParamKey: string) {
   const navigate = useNavigate();
-  const paramsToRemove = [searchParamKey, ...additionalParamKeys];
 
   return () => {
-    navigate({
-      to: '.',
-      replace: true,
-      resetScroll: false,
-      search: (prev) => {
-        const next: Record<string, unknown> = { ...prev };
-        for (const key of paramsToRemove) next[key] = undefined;
-        return next;
-      },
-    });
+    navigate({ to: '.', replace: true, resetScroll: false, search: (prev) => ({ ...prev, [searchParamKey]: undefined }) });
   };
 }
 

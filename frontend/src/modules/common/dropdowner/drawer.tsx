@@ -9,14 +9,10 @@ export function DropdownerDrawer({ dropdown }: { dropdown: InternalDropdown }) {
     dropdowner.getState().remove();
   };
 
-  const onOpenChange = (open: boolean) => {
-    if (!open) closeDialog();
-  };
-
   useEventListener('popstate', closeDialog);
 
   return (
-    <Drawer key={id} open={true} onOpenChange={onOpenChange}>
+    <Drawer key={id} open={true} onOpenChange={closeDialog}>
       <DrawerVirtualKeyboardProvider>
         {/* While typing, the sheet fills the space above the keyboard: sized by a filtering list, it would shrink and move its search field. */}
         <DrawerContent id={String(id)} className="max-h-[70dvh] group-[.keyboard-open]/body:h-[calc(100%-1.25rem)]">

@@ -35,17 +35,13 @@ function FocusGuard({ onFocus }: { onFocus: (e: React.FocusEvent) => void }) {
 
 export function FocusTrap({
   children,
-  mainElementId,
   active = true,
-  disableInactive = true,
   initialFocus = false,
   returnFocus = false,
   containFocus = false,
 }: {
   children: ReactNode;
-  mainElementId?: string;
   active?: boolean;
-  disableInactive?: boolean;
   /** Move focus into the trap when activated (true = first element, or the trap itself after touch; ref = specific element) */
   initialFocus?: boolean | RefObject<HTMLElement | null>;
   /** Restore focus to the earlier focused element on deactivation. */
@@ -54,8 +50,6 @@ export function FocusTrap({
   containFocus?: boolean;
 }) {
   const internalRef = useRef<HTMLDivElement | null>(null);
-  // Track elements we disabled so we can restore exactly those on re-activation
-  const disabledRef = useRef<Set<HTMLElement>>(new Set());
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const getContainer = () => internalRef.current;
@@ -111,23 +105,6 @@ export function FocusTrap({
     return () => document.removeEventListener('focusin', onFocusIn);
   }, [active, containFocus]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Escape → main element
-  useEffect(() => {
-    if (!active || !mainElementId) return;
-    const trap = getContainer();
-    if (!trap) return;
-
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        const main = document.getElementById(mainElementId!);
-        if (main && document.activeElement !== main) main.focus();
-      }
-    }
-
-    trap.addEventListener('keydown', onKeyDown);
-    return () => trap.removeEventListener('keydown', onKeyDown);
-  }, [active, mainElementId]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // Prevent Tab from escaping a trap with no focusable elements
   useEffect(() => {
     if (!active) return;
@@ -143,25 +120,6 @@ export function FocusTrap({
     trap.addEventListener('keydown', onKeyDown);
     return () => trap.removeEventListener('keydown', onKeyDown);
   }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Inactive: optionally remove children from tab order
-  useEffect(() => {
-    const trap = getContainer();
-    if (!trap) return;
-
-    if (active) {
-      for (const el of disabledRef.current) el.setAttribute('tabindex', '0');
-      disabledRef.current.clear();
-      return;
-    }
-
-    if (!disableInactive) return;
-    const focusable = getFocusableElements(trap);
-    for (const el of focusable) {
-      el.setAttribute('tabindex', '-1');
-      disabledRef.current.add(el);
-    }
-  }, [active, disableInactive]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sentinel focus handlers use relatedTarget to distinguish cycling from entering.
   const handleBeforeGuardFocus = (e: React.FocusEvent) => {

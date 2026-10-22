@@ -1,5 +1,6 @@
-import { CheckIcon, HashIcon } from 'lucide-react';
+import { HashIcon } from 'lucide-react';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
+import { CopiedIcon } from '~/modules/common/copied-icon';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
@@ -21,7 +22,7 @@ export function HashUrlButton({ url, className }: HashUrlButtonProps) {
       className={cn('opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-70', className)}
       aria-label="Copy link"
     >
-      {copied ? <CheckIcon className="size-3.5 text-success" /> : <HashIcon className="size-3.5" />}
+      <CopiedIcon copied={copied} icon={HashIcon} />
     </Button>
   );
 }

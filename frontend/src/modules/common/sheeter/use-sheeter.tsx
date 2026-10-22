@@ -1,11 +1,8 @@
-import type { ReactNode, RefObject } from 'react';
+import type { ReactNode } from 'react';
 import { create } from 'zustand';
-import { blurAndStashTrigger, removeAndNotify, withDefaults } from '~/modules/common/overlay-store-helpers';
+import { blurAndStashTrigger, removeAndNotify, type TriggerRef, updateById, withDefaults } from '~/modules/common/overlay-store-helpers';
 
-/** Element focus returns to on close; read when the sheet closes, so a ref may resolve to a later DOM node. */
-export type TriggerRef = RefObject<HTMLElement | null>;
-
-type SheetContainerOptions = { ref: RefObject<HTMLDivElement | null> };
+export type { TriggerRef } from '~/modules/common/overlay-store-helpers';
 
 export type SheetData = {
   id: string;
@@ -20,7 +17,6 @@ export type SheetData = {
   modal?: boolean | 'trap-focus';
   disablePointerDismissal?: boolean;
   closeSheetOnRouteChange?: boolean;
-  container?: SheetContainerOptions;
   /** Key to identify content for animated transitions (used with AnimatePresence). */
   contentKey?: string;
   /** Enable auto-scrolling when dragging elements near edges. */
@@ -57,13 +53,11 @@ interface SheetStoreState {
   replace(content: ReactNode, data: SheetData): string;
   update(id: string, updates: Partial<InternalSheet>): void;
   remove(id?: string, opts?: CloseOptions): void;
-  removeOnRouteChange: (opts?: CloseOptions) => void;
+  /** Removes every sheet that closes on a route change, except the one with `keepId`. */
+  removeOnRouteChange: (opts?: CloseOptions & { keepId?: string }) => void;
   /** Removes a sheet for good, a closed keepMounted sheet included. */
   unmount(id: string): void;
   get(id: string): InternalSheet | undefined;
-
-  /** @deprecated No-op: focus returns through `triggerRef` or the focus fallback. Removed in the next release. */
-  setTriggerRef: (id: string, ref: TriggerRef) => void;
 }
 
 // Manages one or multiple sheets; on mobile they render as drawers.
@@ -90,17 +84,14 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
   },
 
   replace: (content, data) => {
-    const existing = get().sheets.find((s) => s.id === data.id);
-    if (!existing) return get().create(content, data);
+    if (!get().get(data.id)) return get().create(content, data);
 
     // Merges into the open sheet: an option passed as undefined clears its value.
-    set((state) => ({ sheets: state.sheets.map((s) => (s.id === data.id ? { ...s, ...data, content, open: true } : s)) }));
+    set((state) => ({ sheets: updateById(state.sheets, data.id, { ...data, content, open: true }) }));
     return data.id;
   },
 
-  update: (id, updates) => {
-    set((state) => ({ sheets: state.sheets.map((sheet) => (sheet.id === id ? { ...sheet, ...updates } : sheet)) }));
-  },
+  update: (id, updates) => set((state) => ({ sheets: updateById(state.sheets, id, updates) })),
 
   remove: (id, opts) => {
     const { sheets } = get();
@@ -110,7 +101,7 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
 
   removeOnRouteChange: (opts) => {
     const { sheets } = get();
-    const toRemove = sheets.filter((sheet) => sheet.closeSheetOnRouteChange !== false);
+    const toRemove = sheets.filter((sheet) => sheet.closeSheetOnRouteChange !== false && sheet.id !== opts?.keepId);
     closeAndNotify(set, sheets, toRemove, opts);
   },
 
@@ -124,8 +115,6 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
   },
 
   get: (id) => get().sheets.find((sheet) => sheet.id === id),
-
-  setTriggerRef: () => {},
 }));
 
 // Non-hook alias for use outside React components, e.g. sheeter.getState()

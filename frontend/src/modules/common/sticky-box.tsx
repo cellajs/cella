@@ -15,6 +15,12 @@ export function getScrollParent(node: HTMLElement): HTMLElement | Window {
   return window;
 }
 
+/** Scroll offset of a scroll parent from `getScrollParent`. */
+const scrollTopOf = (scrollParent: HTMLElement | Window) => (scrollParent instanceof Window ? scrollParent.scrollY : scrollParent.scrollTop);
+
+/** Viewport position of a scroll parent's top edge: 0 for the window. */
+const viewportTopOf = (scrollParent: HTMLElement | Window) => (scrollParent instanceof Window ? 0 : scrollParent.getBoundingClientRect().top);
+
 const passiveArg = { passive: true } as const;
 
 type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
@@ -86,7 +92,7 @@ export function StickyBox({
       return;
     }
     const scrollParent = getScrollParent(sentinel);
-    const root = scrollParent === window ? null : (scrollParent as HTMLElement);
+    const root = scrollParent instanceof Window ? null : scrollParent;
     const io = new IntersectionObserver(
       ([entry]) => {
         const rb = entry.rootBounds;
@@ -114,8 +120,7 @@ export function StickyBox({
       raf = requestAnimationFrame(() => {
         const parentRect = parent.getBoundingClientRect();
         const barHeight = bar.offsetHeight;
-        const scrollTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top;
-        const stickyBottom = scrollTop + stackOffset(bar, publishVar) + offsetTop + barHeight;
+        const stickyBottom = viewportTopOf(scrollParent) + stackOffset(bar, publishVar) + offsetTop + barHeight;
         const spaceBelow = parentRect.bottom - stickyBottom;
         // Offset from the sentinel: at the release boundary it equals the stuck position exactly
         const naturalTop = sentinelRef.current?.getBoundingClientRect().top ?? parentRect.top;
@@ -145,7 +150,7 @@ export function StickyBox({
       return;
     }
     const scrollParent = getScrollParent(sentinel);
-    let lastScrollY = scrollParent === window ? window.scrollY : (scrollParent as HTMLElement).scrollTop;
+    let lastScrollY = scrollTopOf(scrollParent);
     let accumulated = 0;
     let scrollingUp = false;
     let ticking = false;
@@ -153,7 +158,7 @@ export function StickyBox({
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(() => {
-        const currentY = scrollParent === window ? window.scrollY : (scrollParent as HTMLElement).scrollTop;
+        const currentY = scrollTopOf(scrollParent);
         const delta = currentY - lastScrollY;
         // A direction counts once it has carried 10px; a programmatic scroll never reveals the bar
         accumulated = Math.sign(delta) === Math.sign(accumulated) ? accumulated + delta : delta;
@@ -161,8 +166,7 @@ export function StickyBox({
         else if (Math.abs(accumulated) > 10) scrollingUp = accumulated < 0;
 
         // The bar's own place, measured from the pin line: the sentinel marks its top wherever the bar itself is drawn
-        const rootTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top;
-        const placeTop = sentinel.getBoundingClientRect().top - rootTop - offsetTop - stackOffset(bar, publishVar);
+        const placeTop = sentinel.getBoundingClientRect().top - viewportTopOf(scrollParent) - offsetTop - stackOffset(bar, publishVar);
         const placeOffScreen = placeTop + bar.offsetHeight <= 0;
 
         setPhase((prev) => {

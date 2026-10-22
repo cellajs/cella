@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
+import { collapseMotion } from '~/modules/common/collapse-motion';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
@@ -29,12 +30,7 @@ export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwa
           // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
           <AnimatePresence key={index}>
             {isInitiallyVisible || expanded ? (
-              <motion.div
-                initial={shouldAnimate ? { height: 0, opacity: 0 } : false}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-              >
+              <motion.div {...collapseMotion} initial={shouldAnimate ? collapseMotion.initial : false}>
                 {renderItem(item, index)}
               </motion.div>
             ) : null}

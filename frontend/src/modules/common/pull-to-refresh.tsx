@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
+import { useBodyClass } from '~/hooks/use-body-class';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
@@ -14,7 +15,8 @@ const emptyPhase = 30;
 
 type Phase = 'idle' | 'refreshing' | 'exiting';
 
-function getScrollParent(el: Element | null): Element | null {
+/** Nearest ancestor that scrolls and has content to scroll; null when only the page does. */
+function getScrollingAncestor(el: Element | null): Element | null {
   let current = el;
   while (current && current !== document.documentElement) {
     const style = getComputedStyle(current);
@@ -85,7 +87,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
       if (!touch || touch.clientY > window.innerHeight * 0.4 || window.scrollY > 0) return;
 
       // Only start at the top of the touch target's scroll parent; the walk reads styles, so it runs last
-      const scrollParent = getScrollParent(e.target as Element | null);
+      const scrollParent = getScrollingAncestor(e.target as Element | null);
       if (scrollParent && scrollParent.scrollTop > 0) return;
 
       setPhase('idle'); // cancel any in-progress exit animation
@@ -147,15 +149,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
     };
   }, [disabled, maximumPullLength, refreshThreshold]);
 
-  useEffect(() => {
-    const className = 'overflow-hidden';
-
-    isPulling ? document.body.classList.add(className) : document.body.classList.remove(className);
-
-    return () => {
-      document.body.classList.remove(className);
-    };
-  }, [isPulling]);
+  useBodyClass({ 'overflow-hidden': isPulling });
 
   const progressPull = Math.max(0, pullPosition - emptyPhase);
   const clamped = Math.min(progressPull, refreshThreshold);

@@ -20,6 +20,7 @@ function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props
     return (
       <Avatar
         {...props}
+        data-type={type}
         className={cn('flex items-center justify-center overflow-hidden rounded-md bg-background data-[type=user]:rounded-full', className)}
       >
         <Icon className="size-[70%] fill-accent opacity-70" strokeWidth={1.5} />

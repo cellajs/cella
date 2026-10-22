@@ -3,8 +3,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import { type KeyboardEvent, type ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
+import { collapseMotion } from '~/modules/common/collapse-motion';
 import { FocusTrap } from '~/modules/common/focus-trap';
-import { collapseMotion } from '~/modules/navigation/menu-sheet/helpers/collapse-motion';
 import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
 import { InfoContent } from '~/modules/navigation/panels/info-content';
 import { PreferencesContent } from '~/modules/navigation/panels/preferences-content';
@@ -108,7 +108,7 @@ export function NavSheetPanels() {
         )}
       </AnimatePresence>
 
-      <FocusTrap active={hasOpenPanel} disableInactive={false}>
+      <FocusTrap active={hasOpenPanel}>
         <div
           className={cn(
             'flex flex-col gap-1 border-t border-dashed bg-card px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]',

@@ -23,7 +23,7 @@ export function ComboboxSearchInput({
   return (
     <div
       data-slot="combobox-search-input-wrapper"
-      className={cn('group relative flex h-10 items-center border-b px-3', wrapClassName, value.length > 0 && 'pr-10')}
+      className={cn('group relative flex h-10 items-center border-b px-3', wrapClassName, showClear && value.length > 0 && 'pr-10')}
     >
       <SearchSpinner isSearching={isSearching} value={value} appearDelay={spinnerDelay} />
       <ComboboxPrimitive.Input

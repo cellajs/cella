@@ -6,7 +6,7 @@ import { Alerter } from '~/modules/common/alerter/alerter';
 import { DownAlert } from '~/modules/common/alerter/down-alert';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
-import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
+import { errorNoticeFallback } from '~/modules/common/error-notice';
 import { Sheeter } from '~/modules/common/sheeter/provider';
 import { lazyNamed } from '~/utils/lazy-named';
 
@@ -21,11 +21,7 @@ const DebugDropdown =
 export function PublicLayout() {
   return (
     <div id="publicLayout">
-      <ErrorBoundary
-        fallbackRender={({ error, resetErrorBoundary }) => (
-          <ErrorNotice error={error as ErrorNoticeError} boundary="root" resetErrorBoundary={resetErrorBoundary} />
-        )}
-      >
+      <ErrorBoundary fallbackRender={errorNoticeFallback('root')}>
         <Alerter mode="public" />
         <Dialoger />
         <Dropdowner />

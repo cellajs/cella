@@ -1,10 +1,10 @@
 import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
-import { blurAndStashTrigger, removeAndNotify, withDefaults } from '~/modules/common/overlay-store-helpers';
+import { blurAndStashTrigger, removeAndNotify, type TriggerRef, updateById, withDefaults } from '~/modules/common/overlay-store-helpers';
 
-type DialogContainerOptions = { ref: RefObject<HTMLDivElement | null>; overlay?: boolean; overlayRef?: RefObject<HTMLDivElement | null> };
+export type { TriggerRef } from '~/modules/common/overlay-store-helpers';
 
-export type TriggerRef = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
+type DialogContainerOptions = { ref: RefObject<HTMLDivElement | null>; overlay?: boolean };
 
 export type DialogData = {
   id: number | string;
@@ -32,9 +32,6 @@ interface DialogStoreState {
   remove: (id?: number | string, opts?: { isCleanup?: boolean }) => void;
   get: (id: number | string) => InternalDialog | undefined;
   scrollToTop: (id: number | string) => void;
-
-  /** @deprecated No-op: focus returns through `triggerRef` or the focus fallback. Removed in the next release. */
-  setTriggerRef: (id: string, ref: TriggerRef) => void;
 }
 
 // Manages one or multiple dialogs; on mobile they render as drawers.
@@ -53,9 +50,7 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
     return data.id;
   },
 
-  update: (id, updates) => {
-    set((state) => ({ dialogs: state.dialogs.map((dialog) => (dialog.id === id ? { ...dialog, ...updates } : dialog)) }));
-  },
+  update: (id, updates) => set((state) => ({ dialogs: updateById(state.dialogs, id, updates) })),
 
   remove: (id, opts) => {
     const { dialogs } = get();
@@ -69,8 +64,6 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
     const popup = document.getElementById(String(id));
     popup?.closest('[data-slot="dialog-viewport"]')?.scrollTo({ top: 0 });
   },
-
-  setTriggerRef: () => {},
 }));
 
 // Non-hook alias for accessing store outside of React components / as a value (e.g. getState)

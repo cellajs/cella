@@ -8,7 +8,6 @@ export type SheetTab = { id: string; label: TKey; element: React.ReactNode };
 
 interface Props {
   tabs: SheetTab[];
-  id?: string;
 }
 
 export function SheetTabs({ tabs }: Props) {
@@ -16,7 +15,9 @@ export function SheetTabs({ tabs }: Props) {
   const layoutId = useId();
   const { t } = useTranslation();
 
-  const [currentPage, setCurrentPage] = useState(tabs[0]);
+  // The id, so a sheet update that passes new tabs shows their element
+  const [currentId, setCurrentId] = useState(tabs[0].id);
+  const currentPage = tabs.find((tab) => tab.id === currentId) ?? tabs[0];
 
   const renderPage = () => currentPage.element;
 
@@ -30,7 +31,7 @@ export function SheetTabs({ tabs }: Props) {
                 variant="none"
                 data-current={currentPage.id === tab.id}
                 className="peer group opacity-80 hover:opacity-100 data-[current=true]:opacity-100"
-                onClick={() => setCurrentPage(tab)}
+                onClick={() => setCurrentId(tab.id)}
               >
                 <span className="group-active:press block">{t(tab.label)}</span>
                 {currentPage.id === tab.id && (

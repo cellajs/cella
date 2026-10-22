@@ -9,7 +9,7 @@ export function Alerter({ mode }: { mode: AlertContextMode }) {
         if (!modes.includes(mode)) return null;
 
         return (
-          <AlertBanner key={id} id={id} modes={modes} contextMode={mode} {...alertProps}>
+          <AlertBanner key={id} id={id} contextMode={mode} {...alertProps}>
             {children}
           </AlertBanner>
         );

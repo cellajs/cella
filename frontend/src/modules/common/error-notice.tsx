@@ -2,9 +2,11 @@ import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { BuildingIcon, ChevronUpIcon, HouseIcon, MessageCircleQuestionMarkIcon, RefreshCwIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Fragment, useEffect, useRef, useState } from 'react';
+import type { FallbackProps } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '~/lib/api';
 import { AppFooter } from '~/modules/common/app/app-footer';
+import { collapseMotion } from '~/modules/common/collapse-motion';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import { handleAskForHelp } from '~/modules/common/error-helpers';
@@ -102,13 +104,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
 
                 <AnimatePresence>
                   {showError && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: 'easeInOut' }}
-                      className="overflow-hidden"
-                    >
+                    <motion.div {...collapseMotion} className="overflow-hidden">
                       <div className="grid grid-cols-[auto_1fr] place-items-start gap-1 pb-4 text-sm">
                         {(
                           [
@@ -172,5 +168,12 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
         </div>
       </div>
     </>
+  );
+}
+
+/** The `fallbackRender` of an error boundary inside the `boundary` layout. */
+export function errorNoticeFallback(boundary: BoundaryType) {
+  return ({ error, resetErrorBoundary }: FallbackProps) => (
+    <ErrorNotice boundary={boundary} error={error instanceof Error ? error : null} resetErrorBoundary={resetErrorBoundary} />
   );
 }

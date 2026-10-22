@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import '~/modules/common/contact-form/contact-form-map.css';
-import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
+import { errorNoticeFallback } from '~/modules/common/error-notice';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
 import Logo from '/static/common/logo/logo-icon-only.svg';
@@ -97,11 +97,7 @@ function ContactFormMap() {
   if (!styleUrl) return null;
 
   return (
-    <ErrorBoundary
-      fallbackRender={({ error, resetErrorBoundary }) => (
-        <ErrorNotice boundary="app" error={error as ErrorNoticeError} resetErrorBoundary={resetErrorBoundary} />
-      )}
-    >
+    <ErrorBoundary fallbackRender={errorNoticeFallback('app')}>
       <div className="size-full">
         <div className="size-full overflow-hidden rounded-sm bg-accent">
           <AnimatePresence>

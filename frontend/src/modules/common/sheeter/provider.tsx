@@ -1,12 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { useOverlayLock } from '~/modules/common/overlay-store-helpers';
+import { useOnPathChange, useOverlayLock } from '~/modules/common/overlay-store-helpers';
 import { SheeterDrawer } from '~/modules/common/sheeter/drawer';
 import { SheeterSheet } from '~/modules/common/sheeter/sheet';
 import { type InternalSheet, navSheetId, sheeter, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { navigationStore } from '~/modules/navigation/navigation-store';
-import { getRouter } from '~/routes/-router-instance';
 
 /**
  * Keeps sheets that leave the store rendered with `open: false` until Base UI reports their exit done, so every
@@ -44,9 +43,7 @@ function useExitingSheets(sheets: InternalSheet[], mode: string) {
   return { exiting, onExited };
 }
 
-/**
- * Renders drawers on mobile, sheets on desktop; when `container` is provided, sheets are portaled into it.
- */
+/** Renders drawers on mobile, sheets on desktop. */
 export function Sheeter() {
   const isMobile = useBreakpointBelow('sm');
   const sheets = useSheeter((state) => state.sheets);
@@ -60,31 +57,17 @@ export function Sheeter() {
   // Dialogs opened from a sheet stack above it through this class
   useBodyClass({ 'sheeter-open': hasOpenSheet });
 
-  useEffect(() => {
-    return getRouter().subscribe('onBeforeLoad', ({ pathChanged }) => {
-      if (!pathChanged) return;
-
-      const navState = navigationStore.getState();
-      const sheetsToClose = sheeter.getState().sheets.filter((s) => s.closeSheetOnRouteChange !== false);
-      if (!sheetsToClose.length) return;
-
-      if (!navState.navSheetOpen || !navState.keepNavOpen) {
-        sheeter.getState().removeOnRouteChange({ isCleanup: true });
-        return;
-      }
-
-      for (const sheet of sheetsToClose.filter((s) => s.id !== navSheetId)) {
-        sheeter.getState().remove(sheet.id, { isCleanup: true });
-      }
-    });
-  }, []);
+  useOnPathChange(() => {
+    const { navSheetOpen, keepNavOpen } = navigationStore.getState();
+    sheeter.getState().removeOnRouteChange({ isCleanup: true, keepId: navSheetOpen && keepNavOpen ? navSheetId : undefined });
+  });
 
   if (!sheets.length && !exiting.length) return null;
 
   return (
     <>
       {[...sheets, ...exiting].map((sheet) => {
-        const SheetComponent = isMobile && !sheet.container ? SheeterDrawer : SheeterSheet;
+        const SheetComponent = isMobile ? SheeterDrawer : SheeterSheet;
         return <SheetComponent key={`${sheet.id}-${mode}`} sheet={sheet} onExited={() => onExited(sheet.id)} />;
       })}
     </>
