@@ -88,7 +88,8 @@ const defaultDeps: PushSendDeps = {
  * 404/410 responses prune the subscription (the push service says the endpoint is gone); a 429
  * aborts the remaining batch (back off until the next event); 403s keep their rows and are
  * counted into one warning, because a VAPID key deployed by mistake answers 403 for every
- * subscription; other errors are logged per endpoint and skipped.
+ * subscription; other errors are logged per endpoint and skipped. A stored row whose host is not in `pushServiceHosts`
+ * is never sent to, and the pass logs one warning with the count of such rows.
  */
 export async function sendNotificationPush(userIds: string[], payload: NotificationPushPayload, deps: PushSendDeps = defaultDeps): Promise<void> {
   try {
@@ -96,7 +97,12 @@ export async function sendNotificationPush(userIds: string[], payload: Notificat
     if (offline.length === 0) return;
 
     // Registration checks the host too; this covers rows stored under an earlier host list or check, whatever `deps` reads.
-    const subscriptions = (await deps.findSubscriptions(offline)).filter((row) => isPushServiceEndpoint(row.endpoint));
+    const stored = await deps.findSubscriptions(offline);
+    const subscriptions = stored.filter((row) => isPushServiceEndpoint(row.endpoint));
+    const skipped = stored.length - subscriptions.length;
+    if (skipped > 0) {
+      log.warn('Push subscriptions skipped: their host is not in pushServiceHosts', { count: skipped, activityId: payload.activityId });
+    }
     if (subscriptions.length === 0) return;
 
     const body = JSON.stringify(payload);
