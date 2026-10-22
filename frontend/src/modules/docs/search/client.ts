@@ -36,7 +36,7 @@ async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> 
     queryClient.query(schemasQueryOptions).catch(() => null),
   ]);
 
-  const sectionsBySlug = new Map(Object.entries(docsSectionsIndex).map(([path, s]) => [pathToSlug(path), s]));
+  const sectionsBySlug = new Map(Object.entries(docsSectionsIndex).map(([path, sections]) => [pathToSlug(path), sections]));
   const pages: EnginePage[] = docPages
     .filter((page) => !page.draft && !page.hidden)
     .map((page) => ({

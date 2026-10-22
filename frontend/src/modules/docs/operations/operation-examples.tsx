@@ -21,13 +21,13 @@ export function openExamplesSheet(operation: GenOperationSummary, trigger: HTMLB
 
 /** Wrap the parent component in a Suspense boundary for optimal batching. */
 export function OperationExamples({ operationId, tagName }: OperationExamplesProps) {
-  const { data: operations } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
+  const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
   const { zodIndex, typesIndex } = useDefinitionIndexes();
 
-  const operation = operations.find((op) => op.operationId === operationId);
+  const detail = tagDetails.find((entry) => entry.operationId === operationId);
   // The sheet is titled "Success response": error examples stay on the operation page.
-  const successResponses = (operation?.responses ?? []).filter((r) => r.status >= 200 && r.status < 300);
+  const successResponses = (detail?.responses ?? []).filter((response) => response.status >= 200 && response.status < 300);
 
   return (
     <ResponsesAccordion

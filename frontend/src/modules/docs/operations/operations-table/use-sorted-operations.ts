@@ -22,13 +22,13 @@ export function useSortedOperations(operations: GenOperationSummary[], sortColum
     const { columnKey, direction } = sortColumns[0];
     const modifier = direction === 'ASC' ? 1 : -1;
     return [...operations].sort((a, b) => {
-      const aVal = getSortValue(a, columnKey);
-      const bVal = getSortValue(b, columnKey);
+      const aValue = getSortValue(a, columnKey);
+      const bValue = getSortValue(b, columnKey);
       // Push empties to the bottom in both ASC and DESC.
-      if (!aVal && !bVal) return 0;
-      if (!aVal) return 1;
-      if (!bVal) return -1;
-      return aVal.localeCompare(bVal) * modifier;
+      if (!aValue && !bValue) return 0;
+      if (!aValue) return 1;
+      if (!bValue) return -1;
+      return aValue.localeCompare(bValue) * modifier;
     });
   }, [operations, sortColumns]);
 }

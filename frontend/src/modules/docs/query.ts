@@ -44,10 +44,10 @@ export const openApiSpecQueryOptions = queryOptions({
 });
 
 /** Group items by key(s). Supports single-key and multi-key (array) extractors. */
-function groupBy<T>(items: T[], keyFn: (item: T) => string | string[]): Record<string, T[]> {
+function groupBy<T>(items: T[], getKeys: (item: T) => string | string[]): Record<string, T[]> {
   const result: Record<string, T[]> = {};
   for (const item of items) {
-    const keys = keyFn(item);
+    const keys = getKeys(item);
     for (const key of Array.isArray(keys) ? keys : [keys]) {
       result[key] ??= [];
       result[key].push(item);
@@ -95,7 +95,7 @@ export const schemasQueryOptions = queryOptions({
 /** Schemas grouped by schema tag, derived per observer from the schemasQueryOptions cache. */
 export const schemasByTagQueryOptions = queryOptions({
   ...schemasQueryOptions,
-  select: (schemas: GenComponentSchema[]) => groupBy(schemas, (s) => s.schemaTag),
+  select: (schemas: GenComponentSchema[]) => groupBy(schemas, (schema) => schema.schemaTag),
 });
 
 export const schemaTagsQueryOptions = queryOptions({
@@ -121,8 +121,8 @@ const definitionIndexQueryOptions = (queryKey: readonly string[], file: string) 
   queryOptions({
     queryKey,
     queryFn: async () => {
-      const res = await fetch(versionedUrl(`${appConfig.frontendUrl}/static/${file}`));
-      return buildIndex(await res.text());
+      const response = await fetch(versionedUrl(`${appConfig.frontendUrl}/static/${file}`));
+      return buildIndex(await response.text());
     },
     staleTime: 'static',
   });

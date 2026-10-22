@@ -6,7 +6,7 @@ import { getSection, scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { collapsiblePanelClass } from '~/modules/docs/collapsible-panel';
 import { ActiveIndicator } from '~/modules/docs/sidebar/active-indicator';
-import { closeSidebarSheetAndNavigate, docsSidebarSheetId } from '~/modules/docs/sidebar/close-sidebar-sheet';
+import { closeSidebarSheetAndNavigate, docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { sidebarLeafClass } from '~/modules/docs/sidebar/sidebar-hash-item';
 import { type DocPage, pageSectionId } from '~/modules/page/content';
 import { Button, buttonVariants } from '~/modules/ui/button';
@@ -17,13 +17,13 @@ import { isModifiedClick } from '~/utils/is-modified-click';
 
 export type PageNode = { page: DocPage; children: PageNode[] };
 
-type PageBranchProps = {
+interface PageBranchProps {
   node: PageNode;
   variant: 'root' | 'parent';
   activePageId: string | undefined;
   expandedIds: ReadonlySet<string>;
   onToggle: (id: string) => void;
-};
+}
 
 /** Tier 0 (root) and tier 1 (parent) page rows. Both are collapsible; only visuals differ. */
 export function PageBranch({ node, variant, activePageId, expandedIds, onToggle }: PageBranchProps) {
@@ -31,12 +31,12 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
   const hasChildren = children.length > 0;
   const isExpanded = expandedIds.has(page.id);
   const isActive = activePageId === page.id;
-  const expanderOnly = page.renderMode === 'nodeOnly' && hasChildren;
+  const isExpanderOnly = page.renderMode === 'nodeOnly' && hasChildren;
   const isRoot = variant === 'root';
   // Sheet-mode threshold (below `md`): the indicator moves as in the tag groups
   const isMobile = useBreakpointBelow('md', false);
   const layoutId = useId();
-  const activeChildIndex = isRoot ? -1 : children.findIndex((c) => c.page.id === activePageId);
+  const activeChildIndex = isRoot ? -1 : children.findIndex((child) => child.page.id === activePageId);
 
   return (
     <Collapsible
@@ -54,7 +54,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
         <Link
           to="/docs/page/$"
           params={{ _splat: page.id }}
-          preload={expanderOnly ? false : 'intent'}
+          preload={isExpanderOnly ? false : 'intent'}
           draggable={false}
           data-active={isActive}
           data-expanded={isExpanded}
@@ -65,17 +65,17 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
               ? 'px-3 font-medium data-[active=true]:bg-accent data-[active=true]:font-semibold'
               : 'focus-inset h-8 font-normal opacity-80 data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:opacity-100 data-[expanded=true]:opacity-100',
           )}
-          onClick={(e) => {
-            if (isModifiedClick(e)) return;
-            if (expanderOnly) {
-              e.preventDefault();
+          onClick={(event) => {
+            if (isModifiedClick(event)) return;
+            if (isExpanderOnly) {
+              event.preventDefault();
               onToggle(page.id);
               return;
             }
             // Collapsing is a re-click at the top of the page you are on. Further down that page the click scrolls back up,
             // and from another page it navigates here; both leave the subtree open.
             if (hasChildren && isExpanded && isActive) {
-              e.preventDefault();
+              event.preventDefault();
               if (getSection() === pageSectionId) return onToggle(page.id);
               scrollToSectionById(pageSectionId);
               sheeter.getState().remove(docsSidebarSheetId);
@@ -83,7 +83,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
             }
             if (hasChildren && !isExpanded) onToggle(page.id);
             // On mobile the sheet closes only on leaf navigation, so children revealed by an expand stay visible
-            if (!hasChildren) closeSidebarSheetAndNavigate(e);
+            if (!hasChildren) closeSidebarSheetAndNavigate(event);
           }}
         >
           {/* Leading dot (parent tier only) */}
@@ -157,14 +157,14 @@ function PageLeaf({ page, isActive }: { page: DocPage; isActive: boolean }) {
 
 /** Build a hierarchical tree of pages; every level keeps the order of `pages`, which `docPages` sorts by display order. */
 export function buildPageNodeTree(pages: DocPage[]): PageNode[] {
-  const validIds = new Set(pages.map((p) => p.id));
+  const validIds = new Set(pages.map((page) => page.id));
   const byParent = new Map<string | null, DocPage[]>();
-  for (const p of pages) {
+  for (const page of pages) {
     // Treat parentless pages (parent missing from visible set) as roots
-    const key = p.parentId && validIds.has(p.parentId) ? p.parentId : null;
-    const list = byParent.get(key);
-    if (list) list.push(p);
-    else byParent.set(key, [p]);
+    const key = page.parentId && validIds.has(page.parentId) ? page.parentId : null;
+    const siblings = byParent.get(key);
+    if (siblings) siblings.push(page);
+    else byParent.set(key, [page]);
   }
 
   const build = (parentId: string | null): PageNode[] => (byParent.get(parentId) ?? []).map((page) => ({ page, children: build(page.id) }));
@@ -176,7 +176,7 @@ export function buildPageNodeTree(pages: DocPage[]): PageNode[] {
 export function computeAncestorIds(pages: DocPage[], pageId: string | undefined): Set<string> {
   const ancestors = new Set<string>();
   if (!pageId) return ancestors;
-  const byId = new Map(pages.map((p) => [p.id, p]));
+  const byId = new Map(pages.map((page) => [page.id, page]));
   let current = byId.get(pageId);
   while (current?.parentId && !ancestors.has(current.parentId)) {
     ancestors.add(current.parentId);

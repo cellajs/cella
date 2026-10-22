@@ -47,8 +47,8 @@ export function ApiReferenceSection({ label }: ApiReferenceSectionProps) {
   const [forcedCollapsed, setForcedCollapsed] = useState<ApiSection | null>(initialForcedCollapsed);
 
   // On its own route a section's link toggles it; elsewhere it navigates and clears only that section's forced collapse
-  const onSectionClick = (e: MouseEvent, section: ApiSection, isRoute: boolean) => {
-    if (isRoute) e.preventDefault();
+  const handleSectionClick = (event: MouseEvent, section: ApiSection, isRoute: boolean) => {
+    if (isRoute) event.preventDefault();
     setForcedCollapsed((prev) => (prev === section ? null : isRoute ? section : prev));
   };
 
@@ -65,7 +65,7 @@ export function ApiReferenceSection({ label }: ApiReferenceSectionProps) {
         count={tags.reduce((sum, tag) => sum + tag.count, 0)}
         isActive={isOperationsRoute || isOperationsTableRoute}
         isOpen={isOperationsRoute && forcedCollapsed !== 'operations'}
-        onClick={(e) => onSectionClick(e, 'operations', isOperationsRoute)}
+        onClick={(event) => handleSectionClick(event, 'operations', isOperationsRoute)}
         onPrefetch={prefetchOperations}
       >
         <OperationsSidebar activeTag={activeOperationTag} />
@@ -76,7 +76,7 @@ export function ApiReferenceSection({ label }: ApiReferenceSectionProps) {
         count={schemas.length}
         isActive={isSchemasRoute}
         isOpen={isSchemasRoute && forcedCollapsed !== 'schemas'}
-        onClick={(e) => onSectionClick(e, 'schemas', isSchemasRoute)}
+        onClick={(event) => handleSectionClick(event, 'schemas', isSchemasRoute)}
       >
         <SchemasSidebar activeTag={activeSchemaTag} />
       </ApiReferenceGroup>
@@ -91,7 +91,7 @@ interface ApiReferenceGroupProps {
   count: number;
   isActive: boolean;
   isOpen: boolean;
-  onClick: (e: MouseEvent) => void;
+  onClick: (event: MouseEvent) => void;
   onPrefetch?: () => void;
   children: ReactNode;
 }

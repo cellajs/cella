@@ -51,7 +51,12 @@ export function OpenApiSpecViewer() {
           <InputGroupAddon>
             <SearchSpinner value={searchText} isSearching={false} />
           </InputGroupAddon>
-          <InputGroupInput type="text" placeholder={`${t('c:search')}...`} value={searchText} onChange={(e) => handleSearchChange(e.target.value)} />
+          <InputGroupInput
+            type="text"
+            placeholder={`${t('c:search')}...`}
+            value={searchText}
+            onChange={(event) => handleSearchChange(event.target.value)}
+          />
           <AnimatePresence mode="wait">
             {isSearching ? (
               <motion.div
@@ -102,7 +107,7 @@ export function OpenApiSpecViewer() {
           onClick={() => {
             if (isExpanded) {
               // Reset to default state by forcing re-mount
-              setResetKey((k) => k + 1);
+              setResetKey((prev) => prev + 1);
             }
             setIsExpanded(!isExpanded);
           }}

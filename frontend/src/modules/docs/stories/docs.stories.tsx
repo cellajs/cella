@@ -8,10 +8,10 @@ import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { OperationExamples } from '~/modules/docs/operations/operation-examples';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
 import { TagSchemasTable } from '~/modules/docs/schemas/tag-schemas-table';
-import { docsSidebarSheetId } from '~/modules/docs/sidebar/close-sidebar-sheet';
 import { CollapsibleTagItem } from '~/modules/docs/sidebar/collapsible-tag-item';
+import { docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { OperationItem } from '~/modules/docs/sidebar/operation-item';
-import { PageBranch, type PageNode } from '~/modules/docs/sidebar/page-tree-item';
+import { PageBranch, type PageNode } from '~/modules/docs/sidebar/page-branch';
 import { SchemaItem } from '~/modules/docs/sidebar/schema-item';
 import { TagOperationsTable } from '~/modules/docs/tag-operations-table';
 import { type DocPage, pageSectionId } from '~/modules/page/content';
@@ -126,7 +126,7 @@ export const SchemasTagTable: Story = {
 
     const link = await canvas.findByRole('link', { name: 'SessionBase' });
     await expect(link).toHaveAttribute('href', '/?q=keep&schemaTag=data#/components/schemas/SessionBase');
-    await expect(canvas.getByRole('columnheader', { name: 'Name' })).toBeVisible();
+    await expect(canvas.getByRole('columnheader', { name: 'name' })).toBeVisible();
     await expect(canvas.getByRole('columnheader', { name: 'Module' })).toBeVisible();
     await expect(canvas.getByText('users')).toBeVisible();
 

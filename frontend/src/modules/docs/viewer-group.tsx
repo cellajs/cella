@@ -8,7 +8,7 @@ import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { lazyNamed } from '~/utils/lazy-named';
 
 // Lazy: shiki and its grammars load when the code view opens, not with the docs route.
-const CodeViewer = lazyNamed(() => import('./code-viewer'), 'CodeViewer');
+const CodeViewer = lazyNamed(() => import('~/modules/docs/code-viewer'), 'CodeViewer');
 
 type SchemaViewMode = 'format' | 'zod' | 'type' | 'example';
 

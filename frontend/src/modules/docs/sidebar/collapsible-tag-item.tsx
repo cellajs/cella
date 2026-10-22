@@ -29,7 +29,7 @@ const tagTypeConfig = {
 
 type TagType = keyof typeof tagTypeConfig;
 
-type CollapsibleTagItemProps<T> = {
+interface CollapsibleTagItemProps<T> {
   type: TagType;
   tag: { name: string; count: number };
   items: T[];
@@ -44,7 +44,7 @@ type CollapsibleTagItemProps<T> = {
   itemKey: (item: T) => string;
   /** Called on hover to trigger prerendering of this tag's details in the page */
   onPrerender?: () => void;
-};
+}
 
 function CollapsibleTagItemBase<T>({
   type,

@@ -3,6 +3,7 @@ import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenExtensionDefinition, GenOperationSummary } from 'sdk/docs-types';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { upperFirst } from '~/modules/docs/helpers/upper-first';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { openOperationSheet } from '~/modules/docs/operations/operation-detail';
 import { openExamplesSheet } from '~/modules/docs/operations/operation-examples';
@@ -52,10 +53,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
   return useState<ColumnOrColumnGroup<GenOperationSummary>[]>(() => {
     const extensionColumns: ColumnOrColumnGroup<GenOperationSummary>[] = extensions.map((ext) => ({
       key: ext.id,
-      name: ext.key
-        .replace('x-', '')
-        .replace(/-/g, ' ')
-        .replace(/^\w/, (c) => c.toUpperCase()),
+      name: upperFirst(ext.key.replace('x-', '').replace(/-/g, ' ')),
       minBreakpoint: 'md',
       resizable: true,
       width: 150,
@@ -93,7 +91,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
     // One column per tag kind, e.g. 'module', 'owner'
     const tagKindColumns: ColumnOrColumnGroup<GenOperationSummary>[] = tagKinds.map((kind) => ({
       key: `tag-${kind}`,
-      name: kind.replace(/^\w/, (c) => c.toUpperCase()),
+      name: upperFirst(kind),
       hidden: hiddenTagKinds.has(kind),
       sortable: true,
       minBreakpoint: 'md',
@@ -132,7 +130,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
             tabIndex={tabIndex}
             title={row.path}
             className="w-full min-w-0 justify-start font-mono text-xs"
-            onClick={(e) => openOperationSheet(row, e.currentTarget)}
+            onClick={(event) => openOperationSheet(row, event.currentTarget)}
           >
             {/* The underline sits on the path alone: on the button it would reach the badge too */}
             <span
@@ -164,7 +162,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
               aria-label={t('c:docs.view_example')}
               data-tooltip="true"
               data-tooltip-content={t('c:docs.view_example')}
-              onClick={(e) => openExamplesSheet(row, e.currentTarget)}
+              onClick={(event) => openExamplesSheet(row, event.currentTarget)}
             >
               <BirdIcon className="size-4" />
             </Button>

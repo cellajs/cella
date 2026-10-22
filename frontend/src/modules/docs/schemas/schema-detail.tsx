@@ -16,14 +16,14 @@ interface SchemaDetailProps {
 function SchemaDetail({ schema, className }: SchemaDetailProps) {
   const { zodIndex, typesIndex } = useDefinitionIndexes();
 
-  const refId = schemaAnchor(schema);
+  const anchor = schemaAnchor(schema);
 
   return (
-    <Card id={`spy-${refId}`} className={cn('border-0', className)}>
+    <Card id={`spy-${anchor}`} className={cn('border-0', className)}>
       <CardHeader className="group/hash-url">
         <CardTitle level={3} className="gap-2 text-xl leading-8">
           {schema.name}
-          <HashUrlButton hash={refId} />
+          <HashUrlButton hash={anchor} />
         </CardTitle>
         {schema.description && <CardDescription className="my-2 max-w-4xl text-base">{schema.description}</CardDescription>}
       </CardHeader>

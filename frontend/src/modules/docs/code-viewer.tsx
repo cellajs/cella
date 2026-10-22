@@ -25,12 +25,12 @@ const getHighlighter = () => {
 
 export function CodeViewer({ code }: CodeViewerProps) {
   // `html: null` means highlighting failed and the code renders as plain text.
-  const [state, setState] = useState<{ html: string | null; isLoading: boolean }>({ html: '', isLoading: true });
+  const [{ html, isLoading }, setHighlight] = useState<{ html: string | null; isLoading: boolean }>({ html: '', isLoading: true });
   const mode = useUIStore((state) => state.mode);
 
   useEffect(() => {
     let cancelled = false;
-    setState((prev) => ({ ...prev, isLoading: true }));
+    setHighlight((prev) => ({ ...prev, isLoading: true }));
 
     const highlight = async () => {
       try {
@@ -39,9 +39,9 @@ export function CodeViewer({ code }: CodeViewerProps) {
           lang: 'typescript',
           theme: mode === 'dark' ? 'github-dark-default' : 'github-light-default',
         });
-        if (!cancelled) setState({ html: highlighted, isLoading: false });
+        if (!cancelled) setHighlight({ html: highlighted, isLoading: false });
       } catch {
-        if (!cancelled) setState({ html: null, isLoading: false });
+        if (!cancelled) setHighlight({ html: null, isLoading: false });
       }
     };
 
@@ -51,11 +51,11 @@ export function CodeViewer({ code }: CodeViewerProps) {
     };
   }, [code, mode]);
 
-  if (state.isLoading) {
+  if (isLoading) {
     return <div className="h-24 animate-pulse rounded bg-muted" />;
   }
 
-  if (state.html === null) {
+  if (html === null) {
     return (
       <div className="text-sm">
         <pre>
@@ -69,7 +69,7 @@ export function CodeViewer({ code }: CodeViewerProps) {
     <div
       className="text-sm [&_code]:bg-transparent! [&_pre]:bg-transparent!"
       // biome-ignore lint/security/noDangerouslySetInnerHtml: Shiki output is safe
-      dangerouslySetInnerHTML={{ __html: state.html }}
+      dangerouslySetInnerHTML={{ __html: html }}
     />
   );
 }

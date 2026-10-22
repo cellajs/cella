@@ -39,7 +39,7 @@ export function useTableBarFilters<T extends { q?: string }>(options: TableBarFi
   return { isFiltered, onSearch, onResetFilters };
 }
 
-interface TableBarShellProps<TRow extends Record<string, unknown>> extends ReturnType<typeof useTableBarFilters> {
+interface TableBarShellProps<TRow extends object> extends ReturnType<typeof useTableBarFilters> {
   searchVars: { q?: string };
   total: number | null;
   /** Count label, pluralized by the total. */
@@ -66,7 +66,7 @@ interface TableBarShellProps<TRow extends Record<string, unknown>> extends Retur
 }
 
 /** The bar above an entity table: actions and count, search and filters, columns, export and focus view. */
-export function TableBarShell<TRow extends Record<string, unknown>>({
+export function TableBarShell<TRow extends object>({
   isFiltered,
   onSearch,
   onResetFilters,

@@ -47,7 +47,7 @@ function useResolvedDetail(operation: GenOperationSummary, detail?: GenOperation
   const tagName = operation.tags[0] ?? '';
   const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   if (detail) return detail;
-  return tagDetails.find((d) => d.operationId === operation.id);
+  return tagDetails.find((entry) => entry.operationId === operation.id);
 }
 
 interface OperationDetailProps {
@@ -105,7 +105,7 @@ export function TagOperationsList({ operations }: TagOperationsListProps) {
 
   const tagName = operations.length > 0 ? operations[0].tags[0] : '';
   const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
-  const detailsMap = new Map(tagDetails.map((d) => [d.operationId, d]));
+  const detailsById = new Map(tagDetails.map((detail) => [detail.operationId, detail]));
 
   // Guard against empty operations to prevent fetching with undefined tag name
   if (operations.length === 0) return null;
@@ -116,7 +116,7 @@ export function TagOperationsList({ operations }: TagOperationsListProps) {
         <OperationDetail
           key={operation.hash}
           operation={operation}
-          detail={detailsMap.get(operation.id)}
+          detail={detailsById.get(operation.id)}
           className="rounded-none last:rounded-b-lg"
         />
       ))}

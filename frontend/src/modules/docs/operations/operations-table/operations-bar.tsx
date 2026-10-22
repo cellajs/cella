@@ -4,6 +4,7 @@ import type { GenOperationSummary } from 'sdk/docs-types';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { ResponsiveSelect } from '~/modules/common/form-fields/responsive-select';
+import { upperFirst } from '~/modules/docs/helpers/upper-first';
 import { mcpToolFilter } from '~/modules/docs/operations/operations-table/use-filtered-operations';
 import { ViewModeToggle } from '~/modules/docs/operations/view-mode-toggle';
 
@@ -19,17 +20,14 @@ interface OperationsTableBarProps {
   hasMcpTools: boolean;
 }
 
-/** `GenOperationSummary` as an object type: the bar shell's rows must be a `Record<string, unknown>`, which no interface is. */
-type OperationRow = { [K in keyof GenOperationSummary]: GenOperationSummary[K] };
-
 /** Display order for tag-kind groups in the filter dropdown. */
 const kindOrder = ['owner', 'entity'];
 
 /** Human-readable label for a `${kind}:${value}` filter option. */
 const labelFor = (kind: string, value: string): string => {
-  const cap = value.replace(/^\w/, (c) => c.toUpperCase());
-  if (kind === 'entity') return `${cap} entity`;
-  return cap;
+  const label = upperFirst(value);
+  if (kind === 'entity') return `${label} entity`;
+  return label;
 };
 
 export function OperationsTableBar({ total, searchVars, setSearch, columns, setColumns, tagFilters, hasMcpTools }: OperationsTableBarProps) {
@@ -37,8 +35,8 @@ export function OperationsTableBar({ total, searchVars, setSearch, columns, setC
   const barFilters = useTableBarFilters({ searchVars, setSearch, reset: { q: '', tag: undefined } });
 
   const orderedKinds = [
-    ...kindOrder.filter((k) => tagFilters[k]?.length),
-    ...Object.keys(tagFilters).filter((k) => !kindOrder.includes(k) && tagFilters[k]?.length),
+    ...kindOrder.filter((kind) => tagFilters[kind]?.length),
+    ...Object.keys(tagFilters).filter((kind) => !kindOrder.includes(kind) && tagFilters[kind]?.length),
   ];
 
   const tagOptions = orderedKinds.flatMap((kind) => tagFilters[kind].map((value) => ({ value: `${kind}:${value}`, label: labelFor(kind, value) })));
@@ -49,7 +47,7 @@ export function OperationsTableBar({ total, searchVars, setSearch, columns, setC
   ];
 
   return (
-    <TableBarShell<OperationRow>
+    <TableBarShell
       {...barFilters}
       {...{ searchVars, total, columns, setColumns }}
       label="c:operation"

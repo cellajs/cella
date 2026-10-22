@@ -9,8 +9,8 @@ import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useScrolledPast } from '~/hooks/use-scrolled-past';
 import { type SheetData, sheeter, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toggleDocsSearch } from '~/modules/docs/search/open-docs-search';
-import { docsSidebarSheetId, isDocsSidebarOpen } from '~/modules/docs/sidebar/close-sidebar-sheet';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
+import { docsSidebarSheetId, isDocsSidebarOpen } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
@@ -20,7 +20,7 @@ const minSidebarWidth = 220;
 const maxSidebarWidth = 400;
 
 /** The width of `--docs-sidebar-width`'s CSS default, clamp(220px, 24vw, 288px), for the resize handle's value. */
-const defaultSidebarWidth = () => Math.round(Math.min(288, Math.max(minSidebarWidth, window.innerWidth * 0.24)));
+const getDefaultSidebarWidth = () => Math.round(Math.min(288, Math.max(minSidebarWidth, window.innerWidth * 0.24)));
 
 function DocsLayout() {
   const navigate = useNavigate();
@@ -34,12 +34,12 @@ function DocsLayout() {
 
   const showScrollTop = useScrolledPast(300, !isDesktop);
   // First-visit affordance: the menu button reads "menu" while at the top of the page
-  const atTop = !useScrolledPast(8, !isDesktop);
-  const showMenuLabel = useFirstTimeHint('floating-menu-docs', !isDesktop && atTop);
+  const isAtTop = !useScrolledPast(8, !isDesktop);
+  const showMenuLabel = useFirstTimeHint('floating-menu-docs', !isDesktop && isAtTop);
 
-  const startSidebarResize = (e: React.PointerEvent) => {
-    e.preventDefault();
-    const startX = e.clientX;
+  const startSidebarResize = (event: React.PointerEvent) => {
+    event.preventDefault();
+    const startX = event.clientX;
     const startWidth = sidebarRef.current?.getBoundingClientRect().width ?? minSidebarWidth;
     // The drag writes the variable to the DOM once per frame and commits state on release, so it doesn't re-render the layout and sidebar
     let width: number | null = null;
@@ -48,35 +48,35 @@ function DocsLayout() {
       frame = 0;
       if (width !== null) wrapperRef.current?.style.setProperty('--docs-sidebar-width', `${width}px`);
     };
-    const onMove = (ev: PointerEvent) => {
-      width = Math.min(maxSidebarWidth, Math.max(minSidebarWidth, startWidth + (ev.clientX - startX)));
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      width = Math.min(maxSidebarWidth, Math.max(minSidebarWidth, startWidth + (moveEvent.clientX - startX)));
       if (!frame) frame = requestAnimationFrame(writeWidth);
     };
-    const onUp = () => {
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onUp);
-      document.removeEventListener('pointercancel', onUp);
+    const handlePointerUp = () => {
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerUp);
+      document.removeEventListener('pointercancel', handlePointerUp);
       document.body.style.cursor = '';
       cancelAnimationFrame(frame);
       writeWidth();
       if (width !== null) setResizedSidebarWidth(width);
     };
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onUp);
-    document.addEventListener('pointercancel', onUp);
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerUp);
+    document.addEventListener('pointercancel', handlePointerUp);
     document.body.style.cursor = 'col-resize';
   };
 
   // The keyboard path of the same handle: arrows move it in steps, Home and End jump to the limits.
-  const resizeSidebarByKey = (e: React.KeyboardEvent) => {
+  const resizeSidebarByKey = (event: React.KeyboardEvent) => {
     const width = sidebarRef.current?.getBoundingClientRect().width ?? minSidebarWidth;
-    const target = { ArrowLeft: width - 16, ArrowRight: width + 16, Home: minSidebarWidth, End: maxSidebarWidth }[e.key];
+    const target = { ArrowLeft: width - 16, ArrowRight: width + 16, Home: minSidebarWidth, End: maxSidebarWidth }[event.key];
     if (target === undefined) return;
-    e.preventDefault();
+    event.preventDefault();
     setResizedSidebarWidth(Math.min(maxSidebarWidth, Math.max(minSidebarWidth, target)));
   };
 
-  const sidebarOpen = useSheeter((state) => isDocsSidebarOpen(state.sheets));
+  const isSidebarOpen = useSheeter((state) => isDocsSidebarOpen(state.sheets));
 
   const sidebarContent = <DocsSidebar />;
   const sidebarSheet: SheetData = {
@@ -107,14 +107,14 @@ function DocsLayout() {
       'Escape',
       () => {
         // The open sidebar sheet closes on its own Escape
-        if (sidebarOpen) return;
+        if (isSidebarOpen) return;
         navigate({ to: '.', search: (prev) => ({ ...prev, operationTag: undefined }), resetScroll: false, replace: true });
       },
     ],
   ]);
 
   const toggleSidebar = () => {
-    if (sidebarOpen) {
+    if (isSidebarOpen) {
       sheeter.getState().remove(docsSidebarSheetId);
     } else {
       sheeter.getState().create(sidebarContent, sidebarSheet);
@@ -148,7 +148,7 @@ function DocsLayout() {
   if (!isDesktop) {
     return (
       <div>
-        <FloatingNav items={floatingNavItems} bodyClass="docs-floating-nav" resetTrigger={sidebarOpen} />
+        <FloatingNav items={floatingNavItems} bodyClass="docs-floating-nav" resetTrigger={isSidebarOpen} />
         <main className="focus-view-scope pt-4 pb-[70vh]">
           <Outlet />
         </main>
@@ -167,7 +167,7 @@ function DocsLayout() {
           role="separator"
           aria-label={i18n.t('c:resize_sidebar')}
           aria-orientation="vertical"
-          aria-valuenow={resizedSidebarWidth ?? defaultSidebarWidth()}
+          aria-valuenow={resizedSidebarWidth ?? getDefaultSidebarWidth()}
           aria-valuemin={minSidebarWidth}
           aria-valuemax={maxSidebarWidth}
           tabIndex={0}

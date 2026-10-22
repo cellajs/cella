@@ -12,10 +12,7 @@ import { cn } from '~/utils/cn';
 function resolveResponseSchema(response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined {
   if (response.schema) return response.schema;
   // For error responses (no embedded schema), look up by name in schemas.gen.json
-  if (response.name) {
-    const schemaEntry = schemas.find((s) => s.name === response.name);
-    return schemaEntry?.schema;
-  }
+  if (response.name) return schemas.find((schema) => schema.name === response.name)?.schema;
   return undefined;
 }
 
@@ -32,7 +29,7 @@ interface ResponsesAccordionProps {
 export function ResponsesAccordion({ responses: allResponses, schemas, operationId, zodIndex, typesIndex, examplesOnly }: ResponsesAccordionProps) {
   const { t } = useTranslation();
 
-  const responses = examplesOnly ? allResponses.filter((r) => r.example !== undefined) : allResponses;
+  const responses = examplesOnly ? allResponses.filter((response) => response.example !== undefined) : allResponses;
 
   if (responses.length === 0) {
     return (

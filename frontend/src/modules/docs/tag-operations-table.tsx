@@ -10,7 +10,7 @@ interface TagOperationsTableProps {
   onPrerender?: () => void;
 }
 
-function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] {
+function operationColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] {
   return [
     {
       key: 'method',
@@ -42,7 +42,7 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
 }
 
 export function TagOperationsTable({ operations, tagName, onPrerender }: TagOperationsTableProps) {
-  const columns = useColumns(tagName);
+  const columns = operationColumns(tagName);
 
   return <TagTable<GenOperationSummary> rows={operations} columns={columns} rowKeyGetter={(row) => row.hash} hideHeader onPrerender={onPrerender} />;
 }

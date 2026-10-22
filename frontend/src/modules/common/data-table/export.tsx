@@ -38,7 +38,7 @@ function ExportItem({ format, note, disabled, onClick }: ExportItemProps) {
   );
 }
 
-export function Export<TData extends Record<string, unknown>>({ filename, columns, selectedRows, fetchRows, className }: ExportProps<TData>) {
+export function Export<TData extends object>({ filename, columns, selectedRows, fetchRows, className }: ExportProps<TData>) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 

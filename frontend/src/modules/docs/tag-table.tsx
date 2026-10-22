@@ -6,13 +6,13 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { Badge } from '~/modules/ui/badge';
 import { isModifiedClick } from '~/utils/is-modified-click';
 
-type TagHashLinkProps = Pick<ComponentProps<'a'>, 'title' | 'dir' | 'children'> & {
+interface TagHashLinkProps extends Pick<ComponentProps<'a'>, 'title' | 'dir' | 'children'> {
   /** Search param that records the expanded tag. */
   tagParam: 'operationTag' | 'schemaTag';
   tagName: string;
   hash: string;
   tabIndex: number;
-};
+}
 
 /** Cell-filling row link to a section of the tag list: enqueues the scroll (the store retries until laid out), then navigates. */
 export function TagHashLink({ tagParam, tagName, hash, tabIndex, title, dir, children }: TagHashLinkProps) {
@@ -25,9 +25,9 @@ export function TagHashLink({ tagParam, tagName, hash, tabIndex, title, dir, chi
       search={search}
       hash={hash}
       replace
-      onClick={(e) => {
-        if (isModifiedClick(e)) return;
-        e.preventDefault();
+      onClick={(event) => {
+        if (isModifiedClick(event)) return;
+        event.preventDefault();
         scrollToSectionById(hash);
         navigate({ to: '.', search, hash, replace: true, resetScroll: false });
       }}

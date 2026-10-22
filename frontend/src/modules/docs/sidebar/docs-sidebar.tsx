@@ -6,7 +6,7 @@ import { Logo } from '~/modules/common/logo';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { openDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { ApiReferenceSection } from '~/modules/docs/sidebar/api-reference-section';
-import { closeSidebarSheetAndNavigate } from '~/modules/docs/sidebar/close-sidebar-sheet';
+import { closeSidebarSheetAndNavigate } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { LinksSection } from '~/modules/docs/sidebar/links-section';
 import { PagesSection } from '~/modules/docs/sidebar/pages-section';
 import { UserTheme } from '~/modules/me/user-theme';

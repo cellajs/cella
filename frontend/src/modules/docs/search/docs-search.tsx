@@ -15,9 +15,9 @@ import { type HistoryEntry, SearchHistoryGroup } from '~/modules/common/search-h
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { getDocsSearchClient } from '~/modules/docs/search/client';
 import { DocsSearchRow } from '~/modules/docs/search/docs-search-row';
-import { deleteRecentSearch, updateRecentSearches, useDocsSearchStore } from '~/modules/docs/search/docs-search-store';
+import { removeRecentSearch, saveRecentSearch, useDocsSearchStore } from '~/modules/docs/search/docs-search-store';
 import type { DocsSearchResult, DocsSearchScope } from '~/modules/docs/search/types';
-import { docsSidebarSheetId } from '~/modules/docs/sidebar/close-sidebar-sheet';
+import { docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { docsConfig } from '~/modules/page/content';
 import { Combobox, ComboboxItem, ComboboxList } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
@@ -30,8 +30,8 @@ export const docsSearchDialogId = 'docs-search';
 
 /** Scope chips, labeled by the config-driven sidebar section labels. */
 const scopeChips: { value: DocsSearchScope; label: string }[] = [
-  { value: 'pages', label: docsConfig.sections.find((s) => s.id === 'pages')?.label ?? 'Documentation' },
-  { value: 'api', label: docsConfig.sections.find((s) => s.id === 'apiReference')?.label ?? 'API' },
+  { value: 'pages', label: docsConfig.sections.find((section) => section.id === 'pages')?.label ?? 'Documentation' },
+  { value: 'api', label: docsConfig.sections.find((section) => section.id === 'apiReference')?.label ?? 'API' },
 ];
 
 /** Docs search dialog: client-side search over docs pages and the API reference, works offline. */
@@ -86,13 +86,13 @@ export function DocsSearch() {
     sheeter.getState().remove(docsSidebarSheetId);
   };
 
-  const onSelect = (selection: SearchSelection) => {
+  const handleSelect = (selection: SearchSelection) => {
     // History entries re-run their query without navigating.
     if ('kind' in selection) {
       setSearchValue(selection.value);
       return;
     }
-    updateRecentSearches(searchValue);
+    saveRecentSearch(searchValue);
     navigate({ to: selection.to, params: selection.params, hash: selection.hash, resetScroll: false });
     // Queued scroll: resolves once the target section is mounted and laid out.
     if (selection.hash) scrollToSectionById(selection.hash);
@@ -109,7 +109,7 @@ export function DocsSearch() {
       openOnInputClick={false}
       value={null}
       onValueChange={(selection) => {
-        if (selection) onSelect(selection);
+        if (selection) handleSelect(selection);
       }}
       inputValue={searchValue}
       onInputValueChange={(value) => setSearchValue(resolveSearchInput(searchValue, value, recentSearches))}
@@ -139,7 +139,7 @@ export function DocsSearch() {
             />
           )}
           <ComboboxList className="h-full max-h-none overflow-visible" hidden={results === null ? !recentSearches.length : !results.length}>
-            {results === null && <SearchHistoryGroup searches={recentSearches} onRemove={deleteRecentSearch} />}
+            {results === null && <SearchHistoryGroup searches={recentSearches} onRemove={removeRecentSearch} />}
             {results !== null && (
               <MatchScope terms={parseTerms(debouncedValue)}>
                 <div className="p-1">

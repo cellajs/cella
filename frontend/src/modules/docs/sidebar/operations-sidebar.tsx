@@ -1,7 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useId } from 'react';
 import type { GenOperationSummary } from 'sdk/docs-types';
-import { nanoid } from 'shared/utils/nanoid';
 import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import { nonEmptyTagsQueryOptions, operationsByTagQueryOptions, prefetchTagDetails } from '~/modules/docs/query';
@@ -17,7 +16,7 @@ interface OperationsSidebarProps {
 }
 
 export function OperationsSidebar({ activeTag }: OperationsSidebarProps) {
-  const [layoutId] = useState(() => nanoid());
+  const layoutId = useId();
   const { prerender } = usePrerenderTrigger('operations');
 
   const { data: operationsByTag } = useSuspenseQuery(operationsByTagQueryOptions);

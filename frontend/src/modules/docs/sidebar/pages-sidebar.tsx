@@ -1,7 +1,7 @@
 import { useRouterState } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { buildPageNodeTree, computeAncestorIds, PageBranch } from '~/modules/docs/sidebar/page-tree-item';
+import { buildPageNodeTree, computeAncestorIds, PageBranch } from '~/modules/docs/sidebar/page-branch';
 import { docPages } from '~/modules/page/content';
 import { SidebarMenu, SidebarMenuItem } from '~/modules/ui/sidebar';
 
@@ -24,8 +24,8 @@ export function PagesSidebar() {
 
   // Effective parent per page id for sibling lookup (orphans count as roots, like buildPageNodeTree)
   const parentById = useMemo(() => {
-    const validIds = new Set(pages.map((p) => p.id));
-    return new Map(pages.map((p) => [p.id, p.parentId && validIds.has(p.parentId) ? p.parentId : null]));
+    const validIds = new Set(pages.map((page) => page.id));
+    return new Map(pages.map((page) => [page.id, page.parentId && validIds.has(page.parentId) ? page.parentId : null]));
   }, [pages]);
 
   // Accordion: expanding an id collapses its siblings (same effective parent, removed from the set)

@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
-import { docsSidebarSheetId } from '~/modules/docs/sidebar/close-sidebar-sheet';
+import { docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { isModifiedClick } from '~/utils/is-modified-click';
@@ -35,9 +35,9 @@ export function SidebarHashItem({ to, hash, isActive, className, children }: Sid
           replace
           draggable={false}
           data-active={isActive}
-          onClick={(e) => {
-            if (isModifiedClick(e)) return;
-            e.preventDefault();
+          onClick={(event) => {
+            if (isModifiedClick(event)) return;
+            event.preventDefault();
             scrollToSectionById(hash);
             sheeter.getState().remove(docsSidebarSheetId);
           }}

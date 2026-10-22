@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { buttonVariants } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-type TagExpandLinkProps = Pick<LinkProps, 'to' | 'search' | 'hash'> & {
+interface TagExpandLinkProps extends Pick<LinkProps, 'to' | 'search' | 'hash'> {
   isOpen: boolean;
   /** The section the link expands; it joins the link's accessible name, since every section repeats the same text. */
   tagName: string;
@@ -12,7 +12,7 @@ type TagExpandLinkProps = Pick<LinkProps, 'to' | 'search' | 'hash'> & {
   loading?: boolean;
   onMouseEnter?: () => void;
   onClick?: () => void;
-};
+}
 
 /** The chevron stays mounted across toggles so its rotation animates smoothly. */
 export function TagExpandLink({ isOpen, tagName, loading, to, search, hash, onMouseEnter, onClick }: TagExpandLinkProps) {

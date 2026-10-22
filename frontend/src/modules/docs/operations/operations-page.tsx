@@ -2,7 +2,7 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GenOperationSummary } from 'sdk/docs-types';
+import type { GenOperationSummary, GenTagSummary } from 'sdk/docs-types';
 import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
@@ -24,10 +24,10 @@ function OperationsPage() {
   const { data: operationsByTag } = useSuspenseQuery(operationsByTagQueryOptions);
   const { data: tags } = useSuspenseQuery(nonEmptyTagsQueryOptions);
 
-  const operationCount = tags.reduce((sum, t) => sum + t.count, 0);
+  const operationCount = tags.reduce((sum, tag) => sum + tag.count, 0);
 
   // Operation hashes are contributed by OperationDetail when rendered
-  const tagSectionIds = tags.map((t) => `tag/${t.name}`);
+  const tagSectionIds = tags.map((tag) => `tag/${tag.name}`);
 
   useScrollSpy(tagSectionIds);
 
@@ -56,7 +56,7 @@ function OperationsPage() {
 
       <div className="container flex flex-col gap-12 lg:gap-20">
         {tags.map((tag) => (
-          <TagSection
+          <OperationTagSection
             key={tag.name}
             tag={tag}
             operations={operationsByTag[tag.name] || []}
@@ -72,14 +72,14 @@ function OperationsPage() {
   );
 }
 
-interface TagSectionProps {
-  tag: { name: string; description?: string; count: number };
+interface OperationTagSectionProps {
+  tag: GenTagSummary;
   operations: GenOperationSummary[];
   isOpen: boolean;
   onPrerender: () => void;
 }
 
-function TagSection({ tag, operations, isOpen, onPrerender }: TagSectionProps) {
+function OperationTagSection({ tag, operations, isOpen, onPrerender }: OperationTagSectionProps) {
   // Defer page content mount by one frame so the sidebar can update first
   const [deferredIsOpen, setDeferredIsOpen] = useState(isOpen);
   useEffect(() => {
@@ -92,7 +92,7 @@ function TagSection({ tag, operations, isOpen, onPrerender }: TagSectionProps) {
   }, [isOpen]);
 
   // `enabled: isOpen` keeps tag details dormant until the user expands the section
-  const { isFetching: detailsLoading } = useQuery({ ...tagDetailsQueryOptions(tag.name), enabled: isOpen });
+  const { isFetching: isFetchingDetails } = useQuery({ ...tagDetailsQueryOptions(tag.name), enabled: isOpen });
 
   return (
     <TagSectionCard
@@ -106,7 +106,7 @@ function TagSection({ tag, operations, isOpen, onPrerender }: TagSectionProps) {
       <TagOperationsTable operations={operations} tagName={tag.name} onPrerender={onPrerender} />
       <TagExpandLink
         isOpen={isOpen}
-        loading={isOpen && detailsLoading}
+        loading={isOpen && isFetchingDetails}
         to="."
         search={(prev) => ({ ...prev, operationTag: isOpen ? undefined : tag.name })}
         tagName={tag.name}

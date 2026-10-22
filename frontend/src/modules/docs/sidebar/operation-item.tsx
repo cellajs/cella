@@ -3,7 +3,10 @@ import type { GenOperationSummary } from 'sdk/docs-types';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { SidebarHashItem } from '~/modules/docs/sidebar/sidebar-hash-item';
 
-type OperationItemProps = { operation: GenOperationSummary; isActive: boolean };
+interface OperationItemProps {
+  operation: GenOperationSummary;
+  isActive: boolean;
+}
 
 function OperationItemBase({ operation, isActive }: OperationItemProps) {
   return (

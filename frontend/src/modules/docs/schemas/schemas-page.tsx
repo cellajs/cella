@@ -28,12 +28,12 @@ function SchemasPage() {
   // Distinct non-schema tag kinds (e.g., 'module', 'owner') drive the dynamic columns
   const tagKinds = useMemo(() => collectTagKinds(allSchemas, ['schema']), [allSchemas]);
 
-  const schemaCount = schemaTags.reduce((sum, t) => sum + t.count, 0);
+  const schemaCount = schemaTags.reduce((sum, tag) => sum + tag.count, 0);
 
   // Schema refs are contributed by SchemaDetail when rendered
-  const schemaTagIds = schemaTags.map((t) => t.name);
+  const tagSectionIds = schemaTags.map((tag) => tag.name);
 
-  useScrollSpy(schemaTagIds);
+  useScrollSpy(tagSectionIds);
 
   return (
     <div className="container">
@@ -69,7 +69,7 @@ interface SchemaTagSectionProps {
   onPrerender: () => void;
 }
 
-function SchemaTagSection({ tag, schemas: tagSchemas, tagKinds, isOpen, onPrerender }: SchemaTagSectionProps) {
+function SchemaTagSection({ tag, schemas, tagKinds, isOpen, onPrerender }: SchemaTagSectionProps) {
   return (
     <TagSectionCard
       scope="schemas"
@@ -77,9 +77,9 @@ function SchemaTagSection({ tag, schemas: tagSchemas, tagKinds, isOpen, onPreren
       sectionId={tag.name}
       description={tag.description}
       isOpen={isOpen}
-      details={<TagSchemasList schemas={tagSchemas} />}
+      details={<TagSchemasList schemas={schemas} />}
     >
-      <TagSchemasTable schemas={tagSchemas} tagName={tag.name} tagKinds={tagKinds} onPrerender={onPrerender} />
+      <TagSchemasTable schemas={schemas} tagName={tag.name} tagKinds={tagKinds} onPrerender={onPrerender} />
       <TagExpandLink
         isOpen={isOpen}
         to="."

@@ -37,15 +37,15 @@ function OperationsTable() {
 
   // kind -> distinct values present; 'module' is driven by the sidebar and 'schema' does not apply here
   const tagFilters = useMemo(() => {
-    const map: Record<string, Set<string>> = {};
+    const valuesByKind: Record<string, Set<string>> = {};
     for (const op of operations) {
       for (const [kind, values] of Object.entries(op.tagsByKind)) {
         if (kind === 'module' || kind === 'schema') continue;
-        if (!map[kind]) map[kind] = new Set();
-        for (const v of values) map[kind].add(v);
+        if (!valuesByKind[kind]) valuesByKind[kind] = new Set();
+        for (const value of values) valuesByKind[kind].add(value);
       }
     }
-    return Object.fromEntries(Object.entries(map).map(([k, v]) => [k, [...v]]));
+    return Object.fromEntries(Object.entries(valuesByKind).map(([kind, values]) => [kind, [...values]]));
   }, [operations]);
 
   const [columns, setColumns] = useColumns(extensions, tagKinds);

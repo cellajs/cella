@@ -14,7 +14,7 @@ export const useDocsSearchStore = create<DocsSearchStoreState>()(
   persist(() => ({ recentSearches: [] as string[] }), { name: 'docs-search', storage: createJSONStorage(() => localStorage) }),
 );
 
-export const deleteRecentSearch = (value: string) => {
+export const removeRecentSearch = (value: string) => {
   useDocsSearchStore.setState((state) => {
     const searches = state.recentSearches.filter((entry) => entry !== value);
     return searches.length === state.recentSearches.length ? state : { recentSearches: searches };
@@ -22,7 +22,7 @@ export const deleteRecentSearch = (value: string) => {
 };
 
 /** Record a submitted query: most recent on top, normalized/containment dedupe. */
-export const updateRecentSearches = (value: string) => {
+export const saveRecentSearch = (value: string) => {
   useDocsSearchStore.setState((state) => {
     const searches = addRecentSearch(state.recentSearches, value);
     return searches === state.recentSearches ? state : { recentSearches: searches };

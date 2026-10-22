@@ -6,14 +6,14 @@ const listPaddingTopRem = 0.25; // 4px at base 16px
 const indicatorOffsetRem = 0.5; // 8px at base 16px
 const indicatorHeightRem = 1; // 16px (ITEM_HEIGHT - 16)
 
-type ActiveIndicatorProps = {
+interface ActiveIndicatorProps {
   /** Index of the active row in the list. Pass -1 (or any negative) to hide. */
   activeIndex: number;
   /** Unique id for the motion layout animation between sibling lists. */
   layoutId: string;
   /** When true, falls back to a CSS transform transition (no motion shared layout). */
   isMobile: boolean;
-};
+}
 
 /** Assumes a `relative` parent, items stacked with no gap, and each item `h-8`. */
 export function ActiveIndicator({ activeIndex, layoutId, isMobile }: ActiveIndicatorProps) {

@@ -13,12 +13,12 @@ export const isDocsSidebarOpen = (sheets: InternalSheet[]) => sheets.some((sheet
  * Click handler for a docs sidebar link. In the mobile sheet it closes the sheet and navigates a frame later, so the
  * slide-out starts before the new page renders under it. On desktop, and on a modified click, the link navigates as usual.
  */
-export function closeSidebarSheetAndNavigate(e: MouseEvent<HTMLAnchorElement>) {
-  if (isModifiedClick(e) || !isDocsSidebarOpen(sheeter.getState().sheets)) return;
+export function closeSidebarSheetAndNavigate(event: MouseEvent<HTMLAnchorElement>) {
+  if (isModifiedClick(event) || !isDocsSidebarOpen(sheeter.getState().sheets)) return;
   sheeter.getState().remove(docsSidebarSheetId);
 
-  const href = e.currentTarget.getAttribute('href');
+  const href = event.currentTarget.getAttribute('href');
   if (!href) return;
-  e.preventDefault();
+  event.preventDefault();
   requestAnimationFrame(() => setTimeout(() => getRouter().navigate({ href })));
 }

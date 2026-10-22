@@ -1,6 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import type { GenComponentSchema } from 'sdk/docs-types';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { schemaAnchor } from '~/modules/docs/helpers/schema-anchor';
+import { upperFirst } from '~/modules/docs/helpers/upper-first';
 import { TagBadges, TagHashLink, TagTable } from '~/modules/docs/tag-table';
 
 interface TagSchemasTableProps {
@@ -14,9 +16,11 @@ interface TagSchemasTableProps {
 }
 
 function useColumns(tagName: string, tagKinds: string[]): ColumnOrColumnGroup<GenComponentSchema>[] {
+  const { t } = useTranslation();
+
   const tagKindColumns: ColumnOrColumnGroup<GenComponentSchema>[] = tagKinds.map((kind) => ({
     key: `tag-${kind}`,
-    name: kind.replace(/^\w/, (c) => c.toUpperCase()),
+    name: upperFirst(kind),
     minBreakpoint: 'md',
     width: 140,
     placeholderValue: '-',
@@ -29,7 +33,7 @@ function useColumns(tagName: string, tagKinds: string[]): ColumnOrColumnGroup<Ge
   return [
     {
       key: 'name',
-      name: 'Name',
+      name: t('c:name'),
       minWidth: 200,
       renderCell: ({ row, tabIndex }) => (
         <TagHashLink tagParam="schemaTag" tagName={tagName} hash={schemaAnchor(row)} tabIndex={tabIndex}>
