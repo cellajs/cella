@@ -167,9 +167,9 @@ A **row condition** (`shared/src/permissions/row-conditions.ts`) qualifies a gra
 export type RowConditionName = "own" | "public"; // this union IS the contract
 ```
 
-**Public read** (`shared/src/permissions/public-read.ts`) makes rows with their own `publicAt` set readable by any actor, anonymous included, independent of memberships. Declared per subject with `publicRead()`, it widens `read` only. It is not a policy cell, but it resolves through the same `'public'` row condition and parity test.
+**Public read** (`shared/src/permissions/public-read.ts`) makes rows whose own `public` flag is set readable by any actor, anonymous included, independent of memberships. Declared per subject with `publicRead()`, it widens `read` only. It is not a policy cell, but it resolves through the same `'public'` row condition and parity test.
 
-Two row columns sit beside the engine: drafts (`publishedAt`) are checked before the engine. A product draft is visible to its author alone ([Drafts](./SYNC_ENGINE.md#drafts)); a channel draft to its own members and to a grant above it that also holds `update` on the type, in a list and by id alike (`draftChannelVisibleTo`). Visibility (`publicAt`) is row-local, set by the client on create, and never cascades.
+Two row columns sit beside the engine: drafts (`publishedAt`) are checked before the engine. A product draft is visible to its author alone ([Drafts](./SYNC_ENGINE.md#drafts)); a channel draft to its own members and to a grant above it that also holds `update` on the type, in a list and by id alike (`draftChannelVisibleTo`). Public read (`public`) is row-local: the server copies the home channel's flag onto a new row, and never cascades.
 
 ## Frontend map
 
@@ -236,6 +236,6 @@ Users who share an organization see each other's `UserBase` fields, email addres
 | Scenario | Outcome |
 | --- | --- |
 | Member with `update: 'own'` edits someone else's row | Denied. The UI enables the control optimistically and the backend rejects on save. |
-| Actor reads a row whose `publicAt` is set (entity declares `publicRead()`) | Allowed, `grantedBy: public`, single-row, in lists, and over SSE, anonymous included |
+| Actor reads a row whose `public` flag is set (entity declares `publicRead()`) | Allowed, `grantedBy: public`, single-row, in lists, and over SSE, anonymous included |
 | Actor loses access mid-Yjs-session | The socket closes when its five-minute token expires, and a reconnect is authorized again. Materialization credits the newest editor who still has `update` |
 | System admin joins a Yjs collab session | No bypass. Authorized as the acting user, matching materialization |

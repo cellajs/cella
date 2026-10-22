@@ -9,7 +9,6 @@ import { getChannelCountsSelect } from '#/modules/entities/entities-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationFlagsSelect, setupConfigSelect } from '#/modules/organization/helpers/select';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { auditUserSelect, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
 import { getOrderColumns } from '#/utils/order-column';
 import { textSearchFilter } from '#/utils/sql';
 
@@ -138,13 +137,12 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
 
   // System admins LEFT JOIN memberships (RLS grants access via createdBy or membership); regular users INNER JOIN and see only their orgs.
   const countData = includeCounts ? getChannelCountsSelect(entityType) : null;
-  const { createdBy: _cb, updatedBy: _mb, ...orgCols } = getColumns(organizationsTable);
+  // Writer ids stay ids here; the operation resolves them to references for the page (`withActorRefs`).
   const selectShape = {
-    ...orgCols,
+    ...getColumns(organizationsTable),
     // Rows store organizationFlags/setupConfig sparse; merge config defaults under the stored bag
     organizationFlags: organizationFlagsSelect,
     setupConfig: setupConfigSelect,
-    ...auditUserSelect,
     ...(countData && { counts: countData.countsSelect }),
   } as const;
 
@@ -157,8 +155,6 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
   }
 
   const itemsQuery = query
-    .leftJoin(createdByUser, eq(createdByUser.id, organizationsTable.createdBy))
-    .leftJoin(updatedByUser, eq(updatedByUser.id, organizationsTable.updatedBy))
     .where(and(...orgWhere))
     .orderBy(...orderBy)
     .limit(limit)

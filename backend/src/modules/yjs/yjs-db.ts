@@ -1,7 +1,8 @@
-import { bigint, customType, index, primaryKey, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { bigint, customType, index, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { tenantIdLength } from '#/db/utils/constraints';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
+import { isoTimestamp } from '#/db/utils/timestamp-columns';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 // Custom bytea type for raw Y.Doc binary storage
@@ -23,7 +24,7 @@ export const yjsDocumentsTable = snakeCase.table(
   {
     entityType: varchar({ length: 50 }).notNull(),
     entityId: uuid().notNull(),
-    tenantId: varchar('tenant_id', { length: tenantIdLength })
+    tenantId: varchar({ length: tenantIdLength })
       .notNull()
       .references(() => tenantsTable.id),
     organizationId: uuid(),
@@ -31,7 +32,7 @@ export const yjsDocumentsTable = snakeCase.table(
     /** Names one seed of the document. The relay announces it at every handshake; a client whose document is of another generation rebuilds from the server state. */
     generation: uuid().defaultRandom().notNull(),
     /** Stamped on seeding, on compaction and every minute while a relay holds a session; the relay's sweep takes an unstamped row with an uncompacted log for one no session holds. */
-    updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+    updatedAt: isoTimestamp().defaultNow().notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.entityType, table.entityId] }),
@@ -57,14 +58,14 @@ export const yjsUpdatesTable = snakeCase.table(
     id: bigint({ mode: 'number' }).generatedAlwaysAsIdentity().primaryKey(),
     entityType: varchar({ length: 50 }).notNull(),
     entityId: uuid().notNull(),
-    tenantId: varchar('tenant_id', { length: tenantIdLength })
+    tenantId: varchar({ length: tenantIdLength })
       .notNull()
       .references(() => tenantsTable.id),
     organizationId: uuid(),
     /** The client whose update this is; null for a server-origin row. Credits the materialized write. */
     userId: uuid(),
     payload: bytea().notNull(),
-    createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+    createdAt: isoTimestamp().defaultNow().notNull(),
   },
   (table) => [
     index('idx_yjs_updates_doc').on(table.entityType, table.entityId, table.id),

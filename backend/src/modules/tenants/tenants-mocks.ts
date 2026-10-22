@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { mockPaginated, mockTenantId, mockTimestamps, mockUuid, withFakerSeed } from '#/mocks';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
+import { mockActorRef } from '#/schemas/entity-base-mocks';
 
 export const mockTenantResponse = (key = 'tenant:default') =>
   withFakerSeed(key, () => {
@@ -11,7 +12,8 @@ export const mockTenantResponse = (key = 'tenant:default') =>
       status: 'active' as const,
       restrictions: defaultRestrictions(),
       authStrategies: [],
-      createdBy: mockUuid(),
+      createdBy: mockActorRef(`${key}:created-by`),
+      updatedBy: null,
       subscriptionId: null,
       subscriptionStatus: 'none' as const,
       subscriptionPlan: null,

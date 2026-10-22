@@ -1,6 +1,7 @@
-import { boolean, foreignKey, index, jsonb, snakeCase, text, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, jsonb, snakeCase, text, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, type UserFlags } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
+import { writerColumn } from '#/db/utils/audit-columns';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -44,13 +45,13 @@ export const usersTable = snakeCase.table(
       .notNull()
       .default({} as UserFlags),
     updatedAt: timestampColumns.updatedAt,
-    updatedBy: uuid().$type<UserId>(),
+    // The user, a system admin or a service acting for them; no `createdBy`: a user is created by a sign-up.
+    updatedBy: writerColumn(),
   },
   (table) => [
     index('users_name_index').on(table.name.desc()),
     index('users_email_index').on(table.email.desc()),
     index('users_created_at_index').on(table.createdAt.desc()),
-    foreignKey({ columns: [table.updatedBy], foreignColumns: [table.id] }),
   ],
 );
 

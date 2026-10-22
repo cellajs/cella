@@ -4,6 +4,7 @@ import { issueToken } from '#/modules/auth/tokens/token-lifecycle';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { findPendingInactiveMembershipsByChannels, stampInactiveMembershipsReminded } from '#/modules/memberships/memberships-queries';
 import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
+import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 interface DispatchDeferredInvitesOpts {
@@ -66,7 +67,7 @@ export async function dispatchDeferredInvites(ctx: UserContext, { channelIds }: 
     });
 
     // Stamped per group: a later group that fails leaves this one mailed once.
-    await stampInactiveMembershipsReminded(ctx, { ids: group.map((row) => row.id), remindedAt: new Date().toISOString() });
+    await stampInactiveMembershipsReminded(ctx, { ids: group.map((row) => row.id), remindedAt: getIsoDate() });
     dispatched += group.length;
   }
 

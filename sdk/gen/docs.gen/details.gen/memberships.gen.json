@@ -290,18 +290,20 @@
               "enum": ["admin", "member"]
             },
             "createdBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "format": "uuid"
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
             },
             "updatedAt": {
               "type": ["string", "null"],
               "required": true
             },
             "updatedBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "format": "uuid"
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
             },
             "organizationId": { "type": "string", "required": true, "format": "uuid" },
             "archived": { "type": "boolean", "required": false },
@@ -327,7 +329,13 @@
           "muted": false,
           "archived": false,
           "createdAt": "2024-10-28T10:38:59.996Z",
-          "createdBy": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
+          "createdBy": {
+            "id": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
+            "kind": "user",
+            "name": "Marquis Hudson",
+            "slug": "marquis.hudson73",
+            "thumbnailUrl": null
+          },
           "updatedAt": "2024-10-28T10:38:59.996Z",
           "updatedBy": null
         }
@@ -807,8 +815,8 @@
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
-                    "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
+                    "ref": "#/components/schemas/ActorRef",
+                    "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
                   }
                 }
               }
@@ -826,10 +834,10 @@
               "createdAt": "2024-11-21T01:19:53.533Z",
               "createdBy": {
                 "id": "617f1449-7605-4cc9-8f52-1e3f100f6db2",
+                "kind": "user",
                 "name": "Agustin Kirlin",
                 "slug": "agustin_kirlin",
-                "thumbnailUrl": null,
-                "entityType": "user"
+                "thumbnailUrl": null
               }
             },
             {
@@ -839,10 +847,10 @@
               "createdAt": "2024-10-29T04:35:17.725Z",
               "createdBy": {
                 "id": "ba7cf4de-5ede-48cc-9fef-453bf074c2ef",
+                "kind": "user",
                 "name": "Nya Nikolaus",
                 "slug": "nya_nikolaus",
-                "thumbnailUrl": null,
-                "entityType": "user"
+                "thumbnailUrl": null
               }
             }
           ],

@@ -1,13 +1,14 @@
 import { and, count, eq, getColumns, inArray, isNull, or, type SQL } from 'drizzle-orm';
 import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import type { ActorContext, DbContext } from '#/core/context';
+import type { ActorId } from '#/db/utils/ids';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import { requestScopeWhere } from '#/db/utils/request-scope';
+import { deleteStamps } from '#/db/utils/stamps';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { getOrganizationEntityCount, productViewCountJoin, productViewCountSelect } from '#/modules/entities/entities-queries';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
-import { auditUserSelect, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
 import { getOrderColumns } from '#/utils/order-column';
 import { type SeqRange, seqRangeRead } from '#/utils/seq-range';
 import { textSearchFilter } from '#/utils/sql';
@@ -37,16 +38,16 @@ export const updateAttachment = async (ctx: ActorContext, { id, values }: Update
 
 interface DeleteAttachmentsByIdsOpts {
   ids: string[];
-  deletedBy: string;
-  deletedAt: string;
+  /** Who deletes: stamped as the tombstone and as the row's last write. */
+  actorId: ActorId;
 }
 
 /** Soft-deletes the rows and returns them, for the `attachment.deleted` event. */
-export const deleteAttachmentsByIds = async (ctx: ActorContext, { ids, deletedAt, deletedBy }: DeleteAttachmentsByIdsOpts) => {
+export const deleteAttachmentsByIds = async (ctx: ActorContext, { ids, actorId }: DeleteAttachmentsByIdsOpts) => {
   const { db } = ctx.var;
   return db
     .update(attachmentsTable)
-    .set({ deletedAt, deletedBy, updatedAt: deletedAt, updatedBy: deletedBy })
+    .set(deleteStamps(actorId))
     .where(and(inArray(attachmentsTable.id, ids), requestScopeWhere(ctx, attachmentsTable), isNull(attachmentsTable.deletedAt)))
     .returning();
 };
@@ -117,14 +118,12 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
     });
 
   const whereClause = and(...filters);
-  const { createdBy: _cb, updatedBy: _mb, ...attachmentCols } = getColumns(attachmentsTable);
 
+  // Writer ids stay ids here; the operation resolves them to references for the page (`withActorRefs`).
   const itemsQuery = db
-    .select({ ...attachmentCols, ...auditUserSelect, viewCount: productViewCountSelect() })
+    .select({ ...getColumns(attachmentsTable), viewCount: productViewCountSelect() })
     .from(attachmentsTable)
     .leftJoin(productCountersTable, productViewCountJoin(attachmentsTable.id))
-    .leftJoin(createdByUser, eq(createdByUser.id, attachmentsTable.createdBy))
-    .leftJoin(updatedByUser, eq(updatedByUser.id, attachmentsTable.updatedBy))
     .where(whereClause)
     .orderBy(...orderBy)
     .limit(limit)

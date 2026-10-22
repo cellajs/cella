@@ -5,6 +5,7 @@ import { maxLength } from '#/db/utils/constraints';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { connectionKinds, connectionStatuses, connectionsTable } from '#/modules/connections/connections-db';
 import { entityIdParamSchema, tenantOnlyParamSchema, validDomainSchema, validNameSchema } from '#/schemas';
+import { auditShape } from '#/schemas/entity-base';
 import { mockConnectionResponse } from './connections-mocks';
 
 const federationKeys = Object.keys(appConfig.federations);
@@ -28,6 +29,7 @@ export const connectionSchema = z
       claimValues: z.array(z.string()),
       config: connectionConfigSchema,
     }).shape,
+    ...auditShape,
   })
   .openapi('Connection', {
     description:

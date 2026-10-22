@@ -1,8 +1,6 @@
-import { jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { jsonb, snakeCase, varchar } from 'drizzle-orm/pg-core';
+import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength } from '#/db/utils/constraints';
-import type { ActorId } from '#/db/utils/ids';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { actorsTable } from '#/modules/actors/actors-db';
 
 /**
  * Pre-registered OAuth apps (a student portfolio, a partner integration): deployment-wide, installed per tenant by a
@@ -18,11 +16,7 @@ export const oauthClientsTable = snakeCase.table('oauth_clients', {
   secretHash: varchar({ length: maxLength.field }),
   redirectUris: jsonb().$type<string[]>().notNull().default([]),
   logoUri: varchar({ length: maxLength.url }),
-  createdBy: uuid()
-    .references(() => actorsTable.id, { onDelete: 'set null' })
-    .$type<ActorId>(),
-  createdAt: timestampColumns.createdAt,
-  updatedAt: timestampColumns.updatedAt,
+  ...auditColumns(),
 });
 
 export type OauthClientModel = typeof oauthClientsTable.$inferSelect;

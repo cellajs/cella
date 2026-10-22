@@ -1,19 +1,18 @@
 import { uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
+import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /** Shared by channel and product entities. Users are cross-tenant and do not use this. */
 export const tenantEntityColumns = <T extends string>(entityType: T) => ({
-  createdAt: timestampColumns.createdAt,
   id: uuid().primaryKey().$defaultFn(generateId),
   entityType: varchar({ enum: [entityType] })
     .notNull()
     .default(entityType),
-  tenantId: varchar('tenant_id', { length: tenantIdLength })
+  tenantId: varchar({ length: tenantIdLength })
     .notNull()
     .references(() => tenantsTable.id),
   name: varchar({ length: maxLength.field }).notNull(),
-  updatedAt: timestampColumns.updatedAt,
+  ...auditColumns(),
 });

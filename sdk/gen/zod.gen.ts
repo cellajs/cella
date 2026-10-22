@@ -3,7 +3,18 @@
 import * as z from 'zod';
 
 /**
- * The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`.
+ * Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone.
+ */
+export const zActorRef = z.object({
+  id: z.string(),
+  kind: z.enum(['user', 'service']),
+  name: z.string(),
+  slug: z.string().nullable(),
+  thumbnailUrl: z.string().nullable(),
+});
+
+/**
+ * The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`.
  */
 export const zUserMinimalBase = z.object({
   id: z.string(),
@@ -45,7 +56,7 @@ export const zChannelBase = z.object({
 });
 
 /**
- * The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields.
+ * The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields and adds its writers as `ActorRef`s.
  */
 export const zProductBase = z.object({
   id: z.string(),
@@ -53,8 +64,6 @@ export const zProductBase = z.object({
   createdAt: z.string(),
   updatedAt: z.string().nullable(),
   description: z.string().nullable(),
-  createdBy: zUserMinimalBase.nullable(),
-  updatedBy: zUserMinimalBase.nullable(),
   entityType: z.enum(['attachment']),
   keywords: z.string(),
 });
@@ -237,7 +246,6 @@ export const zUser = z.object({
     finishedOnboarding: z.boolean(),
   }),
   updatedAt: z.string().nullable(),
-  updatedBy: z.uuid().nullable(),
   lastSeenAt: z.string().nullable(),
   lastSignInAt: z.string().nullable(),
 });
@@ -324,7 +332,7 @@ export const zInactiveMembership = z.object({
   role: z.enum(['admin', 'member']),
   rejectedAt: z.string().nullable(),
   remindedAt: z.string().nullable(),
-  createdBy: zUserMinimalBase.nullable(),
+  createdBy: zActorRef.nullable(),
   organizationId: z.uuid(),
 });
 
@@ -386,12 +394,13 @@ export const zTenant = z.object({
     allowUnregisteredClients: z.boolean(),
   }),
   authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'surfconext'])),
-  createdBy: z.uuid().nullable(),
   subscriptionId: z.string().max(255).nullable(),
   subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']),
   subscriptionPlan: z.string().max(255).nullable(),
   createdAt: z.string(),
+  createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
+  updatedBy: zActorRef.nullable(),
   organization: z
     .object({
       id: z.string(),
@@ -419,9 +428,10 @@ export const zConnection = z.object({
     idpEntityIds: z.array(z.string().min(1).max(255)).optional(),
     logoUrl: z.url().max(255).optional(),
   }),
-  createdBy: z.uuid().nullable(),
   createdAt: z.string(),
+  createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
+  updatedBy: zActorRef.nullable(),
 });
 
 /**
@@ -439,19 +449,19 @@ export const zProtectedResourceMetadata = z.object({
  * The channel entity every other channel nests under, owning memberships and roles. Tenant and organization are 1:1: an organization belongs to one tenant, and that tenant holds no other. Returned with `included` data: the signed-in user's membership, counts and member previews.
  */
 export const zOrganization = z.object({
-  createdAt: z.string(),
   id: z.uuid(),
   entityType: z.enum(['organization']),
   tenantId: z.string().max(24),
   name: z.string().max(255),
+  createdAt: z.string(),
+  createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
+  updatedBy: zActorRef.nullable(),
   slug: z.string().max(255),
   thumbnailUrl: z.string().max(2048).nullable(),
   bannerUrl: z.string().max(2048).nullable(),
-  createdBy: zUserMinimalBase.nullable(),
-  updatedBy: zUserMinimalBase.nullable(),
   publishedAt: z.string().nullable(),
-  publicAt: z.string().nullable(),
+  public: z.boolean(),
   toolsConfig: z.object({
     'organization.settings': z
       .object({
@@ -512,20 +522,20 @@ export const zOrganization = z.object({
  * A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.
  */
 export const zAttachment = z.object({
-  createdAt: z.string(),
   id: z.uuid(),
   entityType: z.enum(['attachment']),
   tenantId: z.string().max(24),
   name: z.string().max(255),
+  createdAt: z.string(),
+  createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
+  updatedBy: zActorRef.nullable(),
   stx: zStxBase,
   description: z.string().max(1000000).nullable(),
   keywords: z.string().max(1000000),
-  createdBy: zUserMinimalBase.nullable(),
-  updatedBy: zUserMinimalBase.nullable(),
   deletedAt: z.string().nullable(),
-  deletedBy: z.uuid().nullable(),
-  publicAt: z.string().nullable(),
+  deletedBy: zActorRef.nullable(),
+  public: z.boolean(),
   seq: z.int().gte(-9007199254740991).lte(9007199254740991),
   publicBucket: z.boolean(),
   bucketName: z.string().max(255),
@@ -561,10 +571,10 @@ export const zServiceAccount = z.object({
     }),
   ),
   oauthClientId: z.string().max(255).nullable(),
-  createdBy: z.uuid().nullable(),
-  updatedBy: z.uuid().nullable(),
   createdAt: z.string(),
+  createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
+  updatedBy: zActorRef.nullable(),
   lastSeenAt: z.string().nullable(),
 });
 
@@ -582,7 +592,7 @@ export const zApiKey = z.object({
   expiresAt: z.string().nullable(),
   revokedAt: z.string().nullable(),
   revokedBy: z.uuid().nullable(),
-  createdBy: zUserMinimalBase.nullable(),
+  createdBy: zActorRef.nullable(),
   createdAt: z.string(),
 });
 
@@ -1865,7 +1875,6 @@ export const zCreateAttachmentsBody = z
       }),
       groupId: z.uuid().nullish(),
       convertedContentType: z.string().max(255).nullish(),
-      publicAt: z.string().nullish(),
       stx: zStxBase,
     }),
   )
@@ -2082,9 +2091,9 @@ export const zUpdateMembershipResponse = z.object({
   channelId: z.uuid(),
   userId: z.uuid(),
   role: z.enum(['admin', 'member']),
-  createdBy: z.uuid().nullable(),
+  createdBy: zActorRef.nullable(),
   updatedAt: z.string().nullable(),
-  updatedBy: z.uuid().nullable(),
+  updatedBy: zActorRef.nullable(),
   organizationId: z.uuid(),
   archived: z.boolean().optional(),
   muted: z.boolean().optional(),
@@ -2182,7 +2191,7 @@ export const zGetPendingMembershipsResponse = z.object({
       email: z.email(),
       role: z.enum(['admin', 'member']).nullable(),
       createdAt: z.string(),
-      createdBy: zUserMinimalBase.nullable(),
+      createdBy: zActorRef.nullable(),
     }),
   ),
   total: z.number(),

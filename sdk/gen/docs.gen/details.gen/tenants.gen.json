@@ -60,11 +60,6 @@
                     "itemType": "string",
                     "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
                   },
-                  "createdBy": {
-                    "type": ["string", "null"],
-                    "required": true,
-                    "format": "uuid"
-                  },
                   "subscriptionId": {
                     "type": ["string", "null"],
                     "required": true,
@@ -81,9 +76,21 @@
                     "maxLength": 255
                   },
                   "createdAt": { "type": "string", "required": true },
+                  "createdBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "ref": "#/components/schemas/ActorRef",
+                    "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
+                  },
                   "updatedAt": {
                     "type": ["string", "null"],
                     "required": true
+                  },
+                  "updatedBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "ref": "#/components/schemas/ActorRef",
+                    "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
                   },
                   "organization": {
                     "type": ["object", "null"],
@@ -130,14 +137,21 @@
                 "allowUnregisteredClients": true
               },
               "authStrategies": [],
-              "createdBy": "d91cd87f-54ea-401d-9336-a3f30f204331",
+              "createdBy": {
+                "id": "99a36819-e0f2-470b-88d0-2f92a164c4d7",
+                "kind": "user",
+                "name": "Agustin Kirlin",
+                "slug": "agustin_kirlin65",
+                "thumbnailUrl": null
+              },
+              "updatedBy": null,
               "subscriptionId": null,
               "subscriptionStatus": "none",
               "subscriptionPlan": null,
-              "createdAt": "2024-11-25T05:49:32.040Z",
-              "updatedAt": "2024-12-21T15:03:10.241Z",
+              "createdAt": "2024-06-26T03:38:34.095Z",
+              "updatedAt": "2024-07-23T13:11:01.378Z",
               "organization": {
-                "id": "ed4a4eac-b4a6-4c0f-ae21-2f50796fe855",
+                "id": "5fcdcd77-a74d-4675-a4be-219ac431684e",
                 "name": "Predovic, Bahringer and Morar",
                 "slug": "predovic-bahringer-and-morar",
                 "thumbnailUrl": null,
@@ -160,14 +174,21 @@
                 "allowUnregisteredClients": true
               },
               "authStrategies": [],
-              "createdBy": "35465948-59fc-43d4-bffc-d93da6f4757f",
+              "createdBy": {
+                "id": "d296abdd-ef82-40aa-a7f0-4fba2ed8a6dc",
+                "kind": "user",
+                "name": "Nya Nikolaus",
+                "slug": "nya_nikolaus53",
+                "thumbnailUrl": null
+              },
+              "updatedBy": null,
               "subscriptionId": null,
               "subscriptionStatus": "none",
               "subscriptionPlan": null,
-              "createdAt": "2024-01-02T16:12:28.968Z",
-              "updatedAt": "2024-01-18T17:11:22.322Z",
+              "createdAt": "2024-11-09T09:16:10.228Z",
+              "updatedAt": "2024-11-14T01:28:51.991Z",
               "organization": {
-                "id": "cc2dc65b-1a01-4eb4-922d-b6339b813cf8",
+                "id": "2be8971c-945c-4a5c-b51f-a622b9660ef8",
                 "name": "Crooks, Kuphal and Roob-Blick",
                 "slug": "crooks-kuphal-and-roob-blick",
                 "thumbnailUrl": null,
@@ -307,11 +328,6 @@
               "itemType": "string",
               "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
             },
-            "createdBy": {
-              "type": ["string", "null"],
-              "required": true,
-              "format": "uuid"
-            },
             "subscriptionId": {
               "type": ["string", "null"],
               "required": true,
@@ -328,9 +344,21 @@
               "maxLength": 255
             },
             "createdAt": { "type": "string", "required": true },
+            "createdBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
+            },
             "updatedAt": {
               "type": ["string", "null"],
               "required": true
+            },
+            "updatedBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
             },
             "organization": {
               "type": ["object", "null"],
@@ -371,14 +399,21 @@
             "allowUnregisteredClients": true
           },
           "authStrategies": [],
-          "createdBy": "97e6acf3-d1c3-4967-a839-e8b32adde60a",
+          "createdBy": {
+            "id": "75b8af80-b170-4f44-867f-4d401a4d1e6a",
+            "kind": "user",
+            "name": "Antonina Trantow",
+            "slug": "antonina_trantow60",
+            "thumbnailUrl": null
+          },
+          "updatedBy": null,
           "subscriptionId": null,
           "subscriptionStatus": "none",
           "subscriptionPlan": null,
-          "createdAt": "2024-02-09T07:11:04.461Z",
-          "updatedAt": "2024-03-30T20:43:34.109Z",
+          "createdAt": "2024-01-14T10:00:28.012Z",
+          "updatedAt": "2024-03-05T22:43:30.502Z",
           "organization": {
-            "id": "c6e2f31a-be0a-4e1a-a760-f0b106b6bbcb",
+            "id": "ebefa691-88f5-48a0-89ae-90751aba8e7d",
             "name": "Lubowitz, Waters and Haley",
             "slug": "lubowitz-waters-and-haley",
             "thumbnailUrl": null,
@@ -500,11 +535,6 @@
               "itemType": "string",
               "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
             },
-            "createdBy": {
-              "type": ["string", "null"],
-              "required": true,
-              "format": "uuid"
-            },
             "subscriptionId": {
               "type": ["string", "null"],
               "required": true,
@@ -521,9 +551,21 @@
               "maxLength": 255
             },
             "createdAt": { "type": "string", "required": true },
+            "createdBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
+            },
             "updatedAt": {
               "type": ["string", "null"],
               "required": true
+            },
+            "updatedBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
             },
             "organization": {
               "type": ["object", "null"],
@@ -564,14 +606,21 @@
             "allowUnregisteredClients": true
           },
           "authStrategies": [],
-          "createdBy": "97e6acf3-d1c3-4967-a839-e8b32adde60a",
+          "createdBy": {
+            "id": "75b8af80-b170-4f44-867f-4d401a4d1e6a",
+            "kind": "user",
+            "name": "Antonina Trantow",
+            "slug": "antonina_trantow60",
+            "thumbnailUrl": null
+          },
+          "updatedBy": null,
           "subscriptionId": null,
           "subscriptionStatus": "none",
           "subscriptionPlan": null,
-          "createdAt": "2024-02-09T07:11:04.461Z",
-          "updatedAt": "2024-03-30T20:43:34.109Z",
+          "createdAt": "2024-01-14T10:00:28.012Z",
+          "updatedAt": "2024-03-05T22:43:30.502Z",
           "organization": {
-            "id": "c6e2f31a-be0a-4e1a-a760-f0b106b6bbcb",
+            "id": "ebefa691-88f5-48a0-89ae-90751aba8e7d",
             "name": "Lubowitz, Waters and Haley",
             "slug": "lubowitz-waters-and-haley",
             "thumbnailUrl": null,

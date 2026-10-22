@@ -118,6 +118,7 @@ export type {
   AcceptInvitationTokenErrors,
   AcceptInvitationTokenResponse,
   AcceptInvitationTokenResponses,
+  ActorRef,
   ApiError,
   ApiKey,
   Attachment,

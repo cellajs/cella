@@ -252,11 +252,6 @@
               "type": ["string", "null"],
               "required": true
             },
-            "updatedBy": {
-              "type": ["string", "null"],
-              "required": true,
-              "format": "uuid"
-            },
             "lastSeenAt": {
               "type": ["string", "null"],
               "required": true

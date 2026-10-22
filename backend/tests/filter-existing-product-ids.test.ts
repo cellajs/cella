@@ -1,4 +1,4 @@
-import { eq, inArray, isNotNull, or } from 'drizzle-orm';
+import { eq, inArray, or } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { ActorContext } from '#/core/context';
@@ -18,7 +18,7 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 // stands in for the publish date: a row without one shows to its creator alone.
 vi.mock('#/db/utils/published-predicate', async (importOriginal) => ({
   ...(await importOriginal<typeof import('#/db/utils/published-predicate')>()),
-  draftVisibleRowsPredicate: (_table: unknown, actorId: string) => or(isNotNull(attachmentsTable.publicAt), eq(attachmentsTable.createdBy, actorId)),
+  draftVisibleRowsPredicate: (_table: unknown, actorId: string) => or(eq(attachmentsTable.public, true), eq(attachmentsTable.createdBy, actorId)),
 }));
 
 /**

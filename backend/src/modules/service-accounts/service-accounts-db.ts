@@ -1,9 +1,9 @@
 import { index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
+import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
-import type { ActorId, ServiceAccountId } from '#/db/utils/ids';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
+import type { ServiceAccountId } from '#/db/utils/ids';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
@@ -39,15 +39,8 @@ export const serviceAccountsTable = snakeCase.table(
     bindings: jsonb().$type<RoleBinding[]>().notNull().default([]),
     /** Set when this account is the installation of a registered app in this tenant (D4); its consents hang off it. */
     oauthClientId: varchar({ length: maxLength.field }).references(() => oauthClientsTable.id, { onDelete: 'cascade' }),
-    createdBy: uuid()
-      .references(() => actorsTable.id, { onDelete: 'set null' })
-      .$type<ActorId>(),
-    /** Who last changed name or status; disabling is the security-relevant act here. */
-    updatedBy: uuid()
-      .references(() => actorsTable.id, { onDelete: 'set null' })
-      .$type<ActorId>(),
-    createdAt: timestampColumns.createdAt,
-    updatedAt: timestampColumns.updatedAt,
+    // `updatedBy` names who last changed name or status; disabling is the security-relevant act here.
+    ...auditColumns(),
   },
   (table) => [index('service_accounts_tenant_id_idx').on(table.tenantId)],
 );

@@ -1,6 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { eq, type SQL } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
+import { withActorRefs } from '#/modules/actors/actor-refs';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { findTenantsPaginated } from '#/modules/tenants/tenants-queries';
 import type { tenantListQuerySchema } from '#/modules/tenants/tenants-schema';
@@ -17,5 +18,6 @@ export async function getTenantsOp(ctx: UserContext, input: GetTenantsInput) {
     conditions.push(eq(tenantsTable.status, status));
   }
 
-  return findTenantsPaginated(ctx, { filters: conditions, sort, order, limit, offset });
+  const { items, total } = await findTenantsPaginated(ctx, { filters: conditions, sort, order, limit, offset });
+  return { items: await withActorRefs(ctx, items), total };
 }

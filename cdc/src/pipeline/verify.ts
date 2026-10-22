@@ -265,7 +265,7 @@ export const rebuildAllowed = (): boolean => Date.now() - lastRebuildAt >= rebui
 export async function restoreBooksState(): Promise<void> {
   const [state] = await cdcDb.select().from(syncStateTable).where(eq(syncStateTable.id, syncStateId));
   replicationState.generation = state?.generation ?? 1;
-  if (state?.rebuiltAt) lastRebuildAt = new Date(`${state.rebuiltAt}Z`).getTime();
+  if (state?.rebuiltAt) lastRebuildAt = new Date(state.rebuiltAt).getTime();
   fenceLeftOpen = Boolean(state?.fence);
   booksStateRestored = true;
 }

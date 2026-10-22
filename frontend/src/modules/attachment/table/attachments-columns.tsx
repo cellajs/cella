@@ -16,7 +16,7 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { openPopConfirm } from '~/modules/common/popconfirm';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { SeenMark } from '~/modules/seen/seen-mark';
-import { UserCell } from '~/modules/user/user-cell';
+import { ActorCell } from '~/modules/user/actor-cell';
 import { useUserStore } from '~/modules/user/user-store';
 import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
@@ -165,7 +165,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
         hidden: true,
         minWidth: 160,
         placeholderValue: '-',
-        renderCell: ({ row, tabIndex }) => row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
+        renderCell: ({ row, tabIndex }) => row.createdBy && <ActorCell compactable actor={row.createdBy} tabIndex={tabIndex} />,
       },
       {
         key: 'updatedAt',
@@ -181,7 +181,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
         hidden: true,
         width: 160,
         placeholderValue: '-',
-        renderCell: ({ row, tabIndex }) => row.updatedBy && <UserCell compactable user={row.updatedBy} tabIndex={tabIndex} />,
+        renderCell: ({ row, tabIndex }) => row.updatedBy && <ActorCell compactable actor={row.updatedBy} tabIndex={tabIndex} />,
       },
     ],
     [canUpdate, deleteState, channelId, userId, isSheet],

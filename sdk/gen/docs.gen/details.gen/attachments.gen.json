@@ -18,7 +18,6 @@
                 "type": "object",
                 "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
                 "properties": {
-                  "createdAt": { "type": "string", "required": true },
                   "id": { "type": "string", "required": true, "format": "uuid" },
                   "entityType": {
                     "type": "string",
@@ -27,9 +26,22 @@
                   },
                   "tenantId": { "type": "string", "required": true, "maxLength": 24 },
                   "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "createdAt": { "type": "string", "required": true },
+                  "createdBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "ref": "#/components/schemas/ActorRef",
+                    "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
+                  },
                   "updatedAt": {
                     "type": ["string", "null"],
                     "required": true
+                  },
+                  "updatedBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "ref": "#/components/schemas/ActorRef",
+                    "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
                   },
                   "stx": {
                     "type": "object",
@@ -68,31 +80,17 @@
                     "maxLength": 1000000
                   },
                   "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
-                  "createdBy": {
-                    "type": ["object", "null"],
-                    "required": true,
-                    "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
-                  },
-                  "updatedBy": {
-                    "type": ["object", "null"],
-                    "required": true,
-                    "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
-                  },
                   "deletedAt": {
                     "type": ["string", "null"],
                     "required": true
                   },
                   "deletedBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "format": "uuid"
+                    "ref": "#/components/schemas/ActorRef",
+                    "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
                   },
-                  "publicAt": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
+                  "public": { "type": "boolean", "required": true },
                   "seq": {
                     "type": "integer",
                     "required": true,
@@ -163,21 +161,21 @@
               "keywords": "venia vulpes delego",
               "createdBy": {
                 "id": "eacb4a6c-0fe2-412f-9507-96fe85592b8e",
+                "kind": "user",
                 "name": "Agustin Kirlin",
                 "slug": "agustin_kirlin",
-                "thumbnailUrl": null,
-                "entityType": "user"
+                "thumbnailUrl": null
               },
               "updatedBy": {
                 "id": "eacb4a6c-0fe2-412f-9507-96fe85592b8e",
+                "kind": "user",
                 "name": "Agustin Kirlin",
                 "slug": "agustin_kirlin",
-                "thumbnailUrl": null,
-                "entityType": "user"
+                "thumbnailUrl": null
               },
               "deletedAt": null,
               "deletedBy": null,
-              "publicAt": null,
+              "public": false,
               "seq": 108,
               "publicBucket": false,
               "bucketName": "attachments",
@@ -205,21 +203,21 @@
               "keywords": "depono terreo exercitationem",
               "createdBy": {
                 "id": "c65b1a01-eb42-42db-8633-9b813cf84d75",
+                "kind": "user",
                 "name": "Nya Nikolaus",
                 "slug": "nya_nikolaus",
-                "thumbnailUrl": null,
-                "entityType": "user"
+                "thumbnailUrl": null
               },
               "updatedBy": {
                 "id": "c65b1a01-eb42-42db-8633-9b813cf84d75",
+                "kind": "user",
                 "name": "Nya Nikolaus",
                 "slug": "nya_nikolaus",
-                "thumbnailUrl": null,
-                "entityType": "user"
+                "thumbnailUrl": null
               },
               "deletedAt": null,
               "deletedBy": null,
-              "publicAt": null,
+              "public": false,
               "seq": 306,
               "publicBucket": false,
               "bucketName": "attachments",
@@ -341,7 +339,6 @@
                 "type": "object",
                 "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
                 "properties": {
-                  "createdAt": { "type": "string", "required": true },
                   "id": { "type": "string", "required": true, "format": "uuid" },
                   "entityType": {
                     "type": "string",
@@ -350,9 +347,22 @@
                   },
                   "tenantId": { "type": "string", "required": true, "maxLength": 24 },
                   "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "createdAt": { "type": "string", "required": true },
+                  "createdBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "ref": "#/components/schemas/ActorRef",
+                    "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
+                  },
                   "updatedAt": {
                     "type": ["string", "null"],
                     "required": true
+                  },
+                  "updatedBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "ref": "#/components/schemas/ActorRef",
+                    "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
                   },
                   "stx": {
                     "type": "object",
@@ -391,31 +401,17 @@
                     "maxLength": 1000000
                   },
                   "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
-                  "createdBy": {
-                    "type": ["object", "null"],
-                    "required": true,
-                    "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
-                  },
-                  "updatedBy": {
-                    "type": ["object", "null"],
-                    "required": true,
-                    "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
-                  },
                   "deletedAt": {
                     "type": ["string", "null"],
                     "required": true
                   },
                   "deletedBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "format": "uuid"
+                    "ref": "#/components/schemas/ActorRef",
+                    "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
                   },
-                  "publicAt": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
+                  "public": { "type": "boolean", "required": true },
                   "seq": {
                     "type": "integer",
                     "required": true,
@@ -497,21 +493,21 @@
               "keywords": "surculus quas sollers",
               "createdBy": {
                 "id": "a26b695c-c9ed-49cd-b1f5-5c6487a8af2c",
+                "kind": "user",
                 "name": "Bethel Sawayn",
                 "slug": "bethel_sawayn",
-                "thumbnailUrl": null,
-                "entityType": "user"
+                "thumbnailUrl": null
               },
               "updatedBy": {
                 "id": "a26b695c-c9ed-49cd-b1f5-5c6487a8af2c",
+                "kind": "user",
                 "name": "Bethel Sawayn",
                 "slug": "bethel_sawayn",
-                "thumbnailUrl": null,
-                "entityType": "user"
+                "thumbnailUrl": null
               },
               "deletedAt": null,
               "deletedBy": null,
-              "publicAt": null,
+              "public": false,
               "seq": 482,
               "publicBucket": false,
               "bucketName": "attachments",
@@ -539,21 +535,21 @@
               "keywords": "volup quae chirographum",
               "createdBy": {
                 "id": "683210fb-7a21-4be2-86ba-4ee7e27d3697",
+                "kind": "user",
                 "name": "Americo Kutch",
                 "slug": "americo_kutch",
-                "thumbnailUrl": null,
-                "entityType": "user"
+                "thumbnailUrl": null
               },
               "updatedBy": {
                 "id": "683210fb-7a21-4be2-86ba-4ee7e27d3697",
+                "kind": "user",
                 "name": "Americo Kutch",
                 "slug": "americo_kutch",
-                "thumbnailUrl": null,
-                "entityType": "user"
+                "thumbnailUrl": null
               },
               "deletedAt": null,
               "deletedBy": null,
-              "publicAt": null,
+              "public": false,
               "seq": 39,
               "publicBucket": false,
               "bucketName": "attachments",
@@ -585,7 +581,6 @@
                 "type": "object",
                 "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
                 "properties": {
-                  "createdAt": { "type": "string", "required": true },
                   "id": { "type": "string", "required": true, "format": "uuid" },
                   "entityType": {
                     "type": "string",
@@ -594,9 +589,22 @@
                   },
                   "tenantId": { "type": "string", "required": true, "maxLength": 24 },
                   "name": { "type": "string", "required": true, "maxLength": 255 },
+                  "createdAt": { "type": "string", "required": true },
+                  "createdBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "ref": "#/components/schemas/ActorRef",
+                    "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
+                  },
                   "updatedAt": {
                     "type": ["string", "null"],
                     "required": true
+                  },
+                  "updatedBy": {
+                    "type": ["object", "null"],
+                    "required": true,
+                    "ref": "#/components/schemas/ActorRef",
+                    "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
                   },
                   "stx": {
                     "type": "object",
@@ -635,31 +643,17 @@
                     "maxLength": 1000000
                   },
                   "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
-                  "createdBy": {
-                    "type": ["object", "null"],
-                    "required": true,
-                    "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
-                  },
-                  "updatedBy": {
-                    "type": ["object", "null"],
-                    "required": true,
-                    "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
-                  },
                   "deletedAt": {
                     "type": ["string", "null"],
                     "required": true
                   },
                   "deletedBy": {
-                    "type": ["string", "null"],
+                    "type": ["object", "null"],
                     "required": true,
-                    "format": "uuid"
+                    "ref": "#/components/schemas/ActorRef",
+                    "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
                   },
-                  "publicAt": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
+                  "public": { "type": "boolean", "required": true },
                   "seq": {
                     "type": "integer",
                     "required": true,
@@ -741,21 +735,21 @@
               "keywords": "surculus quas sollers",
               "createdBy": {
                 "id": "a26b695c-c9ed-49cd-b1f5-5c6487a8af2c",
+                "kind": "user",
                 "name": "Bethel Sawayn",
                 "slug": "bethel_sawayn",
-                "thumbnailUrl": null,
-                "entityType": "user"
+                "thumbnailUrl": null
               },
               "updatedBy": {
                 "id": "a26b695c-c9ed-49cd-b1f5-5c6487a8af2c",
+                "kind": "user",
                 "name": "Bethel Sawayn",
                 "slug": "bethel_sawayn",
-                "thumbnailUrl": null,
-                "entityType": "user"
+                "thumbnailUrl": null
               },
               "deletedAt": null,
               "deletedBy": null,
-              "publicAt": null,
+              "public": false,
               "seq": 482,
               "publicBucket": false,
               "bucketName": "attachments",
@@ -783,21 +777,21 @@
               "keywords": "volup quae chirographum",
               "createdBy": {
                 "id": "683210fb-7a21-4be2-86ba-4ee7e27d3697",
+                "kind": "user",
                 "name": "Americo Kutch",
                 "slug": "americo_kutch",
-                "thumbnailUrl": null,
-                "entityType": "user"
+                "thumbnailUrl": null
               },
               "updatedBy": {
                 "id": "683210fb-7a21-4be2-86ba-4ee7e27d3697",
+                "kind": "user",
                 "name": "Americo Kutch",
                 "slug": "americo_kutch",
-                "thumbnailUrl": null,
-                "entityType": "user"
+                "thumbnailUrl": null
               },
               "deletedAt": null,
               "deletedBy": null,
-              "publicAt": null,
+              "public": false,
               "seq": 39,
               "publicBucket": false,
               "bucketName": "attachments",
@@ -901,10 +895,6 @@
               "required": false,
               "description": "MIME type of the server-converted variant; null when none.",
               "maxLength": 255
-            },
-            "publicAt": {
-              "type": ["string", "null"],
-              "required": false
             },
             "stx": {
               "type": "object",
@@ -1193,7 +1183,6 @@
           "type": "object",
           "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
           "properties": {
-            "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true, "format": "uuid" },
             "entityType": {
               "type": "string",
@@ -1202,9 +1191,22 @@
             },
             "tenantId": { "type": "string", "required": true, "maxLength": 24 },
             "name": { "type": "string", "required": true, "maxLength": 255 },
+            "createdAt": { "type": "string", "required": true },
+            "createdBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
+            },
             "updatedAt": {
               "type": ["string", "null"],
               "required": true
+            },
+            "updatedBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
             },
             "stx": {
               "type": "object",
@@ -1243,31 +1245,17 @@
               "maxLength": 1000000
             },
             "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
-            "createdBy": {
-              "type": ["object", "null"],
-              "required": true,
-              "ref": "#/components/schemas/UserMinimalBase",
-              "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
-            },
-            "updatedBy": {
-              "type": ["object", "null"],
-              "required": true,
-              "ref": "#/components/schemas/UserMinimalBase",
-              "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
-            },
             "deletedAt": {
               "type": ["string", "null"],
               "required": true
             },
             "deletedBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "format": "uuid"
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
             },
-            "publicAt": {
-              "type": ["string", "null"],
-              "required": true
-            },
+            "public": { "type": "boolean", "required": true },
             "seq": {
               "type": "integer",
               "required": true,
@@ -1332,21 +1320,21 @@
           "keywords": "dolores cetera aetas",
           "createdBy": {
             "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+            "kind": "user",
             "name": "Francesco Littel",
             "slug": "francesco_littel16",
-            "thumbnailUrl": null,
-            "entityType": "user"
+            "thumbnailUrl": null
           },
           "updatedBy": {
             "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+            "kind": "user",
             "name": "Francesco Littel",
             "slug": "francesco_littel16",
-            "thumbnailUrl": null,
-            "entityType": "user"
+            "thumbnailUrl": null
           },
           "deletedAt": null,
           "deletedBy": null,
-          "publicAt": null,
+          "public": false,
           "seq": 447,
           "publicBucket": false,
           "bucketName": "attachments",
@@ -1425,7 +1413,6 @@
           "type": "object",
           "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
           "properties": {
-            "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true, "format": "uuid" },
             "entityType": {
               "type": "string",
@@ -1434,9 +1421,22 @@
             },
             "tenantId": { "type": "string", "required": true, "maxLength": 24 },
             "name": { "type": "string", "required": true, "maxLength": 255 },
+            "createdAt": { "type": "string", "required": true },
+            "createdBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
+            },
             "updatedAt": {
               "type": ["string", "null"],
               "required": true
+            },
+            "updatedBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
             },
             "stx": {
               "type": "object",
@@ -1475,31 +1475,17 @@
               "maxLength": 1000000
             },
             "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
-            "createdBy": {
-              "type": ["object", "null"],
-              "required": true,
-              "ref": "#/components/schemas/UserMinimalBase",
-              "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
-            },
-            "updatedBy": {
-              "type": ["object", "null"],
-              "required": true,
-              "ref": "#/components/schemas/UserMinimalBase",
-              "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
-            },
             "deletedAt": {
               "type": ["string", "null"],
               "required": true
             },
             "deletedBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "format": "uuid"
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
             },
-            "publicAt": {
-              "type": ["string", "null"],
-              "required": true
-            },
+            "public": { "type": "boolean", "required": true },
             "seq": {
               "type": "integer",
               "required": true,
@@ -1564,21 +1550,21 @@
           "keywords": "dolores cetera aetas",
           "createdBy": {
             "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+            "kind": "user",
             "name": "Francesco Littel",
             "slug": "francesco_littel16",
-            "thumbnailUrl": null,
-            "entityType": "user"
+            "thumbnailUrl": null
           },
           "updatedBy": {
             "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+            "kind": "user",
             "name": "Francesco Littel",
             "slug": "francesco_littel16",
-            "thumbnailUrl": null,
-            "entityType": "user"
+            "thumbnailUrl": null
           },
           "deletedAt": null,
           "deletedBy": null,
-          "publicAt": null,
+          "public": false,
           "seq": 447,
           "publicBucket": false,
           "bucketName": "attachments",
@@ -1718,7 +1704,6 @@
           "type": "object",
           "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
           "properties": {
-            "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true, "format": "uuid" },
             "entityType": {
               "type": "string",
@@ -1727,9 +1712,22 @@
             },
             "tenantId": { "type": "string", "required": true, "maxLength": 24 },
             "name": { "type": "string", "required": true, "maxLength": 255 },
+            "createdAt": { "type": "string", "required": true },
+            "createdBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
+            },
             "updatedAt": {
               "type": ["string", "null"],
               "required": true
+            },
+            "updatedBy": {
+              "type": ["object", "null"],
+              "required": true,
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
             },
             "stx": {
               "type": "object",
@@ -1768,31 +1766,17 @@
               "maxLength": 1000000
             },
             "keywords": { "type": "string", "required": true, "maxLength": 1000000 },
-            "createdBy": {
-              "type": ["object", "null"],
-              "required": true,
-              "ref": "#/components/schemas/UserMinimalBase",
-              "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
-            },
-            "updatedBy": {
-              "type": ["object", "null"],
-              "required": true,
-              "ref": "#/components/schemas/UserMinimalBase",
-              "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
-            },
             "deletedAt": {
               "type": ["string", "null"],
               "required": true
             },
             "deletedBy": {
-              "type": ["string", "null"],
+              "type": ["object", "null"],
               "required": true,
-              "format": "uuid"
+              "ref": "#/components/schemas/ActorRef",
+              "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
             },
-            "publicAt": {
-              "type": ["string", "null"],
-              "required": true
-            },
+            "public": { "type": "boolean", "required": true },
             "seq": {
               "type": "integer",
               "required": true,
@@ -1857,21 +1841,21 @@
           "keywords": "dolores cetera aetas",
           "createdBy": {
             "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+            "kind": "user",
             "name": "Francesco Littel",
             "slug": "francesco_littel16",
-            "thumbnailUrl": null,
-            "entityType": "user"
+            "thumbnailUrl": null
           },
           "updatedBy": {
             "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
+            "kind": "user",
             "name": "Francesco Littel",
             "slug": "francesco_littel16",
-            "thumbnailUrl": null,
-            "entityType": "user"
+            "thumbnailUrl": null
           },
           "deletedAt": null,
           "deletedBy": null,
-          "publicAt": null,
+          "public": false,
           "seq": 447,
           "publicBucket": false,
           "bucketName": "attachments",

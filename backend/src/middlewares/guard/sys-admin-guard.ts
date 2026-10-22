@@ -7,6 +7,7 @@ import { setMiddlewareExtension } from '#/core/x-middleware';
 import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { refuseImpersonation } from '#/modules/auth/step-up/helpers/step-up';
 import { getIp } from '#/utils/get-ip';
+import { getIsoDate } from '#/utils/iso-date';
 import { env } from '../../env';
 
 const allowList = env.SYSTEM_ADMIN_IP_ALLOWLIST === 'none' ? [] : env.SYSTEM_ADMIN_IP_ALLOWLIST.split(',');
@@ -24,7 +25,7 @@ const sysAdminCheck: MiddlewareHandler = async (ctx, next) => {
 
   if (!isSystemAdmin) {
     const ip = getIp(ctx) ?? 'unknown';
-    sendSecurityInboxEmail('sysadmin-fail', { ip, route: scrubUrl(ctx.req.path), timestamp: new Date().toISOString() });
+    sendSecurityInboxEmail('sysadmin-fail', { ip, route: scrubUrl(ctx.req.path), timestamp: getIsoDate() });
     throw new AppError(403, 'no_sysadmin', 'warn', { meta: { user: user.id } });
   }
 
@@ -41,7 +42,7 @@ const combinedMiddleware: MiddlewareHandler = every(
     { allowList },
     async (remote) => {
       const ip = remote.addr ?? 'unknown';
-      sendSecurityInboxEmail('sysadmin-fail', { ip, route: 'ip-restricted', timestamp: new Date().toISOString() });
+      sendSecurityInboxEmail('sysadmin-fail', { ip, route: 'ip-restricted', timestamp: getIsoDate() });
       throw new AppError(403, 'forbidden', 'warn');
     },
   ),

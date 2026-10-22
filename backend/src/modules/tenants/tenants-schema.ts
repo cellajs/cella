@@ -4,6 +4,7 @@ import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schem
 import { authStrategiesEnum } from '#/modules/auth/sessions/sessions-db';
 import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/modules/tenants/tenants-db';
 import { minimalBaseSchema, paginationQuerySchema, validNameSchema } from '#/schemas';
+import { auditShape } from '#/schemas/entity-base';
 import { mockTenantResponse } from './tenants-mocks';
 
 export type TenantStatus = (typeof tenantStatusValues)[number];
@@ -35,6 +36,7 @@ export const tenantSchema = z
       restrictions: restrictionsSchema,
       authStrategies: z.array(z.enum(authStrategiesEnum)),
     }).shape,
+    ...auditShape,
     organization: minimalBaseSchema('organization').nullable().describe('The organization this tenant holds, or null if none'),
   })
   .openapi('Tenant', {

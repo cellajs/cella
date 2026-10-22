@@ -160,11 +160,11 @@ describe('Service accounts and API keys', async () => {
 
   it('names the user who issued a key, at creation and in the list', async () => {
     const { org, user, headers, account, apiKey } = await issueKey();
-    expect(apiKey.createdBy).toMatchObject({ id: user.id, entityType: 'user' });
+    expect(apiKey.createdBy).toMatchObject({ id: user.id, kind: 'user' });
 
     const keys = await call(getApiKeys, { path: { tenantId: org.tenantId, organizationId: org.id, id: account.id }, headers });
     const [listed] = (keys.data as { items: { createdBy: { id: string } | null }[] }).items;
-    expect(listed.createdBy).toMatchObject({ id: user.id, entityType: 'user' });
+    expect(listed.createdBy).toMatchObject({ id: user.id, kind: 'user' });
   });
 
   it('shows when a key of the account last authenticated a request', async () => {

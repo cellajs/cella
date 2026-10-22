@@ -1,10 +1,10 @@
 import { sql } from 'drizzle-orm';
-import { index, jsonb, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, jsonb, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { authStrategiesEnum, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { connectionsTable } from '#/modules/connections/connections-db';
@@ -55,7 +55,7 @@ export const tokensTable = snakeCase.table(
       .$type<UserId>(),
     createdAt: timestampColumns.createdAt,
     expiresAt: timestampColumns.expiresAt,
-    invokedAt: timestamp({ withTimezone: true, mode: 'string' }),
+    invokedAt: isoTimestamp(),
   },
   (table) => [
     index('tokens_secret_type_idx').on(table.secret, table.type),

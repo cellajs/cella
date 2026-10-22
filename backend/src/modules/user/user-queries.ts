@@ -7,7 +7,6 @@ import { deleteDanglingActors, insertActors } from '#/modules/actors/actors-quer
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { type EmailProof, emailsTable } from '#/modules/user/emails-db';
-import { userMinimalColumns } from '#/modules/user/helpers/audit-user';
 import { lastSeenOrder, memberSelect, userActorJoin, userSelect } from '#/modules/user/helpers/select';
 import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
@@ -247,15 +246,6 @@ export const findMfaRequired = async (ctx: DbContext, { userId, memberOfAny }: F
     .where(and(...filters))
     .limit(1);
   return user?.mfaRequired;
-};
-
-interface FindAuditUsersByIdsOpts {
-  ids: string[];
-}
-
-/** The minimal user columns of these users, for resolving `createdBy` and `updatedBy`. */
-export const findAuditUsersByIds = async (ctx: DbContext, { ids }: FindAuditUsersByIdsOpts) => {
-  return ctx.var.db.select(userMinimalColumns).from(usersTable).where(inArray(usersTable.id, ids));
 };
 
 interface FindUserModelsByIdsOpts {

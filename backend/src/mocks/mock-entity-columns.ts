@@ -45,7 +45,7 @@ type MockProductColumns<T extends ProductEntityType> = MockTenantEntityColumns<T
   updatedBy: string | null;
   deletedAt: string | null;
   deletedBy: string | null;
-  publicAt: string | null;
+  public: boolean;
   seq: number;
 };
 
@@ -63,7 +63,7 @@ export const mockProductColumns = <T extends ProductEntityType>(entityType: T, o
     updatedBy: options.updatedBy === undefined ? createdBy : options.updatedBy,
     deletedAt: options.deletedAt ?? null,
     deletedBy: options.deletedBy ?? null,
-    publicAt: options.publicAt ?? null,
+    public: options.public ?? false,
     seq: options.seq ?? faker.number.int({ min: 1, max: 500 }),
   };
 };
@@ -75,7 +75,7 @@ type MockChannelColumns<T extends ChannelEntityType> = MockTenantEntityColumns<T
   createdBy: string | null;
   updatedBy: string | null;
   publishedAt: string | null;
-  publicAt: string | null;
+  public: boolean;
   toolsConfig: ToolsConfig;
   path: string | null;
 };
@@ -95,7 +95,7 @@ export const mockChannelColumns = <T extends ChannelEntityType>(entityType: T, o
     createdBy: options.createdBy ?? null,
     updatedBy: options.updatedBy ?? null,
     publishedAt: options.publishedAt === undefined ? base.createdAt : options.publishedAt,
-    publicAt: options.publicAt ?? null,
+    public: options.public ?? false,
     toolsConfig: options.toolsConfig ?? {},
     path: hierarchy.computeChannelPath(entityType, { id: base.id, ...options.channelIds }),
   };

@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import {
   appConfig,
@@ -33,7 +33,7 @@ const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable, actor
     }
     // Actor-independent (public read): matches for anonymous actors too.
     case 'public':
-      return isNotNull(resolveColumn(table, 'publicAt', name));
+      return eq(resolveColumn(table, 'public', name), true);
   }
 };
 

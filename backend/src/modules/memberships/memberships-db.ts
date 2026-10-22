@@ -20,11 +20,11 @@ export const membershipsTable = snakeCase.table(
   {
     createdAt: timestampColumns.createdAt,
     id: uuid().primaryKey().$defaultFn(generateId),
-    tenantId: varchar('tenant_id', { length: tenantIdLength })
+    tenantId: varchar({ length: tenantIdLength })
       .notNull()
       .references(() => tenantsTable.id),
     channelType: varchar({ enum: appConfig.channelEntityTypes }).notNull(),
-    channelId: uuid('channel_id').notNull(),
+    channelId: uuid().notNull(),
     userId: uuid()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' })

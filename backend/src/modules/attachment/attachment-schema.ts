@@ -6,7 +6,7 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { productViewCountSchema } from '#/modules/entities/entities-schema';
 import { placementFieldsSchema, validatePlacement } from '#/permissions/product-placement';
 import { batchResponseSchema, maxLength, productListQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
-import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
+import { auditShape, tombstoneShape } from '#/schemas/entity-base';
 import { mockAttachmentResponse } from './attachment-mocks';
 
 /**
@@ -35,8 +35,8 @@ const attachmentSelectSchema = describeFields(createSelectSchema(attachmentsTabl
 export const attachmentSchema = z
   .object({
     ...attachmentSelectSchema.shape,
-    createdBy: nullableUserMinimalBaseSchema,
-    updatedBy: nullableUserMinimalBaseSchema,
+    ...auditShape,
+    ...tombstoneShape,
     stx: stxBaseSchema,
     viewCount: productViewCountSchema,
   })
@@ -58,8 +58,6 @@ const attachmentCreateBodySchema = attachmentInsertSchema
     keys: true,
     groupId: true,
     convertedContentType: true,
-    // Row-local public read: client-sent, the template client stamps the home channel's value.
-    publicAt: true,
   })
   .extend({
     id: validUuidSchema,

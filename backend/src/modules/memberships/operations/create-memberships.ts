@@ -17,6 +17,7 @@ import {
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
 import { getValidChannel } from '#/permissions/get-valid-channel';
+import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 interface CreateMembershipsInput {
@@ -202,7 +203,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
 
     // A first mail stamps as a reminder does: the 7-day throttle reads the stamp, and a held invitation is one without it.
     const mailedIds = [...insertedInactiveMemberships.map((invitation) => invitation.id), ...remindedInactiveMembershipIds];
-    await stampInactiveMembershipsReminded(ctx, { ids: mailedIds, remindedAt: new Date().toISOString() });
+    await stampInactiveMembershipsReminded(ctx, { ids: mailedIds, remindedAt: getIsoDate() });
   }
 
   const invitesSentCount = insertedInactiveMemberships.length;

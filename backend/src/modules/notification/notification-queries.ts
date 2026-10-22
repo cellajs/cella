@@ -7,9 +7,10 @@ import { type MembershipBaseModel, toMembershipBase } from '#/modules/membership
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { emailsTable } from '#/modules/user/emails-db';
-import { toUserMinimalBase, type UserMinimalBase } from '#/modules/user/helpers/audit-user';
+import { toUserMinimalBase, type UserMinimalBase } from '#/modules/user/helpers/user-minimal';
 import { usersTable } from '#/modules/user/user-db';
 import { getEntityTable } from '#/tables';
+import { getIsoDate } from '#/utils/iso-date';
 import { type DigestFrequency, defaultDigestFrequency, notificationPreferencesTable, notificationsTable } from './notification-db';
 import { instantEmailTypes, type NotificationType } from './notification-types';
 
@@ -88,7 +89,7 @@ export async function markNotificationsRead(ctx: DbContext, { userId, ids }: Mar
 
   const updated = await ctx.var.db
     .update(notificationsTable)
-    .set({ readAt: new Date().toISOString() })
+    .set({ readAt: getIsoDate() })
     .where(and(...filters))
     .returning({ id: notificationsTable.id });
 
@@ -104,7 +105,7 @@ interface MarkContextNotificationsReadOpts {
 export async function markContextNotificationsRead(ctx: DbContext, { userId, contextId }: MarkContextNotificationsReadOpts): Promise<number> {
   const updated = await ctx.var.db
     .update(notificationsTable)
-    .set({ readAt: new Date().toISOString() })
+    .set({ readAt: getIsoDate() })
     .where(and(eq(notificationsTable.userId, userId), eq(notificationsTable.contextId, contextId), isNull(notificationsTable.readAt)))
     .returning({ id: notificationsTable.id });
 
@@ -139,7 +140,7 @@ interface UpdatePreferencesOpts {
 export async function updatePreferences(ctx: DbContext, { userId, values }: UpdatePreferencesOpts) {
   const [updated] = await ctx.var.db
     .update(notificationPreferencesTable)
-    .set({ ...values, updatedAt: new Date().toISOString() })
+    .set({ ...values, updatedAt: getIsoDate() })
     .where(eq(notificationPreferencesTable.userId, userId))
     .returning();
 
@@ -392,7 +393,7 @@ interface NotificationIdsOpts {
 /** Settles rows the instant-mail pass took, mailed or skipped for good: neither it nor the digest reads them again. */
 export async function stampEmailed(ctx: DbContext, { ids }: NotificationIdsOpts): Promise<void> {
   if (ids.length === 0) return;
-  await ctx.var.db.update(notificationsTable).set({ emailedAt: new Date().toISOString() }).where(inArray(notificationsTable.id, ids));
+  await ctx.var.db.update(notificationsTable).set({ emailedAt: getIsoDate() }).where(inArray(notificationsTable.id, ids));
 }
 
 // ── Digest ───────────────────────────────────────────────────────────────────
@@ -490,7 +491,7 @@ export async function findUndigestedNotifications(ctx: DbContext, { userId, sinc
 
 export async function stampDigested(ctx: DbContext, { ids }: NotificationIdsOpts): Promise<void> {
   if (ids.length === 0) return;
-  await ctx.var.db.update(notificationsTable).set({ digestedAt: new Date().toISOString() }).where(inArray(notificationsTable.id, ids));
+  await ctx.var.db.update(notificationsTable).set({ digestedAt: getIsoDate() }).where(inArray(notificationsTable.id, ids));
 }
 
 interface StampDigestRunOpts {

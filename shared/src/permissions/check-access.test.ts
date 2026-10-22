@@ -20,8 +20,7 @@ const membership: AccessMembership = {
   userId: 'u1',
 } as AccessMembership;
 
-const subject = (id = 'a1'): SubjectForPermission =>
-  ({ entityType: 'attachment', id, channelIds, row: { createdBy: 'u1', publicAt: null } }) as never;
+const subject = (id = 'a1'): SubjectForPermission => ({ entityType: 'attachment', id, channelIds, row: { createdBy: 'u1', public: false } }) as never;
 
 const admin = (scopes: readonly AccessScope[] | null): Access => ({ actorId: 'u1', memberships: [membership], scopes });
 
