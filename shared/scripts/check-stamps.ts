@@ -1,6 +1,6 @@
 /**
  * Row stamps are written one way, `getIsoDate()` for a moment and `updateStamps()` / `deleteStamps()` for a row's last
- * write and tombstone (ARCHITECTURE.md, Row stamps): this flags backend code that stamps by hand. A table without a
+ * write and tombstone (AGENTS.md, Coding patterns): this flags backend code that stamps by hand. A table without a
  * writer (`updatedAt` alone) still stamps with `getIsoDate()`.
  */
 import type { Finding } from './repo-files.ts';

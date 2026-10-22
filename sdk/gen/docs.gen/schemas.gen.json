@@ -372,8 +372,8 @@
         "thumbnailUrl": null
       },
       "updatedBy": null,
-      "createdAt": "2024-10-20T17:01:42.197Z",
-      "updatedAt": "2024-10-28T06:23:25.886Z"
+      "createdAt": "2024-05-28T05:49:31.389Z",
+      "updatedAt": "2024-09-09T15:07:51.965Z"
     }
   },
   {
@@ -1865,10 +1865,10 @@
       "subscriptionId": null,
       "subscriptionStatus": "none",
       "subscriptionPlan": null,
-      "createdAt": "2024-06-17T21:04:44.959Z",
-      "updatedAt": "2024-08-27T08:36:44.038Z",
+      "createdAt": "2024-01-14T10:00:28.012Z",
+      "updatedAt": "2024-03-05T22:43:30.502Z",
       "organization": {
-        "id": "b5556f70-5f9d-421f-98fc-6736b39230cc",
+        "id": "ebefa691-88f5-48a0-89ae-90751aba8e7d",
         "name": "Lubowitz, Waters and Haley",
         "slug": "lubowitz-waters-and-haley",
         "thumbnailUrl": null,

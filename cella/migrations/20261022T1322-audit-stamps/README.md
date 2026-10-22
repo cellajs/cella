@@ -11,7 +11,7 @@ helpers); `publicAt` is a `public` boolean; every timestamp column is `isoTimest
 `updatedBy` and `deletedBy` cross the wire as `ActorRef` (`{ id, kind, name, slug, thumbnailUrl }`), resolved by
 `withActorRefs()`, and the frontend renders them with `ActorCell`. `withAuditUsers`, `auditUserSelect`,
 `coalesceAuditUsers`, `mockAuditUsers` and `nullableUserMinimalBaseSchema` in audit positions are gone. The rules:
-[Row stamps](../../ARCHITECTURE.md#row-stamps).
+[Row stamps](../../AGENTS.md#coding-patterns).
 
 ## What & why
 
