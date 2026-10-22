@@ -1861,10 +1861,10 @@
       "subscriptionId": null,
       "subscriptionStatus": "none",
       "subscriptionPlan": null,
-      "createdAt": "2024-10-23T09:13:56.815Z",
-      "updatedAt": "2024-12-24T20:00:47.618Z",
+      "createdAt": "2024-12-13T14:51:04.197Z",
+      "updatedAt": "2024-12-19T07:52:53.171Z",
       "organization": {
-        "id": "488e199d-a4ae-4c93-9335-b9ab516aa474",
+        "id": "d1f6a5c0-34bb-485f-ab20-4e8f386efc6f",
         "name": "Lubowitz, Waters and Haley",
         "slug": "lubowitz-waters-and-haley",
         "thumbnailUrl": null,
