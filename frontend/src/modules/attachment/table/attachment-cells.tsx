@@ -9,12 +9,12 @@ import { isPendingUpload, pendingUploadMessage } from '~/modules/attachment/help
 import { useAttachmentUrl } from '~/modules/attachment/hooks/use-attachment-url';
 import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-upload-status';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { MediaThumbnail } from '~/modules/common/media-thumbnail';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
-import { tw } from '~/utils/tw';
 
 interface AttachmentCellProps {
   row: Attachment;
@@ -25,8 +25,6 @@ export function ThumbnailCell({ row, tabIndex }: AttachmentCellProps) {
   const { id, filename, contentType, groupId } = row;
   const navigate = useNavigate();
 
-  const wrapClass = tw('relative flex size-full items-center justify-center gap-2');
-
   // Table cells prefer the tiny thumbnail; non-image types have none and fall back to the mid-size preview.
   const { url } = useAttachmentUrl(row, { preferredVariant: 'thumbnail' });
 
@@ -34,13 +32,10 @@ export function ThumbnailCell({ row, tabIndex }: AttachmentCellProps) {
     navigate({ to: '.', replace: false, resetScroll: false, search: openAttachmentDialogSearch(id, groupId) });
   };
 
-  const preview = <MediaThumbnail name={filename} url={url} contentType={contentType} />;
-  const badge = <UploadStatusBadge row={row} />;
-
   return (
-    <Button variant="cell" size="cell" tabIndex={tabIndex} className={wrapClass} aria-label={filename} onClick={handleClick}>
-      {preview}
-      {badge}
+    <Button variant="cell" size="cell" tabIndex={tabIndex} className="relative justify-center" aria-label={filename} onClick={handleClick}>
+      <MediaThumbnail name={filename} url={url} contentType={contentType} />
+      <UploadStatusBadge row={row} />
     </Button>
   );
 }
@@ -52,25 +47,25 @@ function UploadStatusBadge({ row }: { row: Attachment }) {
 
   if (hasLocalBlob && isUploaded) return null;
 
-  let icon: React.ReactNode;
+  let Icon: IconComponent;
   let tooltip: string;
 
   if (!hasLocalBlob) {
     if (!isPendingUpload(row)) return null;
     const { key, params } = pendingUploadMessage({ uploader: row.createdBy });
-    icon = <CloudOffIcon className="size-2.5 text-background" />;
+    Icon = CloudOffIcon;
     tooltip = t(key, params);
   } else if (isUploading) {
-    icon = <LoaderIcon className="size-2.5 animate-spin text-background" />;
+    Icon = LoaderIcon;
     tooltip = t('c:uploading');
   } else if (isPending) {
-    icon = <CloudUploadIcon className="size-2.5 text-background" />;
+    Icon = CloudUploadIcon;
     tooltip = t('c:pending_upload');
   } else if (isFailed) {
-    icon = <CircleAlertIcon className="size-2.5 text-background" />;
+    Icon = CircleAlertIcon;
     tooltip = t('c:upload_failed');
   } else if (isLocalOnly) {
-    icon = <CloudOffIcon className="size-2.5 text-background" />;
+    Icon = CloudOffIcon;
     tooltip = t('c:local_only');
   } else {
     return null;
@@ -82,7 +77,7 @@ function UploadStatusBadge({ row }: { row: Attachment }) {
       data-tooltip="true"
       data-tooltip-content={tooltip}
     >
-      {icon}
+      <Icon className={cn('size-2.5 text-background', isUploading && 'animate-spin')} />
     </div>
   );
 }
@@ -123,7 +118,7 @@ export function DownloadCell({ row, tabIndex }: AttachmentCellProps) {
       disabled={isInProgress}
       // Not `disabled`: the tooltip says why there is nothing to download, and a disabled button would not show it.
       aria-disabled={!!pending}
-      className={cn('justify-center', pending && 'opacity-50')}
+      className="justify-center aria-disabled:opacity-50"
       aria-label={tooltip}
       data-tooltip="true"
       data-tooltip-content={tooltip}

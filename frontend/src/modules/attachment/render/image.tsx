@@ -10,10 +10,10 @@ import {
   RefreshCwIcon,
   RotateCwSquareIcon,
 } from 'lucide-react';
-import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePanZoom } from '~/modules/attachment/render/use-pan-zoom';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { ButtonGroup } from '~/modules/ui/button-group';
@@ -35,13 +35,13 @@ const panStep = 120;
 interface ControlButtonProps {
   tooltipContent: string;
   onClick: () => void;
-  icon: React.ReactNode;
+  icon: IconComponent;
 }
-function ControlButton({ tooltipContent, onClick, icon }: ControlButtonProps) {
+function ControlButton({ tooltipContent, onClick, icon: Icon }: ControlButtonProps) {
   return (
     <TooltipButton toolTipContent={tooltipContent}>
       <Button onClick={onClick} className="border border-input bg-background text-accent-foreground hover:bg-accent">
-        {icon}
+        <Icon className="size-3.5" />
       </Button>
     </TooltipButton>
   );
@@ -56,10 +56,10 @@ export function RenderImage({ image, alt, showButtons, imageClassName, onPanMode
   return (
     <>
       {showButtons && (
-        <ButtonGroup className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center justify-center gap-0 rounded-md bg-transparent text-sm shadow-xs ring-offset-background">
-          <ControlButton tooltipContent={t('c:zoom_in')} onClick={zoomIn} icon={<PlusIcon className="size-3.5" />} />
-          <ControlButton tooltipContent={t('c:zoom_out')} onClick={zoomOut} icon={<MinusIcon className="size-3.5" />} />
-          <ControlButton tooltipContent={t('c:rotate_right')} onClick={rotateRight} icon={<RotateCwSquareIcon className="size-3.5" />} />
+        <ButtonGroup className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-md shadow-xs">
+          <ControlButton tooltipContent={t('c:zoom_in')} onClick={zoomIn} icon={PlusIcon} />
+          <ControlButton tooltipContent={t('c:zoom_out')} onClick={zoomOut} icon={MinusIcon} />
+          <ControlButton tooltipContent={t('c:rotate_right')} onClick={rotateRight} icon={RotateCwSquareIcon} />
 
           {onPanModeChange && (
             <ControlButton
@@ -68,20 +68,20 @@ export function RenderImage({ image, alt, showButtons, imageClassName, onPanMode
                 setPanEnabled(!panEnabled);
                 onPanModeChange(!panEnabled);
               }}
-              icon={panEnabled ? <HandGrabIcon className="size-3.5" /> : <HandIcon className="size-3.5" />}
+              icon={panEnabled ? HandGrabIcon : HandIcon}
             />
           )}
 
           {zoomed && (
             <>
-              <ControlButton tooltipContent={t('c:move_left')} onClick={() => panBy(-panStep, 0)} icon={<ArrowLeftIcon className="size-3.5" />} />
-              <ControlButton tooltipContent={t('c:move_up')} onClick={() => panBy(0, -panStep)} icon={<ArrowUpIcon className="size-3.5" />} />
-              <ControlButton tooltipContent={t('c:move_down')} onClick={() => panBy(0, panStep)} icon={<ArrowDownIcon className="size-3.5" />} />
-              <ControlButton tooltipContent={t('c:move_right')} onClick={() => panBy(panStep, 0)} icon={<ArrowRightIcon className="size-3.5" />} />
+              <ControlButton tooltipContent={t('c:move_left')} onClick={() => panBy(-panStep, 0)} icon={ArrowLeftIcon} />
+              <ControlButton tooltipContent={t('c:move_up')} onClick={() => panBy(0, -panStep)} icon={ArrowUpIcon} />
+              <ControlButton tooltipContent={t('c:move_down')} onClick={() => panBy(0, panStep)} icon={ArrowDownIcon} />
+              <ControlButton tooltipContent={t('c:move_right')} onClick={() => panBy(panStep, 0)} icon={ArrowRightIcon} />
             </>
           )}
 
-          <ControlButton tooltipContent={t('c:reset')} onClick={reset} icon={<RefreshCwIcon className="size-3.5" />} />
+          <ControlButton tooltipContent={t('c:reset')} onClick={reset} icon={RefreshCwIcon} />
         </ButtonGroup>
       )}
 

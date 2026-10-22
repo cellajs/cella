@@ -59,8 +59,7 @@ export function AttachmentDialog() {
   if (!resolvedItems.length || errorIds.includes(initialAttachmentId)) {
     return (
       <>
-        <div className="fixed top-0 left-0 z-20 flex w-full gap-2 bg-background/60 p-3 backdrop-blur-xs">
-          <div className="grow" />
+        <div className="fixed top-0 left-0 z-20 flex w-full justify-end bg-background/60 p-3 backdrop-blur-xs">
           <CloseButton onClick={() => removeDialog()} size="lg" className="-my-1" />
         </div>
         <ContentPlaceholder icon={FlameKindlingIcon} title="error:not_found.text">

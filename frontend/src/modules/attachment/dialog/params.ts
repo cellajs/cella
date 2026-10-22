@@ -15,10 +15,10 @@ export const attachmentUrlDialogId = 'attachment-url-dialog';
 export const attachmentDialogId = 'attachment-dialog';
 
 /** Chrome shared by both ways of opening the carousel (URL-driven and imperative). */
-const attachmentDialogClassName = tw('mt-0 flex h-dvh max-h-dvh min-w-full flex-col rounded-none border-0 p-0');
+const attachmentDialogClassName = tw('flex h-dvh max-h-dvh min-w-full flex-col rounded-none p-0');
 
 /** Wrapper the carousel is mounted in, identical for both dialog entry points. */
-export const attachmentDialogContentClassName = tw('relative -z-1 flex h-dvh grow flex-wrap justify-center p-2');
+export const attachmentDialogContentClassName = tw('relative -z-1 h-dvh p-2');
 
 /**
  * Per-slide stage insets: a fitted image stays clear of the fixed header (3rem) and, from `sm` up where the pan/zoom

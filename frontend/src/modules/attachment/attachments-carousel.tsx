@@ -27,6 +27,7 @@ import {
   CarouselPrevious,
 } from '~/modules/ui/carousel';
 import { DialogTitle } from '~/modules/ui/dialog';
+import { HelpCollapse } from '~/modules/ui/help-toggle';
 import { cn } from '~/utils/cn';
 
 export type CarouselItemData = {
@@ -134,7 +135,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
               }),
             ]
       }
-      className="group size-full"
+      className="group/carousel size-full"
       setApi={handleSetApi}
     >
       {/* z-20 matches the zoom controls: at z-10 the viewer, a flex item with the same index, paints over the title. */}
@@ -156,25 +157,13 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 size="icon"
                 aria-expanded={descriptionOpen}
                 aria-label={i18n.t('c:description')}
-                className="-my-1 size-8 shrink-0 opacity-70 hover:opacity-100"
+                className="group/description-toggle -my-1 size-8 shrink-0 opacity-70 hover:opacity-100"
                 press={false}
                 onClick={() => setDescriptionOpen(!descriptionOpen)}
               >
                 <span className="relative size-5">
-                  <InfoIcon
-                    className={cn(
-                      'absolute inset-0 size-5 transition-all duration-200 motion-reduce:transition-none',
-                      descriptionOpen ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100',
-                    )}
-                    strokeWidth={1.5}
-                  />
-                  <ChevronUpIcon
-                    className={cn(
-                      'absolute inset-0 size-5 transition-all duration-200 motion-reduce:transition-none',
-                      descriptionOpen ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0',
-                    )}
-                    strokeWidth={1.5}
-                  />
+                  <InfoIcon className="absolute inset-0 size-5 transition duration-200 group-aria-expanded/description-toggle:rotate-90 group-aria-expanded/description-toggle:opacity-0 motion-reduce:transition-none" />
+                  <ChevronUpIcon className="absolute inset-0 size-5 -rotate-90 opacity-0 transition duration-200 group-aria-expanded/description-toggle:rotate-0 group-aria-expanded/description-toggle:opacity-100 motion-reduce:transition-none" />
                 </span>
               </Button>
             )}
@@ -187,7 +176,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 className="-my-1 size-8 opacity-70 hover:opacity-100"
                 onClick={() => window.open(currentItem.url, '_blank')}
               >
-                <ExternalLinkIcon className="size-5" strokeWidth={1.5} />
+                <ExternalLinkIcon className="size-5" />
               </Button>
             )}
 
@@ -201,29 +190,16 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 className="-my-1 size-8 opacity-70 hover:opacity-100"
                 onClick={() => download(currentItem.url, currentItem.filename || 'file')}
               >
-                {isInProgress ? <Spinner className="size-5 text-foreground/80" noDelay /> : <DownloadIcon className="size-5" strokeWidth={1.5} />}
+                {isInProgress ? <Spinner className="size-5 text-foreground/80" noDelay /> : <DownloadIcon className="size-5" />}
               </Button>
             )}
 
             <CloseButton onClick={() => removeDialog()} size="lg" className="-my-1" />
           </div>
-          {/* Collapsed by default; expands like a form label's help text. */}
           {descriptionText && (
-            <div
-              className={cn(
-                'grid transition-[grid-template-rows] duration-200 motion-reduce:transition-none',
-                descriptionOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
-              )}
-            >
-              <div
-                className={cn(
-                  'overflow-hidden transition-opacity duration-200 motion-reduce:transition-none',
-                  descriptionOpen ? 'opacity-100' : 'opacity-0',
-                )}
-              >
-                <p className="mt-2 ml-1 max-w-3xl text-muted-foreground text-sm max-sm:mx-auto">{descriptionText}</p>
-              </div>
-            </div>
+            <HelpCollapse open={descriptionOpen}>
+              <p className="mt-2 ml-1 max-w-3xl max-sm:mx-auto">{descriptionText}</p>
+            </HelpCollapse>
           )}
         </div>
       )}
@@ -244,7 +220,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                   isDialog && attachmentDialogStageClassName,
                   containerClassName,
                 )}
-                itemClassName={isDialog ? 'object-contain' : ''}
+                itemClassName={isDialog ? 'object-contain' : undefined}
                 type={convertedContentType || contentType}
                 imagePanZoom={isDialog}
                 showButtons={currentItemIndex === index}
@@ -263,10 +239,10 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       {items.length > 1 && (
         <>
           {/* Solid on every backdrop: the slide behind can be any image, so neither the button nor its hover fill lets it through. */}
-          <CarouselPrevious className="left-4 size-11 opacity-0 shadow-lg/40 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 lg:left-8 dark:hover:bg-accent [&_svg]:size-5" />
+          <CarouselPrevious className="left-4 size-11 opacity-0 shadow-lg/40 transition-opacity focus-visible:opacity-100 group-hover/carousel:opacity-100 lg:left-8 dark:hover:bg-accent [&_svg]:size-5" />
           <CarouselNext
             ref={nextButtonRef}
-            className="right-4 size-11 opacity-0 shadow-lg/40 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 lg:right-8 dark:hover:bg-accent [&_svg]:size-5"
+            className="right-4 size-11 opacity-0 shadow-lg/40 transition-opacity focus-visible:opacity-100 group-hover/carousel:opacity-100 lg:right-8 dark:hover:bg-accent [&_svg]:size-5"
           />
         </>
       )}

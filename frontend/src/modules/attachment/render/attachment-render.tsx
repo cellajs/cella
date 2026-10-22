@@ -102,7 +102,7 @@ export function AttachmentRender({
                 backdropDismiss={!!onBackdropClick}
               />
             ) : (
-              <img src={url} alt={alt} className={cn(itemClassName, onBackdropClick ? 'max-h-full max-w-full' : 'size-full')} />
+              <img src={url} alt={alt} className={cn(onBackdropClick ? 'max-h-full max-w-full' : 'size-full', itemClassName)} />
             ))}
           {kind === 'audio' && <RenderAudio src={url} className="mx-auto -mt-48 h-20 w-[80vw]" />}
           {kind === 'video' && <RenderVideo src={url} className="mx-auto max-h-full max-w-7xl" />}

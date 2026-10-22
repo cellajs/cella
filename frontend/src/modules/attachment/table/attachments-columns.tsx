@@ -118,18 +118,15 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
       minBreakpoint: 'md',
       resizable: true,
       minWidth: 140,
-      renderCell: ({ row }) => (
-        <span className="truncate underline-offset-4 group-hover:underline">{row.filename || <span className="text-muted">-</span>}</span>
-      ),
+      placeholderValue: '-',
+      renderCell: ({ row }) => (row.filename ? <span className="truncate">{row.filename}</span> : null),
     },
     {
       key: 'size',
       name: t('c:size'),
       minBreakpoint: 'md',
       width: 100,
-      renderCell: ({ row }) => (
-        <div className="group relative inline-flex size-full items-center gap-1 text-muted-foreground">{formatBytes(row.size)}</div>
-      ),
+      renderCell: ({ row }) => <span className="text-muted-foreground">{formatBytes(row.size)}</span>,
     },
     {
       key: 'viewCount',
@@ -143,8 +140,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
         return (
           <span
             className="inline-flex size-full items-center"
-            data-tooltip={outsideSeenWindow ? 'true' : undefined}
-            data-tooltip-content={outsideSeenWindow ? t('c:views_retention_hint') : undefined}
+            {...(outsideSeenWindow && { 'data-tooltip': 'true', 'data-tooltip-content': t('c:views_retention_hint') })}
           >
             <UserIcon className="mr-2 opacity-50" />
             <span className={cn(outsideSeenWindow && 'text-muted-foreground')}>{row.viewCount ?? 0}</span>
