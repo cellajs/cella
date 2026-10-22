@@ -126,8 +126,8 @@ export async function sendNotificationPush(userIds: string[], payload: Notificat
             if (statusCode === 404 || statusCode === 410) gone.push(subscription.endpoint);
             else if (statusCode === 403) refused++;
             else if (statusCode === 429) backOff = true;
-            // The error also holds the endpoint, which stays out of the log; the body is the push service's reason.
-            else log.warn('Push delivery failed', { statusCode, body: error.body, activityId: payload.activityId });
+            // The error also holds the endpoint, which stays out of the log; the body is the push service's reason, cut to 500 characters.
+            else log.warn('Push delivery failed', { statusCode, body: String(error.body).slice(0, 500), activityId: payload.activityId });
           }
         }),
       );
