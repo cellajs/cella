@@ -29,7 +29,7 @@ export function ComboboxSearchInput({
       <ComboboxPrimitive.Input
         data-slot="combobox-search-input"
         className={cn(
-          // text-md is 16px on phones: iOS zooms into a focused field below that.
+          // text-md is at least 16px on phones: iOS zooms into a focused field below that.
           'flex h-10 w-full rounded-md bg-transparent py-3 text-md outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm [&::-webkit-search-cancel-button]:hidden',
           className,
         )}
