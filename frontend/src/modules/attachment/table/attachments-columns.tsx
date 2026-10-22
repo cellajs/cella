@@ -1,4 +1,3 @@
-import i18n from 'i18next';
 import { TrashIcon, UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
@@ -100,7 +99,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
 
       return [
         {
-          label: i18n.t('c:delete'),
+          label: t('c:delete'),
           icon: TrashIcon,
           onSelect: (row) => {
             const { remove } = dropdowner.getState();

@@ -36,9 +36,9 @@ export function clearAttachmentDialogSearch(prev: Record<string, unknown>) {
 }
 
 /** Clears the dialog search params through the router instance, where `to: '.'` resolves against the current location. */
-export const clearAttachmentDialogFromUrl = () => {
+export function clearAttachmentDialogFromUrl() {
   getRouter().navigate({ to: '.', replace: true, resetScroll: false, search: clearAttachmentDialogSearch });
-};
+}
 
 /** Dialoger options shared by both entry points. */
 export function attachmentDialogOptions(overrides: DialogData): DialogData {

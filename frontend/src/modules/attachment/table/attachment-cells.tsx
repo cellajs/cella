@@ -25,7 +25,7 @@ export function ThumbnailCell({ row, tabIndex }: AttachmentCellProps) {
   const { id, filename, contentType, groupId } = row;
   const navigate = useNavigate();
 
-  // Table cells prefer the tiny thumbnail; non-image types have none and fall back to the mid-size preview.
+  // Table cells prefer the tiny thumbnail; a file without one falls back to a local preview, else the original.
   const { url } = useAttachmentUrl(row, { preferredVariant: 'thumbnail' });
 
   const handleClick = () => {
@@ -41,7 +41,7 @@ export function ThumbnailCell({ row, tabIndex }: AttachmentCellProps) {
 }
 
 /** What this device can tell about the file: its own upload's progress, or, without the file, that its uploader still holds it. */
-function UploadStatusBadge({ row }: { row: Attachment }) {
+function UploadStatusBadge({ row }: Pick<AttachmentCellProps, 'row'>) {
   const { t } = useTranslation();
   const { hasLocalBlob, isUploaded, isUploading, isFailed, isPending, isLocalOnly } = useBlobUploadStatus(row.id);
 

@@ -7,8 +7,8 @@ import { type AttachmentMeta, resolveAttachmentUrl } from '~/modules/attachment/
 import { PresignRejectedError } from '~/modules/attachment/presign-batch';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 
-/** A carousel item that may already carry its own attachment metadata (group/single items do). */
-export type ResolvableItem = Partial<CarouselItemData> & Partial<AttachmentMeta> & { id: string };
+/** A carousel item that carries all of its attachment metadata (group and single items do) or none. */
+export type ResolvableItem = Partial<CarouselItemData> & { id: string } & (AttachmentMeta | { keys?: never });
 
 /** Transient failures (blob mid-download, cache mid-sync) get a few retries before "not found". */
 const resolveRetryLimit = 3;
@@ -88,7 +88,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
           try {
             // The list cache holds fresher metadata; group and single items carry full keys as fallback.
             const cachedMeta = findAttachmentInCache(item.id);
-            const meta = cachedMeta ?? (item.keys?.original ? (item as AttachmentMeta) : null);
+            const meta = cachedMeta ?? (item.keys?.original ? item : null);
 
             const result = await resolveAttachmentUrl(item.id, meta, { preferredVariant: 'converted' });
             if (result) {
@@ -115,7 +115,6 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
         const errors = outcomes.flatMap((outcome) => ('errorId' in outcome ? [outcome.errorId] : []));
         const hasTransientErrors = outcomes.some((outcome) => 'errorId' in outcome && !outcome.permanent);
 
-        // Revoke blob URLs absent from the active item set.
         for (const [id, url] of blobUrlsRef.current) {
           if (!newBlobUrls.has(id)) URL.revokeObjectURL(url);
         }

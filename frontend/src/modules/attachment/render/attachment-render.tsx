@@ -1,6 +1,5 @@
 import { CloudOffIcon, DownloadIcon } from 'lucide-react';
-import type React from 'react';
-import { Suspense } from 'react';
+import { type MouseEvent, Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
@@ -20,6 +19,11 @@ const RenderVideo = lazyNamed(() => import('~/modules/attachment/render/video'),
 
 /** The renderers, matched by substring of the content type in this order; any other type gets the download placeholder. */
 const renderKinds = ['image', 'audio', 'video', 'pdf'] as const;
+
+export interface MediaPlayerProps {
+  src: string;
+  className?: string;
+}
 
 interface AttachmentRenderProps {
   type: string;
@@ -70,7 +74,7 @@ export function AttachmentRender({
 
   // Only the container itself is the backdrop: clicks on media or controls bubble here but fail the target check.
   const handleBackdropClick = onBackdropClick
-    ? (event: React.MouseEvent<HTMLDivElement>) => {
+    ? (event: MouseEvent<HTMLDivElement>) => {
         if (event.target === event.currentTarget) onBackdropClick();
       }
     : undefined;

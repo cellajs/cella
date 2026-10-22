@@ -10,7 +10,7 @@ interface OpenAttachmentDialogParams {
 }
 
 /** Open resolved cloud or blob attachments without URL-driven dialog state or deep linking. */
-export const openAttachmentDialog = ({ attachmentIndex, attachments, triggerRef }: OpenAttachmentDialogParams) => {
+export function openAttachmentDialog({ attachmentIndex, attachments, triggerRef }: OpenAttachmentDialogParams) {
   dialoger.getState().create(
     <div className={attachmentDialogContentClassName}>
       <AttachmentsCarousel items={attachments} isDialog itemIndex={attachmentIndex} saveInSearchParams={false} />
@@ -20,4 +20,4 @@ export const openAttachmentDialog = ({ attachmentIndex, attachments, triggerRef 
       triggerRef: triggerRef ?? fallbackContentRef,
     }),
   );
-};
+}

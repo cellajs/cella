@@ -1,9 +1,9 @@
 import { useNavigate } from '@tanstack/react-router';
 import Autoplay from 'embla-carousel-autoplay';
-import i18n from 'i18next';
 import { ChevronUpIcon, DownloadIcon, ExternalLinkIcon, InfoIcon, PauseIcon, PlayIcon } from 'lucide-react';
 import { useReducedMotion } from 'motion/react';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { textFromDocument } from 'shared/blocknote';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { useDownloader } from '~/hooks/use-downloader';
@@ -57,6 +57,7 @@ type AttachmentsCarouselProps = {
 } & ({ isDialog: true; saveInSearchParams: boolean } | { isDialog?: false; saveInSearchParams?: never });
 
 export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, saveInSearchParams, containerClassName }: AttachmentsCarouselProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const removeDialog = useDialoger((state) => state.remove);
   const { download, isInProgress } = useDownloader();
@@ -95,8 +96,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
     setStart({ index: currentItemIndex, count: items.length });
   };
 
-  // Slides stay still for a reader who asked for reduced motion, who gets the control to start them; everyone else gets
-  // slides that hold while the pointer or the keyboard is on them and carry on once it leaves.
+  // Autoplay pauses under the pointer or keyboard focus; with reduced motion it starts only from the play control.
   const reducedMotion = useReducedMotion();
   const apiRef = useRef<CarouselApi>(undefined);
   const [autoplaying, setAutoplaying] = useState(false);
@@ -153,17 +153,17 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 <span className="truncate">{currentItem.name}</span>
               </DialogTitle>
             ) : (
-              <DialogTitle className="sr-only">{currentItem.filename || i18n.t('c:attachment')}</DialogTitle>
+              <DialogTitle className="sr-only">{currentItem.filename || t('c:attachment')}</DialogTitle>
             )}
             {descriptionText && (
               <Button
                 variant="ghost"
                 size="icon"
                 aria-expanded={descriptionOpen}
-                aria-label={i18n.t('c:description')}
+                aria-label={t('c:description')}
                 className={cn(headerButtonClass, 'group/description-toggle')}
                 press={false}
-                onClick={() => setDescriptionOpen(!descriptionOpen)}
+                onClick={() => setDescriptionOpen((prev) => !prev)}
               >
                 <span className="relative size-5">
                   <InfoIcon className="absolute inset-0 size-5 transition duration-200 group-aria-expanded/description-toggle:rotate-90 group-aria-expanded/description-toggle:opacity-0 motion-reduce:transition-none" />
@@ -176,7 +176,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label={i18n.t('c:open')}
+                aria-label={t('c:open')}
                 className={headerButtonClass}
                 onClick={() => window.open(currentItem.url, '_blank')}
               >
@@ -190,7 +190,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 variant="ghost"
                 size="icon"
                 disabled={isInProgress}
-                aria-label={i18n.t('c:download')}
+                aria-label={t('c:download')}
                 className={headerButtonClass}
                 onClick={() => download(currentItem.url, currentItem.filename || 'file')}
               >
@@ -209,35 +209,33 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       )}
 
       <CarouselContent className="h-full">
-        {items.map(({ id, url, name, filename, contentType = 'image', convertedContentType, pendingUpload }, index) => {
-          return (
-            <CarouselItem
-              key={id}
-              onClick={() => {
-                if (isDialog) return;
-                openAttachmentDialog({ attachmentIndex: index, attachments: items, triggerRef: nextButtonRef });
-              }}
-            >
-              <AttachmentRender
-                containerClassName={cn(
-                  'relative flex h-full items-center justify-center overflow-hidden',
-                  isDialog && attachmentDialogStageClassName,
-                  containerClassName,
-                )}
-                itemClassName={isDialog ? 'object-contain' : undefined}
-                type={convertedContentType || contentType}
-                imagePanZoom={isDialog}
-                showButtons={currentItemIndex === index}
-                url={url}
-                pendingUpload={pendingUpload}
-                filename={filename}
-                alt={name || filename || i18n.t('c:attachment')}
-                onPanModeChange={handlePanModeChange}
-                onBackdropClick={isDialog ? () => removeDialog() : undefined}
-              />
-            </CarouselItem>
-          );
-        })}
+        {items.map(({ id, url, name, filename, contentType = 'image', convertedContentType, pendingUpload }, index) => (
+          <CarouselItem
+            key={id}
+            onClick={() => {
+              if (isDialog) return;
+              openAttachmentDialog({ attachmentIndex: index, attachments: items, triggerRef: nextButtonRef });
+            }}
+          >
+            <AttachmentRender
+              containerClassName={cn(
+                'relative flex h-full items-center justify-center overflow-hidden',
+                isDialog && attachmentDialogStageClassName,
+                containerClassName,
+              )}
+              itemClassName={isDialog ? 'object-contain' : undefined}
+              type={convertedContentType || contentType}
+              imagePanZoom={isDialog}
+              showButtons={currentItemIndex === index}
+              url={url}
+              pendingUpload={pendingUpload}
+              filename={filename}
+              alt={name || filename || t('c:attachment')}
+              onPanModeChange={handlePanModeChange}
+              onBackdropClick={isDialog ? () => removeDialog() : undefined}
+            />
+          </CarouselItem>
+        ))}
       </CarouselContent>
 
       {items.length > 1 && (
@@ -253,13 +251,12 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       {!isDialog && (
         <div className="relative mx-auto mt-[calc(1rem+2%)] w-fit">
           <CarouselDots size="sm" gap="lg" />
-          {/* Only a reader on reduced motion needs it: their slides never start on their own, and theirs is the one pause
-              that must not be undone by the pointer leaving */}
+          {/* Reduced motion only: autoplay starts from this control, and a pause holds until it is pressed again. */}
           {items.length > 1 && reducedMotion && (
             <Button
               variant="ghost"
               size="micro"
-              aria-label={i18n.t(autoplaying ? 'c:pause' : 'c:play')}
+              aria-label={t(autoplaying ? 'c:pause' : 'c:play')}
               onClick={toggleAutoplay}
               className="absolute top-1/2 left-full z-10 ml-3 size-6 -translate-y-1/2 rounded-full p-0 text-muted-foreground hover:text-foreground"
             >

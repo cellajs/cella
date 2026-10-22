@@ -1,5 +1,4 @@
-import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { type MouseEvent, type TouchEvent, useEffect, useRef, useState, type WheelEvent } from 'react';
 
 /** Zoom 1 is the CSS fit inside the dialog stage; the floor keeps a zoomed-out image visible, the ceiling keeps it navigable. */
 export const minZoom = 0.25;
@@ -15,10 +14,10 @@ type Offset = { x: number; y: number };
 const blockPageWheel = (event: Event) => event.preventDefault();
 
 /** The viewport carries the offset as custom properties that `layerStyle` reads, so a drag moves the layer without a render. */
-const writeOffset = (viewport: HTMLElement, { x, y }: Offset) => {
+function writeOffset(viewport: HTMLElement, { x, y }: Offset) {
   viewport.style.setProperty('--pan-x', `${x}`);
   viewport.style.setProperty('--pan-y', `${y}`);
-};
+}
 
 /**
  * Zoom, pan and rotation of the dialog image viewer. Spread `panProps` on the viewport and put `layerStyle` on
@@ -66,9 +65,9 @@ export function usePanZoom(panEnabled: boolean) {
     setIsDragging(false);
   };
 
-  const panStart = (pageX: number, pageY: number, event: React.MouseEvent | React.TouchEvent) => {
+  const panStart = (pageX: number, pageY: number, event: MouseEvent<HTMLElement> | TouchEvent<HTMLElement>) => {
     if (!panEnabled) return;
-    dragRef.current = { startX: pageX, startY: pageY, startOffset: offset, viewport: event.currentTarget as HTMLElement, offset: null };
+    dragRef.current = { startX: pageX, startY: pageY, startOffset: offset, viewport: event.currentTarget, offset: null };
     setIsDragging(true);
     // A mouse button released outside the viewport ends the drag too; touch delivers touchend to its target.
     if (!('touches' in event)) {
@@ -95,16 +94,15 @@ export function usePanZoom(panEnabled: boolean) {
 
   const panProps = {
     style: { userSelect: 'none', cursor: isDragging ? 'move' : undefined, '--pan-x': offset.x, '--pan-y': offset.y } as const,
-    onMouseDown: (event: React.MouseEvent) => panStart(event.pageX, event.pageY, event),
-    onMouseMove: (event: React.MouseEvent) => panMove(event.pageX, event.pageY),
+    onMouseDown: (event: MouseEvent<HTMLElement>) => panStart(event.pageX, event.pageY, event),
+    onMouseMove: (event: MouseEvent) => panMove(event.pageX, event.pageY),
     onMouseUp: panEnd,
-    onTouchStart: (event: React.TouchEvent) => panStart(event.touches[0].pageX, event.touches[0].pageY, event),
-    onTouchMove: (event: React.TouchEvent) => panMove(event.touches[0].pageX, event.touches[0].pageY),
+    onTouchStart: (event: TouchEvent<HTMLElement>) => panStart(event.touches[0].pageX, event.touches[0].pageY, event),
+    onTouchMove: (event: TouchEvent) => panMove(event.touches[0].pageX, event.touches[0].pageY),
     onTouchEnd: panEnd,
-    // A trackpad pinch arrives as a ctrlKey wheel with small deltas: the exponential step keeps pinch and mouse
-    // wheel continuous, and the clamp sets the floor and ceiling. Steps multiply, so a frame's deltas apply as one.
-    onWheel: (event: React.WheelEvent) => {
-      const deltaY = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? event.deltaY * 16 : event.deltaY;
+    // A trackpad pinch is a ctrlKey wheel with small deltas; one exponential scale serves it and the mouse wheel, multiplied per frame.
+    onWheel: (event: WheelEvent) => {
+      const deltaY = event.deltaMode === event.nativeEvent.DOM_DELTA_LINE ? event.deltaY * 16 : event.deltaY;
       wheelFactorRef.current *= Math.exp(-deltaY * wheelZoomSensitivity);
       if (wheelFrameRef.current) return;
       wheelFrameRef.current = requestAnimationFrame(() => {
@@ -130,7 +128,6 @@ export function usePanZoom(panEnabled: boolean) {
     zoomIn: () => setZoom(zoom + zoomStep),
     zoomOut: () => setZoom(zoom - zoomStep),
     rotateRight: () => setRotation((prev) => (prev + 1) % 4),
-    // The image fits its container via CSS (object-contain), so zoom 1 is the natural fit.
     reset: () => {
       setOffset({ x: 0, y: 0 });
       setZoom(1);

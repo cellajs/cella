@@ -20,14 +20,16 @@ import { tw } from '~/utils/tw';
 
 const sheetId = 'attachment-description';
 
+interface AttachmentDescriptionFormProps {
+  attachment: Attachment;
+}
+
 /**
- * Collaborative description editor for one attachment. Grants and the mention audience come
- * from the row's home channel (deepest ancestor, organization for org-homed rows), so an app that
- * re-homes attachments below the organization needs no change here. Read-only without update
- * permission; the relay persists collaborative sessions, the update mutation the editor of an app
- * with Yjs off.
+ * Collaborative description editor for one attachment, read-only without update permission. Grants and the mention audience
+ * come from the row's home channel (its deepest ancestor), so an app that re-homes attachments needs no change here. The
+ * relay saves a collaborative session; with Yjs off, the update mutation saves.
  */
-function AttachmentDescriptionForm({ attachment: openedRow }: { attachment: Attachment }) {
+function AttachmentDescriptionForm({ attachment: openedRow }: AttachmentDescriptionFormProps) {
   const { tenantId, organizationId } = openedRow;
   // The sheet content is built once, so the row is read live: the editor and the save compare with the stored text.
   const { data: liveRow } = useQuery({
@@ -51,9 +53,7 @@ function AttachmentDescriptionForm({ attachment: openedRow }: { attachment: Atta
   const { mutateAsync } = useAttachmentUpdateMutation(tenantId, organizationId);
   const updateData = useDescriptionUpdate('attachment', attachment, (ops) => mutateAsync({ id: attachment.id, ops }));
 
-  // The stored description wherever no live editor is. Faded and inert while the relay syncs: the live
-  // editor replaces it at the same height, so the swap does not reflow. Without a description the box
-  // only holds the height.
+  // The stored text wherever no live editor is: faded and inert while the relay syncs, at the editor's height so the swap does not reflow.
   const waitingFallback = (
     <div className={cn('min-h-40', canEdit && 'pointer-events-none select-none opacity-50')}>
       {attachment.description && (
@@ -90,7 +90,7 @@ function AttachmentDescriptionForm({ attachment: openedRow }: { attachment: Atta
   );
 }
 
-/** Opens the description editor in a sheet; the same entry point for the table column and the dialog caption. */
+/** Opens the description editor in a sheet; the form reads the row live, so a cached copy is enough to pass. */
 export function openAttachmentDescriptionSheet(attachment: Attachment, triggerRef: TriggerRef) {
   sheeter.getState().create(
     <div className="container sm:pl-8">

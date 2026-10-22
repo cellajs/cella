@@ -1,5 +1,5 @@
 import { useMatch, useNavigate, useSearch } from '@tanstack/react-router';
-import { memo, useEffect } from 'react';
+import { useEffect } from 'react';
 import { AttachmentDialog } from '~/modules/attachment/dialog/attachment-dialog';
 import {
   attachmentDialogOptions,
@@ -10,9 +10,10 @@ import {
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
-function AttachmentDialogHandlerBase() {
+/** Mounted once in the app layout: opens the viewer while the URL holds an attachment id, and clears the id on close. */
+export function AttachmentDialogHandler() {
   const navigate = useNavigate();
-  const isOpen = useSearch({ strict: false, select: (s) => !!(s as Record<string, string | undefined>)[attachmentDialogParam] });
+  const isOpen = useSearch({ strict: false, select: (s) => !!s[attachmentDialogParam] });
   const organizationId = useMatch({ from: '/_app/$tenantId/$organizationSlug', shouldThrow: false, select: (m) => m.context.organization?.id });
 
   useEffect(() => {
@@ -29,7 +30,7 @@ function AttachmentDialogHandlerBase() {
         attachmentDialogOptions({
           id: attachmentUrlDialogId,
           triggerRef: fallbackContentRef,
-          onClose: (isCleanup?: boolean) => {
+          onClose: (isCleanup) => {
             if (!isCleanup) close();
           },
           // Open state lives in the URL: remove on ESC/outside-press so the search param clears before a re-open can flash.
@@ -45,5 +46,3 @@ function AttachmentDialogHandlerBase() {
 
   return null;
 }
-
-export const AttachmentDialogHandler = memo(AttachmentDialogHandlerBase);

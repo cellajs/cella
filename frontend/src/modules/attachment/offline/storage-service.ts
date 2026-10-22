@@ -140,7 +140,6 @@ class AttachmentStorageService {
     }
   }
 
-  /** Single primary-key lookup on the composite key. */
   async hasVariant(attachmentId: string, variant: BlobVariant): Promise<boolean> {
     try {
       const blob = await attachmentsDb.blobs.get(makeBlobKey(attachmentId, variant));
@@ -290,7 +289,7 @@ class AttachmentStorageService {
     await attachmentsDb.blobs.update(blobKey, { linkAttempts: attempts, lastError: error });
   }
 
-  /** Get total storage used by blobs for an organization. */
+  /** Bytes the organization's stored blobs take on this device. */
   async getStorageUsed(organizationId: string): Promise<number> {
     try {
       const blobs = await attachmentsDb.blobs.where('organizationId').equals(organizationId).toArray();

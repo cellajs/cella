@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import type { BlobVariant } from '~/modules/attachment/offline/attachments-db';
 import { getPresignedUrlBatched } from '~/modules/attachment/presign-batch';
 
-/** Variants that exist as stored cloud keys (BlobVariant minus the local-only 'raw'). */
+/** Variants stored as cloud keys. */
 export type CloudFileVariant = Exclude<BlobVariant, 'raw'>;
 
 /** Cloud-key fields an attachment carries, enough to resolve any variant's URL. */

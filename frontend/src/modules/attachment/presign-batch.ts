@@ -23,7 +23,7 @@ interface PendingRequest {
 
 /** Requests arriving within this window coalesce into one batch call. */
 const flushWindowMs = 10;
-/** Signed URLs live 24h server-side; serve repeats from memory well within that. */
+/** Well under the server's signed-URL lifetime, so a URL served from memory is still valid. */
 const memoTtlMs = 60 * 60 * 1000;
 /** Server-side cap on items per batch call. */
 const maxItemsPerCall = 50;
@@ -43,7 +43,7 @@ function subscribeOwnerOnce() {
   subscribeOwnerChange(() => memo.clear());
 }
 
-/** Resolve one chunk (same tenant/org, ≤50 items) and settle its per-pair promises. */
+/** Resolves one chunk (one tenant and organization, at most `maxItemsPerCall` items) and settles its per-pair promises. */
 async function sendChunk(requests: PendingRequest[]) {
   const { tenantId, organizationId } = requests[0];
   try {
@@ -85,10 +85,9 @@ function flush() {
 }
 
 /**
- * Presigned URL for a private attachment, coalesced: concurrent requests within a short window
- * merge into one batch call, identical in-flight pairs share one promise, and signed URLs are
- * memoized for an hour. Rejected ids reject with {@link PresignRejectedError}; transport failures
- * reject with the underlying error. Fails fast when offline.
+ * Presigned URL for a private attachment, coalesced: requests within `flushWindowMs` share one batch call, identical in-flight
+ * pairs one promise, and URLs are memoized for `memoTtlMs`. A rejected id rejects with {@link PresignRejectedError}, a
+ * transport failure with its own error; offline it fails at once.
  */
 export function getPresignedUrlBatched(attachmentId: string, variant: CloudFileVariant, tenantId: string, organizationId: string): Promise<string> {
   subscribeOwnerOnce();

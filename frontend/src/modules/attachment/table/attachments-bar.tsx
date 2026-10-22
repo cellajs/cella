@@ -41,7 +41,7 @@ export function AttachmentsTableBar({
   const { open } = useAttachmentsUploadDialog(channel.tenantId, organizationId, placement);
   const canDelete = useCanDeleteAttachment(channel);
 
-  const deleteButtonRef = useRef(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
   const total = useListQueryTotal(queryKey);
 
@@ -75,7 +75,7 @@ export function AttachmentsTableBar({
       label="c:attachment"
       searchName="attachmentSearch"
       allowOfflineSearch
-      actions={canUpload && <TableBarButton icon={UploadIcon} label="c:upload" onClick={() => open()} />}
+      actions={canUpload && <TableBarButton icon={UploadIcon} label="c:upload" onClick={open} />}
       focusView={!isSheet}
       selection={{
         count: selected.length,

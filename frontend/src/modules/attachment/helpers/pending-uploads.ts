@@ -22,9 +22,9 @@ export const isPendingUpload = (attachment: Pick<Attachment, 'keys'>) => !hasClo
 const pendingUploads = new Map<string, PendingUpload>();
 const listeners = new Set<() => void>();
 
-export function markPendingUpload(attachmentId: string, uploader: Attachment['createdBy']): void {
+export const markPendingUpload = (attachmentId: string, uploader: Attachment['createdBy']): void => {
   pendingUploads.set(attachmentId, { uploader });
-}
+};
 
 export const getPendingUpload = (attachmentId: string) => pendingUploads.get(attachmentId);
 
@@ -35,7 +35,7 @@ export const getBlockPendingUpload = (props: Record<string, unknown>) => {
 };
 
 /** Drops the attachments whose file `isStored` now finds in storage and tells subscribers, so placeholders turn into files. */
-export function clearStoredUploads(isStored: (attachmentId: string) => boolean): void {
+export const clearStoredUploads = (isStored: (attachmentId: string) => boolean): void => {
   let cleared = false;
   for (const id of pendingUploads.keys()) {
     if (!isStored(id)) continue;
@@ -43,19 +43,19 @@ export function clearStoredUploads(isStored: (attachmentId: string) => boolean):
     cleared = true;
   }
   if (cleared) for (const listener of listeners) listener();
-}
+};
 
 export const hasPendingUploads = () => pendingUploads.size > 0;
 
 /** Called when any pending attachment's file arrives in storage. */
-export function subscribePendingUploads(listener: () => void): () => void {
+export const subscribePendingUploads = (listener: () => void): (() => void) => {
   listeners.add(listener);
   return () => listeners.delete(listener);
-}
+};
 
 /** What a placeholder says: whose device holds the file. */
-export function pendingUploadMessage({ uploader }: PendingUpload): { key: TKey; params?: { name: string } } {
+export const pendingUploadMessage = ({ uploader }: PendingUpload): { key: TKey; params?: { name: string } } => {
   if (uploader && uploader.id === userStore.getState().user?.id) return { key: 'c:only_on_your_other_device' };
   const name = getFirstName(uploader?.name);
   return name ? { key: 'c:only_on_device', params: { name } } : { key: 'c:not_uploaded_yet' };
-}
+};

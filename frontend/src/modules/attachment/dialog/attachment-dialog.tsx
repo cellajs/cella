@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMatch, useSearch } from '@tanstack/react-router';
-import { t } from 'i18next';
 import { FlameKindlingIcon } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AttachmentsCarousel, headerButtonClass } from '~/modules/attachment/attachments-carousel';
 import { attachmentDialogContentClassName, attachmentDialogParam, attachmentGroupParam } from '~/modules/attachment/dialog/params';
 import { type ResolvableItem, useResolvedAttachments } from '~/modules/attachment/hooks/use-resolved-attachments';
@@ -14,6 +14,7 @@ import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 
 export function AttachmentDialog() {
+  const { t } = useTranslation();
   const removeDialog = useDialoger((state) => state.remove);
   // Primitive selects: the match object is rebuilt on every carousel URL write.
   const tenantId = useMatch({ from: '/_app/$tenantId/$organizationSlug', shouldThrow: false, select: (m) => m.params.tenantId });

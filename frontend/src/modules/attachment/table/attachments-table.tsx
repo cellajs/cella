@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { PaperclipIcon } from 'lucide-react';
-import { useState } from 'react';
+import { type Dispatch, type SetStateAction, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
@@ -37,10 +37,9 @@ export interface AttachmentsTableProps {
   canUpload?: boolean;
 }
 
-function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTableProps) {
-  // Create has no row to resolve 'own' against, so only an unconditional grant shows upload, and
-  // only on channels the app declares as upload targets (`attachmentUploadTargets`).
-  const isUploadTarget = (appConfig.attachmentUploadTargets as readonly string[]).includes(channel.entityType);
+export function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTableProps) {
+  // Create has no row to resolve 'own' against: upload takes an unconditional grant on a channel in `attachmentUploadTargets`.
+  const isUploadTarget = appConfig.attachmentUploadTargets.some((type) => type === channel.entityType);
   const allowUpload = canUpload ?? (isUploadTarget && channel.can?.attachment?.create === true);
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
@@ -53,7 +52,7 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
 
   const [hiddenOverrides, setHiddenOverrides] = useState<Record<string, boolean>>({});
   const columns = useColumns(channel, isSheet).map((column) => ({ ...column, hidden: hiddenOverrides[column.key] ?? column.hidden }));
-  const setColumns: React.Dispatch<React.SetStateAction<ColumnOrColumnGroup<Attachment>[]>> = (updater) => {
+  const setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Attachment>[]>> = (updater) => {
     const nextColumns = typeof updater === 'function' ? updater(columns) : updater;
     setHiddenOverrides((prev) => {
       const next = { ...prev };
@@ -129,5 +128,3 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
     </>
   );
 }
-
-export { AttachmentsTable };

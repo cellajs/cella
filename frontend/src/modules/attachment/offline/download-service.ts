@@ -20,7 +20,6 @@ const variantPriority: CloudFileVariant[] = ['thumbnail', 'preview', 'converted'
 
 const variantFetchTimeoutMs = 30_000;
 
-/** Result of attempting to download a single variant. */
 type VariantResult = 'stored' | 'skipped' | 'failed-auth' | 'failed-other';
 
 class AttachmentDownloadService {
@@ -32,12 +31,8 @@ class AttachmentDownloadService {
   private mutationUnsubscribe: (() => void) | null = null;
   private ownerUnsubscribe: (() => void) | null = null;
 
-  private get config() {
-    return appConfig.localBlobStorage;
-  }
-
   start(): void {
-    if (!this.config.enabled) {
+    if (!appConfig.localBlobStorage.enabled) {
       console.debug('[DownloadService] Local blob storage disabled');
       return;
     }
@@ -120,9 +115,9 @@ class AttachmentDownloadService {
   }
 
   async queueForDownload(attachments: Attachment[]): Promise<void> {
-    if (!this.config.enabled) return;
+    if (!appConfig.localBlobStorage.enabled) return;
 
-    // Skip transient optimistic rows; queue only persisted attachments.
+    // Optimistic rows are not on the server yet.
     const queueable = attachments.filter(isPersisted);
     if (!queueable.length) return;
 
@@ -135,7 +130,7 @@ class AttachmentDownloadService {
   }
 
   async processQueue(): Promise<void> {
-    if (!this.config.enabled) return;
+    if (!appConfig.localBlobStorage.enabled) return;
     if (this.processing) return;
     if (!onlineManager.isOnline()) return;
     if (!getLocalUserDb()) return; // Signed out, no per-user queue to process.
@@ -143,19 +138,18 @@ class AttachmentDownloadService {
     this.processing = true;
 
     try {
-      // Table scan is fine for this small table.
       const pendingEntries = await attachmentsDb.downloadQueue.filter((entry) => entry.status === 'pending').toArray();
 
       if (pendingEntries.length === 0) return;
 
       for (const [organizationId, entries] of groupBy(pendingEntries, (entry) => entry.organizationId)) {
         const used = await attachmentStorage.getStorageUsed(organizationId);
-        if (used >= this.config.maxTotalSize) {
+        if (used >= appConfig.localBlobStorage.maxTotalSize) {
           console.debug(`[DownloadService] Storage limit reached for org ${organizationId}`);
           continue;
         }
 
-        const sorted = entries.sort((a, b) => a.priority - b.priority).slice(0, this.config.downloadConcurrency);
+        const sorted = entries.sort((a, b) => a.priority - b.priority).slice(0, appConfig.localBlobStorage.downloadConcurrency);
 
         await Promise.all(sorted.map((entry) => this.downloadAttachment(entry.id, organizationId)));
       }
@@ -166,7 +160,7 @@ class AttachmentDownloadService {
     }
   }
 
-  /** Downloads variants in priority order (thumbnail, preview, converted, original), then evicts raw. */
+  /** Downloads the variants in `variantPriority` order, then evicts the raw blob once the original is stored. */
   private async downloadAttachment(attachmentId: string, organizationId: string): Promise<void> {
     // Read the cache before claiming the row, so a row whose metadata has not synced does not burn an attempt.
     const attachment = findAttachmentInCache(attachmentId);
@@ -220,10 +214,8 @@ class AttachmentDownloadService {
   }
 
   private async downloadVariant(attachment: Attachment, variant: CloudFileVariant, organizationId: string): Promise<VariantResult> {
-    // This attachment has no object for this variant.
     if (!getVariantKey(attachment, variant)) return 'skipped';
 
-    // Already have it locally.
     if (await attachmentStorage.hasVariant(attachment.id, variant)) return 'skipped';
 
     try {

@@ -50,7 +50,6 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
   try {
     const ids = attachments.map((attachment) => attachment.id);
 
-    // Single indexed lookup: primary key on `id` makes this O(log n).
     const existingEntries = await attachmentsDb.downloadQueue.where('id').anyOf(ids).toArray();
     const existingById = new Map(existingEntries.map((entry) => [entry.id, entry]));
 
@@ -161,7 +160,6 @@ function matchesMimePattern(mimeType: string, pattern: string): boolean {
   return mimeType === pattern;
 }
 
-/** Download priority; lower runs first. */
 function calculatePriority(attachment: Attachment): number {
   const type = attachment.contentType || '';
   if (type.startsWith('image/')) return 1;

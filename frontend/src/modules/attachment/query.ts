@@ -139,7 +139,7 @@ export const findAttachmentInCache = createCacheFinder<Attachment>('attachment')
 export const fetchAttachment = (tenantId: string, organizationId: string, id: string) =>
   queryClient.query({ ...attachmentQueryOptions(tenantId, organizationId, id), staleTime: 'static' }).catch(() => null);
 
-export function useGroupAttachments(tenantId: string | undefined, organizationId: string | undefined, groupId: string | undefined) {
+export const useGroupAttachments = (tenantId: string | undefined, organizationId: string | undefined, groupId: string | undefined) => {
   const { data } = useQuery({
     ...attachmentsCanonicalOptions({ organizationId: organizationId!, tenantId: tenantId! }),
     enabled: !!tenantId && !!organizationId && !!groupId,
@@ -151,7 +151,7 @@ export function useGroupAttachments(tenantId: string | undefined, organizationId
   });
 
   return data ?? null;
-}
+};
 
 type CreateData = Awaited<ReturnType<typeof createAttachmentsMutationFn>>;
 type UpdateData = Awaited<ReturnType<typeof updateAttachmentMutationFn>>;
@@ -297,7 +297,7 @@ export const useAttachmentUpdateMutation = (tenantId: string, organizationId: st
   return { ...mutation, ...buildPreparedHandlers(mutation, prepare) };
 };
 
-/** Prepared delete mutation: usable offline and squashes multiple deletes into one. */
+/** A row whose create is still queued offline leaves the cache without a request (`prepareProductDelete`). */
 export const useAttachmentDeleteMutation = (tenantId: string, organizationId: string) => {
   const queryClient = useQueryClient();
   const mutation = useMutation(attachmentDeleteOptions(queryClient));

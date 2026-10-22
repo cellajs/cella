@@ -37,6 +37,7 @@ interface ControlButtonProps {
   onClick: () => void;
   icon: IconComponent;
 }
+
 function ControlButton({ tooltipContent, onClick, icon: Icon }: ControlButtonProps) {
   // The bar floats over the image: a solid hover fill in dark mode too, where outline's own is translucent.
   return (
@@ -50,7 +51,7 @@ function ControlButton({ tooltipContent, onClick, icon: Icon }: ControlButtonPro
 
 export function RenderImage({ image, alt, showButtons, imageClassName, onPanModeChange, backdropDismiss = false }: RenderImageProps) {
   const { t } = useTranslation();
-  // On by default when no onPanModeChange is passed.
+  // Without onPanModeChange there is no pan toggle, so pan stays on.
   const [panEnabled, setPanEnabled] = useState(!onPanModeChange);
   const { rotation, zoomed, panBy, panProps, layerStyle, zoomIn, zoomOut, rotateRight, reset } = usePanZoom(panEnabled);
 

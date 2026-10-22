@@ -92,7 +92,7 @@ function subscribe(listener: () => void) {
   listeners.add(listener);
   if (listeners.size === 1) {
     subscribeQuery();
-    // liveQuery tracks only the DB it first resolved, so re-subscribe when the per-user localUserDb rebinds.
+    // A rebound per-user DB starts empty and gets its own live query.
     stopOwnerChange = subscribeOwnerChange(() => {
       publish(new Map());
       subscribeQuery();

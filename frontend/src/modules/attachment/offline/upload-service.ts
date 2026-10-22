@@ -90,7 +90,7 @@ class AttachmentUploadService {
     }
   }
 
-  /** Upload blobs for a specific organization. Each blob gets a fresh token via lazy assemblyOptions. */
+  /** Each blob gets a fresh token through the lazy `assemblyOptions`. */
   private async uploadOrganizationBlobs(organizationId: string, blobs: AttachmentBlob[]): Promise<void> {
     const availability = await this.checkCloudAvailability(organizationId);
     // An unreachable server says nothing about cloud storage: the blobs stay pending for the next run.

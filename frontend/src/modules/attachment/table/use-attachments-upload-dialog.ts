@@ -1,4 +1,4 @@
-import { t } from 'i18next';
+import i18n from 'i18next';
 import { appConfig } from 'shared';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
 import { useAttachmentCreateMutation } from '~/modules/attachment/query';
@@ -7,7 +7,7 @@ import type { UploadResults } from '~/modules/common/uploader/types';
 import { uploader } from '~/modules/common/uploader/use-uploader';
 
 const maxNumberOfFiles = 20;
-const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
+const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize;
 
 export const useAttachmentsUploadDialog = (
   tenantId: string,
@@ -25,7 +25,7 @@ export const useAttachmentsUploadDialog = (
       uploader.getState().remove();
 
       if (attachments.length === 0) {
-        toaster.error(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }));
+        toaster.error(i18n.t('error:create_resource', { resource: i18n.t('c:attachment').toLowerCase() }));
         return;
       }
 
@@ -33,7 +33,7 @@ export const useAttachmentsUploadDialog = (
       createAttachments.mutate(attachments);
     };
 
-    const item = t('c:attachment_other').toLowerCase();
+    const item = i18n.t('c:attachment_other').toLowerCase();
     uploader.getState().create({
       personalUpload: false,
       organizationId,
@@ -41,8 +41,8 @@ export const useAttachmentsUploadDialog = (
       restrictions: { maxNumberOfFiles, maxTotalFileSize, allowedFileTypes: ['*/*'] },
       plugins: ['webcam', 'image-editor', 'screen-capture', 'audio', 'url'],
       onComplete,
-      title: t('c:upload_item', { item }),
-      description: t('c:upload_multiple.text', { item, count: maxNumberOfFiles }),
+      title: i18n.t('c:upload_item', { item }),
+      description: i18n.t('c:upload_multiple.text', { item, count: maxNumberOfFiles }),
     });
   };
 
