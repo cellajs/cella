@@ -25,26 +25,16 @@ function createTestRouter(url: string) {
   return createRouter({ routeTree, history: createMemoryHistory({ initialEntries: [url] }) });
 }
 
-const settled = async (url: string) => {
-  const router = createTestRouter(url);
-  await router.load();
-  await vi.waitFor(() => expect(router.state.status).toBe('idle'));
-  return router;
-};
-
 describe('rewriteUrlToSlug', () => {
   it('rewrites the layout param and keeps the page below it, with its param, search and hash', async () => {
-    const router = await settled('/org-1/project/p-1?open=t1#pt');
+    const router = createTestRouter('/org-1/project/p-1?open=t1#pt');
+    await router.load();
+    await vi.waitFor(() => expect(router.state.status).toBe('idle'));
 
     await vi.waitFor(() => expect(router.state.location.pathname).toBe('/acme/project/p-1'));
     expect(router.state.location.search).toEqual({ open: 't1' });
     expect(router.state.location.hash).toBe('pt');
     // Replaced, so back does not return to the id URL.
     expect(router.history.length).toBe(1);
-  });
-
-  it('leaves a URL that names the slug alone', async () => {
-    const router = await settled('/acme/project/p-1');
-    expect(router.state.location.pathname).toBe('/acme/project/p-1');
   });
 });

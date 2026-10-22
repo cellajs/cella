@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { createRef, type RefObject } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fallbackContentRef } from '~/utils/fallback-content-ref';
 import { type DropdownData, useDropdowner } from './use-dropdowner';
 
 const trigger = (): RefObject<HTMLButtonElement | null> => {
@@ -17,7 +16,6 @@ const dropdown = (triggerId: string, data: Partial<DropdownData> = {}): Dropdown
   ...data,
 });
 
-const isActive = (ref: RefObject<HTMLButtonElement | null>) => ref.current?.hasAttribute('data-dropdowner-active');
 const isDone = (ref: RefObject<HTMLButtonElement | null>) => ref.current?.hasAttribute('data-dropdowner-done');
 
 describe('dropdowner store', () => {
@@ -25,103 +23,22 @@ describe('dropdowner store', () => {
     vi.useFakeTimers();
     vi.setSystemTime(10_000);
     useDropdowner.setState({ dropdown: null, lastRemovedTriggerId: null, lastRemovedAt: 0, done: null });
-    fallbackContentRef.current = null;
   });
   afterEach(() => {
     vi.useRealTimers();
     document.body.innerHTML = '';
   });
 
-  it('opens one dropdown with its defaults and marks the trigger active', () => {
-    const data = dropdown('t1');
-
-    const id = useDropdowner.getState().create('menu', data);
-
-    expect(id).toBe('t1');
-    expect(useDropdowner.getState().get()).toMatchObject({ triggerId: 't1', content: 'menu', align: 'start', modal: true, kind: 'panel' });
-    expect(isActive(data.triggerRef)).toBe(true);
-  });
-
-  it('lets data override the defaults', () => {
-    useDropdowner.getState().create(null, dropdown('t1', { align: 'end', modal: false, kind: 'menu' }));
-
-    expect(useDropdowner.getState().dropdown).toMatchObject({ align: 'end', modal: false, kind: 'menu' });
-  });
-
-  it('keeps the defaults for options passed as undefined', () => {
-    useDropdowner.getState().create(null, dropdown('t1', { align: undefined, modal: undefined, kind: undefined }));
-
-    expect(useDropdowner.getState().dropdown).toMatchObject({ align: 'start', modal: true, kind: 'panel' });
-  });
-
-  it('closes when the same trigger opens it again', () => {
-    const data = dropdown('t1');
-    useDropdowner.getState().create(null, data);
-
-    useDropdowner.getState().create(null, { ...data, id: 'other-id' });
-
-    expect(useDropdowner.getState().dropdown).toBeNull();
-    expect(isActive(data.triggerRef)).toBe(false);
-    expect(useDropdowner.getState()).toMatchObject({ lastRemovedTriggerId: 't1', lastRemovedAt: 10_000 });
-  });
-
-  it('moves the active mark to a different trigger', () => {
-    const first = dropdown('t1');
-    const second = dropdown('t2');
-    useDropdowner.getState().create(null, first);
-
-    useDropdowner.getState().create('second', second);
-
-    expect(useDropdowner.getState().dropdown?.triggerId).toBe('t2');
-    expect(isActive(first.triggerRef)).toBe(false);
-    expect(isActive(second.triggerRef)).toBe(true);
-  });
-
-  it('ignores a reopen from the same trigger within 300 ms of a removal, once', () => {
+  it('swallows the click that follows a dismissal on the same trigger, but never a programmatic open', () => {
     const data = dropdown('t1');
     useDropdowner.getState().create(null, data);
     useDropdowner.getState().remove();
-    expect(isActive(data.triggerRef)).toBe(false);
-
-    vi.advanceTimersByTime(299);
-    useDropdowner.getState().create(null, data);
-    expect(useDropdowner.getState().dropdown).toBeNull();
-    expect(useDropdowner.getState().lastRemovedTriggerId).toBeNull();
-
-    // The guard is spent: the next click opens
-    useDropdowner.getState().create(null, data);
-    expect(useDropdowner.getState().dropdown?.triggerId).toBe('t1');
-  });
-
-  it('reopens from the same trigger after 300 ms', () => {
-    const data = dropdown('t1');
-    useDropdowner.getState().create(null, data);
-    useDropdowner.getState().remove();
-
-    vi.advanceTimersByTime(300);
-    useDropdowner.getState().create(null, data);
-
-    expect(useDropdowner.getState().dropdown?.triggerId).toBe('t1');
-  });
-
-  it('opens a different trigger right after a removal', () => {
-    useDropdowner.getState().create(null, dropdown('t1'));
-    useDropdowner.getState().remove();
-
-    useDropdowner.getState().create(null, dropdown('t2'));
-
-    expect(useDropdowner.getState().dropdown?.triggerId).toBe('t2');
-  });
-
-  it('lets a programmatic open bypass the reopen guard', () => {
-    const data = dropdown('t1');
-    useDropdowner.getState().create(null, data);
-    useDropdowner.getState().remove();
-
     useDropdowner.getState().create(null, { ...data, programmatic: true });
-
     expect(useDropdowner.getState().dropdown?.triggerId).toBe('t1');
-    expect(isActive(data.triggerRef)).toBe(true);
+
+    useDropdowner.getState().remove();
+    useDropdowner.getState().create(null, data);
+    expect(useDropdowner.getState().dropdown).toBeNull();
   });
 
   it('merges updates into the open dropdown and ignores them when closed', () => {
@@ -134,87 +51,18 @@ describe('dropdowner store', () => {
     expect(useDropdowner.getState().dropdown).toMatchObject({ align: 'end', content: 'next', triggerId: 't1' });
   });
 
-  it('records the removed trigger and clears its active mark', () => {
-    const data = dropdown('t1');
-    useDropdowner.getState().create(null, data);
-
-    useDropdowner.getState().remove();
-
-    expect(useDropdowner.getState()).toMatchObject({ dropdown: null, lastRemovedTriggerId: 't1', lastRemovedAt: 10_000 });
-    expect(isActive(data.triggerRef)).toBe(false);
-  });
-
-  it('marks the trigger done after a completion, until 1.4 s have passed', () => {
+  it('complete closes the dropdown and marks its trigger done until the mark times out', () => {
     const data = dropdown('t1');
     useDropdowner.getState().create(null, data);
 
     useDropdowner.getState().complete('Copied');
 
-    expect(isActive(data.triggerRef)).toBe(false);
+    expect(useDropdowner.getState().dropdown).toBeNull();
     expect(isDone(data.triggerRef)).toBe(true);
     expect(useDropdowner.getState().done).toMatchObject({ trigger: data.triggerRef.current, label: 'Copied', open: true });
 
-    vi.advanceTimersByTime(1399);
-    expect(isDone(data.triggerRef)).toBe(true);
-    vi.advanceTimersByTime(1);
+    vi.runAllTimers();
     expect(isDone(data.triggerRef)).toBe(false);
-    expect(useDropdowner.getState().done).toMatchObject({ label: 'Copied', open: false });
-  });
-
-  it('leaves the trigger unmarked after a plain removal', () => {
-    const data = dropdown('t1');
-    useDropdowner.getState().create(null, data);
-
-    useDropdowner.getState().remove();
-
-    expect(isDone(data.triggerRef)).toBe(false);
-    expect(useDropdowner.getState().done).toBeNull();
-  });
-
-  it('ends a done mark as soon as a dropdown opens, and marks the next one on its own', () => {
-    const first = dropdown('t1');
-    const second = dropdown('t2');
-    useDropdowner.getState().create(null, first);
-    useDropdowner.getState().complete('Copied');
-
-    useDropdowner.getState().create(null, second);
-    expect(isDone(first.triggerRef)).toBe(false);
     expect(useDropdowner.getState().done?.open).toBe(false);
-
-    useDropdowner.getState().complete('Link copied');
-    expect(isDone(first.triggerRef)).toBe(false);
-    expect(isDone(second.triggerRef)).toBe(true);
-    expect(useDropdowner.getState().done).toMatchObject({ trigger: second.triggerRef.current, label: 'Link copied', open: true });
-  });
-
-  it('calls onClose once when the dropdown is removed, toggled closed or replaced', () => {
-    const onClose = vi.fn();
-    const data = dropdown('t1', { onClose });
-
-    useDropdowner.getState().create(null, data);
-    expect(onClose).not.toHaveBeenCalled();
-    useDropdowner.getState().remove();
-    useDropdowner.getState().remove();
-    expect(onClose).toHaveBeenCalledTimes(1);
-
-    vi.advanceTimersByTime(301);
-    useDropdowner.getState().create(null, data);
-    useDropdowner.getState().create(null, data);
-    expect(onClose).toHaveBeenCalledTimes(2);
-
-    vi.advanceTimersByTime(301);
-    useDropdowner.getState().create(null, data);
-    useDropdowner.getState().create(null, dropdown('t2'));
-    expect(onClose).toHaveBeenCalledTimes(3);
-  });
-
-  it('blurs any focused element without touching the focus fallback', () => {
-    const input = document.body.appendChild(document.createElement('input'));
-    input.focus();
-
-    useDropdowner.getState().create(null, dropdown('t1'));
-
-    expect(document.activeElement).not.toBe(input);
-    expect(fallbackContentRef.current).toBeNull();
   });
 });

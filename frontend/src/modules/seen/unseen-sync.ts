@@ -16,7 +16,7 @@ export function noteUnseenReconciled(): void {
 }
 
 /** Badge deltas for a synced seq range: new-and-unseen rows +1, tombstoned-and-unseen rows -1, under the server's `findUnseenCountsByUser` filters. */
-export function ingestSyncedRows(productType: ProductEntityType, fallbackChannelId: string, rows: { id: string; [key: string]: unknown }[]): void {
+function ingestSyncedRows(productType: ProductEntityType, fallbackChannelId: string, rows: { id: string; [key: string]: unknown }[]): void {
   if (!isSeenTracked(productType)) return;
   const cutoff = Date.now() - seenWindowMs;
 

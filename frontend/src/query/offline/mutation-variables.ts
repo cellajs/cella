@@ -66,7 +66,7 @@ export function registerVariablesVersion(mutationKey: readonly unknown[], versio
 }
 
 /** The version of the variables a mutation of this key is issued with now. */
-export const variablesVersionOf = (mutationKey: unknown): number => versions.get(versionKey(mutationKey))?.version ?? 1;
+const variablesVersionOf = (mutationKey: unknown): number => versions.get(versionKey(mutationKey))?.version ?? 1;
 
 /** A queued mutation as the persister stores it: `meta.variablesVersion` is the version of its variables. */
 type StoredMutation = DehydratedState['mutations'][number];

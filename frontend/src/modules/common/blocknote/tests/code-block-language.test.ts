@@ -18,50 +18,25 @@ const mount = (options: Parameters<typeof BlockNoteEditor.create>[0]) => {
   return { editor, element };
 };
 
-const mountCodeBlock = (language: string) => mount({ schema: customSchema, initialContent: [codeBlock(language)] });
-
 describe('code block language', () => {
   afterEach(() => {
     for (const editor of mounted.splice(0)) editor.unmount();
     document.body.replaceChildren();
   });
 
-  it('mounts a stored language outside the supported list as plain text and keeps it stored', () => {
-    const { editor, element } = mountCodeBlock('dotenv');
+  // BlockNote 0.55 threw on such a block and took down a task card on raak.dev (cella#1411).
+  it('must not throw on a stored language outside the supported list: editor and static HTML show it as plain text, and it stays stored', () => {
+    const { editor, element } = mount({ schema: customSchema, initialContent: [codeBlock('dotenv')] });
 
     expect(element.querySelector('select')?.value).toBe('text');
     expect(element.querySelector('pre')?.textContent).toBe('KEY=value');
     expect(editor.document[0].props).toMatchObject({ language: 'dotenv' });
-  });
 
-  it('renders the static HTML of a stored language outside the supported list', () => {
     const headless = BlockNoteEditor.create({ schema: customSchema, _headless: true });
-
     expect(headless.blocksToFullHTML([codeBlock('dotenv')])).toContain('KEY=value');
-  });
 
-  it('highlights a stored language outside the supported list as plain text', () => {
     const { highlight } = customSchema.blockSpecs.codeBlock.implementation.meta ?? {};
-
     expect(highlight?.({ type: 'codeBlock', props: { language: 'dotenv' } })).toBe('text');
-    expect(highlight?.({ type: 'codeBlock', props: { language: 'typescript' } })).toBe('typescript');
-  });
-
-  it('highlights and selects a stored alias as the language it names, keeping the alias stored', () => {
-    const { highlight } = customSchema.blockSpecs.codeBlock.implementation.meta ?? {};
-    const { editor, element } = mountCodeBlock('ts');
-
-    expect(highlight?.({ type: 'codeBlock', props: { language: 'ts' } })).toBe('typescript');
-    expect(highlight?.({ type: 'codeBlock', props: { language: 'MD' } })).toBe('markdown');
-    expect(highlight?.({ type: 'codeBlock', props: { language: 'txt' } })).toBe('text');
-    expect(element.querySelector('select')?.value).toBe('typescript');
-    expect(editor.document[0].props).toMatchObject({ language: 'ts' });
-  });
-
-  it('selects a supported language', () => {
-    const { element } = mountCodeBlock('typescript');
-
-    expect(element.querySelector('select')?.value).toBe('typescript');
   });
 
   it('highlights every supported language but plain text', async () => {

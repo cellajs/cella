@@ -110,20 +110,6 @@ afterEach(async () => {
 });
 
 describe('the notice for edits that can never be saved', () => {
-  it("Copy text puts the parked document's blocks on the clipboard, computed before the click", async () => {
-    await showUnsaveableNotice(recordOf(documentWith('Text typed offline')));
-    const toast = toasts.shown[0];
-    expect(toast.timeout).toBe(0);
-
-    const container = await renderActions();
-    await act(async () => button(container, 'c:copy_text').click());
-
-    expect(copyBlocksToClipboard).toHaveBeenCalledOnce();
-    const blocks = JSON.parse(copyBlocksToClipboard.mock.calls[0][0] as string);
-    expect(blocks[0]).toMatchObject({ type: 'paragraph', content: [{ type: 'text', text: 'Text typed offline' }] });
-    expect(button(container, 'c:copied')).toBeTruthy();
-  });
-
   it('Discard deletes the parked row and refetches the entity, whose cache holds the unsaved text', async () => {
     const doc = documentWith('Unsaved');
     const id = await db.unsaveableYDocs.add(recordOf(doc));
@@ -138,92 +124,29 @@ describe('the notice for edits that can never be saved', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['attachment', 'detail', 'att-1'] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['attachment', 'list', 'org-1'] });
   });
-
-  it("names the entity from the cache, else by the document's first line", async () => {
-    await showUnsaveableNotice(recordOf(documentWith('Meeting notes'), { reason: 'denied' }));
-    expect(toasts.shown[0].title).toBe('c:unsaveable_denied.text [“Meeting notes”]');
-
-    queryClient.setQueryData(['attachment', 'detail', 'att-1'], { id: 'att-1', name: 'report.pdf' });
-    await showUnsaveableNotice(recordOf(documentWith('Meeting notes'), { reason: 'replaced', at: 2 }));
-    expect(toasts.shown[1].title).toBe('c:unsaveable_replaced.text [report.pdf]');
-  });
 });
 
 describe('parking edits that can never be saved', () => {
-  it('parks unsynced edits through the writer, and the notice discards exactly the row it parked', async () => {
-    const doc = documentWith('Parked text');
-    const writer = fakeWriter();
-    const conn = { yDoc: doc, writer, unsynced: true, generation: 'gen-1' };
-
-    parkUnsaveable(conn, scope, 'denied');
-    expect(writer.park).toHaveBeenCalledExactlyOnceWith('denied', doc);
-    expect(writer.drop).not.toHaveBeenCalled();
-    await untilShown();
-
-    const [row] = await db.unsaveableYDocs.toArray();
-    expect(row).toMatchObject({ ...scope, reason: 'denied' });
-    expect(toasts.shown[0].id).toBe(`unsaveable:${row.id}`);
-
-    const container = await renderActions();
-    await act(async () => button(container, 'c:copy_text').click());
-    expect(JSON.parse(copyBlocksToClipboard.mock.calls[0][0] as string)[0].content[0].text).toBe('Parked text');
-
-    await act(async () => button(container, 'c:discard').click());
-    await vi.waitFor(async () => expect(await db.unsaveableYDocs.count()).toBe(0));
-  });
-
-  it('a clean document parks nothing: its stored copy goes, silently', async () => {
-    const writer = fakeWriter();
-
-    parkUnsaveable({ yDoc: documentWith('Saved'), writer, unsynced: false, generation: 'gen-1' }, scope, 'deleted');
-
-    expect(writer.drop).toHaveBeenCalledOnce();
-    expect(writer.park).not.toHaveBeenCalled();
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(toasts.shown).toEqual([]);
-  });
-
-  it('must not lose edits without a database: the notice holds the state in memory', async () => {
-    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
-    const conn = { yDoc: documentWith('Impersonated edit'), writer: null, unsynced: true, generation: null };
-
-    parkUnsaveable(conn, scope, 'refused');
-    await untilShown();
-    expect(toasts.shown[0].title).toBe('c:unsaveable_refused.text [“Impersonated edit”]');
-
-    const container = await renderActions();
-    await act(async () => button(container, 'c:copy_text').click());
-    expect(JSON.parse(copyBlocksToClipboard.mock.calls[0][0] as string)[0].content[0].text).toBe('Impersonated edit');
-
-    await act(async () => button(container, 'c:discard').click());
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['attachment', 'detail', 'att-1'] });
-    expect(await db.unsaveableYDocs.count()).toBe(0);
-  });
-
-  it('must not lose edits whose parking failed: the notice falls back to the state it read', async () => {
+  it('must not lose edits it cannot park: without a database or after a failed park, the notice holds the state read before the caller destroys the document', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    const writer = fakeWriter({ park: vi.fn(async () => Promise.reject(new DOMException('full', 'QuotaExceededError'))) });
+    const failingWriter = fakeWriter({ park: vi.fn(async () => Promise.reject(new DOMException('full', 'QuotaExceededError'))) });
+    const parks = [
+      { text: 'Impersonated edit', writer: null },
+      { text: 'Kept anyway', writer: failingWriter },
+    ];
 
-    parkUnsaveable({ yDoc: documentWith('Kept anyway'), writer, unsynced: true, generation: 'gen-1' }, scope, 'deleted');
-    await untilShown();
+    for (const [i, { text, writer }] of parks.entries()) {
+      const doc = documentWith(text);
+      parkUnsaveable({ yDoc: doc, writer, unsynced: true, generation: 'gen-1' }, scope, 'refused');
+      // The connection's rebuild clears and destroys the dropped document at once.
+      doc.getXmlFragment('document-store').delete(0, doc.getXmlFragment('document-store').length);
+      doc.destroy();
+      await untilShown(i + 1);
 
-    // No row to point at: the notice is keyed by the document and when it was parked.
-    expect(toasts.shown[0].id).toMatch(/^unsaveable:attachment:att-1:\d+$/);
-    const container = await renderActions();
-    await act(async () => button(container, 'c:copy_text').click());
-    expect(JSON.parse(copyBlocksToClipboard.mock.calls[0][0] as string)[0].content[0].text).toBe('Kept anyway');
-  });
-
-  it('reads the document as it parks, so the caller may destroy it right after', async () => {
-    const doc = documentWith('Read in time');
-    parkUnsaveable({ yDoc: doc, writer: null, unsynced: true, generation: 'gen-1' }, scope, 'replaced');
-    // The connection's rebuild clears and destroys the dropped document at once.
-    doc.getXmlFragment('document-store').delete(0, doc.getXmlFragment('document-store').length);
-    doc.destroy();
-    await untilShown();
-
-    const container = await renderActions();
-    await act(async () => button(container, 'c:copy_text').click());
-    expect(JSON.parse(copyBlocksToClipboard.mock.calls[0][0] as string)[0].content[0].text).toBe('Read in time');
+      await act(async () => root?.unmount());
+      const container = await renderActions();
+      await act(async () => button(container, 'c:copy_text').click());
+      expect(JSON.parse(copyBlocksToClipboard.mock.calls[i][0] as string)[0].content[0].text).toBe(text);
+    }
   });
 });

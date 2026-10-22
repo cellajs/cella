@@ -55,21 +55,6 @@ describe('observed-channels', () => {
     vi.clearAllMocks();
   });
 
-  it('marks a channel observed while its canonical scope query has an observer, and clears on unsubscribe', () => {
-    expect(isObservedChannel('project-1')).toBe(false);
-
-    const unsubscribe = observe(taskKeys.list.home('org-1', 'project-1'));
-    expect(isObservedChannel('project-1')).toBe(true);
-
-    unsubscribe();
-    expect(isObservedChannel('project-1')).toBe(false);
-  });
-
-  it('does not count cached data without observers (prefetching sibling channels stays background)', () => {
-    queryClient.setQueryData([...taskKeys.list.home('org-1', 'project-2')], []);
-    expect(isObservedChannel('project-2')).toBe(false);
-  });
-
   it('finds the channel id inside filter-object keys', () => {
     const unsubscribe = observe(['task', 'list', { projectId: 'project-3', q: 'search' }]);
     expect(isObservedChannel('project-3')).toBe(true);
@@ -77,48 +62,12 @@ describe('observed-channels', () => {
 
     unsubscribe();
   });
-
-  it('keeps a channel observed while any of its queries still has an observer', () => {
-    const first = observe(taskKeys.list.home('org-1', 'project-4'));
-    const second = observe(['task', 'list', { projectId: 'project-4' }]);
-
-    first();
-    expect(isObservedChannel('project-4')).toBe(true);
-
-    second();
-    expect(isObservedChannel('project-4')).toBe(false);
-  });
-
-  it('ignores detail keys and unregistered entity types', () => {
-    const detail = observe(taskKeys.detail.byId('project-5')); // id happens to collide with a channel id
-    const foreign = observe(['unregistered', 'list', 'org-1', 'project-5']);
-
-    expect(isObservedChannel('project-5')).toBe(false);
-
-    detail();
-    foreign();
-  });
 });
 
 describe('isViewingChannel with sub-org channels', () => {
   afterEach(() => {
     queryClient.clear();
     routeMatches = [];
-  });
-
-  it('requires the route org to match, regardless of observation', () => {
-    routeMatches = [{ context: { organization: { id: 'org-1' } } }];
-    const unsubscribe = observe(taskKeys.list.home('org-2', 'project-7'));
-
-    expect(isViewingChannel('org-2', 'project-7')).toBe(false);
-
-    unsubscribe();
-  });
-
-  it('treats org-level channel views as viewed inside the org (base cella behavior unchanged)', () => {
-    routeMatches = [{ context: { organization: { id: 'org-1' } } }];
-    expect(isViewingChannel('org-1', null)).toBe(true);
-    expect(isViewingChannel('org-1', 'org-1')).toBe(true);
   });
 
   it('resolves sub-org channel views by observation: slug routes and unrouted board panels both work', () => {

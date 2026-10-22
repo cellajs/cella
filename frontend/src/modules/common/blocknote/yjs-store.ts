@@ -26,13 +26,13 @@ import { isLeader, tabCoordinatorStore } from '~/query/realtime/tab-coordinator'
 /** The longest a load may hold up the provider's connect. */
 export const STORE_LOAD_TIMEOUT_MS = 5_000;
 /** A document's update rows are trimmed into its base past this many rows, or past `TRIM_BYTES`. */
-export const TRIM_ROWS = 100;
+const TRIM_ROWS = 100;
 const TRIM_BYTES = 256 * 1024;
 /** A trim waits this long for more rows, so a burst of edits trims once. */
-export const TRIM_DEBOUNCE_MS = 2_000;
+const TRIM_DEBOUNCE_MS = 2_000;
 /** Eviction removes the least recently opened documents past this many, or past `MAX_STORED_BYTES` in all. */
 export const MAX_STORED_DOCS = 200;
-export const MAX_STORED_BYTES = 50 * 1024 * 1024;
+const MAX_STORED_BYTES = 50 * 1024 * 1024;
 /** Eviction leaves a document opened within this window alone: another tab may hold it open. */
 const EVICT_MIN_AGE_MS = 60 * 60_000;
 /** Eviction runs at most this often after a first store or a trim. */
@@ -40,7 +40,7 @@ const EVICT_INTERVAL_MS = 60_000;
 /** Without offline access (session mode), eviction also drops synced documents not opened within this window. */
 const SESSION_KEEP_MS = 2 * 60 * 60_000;
 /** Background connections boot resume opens at a time. */
-export const RESUME_CONCURRENCY = 3;
+const RESUME_CONCURRENCY = 3;
 
 /** The origin a stored state is applied with: no edit of this tab, and nothing to store again. */
 export const storageOrigin = Symbol('yjs-store');
@@ -727,7 +727,7 @@ let resuming: Promise<void> | null = null;
  * In the leader tab, uploads the stored documents with unsynced edits through background connections, a few at a time:
  * without it, edits made offline in a tab since closed reach other users only when their author reopens the document.
  */
-export function resumeYDocs(): Promise<void> {
+function resumeYDocs(): Promise<void> {
   if (resuming) return resuming;
   resuming = (async () => {
     if (!isLeader() || !onlineManager.isOnline() || !appConfig.services.yjs.enabled || !appConfig.yjsUrl) return;
