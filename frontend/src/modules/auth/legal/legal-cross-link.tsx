@@ -8,7 +8,12 @@ const LegalDialogNavContext = createContext<((subject: LegalSubject) => void) | 
 
 export const LegalDialogNavProvider = LegalDialogNavContext.Provider;
 
-export function LegalCrossLink({ subject, children }: { subject: LegalSubject; children: ReactNode }) {
+interface LegalCrossLinkProps {
+  subject: LegalSubject;
+  children: ReactNode;
+}
+
+export function LegalCrossLink({ subject, children }: LegalCrossLinkProps) {
   const navigateInDialog = use(LegalDialogNavContext);
 
   if (navigateInDialog) {

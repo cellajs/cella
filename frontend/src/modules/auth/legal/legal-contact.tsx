@@ -2,8 +2,12 @@ import { BuildingIcon } from 'lucide-react';
 import { appConfig } from 'shared';
 import { cn } from '~/utils/cn';
 
+interface SupportEmailLinkProps {
+  className?: string;
+}
+
 /** The support address as a mail link. */
-export function SupportEmailLink({ className }: { className?: string }) {
+export function SupportEmailLink({ className }: SupportEmailLinkProps) {
   const { supportEmail } = appConfig.company;
 
   return (
@@ -13,14 +17,14 @@ export function SupportEmailLink({ className }: { className?: string }) {
   );
 }
 
-export function LegalContact({ addressOnly = false, className }: { addressOnly?: boolean; className?: string }) {
-  const companyFull = appConfig.company.name;
-  const streetAddress = appConfig.company.streetAddress;
-  const postcode = appConfig.company.postcode;
-  const city = appConfig.company.city;
-  const country = appConfig.company.country;
-  const registration = appConfig.company.registration;
-  const vatNumber = appConfig.company.vatNumber;
+interface LegalContactProps {
+  /** Leaves out the registration and VAT lines. */
+  addressOnly?: boolean;
+  className?: string;
+}
+
+export function LegalContact({ addressOnly = false, className }: LegalContactProps) {
+  const { name, streetAddress, postcode, city, country, registration, vatNumber } = appConfig.company;
 
   return (
     <div className={cn('not-prose flex gap-6', className)}>
@@ -30,7 +34,7 @@ export function LegalContact({ addressOnly = false, className }: { addressOnly?:
       </span>
       <ul>
         <li className="mb-2">
-          <strong>{companyFull}</strong>
+          <strong>{name}</strong>
         </li>
         <li>{streetAddress}</li>
         <li>

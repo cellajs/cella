@@ -24,8 +24,7 @@ export function AuthErrorPage() {
   // Any other refusal of an invitation round trip (a provider account on another address) resumes the invitation.
   const resumeTokenId = resendTokenId ? undefined : tokenId;
 
-  // An institution sign-in found the address on an existing account: this browser may ask once for a sign-in link to
-  // that address, which lands on the account page to connect the institution account.
+  // The address already has an account: this browser may ask once for a sign-in link, which opens the account page to connect the institution.
   const offersRecoveryLink = errorType === 'sso_email_exists' && magicLinkEnabled;
   const { mutate: sendRecoveryLink, isPending: isSendingRecoveryLink } = useMutation({
     mutationFn: () => sendSsoRecoveryLink(),

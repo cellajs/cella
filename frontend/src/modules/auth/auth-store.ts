@@ -5,11 +5,16 @@ type MagicLinkMode = 'signin' | 'signup';
 
 interface AuthStoreState {
   step: AuthStep;
+  /** The address the step is for; empty until the visitor gives one. */
   email: string;
-  restrictedMode: boolean; // Neutral step: silent on whether the address has an account (unknown browser or limited IP)
-  signedIn: boolean; // True after successful sign-in, prevents UI flash during route transition
-  magicLinkMode: MagicLinkMode; // Which flow triggered the magicLinkSent step, used for contextual copy
-  inviteOtherAccount: boolean; // Invitation in hand, and the visitor chose to answer it with another account than the invited address
+  /** The neutral step, which does not tell whether the address has an account (an unknown browser or a limited IP). */
+  restrictedMode: boolean;
+  /** Set by an in-page sign-in: the auth pages show a spinner until the route changes. */
+  signedIn: boolean;
+  /** The flow that sent the link, for the wording of the link-sent step. */
+  magicLinkMode: MagicLinkMode;
+  /** An invitation in hand, which the visitor answers with another account than the invited address. */
+  inviteOtherAccount: boolean;
 }
 
 interface AuthStoreActions {
@@ -32,12 +37,12 @@ const initStore: AuthStoreState = {
 
 export const useAuthStore = create<AuthStoreState & AuthStoreActions>((set) => ({
   ...initStore,
-  setStep: (step, email) => set(() => ({ step, email })),
-  setRestrictedMode: (restrictedMode) => set(() => ({ restrictedMode })),
-  setSignedIn: (signedIn) => set(() => ({ signedIn })),
-  setMagicLinkSent: (email, magicLinkMode) => set(() => ({ step: 'magicLinkSent', email, magicLinkMode })),
-  setInviteOtherAccount: (inviteOtherAccount) => set(() => ({ inviteOtherAccount })),
-  reset: () => set(() => ({ ...initStore })),
+  setStep: (step, email) => set({ step, email }),
+  setRestrictedMode: (restrictedMode) => set({ restrictedMode }),
+  setSignedIn: (signedIn) => set({ signedIn }),
+  setMagicLinkSent: (email, magicLinkMode) => set({ step: 'magicLinkSent', email, magicLinkMode }),
+  setInviteOtherAccount: (inviteOtherAccount) => set({ inviteOtherAccount }),
+  reset: () => set(initStore),
 }));
 
 export { useAuthStore as authStore };

@@ -30,9 +30,8 @@ const outcomes = ({ supports, partiallySupports, doesNotSupport, notApplicable, 
 /** A `YYYY-MM-DD` day as "October 3, 2026". */
 const longDate = (day: string) => new Date(`${day}T00:00:00`).toLocaleDateString('en-US', { dateStyle: 'long' });
 
-function AccessibilityText() {
+export function AccessibilityText() {
   const { t } = useTranslation();
-  const lastUpdated = 'October 15, 2026';
 
   const appName = appConfig.name;
   const frontendUrl = appConfig.frontendUrl;
@@ -54,8 +53,7 @@ function AccessibilityText() {
 
   return (
     <div id="accessibility-content">
-      <LegalSection subject="accessibility" id="overview">
-        <p className="text-muted-foreground text-sm">Last updated: {lastUpdated}</p>
+      <LegalSection subject="accessibility" id="overview" lastUpdated="October 15, 2026">
         <p>
           This statement covers the {appName} website and app at{' '}
           <a href={frontendUrl} target="_blank" rel="noreferrer">
@@ -132,5 +130,3 @@ function AccessibilityText() {
     </div>
   );
 }
-
-export { AccessibilityText };

@@ -90,7 +90,7 @@ export const getPasskeyStepUpCredential = async () => {
   return startAuthentication({ optionsJSON: requestOptions(challenge, credentialIds) });
 };
 
-// Fetch a base64url challenge from BE; it doubles as the WebAuthn JSON options value
+/** A base64url challenge from the backend, which the WebAuthn options JSON takes as is. */
 const getChallenge = (body: PasskeyChallengeBody) => generatePasskeyChallenge({ body });
 
 const generatePasskeyName = () => {

@@ -1,5 +1,5 @@
 import { type ReactNode, Suspense, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
 import { InlineLinkButton } from '~/modules/auth/inline-link-button';
@@ -32,8 +32,8 @@ function LegalDialog({ initialSubject }: { initialSubject: LegalSubject }) {
   );
 }
 
-/** Opens one legal text in the legal dialog. */
-function LegalNoticeLink({ subject, children }: { subject: LegalSubject; children: ReactNode }) {
+/** Opens one legal text in the legal dialog; `Trans` hands it the link text. */
+function LegalNoticeLink({ subject, children }: { subject: LegalSubject; children?: ReactNode }) {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -58,26 +58,32 @@ function LegalNoticeLink({ subject, children }: { subject: LegalSubject; childre
 // Fetched while the notice is read, so the dialog opens at full height with no spinner.
 const linkedTexts = [legalConfig.terms.component, legalConfig.privacy.component];
 
+const noticeKeys = {
+  signup: 'c:legal_notice.text',
+  continue: 'c:legal_notice_continue.text',
+  waitlist: 'c:legal_notice_waitlist.text',
+  verify: 'c:request_verification.legal_notice',
+} as const;
+
 interface LegalNoticeProps {
+  /** Named in the sign-up sentence. */
   email?: string;
-  mode?: 'waitlist' | 'signup' | 'verify' | 'continue';
+  mode: keyof typeof noticeKeys;
   className?: string;
 }
 
-export function LegalNotice({ email = '', mode = 'signup', className }: LegalNoticeProps) {
+export function LegalNotice({ email, mode, className }: LegalNoticeProps) {
   const { t } = useTranslation();
   usePreloadLazyComponents(linkedTexts);
 
   return (
-    <p className={cn('space-x-1 text-center', className)}>
-      {mode === 'continue' && <span>{t('c:legal_notice_continue.text')}</span>}
-      {mode === 'signup' && <span>{email ? t('c:legal_notice_email.text', { email }) : t('c:legal_notice.text')}</span>}
-      {mode === 'waitlist' && <span>{t('c:legal_notice_waitlist.text', { email })}</span>}
-      {mode === 'verify' && <span>{t('c:request_verification.legal_notice')}</span>}
-      <LegalNoticeLink subject="terms">{t('c:terms').toLocaleLowerCase()}</LegalNoticeLink>
-      <span>&</span>
-      <LegalNoticeLink subject="privacy">{t('c:privacy_policy').toLocaleLowerCase()}</LegalNoticeLink>
-      <span>of {appConfig.company.name}.</span>
+    <p className={cn('text-center', className)}>
+      <Trans
+        t={t}
+        i18nKey={mode === 'signup' && email ? 'c:legal_notice_email.text' : noticeKeys[mode]}
+        values={{ email, company: appConfig.company.name }}
+        components={{ terms: <LegalNoticeLink subject="terms" />, privacy: <LegalNoticeLink subject="privacy" /> }}
+      />
     </p>
   );
 }

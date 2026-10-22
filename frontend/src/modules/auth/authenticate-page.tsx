@@ -10,7 +10,13 @@ import { useAuthStore } from '~/modules/auth/auth-store';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
 import { authHealthQueryOptions, tokenDataQueryOptions } from '~/modules/auth/query';
 import { SsoProviders } from '~/modules/auth/sso-providers';
-import { AcceptInvitationStep, CheckEmailStep, InvitationStep, MagicLinkSentStep, SignInStep, SignUpStep, WaitlistStep } from '~/modules/auth/steps';
+import { AcceptInvitationStep } from '~/modules/auth/steps/accept-invitation';
+import { CheckEmailStep } from '~/modules/auth/steps/check-email';
+import { InvitationStep } from '~/modules/auth/steps/invitation';
+import { MagicLinkSentStep } from '~/modules/auth/steps/magic-link-sent';
+import { SignInStep } from '~/modules/auth/steps/sign-in';
+import { SignUpStep } from '~/modules/auth/steps/sign-up';
+import { WaitlistStep } from '~/modules/auth/steps/waitlist';
 import type { TokenData } from '~/modules/auth/types';
 import { EntityChip } from '~/modules/common/entity-chip';
 import { Spinner } from '~/modules/common/spinner';
@@ -71,7 +77,7 @@ export function AuthenticatePage() {
   }, [healthData, setRestrictedMode]);
 
   useEffect(() => {
-    // Don't override terminal steps (e.g. magicLinkSent)
+    // The link-sent step stays until the visitor leaves it.
     if (step === 'magicLinkSent') return;
 
     if (lastUser?.email && !tokenId) return setStep('signIn', lastUser.email);
@@ -138,7 +144,7 @@ export function AuthenticatePage() {
           {isStrategyEnabled('sso') && <SsoProviders connectionId={tokenData?.ssoConnectionId} federations={healthData?.federations} />}
           {isStrategyEnabled('oauth') && <OAuthProviders authStep={step} />}
           {inviteOtherAccount && (
-            <Button type="button" variant="ghost" onClick={() => setInviteOtherAccount(false)}>
+            <Button variant="ghost" onClick={() => setInviteOtherAccount(false)}>
               <ArrowLeftIcon />
               {t('c:invite_back')}
             </Button>

@@ -3,17 +3,14 @@ import { LegalContact, SupportEmailLink } from '~/modules/auth/legal/legal-conta
 import { LegalCrossLink } from '~/modules/auth/legal/legal-cross-link';
 import { LegalSection } from '~/modules/auth/legal/legal-section';
 
-function TermsText() {
-  const lastUpdated = 'October 15, 2026';
-
+export function TermsText() {
   const appName = appConfig.name;
   const company = appConfig.company.name;
   const frontendUrl = appConfig.frontendUrl;
 
   return (
     <div id="terms-content">
-      <LegalSection subject="terms" id="overview">
-        <p className="text-muted-foreground text-sm">Last updated: {lastUpdated}</p>
+      <LegalSection subject="terms" id="overview" lastUpdated="October 15, 2026">
         <p>
           These Terms of Use ("Terms") govern your use of {appName} (the "Service") at{' '}
           <a href={frontendUrl} target="_blank" rel="noreferrer">
@@ -138,5 +135,3 @@ function TermsText() {
     </div>
   );
 }
-
-export { TermsText };

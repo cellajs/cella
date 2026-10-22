@@ -5,7 +5,7 @@ import { AuthHeader } from '~/modules/auth/auth-header';
 import { Button } from '~/modules/ui/button';
 
 /**
- * Where an opened confirmation link lands. The tab that asked holds the action and carries on by itself, so this page
+ * The page an opened confirmation link shows. The tab that asked holds the action and carries on by itself, so this page
  * sends the user back to it; its link to the page that asked is for when that tab is gone.
  */
 export function StepUpConfirmedPage() {

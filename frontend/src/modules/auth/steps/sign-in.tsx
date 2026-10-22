@@ -4,10 +4,9 @@ import { ArrowRightIcon, MailIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { type SignInWithPasskeyData, sendMagicLink, signInWithPasskey } from 'sdk';
+import { sendMagicLink, signInWithPasskey } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
-import type { ApiError } from '~/lib/api';
 import { AuthEmailButton } from '~/modules/auth/auth-email-button';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
@@ -66,8 +65,7 @@ export function SignInStep() {
 
     const handleCredential = async (data: ConditionalMediationResult) => {
       try {
-        const body: NonNullable<SignInWithPasskeyData['body']> = data;
-        await signInWithPasskey({ body });
+        await signInWithPasskey({ body: data });
         navigateAfterAuth();
       } catch {
         toaster.error(t('error:passkey_verification_failed'));
@@ -90,7 +88,7 @@ export function SignInStep() {
     mutationFn: () => sendMagicLink({ body: { email: form.getValues('email'), redirect: tokenId ? invitationResumePath(tokenId) : redirect } }),
     onSuccess: () => setMagicLinkSent(form.getValues('email'), 'signin'),
     // An address an institution governs sends no link: its entry page takes over, keeping the redirect.
-    onError: (error: ApiError) => {
+    onError: (error) => {
       const connectionId = error.type === 'sso_required' ? error.meta?.connectionId : undefined;
       if (typeof connectionId !== 'string') return;
       navigate({ to: '/auth/sso/$connectionId', params: { connectionId }, search: redirect ? { redirect } : {}, replace: true });
@@ -101,10 +99,7 @@ export function SignInStep() {
   const onSubmit = () => {
     if (magicLinkEnabled) return sendMagic();
     startMediation();
-    setTimeout(() => {
-      const submitButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
-      submitButton?.focus();
-    }, 0);
+    setTimeout(() => document.querySelector<HTMLButtonElement>('button[type="submit"]')?.focus(), 0);
   };
 
   const resetAuth = () => {
@@ -131,9 +126,10 @@ export function SignInStep() {
         )}
       </AuthHeader>
 
+      {/* Built at submit time: a handler that reads a ref, handed over during render, keeps the compiler off this step */}
       {(passkeyEnabled || magicLinkEnabled) && (
-        <form noValidate onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
-          <EmailField control={form.control} hidden={!restrictedMode} className="-mb-2" />
+        <form noValidate onSubmit={(event) => form.handleSubmit(onSubmit, defaultOnInvalid)(event)} className="flex flex-col gap-4">
+          <EmailField control={form.control} hidden={!restrictedMode} />
 
           <SubmitButton loading={isSending} className="w-full">
             {magicLinkEnabled ? (

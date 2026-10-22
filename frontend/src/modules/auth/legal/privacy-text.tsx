@@ -4,17 +4,14 @@ import { LegalSection } from '~/modules/auth/legal/legal-section';
 import { ProcessedDataTypes } from '~/modules/auth/legal/processed-data-types';
 import { Subprocessors } from '~/modules/auth/legal/subprocessors';
 
-function PrivacyText() {
-  const lastUpdated = 'October 19, 2026';
-
+export function PrivacyText() {
   const appName = appConfig.name;
   const company = appConfig.company.name;
   const mapHost = appConfig.mapStyleUrls.light && new URL(appConfig.mapStyleUrls.light).hostname;
 
   return (
     <div id="privacy-content">
-      <LegalSection subject="privacy" id="overview">
-        <p className="text-muted-foreground text-sm">Last updated: {lastUpdated}</p>
+      <LegalSection subject="privacy" id="overview" lastUpdated="October 19, 2026">
         <p>
           {company} ("we") runs {appName} (the "Service") for organizations. This policy explains how we handle personal data under the EU General
           Data Protection Regulation (GDPR). We are the controller of your account data. Content your organization puts in the Service is usually its
@@ -92,5 +89,3 @@ function PrivacyText() {
     </div>
   );
 }
-
-export { PrivacyText };

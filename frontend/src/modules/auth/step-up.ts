@@ -17,9 +17,8 @@ const openStepUpDialog = (methods: StepUpMethod[], section?: string) => {
 };
 
 /**
- * Runs an account-security action; when the server asks the user to prove it's them first, opens the re-auth dialog
- * and runs the action once more after that. A closed dialog rejects with `StepUpDismissed`. `section` is the id of the
- * page section that asks: an emailed link or a new sign-in comes back there, and without it to the section in view.
+ * `retryAfterStepUp` through the re-auth dialog; dismissing it fails the action with `StepUpDismissed`. `section` is the
+ * id of the page section that asks: an emailed link or a new sign-in returns to it, or without one to the section in view.
  */
 export const withStepUp = <T>(action: () => Promise<T>, section?: string) =>
   retryAfterStepUp(action, (methods) => openStepUpDialog(methods, section));

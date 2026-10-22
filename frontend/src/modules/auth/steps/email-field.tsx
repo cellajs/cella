@@ -14,11 +14,10 @@ interface EmailFieldProps {
   control: Control<EmailFormValues>;
   /** The address of an earlier step, kept in the form but out of view, the tab order and autofill. */
   hidden?: boolean;
-  className?: string;
 }
 
 /** The address field of the email steps. */
-export function EmailField({ control, hidden = false, className }: EmailFieldProps) {
+export function EmailField({ control, hidden = false }: EmailFieldProps) {
   const { t } = useTranslation();
 
   return (
@@ -26,8 +25,8 @@ export function EmailField({ control, hidden = false, className }: EmailFieldPro
       control={control}
       name="email"
       render={({ field }) => (
-        // Custom css due to html injection by browser extensions
-        <FormItem className={cn('gap-0', hidden && 'hidden', className)}>
+        // Spacing by margin: a gap would add space around every node a browser extension injects
+        <FormItem className={cn('gap-0', hidden && 'hidden')}>
           {/* Hidden on purpose: the example address is the visible cue */}
           <FormLabel className="sr-only">{t('c:email')}</FormLabel>
           <FormControl>

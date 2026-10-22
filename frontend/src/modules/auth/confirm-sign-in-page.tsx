@@ -9,7 +9,7 @@ import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 
 /**
- * Where a magic link opened in a browser that did not ask for it lands. It names the account the link signs in to and
+ * The page a magic link opens in a browser that did not ask for it. It names the account the link signs in to and
  * signs in only on a click, a form post from this page, so a link planted in someone's browser or fetched by an email
  * scanner signs nobody in. The browser that asked for the link never sees this page.
  */

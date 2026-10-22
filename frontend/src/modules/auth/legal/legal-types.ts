@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import type { ComponentType, LazyExoticComponent } from 'react';
 
 /**
  * Id of every subject's first section: the text above the first heading. The page wrapper carries its spy anchor, so
@@ -12,7 +12,7 @@ export interface LegalSection {
 }
 
 export interface LegalTextConfig {
-  component: React.LazyExoticComponent<() => JSX.Element>;
+  component: LazyExoticComponent<ComponentType>;
   label: string;
   sections: LegalSection[];
 }
@@ -50,7 +50,7 @@ export interface AccessibilityLimitation {
   description: string;
   /** WCAG success criteria it fails, e.g. `['2.1.4']`. */
   criteria: string[];
-  /** Workaround or planned fix. */
+  /** What a user can do in the meantime, or the planned fix. */
   workaround?: string;
 }
 

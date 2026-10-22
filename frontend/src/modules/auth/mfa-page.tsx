@@ -22,15 +22,12 @@ export function MfaPage() {
   const [isTotpActive, setIsTotpActive] = useState(false);
 
   const handleCancelMfa = async () => {
-    try {
-      await signOut();
-      toaster.success(t('c:success.cancel_mfa'));
-    } catch (error) {
-      console.error('Sign out failed:', error);
-    } finally {
-      clearUserStore();
-      navigate({ to: '/auth/authenticate', replace: true });
-    }
+    await signOut().then(
+      () => toaster.success(t('c:success.cancel_mfa')),
+      (error) => console.error('Sign out failed:', error),
+    );
+    clearUserStore();
+    navigate({ to: '/auth/authenticate', replace: true });
   };
 
   if (signedIn) return <Spinner size="lg" />;

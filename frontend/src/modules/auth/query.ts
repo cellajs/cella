@@ -1,6 +1,5 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
 import { type GetTokenDataData, getAuthHealth, getPendingMagicLink, getSsoEntry, getTokenData } from 'sdk';
-import type { ApiError } from '~/lib/api';
 import { decideConsent, getConsentDetails } from '~/lib/oauth-interaction';
 import { withStepUp } from '~/modules/auth/step-up';
 
@@ -20,7 +19,6 @@ const healthTimeoutMs = 20000;
 
 export const authHealthQueryOptions = queryOptions({
   queryKey: authKeys.health,
-  // Combine the query signal with a hard timeout so an unreachable backend fails deterministically.
   queryFn: ({ signal }) => getAuthHealth({ signal: AbortSignal.any([signal, AbortSignal.timeout(healthTimeoutMs)]) }),
   staleTime: 0,
   refetchOnMount: 'always',
@@ -33,7 +31,7 @@ export const tokenDataQueryOptions = (type: TokenType, tokenId?: string) =>
     queryKey: authKeys.token(type, tokenId),
     queryFn: () => getTokenData({ path: { type, id: tokenId ?? '' } }),
     enabled: !!tokenId,
-    staleTime: 0, // Important to always get latest token status
+    staleTime: 0,
     meta: { persist: false },
   });
 
@@ -66,8 +64,8 @@ export const consentDetailsQueryOptions = (uid: string) =>
 
 /** The provider answers with where to send the browser next; a full navigation completes the flow. Accepting needs a step-up. */
 export const useDecideConsentMutation = (uid: string) =>
-  useMutation<{ redirectTo: string }, ApiError, boolean>({
+  useMutation({
     mutationKey: authKeys.consent.decide,
-    mutationFn: (accept) => (accept ? withStepUp(() => decideConsent(uid, true)) : decideConsent(uid, false)),
+    mutationFn: (accept: boolean) => (accept ? withStepUp(() => decideConsent(uid, true)) : decideConsent(uid, false)),
     onSuccess: ({ redirectTo }) => window.location.assign(redirectTo),
   });

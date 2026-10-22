@@ -18,11 +18,15 @@ import { formResolver } from '~/utils/form-resolver';
 
 const magicLinkEnabled = isStrategyEnabled('magic');
 
+interface SignUpStepProps {
+  tokenData?: TokenData;
+}
+
 /**
  * Sign-up from the neutral sign-in step, on the address typed there. An invitation in hand is answered on its own step
  * (`InvitationStep`); here it only matters when the visitor signs up on another address than the invited one.
  */
-export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
+export function SignUpStep({ tokenData }: SignUpStepProps) {
   const { t } = useTranslation();
 
   const email = useAuthStore((state) => state.email);
@@ -50,7 +54,7 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
 
       {magicLinkEnabled && (
         <form noValidate onSubmit={form.handleSubmit((body) => sendMagic(body.email), defaultOnInvalid)} className="flex flex-col gap-4">
-          <EmailField control={form.control} className="-mb-2" />
+          <EmailField control={form.control} />
 
           <SubmitButton loading={isPending} icon={<MailIcon />} className="w-full">
             {t('c:magic_link_send_signup')}

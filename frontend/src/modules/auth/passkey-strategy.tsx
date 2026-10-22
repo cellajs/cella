@@ -9,7 +9,6 @@ import type { PasskeyVerifyType } from '~/modules/auth/types';
 import { useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
-import { cn } from '~/utils/cn';
 
 interface PasskeyStrategyProps {
   type: PasskeyVerifyType;
@@ -21,7 +20,7 @@ export function PasskeyStrategy({ type }: PasskeyStrategyProps) {
 
   const navigateAfterAuth = useNavigateAfterAuth();
 
-  const { mutate: passkeySignIn } = useMutation<SignInWithPasskeyResponse, ApiError | Error, void>({
+  const { mutate: passkeySignIn } = useMutation<SignInWithPasskeyResponse, ApiError | Error>({
     mutationFn: async () => {
       const body = await getPasskeyVerifyCredential({ type });
       return await signInWithPasskey({ body });
@@ -36,18 +35,10 @@ export function PasskeyStrategy({ type }: PasskeyStrategyProps) {
     },
   });
 
-  // The auth backdrop shows through plain's tint, so here the button brings a surface of its own
   return (
-    <Button
-      type="button"
-      variant={type === 'mfa' ? 'default' : 'plain'}
-      onClick={() => passkeySignIn()}
-      className={cn('w-full', type !== 'mfa' && 'bg-secondary/60 hover:bg-secondary/80')}
-    >
+    <Button variant={type === 'mfa' ? 'default' : 'plain'} onClick={() => passkeySignIn()} className="w-full">
       <FingerprintPatternIcon />
-      <span className="truncate">
-        {t('c:sign_in')} {t('c:with').toLowerCase()} {t('c:passkey').toLowerCase()}
-      </span>
+      <span className="truncate">{t('c:passkey.sign_in')}</span>
     </Button>
   );
 }

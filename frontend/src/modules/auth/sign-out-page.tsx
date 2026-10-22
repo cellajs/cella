@@ -9,7 +9,6 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { lazyNamed } from '~/utils/lazy-named';
 import { teardownUserState } from '~/utils/teardown-user-state';
 
-// Loaded on demand: the list reaches the Yjs connections and the editor chunk, which the auth pages never need.
 const UnsavedEditsGate = lazyNamed(() => import('~/modules/auth/unsaved-edits-dialog'), 'UnsavedEditsGate');
 
 /**

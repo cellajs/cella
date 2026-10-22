@@ -15,7 +15,7 @@ export function WaitlistStep() {
   return (
     <>
       <AuthHeader title={t('c:request_access')}>{email.length > 0 && <AuthEmailButton email={email} onClick={resetAuthStore} />}</AuthHeader>
-      <LegalNotice email={email} mode="waitlist" />
+      <LegalNotice mode="waitlist" />
       {/* Stacked like the email step; the form's own row layout serves the pricing dialog */}
       <WaitlistForm
         email={email}

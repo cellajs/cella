@@ -2,9 +2,8 @@ import { useMutation } from '@tanstack/react-query';
 import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { type CheckEmailData, type CheckEmailResponse, checkEmail } from 'sdk';
+import { type CheckEmailData, checkEmail } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
-import type { ApiError } from '~/lib/api';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { SignUpDisabled } from '~/modules/auth/sign-up-disabled';
@@ -29,13 +28,13 @@ export function CheckEmailStep() {
   const form = useForm<EmailFormValues>({ resolver: formResolver(emailFormSchema), defaultValues: { email: '' } });
 
   // A browser that never signed in to the address gets the step that does not say whether it has an account.
-  const { mutate: submitEmail, isPending } = useMutation<CheckEmailResponse, ApiError, CheckEmailData['body']>({
-    mutationFn: (body) => checkEmail({ body }),
+  const { mutate: submitEmail, isPending } = useMutation({
+    mutationFn: (body: CheckEmailData['body']) => checkEmail({ body }),
     onSuccess: ({ recognized }) => {
       if (!recognized) setRestrictedMode(true);
       setStep('signIn', form.getValues('email'));
     },
-    onError: (error: ApiError) => {
+    onError: (error) => {
       if (error.status !== 429) return;
       setRestrictedMode(true);
       setStep('signIn', form.getValues('email'));

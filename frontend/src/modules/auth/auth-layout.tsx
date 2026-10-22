@@ -20,16 +20,15 @@ export function AuthLayout() {
 
   return (
     <div className="group/auth-layout rich-gradient container flex min-h-[90svh] flex-col items-center overflow-y-clip pt-8 pb-40 before:fixed after:fixed sm:min-h-svh">
-      {/* Dividing-colony mark behind the auth card; the module lays it out as the page background and brings it in */}
+      {/* The colony mark behind the card: the module lays itself out as the page background */}
       <Suspense fallback={null}>
-        {/* overscan below 1 zooms in: the colony stays larger than the viewport at every stage, so the window always crops it, and a phone zooms in further */}
-        {/* slowed further: the low overscan magnifies motion, so the clock compensates */}
+        {/* Overscan below 1 zooms in, a phone further, so the window always crops the colony; the zoom magnifies motion, hence the lower speed */}
         <MorphAnimation variant="colony" grid={192} stamp="plus" overscan={isMobile ? 0.26 : 0.31} speed={0.4} />
       </Suspense>
 
-      {/* The content column's own box, clear of the entrance transform below: the veil measures itself on it */}
+      {/* The box the veil measures itself on, clear of the content column's entrance transform */}
       <div className="relative my-auto">
-        {/* Veil above the colony and under the content: two soft ellipses calm the backdrop where the reading happens, and come in with the content: both enter at mount, through `starting:` */}
+        {/* Veil that calms the colony under the content, entering with it at mount through `starting:` */}
         <div className="pointer-events-none absolute inset-0 starting:opacity-0 transition-opacity duration-500 ease-out">
           <div className="rich-veil-gradient" />
           <div className="rich-veil-background" />

@@ -2,7 +2,7 @@ import { useForm, useFormState } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zCreateTotpBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
-import type z from 'zod';
+import type { z } from 'zod';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { Button } from '~/modules/ui/button';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';

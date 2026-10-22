@@ -120,13 +120,13 @@ function StepUpDialog({ methods, section, onStepUp }: StepUpDialogProps) {
       {methods.includes('passkey') && (
         <Button variant="plain" className="w-full" loading={proving} onClick={confirmWithPasskey}>
           <FingerprintPatternIcon />
-          {t('c:confirm')} {t('c:with').toLowerCase()} {t('c:passkey').toLowerCase()}
+          {t('c:passkey.confirm')}
         </Button>
       )}
       {methods.includes('totp') && (
         <Button variant="plain" className="w-full" onClick={() => setView('totp')}>
           <SmartphoneIcon />
-          {t('c:confirm')} {t('c:with').toLowerCase()} {t('c:authenticator_app').toLowerCase()}
+          {t('c:authenticator_app.confirm')}
         </Button>
       )}
     </div>

@@ -27,7 +27,7 @@ export function MagicLinkSentStep() {
         <p>{t(isSignup ? 'c:magic_link_check_email.signup.text' : 'c:magic_link_check_email.text', { email })}</p>
       </AuthHeader>
       {!isSignup && (
-        <Button type="button" variant="plain" onClick={resetAuthStore} className="mt-2">
+        <Button variant="plain" onClick={resetAuthStore} className="mt-2">
           <ArrowLeftIcon />
           {t('c:try_another_way')}
         </Button>

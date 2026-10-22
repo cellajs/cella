@@ -6,7 +6,7 @@ import { AuthHeader } from '~/modules/auth/auth-header';
 import { ssoEntryQueryOptions } from '~/modules/auth/query';
 import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import { ssoStartUrl } from '~/modules/auth/sso-providers';
-import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
+import { ErrorNotice } from '~/modules/common/error-notice';
 import { Spinner } from '~/modules/common/spinner';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
@@ -23,7 +23,7 @@ export function SsoEntryPage() {
 
   const { data, error, isPending } = useQuery(ssoEntryQueryOptions(connectionId));
 
-  if (error) return <ErrorNotice error={error as ErrorNoticeError} boundary="public" />;
+  if (error) return <ErrorNotice error={error} boundary="public" />;
   if (isPending || !data) return <Spinner size="lg" />;
 
   const { institution, organization, federation, status } = data;
@@ -31,7 +31,7 @@ export function SsoEntryPage() {
   const image = organization?.thumbnailUrl ?? institution.logoUrl;
 
   return (
-    <div className="flex flex-col gap-6">
+    <>
       <AuthHeader
         image={image && <img src={image} alt="" className="size-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
         title={t('c:sso_entry', { organization: organizationName })}
@@ -58,6 +58,6 @@ export function SsoEntryPage() {
       <Button variant="link" render={<Link to="/auth/authenticate" search={redirect ? { redirect } : {}} />}>
         {t('c:sign_in_another_way')}
       </Button>
-    </div>
+    </>
   );
 }
