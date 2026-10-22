@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
 import * as decoding from 'lib0/decoding';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { appConfig, type ProductEntityType } from 'shared';
 import { toWsUrl } from 'shared/utils/ws-url';
 import { Awareness } from 'y-protocols/awareness';
@@ -9,20 +9,22 @@ import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import { create } from 'zustand';
 import type { TKey } from '~/lib/i18n-locales';
-import { yjsTokenKeys, yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
+import { type YjsDocScope, yjsTokenKeys, yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
 import { parkUnsaveable } from '~/modules/common/blocknote/unsaveable-notices';
-import { createHttpLink, type HttpLink, type HttpLinkScope, wsSyncDeadlineMs } from '~/modules/common/blocknote/yjs-http';
+import { ydocFragment } from '~/modules/common/blocknote/ydoc-label';
+import { createHttpLink, type HttpLink, wsSyncDeadlineMs } from '~/modules/common/blocknote/yjs-http';
 import { watchPendingStructs } from '~/modules/common/blocknote/yjs-resync';
 import {
   type AppliedRows,
   createYDocWriter,
   type LoadedYDoc,
   loadYDoc,
+  type StoreProof,
   storageOrigin,
   storeLoadTimeoutMs,
   type YDocWriter,
 } from '~/modules/common/blocknote/yjs-store';
-import { onTabMessage, postTabHello, postTabUpdate, type TabMessage, toTabKey } from '~/modules/common/blocknote/yjs-tab-channel';
+import { onTabMessage, postTabMessage, type TabMessage, toTabKey } from '~/modules/common/blocknote/yjs-tab-channel';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { userStore, yjsTokenKey } from '~/modules/user/user-store';
 import { getLocalUserDb, type UnsaveableReason, type YDocRecord } from '~/query/local-user-db';
@@ -101,11 +103,23 @@ interface SocketLedger {
   onHandshakeSent: () => void;
 }
 
+/** A socket's ledger before it sent or received a frame. */
+const freshLedger: Omit<SocketLedger, 'onChange' | 'onHandshakeSent'> = {
+  sent: 0,
+  saved: 0,
+  handshakeAt: 0,
+  legacy: false,
+  generationSeen: false,
+  handshakeProven: false,
+  fallbackTimer: undefined,
+};
+
 /** The transport syncing a connection's document: the relay's socket, the API's HTTP routes, or none yet. */
 export type YjsTransport = 'none' | 'ws' | 'http';
 
 /** One entity's collaborative document and everything that syncs, stores and shows it. */
 export interface YjsConnection {
+  scope: YjsDocScope;
   yDoc: Y.Doc;
   /**
    * Cursors and presence. The connection owns it and hands it to the provider, so the editor binds one that lives as
@@ -154,38 +168,48 @@ export interface YjsConnection {
 /** Module-level connection map; mutations happen outside React render. */
 const connections = new Map<string, YjsConnection>();
 
-interface YjsSyncState {
-  /** editSessionId → synced boolean; back to false while a reseeded document syncs afresh */
-  synced: Record<string, boolean>;
-  /** editSessionId → true once its connection stopped for good */
-  stopped: Record<string, boolean>;
-  /** editSessionId → why its connection stopped, when a final answer said so */
-  stopReason: Record<string, YjsStopReason>;
-  /** editSessionId → true once its editor may mount: synced over either transport, or loaded from storage */
-  ready: Record<string, boolean>;
-  /** editSessionId → the transport carrying its edits */
-  transport: Record<string, YjsTransport>;
-  /** editSessionId → how often its document was rebuilt after a reseed; the editor remounts on the new fragment */
-  rebuilds: Record<string, number>;
-  /** editSessionId → true while its document holds local edits the relay has not saved */
-  unsynced: Record<string, boolean>;
-  /** editSessionId → true once its entity was deleted; its connection stopped with it */
-  deleted: Record<string, boolean>;
-  /** editSessionId → true once storing its document failed for good: its edits live only in this tab until saved */
-  storageFailed: Record<string, boolean>;
+/** What useYjsConnection reports of one connection. */
+interface SessionSync {
+  /** True once the editor may mount: synced over the relay's socket or over HTTP, or loaded from storage; false again while a reseeded document syncs afresh. */
+  ready: boolean;
+  /** `none` before the first sync and while offline. */
+  transport: YjsTransport;
+  /** True once the session ended for good: the editor must go read-only. */
+  stopped: boolean;
+  /** Why it stopped, when a final answer said so. */
+  stopReason: YjsStopReason | null;
+  /** How often a reseed rebuilt the document; the editor remounts on each new fragment. */
+  rebuilds: number;
+  /** True while the document holds local edits the server has not saved. */
+  unsynced: boolean;
+  /** True once the entity was deleted: the connection stopped with it, and the edits its document held were parked. */
+  deleted: boolean;
+  /** True once storing the document failed for good: its edits live only in this tab until saved. */
+  storageFailed: boolean;
 }
 
-const useYjsSyncStore = create<YjsSyncState>(() => ({
-  synced: {},
-  stopped: {},
-  stopReason: {},
-  ready: {},
-  transport: {},
-  rebuilds: {},
-  unsynced: {},
-  deleted: {},
-  storageFailed: {},
-}));
+const initialSession: SessionSync = {
+  ready: false,
+  transport: 'none',
+  stopped: false,
+  stopReason: null,
+  rebuilds: 0,
+  unsynced: false,
+  deleted: false,
+  storageFailed: false,
+};
+
+/** Each connection's session, by its entity id. */
+const useYjsSyncStore = create<{ sessions: Record<string, SessionSync> }>(() => ({ sessions: {} }));
+
+const sessionOf = (conn: YjsConnection) => useYjsSyncStore.getState().sessions[conn.scope.entityId] ?? initialSession;
+
+function patchSession(conn: YjsConnection, patch: Partial<SessionSync>) {
+  const { entityId } = conn.scope;
+  // A destroyed connection's writer still reports its last flush, which must not reach the document's next session.
+  if (connections.get(entityId) !== conn) return;
+  useYjsSyncStore.setState(({ sessions }) => ({ sessions: { ...sessions, [entityId]: { ...(sessions[entityId] ?? initialSession), ...patch } } }));
+}
 
 /** Asks before the page unloads: edits no server saved live only in this tab, and the per-user database does not keep them. */
 function warnBeforeUnload(event: BeforeUnloadEvent) {
@@ -211,32 +235,32 @@ function guardUnload() {
   else window.removeEventListener('beforeunload', warnBeforeUnload);
 }
 
-function setUnsynced(editSessionId: string, conn: YjsConnection, unsynced: boolean) {
+function setUnsynced(conn: YjsConnection, unsynced: boolean) {
   if (conn.unsynced === unsynced) return;
   conn.unsynced = unsynced;
-  useYjsSyncStore.setState((s) => ({ unsynced: { ...s.unsynced, [editSessionId]: unsynced } }));
+  patchSession(conn, { unsynced });
   guardUnload();
 }
 
 /** Lets the connection's editor mount: synced over either transport, or loaded from storage. Stays until a rebuild. */
-function setReady(editSessionId: string, conn: YjsConnection) {
+function setReady(conn: YjsConnection) {
   if (conn.ready) return;
   conn.ready = true;
-  useYjsSyncStore.setState((s) => ({ ready: { ...s.ready, [editSessionId]: true } }));
+  patchSession(conn, { ready: true });
 }
 
-function setTransport(editSessionId: string, conn: YjsConnection, transport: YjsTransport) {
+function setTransport(conn: YjsConnection, transport: YjsTransport) {
   if (conn.transport === transport) return;
   conn.transport = transport;
-  useYjsSyncStore.setState((s) => ({ transport: { ...s.transport, [editSessionId]: transport } }));
+  patchSession(conn, { transport });
 }
 
 /** Offline, or stopped: no transport carries an edit, so the deadline goes and HTTP leaves. Back online, the provider's next attempt rearms it. */
-function pauseTransports(editSessionId: string, conn: YjsConnection) {
+function pauseTransports(conn: YjsConnection) {
   clearTimeout(conn.wsDeadline);
   conn.wsDeadline = undefined;
   conn.http?.leave();
-  setTransport(editSessionId, conn, 'none');
+  setTransport(conn, 'none');
 }
 
 /** The relay has `savedFallbackMs` from the handshake Step2 to send this socket's first `Saved`. */
@@ -265,15 +289,7 @@ function ledgerSocket(ledger: SocketLedger): typeof WebSocket {
     constructor(url: string | URL, protocols?: string | string[]) {
       super(url, protocols);
       clearTimeout(ledger.fallbackTimer);
-      Object.assign(ledger, {
-        sent: 0,
-        saved: 0,
-        handshakeAt: 0,
-        legacy: false,
-        generationSeen: false,
-        handshakeProven: false,
-        fallbackTimer: undefined,
-      });
+      Object.assign(ledger, freshLedger);
     }
 
     send(data: Parameters<WebSocket['send']>[0]) {
@@ -307,6 +323,13 @@ function isClean(conn: YjsConnection) {
   return isSocketClean(conn.provider, conn.ledger);
 }
 
+/** What a handshake proves once the server holds it: every stored row the document holds now, and its state. */
+export const handshakeProof = (conn: YjsConnection): StoreProof => ({
+  kind: 'handshake',
+  applied: { upTo: conn.applied.upTo, ids: new Set(conn.applied.ids) },
+  vector: Y.encodeStateVector(conn.yDoc),
+});
+
 /** Where an update applied with the provider as origin came from: the relay, unless {@link applyRemoteUpdate} says otherwise. */
 export type RemoteSource = { kind: 'relay' } | { kind: 'http' } | { kind: 'tab'; rowId: number | null };
 
@@ -332,15 +355,12 @@ export function applyRemoteUpdate(conn: YjsConnection, update: Uint8Array, sourc
  * reports `stopped`), so nothing typed after this is lost unsynced. `reason`, if any, names why, in a toast too unless
  * `toast` is false: a parked notice names it then.
  */
-function stopConnection(editSessionId: string, conn: YjsConnection, reason: YjsStopReason | null, toast = true) {
+function stopConnection(conn: YjsConnection, reason: YjsStopReason | null, toast = true) {
   if (conn.stopped) return;
   conn.stopped = true;
   conn.provider.disconnect();
-  pauseTransports(editSessionId, conn);
-  useYjsSyncStore.setState((s) => ({
-    stopped: { ...s.stopped, [editSessionId]: true },
-    stopReason: reason ? { ...s.stopReason, [editSessionId]: reason } : s.stopReason,
-  }));
+  pauseTransports(conn);
+  patchSession(conn, { stopped: true, stopReason: reason });
   if (reason && toast) toaster.warning(i18n.t(stopMessages[reason]));
 }
 
@@ -349,29 +369,22 @@ function stopConnection(editSessionId: string, conn: YjsConnection, reason: YjsS
  * them to copy in place of the stop's toast. A clean document's stored copy goes. useYjsConnection reports `deleted`
  * for a deleted entity.
  */
-function endUnsaveable(editSessionId: string, conn: YjsConnection, scope: HttpLinkScope, reason: EndReason) {
+function endUnsaveable(conn: YjsConnection, reason: EndReason) {
   const { unsynced } = conn;
-  parkUnsaveable(conn, scope, reason);
-  setUnsynced(editSessionId, conn, false);
-  if (reason === 'deleted') useYjsSyncStore.setState((s) => ({ deleted: { ...s.deleted, [editSessionId]: true } }));
-  stopConnection(editSessionId, conn, reason === 'deleted' ? null : reason, !unsynced);
-  reapConnection(editSessionId, conn);
+  parkUnsaveable(conn, conn.scope, reason);
+  setUnsynced(conn, false);
+  if (reason === 'deleted') patchSession(conn, { deleted: true });
+  stopConnection(conn, reason === 'deleted' ? null : reason, !unsynced);
+  reapConnection(conn);
 }
 
 /**
  * Ends a connection on the HTTP routes' final answer, as the relay's matching close ends it: another generation
  * rebuilds it, and a deleted entity, lost rights or a refused update end it for good. Both park edits no server holds.
  */
-function endOverHttp(
-  editSessionId: string,
-  conn: YjsConnection,
-  reason: UnsaveableReason,
-  entityType: ProductEntityType,
-  tenantId: string,
-  organizationId: string,
-) {
-  if (reason === 'replaced') return rebuildConnection(editSessionId, conn, entityType, tenantId, organizationId);
-  endUnsaveable(editSessionId, conn, { entityType, entityId: editSessionId, tenantId, organizationId }, reason);
+function endOverHttp(conn: YjsConnection, reason: UnsaveableReason) {
+  if (reason === 'replaced') return rebuildConnection(conn);
+  endUnsaveable(conn, reason);
 }
 
 /** What a connection holds per document: a rebuild replaces all of it. */
@@ -385,24 +398,15 @@ type DocParts = Pick<
  * provider waits for startConnection to connect, and without a token for the token: a stored document is editable
  * meanwhile.
  */
-function openDoc(editSessionId: string, entityType: ProductEntityType, tenantId: string): DocParts {
+function openDoc({ entityType, entityId, tenantId }: YjsDocScope): DocParts {
   const serverUrl = toWsUrl(appConfig.yjsUrl!);
   // The session is the entity's document, and a token opens that one document only.
-  const token = userStore.getState().yjsTokens[yjsTokenKey(entityType, editSessionId)] ?? '';
+  const token = userStore.getState().yjsTokens[yjsTokenKey(entityType, entityId)] ?? '';
 
   const yDoc = new Y.Doc();
   const awareness = new Awareness(yDoc);
-  const ledger: SocketLedger = {
-    sent: 0,
-    saved: 0,
-    handshakeAt: 0,
-    legacy: false,
-    generationSeen: false,
-    handshakeProven: false,
-    onChange: () => {},
-    onHandshakeSent: () => {},
-  };
-  const provider = new WebsocketProvider(serverUrl, editSessionId, yDoc, {
+  const ledger: SocketLedger = { ...freshLedger, onChange: () => {}, onHandshakeSent: () => {} };
+  const provider = new WebsocketProvider(serverUrl, entityId, yDoc, {
     params: { token, entityType, tenantId },
     awareness,
     // y-websocket's own tab channel exchanges whole documents with no generation, so a tab that rebuilt on a reseeded
@@ -416,7 +420,7 @@ function openDoc(editSessionId: string, entityType: ProductEntityType, tenantId:
     yDoc,
     awareness,
     provider,
-    fragment: yDoc.getXmlFragment('document-store'),
+    fragment: yDoc.getXmlFragment(ydocFragment),
     ledger,
     transport: 'none',
     loaded: false,
@@ -434,34 +438,27 @@ function startConnection(conn: YjsConnection) {
   if (onlineManager.isOnline() !== false && conn.provider.params.token) conn.provider.connect();
 }
 
-/** The entity a connection's document belongs to, and the scope it is stored and fetched in. */
-interface DocScope {
-  entityType: ProductEntityType;
-  tenantId: string;
-  organizationId: string;
-}
-
 /**
  * Applies the stored document, if any, then connects: the handshake Step1 then carries the stored state. A load slower
  * than storeLoadTimeoutMs connects without it, and is applied when it arrives (applyStored).
  */
-function loadConnection(editSessionId: string, conn: YjsConnection, scope: DocScope) {
+function loadConnection(conn: YjsConnection) {
   if (!getLocalUserDb()) return startConnection(conn);
-  const { provider } = conn;
-  const current = () => connections.get(editSessionId) === conn && conn.provider === provider;
+  const { provider, scope } = conn;
+  const current = () => connections.get(scope.entityId) === conn && conn.provider === provider;
   const timer = setTimeout(() => {
     if (current() && !conn.loaded) startConnection(conn);
   }, storeLoadTimeoutMs);
-  void loadYDoc({ entityType: scope.entityType, entityId: editSessionId })
+  void loadYDoc(scope)
     .catch((error) => {
-      console.warn(`[yjs] Stored document not loaded for ${editSessionId}`, error);
+      console.warn(`[yjs] Stored document not loaded for ${scope.entityId}`, error);
       return null;
     })
     .then((stored) => {
       clearTimeout(timer);
       if (!current()) return;
       const late = conn.loaded;
-      if (stored) applyStored(editSessionId, conn, scope, stored);
+      if (stored) applyStored(conn, stored);
       if (!late) startConnection(conn);
     });
 }
@@ -472,14 +469,13 @@ function loadConnection(editSessionId: string, conn: YjsConnection, scope: DocSc
  * announced another generation holds another history: its unsynced edits are parked, and a clean copy goes. Otherwise
  * the stored edits merge in; after the connect y-websocket sends them as an update.
  */
-function applyStored(editSessionId: string, conn: YjsConnection, scope: DocScope, stored: LoadedYDoc) {
+function applyStored(conn: YjsConnection, stored: LoadedYDoc) {
   const { record } = stored;
-  const key = { entityType: scope.entityType, entityId: editSessionId };
   if (conn.generation !== null && conn.generation !== record.generation) {
     // Not started, the writer parks or drops by the stored record alone; the empty document is the notice's fallback only.
     const yDoc = new Y.Doc();
-    const source = { yDoc, writer: createYDocWriter(key), unsynced: record.unsynced === 1, generation: record.generation };
-    parkUnsaveable(source, { ...key, tenantId: scope.tenantId, organizationId: scope.organizationId }, 'replaced');
+    const source = { yDoc, writer: createYDocWriter(conn.scope), unsynced: record.unsynced === 1, generation: record.generation };
+    parkUnsaveable(source, conn.scope, 'replaced');
     yDoc.destroy();
     return;
   }
@@ -493,20 +489,20 @@ function applyStored(editSessionId: string, conn: YjsConnection, scope: DocScope
   conn.generation = record.generation;
   conn.applied.upTo = Math.max(conn.applied.upTo, stored.appliedUpTo);
   conn.stored = true;
-  setReady(editSessionId, conn);
+  setReady(conn);
   // Its rows are stored already, so the writer starts without a local row of the whole document.
-  startStoring(editSessionId, conn, scope, false);
-  if (record.unsynced) setUnsynced(editSessionId, conn, true);
+  startStoring(conn, false);
+  if (record.unsynced) setUnsynced(conn, true);
   // Loaded after the HTTP link's handshake, which posted what the document held then: the stored edits go as an edit.
   if (record.unsynced && conn.transport === 'http') conn.http?.queue(Y.mergeUpdates(stored.updates));
-  postTabHello({ t: 'hello', key: toTabKey(key), generation: record.generation, vector: Y.encodeStateVector(conn.yDoc) });
+  postTabMessage({ t: 'hello', key: toTabKey(conn.scope), generation: record.generation, vector: Y.encodeStateVector(conn.yDoc) });
 }
 
 /** Keeps the document in the per-user database from now on: opened for editing, by a focus or a local edit. */
-function markStored(editSessionId: string, conn: YjsConnection, scope: DocScope) {
+function markStored(conn: YjsConnection) {
   if (conn.stored || conn.stopped) return;
   conn.stored = true;
-  startStoring(editSessionId, conn, scope, conn.unsynced);
+  startStoring(conn, conn.unsynced);
 }
 
 /**
@@ -514,36 +510,31 @@ function markStored(editSessionId: string, conn: YjsConnection, scope: DocScope)
  * before the handshake answered would keep an empty document. `unsynced` adds a local row of the whole document, for
  * edits made before.
  */
-function startStoring(editSessionId: string, conn: YjsConnection, scope: DocScope, unsynced: boolean) {
+function startStoring(conn: YjsConnection, unsynced: boolean) {
   if (!conn.stored || conn.writer || conn.generation === null || conn.stopped) return;
   if (!conn.ready && !conn.provider.synced) return;
-  const writer = createYDocWriter(
-    { entityType: scope.entityType, entityId: editSessionId },
-    { applied: conn.applied, onChange: () => onWriterChange(editSessionId, conn, writer) },
-  );
+  const writer = createYDocWriter(conn.scope, { applied: conn.applied, onChange: () => onWriterChange(conn, writer) });
   if (!writer) return;
   conn.writer = writer;
-  writer.start(conn.yDoc, { tenantId: scope.tenantId, organizationId: scope.organizationId, generation: conn.generation }, unsynced);
+  const { tenantId, organizationId } = conn.scope;
+  writer.start(conn.yDoc, { tenantId, organizationId, generation: conn.generation }, unsynced);
 }
 
 /**
  * A writer committed, queued or failed: the unload guard follows, a failure shows, and a connection that is clean
  * proves the rows this commit wrote, which a Saved that came first left local.
  */
-function onWriterChange(editSessionId: string, conn: YjsConnection, writer: YDocWriter | null) {
+function onWriterChange(conn: YjsConnection, writer: YDocWriter | null) {
   if (!writer || conn.writer !== writer) return;
-  if (writer.failed !== (useYjsSyncStore.getState().storageFailed[editSessionId] ?? false)) {
-    useYjsSyncStore.setState((s) => ({ storageFailed: { ...s.storageFailed, [editSessionId]: writer.failed } }));
-  }
+  if (writer.failed !== sessionOf(conn).storageFailed) patchSession(conn, { storageFailed: writer.failed });
   guardUnload();
   if (!conn.unsynced && !writer.pending && isClean(conn)) void writer.prove({ kind: 'clean' });
 }
 
 /** The connection this tab holds for a document, by its key on the tab channel. */
 export function findConnection(key: string): YjsConnection | undefined {
-  const separator = key.indexOf(':');
-  const conn = connections.get(key.slice(separator + 1));
-  return conn?.provider.params.entityType === key.slice(0, separator) ? conn : undefined;
+  const conn = connections.get(key.slice(key.indexOf(':') + 1));
+  return conn && toTabKey(conn.scope) === key ? conn : undefined;
 }
 
 /** True for an update that carries something: an empty Yjs update is two zero bytes. */
@@ -559,7 +550,7 @@ function receiveTabMessage(msg: TabMessage) {
   if (!conn || conn.stopped || conn.generation !== msg.generation) return;
   if (msg.t === 'hello') {
     const missing = Y.encodeStateAsUpdate(conn.yDoc, msg.vector);
-    if (holdsChanges(missing)) postTabUpdate({ t: 'update', key: msg.key, generation: msg.generation, update: missing, rowId: null });
+    if (holdsChanges(missing)) postTabMessage({ t: 'update', key: msg.key, generation: msg.generation, update: missing, rowId: null });
     return;
   }
   if (msg.rowId !== null) conn.applied.ids.add(msg.rowId);
@@ -573,34 +564,33 @@ onTabMessage(receiveTabMessage);
  * final close or a deleted entity, rebuilds it when the relay reseeded the document, reports the first sync, and tracks
  * the edits the relay has not saved yet.
  */
-function bindProvider(editSessionId: string, conn: YjsConnection, entityType: ProductEntityType, tenantId: string, organizationId: string) {
-  const { provider, yDoc, ledger } = conn;
-  const scope: HttpLinkScope = { entityType, entityId: editSessionId, tenantId, organizationId };
-  const tokenKey = yjsTokenKey(entityType, editSessionId);
-  const tokenQueryKey = yjsTokenKeys.entity(entityType, editSessionId);
+function bindProvider(conn: YjsConnection) {
+  const { provider, yDoc, ledger, scope } = conn;
+  const tokenKey = yjsTokenKey(scope.entityType, scope.entityId);
+  const tokenQueryKey = yjsTokenKeys.entity(scope.entityType, scope.entityId);
 
   // Clears `unsynced` once the server holds every edit, then lets a connection whose grace period ran out meanwhile go.
   // The stored rows of this tab's edits are proven with it.
   const settle = () => {
     if (conn.provider !== provider || !conn.unsynced || !isClean(conn)) return;
-    setUnsynced(editSessionId, conn, false);
+    setUnsynced(conn, false);
     void conn.writer?.prove({ kind: 'clean' });
-    reapConnection(editSessionId, conn);
+    reapConnection(conn);
   };
   ledger.onChange = settle;
 
   // What the handshake's Step2 carries: every stored row the document holds and its state, proven once the relay saved
   // it. A document not stored yet has no rows to prove.
-  let handshake: { applied: AppliedRows; vector: Uint8Array } | null = null;
+  let handshake: StoreProof | null = null;
   ledger.onHandshakeSent = () => {
-    handshake = conn.writer ? { applied: { upTo: conn.applied.upTo, ids: new Set(conn.applied.ids) }, vector: Y.encodeStateVector(yDoc) } : null;
+    handshake = conn.writer ? handshakeProof(conn) : null;
   };
 
   // A withdrawn token stays withdrawn across an offline blip: reconnect only while one is held.
   conn.unsubOnline = onlineManager.subscribe((isOnline) => {
     if (!isOnline) {
       provider.disconnect();
-      pauseTransports(editSessionId, conn);
+      pauseTransports(conn);
     } else if (conn.loaded && !conn.stopped && userStore.getState().yjsTokens[tokenKey]) provider.connect();
   });
 
@@ -608,7 +598,7 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
   conn.unsubToken = userStore.subscribe((state, prevState) => {
     const newToken = state.yjsTokens[tokenKey];
     if (newToken) {
-      if (provider.params) (provider.params as Record<string, string>).token = newToken;
+      provider.params.token = newToken;
       // A document opened without a token, from storage, connects once one arrives.
       if (!prevState.yjsTokens[tokenKey] && conn.loaded && !conn.stopped && onlineManager.isOnline() !== false) provider.connect();
       return;
@@ -618,13 +608,13 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
     // Signed out: the connection goes and leaves storage alone. A hard sign-out deletes the database once the sign-out
     // page listed these edits and the user confirmed; a lost session keeps them stored for the same user's next one.
     if (!state.user) {
-      setUnsynced(editSessionId, conn, false);
-      stopConnection(editSessionId, conn, null);
-      return reapConnection(editSessionId, conn);
+      setUnsynced(conn, false);
+      stopConnection(conn, null);
+      return reapConnection(conn);
     }
     // The token route refused it: 404 for a deleted entity, as the relay's 4410 says, else 403 for lost edit rights.
     const refusal = yjsTokenRefusal(queryClient.getQueryState(tokenQueryKey)?.error);
-    endUnsaveable(editSessionId, conn, scope, refusal === 'deleted' ? 'deleted' : 'denied');
+    endUnsaveable(conn, refusal === 'deleted' ? 'deleted' : 'denied');
   });
 
   // The token each attempt carries: y-websocket reads the params as it opens a socket, then reports 'connecting'.
@@ -639,7 +629,7 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
   provider.on('sync', (isSynced: boolean) => {
     if (!isSynced) return;
     refusedTokens.clear();
-    startStoring(editSessionId, conn, scope, conn.unsynced);
+    startStoring(conn, conn.unsynced);
     settle();
   });
 
@@ -657,20 +647,20 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
       // observing the key, so it fetches its own token, and a refusal withdraws it like the query's would.
       if (!queryClient.getQueryCache().find({ queryKey: tokenQueryKey })?.getObserversCount()) {
         queryClient
-          .query(yjsTokenQueryOptions({ entityType, entityId: editSessionId, tenantId, organizationId }))
+          .query(yjsTokenQueryOptions(scope))
           .then((token) => userStore.getState().setYjsToken(tokenKey, token))
           .catch((error) => {
             if (yjsTokenRefusal(error)) userStore.getState().setYjsToken(tokenKey, null);
           });
       }
       if (refusedTokens.size < maxTokenFailures) return;
-      console.warn(`[yjs] Circuit breaker: ${refusedTokens.size} tokens refused in a row for ${editSessionId}`);
-      stopConnection(editSessionId, conn, 'expired');
+      console.warn(`[yjs] Circuit breaker: ${refusedTokens.size} tokens refused in a row for ${scope.entityId}`);
+      stopConnection(conn, 'expired');
       return;
     }
 
     const reason = finalCloses.get(event.code);
-    if (reason) endUnsaveable(editSessionId, conn, scope, reason);
+    if (reason) endUnsaveable(conn, reason);
   });
 
   // The relay announces the document's generation before it answers a handshake. The first one is the document's. A
@@ -681,7 +671,7 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
   provider.messageHandlers[yjsMessageTypes.GENERATION] = (_encoder, decoder) => {
     const generation = decoding.readVarString(decoder);
     if (conn.generation === null) conn.generation = generation;
-    else if (conn.generation !== generation) return rebuildConnection(editSessionId, conn, entityType, tenantId, organizationId);
+    else if (conn.generation !== generation) return rebuildConnection(conn);
     ledger.generationSeen = true;
   };
 
@@ -698,7 +688,7 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
     ledger.saved++;
     if (ledger.handshakeAt > 0 && ledger.saved >= ledger.handshakeAt && !ledger.handshakeProven) {
       ledger.handshakeProven = true;
-      if (handshake) void conn.writer?.prove({ kind: 'handshake', ...handshake });
+      if (handshake) void conn.writer?.prove(handshake);
       handshake = null;
     }
     ledger.legacy = false;
@@ -718,40 +708,25 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
       return;
     }
     // A local edit opens the document for editing, also in an editor never focused (a checklist toggle).
-    markStored(editSessionId, conn, scope);
+    markStored(conn);
     conn.writer?.append(update, true);
     // Off the socket, the HTTP link keeps the edit: it posts it, or batches it into its next handshake.
     if (conn.transport !== 'ws') conn.http?.queue(update);
-    setUnsynced(editSessionId, conn, true);
+    setUnsynced(conn, true);
     queueMicrotask(settle);
   });
 
   conn.stopResyncWatch = watchPendingStructs(yDoc, provider);
 
-  const handleSync = (isSynced: boolean) => {
-    if (!isSynced) return;
-    provider.off('sync', handleSync);
-    useYjsSyncStore.setState((s) => ({ synced: { ...s.synced, [editSessionId]: true } }));
-  };
-
-  if (provider.synced) {
-    useYjsSyncStore.setState((s) => ({ synced: { ...s.synced, [editSessionId]: true } }));
-  } else {
-    provider.on('sync', handleSync);
-  }
-
   // HTTP takes over when a socket attempt has not synced within wsSyncDeadlineMs while the API answers. y-websocket
   // keeps reconnecting with backoff meanwhile, and the first sync hands the document back. No switch disconnects it.
-  conn.http = createHttpLink(conn, scope, {
-    onChange: settle,
-    end: (reason) => endOverHttp(editSessionId, conn, reason, entityType, tenantId, organizationId),
-  });
+  conn.http = createHttpLink(conn, { onChange: settle, end: (reason) => endOverHttp(conn, reason) });
   const enterHttp = async () => {
     const link = conn.http;
     if (!link || !(await link.enter()) || conn.http !== link || conn.stopped || provider.synced) return;
-    setTransport(editSessionId, conn, 'http');
-    setReady(editSessionId, conn);
-    startStoring(editSessionId, conn, scope, conn.unsynced);
+    setTransport(conn, 'http');
+    setReady(conn);
+    startStoring(conn, conn.unsynced);
     // The link may have reported its ledger before the transport was its own.
     settle();
   };
@@ -768,8 +743,8 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
     conn.wsDeadline = undefined;
     // A post in flight settles; the socket's handshake proves the whole document by itself.
     conn.http?.leave();
-    setTransport(editSessionId, conn, 'ws');
-    setReady(editSessionId, conn);
+    setTransport(conn, 'ws');
+    setReady(conn);
   });
 }
 
@@ -789,31 +764,26 @@ function unbindProvider(conn: YjsConnection) {
 /**
  * Replaces the connection's document with a fresh one that syncs the reseeded server state, after a delete and a
  * restore or a lost document row. The editor remounts on the new fragment once it synced (useYjsConnection reports
- * `synced` false meanwhile). Edits the relay never saved cannot reach the reseeded document, so they are parked with
+ * `ready` false meanwhile). Edits the relay never saved cannot reach the reseeded document, so they are parked with
  * a notice to copy them. A connection that only waited for those edits to be saved has nothing left to wait for.
  */
-function rebuildConnection(editSessionId: string, conn: YjsConnection, entityType: ProductEntityType, tenantId: string, organizationId: string) {
+function rebuildConnection(conn: YjsConnection) {
   const { stored } = conn;
-  parkUnsaveable(conn, { entityType, entityId: editSessionId, tenantId, organizationId }, 'replaced');
-  setUnsynced(editSessionId, conn, false);
-  if (conn.refCount === 0 && !conn.graceTimer) destroyConnection(editSessionId, conn);
+  parkUnsaveable(conn, conn.scope, 'replaced');
+  setUnsynced(conn, false);
+  if (conn.refCount === 0 && !conn.graceTimer) destroyConnection(conn);
   else {
     unbindProvider(conn);
     // A stored document stays stored: the fresh one is written whole once it synced, over the dropped generation's.
-    Object.assign(conn, openDoc(editSessionId, entityType, tenantId), { generation: null, wsDeadline: undefined, stored });
-    useYjsSyncStore.setState((s) => ({
-      synced: { ...s.synced, [editSessionId]: false },
-      ready: { ...s.ready, [editSessionId]: false },
-      transport: { ...s.transport, [editSessionId]: 'none' },
-      rebuilds: { ...s.rebuilds, [editSessionId]: (s.rebuilds[editSessionId] ?? 0) + 1 },
-    }));
-    bindProvider(editSessionId, conn, entityType, tenantId, organizationId);
+    Object.assign(conn, openDoc(conn.scope), { generation: null, wsDeadline: undefined, stored });
+    patchSession(conn, { ready: false, transport: 'none', rebuilds: sessionOf(conn).rebuilds + 1 });
+    bindProvider(conn);
     startConnection(conn);
   }
 }
 
-function acquireConnection(editSessionId: string, entityType: ProductEntityType, tenantId: string, organizationId: string): YjsConnection {
-  const existing = connections.get(editSessionId);
+function acquireConnection(scope: YjsDocScope): YjsConnection {
+  const existing = connections.get(scope.entityId);
 
   if (existing) {
     if (existing.graceTimer) {
@@ -824,29 +794,22 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
     return existing;
   }
 
-  const conn: YjsConnection = { ...openDoc(editSessionId, entityType, tenantId), refCount: 1, stopped: false, generation: null, unsynced: false };
-  bindProvider(editSessionId, conn, entityType, tenantId, organizationId);
-  connections.set(editSessionId, conn);
-  loadConnection(editSessionId, conn, { entityType, tenantId, organizationId });
+  const conn: YjsConnection = { scope, ...openDoc(scope), refCount: 1, stopped: false, generation: null, unsynced: false };
+  bindProvider(conn);
+  connections.set(scope.entityId, conn);
+  loadConnection(conn);
   return conn;
 }
 
-function destroyConnection(editSessionId: string, conn: YjsConnection) {
-  if (connections.get(editSessionId) !== conn) return;
+function destroyConnection(conn: YjsConnection) {
+  const { entityId } = conn.scope;
+  if (connections.get(entityId) !== conn) return;
   unbindProvider(conn);
-  connections.delete(editSessionId);
+  connections.delete(entityId);
   guardUnload();
-  useYjsSyncStore.setState((s) => {
-    const { [editSessionId]: _synced, ...synced } = s.synced;
-    const { [editSessionId]: _stopped, ...stopped } = s.stopped;
-    const { [editSessionId]: _stopReason, ...stopReason } = s.stopReason;
-    const { [editSessionId]: _ready, ...ready } = s.ready;
-    const { [editSessionId]: _transport, ...transport } = s.transport;
-    const { [editSessionId]: _rebuilds, ...rebuilds } = s.rebuilds;
-    const { [editSessionId]: _unsynced, ...unsynced } = s.unsynced;
-    const { [editSessionId]: _deleted, ...deleted } = s.deleted;
-    const { [editSessionId]: _storageFailed, ...storageFailed } = s.storageFailed;
-    return { synced, stopped, stopReason, ready, transport, rebuilds, unsynced, deleted, storageFailed };
+  useYjsSyncStore.setState(({ sessions }) => {
+    const { [entityId]: _destroyed, ...rest } = sessions;
+    return { sessions: rest };
   });
 }
 
@@ -855,9 +818,9 @@ function destroyConnection(editSessionId: string, conn: YjsConnection) {
  * those live only in its document, so it stays, reconnecting, until the relay saved them. A stopped connection never
  * gets there, and keeps them for the editor to show again.
  */
-function reapConnection(editSessionId: string, conn: YjsConnection) {
+function reapConnection(conn: YjsConnection) {
   if (conn.refCount > 0 || conn.graceTimer || conn.unsynced) return;
-  destroyConnection(editSessionId, conn);
+  destroyConnection(conn);
 }
 
 /** Unsynced edits a connection holds in memory only: no database stores them, or storing them failed. */
@@ -895,10 +858,11 @@ const resumePollMs = 1_000;
 export async function resumeConnection(record: YDocRecord): Promise<void> {
   const { entityType, entityId, tenantId, organizationId } = record;
   if (connections.has(entityId)) return;
+  const scope: YjsDocScope = { entityType, entityId, tenantId, organizationId };
   const tokenKey = yjsTokenKey(entityType, entityId);
   if (!userStore.getState().yjsTokens[tokenKey]) {
     try {
-      const token = await queryClient.query(yjsTokenQueryOptions({ entityType, entityId, tenantId, organizationId }));
+      const token = await queryClient.query(yjsTokenQueryOptions(scope));
       userStore.getState().setYjsToken(tokenKey, token);
     } catch (error) {
       // Deleted, or edit rights lost while the edits waited: they can never be saved, so the stored document is parked
@@ -907,7 +871,6 @@ export async function resumeConnection(record: YDocRecord): Promise<void> {
       if (!refusal) return console.warn(`[yjs] No token to resume ${entityType}:${entityId}`, error);
       // Not started, the writer parks the stored document alone; the empty document is the notice's fallback only.
       const yDoc = new Y.Doc();
-      const scope = { entityType, entityId, tenantId, organizationId };
       parkUnsaveable(
         { yDoc, writer: createYDocWriter(record), unsynced: true, generation: record.generation },
         scope,
@@ -918,7 +881,7 @@ export async function resumeConnection(record: YDocRecord): Promise<void> {
     }
   }
   if (connections.has(entityId)) return;
-  const conn = acquireConnection(entityId, entityType, tenantId, organizationId);
+  const conn = acquireConnection(scope);
   releaseConnection(entityId);
 
   await new Promise<void>((resolve) => {
@@ -940,25 +903,18 @@ function releaseConnection(editSessionId: string) {
   if (conn.refCount > 0) return;
   // A stopped connection holds nothing to reuse, so reopening the editor starts a fresh one; unless it holds unsaved
   // edits, which the reopened editor shows again.
-  if (conn.stopped) return reapConnection(editSessionId, conn);
+  if (conn.stopped) return reapConnection(conn);
   conn.graceTimer = setTimeout(() => {
     conn.graceTimer = undefined;
-    reapConnection(editSessionId, conn);
+    reapConnection(conn);
   }, gracePeriodMs);
 }
 
 /**
  * Ref-counted Yjs connection kept alive for a grace period after the last consumer unmounts, so a remount reuses it,
- * and after that for as long as it holds edits the server has not saved; `undefined` disables it. `ready` turns true
- * once the editor may mount: synced over the relay's socket or over HTTP, or loaded from storage. `transport` names
- * what carries the edits: `ws`, `http` while the relay is out of reach, or `none` before the first sync and while
- * offline. `stopped` turns true once the session ended for good, with `stopReason` saying why when a final answer did:
- * the editor must go read-only. `deleted` turns true with it when the entity was deleted, and the edits its document
- * held were parked. `ready` and `synced` drop back to false while a reseeded document syncs afresh, and `rebuilds`
- * counts those, so the editor remounts on the new fragment. `unsynced` is true while the document holds local edits the
- * server has not saved. `markStored` keeps the document in the per-user database from
- * then on (the editor calls it on focus; a local edit does too), and `storageFailed` turns true once storing it failed
- * for good.
+ * and after that for as long as it holds edits the server has not saved; `undefined` disables it. It reports the
+ * connection's {@link SessionSync}, and `markStored` keeps the document in the per-user database from then on (the
+ * editor calls it on focus; a local edit does too).
  */
 export function useYjsConnection(editSessionId: string | undefined, entityType: ProductEntityType, tenantId: string, organizationId: string) {
   const [conn, setConn] = useState<YjsConnection | null>(() => {
@@ -970,7 +926,7 @@ export function useYjsConnection(editSessionId: string | undefined, entityType: 
       setConn(null);
       return;
     }
-    const acquired = acquireConnection(editSessionId, entityType, tenantId, organizationId);
+    const acquired = acquireConnection({ entityType, entityId: editSessionId, tenantId, organizationId });
     setConn(acquired);
     return () => {
       releaseConnection(editSessionId);
@@ -978,34 +934,14 @@ export function useYjsConnection(editSessionId: string | undefined, entityType: 
     };
   }, [editSessionId, entityType, tenantId, organizationId]);
 
-  const synced = useYjsSyncStore((s) => s.synced[editSessionId ?? ''] ?? false);
-  const ready = useYjsSyncStore((s) => s.ready[editSessionId ?? ''] ?? false);
-  const transport = useYjsSyncStore((s) => s.transport[editSessionId ?? ''] ?? 'none');
-  const stopped = useYjsSyncStore((s) => s.stopped[editSessionId ?? ''] ?? false);
-  const stopReason = useYjsSyncStore((s) => s.stopReason[editSessionId ?? ''] ?? null);
-  const rebuilds = useYjsSyncStore((s) => s.rebuilds[editSessionId ?? ''] ?? 0);
-  const unsynced = useYjsSyncStore((s) => s.unsynced[editSessionId ?? ''] ?? false);
-  const deleted = useYjsSyncStore((s) => s.deleted[editSessionId ?? ''] ?? false);
-  const storageFailed = useYjsSyncStore((s) => s.storageFailed[editSessionId ?? ''] ?? false);
-
-  // Opened for editing: the editor's focus stores the document from now on. A warm editor is never focused, and stores nothing.
-  const storeDocument = useCallback(() => {
-    if (conn && editSessionId) markStored(editSessionId, conn, { entityType, tenantId, organizationId });
-  }, [conn, editSessionId, entityType, tenantId, organizationId]);
+  const session = useYjsSyncStore((state) => state.sessions[editSessionId ?? '']) ?? initialSession;
 
   if (!conn) return null;
   return {
     awareness: conn.awareness,
     fragment: conn.fragment,
-    ready,
-    transport,
-    synced,
-    stopped,
-    stopReason,
-    rebuilds,
-    unsynced,
-    deleted,
-    storageFailed,
-    markStored: storeDocument,
+    ...session,
+    // Opened for editing: the editor's focus stores the document from now on. A warm editor is never focused, and stores nothing.
+    markStored: () => markStored(conn),
   };
 }

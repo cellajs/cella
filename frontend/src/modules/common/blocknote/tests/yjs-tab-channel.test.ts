@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('shared', () => ({ appConfig: { slug: 'test' } }));
 
 const { bindLocalUserDb, closeLocalUserDb, notifyOwnerChange } = await import('~/query/local-user-db');
-const { onTabMessage, postTabUpdate, toTabKey } = await import('~/modules/common/blocknote/yjs-tab-channel');
+const { onTabMessage, postTabMessage, toTabKey } = await import('~/modules/common/blocknote/yjs-tab-channel');
 type TabMessage = Parameters<Parameters<typeof onTabMessage>[0]>[0];
 
 /** Binds `owner`'s database as sign-in does, and tells the owner listeners, as local-user-storage does once bound. */
@@ -47,7 +47,7 @@ describe('yjs tab channel', () => {
       () => tab.channel.close(),
     );
 
-    postTabUpdate(update(7));
+    postTabMessage(update(7));
     tab.channel.postMessage(update(null));
 
     await vi.waitFor(() => expect(tab.received).toEqual([update(7)]));
@@ -67,7 +67,7 @@ describe('yjs tab channel', () => {
     );
 
     signIn('user-b');
-    postTabUpdate(update(1));
+    postTabMessage(update(1));
     tabA.channel.postMessage(update(2));
     tabB.channel.postMessage(update(3));
 
@@ -82,9 +82,9 @@ describe('yjs tab channel', () => {
     stops.push(() => tab.channel.close());
     signIn(null);
 
-    postTabUpdate(update(1));
+    postTabMessage(update(1));
     signIn('user-a');
-    postTabUpdate(update(2));
+    postTabMessage(update(2));
 
     await vi.waitFor(() => expect(tab.received).toEqual([update(2)]));
   });

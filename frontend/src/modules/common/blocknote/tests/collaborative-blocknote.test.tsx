@@ -27,7 +27,6 @@ vi.mock('~/modules/common/blocknote/lazy-full-html', () => ({
 const connectionDefaults = {
   ready: true,
   transport: 'ws' as 'none' | 'ws' | 'http',
-  synced: true,
   stopped: false,
   stopReason: null as 'denied' | 'refused' | 'expired' | null,
   rebuilds: 0,
@@ -54,14 +53,13 @@ let online = true;
 vi.mock('~/hooks/use-online-manager', () => ({ useOnlineManager: () => online }));
 // Whether the per-user database holds the document: a stored one opens without a token.
 let stored = false;
-vi.mock('~/modules/common/blocknote/yjs-store', () => ({ useStoredYDoc: () => ({ stored, unsynced: false }) }));
+vi.mock('~/modules/common/blocknote/yjs-store', () => ({ isYjsEnabled: () => true, useStoredYDoc: () => ({ stored, unsynced: false }) }));
 vi.mock('~/modules/user/user-store', () => ({ useCurrentUser: () => ({ name: 'Editor' }) }));
 vi.mock('~/modules/common/blocknote/custom-file-panel/upload-host', () => ({
   UploadHostProvider: ({ children }: { children: unknown }) => children,
 }));
 vi.mock('~/utils/random-color', () => ({ getRandomColor: () => '#000000' }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }));
-vi.mock('shared', () => ({ appConfig: { services: { yjs: { enabled: true } }, yjsUrl: 'http://localhost:1234' } }));
 
 const { CollaborativeBlockNote } = await import('~/modules/common/blocknote/collaborative-blocknote');
 
@@ -145,13 +143,13 @@ describe('CollaborativeBlockNote states', () => {
 
     // The token arrives, and the relay is slow: still connecting.
     tokenState.token = 'token';
-    Object.assign(connection, { ready: false, transport: 'none', synced: false });
+    Object.assign(connection, { ready: false, transport: 'none' });
     await render({ waitingFallback: undefined, description: 'written elsewhere' });
     expect(connectionRequests.at(-1)).toBe('attachment-1');
     expect(editors).toHaveLength(0);
     expect(status()).toBe('c:connecting');
 
-    Object.assign(connection, { ready: true, transport: 'ws', synced: true });
+    Object.assign(connection, { ready: true, transport: 'ws' });
     await render({ waitingFallback: undefined, description: 'written elsewhere' });
     expect(editors.at(-1)?.collaboration).toBeDefined();
     expect(container.querySelector('[data-static]')).toBeNull();
@@ -160,7 +158,7 @@ describe('CollaborativeBlockNote states', () => {
 
   it('offline with nothing stored: the static saying offline, then the editor once online and synced', async () => {
     online = false;
-    Object.assign(connection, { ready: false, transport: 'none', synced: false });
+    Object.assign(connection, { ready: false, transport: 'none' });
     await render();
 
     expect(showsStatic()).toBe(true);
@@ -168,7 +166,7 @@ describe('CollaborativeBlockNote states', () => {
     expect(status()).toBe('c:offline');
 
     online = true;
-    Object.assign(connection, { ready: true, transport: 'ws', synced: true });
+    Object.assign(connection, { ready: true, transport: 'ws' });
     await render();
     expect(showsStatic()).toBe(false);
     expect(editors.at(-1)?.editable).toBe(true);
@@ -244,7 +242,7 @@ describe('CollaborativeBlockNote states', () => {
   });
 
   it('renders no static for a null waitingFallback', async () => {
-    Object.assign(connection, { ready: false, synced: false });
+    Object.assign(connection, { ready: false });
     await render({ waitingFallback: null, description: 'stored' });
 
     expect(container.querySelector('[data-static]')).toBeNull();
@@ -252,7 +250,7 @@ describe('CollaborativeBlockNote states', () => {
   });
 
   it('stopped before it was ever ready: the static with the stopped notice', async () => {
-    Object.assign(connection, { ready: false, synced: false, stopped: true, stopReason: 'refused' });
+    Object.assign(connection, { ready: false, stopped: true, stopReason: 'refused' });
     await render();
 
     expect(showsStatic()).toBe(true);
@@ -268,13 +266,13 @@ describe('CollaborativeBlockNote after the relay reseeded the document', () => {
     expect(dropped).toBe(connection.fragment);
 
     // The connection replaced its document; the new one is not ready yet.
-    Object.assign(connection, { fragment: {}, ready: false, transport: 'none', synced: false, rebuilds: 1 });
+    Object.assign(connection, { fragment: {}, ready: false, transport: 'none', rebuilds: 1 });
     const rendered = editors.length;
     await render();
     expect(editors).toHaveLength(rendered);
     expect(showsStatic()).toBe(true);
 
-    Object.assign(connection, { ready: true, transport: 'ws', synced: true });
+    Object.assign(connection, { ready: true, transport: 'ws' });
     await render();
     expect(editorMounts).toBe(2);
     expect(showsStatic()).toBe(false);
@@ -319,7 +317,7 @@ describe('CollaborativeBlockNote off the relay', () => {
     online = false;
     stored = true;
     tokenState.token = undefined;
-    Object.assign(connection, { transport: 'none', synced: false });
+    Object.assign(connection, { transport: 'none' });
     await render();
 
     expect(connectionRequests.at(-1)).toBe('attachment-1');
@@ -337,7 +335,7 @@ describe('CollaborativeBlockNote off the relay', () => {
   it('a stored document online before either transport synced it: the live editor, saying connecting after a second', async () => {
     vi.useFakeTimers();
     stored = true;
-    Object.assign(connection, { transport: 'none', synced: false });
+    Object.assign(connection, { transport: 'none' });
     await render();
 
     expect(editors.at(-1)?.editable).toBe(true);
@@ -345,7 +343,7 @@ describe('CollaborativeBlockNote off the relay', () => {
     await act(async () => vi.advanceTimersByTime(1_000));
     expect(status()).toBe('c:connecting');
 
-    Object.assign(connection, { transport: 'ws', synced: true });
+    Object.assign(connection, { transport: 'ws' });
     await render();
     expect(status()).toBeNull();
     expect(editorMounts).toBe(1);
@@ -394,7 +392,7 @@ describe('CollaborativeBlockNote after the entity is deleted', () => {
   });
 
   it('shows deleted, not collaboration stopped, for a connection the relay closed with 4410 before it was ready', async () => {
-    Object.assign(connection, { ready: false, synced: false, stopped: true, deleted: true });
+    Object.assign(connection, { ready: false, stopped: true, deleted: true });
     await render();
 
     expect(showsStatic()).toBe(true);

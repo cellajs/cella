@@ -174,7 +174,7 @@ vi.mock('~/env', () => ({ isDebugMode: false }));
 const httpHooks: { end: (reason: string) => void }[] = [];
 vi.mock('~/modules/common/blocknote/yjs-http', () => ({
   wsSyncDeadlineMs: 5_000,
-  createHttpLink: (_conn: unknown, _scope: unknown, hooks: { end: (reason: string) => void }) => {
+  createHttpLink: (_conn: unknown, hooks: { end: (reason: string) => void }) => {
     httpHooks.push(hooks);
     return { enter: () => new Promise(() => {}), leave: () => {}, queue: () => {}, pull: async () => {}, clean: false };
   },
@@ -415,7 +415,7 @@ describe('yjs connection: a reseeded document', () => {
     const { provider, state } = await mountConnection();
     await announce(provider, 'gen-1');
     await act(async () => provider.emit('sync', true));
-    expect(state()?.synced).toBe(true);
+    expect(state()).toMatchObject({ ready: true, transport: 'ws' });
 
     // A local edit; a reconnect announces the same generation, and nothing happens.
     provider.doc.onUpdate?.(new Uint8Array(), 'editor');
@@ -434,7 +434,7 @@ describe('yjs connection: a reseeded document', () => {
     expect(next.awareness).not.toBe(provider.awareness);
     expect(provider.awareness?.destroy).toHaveBeenCalledTimes(1);
     expect(next.connect).toHaveBeenCalledOnce();
-    expect(state()?.synced).toBe(false);
+    expect(state()).toMatchObject({ ready: false, transport: 'none' });
     expect(state()?.rebuilds).toBe(1);
     expect(state()?.stopped).toBe(false);
     // The edits the relay never saved are parked with the dropped document, and the notice replaces a toast.
@@ -445,7 +445,7 @@ describe('yjs connection: a reseeded document', () => {
     await announce(next, 'gen-2');
     await act(async () => next.emit('sync', true));
     expect(next.destroy).not.toHaveBeenCalled();
-    expect(state()?.synced).toBe(true);
+    expect(state()).toMatchObject({ ready: true, transport: 'ws' });
   });
 
   it('reloads a document never edited here without a notice (positive control)', async () => {
@@ -749,7 +749,7 @@ describe('yjs connection: a write from outside the relay', () => {
     expect(providers).toHaveLength(opened);
     expect(state()?.awareness).toBe(provider.awareness);
     expect(state()?.rebuilds).toBe(0);
-    expect(state()?.synced).toBe(true);
+    expect(state()).toMatchObject({ ready: true, transport: 'ws' });
     expect(warning).not.toHaveBeenCalled();
 
     // The edit survives in the same document, and the handshake Step2 saves it.

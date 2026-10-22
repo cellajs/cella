@@ -35,8 +35,7 @@ export function watchPendingStructs(doc: Y.Doc, provider: ResyncableProvider, no
   let lastResyncAt = 0;
 
   const check = () => {
-    const store = doc.store as unknown as { pendingStructs: unknown };
-    const parked = store.pendingStructs !== null && store.pendingStructs !== undefined;
+    const parked = doc.store.pendingStructs !== null;
     const time = now();
     if (!parked) {
       parkedSince = 0;

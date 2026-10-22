@@ -48,13 +48,8 @@ subscribeOwnerChange(() => {
   if (handlers.size > 0) currentChannel();
 });
 
-/** Sends a local edit to the other tabs, after the store committed it. */
-export function postTabUpdate(msg: Extract<TabMessage, { t: 'update' }>): void {
-  currentChannel()?.postMessage(msg);
-}
-
-/** Asks the other tabs for what a loaded document lacks. */
-export function postTabHello(msg: Extract<TabMessage, { t: 'hello' }>): void {
+/** Sends a message to the bound user's other tabs. */
+export function postTabMessage(msg: TabMessage): void {
   currentChannel()?.postMessage(msg);
 }
 

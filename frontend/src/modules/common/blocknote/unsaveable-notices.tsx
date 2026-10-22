@@ -1,12 +1,13 @@
 import i18n from 'i18next';
-import { CheckIcon, CopyIcon } from 'lucide-react';
+import { CopyIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as Y from 'yjs';
 import type { TKey } from '~/lib/i18n-locales';
+import type { YjsDocScope } from '~/modules/common/blocknote/query';
 import { firstLineOf, yDocLabel, ydocFragment } from '~/modules/common/blocknote/ydoc-label';
 import type { YjsConnection } from '~/modules/common/blocknote/yjs-connections';
-import type { HttpLinkScope } from '~/modules/common/blocknote/yjs-http';
+import { CopiedIcon } from '~/modules/common/copied-icon';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
@@ -28,7 +29,7 @@ type ParkSource = Pick<YjsConnection, 'yDoc' | 'writer' | 'unsynced' | 'generati
  * and a clean document's stored copy goes silently. The document is read before this returns, so the caller may destroy
  * it right after. Without a writer, or when parking fails, the notice holds the state in memory.
  */
-export function parkUnsaveable(conn: ParkSource, scope: HttpLinkScope, reason: UnsaveableReason): void {
+export function parkUnsaveable(conn: ParkSource, scope: YjsDocScope, reason: UnsaveableReason): void {
   const { writer, yDoc } = conn;
   if (!conn.unsynced) {
     writer?.drop().catch((error) => console.error('[yjs] Deleting a stored document failed:', error));
@@ -128,7 +129,7 @@ function NoticeActions({ copy, discard }: { copy: (() => Promise<boolean>) | nul
       <p>{t('c:unsaveable_edits.text')}</p>
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" size="xs" className="text-foreground" disabled={!copy} onClick={() => copy?.().then(setCopied)}>
-          {copied ? <CheckIcon /> : <CopyIcon />}
+          <CopiedIcon copied={!!copied} icon={CopyIcon} />
           {copied ? t('c:copied') : copied === false ? t('c:copy_failed') : t('c:copy_text')}
         </Button>
         <Button variant="ghost" size="xs" className="text-foreground" onClick={() => void discard()}>

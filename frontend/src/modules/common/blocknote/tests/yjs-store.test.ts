@@ -7,7 +7,7 @@ vi.mock('shared', () => ({ appConfig: { slug: 'test', yjsUrl: 'http://relay.test
 /** What the tab channel was asked to send, in order. */
 const broadcasts: { key: string; generation: string; update: Uint8Array; rowId: number | null }[] = [];
 vi.mock('~/modules/common/blocknote/yjs-tab-channel', () => ({
-  postTabUpdate: (msg: (typeof broadcasts)[number]) => broadcasts.push(msg),
+  postTabMessage: (msg: (typeof broadcasts)[number]) => broadcasts.push(msg),
   toTabKey: (key: { entityType: string; entityId: string }) => `${key.entityType}:${key.entityId}`,
 }));
 let offlineAccess = true;

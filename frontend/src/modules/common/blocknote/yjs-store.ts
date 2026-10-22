@@ -9,8 +9,9 @@ import { liveQuery } from 'dexie';
 import { useEffect, useState } from 'react';
 import { appConfig, type ProductEntityType } from 'shared';
 import type * as Y from 'yjs';
+import type { YjsDocScope } from '~/modules/common/blocknote/query';
 import { warnOnStoragePressure } from '~/modules/common/blocknote/storage-warning';
-import { postTabUpdate, toTabKey } from '~/modules/common/blocknote/yjs-tab-channel';
+import { postTabMessage, toTabKey } from '~/modules/common/blocknote/yjs-tab-channel';
 import { uiStore } from '~/modules/ui/ui-store';
 import {
   getLocalUserDb,
@@ -42,6 +43,9 @@ const sessionKeepMs = 2 * 60 * 60_000;
 /** Background connections boot resume opens at a time. */
 export const resumeConcurrency = 3;
 
+/** Whether descriptions save through the Yjs relay: one save mode for every type, fixed by config. */
+export const isYjsEnabled = () => appConfig.services.yjs.enabled && !!appConfig.yjsUrl;
+
 /** The origin a stored state is applied with: no edit of this tab, and nothing to store again. */
 export const storageOrigin = Symbol('yjs-store');
 
@@ -64,9 +68,7 @@ export interface LoadedYDoc {
 }
 
 /** A document whose edits no server holds: stored with unsynced edits, or parked as unsaveable. */
-export interface UnsavedYDoc extends YDocKey {
-  tenantId: string;
-  organizationId: string;
+export interface UnsavedYDoc extends YjsDocScope {
   /** Why the edits can never be saved, once parked; null while they are stored and wait for a server. */
   parked: UnsaveableReason | null;
   /** The parked row in `unsaveableYDocs`, which a discard deletes; absent while not parked. */
@@ -383,7 +385,7 @@ class StoreWriter implements YDocWriter {
 
   private broadcast(update: Uint8Array, rowId: number | null) {
     if (!this.scope) return;
-    postTabUpdate({ t: 'update', key: toTabKey(this.key), generation: this.scope.generation, update, rowId });
+    postTabMessage({ t: 'update', key: toTabKey(this.key), generation: this.scope.generation, update, rowId });
   }
 
   private async write(batch: Batch) {
@@ -642,10 +644,13 @@ export async function evictYDocs(): Promise<void> {
   await warnOnStoragePressure({ limitsReached: count > maxStoredDocs || bytes > maxStoredBytes });
 }
 
+/** Stored documents with unsynced edits. */
+const listUnsyncedYDocs = (db: LocalUserDatabase) => db.yDocs.filter((record) => record.unsynced === 1).toArray();
+
 /** Stored documents with unsynced edits, then parked ones. */
 async function readUnsaved(db: LocalUserDatabase): Promise<UnsavedYDoc[]> {
   return db.transaction('r', db.yDocs, db.unsaveableYDocs, async () => {
-    const stored = await db.yDocs.filter((record) => record.unsynced === 1).toArray();
+    const stored = await listUnsyncedYDocs(db);
     const parked = await db.unsaveableYDocs.toArray();
     return [
       ...stored.map(({ entityType, entityId, tenantId, organizationId }) => ({ entityType, entityId, tenantId, organizationId, parked: null })),
@@ -694,12 +699,12 @@ type StoredState = { stored: boolean; unsynced: boolean };
 export function useStoredYDoc(key: YDocKey | undefined): StoredState | undefined {
   const entityType = key?.entityType;
   const entityId = key?.entityId;
-  const id = entityType && entityId ? `${entityType}:${entityId}` : null;
+  const id = entityType && entityId ? toTabKey({ entityType, entityId }) : null;
   const [state, setState] = useState<{ id: string; value: StoredState } | null>(null);
 
   useEffect(() => {
     if (!entityType || !entityId) return;
-    const id = `${entityType}:${entityId}`;
+    const id = toTabKey({ entityType, entityId });
     return watchLocalUserDb(
       (db) => db.yDocs.get([entityType, entityId]),
       undefined,
@@ -714,13 +719,6 @@ export function useStoredYDoc(key: YDocKey | undefined): StoredState | undefined
   return id && state?.id === id ? state.value : undefined;
 }
 
-/** Documents with unsynced edits a background connection should upload. */
-async function listUnsyncedYDocs(): Promise<YDocRecord[]> {
-  const db = getLocalUserDb();
-  if (!db) return [];
-  return db.yDocs.filter((record) => record.unsynced === 1).toArray();
-}
-
 let resuming: Promise<void> | null = null;
 
 /**
@@ -730,8 +728,9 @@ let resuming: Promise<void> | null = null;
 export function resumeYDocs(): Promise<void> {
   if (resuming) return resuming;
   resuming = (async () => {
-    if (!isLeader() || !onlineManager.isOnline() || !appConfig.services.yjs.enabled || !appConfig.yjsUrl) return;
-    const queue = await listUnsyncedYDocs();
+    const db = getLocalUserDb();
+    if (!db || !isLeader() || !onlineManager.isOnline() || !isYjsEnabled()) return;
+    const queue = await listUnsyncedYDocs(db);
     if (queue.length === 0) return;
     const { resumeConnection } = await import('~/modules/common/blocknote/yjs-connections');
     const worker = async () => {

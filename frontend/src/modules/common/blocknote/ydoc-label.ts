@@ -5,7 +5,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 
-/** The fragment a collaborative editor binds in its document; yjs-connections.ts opens the same one. */
+/** The fragment a collaborative editor binds in its document. */
 export const ydocFragment = 'document-store';
 
 /** How much of a first line a label quotes. */

@@ -4,11 +4,10 @@
  * socket at its first sync.
  */
 
-import type { ProductEntityType } from 'shared';
 import * as Y from 'yjs';
 import { ApiError } from '~/lib/api';
 import { pullYjsDiff, pushYjsDiff } from '~/modules/common/blocknote/query';
-import { applyRemoteUpdate, type YjsConnection } from '~/modules/common/blocknote/yjs-connections';
+import { applyRemoteUpdate, handshakeProof, type YjsConnection } from '~/modules/common/blocknote/yjs-connections';
 import type { UnsaveableReason } from '~/query/local-user-db';
 
 /** How long the socket may take to sync after starting before HTTP takes over, while the API answers. */
@@ -28,14 +27,6 @@ const httpPullGapMs = 2_000;
 /** A failed request is retried after 1 s, doubling up to the minute the routes' limiter counts a caller in. */
 const httpRetryMs = 1_000;
 const httpRetryMaxMs = 60_000;
-
-/** The document a link syncs: its entity and the scope the routes check it in. */
-export interface HttpLinkScope {
-  entityType: ProductEntityType;
-  entityId: string;
-  tenantId: string;
-  organizationId: string;
-}
 
 /** What a link asks of its connection. */
 export interface HttpLinkHooks {
@@ -121,7 +112,7 @@ export function batchUpdates(updates: Uint8Array[], cap = httpChunkBytes): { bat
  * 200 proves the server holds the whole document as it stood when the handshake was encoded. One post is in flight at
  * a time, and none is aborted: a 200 that arrives after the link left still proves the rows it covered.
  */
-export function createHttpLink(conn: YjsConnection, scope: HttpLinkScope, hooks: HttpLinkHooks): HttpLink {
+export function createHttpLink(conn: YjsConnection, hooks: HttpLinkHooks): HttpLink {
   const doc = conn.yDoc;
 
   // Bumped by each enter and leave: a request of an earlier session settles, but changes nothing past its proof.
@@ -173,7 +164,7 @@ export function createHttpLink(conn: YjsConnection, scope: HttpLinkScope, hooks:
   const requestPull = async (s: number): Promise<boolean> => {
     lastPullAt = Date.now();
     try {
-      const answer = await pullYjsDiff(scope, Y.encodeStateVector(doc));
+      const answer = await pullYjsDiff(conn.scope, Y.encodeStateVector(doc));
       if (!isCurrent(s)) return false;
       // The first answer names the document's generation, as the relay's `Generation` frame does; another one later
       // means the server reseeded the document.
@@ -223,7 +214,7 @@ export function createHttpLink(conn: YjsConnection, scope: HttpLinkScope, hooks:
       let pulledForConflict = false;
       for (let attempt = 0; ; attempt++) {
         try {
-          await pushYjsDiff(scope, generation, update);
+          await pushYjsDiff(conn.scope, generation, update);
           return true;
         } catch (error) {
           // The link left: the failure is ignored, and the next handshake carries the document.
@@ -251,9 +242,6 @@ export function createHttpLink(conn: YjsConnection, scope: HttpLinkScope, hooks:
     }
   };
 
-  /** The rows and state vector a handshake proves, as they stand when it is encoded. */
-  const snapshot = () => ({ applied: { upTo: conn.applied.upTo, ids: new Set(conn.applied.ids) }, vector: Y.encodeStateVector(doc) });
-
   /**
    * Posts what the server lacks after the entering pull. With nothing unsynced it is proven at once. Too large for one
    * post, the queued edits go first in batches, then a pull and the rest as one diff; a rest still too large holds it.
@@ -265,7 +253,7 @@ export function createHttpLink(conn: YjsConnection, scope: HttpLinkScope, hooks:
       handshake = 'proven';
       return true;
     }
-    let proof = snapshot();
+    let proof = handshakeProof(conn);
     let update = Y.encodeStateAsUpdate(doc, serverVector);
     if (update.length > httpChunkBytes) {
       for (const batch of batchUpdates(backlog).batches) {
@@ -274,7 +262,7 @@ export function createHttpLink(conn: YjsConnection, scope: HttpLinkScope, hooks:
       // A pull that went out before the batches answers a vector without them.
       if (pulling) await pulling.done;
       if (!(await pullUntilAnswered(s))) return false;
-      proof = snapshot();
+      proof = handshakeProof(conn);
       update = Y.encodeStateAsUpdate(doc, serverVector);
       if (update.length > httpChunkBytes) {
         if (s === session) handshake = 'held';
@@ -283,7 +271,7 @@ export function createHttpLink(conn: YjsConnection, scope: HttpLinkScope, hooks:
     }
     if (!(await post(update, s))) return false;
     if (conn.yDoc === doc) {
-      conn.writer?.prove({ kind: 'handshake', ...proof }).catch((error) => console.error('[yjs] Storing the HTTP handshake proof failed', error));
+      conn.writer?.prove(proof).catch((error) => console.error('[yjs] Storing the HTTP handshake proof failed', error));
     }
     if (s === session) handshake = 'proven';
     return isCurrent(s);

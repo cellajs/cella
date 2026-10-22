@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import type { ProductEntityType } from 'shared';
-import { yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
+import { type YjsDocScope, yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
 import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
 
 /**
@@ -9,8 +8,7 @@ import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
  * The backend will not issue one when the caller may not edit the entity (`refused`, a 403: view only) or when the
  * entity is gone (`deleted`, a 404).
  */
-export function useYjsToken(params: { entityType: ProductEntityType; entityId: string; tenantId: string; organizationId: string; enabled: boolean }) {
-  const { enabled, ...scope } = params;
+export function useYjsToken({ enabled, ...scope }: YjsDocScope & { enabled: boolean }) {
   const setYjsToken = useUserStore((s) => s.setYjsToken);
   const tokenKey = yjsTokenKey(scope.entityType, scope.entityId);
   const { data: token, error } = useQuery({ ...yjsTokenQueryOptions(scope), enabled });
