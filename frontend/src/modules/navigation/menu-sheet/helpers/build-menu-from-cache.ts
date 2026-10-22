@@ -1,9 +1,9 @@
 import { appConfig, type ChannelEntityType } from 'shared';
 import { getChannelListQuery } from '~/lib/entity-modules';
 import type { UserMenu, UserMenuItem } from '~/modules/me/types';
+import { buildMenu } from '~/modules/navigation/menu-sheet/helpers/build-menu';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { queryClient } from '~/query/query-client';
-import { buildMenu } from './build-menu';
 
 /** Entity types referenced by the menu structure (entity + subentity) */
 const menuEntityTypes = Array.from(

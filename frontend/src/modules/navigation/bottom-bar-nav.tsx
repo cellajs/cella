@@ -4,11 +4,7 @@ import { navItems } from '~/modules/navigation/nav-items';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
 
-let baseNavItems: NavItem[] | null = null;
-function getBaseNavItems() {
-  if (!baseNavItems) baseNavItems = navItems.filter(({ type }) => type === 'base');
-  return baseNavItems;
-}
+const baseNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'base');
 
 interface BottomBarNavProps {
   triggerNavItem: TriggerNavItemFn;
@@ -28,7 +24,7 @@ export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
       className="fixed bottom-0 z-100 flex w-full flex-row justify-between bg-sidebar pb-[env(safe-area-inset-bottom,0px)] shadow-xs transition-transform ease-out focus-view:hidden group-[.keyboard-open]/body:translate-y-full group-[.selection-active]/body:translate-y-full data-[started=false]:translate-y-full"
     >
       <ul className="flex w-full flex-row justify-between p-1 px-2">
-        {getBaseNavItems().map((navItem: NavItem) => (
+        {baseNavItems.map((navItem) => (
           <li key={navItem.id} className="flex justify-start">
             <BottomBarNavButton navItem={navItem} isActive={navSheetOpen === navItem.id} onClick={triggerNavItem} />
           </li>

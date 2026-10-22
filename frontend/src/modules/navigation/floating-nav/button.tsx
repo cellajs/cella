@@ -19,15 +19,8 @@ export interface FloatingNavItem {
   labelVisible?: boolean;
 }
 
-interface FloatingNavButtonProps {
-  id: string;
-  icon: IconComponent;
-  onClick: () => void;
-  ariaLabel?: string;
+interface FloatingNavButtonProps extends Omit<FloatingNavItem, 'visible'> {
   className?: string;
-  direction?: 'left' | 'right';
-  label?: string;
-  labelVisible?: boolean;
 }
 
 export function FloatingNavButton({

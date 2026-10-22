@@ -19,36 +19,41 @@ import { cn } from '~/utils/cn';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
-type AccountButtonProps = { icon: IconComponent; label: string; id: string; action: string } & (
-  | { offlineAccess: false; isOnline: boolean }
-  | { offlineAccess: true; isOnline?: never }
+/** An `onClick` row acts in place; a `to` row links, and while offline it warns and stays put unless `offlineAccess`. */
+type AccountButtonProps = { icon: IconComponent; label: string; id: string } & (
+  | { onClick: () => void }
+  | ({ to: string } & ({ offlineAccess: false; isOnline: boolean } | { offlineAccess: true; isOnline?: never }))
 );
 
-function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action }: AccountButtonProps) {
+function AccountButton(props: AccountButtonProps) {
+  const { icon: Icon, label, id } = props;
   const { t } = useTranslation();
-  const keepNavOpen = useNavigationStore((state) => state.keepNavOpen);
 
-  const isDisabled = offlineAccess ? false : !isOnline;
+  const isDisabled = 'to' in props && !props.offlineAccess && !props.isOnline;
+
   return (
     <Button
       variant="ghost"
       size="lg"
+      id={id}
       className="focus-effect w-full justify-start text-left hover:bg-accent/50 data-[sign-out=true]:text-destructive"
       data-sign-out={id === 'btn-signout'}
+      onClick={'onClick' in props ? props.onClick : undefined}
       render={
-        <Link
-          disabled={isDisabled}
-          onClick={() => {
-            if (isDisabled) {
-              toaster.warning(t('c:action.offline.text'));
-              return;
-            }
-            if (!keepNavOpen) useSheeter.getState().remove();
-          }}
-          id={id}
-          draggable={false}
-          to={action}
-        />
+        'to' in props ? (
+          <Link
+            disabled={isDisabled}
+            onClick={() => {
+              if (isDisabled) {
+                toaster.warning(t('c:action.offline.text'));
+                return;
+              }
+              if (!useNavigationStore.getState().keepNavOpen) useSheeter.getState().remove();
+            }}
+            draggable={false}
+            to={props.to}
+          />
+        ) : undefined
       }
     >
       <Icon className="size-4" aria-hidden="true" />
@@ -130,33 +135,18 @@ export function AccountSheet() {
         </div>
       </button>
       <div className="mt-3 flex flex-col gap-1 px-3 max-sm:mt-4">
-        <Button
-          variant="ghost"
-          size="lg"
+        <AccountButton
+          icon={UserRoundIcon}
           id="btn-profile"
-          className="focus-effect w-full justify-start text-left hover:bg-accent/50"
+          label={t('c:view_resource', { resource: t('c:profile').toLowerCase() })}
           onClick={openProfile}
-        >
-          <UserRoundIcon className="size-4" aria-hidden="true" />
-          {t('c:view_resource', { resource: t('c:profile').toLowerCase() })}
-        </Button>
-        <AccountButton offlineAccess={false} isOnline={isOnline} icon={SettingsIcon} id="btn-account" label={t('c:settings')} action="/account" />
+        />
+        <AccountButton offlineAccess={false} isOnline={isOnline} icon={SettingsIcon} id="btn-account" label={t('c:settings')} to="/account" />
         {isSystemAdmin && (
-          <AccountButton offlineAccess={false} isOnline={isOnline} icon={WrenchIcon} id="btn-system" label={t('c:system_panel')} action="/system" />
+          <AccountButton offlineAccess={false} isOnline={isOnline} icon={WrenchIcon} id="btn-system" label={t('c:system_panel')} to="/system" />
         )}
-        {isInstalledApp() && (
-          <Button
-            variant="ghost"
-            size="lg"
-            id="btn-refresh"
-            className="focus-effect w-full justify-start text-left hover:bg-accent/50"
-            onClick={refresh}
-          >
-            <RefreshCwIcon className="size-4" aria-hidden="true" />
-            {t('c:refresh')}
-          </Button>
-        )}
-        <AccountButton offlineAccess={false} isOnline={isOnline} icon={LogOutIcon} id="btn-signout" label={t('c:sign_out')} action="/auth/sign-out" />
+        {isInstalledApp() && <AccountButton icon={RefreshCwIcon} id="btn-refresh" label={t('c:refresh')} onClick={refresh} />}
+        <AccountButton offlineAccess={false} isOnline={isOnline} icon={LogOutIcon} id="btn-signout" label={t('c:sign_out')} to="/auth/sign-out" />
       </div>
     </NavSheetFrame>
   );

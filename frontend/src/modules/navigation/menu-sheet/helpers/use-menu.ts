@@ -3,8 +3,8 @@ import { useMemo } from 'react';
 import { appConfig, type ChannelEntityType } from 'shared';
 import { getChannelListQuery } from '~/lib/entity-modules';
 import type { UserMenuItem } from '~/modules/me/types';
-import { buildMenu } from './build-menu';
-import { menuEntityTypes, menuItemsFromList } from './build-menu-from-cache';
+import { buildMenu } from '~/modules/navigation/menu-sheet/helpers/build-menu';
+import { menuEntityTypes, menuItemsFromList } from '~/modules/navigation/menu-sheet/helpers/build-menu-from-cache';
 
 /**
  * The menu, rebuilt whenever one of its entity lists changes: the cache subscriber enriches those lists with the

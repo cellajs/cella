@@ -1,5 +1,4 @@
 import { type StaticDataRouteOption, useNavigate, useRouterState } from '@tanstack/react-router';
-import i18n from 'i18next';
 import { useEffect } from 'react';
 import { useBreakpointAbove, useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
@@ -7,7 +6,7 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { navItems } from '~/modules/navigation/nav-items';
-import { navSheetClassName } from '~/modules/navigation/nav-sheet-constants';
+import { closeNavSheet, navSheetOptions } from '~/modules/navigation/nav-sheet';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, NavItemId, TriggerNavItemFn } from '~/modules/navigation/types';
@@ -39,8 +38,7 @@ export function AppNav() {
     const triggerRef = ref || { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null };
 
     if (id === navSheetOpen) {
-      setNavSheetOpen(null);
-      useSheeter.getState().remove('nav-sheet');
+      closeNavSheet();
       return;
     }
 
@@ -49,30 +47,20 @@ export function AppNav() {
     if (navItem.action) return navItem.action(triggerRef);
 
     if (navItem.href) {
-      if (!useNavigationStore.getState().keepNavOpen) {
-        setNavSheetOpen(null);
-        useSheeter.getState().remove('nav-sheet');
-      }
+      if (!useNavigationStore.getState().keepNavOpen) closeNavSheet();
       return navigate({ to: navItem.href });
     }
 
     if (navItem.sheet) {
       setNavSheetOpen(navItem.id);
 
-      const sheetSide = isMobile && navItem.mirrorOnMobile ? 'right' : 'left';
       useSheeter.getState().replace(navItem.sheet(), {
+        ...navSheetOptions(navItem.id, triggerRef),
         id: 'nav-sheet',
-        triggerRef,
-        title: i18n.t(`c:${navItem.id}`),
-        headerClassName: 'hidden',
-        side: sheetSide as 'left' | 'right',
-        modal: 'trap-focus',
+        side: isMobile && navItem.mirrorOnMobile ? 'right' : 'left',
         // Outside-press is gated by `keepNavOpen` in the sheeter's onOpenChange; disabling it here suppresses the event entirely.
         disablePointerDismissal: false,
-        className: navSheetClassName,
-        contentKey: navItem.id,
         autoScrollOnDrag: 'vertical',
-        onClose: () => setNavSheetOpen(null),
       });
     }
   };
@@ -99,13 +87,11 @@ export function AppNav() {
   const floatingItems: FloatingNavItem[] = [];
 
   if (isMobile) {
-    for (const id of floatingConfig.left) {
-      const item = navItems.find((n) => n.id === id);
-      if (item) floatingItems.push({ id: item.id, icon: item.icon, onClick: () => triggerNavItem(item.id), direction: 'left' });
-    }
-    for (const id of floatingConfig.right) {
-      const item = navItems.find((n) => n.id === id);
-      if (item) floatingItems.push({ id: item.id, icon: item.icon, onClick: () => triggerNavItem(item.id), direction: 'right' });
+    for (const direction of ['left', 'right'] as const) {
+      for (const id of floatingConfig[direction]) {
+        const item = navItems.find((n) => n.id === id);
+        if (item) floatingItems.push({ id: item.id, icon: item.icon, onClick: () => triggerNavItem(item.id), direction });
+      }
     }
   }
 

@@ -7,11 +7,13 @@ import { getMenuSection } from '~/lib/entity-modules';
 import { Spinner } from '~/modules/common/spinner';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { MenuSheetHeader } from '~/modules/navigation/menu-sheet/header';
-import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
+import { buildMembershipUpdate } from '~/modules/navigation/menu-sheet/helpers/build-membership-update';
+import { getRelativeItemOrder } from '~/modules/navigation/menu-sheet/helpers/get-relative-item-order';
+import { isPageData } from '~/modules/navigation/menu-sheet/helpers/is-page-data';
+import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { useUserStore } from '~/modules/user/user-store';
-import { useMenu } from './helpers/use-menu';
 
 export function MenuSheet() {
   const user = useUserStore((state) => state.user);
@@ -46,16 +48,7 @@ export function MenuSheet() {
 
           if (newOrder === sourceItem.membership.displayOrder) return;
 
-          await mutateAsync({
-            path: {
-              id: sourceItem.membership.id,
-              tenantId: sourceItem.tenantId,
-              organizationId: sourceItem.membership.organizationId || sourceItem.id,
-            },
-            body: { displayOrder: newOrder },
-            channelId: sourceItem.id,
-            channelType: sourceItem.entityType,
-          });
+          await mutateAsync(buildMembershipUpdate(sourceItem, { displayOrder: newOrder }));
         },
       }),
     ];

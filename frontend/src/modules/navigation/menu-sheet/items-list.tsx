@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
 import type { UserMenuItem } from '~/modules/me/types';
+import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
@@ -37,9 +38,7 @@ export function MenuSheetItems({ data, type, isArchived, options, className }: M
     );
 
   const renderItems = () => {
-    const filteredItems = data
-      .filter((item) => (isArchived ? item.membership.archived : !item.membership.archived))
-      .sort((a, b) => a.membership.displayOrder - b.membership.displayOrder);
+    const filteredItems = sortAndFilterMenu(data, isArchived);
     return (
       <>
         {filteredItems.map((item) => (

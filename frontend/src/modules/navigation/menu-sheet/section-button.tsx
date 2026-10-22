@@ -2,6 +2,7 @@ import { ChevronDownIcon, PlusIcon, Settings2Icon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { CountBadge } from '~/modules/common/count-badge';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import type { UserMenuItem } from '~/modules/me/types';
 import { widenMotion } from '~/modules/navigation/menu-sheet/helpers/widen-motion';
@@ -53,9 +54,7 @@ export function MenuSectionButton({
                 className="inline-block px-2 py-1 text-muted-foreground text-xs group-data-[visible=true]/menu-section:hidden"
               >
                 {sectionUnseenCount > 0 ? (
-                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 font-bold text-2xs text-primary-foreground leading-none">
-                    {sectionUnseenCount > 99 ? '99+' : sectionUnseenCount}
-                  </span>
+                  <CountBadge count={sectionUnseenCount} className="inline-flex" />
                 ) : (
                   data.filter((i) => !i.membership.archived).length
                 )}
@@ -68,12 +67,7 @@ export function MenuSectionButton({
           {/* initial={false} so opening the sheet doesn't widen every open section at once, only a toggle does */}
           <AnimatePresence initial={false}>
             {isSectionVisible && !!data.length && (
-              <motion.div
-                key={`settings-${options.entityType}`}
-                {...widenMotion}
-                transition={{ bounce: 0, duration: 0.2 }}
-                className="shrink-0 max-sm:hidden"
-              >
+              <motion.div key={`settings-${options.entityType}`} {...widenMotion} className="shrink-0 max-sm:hidden">
                 <TooltipButton toolTipContent={t('c:manage_content')} side="bottom" sideOffset={10}>
                   <Button className="w-10 px-2 shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={() => toggleIsEditing()}>
                     <Settings2Icon className="size-5" />
@@ -85,7 +79,7 @@ export function MenuSectionButton({
 
           <AnimatePresence initial={false}>
             {isSectionVisible && handleCreateAction && (
-              <motion.div key={`create-${options.entityType}`} {...widenMotion} transition={{ bounce: 0, duration: 0.2 }} className="shrink-0">
+              <motion.div key={`create-${options.entityType}`} {...widenMotion} className="shrink-0">
                 <TooltipButton toolTipContent={t('c:create')} sideOffset={22} side="right">
                   <Button
                     ref={createButtonRef}

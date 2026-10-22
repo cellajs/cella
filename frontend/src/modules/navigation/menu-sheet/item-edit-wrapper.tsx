@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { EntityType } from 'shared';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 import type { UserMenuItem } from '~/modules/me/types';
-import { isPageData } from '~/modules/navigation/menu-sheet/helpers';
+import { isPageData } from '~/modules/navigation/menu-sheet/helpers/is-page-data';
 import { MenuItemEdit } from '~/modules/navigation/menu-sheet/item-edit';
 import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
@@ -64,13 +64,15 @@ export function MenuItemEditWrapper({
     );
   }, [item, unarchiveItems]);
 
+  const archivedSubitemCount = item.submenu?.filter((i) => i.membership.archived).length ?? 0;
+
   return (
     <li data-submenu={!!item.submenu} className="group/menu-options relative my-1">
       <div ref={dragRef}>
         <MenuItemEdit item={item} siblings={unarchiveItems} icon={options?.icon} />
         {!item.membership.archived && !!item.submenu?.length && detailedMenu && (
           <div
-            data-has-archived={!!item.submenu.filter((i) => i.membership.archived).length}
+            data-has-archived={!!archivedSubitemCount}
             data-submenu={true}
             data-archived-visible={isSubmenuArchivedVisible}
             className="group/archived"
@@ -78,10 +80,7 @@ export function MenuItemEditWrapper({
             <ul>
               <MenuSheetItemsEdit data={item.submenu} isArchived={isArchived} />
             </ul>
-            <SectionArchiveButton
-              archiveToggleClick={() => toggleSubmenuVisibility(item.id)}
-              archivedCount={item.submenu.filter((i) => i.membership.archived).length}
-            />
+            <SectionArchiveButton archiveToggleClick={() => toggleSubmenuVisibility(item.id)} archivedCount={archivedSubitemCount} />
             {isSubmenuArchivedVisible && (
               <ul>
                 <MenuSheetItemsEdit data={item.submenu} isArchived={true} />

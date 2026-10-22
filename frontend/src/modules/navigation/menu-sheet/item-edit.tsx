@@ -11,7 +11,7 @@ import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
-import type { MutationUpdateMembership } from '~/modules/memberships/types';
+import { buildMembershipUpdate } from '~/modules/navigation/menu-sheet/helpers/build-membership-update';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
@@ -32,14 +32,7 @@ export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) 
       return toaster.warning(t('c:action.offline.text'));
     }
 
-    const updatedMembership: MutationUpdateMembership = {
-      path: { id: item.membership.id, tenantId: item.tenantId, organizationId: item.membership.organizationId },
-      body: key === 'archived' ? { archived: !item.membership.archived } : { muted: !item.membership.muted },
-      channelId: item.id,
-      channelType: item.entityType,
-    };
-
-    updateMembership(updatedMembership);
+    updateMembership(buildMembershipUpdate(item, key === 'archived' ? { archived: !item.membership.archived } : { muted: !item.membership.muted }));
   };
 
   const handleRef = useRef<HTMLButtonElement>(null);
@@ -54,12 +47,7 @@ export function MenuItemEdit({ item, siblings, icon: Icon }: MenuItemEditProps) 
     const ordered = siblings.map((sibling) => ({ id: sibling.id, displayOrder: sibling.membership.displayOrder }));
     const displayOrder = getRelativeOrder(ordered, target.membership.displayOrder, item.id, step < 0 ? 'top' : 'bottom');
     refocusAtOrder.current = displayOrder;
-    updateMembership({
-      path: { id: item.membership.id, tenantId: item.tenantId, organizationId: item.membership.organizationId || item.id },
-      body: { displayOrder },
-      channelId: item.id,
-      channelType: item.entityType,
-    });
+    updateMembership(buildMembershipUpdate(item, { displayOrder }));
   };
 
   // React re-inserts a row it moves down, and a removed node drops focus

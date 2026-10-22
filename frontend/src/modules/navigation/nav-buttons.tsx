@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { type ReactNode, type Ref, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
@@ -33,33 +33,64 @@ function AppNavBadge({ navItem, isActive, className }: { navItem: NavItem; isAct
   return <BadgeSlot isActive={isActive} className={className} />;
 }
 
-export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButtonProps) {
-  const { t } = useTranslation();
-  const buttonRef = useRef<HTMLButtonElement>(null);
+interface SidebarNavButtonProps {
+  label: string;
+  isCollapsed: boolean;
+  onClick: () => void;
+  isActive?: boolean;
+  ref?: Ref<HTMLButtonElement>;
+  className?: string;
+  /** The icon, then anything that renders before the text label. */
+  children: ReactNode;
+}
 
+/** A sidebar nav button: tooltip while collapsed or without text labels, and the text label when the theme shows one. */
+export function SidebarNavButton({ label, isCollapsed, onClick, isActive, ref, className, children }: SidebarNavButtonProps) {
   const showTooltip = isCollapsed || !hasSidebarTextLabels;
 
   return (
     <SidebarMenuItem className="flex grow-0 justify-start pb-2">
       <SidebarMenuButton
-        ref={buttonRef}
+        ref={ref}
         size="lg"
         data-collapsed={isCollapsed}
-        tooltip={{ children: t(`c:${navItem.id}`), hidden: !showTooltip }}
-        onClick={() => onClick(navItem.id, buttonRef)}
+        tooltip={{ children: label, hidden: !showTooltip }}
+        onClick={onClick}
         isActive={isActive}
-        className="group relative h-14 w-full justify-center text-sidebar-foreground ring-inset transition-[width] duration-200 ease-linear hover:bg-background/30 focus-visible:ring-offset-0 data-[collapsed=true]:w-16 data-[active=true]:bg-background/50"
+        className={cn(
+          'group h-14 w-full justify-center text-sidebar-foreground ring-inset transition-[width] duration-200 ease-linear hover:bg-background/30 focus-visible:ring-offset-0 data-[collapsed=true]:w-16',
+          className,
+        )}
       >
-        <AppNavIcon navItem={navItem} />
-        {!hasSidebarTextLabels && <span className="sr-only">{t(`c:${navItem.id}`)}</span>}
-        <AppNavBadge navItem={navItem} isActive={isActive} className="top-2 left-8" />
+        {children}
         {hasSidebarTextLabels && (
           <span className="w-auto overflow-hidden whitespace-nowrap pl-1.5 font-medium opacity-100 transition-[opacity,width] duration-200 ease-linear group-data-[collapsed=true]:w-0 group-data-[collapsed=true]:opacity-0">
-            {t(`c:${navItem.id}`)}
+            {label}
           </span>
         )}
       </SidebarMenuButton>
     </SidebarMenuItem>
+  );
+}
+
+export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButtonProps) {
+  const { t } = useTranslation();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const label = t(`c:${navItem.id}`);
+
+  return (
+    <SidebarNavButton
+      ref={buttonRef}
+      label={label}
+      isCollapsed={isCollapsed}
+      isActive={isActive}
+      onClick={() => onClick(navItem.id, buttonRef)}
+      className="relative data-[active=true]:bg-background/50"
+    >
+      <AppNavIcon navItem={navItem} />
+      {!hasSidebarTextLabels && <span className="sr-only">{label}</span>}
+      <AppNavBadge navItem={navItem} isActive={isActive} className="top-2 left-8" />
+    </SidebarNavButton>
   );
 }
 

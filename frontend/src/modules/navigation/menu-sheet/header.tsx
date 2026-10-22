@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router';
-import i18n from 'i18next';
 import { BellIcon } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,7 +6,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { Logo } from '~/modules/common/logo';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
-import { navSheetClassName } from '~/modules/navigation/nav-sheet-constants';
+import { navSheetOptions } from '~/modules/navigation/nav-sheet';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import type { NavItemId } from '~/modules/navigation/types';
 import { NotificationsSheet } from '~/modules/notification/notifications-sheet';
@@ -17,20 +16,8 @@ import { useUserStore } from '~/modules/user/user-store';
 
 /** Stacks a nav sheet over the menu sheet; floating-nav layouts have no bottom bar to open it from. */
 function openStackedNavSheet(id: NavItemId, content: React.ReactNode, triggerRef: RefObject<HTMLButtonElement | null>) {
-  const setNavSheetOpen = useNavigationStore.getState().setNavSheetOpen;
-  setNavSheetOpen(id);
-  useSheeter.getState().create(content, {
-    id: `${id}-sheet`,
-    triggerRef,
-    title: i18n.t(`c:${id}`),
-    headerClassName: 'hidden',
-    side: 'left',
-    modal: 'trap-focus',
-    disablePointerDismissal: true,
-    className: navSheetClassName,
-    contentKey: id,
-    onClose: () => setNavSheetOpen(null),
-  });
+  useNavigationStore.getState().setNavSheetOpen(id);
+  useSheeter.getState().create(content, { ...navSheetOptions(id, triggerRef), id: `${id}-sheet`, side: 'left', disablePointerDismissal: true });
 }
 
 export function MenuSheetHeader() {

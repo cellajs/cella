@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserMenuItem } from '~/modules/me/types';
+import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
 import { MenuItemEditWrapper } from '~/modules/navigation/menu-sheet/item-edit-wrapper';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
@@ -14,9 +15,7 @@ export function MenuSheetItemsEdit({ data, isArchived, options }: { data: UserMe
     return <li className="py-2 text-center text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: options.entityType })}</li>;
   }
 
-  const filteredItems = data
-    .filter((i) => (isArchived ? i.membership.archived : !i.membership.archived))
-    .sort((a, b) => a.membership.displayOrder - b.membership.displayOrder);
+  const filteredItems = sortAndFilterMenu(data, isArchived);
 
   const toggleSubmenuVisibility = (itemId: string) => {
     setSubmenuVisibility((prevState) => ({ ...prevState, [itemId]: !prevState[itemId] }));

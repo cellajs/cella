@@ -79,39 +79,40 @@ export function AppSearch() {
     });
   };
 
-  const userQ = useInfiniteQuery({ ...usersListQueryOptions({ q: debouncedSearchValue }), enabled: debouncedSearchValue.length > 0 });
+  const hasQuery = debouncedSearchValue.length > 0;
 
-  const channelResults = Object.fromEntries(
-    Object.entries(getChannelListQueries()).map(([entityType, queryOptions]) => [
-      entityType,
-      useInfiniteQuery({
-        // biome-ignore lint/suspicious/noExplicitAny: queryOptions union covers heterogeneous entity types.
-        ...(queryOptions as any)({ q: debouncedSearchValue }),
-        enabled: debouncedSearchValue.length > 0,
-      }),
-    ]),
-  );
+  const userQ = useInfiniteQuery({ ...usersListQueryOptions({ q: debouncedSearchValue }), enabled: hasQuery });
 
-  const users = debouncedSearchValue.length > 0 ? (userQ.data?.pages.flatMap((p) => p.items) ?? []) : [];
-  const channelData = Object.fromEntries(
-    Object.entries(channelResults).map(([entityType, query]) => [
-      entityType,
-      // biome-ignore lint/suspicious/noExplicitAny: query data types vary per entity
-      debouncedSearchValue.length > 0 ? ((query.data as any)?.pages.flatMap((p: any) => p.items) ?? []) : [],
-    ]),
-  );
+  const channelQueries = Object.entries(getChannelListQueries()).map(([entityType, queryOptions]) => ({
+    entityType,
+    query: useInfiniteQuery({
+      // biome-ignore lint/suspicious/noExplicitAny: queryOptions union covers heterogeneous entity types.
+      ...(queryOptions as any)({ q: debouncedSearchValue }),
+      enabled: hasQuery,
+    }),
+  }));
+  const queries = [userQ, ...channelQueries.map(({ query }) => query)];
 
-  const data: Record<string, (EnrichedChannel | UserBase)[]> = { user: users, ...channelData };
-  const notFound = users.length === 0 && Object.values(channelData).every((items) => items.length === 0);
+  const data: Record<string, (EnrichedChannel | UserBase)[]> = {
+    user: hasQuery ? (userQ.data?.pages.flatMap((p) => p.items) ?? []) : [],
+    ...Object.fromEntries(
+      channelQueries.map(({ entityType, query }) => [
+        entityType,
+        // biome-ignore lint/suspicious/noExplicitAny: query data types vary per entity
+        hasQuery ? ((query.data as any)?.pages.flatMap((p: any) => p.items) ?? []) : [],
+      ]),
+    ),
+  };
+  const notFound = Object.values(data).every((items) => items.length === 0);
+  const firstWithResults = searchableEntityTypes.find((entityType) => (data[entityType] ?? []).length > 0);
   // The debounce gap counts as loading, so the skeleton shows in place of the empty state.
   const isDebouncePending = searchValue.length > 0 && searchValue !== debouncedSearchValue;
   // The gap is included here too, keeping the input spinner visible while typing. Query activity only counts
   // while there is a query: an empty q shares its cache key with default list pages, whose refetches would
   // otherwise keep the spinner alive after the input is cleared.
-  const hasQuery = debouncedSearchValue.length > 0;
-  const isQueryFetching = hasQuery && (userQ.isFetching || Object.values(channelResults).some((q) => q.isFetching));
+  const isQueryFetching = hasQuery && queries.some((query) => query.isFetching);
   const isFetching = isDebouncePending || isQueryFetching;
-  const isLoading = searchValue.length > 0 && (isDebouncePending || userQ.isLoading || Object.values(channelResults).some((q) => q.isLoading));
+  const isLoading = searchValue.length > 0 && (isDebouncePending || queries.some((query) => query.isLoading));
 
   const onSelectItem = (item: EnrichedChannel | UserBase) => {
     updateRecentSearches(searchValue);
@@ -169,19 +170,16 @@ export function AppSearch() {
             {notFound && <SearchHistoryGroup searches={recentSearches} onRemove={deleteItemFromList} />}
             {!notFound && (
               <div className="p-1">
-                {(() => {
-                  const firstWithResults = searchableEntityTypes.find((entityType) => (data[entityType] ?? []).length > 0);
-                  return searchableEntityTypes.map((entityType) => (
-                    <SearchResultBlock
-                      key={entityType}
-                      results={data[entityType] ?? []}
-                      entityType={entityType}
-                      hideSeparator={entityType === firstWithResults}
-                      collapsed={!!collapsedTypes[entityType]}
-                      onToggleCollapsed={() => toggleCollapsed(entityType)}
-                    />
-                  ));
-                })()}
+                {searchableEntityTypes.map((entityType) => (
+                  <SearchResultBlock
+                    key={entityType}
+                    results={data[entityType] ?? []}
+                    entityType={entityType}
+                    hideSeparator={entityType === firstWithResults}
+                    collapsed={!!collapsedTypes[entityType]}
+                    onToggleCollapsed={() => toggleCollapsed(entityType)}
+                  />
+                ))}
               </div>
             )}
           </ComboboxList>

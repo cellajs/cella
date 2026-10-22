@@ -2,7 +2,7 @@ import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge
 import type { ChannelEntityType } from 'shared';
 import { getRelativeOrder } from 'shared/utils/display-order';
 import type { UserMenu } from '~/modules/me/types';
-import { sortAndFilterMenu } from './sort-and-filter-menu';
+import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
 
 /** Computes the new displayOrder for a dragged item from its drop target and edge. */
 export const getRelativeItemOrder = (
@@ -15,12 +15,15 @@ export const getRelativeItemOrder = (
 ) => {
   const flatData = Object.values(data).flat();
 
-  const items = sortAndFilterMenu(flatData, entityType, archived);
+  const items = sortAndFilterMenu(
+    flatData.filter((item) => item.entityType === entityType),
+    archived,
+  );
 
   let neededItems = items;
   if (!items.length) {
     const parentMenu = flatData.find((el) => el.submenu?.some((subEl) => subEl.id === itemId));
-    if (parentMenu) neededItems = sortAndFilterMenu(parentMenu.submenu ?? [], entityType, archived);
+    if (parentMenu) neededItems = sortAndFilterMenu(parentMenu.submenu ?? [], archived);
   }
 
   const ordered = neededItems.map((item) => ({ id: item.id, displayOrder: item.membership.displayOrder }));

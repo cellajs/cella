@@ -1,14 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { BookOpenIcon, ExternalLinkIcon, InfoIcon, LifeBuoyIcon, MailIcon } from 'lucide-react';
-import { useRef } from 'react';
+import { type Ref, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { handleAskForHelp } from '~/modules/common/error-helpers';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { type HealthStatus, healthQueryOptions } from '~/modules/navigation/menu-sheet/query';
 import { type GradedStatusEntry, gradeStatusEntries } from '~/modules/navigation/menu-sheet/status-entries';
-import { Button } from '~/modules/ui/button';
+import { Button, type ButtonProps } from '~/modules/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
@@ -59,6 +60,24 @@ function StatusEntryCard({ graded: { entry, status, component, reason } }: { gra
   );
 }
 
+interface InfoButtonProps {
+  icon: IconComponent;
+  label: string;
+  onClick?: () => void;
+  render?: ButtonProps['render'];
+  ref?: Ref<HTMLButtonElement>;
+}
+
+/** A full-width row of the support list: a link through `render`, or an action through `onClick`. */
+function InfoButton({ icon: Icon, label, ...props }: InfoButtonProps) {
+  return (
+    <Button variant="ghost" className="w-full justify-start text-left font-normal" {...props}>
+      <Icon className="size-4" aria-hidden="true" />
+      {label}
+    </Button>
+  );
+}
+
 export function InfoContent() {
   const { t } = useTranslation();
   const supportRef = useRef<HTMLButtonElement | null>(null);
@@ -73,34 +92,12 @@ export function InfoContent() {
     <div className="flex flex-col gap-6 pt-3 pb-8">
       <div className="flex flex-col gap-1">
         <h3 className="px-3 font-medium text-muted-foreground text-sm lowercase">{t('c:support')}</h3>
-        <Button variant="ghost" className="w-full justify-start text-left font-normal" render={<Link to={appConfig.aboutUrl} draggable={false} />}>
-          <InfoIcon className="size-4" aria-hidden="true" />
-          {t('c:about')}
-        </Button>
-        <Button variant="ghost" className="w-full justify-start text-left font-normal" render={<Link to="/docs" draggable={false} />}>
-          <BookOpenIcon className="size-4" aria-hidden="true" />
-          {t('c:api_docs')}
-        </Button>
+        <InfoButton icon={InfoIcon} label={t('c:about')} render={<Link to={appConfig.aboutUrl} draggable={false} />} />
+        <InfoButton icon={BookOpenIcon} label={t('c:api_docs')} render={<Link to="/docs" draggable={false} />} />
         {appConfig.has.chatSupport && (
-          <Button
-            ref={supportRef}
-            variant="ghost"
-            className="w-full justify-start text-left font-normal"
-            onClick={() => handleAskForHelp(supportRef)}
-          >
-            <LifeBuoyIcon className="size-4" aria-hidden="true" />
-            {t('c:support')}
-          </Button>
+          <InfoButton ref={supportRef} icon={LifeBuoyIcon} label={t('c:support')} onClick={() => handleAskForHelp(supportRef)} />
         )}
-        <Button
-          ref={contactRef}
-          variant="ghost"
-          className="w-full justify-start text-left font-normal"
-          onClick={() => contactFormHandler(contactRef)}
-        >
-          <MailIcon className="size-4" aria-hidden="true" />
-          {t('c:contact_us')}
-        </Button>
+        <InfoButton ref={contactRef} icon={MailIcon} label={t('c:contact_us')} onClick={() => contactFormHandler(contactRef)} />
       </div>
 
       <div className="flex flex-col gap-1">

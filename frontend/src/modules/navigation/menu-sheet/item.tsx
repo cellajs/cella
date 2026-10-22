@@ -2,6 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { BellOffIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { CountBadge } from '~/modules/common/count-badge';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -99,11 +100,7 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
           </span>
         </div>
       </div>
-      {showBadge && (
-        <span className="mr-3 flex h-4 min-w-4 shrink-0 items-center justify-center self-center rounded-full bg-primary px-1 font-bold text-2xs text-primary-foreground leading-none">
-          {unseenCount > 99 ? '99+' : unseenCount}
-        </span>
-      )}
+      {showBadge && <CountBadge count={unseenCount} className="mr-3 shrink-0 self-center" />}
     </Link>
   );
 }

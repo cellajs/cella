@@ -18,17 +18,8 @@ const DebugDropdown = __DEV_TOOLS__ ? lazyNamed(() => import('~/modules/common/d
 
 const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } = appConfig.theme.navigation;
 
-let baseNavItems: NavItem[] | null = null;
-function getBaseNavItems() {
-  if (!baseNavItems) baseNavItems = navItems.filter(({ type }) => type === 'base');
-  return baseNavItems;
-}
-
-let footerNavItems: NavItem[] | null = null;
-function getFooterNavItems() {
-  if (!footerNavItems) footerNavItems = navItems.filter(({ type }) => (type as string) === 'footer');
-  return footerNavItems;
-}
+const baseNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'base');
+const footerNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'footer');
 
 interface SidebarNavProps {
   triggerNavItem: TriggerNavItemFn;
@@ -87,7 +78,7 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
               <SidebarGroup className="p-0">
                 <SidebarGroupContent>
                   <SidebarMenu className="gap-1">
-                    {getBaseNavItems().map((navItem: NavItem) => (
+                    {baseNavItems.map((navItem) => (
                       <NavButton
                         key={navItem.id}
                         navItem={navItem}
@@ -106,7 +97,7 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
               </Suspense>
               <SidebarMenu className="gap-1">
                 <StopImpersonation isCollapsed={!isExpanded} />
-                {getFooterNavItems().map((navItem: NavItem) => (
+                {footerNavItems.map((navItem) => (
                   <NavButton
                     key={navItem.id}
                     navItem={navItem}
