@@ -47,6 +47,17 @@ describe('code block language', () => {
     expect(highlight?.({ type: 'codeBlock', props: { language: 'typescript' } })).toBe('typescript');
   });
 
+  it('highlights and selects a stored alias as the language it names, keeping the alias stored', () => {
+    const { highlight } = customSchema.blockSpecs.codeBlock.implementation.meta ?? {};
+    const { editor, element } = mountCodeBlock('ts');
+
+    expect(highlight?.({ type: 'codeBlock', props: { language: 'ts' } })).toBe('typescript');
+    expect(highlight?.({ type: 'codeBlock', props: { language: 'MD' } })).toBe('markdown');
+    expect(highlight?.({ type: 'codeBlock', props: { language: 'txt' } })).toBe('text');
+    expect(element.querySelector('select')?.value).toBe('typescript');
+    expect(editor.document[0].props).toMatchObject({ language: 'ts' });
+  });
+
   it('selects a supported language', () => {
     const { element } = mountCodeBlock('typescript');
 
