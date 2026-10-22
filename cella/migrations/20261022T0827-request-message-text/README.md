@@ -1,6 +1,6 @@
 ---
 syncBreaking: true
-clientCacheBump: false
+clientCacheBump: true
 ---
 
 # A request message is text, up to 5000 characters
@@ -15,7 +15,8 @@ name the request never stored, and requires the message.
 
 ## Blast radius
 
-Every app: one generated migration, `ALTER COLUMN "message" SET DATA TYPE text`, which rewrites no rows. No cache change.
+Every app: one generated migration, `ALTER COLUMN "message" SET DATA TYPE text`, which rewrites no rows. A response
+`message` loses its 255 maximum, so `clientCacheVersion` moves to `v16-request-message-text`; an app bumps its own token.
 
 ## Run
 
