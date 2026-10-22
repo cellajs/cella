@@ -158,6 +158,16 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     generation: 'manual',
     services: ['backend', 'mcp'],
   },
+  // Throwaway, on walk/blocked-target only: a container no apply made, so a deploy of this commit stops as blocked.
+  walkBlockedProbe: {
+    secretName: 'walk-blocked-probe',
+    description: 'Walk of a blocked run: never applied',
+    envVar: 'WALK_BLOCKED_PROBE',
+    required: false,
+    valueSource: 'operator',
+    generation: 'manual',
+    services: ['backend'],
+  },
   transloaditKey: {
     secretName: 'transloadit-key',
     description: 'Transloadit auth key that signed upload assemblies carry',
