@@ -1,5 +1,5 @@
 import type { TKey } from '~/lib/i18n-locales';
-import type { HealthResponse, HealthStatus } from '~/modules/navigation/menu-sheet/query';
+import type { HealthResponse, HealthStatus } from '~/modules/navigation/panels/query';
 
 /** One status entry users recognise, graded by the worst of the backend health components it is built from. */
 interface StatusEntry {
@@ -29,7 +29,7 @@ const statusEntries: readonly StatusEntry[] = [
   { id: 'connected_apps', label: 'c:connected_apps', description: 'c:connected_apps_status.text', components: ['oauth'] },
 ];
 
-const RANK: Record<HealthStatus, number> = { healthy: 0, degraded: 1, unhealthy: 2 };
+const statusRank: Record<HealthStatus, number> = { healthy: 0, degraded: 1, unhealthy: 2 };
 
 /**
  * Grades each entry by its worst component. An entry none of whose components the response carries (the service is
@@ -42,7 +42,7 @@ export function gradeStatusEntries(health: HealthResponse | undefined): GradedSt
     const present = entry.components.filter((name) => health.components[name]);
     if (!present.length) return [];
 
-    const worst = present.reduce((a, b) => (RANK[health.components[b].status] > RANK[health.components[a].status] ? b : a));
+    const worst = present.reduce((a, b) => (statusRank[health.components[b].status] > statusRank[health.components[a].status] ? b : a));
     const { status, reason } = health.components[worst];
     return [status === 'healthy' ? { entry, status } : { entry, status, component: worst, reason }];
   });

@@ -1,7 +1,7 @@
 import i18n from 'i18next';
 import type { RefObject } from 'react';
-import { type SheetData, useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { navSheetId, type SheetData, sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { navigationStore } from '~/modules/navigation/navigation-store';
 import type { NavItemId } from '~/modules/navigation/types';
 import { tw } from '~/utils/tw';
 
@@ -19,12 +19,12 @@ export function navSheetOptions(id: NavItemId, triggerRef: RefObject<HTMLButtonE
     modal: 'trap-focus',
     className: navSheetClassName,
     contentKey: id,
-    onClose: () => useNavigationStore.getState().setNavSheetOpen(null),
+    onClose: () => navigationStore.getState().setNavSheetOpen(null),
   };
 }
 
 /** Closes the nav sheet and clears which nav item has it open. */
 export function closeNavSheet() {
-  useNavigationStore.getState().setNavSheetOpen(null);
-  useSheeter.getState().remove('nav-sheet');
+  navigationStore.getState().setNavSheetOpen(null);
+  sheeter.getState().remove(navSheetId);
 }

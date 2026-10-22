@@ -7,7 +7,7 @@ import { type DialogData, useDialoger } from '~/modules/common/dialoger/use-dial
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Sheeter } from '~/modules/common/sheeter/provider';
-import { type SheetData, useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { navSheetId, type SheetData, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { useUIStore } from '~/modules/ui/ui-store';
 
@@ -124,13 +124,13 @@ describe('overlay providers on a route change', () => {
     const onClose = vi.fn();
     await act(() => {
       useNavigationStore.setState({ navSheetOpen: 'menu' as never, keepNavOpen: true });
-      useSheeter.getState().create(null, sheet('nav-sheet', { onClose }));
+      useSheeter.getState().create(null, sheet(navSheetId, { onClose }));
       useSheeter.getState().create(null, sheet('other', { onClose }));
     });
 
     await changeRoute(true);
 
-    expect(sheetIds()).toEqual(['nav-sheet']);
+    expect(sheetIds()).toEqual([navSheetId]);
     expect(onClose.mock.calls).toEqual([[true]]);
   });
 
@@ -138,7 +138,7 @@ describe('overlay providers on a route change', () => {
     const onClose = vi.fn();
     await act(() => {
       useNavigationStore.setState({ navSheetOpen: 'menu' as never, keepNavOpen: false });
-      useSheeter.getState().create(null, sheet('nav-sheet', { onClose }));
+      useSheeter.getState().create(null, sheet(navSheetId, { onClose }));
     });
 
     await changeRoute(true);

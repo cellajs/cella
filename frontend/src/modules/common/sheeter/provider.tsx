@@ -4,7 +4,7 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useOverlayLock } from '~/modules/common/overlay-store-helpers';
 import { SheeterDrawer } from '~/modules/common/sheeter/drawer';
 import { SheeterSheet } from '~/modules/common/sheeter/sheet';
-import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { type InternalSheet, navSheetId, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { getRouter } from '~/routes/-router-instance';
 
@@ -73,7 +73,7 @@ export function Sheeter() {
         return;
       }
 
-      for (const sheet of sheetsToClose.filter((s) => s.id !== 'nav-sheet')) {
+      for (const sheet of sheetsToClose.filter((s) => s.id !== navSheetId)) {
         useSheeter.getState().remove(sheet.id, { isCleanup: true });
       }
     });

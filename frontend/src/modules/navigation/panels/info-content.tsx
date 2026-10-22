@@ -1,16 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { BookOpenIcon, ExternalLinkIcon, InfoIcon, LifeBuoyIcon, MailIcon } from 'lucide-react';
-import { type Ref, useRef } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { handleAskForHelp } from '~/modules/common/error-helpers';
-import type { IconComponent } from '~/modules/common/icons/types';
-import { PanelHeading } from '~/modules/navigation/menu-sheet/panel-heading';
-import { type HealthStatus, healthQueryOptions } from '~/modules/navigation/menu-sheet/query';
-import { type GradedStatusEntry, gradeStatusEntries } from '~/modules/navigation/menu-sheet/status-entries';
-import { Button, type ButtonProps } from '~/modules/ui/button';
+import { NavSheetRow } from '~/modules/navigation/nav-sheet-row';
+import { PanelHeading } from '~/modules/navigation/panels/panel-heading';
+import { type HealthStatus, healthQueryOptions } from '~/modules/navigation/panels/query';
+import { type GradedStatusEntry, gradeStatusEntries } from '~/modules/navigation/panels/status-entries';
+import { Button } from '~/modules/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
@@ -61,24 +61,6 @@ function StatusEntryCard({ graded: { entry, status, component, reason } }: { gra
   );
 }
 
-interface InfoButtonProps {
-  icon: IconComponent;
-  label: string;
-  onClick?: () => void;
-  render?: ButtonProps['render'];
-  ref?: Ref<HTMLButtonElement>;
-}
-
-/** A full-width row of the support list: a link through `render`, or an action through `onClick`. */
-function InfoButton({ icon: Icon, label, ...props }: InfoButtonProps) {
-  return (
-    <Button variant="ghost" className="w-full justify-start text-left font-normal" {...props}>
-      <Icon className="size-4" />
-      {label}
-    </Button>
-  );
-}
-
 export function InfoContent() {
   const { t } = useTranslation();
   const supportRef = useRef<HTMLButtonElement>(null);
@@ -93,12 +75,12 @@ export function InfoContent() {
     <div className="flex flex-col gap-6 pt-3 pb-8">
       <div className="flex flex-col gap-1">
         <PanelHeading className="px-3">{t('c:support')}</PanelHeading>
-        <InfoButton icon={InfoIcon} label={t('c:about')} render={<Link to={appConfig.aboutUrl} draggable={false} />} />
-        <InfoButton icon={BookOpenIcon} label={t('c:api_docs')} render={<Link to="/docs" draggable={false} />} />
+        <NavSheetRow icon={InfoIcon} label={t('c:about')} render={<Link to={appConfig.aboutUrl} draggable={false} />} />
+        <NavSheetRow icon={BookOpenIcon} label={t('c:api_docs')} render={<Link to="/docs" draggable={false} />} />
         {appConfig.has.chatSupport && (
-          <InfoButton ref={supportRef} icon={LifeBuoyIcon} label={t('c:support')} onClick={() => handleAskForHelp(supportRef)} />
+          <NavSheetRow ref={supportRef} icon={LifeBuoyIcon} label={t('c:support')} onClick={() => handleAskForHelp(supportRef)} />
         )}
-        <InfoButton ref={contactRef} icon={MailIcon} label={t('c:contact_us')} onClick={() => contactFormHandler(contactRef)} />
+        <NavSheetRow ref={contactRef} icon={MailIcon} label={t('c:contact_us')} onClick={() => contactFormHandler(contactRef)} />
       </div>
 
       <div className="flex flex-col gap-1">

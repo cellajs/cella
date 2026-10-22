@@ -12,9 +12,9 @@ import { getChannelListQueries } from '~/lib/entity-modules';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { type HistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
+import { type HistoryEntry, isHistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
 import { SearchResultBlock } from '~/modules/navigation/search-result-block';
 import { Combobox, ComboboxEmpty, ComboboxList } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
@@ -60,7 +60,7 @@ export function AppSearch() {
   const { focusRef } = useFocusByRef();
 
   const removeRecentSearch = (search: string) => {
-    useNavigationStore.setState((state) => {
+    navigationStore.setState((state) => {
       const searches = [...state.recentSearches];
       const index = searches.indexOf(search);
       if (index === -1) return;
@@ -70,7 +70,7 @@ export function AppSearch() {
   };
 
   const saveRecentSearch = (value: string) => {
-    useNavigationStore.setState((state) => {
+    navigationStore.setState((state) => {
       const searches = addRecentSearch(state.recentSearches, value);
       return searches === state.recentSearches ? state : { ...state, recentSearches: searches };
     });
@@ -130,11 +130,11 @@ export function AppSearch() {
       value={null}
       onValueChange={(selection) => {
         if (!selection) return;
-        if ('kind' in selection && selection.kind === 'history') {
+        if (isHistoryEntry(selection)) {
           setSearchValue(selection.value);
           return;
         }
-        openItem(selection as EnrichedChannel | UserBase);
+        openItem(selection);
       }}
       inputValue={searchValue}
       onInputValueChange={(value) => setSearchValue(resolveSearchInput(searchValue, value, recentSearches))}

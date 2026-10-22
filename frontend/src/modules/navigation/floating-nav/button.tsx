@@ -3,13 +3,13 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-const TAP_SLOP_PX = 12; // Max finger travel for a touchend to still count as a tap
+const tapSlopPx = 12; // Max finger travel for a touchend to still count as a tap
 
 export interface FloatingNavItem {
   id: string;
   icon: IconComponent;
   onClick: () => void;
-  ariaLabel?: string;
+  ariaLabel: string;
   /** Defaults to true. */
   visible?: boolean;
   /** Defaults to 'right'. */
@@ -19,7 +19,9 @@ export interface FloatingNavItem {
   labelVisible?: boolean;
 }
 
-interface FloatingNavButtonProps extends Omit<FloatingNavItem, 'visible'> {
+interface FloatingNavButtonProps extends Omit<FloatingNavItem, 'visible' | 'ariaLabel'> {
+  /** Required on a nav item; an inert placeholder button may go without. */
+  ariaLabel?: string;
   className?: string;
 }
 
@@ -53,7 +55,7 @@ export function FloatingNavButton({
     touchStartRef.current = null;
     const touch = event.changedTouches[0];
     if (!start || !touch) return;
-    if (Math.hypot(touch.clientX - start.x, touch.clientY - start.y) > TAP_SLOP_PX) return;
+    if (Math.hypot(touch.clientX - start.x, touch.clientY - start.y) > tapSlopPx) return;
     // Not cancelable means the browser consumed the gesture as a scroll and suppresses the click itself
     if (event.cancelable) event.preventDefault();
     onClick();
@@ -73,12 +75,11 @@ export function FloatingNavButton({
         'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 rounded-full shadow-xl transition-[translate,scale,opacity] duration-300 ease-in-out hover:bg-secondary active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
         // With a label the width is content-driven: the icon keeps its centered-in-circle offset via pl-4, the pill grows to the right
         label ? 'h-14 w-auto min-w-14 justify-start gap-0 pl-4' : 'size-14',
-        // Animate out while the floating selection action bar or the on-screen keyboard is shown; hiding moves by translate, which skips layout
-        'group-[.selection-active]/body:pointer-events-none group-[.selection-active]/body:translate-y-16 group-[.selection-active]/body:scale-50 group-[.selection-active]/body:opacity-0',
-        'group-[.keyboard-open]/body:pointer-events-none group-[.keyboard-open]/body:translate-y-16 group-[.keyboard-open]/body:scale-50 group-[.keyboard-open]/body:opacity-0',
+        // Hiding moves by translate, which skips layout
+        'chrome-hidden:pointer-events-none chrome-hidden:translate-y-16 chrome-hidden:scale-50 chrome-hidden:opacity-0',
         className,
       )}
-      aria-label={ariaLabel ?? 'Navigate'}
+      aria-label={ariaLabel}
     >
       <Icon className="size-6" />
       {label && (

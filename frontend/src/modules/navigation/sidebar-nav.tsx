@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { navSheetId, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
 import { SidebarNavItemButton } from '~/modules/navigation/nav-buttons';
 import { navItems } from '~/modules/navigation/nav-items';
@@ -31,13 +31,12 @@ export function SidebarNav({ onNavItemClick }: SidebarNavProps) {
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const keepNavOpen = useNavigationStore((state) => state.keepNavOpen);
 
-  const navSheetExists = useSheeter((state) => state.sheets.some((sheet) => sheet.id === 'nav-sheet' && sheet.open));
+  const navSheetExists = useSheeter((state) => state.sheets.some((sheet) => sheet.id === navSheetId && sheet.open));
 
   useBodyClass({ 'keep-nav-open': keepNavOpen });
   useBodyClass({ 'nav-sheet-open': navSheetExists });
 
-  const isCollapsed = !!navSheetOpen;
-  const isExpanded = hasSidebarTextLabels && isDesktop && !isCollapsed;
+  const isExpanded = hasSidebarTextLabels && isDesktop && !navSheetOpen;
   const isOverlay = !isDesktop || !keepNavOpen;
 
   // The spacer includes the sheet width when the sheet is open and not overlaying.
@@ -64,9 +63,7 @@ export function SidebarNav({ onNavItemClick }: SidebarNavProps) {
         id="sidebar-nav"
         collapsible="none"
         data-started={hasStarted}
-        data-collapsed={isCollapsed}
-        data-overlay={isOverlay}
-        className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) transition-[width] duration-200 ease-linear focus-view:hidden focus:outline-hidden data-[started=false]:-translate-x-full"
+        className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) transition-[width] duration-200 ease-linear focus-view:hidden data-[started=false]:-translate-x-full"
       >
         <FocusTarget target="sidebar" />
         <div className="relative flex h-full">

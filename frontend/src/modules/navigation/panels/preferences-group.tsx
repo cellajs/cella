@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from 'react';
-import { PanelHeading } from '~/modules/navigation/menu-sheet/panel-heading';
+import { PanelHeading } from '~/modules/navigation/panels/panel-heading';
 import { HelpToggle } from '~/modules/ui/help-toggle';
 import { Switch } from '~/modules/ui/switch';
 import { cn } from '~/utils/cn';

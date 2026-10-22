@@ -1,13 +1,14 @@
 import { type StaticDataRouteOption, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpointAbove, useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { navSheetId, sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { navItems } from '~/modules/navigation/nav-items';
 import { closeNavSheet, navSheetOptions } from '~/modules/navigation/nav-sheet';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
 import { SidebarNav } from '~/modules/navigation/sidebar-nav';
 import type { NavItem, NavItemId, TriggerNavItemFn } from '~/modules/navigation/types';
 
@@ -26,6 +27,7 @@ const serializeFloatingNavConfig = (matches: { pathname: string; staticData: Sta
 };
 
 export function AppNav() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const isMobile = useBreakpointBelow('sm');
   const isDesktop = useBreakpointAbove('2xl');
@@ -48,16 +50,16 @@ export function AppNav() {
     if (navItem.action) return navItem.action(triggerRef);
 
     if (navItem.href) {
-      if (!useNavigationStore.getState().keepNavOpen) closeNavSheet();
+      if (!navigationStore.getState().keepNavOpen) closeNavSheet();
       return navigate({ to: navItem.href });
     }
 
     if (navItem.sheet) {
       setNavSheetOpen(navItem.id);
 
-      useSheeter.getState().replace(navItem.sheet(), {
+      sheeter.getState().replace(navItem.sheet(), {
         ...navSheetOptions(navItem.id, triggerRef),
-        id: 'nav-sheet',
+        id: navSheetId,
         side: isMobile && navItem.mirrorOnMobile ? 'right' : 'left',
         // Outside-press is gated by `keepNavOpen` in the sheeter's onOpenChange; disabling it here suppresses the event entirely.
         disablePointerDismissal: false,
@@ -76,7 +78,7 @@ export function AppNav() {
 
   useEffect(() => {
     const shouldPin = isDesktop && keepOpenPreference && !!navSheetOpen;
-    if (useNavigationStore.getState().keepNavOpen !== shouldPin) setKeepNavOpen(shouldPin);
+    if (navigationStore.getState().keepNavOpen !== shouldPin) setKeepNavOpen(shouldPin);
   }, [isDesktop, keepOpenPreference, navSheetOpen, setKeepNavOpen]);
 
   // A primitive select: matches are new objects on every router write, so selecting them would re-render on each URL change.
@@ -88,7 +90,7 @@ export function AppNav() {
     for (const direction of ['left', 'right'] as const) {
       for (const id of floatingNavConfig[direction]) {
         const navItem = navItems.find((item) => item.id === id);
-        if (navItem) floatingItems.push({ id: navItem.id, icon: navItem.icon, onClick: () => triggerNavItem(navItem.id), direction });
+        if (navItem) floatingItems.push({ id, icon: navItem.icon, ariaLabel: t(`c:${id}`), onClick: () => triggerNavItem(id), direction });
       }
     }
   }

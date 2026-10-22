@@ -8,7 +8,7 @@ import { env } from '~/env';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Spinner } from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { buildMembershipUpdate } from '~/modules/navigation/menu-sheet/helpers/build-membership-update';
@@ -30,7 +30,6 @@ function MembershipFlagButton({ icon: Icon, title, onClick }: MembershipFlagButt
       variant="none"
       size="sm"
       className="link-decoration active:link-decoration-strong focus-inset -mx-1 -my-0.5 h-5 rounded-sm px-1 text-primary text-xs leading-3 opacity-80 hover:underline hover:opacity-100"
-      aria-label={`Click ${title}`}
       onClick={onClick}
     >
       <Icon className="size-3.25 group-data-[subitem=true]/options-item:size-3" />
@@ -52,9 +51,7 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
   const { mutate: updateMembership, status } = useMemberUpdateMutation();
 
   const toggleMembershipFlag = (key: 'archived' | 'muted') => {
-    if (key === 'archived' && item.membership.archived && !onlineManager.isOnline()) {
-      return toaster.warning(t('c:action.offline.text'));
-    }
+    if (key === 'archived' && item.membership.archived && !onlineManager.isOnline()) return toastOffline();
 
     updateMembership(buildMembershipUpdate(item, key === 'archived' ? { archived: !item.membership.archived } : { muted: !item.membership.muted }));
   };

@@ -14,7 +14,7 @@ interface FloatingNavProps {
   resetTrigger?: unknown;
 }
 
-const LABEL_COLLAPSE_MS = 350; // Label collapse duration (300ms) plus margin, so buttons hide only once the text is gone
+const labelCollapseMs = 350; // Label collapse duration (300ms) plus margin, so buttons hide only once the text is gone
 
 export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-nav', resetTrigger }: FloatingNavProps) {
   const isMobile = useBreakpointBelow('sm');
@@ -41,7 +41,7 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
     // Only hold when the collapse starts from a visible state; a label that expanded off-screen never flashes the buttons
     if (!wasExpanded || !showButtonsRef.current) return;
     setIsLabelCollapsing(true);
-    const timeout = setTimeout(() => setIsLabelCollapsing(false), LABEL_COLLAPSE_MS);
+    const timeout = setTimeout(() => setIsLabelCollapsing(false), labelCollapseMs);
     return () => clearTimeout(timeout);
   }, [hasExpandedLabel]);
 

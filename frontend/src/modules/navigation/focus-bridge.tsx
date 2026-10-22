@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { closeNavSheet } from '~/modules/navigation/nav-sheet';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
@@ -41,7 +41,7 @@ export function FocusBridge({ direction, className }: FocusBridgeProps) {
   const { target, label } = bridges[direction];
 
   const handleClick = () => {
-    if (direction !== 'to-sheet' && !useNavigationStore.getState().keepNavOpen) {
+    if (direction !== 'to-sheet' && !navigationStore.getState().keepNavOpen) {
       closeNavSheet();
       // Waits a frame for the closing sheet to release the page; its finalFocus then leaves focus on the target.
       requestAnimationFrame(() => focusById(target));

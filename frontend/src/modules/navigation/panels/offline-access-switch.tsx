@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { PreferenceSwitch } from '~/modules/navigation/menu-sheet/preferences-group';
+import { PreferenceSwitch } from '~/modules/navigation/panels/preferences-group';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 export function OfflineAccessSwitch() {

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { PreferenceSwitch, PreferencesGroup } from '~/modules/navigation/menu-sheet/preferences-group';
+import { PreferenceSwitch, PreferencesGroup } from '~/modules/navigation/panels/preferences-group';
 
 function Group() {
   const [dark, setDark] = useState(false);

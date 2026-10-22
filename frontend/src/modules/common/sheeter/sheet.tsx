@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useRef } from 'react';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { type InternalSheet, navSheetId, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { cn } from '~/utils/cn';
@@ -58,7 +58,7 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
       if (dialogs.some((d) => d.open)) return;
 
       // The nav button's own click handler toggles the nav sheet; closing here makes it reopen
-      if (sheet.id === 'nav-sheet') {
+      if (sheet.id === navSheetId) {
         const navState = useNavigationStore.getState();
         if (navState.keepNavOpen && navState.navSheetOpen) return;
 

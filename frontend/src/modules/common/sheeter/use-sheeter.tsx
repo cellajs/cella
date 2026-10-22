@@ -45,6 +45,9 @@ function closeAndNotify(set: (state: { sheets: InternalSheet[] }) => void, sheet
   removeAndNotify(() => set({ sheets: remaining }), sheets, closing, opts);
 }
 
+/** The sheet the nav bars open; the sheeter keeps it open through outside presses and route changes while the nav is pinned. */
+export const navSheetId = 'nav-sheet';
+
 interface SheetStoreState {
   sheets: InternalSheet[];
 

@@ -10,9 +10,9 @@ interface MenuSheetArchivedToggleProps {
   archivedChannelIds?: string[];
 }
 
-const EMPTY_CHANNEL_IDS: string[] = [];
+const emptyChannelIds: string[] = [];
 
-export function MenuSheetArchivedToggle({ onToggle, archivedCount, archivedChannelIds = EMPTY_CHANNEL_IDS }: MenuSheetArchivedToggleProps) {
+export function MenuSheetArchivedToggle({ onToggle, archivedCount, archivedChannelIds = emptyChannelIds }: MenuSheetArchivedToggleProps) {
   const { t } = useTranslation();
   const archivedUnseenCount = useUnseenCount(archivedChannelIds);
 
@@ -21,8 +21,8 @@ export function MenuSheetArchivedToggle({ onToggle, archivedCount, archivedChann
       <Button
         onClick={onToggle}
         disabled={archivedCount < 1}
-        variant="secondary"
-        className="w-full gap-0 bg-transparent p-0 shadow-none ring-inset ring-offset-0 transition duration-300 hover:bg-accent/50 hover:text-accent-foreground group-data-[submenu=true]/archived:h-8"
+        variant="ghost"
+        className="w-full gap-0 p-0 ring-inset ring-offset-0 transition duration-300 hover:bg-accent/50 group-data-[submenu=true]/archived:h-8"
       >
         <div className="flex w-12 items-center justify-center py-2">
           <ArchiveIcon className="ml-2 size-5 opacity-75" />

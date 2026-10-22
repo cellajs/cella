@@ -5,31 +5,31 @@ import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { FocusTrap } from '~/modules/common/focus-trap';
 import { collapseMotion } from '~/modules/navigation/menu-sheet/helpers/collapse-motion';
-import { InfoContent } from '~/modules/navigation/menu-sheet/info-content';
-import { PreferencesContent } from '~/modules/navigation/menu-sheet/preferences-content';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
+import { InfoContent } from '~/modules/navigation/panels/info-content';
+import { PreferencesContent } from '~/modules/navigation/panels/preferences-content';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
-interface MenuSheetPanelProps {
+interface NavSheetPanelProps {
   id: string;
   label: TKey;
   children: ReactNode;
 }
 
-function MenuSheetPanel({ id, label, children }: MenuSheetPanelProps) {
+function NavSheetPanel({ id, label, children }: NavSheetPanelProps) {
   const { t } = useTranslation();
-  const menuSheetPanel = useNavigationStore((state) => state.menuSheetPanel);
-  const toggleMenuSheetPanel = useNavigationStore((state) => state.toggleMenuSheetPanel);
+  const navSheetPanel = useNavigationStore((state) => state.navSheetPanel);
+  const toggleNavSheetPanel = useNavigationStore((state) => state.toggleNavSheetPanel);
 
-  const isOpen = menuSheetPanel === id;
+  const isOpen = navSheetPanel === id;
 
   return (
     <div>
       {/* Borderless in both states: the open variant's border would shift the label by a pixel on toggle. */}
       <Button
-        onClick={() => toggleMenuSheetPanel(id)}
+        onClick={() => toggleNavSheetPanel(id)}
         className="w-full justify-between border-0 shadow-none"
         variant={isOpen ? 'secondary' : 'ghost'}
       >
@@ -52,11 +52,11 @@ function MenuSheetPanel({ id, label, children }: MenuSheetPanelProps) {
 const pinGlideTiming: KeyframeAnimationOptions = { duration: 200, easing: 'ease-in-out' };
 
 /** Sticks to the bottom of its nav sheet and overlays the sheet's content while a panel is expanded. */
-export function MenuSheetPanels() {
-  const menuSheetPanel = useNavigationStore((state) => state.menuSheetPanel);
-  const toggleMenuSheetPanel = useNavigationStore((state) => state.toggleMenuSheetPanel);
+export function NavSheetPanels() {
+  const navSheetPanel = useNavigationStore((state) => state.navSheetPanel);
+  const toggleNavSheetPanel = useNavigationStore((state) => state.toggleNavSheetPanel);
 
-  const hasOpenPanel = !!menuSheetPanel;
+  const hasOpenPanel = !!navSheetPanel;
 
   const barRef = useRef<HTMLDivElement>(null);
   const glideRef = useRef<Animation | null>(null);
@@ -67,8 +67,8 @@ export function MenuSheetPanels() {
   // write comes before React's commit, so the listener reads where the bar is painted, a running glide included.
   useEffect(
     () =>
-      useNavigationStore.subscribe((state, prev) => {
-        if (!state.menuSheetPanel !== !prev.menuSheetPanel) paintedTopRef.current = barRef.current?.getBoundingClientRect().top ?? null;
+      navigationStore.subscribe((state, prev) => {
+        if (!state.navSheetPanel !== !prev.navSheetPanel) paintedTopRef.current = barRef.current?.getBoundingClientRect().top ?? null;
       }),
     [],
   );
@@ -88,7 +88,7 @@ export function MenuSheetPanels() {
     // An open hover card takes the Escape first; the next one closes the panel
     if (event.key === 'Escape' && hasOpenPanel && !isHoverContentOpen()) {
       event.stopPropagation();
-      toggleMenuSheetPanel(menuSheetPanel);
+      toggleNavSheetPanel(navSheetPanel);
     }
   };
 
@@ -103,7 +103,7 @@ export function MenuSheetPanels() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="absolute right-0 bottom-full left-0 z-10 h-[200vh] bg-card/60"
-            onClick={() => toggleMenuSheetPanel(menuSheetPanel)}
+            onClick={() => toggleNavSheetPanel(navSheetPanel)}
           />
         )}
       </AnimatePresence>
@@ -115,12 +115,12 @@ export function MenuSheetPanels() {
             hasOpenPanel && 'max-h-dvh overflow-y-auto rounded-t-md shadow-lg',
           )}
         >
-          <MenuSheetPanel id="preferences" label="c:preferences">
+          <NavSheetPanel id="preferences" label="c:preferences">
             <PreferencesContent />
-          </MenuSheetPanel>
-          <MenuSheetPanel id="info" label="c:info">
+          </NavSheetPanel>
+          <NavSheetPanel id="info" label="c:info">
             <InfoContent />
-          </MenuSheetPanel>
+          </NavSheetPanel>
         </div>
       </FocusTrap>
     </div>

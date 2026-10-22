@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Sheeter } from '~/modules/common/sheeter/provider';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { navSheetId, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 vi.mock('~/routes/-router-instance', () => ({ getRouter: () => ({ subscribe: () => () => {} }) }));
@@ -94,13 +94,13 @@ describe('overlay exit', () => {
   it('keeps a sheet closed through the store, so it can be reopened in place', async () => {
     const onClose = vi.fn();
     await act(async () => {
-      useSheeter.getState().create(<p>Nav</p>, { id: 'nav-sheet', side: 'left', triggerRef: createRef(), title: 'Menu', onClose });
+      useSheeter.getState().create(<p>Nav</p>, { id: navSheetId, side: 'left', triggerRef: createRef(), title: 'Menu', onClose });
     });
 
-    await act(async () => useSheeter.getState().update('nav-sheet', { open: false }));
+    await act(async () => useSheeter.getState().update(navSheetId, { open: false }));
     await act(async () => new Promise((resolve) => setTimeout(resolve, 50)));
 
-    expect(useSheeter.getState().sheets.map((s) => [s.id, s.open])).toEqual([['nav-sheet', false]]);
+    expect(useSheeter.getState().sheets.map((s) => [s.id, s.open])).toEqual([[navSheetId, false]]);
     expect(onClose).not.toHaveBeenCalled();
   });
 

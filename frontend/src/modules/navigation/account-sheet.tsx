@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate, useRouter } from '@tanstack/react-router';
+import { useNavigate, useRouter } from '@tanstack/react-router';
 import { LogOutIcon, RefreshCwIcon, SettingsIcon, UserRoundIcon, WrenchIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useEffect, useRef } from 'react';
@@ -8,59 +8,15 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import type { IconComponent } from '~/modules/common/icons/types';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { navSheetId, sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { Button } from '~/modules/ui/button';
+import { NavSheetRow } from '~/modules/navigation/nav-sheet-row';
+import { navigationStore } from '~/modules/navigation/navigation-store';
 import { useCurrentUser, useUserStore } from '~/modules/user/user-store';
 import { cn } from '~/utils/cn';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 import { numberToColorClass } from '~/utils/number-to-color-class';
-
-/** An `onClick` row acts in place; a `to` row links, and while offline it warns and stays put unless `offlineAccess`. */
-type AccountButtonProps = { icon: IconComponent; label: string; id: string; destructive?: boolean } & (
-  | { onClick: () => void }
-  | ({ to: string } & ({ offlineAccess: false; isOnline: boolean } | { offlineAccess: true; isOnline?: never }))
-);
-
-function AccountButton(props: AccountButtonProps) {
-  const { icon: Icon, label, id, destructive } = props;
-  const { t } = useTranslation();
-
-  const isDisabled = 'to' in props && !props.offlineAccess && !props.isOnline;
-
-  return (
-    <Button
-      variant="ghost"
-      size="lg"
-      id={id}
-      className="w-full justify-start text-left hover:bg-accent/50 data-[destructive=true]:text-destructive"
-      data-destructive={destructive}
-      onClick={'onClick' in props ? props.onClick : undefined}
-      render={
-        'to' in props ? (
-          <Link
-            disabled={isDisabled}
-            onClick={() => {
-              if (isDisabled) {
-                toaster.warning(t('c:action.offline.text'));
-                return;
-              }
-              if (!useNavigationStore.getState().keepNavOpen) useSheeter.getState().remove();
-            }}
-            draggable={false}
-            to={props.to}
-          />
-        ) : undefined
-      }
-    >
-      <Icon className="size-4" />
-      {label}
-    </Button>
-  );
-}
 
 /** The app runs installed, in its own window without browser controls. */
 const isInstalledApp = () => window.matchMedia('(display-mode: standalone)').matches || ('standalone' in navigator && navigator.standalone === true);
@@ -87,20 +43,20 @@ export function AccountSheet() {
 
   // Unless keepNavOpen, every sheet closes, a menu sheet under this one too; the profile sheet then returns focus to the nav button
   const openProfile = () => {
-    if (!useNavigationStore.getState().keepNavOpen) {
-      const navTrigger = useSheeter.getState().get('nav-sheet')?.triggerRef.current;
+    if (!navigationStore.getState().keepNavOpen) {
+      const navTrigger = sheeter.getState().get(navSheetId)?.triggerRef.current;
       if (navTrigger instanceof HTMLButtonElement) fallbackContentRef.current = navTrigger;
       // Blurred, so the profile sheet does not stash this sheet's button as its trigger
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-      useSheeter.getState().remove();
+      sheeter.getState().remove();
     }
     navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: user.id }), resetScroll: false });
   };
 
   // What pull to refresh does, as a button: the installed app has no browser reload to fall back on
   const refresh = () => {
-    if (!isOnline) return toaster.warning(t('c:action.offline.text'));
-    if (!useNavigationStore.getState().keepNavOpen) useSheeter.getState().remove();
+    if (!isOnline) return toastOffline();
+    if (!navigationStore.getState().keepNavOpen) sheeter.getState().remove();
     Promise.allSettled([queryClient.invalidateQueries(), router.invalidate()]);
   };
 
@@ -112,7 +68,7 @@ export function AccountSheet() {
       <button type="button" tabIndex={-1} onClick={openProfile} className="mt-3 w-full">
         <div
           className={cn(
-            'relative h-32 bg-center bg-cover shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] transition-all duration-300',
+            'relative h-32 bg-center bg-cover shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] transition-colors duration-300',
             !user.bannerUrl && numberToColorClass(user.id),
           )}
           style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
@@ -123,23 +79,23 @@ export function AccountSheet() {
             transition={{ duration: 0.3, ease: 'easeOut' }}
             className="absolute top-6 left-1/2 -ml-10"
           >
-            <EntityAvatar className="size-20 rounded-full ring-4 ring-black/10" type="user" id={user.id} name={user.name} url={user.thumbnailUrl} />
+            <EntityAvatar className="size-20 ring-4 ring-black/10" type="user" id={user.id} name={user.name} url={user.thumbnailUrl} />
           </motion.div>
         </div>
       </button>
       <div className="mt-3 flex flex-col gap-1 px-3 max-sm:mt-4">
-        <AccountButton
+        <NavSheetRow
           icon={UserRoundIcon}
           id="btn-profile"
           label={t('c:view_resource', { resource: t('c:profile').toLowerCase() })}
           onClick={openProfile}
         />
-        <AccountButton offlineAccess={false} isOnline={isOnline} icon={SettingsIcon} id="btn-account" label={t('c:settings')} to="/account" />
+        <NavSheetRow offlineAccess={false} isOnline={isOnline} icon={SettingsIcon} id="btn-account" label={t('c:settings')} to="/account" />
         {isSystemAdmin && (
-          <AccountButton offlineAccess={false} isOnline={isOnline} icon={WrenchIcon} id="btn-system" label={t('c:system_panel')} to="/system" />
+          <NavSheetRow offlineAccess={false} isOnline={isOnline} icon={WrenchIcon} id="btn-system" label={t('c:system_panel')} to="/system" />
         )}
-        {isInstalledApp() && <AccountButton icon={RefreshCwIcon} id="btn-refresh" label={t('c:refresh')} onClick={refresh} />}
-        <AccountButton
+        {isInstalledApp() && <NavSheetRow icon={RefreshCwIcon} id="btn-refresh" label={t('c:refresh')} onClick={refresh} />}
+        <NavSheetRow
           offlineAccess={false}
           isOnline={isOnline}
           icon={LogOutIcon}

@@ -7,7 +7,6 @@ import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface NavigationStoreState {
   recentSearches: string[]; // Search values entered in AppSearch
-  setRecentSearches: (recentSearches: string[]) => void;
 
   navSheetOpen: NavItemId | null;
   setNavSheetOpen: (navSheetOpen: NavItemId | null) => void;
@@ -25,8 +24,8 @@ interface NavigationStoreState {
   toggleSection: (sectionKey: string) => void;
   resetSections: () => void;
 
-  menuSheetPanel: string | null; // Open bottom panel of a nav sheet; at most one
-  toggleMenuSheetPanel: (panel: string) => void;
+  navSheetPanel: string | null; // Open bottom panel of a nav sheet; at most one
+  toggleNavSheetPanel: (panel: string) => void;
 
   floatingNavActive: boolean; // Floating nav is visible, which hides the bottom bar
   setFloatingNavActive: (floatingNavActive: boolean) => void;
@@ -44,7 +43,7 @@ interface InitStore
     | 'navSheetOpen'
     | 'keepOpenPreference'
     | 'floatingNavActive'
-    | 'menuSheetPanel'
+    | 'navSheetPanel'
   > {}
 
 const initStore: InitStore = {
@@ -55,7 +54,7 @@ const initStore: InitStore = {
   detailedMenu: false,
   floatingNavActive: false,
   activeSections: null,
-  menuSheetPanel: null,
+  navSheetPanel: null,
 };
 
 export const useNavigationStore = create<NavigationStoreState>()(
@@ -67,12 +66,7 @@ export const useNavigationStore = create<NavigationStoreState>()(
           setNavSheetOpen: (navSheetOpen) => {
             set((state) => {
               state.navSheetOpen = navSheetOpen;
-              if (!navSheetOpen) state.menuSheetPanel = null;
-            });
-          },
-          setRecentSearches: (recentSearches) => {
-            set((state) => {
-              state.recentSearches = recentSearches;
+              if (!navSheetOpen) state.navSheetPanel = null;
             });
           },
           setKeepNavOpen: (keepNavOpen) => {
@@ -107,9 +101,9 @@ export const useNavigationStore = create<NavigationStoreState>()(
               state.activeSections = null;
             });
           },
-          toggleMenuSheetPanel: (panel) => {
+          toggleNavSheetPanel: (panel) => {
             set((state) => {
-              state.menuSheetPanel = state.menuSheetPanel === panel ? null : panel;
+              state.navSheetPanel = state.navSheetPanel === panel ? null : panel;
             });
           },
           reset: () => set(initStore),
@@ -131,3 +125,6 @@ export const useNavigationStore = create<NavigationStoreState>()(
     { enabled: isDebugMode, name: 'navigation store' },
   ),
 );
+
+// Non-hook alias for use outside React components, e.g. navigationStore.getState()
+export { useNavigationStore as navigationStore };

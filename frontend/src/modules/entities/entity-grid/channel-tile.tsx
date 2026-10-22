@@ -150,7 +150,7 @@ export function ChannelTileStats({ countRole }: { countRole?: EntityRole }) {
             const count = counts?.entities?.[type] ?? 0;
             return (
               <span key={type} className="inline-flex items-center gap-1">
-                {Icon && <Icon className="size-3.5" aria-hidden />}
+                {Icon && <Icon className="size-3.5" />}
                 {formatCount(count)}
                 <span className="sr-only">{t(`c:${type}`, { count })}</span>
               </span>

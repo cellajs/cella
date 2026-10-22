@@ -1,6 +1,6 @@
 import type { ReactNode, Ref } from 'react';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
-import { MenuSheetPanels } from '~/modules/navigation/menu-sheet/panels';
+import { NavSheetPanels } from '~/modules/navigation/nav-sheet-panels';
 import { cn } from '~/utils/cn';
 
 interface NavSheetFrameProps {
@@ -20,7 +20,7 @@ export function NavSheetFrame({ children, panels = false, ref, className }: NavS
       {panels && (
         <>
           <span className="mt-10" />
-          <MenuSheetPanels />
+          <NavSheetPanels />
         </>
       )}
       <div className={cn('flex flex-col focus-within:p-3', !panels && 'mt-auto')}>

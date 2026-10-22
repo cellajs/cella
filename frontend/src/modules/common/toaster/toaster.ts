@@ -1,4 +1,5 @@
 import { Toast, type ToastManager, type ToastManagerAddOptions } from '@base-ui/react/toast';
+import i18n from 'i18next';
 import type { ReactNode } from 'react';
 import { useUIStore } from '~/modules/ui/ui-store';
 
@@ -70,3 +71,6 @@ function show(type?: ToastSeverity) {
 
 /** Shows a toast and returns its id: `toaster(message)` plain, `toaster.<severity>(message)` with an icon. */
 export const toaster = Object.assign(show(), { success: show('success'), info: show('info'), warning: show('warning'), error: show('error'), close });
+
+/** Warns that the action needs a connection. */
+export const toastOffline = () => toaster.warning(i18n.t('c:action.offline.text'));

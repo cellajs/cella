@@ -7,11 +7,11 @@ export type HealthComponent = { status: HealthStatus; reason?: string };
 
 export type HealthResponse = { status: HealthStatus; components: Record<string, HealthComponent> };
 
-const HEALTH_URL = `${appConfig.backendUrl}/health?depth=full`;
-const HEALTH_POLL_MS = 30_000;
+const healthUrl = `${appConfig.backendUrl}/health?depth=full`;
+const healthPollMs = 30_000;
 
 async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse> {
-  const response = await fetch(HEALTH_URL, { cache: 'no-store', signal });
+  const response = await fetch(healthUrl, { cache: 'no-store', signal });
   // A 503 still carries the diagnostics: it names which critical component is down.
   if (!response.ok && response.status !== 503) throw new Error(`Health check failed: ${response.status}`);
   return (await response.json()) as HealthResponse;
@@ -22,8 +22,8 @@ export const healthQueryOptions = () =>
   queryOptions({
     queryKey: ['health'],
     queryFn: ({ signal }) => fetchHealth(signal),
-    refetchInterval: HEALTH_POLL_MS,
-    staleTime: HEALTH_POLL_MS,
+    refetchInterval: healthPollMs,
+    staleTime: healthPollMs,
     // Transient health data: not persisted to IDB, and failures raise no global error toast.
     meta: { persist: false, suppressGlobalErrorToast: true },
   });

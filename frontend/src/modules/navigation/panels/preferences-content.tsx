@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useUpdateSelfMutation } from '~/modules/me/query';
-import { OfflineAccessSwitch } from '~/modules/navigation/menu-sheet/offline-access-switch';
-import { PreferenceSwitch, PreferencesGroup } from '~/modules/navigation/menu-sheet/preferences-group';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { OfflineAccessSwitch } from '~/modules/navigation/panels/offline-access-switch';
+import { PreferenceSwitch, PreferencesGroup } from '~/modules/navigation/panels/preferences-group';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 const pwaEnabled = appConfig.has.pwa;
