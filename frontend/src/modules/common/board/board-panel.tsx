@@ -86,12 +86,12 @@ interface CollapsedPanelViewProps {
   className?: string;
 }
 
-const EMPTY_SECTIONS: CollapsedSection[] = [];
+const emptySections: CollapsedSection[] = [];
 
 // w-12 is a collapsed panel inside its border, so the expanded preview sits where the collapsed count does
 const collapsedCountClass = 'absolute top-[calc(50%-0.5rem)] left-0 w-12 text-center text-muted-foreground text-xs';
 
-export function CollapsedPanelView({ mainCount, sections = EMPTY_SECTIONS, className }: CollapsedPanelViewProps) {
+export function CollapsedPanelView({ mainCount, sections = emptySections, className }: CollapsedPanelViewProps) {
   const topSections = sections.filter((s) => s.position === 'top');
   const bottomSections = sections.filter((s) => s.position === 'bottom');
 

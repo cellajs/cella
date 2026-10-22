@@ -1,7 +1,7 @@
 import * as decoding from 'lib0/decoding';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
-import { PARKED_GRACE_MS, RESYNC_COOLDOWN_MS, watchPendingStructs } from '../yjs-resync';
+import { parkedGraceMs, resyncCooldownMs, watchPendingStructs } from '../yjs-resync';
 
 function fakeDoc(): Y.Doc & { park: (on: boolean) => void } {
   const doc = new Y.Doc();
@@ -34,7 +34,7 @@ describe('watchPendingStructs', () => {
 
     // The park is noticed on the next poll; the grace period counts from there.
     doc.park(true);
-    vi.advanceTimersByTime(PARKED_GRACE_MS);
+    vi.advanceTimersByTime(parkedGraceMs);
     expect(provider.ws.send).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1_000);
     expect(provider.ws.send).toHaveBeenCalledTimes(1);
@@ -74,7 +74,7 @@ describe('watchPendingStructs', () => {
     const stop = watchPendingStructs(doc, provider);
 
     doc.park(true);
-    vi.advanceTimersByTime(PARKED_GRACE_MS + 2_000);
+    vi.advanceTimersByTime(parkedGraceMs + 2_000);
     expect(provider.ws.send).not.toHaveBeenCalled();
 
     provider.wsconnected = true;
@@ -82,7 +82,7 @@ describe('watchPendingStructs', () => {
     expect(provider.ws.send).toHaveBeenCalledTimes(1);
 
     // Still parked: the next attempt waits for the cooldown, not just the grace period.
-    vi.advanceTimersByTime(RESYNC_COOLDOWN_MS - 2_000);
+    vi.advanceTimersByTime(resyncCooldownMs - 2_000);
     expect(provider.ws.send).toHaveBeenCalledTimes(1);
     vi.advanceTimersByTime(3_000);
     expect(provider.ws.send).toHaveBeenCalledTimes(2);

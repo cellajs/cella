@@ -33,9 +33,9 @@ const { queryClient } = await import('~/query/query-client');
 const { enqueueRange, flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');
 const { onSyncedRows } = await import('./sync-signals');
 
-const BACKGROUND = { min: 2_000, max: 30_000 };
-const VIEWING = { min: 0, max: 0 };
-const ON_OPEN = { min: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY };
+const background = { min: 2_000, max: 30_000 };
+const viewing = { min: 0, max: 0 };
+const onOpen = { min: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY };
 
 const base = { entityType: 'attachment' as const, organizationId: 'org-1', tenantId: 'tenant-1', channelId: null, isCreate: false };
 
@@ -47,7 +47,7 @@ describe('fetch-prioritizer', () => {
     setSyncDeliveryTrusted(true);
     // reachedSeq Infinity = full delivery (reaches any untilSeq) unless a test overrides it.
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: Number.POSITIVE_INFINITY });
-    getSyncTier.mockReturnValue(BACKGROUND);
+    getSyncTier.mockReturnValue(background);
   });
 
   afterEach(() => {
@@ -69,7 +69,7 @@ describe('fetch-prioritizer', () => {
   });
 
   it('flushes viewing-tier channel views immediately (single events keep live behavior)', async () => {
-    getSyncTier.mockReturnValue(VIEWING);
+    getSyncTier.mockReturnValue(viewing);
     enqueueRange({ ...base, afterSeq: 2, untilSeq: 3 });
 
     await vi.advanceTimersByTimeAsync(0);
@@ -79,7 +79,7 @@ describe('fetch-prioritizer', () => {
   });
 
   it('records the known seq but never fetches for muted channel views', async () => {
-    getSyncTier.mockReturnValue(ON_OPEN);
+    getSyncTier.mockReturnValue(onOpen);
     enqueueRange({ ...base, channelId: 'project-9', afterSeq: 3, untilSeq: 7 });
 
     await vi.advanceTimersByTimeAsync(60_000);
@@ -255,7 +255,7 @@ describe('fetch-prioritizer', () => {
     expect(fetchRangeAndPatch).not.toHaveBeenCalled();
 
     // The channel view's view mounts: its list query gains an observer and the tier turns live.
-    getSyncTier.mockReturnValue(VIEWING);
+    getSyncTier.mockReturnValue(viewing);
     const observer = new QueryObserver(queryClient, { queryKey: ['attachment', 'list', 'org-1'], queryFn: async () => [] });
     const unsubscribe = observer.subscribe(() => {});
 

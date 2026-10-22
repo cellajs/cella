@@ -9,7 +9,7 @@ import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { useDownloader } from '~/hooks/use-downloader';
 import { useLatestCallback, useLatestRef } from '~/hooks/use-latest-ref';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
-import { ATTACHMENT_DIALOG_PARAM, attachmentDialogStageClassName, clearAttachmentDialogSearchParams } from '~/modules/attachment/dialog/params';
+import { attachmentDialogParam, attachmentDialogStageClassName, clearAttachmentDialogSearchParams } from '~/modules/attachment/dialog/params';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
 import type { PendingUpload } from '~/modules/attachment/helpers/pending-uploads';
 import { AttachmentRender } from '~/modules/attachment/render/attachment-render';
@@ -92,7 +92,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       return;
     }
 
-    navigate({ to: '.', replace: true, resetScroll: false, search: (prev) => ({ ...prev, [ATTACHMENT_DIALOG_PARAM]: newItem.id }) });
+    navigate({ to: '.', replace: true, resetScroll: false, search: (prev) => ({ ...prev, [attachmentDialogParam]: newItem.id }) });
   };
 
   const toggleWatchDrag = (enabled: boolean) => setWatchDrag(enabled && items.length > 1);

@@ -14,7 +14,7 @@ import { OrganizationsTableBar } from '~/modules/organization/table/organization
 import { useColumns } from '~/modules/organization/table/organizations-columns';
 import type { EnrichedOrganization, OrganizationsRouteSearchParams } from '~/modules/organization/types';
 
-const LIMIT = appConfig.requestLimits.organizations;
+const requestLimit = appConfig.requestLimits.organizations;
 
 function rowKeyGetter(row: EnrichedOrganization) {
   return row.id;
@@ -27,7 +27,7 @@ function OrganizationsTable() {
   const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({ from: '/_app/system/organizations' });
 
   const { q, sort, order } = search;
-  const limit = LIMIT;
+  const limit = requestLimit;
 
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);

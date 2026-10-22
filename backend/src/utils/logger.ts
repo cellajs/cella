@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { appConfig, type Severity } from 'shared';
 import type { LogMeta } from 'shared/pino';
-import { BENCH_TENANT_ID, BENCH_UUID_PREFIX } from 'shared/utils/bench-identity';
+import { benchTenantId, benchUuidPrefix } from 'shared/utils/bench-identity';
 import type { Env } from '#/core/context';
 import { baseLog } from '#/lib/pino';
 
@@ -10,7 +10,7 @@ const isProduction = appConfig.mode === 'production';
 /** Check if traffic originates from bench/load testing (dev only). */
 export const isBenchTraffic = (userId?: string, tenantId?: string) => {
   if (isProduction) return false;
-  return tenantId === BENCH_TENANT_ID || userId?.startsWith(BENCH_UUID_PREFIX);
+  return tenantId === benchTenantId || userId?.startsWith(benchUuidPrefix);
 };
 
 /** Ambient log context: the live Hono ctx, or a synthetic { var } for worker jobs. */

@@ -12,7 +12,7 @@ export const streamErrorForEnding = (reason: SessionEndReason): StreamErrorPaylo
   endingsWithSuccessor.has(reason) ? { code: 'session_replaced', message: 'Session replaced' } : { code: 'unauthorized', message: 'Session revoked' };
 
 /** How long a close waits for the client to take its error event. */
-const ERROR_WRITE_TIMEOUT_MS = 1000;
+const errorWriteTimeoutMs = 1000;
 
 /**
  * Tells the client why its stream ends, then ends it; without this the stream stays live until the client leaves. A
@@ -20,7 +20,7 @@ const ERROR_WRITE_TIMEOUT_MS = 1000;
  */
 async function closeAppStream(subscriber: AppStreamSubscriber, payload: StreamErrorPayload): Promise<void> {
   streamSubscriberManager.unregister(subscriber.id);
-  await withinTimeout(writeError(subscriber.stream, payload), ERROR_WRITE_TIMEOUT_MS);
+  await withinTimeout(writeError(subscriber.stream, payload), errorWriteTimeoutMs);
   // Abort runs the handler's onAbort cleanup, ends the response body and releases a write still waiting for the
   // client; close lets keepAlive return.
   subscriber.stream.abort();

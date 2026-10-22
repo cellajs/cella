@@ -9,14 +9,14 @@ import { brevoPlaceholder, type EmailRecipient, type EmailTemplateDef } from '..
 
 if (!env.BREVO_API_KEY && appConfig.mode !== 'test') log.info('Email sending disabled: BREVO_API_KEY missing');
 
-const MAX_VERSIONS_PER_CALL = 99;
+const maxVersionsPerCall = 99;
 
-const BREVO_SEND_URL = 'https://api.brevo.com/v3/smtp/email';
-const BREVO_TIMEOUT_MS = 60_000;
-const BREVO_MAX_RETRIES = 2;
+const brevoSendUrl = 'https://api.brevo.com/v3/smtp/email';
+const brevoTimeoutMs = 60_000;
+const brevoMaxRetries = 2;
 
 /** A Brevo tag opener (`{{`, `{%`, `{#`), or a placeholder `{{params.key}}` (groups: the key, a `|safe`). */
-const BREVO_TAG_OPENER = /\{\{params\.([A-Za-z0-9_]+)(\|safe)?\}\}|\{(?=[{%#])/g;
+const brevoTagOpener = /\{\{params\.([A-Za-z0-9_]+)(\|safe)?\}\}|\{(?=[{%#])/g;
 
 interface BrevoPlaceholders {
   /** Keys every message version carries: `{{params.<key>}}` stays, and Brevo fills it escaped. */
@@ -37,7 +37,7 @@ interface BrevoPlaceholders {
  */
 export function neutralizeBrevoTags(content: string, { params, htmlParams = [] }: BrevoPlaceholders, format: 'html' | 'text'): string {
   const brace = format === 'html' ? '&#123;' : '{\u200B';
-  return content.replace(BREVO_TAG_OPENER, (match, key: string | undefined, safe: string | undefined) => {
+  return content.replace(brevoTagOpener, (match, key: string | undefined, safe: string | undefined) => {
     const ownPlaceholder = key !== undefined && (safe ? htmlParams.includes(key) : params.includes(key));
     return ownPlaceholder ? match : `${brace}${match.slice(1)}`;
   });
@@ -60,16 +60,16 @@ const withSafeHtmlParams = (params: Record<string, unknown>, htmlParams: Partial
 /** Posts to Brevo's transactional endpoint, retrying 408, 429 and 5xx with backoff (Retry-After wins), as its SDK did. */
 async function postToBrevo(apiKey: string, body: unknown): Promise<void> {
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(BREVO_SEND_URL, {
+    const res = await fetch(brevoSendUrl, {
       method: 'POST',
       headers: { 'api-key': apiKey, 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(BREVO_TIMEOUT_MS),
+      signal: AbortSignal.timeout(brevoTimeoutMs),
     });
     if (res.ok) return;
 
     const retryable = res.status === 408 || res.status === 429 || res.status >= 500;
-    if (!retryable || attempt >= BREVO_MAX_RETRIES) {
+    if (!retryable || attempt >= brevoMaxRetries) {
       throw new Error(`Brevo responded ${res.status}: ${await res.text().catch(() => '')}`);
     }
     const retryAfterSeconds = Number.parseInt(res.headers.get('retry-after') ?? '', 10);
@@ -140,8 +140,8 @@ export const mailer: Mailer = {
 
       const html = await render(template.component({ ...componentProps, ...placeholderProps }));
 
-      for (let i = 0; i < lngRecipients.length; i += MAX_VERSIONS_PER_CALL) {
-        const batch = lngRecipients.slice(i, i + MAX_VERSIONS_PER_CALL);
+      for (let i = 0; i < lngRecipients.length; i += maxVersionsPerCall) {
+        const batch = lngRecipients.slice(i, i + maxVersionsPerCall);
 
         const versions = batch.map((recipient) => {
           const params: Record<string, unknown> = {};

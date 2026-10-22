@@ -13,7 +13,7 @@ export interface EntityQueryKeys {
 }
 
 /** The backend's max limit for range fetches: a response of exactly this size may truncate the range, and fetchRangeAndPatch treats that as overflow. */
-export const SYNC_CHUNK_SIZE = 1000;
+export const syncChunkSize = 1000;
 
 /** A range read for sync: the rows stamped with a sequence position in (afterSeq, untilSeq]. */
 export interface SeqRange {
@@ -37,9 +37,9 @@ const entityQueryKeysRegistry = new Map<string, EntityQueryKeys>();
 const rangeFetchRegistry = new Map<string, RangeFetchFn>();
 const equalityFilterKeysRegistry = new Map<string, readonly string[]>();
 
-const SENTINEL_ORG = '__org__';
-const SENTINEL_HOME = '__home__';
-const SENTINEL_ID = '__id__';
+const sentinelOrg = '__org__';
+const sentinelHome = '__home__';
+const sentinelId = '__id__';
 
 /** Validates key builders against the list and detail shapes live routing requires, so a malformed custom key fails at startup and not during sync. */
 function assertKeyContract(entityType: EntityType, keys: EntityQueryKeys): void {
@@ -49,17 +49,17 @@ function assertKeyContract(entityType: EntityType, keys: EntityQueryKeys): void 
     throw new Error(`registerEntityQueryKeys(${entityType}): ${builder} must ${requirement} (createEntityKeys contract - see cella/SYNC_ENGINE.md)`);
   };
 
-  const home = keys.list.home(SENTINEL_ORG, SENTINEL_HOME);
+  const home = keys.list.home(sentinelOrg, sentinelHome);
   if (home[0] !== entityType || home[1] !== 'list') fail('list.home(...)', `start with [${entityType}, 'list']`);
-  if (!carries(home, SENTINEL_ORG) || !carries(home, SENTINEL_HOME)) fail('list.home(...)', 'carry the org and home-channel ids');
+  if (!carries(home, sentinelOrg) || !carries(home, sentinelHome)) fail('list.home(...)', 'carry the org and home-channel ids');
 
-  const org = keys.list.org(SENTINEL_ORG);
+  const org = keys.list.org(sentinelOrg);
   if (org[0] !== entityType || org[1] !== 'list') fail('list.org(...)', `start with [${entityType}, 'list']`);
-  if (!carries(org, SENTINEL_ORG)) fail('list.org(...)', 'carry the org id');
+  if (!carries(org, sentinelOrg)) fail('list.org(...)', 'carry the org id');
 
-  const detail = keys.detail.byId(SENTINEL_ID);
+  const detail = keys.detail.byId(sentinelId);
   if (detail[0] !== entityType) fail('detail.byId(...)', `start with [${entityType}]`);
-  if (!carries(detail, SENTINEL_ID)) fail('detail.byId(...)', 'carry the entity id');
+  if (!carries(detail, sentinelId)) fail('detail.byId(...)', 'carry the entity id');
 }
 
 /** Canonical list data must use home keys, because live sync placement and channel observation derive from that shape; hand-written keys fail validation. */

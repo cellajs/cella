@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { encodeLogNotice, YJS_LOG_CHANNEL } from '#/modules/yjs/helpers/yjs-log';
+import { encodeLogNotice, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
 import { flushMicrotasks } from './helpers';
 
 /** A pg.Client stand-in: `connect` and `LISTEN` succeed unless a test says otherwise, and the test drives its events. */
@@ -60,11 +60,11 @@ describe('log listener', () => {
     await flushMicrotasks();
 
     expect(clients).toHaveLength(1);
-    expect(clients[0].queries).toEqual([`LISTEN ${YJS_LOG_CHANNEL}`]);
+    expect(clients[0].queries).toEqual([`LISTEN ${yjsLogChannel}`]);
     expect(logListenerStatus()).toBe('listening');
     expect(onListening).toHaveBeenCalledTimes(1);
 
-    clients[0].notify(YJS_LOG_CHANNEL, encodeLogNotice(notice));
+    clients[0].notify(yjsLogChannel, encodeLogNotice(notice));
     expect(onNotice).toHaveBeenCalledExactlyOnceWith(notice);
   });
 
@@ -73,8 +73,8 @@ describe('log listener', () => {
     await flushMicrotasks();
 
     clients[0].notify('other_channel', encodeLogNotice(notice));
-    clients[0].notify(YJS_LOG_CHANNEL, 'not json');
-    clients[0].notify(YJS_LOG_CHANNEL, JSON.stringify({ t: 'tenant-1', e: 'task', i: 'entity-1', id: 'seven' }));
+    clients[0].notify(yjsLogChannel, 'not json');
+    clients[0].notify(yjsLogChannel, JSON.stringify({ t: 'tenant-1', e: 'task', i: 'entity-1', id: 'seven' }));
     expect(onNotice).not.toHaveBeenCalled();
   });
 
@@ -101,9 +101,9 @@ describe('log listener', () => {
     expect(logListenerStatus()).toBe('listening');
     expect(onListening).toHaveBeenCalledTimes(2);
     // A late event of a retired connection changes nothing.
-    clients[0].notify(YJS_LOG_CHANNEL, encodeLogNotice(notice));
+    clients[0].notify(yjsLogChannel, encodeLogNotice(notice));
     expect(onNotice).not.toHaveBeenCalled();
-    clients[3].notify(YJS_LOG_CHANNEL, encodeLogNotice(notice));
+    clients[3].notify(yjsLogChannel, encodeLogNotice(notice));
     expect(onNotice).toHaveBeenCalledTimes(1);
   });
 

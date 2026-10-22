@@ -16,7 +16,7 @@ import { membersListQueryOptions } from '~/modules/memberships/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 
-const LIMIT = appConfig.requestLimits.members;
+const requestLimit = appConfig.requestLimits.members;
 
 function rowKeyGetter(row: Member) {
   return row.id;
@@ -44,7 +44,7 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
   const canUpdate = isUnconditionalCan(channel.can?.[channel.entityType]?.update);
 
   const { q, role, sort, order } = search;
-  const limit = LIMIT;
+  const limit = requestLimit;
 
   const [columns, setColumns] = useColumns(canUpdate, isSheet, entityType);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);

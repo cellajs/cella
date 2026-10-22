@@ -34,8 +34,8 @@ const { queryClient } = await import('~/query/query-client');
 const { fetchEntityAndUpdateList, fetchRangeAndPatch, removeEntity } = await import('./cache-ops');
 
 // The synthetic 'task', 'comment' and 'label' types exist only in this file's shared mock, hence the casts.
-const TASK = 'task' as EntityType;
-const COMMENT = 'comment' as ProductEntityType;
+const task = 'task' as EntityType;
+const comment = 'comment' as ProductEntityType;
 
 describe('realtime cache ops', () => {
   afterEach(() => {
@@ -84,8 +84,8 @@ describe('realtime cache ops', () => {
   });
 
   it('splices a sub-org-homed row only into its own home channel list', async () => {
-    const keys = createEntityKeys<Record<string, never>>(TASK);
-    registerEntityQueryKeys(TASK, keys, async () => ({
+    const keys = createEntityKeys<Record<string, never>>(task);
+    registerEntityQueryKeys(task, keys, async () => ({
       items: [{ id: 'task-1', organizationId: 'org-1', projectId: 'project-1', name: 'fresh' }],
       total: 1,
     }));
@@ -94,7 +94,7 @@ describe('realtime cache ops', () => {
     queryClient.setQueryData(keys.list.home('org-1', 'project-2'), { items: [], total: 0 });
     queryClient.setQueryData(keys.list.home('org-1'), { items: [], total: 0 });
 
-    const { status } = await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 2, untilSeq: 3 }, keys);
+    const { status } = await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 2, untilSeq: 3 }, keys);
 
     expect(status).toBe('ok');
     const home = queryClient.getQueryData<{ items: { id: string }[] }>(keys.list.home('org-1', 'project-1'));
@@ -105,8 +105,8 @@ describe('realtime cache ops', () => {
   });
 
   it('splices an org-homed row (null sub-ancestors) into the org home list only', async () => {
-    const keys = createEntityKeys<Record<string, never>>(TASK);
-    registerEntityQueryKeys(TASK, keys, async () => ({
+    const keys = createEntityKeys<Record<string, never>>(task);
+    registerEntityQueryKeys(task, keys, async () => ({
       items: [{ id: 'task-2', organizationId: 'org-1', projectId: null, name: 'org level' }],
       total: 1,
     }));
@@ -114,7 +114,7 @@ describe('realtime cache ops', () => {
     queryClient.setQueryData(keys.list.home('org-1'), { items: [], total: 0 });
     queryClient.setQueryData(keys.list.home('org-1', 'project-1'), { items: [], total: 0 });
 
-    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 3, untilSeq: 4 }, keys);
+    await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 3, untilSeq: 4 }, keys);
 
     const orgHome = queryClient.getQueryData<{ items: { id: string }[] }>(keys.list.home('org-1'));
     expect(orgHome?.items.map((i) => i.id)).toEqual(['task-2']);
@@ -123,8 +123,8 @@ describe('realtime cache ops', () => {
 
   it('does not splice into the bare org prefix key and warns that the row landed nowhere', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const keys = createEntityKeys<Record<string, never>>(TASK);
-    registerEntityQueryKeys(TASK, keys, async () => ({
+    const keys = createEntityKeys<Record<string, never>>(task);
+    registerEntityQueryKeys(task, keys, async () => ({
       items: [{ id: 'task-3', organizationId: 'org-1', projectId: 'project-1', name: 'orphan' }],
       total: 1,
     }));
@@ -132,7 +132,7 @@ describe('realtime cache ops', () => {
     // Canonical data cached at the org PREFIX (a key-shape bug: prefixes are never data keys).
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
-    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
+    await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
 
     expect(queryClient.getQueryData(keys.list.org('org-1'))).toEqual({ items: [], total: 0 });
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('landed in no list cache'));
@@ -179,7 +179,7 @@ describe('realtime cache ops', () => {
 
   it('reports overflow when the seq window overflows one response: no silent 1000-row range cap', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    // A full SYNC_CHUNK_SIZE response means more changes may remain beyond this window
+    // A full syncChunkSize response means more changes may remain beyond this window
     const items = Array.from({ length: 1000 }, (_, i) => ({ id: `att-${i + 1}`, organizationId: 'org-1', seq: i + 1 }));
     registerEntityQueryKeys('attachment', keys, async () => ({ items, total: 1500 }));
 
@@ -226,14 +226,14 @@ describe('filtered list refetch for a new row', () => {
     vi.restoreAllMocks();
   });
 
-  const commentKeys = createEntityKeys<{ itemId?: string }>(COMMENT);
+  const commentKeys = createEntityKeys<{ itemId?: string }>(comment);
   const newComment = { id: 'comment-2', organizationId: 'org-1', itemId: 'item-1' };
   const listKey = (filters: Record<string, unknown>) => [...commentKeys.list.org('org-1'), filters];
 
   // Comment lists are declared to hold only rows whose itemId equals the filter's.
   function registerComments(items: { id: string; organizationId: string; itemId?: string }[] = [newComment]) {
-    registerEntityQueryKeys(COMMENT, commentKeys, async () => ({ items, total: items.length }));
-    registerEqualityFilterKeys(COMMENT, ['itemId']);
+    registerEntityQueryKeys(comment, commentKeys, async () => ({ items, total: items.length }));
+    registerEqualityFilterKeys(comment, ['itemId']);
     queryClient.setQueryDefaults(commentKeys.detail.base, { queryFn: async () => newComment });
   }
 
@@ -260,7 +260,7 @@ describe('filtered list refetch for a new row', () => {
     registerComments();
     seedLists(lists);
 
-    await fetchEntityAndUpdateList('comment-2', commentKeys, 'create', 'org-1', 'tenant-1', COMMENT);
+    await fetchEntityAndUpdateList('comment-2', commentKeys, 'create', 'org-1', 'tenant-1', comment);
 
     expect(isInvalidated(lists.otherItem)).toBe(false);
     expect(isInvalidated(lists.otherItemSorted)).toBe(false);
@@ -277,7 +277,7 @@ describe('filtered list refetch for a new row', () => {
     registerComments([newComment, { id: 'comment-3', organizationId: 'org-1', itemId: 'item-3' }]);
     seedLists({ ...lists, thirdItem: { itemId: 'item-3' } });
 
-    await fetchRangeAndPatch(COMMENT, 'org-1', 'tenant-1', { afterSeq: 8, untilSeq: 10 }, commentKeys);
+    await fetchRangeAndPatch(comment, 'org-1', 'tenant-1', { afterSeq: 8, untilSeq: 10 }, commentKeys);
 
     expect(isInvalidated(lists.otherItem)).toBe(false);
     expect(isInvalidated(lists.sameItem)).toBe(true);
@@ -290,21 +290,21 @@ describe('filtered list refetch for a new row', () => {
     registerComments([{ id: 'comment-4', organizationId: 'org-1' }]);
     seedLists({ otherItem: lists.otherItem });
 
-    await fetchRangeAndPatch(COMMENT, 'org-1', 'tenant-1', { afterSeq: 10, untilSeq: 11 }, commentKeys);
+    await fetchRangeAndPatch(comment, 'org-1', 'tenant-1', { afterSeq: 10, untilSeq: 11 }, commentKeys);
 
     expect(isInvalidated(lists.otherItem)).toBe(true);
   });
 
   it('refetches every filtered list of an entity type without declared keys', async () => {
-    const keys = createEntityKeys<Record<string, never>>(TASK);
-    registerEntityQueryKeys(TASK, keys, async () => ({
+    const keys = createEntityKeys<Record<string, never>>(task);
+    registerEntityQueryKeys(task, keys, async () => ({
       items: [{ id: 'task-9', organizationId: 'org-1', projectId: 'project-1', itemId: 'item-1' }],
       total: 1,
     }));
     const otherItemKey = [...keys.list.org('org-1'), { itemId: 'item-2' }];
     queryClient.setQueryData(otherItemKey, { items: [], total: 0 });
 
-    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 11, untilSeq: 12 }, keys);
+    await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 11, untilSeq: 12 }, keys);
 
     expect(queryClient.getQueryState(otherItemKey)?.isInvalidated).toBe(true);
   });

@@ -2,7 +2,7 @@ import { docsIndex as docsFrontmatter } from 'virtual:docs-frontmatter';
 import type { ComponentType } from 'react';
 import { z } from 'zod';
 
-const CONTENT_ROOT = '/src/content/docs/';
+const contentRoot = '/src/content/docs/';
 
 export const docRenderModes = ['default', 'overview', 'nodeOnly'] as const;
 export type DocRenderMode = (typeof docRenderModes)[number];
@@ -80,13 +80,13 @@ export type DocPage = {
 };
 
 /** DOM id prefix the mdx pipeline (rehype-slug) puts on heading ids; spy store convention. */
-const HEADING_ID_PREFIX = 'spy-';
+const headingIdPrefix = 'spy-';
 
 /**
  * Spy section of the page itself: the article wraps every heading, so it is current until the first heading takes over.
  * Heading slugs never contain a slash, so it can't clash with one (pages do have an `## Overview` heading).
  */
-export const PAGE_SECTION_ID = 'page/intro';
+export const pageSectionId = 'page/intro';
 
 // Frontmatter and headings come from a build-time index (vite/docs-frontmatter.ts); importing page modules for it would pull every page body into this chunk.
 const metaModules = docsFrontmatter;
@@ -95,7 +95,7 @@ const componentModules = import.meta.glob<ComponentType>('/src/content/docs/**/*
 /** File path to slug: `architecture/index.md` becomes `architecture`. */
 export function pathToSlug(path: string): string {
   const slug = path
-    .slice(CONTENT_ROOT.length)
+    .slice(contentRoot.length)
     .replace(/\.(md|mdx)$/, '')
     .replace(/(^|\/)index$/, '');
   return slug.replace(/\/$/, '');
@@ -119,7 +119,7 @@ function buildIndex(): { pages: DocPage[]; loaders: Map<string, () => Promise<Co
     const result = frontmatterSchema.safeParse(entry.frontmatter);
     if (!result.success) throw new Error(`Docs content: invalid frontmatter in ${path}: ${result.error.message}`);
     slugs.add(slug);
-    const headings = entry.headings.map((h) => ({ ...h, id: h.id.replace(HEADING_ID_PREFIX, '') }));
+    const headings = entry.headings.map((h) => ({ ...h, id: h.id.replace(headingIdPrefix, '') }));
     parsed.push({ slug, path, meta: result.data, headings });
   }
 

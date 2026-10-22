@@ -96,11 +96,11 @@ const modeText: Record<SyncMode, { label: TKey; text: TKey }> = {
 
 // Animation timeline (seconds): base REST fades in and holds, then the mode-specific node fades
 // in and the stream/branch lines draw in flow order.
-const ANIM = { fade: 0.6, hold: 1, cdcIn: 0.6, draw: 0.9, sqlDraw: 0.6, gap: 0.4 } as const;
+const animTimeline = { fade: 0.6, hold: 1, cdcIn: 0.6, draw: 0.9, sqlDraw: 0.6, gap: 0.4 } as const;
 
 // Part 4 folds the workers into the API server with the same two moves, also in reverse: their lines pull back, the workers fade
 // out, the server widens into one VM that holds them, and the two outside connections draw again.
-const FOLD = { retract: 0.5, stagger: 0.08, fade: 0.5, morph: 0.6, swap: 0.3 } as const;
+const foldTimeline = { retract: 0.5, stagger: 0.08, fade: 0.5, morph: 0.6, swap: 0.3 } as const;
 
 // Worker lines in the order they pull back: newest first, the reverse of how Parts 2 and 3 drew them.
 const foldOrder = ['yjs-api', 'yjs-database', 'client-yjs', 'cdc-api', 'cdc-database', 'database-cdc'];
@@ -120,21 +120,21 @@ type EdgeTiming = { delay: number; duration: number; draw: boolean };
 // `lead` is the pause before the mode-specific node appears: the full hold on first reveal, 0 on a toggle.
 // `foldAt` is when the last worker line has pulled back in Part 4, which runs on its own clock from the switch.
 const buildTimeline = (lead: number, foldAt = 0) => {
-  const T_CDC = ANIM.fade + lead;
-  const T_REPLICATION = T_CDC + ANIM.cdcIn + ANIM.gap;
-  const T_SQL_CDC = T_REPLICATION + ANIM.draw + ANIM.gap;
-  const T_WS = T_SQL_CDC + ANIM.sqlDraw + ANIM.gap;
-  const T_SSE = T_WS + ANIM.draw + ANIM.gap;
+  const T_CDC = animTimeline.fade + lead;
+  const T_REPLICATION = T_CDC + animTimeline.cdcIn + animTimeline.gap;
+  const T_SQL_CDC = T_REPLICATION + animTimeline.draw + animTimeline.gap;
+  const T_WS = T_SQL_CDC + animTimeline.sqlDraw + animTimeline.gap;
+  const T_SSE = T_WS + animTimeline.draw + animTimeline.gap;
 
   // The Yjs timeline adds the collaboration path to the full CDC flow.
-  const T_YJS_NODE = T_SSE + ANIM.draw + ANIM.gap;
-  const T_WS_YJS = T_YJS_NODE + ANIM.cdcIn + ANIM.gap;
-  const T_YJS_PERSIST = T_WS_YJS + ANIM.draw + ANIM.gap;
-  const T_YJS_SAVE = T_YJS_PERSIST + ANIM.sqlDraw + ANIM.gap;
+  const T_YJS_NODE = T_SSE + animTimeline.draw + animTimeline.gap;
+  const T_WS_YJS = T_YJS_NODE + animTimeline.cdcIn + animTimeline.gap;
+  const T_YJS_PERSIST = T_WS_YJS + animTimeline.draw + animTimeline.gap;
+  const T_YJS_SAVE = T_YJS_PERSIST + animTimeline.sqlDraw + animTimeline.gap;
 
   // The VM timeline: fold, widen, then draw the two connections to the VM.
-  const T_VM_DRAW = foldAt + FOLD.morph + ANIM.gap;
-  const vmAt = { fold: foldAt, workers: foldAt + FOLD.swap };
+  const T_VM_DRAW = foldAt + foldTimeline.morph + animTimeline.gap;
+  const vmAt = { fold: foldAt, workers: foldAt + foldTimeline.swap };
 
   const nodeDelay: Record<SyncMode, Partial<Record<NodeKey, number>>> = {
     rest: { database: 0, api: 0, client: 0 },
@@ -145,43 +145,46 @@ const buildTimeline = (lead: number, foldAt = 0) => {
 
   // `draw` lines are stroked along their trajectory; the rest fade in.
   const edgeAnim: Record<SyncMode, Record<string, EdgeTiming>> = {
-    rest: { 'client-api': { delay: 0, duration: ANIM.fade, draw: false }, 'api-database': { delay: 0, duration: ANIM.fade, draw: false } },
+    rest: {
+      'client-api': { delay: 0, duration: animTimeline.fade, draw: false },
+      'api-database': { delay: 0, duration: animTimeline.fade, draw: false },
+    },
     cdc: {
-      'client-api': { delay: 0, duration: ANIM.fade, draw: false },
-      'api-database': { delay: 0, duration: ANIM.fade, draw: false },
-      'cdc-database': { delay: T_SQL_CDC, duration: ANIM.sqlDraw, draw: true },
-      'database-cdc': { delay: T_REPLICATION, duration: ANIM.draw, draw: true },
-      'cdc-api': { delay: T_WS, duration: ANIM.draw, draw: true },
-      'api-client': { delay: T_SSE, duration: ANIM.draw, draw: true },
+      'client-api': { delay: 0, duration: animTimeline.fade, draw: false },
+      'api-database': { delay: 0, duration: animTimeline.fade, draw: false },
+      'cdc-database': { delay: T_SQL_CDC, duration: animTimeline.sqlDraw, draw: true },
+      'database-cdc': { delay: T_REPLICATION, duration: animTimeline.draw, draw: true },
+      'cdc-api': { delay: T_WS, duration: animTimeline.draw, draw: true },
+      'api-client': { delay: T_SSE, duration: animTimeline.draw, draw: true },
     },
     yjs: {
-      'client-api': { delay: 0, duration: ANIM.fade, draw: false },
-      'api-database': { delay: 0, duration: ANIM.fade, draw: false },
-      'cdc-database': { delay: T_SQL_CDC, duration: ANIM.sqlDraw, draw: true },
-      'database-cdc': { delay: T_REPLICATION, duration: ANIM.draw, draw: true },
-      'cdc-api': { delay: T_WS, duration: ANIM.draw, draw: true },
-      'api-client': { delay: T_SSE, duration: ANIM.draw, draw: true },
-      'client-yjs': { delay: T_WS_YJS, duration: ANIM.draw, draw: true },
-      'yjs-database': { delay: T_YJS_PERSIST, duration: ANIM.sqlDraw, draw: true },
-      'yjs-api': { delay: T_YJS_SAVE, duration: ANIM.draw, draw: true },
+      'client-api': { delay: 0, duration: animTimeline.fade, draw: false },
+      'api-database': { delay: 0, duration: animTimeline.fade, draw: false },
+      'cdc-database': { delay: T_SQL_CDC, duration: animTimeline.sqlDraw, draw: true },
+      'database-cdc': { delay: T_REPLICATION, duration: animTimeline.draw, draw: true },
+      'cdc-api': { delay: T_WS, duration: animTimeline.draw, draw: true },
+      'api-client': { delay: T_SSE, duration: animTimeline.draw, draw: true },
+      'client-yjs': { delay: T_WS_YJS, duration: animTimeline.draw, draw: true },
+      'yjs-database': { delay: T_YJS_PERSIST, duration: animTimeline.sqlDraw, draw: true },
+      'yjs-api': { delay: T_YJS_SAVE, duration: animTimeline.draw, draw: true },
     },
     vm: {
-      'client-api': { delay: 0, duration: ANIM.fade, draw: false },
-      'api-database': { delay: 0, duration: ANIM.fade, draw: false },
-      'api-client': { delay: T_VM_DRAW, duration: ANIM.draw, draw: true },
-      'vm-wal': { delay: T_VM_DRAW, duration: ANIM.draw, draw: true },
-      'vm-socket': { delay: T_VM_DRAW + ANIM.gap, duration: ANIM.draw, draw: true },
+      'client-api': { delay: 0, duration: animTimeline.fade, draw: false },
+      'api-database': { delay: 0, duration: animTimeline.fade, draw: false },
+      'api-client': { delay: T_VM_DRAW, duration: animTimeline.draw, draw: true },
+      'vm-wal': { delay: T_VM_DRAW, duration: animTimeline.draw, draw: true },
+      'vm-socket': { delay: T_VM_DRAW + animTimeline.gap, duration: animTimeline.draw, draw: true },
     },
   };
 
   return { nodeDelay, edgeAnim, vmAt };
 };
-const fallbackAnim = { delay: 0, duration: ANIM.fade, draw: false };
+const fallbackAnim = { delay: 0, duration: animTimeline.fade, draw: false };
 // Runs of the 0.6 s dash cycle per start: 4.8 s, under the five seconds after which moving content needs a pause control.
-const DASH_RUNS = 8;
+const dashRuns = 8;
 
 // Extra room (px) kept between a line end and the icon box edge.
-const EDGE_PADDING = 8;
+const edgePadding = 8;
 
 type Point = { x: number; y: number };
 type Geometry = { width: number; height: number; centers: Record<string, Point>; halves: Record<string, { w: number; h: number }> };
@@ -198,10 +201,10 @@ export function SyncDiagram() {
   // Only edges a part introduces get moving dashes; earlier lines stay static. Part 4 is the exception: there every line flows.
   const prevMode = modeOrder[modeOrder.indexOf(mode) - 1];
   const introducedEdges = new Set(activeEdges.filter((edge) => !prevMode || !modeConfig[prevMode].edges.includes(edge)));
-  const [lead, setLead] = useState<number>(ANIM.hold);
+  const [lead, setLead] = useState<number>(animTimeline.hold);
   // What the previous part showed and Part 4 folds away: these stay mounted to pull back and fade out.
   const [fold, setFold] = useState<Fold>(noFold);
-  const foldAt = fold.edges.length ? (fold.edges.length - 1) * FOLD.stagger + FOLD.retract : 0;
+  const foldAt = fold.edges.length ? (fold.edges.length - 1) * foldTimeline.stagger + foldTimeline.retract : 0;
   const isVm = mode === 'vm';
   // Edge whose label is revealed on hover (inherited labels are hidden until hovered/near).
   const [hovered, setHovered] = useState<string | null>(null);
@@ -290,9 +293,9 @@ export function SyncDiagram() {
   const trimOf = (geometry: Geometry, key: NodeKey, ux: number, uy: number) => {
     const { w, h } = geometry.halves[key];
     const stretch = Math.min(1, (w / h - 1) * 2);
-    if (stretch <= 0) return Math.hypot(w, h) + EDGE_PADDING;
+    if (stretch <= 0) return Math.hypot(w, h) + edgePadding;
     const side = geometry.halves.database?.w ?? h;
-    const round = Math.SQRT2 * side + EDGE_PADDING;
+    const round = Math.SQRT2 * side + edgePadding;
     const clearance = round - side;
     const edge = Math.min((w + clearance) / (Math.abs(ux) || 1e-6), (h + clearance) / (Math.abs(uy) || 1e-6));
     return round + (edge - round) * stretch;
@@ -400,7 +403,7 @@ export function SyncDiagram() {
                 ? trimmedLine(edge.to, edge.from, -(edge.offset ?? 0))
                 : trimmedLine(edge.from, edge.to, edge.offset);
               if (!line) return null;
-              const delay = index * FOLD.stagger;
+              const delay = index * foldTimeline.stagger;
               return (
                 <motion.line
                   key={`${key}-retract`}
@@ -414,8 +417,8 @@ export function SyncDiagram() {
                   initial={{ pathLength: 1, opacity: 1 }}
                   animate={{ pathLength: 0, opacity: 0 }}
                   transition={{
-                    pathLength: { delay, duration: FOLD.retract, ease: 'easeInOut' },
-                    opacity: { delay: delay + FOLD.retract, duration: 0.001 },
+                    pathLength: { delay, duration: foldTimeline.retract, ease: 'easeInOut' },
+                    opacity: { delay: delay + foldTimeline.retract, duration: 0.001 },
                   }}
                 />
               );
@@ -569,7 +572,7 @@ export function SyncDiagram() {
                         strokeDasharray="5 5"
                         markerEnd={`url(#stream-arrow-${key})`}
                         animate={{ strokeDashoffset: flowDashes ? [0, dir] : 0 }}
-                        transition={flowDashes ? { repeat: DASH_RUNS - 1, ease: 'linear', duration: 0.6 } : { duration: 0 }}
+                        transition={flowDashes ? { repeat: dashRuns - 1, ease: 'linear', duration: 0.6 } : { duration: 0 }}
                       />
                     ))
                   ) : (
@@ -638,8 +641,8 @@ export function SyncDiagram() {
               animate={{ opacity: folding ? 0 : 1 }}
               transition={
                 folding
-                  ? { delay: vmAt.fold, duration: FOLD.fade }
-                  : { delay: startDelay(nodeDelay[mode][key as NodeKey] ?? 0), duration: isLastNode ? ANIM.cdcIn : ANIM.fade }
+                  ? { delay: vmAt.fold, duration: foldTimeline.fade }
+                  : { delay: startDelay(nodeDelay[mode][key as NodeKey] ?? 0), duration: isLastNode ? animTimeline.cdcIn : animTimeline.fade }
               }
             >
               {key === 'api' ? (
@@ -653,12 +656,12 @@ export function SyncDiagram() {
                       'absolute top-1/2 left-0 -translate-y-1/2 rounded-xl border bg-background shadow-sm transition-[width,height,border-color] ease-in-out motion-reduce:transition-none',
                       isVm ? 'h-14 w-28 border-foreground/40 sm:h-18 sm:w-36 md:h-20 md:w-42' : 'size-11 sm:size-14 md:size-16',
                     )}
-                    style={{ transitionDuration: `${FOLD.morph}s`, transitionDelay: `${isVm ? vmAt.fold : 0}s` }}
+                    style={{ transitionDuration: `${foldTimeline.morph}s`, transitionDelay: `${isVm ? vmAt.fold : 0}s` }}
                   >
                     <motion.div
                       initial={false}
                       animate={{ opacity: isVm ? 0 : 1 }}
-                      transition={{ delay: isVm ? vmAt.fold : FOLD.swap, duration: FOLD.swap }}
+                      transition={{ delay: isVm ? vmAt.fold : foldTimeline.swap, duration: foldTimeline.swap }}
                       className="absolute inset-0 flex items-center justify-center"
                     >
                       <Icon className="size-5 text-foreground sm:size-7 md:size-8" strokeWidth={1.5} />
@@ -672,7 +675,7 @@ export function SyncDiagram() {
                           key={worker.key}
                           initial={false}
                           animate={{ opacity: isVm ? 1 : 0 }}
-                          transition={isVm ? { delay: vmAt.workers, duration: FOLD.fade } : { duration: 0.2 }}
+                          transition={isVm ? { delay: vmAt.workers, duration: foldTimeline.fade } : { duration: 0.2 }}
                           className="flex flex-col items-center gap-1"
                         >
                           <div className="flex size-6 items-center justify-center rounded-md border sm:size-7 md:size-8">
@@ -686,7 +689,7 @@ export function SyncDiagram() {
                       aria-hidden={!isVm}
                       initial={false}
                       animate={{ opacity: isVm ? 1 : 0 }}
-                      transition={isVm ? { delay: vmAt.workers, duration: FOLD.swap } : { duration: 0.2 }}
+                      transition={isVm ? { delay: vmAt.workers, duration: foldTimeline.swap } : { duration: 0.2 }}
                       className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap font-medium text-foreground text-xs"
                     >
                       One VM
@@ -705,7 +708,7 @@ export function SyncDiagram() {
               )}
               <span
                 className={cn('truncate text-muted-foreground text-xs transition-opacity', becomesVm && 'opacity-0')}
-                style={{ transitionDuration: `${FOLD.swap}s`, transitionDelay: `${becomesVm ? vmAt.fold : 0}s` }}
+                style={{ transitionDuration: `${foldTimeline.swap}s`, transitionDelay: `${becomesVm ? vmAt.fold : 0}s` }}
               >
                 {label}
               </span>

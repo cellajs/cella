@@ -26,8 +26,8 @@ export function dmlMessage(
 export const tableMetaOf = (kind: TableMeta['kind'], type: string): TableMeta =>
   ({ kind, type, table: { [Symbol.for('drizzle:Name')]: `${type}s` } }) as unknown as TableMeta;
 
-const DEFAULT_ENTITY: NonNullable<InsertActivityModel['entityType']> = 'attachment';
-const DEFAULT_TABLE = 'attachments';
+const defaultEntity: NonNullable<InsertActivityModel['entityType']> = 'attachment';
+const defaultTable = 'attachments';
 
 /** The seeded mock is the same on every call, and reseeding faker for each one is slow in a test of many changes, so it is built once. */
 let cdcActivityDefaults: InsertActivityModel | undefined;
@@ -36,10 +36,10 @@ let cdcActivityDefaults: InsertActivityModel | undefined;
 export function mockCdcActivity(overrides: Partial<InsertActivityModel> = {}): InsertActivityModel {
   cdcActivityDefaults ??= mockActivity('cdc:default', {
     action: 'create',
-    entityType: DEFAULT_ENTITY,
+    entityType: defaultEntity,
     resourceType: null,
-    tableName: DEFAULT_TABLE,
-    type: `${DEFAULT_ENTITY}.created` as InsertActivityModel['type'],
+    tableName: defaultTable,
+    type: `${defaultEntity}.created` as InsertActivityModel['type'],
     tenantId: 'tenant-1',
     userId: 'user-1',
     organizationId: 'org-1',
@@ -60,7 +60,7 @@ export function mockParseResult(
     tableMeta?: 'entity' | 'resource';
   } = {},
 ): ParseMessageResult {
-  const type = overrides.entityType ?? overrides.resourceType ?? DEFAULT_ENTITY;
+  const type = overrides.entityType ?? overrides.resourceType ?? defaultEntity;
   const kind = overrides.tableMeta ?? (overrides.resourceType ? 'resource' : 'entity');
 
   const activity = mockCdcActivity({

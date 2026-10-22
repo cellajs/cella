@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as Y from 'yjs';
-import { descriptionToSeed, descriptionToUpdate, stateToBlocksJson, YJS_FRAGMENT_NAME } from './description-update';
+import { descriptionToSeed, descriptionToUpdate, stateToBlocksJson, yjsFragmentName } from './description-update';
 
 const paragraph = (id: string, text: string) => ({
   id,
@@ -20,7 +20,7 @@ const texts = (state: Uint8Array) =>
 const blockGroups = (state: Uint8Array) => {
   const doc = new Y.Doc();
   Y.applyUpdate(doc, state);
-  return doc.getXmlFragment(YJS_FRAGMENT_NAME).length;
+  return doc.getXmlFragment(yjsFragmentName).length;
 };
 
 const merge = (...updates: (Uint8Array | null)[]) => Y.mergeUpdates(updates.filter((update) => update !== null));

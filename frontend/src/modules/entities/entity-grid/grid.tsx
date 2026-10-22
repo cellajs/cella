@@ -10,7 +10,7 @@ import { Button } from '~/modules/ui/button';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 /** limitedView shows at most this many tiles, and {@link EntityGridBar} hides itself at or below it when unfiltered. */
-export const GRID_PREVIEW_LIMIT = 3;
+export const gridPreviewLimit = 3;
 
 type BaseEntityGridProps<TEntity extends { id: string }> = {
   label: TKey;
@@ -35,7 +35,7 @@ type BaseEntityGridProps<TEntity extends { id: string }> = {
   // empty-state logic
   isFiltered: boolean;
 
-  /** When true, only show up to {@link GRID_PREVIEW_LIMIT} items with a "Show all" button */
+  /** When true, only show up to {@link gridPreviewLimit} items with a "Show all" button */
   limitedView?: boolean;
   onExpand?: () => void;
   /** List query key; with limitedView, sources the server total for the "Show all (N)" button. */
@@ -78,9 +78,9 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
     );
   }
 
-  const isLimited = limitedView && entities.length > GRID_PREVIEW_LIMIT;
-  const visibleEntities = isLimited ? entities.slice(0, GRID_PREVIEW_LIMIT) : entities;
-  const showAllCount = total !== null && total > GRID_PREVIEW_LIMIT ? ` (${total})` : '';
+  const isLimited = limitedView && entities.length > gridPreviewLimit;
+  const visibleEntities = isLimited ? entities.slice(0, gridPreviewLimit) : entities;
+  const showAllCount = total !== null && total > gridPreviewLimit ? ` (${total})` : '';
 
   return (
     <div className="mb-12">

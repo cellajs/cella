@@ -1,6 +1,6 @@
 import { SSEStreamingApi } from 'hono/streaming';
 import { describe, expect, it } from 'vitest';
-import { keepAlive, WORKER_AWAY_PING } from './helpers';
+import { keepAlive, workerAwayPing } from './helpers';
 
 /** A real SSE stream and what a client reads from it, frame by frame. */
 const openStream = () => {
@@ -38,7 +38,7 @@ describe('stream keepalive', () => {
 
   it('reads its data anew for every ping, so a client hears a standing fact at the next one and hears when it ends', async () => {
     const { stream, nextFrame } = openStream();
-    const facts = ['', WORKER_AWAY_PING, WORKER_AWAY_PING, ''];
+    const facts = ['', workerAwayPing, workerAwayPing, ''];
     const running = keepAlive(stream, () => facts.shift() ?? '', 5);
 
     const frames = [await nextFrame(), await nextFrame(), await nextFrame(), await nextFrame()];

@@ -7,7 +7,7 @@ interface UseHasScrolledOptions {
   immediate?: boolean;
 }
 
-const SCROLL_KEYS = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '];
+const scrollKeys = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '];
 
 /** True once the user scrolls with wheel, touch or keyboard, and stays true. Waits `delay` before listening. */
 export const useHasScrolled = ({ delay = 2000, immediate = false }: UseHasScrolledOptions = {}) => {
@@ -24,7 +24,7 @@ export const useHasScrolled = ({ delay = 2000, immediate = false }: UseHasScroll
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (SCROLL_KEYS.includes(e.key)) {
+      if (scrollKeys.includes(e.key)) {
         handleScrollIntent();
       }
     };

@@ -7,7 +7,7 @@ import { JsonNode } from './json-node';
 import type { DataType, JsonViewerProps } from './types';
 import { defaultTheme } from './types';
 
-const EMPTY_VALUE_TYPES: DataType[] = [];
+const emptyValueTypes: DataType[] = [];
 
 /** "#/components/schemas/UserSchema" becomes ["components", "schemas", "UserSchema"]. */
 function parseRefPath(refPath: string): string[] {
@@ -77,7 +77,7 @@ export function JsonViewer({
   displayDataTypes = false,
   enableClipboard = false,
   indentWidth = 2,
-  valueTypes = EMPTY_VALUE_TYPES,
+  valueTypes = emptyValueTypes,
   className,
   collapseStringsAfterLength = 200,
   openapiMode,

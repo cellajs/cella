@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as Y from 'yjs';
 import type { TKey } from '~/lib/i18n-locales';
-import { firstLineOf, YDOC_FRAGMENT, yDocLabel } from '~/modules/common/blocknote/ydoc-label';
+import { firstLineOf, yDocLabel, ydocFragment } from '~/modules/common/blocknote/ydoc-label';
 import type { YjsConnection } from '~/modules/common/blocknote/yjs-connections';
 import type { HttpLinkScope } from '~/modules/common/blocknote/yjs-http';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -13,7 +13,7 @@ import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-que
 import { getLocalUserDb, type UnsaveableReason, type UnsaveableYDocRecord } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
 
-const REASON_TEXTS: Record<UnsaveableReason, TKey> = {
+const reasonTexts: Record<UnsaveableReason, TKey> = {
   deleted: 'c:unsaveable_deleted.text',
   denied: 'c:unsaveable_denied.text',
   replaced: 'c:unsaveable_replaced.text',
@@ -81,8 +81,8 @@ export async function showUnsaveableNotice(record: UnsaveableYDocRecord): Promis
   let firstLine: string | null = null;
   try {
     Y.applyUpdate(doc, record.state);
-    firstLine = firstLineOf(doc.getXmlFragment(YDOC_FRAGMENT));
-    blocks = JSON.stringify(yDocToBlocks(getHeadlessEditor(), doc, YDOC_FRAGMENT));
+    firstLine = firstLineOf(doc.getXmlFragment(ydocFragment));
+    blocks = JSON.stringify(yDocToBlocks(getHeadlessEditor(), doc, ydocFragment));
   } catch (error) {
     console.error('[yjs] Reading parked edits failed:', error);
   } finally {
@@ -91,7 +91,7 @@ export async function showUnsaveableNotice(record: UnsaveableYDocRecord): Promis
 
   const id = `unsaveable:${record.id ?? `${record.entityType}:${record.entityId}:${record.at}`}`;
   const name = yDocLabel({ entityId: record.entityId, entityType: record.entityType, firstLine });
-  toaster.warning(i18n.t(REASON_TEXTS[record.reason], { name }), {
+  toaster.warning(i18n.t(reasonTexts[record.reason], { name }), {
     id,
     timeout: 0,
     description: <NoticeActions copy={blocks ? () => copyBlocksToClipboard(blocks) : null} discard={() => discardUnsaveable(record, id)} />,

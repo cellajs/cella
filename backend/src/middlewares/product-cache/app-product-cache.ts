@@ -24,7 +24,7 @@ function productKey(entityType: EntityType, entityId: string): string {
 }
 
 /** How long after a write no read of that row is cached: longer than the write's transaction takes to commit. */
-const WRITE_HOLD_MS = 5000;
+const writeHoldMs = 5000;
 
 /**
  * Per key, the moment before which a read may not be cached. An invalidation sets it to now: a read that was in
@@ -71,7 +71,7 @@ export const productCache = {
     for (const entityId of entityIds) {
       const key = productKey(entityType, entityId);
       cache.delete(key);
-      holdOff(key, performance.now() + WRITE_HOLD_MS);
+      holdOff(key, performance.now() + writeHoldMs);
     }
   },
 

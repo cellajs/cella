@@ -17,7 +17,7 @@ import { useTableTooltip } from '~/modules/common/data-table/use-table-tooltip';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { cn } from '~/utils/cn';
 
-const MAX_SELECTABLE_ROWS = 1000;
+const maxSelectableRows = 1000;
 
 /** DataGrid props forwarded unchanged through `gridProps`, retaining their source types and docs. */
 type ForwardedGridProps<TData> = Pick<
@@ -122,12 +122,12 @@ export function DataTable<TData>({
       const currentSize = selectedRows?.size ?? 0;
       const newSize = newSelectedRows.size;
 
-      if (newSize > MAX_SELECTABLE_ROWS) {
+      if (newSize > maxSelectableRows) {
         // A jump of more than one row is a "select all" attempt.
         if (newSize - currentSize > 1) {
-          toaster.warning(t('c:selection_limit_all', { max: MAX_SELECTABLE_ROWS }));
+          toaster.warning(t('c:selection_limit_all', { max: maxSelectableRows }));
         } else {
-          toaster.warning(t('c:selection_limit', { max: MAX_SELECTABLE_ROWS }));
+          toaster.warning(t('c:selection_limit', { max: maxSelectableRows }));
         }
         return;
       }

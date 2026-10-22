@@ -3,7 +3,7 @@ import { HighlightText } from '~/modules/common/match-highlight';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 import { getTypeColorClass, type JsonViewerTheme } from './types';
-import { JSON_SCHEMA_TYPES } from './utils';
+import { jsonSchemaTypes } from './utils';
 
 interface InlinePrimitiveValueProps {
   value: unknown;
@@ -50,7 +50,7 @@ export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength,
       const str = String(value);
 
       // Schema-mode type keywords render unquoted and in their type color.
-      if (openapiMode === 'schema' && JSON_SCHEMA_TYPES.has(str)) {
+      if (openapiMode === 'schema' && jsonSchemaTypes.has(str)) {
         return <span className={cn(baseClass, theme.schemaType, getTypeColorClass(str, theme))}>{str}</span>;
       }
 

@@ -60,9 +60,9 @@ export interface SyncTier {
   max: number;
 }
 
-const TIER_VIEWING: SyncTier = { min: 0, max: 0 };
-const TIER_BACKGROUND: SyncTier = { min: 2_000, max: 30_000 };
-const TIER_ON_OPEN: SyncTier = { min: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY };
+const tierViewing: SyncTier = { min: 0, max: 0 };
+const tierBackground: SyncTier = { min: 2_000, max: 30_000 };
+const tierOnOpen: SyncTier = { min: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY };
 
 /** Same org, and for sub-org channel views a mounted view observes a query carrying the channel id, which covers slug routes and boards whose routes do not name every rendered channel. */
 export function isViewingChannel(organizationId: string, channelId: string | null): boolean {
@@ -83,8 +83,8 @@ function isMutedOrArchived(organizationId: string, channelId: string | null): bo
 
 /** Set the sole sync priority: viewed scopes live, muted scopes on open, and others in background. */
 export function getSyncTier(entityType: string, organizationId: string, channelId: string | null): SyncTier {
-  if (!isProduct(entityType)) return TIER_ON_OPEN;
-  if (isViewingChannel(organizationId, channelId)) return TIER_VIEWING;
-  if (isMutedOrArchived(organizationId, channelId)) return TIER_ON_OPEN;
-  return TIER_BACKGROUND;
+  if (!isProduct(entityType)) return tierOnOpen;
+  if (isViewingChannel(organizationId, channelId)) return tierViewing;
+  if (isMutedOrArchived(organizationId, channelId)) return tierOnOpen;
+  return tierBackground;
 }

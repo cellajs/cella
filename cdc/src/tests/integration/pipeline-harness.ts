@@ -4,7 +4,7 @@ import { PgoutputPlugin } from 'pg-logical-replication';
 import { appConfig, hierarchy } from 'shared';
 import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
-import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../../constants';
+import { cdcPublicationName, cdcSlotName } from '../../constants';
 import { cdcDb } from '../../lib/db';
 import { wsClient } from '../../network/websocket-client';
 import { ensureReplicationSlot, subscribeWithReconnect } from '../../pipeline/replication';
@@ -23,7 +23,7 @@ export async function waitFor(predicate: () => boolean | Promise<boolean>, timeo
 
 /** Whether the CDC replication slot is currently held by a connection. */
 export async function slotActive(): Promise<boolean> {
-  const res = await cdcDb.execute<{ active: boolean }>(sql`SELECT active FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`);
+  const res = await cdcDb.execute<{ active: boolean }>(sql`SELECT active FROM pg_replication_slots WHERE slot_name = ${cdcSlotName}`);
   return res.rows[0]?.active ?? false;
 }
 
@@ -98,18 +98,18 @@ export interface CdcPipelineHarness {
  */
 export async function startCdcPipeline(): Promise<CdcPipelineHarness> {
   // Drop a leftover slot from a previous run; bail if one is actively held.
-  const existing = await cdcDb.execute<{ active: boolean }>(sql`SELECT active FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`);
+  const existing = await cdcDb.execute<{ active: boolean }>(sql`SELECT active FROM pg_replication_slots WHERE slot_name = ${cdcSlotName}`);
   if (existing.rows[0]?.active) {
-    throw new Error(`Replication slot '${CDC_SLOT_NAME}' is already active: another worker is using the test DB`);
+    throw new Error(`Replication slot '${cdcSlotName}' is already active: another worker is using the test DB`);
   }
   if (existing.rows.length) {
-    await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})`);
+    await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${cdcSlotName})`);
   }
 
   // Made here, so the loop finds it: a slot the loop makes on a database with a history is a lost case.
   await ensureReplicationSlot();
 
-  const plugin = new PgoutputPlugin({ protoVersion: 1, publicationNames: [CDC_PUBLICATION_NAME], messages: true });
+  const plugin = new PgoutputPlugin({ protoVersion: 1, publicationNames: [cdcPublicationName], messages: true });
   let looping = false;
 
   const readAgain = async () => {
@@ -125,7 +125,7 @@ export async function startCdcPipeline(): Promise<CdcPipelineHarness> {
   const loopEnded = async () => {
     // The loop ends with its subscription, or after the wait it is in: at most the longest wait before a read.
     await waitFor(() => !looping, 35_000, 'the subscription loop ended');
-    await waitFor(async () => !(await slotActive()), 10_000, `replication slot '${CDC_SLOT_NAME}' released`);
+    await waitFor(async () => !(await slotActive()), 10_000, `replication slot '${cdcSlotName}' released`);
   };
 
   const stopReading = async () => {
@@ -147,8 +147,8 @@ export async function startCdcPipeline(): Promise<CdcPipelineHarness> {
       await loopEnded().catch(() => {});
       await cdcDb
         .execute(
-          sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})
-              WHERE EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME})`,
+          sql`SELECT pg_drop_replication_slot(${cdcSlotName})
+              WHERE EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = ${cdcSlotName})`,
         )
         .catch(() => {});
     },

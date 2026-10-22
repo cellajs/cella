@@ -4,7 +4,7 @@ import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
 import { type CloudFileVariant, getCloudUrl, getVariantKey } from '~/modules/attachment/file-url';
 import { attachmentsDb } from '~/modules/attachment/offline/attachments-db';
-import { downloadQueue, SKIP_REASON_NO_ORIGINAL_KEY } from '~/modules/attachment/offline/download-queue';
+import { downloadQueue, skipReasonNoOriginalKey } from '~/modules/attachment/offline/download-queue';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { attachmentQueryKeys, findAttachmentInCache } from '~/modules/attachment/query';
 import { isPersisted } from '~/modules/attachment/types';
@@ -211,7 +211,7 @@ class AttachmentDownloadService {
     }
 
     if (!attachment.keys?.original) {
-      await downloadQueue.transition(attachmentId, 'skipped', SKIP_REASON_NO_ORIGINAL_KEY);
+      await downloadQueue.transition(attachmentId, 'skipped', skipReasonNoOriginalKey);
       return;
     }
 

@@ -70,4 +70,4 @@ export function getTypeLabel(value: unknown, type: string): string {
   }
 }
 
-export const JSON_SCHEMA_TYPES = new Set(['string', 'number', 'integer', 'boolean', 'array', 'object', 'null']);
+export const jsonSchemaTypes = new Set(['string', 'number', 'integer', 'boolean', 'array', 'object', 'null']);

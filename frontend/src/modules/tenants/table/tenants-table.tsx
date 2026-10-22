@@ -13,7 +13,7 @@ import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-s
 import { TenantsTableBar } from '~/modules/tenants/table/tenants-bar';
 import { useColumns } from '~/modules/tenants/table/tenants-columns';
 
-const LIMIT = appConfig.requestLimits.users; // Use users limit as fallback
+const requestLimit = appConfig.requestLimits.users; // Use users limit as fallback
 
 function rowKeyGetter(row: Tenant) {
   return row.id;
@@ -24,7 +24,7 @@ function TenantsTable() {
   const { search, setSearch } = useSearchParams<TenantsRouteSearchParams>({ from: '/_app/system/tenants' });
 
   const { q, sort, order } = search;
-  const limit = LIMIT;
+  const limit = requestLimit;
 
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);

@@ -1,13 +1,13 @@
 import { sql } from 'drizzle-orm';
-import { CDC_SLOT_NAME, RESOURCE_LIMITS } from '../constants';
+import { cdcSlotName, resourceLimits } from '../constants';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 
-const BUCKET_MS = 10_000; // 10s per bucket
-const BUCKET_COUNT = 6; // 6 buckets = 60s rolling window
-const LAG_POLL_MS = 10_000;
+const bucketMs = 10_000; // 10s per bucket
+const bucketCount = 6; // 6 buckets = 60s rolling window
+const lagPollMs = 10_000;
 
-const { walLagWarnBytes, walLagUnhealthyBytes } = RESOURCE_LIMITS.health;
+const { walLagWarnBytes, walLagUnhealthyBytes } = resourceLimits.health;
 
 interface Bucket {
   startMs: number;
@@ -49,11 +49,11 @@ class Metrics {
   private currentBucket(): Bucket {
     const now = Date.now();
     const last = this.buckets[this.buckets.length - 1];
-    if (last && now - last.startMs < BUCKET_MS) return last;
+    if (last && now - last.startMs < bucketMs) return last;
 
     const bucket: Bucket = { startMs: now, eventCount: 0, processingDurations: [], batchSizes: [] };
     this.buckets.push(bucket);
-    while (this.buckets.length > BUCKET_COUNT) this.buckets.shift();
+    while (this.buckets.length > bucketCount) this.buckets.shift();
     return bucket;
   }
 
@@ -72,7 +72,7 @@ class Metrics {
     let totalEvents = 0;
     let windowMs = 0;
 
-    const cutoff = Date.now() - BUCKET_COUNT * BUCKET_MS;
+    const cutoff = Date.now() - bucketCount * bucketMs;
     for (const b of this.buckets) {
       if (b.startMs < cutoff) continue;
       totalEvents += b.eventCount;
@@ -107,7 +107,7 @@ class Metrics {
   startLagPolling(): void {
     if (this.lagInterval) return;
     this.pollLag();
-    this.lagInterval = setInterval(() => this.pollLag(), LAG_POLL_MS);
+    this.lagInterval = setInterval(() => this.pollLag(), lagPollMs);
   }
 
   /** Stop all background tasks. */
@@ -140,7 +140,7 @@ class Metrics {
       const result = await cdcDb.execute<{ lag_bytes: string; active: boolean; wal_status: string }>(
         sql`SELECT active, wal_status, pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn)::text AS lag_bytes
             FROM pg_replication_slots
-            WHERE slot_name = ${CDC_SLOT_NAME}`,
+            WHERE slot_name = ${cdcSlotName}`,
       );
       const row = result.rows[0];
       if (row) {

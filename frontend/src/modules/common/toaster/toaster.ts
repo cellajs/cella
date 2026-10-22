@@ -10,8 +10,8 @@ export type ToastSeverity = 'success' | 'error' | 'info' | 'warning';
 export type ToastOptions = Omit<ToastManagerAddOptions<object>, 'title' | 'type'>;
 
 // Errors and toasts with a description carry more to read, so they stay longer
-const TIMEOUT = 4_000;
-const LONG_TIMEOUT = 10_000;
+const timeout = 4_000;
+const longTimeout = 10_000;
 
 const manager = Toast.createToastManager();
 let held: ToastManagerAddOptions<object>[] = [];
@@ -58,7 +58,7 @@ const keepsMessages = () => uiStore.getState().contrast === 'more' || !!globalTh
  */
 function timeoutFor(type: ToastSeverity | undefined, options: ToastOptions) {
   if (keepsMessages()) return 0;
-  return options.timeout ?? (type === 'error' || options.description ? LONG_TIMEOUT : TIMEOUT);
+  return options.timeout ?? (type === 'error' || options.description ? longTimeout : timeout);
 }
 
 /** A string message gets a stable id, so repeating it refreshes the visible toast. Errors are announced urgently. */

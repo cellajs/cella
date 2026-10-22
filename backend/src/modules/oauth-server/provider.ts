@@ -20,8 +20,8 @@ import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { log } from '#/utils/logger';
 
-const HOUR = 60 * 60;
-const DAY = 24 * HOUR;
+const hour = 60 * 60;
+const day = 24 * hour;
 
 /**
  * The secret key a service account presented at the token endpoint, per request (null scopes: an unscoped key), with the
@@ -149,18 +149,18 @@ export async function createProvider(): Promise<Provider> {
           // A service account acts in its own tenant: its token never names another tenant's resource.
           if (clientKindOf(client) === 'service' && presentedKeys.get(ctx)?.tenantId !== resource.tenantId) throw new errors.InvalidTarget();
           const scope = grantableScopes(ctx, client).join(' ');
-          return { scope, audience: resourceIndicator, accessTokenFormat: 'jwt', accessTokenTTL: HOUR };
+          return { scope, audience: resourceIndicator, accessTokenFormat: 'jwt', accessTokenTTL: hour };
         },
       },
     },
     ttl: {
-      AccessToken: HOUR,
+      AccessToken: hour,
       AuthorizationCode: 10 * 60,
-      ClientCredentials: HOUR,
-      Grant: 30 * DAY,
+      ClientCredentials: hour,
+      Grant: 30 * day,
       Interaction: 10 * 60,
-      RefreshToken: 30 * DAY,
-      Session: DAY,
+      RefreshToken: 30 * day,
+      Session: day,
     },
     // Refresh tokens whenever the client may use them; MCP clients do not always ask for `offline_access`.
     issueRefreshToken: (_ctx, client) => client.grantTypeAllowed('refresh_token'),

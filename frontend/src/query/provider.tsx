@@ -13,11 +13,11 @@ import { markCacheRestored, markReplayingMutations, queryClient, silentRevalidat
 import { waitForActiveCatchup } from '~/query/realtime/stream-store';
 
 /** Idle scheduling with a ceiling, so a browser that never goes idle still starts the service. */
-const IDLE_TIMEOUT_MS = 5000;
+const idleTimeoutMs = 5000;
 const scheduleIdle =
   typeof requestIdleCallback === 'function'
-    ? (cb: () => void) => requestIdleCallback(cb, { timeout: IDLE_TIMEOUT_MS })
-    : (cb: () => void) => setTimeout(cb, IDLE_TIMEOUT_MS) as unknown as number;
+    ? (cb: () => void) => requestIdleCallback(cb, { timeout: idleTimeoutMs })
+    : (cb: () => void) => setTimeout(cb, idleTimeoutMs) as unknown as number;
 const cancelIdle = typeof cancelIdleCallback === 'function' ? cancelIdleCallback : clearTimeout;
 
 // Runs before cache restoration: stores the queryClient so entity modules self-register their mutationFn via addMutationRegistrar() on load.

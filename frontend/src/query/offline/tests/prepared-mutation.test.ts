@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildPreparedHandlers, COALESCED, type PreparedVars } from '../prepared-mutation';
+import { buildPreparedHandlers, coalescedResult, type PreparedVars } from '../prepared-mutation';
 
 type Vars = { id: string; value: number };
 
@@ -35,23 +35,23 @@ describe('buildPreparedHandlers', () => {
     expect(mutation.mutate).not.toHaveBeenCalled();
   });
 
-  it('coalesced: mutateAsync resolves immediately with COALESCED and never touches the mutation', async () => {
+  it('coalesced: mutateAsync resolves immediately with coalescedResult and never touches the mutation', async () => {
     const mutation = fakeMutation();
     const { mutateAsync } = buildPreparedHandlers<{ ok: string }, Vars, string>(mutation, () => ({ kind: 'coalesced' }));
 
     // The key property: an awaiting caller (e.g. a dialog) settles without hanging on a queued
     // mutation whose own promise never resolves.
-    await expect(mutateAsync('a')).resolves.toBe(COALESCED);
+    await expect(mutateAsync('a')).resolves.toBe(coalescedResult);
     expect(mutation.mutateAsync).not.toHaveBeenCalled();
   });
 
-  it('noop: mutate issues nothing and mutateAsync resolves with COALESCED', async () => {
+  it('noop: mutate issues nothing and mutateAsync resolves with coalescedResult', async () => {
     const mutation = fakeMutation();
     const prepare = (): PreparedVars<Vars> => ({ kind: 'noop' });
     const { mutate, mutateAsync } = buildPreparedHandlers<{ ok: string }, Vars, string>(mutation, prepare);
 
     mutate('a');
-    await expect(mutateAsync('a')).resolves.toBe(COALESCED);
+    await expect(mutateAsync('a')).resolves.toBe(coalescedResult);
     expect(mutation.mutate).not.toHaveBeenCalled();
     expect(mutation.mutateAsync).not.toHaveBeenCalled();
   });

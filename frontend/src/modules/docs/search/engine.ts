@@ -41,8 +41,8 @@ type SearchDoc = {
   deprecated?: boolean;
 };
 
-const MAX_HITS = 60;
-const MAX_CHILD_ROWS = 5;
+const maxHits = 60;
+const maxChildRows = 5;
 
 function pageDocs(page: EnginePage): SearchDoc[] {
   const base = {
@@ -123,7 +123,7 @@ function schemaDoc(schema: GenComponentSchema, labels: EngineLabels): SearchDoc 
 }
 
 /** Scope chip → the document kinds it allows. */
-const SCOPE_KINDS: Record<Exclude<DocsSearchScope, 'all'>, DocsSearchResultType[]> = {
+const scopeKinds: Record<Exclude<DocsSearchScope, 'all'>, DocsSearchResultType[]> = {
   pages: ['page', 'heading', 'text'],
   api: ['operation', 'schema'],
 };
@@ -181,8 +181,8 @@ export function createEngine(
         // 0 = documents must match every term; typo tolerance still applies per term.
         threshold: 0,
         boost: { title: 2, path: 1.5 },
-        limit: MAX_HITS,
-        ...(scope !== 'all' && { where: { kind: { in: SCOPE_KINDS[scope] } } }),
+        limit: maxHits,
+        ...(scope !== 'all' && { where: { kind: { in: scopeKinds[scope] } } }),
       });
 
       // Group hits by page, preserving global score order; a group ranks by its best hit
@@ -212,7 +212,7 @@ export function createEngine(
         rows.push(
           ...docs
             .filter((doc) => doc.kind !== 'page')
-            .slice(0, MAX_CHILD_ROWS)
+            .slice(0, maxChildRows)
             .map((doc) => toRow(doc, terms)),
         );
       }

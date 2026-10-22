@@ -2,7 +2,7 @@ export {
   keepAlive,
   type StreamErrorCode,
   type StreamErrorPayload,
-  WORKER_AWAY_PING,
+  workerAwayPing,
   writeError,
   writeOffset,
 } from './helpers';

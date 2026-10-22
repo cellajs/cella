@@ -35,7 +35,7 @@ How it works:
   membrane apart. Each daughter runs the same system at a time offset that scales with
   separation: siblings drift apart in character and re-synchronize as they merge.
 - **Entrance = condense.** On mount the grain survival falloff starts wide open, so
-  sparse grains dust the whole frame; it tightens over `ENTER_SECONDS` and the mark
+  sparse grains dust the whole frame; it tightens over `enterSeconds` and the mark
   precipitates from the outside in. No grain travels. One uniform (`uEnter`) drives
   it, and at 1 the shader is the resting piece, so the entrance costs nothing after.
 - **Reduced motion = slow, no entrance.** `prefers-reduced-motion` drops each instance
@@ -45,9 +45,9 @@ How it works:
 The component props are the tuning surface per page: `variant`, `grid` (pixel density),
 `speed` (clock scale, 1 = prototype pace), `overscan` (canvas margin around the shape;
 below 1 it magnifies) and `stamp`. `grid` counts cells across the canvas, so grains
-shrink with it; `MIN_GRAIN_PX` in the renderer stops that at a size that still reads as
+shrink with it; `minGrainPx` in the renderer stops that at a size that still reads as
 a pixel, and a phone-sized canvas draws the same piece with fewer, larger grains. Below
-the `sm` breakpoint `MIN_GRAIN_PX_PHONE` takes over, so a phone's grains come out larger
+the `sm` breakpoint `minGrainPxPhone` takes over, so a phone's grains come out larger
 than a desktop's. The static `+` texture language in
 `styling/plus-grain.css` shares this module's pixel vocabulary for non-animated uses.
 

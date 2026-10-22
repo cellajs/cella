@@ -3,8 +3,8 @@ import { faker } from '@faker-js/faker';
 /** Context for mock ID generation - determines prefix behavior */
 export type MockContext = 'example' | 'script' | 'loadtest';
 
-export const SCRIPT_ID_PREFIX = 'gen-';
-const LOADTEST_ID_PREFIX = 'lt-';
+export const scriptIdPrefix = 'gen-';
+const loadtestIdPrefix = 'lt-';
 
 let currentMockContext: MockContext = 'example';
 
@@ -32,9 +32,9 @@ export const withMockContext = <T>(context: MockContext, fn: () => T): T => {
 const getIdPrefix = (): string => {
   switch (currentMockContext) {
     case 'script':
-      return SCRIPT_ID_PREFIX;
+      return scriptIdPrefix;
     case 'loadtest':
-      return LOADTEST_ID_PREFIX;
+      return loadtestIdPrefix;
     default:
       return '';
   }
@@ -47,16 +47,16 @@ export const mockNanoid = (length = 24) => {
   return `${prefix}${randomPart}`;
 };
 
-export const SCRIPT_UUID_PREFIX = '00000000';
-const LOADTEST_UUID_PREFIX = '00000001';
+export const scriptUuidPrefix = '00000000';
+const loadtestUuidPrefix = '00000001';
 
 export const mockUuid = () => {
   const uuid = faker.string.uuid();
   switch (currentMockContext) {
     case 'script':
-      return `${SCRIPT_UUID_PREFIX}${uuid.substring(SCRIPT_UUID_PREFIX.length)}`;
+      return `${scriptUuidPrefix}${uuid.substring(scriptUuidPrefix.length)}`;
     case 'loadtest':
-      return `${LOADTEST_UUID_PREFIX}${uuid.substring(LOADTEST_UUID_PREFIX.length)}`;
+      return `${loadtestUuidPrefix}${uuid.substring(loadtestUuidPrefix.length)}`;
     default:
       return uuid;
   }

@@ -1,16 +1,16 @@
 import { useMatch, useNavigate, useSearch } from '@tanstack/react-router';
 import { memo, useEffect } from 'react';
 import { AttachmentDialog } from '~/modules/attachment/dialog/attachment-dialog';
-import { ATTACHMENT_DIALOG_PARAM, attachmentDialogOptions, clearAttachmentDialogSearch } from '~/modules/attachment/dialog/params';
+import { attachmentDialogOptions, attachmentDialogParam, clearAttachmentDialogSearch } from '~/modules/attachment/dialog/params';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
-const dialogId = ATTACHMENT_DIALOG_PARAM;
+const dialogId = attachmentDialogParam;
 
 /** A stable dialog id keeps carousel navigation from recreating the dialog. */
 function AttachmentDialogHandlerBase() {
   const navigate = useNavigate();
-  const isOpen = useSearch({ strict: false, select: (s) => !!(s as Record<string, string | undefined>)[ATTACHMENT_DIALOG_PARAM] });
+  const isOpen = useSearch({ strict: false, select: (s) => !!(s as Record<string, string | undefined>)[attachmentDialogParam] });
   const organizationId = useMatch({ from: '/_app/$tenantId/$organizationSlug', shouldThrow: false, select: (m) => m.context.organization?.id });
 
   useEffect(() => {

@@ -1,11 +1,11 @@
-import { BENCH_TENANT_ID, BENCH_UUID_PREFIX } from 'shared/utils/bench-identity';
+import { benchTenantId, benchUuidPrefix } from 'shared/utils/bench-identity';
 
 /**
  * Deterministic UUID 00000000-0000-4000-{variant}-{index padded to 12 hex chars}, shared by data-setup and the
  * scenarios. An app's own entity ids build on it with a `b*` variant.
  * @public
  */
-export const benchUuid = (variant: string, i: number) => `${BENCH_UUID_PREFIX}${variant}-${i.toString(16).padStart(12, '0')}`;
+export const benchUuid = (variant: string, i: number) => `${benchUuidPrefix}${variant}-${i.toString(16).padStart(12, '0')}`;
 
 /**
  * One variant byte per core entity, shared by the id helpers and each seed's `idVariant`, so ids and the rows they clean up cannot drift apart. Cella core owns the `a*` band, apps the `b*` band.
@@ -23,7 +23,7 @@ export const CORE_ID_VARIANTS = {
   project: 'b009',
 } as const;
 
-export const TENANT_ID = BENCH_TENANT_ID;
+export const TENANT_ID = benchTenantId;
 export const ORG_ID = benchUuid(CORE_ID_VARIANTS.org, 0);
 
 export const userId = (i: number) => benchUuid(CORE_ID_VARIANTS.user, i);

@@ -9,7 +9,7 @@ import { UsersTableBar } from '~/modules/user/table/users-bar';
 import { useColumns } from '~/modules/user/table/users-columns';
 import type { BaseUser, UsersRouteSearchParams } from '~/modules/user/types';
 
-const LIMIT = appConfig.requestLimits.users;
+const requestLimit = appConfig.requestLimits.users;
 
 function rowKeyGetter(row: BaseUser) {
   return row.id;
@@ -19,7 +19,7 @@ function UsersTable() {
   const { search, setSearch } = useSearchParams<UsersRouteSearchParams>({ from: '/_app/system/users' });
 
   const { q, role, sort, order } = search;
-  const limit = LIMIT;
+  const limit = requestLimit;
 
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);

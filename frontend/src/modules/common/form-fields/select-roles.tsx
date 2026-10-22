@@ -13,9 +13,9 @@ interface SelectRoleProps {
   className?: string;
 }
 
-const EMPTY_ROLES: EntityRole[] = [];
+const emptyRoles: EntityRole[] = [];
 
-export function SelectRoles({ onValueChange, value = EMPTY_ROLES, label, className }: SelectRoleProps) {
+export function SelectRoles({ onValueChange, value = emptyRoles, label, className }: SelectRoleProps) {
   const { t } = useTranslation();
   // Inside a form Field every checkbox would take the field's label; an explicit id per option keeps their own names.
   const labelIdPrefix = useId();

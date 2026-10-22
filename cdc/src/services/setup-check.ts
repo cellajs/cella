@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { CDC_PUBLICATION_NAME } from '../constants';
+import { cdcPublicationName } from '../constants';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import { tableRegistry } from '../table-registry';
@@ -21,13 +21,13 @@ export async function checkReplicationSetup(db: Pick<typeof cdcDb, 'execute'> = 
 
   const published = (
     await db.execute<{ tablename: string }>(
-      sql`SELECT tablename FROM pg_publication_tables WHERE pubname = ${CDC_PUBLICATION_NAME} AND schemaname = 'public'`,
+      sql`SELECT tablename FROM pg_publication_tables WHERE pubname = ${cdcPublicationName} AND schemaname = 'public'`,
     )
   ).rows.map((row) => row.tablename);
   const missing = tracked.filter((table) => !published.includes(table));
   const extra = published.filter((table) => !tracked.includes(table));
-  if (missing.length) problems.push(`publication '${CDC_PUBLICATION_NAME}' lacks tracked tables: ${missing.join(', ')}. Run the CDC migration`);
-  if (extra.length) problems.push(`publication '${CDC_PUBLICATION_NAME}' holds tables the worker does not track: ${extra.sort().join(', ')}`);
+  if (missing.length) problems.push(`publication '${cdcPublicationName}' lacks tracked tables: ${missing.join(', ')}. Run the CDC migration`);
+  if (extra.length) problems.push(`publication '${cdcPublicationName}' holds tables the worker does not track: ${extra.sort().join(', ')}`);
 
   const identities = await db.execute<{ relname: string }>(
     sql`SELECT c.relname FROM pg_class c

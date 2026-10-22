@@ -1,6 +1,6 @@
 import type { WebSocket } from 'ws';
 import type { DocKey, DocScope } from '../constants';
-import { YJS_AWARENESS_MAX_CLIENTS, YJS_CLEANUP_DELAY_MS, YJS_CLEANUP_MAX_ATTEMPTS, YJS_LIVE_TOUCH_MS } from '../constants';
+import { yjsAwarenessMaxClients, yjsCleanupDelayMs, yjsCleanupMaxAttempts, yjsLiveTouchMs } from '../constants';
 import { deleteDoc, touchDoc } from '../data/storage';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';
@@ -9,7 +9,7 @@ export interface CollabSession {
   /** The document as its entity row places it; compaction, materialize and cleanup act in it as the system, never as a joiner. */
   scope: DocScope;
   clients: Set<WebSocket>;
-  /** Awareness client id → the socket holding it, its user and the last clock relayed for it; no other user's socket relays that id. Up to YJS_AWARENESS_MAX_CLIENTS per socket. */
+  /** Awareness client id → the socket holding it, its user and the last clock relayed for it; no other user's socket relays that id. Up to yjsAwarenessMaxClients per socket. */
   awarenessOwners: Map<number, { ws: WebSocket; userId: string; clock: number }>;
   /** Document lock: seeding, compaction and finishing (cleanup or the sweep) run one at a time through this chain. */
   chain: Promise<unknown>;
@@ -24,9 +24,9 @@ export interface CollabSession {
   queuedCatchUp?: Promise<void>;
   cleanupTimer?: ReturnType<typeof setTimeout>;
   compactTimer?: ReturnType<typeof setTimeout>;
-  /** When the armed compaction runs at the latest: YJS_COMPACT_MAX_WAIT_MS after the first update since the last run started. */
+  /** When the armed compaction runs at the latest: yjsCompactMaxWaitMs after the first update since the last run started. */
   compactDueAt?: number;
-  /** Stamps the session row live every YJS_LIVE_TOUCH_MS while the session lasts. */
+  /** Stamps the session row live every yjsLiveTouchMs while the session lasts. */
   liveTimer: ReturnType<typeof setInterval>;
 }
 
@@ -92,7 +92,7 @@ function markLive(collab: CollabSession): void {
 }
 
 /**
- * Opens the document's session in `scope`. It stamps its row live at once and every YJS_LIVE_TOUCH_MS while it lasts,
+ * Opens the document's session in `scope`. It stamps its row live at once and every yjsLiveTouchMs while it lasts,
  * so the sweep of another relay generation never takes it for an orphan, however long it idles.
  */
 function openCollab(scope: DocScope, clients: WebSocket[]): CollabSession {
@@ -104,7 +104,7 @@ function openCollab(scope: DocScope, clients: WebSocket[]): CollabSession {
     generation: null,
     seen: new Set(),
     // A session never keeps the process alive at shutdown.
-    liveTimer: setInterval(() => markLive(collab), YJS_LIVE_TOUCH_MS).unref(),
+    liveTimer: setInterval(() => markLive(collab), yjsLiveTouchMs).unref(),
   };
   collabSessions.set(collabKey(scope), collab);
   markLive(collab);
@@ -215,7 +215,7 @@ export interface ReleasedClient {
 /**
  * Takes a socket out of its session and frees the awareness clients it held, which it returns so its peers can drop
  * them. When the last client leaves, a grace period runs before the session is finished: its log compacted and forgotten.
- * A retryable failure keeps the log and retries, up to YJS_CLEANUP_MAX_ATTEMPTS, and a permanent refusal or the last
+ * A retryable failure keeps the log and retries, up to yjsCleanupMaxAttempts, and a permanent refusal or the last
  * failed attempt keeps it for the next session or the sweep. A socket that joins while cleanup runs keeps the
  * session; when it leaves again first, the cleanup its leave arms takes over, so what it logged is compacted too. A
  * session leaves the map only while it has no client and no timer armed on it, so the relay always finds a joined
@@ -248,9 +248,9 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): ReleasedClient[] {
     const outcome = await finishCollab(key, collab);
     if (outcome === 'joined') return;
     if (outcome === 'retry') {
-      if (attempts < YJS_CLEANUP_MAX_ATTEMPTS) {
+      if (attempts < yjsCleanupMaxAttempts) {
         log.warn(`Materialize unavailable for ${key}: keeping the log, retrying cleanup`);
-        collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
+        collab.cleanupTimer = setTimeout(cleanup, yjsCleanupDelayMs);
         return;
       }
       log.error(`Materialize failed ${attempts} times for ${key}: keeping the log for the next session or sweep`);
@@ -259,7 +259,7 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): ReleasedClient[] {
     dropCollab(key, collab);
   };
 
-  collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
+  collab.cleanupTimer = setTimeout(cleanup, yjsCleanupDelayMs);
   return released;
 }
 
@@ -274,7 +274,7 @@ function heldClientCount(collab: CollabSession, ws: WebSocket): number {
  * Decides one awareness entry from a socket of `userId`: `relay` it, `drop` it (another user's socket holds its client),
  * or `refuse` the socket, which announced more clients than it may hold. An announcement takes a client no socket holds,
  * or one another socket of the same user holds (a reconnect takes its client over), while the socket holds fewer than
- * YJS_AWARENESS_MAX_CLIENTS, and the client keeps the highest clock relayed for it. A removal takes nothing and frees a
+ * yjsAwarenessMaxClients, and the client keeps the highest clock relayed for it. A removal takes nothing and frees a
  * client the socket holds: y-websocket re-sends every change it applies, including the removal of each peer it timed out.
  */
 export function claimAwarenessClient(
@@ -290,7 +290,7 @@ export function claimAwarenessClient(
     return 'relay';
   }
   const clock = Math.max(owner?.clock ?? 0, entry.clock);
-  if (owner?.ws !== ws && heldClientCount(collab, ws) < YJS_AWARENESS_MAX_CLIENTS) {
+  if (owner?.ws !== ws && heldClientCount(collab, ws) < yjsAwarenessMaxClients) {
     collab.awarenessOwners.set(entry.clientId, { ws, userId, clock });
     return 'relay';
   }

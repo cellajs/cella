@@ -25,7 +25,7 @@ interface OperationsTableBarProps {
 }
 
 /** Display order for tag-kind groups in the filter dropdown. */
-const KIND_ORDER = ['ownership', 'entity'];
+const kindOrder = ['ownership', 'entity'];
 
 /** Human-readable label for a `${kind}:${value}` filter option. */
 const labelFor = (kind: string, value: string): string => {
@@ -53,8 +53,8 @@ export function OperationsTableBar({ total, searchVars, setSearch, columns, setC
   const isFiltered = !!q || !!tag;
 
   const orderedKinds = [
-    ...KIND_ORDER.filter((k) => tagFilters[k]?.length),
-    ...Object.keys(tagFilters).filter((k) => !KIND_ORDER.includes(k) && tagFilters[k]?.length),
+    ...kindOrder.filter((k) => tagFilters[k]?.length),
+    ...Object.keys(tagFilters).filter((k) => !kindOrder.includes(k) && tagFilters[k]?.length),
   ];
 
   const tagOptions = orderedKinds.flatMap((kind) => tagFilters[kind].map((value) => ({ value: `${kind}:${value}`, label: labelFor(kind, value) })));

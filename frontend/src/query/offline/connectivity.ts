@@ -2,13 +2,13 @@ import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'shared';
 
 // /health defaults to shallow (204). ?depth=full for JSON diagnostics.
-const HEALTH_URL = `${appConfig.backendUrl}/health`;
-const FULL_HEALTH_URL = `${HEALTH_URL}?depth=full`;
-const CACHE_TTL_MS = 10_000;
+const healthUrl = `${appConfig.backendUrl}/health`;
+const fullHealthUrl = `${healthUrl}?depth=full`;
+const cacheTtlMs = 10_000;
 
 // Re-probe before declaring offline: mobile PWAs freeze the network radio when backgrounded, so the first fetches after resume fail until it reconnects.
-const PROBE_RETRIES = 2;
-const PROBE_RETRY_DELAY_MS = 750;
+const probeRetries = 2;
+const probeRetryDelayMs = 750;
 
 let lastCheckAt = 0;
 let lastResult: boolean | null = null;
@@ -18,7 +18,7 @@ let inFlight: Promise<boolean> | null = null;
 export async function checkConnectivity(): Promise<boolean> {
   const now = Date.now();
 
-  if (lastResult !== null && now - lastCheckAt < CACHE_TTL_MS) {
+  if (lastResult !== null && now - lastCheckAt < cacheTtlMs) {
     return lastResult;
   }
 
@@ -39,7 +39,7 @@ async function fetchHealthOnce(): Promise<boolean> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
 
-    const response = await fetch(HEALTH_URL, {
+    const response = await fetch(healthUrl, {
       method: 'HEAD',
       // no-store bypasses the browser cache so the request reaches the network; a CDN-cached 204 still proves the path to the edge works.
       cache: 'no-store',
@@ -55,10 +55,10 @@ async function fetchHealthOnce(): Promise<boolean> {
 
 async function probeHealth(): Promise<boolean> {
   let isReachable = false;
-  for (let attempt = 0; attempt <= PROBE_RETRIES; attempt++) {
+  for (let attempt = 0; attempt <= probeRetries; attempt++) {
     isReachable = await fetchHealthOnce();
     if (isReachable) break;
-    if (attempt < PROBE_RETRIES) await new Promise((resolve) => setTimeout(resolve, PROBE_RETRY_DELAY_MS));
+    if (attempt < probeRetries) await new Promise((resolve) => setTimeout(resolve, probeRetryDelayMs));
   }
 
   lastCheckAt = Date.now();
@@ -101,7 +101,7 @@ export async function awaitRecovery({ signal, factor = 1.5 }: AwaitRecoveryOptio
     if (signal?.aborted) return false;
 
     try {
-      const response = await fetch(FULL_HEALTH_URL);
+      const response = await fetch(fullHealthUrl);
       if (response.ok) return true;
     } catch {
       // Backend still unreachable.

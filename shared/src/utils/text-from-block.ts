@@ -5,7 +5,7 @@ export const mediaBlockTypes = new Set(['audio', 'video', 'image', 'file']);
 
 type InlineContentLike = { type?: string; text?: unknown; href?: unknown; content?: unknown; props?: unknown };
 
-const COMMON_HOST_SUFFIXES = new Set(['com', 'org', 'net', 'io', 'app', 'dev', 'co', 'ai', 'nl']);
+const commonHostSuffixes = new Set(['com', 'org', 'net', 'io', 'app', 'dev', 'co', 'ai', 'nl']);
 
 const parseUrl = (rawUrl: string): URL | null => {
   const trimmed = rawUrl.trim();
@@ -32,7 +32,7 @@ export const getSearchableTextFromUrl = (rawUrl: string): string => {
   if (!url || (url.protocol !== 'http:' && url.protocol !== 'https:')) return '';
 
   const hostname = url.hostname.toLowerCase().replace(/^www\./, '');
-  const hostParts = hostname.split('.').filter((part) => part && !COMMON_HOST_SUFFIXES.has(part));
+  const hostParts = hostname.split('.').filter((part) => part && !commonHostSuffixes.has(part));
   const decodedPath = url.pathname
     .split('/')
     .map((segment) => {

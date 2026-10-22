@@ -25,16 +25,16 @@ export interface RenderExpandToggleProps {
 // Connector geometry. All values are in SVG user units == cell pixels (the SVG has no scaling).
 
 /** Column width in px. Must match the column factory's `width`. */
-const COL = 36;
-const CX = COL / 2;
+const col = 36;
+const cx = col / 2;
 /** Horizontal offset of the depth-1 ("solid") and depth-2 ("thin") tracks from center. */
-const TRACK_OFFSET = 4;
-const SOLID_X = CX - TRACK_OFFSET;
-const THIN_X = CX + TRACK_OFFSET;
-const STROKE_SOLID = 2;
-const STROKE_THIN = 1;
+const trackOffset = 4;
+const solidX = cx - trackOffset;
+const thinX = cx + trackOffset;
+const strokeSolid = 2;
+const strokeThin = 1;
 /** Half-height of the size-5 (20px) chevron button; elbows stop this far from row center so the chevron cannot clip the curve. */
-const CHEVRON_HALF = 10;
+const chevronHalf = 10;
 
 interface ConnectorPath {
   d: string;
@@ -54,7 +54,7 @@ interface ConnectorGeometry {
 
 /** Draw a vertical-tangent elbow from the previous row's track to the chevron's unclipped top edge. */
 function elbowAbovePath(xStart: number, xEnd: number, rowHeight: number): string {
-  const yEnd = rowHeight / 2 - CHEVRON_HALF;
+  const yEnd = rowHeight / 2 - chevronHalf;
   const yStem = yEnd / 2; // stem from top to half-way to the chevron edge
   const midY = (yStem + yEnd) / 2;
   return `M ${xStart} 0 V ${yStem} C ${xStart} ${midY}, ${xEnd} ${midY}, ${xEnd} ${yEnd}`;
@@ -62,7 +62,7 @@ function elbowAbovePath(xStart: number, xEnd: number, rowHeight: number): string
 
 /** Mirror of {@link elbowAbovePath} for the bottom half. */
 function elbowBelowPath(xStart: number, xEnd: number, rowHeight: number): string {
-  const yStart = rowHeight / 2 + CHEVRON_HALF;
+  const yStart = rowHeight / 2 + chevronHalf;
   const yStem = (yStart + rowHeight) / 2; // curve occupies upper half of remaining lower-half-row
   const midY = (yStem + yStart) / 2;
   return `M ${xStart} ${yStart} C ${xStart} ${midY}, ${xEnd} ${midY}, ${xEnd} ${yStem} V ${rowHeight}`;
@@ -75,32 +75,32 @@ function buildConnectorPaths(g: ConnectorGeometry): ConnectorPath[] {
 
   // Continuous depth-1 trunk through deeper rows so depth-1 siblings stay connected.
   if (g.parentTrunkContinues) {
-    paths.push({ d: `M ${SOLID_X} 0 V ${H}`, thin: false });
+    paths.push({ d: `M ${solidX} 0 V ${H}`, thin: false });
   }
 
   if (g.showLineAbove) {
     if (g.hasChildren) {
-      const xStart = g.lineAboveIsThin ? THIN_X : SOLID_X;
-      paths.push({ d: elbowAbovePath(xStart, CX, H), thin: g.lineAboveIsThin });
+      const xStart = g.lineAboveIsThin ? thinX : solidX;
+      paths.push({ d: elbowAbovePath(xStart, cx, H), thin: g.lineAboveIsThin });
     } else {
-      const x = g.lineAboveIsThin ? THIN_X : SOLID_X;
+      const x = g.lineAboveIsThin ? thinX : solidX;
       paths.push({ d: `M ${x} 0 V ${yMid}`, thin: g.lineAboveIsThin });
     }
   }
 
   if (g.showLineBelow) {
     if (g.hasChildren) {
-      const xEnd = g.lineBelowIsThin ? THIN_X : SOLID_X;
-      paths.push({ d: elbowBelowPath(CX, xEnd, H), thin: g.lineBelowIsThin });
+      const xEnd = g.lineBelowIsThin ? thinX : solidX;
+      paths.push({ d: elbowBelowPath(cx, xEnd, H), thin: g.lineBelowIsThin });
     } else {
-      const x = g.lineBelowIsThin ? THIN_X : SOLID_X;
+      const x = g.lineBelowIsThin ? thinX : solidX;
       paths.push({ d: `M ${x} ${yMid} V ${H}`, thin: g.lineBelowIsThin });
     }
   }
 
   // Lower-half solid trunk on an expanded parent with children on the thin track, keeping the depth-1 line continuous to the next sibling.
   if (g.solidTrunkBelow) {
-    paths.push({ d: elbowBelowPath(CX, SOLID_X, H), thin: false });
+    paths.push({ d: elbowBelowPath(cx, solidX, H), thin: false });
   }
 
   return paths;
@@ -153,7 +153,7 @@ export function RenderExpandToggle({
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0 size-full text-input"
-          viewBox={`0 0 ${COL} ${rowHeight}`}
+          viewBox={`0 0 ${col} ${rowHeight}`}
           preserveAspectRatio="none"
         >
           {paths.map((p, i) => (
@@ -162,7 +162,7 @@ export function RenderExpandToggle({
               key={i}
               d={p.d}
               stroke="currentColor"
-              strokeWidth={p.thin ? STROKE_THIN : STROKE_SOLID}
+              strokeWidth={p.thin ? strokeThin : strokeSolid}
               fill="none"
             />
           ))}

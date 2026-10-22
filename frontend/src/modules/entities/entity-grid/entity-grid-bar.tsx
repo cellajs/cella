@@ -11,7 +11,7 @@ import { FocusView } from '~/modules/common/focus-view';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { SelectSort } from '~/modules/common/form-fields/select-sort';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { GRID_PREVIEW_LIMIT } from '~/modules/entities/entity-grid/grid';
+import { gridPreviewLimit } from '~/modules/entities/entity-grid/grid';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type EntityGridBarSearch = { q?: string; sort?: string; role?: string };
@@ -42,7 +42,7 @@ type Props = {
    * collapses the backend scope to membership-only rows.
    */
   roleFilter?: boolean;
-  /** Render the bar even at or below GRID_PREVIEW_LIMIT while unfiltered (default false). */
+  /** Render the bar even at or below gridPreviewLimit while unfiltered (default false). */
   alwaysShow?: boolean;
 };
 
@@ -66,7 +66,7 @@ export function EntityGridBar({
   const isFiltered = !!q;
 
   // Hide the bar at or below the preview count while unfiltered; the actions slot stays rendered
-  if (!alwaysShow && !isFiltered && (total ?? 0) <= GRID_PREVIEW_LIMIT) {
+  if (!alwaysShow && !isFiltered && (total ?? 0) <= gridPreviewLimit) {
     return actions ? <div className="flex items-center">{actions}</div> : null;
   }
 

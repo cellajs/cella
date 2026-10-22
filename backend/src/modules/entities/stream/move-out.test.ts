@@ -14,7 +14,7 @@ import type { AppStreamProductEvent } from './types';
  * Only subscribers losing read access receive `moveOut` with the old path. The draft veto creates
  * a configuration-independent visibility difference through the same permission path.
  */
-const ORG = 'org-moveout-a';
+const org = 'org-moveout-a';
 
 const membership = (organizationId: string, role: EntityRole, userId: string): MembershipBaseModel =>
   ({
@@ -36,11 +36,11 @@ const fakeSubscriber = (memberships: MembershipBaseModel[], userId: string) => {
 
   const subscriber: AppStreamSubscriber = {
     id: crypto.randomUUID(),
-    channel: `org:${ORG}`,
+    channel: `org:${org}`,
     stream,
     userId,
     sessionId: `session-${userId}`,
-    organizationIds: new Set([ORG]),
+    organizationIds: new Set([org]),
     isSystemAdmin: false,
     systemAccessAllowed: false,
     memberships,
@@ -56,7 +56,7 @@ const nullAncestorScopes = Object.fromEntries(
 
 const row = (id: string, extra: Record<string, unknown> = {}) => ({
   id,
-  organizationId: ORG,
+  organizationId: org,
   ...nullAncestorScopes,
   createdBy: 'author-user',
   ...extra,
@@ -73,7 +73,7 @@ const updateEvent = (rows: ActivityRow[]): AppStreamProductEvent =>
     tableName: 'attachments',
     subjectId: rows[0].rowData.id,
     tenantId: 'tenant-1',
-    organizationId: ORG,
+    organizationId: org,
     ...nullAncestorScopes,
     rowData: null,
     rows,
@@ -82,14 +82,14 @@ const updateEvent = (rows: ActivityRow[]): AppStreamProductEvent =>
   }) as unknown as AppStreamProductEvent;
 
 afterEach(() => {
-  for (const subscriber of streamSubscriberManager.getByChannel(`org:${ORG}`)) {
+  for (const subscriber of streamSubscriberManager.getByChannel(`org:${org}`)) {
     streamSubscriberManager.unregister(subscriber.id);
   }
 });
 
 describe('dispatchMoveOuts', () => {
   it('sends moveOut with the OLD path to subscribers who lost readability', async () => {
-    const member = fakeSubscriber([membership(ORG, memberRole, 'member-user')], 'member-user');
+    const member = fakeSubscriber([membership(org, memberRole, 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
     // The new row is an unpublished draft, unreadable for everyone; the old row is published
@@ -111,7 +111,7 @@ describe('dispatchMoveOuts', () => {
       productType: 'attachment',
       subjectId: 'att-1',
       // Computed from movedFrom's ancestor ids; org-homed attachments resolve to the org id.
-      path: ORG,
+      path: org,
       seq: 7,
       // The removal is the payload: no range to fetch, and no stx although the event has one.
       batchUntilSeq: null,
@@ -121,7 +121,7 @@ describe('dispatchMoveOuts', () => {
   });
 
   it('does NOT send moveOut to subscribers who can read both locations (normal update routes it)', async () => {
-    const member = fakeSubscriber([membership(ORG, memberRole, 'member-user')], 'member-user');
+    const member = fakeSubscriber([membership(org, memberRole, 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
     // Positive control: both rows are authored by the reader, so both locations are readable
@@ -134,7 +134,7 @@ describe('dispatchMoveOuts', () => {
   });
 
   it('sends nothing for an event whose rows did not move', async () => {
-    const member = fakeSubscriber([membership(ORG, memberRole, 'member-user')], 'member-user');
+    const member = fakeSubscriber([membership(org, memberRole, 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
     await dispatchMoveOuts(updateEvent([{ seq: 7, rowData: row('att-1') }]));
@@ -143,7 +143,7 @@ describe('dispatchMoveOuts', () => {
   });
 
   it('sends one moveOut per moved row of an event of several rows, to those who lost that row', async () => {
-    const member = fakeSubscriber([membership(ORG, memberRole, 'member-user')], 'member-user');
+    const member = fakeSubscriber([membership(org, memberRole, 'member-user')], 'member-user');
     streamSubscriberManager.register(member.subscriber);
 
     // Rows meant to be readable by member-user are authored by them, so they stay readable
@@ -165,6 +165,6 @@ describe('dispatchMoveOuts', () => {
 
     expect(member.received).toHaveLength(1);
     // It names the moved row, with the lowest seq of the event.
-    expect(member.received[0]).toMatchObject({ action: 'moveOut', subjectId: 'att-2', path: ORG, seq: 7, batchUntilSeq: null, count: 1 });
+    expect(member.received[0]).toMatchObject({ action: 'moveOut', subjectId: 'att-2', path: org, seq: 7, batchUntilSeq: null, count: 1 });
   });
 });

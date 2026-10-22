@@ -13,7 +13,7 @@ import { RequestsTableBar } from '~/modules/requests/table/requests-bar';
 import { useColumns } from '~/modules/requests/table/requests-columns';
 import type { RequestsRouteSearchParams } from '~/modules/requests/types';
 
-const LIMIT = appConfig.requestLimits.requests;
+const requestLimit = appConfig.requestLimits.requests;
 
 function rowKeyGetter(row: Request) {
   return row.id;
@@ -24,7 +24,7 @@ function RequestsTable() {
   const { search, setSearch } = useSearchParams<RequestsRouteSearchParams>({ from: '/_app/system/requests' });
 
   const { q, sort, order } = search;
-  const limit = LIMIT;
+  const limit = requestLimit;
 
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);

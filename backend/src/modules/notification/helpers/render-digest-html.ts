@@ -11,14 +11,14 @@ export interface DigestSection {
 // Bodies are stored as HTML, so they are reduced to plain text before being placed in an email:
 // arbitrary markup would fight the template's styling. The text is escaped once, where it lands:
 // Brevo escapes a param it fills, the renderer escapes JSX text.
-const TAG = /<[^>]*>/g;
-const NAMED_ENTITIES: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' };
+const tag = /<[^>]*>/g;
+const namedEntities: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' };
 
 /** Strip markup, decode the entities a stored body carries, and collapse whitespace. */
 function htmlToPlainText(html: string): string {
   return html
-    .replace(TAG, ' ')
-    .replace(/&[a-z#0-9]+;/gi, (entity) => NAMED_ENTITIES[entity.toLowerCase()] ?? ' ')
+    .replace(tag, ' ')
+    .replace(/&[a-z#0-9]+;/gi, (entity) => namedEntities[entity.toLowerCase()] ?? ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }

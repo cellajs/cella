@@ -27,7 +27,7 @@ export async function startYjsWorker(): Promise<void> {
   otel.verifyConnection();
 
   // The logs no session holds, which a relay crash left or clients posted over HTTP, are written at boot and every
-  // YJS_CLEANUP_DELAY_MS after; without a database, there are none.
+  // yjsCleanupDelayMs after; without a database, there are none.
   const stopSweep = env.NODB ? undefined : startPeriodicSweep();
 
   setupGracefulShutdown({

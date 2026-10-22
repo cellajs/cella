@@ -173,7 +173,7 @@ vi.mock('~/env', () => ({ isDebugMode: false }));
 // a test can give the routes' final answer.
 const httpHooks: { end: (reason: string) => void }[] = [];
 vi.mock('~/modules/common/blocknote/yjs-http', () => ({
-  WS_SYNC_DEADLINE_MS: 5_000,
+  wsSyncDeadlineMs: 5_000,
   createHttpLink: (_conn: unknown, _scope: unknown, hooks: { end: (reason: string) => void }) => {
     httpHooks.push(hooks);
     return { enter: () => new Promise(() => {}), leave: () => {}, queue: () => {}, pull: async () => {}, clean: false };

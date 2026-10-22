@@ -292,7 +292,7 @@ export const hintFadeOut = 'opacity-[var(--content-opacity,1)] in-data-opening:a
 /** Content only the collapsed state shows, previewed in the expanded panel: fades in with a collapse hint. */
 export const hintFadeIn = 'opacity-[calc(1_-_var(--content-opacity,1))]';
 
-const CURTAIN_PLEATS = 'repeating-linear-gradient(90deg, transparent 0 9px, color-mix(in oklch, var(--foreground) 4%, transparent) 9px 14px)';
+const curtainPleats = 'repeating-linear-gradient(90deg, transparent 0 9px, color-mix(in oklch, var(--foreground) 4%, transparent) 9px 14px)';
 
 // A curtain drawn from the dragged separator, its leading edge lit at the pointer's height
 function ResizeHint() {
@@ -312,7 +312,7 @@ function ResizeHint() {
           style={{ background: 'radial-gradient(closest-side, color-mix(in oklch, var(--primary) 35%, transparent), transparent)' }}
         />
       </div>
-      <div className="grow" style={{ backgroundColor: 'color-mix(in oklch, var(--card) 92%, transparent)', backgroundImage: CURTAIN_PLEATS }} />
+      <div className="grow" style={{ backgroundColor: 'color-mix(in oklch, var(--card) 92%, transparent)', backgroundImage: curtainPleats }} />
     </div>
   );
 }
@@ -931,7 +931,7 @@ interface SeparatorDragContextValue {
 
 const SeparatorDragContext = createContext<SeparatorDragContextValue | null>(null);
 
-const KEYBOARD_STEP = 20;
+const keyboardStep = 20;
 
 interface SeparatorProps {
   /** The index of this separator among siblings (0-based). Required for drag targeting. */
@@ -981,11 +981,11 @@ export function ResizableSeparator({ index, className, children, 'aria-label': a
     switch (e.key) {
       case 'ArrowLeft':
         e.preventDefault();
-        dragCtx.applyKeyboardStep(index, -KEYBOARD_STEP);
+        dragCtx.applyKeyboardStep(index, -keyboardStep);
         break;
       case 'ArrowRight':
         e.preventDefault();
-        dragCtx.applyKeyboardStep(index, KEYBOARD_STEP);
+        dragCtx.applyKeyboardStep(index, keyboardStep);
         break;
       case 'Home':
         e.preventDefault();

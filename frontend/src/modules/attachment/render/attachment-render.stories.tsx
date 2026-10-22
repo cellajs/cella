@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { AttachmentRender } from '~/modules/attachment/render/attachment-render';
-import { MAX_ZOOM, MIN_ZOOM } from '~/modules/attachment/render/image-zoom';
+import { maxZoom, minZoom } from '~/modules/attachment/render/image-zoom';
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#4f46e5"/></svg>`;
 const imageUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
@@ -93,9 +93,9 @@ export const Viewer: Story = {
 
     await step('wheel zoom stays within the floor and the ceiling', async () => {
       for (let i = 0; i < 12; i++) await wheel(img, -500);
-      await waitFor(() => expect(panLayerOf(img).scale).toBe(MAX_ZOOM));
+      await waitFor(() => expect(panLayerOf(img).scale).toBe(maxZoom));
       for (let i = 0; i < 12; i++) await wheel(img, 500);
-      await waitFor(() => expect(panLayerOf(img).scale).toBe(MIN_ZOOM));
+      await waitFor(() => expect(panLayerOf(img).scale).toBe(minZoom));
     });
 
     await step('the zoom buttons step by 0.2', async () => {

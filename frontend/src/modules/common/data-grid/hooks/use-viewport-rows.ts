@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { floor, max, min } from '../utils/grid-utils';
 
 /** Bound the pre-measurement row set until the real overscan window is available. */
-const UNMEASURED_ROW_COUNT = 30;
+const unmeasuredRowCount = 30;
 
 interface ViewportRowsArgs<R> {
   rows: readonly R[];
@@ -123,7 +123,7 @@ export function useViewportRows<R>({
       rowOverscanEndIdx = min(rows.length - 1, rowVisibleEndIdx + overscanThreshold);
     } else {
       // Layout not measured yet: render a bounded slice, not every row.
-      rowOverscanEndIdx = min(rows.length - 1, UNMEASURED_ROW_COUNT - 1);
+      rowOverscanEndIdx = min(rows.length - 1, unmeasuredRowCount - 1);
     }
   }
 

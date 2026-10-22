@@ -15,7 +15,7 @@ import { limiterScope } from '#/middlewares/rate-limiter/helpers';
 import { createInteractionsApp } from '#/modules/oauth-server/interactions';
 import { signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
 
-const OAUTH_MOUNT = '/oauth';
+const oauthMount = '/oauth';
 
 /** The `?depth=full` diagnostics, in the API's component shape: the store answers and a signing key exists, else 503. */
 async function probeHealth(): Promise<{ httpStatus: number; body: unknown }> {
@@ -70,20 +70,20 @@ export function createOauthListener(provider: Provider): Listener {
 
   return (req, res) => {
     const url = req.url ?? '/';
-    if (url === '/health' || url.startsWith('/health?') || url === `${OAUTH_MOUNT}/health` || url.startsWith(`${OAUTH_MOUNT}/health?`)) {
-      req.url = url.replace(OAUTH_MOUNT, '');
+    if (url === '/health' || url.startsWith('/health?') || url === `${oauthMount}/health` || url.startsWith(`${oauthMount}/health?`)) {
+      req.url = url.replace(oauthMount, '');
       health(req, res);
       return;
     }
-    if (url.startsWith(`${OAUTH_MOUNT}/interaction/`)) {
+    if (url.startsWith(`${oauthMount}/interaction/`)) {
       interactions(req, res);
       return;
     }
-    if (url === OAUTH_MOUNT || url.startsWith(`${OAUTH_MOUNT}/`) || url.startsWith(`${OAUTH_MOUNT}?`)) {
+    if (url === oauthMount || url.startsWith(`${oauthMount}/`) || url.startsWith(`${oauthMount}?`)) {
       // The provider expects paths relative to the mount and rebuilds absolute URLs (resume, redirects) from
       // `originalUrl`, the Express convention it reads for the mount path.
       (req as IncomingMessage & { originalUrl?: string }).originalUrl = url;
-      req.url = url.slice(OAUTH_MOUNT.length) || '/';
+      req.url = url.slice(oauthMount.length) || '/';
       oidc(req, res);
       return;
     }

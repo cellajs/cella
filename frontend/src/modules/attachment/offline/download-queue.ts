@@ -5,7 +5,7 @@ import { attachmentsDb, type DownloadQueueEntry, type DownloadStatus } from './a
 import { attachmentStorage } from './storage-service';
 
 /** Skip reason the download service writes for a row queued before its cloud keys arrived; `enqueue` matches on it to re-queue. */
-export const SKIP_REASON_NO_ORIGINAL_KEY = 'No originalKey';
+export const skipReasonNoOriginalKey = 'No originalKey';
 
 /** Valid transitions for the download service; `failed` is terminal here, and reviving is an `enqueue` decision that writes the row directly. */
 const transitions: Record<DownloadStatus, DownloadStatus[]> = {
@@ -108,7 +108,7 @@ async function addNew(entries: DownloadQueueEntry[]): Promise<void> {
 /** Whether an existing entry goes back to `pending`; other rows stay untouched so the table acts as the dedupe registry. */
 function shouldRevive(entry: DownloadQueueEntry, attachment: Attachment, config: NonNullable<typeof appConfig.localBlobStorage>): boolean {
   // Queued before its keys had synced; now they have.
-  if (entry.status === 'skipped' && entry.skipReason === SKIP_REASON_NO_ORIGINAL_KEY && attachment.keys?.original) {
+  if (entry.status === 'skipped' && entry.skipReason === skipReasonNoOriginalKey && attachment.keys?.original) {
     return true;
   }
 

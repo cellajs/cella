@@ -6,7 +6,7 @@ import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { getIsoDate } from '#/utils/iso-date';
 
 /** Consumed codes and rotated refresh tokens stay this long for replay detection, then go. */
-const CONSUMED_RETENTION_DAYS = 30;
+const consumedRetentionDays = 30;
 
 /** Deletes what the provider no longer reads: expired rows, and consumed rows past their retention. */
 async function sweepOidcPayloads(): Promise<number> {
@@ -16,7 +16,7 @@ async function sweepOidcPayloads(): Promise<number> {
     .where(
       or(
         lt(oidcPayloadsTable.expiresAt, now),
-        sql`${oidcPayloadsTable.consumedAt} < now() - interval '${sql.raw(String(CONSUMED_RETENTION_DAYS))} days'`,
+        sql`${oidcPayloadsTable.consumedAt} < now() - interval '${sql.raw(String(consumedRetentionDays))} days'`,
       ),
     )
     .returning({ id: oidcPayloadsTable.id });

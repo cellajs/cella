@@ -6,7 +6,7 @@ import { invalidateNotifications } from './query';
  * Debounce before refetching the inbox after related rows sync. Absorbs bursts, and covers the
  * post-commit fan-out writing the notification a moment after the row itself reaches the client.
  */
-const REFRESH_DEBOUNCE_MS = 2000;
+const refreshDebounceMs = 2000;
 
 let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -15,7 +15,7 @@ function scheduleInboxRefresh() {
   timer = setTimeout(() => {
     timer = null;
     invalidateNotifications();
-  }, REFRESH_DEBOUNCE_MS);
+  }, refreshDebounceMs);
 }
 
 /**

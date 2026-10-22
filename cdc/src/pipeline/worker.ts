@@ -1,5 +1,5 @@
 import { PgoutputPlugin } from 'pg-logical-replication';
-import { CDC_PUBLICATION_NAME, CDC_SLOT_NAME } from '../constants';
+import { cdcPublicationName, cdcSlotName } from '../constants';
 import { log } from '../lib/pino';
 import { startHealthReporter, stopHealthReporter } from '../network/health-reporter';
 import { wsClient } from '../network/websocket-client';
@@ -11,12 +11,12 @@ import { restoreBooksState, startBooksSchedule, stopBooksSchedule } from './veri
 
 /** Start and stop for the CDC worker; pipeline stages are documented in @see cdc/README.md */
 export async function startCdcWorker(): Promise<void> {
-  log.info('CDC worker starting...', { publicationName: CDC_PUBLICATION_NAME, slotName: CDC_SLOT_NAME });
+  log.info('CDC worker starting...', { publicationName: cdcPublicationName, slotName: cdcSlotName });
 
   await restoreBooksState().catch((error) => log.warn('Could not read the sync state', { err: error }));
 
   // Logical messages are read too: a recount marks its place in the stream with one.
-  const plugin = new PgoutputPlugin({ protoVersion: 1, publicationNames: [CDC_PUBLICATION_NAME], messages: true });
+  const plugin = new PgoutputPlugin({ protoVersion: 1, publicationNames: [cdcPublicationName], messages: true });
 
   startHealthReporter();
   wsClient.connect();

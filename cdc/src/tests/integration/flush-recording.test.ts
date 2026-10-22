@@ -26,14 +26,14 @@ async function probeReady(): Promise<boolean> {
   }
 }
 
-const READY = await probeReady();
+const ready = await probeReady();
 
 /**
  * A flush records its events in one transaction: activity rows, sequence positions, counters and row stamps. The
  * events here are built from real rows through the real parser and handed to `processFlush` directly, so a second
  * delivery is simply a second call with the same LSNs.
  */
-describe.skipIf(!READY)('Recording a flush (integration)', () => {
+describe.skipIf(!ready)('Recording a flush (integration)', () => {
   const tenantId = nanoidTenant();
   const organizationId = generateId();
   const attachmentIds: string[] = [];

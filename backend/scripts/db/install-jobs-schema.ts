@@ -6,7 +6,7 @@ import { sleep } from 'shared/utils/sleep';
 import { getAdminDb } from '#/db/db';
 import { env } from '#/env';
 import { ensureQueues } from '#/lib/jobs';
-import { JOBS_SCHEMA, jobsOptions } from '#/lib/pg-boss';
+import { jobsSchema, jobsOptions } from '#/lib/pg-boss';
 import '#/modules'; // composition root: the queues to create are declared on the modules
 import { durationSuffix, timestamp } from '#/utils/console';
 import { jobsGrantsSql } from '../migrations/10-jobs.migration';
@@ -51,10 +51,10 @@ export async function installJobsSchema(): Promise<void> {
   await boss.start();
   try {
     await waitForBackgroundMigrations(boss);
-    await getAdminDb('job store grants').execute(sql.raw(jobsGrantsSql(JOBS_SCHEMA)));
+    await getAdminDb('job store grants').execute(sql.raw(jobsGrantsSql(jobsSchema)));
     await ensureQueues(boss);
     const queues = (await boss.getQueues()).length;
-    console.info(`${timestamp()} ${pc.green('✔')} Job store ready: schema ${JOBS_SCHEMA}, ${queues} queues${durationSuffix(startedAt)}`);
+    console.info(`${timestamp()} ${pc.green('✔')} Job store ready: schema ${jobsSchema}, ${queues} queues${durationSuffix(startedAt)}`);
   } finally {
     await boss.stop({ graceful: true, timeout: 5_000 });
   }

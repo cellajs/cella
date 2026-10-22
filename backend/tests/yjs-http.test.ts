@@ -12,8 +12,8 @@ import { subjectSegment } from '#/middlewares/rate-limiter/helpers';
 import { yjsHttpLimiter } from '#/middlewares/rate-limiter/limiters';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
-import { stateToBlocksJson, YJS_FRAGMENT_NAME } from '#/modules/yjs/helpers/description-update';
-import { decodeLogNotice, YJS_HTTP_CHUNK_BYTES, YJS_LOG_CHANNEL } from '#/modules/yjs/helpers/yjs-log';
+import { stateToBlocksJson, yjsFragmentName } from '#/modules/yjs/helpers/description-update';
+import { decodeLogNotice, yjsHttpChunkBytes, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
 import { mergeLog } from '#/modules/yjs/helpers/yjs-state';
 import type { AppendYjsUpdateOpts } from '#/modules/yjs/operations/append-yjs-update';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
@@ -118,7 +118,7 @@ function firstText(doc: Y.Doc): Y.XmlText {
     }
     return null;
   };
-  const text = find(doc.getXmlFragment(YJS_FRAGMENT_NAME));
+  const text = find(doc.getXmlFragment(yjsFragmentName));
   if (!text) throw new Error('no text in the document');
   return text;
 }
@@ -131,7 +131,7 @@ function typeInto(doc: Y.Doc, text: string): Uint8Array {
 }
 
 /** The top-level children of the editor's fragment: one block group for one document. */
-const blockGroups = (state: Uint8Array) => docOf(state).getXmlFragment(YJS_FRAGMENT_NAME).length;
+const blockGroups = (state: Uint8Array) => docOf(state).getXmlFragment(yjsFragmentName).length;
 
 /**
  * Yjs over HTTP: a client that cannot reach the relay pulls and pushes through the API. Both routes authorize as the
@@ -213,7 +213,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
   /** Returns once a notification sent now is heard: notifications arrive in commit order, so every earlier one has too. */
   const barrier = async () => {
     const token = `barrier-${randomUUID()}`;
-    await adminDb.execute(sql`SELECT pg_notify(${YJS_LOG_CHANNEL}, ${token})`);
+    await adminDb.execute(sql`SELECT pg_notify(${yjsLogChannel}, ${token})`);
     await vi.waitUntil(() => heard.includes(token), { timeout: 5000, interval: 10 });
   };
 
@@ -224,9 +224,9 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
     listener = new pg.Client({ connectionString: testDatabaseUrl });
     await listener.connect();
     listener.on('notification', ({ channel, payload }) => {
-      if (channel === YJS_LOG_CHANNEL) heard.push(payload ?? '');
+      if (channel === yjsLogChannel) heard.push(payload ?? '');
     });
-    await listener.query(`LISTEN ${YJS_LOG_CHANNEL}`);
+    await listener.query(`LISTEN ${yjsLogChannel}`);
   });
 
   afterAll(async () => {
@@ -430,7 +430,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
     it('must not log an update of a document with no row: 409 with a null generation, and a pull, which seeds, lets it in', async () => {
       const attachment = await arrange(paragraph('original'));
       const offline = docOf();
-      offline.getXmlFragment(YJS_FRAGMENT_NAME).insert(0, [new Y.XmlText('offline')]);
+      offline.getXmlFragment(yjsFragmentName).insert(0, [new Y.XmlText('offline')]);
       const answer = await push(owner.sessionCookie, attachment.id, randomUUID(), Y.encodeStateAsUpdate(offline));
       await expectRefusal(answer, 409, 'sync_document_replaced');
       expect((answer.error as ErrorResponse).meta).toEqual({ generation: null });
@@ -451,10 +451,10 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
         });
       const chunk = (bytes: number) => Buffer.alloc(bytes).toString('base64url');
 
-      await expectRefusal(await pushOf(chunk(YJS_HTTP_CHUNK_BYTES + 1)), 400, 'form.too_big');
+      await expectRefusal(await pushOf(chunk(yjsHttpChunkBytes + 1)), 400, 'form.too_big');
       await expectRefusal(await pushOf(chunk(800 * 1024)), 413, 'body_too_large');
       // A full chunk passes validation (positive control): zeros decode as an update that carries nothing.
-      const full = await pushOf(chunk(YJS_HTTP_CHUNK_BYTES));
+      const full = await pushOf(chunk(yjsHttpChunkBytes));
       expect(full).toEqual({ status: 200, body: { status: 'empty' } });
     });
 

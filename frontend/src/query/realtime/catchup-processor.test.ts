@@ -64,7 +64,7 @@ vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { match
 stubLocalStorage();
 
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
-const { registerEntityQueryKeys, SYNC_CHUNK_SIZE } = await import('~/query/basic/entity-query-registry');
+const { registerEntityQueryKeys, syncChunkSize } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
 const { syncStore } = await import('~/query/realtime/sync-store');
 const { flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');
@@ -78,7 +78,7 @@ const rangeRequest = (afterSeq: number, untilSeq: number) => ({
   organizationId: 'org-1',
   tenantId: 'tenant-1',
   channelId: undefined,
-  query: { afterSeq, untilSeq, limit: SYNC_CHUNK_SIZE },
+  query: { afterSeq, untilSeq, limit: syncChunkSize },
 });
 
 /** Views-contract response with one org view answer for attachment. */

@@ -16,8 +16,8 @@ import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { tw } from '~/utils/tw';
 
-const MIN_SIDEBAR_WIDTH = 220;
-const MAX_SIDEBAR_WIDTH = 400;
+const minSidebarWidth = 220;
+const maxSidebarWidth = 400;
 
 // Safari has no requestIdleCallback
 const scheduleIdle =
@@ -44,7 +44,7 @@ function DocsLayout() {
   const startSidebarResize = (e: React.PointerEvent) => {
     e.preventDefault();
     const startX = e.clientX;
-    const startWidth = sidebarRef.current?.getBoundingClientRect().width ?? MIN_SIDEBAR_WIDTH;
+    const startWidth = sidebarRef.current?.getBoundingClientRect().width ?? minSidebarWidth;
     // The drag writes the variable to the DOM once per frame and commits state on release, so it doesn't re-render the layout and sidebar
     let width: number | null = null;
     let frame = 0;
@@ -53,7 +53,7 @@ function DocsLayout() {
       if (width !== null) wrapperRef.current?.style.setProperty('--docs-sidebar-width', `${width}px`);
     };
     const onMove = (ev: PointerEvent) => {
-      width = Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, startWidth + (ev.clientX - startX)));
+      width = Math.min(maxSidebarWidth, Math.max(minSidebarWidth, startWidth + (ev.clientX - startX)));
       if (!frame) frame = requestAnimationFrame(writeWidth);
     };
     const onUp = () => {
@@ -73,11 +73,11 @@ function DocsLayout() {
 
   // The keyboard path of the same handle: arrows move it in steps, Home and End jump to the limits.
   const resizeSidebarByKey = (e: React.KeyboardEvent) => {
-    const width = sidebarRef.current?.getBoundingClientRect().width ?? MIN_SIDEBAR_WIDTH;
-    const target = { ArrowLeft: width - 16, ArrowRight: width + 16, Home: MIN_SIDEBAR_WIDTH, End: MAX_SIDEBAR_WIDTH }[e.key];
+    const width = sidebarRef.current?.getBoundingClientRect().width ?? minSidebarWidth;
+    const target = { ArrowLeft: width - 16, ArrowRight: width + 16, Home: minSidebarWidth, End: maxSidebarWidth }[e.key];
     if (target === undefined) return;
     e.preventDefault();
-    setResizedSidebarWidth(Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, target)));
+    setResizedSidebarWidth(Math.min(maxSidebarWidth, Math.max(minSidebarWidth, target)));
   };
 
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);

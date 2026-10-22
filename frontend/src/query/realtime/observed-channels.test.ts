@@ -39,9 +39,9 @@ const { isObservedChannel } = await import('./observed-channels');
 const { isViewingChannel } = await import('./sync-priority');
 
 // The synthetic 'task' type exists only in this file's shared mock, hence the casts.
-const TASK = 'task' as EntityType;
-const taskKeys = createEntityKeys(TASK);
-registerEntityQueryKeys(TASK, taskKeys);
+const task = 'task' as EntityType;
+const taskKeys = createEntityKeys(task);
+registerEntityQueryKeys(task, taskKeys);
 
 /** Mount a headless observer matching the signal produced by a component rendering this query. */
 function observe(queryKey: readonly unknown[]): () => void {

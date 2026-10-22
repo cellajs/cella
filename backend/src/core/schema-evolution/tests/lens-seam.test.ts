@@ -41,7 +41,7 @@ const hlc = '100:0001:aaaaa';
 afterEach(() => _resetHLC());
 
 // Synthetic lens-less entity; widenedOpsKeyMap/normalizeOps are mocked above by name.
-const LENSLESS = 'doc' as ProductEntityType;
+const lensless = 'doc' as ProductEntityType;
 
 describe('createUpdateSchema widening', () => {
   const schema = createUpdateSchema('attachment', { title: z.string() });
@@ -66,7 +66,7 @@ describe('createUpdateSchema widening', () => {
   });
 
   it('accepts an AWSet delta without an HLC', () => {
-    const deltaSchema = createUpdateSchema(LENSLESS, { labels: arrayDeltaSchema(z.string()) });
+    const deltaSchema = createUpdateSchema(lensless, { labels: arrayDeltaSchema(z.string()) });
     expect(deltaSchema.parse({ ops: { labels: { add: ['a'] } }, stx: stx({}) }).ops).toEqual({
       labels: { add: ['a'], remove: [] },
     });
@@ -102,7 +102,7 @@ describe('widenBodySchema', () => {
   const body = z.object({ id: z.string(), title: z.string(), size: z.number().optional() });
 
   it('is identity for entities without lenses', () => {
-    const widened = widenBodySchema(LENSLESS, body);
+    const widened = widenBodySchema(lensless, body);
     expect(widened).toBe(body);
   });
 
@@ -128,7 +128,7 @@ describe('normalizeCreateItem', () => {
 
   it('is passthrough for entities without lenses', () => {
     const item = { id: '1', name: 'doc', stx: stx({}) };
-    expect(normalizeCreateItem(LENSLESS, item)).toEqual(item);
+    expect(normalizeCreateItem(lensless, item)).toEqual(item);
   });
 });
 
@@ -161,7 +161,7 @@ describe('resolveUpdateOps lens seam', () => {
 
   it('is passthrough for entities without lenses', () => {
     const pageEntity = { id: 'p1', name: 'old', stx: { mutationId: 'm0', sourceId: 's0', fieldTimestamps: {} } };
-    const resolved = resolveUpdateOps(LENSLESS, pageEntity, { name: 'new' }, stx({ name: '300:0001:bbbbb' }));
+    const resolved = resolveUpdateOps(lensless, pageEntity, { name: 'new' }, stx({ name: '300:0001:bbbbb' }));
     expect(resolved.changed).toBe(true);
     if (!resolved.changed) return;
     expect(resolved.values).toEqual({ name: 'new' });

@@ -2,7 +2,7 @@
  * DOM id prefix (e.g. id="spy-intro") prevents auto-scroll on hash change. No element may carry the bare section id:
  * TanStack history patches replaceState, so each hash write runs the router's hash scroll, which jumps to that element.
  */
-const SPY_PREFIX = 'spy-';
+const spyPrefix = 'spy-';
 
 const sections = new Map<string, number>(); // sectionId → intersection ratio
 let observer: IntersectionObserver | null = null;
@@ -47,14 +47,14 @@ const canWriteHash = () => Date.now() > hashWriteBlockedUntil && initTime && Dat
 export const isProgrammaticScroll = () => Date.now() < hashWriteBlockedUntil;
 
 /** Within this many px of the top the page counts as unscrolled: the topmost section is current and the hash is dropped. */
-const TOP_THRESHOLD = 64;
+const topThreshold = 64;
 
 let topWatchTarget: HTMLElement | Window | null = null;
 let topWatchFrame = 0;
 
 const scrollTopOf = (target: HTMLElement | Window) => (target === window ? window.scrollY : (target as HTMLElement).scrollTop);
 
-const isAtTop = () => scrollTopOf(topWatchTarget ?? window) <= TOP_THRESHOLD;
+const isAtTop = () => scrollTopOf(topWatchTarget ?? window) <= topThreshold;
 
 /** Drop the hash, keeping path and search intact. */
 const clearHash = () => {
@@ -82,7 +82,7 @@ const onScroll = () => {
 
 /** Point the top watcher at the sections' scroller (window when that is the document scroller). */
 const watchScroller = () => {
-  const anchor = [...sections.keys()].map((id) => document.getElementById(`${SPY_PREFIX}${id}`)).find((el): el is HTMLElement => el !== null);
+  const anchor = [...sections.keys()].map((id) => document.getElementById(`${spyPrefix}${id}`)).find((el): el is HTMLElement => el !== null);
   const scroller = anchor ? findScrollParent(anchor) : null;
   const next: HTMLElement | Window = !scroller || isRootScroller(scroller) ? window : scroller;
   if (next === topWatchTarget) return;
@@ -127,7 +127,7 @@ const getBestSection = (): string | null => {
   // Every rendered anchor counts, not only those in view: after a long scroll the current section's anchor sits above the viewport
   const withPositions = [...sections.keys()]
     .flatMap((id) => {
-      const el = document.getElementById(`${SPY_PREFIX}${id}`);
+      const el = document.getElementById(`${spyPrefix}${id}`);
       return el?.getClientRects().length ? [{ id, top: el.getBoundingClientRect().top }] : [];
     })
     .sort((a, b) => a.top - b.top);
@@ -152,7 +152,7 @@ const rebuild = () => {
   observer = new IntersectionObserver(
     (entries) => {
       for (const e of entries) {
-        sections.set(e.target.id.replace(SPY_PREFIX, ''), e.intersectionRatio);
+        sections.set(e.target.id.replace(spyPrefix, ''), e.intersectionRatio);
       }
 
       // Skip section updates during programmatic scroll to prevent indicator jank
@@ -174,7 +174,7 @@ const rebuild = () => {
   );
 
   for (const id of sections.keys()) {
-    const el = document.getElementById(`${SPY_PREFIX}${id}`);
+    const el = document.getElementById(`${spyPrefix}${id}`);
     if (el) observer.observe(el);
   }
 
@@ -216,7 +216,7 @@ export const registerSections = (ids: string[]) => {
     notify();
     blockHashWrites(1000);
     requestAnimationFrame(() => {
-      document.getElementById(`${SPY_PREFIX}${hash}`)?.scrollIntoView({ behavior: 'instant' });
+      document.getElementById(`${spyPrefix}${hash}`)?.scrollIntoView({ behavior: 'instant' });
     });
     return;
   }
@@ -301,14 +301,14 @@ const isLaidOut = (el: HTMLElement): boolean => {
   return el.getBoundingClientRect().height > 0;
 };
 
-const MAX_PENDING_FRAMES = 60; // ~1s at 60fps
+const maxPendingFrames = 60; // ~1s at 60fps
 let pendingFrameAttempts = 0;
 
 /** Polls once per frame until the queued target is laid out, then scrolls. */
 const tryFlushPendingScroll = () => {
   if (!pendingScrollTarget) return;
 
-  const el = document.getElementById(`${SPY_PREFIX}${pendingScrollTarget}`);
+  const el = document.getElementById(`${spyPrefix}${pendingScrollTarget}`);
   if (el && isLaidOut(el)) {
     const id = pendingScrollTarget;
     pendingScrollTarget = null;
@@ -317,7 +317,7 @@ const tryFlushPendingScroll = () => {
     return;
   }
 
-  if (pendingFrameAttempts++ < MAX_PENDING_FRAMES) {
+  if (pendingFrameAttempts++ < maxPendingFrames) {
     requestAnimationFrame(tryFlushPendingScroll);
   } else {
     pendingScrollTarget = null;

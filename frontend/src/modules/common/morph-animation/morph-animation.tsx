@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { MorphRenderer, type MorphVariant } from '~/modules/common/morph-animation/renderer';
-import { FRAGMENT_SOURCE } from '~/modules/common/morph-animation/shader';
+import { fragmentSource } from '~/modules/common/morph-animation/shader';
 import { uiStore, useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
@@ -43,7 +43,7 @@ export function MorphAnimation({
   const propsRef = useRef({ grid, speed, overscan, stamp, isPhone });
   propsRef.current = { grid, speed, overscan, stamp, isPhone };
 
-  // FRAGMENT_SOURCE in the deps only changes under HMR, where it forces a rebuild so shader edits apply live
+  // fragmentSource in the deps only changes under HMR, where it forces a rebuild so shader edits apply live
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -78,7 +78,7 @@ export function MorphAnimation({
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [variant, FRAGMENT_SOURCE]);
+  }, [variant, fragmentSource]);
 
   useEffect(() => {
     rendererRef.current?.setDark(mode === 'dark');
