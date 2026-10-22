@@ -53,17 +53,17 @@ describe('useYjsToken refusals', () => {
     userStore.getState().setYjsToken(tokenKey, 'token-v1');
     vi.mocked(getYjsToken).mockRejectedValue(new ApiError({ status: 404 }));
 
-    expect(await renderToken()).toEqual({ token: undefined, refused: false, deleted: true });
+    expect(await renderToken()).toEqual({ token: undefined, denied: false, deleted: true });
     expect(userStore.getState().yjsTokens[tokenKey]).toBeUndefined();
     // No retry changes a refusal.
     expect(getYjsToken).toHaveBeenCalledOnce();
   });
 
-  it('a 403 gives refused, view only, and withdraws the held token', async () => {
+  it('a 403 gives denied, view only, and withdraws the held token', async () => {
     userStore.getState().setYjsToken(tokenKey, 'token-v1');
     vi.mocked(getYjsToken).mockRejectedValue(new ApiError({ status: 403 }));
 
-    expect(await renderToken()).toEqual({ token: undefined, refused: true, deleted: false });
+    expect(await renderToken()).toEqual({ token: undefined, denied: true, deleted: false });
     expect(userStore.getState().yjsTokens[tokenKey]).toBeUndefined();
     expect(getYjsToken).toHaveBeenCalledOnce();
   });
@@ -71,7 +71,7 @@ describe('useYjsToken refusals', () => {
   it('a token the route issues is neither, and lands in the user store (positive control)', async () => {
     vi.mocked(getYjsToken).mockResolvedValue({ token: 'token-v2' } as never);
 
-    expect(await renderToken()).toEqual({ token: 'token-v2', refused: false, deleted: false });
+    expect(await renderToken()).toEqual({ token: 'token-v2', denied: false, deleted: false });
     expect(userStore.getState().yjsTokens[tokenKey]).toBe('token-v2');
   });
 });

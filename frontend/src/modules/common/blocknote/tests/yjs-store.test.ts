@@ -8,7 +8,7 @@ vi.mock('shared', () => ({ appConfig: { slug: 'test', yjsUrl: 'http://relay.test
 const broadcasts: { key: string; generation: string; update: Uint8Array; rowId: number | null }[] = [];
 vi.mock('~/modules/common/blocknote/yjs-tab-channel', () => ({
   postTabMessage: (msg: (typeof broadcasts)[number]) => broadcasts.push(msg),
-  toTabKey: (key: { entityType: string; entityId: string }) => `${key.entityType}:${key.entityId}`,
+  yDocKeyString: (key: { entityType: string; entityId: string }) => `${key.entityType}:${key.entityId}`,
 }));
 let offlineAccess = true;
 vi.mock('~/modules/ui/ui-store', () => ({ uiStore: { getState: () => ({ offlineAccess }) } }));

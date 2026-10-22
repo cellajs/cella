@@ -14,10 +14,10 @@ export type TabMessage =
   | { t: 'update'; key: string; generation: string; update: Uint8Array; rowId: number | null }
   | { t: 'hello'; key: string; generation: string; vector: Uint8Array };
 
-/** A document's key on the channel. */
-export const toTabKey = (key: YDocKey) => `${key.entityType}:${key.entityId}`;
+/** A document's key as one string, `entityType:entityId`: the tab channel's message key, and the store's lookup key. */
+export const yDocKeyString = (key: YDocKey) => `${key.entityType}:${key.entityId}`;
 
-const handlers = new Set<(msg: TabMessage) => void>();
+const handlers = new Set<(message: TabMessage) => void>();
 let channel: BroadcastChannel | null = null;
 
 /** The channel of the bound user's database, opened on first use; null while no database is bound. */
@@ -49,12 +49,12 @@ subscribeOwnerChange(() => {
 });
 
 /** Sends a message to the bound user's other tabs. */
-export function postTabMessage(msg: TabMessage): void {
-  currentChannel()?.postMessage(msg);
+export function postTabMessage(message: TabMessage): void {
+  currentChannel()?.postMessage(message);
 }
 
 /** Calls `handler` for each message another tab sends; returns the unsubscribe. */
-export function onTabMessage(handler: (msg: TabMessage) => void): () => void {
+export function onTabMessage(handler: (message: TabMessage) => void): () => void {
   handlers.add(handler);
   currentChannel();
   return () => {

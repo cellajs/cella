@@ -10,7 +10,7 @@ const warnedKey = `${appConfig.slug}:storage-low-warned`;
 let warnedHere = false;
 
 /** True once this tab session showed the warning; a reload keeps it, so each boot's eviction does not repeat it. */
-function warned(): boolean {
+function hasWarned(): boolean {
   if (warnedHere) return true;
   try {
     return sessionStorage.getItem(warnedKey) === '1';
@@ -40,7 +40,7 @@ export function isStorageLow({ usage, quota }: StorageEstimate): boolean {
  * stored here survive a closed tab only while there is room for them.
  */
 export async function warnOnStoragePressure({ limitsReached = false }: { limitsReached?: boolean } = {}): Promise<void> {
-  if (warned()) return;
+  if (hasWarned()) return;
   let low = limitsReached;
   if (!low) {
     try {
@@ -50,7 +50,7 @@ export async function warnOnStoragePressure({ limitsReached = false }: { limitsR
       return;
     }
   }
-  if (!low || warned()) return;
+  if (!low || hasWarned()) return;
   markWarned();
   toaster.warning(i18n.t('c:storage_low.text'), { id: 'storage-low' });
 }

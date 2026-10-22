@@ -1,7 +1,7 @@
 import * as decoding from 'lib0/decoding';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
-import { parkedGraceMs, resyncCooldownMs, watchPendingStructs } from '../yjs-resync';
+import { parkedGraceMs, resyncCooldownMs, watchPendingStructs } from '~/modules/common/blocknote/yjs-resync';
 
 function fakeDoc(): Y.Doc & { park: (on: boolean) => void } {
   const doc = new Y.Doc();

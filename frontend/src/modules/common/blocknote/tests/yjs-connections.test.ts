@@ -159,7 +159,7 @@ vi.mock('~/modules/common/blocknote/query', () => ({
   yjsTokenKeys: { entity: (...key: unknown[]) => key },
   yjsTokenQueryOptions: (params: unknown) => ({ params }),
   // As the token route answers: 404 for a deleted entity, 403 for one the caller may not edit.
-  yjsTokenRefusal: (error: { status: number } | null) => (error?.status === 404 ? 'deleted' : error?.status === 403 ? 'refused' : null),
+  yjsTokenRefusal: (error: { status: number } | null) => (error?.status === 404 ? 'deleted' : error?.status === 403 ? 'denied' : null),
 }));
 vi.mock('~/modules/common/blocknote/yjs-resync', () => ({ watchPendingStructs: () => () => {} }));
 /** What each end for good handed to parking: its reason and scope, the document, and whether it held unsynced edits then. */
@@ -169,13 +169,13 @@ vi.mock('~/modules/common/blocknote/unsaveable-notices', () => ({
     parked.push({ reason, scope, doc: conn.yDoc, unsynced: conn.unsynced }),
 }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
-// The API never answers here, so the socket alone syncs; yjs-http.test.ts covers the HTTP link. Its hooks are kept, so
+// The API never answers here, so the socket alone syncs; yjs-http.test.ts covers the HTTP link. Its handlers are kept, so
 // a test can give the routes' final answer.
-const httpHooks: { end: (reason: string) => void }[] = [];
+const httpHandlers: { onEnd: (reason: string) => void }[] = [];
 vi.mock('~/modules/common/blocknote/yjs-http', () => ({
   wsSyncDeadlineMs: 5_000,
-  createHttpLink: (_conn: unknown, hooks: { end: (reason: string) => void }) => {
-    httpHooks.push(hooks);
+  createHttpLink: (_conn: unknown, handlers: { onEnd: (reason: string) => void }) => {
+    httpHandlers.push(handlers);
     return { enter: () => new Promise(() => {}), leave: () => {}, queue: () => {}, pull: async () => {}, clean: false };
   },
 }));
@@ -197,7 +197,7 @@ async function mountConnection() {
   userStore.getState().setYjsToken(tokenKey, 'token-v1');
   let latest: Connection = null;
   const Harness = () => {
-    latest = useYjsConnection(entityId, 'attachment', 'tenant-1', 'org-1');
+    latest = useYjsConnection({ entityType: 'attachment', entityId, tenantId: 'tenant-1', organizationId: 'org-1', enabled: true });
     return null;
   };
   const container = document.createElement('div');
@@ -940,7 +940,7 @@ describe('yjs connection: answers of the HTTP routes', () => {
     await relaySaved(provider);
     await editLocally(provider);
 
-    await act(async () => httpHooks.at(-1)?.end('deleted'));
+    await act(async () => httpHandlers.at(-1)?.onEnd('deleted'));
 
     expect(parked).toEqual([{ reason: 'deleted', scope: scopeOf(entityId), doc: provider.doc, unsynced: true }]);
     expect(state()?.stopped).toBe(true);
@@ -954,7 +954,7 @@ describe('yjs connection: answers of the HTTP routes', () => {
     await relaySaved(provider);
     await editLocally(provider);
 
-    await act(async () => httpHooks.at(-1)?.end('denied'));
+    await act(async () => httpHandlers.at(-1)?.onEnd('denied'));
 
     expect(parked).toEqual([{ reason: 'denied', scope: scopeOf(entityId), doc: provider.doc, unsynced: true }]);
     expect(state()?.stopped).toBe(true);
@@ -969,7 +969,7 @@ describe('yjs connection: answers of the HTTP routes', () => {
     await relaySaved(provider);
     await editLocally(provider);
 
-    await act(async () => httpHooks.at(-1)?.end('refused'));
+    await act(async () => httpHandlers.at(-1)?.onEnd('refused'));
 
     expect(parked).toMatchObject([{ reason: 'refused', unsynced: true }]);
     expect(state()?.stopReason).toBe('refused');
@@ -983,7 +983,7 @@ describe('yjs connection: answers of the HTTP routes', () => {
     await relaySaved(provider);
     await editLocally(provider);
 
-    await act(async () => httpHooks.at(-1)?.end('replaced'));
+    await act(async () => httpHandlers.at(-1)?.onEnd('replaced'));
 
     expect(parked).toEqual([expect.objectContaining({ reason: 'replaced', unsynced: true, doc: provider.doc })]);
     expect(state()?.rebuilds).toBe(1);

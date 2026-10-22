@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
 import * as decoding from 'lib0/decoding';
 import { useEffect, useState } from 'react';
-import { appConfig, type ProductEntityType } from 'shared';
+import { appConfig } from 'shared';
 import { toWsUrl } from 'shared/utils/ws-url';
 import { Awareness } from 'y-protocols/awareness';
 import { WebsocketProvider } from 'y-websocket';
@@ -11,7 +11,7 @@ import { create } from 'zustand';
 import type { TKey } from '~/lib/i18n-locales';
 import { type YjsDocScope, yjsTokenKeys, yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
 import { parkUnsaveable } from '~/modules/common/blocknote/unsaveable-notices';
-import { ydocFragment } from '~/modules/common/blocknote/ydoc-label';
+import { yDocFragment } from '~/modules/common/blocknote/ydoc-label';
 import { createHttpLink, type HttpLink, wsSyncDeadlineMs } from '~/modules/common/blocknote/yjs-http';
 import { watchPendingStructs } from '~/modules/common/blocknote/yjs-resync';
 import {
@@ -24,7 +24,7 @@ import {
   storeLoadTimeoutMs,
   type YDocWriter,
 } from '~/modules/common/blocknote/yjs-store';
-import { onTabMessage, postTabMessage, type TabMessage, toTabKey } from '~/modules/common/blocknote/yjs-tab-channel';
+import { onTabMessage, postTabMessage, type TabMessage, yDocKeyString } from '~/modules/common/blocknote/yjs-tab-channel';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { userStore, yjsTokenKey } from '~/modules/user/user-store';
 import { getLocalUserDb, type UnsaveableReason, type YDocRecord } from '~/query/local-user-db';
@@ -159,8 +159,8 @@ export interface YjsConnection {
    */
   unsynced: boolean;
   graceTimer?: ReturnType<typeof setTimeout>;
-  unsubOnline?: () => void;
-  unsubToken?: () => void;
+  unsubscribeOnline?: () => void;
+  unsubscribeToken?: () => void;
   /** Stops the parked-structs watch that resyncs a document stuck on a lost update. */
   stopResyncWatch?: () => void;
 }
@@ -420,7 +420,7 @@ function openDoc({ entityType, entityId, tenantId }: YjsDocScope): DocParts {
     yDoc,
     awareness,
     provider,
-    fragment: yDoc.getXmlFragment(ydocFragment),
+    fragment: yDoc.getXmlFragment(yDocFragment),
     ledger,
     transport: 'none',
     loaded: false,
@@ -495,7 +495,7 @@ function applyStored(conn: YjsConnection, stored: LoadedYDoc) {
   if (record.unsynced) setUnsynced(conn, true);
   // Loaded after the HTTP link's handshake, which posted what the document held then: the stored edits go as an edit.
   if (record.unsynced && conn.transport === 'http') conn.http?.queue(Y.mergeUpdates(stored.updates));
-  postTabMessage({ t: 'hello', key: toTabKey(conn.scope), generation: record.generation, vector: Y.encodeStateVector(conn.yDoc) });
+  postTabMessage({ t: 'hello', key: yDocKeyString(conn.scope), generation: record.generation, vector: Y.encodeStateVector(conn.yDoc) });
 }
 
 /** Keeps the document in the per-user database from now on: opened for editing, by a focus or a local edit. */
@@ -513,7 +513,7 @@ function markStored(conn: YjsConnection) {
 function startStoring(conn: YjsConnection, unsynced: boolean) {
   if (!conn.stored || conn.writer || conn.generation === null || conn.stopped) return;
   if (!conn.ready && !conn.provider.synced) return;
-  const writer = createYDocWriter(conn.scope, { applied: conn.applied, onChange: () => onWriterChange(conn, writer) });
+  const writer = createYDocWriter(conn.scope, { applied: conn.applied, onChange: () => handleWriterChange(conn, writer) });
   if (!writer) return;
   conn.writer = writer;
   const { tenantId, organizationId } = conn.scope;
@@ -524,7 +524,7 @@ function startStoring(conn: YjsConnection, unsynced: boolean) {
  * A writer committed, queued or failed: the unload guard follows, a failure shows, and a connection that is clean
  * proves the rows this commit wrote, which a Saved that came first left local.
  */
-function onWriterChange(conn: YjsConnection, writer: YDocWriter | null) {
+function handleWriterChange(conn: YjsConnection, writer: YDocWriter | null) {
   if (!writer || conn.writer !== writer) return;
   if (writer.failed !== sessionOf(conn).storageFailed) patchSession(conn, { storageFailed: writer.failed });
   guardUnload();
@@ -534,7 +534,7 @@ function onWriterChange(conn: YjsConnection, writer: YDocWriter | null) {
 /** The connection this tab holds for a document, by its key on the tab channel. */
 export function findConnection(key: string): YjsConnection | undefined {
   const conn = connections.get(key.slice(key.indexOf(':') + 1));
-  return conn && toTabKey(conn.scope) === key ? conn : undefined;
+  return conn && yDocKeyString(conn.scope) === key ? conn : undefined;
 }
 
 /** True for an update that carries something: an empty Yjs update is two zero bytes. */
@@ -545,16 +545,16 @@ const holdsChanges = (update: Uint8Array) => update.byteLength > 2;
  * that has not hold two histories. An update is no edit of this tab, and is neither sent nor stored again when its tab
  * stored it. A hello is answered with what the sender's vector lacks.
  */
-function receiveTabMessage(msg: TabMessage) {
-  const conn = findConnection(msg.key);
-  if (!conn || conn.stopped || conn.generation !== msg.generation) return;
-  if (msg.t === 'hello') {
-    const missing = Y.encodeStateAsUpdate(conn.yDoc, msg.vector);
-    if (holdsChanges(missing)) postTabMessage({ t: 'update', key: msg.key, generation: msg.generation, update: missing, rowId: null });
+function receiveTabMessage(message: TabMessage) {
+  const conn = findConnection(message.key);
+  if (!conn || conn.stopped || conn.generation !== message.generation) return;
+  if (message.t === 'hello') {
+    const missing = Y.encodeStateAsUpdate(conn.yDoc, message.vector);
+    if (holdsChanges(missing)) postTabMessage({ t: 'update', key: message.key, generation: message.generation, update: missing, rowId: null });
     return;
   }
-  if (msg.rowId !== null) conn.applied.ids.add(msg.rowId);
-  applyRemoteUpdate(conn, msg.update, { kind: 'tab', rowId: msg.rowId });
+  if (message.rowId !== null) conn.applied.ids.add(message.rowId);
+  applyRemoteUpdate(conn, message.update, { kind: 'tab', rowId: message.rowId });
 }
 
 onTabMessage(receiveTabMessage);
@@ -587,7 +587,7 @@ function bindProvider(conn: YjsConnection) {
   };
 
   // A withdrawn token stays withdrawn across an offline blip: reconnect only while one is held.
-  conn.unsubOnline = onlineManager.subscribe((isOnline) => {
+  conn.unsubscribeOnline = onlineManager.subscribe((isOnline) => {
     if (!isOnline) {
       provider.disconnect();
       pauseTransports(conn);
@@ -595,16 +595,16 @@ function bindProvider(conn: YjsConnection) {
   });
 
   // Keep provider params on the latest token so a reconnect (after sleep, or the relay's close at expiry) uses a fresh one.
-  conn.unsubToken = userStore.subscribe((state, prevState) => {
+  conn.unsubscribeToken = userStore.subscribe((state, prev) => {
     const newToken = state.yjsTokens[tokenKey];
     if (newToken) {
       provider.params.token = newToken;
       // A document opened without a token, from storage, connects once one arrives.
-      if (!prevState.yjsTokens[tokenKey] && conn.loaded && !conn.stopped && onlineManager.isOnline() !== false) provider.connect();
+      if (!prev.yjsTokens[tokenKey] && conn.loaded && !conn.stopped && onlineManager.isOnline() !== false) provider.connect();
       return;
     }
     // Withdrawn (access revoked, the entity gone, or signed out), also while offline: the token cannot come back.
-    if (!prevState.yjsTokens[tokenKey]) return;
+    if (!prev.yjsTokens[tokenKey]) return;
     // Signed out: the connection goes and leaves storage alone. A hard sign-out deletes the database once the sign-out
     // page listed these edits and the user confirmed; a lost session keeps them stored for the same user's next one.
     if (!state.user) {
@@ -614,7 +614,7 @@ function bindProvider(conn: YjsConnection) {
     }
     // The token route refused it: 404 for a deleted entity, as the relay's 4410 says, else 403 for lost edit rights.
     const refusal = yjsTokenRefusal(queryClient.getQueryState(tokenQueryKey)?.error);
-    endUnsaveable(conn, refusal === 'deleted' ? 'deleted' : 'denied');
+    endUnsaveable(conn, refusal ?? 'denied');
   });
 
   // The token each attempt carries: y-websocket reads the params as it opens a socket, then reports 'connecting'.
@@ -720,7 +720,7 @@ function bindProvider(conn: YjsConnection) {
 
   // HTTP takes over when a socket attempt has not synced within wsSyncDeadlineMs while the API answers. y-websocket
   // keeps reconnecting with backoff meanwhile, and the first sync hands the document back. No switch disconnects it.
-  conn.http = createHttpLink(conn, { onChange: settle, end: (reason) => endOverHttp(conn, reason) });
+  conn.http = createHttpLink(conn, { onChange: settle, onEnd: (reason) => endOverHttp(conn, reason) });
   const enterHttp = async () => {
     const link = conn.http;
     if (!link || !(await link.enter()) || conn.http !== link || conn.stopped || provider.synced) return;
@@ -750,8 +750,8 @@ function bindProvider(conn: YjsConnection) {
 
 /** Ends the connection's transports, its Awareness and its document. */
 function unbindProvider(conn: YjsConnection) {
-  conn.unsubOnline?.();
-  conn.unsubToken?.();
+  conn.unsubscribeOnline?.();
+  conn.unsubscribeToken?.();
   conn.stopResyncWatch?.();
   clearTimeout(conn.ledger.fallbackTimer);
   clearTimeout(conn.wsDeadline);
@@ -830,7 +830,7 @@ export interface UnstoredYDoc {
 }
 
 /** Connections holding unsynced edits no database stores, live; the sign-out confirm lists them next to the stored ones. */
-export function watchUnstoredYDocs(cb: (docs: UnstoredYDoc[]) => void): () => void {
+export function watchUnstoredYDocs(onChange: (docs: UnstoredYDoc[]) => void): () => void {
   let emitted: string | undefined;
   const emit = () => {
     const docs = [...connections]
@@ -839,7 +839,7 @@ export function watchUnstoredYDocs(cb: (docs: UnstoredYDoc[]) => void): () => vo
     const ids = docs.map((doc) => doc.entityId).join();
     if (ids === emitted) return;
     emitted = ids;
-    cb(docs);
+    onChange(docs);
   };
   emit();
   return useYjsSyncStore.subscribe(emit);
@@ -871,11 +871,7 @@ export async function resumeConnection(record: YDocRecord): Promise<void> {
       if (!refusal) return console.warn(`[yjs] No token to resume ${entityType}:${entityId}`, error);
       // Not started, the writer parks the stored document alone; the empty document is the notice's fallback only.
       const yDoc = new Y.Doc();
-      parkUnsaveable(
-        { yDoc, writer: createYDocWriter(record), unsynced: true, generation: record.generation },
-        scope,
-        refusal === 'deleted' ? 'deleted' : 'denied',
-      );
+      parkUnsaveable({ yDoc, writer: createYDocWriter(record), unsynced: true, generation: record.generation }, scope, refusal);
       yDoc.destroy();
       return;
     }
@@ -895,8 +891,8 @@ export async function resumeConnection(record: YDocRecord): Promise<void> {
   });
 }
 
-function releaseConnection(editSessionId: string) {
-  const conn = connections.get(editSessionId);
+function releaseConnection(entityId: string) {
+  const conn = connections.get(entityId);
   if (!conn) return;
 
   conn.refCount--;
@@ -912,29 +908,26 @@ function releaseConnection(editSessionId: string) {
 
 /**
  * Ref-counted Yjs connection kept alive for a grace period after the last consumer unmounts, so a remount reuses it,
- * and after that for as long as it holds edits the server has not saved; `undefined` disables it. It reports the
+ * and after that for as long as it holds edits the server has not saved; `enabled` false disables it. It reports the
  * connection's {@link SessionSync}, and `markStored` keeps the document in the per-user database from then on (the
  * editor calls it on focus; a local edit does too).
  */
-export function useYjsConnection(editSessionId: string | undefined, entityType: ProductEntityType, tenantId: string, organizationId: string) {
-  const [conn, setConn] = useState<YjsConnection | null>(() => {
-    return editSessionId ? (connections.get(editSessionId) ?? null) : null;
-  });
+export function useYjsConnection({ enabled, entityType, entityId, tenantId, organizationId }: YjsDocScope & { enabled: boolean }) {
+  const [conn, setConn] = useState<YjsConnection | null>(() => (enabled ? (connections.get(entityId) ?? null) : null));
 
   useEffect(() => {
-    if (!editSessionId) {
+    if (!enabled) {
       setConn(null);
       return;
     }
-    const acquired = acquireConnection({ entityType, entityId: editSessionId, tenantId, organizationId });
-    setConn(acquired);
+    setConn(acquireConnection({ entityType, entityId, tenantId, organizationId }));
     return () => {
-      releaseConnection(editSessionId);
+      releaseConnection(entityId);
       setConn(null);
     };
-  }, [editSessionId, entityType, tenantId, organizationId]);
+  }, [enabled, entityType, entityId, tenantId, organizationId]);
 
-  const session = useYjsSyncStore((state) => state.sessions[editSessionId ?? '']) ?? initialSession;
+  const session = useYjsSyncStore((state) => state.sessions[entityId]) ?? initialSession;
 
   if (!conn) return null;
   return {

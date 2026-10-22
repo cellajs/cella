@@ -119,7 +119,7 @@ vi.mock('~/query/query-client', () => ({
 vi.mock('~/modules/common/blocknote/query', () => ({
   yjsTokenKeys: { entity: (...key: unknown[]) => key },
   yjsTokenQueryOptions: (params: unknown) => ({ params }),
-  yjsTokenRefusal: (error: { status?: number } | null) => (error?.status === 404 ? 'deleted' : error?.status === 403 ? 'refused' : null),
+  yjsTokenRefusal: (error: { status?: number } | null) => (error?.status === 404 ? 'deleted' : error?.status === 403 ? 'denied' : null),
 }));
 vi.mock('~/modules/common/blocknote/yjs-resync', () => ({ watchPendingStructs: () => () => {} }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
@@ -201,7 +201,7 @@ async function mountConnection(entityId = `doc-${++counter}`) {
   userStore.getState().setYjsToken(yjsTokenKey('attachment', entityId), 'token-v1');
   let latest: Hook = null;
   const Harness = () => {
-    latest = useYjsConnection(entityId, 'attachment', scope.tenantId, scope.organizationId);
+    latest = useYjsConnection({ entityType: 'attachment', entityId, ...scope, enabled: true });
     return null;
   };
   root = createRoot(document.createElement('div'));

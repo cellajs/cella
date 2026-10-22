@@ -35,8 +35,12 @@ type StandaloneHostProps = PassthroughProps & Pick<CollaborativeBlockNoteProps, 
 /** How long a connection may take before the static says it is connecting: a quick one shows no notice, so its swap to the editor does not reflow. */
 const connectingNoticeMs = 1_000;
 
+interface SyncStatusProps {
+  text: string;
+}
+
 /** One line above the description saying why it is read-only, or what happens to its edits. */
-function SyncStatus({ text }: { text: string }) {
+function SyncStatus({ text }: SyncStatusProps) {
   return (
     <p role="status" className="mb-2 text-muted-foreground text-sm">
       {text}
@@ -97,7 +101,7 @@ export function CollaborativeBlockNote({
 
 /** The live editor once the connection is ready, the static with a status until then and once the document cannot be edited. */
 function CollaborativeHost({ scope, updateData, staticView, ...blockNoteProps }: CollaborativeHostProps) {
-  const { entityType, entityId, tenantId, organizationId } = scope;
+  const { entityId } = scope;
   const { t } = useTranslation();
   const user = useCurrentUser();
   const isOnline = useOnlineManager();
@@ -105,24 +109,24 @@ function CollaborativeHost({ scope, updateData, staticView, ...blockNoteProps }:
   const [userColor] = useState(getRandomColor);
 
   // The token names this entity only; the relay closes the socket when it expires, and the refreshed token reconnects it.
-  const { token, refused, deleted: tokenDeleted } = useYjsToken({ ...scope, enabled: isOnline });
+  const { token, denied: tokenDenied, deleted: tokenDeleted } = useYjsToken({ ...scope, enabled: isOnline });
 
   // A stored document opens without a token, offline too: its editor mounts from storage.
   const stored = useStoredYDoc(scope)?.stored ?? false;
   // Once ready, the connection stays for the mount, also when its token is refused: a stopped editor shows what was typed.
-  const [joined, setJoined] = useState<string | null>(null);
-  const yjsConn = useYjsConnection(token || stored || joined === entityId ? entityId : undefined, entityType, tenantId, organizationId);
-  if (yjsConn?.ready && joined !== entityId) setJoined(entityId);
+  const [joinedId, setJoinedId] = useState<string | null>(null);
+  const connection = useYjsConnection({ ...scope, enabled: !!token || stored || joinedId === entityId });
+  if (connection?.ready && joinedId !== entityId) setJoinedId(entityId);
 
-  const stopped = yjsConn?.stopped ?? false;
-  const stopReason = yjsConn?.stopReason ?? null;
+  const stopped = connection?.stopped ?? false;
+  const stopReason = connection?.stopReason ?? null;
   // The token or HTTP routes answered 404, or the relay closed with 4410: the document went with the entity.
-  const deleted = tokenDeleted || (yjsConn?.deleted ?? false);
+  const deleted = tokenDeleted || (connection?.deleted ?? false);
   // Edit rights withdrawn: the token or HTTP routes answered 403, or the relay closed with 4003.
-  const denied = refused || stopReason === 'denied';
+  const denied = tokenDenied || stopReason === 'denied';
   const stoppedText = stopReason === 'expired' ? t('error:sync_token_expired.text') : t('c:collaboration_stopped.text');
   // Not ready yet, or ready from storage before either transport synced it.
-  const connecting = isOnline && !denied && !deleted && !stopped && (!yjsConn?.ready || yjsConn.transport === 'none');
+  const connecting = isOnline && !denied && !deleted && !stopped && (!connection?.ready || connection.transport === 'none');
   const [connectingNoticed, setConnectingNoticed] = useState(false);
   useEffect(() => {
     if (!connecting) return;
@@ -136,7 +140,7 @@ function CollaborativeHost({ scope, updateData, staticView, ...blockNoteProps }:
   // Not ready yet, or a reseeded document syncing afresh: nothing was typed into it, so the editor that replaces the
   // static once it is ready loses nothing. A deleted entity, lost rights or a refused document leave nothing to edit:
   // edits the server never saved are offered as a copy, outside the editor.
-  if (!yjsConn?.ready || deleted || denied || stopReason === 'refused') {
+  if (!connection?.ready || deleted || denied || stopReason === 'refused') {
     const status = deleted
       ? t('c:deleted')
       : denied
@@ -161,8 +165,8 @@ function CollaborativeHost({ scope, updateData, staticView, ...blockNoteProps }:
   const status = stopped
     ? stoppedText
     : !isOnline
-      ? t(yjsConn.unsynced ? 'c:collaboration_offline.text' : 'c:offline')
-      : yjsConn.transport === 'http'
+      ? t(connection.unsynced ? 'c:collaboration_offline.text' : 'c:offline')
+      : connection.transport === 'http'
         ? t('c:sync_limited.text')
         : connectingNoticed
           ? t('c:connecting')
@@ -171,17 +175,17 @@ function CollaborativeHost({ scope, updateData, staticView, ...blockNoteProps }:
     <>
       {status && <SyncStatus text={status} />}
       {/* Storing failed for good: unsynced edits live in this page only, and the unload warning asks. */}
-      {yjsConn.storageFailed && <SyncStatus text={t('c:storage_unavailable.text')} />}
+      {connection.storageFailed && <SyncStatus text={t('c:storage_unavailable.text')} />}
       <BlockNote
         // New per rebuilt document, so the editor binds the fresh fragment.
-        key={yjsConn.rebuilds}
+        key={connection.rebuilds}
         id={`blocknote-${entityId}`}
         updateData={(blocks) => void updateData(blocks, true)}
-        collaboration={{ provider: { awareness: yjsConn.awareness }, fragment: yjsConn.fragment, user: { name: user.name, color: userColor } }}
+        collaboration={{ provider: { awareness: connection.awareness }, fragment: connection.fragment, user: { name: user.name, color: userColor } }}
         {...blockNoteProps}
         // Opened for editing: from the first focus on, the document is stored and stays editable offline.
         onFocus={() => {
-          yjsConn.markStored();
+          connection.markStored();
           blockNoteProps.onFocus?.();
         }}
         editable={blockNoteProps.editable !== false && !stopped}

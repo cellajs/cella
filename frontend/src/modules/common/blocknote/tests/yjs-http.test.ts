@@ -174,7 +174,7 @@ async function mountConnection() {
   userStore.getState().setYjsToken(yjsTokenKey('attachment', entityId), 'token-v1');
   let latest: ReturnType<typeof useYjsConnection> = null;
   const Harness = () => {
-    latest = useYjsConnection(entityId, 'attachment', 'tenant-1', 'org-1');
+    latest = useYjsConnection({ entityType: 'attachment', entityId, tenantId: 'tenant-1', organizationId: 'org-1', enabled: true });
     return null;
   };
   root = createRoot(document.createElement('div'));

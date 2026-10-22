@@ -11,7 +11,7 @@ import { appConfig, type ProductEntityType } from 'shared';
 import type * as Y from 'yjs';
 import type { YjsDocScope } from '~/modules/common/blocknote/query';
 import { warnOnStoragePressure } from '~/modules/common/blocknote/storage-warning';
-import { postTabMessage, toTabKey } from '~/modules/common/blocknote/yjs-tab-channel';
+import { postTabMessage, yDocKeyString } from '~/modules/common/blocknote/yjs-tab-channel';
 import { uiStore } from '~/modules/ui/ui-store';
 import {
   getLocalUserDb,
@@ -222,7 +222,7 @@ class StoreWriter implements YDocWriter {
   constructor(
     readonly key: YDocKey,
     private readonly db: LocalUserDatabase,
-    private readonly opts: YDocWriterOptions,
+    private readonly options: YDocWriterOptions,
   ) {}
 
   get pending() {
@@ -243,7 +243,7 @@ class StoreWriter implements YDocWriter {
     this.batch.start = true;
     if (unsynced) this.batch.fullLocal = true;
     this.schedule();
-    if (unsynced) this.opts.onChange?.();
+    if (unsynced) this.options.onChange?.();
   }
 
   append(update: Uint8Array, local: boolean, fromTab?: { rowId: number | null }) {
@@ -258,7 +258,7 @@ class StoreWriter implements YDocWriter {
     if (local && !fromTab) this.batch.local.push(update);
     else this.batch.remote.push(update);
     this.schedule();
-    if (this.pending !== wasPending) this.opts.onChange?.();
+    if (this.pending !== wasPending) this.options.onChange?.();
   }
 
   /** Writes what is queued now; resolves once every write so far committed. */
@@ -278,7 +278,7 @@ class StoreWriter implements YDocWriter {
       .finally(() => {
         this.writing--;
         if (holdsLocal) this.writingLocal--;
-        this.opts.onChange?.();
+        this.options.onChange?.();
         if (this.released && !this.busy) writers.delete(this);
       });
   }
@@ -292,10 +292,9 @@ class StoreWriter implements YDocWriter {
     return this.enqueueTask(async () => {
       const scope = this.scope;
       if (this.closed || !scope) return;
-      const k = keyPath(this.key);
       await this.db
         .transaction('rw', this.db.yDocs, this.db.yDocUpdates, async () => {
-          const record = await this.db.yDocs.get(k);
+          const record = await this.db.yDocs.get(keyPath(this.key));
           // Another generation's rows are another history, which this proof says nothing about.
           if (!record || record.generation !== scope.generation) return;
           await rowsOf(this.db, this.key)
@@ -385,7 +384,7 @@ class StoreWriter implements YDocWriter {
 
   private broadcast(update: Uint8Array, rowId: number | null) {
     if (!this.scope) return;
-    postTabMessage({ t: 'update', key: toTabKey(this.key), generation: this.scope.generation, update, rowId });
+    postTabMessage({ t: 'update', key: yDocKeyString(this.key), generation: this.scope.generation, update, rowId });
   }
 
   private async write(batch: Batch) {
@@ -420,7 +419,7 @@ class StoreWriter implements YDocWriter {
     if (commit?.created) this.ownRows.clear();
     if (commit?.ownRowId) {
       this.ownRows.add(commit.ownRowId);
-      this.opts.applied?.ids.add(commit.ownRowId);
+      this.options.applied?.ids.add(commit.ownRowId);
     }
     if (local) this.broadcast(local, commit?.superseded ? null : (commit?.broadcastRowId ?? null));
     if (commit?.trim) scheduleTrim(this.key);
@@ -505,7 +504,7 @@ class StoreWriter implements YDocWriter {
   private fail(error: unknown) {
     console.warn('[yjs-store] Storing failed; edits stay in memory and still sync online', error);
     this.failed = true;
-    this.opts.onChange?.();
+    this.options.onChange?.();
     if (isQuotaError(error)) void warnOnStoragePressure({ limitsReached: true });
   }
 }
@@ -523,11 +522,11 @@ export async function loadYDoc(key: YDocKey): Promise<LoadedYDoc | null> {
 }
 
 /** A writer for one document's rows, on the bound user's database; null while none is bound. */
-export function createYDocWriter(key: YDocKey, opts: YDocWriterOptions = {}): YDocWriter | null {
+export function createYDocWriter(key: YDocKey, options: YDocWriterOptions = {}): YDocWriter | null {
   const db = getLocalUserDb();
   if (!db) return null;
   void loadYjs();
-  return new StoreWriter({ entityType: key.entityType, entityId: key.entityId }, db, opts);
+  return new StoreWriter({ entityType: key.entityType, entityId: key.entityId }, db, options);
 }
 
 /** Resolves once every queued update is committed. */
@@ -539,7 +538,7 @@ const trimTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 /** Trims a document `trimDebounceMs` after its last call. */
 function scheduleTrim(key: YDocKey) {
-  const id = toTabKey(key);
+  const id = yDocKeyString(key);
   clearTimeout(trimTimers.get(id));
   trimTimers.set(
     id,
@@ -602,7 +601,7 @@ function scheduleEviction() {
 }
 
 /** Keys of the documents open in this tab. */
-const openKeys = () => new Set([...writers].filter((writer) => !writer.released).map((writer) => toTabKey(writer.key)));
+const openKeys = () => new Set([...writers].filter((writer) => !writer.released).map((writer) => yDocKeyString(writer.key)));
 
 /**
  * Deletes the least recently opened documents while more than `maxStoredDocs` are stored or more than
@@ -617,7 +616,7 @@ export async function evictYDocs(): Promise<void> {
   const now = Date.now();
   const sessionMode = !uiStore.getState().offlineAccess;
   const open = openKeys();
-  const evictable = (record: YDocRecord) => record.unsynced === 0 && !open.has(toTabKey(record)) && now - record.lastOpenedAt > evictMinAgeMs;
+  const evictable = (record: YDocRecord) => record.unsynced === 0 && !open.has(yDocKeyString(record)) && now - record.lastOpenedAt > evictMinAgeMs;
 
   const records = await db.yDocs.orderBy('lastOpenedAt').toArray();
   let count = records.length;
@@ -667,15 +666,15 @@ async function readUnsaved(db: LocalUserDatabase): Promise<UnsavedYDoc[]> {
 }
 
 /** A live query on the bound user's database, resubscribed when another user binds; `empty` while none is. */
-function watchLocalUserDb<T>(query: (db: LocalUserDatabase) => Promise<T>, empty: T, cb: (value: T) => void): () => void {
+function watchLocalUserDb<T>(query: (db: LocalUserDatabase) => Promise<T>, empty: T, onChange: (value: T) => void): () => void {
   let subscription: { unsubscribe: () => void } | null = null;
   const subscribe = () => {
     subscription?.unsubscribe();
     subscription = null;
     const db = getLocalUserDb();
-    if (!db) return cb(empty);
+    if (!db) return onChange(empty);
     subscription = liveQuery(() => query(db)).subscribe({
-      next: cb,
+      next: onChange,
       error: (error) => console.error('[yjs-store] Live query failed', error),
     });
   };
@@ -689,8 +688,8 @@ function watchLocalUserDb<T>(query: (db: LocalUserDatabase) => Promise<T>, empty
 }
 
 /** Stored rows with unsynced edits plus parked ones, live; for the sign-out dialog. */
-export function watchUnsavedYDocs(cb: (docs: UnsavedYDoc[]) => void): () => void {
-  return watchLocalUserDb(readUnsaved, [], cb);
+export function watchUnsavedYDocs(onChange: (docs: UnsavedYDoc[]) => void): () => void {
+  return watchLocalUserDb(readUnsaved, [], onChange);
 }
 
 type StoredState = { stored: boolean; unsynced: boolean };
@@ -699,12 +698,12 @@ type StoredState = { stored: boolean; unsynced: boolean };
 export function useStoredYDoc(key: YDocKey | undefined): StoredState | undefined {
   const entityType = key?.entityType;
   const entityId = key?.entityId;
-  const id = entityType && entityId ? toTabKey({ entityType, entityId }) : null;
+  const id = entityType && entityId ? yDocKeyString({ entityType, entityId }) : null;
   const [state, setState] = useState<{ id: string; value: StoredState } | null>(null);
 
   useEffect(() => {
     if (!entityType || !entityId) return;
-    const id = toTabKey({ entityType, entityId });
+    const id = yDocKeyString({ entityType, entityId });
     return watchLocalUserDb(
       (db) => db.yDocs.get([entityType, entityId]),
       undefined,
@@ -750,23 +749,23 @@ export function resumeYDocs(): Promise<void> {
  * unsynced documents, again when it becomes leader and when the browser is back online. Returns the stop.
  */
 export function startYjsStore(): () => void {
-  const onBound = () => {
+  const evictAndResume = () => {
     if (!getLocalUserDb()) return;
     void evictYDocs().catch((error) => console.warn('[yjs-store] Eviction failed', error));
     void resumeYDocs();
   };
   const stops = [
     subscribeOwnerChange((owner) => {
-      if (owner) onBound();
+      if (owner) evictAndResume();
     }),
     tabCoordinatorStore.subscribe((state, prev) => {
       if (state.isLeader && !prev.isLeader) void resumeYDocs();
     }),
-    onlineManager.subscribe((online) => {
-      if (online) void resumeYDocs();
+    onlineManager.subscribe((isOnline) => {
+      if (isOnline) void resumeYDocs();
     }),
   ];
-  onBound();
+  evictAndResume();
   return () => {
     for (const stop of stops) stop();
   };

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import * as Y from 'yjs';
 import type { TKey } from '~/lib/i18n-locales';
 import type { YjsDocScope } from '~/modules/common/blocknote/query';
-import { firstLineOf, yDocLabel, ydocFragment } from '~/modules/common/blocknote/ydoc-label';
+import { firstLineOf, yDocFragment, yDocLabel } from '~/modules/common/blocknote/ydoc-label';
 import type { YjsConnection } from '~/modules/common/blocknote/yjs-connections';
 import { CopiedIcon } from '~/modules/common/copied-icon';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -29,9 +29,9 @@ type ParkSource = Pick<YjsConnection, 'yDoc' | 'writer' | 'unsynced' | 'generati
  * and a clean document's stored copy goes silently. The document is read before this returns, so the caller may destroy
  * it right after. Without a writer, or when parking fails, the notice holds the state in memory.
  */
-export function parkUnsaveable(conn: ParkSource, scope: YjsDocScope, reason: UnsaveableReason): void {
-  const { writer, yDoc } = conn;
-  if (!conn.unsynced) {
+export function parkUnsaveable(source: ParkSource, scope: YjsDocScope, reason: UnsaveableReason): void {
+  const { writer, yDoc } = source;
+  if (!source.unsynced) {
     writer?.drop().catch((error) => console.error('[yjs] Deleting a stored document failed:', error));
     return;
   }
@@ -41,17 +41,17 @@ export function parkUnsaveable(conn: ParkSource, scope: YjsDocScope, reason: Uns
     entityId,
     tenantId,
     organizationId,
-    generation: conn.generation ?? '',
+    generation: source.generation ?? '',
     reason,
     state: Y.encodeStateAsUpdate(yDoc),
     at: Date.now(),
   };
-  noticeOnceParked(record, writer ? writer.park(reason, yDoc) : null).catch((error) =>
+  showNoticeOnceParked(record, writer ? writer.park(reason, yDoc) : null).catch((error) =>
     console.error('[yjs] Showing the notice for unsaveable edits failed:', error),
   );
 }
 
-async function noticeOnceParked(record: UnsaveableYDocRecord, parked: Promise<void> | null) {
+async function showNoticeOnceParked(record: UnsaveableYDocRecord, parked: Promise<void> | null) {
   let shown = record;
   if (parked) {
     try {
@@ -82,8 +82,8 @@ export async function showUnsaveableNotice(record: UnsaveableYDocRecord): Promis
   let firstLine: string | null = null;
   try {
     Y.applyUpdate(doc, record.state);
-    firstLine = firstLineOf(doc.getXmlFragment(ydocFragment));
-    blocks = JSON.stringify(yDocToBlocks(getHeadlessEditor(), doc, ydocFragment));
+    firstLine = firstLineOf(doc.getXmlFragment(yDocFragment));
+    blocks = JSON.stringify(yDocToBlocks(getHeadlessEditor(), doc, yDocFragment));
   } catch (error) {
     console.error('[yjs] Reading parked edits failed:', error);
   } finally {
@@ -95,7 +95,7 @@ export async function showUnsaveableNotice(record: UnsaveableYDocRecord): Promis
   toaster.warning(i18n.t(reasonTexts[record.reason], { name }), {
     id,
     timeout: 0,
-    description: <NoticeActions copy={blocks ? () => copyBlocksToClipboard(blocks) : null} discard={() => discardUnsaveable(record, id)} />,
+    description: <NoticeActions onCopy={blocks ? () => copyBlocksToClipboard(blocks) : null} onDiscard={() => discardUnsaveable(record, id)} />,
   });
 }
 
@@ -120,7 +120,13 @@ async function discardUnsaveable(record: UnsaveableYDocRecord, toastId: string) 
   ]);
 }
 
-function NoticeActions({ copy, discard }: { copy: (() => Promise<boolean>) | null; discard: () => Promise<void> }) {
+interface NoticeActionsProps {
+  /** Resolves whether the clipboard took the text; null when the parked edits could not be read. */
+  onCopy: (() => Promise<boolean>) | null;
+  onDiscard: () => Promise<void>;
+}
+
+function NoticeActions({ onCopy, onDiscard }: NoticeActionsProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState<boolean | null>(null);
 
@@ -128,11 +134,11 @@ function NoticeActions({ copy, discard }: { copy: (() => Promise<boolean>) | nul
     <div className="flex flex-col gap-2">
       <p>{t('c:unsaveable_edits.text')}</p>
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="xs" className="text-foreground" disabled={!copy} onClick={() => copy?.().then(setCopied)}>
+        <Button variant="outline" size="xs" className="text-foreground" disabled={!onCopy} onClick={() => onCopy?.().then(setCopied)}>
           <CopiedIcon copied={!!copied} icon={CopyIcon} />
           {copied ? t('c:copied') : copied === false ? t('c:copy_failed') : t('c:copy_text')}
         </Button>
-        <Button variant="ghost" size="xs" className="text-foreground" onClick={() => void discard()}>
+        <Button variant="ghost" size="xs" className="text-foreground" onClick={() => void onDiscard()}>
           {t('c:discard')}
         </Button>
       </div>

@@ -6,7 +6,7 @@ import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-regi
 import { findInCache } from '~/query/basic/find-in-list-cache';
 
 /** The fragment a collaborative editor binds in its document. */
-export const ydocFragment = 'document-store';
+export const yDocFragment = 'document-store';
 
 /** How much of a first line a label quotes. */
 const maxLineLength = 60;
@@ -35,7 +35,7 @@ export function firstLineOfUpdates(updates: Uint8Array[]): string | null {
   const doc = new Y.Doc();
   try {
     for (const update of updates) Y.applyUpdate(doc, update);
-    return firstLineOf(doc.getXmlFragment(ydocFragment));
+    return firstLineOf(doc.getXmlFragment(yDocFragment));
   } finally {
     doc.destroy();
   }

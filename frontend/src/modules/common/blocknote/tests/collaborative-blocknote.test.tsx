@@ -36,12 +36,12 @@ const connectionDefaults = {
 const connection = { awareness: {}, fragment: {}, ...connectionDefaults };
 const connectionRequests: (string | undefined)[] = [];
 vi.mock('~/modules/common/blocknote/yjs-connections', () => ({
-  useYjsConnection: (editSessionId: string | undefined) => {
-    connectionRequests.push(editSessionId);
-    return editSessionId ? { ...connection } : null;
+  useYjsConnection: ({ entityId, enabled }: { entityId: string; enabled: boolean }) => {
+    connectionRequests.push(enabled ? entityId : undefined);
+    return enabled ? { ...connection } : null;
   },
 }));
-const tokenState: { token: string | undefined; refused: boolean; deleted: boolean } = { token: 'token', refused: false, deleted: false };
+const tokenState: { token: string | undefined; denied: boolean; deleted: boolean } = { token: 'token', denied: false, deleted: false };
 const tokenRequests: { enabled: boolean }[] = [];
 vi.mock('~/modules/common/blocknote/hooks/use-yjs-token', () => ({
   useYjsToken: (params: { enabled: boolean }) => {
@@ -105,7 +105,7 @@ afterEach(async () => {
   tokenRequests.length = 0;
   updateData.mockClear();
   online = true;
-  Object.assign(tokenState, { token: 'token', refused: false, deleted: false });
+  Object.assign(tokenState, { token: 'token', denied: false, deleted: false });
   Object.assign(connection, { fragment: {}, ...connectionDefaults });
 });
 
@@ -173,7 +173,7 @@ describe('CollaborativeBlockNote states', () => {
   });
 
   it('token refused (403): the static saying read only, and no connection', async () => {
-    Object.assign(tokenState, { token: undefined, refused: true });
+    Object.assign(tokenState, { token: undefined, denied: true });
     await render();
 
     expect(showsStatic()).toBe(true);
@@ -221,7 +221,7 @@ describe('CollaborativeBlockNote states', () => {
   it('must not keep an editor once edit rights are withdrawn mid-session (token 403): the static says read only', async () => {
     await render();
     const rendered = editors.length;
-    Object.assign(tokenState, { token: undefined, refused: true });
+    Object.assign(tokenState, { token: undefined, denied: true });
     Object.assign(connection, { stopped: true, stopReason: 'denied' });
     await render();
 

@@ -5,11 +5,11 @@ import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
 
 /**
  * Keeps one entity's Yjs token in the user store, where the non-React connection layer reads it, while `enabled`.
- * The backend will not issue one when the caller may not edit the entity (`refused`, a 403: view only) or when the
+ * The backend will not issue one when the caller may not edit the entity (`denied`, a 403: view only) or when the
  * entity is gone (`deleted`, a 404).
  */
 export function useYjsToken({ enabled, ...scope }: YjsDocScope & { enabled: boolean }) {
-  const setYjsToken = useUserStore((s) => s.setYjsToken);
+  const setYjsToken = useUserStore((state) => state.setYjsToken);
   const tokenKey = yjsTokenKey(scope.entityType, scope.entityId);
   const { data: token, error } = useQuery({ ...yjsTokenQueryOptions(scope), enabled });
   const refusal = yjsTokenRefusal(error);
@@ -20,5 +20,5 @@ export function useYjsToken({ enabled, ...scope }: YjsDocScope & { enabled: bool
     else if (token) setYjsToken(tokenKey, token);
   }, [token, refusal, tokenKey, setYjsToken]);
 
-  return { token: refusal ? undefined : token, refused: refusal === 'refused', deleted: refusal === 'deleted' };
+  return { token: refusal ? undefined : token, denied: refusal === 'denied', deleted: refusal === 'deleted' };
 }

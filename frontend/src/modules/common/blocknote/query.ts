@@ -17,23 +17,22 @@ const yjsTokenRefetchMs = 4 * 60 * 1000;
 export const yjsTokenKeys = { entity: (entityType: ProductEntityType, entityId: string) => ['yjs', 'token', entityType, entityId] as const };
 
 /**
- * Why the backend will not issue a token, which no retry changes: `refused` for a 403, the caller may not edit the
+ * Why the backend will not issue a token, which no retry changes: `denied` for a 403, the caller may not edit the
  * entity; `deleted` for a 404, the entity is gone. Null for any other error.
  */
 export const yjsTokenRefusal = (error: unknown) => {
   if (!(error instanceof ApiError)) return null;
   if (error.status === 404) return 'deleted';
-  return error.status === 403 ? 'refused' : null;
+  return error.status === 403 ? 'denied' : null;
 };
 
 /** The Yjs token for one entity, refreshed before it expires. */
-export const yjsTokenQueryOptions = (params: YjsDocScope) =>
+export const yjsTokenQueryOptions = ({ entityType, entityId, tenantId, organizationId }: YjsDocScope) =>
   queryOptions({
-    queryKey: yjsTokenKeys.entity(params.entityType, params.entityId),
+    queryKey: yjsTokenKeys.entity(entityType, entityId),
     queryFn: async () => {
-      const { entityType, entityId, tenantId, organizationId } = params;
-      const res = await getYjsToken({ path: { tenantId, organizationId }, query: { entityType, entityId } });
-      return res.token;
+      const { token } = await getYjsToken({ path: { tenantId, organizationId }, query: { entityType, entityId } });
+      return token;
     },
     staleTime: yjsTokenRefetchMs,
     refetchInterval: yjsTokenRefetchMs,
