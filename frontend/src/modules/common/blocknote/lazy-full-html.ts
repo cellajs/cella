@@ -41,7 +41,7 @@ export function useStaticDocumentsReady(documents: string[] | null, organization
       helpers.getHeadlessEditor();
       for (const document of documents) fullHtml.precomputeDocumentHtml(document, organizationId);
       rendererWarm = true;
-      if (mountedRef.current) setReady(true);
+      setReady(true);
     })();
   }, [ready, documents, organizationId]);
   return ready;

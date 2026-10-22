@@ -1,9 +1,10 @@
-import type { ExtensionFactoryInstance, HeadingOptions } from '@blocknote/core';
+import type { BlockNoteEditor, ExtensionFactoryInstance, HeadingOptions } from '@blocknote/core';
 import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import type { FilePanelProps } from '@blocknote/react';
 import type React from 'react';
 import type { Attachment } from 'sdk';
 import type { UploadTemplateId } from 'shared';
+import { mediaBlockTypes } from 'shared/blocknote';
 import type { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import type { Member } from '~/modules/memberships/types';
 
@@ -14,9 +15,17 @@ export interface ExtendableBlockNoteTypes {
 export type CustomBlockNoteEditor = typeof customSchema.BlockNoteEditor;
 export type CustomBlock = typeof customSchema.Block;
 
+/** The editor a block spec's code receives: a `CustomBlockNoteEditor` there makes `customSchema` reference itself (TS2502). */
+// biome-ignore lint/suspicious/noExplicitAny: schema-agnostic editor type
+export type AnyBlockNoteEditor = BlockNoteEditor<any, any, any>;
+
 export type CustomBlockTypes = CustomBlock['type'] | 'emoji';
 export type CustomBlockFileTypes = Extract<CustomBlockTypes, 'file' | 'image' | 'audio' | 'video'>;
 export type CustomBlockRegularTypes = Exclude<CustomBlockTypes, CustomBlockFileTypes>;
+
+export const isMediaBlockType = (type: CustomBlockTypes): type is CustomBlockFileTypes => mediaBlockTypes.has(type);
+
+export const isMediaBlock = (block: CustomBlock): block is Extract<CustomBlock, { type: CustomBlockFileTypes }> => mediaBlockTypes.has(block.type);
 
 export type SlashItemKeys = ExtendableBlockNoteTypes['SlashKeys'];
 export interface CustomFormatToolBarConfig {
@@ -41,10 +50,6 @@ type MaxNineItems<T extends string> =
   | [T, T, T, T, T, T, T, T]
   | [T, T, T, T, T, T, T, T, T];
 export type SlashIndexedItems = MaxNineItems<CustomBlockTypes>;
-
-export type IconType = (
-  props: React.SVGAttributes<SVGElement> & { children?: React.ReactNode; size?: string | number; color?: string; title?: string },
-) => React.ReactElement;
 
 /** How an upload is referenced: by attachment id, or by cloud key when its upload template stores publicly (the template decides). */
 export type BlockNoteMediaMode = 'public-no-attachment' | 'public-attachment' | 'private-attachment';

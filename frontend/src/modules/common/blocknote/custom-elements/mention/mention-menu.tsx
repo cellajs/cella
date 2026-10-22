@@ -4,11 +4,11 @@ import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import type { Member } from '~/modules/memberships/types';
 
 export function Mention({ members, editor }: { members?: Member[]; editor: CustomBlockNoteEditor }) {
-  if (!members || members.length === 0) return;
+  if (!members?.length) return null;
   return (
     <GridSuggestionMenuController
       triggerCharacter={'@'}
-      getItems={async () => getMentionMenuItems(members, editor).map((item) => ({ ...item, title: item.id }))}
+      getItems={async (query) => getMentionMenuItems(members, editor, query)}
       columns={2}
       minQueryLength={0}
     />

@@ -23,12 +23,21 @@ export const MentionSchema = createReactInlineContentSpec(mentionConfig, {
   },
 });
 
-export const getMentionMenuItems = (members: Member[], editor: CustomBlockNoteEditor): DefaultReactGridSuggestionItem[] => {
-  return members.map((m) => ({
-    id: m.id,
-    onItemClick: () => {
-      editor.insertInlineContent([{ type: 'mention', props: { name: m.name, id: m.id, slug: m.slug } }]);
-    },
-    icon: <EntityAvatar type="user" id={m.id} name={m.name} url={m.thumbnailUrl} className="size-5" />,
-  }));
+/** The members whose name holds the typed query, each shown by avatar and name (the grid item renders only its `icon`). */
+export const getMentionMenuItems = (members: Member[], editor: CustomBlockNoteEditor, query: string): DefaultReactGridSuggestionItem[] => {
+  const typed = query.toLowerCase();
+  return members
+    .filter(({ name }) => name.toLowerCase().includes(typed))
+    .map((m) => ({
+      id: m.id,
+      onItemClick: () => {
+        editor.insertInlineContent([{ type: 'mention', props: { name: m.name, id: m.id, slug: m.slug } }]);
+      },
+      icon: (
+        <>
+          <EntityAvatar type="user" id={m.id} name={m.name} url={m.thumbnailUrl} className="size-5" />
+          {m.name}
+        </>
+      ),
+    }));
 };

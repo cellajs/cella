@@ -1,30 +1,21 @@
 import { useBlockNoteEditor, useComponentsContext, useSelectedBlocks } from '@blocknote/react';
 import { ScalingIcon } from 'lucide-react';
-import { useMemo, useRef } from 'react';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
+import { isMediaBlock } from '~/modules/common/blocknote/types';
 
 export function FileOpenPreviewButton() {
-  const ref = useRef(null);
   const editor = useBlockNoteEditor(customSchema);
   const Components = useComponentsContext()!;
 
   const selectedBlocks = useSelectedBlocks(editor);
-
-  const selectedFileBlock = useMemo(() => {
-    if (selectedBlocks.length !== 1) return null;
-    const block = selectedBlocks[0];
-    return block.type === 'file' || block.type === 'image' || block.type === 'video' || block.type === 'audio' ? block : null;
-  }, [selectedBlocks]);
-
-  if (!selectedFileBlock) return null;
-
-  const blockUrl = 'url' in selectedFileBlock.props ? (selectedFileBlock.props.url as string) : undefined;
+  const [block] = selectedBlocks;
+  if (selectedBlocks.length !== 1 || !isMediaBlock(block)) return null;
 
   return (
     <Components.FormattingToolbar.Button
       className={'bn-button'}
-      onClick={() => openAttachment(editor, ref, blockUrl)}
+      onClick={() => openAttachment(editor, block.id)}
       mainTooltip={'Open attachment preview'}
       label={'Open attachment preview'}
       icon={<ScalingIcon className="size-3.5" />}

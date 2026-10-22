@@ -1,6 +1,6 @@
 import { BlockNoteSchema, createCodeBlockSpec, defaultBlockSpecs, defaultStyleSpecs } from '@blocknote/core';
 import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
-import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
+import { type BlockTypeSelectItem, blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import i18n from 'i18next';
 import { codeBlockConfig, withAttachmentRef } from 'shared/utils/blocknote-schema-configs';
 import {
@@ -9,12 +9,17 @@ import {
   pendingUploadMessage,
   subscribePendingUploads,
 } from '~/modules/attachment/helpers/pending-uploads';
-import { checklistItemBlock, getChecklistSlashItem } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
+import {
+  checklistItemBlock,
+  checklistTypeItem,
+  getChecklistSlashItem,
+} from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
 import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
-import { getSlashNotifySlashItem, notifyBlock } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
+import { getNotifySlashItem, notifyBlock } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
 import { baseBlockNoteTypeToKeys } from '~/modules/common/blocknote/type-to-keys';
 import type {
   CommonBlockNoteProps,
+  CustomBlock,
   CustomBlockNoteEditor,
   CustomBlockTypes,
   CustomFormatToolBarConfig,
@@ -218,9 +223,26 @@ export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs 
   inlineContentSpecs: { mention: MentionSchema },
 });
 
-export const customBlockTypeSwitchItems: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checklistItem'];
+const blockTypeSwitchTypes: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checklistItem'];
 
-export const getSideMenuItems = (editor: CustomBlockNoteEditor) => [...blockTypeSelectItems(editor)];
+/** The block types a block can switch to: the allowed switch types, with plain headings at `headingLevels` only. */
+export const getBlockTypeItems = (
+  editor: CustomBlockNoteEditor,
+  allowedTypes: CustomBlockTypes[],
+  headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>,
+): BlockTypeSelectItem[] => {
+  const switchTypes: readonly string[] = blockTypeSwitchTypes.filter((type) => allowedTypes.includes(type));
+  return [...blockTypeSelectItems(editor), checklistTypeItem].filter(
+    ({ type, props }) =>
+      switchTypes.includes(type) && (type !== 'heading' || (!props?.isToggleable && headingLevels.some((level) => level === props?.level))),
+  );
+};
+
+/** Whether an item names the block's current type: its type, and each prop the item sets. */
+export const isCurrentBlockType = (item: BlockTypeSelectItem, block: CustomBlock) => {
+  const blockProps: Record<string, unknown> = block.props;
+  return item.type === block.type && Object.entries(item.props ?? {}).every(([name, value]) => blockProps[name] === value);
+};
 
 // Indexed items (max 9 for quick number-based selection)
 export const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checklistItem', 'notify'];
@@ -230,7 +252,7 @@ export const getSlashMenuItems = (
   allowedTypes: CustomBlockTypes[],
   headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>,
 ): DefaultReactSuggestionItem[] => {
-  const baseItems = [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor), getChecklistSlashItem(editor)];
+  const baseItems = [...getDefaultReactSlashMenuItems(editor), getNotifySlashItem(editor), getChecklistSlashItem(editor)];
 
   const { heading, ...restTypeToKeys } = { ...baseBlockNoteTypeToKeys };
   const filteredHeading = heading.filter((key) => {

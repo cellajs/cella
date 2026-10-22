@@ -1,5 +1,4 @@
-import { createContext, type ReactNode, useContext, useRef, useState } from 'react';
-import { appConfig } from 'shared';
+import { createContext, type ReactNode, useContext, useState } from 'react';
 import { UppyFilePanel } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import type { BaseUppyFilePanelProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
@@ -26,7 +25,7 @@ export function UploadHostProvider({ baseFilePanelProps, children }: { baseFileP
   const [handle, setHandle] = useState<EditorHandle | null>(null);
 
   // Stable API object: the setters are referentially stable, so the bridge's effects never re-run on it.
-  const api = useRef<UploadHostApi>({ openFor: setActiveBlockId, registerEditor: setHandle }).current;
+  const [api] = useState<UploadHostApi>(() => ({ openFor: setActiveBlockId, registerEditor: setHandle }));
 
   const close = () => {
     handle?.closeFilePanel();
@@ -37,9 +36,7 @@ export function UploadHostProvider({ baseFilePanelProps, children }: { baseFileP
   return (
     <UploadHostContext.Provider value={api}>
       {children}
-      {appConfig.has.uploadEnabled && handle && activeBlockId !== null && (
-        <UppyFilePanel {...baseFilePanelProps} blockId={activeBlockId} editor={handle.editor} onClose={close} />
-      )}
+      {handle && activeBlockId !== null && <UppyFilePanel {...baseFilePanelProps} blockId={activeBlockId} editor={handle.editor} onClose={close} />}
     </UploadHostContext.Provider>
   );
 }

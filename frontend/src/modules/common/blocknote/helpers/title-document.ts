@@ -1,7 +1,7 @@
 // Title documents: block 0 of a stored description is its title. Editors seed it from a template and label it with
 // `titlePlaceholder`, nothing enforces it, and both sides read the title with `titleFromDocument` (shared/blocknote).
 import { getInlineTextFromBlock, parseBlocks } from 'shared/blocknote';
-import type { CustomBlock, TitleLevel } from '~/modules/common/blocknote/types';
+import type { TitleLevel } from '~/modules/common/blocknote/types';
 
 /**
  * Matches backend maxLength.field (backend/src/db/utils/constraints.ts): name column limit.
@@ -14,12 +14,11 @@ type LooseBlock = { type: string; props?: Record<string, unknown>; content?: unk
 /** True when a block renders nothing: no text, no children, and not a media/void block. */
 const isEmptyTextBlock = (block: LooseBlock): boolean => Array.isArray(block.content) && !getInlineTextFromBlock(block) && !block.children?.length;
 
-const titleBlock = (name: string, level: TitleLevel) =>
-  ({
-    type: 'heading',
-    props: { level },
-    content: name ? [{ type: 'text', text: name, styles: {} }] : [],
-  }) as unknown as CustomBlock;
+const titleBlock = (name: string, level: TitleLevel) => ({
+  type: 'heading',
+  props: { level },
+  content: name ? [{ type: 'text', text: name, styles: {} }] : [],
+});
 
 /** A stringified single empty title block, the sync seed for create forms. */
 export const emptyTitleDocument = (level: TitleLevel = 1) => JSON.stringify([titleBlock('', level)]);

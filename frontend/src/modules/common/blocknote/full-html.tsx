@@ -4,16 +4,16 @@ import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.cs
 
 import DOMPurify from 'dompurify';
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
-import { mediaBlockTypes } from 'shared/blocknote';
 import type { MediaRefContext } from 'shared/utils/media-ref';
 import { childNodes, isDocumentNode, isRefusedMediaBlock } from 'shared/utils/validate-block-media-urls';
+import { useLatestRef } from '~/hooks/use-latest-ref';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
-import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { getBlockPendingUpload, subscribePendingUploads } from '~/modules/attachment/helpers/pending-uploads';
 import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-url';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
-import { findClickedMedia, getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
-import type { CustomBlock } from '~/modules/common/blocknote/types';
+import { findClickedMediaBlockId, getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
+import { openMediaCarousel } from '~/modules/common/blocknote/helpers/open-attachment';
+import { type CustomBlock, isMediaBlock } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
@@ -114,17 +114,15 @@ async function processBlocks(
     const walked = await Promise.all(
       blocks.map(async (block): Promise<CustomBlock[]> => {
         let props = block.props;
-        const children = block.children?.length ? await walk(block.children as CustomBlock[]) : block.children;
+        const children = block.children?.length ? await walk(block.children) : block.children;
 
         // renderableBlocks ran first: a media block here holds a props object.
-        if (mediaBlockTypes.has(block.type) && 'url' in props && props.url) {
-          const rawUrl = props.url as string;
-          const resolvedUrl = await resolveUrl(rawUrl);
+        if (isMediaBlock(block) && block.props.url) {
+          const resolvedUrl = await resolveUrl(block.props.url);
 
           if (resolvedUrl) {
             props = { ...props, url: resolvedUrl };
-            const filename = ('name' in props ? (props.name as string) : '') || '';
-            media.push({ id: block.id, url: resolvedUrl, filename, contentType: block.type });
+            media.push({ id: block.id, url: resolvedUrl, filename: block.props.name, contentType: block.type });
           } else if (!getBlockPendingUpload(props)) {
             // A gone or denied file renders nothing, as a refused ref does; a pending one keeps its ref for the placeholder.
             return (children as CustomBlock[] | undefined) ?? [];
@@ -166,15 +164,14 @@ function BlockNoteFullHtml({
   const [uploadsArrived, setUploadsArrived] = useState(0);
   useEffect(() => subscribePendingUploads(() => setUploadsArrived((count) => count + 1)), []);
 
-  const onReadyRef = useRef(onReady);
-  onReadyRef.current = onReady;
+  const onReadyRef = useLatestRef(onReady);
   const readyFiredRef = useRef(false);
   useEffect(() => {
     if (renderState.ready && !readyFiredRef.current) {
       readyFiredRef.current = true;
       onReadyRef.current?.();
     }
-  }, [renderState.ready]);
+  }, [renderState.ready, onReadyRef]);
 
   // blocksToFullHTML calls flushSync, which cannot run during render or commit, so useEffect plus queueMicrotask keeps it outside both.
   useEffect(() => {
@@ -220,16 +217,11 @@ function BlockNoteFullHtml({
   const handleClick: MouseEventHandler = (event) => {
     if (!clickOpensPreview || renderState.mediaItems.length === 0) return;
 
-    const media = findClickedMedia(event.target as HTMLElement);
-    if (!media) return;
+    const blockId = findClickedMediaBlockId(event.target as HTMLElement);
+    if (!blockId) return;
 
     event.preventDefault();
-    const attachmentIndex = Math.max(
-      0,
-      renderState.mediaItems.findIndex(({ url }) => url === media.src),
-    );
-
-    openAttachmentDialog({ attachmentIndex, attachments: renderState.mediaItems, triggerRef: containerRef as React.RefObject<null> });
+    openMediaCarousel(renderState.mediaItems, blockId, containerRef);
   };
 
   // Not `.bn-editor`: BlockNote's side-menu plugin scans those nodes and expects editor-only children such as `.bn-block-group`.

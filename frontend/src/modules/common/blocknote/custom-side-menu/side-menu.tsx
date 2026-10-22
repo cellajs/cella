@@ -7,29 +7,35 @@ import { ResetBlockTypeItem } from '~/modules/common/blocknote/custom-side-menu/
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
-export function CustomSideMenu({ editor, allowedTypes, headingLevels, pinTitleBlock }: CustomBlockNoteMenuProps & { pinTitleBlock?: boolean }) {
+interface CustomSideMenuProps extends CustomBlockNoteMenuProps {
+  pinTitleBlock?: boolean;
+}
+
+export function CustomSideMenu({ editor, allowedTypes, headingLevels, pinTitleBlock }: CustomSideMenuProps) {
   return (
     <SideMenuController
-      sideMenu={(props) => {
-        const sideMenu = useExtension(SideMenuExtension);
-        const block = useExtensionState(SideMenuExtension, { editor, selector: (state) => state?.block });
-        if (block === undefined) return null;
-        // A pinned title is not moved, so it gets no handle (TypeCellOS/BlockNote#709).
-        if (pinTitleBlock && block.id === editor.document[0]?.id) return null;
-        return (
-          <SideMenu {...props}>
-            <DragHandle
-              sideMenu={sideMenu}
-              block={block}
-              editor={editor}
-              allowedTypes={allowedTypes}
-              headingLevels={headingLevels}
-              pinTitleBlock={pinTitleBlock}
-            />
-          </SideMenu>
-        );
-      }}
+      sideMenu={() => <BlockSideMenu editor={editor} allowedTypes={allowedTypes} headingLevels={headingLevels} pinTitleBlock={pinTitleBlock} />}
     />
+  );
+}
+
+function BlockSideMenu({ editor, allowedTypes, headingLevels, pinTitleBlock }: CustomSideMenuProps) {
+  const sideMenu = useExtension(SideMenuExtension);
+  const block = useExtensionState(SideMenuExtension, { editor, selector: (state) => state?.block });
+  if (block === undefined) return null;
+  // A pinned title is not moved, so it gets no handle (TypeCellOS/BlockNote#709).
+  if (pinTitleBlock && block.id === editor.document[0]?.id) return null;
+  return (
+    <SideMenu>
+      <DragHandle
+        sideMenu={sideMenu}
+        block={block}
+        editor={editor}
+        allowedTypes={allowedTypes}
+        headingLevels={headingLevels}
+        pinTitleBlock={pinTitleBlock}
+      />
+    </SideMenu>
   );
 }
 
@@ -115,7 +121,7 @@ function DragHandle({
             sideMenu.unfreezeMenu();
           }}
         />
-        <ResetBlockTypeItem editor={editor} allowedTypes={allowedTypes} headingLevels={headingLevels} />
+        <ResetBlockTypeItem editor={editor} block={block} allowedTypes={allowedTypes} headingLevels={headingLevels} />
       </DropdownMenuContent>
     </DropdownMenu>
   );

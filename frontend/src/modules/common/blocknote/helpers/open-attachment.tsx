@@ -1,22 +1,32 @@
+import type { RefObject } from 'react';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { getPendingUpload, PendingUploadError } from '~/modules/attachment/helpers/pending-uploads';
 import { resolveAttachmentUrl } from '~/modules/attachment/helpers/resolve-url';
-import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
+import { type CustomBlockNoteEditor, isMediaBlock } from '~/modules/common/blocknote/types';
 
 /** Collected media block plus the attachment ID for resolving its full-size variant. */
 type MediaBlock = CarouselItemData & { attachmentId?: string };
 
-/** Opens editor media in a carousel starting at the clicked attachment. */
-export const openAttachment = async (editor: CustomBlockNoteEditor, blockNoteRef: React.RefObject<HTMLDivElement | null>, clickedSrc?: string) => {
+/** Opens the carousel at the item of block `blockId`, else at the first. */
+export const openMediaCarousel = (attachments: CarouselItemData[], blockId?: string, triggerRef?: RefObject<HTMLDivElement | null>) => {
+  const attachmentIndex = Math.max(
+    0,
+    attachments.findIndex(({ id }) => id === blockId),
+  );
+  openAttachmentDialog({ attachmentIndex, attachments, triggerRef: triggerRef as RefObject<null> | undefined });
+};
+
+/** Opens editor media in a carousel starting at the media of block `blockId`. */
+export const openAttachment = async (editor: CustomBlockNoteEditor, blockId?: string, triggerRef?: RefObject<HTMLDivElement | null>) => {
   const mediaBlocks: MediaBlock[] = [];
 
-  editor.forEachBlock(({ id, props, type: contentType }) => {
-    if (!('url' in props) || !props.url) return true;
+  editor.forEachBlock((block) => {
+    if (!isMediaBlock(block) || !block.props.url) return true;
 
-    const { url, name } = props as { url: string; name?: string };
+    const { id, type: contentType, props } = block;
     const attachmentId = 'attachmentId' in props && typeof props.attachmentId === 'string' ? props.attachmentId : undefined;
-    mediaBlocks.push({ id, url, filename: name || '', name: name || '', contentType, attachmentId });
+    mediaBlocks.push({ id, url: props.url, filename: props.name, name: props.name, contentType, attachmentId });
 
     return true;
   });
@@ -40,12 +50,5 @@ export const openAttachment = async (editor: CustomBlockNoteEditor, blockNoteRef
   const attachments = resolved.filter(({ url, pendingUpload }) => url || pendingUpload);
   if (attachments.length === 0) return;
 
-  const attachmentIndex = clickedSrc
-    ? Math.max(
-        0,
-        attachments.findIndex(({ url }) => url === clickedSrc),
-      )
-    : 0;
-
-  openAttachmentDialog({ attachmentIndex, attachments, triggerRef: blockNoteRef as React.RefObject<null> });
+  openMediaCarousel(attachments, blockId, triggerRef);
 };

@@ -15,11 +15,13 @@ import { CustomBlockTypeSelect } from '~/modules/common/blocknote/custom-formatt
 import { FileOpenPreviewButton } from '~/modules/common/blocknote/custom-formatting-toolbar/open-preview-button';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
+type FormattingToolbarProps = Omit<CustomBlockNoteMenuProps, 'editor'>;
+
 // Extracted as a named component so hooks (useEffect etc.) are valid
-function FormattingToolbarContent({ headingLevels }: { headingLevels: CustomBlockNoteMenuProps['headingLevels'] }) {
+function FormattingToolbarContent({ allowedTypes, headingLevels }: FormattingToolbarProps) {
   return (
     <FormattingToolbar>
-      {customFormattingToolBarConfig.blockTypeSelect && <CustomBlockTypeSelect headingLevels={headingLevels} />}
+      {customFormattingToolBarConfig.blockTypeSelect && <CustomBlockTypeSelect allowedTypes={allowedTypes} headingLevels={headingLevels} />}
       {customFormattingToolBarConfig.blockStyleSelect && (
         <>
           <BasicTextStyleButton basicTextStyle="bold" />
@@ -50,6 +52,8 @@ function FormattingToolbarContent({ headingLevels }: { headingLevels: CustomBloc
   );
 }
 
-export function CustomFormattingToolbar({ headingLevels }: { headingLevels: CustomBlockNoteMenuProps['headingLevels'] }) {
-  return <FormattingToolbarController formattingToolbar={() => <FormattingToolbarContent headingLevels={headingLevels} />} />;
+export function CustomFormattingToolbar({ allowedTypes, headingLevels }: FormattingToolbarProps) {
+  return (
+    <FormattingToolbarController formattingToolbar={() => <FormattingToolbarContent allowedTypes={allowedTypes} headingLevels={headingLevels} />} />
+  );
 }

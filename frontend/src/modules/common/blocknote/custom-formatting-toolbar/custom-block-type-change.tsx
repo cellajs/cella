@@ -1,78 +1,27 @@
-import type { BlockSchema, InlineContentSchema, StyleSchema } from '@blocknote/core';
-import {
-  type BlockTypeSelectItem,
-  blockTypeSelectItems,
-  useBlockNoteEditor,
-  useComponentsContext,
-  useEditorState,
-  usePortalElement,
-  useSelectedBlocks,
-} from '@blocknote/react';
+import { type BlockTypeSelectItem, useBlockNoteEditor, useComponentsContext, usePortalElement, useSelectedBlocks } from '@blocknote/react';
 import { ChevronDownIcon } from 'lucide-react';
-import { useState } from 'react';
-import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote-schema';
-import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
-import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
+import { customSchema, getBlockTypeItems, isCurrentBlockType } from '~/modules/common/blocknote/blocknote-schema';
+import type { CustomBlockNoteMenuProps, CustomBlockTypes } from '~/modules/common/blocknote/types';
 
-export function CustomBlockTypeSelect({ headingLevels }: { headingLevels: CustomBlockNoteMenuProps['headingLevels'] }) {
+export function CustomBlockTypeSelect({ allowedTypes, headingLevels }: Omit<CustomBlockNoteMenuProps, 'editor'>) {
   const Components = useComponentsContext()!;
   const portalElement = usePortalElement();
-  const editor = useBlockNoteEditor<BlockSchema, InlineContentSchema, StyleSchema>();
+  const editor = useBlockNoteEditor(customSchema);
 
   const selectedBlocks = useSelectedBlocks(editor);
-  const currentBlock = selectedBlocks[0];
-  const itemsType: readonly string[] = customBlockTypeSwitchItems;
+  const [block] = selectedBlocks;
 
-  const [block, setBlock] = useState(editor.getTextCursorPosition().block);
+  const items = getBlockTypeItems(editor, allowedTypes, headingLevels);
+  if (!editor.isEditable || !items.some((item) => item.type === block.type)) return null;
 
-  const filteredItems = blockTypeSelectItems(editor).filter(({ type, props }) => {
-    if (!itemsType.includes(type)) return false;
-    if (type === 'heading') {
-      if (props?.isToggleable) return false;
-      if (typeof props?.level === 'number') {
-        return headingLevels.includes(props.level as (typeof headingLevels)[number]);
-      }
-    }
-    return true;
-  });
-
-  const shouldShow = filteredItems.some((item) => item.type === block.type);
-
-  const selectedItem = filteredItems.find(
-    (el) =>
-      el.type === currentBlock.type && el.props?.level === currentBlock.props.level && !!el.props?.isToggleable === currentBlock.props.isToggleable,
-  );
+  const selectedItem = items.find((item) => isCurrentBlockType(item, block));
 
   const handleItemClick = (item: BlockTypeSelectItem) => {
     editor.focus();
-    for (const block of selectedBlocks) {
-      editor.updateBlock(block, {
-        type: item.type,
-        // biome-ignore lint/suspicious/noExplicitAny: required by author
-        props: item.props as any,
-      });
+    for (const selected of selectedBlocks) {
+      editor.updateBlock(selected, { type: item.type as Exclude<CustomBlockTypes, 'emoji'>, props: item.props });
     }
   };
-
-  const fullItems = filteredItems.map((item) => {
-    const { icon: Icon, name, type } = item;
-    return {
-      title: name,
-      icon: <Icon />,
-      onClick: () => handleItemClick(item),
-      isSelected: block.type === 'heading' ? isHeadingMenuItemActive(block, name) : block.type === type,
-    };
-  });
-
-  useEditorState({
-    editor,
-    selector: ({ editor }) => {
-      const selectedBlock = editor.getSelection()?.blocks[0] || editor.getTextCursorPosition().block;
-      setBlock(selectedBlock as typeof block);
-    },
-  });
-
-  if (!shouldShow || !editor.isEditable) return null;
 
   return (
     <Components.Generic.Menu.Root portalElement={portalElement}>
@@ -83,9 +32,15 @@ export function CustomBlockTypeSelect({ headingLevels }: { headingLevels: Custom
         </Components.FormattingToolbar.Button>
       </Components.Generic.Menu.Trigger>
       <Components.Generic.Menu.Dropdown className="p-2">
-        {fullItems.map(({ title, icon, isSelected, onClick }) => (
-          <Components.Generic.Menu.Item className="bn-menu-item" key={title} onClick={onClick} icon={icon} checked={isSelected}>
-            {title}
+        {items.map((item) => (
+          <Components.Generic.Menu.Item
+            className="bn-menu-item"
+            key={item.name}
+            onClick={() => handleItemClick(item)}
+            icon={<item.icon />}
+            checked={isCurrentBlockType(item, block)}
+          >
+            {item.name}
           </Components.Generic.Menu.Item>
         ))}
       </Components.Generic.Menu.Dropdown>

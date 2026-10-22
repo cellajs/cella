@@ -13,13 +13,13 @@ interface UseSmartBlurArgs {
 
 /** Fires only when focus leaves the editor, ignoring moves into BlockNote's own UI and into container descendants. */
 export function useSmartBlur({ editor, containerRef, onBlur }: UseSmartBlurArgs): FocusEventHandler {
-  const sideMenuExt = useExtensionState(SideMenuExtension, { editor });
+  const sideMenuShown = useExtensionState(SideMenuExtension, { editor, selector: (state) => state?.show ?? false });
   const suggestionMenuExt = useExtension(SuggestionMenu, { editor });
   const formattingToolbarShown = useExtensionState(FormattingToolbarExtension, { editor });
   const filePanelShown = !!useExtensionState(FilePanelExtension, { editor });
 
   return (event) => {
-    if (sideMenuExt?.show) return;
+    if (sideMenuShown) return;
     if (formattingToolbarShown) return;
     if (suggestionMenuExt.shown()) return;
     if (filePanelShown) return;

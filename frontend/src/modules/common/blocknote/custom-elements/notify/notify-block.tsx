@@ -1,7 +1,6 @@
 import { insertOrUpdateBlockForSlashMenu } from '@blocknote/core/extensions';
 import { createReactBlockSpec } from '@blocknote/react';
 import { MessageCircleIcon } from 'lucide-react';
-import { useState } from 'react';
 import { notifyConfig } from 'shared/utils/blocknote-schema-configs';
 import { notifyTypes } from '~/modules/common/blocknote/custom-elements/notify/notify-options';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
@@ -18,12 +17,11 @@ import { cn } from '~/utils/cn';
 
 export const notifyBlock = createReactBlockSpec(notifyConfig, {
   render: ({ block, editor, contentRef }) => {
-    const [open, setOpen] = useState(false);
     const notifyType = notifyTypes.find((a) => a.value === block.props.type)!;
     const Icon = notifyType.icon;
     return (
       <div className={'notify'} data-notify-type={block.props.type}>
-        <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
+        <DropdownMenu modal={false}>
           <DropdownMenuTrigger disabled={!editor.isEditable}>
             <div className={'notify-icon-wrapper'} contentEditable={false}>
               <Icon className={cn('notify-icon size-8', !editor.isEditable && 'cursor-default')} data-notify-icon-type={block.props.type} />
@@ -55,7 +53,7 @@ export const notifyBlock = createReactBlockSpec(notifyConfig, {
   },
 });
 
-const insertSlashNotifyItem = (editor: CustomBlockNoteEditor) => ({
+export const getNotifySlashItem = (editor: CustomBlockNoteEditor) => ({
   title: 'Notify',
   key: 'notify',
   onItemClick: () => {
@@ -65,5 +63,3 @@ const insertSlashNotifyItem = (editor: CustomBlockNoteEditor) => ({
   group: 'Custom',
   icon: <MessageCircleIcon />,
 });
-
-export const getSlashNotifySlashItem = (editor: CustomBlockNoteEditor) => insertSlashNotifyItem(editor);

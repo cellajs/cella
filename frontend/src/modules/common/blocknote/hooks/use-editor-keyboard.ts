@@ -40,15 +40,10 @@ export function useEditorKeyboard({ editor, onEscapeClick, onEnterClick, commit 
     if (!isEscape && !isCmdEnter) return;
 
     event.preventDefault();
+    if (isCmdEnter) event.stopPropagation();
 
-    if (isEscape) {
-      commit();
-      onEscapeClick?.();
-      return;
-    }
-
-    event.stopPropagation();
-    onEnterClick?.();
     commit();
+    if (isEscape) onEscapeClick?.();
+    else onEnterClick?.();
   };
 }
