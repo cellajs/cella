@@ -6,14 +6,14 @@ What the test suite is for, how to run it and where new tests belong.
 
 ### TL;DR
 
-The suite's main job is to prove that attacks fail. All package tests use [Vitest](https://vitest.dev)
+The suite's main job is to prove that attacks fail, and a feature test is the exception. All package tests use [Vitest](https://vitest.dev)
 and share one root setup. `pnpm test` starts the Docker test database and runs everything with a
 coverage summary. Storybook UI tests run separately in a browser with `pnpm test:storybook`. Keep unit
 tests next to their source. Tests that need extra services or network servers go in `tests/integration/`.
 
 ## Goals
 
-Besides checking that features work, the suite's main job is to prove that attacks fail. A security test acts as the attacker: it signs in as one user, tries to do something that user has no right to, and passes only when the app refuses. It checks for the exact refusal: the status code or Postgres error, no leaked rows, and any side effect such as a revoked grant. A matching test shows the rightful user still gets through, so an endpoint that refuses everyone can't pass. Name these tests after the attack (`must not leak attachments via another tenant's id`) and put the route-level ones in [backend/tests/security/](../backend/tests/security/). Every security fix adds a test that reproduces the exploit. The attacks we test against:
+The suite's main job is to prove that attacks fail. A feature test is the exception: it earns its place when it reproduces a bug that shipped, pins a contract another module or an app depends on, or checks a table-driven rule too wide to eyeball, and a test that restates the code next to it is not added ([AGENTS.md](./AGENTS.md#testing)). A security test acts as the attacker: it signs in as one user, tries to do something that user has no right to, and passes only when the app refuses. It checks for the exact refusal: the status code or Postgres error, no leaked rows, and any side effect such as a revoked grant. A matching test shows the rightful user still gets through, so an endpoint that refuses everyone can't pass. Name these tests after the attack (`must not leak attachments via another tenant's id`) and put the route-level ones in [backend/tests/security/](../backend/tests/security/). Every security fix adds a test that reproduces the exploit. The attacks we test against:
 
 - **Crossing a boundary:** reading or writing another tenant's or organization's data, through the API or directly against the database under RLS.
 - **Escalating a role:** a member doing what only an admin may, or setting fields the caller may not set.
