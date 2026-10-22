@@ -30,14 +30,14 @@ export function PreserveDescriptionHeight({ children }: { children: ReactNode })
     };
 
     measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(inner);
-    const mo = new MutationObserver(measure);
-    mo.observe(inner, { childList: true, subtree: true, characterData: true });
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(inner);
+    const mutationObserver = new MutationObserver(measure);
+    mutationObserver.observe(inner, { childList: true, subtree: true, characterData: true });
     return () => {
       clearTimeout(releaseTimer);
-      ro.disconnect();
-      mo.disconnect();
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
     };
   }, []);
 

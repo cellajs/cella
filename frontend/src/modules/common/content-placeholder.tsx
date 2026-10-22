@@ -5,7 +5,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { cn } from '~/utils/cn';
 
-interface Props {
+interface ContentPlaceholderProps {
   title: TKey;
   icon?: IconComponent;
   /** `sm` fits a section inside a card or popup; the default fills a page, tab or table body. */
@@ -17,7 +17,14 @@ interface Props {
 
 const defaultTitleProps = {};
 
-export function ContentPlaceholder({ title, icon: Icon, size = 'default', className = '', children, titleProps = defaultTitleProps }: Props) {
+export function ContentPlaceholder({
+  title,
+  icon: Icon,
+  size = 'default',
+  className = '',
+  children,
+  titleProps = defaultTitleProps,
+}: ContentPlaceholderProps) {
   const { t } = useTranslation();
 
   const titleText = t(title, titleProps as Record<string, unknown>);

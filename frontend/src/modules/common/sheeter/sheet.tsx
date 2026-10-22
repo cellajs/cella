@@ -1,8 +1,8 @@
-import { AnimatePresence, motion } from 'motion/react';
-import { type ReactNode, useRef } from 'react';
+import { useRef } from 'react';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { isDropdownOpen } from '~/modules/common/dropdowner/use-dropdowner';
 import { finalFocusFor, type OverlayCloseDetails, touchInitialFocus } from '~/modules/common/overlay-store-helpers';
+import { ContentKeyTransition } from '~/modules/common/sheeter/content-key-transition';
 import { type InternalSheet, navSheetId, sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { navigationStore } from '~/modules/navigation/navigation-store';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
@@ -36,11 +36,11 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
     sheeter.getState().remove(sheet.id);
 
     // Closing the sheet closes the dialogs it opened
-    const dialogs = dialoger.getState().dialogs.filter((d) => d.open);
+    const dialogs = dialoger.getState().dialogs.filter((dialog) => dialog.open);
     for (const dialog of dialogs) dialoger.getState().remove(dialog.id);
   };
 
-  const onOpenChange = (_nextOpen: boolean, eventDetails: OverlayCloseDetails) => {
+  const handleOpenChange = (_nextOpen: boolean, eventDetails: OverlayCloseDetails) => {
     if (eventDetails.reason === 'escape-key') {
       if (!closeSheetOnEsc || isHoverContentOpen()) return;
       closeSheet();
@@ -49,7 +49,7 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
 
     if (eventDetails.reason === 'outside-press') {
       // An outside press landing on a dropdown or dialog must not close the sheet
-      if (isDropdownOpen() || dialoger.getState().dialogs.some((d) => d.open)) return;
+      if (isDropdownOpen() || dialoger.getState().dialogs.some((dialog) => dialog.open)) return;
 
       // The nav button's own click handler toggles the nav sheet; closing here makes it reopen
       if (sheet.id === navSheetId) {
@@ -58,8 +58,8 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
 
         const target = eventDetails.event?.target as Node | null;
         if (target && (target as Element).nodeType === 1) {
-          const el = target as Element;
-          if (el.closest('#sidebar-nav, #bottom-bar-nav')) return;
+          const element = target as Element;
+          if (element.closest('#sidebar-nav, #bottom-bar-nav')) return;
         }
       }
     }
@@ -70,7 +70,7 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
   return (
     <Sheet
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
       onOpenChangeComplete={(isOpen) => !isOpen && onExited?.()}
       modal={modal}
       disablePointerDismissal={disablePointerDismissal}
@@ -93,35 +93,5 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
         <ContentKeyTransition contentKey={contentKey}>{content}</ContentKeyTransition>
       </SheetContent>
     </Sheet>
-  );
-}
-
-/** Ref callback that starts mounting content at the top of its sheet's scroll container; stable, so only mounts call it. */
-function scrollToTop(element: HTMLElement | null) {
-  const scroller = element?.closest('[data-slot="scroll-area-viewport"], [data-slot="drawer-content"]');
-  if (scroller) scroller.scrollTop = 0;
-}
-
-/**
- * Slides in new content when `contentKey` changes; without a key the content renders as is. The old content leaves
- * first, at its own scroll position, and the new content then starts at the top.
- */
-export function ContentKeyTransition({ contentKey, children }: { contentKey?: string; children: ReactNode }) {
-  if (!contentKey) return children;
-
-  return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={contentKey}
-        ref={scrollToTop}
-        className="flex flex-1 flex-col"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.1 }}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
   );
 }

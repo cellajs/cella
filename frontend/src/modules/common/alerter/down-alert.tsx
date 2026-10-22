@@ -2,8 +2,8 @@ import { ClockAlertIcon, CloudOffIcon, ConstructionIcon, TriangleAlertIcon } fro
 import { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { type AlertKeys, useAlertStore } from '~/modules/common/alerter/alert-store';
-import { useUiOffline } from '~/modules/common/alerter/use-ui-offline';
+import { type AlertKey, useAlertStore } from '~/modules/common/alerter/alert-store';
+import { useUIOffline } from '~/modules/common/alerter/use-ui-offline';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { forceOnline } from '~/query/offline/connectivity';
@@ -22,10 +22,10 @@ export function DownAlert() {
   const offlineAccess = useUIStore((state) => state.offlineAccess);
   const downAlert = useAlertStore((state) => state.downAlert);
   const setDownAlert = useAlertStore((state) => state.setDownAlert);
-  const [dismissedAlerts, setDismissedAlerts] = useState<Partial<Record<AlertKeys, boolean>>>({});
+  const [dismissedAlerts, setDismissedAlerts] = useState<Partial<Record<AlertKey, boolean>>>({});
 
   // Derives the debounced UI offline state from onlineManager
-  useUiOffline();
+  useUIOffline();
 
   const dismissAlert = () => {
     if (!downAlert) return;

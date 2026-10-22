@@ -23,7 +23,7 @@ const Uploader = lazyNamed(() => import('~/modules/common/uploader/uploader'), '
 
 function AppLayout() {
   return (
-    <div id="appLayout" className="max-sm:not-in-[.floating-nav]:mb-[calc(4rem+env(safe-area-inset-bottom,0px))]">
+    <div className="max-sm:not-in-[.floating-nav]:mb-[calc(4rem+env(safe-area-inset-bottom,0px))]">
       <ErrorBoundary fallbackRender={errorNoticeFallback('root')}>
         <SidebarWrapper>
           <AppNav />

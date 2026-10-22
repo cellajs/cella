@@ -18,8 +18,8 @@ function setContrastAttribute(contrast: Contrast) {
   else delete root.dataset.contrast;
 }
 
-function setBrandColor(passedTheme: Theme) {
-  const color = passedTheme === 'none' ? null : appConfig.theme.colors[passedTheme];
+function setBrandColor(theme: Theme) {
+  const color = theme === 'none' ? null : appConfig.theme.colors[theme];
 
   let brandStyleTag = document.getElementById('brand-style');
   if (!brandStyleTag) {

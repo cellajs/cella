@@ -12,32 +12,35 @@ import { navigationStore } from '~/modules/navigation/navigation-store';
  * close (dismiss, route change, store remove) animates out. A sheet created again with the same id takes over.
  */
 function useExitingSheets(sheets: InternalSheet[], mode: string) {
-  const [seen, setSeen] = useState({ sheets, mode });
+  const [previous, setPrevious] = useState({ sheets, mode });
   const [exiting, setExiting] = useState<InternalSheet[]>([]);
   // keepMounted sheets that closed in place and are still sliding out: one unmounted now finishes its exit first
-  const [sliding, setSliding] = useState<string[]>([]);
+  const [slidingIds, setSlidingIds] = useState<string[]>([]);
 
   // Derived during render: in an effect the removed sheet would unmount first and remount closed, with nothing to animate.
-  if (seen.sheets !== sheets || seen.mode !== mode) {
-    setSeen({ sheets, mode });
-    const isLive = (sheet: InternalSheet) => sheets.some((s) => s.id === sheet.id);
-    const isClosed = (id: string) => sheets.some((s) => s.id === id && s.open === false);
+  if (previous.sheets !== sheets || previous.mode !== mode) {
+    setPrevious({ sheets, mode });
+    const isLive = (sheet: InternalSheet) => sheets.some(({ id }) => id === sheet.id);
+    const isClosed = (id: string) => sheets.some((sheet) => sheet.id === id && sheet.open === false);
 
     // A breakpoint switch remounts every overlay, so an exit in progress cannot finish
-    if (seen.mode !== mode) {
+    if (previous.mode !== mode) {
       setExiting([]);
-      setSliding([]);
+      setSlidingIds([]);
     } else {
-      const closedInPlace = seen.sheets.filter((s) => s.open !== false && isClosed(s.id)).map((s) => s.id);
-      const removed = seen.sheets.filter((s) => !isLive(s) && (s.open !== false || sliding.includes(s.id)));
-      setSliding((current) => [...current.filter(isClosed), ...closedInPlace]);
-      setExiting((current) => [...current.filter((s) => !isLive(s)), ...removed.map((s) => ({ ...s, open: false, onClose: undefined }))]);
+      const closedInPlaceIds = previous.sheets.filter((sheet) => sheet.open !== false && isClosed(sheet.id)).map((sheet) => sheet.id);
+      const removed = previous.sheets.filter((sheet) => !isLive(sheet) && (sheet.open !== false || slidingIds.includes(sheet.id)));
+      setSlidingIds((current) => [...current.filter(isClosed), ...closedInPlaceIds]);
+      setExiting((current) => [
+        ...current.filter((sheet) => !isLive(sheet)),
+        ...removed.map((sheet) => ({ ...sheet, open: false, onClose: undefined })),
+      ]);
     }
   }
 
   const onExited = (id: string) => {
-    setExiting((current) => current.filter((s) => s.id !== id));
-    setSliding((current) => current.filter((slidingId) => slidingId !== id));
+    setExiting((current) => current.filter((sheet) => sheet.id !== id));
+    setSlidingIds((current) => current.filter((slidingId) => slidingId !== id));
   };
 
   return { exiting, onExited };
@@ -51,7 +54,7 @@ export function Sheeter() {
   const mode = isMobile ? 'drawer' : 'sheet';
   const { exiting, onExited } = useExitingSheets(sheets, mode);
   // A sheet sliding out no longer blocks the page (pull-to-refresh, dialog stacking)
-  const hasOpenSheet = sheets.some((s) => s.open !== false);
+  const hasOpenSheet = sheets.some((sheet) => sheet.open !== false);
 
   useOverlayLock('sheeter', hasOpenSheet);
   // Dialogs opened from a sheet stack above it through this class

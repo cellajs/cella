@@ -5,7 +5,7 @@ import { Button, type ButtonProps } from '~/modules/ui/button';
 import { DropdownMenuItem } from '~/modules/ui/dropdown-menu';
 import { cn } from '~/utils/cn';
 
-interface Props {
+interface DropdownActionItemProps {
   /** Renders the drawer row; defaults to the breakpoint at which the dropdowner renders a drawer. */
   isMobile?: boolean;
   onSelect?: () => void;
@@ -20,7 +20,15 @@ interface Props {
   closeOnSelect?: boolean;
 }
 
-export function DropdownActionItem({ isMobile, onSelect, icon: Icon, children, variant = 'secondary', className, closeOnSelect = true }: Props) {
+export function DropdownActionItem({
+  isMobile,
+  onSelect,
+  icon: Icon,
+  children,
+  variant = 'secondary',
+  className,
+  closeOnSelect = true,
+}: DropdownActionItemProps) {
   const isDrawer = useBreakpointBelow('sm');
 
   if (isMobile ?? isDrawer) {

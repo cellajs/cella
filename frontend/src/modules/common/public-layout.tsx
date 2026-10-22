@@ -20,7 +20,7 @@ const DebugDropdown =
  */
 export function PublicLayout() {
   return (
-    <div id="publicLayout">
+    <div>
       <ErrorBoundary fallbackRender={errorNoticeFallback('root')}>
         <Alerter mode="public" />
         <Dialoger />

@@ -40,11 +40,11 @@ export function ComboboxSearchInput({
         data-1p-ignore
         data-lpignore="true"
         {...props}
-        ref={(el) => {
+        ref={(element) => {
           // type="search" is set imperatively (base-ui omits it from its types) so password managers skip the input.
-          if (el) el.type = 'search';
-          if (typeof ref === 'function') ref(el);
-          else if (ref) ref.current = el;
+          if (element) element.type = 'search';
+          if (typeof ref === 'function') ref(element);
+          else if (ref) ref.current = element;
         }}
       />
       {showClear && value.length > 0 && (

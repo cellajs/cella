@@ -30,7 +30,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   // The dialog animates out before its entry (and onClose) is removed.
   const { close: closeDialog, onOpenChangeComplete } = useRemoveAfterExit(() => dialoger.getState().update(dialog.id, { open: false }), removeDialog);
 
-  const onOpenChange = (_nextOpen: boolean, eventDetails: OverlayCloseDetails) => {
+  const handleOpenChange = (_nextOpen: boolean, eventDetails: OverlayCloseDetails) => {
     if (eventDetails.reason === 'escape-key' && isHoverContentOpen()) return;
     if (eventDetails.reason === 'outside-press' && (isDropdownOpen() || inline)) return;
 
@@ -42,7 +42,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   const popupRef = useRef<HTMLDivElement>(null);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete} modal={inline ? 'trap-focus' : true}>
+    <Dialog open={open} onOpenChange={handleOpenChange} onOpenChangeComplete={onOpenChangeComplete} modal={inline ? 'trap-focus' : true}>
       {container?.overlay && (
         <div className={cn('fixed inset-0 z-30 bg-background/75 duration-200', open ? 'fade-in-0 animate-in' : 'fade-out-0 animate-out')} />
       )}

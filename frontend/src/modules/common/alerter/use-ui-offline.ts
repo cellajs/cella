@@ -11,7 +11,7 @@ const showDelay = 2000;
  * Delay offline UI until disconnection persists, clear immediately on reconnect, and probe on resume.
  * Query pausing still follows `onlineManager` without delay.
  */
-export const useUiOffline = () => {
+export const useUIOffline = () => {
   const isOnline = useOnlineManager();
 
   useEffect(() => {

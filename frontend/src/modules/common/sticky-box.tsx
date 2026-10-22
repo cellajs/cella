@@ -6,9 +6,9 @@ export function getScrollParent(node: HTMLElement): HTMLElement | Window {
   let parent: HTMLElement | null = node;
   // biome-ignore lint/suspicious/noAssignInExpressions: required for short-circuit assignment pattern
   while ((parent = parent.parentElement)) {
-    const overflowYVal = getComputedStyle(parent, null).getPropertyValue('overflow-y');
+    const overflowY = getComputedStyle(parent, null).getPropertyValue('overflow-y');
     if (parent === document.body) return window;
-    if (overflowYVal === 'auto' || overflowYVal === 'scroll' || overflowYVal === 'overlay') {
+    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
       return parent;
     }
   }
@@ -51,12 +51,14 @@ const stackVars = ['--sticky-stack-nav', '--sticky-stack-top'] as const;
 /** Offset (px) the stack variables add to the bar's pin line, leaving out the one it publishes itself. */
 export function stackOffset(bar: HTMLElement, publishVar?: string) {
   const barStyles = getComputedStyle(bar);
-  return Math.max(...stackVars.filter((v) => v !== publishVar).map((v) => Number.parseFloat(barStyles.getPropertyValue(v)) || 0));
+  return Math.max(
+    ...stackVars.filter((stackVar) => stackVar !== publishVar).map((stackVar) => Number.parseFloat(barStyles.getPropertyValue(stackVar)) || 0),
+  );
 }
 
 /** The same offset as a CSS length, so an element that pins with it follows the variables without a rerender. */
 export function stackOffsetCss(publishVar?: string) {
-  const consumedVars = stackVars.filter((v) => v !== publishVar).map((v) => `var(${v}, 0px)`);
+  const consumedVars = stackVars.filter((stackVar) => stackVar !== publishVar).map((stackVar) => `var(${stackVar}, 0px)`);
   return consumedVars.length > 1 ? `max(${consumedVars.join(', ')})` : (consumedVars[0] ?? '0px');
 }
 
@@ -93,16 +95,16 @@ export function StickyBox({
     }
     const scrollParent = getScrollParent(sentinel);
     const root = scrollParent instanceof Window ? null : scrollParent;
-    const io = new IntersectionObserver(
+    const observer = new IntersectionObserver(
       ([entry]) => {
-        const rb = entry.rootBounds;
-        if (!rb) return;
-        setStuck(!entry.isIntersecting && entry.boundingClientRect.top < rb.top);
+        const { rootBounds } = entry;
+        if (!rootBounds) return;
+        setStuck(!entry.isIntersecting && entry.boundingClientRect.top < rootBounds.top);
       },
       { root, rootMargin: `${-offsetTop}px 0px 0px 0px`, threshold: [0] },
     );
-    io.observe(sentinel);
-    return () => io.disconnect();
+    observer.observe(sentinel);
+    return () => observer.disconnect();
   }, [enabled, offsetTop]);
 
   // Release sticky positioning early when the bar approaches the configured bottom offset.
@@ -131,13 +133,13 @@ export function StickyBox({
     check();
     scrollParent.addEventListener('scroll', check, passiveArg);
     window.addEventListener('resize', check, passiveArg);
-    const ro = new ResizeObserver(check);
-    ro.observe(parent);
+    const observer = new ResizeObserver(check);
+    observer.observe(parent);
     return () => {
       cancelAnimationFrame(raf);
       scrollParent.removeEventListener('scroll', check);
       window.removeEventListener('resize', check);
-      ro.disconnect();
+      observer.disconnect();
     };
   }, [enabled, offsetBottom, offsetTop, publishVar]);
 
@@ -193,10 +195,10 @@ export function StickyBox({
     if (!publishVar || !enabled || !bar || !host) return;
     const publish = () => host.style.setProperty(publishVar, `${bar.offsetHeight}px`);
     publish();
-    const ro = new ResizeObserver(publish);
-    ro.observe(bar);
+    const observer = new ResizeObserver(publish);
+    observer.observe(bar);
     return () => {
-      ro.disconnect();
+      observer.disconnect();
       host.style.removeProperty(publishVar);
     };
   }, [publishVar, enabled]);

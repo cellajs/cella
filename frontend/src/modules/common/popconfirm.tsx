@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 
-interface Props {
+interface PopConfirmProps {
   children: ReactNode;
   /** The question asked: a `ConfirmText` when it names what the action hits, so that name shows in bold. */
   title: ReactNode;
 }
 
-export function PopConfirm({ children, title }: Props) {
+export function PopConfirm({ children, title }: PopConfirmProps) {
   return (
     <div className="flex flex-col gap-3 sm:w-max sm:max-w-72 sm:p-3">
       <p className="text-sm max-sm:py-3 max-sm:text-center">{title}</p>

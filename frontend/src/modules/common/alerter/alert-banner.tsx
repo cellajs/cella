@@ -13,7 +13,7 @@ import { cn } from '~/utils/cn';
 
 export type AlertContextMode = 'public' | 'app';
 
-export type AlertBanner = {
+interface AlertBannerProps {
   className?: string;
   id: string;
   modes?: AlertContextMode[];
@@ -23,7 +23,10 @@ export type AlertBanner = {
   variant?: VariantProps<typeof alertVariants>['variant'];
   animate?: boolean;
   contextMode?: AlertContextMode;
-};
+}
+
+/** An entry of the app's `alertsConfig` (`alert-config.tsx`). */
+export type AlertBanner = AlertBannerProps;
 
 export function AlertBanner({
   id,
@@ -34,7 +37,7 @@ export function AlertBanner({
   variant = 'default',
   animate = false,
   contextMode = 'app',
-}: AlertBanner) {
+}: AlertBannerProps) {
   const { t } = useTranslation();
   const alertsSeen = useAlertStore((state) => state.alertsSeen);
   const setAlertSeen = useAlertStore((state) => state.setAlertSeen);

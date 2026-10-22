@@ -1,13 +1,13 @@
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { cn } from '~/utils/cn';
 
-interface Props {
+interface DropIndicatorProps {
   edge: Edge;
   className?: string;
   gap: number;
 }
 
-export function DropIndicator({ edge, className = '', gap = 0 }: Props) {
+export function DropIndicator({ edge, className = '', gap = 0 }: DropIndicatorProps) {
   const dropIndicatorEdgeStyles = {
     top: { top: `${-gap / 2}rem` },
     bottom: { bottom: `${-gap / 2}rem` },

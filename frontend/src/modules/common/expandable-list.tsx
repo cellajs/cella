@@ -18,13 +18,13 @@ interface ExpandableListProps<T> {
 export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwaysShowAll = false, expandText }: ExpandableListProps<T>) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(alwaysShowAll);
-  const hasExpandedOnce = useRef(false);
+  const hasExpandedOnceRef = useRef(false);
 
   return (
     <>
       {items.map((item, index) => {
         const isInitiallyVisible = index < initialDisplayCount;
-        const shouldAnimate = hasExpandedOnce.current && !isInitiallyVisible;
+        const shouldAnimate = hasExpandedOnceRef.current && !isInitiallyVisible;
 
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
@@ -43,7 +43,7 @@ export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwa
           variant="ghost"
           className="group flex w-full items-center"
           onClick={() => {
-            hasExpandedOnce.current = true;
+            hasExpandedOnceRef.current = true;
             setExpanded(true);
           }}
         >

@@ -24,10 +24,10 @@ const expandedTextClasses = tw('mt-2 max-h-24 transition-[max-height,opacity,mar
 export function SimpleHeader({ heading, text, children, className = '', textClassName = '', collapseText }: SimpleHeaderProps) {
   const { t } = useTranslation();
   const hasScrolled = useHasScrolled();
-  const useCollapse = collapseText || textClassName;
+  const textSetsSpacing = collapseText || !!textClassName;
 
   return (
-    <div className={cn('flex h-auto flex-col', useCollapse ? '' : 'gap-2 md:gap-3', className)}>
+    <div className={cn('flex h-auto flex-col', textSetsSpacing ? '' : 'gap-2 md:gap-3', className)}>
       {heading && <h1 className="font-heading font-semibold text-xl">{t(heading as TKey)}</h1>}
       {text && (
         <p

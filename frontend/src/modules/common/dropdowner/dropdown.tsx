@@ -12,8 +12,8 @@ function removeIfCurrent(key: number) {
 }
 
 export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown }) {
-  const triggerEl = dropdown.triggerRef?.current;
-  const triggerFocusRef = useLatestRef(triggerEl ?? null);
+  const trigger = dropdown.triggerRef?.current;
+  const triggerFocusRef = useLatestRef(trigger ?? null);
 
   // Portaled content can jump the document scroll to the top while the popup still sits at
   // (0,0), across several async frames. Pin the pre-open scroll position and snap back on any
@@ -50,29 +50,29 @@ export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown })
   }, []);
 
   useEffect(() => {
-    if (!triggerEl) return;
+    if (!trigger) return;
 
     const observer = new MutationObserver(() => {
-      if (!document.body.contains(triggerEl)) {
+      if (!document.body.contains(trigger)) {
         dropdowner.getState().remove();
       }
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, [triggerEl]);
+  }, [trigger]);
 
-  if (!triggerEl) return null;
+  if (!trigger) return null;
 
-  const onOpenChange = (nextOpen: boolean) => {
+  const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) removeIfCurrent(dropdown.key);
   };
 
   if (dropdown.kind === 'menu') {
     return (
-      <DropdownMenu key={dropdown.key} open={true} onOpenChange={onOpenChange} modal={false}>
+      <DropdownMenu key={dropdown.key} open={true} onOpenChange={handleOpenChange} modal={false}>
         <DropdownMenuContent
-          anchor={triggerEl}
+          anchor={trigger}
           align={dropdown.align}
           positionerClassName="z-301"
           className={dropdown.popupClassName}
@@ -85,9 +85,9 @@ export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown })
   }
 
   return (
-    <Popover key={dropdown.key} open={true} onOpenChange={onOpenChange} modal={false}>
+    <Popover key={dropdown.key} open={true} onOpenChange={handleOpenChange} modal={false}>
       <PopoverContent
-        anchor={triggerEl}
+        anchor={trigger}
         align={dropdown.align}
         positionerClassName="z-301"
         className="p-0"

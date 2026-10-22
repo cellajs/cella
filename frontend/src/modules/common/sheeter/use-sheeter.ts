@@ -70,13 +70,13 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
     const defaults = { open: true, modal: true, closeSheetOnRouteChange: true };
 
     set((state) => ({
-      sheets: [...state.sheets.filter((s) => s.id !== data.id), { ...withDefaults(defaults, data), content }],
+      sheets: [...state.sheets.filter((sheet) => sheet.id !== data.id), { ...withDefaults(defaults, data), content }],
     }));
     return data.id;
   },
 
   mount: (content, data) => {
-    if (get().sheets.some((s) => s.id === data.id)) return;
+    if (get().get(data.id)) return;
 
     const defaults = { modal: true, closeSheetOnRouteChange: true };
 
@@ -107,10 +107,10 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
 
   unmount: (id) => {
     const { sheets } = get();
-    const sheet = sheets.find((s) => s.id === id);
+    const sheet = get().get(id);
     if (!sheet) return;
     // A closed sheet already had its onClose
-    if (sheet.open === false) set({ sheets: sheets.filter((s) => s !== sheet) });
+    if (sheet.open === false) set({ sheets: sheets.filter((other) => other !== sheet) });
     else removeAndNotify((remaining) => set({ sheets: remaining }), sheets, [sheet], { isCleanup: true });
   },
 

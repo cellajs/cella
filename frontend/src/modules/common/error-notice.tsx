@@ -9,7 +9,7 @@ import { AppFooter } from '~/modules/common/app/app-footer';
 import { collapseMotion } from '~/modules/common/collapse-motion';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
-import { handleAskForHelp } from '~/modules/common/error-helpers';
+import { askForHelp } from '~/modules/common/error-helpers';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 import type { BoundaryType } from '~/routes/types';
@@ -34,11 +34,11 @@ interface ErrorNoticeProps {
 export function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath = '/' }: ErrorNoticeProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const errorFromQuery = useRouterState({ select: (s) => s.location.search.error });
-  const severityFromQuery = useRouterState({ select: (s) => s.location.search.severity });
+  const errorFromQuery = useRouterState({ select: (state) => state.location.search.error });
+  const severityFromQuery = useRouterState({ select: (state) => state.location.search.severity });
   const contactButtonRef = useRef<HTMLButtonElement>(null);
 
-  const [showError, setShowError] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   // Only an API error carries a severity, request details and a connection to sign in through
   const apiError = error instanceof ApiError ? error : undefined;
@@ -95,15 +95,15 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                 <Button
                   variant="link"
                   size="sm"
-                  onClick={() => setShowError((prev) => !prev)}
+                  onClick={() => setShowDetails((prev) => !prev)}
                   className="flex w-full items-center whitespace-pre-wrap text-destructive"
                 >
-                  <span>{showError ? t('c:hide_details') : t('c:show_details')}</span>
-                  <ChevronUpIcon className={cn('transition-transform', showError ? 'rotate-0' : 'rotate-180')} />
+                  <span>{showDetails ? t('c:hide_details') : t('c:show_details')}</span>
+                  <ChevronUpIcon className={cn('transition-transform', showDetails ? 'rotate-0' : 'rotate-180')} />
                 </Button>
 
                 <AnimatePresence>
-                  {showError && (
+                  {showDetails && (
                     <motion.div {...collapseMotion} className="overflow-hidden">
                       <div className="grid grid-cols-[auto_1fr] place-items-start gap-1 pb-4 text-sm">
                         {(
@@ -157,7 +157,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                 </>
               )}
               {severity && ['warn', 'error'].includes(severity) && (
-                <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)}>
+                <Button ref={contactButtonRef} variant="plain" onClick={() => askForHelp(contactButtonRef)}>
                   <MessageCircleQuestionMarkIcon />
                   {t('c:contact_support')}
                 </Button>

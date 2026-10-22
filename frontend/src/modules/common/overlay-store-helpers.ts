@@ -72,26 +72,26 @@ export function finalFocusFor(triggerRef: TriggerRef | undefined, popupId: strin
  * through the store (`update`, `remove`, route changes) behave as before.
  */
 export function useRemoveAfterExit(hide: () => void, remove: () => void) {
-  const pendingRemoval = useRef(false);
+  const pendingRemovalRef = useRef(false);
   const removeRef = useLatestRef(remove);
 
   // Unmounting mid-exit (e.g. a breakpoint switch remounts the overlay) must not strand the closed entry.
   useEffect(
     () => () => {
-      if (pendingRemoval.current) removeRef.current();
+      if (pendingRemovalRef.current) removeRef.current();
     },
     [],
   );
 
   const close = () => {
-    pendingRemoval.current = true;
+    pendingRemovalRef.current = true;
     hide();
   };
 
   const onOpenChangeComplete = (isOpen: boolean) => {
-    if (isOpen) pendingRemoval.current = false;
-    else if (pendingRemoval.current) {
-      pendingRemoval.current = false;
+    if (isOpen) pendingRemovalRef.current = false;
+    else if (pendingRemovalRef.current) {
+      pendingRemovalRef.current = false;
       remove();
     }
   };

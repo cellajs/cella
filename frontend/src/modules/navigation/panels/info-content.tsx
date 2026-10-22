@@ -5,7 +5,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
-import { handleAskForHelp } from '~/modules/common/error-helpers';
+import { askForHelp } from '~/modules/common/error-helpers';
 import { NavSheetRow } from '~/modules/navigation/nav-sheet-row';
 import { PanelHeading } from '~/modules/navigation/panels/panel-heading';
 import { type HealthStatus, healthQueryOptions } from '~/modules/navigation/panels/query';
@@ -78,7 +78,7 @@ export function InfoContent() {
         <NavSheetRow icon={InfoIcon} label={t('c:about')} render={<Link to={appConfig.aboutUrl} draggable={false} />} />
         <NavSheetRow icon={BookOpenIcon} label={t('c:api_docs')} render={<Link to="/docs" draggable={false} />} />
         {appConfig.has.chatSupport && (
-          <NavSheetRow ref={supportRef} icon={LifeBuoyIcon} label={t('c:support')} onClick={() => handleAskForHelp(supportRef)} />
+          <NavSheetRow ref={supportRef} icon={LifeBuoyIcon} label={t('c:support')} onClick={() => askForHelp(supportRef)} />
         )}
         <NavSheetRow ref={contactRef} icon={MailIcon} label={t('c:contact_us')} onClick={() => contactFormHandler(contactRef)} />
       </div>

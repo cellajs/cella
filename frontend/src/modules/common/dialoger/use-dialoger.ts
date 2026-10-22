@@ -44,7 +44,7 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
     const defaults = { drawerOnMobile: true, headerClassName: 'with-close-btn', open: true };
 
     set((state) => ({
-      dialogs: [...state.dialogs.filter((d) => d.id !== data.id), { ...withDefaults(defaults, data), content }],
+      dialogs: [...state.dialogs.filter((dialog) => dialog.id !== data.id), { ...withDefaults(defaults, data), content }],
     }));
 
     return data.id;
@@ -54,11 +54,11 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
 
   remove: (id, opts) => {
     const { dialogs } = get();
-    const toRemove = id === undefined ? dialogs : dialogs.filter((d) => d.id === id);
+    const toRemove = id === undefined ? dialogs : dialogs.filter((dialog) => dialog.id === id);
     removeAndNotify((remaining) => set({ dialogs: remaining }), dialogs, toRemove, opts);
   },
 
-  get: (id) => get().dialogs.find((d) => d.id === id),
+  get: (id) => get().dialogs.find((dialog) => dialog.id === id),
 
   scrollToTop: (id) => {
     const popup = document.getElementById(String(id));

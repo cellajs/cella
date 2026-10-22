@@ -31,8 +31,12 @@ export function useUrlSheet(config: UseUrlSheetConfig) {
   const { searchParamKey, renderContent, onAfterClose, options } = config;
 
   // Primitive selects, so writes to other search keys don't re-render the host.
-  const value = useSearch({ strict: false, select: (s) => (s as Record<string, string | undefined>)[searchParamKey] ?? null });
-  const organizationId = useMatch({ from: '/_app/$tenantId/$organizationSlug', shouldThrow: false, select: (m) => m.context.organization?.id });
+  const value = useSearch({ strict: false, select: (search) => (search as Record<string, string | undefined>)[searchParamKey] ?? null });
+  const organizationId = useMatch({
+    from: '/_app/$tenantId/$organizationSlug',
+    shouldThrow: false,
+    select: (match) => match.context.organization?.id,
+  });
   const close = useCloseOverlay(searchParamKey);
 
   useEffect(() => {

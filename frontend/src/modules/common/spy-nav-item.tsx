@@ -62,9 +62,9 @@ export function SpyNavItem({ id, isActive, layoutId, group, staticIndicator, cla
             hash={id}
             replace
             draggable={false}
-            onClick={(e) => {
-              if (e.metaKey || e.ctrlKey) return;
-              e.preventDefault();
+            onClick={(event) => {
+              if (event.metaKey || event.ctrlKey) return;
+              event.preventDefault();
               scrollToSectionById(id);
             }}
           />

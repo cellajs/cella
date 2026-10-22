@@ -33,12 +33,12 @@ function AppFooterLink({ id, href }: FooterLinkProps) {
   );
 }
 
-interface FooterLinksProps {
+interface AppFooterLinksProps {
   links?: FooterLinkProps[];
   className?: string;
 }
 
-export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: FooterLinksProps) {
+export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: AppFooterLinksProps) {
   const { t } = useTranslation();
   const contactButtonRef = useRef(null);
   const statusUrl = appConfig.statusUrl?.trim();

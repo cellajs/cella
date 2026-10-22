@@ -16,7 +16,7 @@ export function SearchClearButton({ className, ...props }: React.ComponentProps<
         className,
       )}
       // Keeps focus in the input, so typing can continue right after clearing
-      onMouseDown={(e) => e.preventDefault()}
+      onMouseDown={(event) => event.preventDefault()}
       {...props}
     >
       <XIcon className="size-4" />

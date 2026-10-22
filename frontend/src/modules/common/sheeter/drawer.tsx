@@ -1,5 +1,5 @@
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { ContentKeyTransition } from '~/modules/common/sheeter/sheet';
+import { ContentKeyTransition } from '~/modules/common/sheeter/content-key-transition';
 import { type InternalSheet, sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 import { cn } from '~/utils/cn';

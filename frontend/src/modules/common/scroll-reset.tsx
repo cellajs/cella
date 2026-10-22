@@ -8,12 +8,12 @@ const ScrollResetContext = createContext<(() => void) | null>(null);
  * Nestable. An inner `ScrollReset` overrides the outer context.
  */
 export function ScrollReset({ children }: { children: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const scrollToReset = () => {
-    const el = ref.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const rect = sentinel.getBoundingClientRect();
     // Only scroll when the sentinel is above the viewport
     if (rect.top < 0) {
       window.scrollTo({ top: Math.floor(window.scrollY + rect.top), behavior: 'instant' });
@@ -22,7 +22,7 @@ export function ScrollReset({ children }: { children: ReactNode }) {
 
   return (
     <ScrollResetContext.Provider value={scrollToReset}>
-      <div ref={ref} className="h-0" aria-hidden />
+      <div ref={sentinelRef} className="h-0" aria-hidden />
       <div className="min-h-svh">{children}</div>
     </ScrollResetContext.Provider>
   );

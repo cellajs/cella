@@ -30,11 +30,11 @@ export function DeleteItems<TItem, TVariables>(props: DeleteItemsProps<TItem, TV
     if (!callbackFirst) callback?.(args);
   };
 
-  const onDelete = () => {
+  const handleDelete = () => {
     if (props.onlineOnly && !onlineManager.isOnline()) return toastOffline();
     mutation.mutate(props.toVariables(items), { onSuccess: () => finish({ data: items, status: 'success' }) });
   };
 
-  const onCancel = props.onCancel ?? (() => finish({ status: 'settle' }));
-  return <DeleteForm onDelete={onDelete} onCancel={onCancel} pending={mutation.isPending} />;
+  const handleCancel = props.onCancel ?? (() => finish({ status: 'settle' }));
+  return <DeleteForm onDelete={handleDelete} onCancel={handleCancel} pending={mutation.isPending} />;
 }

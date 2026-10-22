@@ -6,17 +6,17 @@ import { isDebugMode } from '~/env';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 import { awaitRecovery, forceOnline } from '~/query/offline/connectivity';
 
-export type AlertKeys = 'offline' | 'backend_not_ready' | 'maintenance' | 'auth_unavailable';
+export type AlertKey = 'offline' | 'backend_not_ready' | 'maintenance' | 'auth_unavailable';
 
 // Alerts with higher priority should not be overwritten by lower ones
-const alertPriority: Record<AlertKeys, number> = { maintenance: 3, backend_not_ready: 2, auth_unavailable: 1, offline: 0 };
+const alertPriority: Record<AlertKey, number> = { maintenance: 3, backend_not_ready: 2, auth_unavailable: 1, offline: 0 };
 
 interface AlertStoreState {
   alertsSeen: string[]; // Seen alert IDs (to prevent duplicate notifications)
-  downAlert: AlertKeys | null; // Down alert type
+  downAlert: AlertKey | null; // Down alert type
 
-  setAlertSeen: (alertSeen: string) => void; // Adds an alert to the seen list
-  setDownAlert: (downLevel: AlertKeys | null) => void; // Sets the current down alert type
+  setAlertSeen: (alertId: string) => void; // Adds an alert to the seen list
+  setDownAlert: (downAlert: AlertKey | null) => void; // Sets the current down alert type
   reset: () => void; // Resets in-memory state to initial (call on sign-out)
 }
 
@@ -48,26 +48,26 @@ export const useAlertStore = create<AlertStoreState>()(
       persist(
         (set, get) => ({
           ...initStore,
-          setAlertSeen: (alertSeen) => {
+          setAlertSeen: (alertId) => {
             set((state) => {
-              state.alertsSeen.push(alertSeen);
+              state.alertsSeen.push(alertId);
             });
           },
-          setDownAlert: (alert) => {
+          setDownAlert: (downAlert) => {
             const current = get().downAlert;
             // Re-setting the same alert would restart recovery polling
-            if (current === alert) return;
+            if (current === downAlert) return;
 
-            if (alert && current && alertPriority[alert] < alertPriority[current]) return;
+            if (downAlert && current && alertPriority[downAlert] < alertPriority[current]) return;
 
             cancelRecovery();
             set((state) => {
-              state.downAlert = alert;
+              state.downAlert = downAlert;
             });
 
             // Auto-recovery: poll /health for recoverable alerts
-            if (alert === 'offline' && navigator.onLine) startRecovery(forceOnline);
-            else if (alert === 'backend_not_ready') {
+            if (downAlert === 'offline' && navigator.onLine) startRecovery(forceOnline);
+            else if (downAlert === 'backend_not_ready') {
               startRecovery(() =>
                 set((state) => {
                   state.downAlert = null;
