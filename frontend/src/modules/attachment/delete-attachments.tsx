@@ -2,9 +2,11 @@ import type { Attachment } from 'sdk';
 import { useAttachmentDeleteMutation } from '~/modules/attachment/query';
 import { DeleteItems, type DeleteItemsProps } from '~/modules/common/delete-items';
 
-type Props = Pick<DeleteItemsProps<Attachment, Attachment[]>, 'dialog' | 'callback' | 'onCancel'> & { attachments: Attachment[] };
+interface DeleteAttachmentsProps extends Pick<DeleteItemsProps<Attachment, Attachment[]>, 'dialog' | 'callback' | 'onCancel'> {
+  attachments: Attachment[];
+}
 
-export function DeleteAttachments({ attachments, ...props }: Props) {
+export function DeleteAttachments({ attachments, ...props }: DeleteAttachmentsProps) {
   // All attachments belong to one organization, so the first one carries the ids.
   const mutation = useAttachmentDeleteMutation(attachments[0].tenantId, attachments[0].organizationId);
 

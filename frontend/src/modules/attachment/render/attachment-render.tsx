@@ -13,7 +13,7 @@ import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const ReactPanZoom = lazyNamed(() => import('~/modules/attachment/render/image'), 'ReactPanZoom');
+const RenderImage = lazyNamed(() => import('~/modules/attachment/render/image'), 'RenderImage');
 const RenderAudio = lazyNamed(() => import('~/modules/attachment/render/audio'), 'RenderAudio');
 const RenderPDF = lazyNamed(() => import('~/modules/attachment/render/pdf'), 'RenderPDF');
 const RenderVideo = lazyNamed(() => import('~/modules/attachment/render/video'), 'RenderVideo');
@@ -32,7 +32,7 @@ interface AttachmentRenderProps {
   showButtons?: boolean;
   itemClassName?: string;
   containerClassName?: string;
-  onPanStateToggle?: (state: boolean) => void;
+  onPanModeChange?: (panning: boolean) => void;
   /** A click on the empty letterbox dismisses the viewer; it also sizes the media to its content so that area is a click target. */
   onBackdropClick?: () => void;
 }
@@ -48,7 +48,7 @@ export function AttachmentRender({
   imagePanZoom = false,
   itemClassName,
   containerClassName,
-  onPanStateToggle,
+  onPanModeChange,
   onBackdropClick,
 }: AttachmentRenderProps) {
   const { t } = useTranslation();
@@ -70,8 +70,8 @@ export function AttachmentRender({
 
   // Only the container itself is the backdrop: clicks on media or controls bubble here but fail the target check.
   const handleBackdropClick = onBackdropClick
-    ? (e: React.MouseEvent<HTMLDivElement>) => {
-        if (e.target === e.currentTarget) onBackdropClick();
+    ? (event: React.MouseEvent<HTMLDivElement>) => {
+        if (event.target === event.currentTarget) onBackdropClick();
       }
     : undefined;
 
@@ -93,10 +93,10 @@ export function AttachmentRender({
         <Suspense fallback={<Spinner size="lg" />}>
           {kind === 'image' &&
             (imagePanZoom && !isMobile ? (
-              <ReactPanZoom
+              <RenderImage
                 image={url}
                 alt={alt}
-                onPanStateToggle={onPanStateToggle}
+                onPanModeChange={onPanModeChange}
                 imageClassName={itemClassName}
                 showButtons={showButtons}
                 backdropDismiss={!!onBackdropClick}

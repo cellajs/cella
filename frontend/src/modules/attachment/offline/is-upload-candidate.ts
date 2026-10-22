@@ -1,4 +1,4 @@
-import type { AttachmentBlob } from './attachments-db';
+import type { AttachmentBlob } from '~/modules/attachment/offline/attachments-db';
 
 /** Eligible for an upload attempt: `pending` always, `failed` once `nextRetryAt` passed and `uploadAttempts` is under the budget, past which it stays `failed`. */
 export function isUploadCandidate(

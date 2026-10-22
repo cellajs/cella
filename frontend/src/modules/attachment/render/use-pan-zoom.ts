@@ -12,7 +12,7 @@ const clampZoom = (zoom: number) => Math.min(maxZoom, Math.max(minZoom, zoom));
 
 type Offset = { x: number; y: number };
 
-const blockPageWheel = (e: Event) => e.preventDefault();
+const blockPageWheel = (event: Event) => event.preventDefault();
 
 /** The viewport carries the offset as custom properties that `layerStyle` reads, so a drag moves the layer without a render. */
 const writeOffset = (viewport: HTMLElement, { x, y }: Offset) => {
@@ -28,15 +28,15 @@ export function usePanZoom(panEnabled: boolean) {
   const [zoom, setZoomState] = useState(1);
   const [offset, setOffset] = useState<Offset>({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
-  const [isPanning, setIsPanning] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   // Pointer position, committed offset and viewport at the start of the current drag, plus its latest offset
-  const drag = useRef<{ x: number; y: number; dx: number; dy: number; viewport: HTMLElement; offset: Offset | null } | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; startOffset: Offset; viewport: HTMLElement; offset: Offset | null } | null>(null);
   // Removes the window mouseup listener of the current mouse drag
-  const stopWindowRelease = useRef<(() => void) | null>(null);
+  const stopWindowReleaseRef = useRef<(() => void) | null>(null);
   // Pending frames: moves and wheel deltas between frames collapse into one write each
-  const panFrame = useRef(0);
-  const wheelFrame = useRef(0);
-  const wheelFactor = useRef(1);
+  const panFrameRef = useRef(0);
+  const wheelFrameRef = useRef(0);
+  const wheelFactorRef = useRef(1);
 
   // Every input (buttons, wheel, trackpad pinch) goes through the same clamp.
   const setZoom = (next: number) => setZoomState(clampZoom(next));
@@ -44,73 +44,73 @@ export function usePanZoom(panEnabled: boolean) {
   useEffect(
     () => () => {
       document.removeEventListener('wheel', blockPageWheel);
-      stopWindowRelease.current?.();
-      cancelAnimationFrame(panFrame.current);
-      cancelAnimationFrame(wheelFrame.current);
+      stopWindowReleaseRef.current?.();
+      cancelAnimationFrame(panFrameRef.current);
+      cancelAnimationFrame(wheelFrameRef.current);
     },
     [],
   );
 
   const panEnd = () => {
-    stopWindowRelease.current?.();
-    stopWindowRelease.current = null;
-    cancelAnimationFrame(panFrame.current);
-    panFrame.current = 0;
-    const current = drag.current;
-    drag.current = null;
+    stopWindowReleaseRef.current?.();
+    stopWindowReleaseRef.current = null;
+    cancelAnimationFrame(panFrameRef.current);
+    panFrameRef.current = 0;
+    const current = dragRef.current;
+    dragRef.current = null;
     // Write the last move as well, since its frame was cancelled: the DOM must match the offset committed here.
     if (current?.offset) {
       writeOffset(current.viewport, current.offset);
       setOffset(current.offset);
     }
-    setIsPanning(false);
+    setIsDragging(false);
   };
 
-  const panStart = (pageX: number, pageY: number, e: React.MouseEvent | React.TouchEvent) => {
+  const panStart = (pageX: number, pageY: number, event: React.MouseEvent | React.TouchEvent) => {
     if (!panEnabled) return;
-    drag.current = { x: pageX, y: pageY, dx: offset.x, dy: offset.y, viewport: e.currentTarget as HTMLElement, offset: null };
-    setIsPanning(true);
+    dragRef.current = { startX: pageX, startY: pageY, startOffset: offset, viewport: event.currentTarget as HTMLElement, offset: null };
+    setIsDragging(true);
     // A mouse button released outside the viewport ends the drag too; touch delivers touchend to its target.
-    if (!('touches' in e)) {
-      stopWindowRelease.current?.();
+    if (!('touches' in event)) {
+      stopWindowReleaseRef.current?.();
       window.addEventListener('mouseup', panEnd, { once: true });
-      stopWindowRelease.current = () => window.removeEventListener('mouseup', panEnd);
+      stopWindowReleaseRef.current = () => window.removeEventListener('mouseup', panEnd);
     }
     // Keeps the drag from reaching the carousel
-    e.stopPropagation();
-    e.nativeEvent.stopImmediatePropagation();
-    e.preventDefault();
+    event.stopPropagation();
+    event.nativeEvent.stopImmediatePropagation();
+    event.preventDefault();
   };
 
   const panMove = (pageX: number, pageY: number) => {
-    const current = drag.current;
+    const current = dragRef.current;
     if (!current) return;
-    current.offset = { x: current.dx + pageX - current.x, y: current.dy + pageY - current.y };
-    if (panFrame.current) return;
-    panFrame.current = requestAnimationFrame(() => {
-      panFrame.current = 0;
-      if (drag.current?.offset) writeOffset(drag.current.viewport, drag.current.offset);
+    current.offset = { x: current.startOffset.x + pageX - current.startX, y: current.startOffset.y + pageY - current.startY };
+    if (panFrameRef.current) return;
+    panFrameRef.current = requestAnimationFrame(() => {
+      panFrameRef.current = 0;
+      if (dragRef.current?.offset) writeOffset(dragRef.current.viewport, dragRef.current.offset);
     });
   };
 
   const panProps = {
-    style: { userSelect: 'none', cursor: isPanning ? 'move' : undefined, '--pan-x': offset.x, '--pan-y': offset.y } as const,
-    onMouseDown: (e: React.MouseEvent) => panStart(e.pageX, e.pageY, e),
-    onMouseMove: (e: React.MouseEvent) => panMove(e.pageX, e.pageY),
+    style: { userSelect: 'none', cursor: isDragging ? 'move' : undefined, '--pan-x': offset.x, '--pan-y': offset.y } as const,
+    onMouseDown: (event: React.MouseEvent) => panStart(event.pageX, event.pageY, event),
+    onMouseMove: (event: React.MouseEvent) => panMove(event.pageX, event.pageY),
     onMouseUp: panEnd,
-    onTouchStart: (e: React.TouchEvent) => panStart(e.touches[0].pageX, e.touches[0].pageY, e),
-    onTouchMove: (e: React.TouchEvent) => panMove(e.touches[0].pageX, e.touches[0].pageY),
+    onTouchStart: (event: React.TouchEvent) => panStart(event.touches[0].pageX, event.touches[0].pageY, event),
+    onTouchMove: (event: React.TouchEvent) => panMove(event.touches[0].pageX, event.touches[0].pageY),
     onTouchEnd: panEnd,
     // A trackpad pinch arrives as a ctrlKey wheel with small deltas: the exponential step keeps pinch and mouse
     // wheel continuous, and the clamp sets the floor and ceiling. Steps multiply, so a frame's deltas apply as one.
-    onWheel: (e: React.WheelEvent) => {
-      const deltaY = e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaY * 16 : e.deltaY;
-      wheelFactor.current *= Math.exp(-deltaY * wheelZoomSensitivity);
-      if (wheelFrame.current) return;
-      wheelFrame.current = requestAnimationFrame(() => {
-        wheelFrame.current = 0;
-        const factor = wheelFactor.current;
-        wheelFactor.current = 1;
+    onWheel: (event: React.WheelEvent) => {
+      const deltaY = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? event.deltaY * 16 : event.deltaY;
+      wheelFactorRef.current *= Math.exp(-deltaY * wheelZoomSensitivity);
+      if (wheelFrameRef.current) return;
+      wheelFrameRef.current = requestAnimationFrame(() => {
+        wheelFrameRef.current = 0;
+        const factor = wheelFactorRef.current;
+        wheelFactorRef.current = 1;
         setZoomState((prev) => clampZoom(prev * factor));
       });
     },

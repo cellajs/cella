@@ -71,11 +71,11 @@ class AttachmentDownloadService {
       const ids = entityIdsOf(event.mutation.state.variables);
       if (!ids.length) return;
 
-      attachmentStorage.deleteBlobs(ids).catch((err) => {
-        console.error('[DownloadService] Failed to delete local blobs:', err);
+      attachmentStorage.deleteBlobs(ids).catch((error) => {
+        console.error('[DownloadService] Failed to delete local blobs:', error);
       });
-      downloadQueue.remove(ids).catch((err) => {
-        console.error('[DownloadService] Failed to remove queue entries:', err);
+      downloadQueue.remove(ids).catch((error) => {
+        console.error('[DownloadService] Failed to remove queue entries:', error);
       });
     });
 
@@ -86,12 +86,12 @@ class AttachmentDownloadService {
   private subscribeQueue(): void {
     this.queueSubscription?.unsubscribe();
     this.queueSubscription = liveQuery(() =>
-      getLocalUserDb() ? attachmentsDb.downloadQueue.filter((e) => e.status === 'pending').count() : 0,
+      getLocalUserDb() ? attachmentsDb.downloadQueue.filter((entry) => entry.status === 'pending').count() : 0,
     ).subscribe({
       next: (count) => {
         if (count > 0) this.processQueueSoon();
       },
-      error: (err) => console.error('[DownloadService] Queue liveQuery error:', err),
+      error: (error) => console.error('[DownloadService] Queue liveQuery error:', error),
     });
   }
 
@@ -144,11 +144,11 @@ class AttachmentDownloadService {
 
     try {
       // Table scan is fine for this small table.
-      const pendingAll = await attachmentsDb.downloadQueue.filter((e) => e.status === 'pending').toArray();
+      const pendingEntries = await attachmentsDb.downloadQueue.filter((entry) => entry.status === 'pending').toArray();
 
-      if (pendingAll.length === 0) return;
+      if (pendingEntries.length === 0) return;
 
-      for (const [organizationId, entries] of groupBy(pendingAll, (entry) => entry.organizationId)) {
+      for (const [organizationId, entries] of groupBy(pendingEntries, (entry) => entry.organizationId)) {
         const used = await attachmentStorage.getStorageUsed(organizationId);
         if (used >= this.config.maxTotalSize) {
           console.debug(`[DownloadService] Storage limit reached for org ${organizationId}`);
@@ -254,8 +254,8 @@ class AttachmentDownloadService {
 
       console.debug(`[DownloadService] Downloaded ${variant} for ${attachment.id}`);
       return 'stored';
-    } catch (err) {
-      console.debug(`[DownloadService] Error downloading ${variant} for ${attachment.id}:`, err);
+    } catch (error) {
+      console.debug(`[DownloadService] Error downloading ${variant} for ${attachment.id}:`, error);
       return 'failed-other';
     }
   }

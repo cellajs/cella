@@ -1,8 +1,8 @@
 import { Dexie } from 'dexie';
 import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
-import { attachmentsDb, type DownloadQueueEntry, type DownloadStatus } from './attachments-db';
-import { attachmentStorage } from './storage-service';
+import { attachmentsDb, type DownloadQueueEntry, type DownloadStatus } from '~/modules/attachment/offline/attachments-db';
+import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 
 /** Skip reason the download service writes for a row queued before its cloud keys arrived; `enqueue` matches on it to re-queue. */
 export const skipReasonNoOriginalKey = 'No originalKey';
@@ -48,28 +48,28 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
   if (!config.enabled) return;
 
   try {
-    const ids = attachments.map((a) => a.id);
+    const ids = attachments.map((attachment) => attachment.id);
 
     // Single indexed lookup: primary key on `id` makes this O(log n).
     const existingEntries = await attachmentsDb.downloadQueue.where('id').anyOf(ids).toArray();
-    const existingById = new Map(existingEntries.map((e) => [e.id, e]));
+    const existingById = new Map(existingEntries.map((entry) => [entry.id, entry]));
 
     const newEntries: DownloadQueueEntry[] = [];
-    const resetIds: string[] = [];
+    const revivedIds: string[] = [];
 
     for (const attachment of attachments) {
       const existing = existingById.get(attachment.id);
 
       if (existing) {
-        if (shouldRevive(existing, attachment, config)) resetIds.push(attachment.id);
+        if (shouldRevive(existing, attachment, config)) revivedIds.push(attachment.id);
         continue;
       }
 
       // Already stored locally as a processed variant.
       const storedVariants = await attachmentStorage.getStoredVariants(attachment.id);
-      if (storedVariants.some((v) => v !== 'raw')) continue;
+      if (storedVariants.some((variant) => variant !== 'raw')) continue;
 
-      const skipReason = shouldSkipDownload(attachment, config);
+      const skipReason = getSkipReason(attachment, config);
 
       newEntries.push({
         id: attachment.id,
@@ -86,9 +86,9 @@ async function enqueue(attachments: Attachment[], organizationId: string): Promi
       await addNew(newEntries);
     }
 
-    if (resetIds.length > 0) {
-      await attachmentsDb.downloadQueue.where('id').anyOf(resetIds).modify({ status: 'pending', skipReason: null });
-      console.debug(`[DownloadQueue] Revived ${resetIds.length} entries for re-download`);
+    if (revivedIds.length > 0) {
+      await attachmentsDb.downloadQueue.where('id').anyOf(revivedIds).modify({ status: 'pending', skipReason: null });
+      console.debug(`[DownloadQueue] Revived ${revivedIds.length} entries for re-download`);
     }
   } catch (error) {
     console.error('[DownloadQueue] Failed to enqueue:', error);
@@ -101,7 +101,7 @@ async function addNew(entries: DownloadQueueEntry[]): Promise<void> {
     await attachmentsDb.downloadQueue.bulkAdd(entries);
   } catch (error) {
     // Outside a transaction bulkAdd keeps the rows that succeeded, so only a non-duplicate failure is a real error.
-    if (!(error instanceof Dexie.BulkError) || error.failures.some((f) => f.name !== 'ConstraintError')) throw error;
+    if (!(error instanceof Dexie.BulkError) || error.failures.some((failure) => failure.name !== 'ConstraintError')) throw error;
   }
 }
 
@@ -128,7 +128,7 @@ async function remove(ids: string[]): Promise<void> {
   }
 }
 
-function shouldSkipDownload(attachment: Attachment, config: typeof appConfig.localBlobStorage): string | null {
+function getSkipReason(attachment: Attachment, config: typeof appConfig.localBlobStorage): string | null {
   const fileSize = attachment.size ? Number(attachment.size) : 0;
   if (config.maxFileSize && fileSize && fileSize > config.maxFileSize) {
     return `File too large (${Math.round(fileSize / 1024 / 1024)}MB > ${Math.round(config.maxFileSize / 1024 / 1024)}MB)`;

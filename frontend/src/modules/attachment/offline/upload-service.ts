@@ -9,8 +9,8 @@ import { reportCriticalError } from '~/lib/tracing';
 import { uploadedFileKeys } from '~/modules/attachment/helpers/parse-uploaded';
 import { type AttachmentBlob, attachmentsDb } from '~/modules/attachment/offline/attachments-db';
 import { groupBy } from '~/modules/attachment/offline/group-by';
+import { isUploadCandidate } from '~/modules/attachment/offline/is-upload-candidate';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
-import { isUploadCandidate } from '~/modules/attachment/offline/upload-retry';
 import { findAttachmentInCache } from '~/modules/attachment/query';
 import type { UploadResults } from '~/modules/common/uploader/types';
 import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
@@ -161,12 +161,12 @@ class AttachmentUploadService {
         await this.linkBlobKeys({ ...blob, cloudKeys: keys, cloudConvertedContentType: convertedContentType, linkAttempts: 0 });
       } else if (result.failed && result.failed.length > 0) {
         const file = result.failed[0];
-        const errorMsg = typeof file.error === 'string' ? file.error : 'Upload failed';
-        await attachmentStorage.markFailed(blob.id, errorMsg);
+        const errorMessage = typeof file.error === 'string' ? file.error : 'Upload failed';
+        await attachmentStorage.markFailed(blob.id, errorMessage);
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      await attachmentStorage.markFailed(blob.id, errorMsg);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      await attachmentStorage.markFailed(blob.id, errorMessage);
       console.error(`[UploadService] Blob ${blob.id} error:`, error);
     } finally {
       uppy.destroy();

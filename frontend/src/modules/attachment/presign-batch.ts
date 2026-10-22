@@ -18,7 +18,7 @@ interface PendingRequest {
   tenantId: string;
   organizationId: string;
   resolve: (url: string) => void;
-  reject: (err: unknown) => void;
+  reject: (error: unknown) => void;
 }
 
 /** Requests arriving within this window coalesce into one batch call. */
@@ -65,9 +65,9 @@ async function sendChunk(requests: PendingRequest[]) {
         request.reject(new Error(`No presigned URL returned for ${request.attachmentId}:${request.variant}`));
       }
     }
-  } catch (err) {
+  } catch (error) {
     // Transport failure (offline, 401, rate limit): transient, unlike PresignRejectedError.
-    for (const request of requests) request.reject(err);
+    for (const request of requests) request.reject(error);
   }
 }
 

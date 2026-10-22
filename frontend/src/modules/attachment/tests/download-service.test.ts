@@ -15,7 +15,7 @@ const { bindLocalUserDb } = await import('~/query/local-user-db');
 const { attachmentsDb } = await import('~/modules/attachment/offline/attachments-db');
 const { downloadService } = await import('~/modules/attachment/offline/download-service');
 const { useAttachmentDeleteMutation } = await import('~/modules/attachment/query');
-const { makeAttachment, makeQueueEntry } = await import('./test-setup');
+const { makeAttachment, makeQueueEntry } = await import('~/modules/attachment/tests/test-setup');
 
 const ctx = { tenantId: 'ten-1', organizationId: 'org-1' };
 

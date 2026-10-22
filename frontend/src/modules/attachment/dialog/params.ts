@@ -8,6 +8,12 @@ export const attachmentDialogParam = 'attachmentDialogId';
 /** Search param holding the upload group the dialog pages through, cleared with the dialog id. */
 export const attachmentGroupParam = 'groupId';
 
+/** Dialog id of the URL-driven viewer; a stable id keeps carousel navigation from recreating the dialog. */
+export const attachmentUrlDialogId = 'attachment-url-dialog';
+
+/** Dialog id of the viewer `openAttachmentDialog` opens, apart from the URL-driven one. */
+export const attachmentDialogId = 'attachment-dialog';
+
 /** Chrome shared by both ways of opening the carousel (URL-driven and imperative). */
 const attachmentDialogClassName = tw('mt-0 flex h-dvh max-h-dvh min-w-full flex-col rounded-none border-0 p-0');
 
@@ -30,7 +36,7 @@ export function clearAttachmentDialogSearch(prev: Record<string, unknown>) {
 }
 
 /** Clears the dialog search params through the router instance, where `to: '.'` resolves against the current location. */
-export const clearAttachmentDialogSearchParams = () => {
+export const clearAttachmentDialogFromUrl = () => {
   getRouter().navigate({ to: '.', replace: true, resetScroll: false, search: clearAttachmentDialogSearch });
 };
 

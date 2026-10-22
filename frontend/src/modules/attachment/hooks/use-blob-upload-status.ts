@@ -47,19 +47,19 @@ async function readUploadInfos(): Promise<Map<string, BlobUploadInfo>> {
   const infos = new Map<string, BlobUploadInfo>();
   if (!getLocalUserDb()) return infos;
 
-  const ids = await attachmentsDb.blobs.toCollection().primaryKeys();
-  const syncing: AttachmentBlob[] = await attachmentsDb.blobs.where('uploadStatus').notEqual('uploaded').toArray();
-  const syncingById = new Map(syncing.map((blob) => [blob.id, blob]));
+  const blobKeys = await attachmentsDb.blobs.toCollection().primaryKeys();
+  const notUploaded: AttachmentBlob[] = await attachmentsDb.blobs.where('uploadStatus').notEqual('uploaded').toArray();
+  const notUploadedById = new Map(notUploaded.map((blob) => [blob.id, blob]));
 
   // The raw blob carries the upload state; without one, the attachment's first blob in key order (`${attachmentId}:${variant}`).
-  const primaryIds = new Map<string, string>();
-  for (const id of ids) {
-    const attachmentId = id.slice(0, id.lastIndexOf(':'));
-    if (!primaryIds.has(attachmentId) || id.endsWith(':raw')) primaryIds.set(attachmentId, id);
+  const primaryBlobKeys = new Map<string, string>();
+  for (const blobKey of blobKeys) {
+    const attachmentId = blobKey.slice(0, blobKey.lastIndexOf(':'));
+    if (!primaryBlobKeys.has(attachmentId) || blobKey.endsWith(':raw')) primaryBlobKeys.set(attachmentId, blobKey);
   }
 
-  for (const [attachmentId, id] of primaryIds) {
-    const blob = syncingById.get(id);
+  for (const [attachmentId, blobKey] of primaryBlobKeys) {
+    const blob = notUploadedById.get(blobKey);
     infos.set(attachmentId, blob ? toUploadInfo(blob.uploadStatus) : uploadedInfo);
   }
   return infos;
@@ -84,7 +84,7 @@ function subscribeQuery() {
   subscription?.unsubscribe();
   subscription = liveQuery(readUploadInfos).subscribe({
     next: publish,
-    error: (err) => console.error('[useBlobUploadStatus] Blob liveQuery error:', err),
+    error: (error) => console.error('[useBlobUploadStatus] Blob liveQuery error:', error),
   });
 }
 

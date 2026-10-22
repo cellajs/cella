@@ -143,9 +143,9 @@ export function useGroupAttachments(tenantId: string | undefined, organizationId
   const { data } = useQuery({
     ...attachmentsCanonicalOptions({ organizationId: organizationId!, tenantId: tenantId! }),
     enabled: !!tenantId && !!organizationId && !!groupId,
-    select: (data) => {
+    select: ({ items }) => {
       if (!groupId) return null;
-      const filtered = data.items.filter((item) => item.groupId === groupId);
+      const filtered = items.filter((item) => item.groupId === groupId);
       return filtered.length > 0 ? filtered : null;
     },
   });
@@ -168,7 +168,7 @@ export const attachmentCreateOptions = (
   onMutate: async ({ organizationId, data }) => {
     const orgKey = keys.list.org(organizationId);
     await queryClient.cancelQueries({ queryKey: orgKey });
-    const optimisticAttachments = data.map((att) => createOptimisticEntity(zAttachment, { ...att, organizationId }));
+    const optimisticAttachments = data.map((attachment) => createOptimisticEntity(zAttachment, { ...attachment, organizationId }));
     insertEntitiesIntoHome(queryClient, optimisticAttachments);
     return { optimisticAttachments };
   },

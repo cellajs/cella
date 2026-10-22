@@ -5,7 +5,7 @@ vi.mock('sdk/sdk.gen', () => ({ getPresignedUrls: (...args: unknown[]) => getPre
 vi.mock('~/query/local-user-storage', () => ({ subscribeOwnerChange: () => () => {} }));
 vi.mock('@tanstack/react-query', () => ({ onlineManager: { isOnline: () => true } }));
 
-const { getPresignedUrlBatched, PresignRejectedError, resetPresignBatch } = await import('../presign-batch');
+const { getPresignedUrlBatched, PresignRejectedError, resetPresignBatch } = await import('~/modules/attachment/presign-batch');
 
 /** Echo-sign every requested pair, as the server's happy path does. */
 function signAllRequested() {

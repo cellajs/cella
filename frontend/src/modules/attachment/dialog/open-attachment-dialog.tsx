@@ -1,5 +1,5 @@
 import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/attachments-carousel';
-import { attachmentDialogContentClassName, attachmentDialogOptions } from '~/modules/attachment/dialog/params';
+import { attachmentDialogContentClassName, attachmentDialogId, attachmentDialogOptions } from '~/modules/attachment/dialog/params';
 import { dialoger, type TriggerRef } from '~/modules/common/dialoger/use-dialoger';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
@@ -16,7 +16,7 @@ export const openAttachmentDialog = ({ attachmentIndex, attachments, triggerRef 
       <AttachmentsCarousel items={attachments} isDialog itemIndex={attachmentIndex} saveInSearchParams={false} />
     </div>,
     attachmentDialogOptions({
-      id: 'attachment-dialog',
+      id: attachmentDialogId,
       triggerRef: triggerRef ?? fallbackContentRef,
     }),
   );

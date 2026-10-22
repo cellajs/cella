@@ -55,14 +55,14 @@ export function useAttachmentUrl(
             error: null,
           });
         }
-      } catch (err) {
+      } catch (error) {
         if (!cancelled) {
           setResult({
             url: null,
             isLocal: false,
             resolvedVariant: null,
             isLoading: false,
-            error: err instanceof Error ? err : new Error(String(err)),
+            error: error instanceof Error ? error : new Error(String(error)),
           });
         }
       }

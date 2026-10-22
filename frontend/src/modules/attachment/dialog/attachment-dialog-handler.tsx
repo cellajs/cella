@@ -1,13 +1,15 @@
 import { useMatch, useNavigate, useSearch } from '@tanstack/react-router';
 import { memo, useEffect } from 'react';
 import { AttachmentDialog } from '~/modules/attachment/dialog/attachment-dialog';
-import { attachmentDialogOptions, attachmentDialogParam, clearAttachmentDialogSearch } from '~/modules/attachment/dialog/params';
+import {
+  attachmentDialogOptions,
+  attachmentDialogParam,
+  attachmentUrlDialogId,
+  clearAttachmentDialogSearch,
+} from '~/modules/attachment/dialog/params';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
-const dialogId = attachmentDialogParam;
-
-/** A stable dialog id keeps carousel navigation from recreating the dialog. */
 function AttachmentDialogHandlerBase() {
   const navigate = useNavigate();
   const isOpen = useSearch({ strict: false, select: (s) => !!(s as Record<string, string | undefined>)[attachmentDialogParam] });
@@ -15,7 +17,7 @@ function AttachmentDialogHandlerBase() {
 
   useEffect(() => {
     if (!isOpen) return;
-    if (dialoger.getState().get(dialogId)) return;
+    if (dialoger.getState().get(attachmentUrlDialogId)) return;
 
     const close = () => {
       navigate({ to: '.', replace: true, resetScroll: false, search: clearAttachmentDialogSearch });
@@ -25,7 +27,7 @@ function AttachmentDialogHandlerBase() {
       dialoger.getState().create(
         <AttachmentDialog />,
         attachmentDialogOptions({
-          id: dialogId,
+          id: attachmentUrlDialogId,
           triggerRef: fallbackContentRef,
           onClose: (isCleanup?: boolean) => {
             if (!isCleanup) close();
@@ -37,7 +39,7 @@ function AttachmentDialogHandlerBase() {
     });
 
     return () => {
-      dialoger.getState().remove(dialogId, { isCleanup: true });
+      dialoger.getState().remove(attachmentUrlDialogId, { isCleanup: true });
     };
   }, [isOpen, organizationId]);
 

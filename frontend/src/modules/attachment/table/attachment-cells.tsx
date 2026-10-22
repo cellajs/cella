@@ -16,12 +16,12 @@ import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
-interface ThumbnailCellProps {
+interface AttachmentCellProps {
   row: Attachment;
   tabIndex: number;
 }
 
-export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
+export function ThumbnailCell({ row, tabIndex }: AttachmentCellProps) {
   const { id, filename, contentType, groupId } = row;
   const navigate = useNavigate();
 
@@ -35,7 +35,7 @@ export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
   };
 
   const preview = <MediaThumbnail name={filename} url={url} contentType={contentType} />;
-  const badge = <SyncStatusBadge row={row} />;
+  const badge = <UploadStatusBadge row={row} />;
 
   return (
     <Button variant="cell" size="cell" tabIndex={tabIndex} className={wrapClass} aria-label={filename} onClick={handleClick}>
@@ -46,7 +46,7 @@ export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
 }
 
 /** What this device can tell about the file: its own upload's progress, or, without the file, that its uploader still holds it. */
-function SyncStatusBadge({ row }: { row: Attachment }) {
+function UploadStatusBadge({ row }: { row: Attachment }) {
   const { t } = useTranslation();
   const { hasLocalBlob, isUploaded, isUploading, isFailed, isPending, isLocalOnly } = useBlobUploadStatus(row.id);
 
@@ -87,12 +87,7 @@ function SyncStatusBadge({ row }: { row: Attachment }) {
   );
 }
 
-interface DownloadCellProps {
-  row: Attachment;
-  tabIndex: number;
-}
-
-export function DownloadCell({ row, tabIndex }: DownloadCellProps) {
+export function DownloadCell({ row, tabIndex }: AttachmentCellProps) {
   const { t } = useTranslation();
   const { download, isInProgress } = useDownloader();
   const { hasLocalBlob } = useBlobUploadStatus(row.id);

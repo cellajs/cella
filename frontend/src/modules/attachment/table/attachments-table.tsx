@@ -52,13 +52,13 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
   const { q, sort, order } = search;
 
   const [hiddenOverrides, setHiddenOverrides] = useState<Record<string, boolean>>({});
-  const columns = useColumns(channel, isSheet).map((col) => ({ ...col, hidden: hiddenOverrides[col.key] ?? col.hidden }));
+  const columns = useColumns(channel, isSheet).map((column) => ({ ...column, hidden: hiddenOverrides[column.key] ?? column.hidden }));
   const setColumns: React.Dispatch<React.SetStateAction<ColumnOrColumnGroup<Attachment>[]>> = (updater) => {
-    const newCols = typeof updater === 'function' ? updater(columns) : updater;
+    const nextColumns = typeof updater === 'function' ? updater(columns) : updater;
     setHiddenOverrides((prev) => {
       const next = { ...prev };
-      for (const col of newCols) {
-        if (col.hidden !== undefined) next[col.key] = col.hidden;
+      for (const column of nextColumns) {
+        if (column.hidden !== undefined) next[column.key] = column.hidden;
       }
       return next;
     });

@@ -45,7 +45,7 @@ export function RenderPDF({ file, className }: RenderPDFProps) {
   }, []);
 
   // Each page's own width, so landscape, A4, legal and mixed-orientation pages each fit.
-  const onDocumentLoad = async (pdf: PDFDocumentProxy) => {
+  const handleDocumentLoad = async (pdf: PDFDocumentProxy) => {
     const widths = await Promise.all(
       Array.from({ length: pdf.numPages }, async (_, i) => (await pdf.getPage(i + 1)).getViewport({ scale: 1 }).width),
     );
@@ -56,7 +56,7 @@ export function RenderPDF({ file, className }: RenderPDFProps) {
 
   return (
     <div ref={containerRef} className={className}>
-      <Document file={file} options={options} loading={loadingSpinner} onLoadSuccess={onDocumentLoad}>
+      <Document file={file} options={options} loading={loadingSpinner} onLoadSuccess={handleDocumentLoad}>
         {availableWidth > 0 &&
           pageWidths.map((width, index) => (
             <Page

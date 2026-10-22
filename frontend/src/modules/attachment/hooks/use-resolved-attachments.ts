@@ -45,7 +45,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
   // Bumped to re-run resolution after a transient failure; reset when the item set changes.
   const [retrySignal, setRetrySignal] = useState(0);
   const retryCountRef = useRef(0);
-  const itemsKey = items.map((i) => `${i.id}:${i.url ?? ''}`).join(',');
+  const itemsKey = items.map((item) => `${item.id}:${item.url ?? ''}`).join(',');
 
   useEffect(() => {
     retryCountRef.current = 0;
@@ -101,11 +101,11 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
                 `cachedMeta=${!!cachedMeta}, itemKey=${!!item.keys?.original})`,
             );
             return { errorId: item.id, permanent: false };
-          } catch (err) {
-            if (err instanceof PendingUploadError) return { data: { ...buildItemData(item, '', false), pendingUpload: getPendingUpload(item.id) } };
-            console.error(`Failed to resolve URL for attachment ${item.id}:`, err);
+          } catch (error) {
+            if (error instanceof PendingUploadError) return { data: { ...buildItemData(item, '', false), pendingUpload: getPendingUpload(item.id) } };
+            console.error(`Failed to resolve URL for attachment ${item.id}:`, error);
             // A server-rejected id (denied or deleted) will not change on retry.
-            return { errorId: item.id, permanent: err instanceof PresignRejectedError };
+            return { errorId: item.id, permanent: error instanceof PresignRejectedError };
           }
         }),
       );
@@ -127,7 +127,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
         // Retries are bounded per item set: a transient failure means the blob is still downloading or the cache is mid-sync.
         if (hasTransientErrors && retryCountRef.current < resolveRetryLimit) {
           retryCountRef.current += 1;
-          retryTimer = setTimeout(() => setRetrySignal((v) => v + 1), resolveRetryDelayMs);
+          retryTimer = setTimeout(() => setRetrySignal((signal) => signal + 1), resolveRetryDelayMs);
         }
       }
     };

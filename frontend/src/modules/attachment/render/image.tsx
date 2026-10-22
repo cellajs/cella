@@ -19,15 +19,15 @@ import { Button } from '~/modules/ui/button';
 import { ButtonGroup } from '~/modules/ui/button-group';
 import { cn } from '~/utils/cn';
 
-type RenderImageProps = {
+interface RenderImageProps {
   image: string;
   alt?: string;
   imageClassName?: string;
   showButtons?: boolean;
-  onPanStateToggle?: (state: boolean) => void;
+  onPanModeChange?: (panning: boolean) => void;
   /** Dialog viewer: sizes the image to its content so the letterbox falls through to the backdrop, while panning on the image still works. */
   backdropDismiss?: boolean;
-};
+}
 
 /** Pixels one press of a pan button moves the zoomed image. */
 const panStep = 120;
@@ -47,11 +47,11 @@ function ControlButton({ tooltipContent, onClick, icon }: ControlButtonProps) {
   );
 }
 
-export function ReactPanZoom({ image, alt, showButtons, imageClassName, onPanStateToggle, backdropDismiss = false }: RenderImageProps) {
+export function RenderImage({ image, alt, showButtons, imageClassName, onPanModeChange, backdropDismiss = false }: RenderImageProps) {
   const { t } = useTranslation();
-  // On by default when no onPanStateToggle is passed.
-  const [panState, setPanState] = useState(!onPanStateToggle);
-  const { rotation, zoomed, panBy, panProps, layerStyle, zoomIn, zoomOut, rotateRight, reset } = usePanZoom(panState);
+  // On by default when no onPanModeChange is passed.
+  const [panEnabled, setPanEnabled] = useState(!onPanModeChange);
+  const { rotation, zoomed, panBy, panProps, layerStyle, zoomIn, zoomOut, rotateRight, reset } = usePanZoom(panEnabled);
 
   return (
     <>
@@ -61,14 +61,14 @@ export function ReactPanZoom({ image, alt, showButtons, imageClassName, onPanSta
           <ControlButton tooltipContent={t('c:zoom_out')} onClick={zoomOut} icon={<MinusIcon className="size-3.5" />} />
           <ControlButton tooltipContent={t('c:rotate_right')} onClick={rotateRight} icon={<RotateCwSquareIcon className="size-3.5" />} />
 
-          {onPanStateToggle && (
+          {onPanModeChange && (
             <ControlButton
               tooltipContent={t('c:toggle_pan_view')}
               onClick={() => {
-                setPanState(!panState);
-                onPanStateToggle(panState);
+                setPanEnabled(!panEnabled);
+                onPanModeChange(!panEnabled);
               }}
-              icon={panState ? <HandGrabIcon className="size-3.5" /> : <HandIcon className="size-3.5" />}
+              icon={panEnabled ? <HandGrabIcon className="size-3.5" /> : <HandIcon className="size-3.5" />}
             />
           )}
 
