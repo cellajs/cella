@@ -22,7 +22,6 @@ export const organizationLayoutBeforeLoad = async ({ params, cause }: Organizati
     revalidateIfStale: shouldRevalidate,
     params,
     buildSlugOverrides: (entity) => ({ tenantId, organizationSlug: entity.slug }),
-    routeTo: '/$tenantId/$organizationSlug',
   });
 
   return { organization, tenantId };

@@ -27,7 +27,6 @@ const resolveOnEnter = (fetchDetail: () => Promise<Channel>, revalidateIfStale =
     revalidateIfStale,
     params: { organizationSlug: 'acme' },
     buildSlugOverrides: (entity) => ({ organizationSlug: entity.slug }),
-    routeTo: '/$organizationSlug',
   });
 
 describe('resolveChannelBySlug', () => {
