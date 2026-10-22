@@ -29,8 +29,8 @@ interface SpotlighterState {
 
 export const useSpotlighter = create<SpotlighterState>((set) => ({
   stack: [],
-  open: (entry) => set((state) => ({ stack: [...state.stack.filter((e) => e.id !== entry.id), entry] })),
-  close: (id) => set((state) => ({ stack: state.stack.filter((e) => e.id !== id) })),
+  open: (entry) => set((state) => ({ stack: [...state.stack.filter((existing) => existing.id !== entry.id), entry] })),
+  close: (id) => set((state) => ({ stack: state.stack.filter((entry) => entry.id !== id) })),
 }));
 
 /**

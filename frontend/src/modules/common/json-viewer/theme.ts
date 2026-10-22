@@ -6,7 +6,7 @@ export const jsonViewerTheme = {
   null: 'text-muted-foreground',
   key: 'text-emerald-700 dark:text-emerald-400',
   /** Hidden in schema mode */
-  bracket: 'font-medium text-gray-700 group-data-[openapi-mode=schema]/jv:hidden dark:text-gray-300',
+  bracket: 'font-medium text-gray-700 group-data-[openapi-mode=schema]/json-viewer:hidden dark:text-gray-300',
   index: 'text-muted-foreground text-xs',
   schemaType: 'font-medium italic',
   /** Type keywords other than the primitive ones (array, object) */

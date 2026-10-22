@@ -4,12 +4,12 @@ import { memo, useEffect, useRef, useState } from 'react';
 import { isRecord } from 'shared/utils/as-record';
 import { CollapsedPreview } from '~/modules/common/json-viewer/collapsed-preview';
 import { useJsonViewerContext } from '~/modules/common/json-viewer/context';
-import { CopyButton } from '~/modules/common/json-viewer/copy-button';
-import { KeyRenderer } from '~/modules/common/json-viewer/key-renderer';
+import { CopyNodeButton } from '~/modules/common/json-viewer/copy-node-button';
+import { NodeKey } from '~/modules/common/json-viewer/node-key';
 import { InlinePrimitiveValue, PrimitiveValue } from '~/modules/common/json-viewer/primitive-value';
-import { SchemaLabels } from '~/modules/common/json-viewer/schema-labels';
+import { type SchemaConstraints, SchemaLabels } from '~/modules/common/json-viewer/schema-labels';
 import { jsonViewerTheme } from '~/modules/common/json-viewer/theme';
-import { getTypeLabel, getValueType, isPathPrefix, type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils';
+import { getValueType, isPathPrefix, type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils';
 import { cn } from '~/utils/cn';
 
 interface JsonNodeProps {
@@ -19,8 +19,6 @@ interface JsonNodeProps {
   depth: number;
   /** Visual depth for indentation; does not increment for flattened nodes */
   visualDepth?: number;
-  /** How many more levels to auto-expand, passed down when a parent expands */
-  cascadeDepth?: number;
 }
 
 // Schema keywords that render as labels or inline constraints, so their own entries are hidden
@@ -43,13 +41,12 @@ const refTargetFlash: Keyframe[] = [
   { backgroundColor: 'transparent', boxShadow: 'none', borderRadius: '4px' },
 ];
 
-function JsonNodeBase({ value, path, keyName, depth, visualDepth, cascadeDepth = 0 }: JsonNodeProps) {
+function JsonNodeBase({ value, path, keyName, depth, visualDepth }: JsonNodeProps) {
   const effectiveVisualDepth = visualDepth ?? depth;
 
   const {
     indentWidth,
     defaultInspectDepth,
-    displayDataTypes,
     enableClipboard,
     valueTypes,
     collapseStringsAfterLength,
@@ -58,13 +55,8 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth, cascadeDepth =
     searchText,
     expandAll,
     showKeyQuotes,
-    expandChildrenDepth,
     openapiMode,
   } = useJsonViewerContext();
-
-  const singleLineArrays = openapiMode === 'schema';
-
-  const [childCascadeDepth, setChildCascadeDepth] = useState(0);
 
   // Flattened nodes render always expanded and without a key.
   const isPropertiesNode = openapiMode === 'schema' && keyName === 'properties';
@@ -75,7 +67,6 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth, cascadeDepth =
 
   const getDefaultExpanded = () => {
     if (isFlattenedNode || isRootInSchemaMode) return true;
-    if (cascadeDepth > 0) return true;
     if (expandAll) return true;
     return depth < defaultInspectDepth;
   };
@@ -133,13 +124,12 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth, cascadeDepth =
     openapiMode,
     ref: keyRef,
   };
-  const typeLabel = displayDataTypes && <span className="ml-2 text-muted-foreground text-sm">{getTypeLabel(value, valueType)}</span>;
 
   const customType = valueTypes.find((dataType) => dataType.is(value, path));
   if (customType) {
     return (
       <div {...rowProps} className="whitespace-nowrap">
-        <KeyRenderer {...keyProps} />
+        <NodeKey {...keyProps} />
         <customType.Component value={value} path={path} />
       </div>
     );
@@ -148,9 +138,8 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth, cascadeDepth =
   if (!isRecord(value) && !Array.isArray(value)) {
     return (
       <div {...rowProps} className="whitespace-nowrap">
-        <KeyRenderer {...keyProps} />
+        <NodeKey {...keyProps} />
         <PrimitiveValue value={value} type={valueType} collapseStringsAfterLength={collapseStringsAfterLength} openapiMode={openapiMode} />
-        {typeLabel}
       </div>
     );
   }
@@ -158,54 +147,52 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth, cascadeDepth =
   const isArray = Array.isArray(value);
 
   // A 'properties' node's keys are property names, so none of them is read or hidden as a schema keyword.
-  const parentKey = path.length > 0 ? path[path.length - 1] : null;
-  const isInsideProperties = parentKey === 'properties';
-  const valueObj = isInsideProperties ? null : schemaRecord;
+  const keywords = isPropertiesNode ? null : schemaRecord;
 
   // 'type' renders as a label: a string, or an array such as ["string", "null"] for nullable.
   const typeValue = (() => {
-    const typeField = valueObj?.type;
+    const typeField = keywords?.type;
     if (typeof typeField === 'string') return typeField;
     if (Array.isArray(typeField) && typeField.every((type): type is string => typeof type === 'string')) return typeField;
     return null;
   })();
 
   // anyOf/oneOf render as a type label.
-  const hasAnyOf = Array.isArray(valueObj?.anyOf);
-  const hasOneOf = Array.isArray(valueObj?.oneOf);
+  const hasAnyOf = Array.isArray(keywords?.anyOf);
+  const hasOneOf = Array.isArray(keywords?.oneOf);
 
   // 'ref' renders as a label holding only the schema name: '#/components/schemas/User' becomes 'User'.
-  const refField = valueObj?.ref;
+  const refField = keywords?.ref;
   const refValue = typeof refField === 'string' ? refField.split('/').pop() || refField : null;
 
   // Rendered as a label and filtered out of the entries below.
-  const contentTypeField = valueObj?.contentType;
+  const contentTypeField = keywords?.contentType;
   const contentTypeValue = typeof contentTypeField === 'string' ? contentTypeField : null;
 
   // Rendered inline and filtered out of the entries below.
   const constraints = (() => {
     if (!schemaRecord) return null;
-    const c: { maxLength?: number; minLength?: number; maximum?: number; minimum?: number } = {};
-    if (typeof schemaRecord.maxLength === 'number') c.maxLength = schemaRecord.maxLength;
-    if (typeof schemaRecord.minLength === 'number') c.minLength = schemaRecord.minLength;
-    if (typeof schemaRecord.maximum === 'number') c.maximum = schemaRecord.maximum;
-    if (typeof schemaRecord.minimum === 'number') c.minimum = schemaRecord.minimum;
-    return Object.keys(c).length > 0 ? c : null;
+    const found: SchemaConstraints = {};
+    if (typeof schemaRecord.maxLength === 'number') found.maxLength = schemaRecord.maxLength;
+    if (typeof schemaRecord.minLength === 'number') found.minLength = schemaRecord.minLength;
+    if (typeof schemaRecord.maximum === 'number') found.maximum = schemaRecord.maximum;
+    if (typeof schemaRecord.minimum === 'number') found.minimum = schemaRecord.minimum;
+    return Object.keys(found).length > 0 ? found : null;
   })();
 
   // Rendered as a synthetic [key] entry.
-  const additionalProperties = valueObj?.additionalProperties;
-  const additionalPropsSchema = additionalProperties && typeof additionalProperties === 'object' ? additionalProperties : null;
+  const additionalProperties = keywords?.additionalProperties;
+  const additionalPropertiesSchema = additionalProperties && typeof additionalProperties === 'object' ? additionalProperties : null;
 
   // Array schemas hoist items.properties.
   const isArraySchema = schemaRecord?.type === 'array';
 
-  const rawEntries = isArray ? value.map((v, i) => [i, v] as [number, unknown]) : Object.entries(value);
+  const rawEntries = isArray ? value.map((item, index) => [index, item] as [number, unknown]) : Object.entries(value);
 
   // Hide schema keys promoted into labels and hoist array-item properties.
   const filteredEntries =
     openapiMode === 'schema' && !isArray
-      ? rawEntries.filter(([key]) => (isInsideProperties || !labelKeys.has(key)) && !(isArraySchema && key === 'items'))
+      ? rawEntries.filter(([key]) => (isPropertiesNode || !labelKeys.has(key)) && !(isArraySchema && key === 'items'))
       : rawEntries;
 
   const items = schemaRecord?.items;
@@ -224,8 +211,8 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth, cascadeDepth =
         })
       : filteredEntries;
 
-  if (additionalPropsSchema) {
-    entries.push(['[key]', additionalPropsSchema] as [string, unknown]);
+  if (additionalPropertiesSchema) {
+    entries.push(['[key]', additionalPropertiesSchema] as [string, unknown]);
   }
 
   // Counts the children a reader actually sees.
@@ -240,12 +227,12 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth, cascadeDepth =
   const isEmpty = entries.length === 0;
 
   // Schema mode: an object is expandable only if it has nested object (not array) children; arrays are always expandable.
-  const hasNestedObjects = openapiMode === 'schema' && !isArray ? entries.some(([, val]) => isRecord(val)) : true;
+  const isExpandable = openapiMode === 'schema' && !isArray ? entries.some(([, child]) => isRecord(child)) : true;
 
   if (isEmpty) {
     return (
       <div {...rowProps} className="whitespace-nowrap">
-        <KeyRenderer {...keyProps} />
+        <NodeKey {...keyProps} />
         <span className={jsonViewerTheme.bracket}>{openBracket}</span>
         <SchemaLabels
           typeValue={typeValue}
@@ -261,12 +248,12 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth, cascadeDepth =
   }
 
   const isPrimitiveArray =
-    isArray && singleLineArrays && value.every((item) => item === null || (typeof item !== 'object' && typeof item !== 'undefined'));
+    isArray && openapiMode === 'schema' && value.every((item) => item === null || (typeof item !== 'object' && typeof item !== 'undefined'));
 
   if (isPrimitiveArray) {
     return (
       <div {...rowProps} className="whitespace-nowrap">
-        <KeyRenderer {...keyProps} />
+        <NodeKey {...keyProps} />
         <span className={jsonViewerTheme.bracket}>[</span>
         {value.map((item, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: rendering an inline primitive array; items have no stable id.
@@ -282,8 +269,6 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth, cascadeDepth =
 
   const hiddenMatchCount = isExpanded ? 0 : matchRowPaths(value, searchText).length;
 
-  const isExpandable = hasNestedObjects;
-
   // Items nodes keep their header so the array item structure stays visible.
   const hideExpandHeader = isFlattenedNode || isRootInSchemaMode;
 
@@ -297,18 +282,7 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth, cascadeDepth =
             'group/node -mx-1 -my-px inline-flex items-center gap-0.5 rounded px-1 py-px',
             isExpandable ? 'cursor-pointer hover:bg-accent/50' : 'pointer-events-none',
           )}
-          onClick={
-            isExpandable
-              ? () => {
-                  if (!isExpanded && expandChildrenDepth > 1) {
-                    setChildCascadeDepth(expandChildrenDepth - 1);
-                  } else {
-                    setChildCascadeDepth(0);
-                  }
-                  setIsExpanded(!isExpanded);
-                }
-              : undefined
-          }
+          onClick={isExpandable ? () => setIsExpanded(!isExpanded) : undefined}
         >
           {isExpandable ? (
             // No handler of its own: its click bubbles to the row, so Enter and Space toggle the node as a mouse click does.
@@ -325,7 +299,7 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth, cascadeDepth =
               <ChevronRightIcon className="size-3.5" />
             </span>
           )}
-          <KeyRenderer {...keyProps} />
+          <NodeKey {...keyProps} />
           <span className={jsonViewerTheme.bracket}>{openBracket}</span>
           <SchemaLabels
             typeValue={typeValue}
@@ -336,27 +310,21 @@ function JsonNodeBase({ value, path, keyName, depth, visualDepth, cascadeDepth =
             constraints={constraints}
           />
           {!isExpanded && isExpandable && (
-            <CollapsedPreview
-              itemCount={schemaPropertiesCount}
-              closeBracket={closeBracket}
-              hiddenMatchCount={hiddenMatchCount}
-              typeLabel={typeLabel}
-            />
+            <CollapsedPreview itemCount={schemaPropertiesCount} closeBracket={closeBracket} hiddenMatchCount={hiddenMatchCount} />
           )}
-          {enableClipboard && <CopyButton value={value} />}
+          {enableClipboard && <CopyNodeButton value={value} />}
         </div>
       )}
       {(isExpanded || hideExpandHeader || !isExpandable) && (
         <div>
-          {entries.map(([key, val]) => (
+          {entries.map(([key, child]) => (
             <JsonNode
               key={String(key)}
-              value={val}
+              value={child}
               path={[...path, key]}
               keyName={key}
               depth={depth + 1}
               visualDepth={hideExpandHeader ? effectiveVisualDepth : effectiveVisualDepth + 1}
-              cascadeDepth={childCascadeDepth > 0 ? childCascadeDepth - 1 : cascadeDepth > 0 ? cascadeDepth - 1 : 0}
             />
           ))}
           {!hideExpandHeader && (
@@ -375,7 +343,6 @@ function jsonNodeEqual(prev: JsonNodeProps, next: JsonNodeProps) {
   if (prev.keyName !== next.keyName) return false;
   if (prev.depth !== next.depth) return false;
   if (prev.visualDepth !== next.visualDepth) return false;
-  if (prev.cascadeDepth !== next.cascadeDepth) return false;
   // Compare path arrays by value so a new reference does not re-render.
   if (prev.path.length !== next.path.length) return false;
   for (let i = 0; i < prev.path.length; i++) {

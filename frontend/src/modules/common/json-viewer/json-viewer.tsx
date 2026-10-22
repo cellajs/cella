@@ -22,9 +22,9 @@ function createRefDataType(onNavigate: (targetPath: string[]) => void): DataType
     Component: ({ value }) => (
       <button
         type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
           onNavigate(parseRefPath(value));
         }}
         className="link-decoration active:link-decoration-strong cursor-pointer font-mono text-primary text-sm hover:underline"
@@ -40,7 +40,6 @@ export function JsonViewer({
   value,
   defaultInspectDepth = 3,
   rootName = 'root',
-  displayDataTypes = false,
   enableClipboard = false,
   indentWidth = 2,
   valueTypes = emptyValueTypes,
@@ -50,7 +49,6 @@ export function JsonViewer({
   expandAll = false,
   searchMatchPath = null,
   showKeyQuotes = true,
-  expandChildrenDepth = 1,
 }: JsonViewerProps) {
   const maxStringLength = collapseStringsAfterLength === false ? Number.MAX_VALUE : collapseStringsAfterLength;
 
@@ -68,7 +66,6 @@ export function JsonViewer({
   const contextValue: JsonViewerContextValue = {
     indentWidth,
     defaultInspectDepth,
-    displayDataTypes,
     enableClipboard,
     valueTypes: combinedValueTypes,
     collapseStringsAfterLength: maxStringLength,
@@ -77,14 +74,13 @@ export function JsonViewer({
     searchText,
     expandAll,
     showKeyQuotes,
-    expandChildrenDepth,
     openapiMode,
   };
 
   return (
     <JsonViewerContext.Provider value={contextValue}>
       <MatchScope terms={searchText ? [foldText(searchText)] : []}>
-        <div data-openapi-mode={openapiMode} className="group/jv font-mono text-foreground text-sm leading-relaxed">
+        <div data-openapi-mode={openapiMode} className="group/json-viewer font-mono text-foreground text-sm leading-relaxed">
           <JsonNode value={value} path={[]} keyName={rootName} depth={0} />
         </div>
       </MatchScope>

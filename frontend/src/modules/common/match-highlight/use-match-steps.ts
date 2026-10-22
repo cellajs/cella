@@ -10,17 +10,17 @@ import { useTranslation } from 'react-i18next';
  */
 export function useMatchSteps<Id>(ids: readonly Id[], onStep: (id: Id) => void, currentId?: Id | null) {
   const { t } = useTranslation();
-  const [ownId, setOwnId] = useState<Id | null>(null);
+  const [steppedId, setSteppedId] = useState<Id | null>(null);
   const [announcement, setAnnouncement] = useState('');
 
-  const activeId = currentId === undefined ? ownId : currentId;
+  const activeId = currentId === undefined ? steppedId : currentId;
   const index = activeId === null ? -1 : ids.indexOf(activeId);
   const total = ids.length;
 
   const step = (direction: 1 | -1) => {
     if (!total) return;
     const next = index === -1 ? (direction === 1 ? 0 : total - 1) : (index + direction + total) % total;
-    setOwnId(ids[next]);
+    setSteppedId(ids[next]);
     setAnnouncement(t('c:match_position', { current: next + 1, total }));
     onStep(ids[next]);
   };

@@ -49,30 +49,4 @@ export function getValueType(value: unknown): string {
   return typeof value;
 }
 
-/** Formats a display label such as "int", "float", "Array(5)", or "Object". */
-export function getTypeLabel(value: unknown, type: string): string {
-  switch (type) {
-    case 'number': {
-      const num = value as number;
-      if (Number.isNaN(num)) return 'NaN';
-      if (!Number.isFinite(num)) return 'Infinity';
-      return Number.isInteger(num) ? 'int' : 'float';
-    }
-    case 'array':
-      return `Array(${(value as unknown[]).length})`;
-    case 'object':
-      return 'Object';
-    case 'string':
-      return 'string';
-    case 'boolean':
-      return 'bool';
-    case 'null':
-      return 'null';
-    case 'undefined':
-      return 'undefined';
-    default:
-      return type;
-  }
-}
-
 export const jsonSchemaTypes = new Set(['string', 'number', 'integer', 'boolean', 'array', 'object', 'null']);

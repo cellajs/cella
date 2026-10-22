@@ -81,7 +81,7 @@ export class MorphRenderer {
   private time = Math.random() * 1000;
   private speed = 1;
   private timeScale = 1;
-  private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  private reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   private enter = 0;
   private grid = 96;
   private shortSide = 0;
@@ -92,19 +92,19 @@ export class MorphRenderer {
   private paused = false;
   private disposed = false;
 
-  private onContextLost = (event: Event) => {
+  private handleContextLost = (event: Event) => {
     event.preventDefault();
     cancelAnimationFrame(this.frameHandle);
   };
-  private onContextRestored = () => this.start();
-  private onMotionChange = () => this.applyMotion();
+  private handleContextRestored = () => this.start();
+  private handleMotionChange = () => this.applyMotion();
 
   constructor(canvas: HTMLCanvasElement, variant: MorphVariant) {
     this.canvas = canvas;
     this.variant = variant;
-    canvas.addEventListener('webglcontextlost', this.onContextLost);
-    canvas.addEventListener('webglcontextrestored', this.onContextRestored);
-    this.reducedMotion.addEventListener('change', this.onMotionChange);
+    canvas.addEventListener('webglcontextlost', this.handleContextLost);
+    canvas.addEventListener('webglcontextrestored', this.handleContextRestored);
+    this.reducedMotionQuery.addEventListener('change', this.handleMotionChange);
   }
 
   start() {
@@ -127,8 +127,8 @@ export class MorphRenderer {
   }
 
   /** A phone-sized viewport gets the larger grain floor: see `minGrainPxPhone`. */
-  setPhone(phone: boolean) {
-    this.minGrain = phone ? minGrainPxPhone : minGrainPx;
+  setPhone(isPhone: boolean) {
+    this.minGrain = isPhone ? minGrainPxPhone : minGrainPx;
   }
 
   /** Grain stamp: squares, or small plus signs. */
@@ -153,15 +153,15 @@ export class MorphRenderer {
     // strict-mode remount, and a remount would then inherit a dead context.
     this.disposed = true;
     cancelAnimationFrame(this.frameHandle);
-    this.canvas.removeEventListener('webglcontextlost', this.onContextLost);
-    this.canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
-    this.reducedMotion.removeEventListener('change', this.onMotionChange);
+    this.canvas.removeEventListener('webglcontextlost', this.handleContextLost);
+    this.canvas.removeEventListener('webglcontextrestored', this.handleContextRestored);
+    this.reducedMotionQuery.removeEventListener('change', this.handleMotionChange);
     this.gl = null;
   }
 
   private applyMotion() {
-    this.timeScale = this.speed * (this.reducedMotion.matches ? reducedMotionSpeed : 1);
-    if (this.reducedMotion.matches) this.enter = 1;
+    this.timeScale = this.speed * (this.reducedMotionQuery.matches ? reducedMotionSpeed : 1);
+    if (this.reducedMotionQuery.matches) this.enter = 1;
   }
 
   private initGl() {

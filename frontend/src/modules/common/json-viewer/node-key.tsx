@@ -3,7 +3,7 @@ import { jsonViewerTheme } from '~/modules/common/json-viewer/theme';
 import { HighlightText } from '~/modules/common/match-highlight';
 import { cn } from '~/utils/cn';
 
-interface KeyRendererProps {
+interface NodeKeyProps {
   keyName: string | number | false;
   showKeyQuotes: boolean;
   isObjectValue: boolean;
@@ -14,7 +14,7 @@ interface KeyRendererProps {
 
 const colon = <span className="mr-1 opacity-70">:</span>;
 
-export function KeyRenderer({ keyName, showKeyQuotes, isObjectValue, hasSelfRequired, openapiMode, ref }: KeyRendererProps) {
+export function NodeKey({ keyName, showKeyQuotes, isObjectValue, hasSelfRequired, openapiMode, ref }: NodeKeyProps) {
   if (keyName === false) return null;
 
   if (typeof keyName === 'number') {

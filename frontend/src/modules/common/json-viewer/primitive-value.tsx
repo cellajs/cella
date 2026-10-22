@@ -5,7 +5,7 @@ import { HighlightText } from '~/modules/common/match-highlight';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
-const quote = <span className="group-data-[openapi-mode=schema]/jv:hidden">"</span>;
+const quote = <span className="group-data-[openapi-mode=schema]/json-viewer:hidden">"</span>;
 
 interface InlinePrimitiveValueProps {
   value: unknown;
@@ -77,9 +77,9 @@ export function PrimitiveValue({ value, type, collapseStringsAfterLength, openap
           tabIndex={0}
           aria-expanded={isExpanded}
           onClick={toggle}
-          onKeyDown={(e) => {
-            if (e.key !== 'Enter' && e.key !== ' ') return;
-            e.preventDefault();
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
             toggle();
           }}
           title={isExpanded ? 'Click to collapse' : 'Click to expand'}

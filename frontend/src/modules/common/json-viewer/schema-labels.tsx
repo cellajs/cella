@@ -1,13 +1,20 @@
 import { getTypeColorClass, jsonViewerTheme } from '~/modules/common/json-viewer/theme';
 import { cn } from '~/utils/cn';
 
+export interface SchemaConstraints {
+  maxLength?: number;
+  minLength?: number;
+  maximum?: number;
+  minimum?: number;
+}
+
 interface SchemaLabelsProps {
   typeValue: string | string[] | null;
   refValue: string | null;
   contentTypeValue?: string | null;
   hasAnyOf?: boolean;
   hasOneOf?: boolean;
-  constraints?: { maxLength?: number; minLength?: number; maximum?: number; minimum?: number } | null;
+  constraints?: SchemaConstraints | null;
 }
 
 export function SchemaLabels({ typeValue, refValue, contentTypeValue, hasAnyOf, hasOneOf, constraints }: SchemaLabelsProps) {

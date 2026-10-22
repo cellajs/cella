@@ -21,7 +21,6 @@ export interface JsonViewerProps<T = unknown> {
   defaultInspectDepth?: number;
   /** Root name to display (false to hide) */
   rootName?: string | false;
-  displayDataTypes?: boolean;
   enableClipboard?: boolean;
   /** Indent width in characters (default: 2) */
   indentWidth?: number;
@@ -38,6 +37,4 @@ export interface JsonViewerProps<T = unknown> {
   searchMatchPath?: JsonPath | null;
   /** Whether to show quotes around keys (default: true) */
   showKeyQuotes?: boolean;
-  /** How many levels deep to expand when clicking a node (default: 1) */
-  expandChildrenDepth?: number;
 }

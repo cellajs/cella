@@ -143,8 +143,13 @@ const styles = {
   },
 };
 
-function SpanList({ spans, filter }: { spans: SpanData[]; filter: string }) {
-  const filtered = filter ? spans.filter((s) => s.name.toLowerCase().includes(filter.toLowerCase())) : spans;
+interface SpanListProps {
+  spans: SpanData[];
+  filter: string;
+}
+
+function SpanList({ spans, filter }: SpanListProps) {
+  const filtered = filter ? spans.filter((span) => span.name.toLowerCase().includes(filter.toLowerCase())) : spans;
 
   if (filtered.length === 0) {
     return <div style={styles.empty}>No spans recorded yet</div>;
@@ -184,7 +189,11 @@ function PrefixRows({ values, format = String }: PrefixRowsProps) {
   );
 }
 
-function StatsView({ spans }: { spans: SpanData[] }) {
+interface SpansViewProps {
+  spans: SpanData[];
+}
+
+function StatsView({ spans }: SpansViewProps) {
   const stats = computeSpanStats(spans);
 
   return (
@@ -213,8 +222,8 @@ function StatsView({ spans }: { spans: SpanData[] }) {
   );
 }
 
-function TimelineView({ spans }: { spans: SpanData[] }) {
-  const spansWithLatency = spans.filter((s) => 'sync.e2e_latency_ms' in s.attributes);
+function TimelineView({ spans }: SpansViewProps) {
+  const spansWithLatency = spans.filter((span) => 'sync.e2e_latency_ms' in span.attributes);
 
   if (spansWithLatency.length === 0) {
     return (
@@ -294,7 +303,7 @@ export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
                 key={tab}
                 type="button"
                 style={{ ...styles.tab, ...(state.activeTab === tab ? styles.tabActive : {}) }}
-                onClick={() => setState((s) => ({ ...s, activeTab: tab }))}
+                onClick={() => setState((prev) => ({ ...prev, activeTab: tab }))}
               >
                 {tab}
               </button>
@@ -317,7 +326,7 @@ export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
             placeholder="Filter spans..."
             style={styles.filter}
             value={state.filter}
-            onChange={(e) => setState((s) => ({ ...s, filter: e.target.value }))}
+            onChange={(event) => setState((prev) => ({ ...prev, filter: event.target.value }))}
           />
           <button type="button" style={styles.button} onClick={() => clearSpans()}>
             Clear

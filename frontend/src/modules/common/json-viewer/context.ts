@@ -5,7 +5,6 @@ import type { JsonPath } from '~/modules/common/json-viewer/utils';
 export interface JsonViewerContextValue {
   indentWidth: number;
   defaultInspectDepth: number;
-  displayDataTypes: boolean;
   enableClipboard: boolean;
   valueTypes: DataType[];
   collapseStringsAfterLength: number;
@@ -16,7 +15,6 @@ export interface JsonViewerContextValue {
   searchText: string;
   expandAll: boolean;
   showKeyQuotes: boolean;
-  expandChildrenDepth: number;
   openapiMode?: 'spec' | 'schema';
 }
 

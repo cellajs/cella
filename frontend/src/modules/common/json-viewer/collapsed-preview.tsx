@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { jsonViewerTheme } from '~/modules/common/json-viewer/theme';
 import { cn } from '~/utils/cn';
@@ -7,11 +6,9 @@ interface CollapsedPreviewProps {
   itemCount: number;
   closeBracket: string;
   hiddenMatchCount: number;
-  /** Shown when the viewer displays data types */
-  typeLabel: ReactNode;
 }
 
-export function CollapsedPreview({ itemCount, closeBracket, hiddenMatchCount, typeLabel }: CollapsedPreviewProps) {
+export function CollapsedPreview({ itemCount, closeBracket, hiddenMatchCount }: CollapsedPreviewProps) {
   const { t } = useTranslation();
   return (
     <>
@@ -22,7 +19,6 @@ export function CollapsedPreview({ itemCount, closeBracket, hiddenMatchCount, ty
           {t('c:matches', { count: hiddenMatchCount })}
         </span>
       )}
-      {typeLabel}
     </>
   );
 }

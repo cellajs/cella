@@ -5,9 +5,9 @@ import { useMatchScope } from '~/modules/common/match-highlight/match-scope';
 /** Name of the one `CSS.highlights` entry, styled by `::highlight(match)` in match-highlight.css. */
 const highlightName = 'match';
 
-const supported = typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight === 'function';
+const isHighlightApiSupported = typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight === 'function';
 
-const registered = () => {
+const getSharedHighlight = () => {
   const existing = CSS.highlights.get(highlightName);
   if (existing) return existing;
   const highlight = new Highlight();
@@ -48,19 +48,19 @@ const rangesIn = (container: HTMLElement, terms: string[]): StaticRange[] => {
  * `HighlightText`. Repaints once per frame after the element's content changes, since the ranges
  * are static and a replaced text node drops them. A browser without the API gets no highlight.
  */
-export function useMatchHighlight(ref: RefObject<HTMLElement | null>): void {
+export function useMatchHighlight(elementRef: RefObject<HTMLElement | null>): void {
   const terms = useMatchScope();
 
   useLayoutEffect(() => {
-    const element = ref.current;
-    if (!element || !supported || !terms.length) return;
+    const element = elementRef.current;
+    if (!element || !isHighlightApiSupported || !terms.length) return;
 
-    const highlight = registered();
-    let own: StaticRange[] = [];
+    const highlight = getSharedHighlight();
+    let paintedRanges: StaticRange[] = [];
     const paint = () => {
-      for (const range of own) highlight.delete(range);
-      own = rangesIn(element, terms);
-      for (const range of own) highlight.add(range);
+      for (const range of paintedRanges) highlight.delete(range);
+      paintedRanges = rangesIn(element, terms);
+      for (const range of paintedRanges) highlight.add(range);
     };
 
     let frame = 0;
@@ -74,7 +74,7 @@ export function useMatchHighlight(ref: RefObject<HTMLElement | null>): void {
     return () => {
       observer.disconnect();
       cancelAnimationFrame(frame);
-      for (const range of own) highlight.delete(range);
+      for (const range of paintedRanges) highlight.delete(range);
     };
-  }, [ref, terms]);
+  }, [elementRef, terms]);
 }

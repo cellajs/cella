@@ -133,7 +133,6 @@ export function OpenApiSpecViewer() {
           value={data}
           openapiMode="spec"
           rootName={false}
-          displayDataTypes={false}
           enableClipboard
           indentWidth={2}
           searchText={searchText}

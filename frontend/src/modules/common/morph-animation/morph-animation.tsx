@@ -6,6 +6,15 @@ import { fragmentSource } from '~/modules/common/morph-animation/shader';
 import { uiStore, useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
+interface MorphAnimationProps {
+  variant?: MorphVariant;
+  grid?: number;
+  speed?: number;
+  overscan?: number;
+  stamp?: MorphStamp;
+  className?: string;
+}
+
 /**
  * Generative mark animation on a transparent canvas; mount it lazily with a
  * `null` Suspense fallback. `single` is one resting cell that fills its
@@ -20,25 +29,11 @@ import { cn } from '~/utils/cn';
  * viewport lowers further; `speed` scales the clock, 1 being the pace the
  * piece was tuned at.
  */
-export function MorphAnimation({
-  variant = 'single',
-  grid = 96,
-  speed = 0.7,
-  overscan = 1.2,
-  stamp = 'square',
-  className,
-}: {
-  variant?: MorphVariant;
-  grid?: number;
-  speed?: number;
-  overscan?: number;
-  stamp?: MorphStamp;
-  className?: string;
-}) {
+export function MorphAnimation({ variant = 'single', grid = 96, speed = 0.7, overscan = 1.2, stamp = 'square', className }: MorphAnimationProps) {
   const mode = useUIStore((state) => state.mode);
   const isPhone = useBreakpointBelow('sm');
   // Reduced motion only: the component lazy-loads, so its fade-in keys on its own mount and always starts from transparent
-  const [faded, setFaded] = useState(false);
+  const [isFadedIn, setIsFadedIn] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<MorphRenderer | null>(null);
   const propsRef = useLatestRef({ grid, speed, overscan, stamp, isPhone });
@@ -61,7 +56,7 @@ export function MorphAnimation({
     observer.observe(canvas);
 
     renderer.start();
-    const fadeFrame = requestAnimationFrame(() => setFaded(true));
+    const fadeFrame = requestAnimationFrame(() => setIsFadedIn(true));
 
     return () => {
       cancelAnimationFrame(fadeFrame);
@@ -101,7 +96,7 @@ export function MorphAnimation({
       ref={canvasRef}
       className={cn(
         'size-full motion-reduce:opacity-0 motion-reduce:transition-opacity motion-reduce:duration-2000',
-        faded && 'motion-reduce:opacity-100',
+        isFadedIn && 'motion-reduce:opacity-100',
         className,
       )}
     />
