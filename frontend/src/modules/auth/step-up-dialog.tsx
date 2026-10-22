@@ -101,7 +101,7 @@ function StepUpDialog({ methods, section, onStepUp }: StepUpDialogProps) {
         {sentAt !== null ? (
           <p className="text-muted-foreground text-sm">{t('c:step_up_link_sent.text')}</p>
         ) : (
-          <Button variant="plain" className="w-full gap-1.5" onClick={() => sendLink()}>
+          <Button variant="plain" className="w-full" onClick={() => sendLink()}>
             <MailIcon />
             {t('c:step_up_email')}
           </Button>
@@ -118,13 +118,13 @@ function StepUpDialog({ methods, section, onStepUp }: StepUpDialogProps) {
   return (
     <div className="flex flex-col gap-2">
       {methods.includes('passkey') && (
-        <Button variant="plain" className="w-full gap-1.5" loading={proving} onClick={confirmWithPasskey}>
+        <Button variant="plain" className="w-full" loading={proving} onClick={confirmWithPasskey}>
           <FingerprintPatternIcon />
           {t('c:confirm')} {t('c:with').toLowerCase()} {t('c:passkey').toLowerCase()}
         </Button>
       )}
       {methods.includes('totp') && (
-        <Button variant="plain" className="w-full gap-1.5" onClick={() => setView('totp')}>
+        <Button variant="plain" className="w-full" onClick={() => setView('totp')}>
           <SmartphoneIcon />
           {t('c:confirm')} {t('c:with').toLowerCase()} {t('c:authenticator_app').toLowerCase()}
         </Button>

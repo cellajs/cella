@@ -42,7 +42,7 @@ export function PasskeyStrategy({ type }: PasskeyStrategyProps) {
       type="button"
       variant={type === 'mfa' ? 'default' : 'plain'}
       onClick={() => passkeySignIn()}
-      className={cn('w-full gap-1.5', type !== 'mfa' && 'bg-secondary/60 hover:bg-secondary/80')}
+      className={cn('w-full', type !== 'mfa' && 'bg-secondary/60 hover:bg-secondary/80')}
     >
       <FingerprintPatternIcon />
       <span className="truncate">

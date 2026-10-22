@@ -35,7 +35,7 @@ export function AuthLayout() {
           <div className="rich-veil-background" />
         </div>
 
-        <div className="flex w-[90vw] xs:w-80 translate-y-4 starting:scale-95 flex-col gap-4 starting:opacity-0 transition-[opacity,scale] duration-500 ease-out will-change-transform has-[.error-notice]:w-[90vw] sm:w-lg has-[.error-notice]:sm:w-200">
+        <div className="flex w-[90vw] xs:w-80 translate-y-4 starting:scale-95 flex-col gap-4 starting:opacity-0 transition-[opacity,scale] duration-500 ease-out has-[.error-notice]:w-[90vw] sm:w-lg has-[.error-notice]:sm:w-200">
           <main className="flex flex-col gap-4">
             <Outlet />
           </main>
