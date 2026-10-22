@@ -43,7 +43,7 @@ function ReorderHandle({ name, onMove, isFirst, isLast }: ReorderHandleProps) {
         });
       }}
       onClick={(event) => {
-        // A key press (detail 0) opens the menu through Base UI, which lands focus on the first item
+        // A key press (detail 0) opens the menu through Base UI, which moves focus to the first item
         if (event.detail === 0 || isDraggingRef.current) return;
         setMenuOpen((open) => !open);
       }}
@@ -86,10 +86,7 @@ interface ReorderColumnOptions<TRow> {
   cellClass?: string;
 }
 
-/**
- * Grip column of a reorderable table: a drag for a pointer, a menu for everything else. Pair it with the grid's
- * `onRowReorder`, which the drag calls, while `onMove` takes the single steps the menu asks for.
- */
+/** Grip column of a reorderable table: a drag calls the grid's `onRowReorder`, the menu's single steps call `onMove`. */
 export function reorderColumn<TRow>({ getName, onMove, rowCount, cellClass }: ReorderColumnOptions<TRow>): ColumnOrColumnGroup<TRow> {
   return {
     key: 'reorder',

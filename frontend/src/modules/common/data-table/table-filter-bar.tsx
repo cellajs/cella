@@ -1,26 +1,26 @@
 import { FunnelXIcon, SearchIcon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { createContext, useContext, useState } from 'react';
+import { createContext, type ReactNode, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 interface TableFilterBarProps {
-  children: React.ReactNode;
+  children: ReactNode;
   isFiltered?: boolean;
   onResetFilters: () => void;
 }
 
 interface FilterBarChildProps {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }
 
 export const TableFilterBarContext = createContext<{ isFilterActive: boolean }>({ isFilterActive: false });
 
 /** Actions section that fades out and slides left on mobile while the filter is active. */
-export function FilterBarActions({ children, className = '' }: FilterBarChildProps) {
+export function FilterBarActions({ children, className }: FilterBarChildProps) {
   const { isFilterActive } = useContext(TableFilterBarContext);
 
   return (
@@ -75,20 +75,16 @@ export function FilterBarFilters(props: FilterBarChildProps) {
   return <FilterBarPart {...props} overlayClassName="z-20" slideX={20} />;
 }
 
-/** Filter bar container; children are absolutely positioned so the mobile toggle can animate them. */
+/** Filter bar; on phones a toggle swaps its actions for the search and filter overlays. */
 export function TableFilterBar({ onResetFilters, isFiltered, children }: TableFilterBarProps) {
   const { t } = useTranslation();
   const isDesktop = useBreakpointAbove('sm');
 
-  const [isFilterActive, setIsFilterActive] = useState<boolean>(!!isFiltered);
+  const [isFilterActive, setIsFilterActive] = useState(!!isFiltered);
 
   const toggleFilter = () => {
-    if (isFilterActive) {
-      if (isFiltered) onResetFilters();
-      setIsFilterActive(false);
-    } else {
-      setIsFilterActive(true);
-    }
+    if (isFilterActive && isFiltered) onResetFilters();
+    setIsFilterActive((active) => !active);
   };
 
   return (

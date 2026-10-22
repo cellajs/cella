@@ -99,11 +99,15 @@ export function useTabIndicator(): TabIndicator {
   return indicator;
 }
 
+interface TabIndicatorProps {
+  indicator: TabIndicator;
+}
+
 /**
  * The bar, rendered once in the tab track; the track is its containing block and the tabs' offsetParent. It is the
  * line itself, with no inset of its own: a `scaleX` glide would scale an inset along and paint the wrong width.
  */
-export function TabIndicatorBar({ indicator }: { indicator: TabIndicator }) {
+export function TabIndicatorBar({ indicator }: TabIndicatorProps) {
   return (
     <span
       ref={indicator.setBar}
@@ -114,7 +118,7 @@ export function TabIndicatorBar({ indicator }: { indicator: TabIndicator }) {
 }
 
 /** Rendered inside the active tab: the bar takes this marker's box, and the tab scrolls into view. */
-export function ActiveTabMarker({ indicator }: { indicator: TabIndicator }) {
+export function ActiveTabMarker({ indicator }: TabIndicatorProps) {
   const markerRef = useRef<HTMLSpanElement>(null);
 
   useLayoutEffect(() => {

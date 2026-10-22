@@ -11,6 +11,7 @@ import { uiStore } from '~/modules/ui/ui-store';
 import { getRouter } from '~/routes/-router-instance';
 
 interface ExportProps<TData> {
+  /** Without extension; each format adds its own. */
   filename: string;
   columns: ColumnOrColumnGroup<TData>[];
   selectedRows?: TData[];
@@ -37,8 +38,7 @@ function ExportItem({ format, note, disabled, onClick }: ExportItemProps) {
   );
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: any is required here
-export function Export<TData extends Record<string, any>>({ filename, columns, selectedRows, fetchRows, className = '' }: ExportProps<TData>) {
+export function Export<TData extends Record<string, unknown>>({ filename, columns, selectedRows, fetchRows, className }: ExportProps<TData>) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 

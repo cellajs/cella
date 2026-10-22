@@ -12,21 +12,21 @@ interface BoardUIState {
   activeBoardType: string | null;
   setActiveBoard: (boardId: string, boardType: string) => void;
 
-  // Set by hover/focus on desktop or tab on mobile; only one panel can be active
+  /** Set by hover or focus on desktop and by tab on mobile; one panel at a time. */
   activePanelId: string | null;
   setActivePanel: (panelId: string | null) => void;
 
-  // Board layouts: boardId => (panelId => size in pixels)
+  /** boardId => (panelId => width in px). */
   boardLayouts: Record<string, Record<string, number>>;
   updateBoardLayout: (boardId: string, layout: Record<string, number>) => void;
 
-  // Local displayOrder for panels the server does not own, in the same fractional-indexing
-  // convention as membership.displayOrder so one comparator sorts both kinds together.
+  /** Local displayOrder of panels the server does not own, fractional like membership.displayOrder so one comparator sorts both. */
   boardPanelOrders: Record<string, Record<string, number>>;
   setPanelOrder: (boardId: string, panelId: string, displayOrder: number) => void;
   prunePanelOrders: (boardId: string, knownPanelIds: string[]) => void;
 
-  reset: () => void; // Resets in-memory state to initial (call on sign-out)
+  /** Restores the initial state; called on sign-out. */
+  reset: () => void;
 }
 
 const initStore: Pick<
@@ -115,5 +115,4 @@ export const useBoardStore = create<BoardUIState>()(
   ),
 );
 
-// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
 export { useBoardStore as boardStore };

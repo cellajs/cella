@@ -12,7 +12,7 @@ export type ColumnOrColumnGroup<TData> = GridColumnOrColumnGroup<TData> & {
   exportValue?: (row: TData) => string | number | null | undefined;
 };
 
-export type BaseTableBarProps<T, K> = {
+export interface BaseTableBarProps<T, K> {
   selected: T[];
   queryKey: QueryKey;
   columns: ColumnOrColumnGroup<T>[];
@@ -20,7 +20,7 @@ export type BaseTableBarProps<T, K> = {
   clearSelection: () => void;
   searchVars: BaseTableSearchVariables<K>;
   setSearch: (newValues: Partial<K>, saveSearch?: boolean) => void;
-};
+}
 
 export type CallbackArgs<T = void> =
   | (T extends void ? { status: 'success' } : { status: 'success'; data: T })

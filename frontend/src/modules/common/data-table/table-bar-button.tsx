@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { forwardRef, type ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import type { IconComponent } from '~/modules/common/icons/types';
@@ -11,12 +11,10 @@ interface TableBarButtonProps extends ButtonProps {
   icon: IconComponent;
   label: TKey;
   badge?: ReactNode;
+  ref?: Ref<HTMLButtonElement>;
 }
 
-export const TableBarButton = forwardRef<HTMLButtonElement, TableBarButtonProps>(function TableBarButton(
-  { icon: Icon, label, badge, className, ...props },
-  ref,
-) {
+export function TableBarButton({ icon: Icon, label, badge, className, ref, ...props }: TableBarButtonProps) {
   const { t } = useTranslation();
   return (
     <Button
@@ -39,4 +37,4 @@ export const TableBarButton = forwardRef<HTMLButtonElement, TableBarButtonProps>
       {badge && <Badge context="button">{badge}</Badge>}
     </Button>
   );
-});
+}

@@ -13,6 +13,7 @@ interface TableCountProps {
   onResetFilters?: () => void;
   children?: ReactNode;
 }
+
 export function TableCount({ count, label, className, isFiltered, children, onResetFilters }: TableCountProps) {
   const { t, i18n } = useTranslation();
 

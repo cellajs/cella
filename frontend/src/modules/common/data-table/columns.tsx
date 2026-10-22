@@ -103,8 +103,12 @@ export const emailColumn = <T extends { email?: string | null }>(options: EmailC
     ) : null,
 });
 
+interface SrOnlyHeaderProps {
+  label: TKey;
+}
+
 /** A column header for assistive technology only, over a column of controls that need no visible title. */
-export function SrOnlyHeader({ label }: { label: TKey }) {
+export function SrOnlyHeader({ label }: SrOnlyHeaderProps) {
   const { t } = useTranslation();
   return <span className="sr-only">{t(label)}</span>;
 }

@@ -22,14 +22,12 @@ interface TableEllipsisProps<T> {
 /** Ellipsis cell button opening a dropdown, or a drawer on mobile. */
 export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options }: TableEllipsisProps<T>) {
   const { t } = useTranslation();
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const openDropdown = () => {
     if (!triggerRef.current) return;
 
-    const { create } = dropdowner.getState();
-
-    create(
+    dropdowner.getState().create(
       options.map(({ label, icon: Icon, onSelect }) => (
         <DropdownActionItem key={label} icon={Icon} onSelect={() => onSelect(row, triggerRef)}>
           {label}

@@ -15,14 +15,10 @@ interface LocalTabNavProps {
   className?: string;
 }
 
-/**
- * Routeless twin of PageTabNav for views without URL state, such as a profile sheet: the same
- * visual shell, with tabs as plain buttons driven by `activeId` and `onTabChange`.
- */
+/** PageTabNav for views without URL state, such as a profile sheet: the same shell, with buttons driven by `activeId`. */
 export function LocalTabNav({ tabs, activeId, onTabChange, title, avatar, className }: LocalTabNavProps) {
   const indicator = useTabIndicator();
-  // Zero-height sentinel above the bar: the scroll-reset target inside a sheet, where the
-  // window-scoped useScrollReset() has no effect.
+  // Scroll-reset target above the bar: inside a sheet the window-scoped useScrollReset() has no effect
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const scrollToReset = () => {

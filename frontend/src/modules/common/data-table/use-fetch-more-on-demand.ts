@@ -5,7 +5,7 @@ interface UseFetchMoreOnDemandOptions {
   demand: boolean;
   hasNextPage: boolean;
   isFetching: boolean;
-  /** Blocks fetching while truthy so a failing page doesn't retry in a loop. */
+  /** Blocks fetching while true, so a failing page does not retry in a loop. */
   hasError: boolean;
   fetchMore?: () => Promise<unknown>;
 }

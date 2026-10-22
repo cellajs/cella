@@ -9,8 +9,13 @@ const expandToggleColumnKey = 'expand-toggle-column';
 /** Minimal row contract this column reads; any {@link buildTree} output satisfies it. */
 type AnyTreeRow = TreeRow<{ id: string }>;
 
+interface ExpandToggleCellProps {
+  row: AnyTreeRow;
+  tabIndex: number;
+}
+
 /** Separate component so `useTreeContext()` runs inside a React render, not in the renderCell callback. */
-function ExpandToggleCell({ row, tabIndex }: { row: AnyTreeRow; tabIndex: number }) {
+function ExpandToggleCell({ row, tabIndex }: ExpandToggleCellProps) {
   const { onToggle, rowHeight, maxDepth } = useTreeContext();
   return (
     <RenderExpandToggle

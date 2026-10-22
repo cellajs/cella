@@ -66,36 +66,53 @@ interface TableBarShellProps<TRow extends Record<string, unknown>> extends Retur
 }
 
 /** The bar above an entity table: actions and count, search and filters, columns, export and focus view. */
-export function TableBarShell<TRow extends Record<string, unknown>>(props: TableBarShellProps<TRow>) {
-  const { searchVars, isFiltered, onSearch, onResetFilters, columns, focusView = true, selection } = props;
-
+export function TableBarShell<TRow extends Record<string, unknown>>({
+  isFiltered,
+  onSearch,
+  onResetFilters,
+  searchVars,
+  total,
+  label,
+  searchName,
+  allowOfflineSearch,
+  columns,
+  setColumns,
+  actions,
+  countExtra,
+  filters,
+  export: exportOptions,
+  controls,
+  focusView = true,
+  selection,
+  after,
+}: TableBarShellProps<TRow>) {
   return (
     <>
       <TableBarContainer searchVars={searchVars}>
         <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
           <FilterBarActions>
-            {!isFiltered && props.actions}
-            <TableCount count={props.total} label={props.label} isFiltered={isFiltered} onResetFilters={onResetFilters}>
-              {props.countExtra}
+            {!isFiltered && actions}
+            <TableCount count={total} label={label} isFiltered={isFiltered} onResetFilters={onResetFilters}>
+              {countExtra}
             </TableCount>
           </FilterBarActions>
 
           <div className="sm:grow" />
 
           <FilterBarSearch>
-            <TableSearch name={props.searchName} value={searchVars.q} setQuery={onSearch} allowOfflineSearch={props.allowOfflineSearch} />
+            <TableSearch name={searchName} value={searchVars.q} setQuery={onSearch} allowOfflineSearch={allowOfflineSearch} />
           </FilterBarSearch>
-          {props.filters && <FilterBarFilters>{props.filters}</FilterBarFilters>}
+          {filters && <FilterBarFilters>{filters}</FilterBarFilters>}
         </TableFilterBar>
 
-        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={props.setColumns} />
-        {props.export && <Export className="max-lg:hidden" columns={columns} {...props.export} />}
-        {props.controls}
+        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
+        {exportOptions && <Export className="max-lg:hidden" columns={columns} {...exportOptions} />}
+        {controls}
         {focusView && <FocusView iconOnly />}
       </TableBarContainer>
 
       {selection && <SelectionActionBar {...selection} />}
-      {props.after}
+      {after}
     </>
   );
 }

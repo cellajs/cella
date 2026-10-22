@@ -47,9 +47,10 @@ function AllLoaded() {
 }
 
 function Loading() {
+  const { t } = useTranslation();
   return (
     <div className="relative top-4 mb-10 flex h-0 w-full animate-pulse items-center justify-center gap-1 opacity-50">
-      <span className="sr-only">Loading...</span>
+      <span className="sr-only">{t('c:loading')}</span>
       <div className="h-1 w-3 animate-bounce rounded-full bg-foreground [animation-delay:-0.3s]" />
       <div className="h-1 w-3 animate-bounce rounded-full bg-foreground [animation-delay:-0.15s]" />
       <div className="h-1 w-3 animate-bounce rounded-full bg-foreground" />

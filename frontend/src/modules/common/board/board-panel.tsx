@@ -80,34 +80,33 @@ const emptySections: CollapsedSection[] = [];
 // w-12 is a collapsed panel inside its border, so the expanded preview sits where the collapsed count does
 const collapsedCountClass = tw('absolute top-[calc(50%-0.5rem)] left-0 w-12 text-center text-muted-foreground text-xs');
 
-export function CollapsedPanelView({ mainCount, sections = emptySections }: CollapsedPanelViewProps) {
-  const topSections = sections.filter((section) => section.position === 'top');
-  const bottomSections = sections.filter((section) => section.position === 'bottom');
+interface CollapsedSectionsProps {
+  sections: CollapsedSection[];
+  position: CollapsedSection['position'];
+}
 
+/** The section counts at one end of a collapsed panel. */
+function CollapsedSections({ sections, position }: CollapsedSectionsProps) {
+  return sections
+    .filter((section) => section.position === position)
+    .map((section, i) => (
+      <div
+        // biome-ignore lint/suspicious/noArrayIndexKey: static sections
+        key={i}
+        className={cn('flex h-9 items-center justify-center p-2 text-xs', section.colorClass, section.borderClass)}
+      >
+        {section.count}
+      </div>
+    ));
+}
+
+export function CollapsedPanelView({ mainCount, sections = emptySections }: CollapsedPanelViewProps) {
   return (
     <div className="relative flex flex-1 snap-center flex-col group-data-[highlighted=true]/paneldrop:border-primary sm:border">
-      {topSections.map((section, i) => (
-        <div
-          // biome-ignore lint/suspicious/noArrayIndexKey: static sections
-          key={`top-${i}`}
-          className={cn('flex h-9 items-center justify-center p-2 text-xs', section.colorClass, section.borderClass)}
-        >
-          {section.count}
-        </div>
-      ))}
-
+      <CollapsedSections sections={sections} position="top" />
       <div className="grow" />
       <div className={cn(collapsedCountClass, hintFadeOut)}>{mainCount}</div>
-
-      {bottomSections.map((section, i) => (
-        <div
-          // biome-ignore lint/suspicious/noArrayIndexKey: static sections
-          key={`bottom-${i}`}
-          className={cn('flex h-9 items-center justify-center p-2 text-xs', section.colorClass, section.borderClass)}
-        >
-          {section.count}
-        </div>
-      ))}
+      <CollapsedSections sections={sections} position="bottom" />
     </div>
   );
 }

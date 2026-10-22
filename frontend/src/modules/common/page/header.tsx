@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { HouseIcon } from 'lucide-react';
-import { Fragment } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelBase, UserBase } from 'sdk';
 import { appConfig } from 'shared';
@@ -12,18 +12,16 @@ import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 
 interface PageHeaderProps extends Omit<PageCoverProps, 'id' | 'url'> {
   entity: ChannelBase | UserBase;
-  panel?: React.ReactNode;
+  /** Controls at the header's end; the viewer's role shows on the membership button placed here, not in the header. */
+  panel?: ReactNode;
   /** Takes the place of the crumb row below the name, for an entity that sits in no hierarchy. */
-  subline?: React.ReactNode;
+  subline?: ReactNode;
   /** Ancestor crumb chain, root first. Entries must be enriched: crumb routes need `ancestorSlugs`. */
   parents?: EnrichedChannel[];
   /** @deprecated Use `parents`. */
   parent?: EnrichedChannel;
 }
 
-/**
- * Page header. Role visibility belongs to the panel's role-labeled membership button.
- */
 export function PageHeader({ entity, panel, subline, parents, parent, ...coverProps }: PageHeaderProps) {
   const { t } = useTranslation();
 

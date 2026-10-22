@@ -4,7 +4,9 @@ import { Skeleton } from '~/modules/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
 
 interface DataTableSkeletonProps {
+  /** Row height in px; each bar is 18px shorter. */
   cellHeight?: number;
+  /** Phones show at most 3. */
   columnCount?: number;
   /** Widths of the first columns; the rest size themselves. */
   cellWidths?: string[];

@@ -51,11 +51,9 @@ function findActiveTab(candidates: NavCandidate[], toolId: string | undefined, f
 }
 
 /**
- * Startup check on the tab bars and on `appConfig.surfaces`: a layout whose child routes declare
- * `navTab` while it names no `tabsSlot` renders an empty bar, and a listed id that names no
- * placement of its surface would hide a tab or section, both without an error. Called once the
- * router exists, so route-declared tabs count. Throws outside production, where a hard crash over
- * one misspelled id would be the worse failure.
+ * Startup check, once the router exists so route tabs count: a layout whose child routes declare `navTab` but which names
+ * no `tabsSlot` renders an empty bar, and a `surfaces` id that names no placement hides a tab or section, both without an
+ * error. Throws outside production; production logs it, since a crash over one misspelled id is the worse failure.
  */
 export function assertSurfaces(): void {
   const routesById = getRoutesById();
@@ -80,9 +78,8 @@ export function assertSurfaces(): void {
 }
 
 /**
- * All tab candidates a surface declares, ungated and unordered: child routes with
- * `staticData.navTab` plus, when the parent declares `staticData.tabsSlot`, that slot's registry
- * tools. Rendering goes through {@link resolveNavTabs}, which gates and orders this list.
+ * Every tab a surface declares, ungated and unordered: child routes with `staticData.navTab`, plus the tools of the parent's
+ * `staticData.tabsSlot` through its `$tool` child. {@link resolveNavTabs} gates and orders them.
  */
 export function getNavTabCandidates(parentRouteId: string): NavCandidate[] {
   const parentRoute: AnyRoute | undefined = getRoutesById()[parentRouteId];
@@ -117,10 +114,7 @@ export function getNavTabCandidates(parentRouteId: string): NavCandidate[] {
   return [...routeCandidates, ...registryCandidates];
 }
 
-/**
- * The {@link getNavTabCandidates} list, gated and ordered: `requires` gates on `grants` and
- * `visibleTo` on `pairs`, then a stable sort on `order` (default 0, lower first).
- */
+/** {@link getNavTabCandidates}, gated (`requires` on `grants`, `visibleTo` on `pairs`) and stably sorted on `order` (default 0, lower first). */
 export function resolveNavTabs(parentRouteId: string, options: ResolvePlacementOptions = {}): PageTab[] {
   const slot = getTabsSlot(parentRouteId);
   if (!slot) return [];
@@ -138,13 +132,10 @@ export function defaultNavTabPath(parentRouteId: string, options?: ResolvePlacem
 }
 
 /**
- * `beforeLoad` guard for a tabbed surface: redirects to the landing tab from the bare parent
- * layout and from a tab the app's `surfaces` list or the channel arrangement disables, before that tab's
- * route mounts and fetches. Detection uses {@link isPlacementHidden} on the arrangement layers
- * only, never `requires`/`visibleTo`, whose inputs may still be loading. Config changes while
- * sitting on a tab are handled by {@link useNavTabRedirect}.
- * @throws A history-replacing redirect preserving params and hash, and the search of a bare parent navigation. The search of a
- * tab it forwards off stays behind: that tab's own sort and filters.
+ * `beforeLoad` guard of a tabbed surface: before the route mounts and fetches, it redirects the bare parent, and a tab that
+ * `surfaces` or the channel arrangement hides, to the landing tab. It reads only the arrangement layers ({@link isPlacementHidden}),
+ * never `requires`/`visibleTo`, whose inputs may still be loading; {@link useNavTabRedirect} covers changes while on a tab.
+ * @throws A replacing redirect that keeps params and hash. It keeps a bare parent's search and drops a hidden tab's own sort and filters.
  */
 export function guardNavTabs(
   matches: readonly { routeId: string; fullPath: string; params: unknown }[],
@@ -173,10 +164,8 @@ export function guardNavTabs(
 }
 
 /**
- * Replace-navigates to the first resolved tab when the current location sits on a tab the app's
- * `surfaces` list or the channel arrangement hides. Detection uses {@link isPlacementHidden} on the
- * arrangement layers only, never `requires`/`visibleTo`. {@link PageTabNav} runs this for
- * route-derived tab bars.
+ * Replace-navigates to the first resolved tab while the location sits on a tab that `surfaces` or the channel arrangement
+ * hides, judged on the arrangement layers as in {@link guardNavTabs}. {@link PageTabNav} runs it for route-derived bars.
  * @public
  */
 export function useNavTabRedirect(parentRouteId: string, options: ResolvePlacementOptions = {}): void {
@@ -198,12 +187,13 @@ export function useNavTabRedirect(parentRouteId: string, options: ResolvePlaceme
 }
 
 interface PageTabNavProps extends ResolvePlacementOptions {
-  /** Explicit tabs array - if provided, takes precedence over parentRouteId */
+  /** Takes precedence over parentRouteId. */
   tabs?: PageTab[];
-  /** Parent route ID to auto-generate tabs from child routes with staticData.navTab */
+  /** Derives the tabs from this route's children (`staticData.navTab`) and its tabs slot. */
   parentRouteId?: string;
   title?: string;
   avatar?: TabNavAvatar;
+  /** Marks the first tab active as well, for a location that matches none of the tabs. */
   fallbackToFirst?: boolean;
   className?: string;
 }

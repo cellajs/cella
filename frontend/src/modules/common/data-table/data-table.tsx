@@ -46,13 +46,14 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   rows: TData[] | undefined;
   rowKeyGetter: (row: TData) => string;
 
-  /** Query/async state: DataTable's own concern (skeleton, error, empty, infinite scroll). */
+  // Query state, from which DataTable renders the skeleton, the error, the empty state and the infinite scroll
   hasNextPage: boolean;
   error?: Error | null;
   isLoading?: boolean;
   isFetching?: boolean;
   isFiltered?: boolean;
-  NoRowsComponent?: React.ReactNode;
+  /** The empty state while nothing is filtered, usually a ContentPlaceholder. */
+  NoRowsComponent?: ReactNode;
   fetchMore?: () => Promise<unknown>;
   /** When this value changes, internal column widths are reset (re-measured from column defaults). */
   resetWidthsKey?: string | number | boolean;
@@ -61,16 +62,16 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   readOnly?: boolean;
   enableVirtualization?: boolean;
 
-  /** Selection: DataTable wraps onSelectedRowsChange with the max-selection cap. */
   selectedRows?: Set<string>;
+  /** Skipped for a change past maxSelectableRows, which toasts a warning. */
   onSelectedRowsChange?: (selectedRows: Set<string>) => void;
 
-  /** Renderers: DataTable bundles these into a stable `renderers` object. */
   renderRow?: (key: Key, props: RenderRowProps<TData, unknown>) => ReactNode;
   renderCell?: (key: Key, props: CellRendererProps<TData, unknown>) => ReactNode;
 
   /** Cell selection mode (focus + range). Defaulted to 'none' when readOnly. @default 'cell' */
   cellSelectionMode?: CellSelectionMode;
+  /** Row height in px, for the grid and its skeleton. Defaults to 52. */
   rowHeight?: number;
 }
 

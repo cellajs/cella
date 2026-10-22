@@ -133,7 +133,7 @@ export function useTreeRows<T extends TreeItem>(options: UseTreeRowsOptions) {
   return {
     /** Bind to your query's `select` option. Stable across renders. */
     buildRows,
-    /** Toggle a row by id. Stable across renders. */
+    /** Stable across renders. */
     onToggle,
     canDrop,
     onReorder,

@@ -16,8 +16,12 @@ export const tabNavItemClass = tw(
   'focus-effect focus-inset group/tab relative rounded-sm px-2 py-3 font-medium more-contrast:opacity-100 opacity-70 transition-opacity last:mr-4 hover:opacity-100 focus-visible:opacity-100 data-[active=true]:opacity-100 lg:px-4',
 );
 
+interface TabNavLabelProps {
+  label: TKey;
+}
+
 /** A tab's label, shortened in the middle past 20 characters. */
-export function TabNavLabel({ label }: { label: TKey }) {
+export function TabNavLabel({ label }: TabNavLabelProps) {
   const { t } = useTranslation();
   return <span className="group-active/tab:press block">{truncateMiddle(t(label), 20)}</span>;
 }
@@ -33,11 +37,9 @@ interface TabNavShellProps {
 }
 
 /**
- * Sticky shell shared by PageTabNav and LocalTabNav: a three-column grid whose side columns
- * split the free space, so the tabs stay centered on the bar until the stuck avatar and title
- * need the room. Then only the right column gives way, and once it is gone the track scrolls
- * from the first tab with `justify-center-safe`. Container queries size the left cell, so the
- * same shell works inside a sheet: avatar from `@2xl`, title from `@4xl`.
+ * Sticky shell of PageTabNav and LocalTabNav. The side columns split the free space, so the tabs stay centered until the
+ * stuck avatar and title need room; the right column gives way first, then the track scrolls from its first tab
+ * (`justify-center-safe`). Container queries size the left cell, so the shell also works inside a sheet.
  */
 export function TabNavShell({ title, avatar, className, indicator, children }: TabNavShellProps) {
   return (
