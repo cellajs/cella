@@ -559,7 +559,7 @@
   "request_verification.text": "We sent you an email {{reason}}. Please check your inbox and click on the link to complete email verification.",
   "requests.text": "Requests per minute",
   "require_mfa": "Secure Account with MFA",
-  "require_mfa.text": "Your account does not have MFA enabled. Enabling MFA helps secure your account.",
+  "require_mfa.text": "Your account does not have multifactor authentication (MFA) enabled. Enabling MFA helps secure your account.",
   "resend": "Resend",
   "resend_invitation.text": "Receive a new invitation by email with a new expiration date.",
   "reset": "Reset",

@@ -17,7 +17,7 @@
   --font-sans: "Open Sans", ui-sans-serif, sans-serif;
   /* Headings share the sans stack; an app with a heading font sets it here. */
   --font-heading: var(--font-sans);
-  /* 16px at the 18px mobile root, rounded up: iOS zooms into a focused field below 16px. */
+  /* At least 16px at the 19px mobile root: iOS zooms into a focused field below 16px. */
   --text-md: 0.889rem;
   /* Badge and counter text. */
   --text-2xs: 0.6rem;
@@ -357,7 +357,7 @@
   z-index: 111;
 }
 
-/* Keep mobile prose near 16px despite the 18px root. Unlayered rules outrank typography utilities. */
+/* Mobile prose stays at text-md (about 17px), a step below the 19px root. Unlayered rules outrank typography utilities. */
 .prose {
   @apply max-sm:text-md;
 }
@@ -534,11 +534,11 @@
     --bottom-inset: env(safe-area-inset-bottom, 0px);
   }
 
-  /* Small screens enlarge everything through the rem root: 112.5% is 18px at the default size and follows the user's setting.
+  /* Small screens enlarge everything through the rem root: 118.75% is 19px at the default size and follows the user's setting.
      overflow-x-clip (on html and body, iOS needs both) keeps stray wide content from widening the layout
      viewport, which on phones reads as the page zooming out and flipping to desktop breakpoints. */
   html {
-    @apply font-sans overscroll-none overflow-x-clip max-sm:text-[112.5%];
+    @apply font-sans overscroll-none overflow-x-clip max-sm:text-[118.75%];
 
     /* Native scrollbars and form controls follow the theme. A macOS overlay scrollbar takes its thumb color from the
        scroller's color-scheme, so a transparent scroller such as the PDF viewer needs it to show a light thumb in dark mode. */
