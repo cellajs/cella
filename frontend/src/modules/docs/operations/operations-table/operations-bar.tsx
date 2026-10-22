@@ -23,13 +23,6 @@ interface OperationsTableBarProps {
 /** Display order for tag-kind groups in the filter dropdown. */
 const kindOrder = ['owner', 'entity'];
 
-/** Human-readable label for a `${kind}:${value}` filter option. */
-const labelFor = (kind: string, value: string): string => {
-  const label = upperFirst(value);
-  if (kind === 'entity') return `${label} entity`;
-  return label;
-};
-
 export function OperationsTableBar({ total, searchVars, setSearch, columns, setColumns, tagFilters, hasMcpTools }: OperationsTableBarProps) {
   const { t } = useTranslation();
   const barFilters = useTableBarFilters({ searchVars, setSearch, reset: { q: '', tag: undefined } });
@@ -39,7 +32,12 @@ export function OperationsTableBar({ total, searchVars, setSearch, columns, setC
     ...Object.keys(tagFilters).filter((kind) => !kindOrder.includes(kind) && tagFilters[kind]?.length),
   ];
 
-  const tagOptions = orderedKinds.flatMap((kind) => tagFilters[kind].map((value) => ({ value: `${kind}:${value}`, label: labelFor(kind, value) })));
+  const tagOptions = orderedKinds.flatMap((kind) =>
+    tagFilters[kind].map((value) => ({
+      value: `${kind}:${value}`,
+      label: kind === 'entity' ? t('c:docs.entity_tag', { name: upperFirst(value) }) : upperFirst(value),
+    })),
+  );
   const filterOptions = [
     { value: 'all', label: t('c:all') },
     ...tagOptions,

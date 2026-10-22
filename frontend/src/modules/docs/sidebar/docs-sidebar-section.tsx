@@ -1,5 +1,9 @@
 import type { ReactNode } from 'react';
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel } from '~/modules/ui/sidebar';
+import { tw } from '~/utils/tw';
+
+/** A sticky tier-1 row's wrapper: its opaque fill hides the rows scrolling under it, also behind the ghost hover, translucent in dark mode. */
+export const sidebarStickyRowClass = tw('sticky top-2 z-10 bg-card');
 
 interface DocsSidebarSectionProps {
   label: string;

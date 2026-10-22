@@ -11,7 +11,6 @@ interface TagSchemasTableProps {
   tagName: string;
   /** Tag kinds (e.g., 'module', 'owner') to render as dynamic columns. */
   tagKinds: string[];
-  /** Called on hover/focus to trigger prerendering of this tag's expanded details. */
   onPrerender?: () => void;
 }
 

@@ -9,7 +9,7 @@ import { tw } from '~/utils/tw';
 
 /** The /docs landing page, driven by the global docs config (content root index.mdx frontmatter). */
 export function DocsLandingPage() {
-  // Body resolved by the index route loader; the lazy path covers other callers and the no-body case
+  // The index route loader resolves the body, else a lazy import; the memo keeps that lazy component's identity across renders
   const Content = useMemo<ComponentType<{ components?: typeof mdxComponents }> | null>(() => {
     const resolved = getResolvedDocPageComponent('');
     if (resolved) return resolved;

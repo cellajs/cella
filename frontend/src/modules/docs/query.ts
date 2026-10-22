@@ -7,7 +7,7 @@ import { queryClient } from '~/query/query-client';
 /** Append the build SHA to a /static URL, so browser and service worker caches roll over per release. */
 const versionedUrl = (url: string) => `${url}?v=${__APP_VERSION__}`;
 
-/** Base URL for docs JSON files served at /static/docs.gen (generated into sdk/gen, copied by Vite) */
+/** Where Vite serves the docs JSON that the sdk generates into sdk/gen. */
 const docsBaseUrl = `${appConfig.frontendUrl}/static/docs.gen`;
 
 /** Fetch JSON with Content-Type validation (guards against SPA HTML fallback responses). */
@@ -43,7 +43,7 @@ export const openApiSpecQueryOptions = queryOptions({
   staleTime: 'static',
 });
 
-/** Group items by key(s). Supports single-key and multi-key (array) extractors. */
+/** An item whose extractor returns several keys joins each of those groups. */
 function groupBy<T>(items: T[], getKeys: (item: T) => string | string[]): Record<string, T[]> {
   const result: Record<string, T[]> = {};
   for (const item of items) {
@@ -107,7 +107,7 @@ export const schemaTagsQueryOptions = queryOptions({
 export const tagDetailsQueryOptions = (tagName: string) =>
   queryOptions({
     queryKey: docsKeys.tagDetails(tagName),
-    queryFn: () => (tagName ? fetchJson<GenOperationDetail[]>(`${docsBaseUrl}/details.gen/${tagName}.gen.json`) : ([] as GenOperationDetail[])),
+    queryFn: async (): Promise<GenOperationDetail[]> => (tagName ? fetchJson(`${docsBaseUrl}/details.gen/${tagName}.gen.json`) : []),
     staleTime: 'static',
   });
 
@@ -116,7 +116,7 @@ export const prefetchTagDetails = (tagName: string) => {
   void queryClient.query(tagDetailsQueryOptions(tagName)).catch(() => {});
 };
 
-/** Every exported definition of a generated sdk source file, by export name. */
+/** The `buildIndex` of a generated sdk file, which Vite serves from /static. */
 const definitionIndexQueryOptions = (queryKey: readonly string[], file: string) =>
   queryOptions({
     queryKey,

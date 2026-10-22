@@ -19,7 +19,7 @@ export function openExamplesSheet(operation: GenOperationSummary, trigger: HTMLB
   });
 }
 
-/** Wrap the parent component in a Suspense boundary for optimal batching. */
+/** Suspends until its four queries resolve; `openExamplesSheet` gives it the boundary. */
 export function OperationExamples({ operationId, tagName }: OperationExamplesProps) {
   const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);

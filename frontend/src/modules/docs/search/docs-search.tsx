@@ -27,12 +27,6 @@ type SearchSelection = DocsSearchResult | HistoryEntry;
 
 export const docsSearchDialogId = 'docs-search';
 
-/** Scope chips, labeled by the config-driven sidebar section labels. */
-const scopeChips: { value: DocsSearchScope; label: string }[] = [
-  { value: 'pages', label: docsConfig.sections.find((section) => section.id === 'pages')?.label ?? 'Documentation' },
-  { value: 'api', label: docsConfig.sections.find((section) => section.id === 'apiReference')?.label ?? 'API' },
-];
-
 /** Docs search dialog: client-side search over docs pages and the API reference, works offline. */
 export function DocsSearch() {
   const { t } = useTranslation();
@@ -98,6 +92,11 @@ export function DocsSearch() {
     close();
   };
 
+  // Scope chips carry the docs config's sidebar section labels
+  const scopeChips: { value: DocsSearchScope; label: string }[] = [
+    { value: 'pages', label: docsConfig.sections.find((section) => section.id === 'pages')?.label ?? t('c:documentation') },
+    { value: 'api', label: docsConfig.sections.find((section) => section.id === 'apiReference')?.label ?? t('c:docs.api_reference') },
+  ];
   // Scoped placeholder mirrors the active chip ("Search API reference...").
   const activeChipLabel = scopeChips.find((chip) => chip.value === scope)?.label;
   const placeholder = activeChipLabel ? t('c:placeholder.search_resource', { resource: activeChipLabel }) : t('c:docs.search.placeholder');

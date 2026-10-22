@@ -9,10 +9,7 @@ export const docsSidebarSheetId = 'docs-sidebar';
 /** A closed keepMounted sheet stays in the list with `open: false`. */
 export const isDocsSidebarOpen = (sheets: InternalSheet[]) => sheets.some((sheet) => sheet.id === docsSidebarSheetId && sheet.open !== false);
 
-/**
- * Click handler for a docs sidebar link. In the mobile sheet it closes the sheet and navigates a frame later, so the
- * slide-out starts before the new page renders under it. On desktop, and on a modified click, the link navigates as usual.
- */
+/** In the open mobile sheet: closes it and navigates a frame later, so the slide-out starts before the new page renders. Otherwise a plain link. */
 export function closeSidebarSheetAndNavigate(event: MouseEvent<HTMLAnchorElement>) {
   if (isModifiedClick(event) || !isDocsSidebarOpen(sheeter.getState().sheets)) return;
   sheeter.getState().remove(docsSidebarSheetId);

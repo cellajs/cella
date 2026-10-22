@@ -6,7 +6,6 @@ import { TagHashLink, TagTable } from '~/modules/docs/tag-table';
 interface TagOperationsTableProps {
   operations: GenOperationSummary[];
   tagName: string;
-  /** Called on hover/focus to trigger prerendering of this tag's details */
   onPrerender?: () => void;
 }
 
@@ -15,7 +14,6 @@ function operationColumns(tagName: string): ColumnOrColumnGroup<GenOperationSumm
     {
       key: 'method',
       name: '',
-
       width: 64,
       renderCell: ({ row }) => <MethodLabel method={row.method} />,
     },
@@ -23,7 +21,6 @@ function operationColumns(tagName: string): ColumnOrColumnGroup<GenOperationSumm
       key: 'path',
       name: '',
       minWidth: 200,
-
       renderCell: ({ row, tabIndex }) => (
         <TagHashLink tagParam="operationTag" tagName={tagName} hash={row.hash} tabIndex={tabIndex} title={row.path} dir="rtl">
           &lrm;{row.path}
@@ -34,7 +31,6 @@ function operationColumns(tagName: string): ColumnOrColumnGroup<GenOperationSumm
       key: 'id',
       name: '',
       minBreakpoint: 'md',
-
       width: 200,
       renderCell: ({ row }) => <code className="truncate text-muted-foreground text-xs">{row.id}</code>,
     },

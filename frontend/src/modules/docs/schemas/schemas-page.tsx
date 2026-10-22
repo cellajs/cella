@@ -1,6 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenComponentSchema, GenSchemaTagSummary } from 'sdk/docs-types';
 import { usePrerenderTrigger } from '~/hooks/use-prerender';
@@ -15,7 +14,7 @@ import { TagSectionCard } from '~/modules/docs/tag-section-card';
 import { collectTagKinds } from '~/modules/docs/tag-table';
 
 /** All component schemas from the OpenAPI spec, categorized into base, data, and errors tags. */
-function SchemasPage() {
+export function SchemasPage() {
   const { t } = useTranslation();
   const { schemaTag: activeSchemaTag } = useSearch({ from: '/_public/_content/docs/schemas' });
 
@@ -25,12 +24,11 @@ function SchemasPage() {
   const { data: schemasByTag } = useSuspenseQuery(schemasByTagQueryOptions);
   const { data: schemaTags } = useSuspenseQuery(schemaTagsQueryOptions);
 
-  // Distinct non-schema tag kinds (e.g., 'module', 'owner') drive the dynamic columns
-  const tagKinds = useMemo(() => collectTagKinds(allSchemas, ['schema']), [allSchemas]);
+  const tagKinds = collectTagKinds(allSchemas, ['schema']);
 
   const schemaCount = schemaTags.reduce((sum, tag) => sum + tag.count, 0);
 
-  // Schema refs are contributed by SchemaDetail when rendered
+  // Tag names only: a mounted TagSchemasList registers its schema anchors
   const tagSectionIds = schemaTags.map((tag) => tag.name);
 
   useScrollSpy(tagSectionIds);
@@ -48,7 +46,7 @@ function SchemasPage() {
           <SchemaTagSection
             key={tag.name}
             tag={tag}
-            schemas={schemasByTag[tag.name] || []}
+            schemas={schemasByTag[tag.name] ?? []}
             tagKinds={tagKinds}
             isOpen={activeSchemaTag === tag.name}
             onPrerender={() => prerender(tag.name)}
@@ -92,5 +90,3 @@ function SchemaTagSection({ tag, schemas, tagKinds, isOpen, onPrerender }: Schem
     </TagSectionCard>
   );
 }
-
-export { SchemasPage };

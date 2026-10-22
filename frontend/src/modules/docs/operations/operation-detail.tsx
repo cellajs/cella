@@ -107,7 +107,7 @@ export function TagOperationsList({ operations }: TagOperationsListProps) {
   const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   const detailsById = new Map(tagDetails.map((detail) => [detail.operationId, detail]));
 
-  // Guard against empty operations to prevent fetching with undefined tag name
+  // Without operations the tag name is '', whose query fetches nothing; this skips the empty dashed list
   if (operations.length === 0) return null;
 
   return (

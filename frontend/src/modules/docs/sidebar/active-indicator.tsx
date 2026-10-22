@@ -1,28 +1,28 @@
 import { IndicatorBar } from '~/modules/common/spy-nav-item';
 
-// Use rem values for proper mobile scaling
-const itemHeightRem = 2; // 32px at base 16px
-const listPaddingTopRem = 0.25; // 4px at base 16px
-const indicatorOffsetRem = 0.5; // 8px at base 16px
-const indicatorHeightRem = 1; // 16px (ITEM_HEIGHT - 16)
+// In rem, so the bar scales with the root font size: it sits centred on an `h-8` row, below the list's `py-1`
+const rowHeightRem = 2;
+const barHeightRem = 1;
+const barTopRem = 0.25 + (rowHeightRem - barHeightRem) / 2;
 
 interface ActiveIndicatorProps {
   /** Index of the active row in the list. Pass -1 (or any negative) to hide. */
   activeIndex: number;
   /** Unique id for the motion layout animation between sibling lists. */
   layoutId: string;
-  /** When true, falls back to a CSS transform transition (no motion shared layout). */
+  /** Below `md`, where the sidebar is a sheet: the bar moves by a CSS transform, without motion's shared layout. */
   isMobile: boolean;
 }
 
-/** Assumes a `relative` parent, items stacked with no gap, and each item `h-8`. */
+/** Assumes a `relative` list with `py-1` whose rows are `h-8` and stack with no gap. */
 export function ActiveIndicator({ activeIndex, layoutId, isMobile }: ActiveIndicatorProps) {
   if (activeIndex < 0) return null;
-  const top = listPaddingTopRem + indicatorOffsetRem;
-  const rowOffset = activeIndex * itemHeightRem;
-  const height = `${indicatorHeightRem}rem`;
-  // Mobile moves the bar by transform: that transition stays on the compositor, where a `top` transition relayouts every frame
-  const style = isMobile ? { top: `${top}rem`, height, transform: `translateY(${rowOffset}rem)` } : { top: `${top + rowOffset}rem`, height };
+  const rowOffset = activeIndex * rowHeightRem;
+  const height = `${barHeightRem}rem`;
+  // A transform transition stays on the compositor, where a `top` transition relayouts every frame
+  const style = isMobile
+    ? { top: `${barTopRem}rem`, height, transform: `translateY(${rowOffset}rem)` }
+    : { top: `${barTopRem + rowOffset}rem`, height };
 
   return (
     <IndicatorBar layoutId={layoutId} animate={!isMobile} className={isMobile ? 'transition-transform duration-200' : undefined} style={style} />

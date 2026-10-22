@@ -15,7 +15,7 @@ interface TagExpandLinkProps extends Pick<LinkProps, 'to' | 'search' | 'hash'> {
   onClick?: () => void;
 }
 
-/** The chevron stays mounted across toggles so its rotation animates smoothly. */
+/** The chevron rotates in place when the section toggles, so the turn animates; the spinner takes its place while details load. */
 export function TagExpandLink({ isOpen, tagName, loading, to, search, hash, onMouseEnter, onClick }: TagExpandLinkProps) {
   const { t } = useTranslation();
   const text = isOpen ? t('c:docs.hide_details') : t('c:docs.show_details');

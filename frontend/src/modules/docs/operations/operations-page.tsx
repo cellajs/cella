@@ -15,7 +15,7 @@ import { TagExpandLink } from '~/modules/docs/tag-expand-link';
 import { TagOperationsTable } from '~/modules/docs/tag-operations-table';
 import { TagSectionCard } from '~/modules/docs/tag-section-card';
 
-function OperationsPage() {
+export function OperationsPage() {
   const { t } = useTranslation();
   const { operationTag: activeTag } = useSearch({ from: '/_public/_content/docs/operations' });
 
@@ -26,7 +26,7 @@ function OperationsPage() {
 
   const operationCount = tags.reduce((sum, tag) => sum + tag.count, 0);
 
-  // Operation hashes are contributed by OperationDetail when rendered
+  // Tag ids only: each tag's TagOperationsList adds its operation hashes once it mounts
   const tagSectionIds = tags.map((tag) => `tag/${tag.name}`);
 
   useScrollSpy(tagSectionIds);
@@ -59,7 +59,7 @@ function OperationsPage() {
           <OperationTagSection
             key={tag.name}
             tag={tag}
-            operations={operationsByTag[tag.name] || []}
+            operations={operationsByTag[tag.name] ?? []}
             isOpen={activeTag === tag.name}
             onPrerender={() => {
               prefetchTagDetails(tag.name);
@@ -91,7 +91,7 @@ function OperationTagSection({ tag, operations, isOpen, onPrerender }: Operation
     return () => cancelAnimationFrame(frame);
   }, [isOpen]);
 
-  // `enabled: isOpen` keeps tag details dormant until the user expands the section
+  // While open, the expand link spins until the tag's details arrive; the route loader already started that fetch
   const { isFetching: isFetchingDetails } = useQuery({ ...tagDetailsQueryOptions(tag.name), enabled: isOpen });
 
   return (
@@ -115,5 +115,3 @@ function OperationTagSection({ tag, operations, isOpen, onPrerender }: Operation
     </TagSectionCard>
   );
 }
-
-export { OperationsPage };

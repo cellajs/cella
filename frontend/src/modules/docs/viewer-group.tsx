@@ -40,7 +40,7 @@ export function ViewerGroup({ schema, zodCode, typeCode, example, defaultInspect
       <ToggleGroup
         type="single"
         value={viewMode}
-        onValueChange={(value: string | string[]) => value && setViewMode(value as SchemaViewMode)}
+        onValueChange={(value) => setViewMode((mode) => toggleItems.find((item) => item.value === value)?.value ?? mode)}
         size="xs"
         variant="outline"
         className="absolute top-2 right-2 z-10 bg-muted/50 max-md:hidden"

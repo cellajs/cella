@@ -3,7 +3,7 @@ import { DocsPageHeader } from '~/modules/docs/docs-page-header';
 import { OpenApiSpecViewer } from '~/modules/docs/openapi-spec-viewer';
 import { OverviewTable } from '~/modules/docs/overview-table';
 
-function OverviewPage() {
+export function OverviewPage() {
   const { t } = useTranslation();
 
   return (
@@ -14,5 +14,3 @@ function OverviewPage() {
     </div>
   );
 }
-
-export { OverviewPage };

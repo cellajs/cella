@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { collapsiblePanelClass } from '~/modules/docs/collapsible-panel';
@@ -39,7 +38,7 @@ interface CollapsibleTagItemProps<T> {
   layoutId: string;
   renderItem: (item: T, isActive: boolean) => ReactNode;
   itemKey: (item: T) => string;
-  /** Called on hover to trigger prerendering of this tag's details in the page */
+  /** Called on hover while the tag is collapsed, to prerender its details in the page. */
   onPrerender?: () => void;
 }
 
@@ -56,12 +55,10 @@ function CollapsibleTagItemBase<T>({
   itemKey,
   onPrerender,
 }: CollapsibleTagItemProps<T>) {
-  // Sheet-mode threshold (below `md`), where the active indicator moves by transform
   const isMobile = useBreakpointBelow('md', false);
   const { linkTo, getSearch, getHash } = tagTypeConfig[type];
   const hash = getHash(tag.name);
-  // Collapsing is a re-click at the tag itself. While expanded but at one of its items or scrolled
-  // elsewhere, the click jumps to this section and leaves it open.
+  // Only a re-click at the tag itself collapses it; at one of its items or elsewhere, the click jumps here and leaves it open
   const collapseOnClick = isExpanded && isAtTag;
 
   return (
@@ -87,11 +84,11 @@ function CollapsibleTagItemBase<T>({
         }
       >
         <div className="absolute left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/tag:bg-muted-foreground/60" />
-        <span>{tag.name}</span>
+        <span className="truncate">{tag.name}</span>
         <span className="text-muted-foreground text-xs opacity-0 transition-opacity group-data-[expanded=true]/tag:hidden sm:group-hover:opacity-100">
           {tag.count}
         </span>
-        <ChevronDownIcon className="invisible ml-auto opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/tag:rotate-180" />
+        <ChevronDownIcon className="invisible ml-auto shrink-0 opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/tag:rotate-180" />
       </CollapsibleTrigger>
       <CollapsibleContent className={collapsiblePanelClass}>
         <div className="relative flex flex-col py-1">

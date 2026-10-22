@@ -6,6 +6,7 @@ import { getSection, scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { collapsiblePanelClass } from '~/modules/docs/collapsible-panel';
 import { ActiveIndicator } from '~/modules/docs/sidebar/active-indicator';
+import { sidebarStickyRowClass } from '~/modules/docs/sidebar/docs-sidebar-section';
 import { closeSidebarSheetAndNavigate, docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { sidebarLeafClass } from '~/modules/docs/sidebar/sidebar-hash-item';
 import { type DocPage, pageSectionId } from '~/modules/page/content';
@@ -33,7 +34,6 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
   const isActive = activePageId === page.id;
   const isExpanderOnly = page.renderMode === 'nodeOnly' && hasChildren;
   const isRoot = variant === 'root';
-  // Sheet-mode threshold (below `md`): the indicator moves as in the tag groups
   const isMobile = useBreakpointBelow('md', false);
   const layoutId = useId();
   const activeChildIndex = isRoot ? -1 : children.findIndex((child) => child.page.id === activePageId);
@@ -43,14 +43,11 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
       open={hasChildren && isExpanded}
       render={<SidebarMenuItem className={isRoot ? 'group/page-root' : 'group/page-parent'} data-expanded={isExpanded} />}
     >
-      {/* Vertical guideline (parent tier only), reads expanded state from the row scope */}
       {!isRoot && hasChildren && (
         <div className="pointer-events-none absolute top-8 bottom-2 left-2.5 hidden w-px bg-muted-foreground/30 group-data-[expanded=true]/page-parent:block" />
       )}
 
-      {/* Sticky tier-1 row: pins just below the scroller top while its subtree scrolls. The wrapper holds the opaque bg,
-            so the ghost hover (translucent in dark mode) still hides the rows passing underneath. */}
-      <div className={isRoot ? 'sticky top-2 z-10 bg-card' : 'contents'}>
+      <div className={isRoot ? sidebarStickyRowClass : 'contents'}>
         <Link
           to="/docs/page/$"
           params={{ _splat: page.id }}
@@ -72,13 +69,15 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
               onToggle(page.id);
               return;
             }
-            // Collapsing is a re-click at the top of the page you are on. Further down that page the click scrolls back up,
-            // and from another page it navigates here; both leave the subtree open.
+            // On the page itself a click collapses the subtree at the top, and further down scrolls back up with the subtree open
             if (hasChildren && isExpanded && isActive) {
               event.preventDefault();
-              if (getSection() === pageSectionId) return onToggle(page.id);
-              scrollToSectionById(pageSectionId);
-              sheeter.getState().remove(docsSidebarSheetId);
+              if (getSection() === pageSectionId) {
+                onToggle(page.id);
+              } else {
+                scrollToSectionById(pageSectionId);
+                sheeter.getState().remove(docsSidebarSheetId);
+              }
               return;
             }
             if (hasChildren && !isExpanded) onToggle(page.id);
@@ -86,7 +85,6 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
             if (!hasChildren) closeSidebarSheetAndNavigate(event);
           }}
         >
-          {/* Leading dot (parent tier only) */}
           {!isRoot && (
             <div className="absolute left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/page-parent:bg-muted-foreground/60" />
           )}

@@ -79,7 +79,6 @@ export function TagTable<T>({ rows, columns, rowKeyGetter, hideHeader, onPrerend
   );
 }
 
-/** A tag-kind cell: one badge per tag. */
 export function TagBadges({ values }: { values: string[] }) {
   return (
     <div className="flex flex-wrap gap-1">

@@ -5,7 +5,7 @@ import { type MouseEvent, type ReactNode, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { collapsiblePanelClass } from '~/modules/docs/collapsible-panel';
 import { operationsQueryOptions, schemasQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
-import { DocsSidebarSection } from '~/modules/docs/sidebar/docs-sidebar-section';
+import { DocsSidebarSection, sidebarStickyRowClass } from '~/modules/docs/sidebar/docs-sidebar-section';
 import { OperationsSidebar } from '~/modules/docs/sidebar/operations-sidebar';
 import { SchemasSidebar } from '~/modules/docs/sidebar/schemas-sidebar';
 import { buttonVariants } from '~/modules/ui/button';
@@ -13,9 +13,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/u
 import { SidebarGroupContent } from '~/modules/ui/sidebar';
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
-
-/** Search params of the operations and schemas routes; the router types location.search as the union of all routes. */
-type DocsSearch = { operationTag?: string; schemaTag?: string; q?: string };
 
 type ApiSection = 'operations' | 'schemas';
 
@@ -32,12 +29,12 @@ export function ApiReferenceSection({ label }: ApiReferenceSectionProps) {
 
   // Narrow selects: the whole router state changes several times per navigation
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const activeOperationTag = useRouterState({ select: (state) => (state.location.search as DocsSearch).operationTag });
-  const activeSchemaTag = useRouterState({ select: (state) => (state.location.search as DocsSearch).schemaTag });
-  const hasQuery = useRouterState({ select: (state) => !!(state.location.search as DocsSearch).q });
+  const activeOperationTag = useRouterState({ select: (state) => state.location.search.operationTag });
+  const activeSchemaTag = useRouterState({ select: (state) => state.location.search.schemaTag });
+  const hasQuery = useRouterState({ select: (state) => !!state.location.search.q });
   const isOperationsRoute = pathname === '/docs/operations';
   const isOperationsTableRoute = pathname === '/docs/operations/table';
-  const isSchemasRoute = pathname.includes('/docs/schemas');
+  const isSchemasRoute = pathname === '/docs/schemas';
 
   // Start collapsed when landing directly via URL without search params
   const hasOperationSearchParams = !!activeOperationTag || hasQuery;
@@ -100,8 +97,7 @@ interface ApiReferenceGroupProps {
 function ApiReferenceGroup({ to, label, count, isActive, isOpen, onClick, onPrefetch, children }: ApiReferenceGroupProps) {
   return (
     <Collapsible open={isOpen}>
-      {/* Sticky tier-1 row: opaque bg so section content passes underneath */}
-      <div className="sticky top-2 z-10 bg-card">
+      <div className={sidebarStickyRowClass}>
         <CollapsibleTrigger
           render={
             <Link

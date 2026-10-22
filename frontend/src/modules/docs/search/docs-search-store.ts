@@ -6,12 +6,9 @@ interface DocsSearchStoreState {
   recentSearches: string[];
 }
 
-/**
- * Recent docs searches. Persisted to localStorage, not the per-user idb kv store: docs is public
- * and idb no-ops while signed out, which would drop history for anonymous visitors.
- */
+/** Recent docs searches, in localStorage: the per-user idb store no-ops while signed out, which would drop an anonymous visitor's history. */
 export const useDocsSearchStore = create<DocsSearchStoreState>()(
-  persist(() => ({ recentSearches: [] as string[] }), { name: 'docs-search', storage: createJSONStorage(() => localStorage) }),
+  persist<DocsSearchStoreState>(() => ({ recentSearches: [] }), { name: 'docs-search', storage: createJSONStorage(() => localStorage) }),
 );
 
 export const removeRecentSearch = (value: string) => {

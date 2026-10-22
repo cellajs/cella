@@ -11,9 +11,11 @@ import { ButtonGroup } from '~/modules/ui/button-group';
 
 interface JsonActionsProps {
   url: string;
+  /** The JSON value the copy button writes to the clipboard. */
   data: unknown;
   filename: string;
-  resourceName?: string;
+  /** Names what was copied in the success toast. */
+  resourceName: string;
   className?: string;
 }
 
@@ -25,7 +27,7 @@ export function JsonActions({ url, data, filename, resourceName, className }: Js
 
   const handleCopy = () => {
     copyToClipboard(JSON.stringify(data, null, 2));
-    toaster.success(t('c:success.resource_copied', { resource: resourceName ?? 'JSON' }));
+    toaster.success(t('c:success.resource_copied', { resource: resourceName }));
   };
 
   const handleOpen = () => {

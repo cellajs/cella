@@ -1,8 +1,7 @@
 import { Outlet, useNavigate } from '@tanstack/react-router';
-import i18n from 'i18next';
 import { ArrowUpIcon, MenuIcon } from 'lucide-react';
-import type { CSSProperties } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { type KeyboardEvent, type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { useFirstTimeHint } from '~/hooks/use-first-time-hint';
 import { useHotkeys } from '~/hooks/use-hot-keys';
@@ -23,14 +22,15 @@ const maxSidebarWidth = 400;
 /** The width of `--docs-sidebar-width`'s CSS default, clamp(220px, 24vw, 288px), for the resize handle's value. */
 const getDefaultSidebarWidth = () => Math.round(Math.min(288, Math.max(minSidebarWidth, window.innerWidth * 0.24)));
 
-function DocsLayout() {
+export function DocsLayout() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const isDesktop = useBreakpointAbove('md');
   const triggerRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Resizable sidebar width (desktop only); main content uses window scroll offset by the same CSS variable
+  // The handle's width in px, `null` for the CSS default; `main` is offset by the same variable, and the window scrolls
   const [resizedSidebarWidth, setResizedSidebarWidth] = useState<number | null>(null);
 
   const showScrollTop = useScrolledPast(300, !isDesktop);
@@ -38,7 +38,7 @@ function DocsLayout() {
   const isAtTop = !useScrolledPast(8, !isDesktop);
   const showMenuLabel = useFirstTimeHint('floating-menu-docs', !isDesktop && isAtTop);
 
-  const startSidebarResize = (event: React.PointerEvent) => {
+  const startSidebarResize = (event: ReactPointerEvent) => {
     event.preventDefault();
     const startX = event.clientX;
     const startWidth = sidebarRef.current?.getBoundingClientRect().width ?? minSidebarWidth;
@@ -68,8 +68,7 @@ function DocsLayout() {
     document.body.style.cursor = 'col-resize';
   };
 
-  // The keyboard path of the same handle: arrows move it in steps, Home and End jump to the limits.
-  const resizeSidebarByKey = (event: React.KeyboardEvent) => {
+  const resizeSidebarByKey = (event: KeyboardEvent) => {
     const width = sidebarRef.current?.getBoundingClientRect().width ?? minSidebarWidth;
     const target = { ArrowLeft: width - 16, ArrowRight: width + 16, Home: minSidebarWidth, End: maxSidebarWidth }[event.key];
     if (target === undefined) return;
@@ -84,7 +83,7 @@ function DocsLayout() {
     id: docsSidebarSheetId,
     side: 'left',
     triggerRef,
-    title: i18n.t('c:docs'),
+    title: t('c:docs'),
     headerClassName: 'hidden',
     className: tw('w-72 p-0'),
     closeSheetOnRouteChange: false,
@@ -103,7 +102,7 @@ function DocsLayout() {
 
   // Search on ⌘K/Ctrl-K, collapse on ESC
   useHotkeys([
-    ['Mod + K', () => toggleDocsSearch()],
+    ['Mod + K', toggleDocsSearch],
     [
       'Escape',
       () => {
@@ -131,22 +130,22 @@ function DocsLayout() {
       id: 'docs-menu',
       icon: MenuIcon,
       onClick: toggleSidebar,
-      ariaLabel: i18n.t('c:toggle_menu'),
+      ariaLabel: t('c:toggle_menu'),
       direction: 'left',
-      label: i18n.t('c:menu'),
+      label: t('c:menu'),
       labelVisible: showMenuLabel,
     },
     {
       id: 'docs-scroll-top',
       icon: ArrowUpIcon,
       onClick: scrollToTop,
-      ariaLabel: i18n.t('c:scroll_to_top'),
+      ariaLabel: t('c:scroll_to_top'),
       visible: showScrollTop,
       direction: 'right',
     },
   ];
 
-  const sidebarWidthStyle = resizedSidebarWidth === null ? undefined : ({ '--docs-sidebar-width': `${resizedSidebarWidth}px` } as CSSProperties);
+  const sidebarWidthStyle = resizedSidebarWidth === null ? undefined : { '--docs-sidebar-width': `${resizedSidebarWidth}px` };
 
   // One root at every width, so `main` and the page in it stay mounted when the window crosses `md`
   return (
@@ -157,7 +156,7 @@ function DocsLayout() {
           {/* biome-ignore lint/a11y/useSemanticElements: a focusable resize handle, which `<hr>`, a static rule, is not */}
           <div
             role="separator"
-            aria-label={i18n.t('c:resize_sidebar')}
+            aria-label={t('c:resize_sidebar')}
             aria-orientation="vertical"
             aria-valuenow={resizedSidebarWidth ?? getDefaultSidebarWidth()}
             aria-valuemin={minSidebarWidth}
@@ -178,5 +177,3 @@ function DocsLayout() {
     </div>
   );
 }
-
-export { DocsLayout };

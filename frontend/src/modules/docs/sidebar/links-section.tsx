@@ -17,9 +17,8 @@ const rowClass = tw('w-full justify-start lowercase');
 
 export function LinksSection({ label }: LinksSectionProps) {
   const { t } = useTranslation();
-  const contactRef = useRef<HTMLButtonElement | null>(null);
+  const contactRef = useRef<HTMLButtonElement>(null);
   const hasStatusPage = !!appConfig.statusUrl?.trim();
-  // Only link the llms page when the content file exists.
   const hasLlmsPage = !!getDocPage('llms');
 
   return (

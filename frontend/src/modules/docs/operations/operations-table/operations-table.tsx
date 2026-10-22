@@ -1,5 +1,4 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary } from 'sdk/docs-types';
 import { useSearchParams } from '~/hooks/use-search-params';
@@ -16,7 +15,7 @@ import { infoQueryOptions, operationsQueryOptions } from '~/modules/docs/query';
 import { collectTagKinds } from '~/modules/docs/tag-table';
 import { useUIStore } from '~/modules/ui/ui-store';
 
-function OperationsTable() {
+export function OperationsTable() {
   const { t } = useTranslation();
   const focusView = useUIStore((state) => state.focusView);
   const { search, setSearch } = useSearchParams<{ q?: string; sort?: string; order?: 'asc' | 'desc'; tag?: string }>({
@@ -33,20 +32,18 @@ function OperationsTable() {
 
   const { data: operations } = useSuspenseQuery(operationsQueryOptions);
 
-  const tagKinds = useMemo(() => collectTagKinds(operations), [operations]);
+  const tagKinds = collectTagKinds(operations);
 
   // kind -> distinct values present; 'module' is driven by the sidebar and 'schema' does not apply here
-  const tagFilters = useMemo(() => {
-    const valuesByKind: Record<string, Set<string>> = {};
-    for (const op of operations) {
-      for (const [kind, values] of Object.entries(op.tagsByKind)) {
-        if (kind === 'module' || kind === 'schema') continue;
-        if (!valuesByKind[kind]) valuesByKind[kind] = new Set();
-        for (const value of values) valuesByKind[kind].add(value);
-      }
+  const valuesByKind: Record<string, Set<string>> = {};
+  for (const op of operations) {
+    for (const [kind, values] of Object.entries(op.tagsByKind)) {
+      if (kind === 'module' || kind === 'schema') continue;
+      if (!valuesByKind[kind]) valuesByKind[kind] = new Set();
+      for (const value of values) valuesByKind[kind].add(value);
     }
-    return Object.fromEntries(Object.entries(valuesByKind).map(([kind, values]) => [kind, [...values]]));
-  }, [operations]);
+  }
+  const tagFilters = Object.fromEntries(Object.entries(valuesByKind).map(([kind, values]) => [kind, [...values]]));
 
   const [columns, setColumns] = useColumns(extensions, tagKinds);
 
@@ -90,5 +87,3 @@ function OperationsTable() {
     </>
   );
 }
-
-export { OperationsTable };

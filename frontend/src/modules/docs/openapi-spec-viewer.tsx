@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { ChevronDownIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, ChevronUpIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { JsonViewer } from '~/modules/common/json-viewer/json-viewer';
 import { type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils';
@@ -14,7 +14,7 @@ import { Button } from '~/modules/ui/button';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
 
-/** Full OpenAPI spec JSON, rendered by json-viewer in 'openapi' mode for $ref click-to-scroll. */
+/** The full OpenAPI spec as JSON, in the viewer's `spec` mode, where a `$ref` scrolls to its target on click. */
 export function OpenApiSpecViewer() {
   const { t } = useTranslation();
 
@@ -25,7 +25,7 @@ export function OpenApiSpecViewer() {
 
   const { data } = useSuspenseQuery(openApiSpecQueryOptions);
 
-  const matchPaths = useMemo(() => matchRowPaths(data, searchText), [data, searchText]);
+  const matchPaths = matchRowPaths(data, searchText);
   const steps = useMatchSteps(matchPaths, setSearchMatchPath);
 
   const handleSearchChange = (newSearch: string) => {
@@ -37,7 +37,6 @@ export function OpenApiSpecViewer() {
 
   return (
     <>
-      {/* Mobile-only: actions above the sticky bar */}
       <JsonActions
         url={openApiUrl}
         data={data}
@@ -58,7 +57,7 @@ export function OpenApiSpecViewer() {
             onChange={(event) => handleSearchChange(event.target.value)}
           />
           <AnimatePresence mode="wait">
-            {isSearching ? (
+            {isSearching && (
               <motion.div
                 key="search-nav"
                 initial={{ opacity: 0, width: 0 }}
@@ -93,7 +92,7 @@ export function OpenApiSpecViewer() {
                   <ChevronDownIcon className="size-3.5" />
                 </button>
               </motion.div>
-            ) : null}
+            )}
           </AnimatePresence>
           <InputGroupAddon align="inline-end">
             <SearchClearButton className={cn(!searchText.length && 'invisible')} onClick={() => handleSearchChange('')} />
@@ -103,13 +102,14 @@ export function OpenApiSpecViewer() {
         <Button
           variant="outline"
           className="max-sm:hidden"
-          aria-label={isExpanded ? 'Reset to default' : 'Expand all'}
+          // The tree's node toggles are named "Expand" too
+          aria-label={isExpanded ? undefined : t('c:expand_all')}
           onClick={() => {
             if (isExpanded) {
               // Reset to default state by forcing re-mount
               setResetKey((prev) => prev + 1);
             }
-            setIsExpanded(!isExpanded);
+            setIsExpanded((value) => !value);
           }}
         >
           {isExpanded ? <ChevronsDownUpIcon /> : <ChevronsUpDownIcon />}

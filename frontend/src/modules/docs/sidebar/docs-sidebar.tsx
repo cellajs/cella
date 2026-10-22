@@ -14,7 +14,7 @@ import { docsConfig } from '~/modules/page/content';
 import { Button } from '~/modules/ui/button';
 import { SidebarContent } from '~/modules/ui/sidebar';
 
-/** Sections come from the global docs config (content root index.mdx frontmatter): label, order, visibility. */
+/** The sections `docsConfig` lists, in their array order; one with `visible: false` is left out. */
 export function DocsSidebar() {
   const { t } = useTranslation();
   const searchTriggerRef = useRef<HTMLButtonElement>(null);
@@ -29,7 +29,6 @@ export function DocsSidebar() {
             to="/about"
             draggable={false}
             className="focus-effect active:press ml-1 flex h-8 items-center rounded-md transition-transform hover:scale-105"
-            aria-label={t('c:go_to_about')}
             onClick={closeSidebarSheetAndNavigate}
           >
             <Logo iconOnly height={28} title={null} />
@@ -48,14 +47,7 @@ export function DocsSidebar() {
         </TooltipButton>
         <div className="ml-auto flex items-center gap-1">
           <TooltipButton toolTipContent={t('c:search')}>
-            <Button
-              ref={searchTriggerRef}
-              variant="ghost"
-              size="icon"
-              className="size-9"
-              aria-label={t('c:search')}
-              onClick={() => openDocsSearch(searchTriggerRef)}
-            >
+            <Button ref={searchTriggerRef} variant="ghost" size="icon" className="size-9" onClick={() => openDocsSearch(searchTriggerRef)}>
               <SearchIcon className="size-5" />
             </Button>
           </TooltipButton>
@@ -63,7 +55,6 @@ export function DocsSidebar() {
         </div>
       </div>
 
-      {/* Sections are pre-sorted by order in content.ts */}
       {docsConfig.sections
         .filter((section) => section.visible)
         .map((section) => {

@@ -7,10 +7,7 @@ export const mcpToolFilter = 'mcp';
 interface FilterOptions {
   /** Free-text query; space-separated terms are AND-combined. */
   q: string;
-  /**
-   * Tag filter encoded as `${kind}:${value}` (e.g. `'owner:cella'`); restricts to operations whose
-   * `tagsByKind[kind]` includes `value`. `mcpToolFilter` restricts to MCP tools.
-   */
+  /** `${kind}:${value}` (e.g. `'owner:cella'`) keeps the operations whose `tagsByKind[kind]` holds `value`; `mcpToolFilter` keeps MCP tools. */
   tag?: string;
 }
 

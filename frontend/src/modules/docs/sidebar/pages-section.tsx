@@ -23,12 +23,7 @@ export function PagesSection({ label }: PagesSectionProps) {
       action={
         isSystemAdmin && (
           <TooltipButton toolTipContent={t('c:manage_pages')} side="right">
-            <Button
-              variant="ghost"
-              size="xs"
-              className="h-7 w-8 p-0"
-              render={<Link to="/docs/pages" onClick={closeSidebarSheetAndNavigate} aria-label={t('c:manage_pages')} />}
-            >
+            <Button variant="ghost" size="xs" className="h-7 w-8 p-0" render={<Link to="/docs/pages" onClick={closeSidebarSheetAndNavigate} />}>
               <PencilIcon className="size-3.5" />
             </Button>
           </TooltipButton>

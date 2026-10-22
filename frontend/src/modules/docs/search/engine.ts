@@ -50,7 +50,7 @@ function pageDocs(page: EnginePage): SearchDoc[] {
     pageId: page.slug,
     path: '',
     tags: [],
-    breadcrumbs: [] as string[],
+    breadcrumbs: [],
     to: '/docs/page/$',
     params: { _splat: page.slug },
   };
@@ -96,7 +96,7 @@ function operationDoc(op: GenOperationSummary, labels: EngineLabels): SearchDoc 
     kind: 'operation',
     pageId: `operation:${op.hash}`,
     title: op.summary || op.id,
-    content: op.description ?? '',
+    content: op.description,
     path: `${op.method} ${op.path}`,
     tags: op.tags,
     breadcrumbs: [labels.operations, ...op.tags],
