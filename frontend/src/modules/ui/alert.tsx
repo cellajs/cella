@@ -49,7 +49,7 @@ export function Alert({
           onClick={onClose}
           className="focus-effect absolute top-2 right-2 rounded-sm p-1 opacity-70 transition-opacity hover:bg-accent hover:opacity-100 disabled:pointer-events-none"
         >
-          <XIcon className="size-5" strokeWidth={1.5} />
+          <XIcon className="size-5" />
           <span className="sr-only">{t('c:close')}</span>
         </button>
       )}

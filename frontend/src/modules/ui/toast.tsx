@@ -83,10 +83,7 @@ export function Toaster({ children, position = 'bottom', ...props }: ToastPrimit
         <ToastPrimitive.Viewport
           data-slot="toast-viewport"
           data-position={position}
-          className={cn(
-            'group/toast-viewport pointer-events-none fixed inset-x-4 z-500 mx-auto w-auto max-w-115 outline-hidden [--toast-dir:1] sm:right-4 sm:left-auto sm:mx-0 sm:w-full',
-            'data-[position=top]:top-[calc(1rem+env(safe-area-inset-top,0px))] data-[position=bottom]:bottom-4 data-[position=top]:[--toast-dir:-1]',
-          )}
+          className="group/toast-viewport pointer-events-none fixed inset-x-4 z-500 mx-auto w-auto max-w-115 outline-hidden [--toast-dir:1] data-[position=top]:top-[calc(1rem+env(safe-area-inset-top,0px))] data-[position=bottom]:bottom-4 sm:right-4 sm:left-auto sm:mx-0 sm:w-full data-[position=top]:[--toast-dir:-1]"
         >
           <ToastList position={position} />
         </ToastPrimitive.Viewport>

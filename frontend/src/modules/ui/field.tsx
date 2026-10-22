@@ -229,7 +229,7 @@ export function FormItem({ className, name, ...props }: Omit<React.ComponentProp
       invalid={invalid}
       dirty={isDirty}
       touched={isTouched}
-      className={cn(`${labelDirection === 'top' ? 'flex-col' : 'flex-row items-center'} flex gap-2`, className)}
+      className={cn('flex gap-2', labelDirection === 'top' ? 'flex-col' : 'items-center', className)}
       {...props}
     />
   );

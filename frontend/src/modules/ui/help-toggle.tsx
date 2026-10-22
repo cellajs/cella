@@ -29,16 +29,10 @@ export function HelpToggle({ open, onToggle, className }: HelpToggleProps) {
     >
       <span className="relative size-4">
         <CircleQuestionMarkIcon
-          className={cn(
-            'absolute inset-0 transition-all duration-200 motion-reduce:transition-none',
-            open ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100',
-          )}
+          className={cn('absolute inset-0 transition-all duration-200 motion-reduce:transition-none', open && 'rotate-90 opacity-0')}
         />
         <ChevronUpIcon
-          className={cn(
-            'absolute inset-0 transition-all duration-200 motion-reduce:transition-none',
-            open ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0',
-          )}
+          className={cn('absolute inset-0 transition-all duration-200 motion-reduce:transition-none', !open && '-rotate-90 opacity-0')}
         />
       </span>
     </Button>
@@ -62,7 +56,7 @@ export function HelpCollapse({ open, children }: HelpCollapseProps) {
       <div
         className={cn(
           'overflow-hidden text-muted-foreground text-sm transition-opacity duration-200 motion-reduce:transition-none',
-          open ? 'opacity-100' : 'opacity-0',
+          !open && 'opacity-0',
         )}
       >
         {children}

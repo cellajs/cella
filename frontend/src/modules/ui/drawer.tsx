@@ -109,14 +109,7 @@ function DrawerContent({
             {...props}
           >
             {/* Drag handle outside Content, with no data-swipe-ignore, so mouse/pointer swipe works here. Hidden on left/right. */}
-            <div
-              className={cn(
-                'sticky top-0 z-20 flex shrink-0 cursor-grab items-center justify-center bg-background active:cursor-grabbing',
-                'group-data-[swipe-direction=down]/drawer-content:py-2',
-                'group-data-[swipe-direction=up]/drawer-content:sticky group-data-[swipe-direction=up]/drawer-content:top-auto group-data-[swipe-direction=up]/drawer-content:bottom-0 group-data-[swipe-direction=up]/drawer-content:order-last group-data-[swipe-direction=up]/drawer-content:py-2',
-                'group-data-[swipe-direction=left]/drawer-content:hidden group-data-[swipe-direction=right]/drawer-content:hidden',
-              )}
-            >
+            <div className="sticky top-0 z-20 flex shrink-0 cursor-grab items-center justify-center bg-background active:cursor-grabbing group-data-[swipe-direction=up]/drawer-content:sticky group-data-[swipe-direction=up]/drawer-content:top-auto group-data-[swipe-direction=up]/drawer-content:bottom-0 group-data-[swipe-direction=up]/drawer-content:order-last group-data-[swipe-direction=left]/drawer-content:hidden group-data-[swipe-direction=right]/drawer-content:hidden group-data-[swipe-direction=down]/drawer-content:py-2 group-data-[swipe-direction=up]/drawer-content:py-2">
               <div className="h-1 w-20 rounded-full bg-muted" />
             </div>
             {/* shrink-0 prevents flex from collapsing Content. Children grow naturally, Popup scrolls when overflow. */}

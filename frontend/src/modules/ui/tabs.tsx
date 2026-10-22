@@ -2,9 +2,9 @@ import { Tabs as TabsPrimitive } from '@base-ui/react/tabs';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '~/utils/cn';
 
-const tabsListVariants = cva('inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-none p-[3px] text-muted-foreground', {
+const tabsListVariants = cva('inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg p-[3px] text-muted-foreground', {
   variants: {
-    variant: { default: '', side: 'flex h-fit w-fit flex-col border-none [&>button]:w-full', underline: 'rounded-none border-b pb-2' },
+    variant: { default: '', side: 'flex h-fit w-fit flex-col [&>button]:w-full', underline: 'rounded-none border-b pb-2' },
   },
   defaultVariants: { variant: 'default' },
 });
@@ -22,7 +22,7 @@ export function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cn(
-        "focus-effect inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1 font-medium text-muted-foreground text-sm transition-[color,box-shadow] hover:text-foreground data-disabled:pointer-events-none data-active:bg-secondary data-active:text-foreground data-disabled:opacity-50 data-active:shadow-sm dark:text-muted-foreground dark:data-active:border-input dark:data-active:bg-input/30 dark:data-active:text-foreground [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "focus-effect inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-2 py-1 font-medium text-muted-foreground text-sm transition-[color,box-shadow] hover:text-foreground data-disabled:pointer-events-none data-active:bg-secondary data-active:text-foreground data-disabled:opacity-50 data-active:shadow-sm dark:data-active:border-input dark:data-active:bg-input/30 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}

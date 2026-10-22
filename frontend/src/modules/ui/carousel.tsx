@@ -210,10 +210,10 @@ function CarouselNext({ className, variant = 'outline', size = 'icon', ...props 
   );
 }
 
-const carouselDotsVariants = cva('group/dot relative flex cursor-pointer items-center justify-center rounded-full', {
+const carouselDotsVariants = cva('group/dot focus-effect relative mx-1 flex cursor-pointer items-center justify-center rounded-full', {
   variants: {
     size: { default: 'size-5', sm: 'size-6', lg: 'size-7' },
-    gap: { default: 'mx-1', sm: 'mx-1', lg: 'mx-1' },
+    gap: { default: '', sm: '', lg: '' },
   },
   defaultVariants: { size: 'default', gap: 'default' },
 });
@@ -258,13 +258,12 @@ function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
           aria-selected={current === index ? 'true' : 'false'}
           aria-label={`Slide ${index + 1}`}
           onClick={() => api?.scrollTo(index)}
-          className={cn(carouselDotsVariants({ size, gap }), 'focus-effect')}
+          className={carouselDotsVariants({ size, gap })}
         >
           <span
             aria-hidden="true"
             className={cn(
-              'size-[30%] rounded-full transition-[width,height,background-color] duration-200',
-              'pointer-coarse:size-[45%] group-hover/dots:size-[45%] group-has-[:focus-visible]/dots:size-[45%]',
+              'pointer-coarse:size-[45%] size-[30%] rounded-full transition-[width,height,background-color] duration-200 group-hover/dots:size-[45%] group-has-[:focus-visible]/dots:size-[45%]',
               current === index ? 'bg-foreground' : 'bg-muted-foreground/40 group-hover/dot:bg-muted-foreground',
             )}
           />
