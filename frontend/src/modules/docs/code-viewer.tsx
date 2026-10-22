@@ -1,8 +1,6 @@
+import { createHighlighterCore } from '@shikijs/core';
+import { createJavaScriptRegexEngine } from '@shikijs/engine-javascript';
 import { useEffect, useState } from 'react';
-import { createHighlighterCore } from 'shiki/core';
-import { createJavaScriptRegexEngine } from 'shiki/engine/javascript';
-import { bundledLanguages } from 'shiki/langs';
-import { bundledThemes } from 'shiki/themes';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 interface CodeViewerProps {
@@ -11,15 +9,15 @@ interface CodeViewerProps {
 }
 
 /**
- * Built from `shiki/core` with the themes and grammar named explicitly. The `shiki` entry bundles
- * every engine, which places the Oniguruma WASM build on the boot path; the app CSP has no
- * 'unsafe-eval', so the JavaScript regex engine is always the one used.
+ * One grammar and two themes, each imported by path so the build emits only those chunks. The grammar comes with
+ * its regular expressions precompiled for the JavaScript engine; the app CSP allows no WebAssembly, which shiki's
+ * Oniguruma engine needs. Same grammar and themes as the editor's code blocks.
  */
 let highlighterPromise: ReturnType<typeof createHighlighterCore> | null = null;
 const getHighlighter = () => {
   highlighterPromise ??= createHighlighterCore({
-    themes: [bundledThemes['github-dark-default'], bundledThemes['github-light-default']],
-    langs: [bundledLanguages.typescript],
+    themes: [import('@shikijs/themes/github-dark-default'), import('@shikijs/themes/github-light-default')],
+    langs: [import('@shikijs/langs-precompiled/typescript')],
     engine: createJavaScriptRegexEngine(),
   });
   return highlighterPromise;

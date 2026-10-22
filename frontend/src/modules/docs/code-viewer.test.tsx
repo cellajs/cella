@@ -4,10 +4,8 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Highlighting fails, so the viewer takes its plain-text fallback.
-vi.mock('shiki/core', () => ({ createHighlighterCore: () => Promise.reject(new Error('highlighter unavailable')) }));
-vi.mock('shiki/engine/javascript', () => ({ createJavaScriptRegexEngine: () => ({}) }));
-vi.mock('shiki/langs', () => ({ bundledLanguages: { typescript: {} } }));
-vi.mock('shiki/themes', () => ({ bundledThemes: {} }));
+vi.mock('@shikijs/core', () => ({ createHighlighterCore: () => Promise.reject(new Error('highlighter unavailable')) }));
+vi.mock('@shikijs/engine-javascript', () => ({ createJavaScriptRegexEngine: () => ({}) }));
 
 const { CodeViewer } = await import('~/modules/docs/code-viewer');
 

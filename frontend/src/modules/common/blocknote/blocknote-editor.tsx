@@ -2,7 +2,6 @@ import '@blocknote/shadcn/style.css';
 import '~/modules/common/blocknote/styles.css';
 import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
-import { syntaxHighlighter } from '@blocknote/code-block';
 import { withCollaboration } from '@blocknote/core/yjs';
 import type { FilePanelProps } from '@blocknote/react';
 import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
@@ -34,6 +33,7 @@ import { useEditorKeyboard } from '~/modules/common/blocknote/hooks/use-editor-k
 import { useSmartBlur } from '~/modules/common/blocknote/hooks/use-smart-blur';
 import { useUntrustedMediaWarning } from '~/modules/common/blocknote/hooks/use-untrusted-media-warning';
 import { useYjsUndoManagerFix } from '~/modules/common/blocknote/hooks/use-yjs-undo-manager-fix';
+import { syntaxHighlighter } from '~/modules/common/blocknote/syntax-highlighter';
 import type {
   CommonBlockNoteProps,
   CustomBlock,
