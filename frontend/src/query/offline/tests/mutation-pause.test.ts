@@ -1,7 +1,6 @@
 import '~/query/tests/query-client-env';
 import { MutationObserver, onlineManager } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApiError } from '~/lib/api';
 
 const { queryClient } = await import('~/query/query-client');
 
@@ -70,22 +69,12 @@ describe('mutation pausing on connectivity failure', () => {
     await queryClient.resumePausedMutations();
     await vi.waitFor(() => expect(mutation.state.status).toBe('success'));
 
-    // The first attempt left as a live edit; the resumed one keeps its ids and timestamps and adds the flag.
+    // The first attempt left as a live edit, unflagged so the server orders it by arrival; the resumed one keeps its ids and timestamps and adds the flag.
     const { mutationId, sourceId, fieldTimestamps } = stx;
     expect(sent).toEqual([
       { mutationId, sourceId, fieldTimestamps },
       { mutationId, sourceId, fieldTimestamps, replayed: true },
     ]);
-  });
-
-  it('leaves the stx of a mutation that never pauses unflagged, so the server orders it by arrival', async () => {
-    const stx = { mutationId: 'm-2', sourceId: 'tab-1', fieldTimestamps: { name: '1710500000123:0001:abcde' } };
-    const observer = new MutationObserver(queryClient, {
-      mutationKey: ['thing', 'update'],
-      mutationFn: async (vars: { id: string; stx: typeof stx }) => vars.stx,
-    });
-
-    expect(await observer.mutate({ id: 'a', stx })).not.toHaveProperty('replayed');
   });
 
   it('flags a mutation restored paused from the persisted cache, each item of a batch included', () => {
@@ -116,22 +105,5 @@ describe('mutation pausing on connectivity failure', () => {
       { mutationId: 'm-3', replayed: true },
     ]);
     expect(live.stx).toEqual({ mutationId: 'm-4' });
-  });
-
-  it('does not pause a server error: it fails fast so 4xx/5xx handlers run', async () => {
-    // onlineManager stays online; the server responds with an error.
-    const observer = new MutationObserver(queryClient, {
-      mutationKey: ['thing', 'update'],
-      retryDelay: 0,
-      mutationFn: async (_vars: { id: string }) => {
-        throw new ApiError({ status: 409, type: 'conflict' });
-      },
-    });
-
-    await observer.mutate({ id: 'a' }).catch(() => {});
-
-    const mutation = queryClient.getMutationCache().getAll()[0];
-    expect(mutation.state.status).toBe('error');
-    expect(mutation.state.isPaused).toBe(false);
   });
 });

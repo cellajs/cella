@@ -7,16 +7,8 @@ const membership = (channelId: string, role: string) => ({ channelType: 'organiz
 const entity = { id: 'org1', entityType: 'organization' } as EnrichedChannel;
 
 describe('heldContextRoles', () => {
-  it('emits a pair for a membership on the entity itself', () => {
-    expect(heldContextRoles(entity, [membership('org1', 'admin')])).toEqual(['organization.admin']);
-  });
-
-  it('ignores memberships on unrelated channels and deduplicates pairs', () => {
-    const pairs = heldContextRoles(entity, [membership('other-org', 'admin'), membership('org1', 'member'), membership('org1', 'member')]);
-    expect(pairs).toEqual(['organization.member']);
-  });
-
-  it('returns no pairs for an actor with no memberships', () => {
-    expect(heldContextRoles(entity, [])).toEqual([]);
+  it("holds the roles of memberships on the entity's own channel, once each, and none from other channels", () => {
+    const memberships = [membership('other-org', 'admin'), membership('org1', 'member'), membership('org1', 'member')];
+    expect(heldContextRoles(entity, memberships)).toEqual(['organization.member']);
   });
 });

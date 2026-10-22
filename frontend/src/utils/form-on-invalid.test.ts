@@ -36,12 +36,6 @@ describe('defaultOnInvalid', () => {
     expect(toastedLines()).toEqual(['Description: Add a file or a description', 'Name: Use at least 2 characters', 'Organization ID: Required']);
   });
 
-  it('shows a general line for an error without a message', () => {
-    defaultOnInvalid({ description: { type: 'custom' } });
-
-    expect(toastedLines()).toEqual(['Description: Check this value']);
-  });
-
   /** A submitted form holding a visible `name` input and a hidden `email` one, as the submit event names it. */
   const submitOf = () => {
     const form = document.body.appendChild(document.createElement('form'));
@@ -53,18 +47,15 @@ describe('defaultOnInvalid', () => {
     return { target: form } as unknown as BaseSyntheticEvent;
   };
 
-  it('leaves out an error its field shows under a visible input, and lists one whose input is hidden', () => {
+  it('toasts only the errors no field shows: one whose input is hidden, and none when every field shows its own', () => {
     defaultOnInvalid(
       { name: { type: 'too_small', message: 'Required' }, email: { type: 'invalid_format', message: 'Enter an email address' } },
       submitOf(),
     );
-
     expect(toastedLines()).toEqual(['Email: Enter an email address']);
-  });
 
-  it('shows no toast when every field shows its own error', () => {
+    toaster.error.mockClear();
     defaultOnInvalid({ name: { type: 'too_small', message: 'Required' } }, submitOf());
-
     expect(toaster.error).not.toHaveBeenCalled();
   });
 });

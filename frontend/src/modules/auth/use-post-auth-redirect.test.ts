@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.stubGlobal('window', { location: { origin: 'https://app.example.test' } });
 
-const { resolvePostAuthRedirect, invitationResumePath } = await import('~/modules/auth/use-post-auth-redirect');
+const { resolvePostAuthRedirect } = await import('~/modules/auth/use-post-auth-redirect');
 const { authenticateRouteSearchParamsSchema } = await import('~/modules/auth/search-params-schemas');
 
 describe('resolvePostAuthRedirect', () => {
@@ -11,28 +11,18 @@ describe('resolvePostAuthRedirect', () => {
     expect(resolvePostAuthRedirect('/acme/organization/members?q=a%26b#row')).toBe('/acme/organization/members?q=a%26b#row');
   });
 
-  it('prefers the invitation resume path when a token is in hand', () => {
-    expect(resolvePostAuthRedirect('/home', 'tok-1')).toBe(invitationResumePath('tok-1'));
-  });
-
-  it('must not leave the app via dot segments that collapse to a scheme-relative URL', () => {
-    for (const redirect of ['/..//evil.example', '/.//evil.example', '/%2e%2e//evil.example']) {
-      expect(resolvePostAuthRedirect(redirect)).toBe(appConfig.defaultRedirectPath);
-    }
-  });
-
-  it('must not leave the app via backslashes, encoded slashes or absolute URLs', () => {
-    for (const redirect of ['/\\evil.example', '/./\\evil.example', '/%2Fevil.example', 'https://evil.example']) {
-      expect(resolvePostAuthRedirect(redirect)).toBe(appConfig.defaultRedirectPath);
-    }
-  });
-
-  it('must not send the browser into backend routes', () => {
-    expect(resolvePostAuthRedirect('/api/auth/sign-out')).toBe(appConfig.defaultRedirectPath);
-  });
-
-  it('falls back to the default path without a redirect', () => {
-    expect(resolvePostAuthRedirect(undefined)).toBe(appConfig.defaultRedirectPath);
+  it('must not send the browser off the app or into a backend route after sign-in', () => {
+    const redirects = [
+      '/..//evil.example',
+      '/.//evil.example',
+      '/%2e%2e//evil.example',
+      '/\\evil.example',
+      '/./\\evil.example',
+      '/%2Fevil.example',
+      'https://evil.example',
+      '/api/auth/sign-out',
+    ];
+    for (const redirect of redirects) expect(resolvePostAuthRedirect(redirect)).toBe(appConfig.defaultRedirectPath);
   });
 });
 

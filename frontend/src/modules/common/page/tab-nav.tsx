@@ -125,7 +125,7 @@ export function getNavTabCandidates(parentRouteId: string): NavCandidate[] {
  * The {@link getNavTabCandidates} list, gated and ordered: `requires` gates on `grants` and
  * `visibleTo` on `pairs`, then a stable sort on `order` (default 0, lower first).
  */
-export function resolveNavTabs(parentRouteId: string, options: ResolveNavTabsOptions = {}): PageTab[] {
+function resolveNavTabs(parentRouteId: string, options: ResolveNavTabsOptions = {}): PageTab[] {
   if (!parentRouteId) return [];
 
   const routesById = getRouter().routesById as unknown as Record<string, AnyRoute>;
