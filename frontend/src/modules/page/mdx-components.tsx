@@ -2,7 +2,6 @@ import { Link } from '@tanstack/react-router';
 import type { ComponentProps } from 'react';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { HashUrlButton } from '~/modules/common/hash-url-button';
-import { getHashUrl } from '~/modules/docs/hash-url';
 import { CodeBlock } from '~/modules/page/code-block';
 import { cn } from '~/utils/cn';
 
@@ -41,9 +40,9 @@ function MdxLink({ href = '', children, ...props }: ComponentProps<'a'>) {
 function MdxHeading({ id = '', className, children, ...props }: ComponentProps<'h2'>) {
   const hash = id.replace(/^spy-/, '');
   return (
-    <h2 id={id} className={cn('group', className)} {...props}>
+    <h2 id={id} className={cn('group/hash-url', className)} {...props}>
       {children}
-      {hash && <HashUrlButton className="ms-2" url={getHashUrl(hash)} />}
+      {hash && <HashUrlButton className="ms-2" hash={hash} />}
     </h2>
   );
 }

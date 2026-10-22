@@ -1,13 +1,8 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary } from 'sdk/docs-types';
-import { ColumnsView } from '~/modules/common/data-table/columns-view';
-import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
-import { TableCount } from '~/modules/common/data-table/table-count';
-import { FilterBarActions, FilterBarFilters, FilterBarSearch, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import { TableSearch } from '~/modules/common/data-table/table-search';
+import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { FocusView } from '~/modules/common/focus-view';
 import { ResponsiveSelect } from '~/modules/common/form-fields/responsive-select';
 import { mcpToolFilter } from '~/modules/docs/operations/operations-table/use-filtered-operations';
 import { ViewModeToggle } from '~/modules/docs/operations/view-mode-toggle';
@@ -24,8 +19,11 @@ interface OperationsTableBarProps {
   hasMcpTools: boolean;
 }
 
+/** `GenOperationSummary` as an object type: the bar shell's rows must be a `Record<string, unknown>`, which no interface is. */
+type OperationRow = { [K in keyof GenOperationSummary]: GenOperationSummary[K] };
+
 /** Display order for tag-kind groups in the filter dropdown. */
-const kindOrder = ['ownership', 'entity'];
+const kindOrder = ['owner', 'entity'];
 
 /** Human-readable label for a `${kind}:${value}` filter option. */
 const labelFor = (kind: string, value: string): string => {
@@ -36,21 +34,7 @@ const labelFor = (kind: string, value: string): string => {
 
 export function OperationsTableBar({ total, searchVars, setSearch, columns, setColumns, tagFilters, hasMcpTools }: OperationsTableBarProps) {
   const { t } = useTranslation();
-  const { q, tag } = searchVars;
-
-  const onSearch = (searchString: string) => {
-    setSearch({ q: searchString });
-  };
-
-  const onFilterChange = (value: string) => {
-    setSearch({ tag: value === 'all' ? undefined : value });
-  };
-
-  const onResetFilters = () => {
-    setSearch({ q: '', tag: undefined });
-  };
-
-  const isFiltered = !!q || !!tag;
+  const barFilters = useTableBarFilters({ searchVars, setSearch, reset: { q: '', tag: undefined } });
 
   const orderedKinds = [
     ...kindOrder.filter((k) => tagFilters[k]?.length),
@@ -65,31 +49,21 @@ export function OperationsTableBar({ total, searchVars, setSearch, columns, setC
   ];
 
   return (
-    <TableBarContainer searchVars={searchVars}>
-      <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
-        <FilterBarActions>
-          <ViewModeToggle />
-          <TableCount count={total} label="c:operation" isFiltered={isFiltered} onResetFilters={onResetFilters} />
-        </FilterBarActions>
-
-        <div className="sm:grow" />
-
-        <FilterBarSearch>
-          <TableSearch name="operationsSearch" value={q} setQuery={onSearch} />
-        </FilterBarSearch>
-        <FilterBarFilters>
-          <ResponsiveSelect
-            options={filterOptions}
-            value={tag ?? 'all'}
-            onChange={onFilterChange}
-            title={t('c:filter')}
-            className="h-10 w-auto sm:min-w-32"
-          />
-        </FilterBarFilters>
-      </TableFilterBar>
-
-      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
-      <FocusView iconOnly />
-    </TableBarContainer>
+    <TableBarShell<OperationRow>
+      {...barFilters}
+      {...{ searchVars, total, columns, setColumns }}
+      label="c:operation"
+      searchName="operationsSearch"
+      filters={
+        <ResponsiveSelect
+          options={filterOptions}
+          value={searchVars.tag ?? 'all'}
+          onChange={(value) => setSearch({ tag: value === 'all' ? undefined : value })}
+          title={t('c:filter')}
+          className="h-10 w-auto sm:min-w-32"
+        />
+      }
+      controls={<ViewModeToggle />}
+    />
   );
 }

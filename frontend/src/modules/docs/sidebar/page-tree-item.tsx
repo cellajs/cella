@@ -4,13 +4,16 @@ import { useId } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { getSection, scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { collapsiblePanelClass } from '~/modules/docs/collapsible-panel';
+import { ActiveIndicator } from '~/modules/docs/sidebar/active-indicator';
+import { closeSidebarSheetAndNavigate, docsSidebarSheetId } from '~/modules/docs/sidebar/close-sidebar-sheet';
+import { sidebarLeafClass } from '~/modules/docs/sidebar/sidebar-hash-item';
 import { type DocPage, pageSectionId } from '~/modules/page/content';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
-import { ActiveIndicator } from './active-indicator';
-import { closeSidebarSheetAndNavigate } from './close-sidebar-sheet';
+import { isModifiedClick } from '~/utils/is-modified-click';
 
 export type PageNode = { page: DocPage; children: PageNode[] };
 
@@ -30,8 +33,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
   const isActive = activePageId === page.id;
   const expanderOnly = page.renderMode === 'nodeOnly' && hasChildren;
   const isRoot = variant === 'root';
-  // Sheet-mode threshold (below `md`): the indicator animates as elsewhere, and subtrees open without a height
-  // animation (main-thread layout every frame, competing with the page a tap navigates to)
+  // Sheet-mode threshold (below `md`): the indicator moves as in the tag groups
   const isMobile = useBreakpointBelow('md', false);
   const layoutId = useId();
   const activeChildIndex = isRoot ? -1 : children.findIndex((c) => c.page.id === activePageId);
@@ -64,7 +66,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
               : 'focus-inset h-8 font-normal opacity-80 data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:opacity-100 data-[expanded=true]:opacity-100',
           )}
           onClick={(e) => {
-            if (e.metaKey || e.ctrlKey) return;
+            if (isModifiedClick(e)) return;
             if (expanderOnly) {
               e.preventDefault();
               onToggle(page.id);
@@ -76,7 +78,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
               e.preventDefault();
               if (getSection() === pageSectionId) return onToggle(page.id);
               scrollToSectionById(pageSectionId);
-              sheeter.getState().remove('docs-sidebar');
+              sheeter.getState().remove(docsSidebarSheetId);
               return;
             }
             if (hasChildren && !isExpanded) onToggle(page.id);
@@ -101,7 +103,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
       </div>
 
       {hasChildren && (
-        <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
+        <CollapsibleContent className={collapsiblePanelClass}>
           {isRoot ? (
             // A <ul> keeps the nested SidebarMenuItem <li> rows off this row's own <li> (invalid HTML)
             <ul className="flex list-none flex-col gap-1 py-1">
@@ -130,16 +132,13 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
   );
 }
 
-/** Tier 2: Leaf page row (mirrors SchemaItem / OperationItem). */
+/** Tier 2: Leaf page row. */
 function PageLeaf({ page, isActive }: { page: DocPage; isActive: boolean }) {
   return (
     <Button
       variant="ghost"
       size="sm"
-      className={cn(
-        'focus-inset h-8 w-full justify-start gap-2 pl-5 text-left font-normal text-sm opacity-70 hover:bg-accent/50',
-        'data-[active=true]:bg-accent data-[active=true]:font-medium data-[active=true]:opacity-100',
-      )}
+      className={cn(sidebarLeafClass, 'justify-start data-[active=true]:bg-accent')}
       render={
         <Link
           to="/docs/page/$"
@@ -156,7 +155,7 @@ function PageLeaf({ page, isActive }: { page: DocPage; isActive: boolean }) {
   );
 }
 
-/** Build a hierarchical tree of pages, sorted by displayOrder at every level. */
+/** Build a hierarchical tree of pages; every level keeps the order of `pages`, which `docPages` sorts by display order. */
 export function buildPageNodeTree(pages: DocPage[]): PageNode[] {
   const validIds = new Set(pages.map((p) => p.id));
   const byParent = new Map<string | null, DocPage[]>();
@@ -167,7 +166,6 @@ export function buildPageNodeTree(pages: DocPage[]): PageNode[] {
     if (list) list.push(p);
     else byParent.set(key, [p]);
   }
-  for (const arr of byParent.values()) arr.sort((a, b) => a.displayOrder - b.displayOrder);
 
   const build = (parentId: string | null): PageNode[] => (byParent.get(parentId) ?? []).map((page) => ({ page, children: build(page.id) }));
 

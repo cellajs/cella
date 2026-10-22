@@ -4,13 +4,13 @@ import type { ReactNode } from 'react';
 import { memo } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { collapsiblePanelClass } from '~/modules/docs/collapsible-panel';
+import { ActiveIndicator } from '~/modules/docs/sidebar/active-indicator';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
-import { sheeter } from '../../common/sheeter/use-sheeter';
-import { ActiveIndicator } from './active-indicator';
 
 const tagTypeConfig = {
   operations: {
@@ -40,7 +40,7 @@ type CollapsibleTagItemProps<T> = {
   isAtTag: boolean;
   activeItemIndex: number;
   layoutId: string;
-  renderItem: (item: T, index: number, isActive: boolean) => ReactNode;
+  renderItem: (item: T, isActive: boolean) => ReactNode;
   itemKey: (item: T) => string;
   /** Called on hover to trigger prerendering of this tag's details in the page */
   onPrerender?: () => void;
@@ -59,7 +59,7 @@ function CollapsibleTagItemBase<T>({
   itemKey,
   onPrerender,
 }: CollapsibleTagItemProps<T>) {
-  // Sheet-mode threshold (below `md`): expanding a nested tag group must keep the sheet open
+  // Sheet-mode threshold (below `md`), where the active indicator moves by transform
   const isMobile = useBreakpointBelow('md', false);
   const { linkTo, getSearch, getHash, triggerClassName } = tagTypeConfig[type];
   const hash = getHash(tag.name);
@@ -88,10 +88,8 @@ function CollapsibleTagItemBase<T>({
               triggerClassName,
             )}
             onMouseEnter={!isExpanded ? onPrerender : undefined}
-            onClick={() => {
-              requestAnimationFrame(() => scrollToSectionById(hash));
-              if (!isMobile) sheeter.getState().remove('docs-sidebar');
-            }}
+            // Leaves the mobile sheet open, so expanding a tag shows its items
+            onClick={() => requestAnimationFrame(() => scrollToSectionById(hash))}
           />
         }
       >
@@ -102,11 +100,11 @@ function CollapsibleTagItemBase<T>({
         </span>
         <ChevronDownIcon className="invisible ml-auto size-4 opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/tag:rotate-180" />
       </CollapsibleTrigger>
-      <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
+      <CollapsibleContent className={collapsiblePanelClass}>
         <div className="relative flex flex-col px-0 py-1">
           <ActiveIndicator activeIndex={activeItemIndex} layoutId={layoutId} isMobile={isMobile} />
           {items.map((item, index) => (
-            <div key={itemKey(item)}>{renderItem(item, index, activeItemIndex === index)}</div>
+            <div key={itemKey(item)}>{renderItem(item, activeItemIndex === index)}</div>
           ))}
         </div>
       </CollapsibleContent>

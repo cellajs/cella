@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import { dialoger, type TriggerRef } from '~/modules/common/dialoger/use-dialoger';
-import { DocsSearch } from '~/modules/docs/search/docs-search';
+import { DocsSearch, docsSearchDialogId } from '~/modules/docs/search/docs-search';
 import { tw } from '~/utils/tw';
 
 /** Fallback focus target when opened via hotkey (no triggering button). */
@@ -8,7 +8,7 @@ const hotkeyTriggerRef: TriggerRef = { current: null };
 
 export function openDocsSearch(triggerRef: TriggerRef = hotkeyTriggerRef) {
   return dialoger.getState().create(<DocsSearch />, {
-    id: 'docs-search',
+    id: docsSearchDialogId,
     triggerRef,
     title: i18n.t('c:search'),
     className: tw('mb-4 border-0 p-0 ring-6 ring-foreground/8 sm:max-w-3xl dark:ring-foreground/12'),
@@ -19,6 +19,6 @@ export function openDocsSearch(triggerRef: TriggerRef = hotkeyTriggerRef) {
 
 /** Hotkey handler: ⌘K/Ctrl-K toggles the dialog. */
 export function toggleDocsSearch() {
-  if (dialoger.getState().get('docs-search')) dialoger.getState().remove('docs-search');
+  if (dialoger.getState().get(docsSearchDialogId)) dialoger.getState().remove(docsSearchDialogId);
   else openDocsSearch();
 }

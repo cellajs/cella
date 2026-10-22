@@ -4,14 +4,13 @@ import type { GenOperationSummary } from 'sdk/docs-types';
 import { nanoid } from 'shared/utils/nanoid';
 import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
-import { operationsByTagQueryOptions, tagDetailsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
+import { nonEmptyTagsQueryOptions, operationsByTagQueryOptions, prefetchTagDetails } from '~/modules/docs/query';
+import { CollapsibleTagItem } from '~/modules/docs/sidebar/collapsible-tag-item';
+import { OperationItem } from '~/modules/docs/sidebar/operation-item';
 import { SidebarMenu } from '~/modules/ui/sidebar';
-import { queryClient } from '~/query/query-client';
-import { CollapsibleTagItem } from './collapsible-tag-item';
-import { OperationItem } from './operation-item';
 
 const itemKey = (op: GenOperationSummary) => op.hash;
-const renderItem = (op: GenOperationSummary, _index: number, isActive: boolean) => <OperationItem operation={op} isActive={isActive} />;
+const renderItem = (op: GenOperationSummary, isActive: boolean) => <OperationItem operation={op} isActive={isActive} />;
 
 interface OperationsSidebarProps {
   activeTag?: string;
@@ -22,8 +21,7 @@ export function OperationsSidebar({ activeTag }: OperationsSidebarProps) {
   const { prerender } = usePrerenderTrigger('operations');
 
   const { data: operationsByTag } = useSuspenseQuery(operationsByTagQueryOptions);
-  const { data: allTags } = useSuspenseQuery(tagsQueryOptions);
-  const tags = allTags.filter((t) => t.count > 0);
+  const { data: tags } = useSuspenseQuery(nonEmptyTagsQueryOptions);
   const hash = useCurrentSection();
 
   return (
@@ -33,7 +31,7 @@ export function OperationsSidebar({ activeTag }: OperationsSidebarProps) {
         // Only pass items for expanded tag to avoid mounting all operations upfront
         const tagOperations = isExpanded ? (operationsByTag[tag.name] ?? []) : [];
         const isAtTag = hash === `tag/${tag.name}`;
-        const isActive = isAtTag || hash?.startsWith(`tag/${tag.name}/`);
+        const isActive = isAtTag || hash.startsWith(`tag/${tag.name}/`);
         const activeOperationIndex = tagOperations.findIndex((op) => op.hash === hash);
 
         return (
@@ -50,7 +48,7 @@ export function OperationsSidebar({ activeTag }: OperationsSidebarProps) {
             renderItem={renderItem}
             itemKey={itemKey}
             onPrerender={() => {
-              void queryClient.query(tagDetailsQueryOptions(tag.name)).catch(() => {});
+              prefetchTagDetails(tag.name);
               prerender(tag.name);
             }}
           />

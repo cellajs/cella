@@ -2,7 +2,6 @@ import { Link } from '@tanstack/react-router';
 import { SearchIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GenTagSummary } from 'sdk/docs-types';
 import { Logo } from '~/modules/common/logo';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { openDocsSearch } from '~/modules/docs/search/open-docs-search';
@@ -15,12 +14,8 @@ import { docsConfig } from '~/modules/page/content';
 import { Button } from '~/modules/ui/button';
 import { SidebarContent } from '~/modules/ui/sidebar';
 
-interface DocsSidebarProps {
-  tags: GenTagSummary[];
-}
-
 /** Sections come from the global docs config (content root index.mdx frontmatter): label, order, visibility. */
-export function DocsSidebar({ tags }: DocsSidebarProps) {
+export function DocsSidebar() {
   const { t } = useTranslation();
   const searchTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -74,11 +69,11 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
         .map((section) => {
           switch (section.id) {
             case 'apiReference':
-              return <ApiReferenceSection key={section.id} label={section.label} tags={tags} />;
+              return <ApiReferenceSection key={section.id} label={section.label} />;
             case 'pages':
-              return <PagesSection key={section.id} label={section.label} onNavigate={closeSidebarSheetAndNavigate} />;
+              return <PagesSection key={section.id} label={section.label} />;
             case 'links':
-              return <LinksSection key={section.id} label={section.label} onNavigate={closeSidebarSheetAndNavigate} />;
+              return <LinksSection key={section.id} label={section.label} />;
             default:
               return null;
           }

@@ -10,7 +10,7 @@ const arrayKey = (values: string[] | undefined): string => {
 
 /** Dynamic tag (`tag-${kind}`) and extension columns sort by their joined sorted values. */
 const getSortValue = (row: GenOperationSummary, columnKey: string): string => {
-  if (columnKey.startsWith('tag-')) return arrayKey(row.tagsByKind?.[columnKey.slice(4)]);
+  if (columnKey.startsWith('tag-')) return arrayKey(row.tagsByKind[columnKey.slice(4)]);
   if (columnKey in row.extensions) return arrayKey(row.extensions[columnKey]);
   return String(row[columnKey as keyof GenOperationSummary] ?? '');
 };

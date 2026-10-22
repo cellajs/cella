@@ -4,13 +4,14 @@ import type { GenComponentSchema } from 'sdk/docs-types';
 import { nanoid } from 'shared/utils/nanoid';
 import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
+import { schemaAnchor } from '~/modules/docs/helpers/schema-anchor';
 import { schemasByTagQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
+import { CollapsibleTagItem } from '~/modules/docs/sidebar/collapsible-tag-item';
+import { SchemaItem } from '~/modules/docs/sidebar/schema-item';
 import { SidebarMenu } from '~/modules/ui/sidebar';
-import { CollapsibleTagItem } from './collapsible-tag-item';
-import { SchemaItem } from './schema-item';
 
 const itemKey = (schema: GenComponentSchema) => schema.name;
-const renderItem = (schema: GenComponentSchema, _index: number, isActive: boolean) => <SchemaItem schema={schema} isActive={isActive} />;
+const renderItem = (schema: GenComponentSchema, isActive: boolean) => <SchemaItem schema={schema} isActive={isActive} />;
 
 interface SchemasSidebarProps {
   activeTag?: string;
@@ -29,8 +30,8 @@ export function SchemasSidebar({ activeTag }: SchemasSidebarProps) {
       {schemaTags.map((tag) => {
         const tagSchemas = schemasByTag[tag.name] ?? [];
         const isAtTag = hash === tag.name;
-        const isActive = isAtTag || tagSchemas.some((s) => s.ref.replace(/^#/, '') === hash);
-        const activeSchemaIndex = tagSchemas.findIndex((s) => s.ref.replace(/^#/, '') === hash);
+        const activeSchemaIndex = tagSchemas.findIndex((schema) => schemaAnchor(schema) === hash);
+        const isActive = isAtTag || activeSchemaIndex >= 0;
 
         return (
           <CollapsibleTagItem

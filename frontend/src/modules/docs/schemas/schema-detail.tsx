@@ -1,12 +1,12 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
 import type { GenComponentSchema } from 'sdk/docs-types';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { HashUrlButton } from '~/modules/common/hash-url-button';
+import { getTypeCodeForSchema, getZodCodeForSchema } from '~/modules/docs/helpers/extract-types';
+import { schemaAnchor } from '~/modules/docs/helpers/schema-anchor';
+import { useDefinitionIndexes } from '~/modules/docs/query';
 import { ViewerGroup } from '~/modules/docs/viewer-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
-import { getHashUrl } from '../hash-url';
-import { getTypeCodeForSchema, getZodCodeForSchema, typesIndexQueryOptions, zodIndexQueryOptions } from '../helpers/extract-types';
 
 interface SchemaDetailProps {
   schema: GenComponentSchema;
@@ -14,17 +14,16 @@ interface SchemaDetailProps {
 }
 
 function SchemaDetail({ schema, className }: SchemaDetailProps) {
-  const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
-  const { data: typesIndex } = useSuspenseQuery(typesIndexQueryOptions);
+  const { zodIndex, typesIndex } = useDefinitionIndexes();
 
-  const refId = schema.ref.replace(/^#/, '');
+  const refId = schemaAnchor(schema);
 
   return (
     <Card id={`spy-${refId}`} className={cn('border-0', className)}>
-      <CardHeader className="group">
+      <CardHeader className="group/hash-url">
         <CardTitle level={3} className="gap-2 text-xl leading-8">
           {schema.name}
-          <HashUrlButton url={getHashUrl(refId)} />
+          <HashUrlButton hash={refId} />
         </CardTitle>
         {schema.description && <CardDescription className="my-2 max-w-4xl text-base">{schema.description}</CardDescription>}
       </CardHeader>
@@ -49,7 +48,7 @@ interface TagSchemasListProps {
 
 /** Registers all schema refs with the shared scroll spy in one hook call. */
 export function TagSchemasList({ schemas }: TagSchemasListProps) {
-  const sectionIds = schemas.map((s) => s.ref.replace(/^#/, ''));
+  const sectionIds = schemas.map(schemaAnchor);
   useScrollSpy(sectionIds);
 
   return (

@@ -3,6 +3,8 @@ import type { ComponentProps } from 'react';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { Badge } from '~/modules/ui/badge';
+import { isModifiedClick } from '~/utils/is-modified-click';
 
 type TagHashLinkProps = Pick<ComponentProps<'a'>, 'title' | 'dir' | 'children'> & {
   /** Search param that records the expanded tag. */
@@ -24,7 +26,7 @@ export function TagHashLink({ tagParam, tagName, hash, tabIndex, title, dir, chi
       hash={hash}
       replace
       onClick={(e) => {
-        if (e.metaKey || e.ctrlKey) return;
+        if (isModifiedClick(e)) return;
         e.preventDefault();
         scrollToSectionById(hash);
         navigate({ to: '.', search, hash, replace: true, resetScroll: false });
@@ -75,4 +77,26 @@ export function TagTable<T>({ rows, columns, rowKeyGetter, hideHeader, onPrerend
       />
     </div>
   );
+}
+
+/** A tag-kind cell: one badge per tag. */
+export function TagBadges({ values }: { values: string[] }) {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {values.map((tag) => (
+        <Badge key={tag} variant="outline" className="text-xs">
+          {tag}
+        </Badge>
+      ))}
+    </div>
+  );
+}
+
+/** Distinct tag kinds across the items, in first-seen order, without the excluded ones. */
+export function collectTagKinds(items: { tagsByKind: Record<string, string[]> }[], exclude: string[] = []) {
+  const kinds = new Set<string>();
+  for (const item of items) {
+    for (const kind of Object.keys(item.tagsByKind)) if (!exclude.includes(kind)) kinds.add(kind);
+  }
+  return [...kinds];
 }

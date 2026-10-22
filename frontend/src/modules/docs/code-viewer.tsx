@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 interface CodeViewerProps {
+  /** TypeScript source, zod schemas included. */
   code: string;
-  language: 'typescript' | 'zod';
 }
 
 /**
@@ -23,7 +23,7 @@ const getHighlighter = () => {
   return highlighterPromise;
 };
 
-export function CodeViewer({ code, language }: CodeViewerProps) {
+export function CodeViewer({ code }: CodeViewerProps) {
   // `html: null` means highlighting failed and the code renders as plain text.
   const [state, setState] = useState<{ html: string | null; isLoading: boolean }>({ html: '', isLoading: true });
   const mode = useUIStore((state) => state.mode);
@@ -49,7 +49,7 @@ export function CodeViewer({ code, language }: CodeViewerProps) {
     return () => {
       cancelled = true;
     };
-  }, [code, language, mode]);
+  }, [code, mode]);
 
   if (state.isLoading) {
     return <div className="h-24 animate-pulse rounded bg-muted" />;

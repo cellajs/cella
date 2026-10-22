@@ -75,8 +75,8 @@ export function ViewerGroup({ schema, zodCode, typeCode, example, defaultInspect
               />
             )}
             <Suspense fallback={null}>
-              {viewMode === 'zod' && zodCode && <CodeViewer code={zodCode} language="zod" />}
-              {viewMode === 'type' && typeCode && <CodeViewer code={typeCode} language="typescript" />}
+              {viewMode === 'zod' && zodCode && <CodeViewer code={zodCode} />}
+              {viewMode === 'type' && typeCode && <CodeViewer code={typeCode} />}
             </Suspense>
             {viewMode === 'example' && example !== undefined && (
               <JsonViewer value={example} rootName={false} defaultInspectDepth={defaultInspectDepth} indentWidth={3} />

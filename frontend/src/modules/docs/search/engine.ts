@@ -1,6 +1,7 @@
 import { create, insertMultiple, search } from '@orama/orama';
 import type { GenComponentSchema, GenOperationSummary } from 'sdk/docs-types';
 import { parseTerms, trimAroundMatch } from 'shared/utils/text-match';
+import { schemaAnchor } from '~/modules/docs/helpers/schema-anchor';
 import type { DocsSearchResult, DocsSearchResultType, DocsSearchScope } from '~/modules/docs/search/types';
 
 /** Everything the engine indexes for one docs page. */
@@ -117,8 +118,7 @@ function schemaDoc(schema: GenComponentSchema, labels: EngineLabels): SearchDoc 
     tags: [schema.schemaTag],
     breadcrumbs: [labels.schemas, schema.schemaTag],
     to: '/docs/schemas',
-    // Anchor convention of the schemas page: the $ref path minus its leading '#'.
-    hash: schema.ref.replace(/^#/, ''),
+    hash: schemaAnchor(schema),
   };
 }
 

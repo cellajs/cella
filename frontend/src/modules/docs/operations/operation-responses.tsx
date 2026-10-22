@@ -1,21 +1,13 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { ChevronDownIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GenComponentSchema, GenOperationDetail, GenResponseSummary, GenSchema } from 'sdk/docs-types';
+import { type DefinitionIndex, getTypeCodeForResponse, getZodCodeForResponse } from '~/modules/docs/helpers/extract-types';
+import { getStatusColor } from '~/modules/docs/helpers/get-status-color';
+import { OperationSection } from '~/modules/docs/operations/operation-section';
+import { schemasQueryOptions, useDefinitionIndexes } from '~/modules/docs/query';
+import { ViewerGroup } from '~/modules/docs/viewer-group';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
-import { Button } from '~/modules/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
-import {
-  type DefinitionIndex,
-  getTypeCodeForResponse,
-  getZodCodeForResponse,
-  typesIndexQueryOptions,
-  zodIndexQueryOptions,
-} from '../helpers/extract-types';
-import { getStatusColor } from '../helpers/get-status-color';
-import { schemasQueryOptions } from '../query';
-import { ViewerGroup } from '../viewer-group';
 
 function resolveResponseSchema(response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined {
   if (response.schema) return response.schema;
@@ -106,36 +98,20 @@ interface OperationResponsesProps {
 
 export function OperationResponses({ detail }: OperationResponsesProps) {
   const { t } = useTranslation();
-  // Height keyframes run on the main thread and drop frames while the opening panel mounts the accordion
-
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
-  const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
-  const { data: typesIndex } = useSuspenseQuery(typesIndexQueryOptions);
-
-  const responses = detail?.responses ?? [];
+  const { zodIndex, typesIndex } = useDefinitionIndexes();
 
   return (
-    <Collapsible defaultOpen className="mt-8">
-      <CollapsibleTrigger
-        nativeButton
-        render={
-          <Button variant="ghost" size="sm" className="group w-full justify-start gap-2">
-            <span className="font-medium text-sm">{t('c:docs.responses')}</span>
-            <ChevronDownIcon className="size-4 opacity-40 transition-transform duration-200 group-hover:opacity-70 group-data-panel-open:rotate-180" />
-          </Button>
-        }
-      />
-      <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
-        <div className="mt-2">
-          <ResponsesAccordion
-            responses={responses}
-            schemas={schemas}
-            operationId={detail?.operationId ?? ''}
-            zodIndex={zodIndex}
-            typesIndex={typesIndex}
-          />
-        </div>
-      </CollapsibleContent>
-    </Collapsible>
+    <OperationSection title={t('c:docs.responses')}>
+      <div className="mt-2">
+        <ResponsesAccordion
+          responses={detail?.responses ?? []}
+          schemas={schemas}
+          operationId={detail?.operationId ?? ''}
+          zodIndex={zodIndex}
+          typesIndex={typesIndex}
+        />
+      </div>
+    </OperationSection>
   );
 }

@@ -1,9 +1,8 @@
 import { BracesIcon, ChevronRightIcon, FileTextIcon, HashIcon } from 'lucide-react';
 import { Fragment } from 'react';
 import { HighlightText } from '~/modules/common/match-highlight';
-import { getMethodColor } from '~/modules/docs/helpers/get-method-color';
+import { MethodLabel } from '~/modules/docs/operations/method-label';
 import type { DocsSearchResult } from '~/modules/docs/search/types';
-import { Badge } from '~/modules/ui/badge';
 import { cn } from '~/utils/cn';
 
 function Breadcrumbs({ crumbs }: { crumbs: string[] }) {
@@ -34,32 +33,14 @@ export function DocsSearchRow({ item }: { item: DocsSearchResult }) {
     );
   }
 
-  if (item.type === 'operation' || item.type === 'schema') {
-    return (
-      <div className="flex w-full min-w-0 flex-col items-start gap-0.5">
-        <Breadcrumbs crumbs={item.breadcrumbs} />
-        <div className="flex w-full min-w-0 items-center gap-2">
-          {item.type === 'schema' && <BracesIcon className="size-4 shrink-0 text-muted-foreground" />}
-          {item.method && (
-            <Badge variant="secondary" className={cn('shrink-0 bg-transparent p-0 text-xs uppercase shadow-none', getMethodColor(item.method))}>
-              {item.method}
-            </Badge>
-          )}
-          <span className={cn('truncate font-medium', item.deprecated && 'line-through opacity-60')}>
-            <HighlightText text={item.title} />
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  // Page row
+  // Operation rows lead with their method, schema and page rows with an icon
+  const LeadingIcon = item.type === 'schema' ? BracesIcon : FileTextIcon;
   return (
     <div className="flex w-full min-w-0 flex-col items-start gap-0.5">
       <Breadcrumbs crumbs={item.breadcrumbs} />
       <div className="flex w-full min-w-0 items-center gap-2">
-        <FileTextIcon className="size-4 shrink-0 text-muted-foreground" />
-        <span className="truncate font-medium">
+        {item.method ? <MethodLabel method={item.method} /> : <LeadingIcon className="size-4 shrink-0 text-muted-foreground" />}
+        <span className={cn('truncate font-medium', item.deprecated && 'line-through opacity-60')}>
           <HighlightText text={item.title} />
         </span>
       </div>

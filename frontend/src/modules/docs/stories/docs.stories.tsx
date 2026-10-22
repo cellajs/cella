@@ -8,6 +8,7 @@ import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { OperationExamples } from '~/modules/docs/operations/operation-examples';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
 import { TagSchemasTable } from '~/modules/docs/schemas/tag-schemas-table';
+import { docsSidebarSheetId } from '~/modules/docs/sidebar/close-sidebar-sheet';
 import { CollapsibleTagItem } from '~/modules/docs/sidebar/collapsible-tag-item';
 import { OperationItem } from '~/modules/docs/sidebar/operation-item';
 import { PageBranch, type PageNode } from '~/modules/docs/sidebar/page-tree-item';
@@ -162,7 +163,7 @@ export const SidebarItems: Story = {
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     const openSidebarSheet = () =>
-      sheeter.getState().create(null, { id: 'docs-sidebar', side: 'left', triggerRef: { current: null }, onClose: sidebarOnClose });
+      sheeter.getState().create(null, { id: docsSidebarSheetId, side: 'left', triggerRef: { current: null }, onClose: sidebarOnClose });
 
     const getMe = await canvas.findByRole('link', { name: /^Get me\s*get$/ });
     const sessions = canvas.getByRole('link', { name: /^Get my sessions\s*get$/ });
@@ -179,7 +180,7 @@ export const SidebarItems: Story = {
       await userEvent.click(getMe);
 
       await waitFor(() => expect(getSection()).toBe('tag/me/get/me'));
-      await expect(sheeter.getState().get('docs-sidebar')).toBeUndefined();
+      await expect(sheeter.getState().get(docsSidebarSheetId)).toBeUndefined();
       await expect(sidebarOnClose).toHaveBeenCalledTimes(1);
       // The click scrolls in place; the router stays where it was
       await expect(getRouter().state.location.pathname).toBe('/');
@@ -190,14 +191,14 @@ export const SidebarItems: Story = {
       openSidebarSheet();
       await userEvent.click(userBase);
 
-      await expect(sheeter.getState().get('docs-sidebar')).toBeUndefined();
+      await expect(sheeter.getState().get(docsSidebarSheetId)).toBeUndefined();
       await expect(sidebarOnClose).toHaveBeenCalledTimes(2);
       await expect(getRouter().state.location.hash).toBe('');
     });
   },
 };
 
-const renderOperation = (op: GenOperationSummary, _index: number, isActive: boolean) => <OperationItem operation={op} isActive={isActive} />;
+const renderOperation = (op: GenOperationSummary, isActive: boolean) => <OperationItem operation={op} isActive={isActive} />;
 
 /** An expanded tag's link collapses it (drops operationTag) only at the tag itself, not while one of its operations is current. */
 export const TagItemReclick: Story = {

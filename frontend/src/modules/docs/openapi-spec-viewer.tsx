@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { ChevronDownIcon, ChevronsDownUpIcon, ChevronsUpDownIcon, ChevronUpIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useState } from 'react';
@@ -8,7 +8,6 @@ import { type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils
 import { useMatchSteps } from '~/modules/common/match-highlight';
 import { SearchClearButton } from '~/modules/common/search-clear-button';
 import { SearchSpinner } from '~/modules/common/search-spinner';
-import { Spinner } from '~/modules/common/spinner';
 import { JsonActions } from '~/modules/docs/json-actions';
 import { openApiSpecQueryOptions, openApiUrl } from '~/modules/docs/query';
 import { Button } from '~/modules/ui/button';
@@ -24,26 +23,15 @@ export function OpenApiSpecViewer() {
   const [resetKey, setResetKey] = useState(0);
   const [searchMatchPath, setSearchMatchPath] = useState<JsonPath | null>(null);
 
-  const { data, isLoading, error } = useQuery(openApiSpecQueryOptions);
+  const { data } = useSuspenseQuery(openApiSpecQueryOptions);
 
-  const matchPaths = useMemo(() => (data ? matchRowPaths(data, searchText) : []), [data, searchText]);
+  const matchPaths = useMemo(() => matchRowPaths(data, searchText), [data, searchText]);
   const steps = useMatchSteps(matchPaths, setSearchMatchPath);
 
   const handleSearchChange = (newSearch: string) => {
     setSearchText(newSearch);
     setSearchMatchPath(null);
   };
-
-  if (isLoading) return <Spinner />;
-
-  if (error) {
-    const resource = t('c:docs.openapi_specification').toLowerCase();
-    return (
-      <div className="flex items-center justify-center p-12">
-        <span className="text-destructive">{t('error:load_resource', { resource })}</span>
-      </div>
-    );
-  }
 
   const isSearching = searchText.length > 0;
 
@@ -134,7 +122,6 @@ export function OpenApiSpecViewer() {
           openapiMode="spec"
           rootName={false}
           enableClipboard
-          indentWidth={2}
           searchText={searchText}
           showKeyQuotes={false}
           expandAll={isExpanded}

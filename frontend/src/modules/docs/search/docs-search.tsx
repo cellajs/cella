@@ -17,6 +17,7 @@ import { getDocsSearchClient } from '~/modules/docs/search/client';
 import { DocsSearchRow } from '~/modules/docs/search/docs-search-row';
 import { deleteRecentSearch, updateRecentSearches, useDocsSearchStore } from '~/modules/docs/search/docs-search-store';
 import type { DocsSearchResult, DocsSearchScope } from '~/modules/docs/search/types';
+import { docsSidebarSheetId } from '~/modules/docs/sidebar/close-sidebar-sheet';
 import { docsConfig } from '~/modules/page/content';
 import { Combobox, ComboboxItem, ComboboxList } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
@@ -24,6 +25,8 @@ import { cn } from '~/utils/cn';
 import { resolveSearchInput } from '~/utils/recent-searches';
 
 type SearchSelection = DocsSearchResult | HistoryEntry;
+
+export const docsSearchDialogId = 'docs-search';
 
 /** Scope chips, labeled by the config-driven sidebar section labels. */
 const scopeChips: { value: DocsSearchScope; label: string }[] = [
@@ -78,9 +81,9 @@ export function DocsSearch() {
   }, [debouncedValue, scope, queryClient]);
 
   const close = () => {
-    dialoger.getState().remove('docs-search');
+    dialoger.getState().remove(docsSearchDialogId);
     // On mobile, search opens from the sidebar sheet; close that too.
-    sheeter.getState().remove('docs-sidebar');
+    sheeter.getState().remove(docsSidebarSheetId);
   };
 
   const onSelect = (selection: SearchSelection) => {

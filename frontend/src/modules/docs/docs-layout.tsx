@@ -1,4 +1,3 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useNavigate } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { ArrowUpIcon, MenuIcon } from 'lucide-react';
@@ -9,22 +8,19 @@ import { useFirstTimeHint } from '~/hooks/use-first-time-hint';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useScrolledPast } from '~/hooks/use-scrolled-past';
 import { type SheetData, sheeter, useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { tagsQueryOptions } from '~/modules/docs/query';
 import { toggleDocsSearch } from '~/modules/docs/search/open-docs-search';
+import { docsSidebarSheetId, isDocsSidebarOpen } from '~/modules/docs/sidebar/close-sidebar-sheet';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
 import { tw } from '~/utils/tw';
 
 const minSidebarWidth = 220;
 const maxSidebarWidth = 400;
 
-// Safari has no requestIdleCallback
-const scheduleIdle =
-  typeof requestIdleCallback === 'function'
-    ? (cb: () => void) => requestIdleCallback(cb, { timeout: 2000 })
-    : (cb: () => void) => window.setTimeout(cb, 1000);
-const cancelIdle = typeof cancelIdleCallback === 'function' ? cancelIdleCallback : clearTimeout;
+/** The width of `--docs-sidebar-width`'s CSS default, clamp(220px, 24vw, 288px), for the resize handle's value. */
+const defaultSidebarWidth = () => Math.round(Math.min(288, Math.max(minSidebarWidth, window.innerWidth * 0.24)));
 
 function DocsLayout() {
   const navigate = useNavigate();
@@ -80,13 +76,11 @@ function DocsLayout() {
     setResizedSidebarWidth(Math.min(maxSidebarWidth, Math.max(minSidebarWidth, target)));
   };
 
-  const { data: tags } = useSuspenseQuery(tagsQueryOptions);
+  const sidebarOpen = useSheeter((state) => isDocsSidebarOpen(state.sheets));
 
-  const sidebarOpen = useSheeter((state) => state.sheets.some((s) => s.id === 'docs-sidebar' && s.open !== false));
-
-  const sidebarContent = <DocsSidebar tags={tags} />;
+  const sidebarContent = <DocsSidebar />;
   const sidebarSheet: SheetData = {
-    id: 'docs-sidebar',
+    id: docsSidebarSheetId,
     side: 'left',
     triggerRef,
     title: i18n.t('c:docs'),
@@ -99,10 +93,10 @@ function DocsLayout() {
   // Below `md` the sheet mounts closed at idle, so a menu tap only slides it in. Leaving the docs or reaching `md` unmounts it.
   useEffect(() => {
     if (isDesktop) return;
-    const handle = scheduleIdle(() => sheeter.getState().mount(sidebarContent, sidebarSheet));
+    const handle = scheduleIdle(() => sheeter.getState().mount(sidebarContent, sidebarSheet), 1000);
     return () => {
       cancelIdle(handle);
-      sheeter.getState().unmount('docs-sidebar');
+      sheeter.getState().unmount(docsSidebarSheetId);
     };
   }, [isDesktop]);
 
@@ -112,10 +106,8 @@ function DocsLayout() {
     [
       'Escape',
       () => {
-        if (sidebarOpen) {
-          sheeter.getState().remove('docs-sidebar');
-          return;
-        }
+        // The open sidebar sheet closes on its own Escape
+        if (sidebarOpen) return;
         navigate({ to: '.', search: (prev) => ({ ...prev, operationTag: undefined }), resetScroll: false, replace: true });
       },
     ],
@@ -123,7 +115,7 @@ function DocsLayout() {
 
   const toggleSidebar = () => {
     if (sidebarOpen) {
-      sheeter.getState().remove('docs-sidebar');
+      sheeter.getState().remove(docsSidebarSheetId);
     } else {
       sheeter.getState().create(sidebarContent, sidebarSheet);
     }
@@ -170,9 +162,15 @@ function DocsLayout() {
     <div ref={wrapperRef} className="contents [--docs-sidebar-width:clamp(220px,24vw,288px)]" style={sidebarWidthStyle}>
       <aside ref={sidebarRef} className="fixed inset-y-0 left-0 z-30 flex w-(--docs-sidebar-width) bg-background focus-view:hidden">
         <ScrollArea className="size-full">{sidebarContent}</ScrollArea>
-        <button
-          type="button"
-          aria-label="Resize sidebar: drag, use the left and right arrow keys, or double-click to reset"
+        {/* biome-ignore lint/a11y/useSemanticElements: a focusable resize handle, which `<hr>`, a static rule, is not */}
+        <div
+          role="separator"
+          aria-label={i18n.t('c:resize_sidebar')}
+          aria-orientation="vertical"
+          aria-valuenow={resizedSidebarWidth ?? defaultSidebarWidth()}
+          aria-valuemin={minSidebarWidth}
+          aria-valuemax={maxSidebarWidth}
+          tabIndex={0}
           onPointerDown={startSidebarResize}
           onDoubleClick={() => setResizedSidebarWidth(null)}
           onKeyDown={resizeSidebarByKey}

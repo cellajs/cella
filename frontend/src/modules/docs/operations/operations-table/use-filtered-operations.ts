@@ -20,9 +20,9 @@ const matchesTerm = (op: GenOperationSummary, term: string): boolean =>
   op.id.toLowerCase().includes(term) ||
   op.method.toLowerCase().includes(term) ||
   op.path.toLowerCase().includes(term) ||
-  !!op.description?.toLowerCase().includes(term) ||
-  !!op.tags?.some((tag) => tag.toLowerCase().includes(term)) ||
-  Object.values(op.tagsByKind ?? {}).some((values) => values.some((v) => v.toLowerCase().includes(term))) ||
+  op.description.toLowerCase().includes(term) ||
+  op.tags.some((tag) => tag.toLowerCase().includes(term)) ||
+  Object.values(op.tagsByKind).some((values) => values.some((v) => v.toLowerCase().includes(term))) ||
   Object.values(op.extensions).some((values) => values.some((v) => v.toLowerCase().includes(term)));
 
 export function useFilteredOperations(operations: GenOperationSummary[], { q, tag }: FilterOptions) {
@@ -35,7 +35,7 @@ export function useFilteredOperations(operations: GenOperationSummary[], { q, ta
       if (sep > 0) {
         const kind = tag.slice(0, sep);
         const value = tag.slice(sep + 1);
-        ops = ops.filter((op) => op.tagsByKind?.[kind]?.includes(value));
+        ops = ops.filter((op) => op.tagsByKind[kind]?.includes(value));
       }
     }
 

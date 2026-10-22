@@ -3,13 +3,13 @@ import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenExtensionDefinition, GenOperationSummary } from 'sdk/docs-types';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { openOperationSheet } from '~/modules/docs/operations/operation-detail';
 import { openExamplesSheet } from '~/modules/docs/operations/operation-examples';
 import { SwitchedOffBadge } from '~/modules/docs/operations/switched-off-badge';
-import { Badge } from '~/modules/ui/badge';
+import { TagBadges } from '~/modules/docs/tag-table';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
-import { getMethodColor } from '../../helpers/get-method-color';
 
 /** Tag kinds whose columns start hidden, to keep the default table narrow; the columns menu shows them. */
 const hiddenTagKinds = new Set(['owner', 'entity']);
@@ -103,18 +103,10 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
       minWidth: 80,
       placeholderValue: '-',
       renderCell: ({ row }: { row: GenOperationSummary }) => {
-        const values = row.tagsByKind?.[kind];
+        const values = row.tagsByKind[kind];
         if (!values?.length) return null;
         if (plainTagKinds.has(kind)) return <LabelList items={values.map((tag) => ({ key: tag, label: tag }))} />;
-        return (
-          <div className="flex flex-wrap gap-1">
-            {values.map((tag) => (
-              <Badge key={tag} variant="outline" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        );
+        return <TagBadges values={values} />;
       },
     }));
 
@@ -125,7 +117,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         sortable: true,
         width: 80,
         minWidth: 80,
-        renderCell: ({ row }) => <span className={cn('font-medium font-mono text-xs', getMethodColor(row.method))}>{row.method.toUpperCase()}</span>,
+        renderCell: ({ row }) => <MethodLabel method={row.method} />,
       },
       {
         key: 'path',

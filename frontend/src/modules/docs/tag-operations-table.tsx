@@ -1,8 +1,7 @@
 import type { GenOperationSummary } from 'sdk/docs-types';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { TagHashLink, TagTable } from '~/modules/docs/tag-table';
-import { cn } from '~/utils/cn';
-import { getMethodColor } from './helpers/get-method-color';
 
 interface TagOperationsTableProps {
   operations: GenOperationSummary[];
@@ -18,7 +17,7 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       name: '',
 
       width: 64,
-      renderCell: ({ row }) => <span className={cn('font-medium font-mono text-xs', getMethodColor(row.method))}>{row.method.toUpperCase()}</span>,
+      renderCell: ({ row }) => <MethodLabel method={row.method} />,
     },
     {
       key: 'path',

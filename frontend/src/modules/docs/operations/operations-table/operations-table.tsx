@@ -13,6 +13,7 @@ import { useFilteredOperations } from '~/modules/docs/operations/operations-tabl
 import { useSortedOperations } from '~/modules/docs/operations/operations-table/use-sorted-operations';
 import { isSwitchedOff } from '~/modules/docs/operations/switched-off-badge';
 import { infoQueryOptions, operationsQueryOptions } from '~/modules/docs/query';
+import { collectTagKinds } from '~/modules/docs/tag-table';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 function OperationsTable() {
@@ -32,19 +33,13 @@ function OperationsTable() {
 
   const { data: operations } = useSuspenseQuery(operationsQueryOptions);
 
-  const tagKinds = useMemo(() => {
-    const kinds = new Set<string>();
-    for (const op of operations) {
-      if (op.tagsByKind) for (const kind of Object.keys(op.tagsByKind)) kinds.add(kind);
-    }
-    return Array.from(kinds);
-  }, [operations]);
+  const tagKinds = useMemo(() => collectTagKinds(operations), [operations]);
 
   // kind -> distinct values present; 'module' is driven by the sidebar and 'schema' does not apply here
   const tagFilters = useMemo(() => {
     const map: Record<string, Set<string>> = {};
     for (const op of operations) {
-      for (const [kind, values] of Object.entries(op.tagsByKind ?? {})) {
+      for (const [kind, values] of Object.entries(op.tagsByKind)) {
         if (kind === 'module' || kind === 'schema') continue;
         if (!map[kind]) map[kind] = new Set();
         for (const v of values) map[kind].add(v);

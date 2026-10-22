@@ -1,21 +1,18 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { Suspense, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenComponentSchema, GenSchemaTagSummary } from 'sdk/docs-types';
-import { usePrerenderSection, usePrerenderTrigger } from '~/hooks/use-prerender';
+import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import { HashUrlButton } from '~/modules/common/hash-url-button';
 import { DocsPageHeader } from '~/modules/docs/docs-page-header';
 import { schemasByTagQueryOptions, schemasQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
 import { TagSchemasList } from '~/modules/docs/schemas/schema-detail';
 import { TagSchemasTable } from '~/modules/docs/schemas/tag-schemas-table';
 import { TagExpandLink } from '~/modules/docs/tag-expand-link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
-import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
-import { cn } from '~/utils/cn';
-import { getHashUrl } from '../hash-url';
+import { TagSectionCard } from '~/modules/docs/tag-section-card';
+import { collectTagKinds } from '~/modules/docs/tag-table';
 
 /** All component schemas from the OpenAPI spec, categorized into base, data, and errors tags. */
 function SchemasPage() {
@@ -28,17 +25,8 @@ function SchemasPage() {
   const { data: schemasByTag } = useSuspenseQuery(schemasByTagQueryOptions);
   const { data: schemaTags } = useSuspenseQuery(schemaTagsQueryOptions);
 
-  // Distinct non-schema tag kinds (e.g., 'module', 'ownership') drive the dynamic columns
-  const tagKinds = useMemo(() => {
-    const kinds = new Set<string>();
-    for (const s of allSchemas) {
-      if (!s.tagsByKind) continue;
-      for (const kind of Object.keys(s.tagsByKind)) {
-        if (kind !== 'schema') kinds.add(kind);
-      }
-    }
-    return Array.from(kinds);
-  }, [allSchemas]);
+  // Distinct non-schema tag kinds (e.g., 'module', 'owner') drive the dynamic columns
+  const tagKinds = useMemo(() => collectTagKinds(allSchemas, ['schema']), [allSchemas]);
 
   const schemaCount = schemaTags.reduce((sum, t) => sum + t.count, 0);
 
@@ -82,45 +70,28 @@ interface SchemaTagSectionProps {
 }
 
 function SchemaTagSection({ tag, schemas: tagSchemas, tagKinds, isOpen, onPrerender }: SchemaTagSectionProps) {
-  const { shouldMount, style } = usePrerenderSection('schemas', tag.name, isOpen);
-
   return (
-    <Collapsible open={isOpen}>
-      <Card id={`spy-${tag.name}`} className={cn('scroll-mt-4 border-0', isOpen && 'rounded-b-none')}>
-        <CardHeader className="group">
-          <CardTitle level={2} className="gap-2 text-2xl leading-12">
-            {tag.name}
-            <HashUrlButton url={getHashUrl(tag.name)} />
-          </CardTitle>
-          <CardDescription className="my-2 max-w-4xl text-base">{tag.description}</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <TagSchemasTable schemas={tagSchemas} tagName={tag.name} tagKinds={tagKinds} onPrerender={onPrerender} />
-
-          <TagExpandLink
-            isOpen={isOpen}
-            to="."
-            search={(prev) => ({ ...prev, schemaTag: isOpen ? undefined : tag.name })}
-            hash={isOpen ? undefined : tag.name}
-            tagName={tag.name}
-            onMouseEnter={onPrerender}
-            onClick={() => {
-              if (!isOpen) scrollToSectionById(tag.name);
-            }}
-          />
-        </CardContent>
-      </Card>
-
-      {shouldMount && (
-        <CollapsibleContent keepMounted>
-          <div style={style}>
-            <Suspense>
-              <TagSchemasList schemas={tagSchemas} />
-            </Suspense>
-          </div>
-        </CollapsibleContent>
-      )}
-    </Collapsible>
+    <TagSectionCard
+      scope="schemas"
+      name={tag.name}
+      sectionId={tag.name}
+      description={tag.description}
+      isOpen={isOpen}
+      details={<TagSchemasList schemas={tagSchemas} />}
+    >
+      <TagSchemasTable schemas={tagSchemas} tagName={tag.name} tagKinds={tagKinds} onPrerender={onPrerender} />
+      <TagExpandLink
+        isOpen={isOpen}
+        to="."
+        search={(prev) => ({ ...prev, schemaTag: isOpen ? undefined : tag.name })}
+        hash={isOpen ? undefined : tag.name}
+        tagName={tag.name}
+        onMouseEnter={onPrerender}
+        onClick={() => {
+          if (!isOpen) scrollToSectionById(tag.name);
+        }}
+      />
+    </TagSectionCard>
   );
 }
 

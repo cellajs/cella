@@ -60,21 +60,16 @@ async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> 
 
   return {
     async search(term, scope) {
-      if (!hasOperations) {
-        const late = await queryClient.query(operationsQueryOptions).catch(() => null);
-        if (late) {
-          engine.addOperations(late);
-          hasOperations = true;
-        }
-      }
-      if (!hasSchemas) {
-        const late = await queryClient.query(schemasQueryOptions).catch(() => null);
-        if (late) {
-          engine.addSchemas(late);
-          hasSchemas = true;
-        }
-      }
+      hasOperations ||= await addLate(() => queryClient.query(operationsQueryOptions), engine.addOperations);
+      hasSchemas ||= await addLate(() => queryClient.query(schemasQueryOptions), engine.addSchemas);
       return engine.search(term, scope);
     },
   };
+}
+
+/** Adds a corpus that a cold offline cache could not serve when the client was built; true once it is in. */
+async function addLate<T>(load: () => Promise<T>, add: (items: T) => void) {
+  const items = await load().catch(() => null);
+  if (items !== null) add(items);
+  return items !== null;
 }
