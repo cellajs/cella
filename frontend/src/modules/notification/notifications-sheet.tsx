@@ -11,9 +11,8 @@ import { Spinner } from '~/modules/common/spinner';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
-import { pageTopHashNav } from '~/utils/channel-route';
+import { getProductRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
-import { getNotificationRoute } from './notification-link';
 import { notificationsQueryOptions, useMarkNotificationsRead } from './query';
 import { UnreadCountBadge } from './unread-nav-badge';
 
@@ -61,7 +60,7 @@ export function NotificationsSheet() {
 function NotificationRow({ notification, onOpen }: { notification: Notification; onOpen: (body: { ids?: string[] }) => void }) {
   const { t } = useTranslation();
   const relativeDate = useRelativeDate(notification.createdAt);
-  const route = getNotificationRoute(notification);
+  const route = getProductRoute(notification);
 
   const onActivate = () => {
     // Like the account sheet: a pinned nav sheet stays open beside the content. No id, because this sheet is
