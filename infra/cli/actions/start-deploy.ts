@@ -55,7 +55,7 @@ export async function runStartDeploy(context: InfraContext): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, POLL_MS));
     run = await readJobRun(auth, { region, runId: run.id });
   }
-  const outcome = run.state === 'succeeded' || run.state === 'failed' ? mainJobOutcome(run.exit_code ?? undefined) : 'failed';
+  const outcome = mainJobOutcome(run);
   if (outcome === 'deployed') console.info(`${checkMark} ${environment} runs ${target.sha.slice(0, 10)}.`);
   else if (outcome === 'blocked')
     console.warn(`${warningMark} Blocked: a privileged change is owed. Apply it (\`${actionCommand('apply')}\`), then start the deploy again.`);
