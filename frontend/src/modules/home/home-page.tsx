@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { ShieldAlertIcon } from 'lucide-react';
+import { ArrowRightIcon, ShieldAlertIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
@@ -34,7 +34,8 @@ export function HomePage() {
         <AlertBanner id="enable_mfa" variant="plain" icon={ShieldAlertIcon} className="mt-4">
           <p>{t('c:require_mfa.text')}</p>
           <Button variant="plain" size="sm" className="mt-2" render={<Link to="/account" hash="authentication" />}>
-            {t('c:setup_resource', { resource: t('c:authentication').toLowerCase() })}
+            {t('c:setup_resource', { resource: 'MFA' })}
+            <ArrowRightIcon />
           </Button>
         </AlertBanner>
       )}
