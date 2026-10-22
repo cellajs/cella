@@ -2,7 +2,9 @@ import { Avatar as AvatarPrimitive } from '@base-ui/react/avatar';
 import * as React from 'react';
 import { cn } from '~/utils/cn';
 
-export type AvatarProps = AvatarPrimitive.Root.Props & { size?: 'default' | 'sm' | 'lg' };
+export interface AvatarProps extends AvatarPrimitive.Root.Props {
+  size?: 'default' | 'sm' | 'lg';
+}
 
 export function Avatar({ className, size = 'default', ...props }: AvatarProps) {
   return (
@@ -29,7 +31,11 @@ export function AvatarFallback({ className, ...props }: AvatarPrimitive.Fallback
   );
 }
 
-type AvatarGroupContextValue = { count?: number; limit?: number; setCount?: React.Dispatch<React.SetStateAction<number>> };
+interface AvatarGroupContextValue {
+  count?: number;
+  limit?: number;
+  setCount?: React.Dispatch<React.SetStateAction<number>>;
+}
 
 const AvatarGroupContext = React.createContext<AvatarGroupContextValue>({});
 

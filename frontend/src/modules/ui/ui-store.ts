@@ -24,13 +24,13 @@ interface UIStoreState {
   setContrast: (contrast: Contrast) => void;
 
   publicAlertsSeen: string[]; // Public route alert IDs dismissed before a user DB exists
-  setPublicAlertSeen: (alertSeen: string) => void;
+  setPublicAlertSeen: (alertId: string) => void;
 
   hintsSeen: string[]; // One-time UI hint IDs already shown (e.g. floating nav menu label)
-  setHintSeen: (hint: string) => void;
+  setHintSeen: (hintId: string) => void;
 
   focusView: boolean;
-  setFocusView: (status: boolean) => void;
+  setFocusView: (focusView: boolean) => void;
 
   uiLocks: string[]; // Active UI lock sources
   lockUI: (source: string) => void;
@@ -79,19 +79,19 @@ export const useUIStore = create<UIStoreState>()(
             state.contrast = contrast;
           });
         },
-        setPublicAlertSeen: (alertSeen) => {
+        setPublicAlertSeen: (alertId) => {
           set((state) => {
-            if (!state.publicAlertsSeen.includes(alertSeen)) state.publicAlertsSeen.push(alertSeen);
+            if (!state.publicAlertsSeen.includes(alertId)) state.publicAlertsSeen.push(alertId);
           });
         },
-        setHintSeen: (hint) => {
+        setHintSeen: (hintId) => {
           set((state) => {
-            if (!state.hintsSeen.includes(hint)) state.hintsSeen.push(hint);
+            if (!state.hintsSeen.includes(hintId)) state.hintsSeen.push(hintId);
           });
         },
-        setFocusView: (status) => {
+        setFocusView: (focusView) => {
           set((state) => {
-            state.focusView = status;
+            state.focusView = focusView;
           });
         },
         lockUI: (source) => {

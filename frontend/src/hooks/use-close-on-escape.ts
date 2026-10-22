@@ -13,22 +13,22 @@ interface CloseOnEscapeOptions<Details> {
  * controls `open` handles Escape itself.
  */
 export function useCloseOnEscape<Details>({ open, defaultOpen = false, onOpenChange }: CloseOnEscapeOptions<Details>) {
-  const [ownOpen, setOwnOpen] = useState(defaultOpen);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const controlled = open !== undefined;
 
   useEffect(() => {
-    if (controlled || !ownOpen) return;
+    if (controlled || !uncontrolledOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOwnOpen(false);
+      if (event.key === 'Escape') setUncontrolledOpen(false);
     };
     document.addEventListener('keydown', onKeyDown, true);
     return () => document.removeEventListener('keydown', onKeyDown, true);
-  }, [controlled, ownOpen]);
+  }, [controlled, uncontrolledOpen]);
 
   const handleOpenChange = (nextOpen: boolean, eventDetails: Details) => {
-    setOwnOpen(nextOpen);
+    setUncontrolledOpen(nextOpen);
     onOpenChange?.(nextOpen, eventDetails);
   };
 
-  return { open: controlled ? open : ownOpen, onOpenChange: handleOpenChange };
+  return { open: controlled ? open : uncontrolledOpen, onOpenChange: handleOpenChange };
 }

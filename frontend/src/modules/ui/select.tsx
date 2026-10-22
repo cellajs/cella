@@ -10,20 +10,22 @@ const SelectValueContext = createContext<string | null | undefined>(undefined);
 
 // Override onValueChange to narrow Base UI's (string | null) to string for all consumers.
 // Pass `items` when labels differ from values: SelectValue reads them before the popup has ever mounted.
-type SelectProps = Omit<SelectPrimitive.Root.Props<string>, 'onValueChange'> & { onValueChange?: (value: string) => void };
+interface SelectProps extends Omit<SelectPrimitive.Root.Props<string>, 'onValueChange'> {
+  onValueChange?: (value: string) => void;
+}
 
 function Select({ onValueChange, value, defaultValue, ...props }: SelectProps) {
   // Mirrors an uncontrolled value, so its item shows the check too
-  const [ownValue, setOwnValue] = useState(defaultValue);
+  const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
 
   return (
-    <SelectValueContext.Provider value={value === undefined ? ownValue : value}>
+    <SelectValueContext.Provider value={value === undefined ? uncontrolledValue : value}>
       <SelectPrimitive.Root
         data-slot="select"
         value={value}
         defaultValue={defaultValue}
         onValueChange={(nextValue) => {
-          setOwnValue(nextValue);
+          setUncontrolledValue(nextValue);
           if (nextValue !== null) onValueChange?.(nextValue);
         }}
         {...props}

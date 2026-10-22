@@ -43,7 +43,7 @@ export function ScrollArea({
     let lastWidth = viewport.scrollWidth;
     let lastHeight = viewport.scrollHeight;
     let frame = 0;
-    const mo = new MutationObserver(() => {
+    const observer = new MutationObserver(() => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const { scrollWidth, scrollHeight } = viewport;
@@ -53,10 +53,10 @@ export function ScrollArea({
         viewport.dispatchEvent(new Event('scroll'));
       });
     });
-    mo.observe(viewport, { childList: true, subtree: true });
+    observer.observe(viewport, { childList: true, subtree: true });
     return () => {
       cancelAnimationFrame(frame);
-      mo.disconnect();
+      observer.disconnect();
     };
   }, [viewportRef]);
 

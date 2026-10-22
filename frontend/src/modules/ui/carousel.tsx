@@ -210,7 +210,7 @@ function CarouselNext({ className, variant = 'outline', size = 'icon', ...props 
   );
 }
 
-const dotsVariants = cva('group/dot relative flex cursor-pointer items-center justify-center rounded-full', {
+const carouselDotsVariants = cva('group/dot relative flex cursor-pointer items-center justify-center rounded-full', {
   variants: {
     size: { default: 'size-5', sm: 'size-6', lg: 'size-7' },
     gap: { default: 'mx-1', sm: 'mx-1', lg: 'mx-1' },
@@ -218,7 +218,7 @@ const dotsVariants = cva('group/dot relative flex cursor-pointer items-center ju
   defaultVariants: { size: 'default', gap: 'default' },
 });
 
-interface CarouselDotsProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof dotsVariants> {}
+interface CarouselDotsProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof carouselDotsVariants> {}
 
 function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
   const { api } = useCarousel();
@@ -227,12 +227,12 @@ function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
 
   React.useEffect(() => {
     if (!api) return;
-    const onSelect = () => setCurrent(api.selectedScrollSnap());
-    onSelect();
-    api.on('select', onSelect);
+    const handleSelect = () => setCurrent(api.selectedScrollSnap());
+    handleSelect();
+    api.on('select', handleSelect);
 
     return () => {
-      api.off('select', onSelect);
+      api.off('select', handleSelect);
     };
   }, [api]);
 
@@ -258,7 +258,7 @@ function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
           aria-selected={current === index ? 'true' : 'false'}
           aria-label={`Slide ${index + 1}`}
           onClick={() => api?.scrollTo(index)}
-          className={cn(dotsVariants({ size, gap }), 'focus-effect')}
+          className={cn(carouselDotsVariants({ size, gap }), 'focus-effect')}
         >
           <span
             aria-hidden="true"
