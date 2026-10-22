@@ -124,9 +124,9 @@ jobs:
       - name: Build frontend
         run: pnpm --filter frontend build
 
-  # Typecheck plus the three service bundles (backend, cdc, yjs). Nothing else in CI typechecks (the
-  # pre-commit hook does, and --no-verify skips it), and the bundles are otherwise first built by the
-  # release deploy, where a package missing from tsup's keep-on-disk list fails (0.12.1). ~2 min, every PR.
+  # Typecheck plus the three service bundles (backend, cdc, yjs), each booted once. Nothing else in CI typechecks (the
+  # pre-commit hook does, and --no-verify skips it), and the bundles are otherwise first built and started by the
+  # release deploy, where a package missing from the keep-on-disk list fails (0.12.1). ~3 min, every PR.
   build-services:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -154,12 +154,18 @@ jobs:
       - name: Build service bundles
         run: pnpm --filter backend --filter cdc-worker --filter yjs-worker build
 
+      - name: Create .env file
+        run: cp ./backend/.env.example ./backend/.env
+
+      # A bundle can build and still crash at start (a workspace import left as a bare import), which a deploy finds
+      # only as a cutover that never turns healthy. Migrates, boots and stops each service on the test database.
+      - name: Boot the service bundles
+        run: pnpm boot:check
+
       # A new app starts from config.template.ts: no federation and no `sso` method. This repo's own config
       # has both, so code that leans on them passes the typecheck above and fails in every new app (0.16.0).
       - name: Typecheck as a new app
-        run: |
-          cp ./backend/.env.example ./backend/.env
-          pnpm template:check
+        run: pnpm template:check
 
   # Runs all tests (full mode with PostgreSQL). Heavy: runs on the release PR, and in an app on the sync PR
   # (`cella/sync/<stamp>`, the branch `pnpm cella sync` opens), where upstream changes first meet the app's code.
