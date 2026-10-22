@@ -107,8 +107,13 @@ export async function jsxToString(element: ReactNode): Promise<string> {
       if (innerHTML) {
         html += innerHTML;
       } else if (type === 'style') {
-        // CSS is raw text: written unescaped, only kept from closing its element early.
-        html += [(props as { children?: unknown }).children].flat().join('').replaceAll('</style', '<\\/style');
+        // CSS is raw text: written unescaped, only kept from closing its element early (`</style` in any case). Like text
+        // children, `false`, `null` and `undefined` write nothing.
+        html += [(props as { children?: unknown }).children]
+          .flat(Number.POSITIVE_INFINITY)
+          .filter((child) => typeof child === 'string' || typeof child === 'number')
+          .join('')
+          .replace(/<\/(style)/gi, '<\\/$1');
       } else {
         html += await jsxToString((props as { children?: ReactNode }).children);
       }
