@@ -6,7 +6,7 @@ import { strategyLabels } from '#/modules/auth/general/helpers/strategy-labels';
 import type { SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import type { UserModel } from '#/modules/user/user-db';
-import { utcStamp } from '#/utils/iso-date';
+import { getIsoDate, utcStamp } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -44,7 +44,7 @@ const countryName = (code: string, language: string) => {
 export const notifySignIn = ({ user, isSystemAdmin, context, strategy, newDevice }: SignInNotice) => {
   // A system admin session goes to the security inbox. Skipped in development, where every local sign-in would mail it.
   if (isSystemAdmin && appConfig.mode !== 'development') {
-    sendSecurityInboxEmail('sysadmin-signin', { email: user.email, ip: context.rawIp ?? 'unknown', timestamp: new Date().toISOString() });
+    sendSecurityInboxEmail('sysadmin-signin', { email: user.email, ip: context.rawIp ?? 'unknown', timestamp: getIsoDate() });
   }
 
   if (newDevice) void notifyNewSignIn({ user, context, strategy, newDevice });

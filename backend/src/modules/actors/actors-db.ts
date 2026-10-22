@@ -1,7 +1,7 @@
-import { snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import type { ActorId } from '#/db/utils/ids';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 
 /** Who can act and be named in provenance: a human user, or a service account behind an API key. */
 const actorKinds = ['user', 'service'] as const;
@@ -23,8 +23,8 @@ export const actorsTable = snakeCase.table('actors', {
    * A user's last authenticated GET on a session of their own (never an impersonation), or the last request a service
    * account's API key or token authenticated; written at most every five minutes (`middlewares/update-last-seen.ts`).
    */
-  lastSeenAt: timestamp({ mode: 'string' }),
+  lastSeenAt: isoTimestamp(),
   /** The user's last completed sign-in; null until the first, which picks the welcome redirect and skips the new-device notice. */
-  lastSignInAt: timestamp({ mode: 'string' }),
+  lastSignInAt: isoTimestamp(),
   createdAt: timestampColumns.createdAt,
 });

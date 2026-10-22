@@ -4,7 +4,7 @@ import { dateColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { ResendPendingInvitationCell } from '~/modules/memberships/pending-table/resend-pending-cell';
 import type { PendingMembership } from '~/modules/memberships/types';
-import { UserCell } from '~/modules/user/user-cell';
+import { ActorCell } from '~/modules/user/actor-cell';
 
 /** `canResend`: the viewer holds `update` on the channel, which a resend needs. */
 export const useColumns = (path: { tenantId: string; organizationId: string }, canResend: boolean) => {
@@ -28,7 +28,7 @@ export const useColumns = (path: { tenantId: string; organizationId: string }, c
       minBreakpoint: 'md',
       minWidth: 160,
       placeholderValue: '-',
-      renderCell: ({ row, tabIndex }) => row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => row.createdBy && <ActorCell compactable actor={row.createdBy} tabIndex={tabIndex} />,
     },
   ];
 

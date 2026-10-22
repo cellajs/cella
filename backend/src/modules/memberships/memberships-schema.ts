@@ -13,7 +13,7 @@ import {
   validIdSchema,
   validUuidSchema,
 } from '#/schemas';
-import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
+import { nullableActorRefSchema } from '#/schemas/actor-ref';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { mockInactiveMembershipResponse, mockMembershipBase, mockMembershipResponse } from './memberships-mocks';
 
@@ -37,7 +37,7 @@ export const inactiveMembershipSchema = z
     ...createSelectSchema(inactiveMembershipsTable).shape,
     role: entityRoleSchema,
     channelType: channelEntityTypeSchema,
-    createdBy: nullableUserMinimalBaseSchema,
+    createdBy: nullableActorRefSchema,
   })
   .openapi('InactiveMembership', {
     description:
@@ -105,5 +105,5 @@ export const pendingMembershipSchema = z.object({
   email: userBaseSchema.shape.email,
   role: membershipSchema.shape.role.nullable(),
   createdAt: membershipSchema.shape.createdAt,
-  createdBy: nullableUserMinimalBaseSchema,
+  createdBy: nullableActorRefSchema,
 });

@@ -52,14 +52,14 @@ describe('buildSubjectFromEntity: carries the row', () => {
 
   const ancestorIds = Object.fromEntries(hierarchy.getOrderedAncestors(product).map((a) => [appConfig.entityIdColumnKeys[a], `test-${a}`]));
 
-  const publicAt = '2026-07-06T12:00:00Z';
-  const entity = { ...ancestorIds, id: 'e1', createdBy: 'u1', publicAt, name: 'irrelevant' };
+  const isPublic = true;
+  const entity = { ...ancestorIds, id: 'e1', createdBy: 'u1', public: isPublic, name: 'irrelevant' };
 
   it('passes the row through, so row-derived rules can evaluate', () => {
     const subject = buildSubjectFromEntity(product, entity);
 
     expect(subject.row).toBeDefined();
-    expect(subject.row?.publicAt).toBe(publicAt);
+    expect(subject.row?.public).toBe(isPublic);
     expect(subject.createdBy).toBe('u1');
   });
 });

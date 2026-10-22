@@ -5,12 +5,12 @@ import { AppError } from '#/core/error';
 import { buildStx } from '#/core/stx';
 import { tenantContext } from '#/db/tenant-context';
 import { dispatchMutation } from '#/lib/mutation-bus';
+import { withActorRefs } from '#/modules/actors/actor-refs';
 import { attachmentsTable, type InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import { insertAttachments } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
 import { namesOwnStorage } from '#/modules/attachment/helpers/storage-key';
 import { getOrganizationEntityCount } from '#/modules/entities/entities-queries';
-import { withAuditUsers } from '#/modules/user/operations/with-audit-users';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { canCreateEntity } from '#/permissions/can-create';
 import { resolvePlacement } from '#/permissions/product-placement';
@@ -37,7 +37,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   const replayedIds = new Set(replayed.map((row) => row.id));
   const fresh = input.filter((item) => !replayedIds.has(item.id));
   // `replayed` tells the handler this request created none.
-  if (fresh.length === 0) return { data: await withAuditUsers(ctx, replayed), rejectedIds: [] as string[], replayed: true };
+  if (fresh.length === 0) return { data: await withActorRefs(ctx, replayed), rejectedIds: [] as string[], replayed: true };
 
   const currentAttachments = await getOrganizationEntityCount(ctx, { organizationId: organization.id, entityType: 'attachment' });
 
@@ -93,7 +93,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   const missingIds = fresh.map((item) => item.id).filter((id) => !insertedIds.has(id));
   const committedMeanwhile = missingIds.length > 0 ? await checkIdempotency(ctx, attachmentsTable, missingIds) : [];
 
-  const attachmentResponses = await withAuditUsers(ctx, [...replayed, ...createdAttachments, ...committedMeanwhile]);
+  const attachmentResponses = await withActorRefs(ctx, [...replayed, ...createdAttachments, ...committedMeanwhile]);
 
   return { data: attachmentResponses, rejectedIds: [] as string[], replayed: false };
 }

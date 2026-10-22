@@ -270,8 +270,8 @@ describe('pruneDevices', () => {
 
     const rows = await devicesOf(user.id);
     expect(rows).toHaveLength(50);
-    // The three oldest are the ones that went. The column has no time zone and holds UTC.
-    const oldestKept = Math.min(...rows.map((row) => new Date(`${row.lastSeenAt.replace(' ', 'T')}Z`).getTime()));
+    // The three oldest are the ones that went.
+    const oldestKept = Math.min(...rows.map((row) => new Date(row.lastSeenAt).getTime()));
     expect(Date.now() - oldestKept).toBeLessThan(51 * 60_000);
     expect(await devicesOf(other.id)).toHaveLength(1);
   });

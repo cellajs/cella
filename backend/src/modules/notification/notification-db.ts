@@ -1,9 +1,9 @@
-import { boolean, foreignKey, index, primaryKey, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, foreignKey, index, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { isoTimestamp, isoTimestampWithoutZone, timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 import { notificationTypes } from './notification-types';
 
@@ -29,7 +29,7 @@ export const notificationsTable = snakeCase.table(
   'notifications',
   {
     id: uuid().notNull().$defaultFn(generateId),
-    createdAt: timestampColumns.createdAt,
+    createdAt: isoTimestampWithoutZone().defaultNow().notNull(),
     userId: uuid().notNull(),
     /** Who caused the notification; null once the actor is deleted. */
     actorId: uuid(),
@@ -43,13 +43,13 @@ export const notificationsTable = snakeCase.table(
     channelId: uuid().notNull(),
     channelType: varchar({ length: maxLength.field, enum: appConfig.channelEntityTypes }).notNull(),
     organizationId: uuid().notNull(),
-    tenantId: varchar('tenant_id', { length: tenantIdLength }).notNull(),
+    tenantId: varchar({ length: tenantIdLength }).notNull(),
     /** CDC activity id: the dedupe key for at-least-once delivery. */
     activityId: varchar({ length: 64 }).notNull(),
-    readAt: timestamp({ mode: 'string' }),
+    readAt: isoTimestamp(),
     /** Set once the instant-mail pass took the row, mailed or skipped for good; the pass and the digest skip it. */
-    emailedAt: timestamp({ mode: 'string' }),
-    digestedAt: timestamp({ mode: 'string' }),
+    emailedAt: isoTimestamp(),
+    digestedAt: isoTimestamp(),
   },
   (table) => [
     // Composite PK required for partitioning by created_at.
@@ -79,7 +79,7 @@ export const notificationPreferencesTable = snakeCase.table('notification_prefer
   commentEmail: boolean().notNull().default(false),
   digest: varchar({ enum: digestFrequencies }).notNull().default(defaultDigestFrequency),
   /** Start of the next digest window. Null means "never digested", handled as the first run. */
-  lastDigestAt: timestamp({ mode: 'string' }),
+  lastDigestAt: isoTimestamp(),
   updatedAt: timestampColumns.updatedAt,
 });
 

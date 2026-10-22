@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toUserMinimalBase } from '#/modules/user/helpers/audit-user';
+import { toUserMinimalBase } from '#/modules/user/helpers/user-minimal';
 import { mockUser } from '#/modules/user/user-mocks';
 
 describe('toUserMinimalBase', () => {

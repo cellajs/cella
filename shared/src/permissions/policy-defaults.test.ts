@@ -42,7 +42,7 @@ describe('missing policy rows', () => {
       wideSubject({
         entityType: 'attachment',
         channelIds: { organization: 'org1', project: 'project1' },
-        row: { publicAt: '2026-07-15T00:00:00.000Z' },
+        row: { public: true },
       }),
       { ...wideOverrides, publicGrants: publicReadGrants },
     );

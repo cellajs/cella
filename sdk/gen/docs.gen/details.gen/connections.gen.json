@@ -51,15 +51,20 @@
                   }
                 }
               },
+              "createdAt": { "type": "string", "required": true },
               "createdBy": {
                 "type": ["string", "null"],
                 "required": true,
                 "format": "uuid"
               },
-              "createdAt": { "type": "string", "required": true },
               "updatedAt": {
                 "type": ["string", "null"],
                 "required": true
+              },
+              "updatedBy": {
+                "type": ["string", "null"],
+                "required": true,
+                "format": "uuid"
               }
             },
             "ref": "#/components/schemas/Connection"
@@ -186,15 +191,20 @@
                 }
               }
             },
+            "createdAt": { "type": "string", "required": true },
             "createdBy": {
               "type": ["string", "null"],
               "required": true,
               "format": "uuid"
             },
-            "createdAt": { "type": "string", "required": true },
             "updatedAt": {
               "type": ["string", "null"],
               "required": true
+            },
+            "updatedBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
             }
           },
           "ref": "#/components/schemas/Connection",
@@ -371,15 +381,20 @@
                 }
               }
             },
+            "createdAt": { "type": "string", "required": true },
             "createdBy": {
               "type": ["string", "null"],
               "required": true,
               "format": "uuid"
             },
-            "createdAt": { "type": "string", "required": true },
             "updatedAt": {
               "type": ["string", "null"],
               "required": true
+            },
+            "updatedBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
             }
           },
           "ref": "#/components/schemas/Connection",
@@ -551,15 +566,20 @@
                 }
               }
             },
+            "createdAt": { "type": "string", "required": true },
             "createdBy": {
               "type": ["string", "null"],
               "required": true,
               "format": "uuid"
             },
-            "createdAt": { "type": "string", "required": true },
             "updatedAt": {
               "type": ["string", "null"],
               "required": true
+            },
+            "updatedBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
             }
           },
           "ref": "#/components/schemas/Connection",

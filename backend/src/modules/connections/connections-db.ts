@@ -1,9 +1,7 @@
 import { boolean, index, jsonb, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
+import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
-import type { ActorId } from '#/db/utils/ids';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
-import { actorsTable } from '#/modules/actors/actors-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
 /** The party a connection trusts: an institution behind an SSO federation. */
@@ -45,11 +43,7 @@ export const connectionsTable = snakeCase.table(
     /** An active connection admits the institution's members without an invitation; off, invited addresses only. */
     jitProvisioning: boolean().notNull().default(true),
     config: jsonb().$type<ConnectionConfig>().notNull().default({}),
-    createdBy: uuid()
-      .references(() => actorsTable.id, { onDelete: 'set null' })
-      .$type<ActorId>(),
-    createdAt: timestampColumns.createdAt,
-    updatedAt: timestampColumns.updatedAt,
+    ...auditColumns(),
   },
   (table) => [
     index('connections_tenant_id_idx').on(table.tenantId),

@@ -19,7 +19,7 @@ import { DeleteOrganizations } from '~/modules/organization/delete-organizations
 import type { EnrichedOrganization } from '~/modules/organization/types';
 import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
 import { Button } from '~/modules/ui/button';
-import { UserCell } from '~/modules/user/user-cell';
+import { ActorCell } from '~/modules/user/actor-cell';
 
 export const openUpdateSheet = (organization: Organization, triggerRef: TriggerRef) =>
   openEditSheet({
@@ -118,7 +118,7 @@ export const useColumns = () => {
       hidden: true,
       minWidth: 160,
       placeholderValue: '-',
-      renderCell: ({ row, tabIndex }) => row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => row.createdBy && <ActorCell compactable actor={row.createdBy} tabIndex={tabIndex} />,
       exportValue: (row) => row.createdBy?.name,
     },
     // Dynamic membership count columns from role config

@@ -1,5 +1,6 @@
-import { integer, jsonb, snakeCase, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { integer, jsonb, snakeCase, text, uuid, varchar } from 'drizzle-orm/pg-core';
 import { maxLength } from '#/db/utils/constraints';
+import { isoTimestamp } from '#/db/utils/timestamp-columns';
 
 /** The id of the one row of `sync_state`. */
 export const syncStateId = 'sync';
@@ -30,15 +31,15 @@ export const syncStateTable = snakeCase.table('sync_state', {
   id: varchar({ length: maxLength.field }).primaryKey().default(syncStateId),
   generation: integer().notNull().default(1),
   requested: varchar({ enum: ['verify', 'rebuild'] }),
-  verifiedAt: timestamp({ mode: 'string' }),
-  rebuiltAt: timestamp({ mode: 'string' }),
+  verifiedAt: isoTimestamp(),
+  rebuiltAt: isoTimestamp(),
   fence: jsonb().$type<SyncFence>(),
 });
 
 /** One row for every time the worker rebuilt the books from the tables, so a rare failure leaves a record. */
 export const syncIncidentsTable = snakeCase.table('sync_incidents', {
   id: uuid().primaryKey().defaultRandom(),
-  createdAt: timestamp({ mode: 'string' }).notNull().defaultNow(),
+  createdAt: isoTimestamp().notNull().defaultNow(),
   /**
    * `requested`: somebody asked for it. `lost_slot`: the replication slot was gone. `lost_counters`: `channel_counters`
    * was empty. `stuck`: a change failed every read. `wrong_books`: a verify found the differences in `corrections`.

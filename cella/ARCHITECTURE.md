@@ -51,6 +51,25 @@ Cella favors a narrow stack over replaceable abstractions: React, TanStack Route
 
 Code names are `ChannelEntityType` and `ProductEntityType`. `EntityType` covers both plus `user`. The template starts with `organization -> attachment`. The hierarchy is declared once in `shared/config/hierarchy-config.ts`. It drives permission traversal, schema helpers, navigation, counters, and stream dispatch. Frontend and backend features live in matching modules. Guide: [New entity](./ADD_ENTITY.md).
 
+## Row stamps
+
+Every row answers who wrote it and when with the same few columns, written one way and carried one way.
+
+| Column | Type | Meaning |
+| --- | --- | --- |
+| `createdAt`, `createdBy` | moment, actor | Set once at insert. The immutability trigger refuses a change on entity tables. |
+| `updatedAt`, `updatedBy` | moment, actor | The row's last write by any actor for any reason: an edit, a publish and a soft delete all move them. Null until the first write after insert. |
+| `deletedAt`, `deletedBy` | moment, actor | The tombstone of a synced product row, which stays so caches drop it. |
+| `publishedAt` | moment | Null is a draft. On a channel the draft holds its invitations and shows to its own members; on a product it is the author's alone and outside sync. Stamped at publish, never a default. |
+| `public` | boolean | Reversible, so a flag: the row reads for any actor once its entity declares `publicRead()`. |
+| `<verb>At`, `<verb>By` | moment, actor | A one-way act of a resource: `revokedAt`, `invokedAt`, `rejectedAt`. A reversible state is a boolean (`archived`, `muted`) or a status. |
+
+Every table a user or a service account writes spreads `auditColumns()` (`backend/src/db/utils/audit-columns.ts`); product tables add `tombstoneColumns()`. An actor column references `actors`, the supertable of users and service accounts, so a row written by a service keeps a real foreign key and its reference comes back named. Memberships, invitations and tokens are a person's alone and keep their user-typed columns.
+
+A moment is `timestamptz` in Postgres and ISO 8601 UTC text on both sides of the driver (`isoTimestamp()` in `timestamp-columns.ts`), so a timestamp compares and sorts as text everywhere. The three partition keys (`activities`, `notifications`, `seen_by`) keep a column without a zone, since Postgres cannot retype a partition key; every connection runs in UTC, so they read the same. The server stamps every moment with `getIsoDate()`, and a write spreads `updateStamps(actorId)` or `deleteStamps(actorId)` (`stamps.ts`); `pnpm style` rejects a stamp written by hand.
+
+On the wire each `*By` is an `ActorRef` (`{ id, kind, name, slug, thumbnailUrl }`, kind `user` or `service`) or null once the actor is gone, resolved for a page of rows by `withActorRefs` after the query. The permission engine compares ids, so the one place a reference becomes an id again is the row condition's input. A base schema (`ChannelBase`, `ProductBase`) is a reference shape and carries no writers; the full schema of an entity spreads `auditShape`.
+
 ## Selective sync engine
 
 Channel entities stay conventional CRUD. Product entities get live updates and offline use without a very different API or cache model. Because an offline client may outlive a deployment, breaking entity-shape changes have an explicit evolution path. See [Sync engine](./SYNC_ENGINE.md), [Client (React)](./CLIENT.md) and [Schema evolution](./SCHEMA_EVOLUTION.md).

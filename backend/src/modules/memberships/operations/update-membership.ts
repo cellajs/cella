@@ -3,12 +3,12 @@ import { hierarchy } from 'shared';
 import { getEdgeOrder } from 'shared/utils/display-order';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships/memberships-queries';
 import { type membershipUpdateBodySchema, personalViewKeys } from '#/modules/memberships/memberships-schema';
 import { getValidChannel } from '#/permissions/get-valid-channel';
-import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 type UpdateMembershipInput = z.infer<typeof membershipUpdateBodySchema>;
@@ -66,8 +66,7 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
     ...(orderToUpdate !== undefined && { displayOrder: orderToUpdate }),
     ...(muted !== undefined && { muted }),
     ...(archived !== undefined && { archived }),
-    updatedBy: actorId,
-    updatedAt: getIsoDate(),
+    ...updateStamps(actorId),
   };
   const updatedMembership = await updateMembership(ctx, { id: membershipId, values });
   invalidateCache.user(updatedMembership.userId);

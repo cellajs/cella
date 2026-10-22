@@ -2,7 +2,7 @@ import { index, jsonb, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/
 import { activityActions, appConfig, trackedEventTypes } from 'shared';
 import { activityChannelColumns } from '#/db/utils/channel-relation-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { isoTimestampWithoutZone } from '#/db/utils/timestamp-columns';
 import type { StxBase } from '#/schemas/sync-transaction-schemas';
 
 /** Append-only CDC log, weekly partitions, 90-day retention. LSN-derived IDs make WAL replay idempotent; no foreign keys. */
@@ -10,16 +10,16 @@ export const activitiesTable = snakeCase.table(
   'activities',
   {
     id: varchar({ length: maxLength.id }).notNull(),
-    tenantId: varchar('tenant_id', { length: tenantIdLength }),
+    tenantId: varchar({ length: tenantIdLength }),
     userId: uuid(),
     entityType: varchar({ enum: appConfig.entityTypes }),
     resourceType: varchar({ enum: appConfig.resourceTypes }),
     action: varchar({ enum: activityActions }).notNull(),
     tableName: varchar({ length: maxLength.field }).notNull(),
     type: varchar({ enum: trackedEventTypes }).notNull(),
-    subjectId: varchar('subject_id', { length: maxLength.id }),
+    subjectId: varchar({ length: maxLength.id }),
     ...activityChannelColumns(),
-    createdAt: timestampColumns.createdAt,
+    createdAt: isoTimestampWithoutZone().defaultNow().notNull(),
     changedFields: jsonb().$type<string[]>(),
     stx: jsonb().$type<StxBase>(),
   },

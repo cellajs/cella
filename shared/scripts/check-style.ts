@@ -11,6 +11,7 @@ import { commentFindings } from './check-comment-style.ts';
 import { docFindings } from './check-doc-style.ts';
 import { frontendFindings, frontendStores } from './check-frontend-style.ts';
 import { migrationNoteFindings, owedNoteFindings } from './check-migration-notes.ts';
+import { stampFindings } from './check-stamps.ts';
 import { tailwindContext, tailwindFindings } from './check-tailwind-classes.ts';
 import { tokenContrastFindings } from './check-token-contrast.ts';
 import { type Finding, formatFinding, isRequested, repoFiles, repoRoot } from './repo-files.ts';
@@ -53,6 +54,7 @@ for (const file of requested) {
     ...findProductNameFindings(file, source),
     ...prose,
     ...frontendFindings(file, source, stores),
+    ...stampFindings(file, source),
     ...tailwindFindings(file, source, tailwind),
     ...tokenContrastFindings(file, source),
   ];

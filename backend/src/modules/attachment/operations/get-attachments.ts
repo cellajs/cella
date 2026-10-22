@@ -4,10 +4,10 @@ import type { OrgContext } from '#/core/context';
 import { tenantRead, tenantReadIncludingDeleted } from '#/db/tenant-context';
 import { requestScopeWhere } from '#/db/utils/request-scope';
 import { buildSubtreeCoverWhere } from '#/db/utils/subtree-cover';
+import { withActorRefs } from '#/modules/actors/actor-refs';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { findAttachmentsPaginated } from '#/modules/attachment/attachment-queries';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
-import { coalesceAuditUsers } from '#/modules/user/helpers/audit-user';
 import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
@@ -56,6 +56,6 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
     }),
   );
 
-  const items = coalesceAuditUsers(rawItems);
+  const items = await withActorRefs(ctx, rawItems);
   return { items, total };
 }

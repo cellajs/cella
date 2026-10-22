@@ -1,6 +1,6 @@
 /**
  * Closed vocabulary shared by JS, SQL and frontend enforcement. `own` requires the actor to match
- * `createdBy`; `public` requires the row's `publicAt`.
+ * `createdBy`; `public` requires the row's `public` flag.
  */
 export type RowConditionName = 'own' | 'public';
 
@@ -21,6 +21,6 @@ export const matchesRowCondition = (name: RowConditionName, row: RowForCondition
     case 'own':
       return !!actor.actorId && !!row.createdBy && row.createdBy === actor.actorId;
     case 'public':
-      return !!row.publicAt;
+      return row.public === true;
   }
 };

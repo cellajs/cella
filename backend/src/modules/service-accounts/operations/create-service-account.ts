@@ -1,6 +1,7 @@
 import { type EntityRole, hierarchy } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { withActorRef } from '#/modules/actors/actor-refs';
 import { generateApiKey } from '#/modules/service-accounts/helpers/api-key';
 import { countServiceAccounts, insertApiKey, insertServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 import type { CreateServiceAccountInput } from '#/modules/service-accounts/service-accounts-schema';
@@ -58,7 +59,7 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
 
   log.info('Service account created', { serviceAccountId: serviceAccount.id, withKey: issued !== null });
   // A new account has authenticated nothing yet.
-  const created = { ...serviceAccount, lastSeenAt: null };
+  const created = { ...(await withActorRef(ctx, serviceAccount)), lastSeenAt: null };
   if (!issued) return { serviceAccount: created };
   return { serviceAccount: created, apiKey: { ...(await withApiKeyCreator(ctx, issued.apiKey)), secret: issued.secret } };
 }

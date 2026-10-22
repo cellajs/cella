@@ -1,7 +1,8 @@
-import { foreignKey, index, primaryKey, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { foreignKey, index, primaryKey, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { tenantIdLength } from '#/db/utils/constraints';
+import { isoTimestampWithoutZone } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 
 /** Per-user product views for 90-day unseen-count windows. Partitioned, excluded from CDC, composite key; RLS replaces organization/tenant foreign keys. */
@@ -15,8 +16,8 @@ export const seenByTable = snakeCase.table(
     /** Parent channel entity ID for grouping (e.g., projectId for tasks). Falls back to organizationId. */
     channelId: uuid().notNull(),
     organizationId: uuid().notNull(),
-    tenantId: varchar('tenant_id', { length: tenantIdLength }).notNull(),
-    createdAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
+    tenantId: varchar({ length: tenantIdLength }).notNull(),
+    createdAt: isoTimestampWithoutZone().defaultNow().notNull(),
   },
   (table) => [
     // Composite PK required for partitioning by created_at

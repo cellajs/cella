@@ -3,7 +3,7 @@ import type { CdcRowData, RowData } from '../types';
 
 /** The columns of a product row that decide who may read it and where it is: all the API reads of a row from a message. */
 const permissionRowKeys: Set<string> = (() => {
-  const keys = new Set<string>(['id', 'createdBy', 'deletedAt', 'publicAt', 'publishedAt']);
+  const keys = new Set<string>(['id', 'createdBy', 'deletedAt', 'public', 'publishedAt']);
   for (const channelType of appConfig.channelEntityTypes) {
     keys.add(appConfig.entityIdColumnKeys[channelType]);
   }

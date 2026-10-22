@@ -4,7 +4,7 @@ import { mockPaginated, mockPastIsoDate, mockTenantId, mockUuid, withFakerSeed }
 import type { InactiveMembershipModel } from '#/modules/memberships/inactive-memberships-db';
 import type { InsertMembershipModel, MembershipModel } from '#/modules/memberships/memberships-db';
 import type { UserModel } from '#/modules/user/user-db';
-import { mockUserBase, mockUserMinimalBase } from '#/schemas/entity-base-mocks';
+import { mockActorRef, mockUserBase } from '#/schemas/entity-base-mocks';
 
 /** MembershipBase type defined here to avoid circular dependency with memberships-schema */
 type MembershipBase = Omit<MembershipModel, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
@@ -163,7 +163,7 @@ const mockInactiveMembership = (key = 'inactive-membership:default', options: Mo
 /** Inactive membership wire response with its creator hydrated. */
 export const mockInactiveMembershipResponse = (key = 'inactive-membership:default', options: MockMembershipBaseOptions = {}) => {
   const membership = mockInactiveMembership(key, options);
-  return { ...membership, createdBy: mockUserMinimalBase(`${key}:created-by`, membership.createdBy) };
+  return { ...membership, createdBy: mockActorRef(`${key}:created-by`, membership.createdBy) };
 };
 
 /** Pending-invitation list row: the invited address, role and inviter, with no account fields. */
