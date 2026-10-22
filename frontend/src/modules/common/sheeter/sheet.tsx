@@ -1,9 +1,9 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useRef } from 'react';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { type InternalSheet, navSheetId, useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { type InternalSheet, navSheetId, sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { navigationStore } from '~/modules/navigation/navigation-store';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { cn } from '~/utils/cn';
 import { isTouchInteraction } from '~/utils/input-modality';
@@ -35,11 +35,11 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
 
   // The provider keeps the removed sheet rendered until it has slid out
   const closeSheet = () => {
-    useSheeter.getState().remove(sheet.id);
+    sheeter.getState().remove(sheet.id);
 
     // Closing the sheet closes the dialogs it opened
-    const dialogs = useDialoger.getState().dialogs.filter((d) => d.open);
-    for (const dialog of dialogs) useDialoger.getState().remove(dialog.id);
+    const dialogs = dialoger.getState().dialogs.filter((d) => d.open);
+    for (const dialog of dialogs) dialoger.getState().remove(dialog.id);
   };
 
   const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string; event?: Event }) => {
@@ -51,15 +51,15 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
 
     if (!nextOpen && eventDetails.reason === 'outside-press') {
       // An outside press landing on a dropdown or dialog must not close the sheet
-      const dropdown = useDropdowner.getState().dropdown;
+      const dropdown = dropdowner.getState().dropdown;
       if (dropdown) return;
 
-      const dialogs = useDialoger.getState().dialogs;
+      const dialogs = dialoger.getState().dialogs;
       if (dialogs.some((d) => d.open)) return;
 
       // The nav button's own click handler toggles the nav sheet; closing here makes it reopen
       if (sheet.id === navSheetId) {
-        const navState = useNavigationStore.getState();
+        const navState = navigationStore.getState();
         if (navState.keepNavOpen && navState.navSheetOpen) return;
 
         const target = eventDetails.event?.target as Node | null;
@@ -74,7 +74,7 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
     }
 
     if (nextOpen) {
-      if (modal) useSheeter.getState().update(id, { open: nextOpen });
+      if (modal) sheeter.getState().update(id, { open: nextOpen });
     } else closeSheet();
   };
 

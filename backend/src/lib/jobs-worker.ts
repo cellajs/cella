@@ -13,12 +13,12 @@ import { otel } from '#/lib/tracing';
 import '#/modules'; // composition root: registers every backend module, whose jobs and queues this worker runs
 
 /** How long the worker waits for the migrate companion to install the job store before giving up. */
-const INSTALL_WAIT_MS = 5 * 60 * 1000;
-const INSTALL_POLL_MS = 5_000;
+const installWaitMs = 5 * 60 * 1000;
+const installPollMs = 5_000;
 
 /** Starts the maintainer instance, waiting out a store that a companion is still installing or upgrading. */
 async function startMaintainer() {
-  const deadline = Date.now() + INSTALL_WAIT_MS;
+  const deadline = Date.now() + installWaitMs;
   for (;;) {
     try {
       return await getPgBoss('maintainer');
@@ -26,8 +26,8 @@ async function startMaintainer() {
       const message = error instanceof Error ? error.message : String(error);
       const installing = message.includes('not installed') || message.includes('requires migrations');
       if (!installing || Date.now() > deadline) throw error;
-      baseLog.warn(`jobs: job store not ready (${message}), retrying in ${INSTALL_POLL_MS / 1000}s`);
-      await sleep(INSTALL_POLL_MS);
+      baseLog.warn(`jobs: job store not ready (${message}), retrying in ${installPollMs / 1000}s`);
+      await sleep(installPollMs);
     }
   }
 }

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { pricingPlans } from '~/modules/marketing/marketing-config';
 import { WaitlistForm } from '~/modules/requests/waitlist-form';
 import { Badge } from '~/modules/ui/badge';
@@ -38,7 +38,7 @@ export function Pricing() {
       navigate({ to: '/auth/authenticate', replace: true });
     }
     if (action === 'waitlist_request') {
-      useDialoger.getState().create(<WaitlistForm dialog />, {
+      dialoger.getState().create(<WaitlistForm dialog />, {
         id: 'waitlist-form',
         triggerRef: buttonRef,
         drawerOnMobile: true,

@@ -12,7 +12,7 @@ import { EditCellInput, externalEditorOptions, RenderExternalEditor } from '~/mo
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { openPopConfirm } from '~/modules/common/popconfirm';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { SeenMark } from '~/modules/seen/seen-mark';
@@ -109,7 +109,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
             label: i18n.t('c:delete'),
             icon: TrashIcon,
             onSelect: (row) => {
-              const { remove } = useDropdowner.getState();
+              const { remove } = dropdowner.getState();
               openPopConfirm(
                 <ConfirmText i18nKey="c:delete_confirm.text" values={{ name: row.name }} />,
                 <DeleteAttachments attachments={[row]} callback={remove} onCancel={remove} />,

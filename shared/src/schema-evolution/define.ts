@@ -12,7 +12,7 @@ export type LensEntityType = ProductEntityType | ChannelEntityType;
  * branches on `lens.formatVersion` to tell which format a frozen module was written against.
  * Bump on an incompatible LensDefinition change.
  */
-export const LENS_FORMAT_VERSION = 1;
+export const lensFormatVersion = 1;
 
 /** Rename a scalar field: `from` (old canonical) → `to` (new canonical). */
 export type RenameDelta = { rename: { from: string; to: string } };
@@ -57,7 +57,7 @@ export interface LensCustom {
 export interface LensDefinition {
   /** Stable, date-prefixed, globally-unique id, e.g. `2026-07-01-task-name-to-title`. */
   id: string;
-  /** Lens-module format version. Omit to get the current `LENS_FORMAT_VERSION`; frozen with the module. */
+  /** Lens-module format version. Omit to get the current `lensFormatVersion`; frozen with the module. */
   formatVersion?: number;
   entityType: LensEntityType;
   /** Human-readable summary of the change. */
@@ -71,16 +71,16 @@ export interface LensDefinition {
   lossyBackward?: boolean;
 }
 
-const ID_PATTERN = /^\d{4}-\d{2}-\d{2}-[a-z0-9-]+$/;
+const idPattern = /^\d{4}-\d{2}-\d{2}-[a-z0-9-]+$/;
 
 /** Returns a frozen definition. Throws on malformed input, at module load and in tests. */
 export function defineLens(def: LensDefinition): LensDefinition {
-  if (!ID_PATTERN.test(def.id)) {
+  if (!idPattern.test(def.id)) {
     throw new Error(`Lens id "${def.id}" must be date-prefixed kebab-case, e.g. 2026-07-01-task-name-to-title`);
   }
-  const formatVersion = def.formatVersion ?? LENS_FORMAT_VERSION;
-  if (!Number.isInteger(formatVersion) || formatVersion < 1 || formatVersion > LENS_FORMAT_VERSION) {
-    throw new Error(`Lens "${def.id}" declares unsupported formatVersion ${def.formatVersion} (current: ${LENS_FORMAT_VERSION})`);
+  const formatVersion = def.formatVersion ?? lensFormatVersion;
+  if (!Number.isInteger(formatVersion) || formatVersion < 1 || formatVersion > lensFormatVersion) {
+    throw new Error(`Lens "${def.id}" declares unsupported formatVersion ${def.formatVersion} (current: ${lensFormatVersion})`);
   }
   if ('retype' in def.delta && !def.custom?.opsConvert) {
     throw new Error(`Lens "${def.id}" uses a retype delta and must declare custom.opsConvert`);

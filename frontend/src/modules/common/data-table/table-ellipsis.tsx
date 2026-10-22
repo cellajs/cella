@@ -3,7 +3,7 @@ import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { DropdownerTriggerIcon } from '~/modules/common/dropdowner/trigger-icon';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 
@@ -27,7 +27,7 @@ export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options
   const openDropdown = () => {
     if (!triggerRef.current) return;
 
-    const { create } = useDropdowner.getState();
+    const { create } = dropdowner.getState();
     const isMobile = window.innerWidth < 640;
 
     create(

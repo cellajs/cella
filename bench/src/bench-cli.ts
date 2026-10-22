@@ -10,7 +10,7 @@ import pg from 'pg';
 import { appConfig } from 'shared';
 import { pc } from 'shared/cli-utils/colors';
 import { printHeader } from 'shared/cli-utils/display';
-import { BENCH_UUID_PREFIX } from 'shared/utils/bench-identity';
+import { benchUuidPrefix } from 'shared/utils/bench-identity';
 import { BASE_URL, COOKIE_SECRET, DB_URL, SESSION_COOKIE_NAME } from './config';
 import { benchSignInStatus, isPostgresReady, isServiceHealthy, SERVICES, unreadyReason } from './preflight';
 import { acquireLock, benchDataDir, type CheckResult, type RunResult, runScenario, type Scenario } from './runner';
@@ -139,7 +139,7 @@ async function assertBenchSignIn(skipSeed: boolean): Promise<void> {
 async function clearRateLimits(): Promise<void> {
   const pool = new pg.Pool({ connectionString: DB_URL });
   try {
-    await pool.query("DELETE FROM rate_limits WHERE key LIKE 'password_%' OR strpos(key, $1) > 0", [BENCH_UUID_PREFIX]);
+    await pool.query("DELETE FROM rate_limits WHERE key LIKE 'password_%' OR strpos(key, $1) > 0", [benchUuidPrefix]);
   } catch {
     // Table may not exist on first run
   } finally {

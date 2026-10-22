@@ -1,7 +1,7 @@
 import { RedoIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useStepper } from '~/modules/common/stepper/stepper';
 import { SkipOrganization } from '~/modules/home/onboarding/skip-organization';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';
@@ -25,7 +25,7 @@ export function StepperFooter({ setOnboardingState }: StepperFooterProps) {
   const skipStep = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     if (currentStep?.id === 'organization') {
-      useDialoger.getState().create(<SkipOrganization setOnboardingState={setOnboardingState} />, {
+      dialoger.getState().create(<SkipOrganization setOnboardingState={setOnboardingState} />, {
         id: 'skip-org-creation',
         triggerRef: skipButtonRef,
         className: 'md:max-w-xl',

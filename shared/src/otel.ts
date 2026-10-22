@@ -49,7 +49,7 @@ import { createRedactingSpanProcessor } from './tracing/redacting-span-processor
  */
 const instrumentations = () => [new HttpInstrumentation(), new UndiciInstrumentation(), new PgInstrumentation()];
 
-const EXPORT_OFF_MSG = '[otel] no OTEL_EXPORTER_OTLP_ENDPOINT or MAPLE_SECRET_INGEST_KEY set: telemetry export is off';
+const exportOffMsg = '[otel] no OTEL_EXPORTER_OTLP_ENDPOINT or MAPLE_SECRET_INGEST_KEY set: telemetry export is off';
 
 /** The sampler `OTEL_TRACES_SAMPLER` and `OTEL_TRACES_SAMPLER_ARG` name; unset, the provider's default (parent-based, always on). */
 const samplerFromEnv = (): Sampler | undefined => {
@@ -159,7 +159,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
       start: () => {},
       shutdown: () => (flushOnShutdown ? meterProvider.shutdown() : Promise.resolve()),
       verifyConnection: async () => {
-        console.info(EXPORT_OFF_MSG);
+        console.info(exportOffMsg);
       },
     };
   }
@@ -230,7 +230,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
 
   async function verifyConnection(): Promise<void> {
     if (!traceExporter || !logExporter) {
-      console.info(EXPORT_OFF_MSG);
+      console.info(exportOffMsg);
       return;
     }
     try {

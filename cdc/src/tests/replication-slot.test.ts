@@ -38,12 +38,12 @@ vi.mock('../pipeline/verify', () => ({
   ensureBooksStateRestored: vi.fn(),
 }));
 
-import { RESOURCE_LIMITS } from '../constants';
+import { resourceLimits } from '../constants';
 import { runBetweenFlushes } from '../pipeline/handle-message';
 import { subscribeWithReconnect } from '../pipeline/replication';
 import { replicationState } from '../services/replication-state';
 
-const { slotTakeover } = RESOURCE_LIMITS;
+const { slotTakeover } = resourceLimits;
 
 const slotIsMissing = Object.assign(new Error('replication slot "cdc_slot" does not exist'), { code: '42704' });
 const slotPredatesPublication = Object.assign(new Error('publication "cdc_pub" does not exist'), { code: '42704' });

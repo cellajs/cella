@@ -1,12 +1,12 @@
 import process from 'node:process';
 import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
-import { RESOURCE_LIMITS } from '../constants';
+import { resourceLimits } from '../constants';
 import { type MetricsSnapshot, metrics } from '../services/cdc-metrics';
 import { type ReplicationFailure, replicationState } from '../services/replication-state';
 import { type ReplicationStatus, replicationStatus } from '../services/replication-status';
 import { wsClient } from './websocket-client';
 
-const limits = RESOURCE_LIMITS.health;
+const limits = resourceLimits.health;
 
 /** What a person needs beside the grade, to see why the worker reports it. */
 type WorkerHealthDetails = {

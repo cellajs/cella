@@ -6,7 +6,7 @@ import type { ChannelEntityType } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import type { PlacementDescriptor } from '~/lib/placements';
 import { ConfirmText } from '~/modules/common/confirm-text';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ToolCard } from '~/modules/common/tool-card';
 import { Button } from '~/modules/ui/button';
 
@@ -62,7 +62,7 @@ export function DeleteToolCard({ name, resource, dialogId, renderDialog }: Delet
 
   const openDeleteDialog = () => {
     // Suspense: dialog content is typically a lazy-loaded per-entity component
-    useDialoger.getState().create(<Suspense fallback={null}>{renderDialog()}</Suspense>, {
+    dialoger.getState().create(<Suspense fallback={null}>{renderDialog()}</Suspense>, {
       id: dialogId,
       triggerRef: deleteButtonRef,
       className: 'md:max-w-xl',

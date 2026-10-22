@@ -18,7 +18,7 @@ const loadingSpinner = (
   </div>
 );
 
-const PAGE_PADDING = 20; // Breathing room around each page (px)
+const pagePadding = 20; // Breathing room around each page (px)
 
 type PageSize = { width: number; height: number };
 
@@ -67,13 +67,13 @@ export function RenderPDF({ file, className, fitMode = 'width' }: RenderPDFProps
   };
 
   const getScale = ({ width, height }: PageSize) => {
-    const availableWidth = container.width - PAGE_PADDING;
+    const availableWidth = container.width - pagePadding;
     if (availableWidth <= 0) return null;
 
     const widthScale = availableWidth / width;
     if (fitMode === 'width') return widthScale;
 
-    const availableHeight = container.height - PAGE_PADDING;
+    const availableHeight = container.height - pagePadding;
     if (availableHeight <= 0) return widthScale;
     return Math.min(widthScale, availableHeight / height);
   };

@@ -57,7 +57,7 @@ function contentOf(message: CdcMessage): Pick<ActivityEvent, 'rows' | 'rowData'>
 }
 
 /** The worker's health push arrives every 15 seconds, so a connection this long without a message is dead. */
-const IDLE_TIMEOUT_MS = 90_000;
+const idleTimeoutMs = 90_000;
 
 /**
  * Why an upgrade's `x-cdc-secret` is refused, or undefined for the worker's own secret. A process that does not hold
@@ -91,7 +91,7 @@ export interface CdcWorkerHealth {
  * How long no worker may read before clients are told. A restart, a deploy and a second read of a failed flush are
  * shorter than this.
  */
-const WORKER_AWAY_AFTER_MS = 60_000;
+const workerAwayAfterMs = 60_000;
 
 /** The grades a health report may carry; one with another grade is unreadable. */
 const workerGrades: readonly unknown[] = ['healthy', 'degraded', 'unhealthy'] satisfies CdcWorkerHealth['status'][];
@@ -258,7 +258,7 @@ class CdcWebSocketServer {
    */
   isWorkerAway(): boolean {
     if (!appConfig.services.cdc.enabled) return false;
-    return this.notReadingSince !== null && Date.now() - this.notReadingSince >= WORKER_AWAY_AFTER_MS;
+    return this.notReadingSince !== null && Date.now() - this.notReadingSince >= workerAwayAfterMs;
   }
 
   /** Starts the idle time anew; a connection that sends no message for 90 seconds is closed. */
@@ -267,7 +267,7 @@ class CdcWebSocketServer {
     this.idleTimer = setTimeout(() => {
       log.warn('CDC WebSocket idle timeout, closing connection');
       this.currentConnection?.close(1000, 'Idle timeout');
-    }, IDLE_TIMEOUT_MS);
+    }, idleTimeoutMs);
   }
 
   /** Forgets the live connection and what it reported. */

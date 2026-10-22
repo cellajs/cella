@@ -24,7 +24,7 @@ vi.mock('~/utils/teardown-user-state', () => ({
   teardownUserState: vi.fn(async (wipe: boolean) => seen.calls.push(`client state cleared (wipe: ${wipe})`)),
 }));
 vi.mock('~/modules/common/dialoger/use-dialoger', () => ({
-  useDialoger: {
+  dialoger: {
     getState: () => ({
       create: (dialog: ReactElement) => {
         seen.dialog = dialog;

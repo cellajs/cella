@@ -16,14 +16,14 @@ export {
   mockNanoid,
   mockTenantId,
   mockUuid,
-  SCRIPT_ID_PREFIX,
-  SCRIPT_UUID_PREFIX,
+  scriptIdPrefix,
+  scriptUuidPrefix,
   setMockContext,
   withMockContext,
 } from './mock-nanoid';
 export { mockPaginated } from './mock-paginated';
 export { mockPastIsoDate } from './mock-past-iso-date';
 export { mockStx } from './mock-stx';
-export { MOCK_REF_DATE, mockTimestamps } from './mock-timestamps';
+export { mockRefDate, mockTimestamps } from './mock-timestamps';
 export { mockUniqueEnforcer } from './mock-unique';
 export { buildInsertableProduct, type ProductMockFn } from './product-mock-registry';

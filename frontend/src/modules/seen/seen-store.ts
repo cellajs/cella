@@ -16,10 +16,10 @@ interface SeenBatch {
   productIds: Set<string>;
 }
 
-const FLUSH_INTERVAL_MS = appConfig.mode === 'development' ? 10 * 1000 : 60 * 1000;
+const flushIntervalMs = appConfig.mode === 'development' ? 10 * 1000 : 60 * 1000;
 
 /** Cap on persisted flushed IDs, evicting oldest first (Sets iterate in insertion order). Evicted IDs may be re-sent; markSeen skips duplicates. */
-const FLUSHED_IDS_MAX = 10_000;
+const flushedIdsMax = 10_000;
 
 const batchKey = (organizationId: string, productType: ProductEntityType) => `${organizationId}:${productType}`;
 
@@ -60,7 +60,7 @@ export const seenStore = createStore<SeenStoreState>()(
 
         startFlushInterval: () => {
           if (flushIntervalId) return;
-          flushIntervalId = setInterval(() => get().flush(), FLUSH_INTERVAL_MS);
+          flushIntervalId = setInterval(() => get().flush(), flushIntervalMs);
         },
 
         stopFlushInterval: () => {
@@ -88,7 +88,7 @@ export const seenStore = createStore<SeenStoreState>()(
               const flushedIds = new Set(get().flushedIds);
               for (const id of productIds) flushedIds.add(id);
               for (const id of flushedIds) {
-                if (flushedIds.size <= FLUSHED_IDS_MAX) break;
+                if (flushedIds.size <= flushedIdsMax) break;
                 flushedIds.delete(id);
               }
               set({ flushedIds });

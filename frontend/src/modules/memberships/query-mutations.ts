@@ -3,7 +3,7 @@ import { t } from 'i18next';
 import type { MembershipBase, MembershipInviteResponse, Organization, UpdateMembershipResponse } from 'sdk';
 import { deleteMemberships, membershipInvite, updateMembership } from 'sdk';
 import type { ApiError } from '~/lib/api';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
@@ -228,7 +228,7 @@ export const useChangeEntityRoleMutation = () =>
   useMutation<ChangeEntityRoleResult, ApiError, ChangeEntityRoleVariables>({
     mutationFn: async ({ entity, role }) => {
       if (!onlineManager.isOnline()) {
-        toaster.warning(t('c:action.offline.text'));
+        toastOffline();
         throw new Error('offline');
       }
 

@@ -25,8 +25,8 @@ type SignInNotice = {
 const inboxStrategies: AuthStrategy[] = ['magic', 'email'];
 
 /** New sign-in notices per user per window. Covers browsers that drop cookies on exit; only notices actually sent spend it. */
-const NOTICE_BUDGET = 3;
-const NOTICE_WINDOW = new TimeSpan(24, 'h');
+const noticeBudget = 3;
+const noticeWindow = new TimeSpan(24, 'h');
 
 /** Notices go out fire-and-forget, without a request, on the base pool. */
 const dbCtx = { var: { db: baseDb } };
@@ -63,10 +63,10 @@ export const notifyNewSignIn = async ({
   if (!newDevice.previousSignInAt || inboxStrategies.includes(strategy)) return;
 
   try {
-    const since = new Date(Date.now() - NOTICE_WINDOW.milliseconds()).toISOString();
+    const since = new Date(Date.now() - noticeWindow.milliseconds()).toISOString();
     const sent = await countNotifiedDevices(dbCtx, { userId: user.id, since });
 
-    if (sent >= NOTICE_BUDGET) {
+    if (sent >= noticeBudget) {
       log.info('New sign-in notice skipped: daily budget spent', { userId: user.id });
       return;
     }

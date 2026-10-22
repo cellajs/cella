@@ -12,9 +12,9 @@ import { isExpiredDate } from '#/utils/is-expired-date';
 const apiKeyTypes = ['secret', 'publishable'] as const;
 export type ApiKeyType = (typeof apiKeyTypes)[number];
 
-const BASE62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-const SECRET_LENGTH = 32;
-const CHECKSUM_LENGTH = 6;
+const base62 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const secretLength = 32;
+const checksumLength = 6;
 
 /** The wire tag of each key type: `<app>_sk_…` is a secret key, `<app>_pk_…` a publishable one. */
 const wireTags = { secret: 'sk', publishable: 'pk' } as const satisfies Record<ApiKeyType, string>;
@@ -31,7 +31,7 @@ const toBase62 = (n: number, length: number): string => {
   let out = '';
   let value = n >>> 0;
   for (let i = 0; i < length; i++) {
-    out = BASE62[value % 62] + out;
+    out = base62[value % 62] + out;
     value = Math.floor(value / 62);
   }
   return out;
@@ -40,13 +40,13 @@ const toBase62 = (n: number, length: number): string => {
 /** Uniform over the alphabet: `randomInt` rejects the biased tail a `byte % 62` would keep. */
 const randomBase62 = (length: number): string => {
   let out = '';
-  for (let i = 0; i < length; i++) out += BASE62[randomInt(62)];
+  for (let i = 0; i < length; i++) out += base62[randomInt(62)];
   return out;
 };
 
-export const checksumOf = (body: string): string => toBase62(crc32(body), CHECKSUM_LENGTH);
+export const checksumOf = (body: string): string => toBase62(crc32(body), checksumLength);
 
-const keyPattern = new RegExp(`^${appConfig.slug}_(sk|pk)_(live|test)_([0-9A-Za-z]{${SECRET_LENGTH}})([0-9A-Za-z]{${CHECKSUM_LENGTH}})$`);
+const keyPattern = new RegExp(`^${appConfig.slug}_(sk|pk)_(live|test)_([0-9A-Za-z]{${secretLength}})([0-9A-Za-z]{${checksumLength}})$`);
 
 /**
  * `<app>_sk_live_<32 base62><6 base62 crc32>`: scannable by prefix, checkable offline, dispatched on shape by the
@@ -54,7 +54,7 @@ const keyPattern = new RegExp(`^${appConfig.slug}_(sk|pk)_(live|test)_([0-9A-Za-
  */
 export function generateApiKey(type: ApiKeyType): { key: string; parsed: ParsedApiKey } {
   const env: KeyEnv = appConfig.mode === 'production' ? 'live' : 'test';
-  const body = `${appConfig.slug}_${wireTags[type]}_${env}_${randomBase62(SECRET_LENGTH)}`;
+  const body = `${appConfig.slug}_${wireTags[type]}_${env}_${randomBase62(secretLength)}`;
   const key = `${body}${checksumOf(body)}`;
   const parsed = parseApiKey(key);
   if (!parsed) throw new Error('Generated key failed its own parse');

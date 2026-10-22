@@ -3,7 +3,7 @@ import { ApiError } from '~/lib/api';
 import { meQueryOptions } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
-import { useUserStore } from '~/modules/user/user-store';
+import { userStore } from '~/modules/user/user-store';
 import { localUserStorageReady } from '~/query/local-user-storage';
 import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
@@ -20,11 +20,11 @@ export const Route = createFileRoute('/_app')({
   beforeLoad: async ({ location, cause }) => {
     if (cause !== 'enter') return;
 
-    let storedUser = useUserStore.getState().user;
+    let storedUser = userStore.getState().user;
 
     if (!storedUser) {
       if (location.pathname === '/') {
-        const { lastUser } = useUserStore.getState();
+        const { lastUser } = userStore.getState();
         if (!lastUser) throw redirect({ to: '/about', replace: true });
 
         // The cookie can still be valid while the store is empty after a backend-driven sign-in, so probe /me first.

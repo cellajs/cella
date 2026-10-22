@@ -27,9 +27,9 @@ vi.mock('~/modules/common/data-table/table-ellipsis', () => ({
 
 const { queryClient } = await import('~/query/query-client');
 const { dateShort } = await import('~/utils/date-short');
-const { useDropdowner } = await import('~/modules/common/dropdowner/use-dropdowner');
-const { useSheeter } = await import('~/modules/common/sheeter/use-sheeter');
-const { useUserStore } = await import('~/modules/user/user-store');
+const { dropdowner } = await import('~/modules/common/dropdowner/use-dropdowner');
+const { sheeter } = await import('~/modules/common/sheeter/use-sheeter');
+const { userStore } = await import('~/modules/user/user-store');
 const users = await import('~/modules/user/table/users-columns');
 const organizations = await import('~/modules/organization/table/organizations-columns');
 const tenants = await import('~/modules/tenants/table/tenants-columns');
@@ -92,7 +92,7 @@ const listedDate = { sortable: true, sortDescendingFirst: true, minBreakpoint: '
 
 afterEach(() => {
   seen.options = [];
-  useSheeter.setState({ sheets: [] });
+  sheeter.setState({ sheets: [] });
   vi.restoreAllMocks();
 });
 
@@ -234,12 +234,12 @@ describe('ellipsis columns', () => {
     expect(headerMarkup(col)).toBe('<span class="sr-only">c:actions</span>');
     expect(cellMarkup(col, row)).toBe('<span>c:edit|c:delete</span>');
 
-    const remove = vi.spyOn(useDropdowner.getState(), 'remove');
+    const remove = vi.spyOn(dropdowner.getState(), 'remove');
     rowAction('c:edit').onSelect(row, trigger);
     expect(remove).toHaveBeenCalled();
-    expect(useSheeter.getState().sheets.map(({ id }) => id)).toEqual([sheet]);
+    expect(sheeter.getState().sheets.map(({ id }) => id)).toEqual([sheet]);
 
-    const update = vi.spyOn(useDropdowner.getState(), 'update');
+    const update = vi.spyOn(dropdowner.getState(), 'update');
     rowAction('c:delete').onSelect(row, trigger);
     const content = update.mock.calls[0][0].content as ReactElement<{ title: ReactElement<ConfirmTextProps> }>;
     expect(content.props.title.props).toEqual({ i18nKey: 'c:delete_confirm.text', values: { name: 'Row one' } });
@@ -255,7 +255,7 @@ describe('ellipsis columns', () => {
 
     const cell = col.renderCell?.({ row: row as never, tabIndex: 0 }) as ReactElement<{ onClick: (event: unknown) => void }>;
     cell.props.onClick({ currentTarget: null });
-    expect(useSheeter.getState().sheets.map(({ id }) => id)).toEqual(['update-tenant']);
+    expect(sheeter.getState().sheets.map(({ id }) => id)).toEqual(['update-tenant']);
   });
 
   it('attachments: delete only on small screens, with a cancel that closes the menu', () => {
@@ -268,19 +268,19 @@ describe('ellipsis columns', () => {
     expect(configOf(col)).toEqual({ key: 'ellipsis', name: '', width: 32, maxBreakpoint: 'sm' });
     expect(cellMarkup(col, row)).toBe('<span>c:delete</span>');
 
-    const update = vi.spyOn(useDropdowner.getState(), 'update');
+    const update = vi.spyOn(dropdowner.getState(), 'update');
     rowAction('c:delete').onSelect(row, trigger);
     const content = update.mock.calls[0][0].content as ReactElement<{
       title: ReactElement<ConfirmTextProps>;
       children: ReactElement<{ callback: unknown; onCancel: unknown }>;
     }>;
     expect(content.props.title.props).toEqual({ i18nKey: 'c:delete_confirm.text', values: { name: 'File' } });
-    expect(content.props.children.props.onCancel).toBe(useDropdowner.getState().remove);
-    expect(content.props.children.props.callback).toBe(useDropdowner.getState().remove);
+    expect(content.props.children.props.onCancel).toBe(dropdowner.getState().remove);
+    expect(content.props.children.props.callback).toBe(dropdowner.getState().remove);
   });
 
   it('attachments: renders nothing without delete permission', () => {
-    useUserStore.setState({ user: { id: 'me' } as never });
+    userStore.setState({ user: { id: 'me' } as never });
     const noDelete = { ...(channel as object), can: { attachment: { delete: false } } } as never;
     const col = column(
       columnsOf(() => attachments.useColumns(noDelete, false)),
@@ -288,7 +288,7 @@ describe('ellipsis columns', () => {
     );
 
     expect(cellMarkup(col, { id: 'att-1', createdBy: null })).toBe('');
-    useUserStore.setState({ user: null });
+    userStore.setState({ user: null });
   });
 });
 

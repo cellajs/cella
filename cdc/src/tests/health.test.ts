@@ -38,15 +38,15 @@ vi.mock('../services/cdc-metrics', () => ({
 
 vi.mock('shared/utils/event-loop-monitor', () => ({ getEventLoopLagMs: () => world.eventLoopLagMs }));
 
-import { RESOURCE_LIMITS } from '../constants';
+import { resourceLimits } from '../constants';
 import { getHealthResponse, gradeWorker } from '../network/health';
 import { replicationState } from '../services/replication-state';
 import { replicationStatus } from '../services/replication-status';
 
-const { stuckAfter } = RESOURCE_LIMITS.reread;
-const limits = RESOURCE_LIMITS.health;
-const MB = 1024 * 1024;
-const GB = 1024 * MB;
+const { stuckAfter } = resourceLimits.reread;
+const limits = resourceLimits.health;
+const mb = 1024 * 1024;
+const gb = 1024 * mb;
 
 const refused = Object.assign(new Error('null value in column "organization_id"'), { code: '23502' });
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000);
@@ -152,7 +152,7 @@ describe('gradeWorker', () => {
     });
 
     it('reports slot lag at 2 GB, as critical only', () => {
-      world.lagBytes = 2 * GB;
+      world.lagBytes = 2 * gb;
 
       expect(grade()).toEqual({ status: 'unhealthy', reasons: ['wal_lag_critical'] });
     });
@@ -233,13 +233,13 @@ describe('gradeWorker', () => {
     });
 
     it('reports slot lag from 50 MB, below 2 GB', () => {
-      world.lagBytes = 50 * MB - 1;
+      world.lagBytes = 50 * mb - 1;
       expect(grade()).toEqual({ status: 'healthy', reasons: [] });
 
-      world.lagBytes = 50 * MB;
+      world.lagBytes = 50 * mb;
       expect(grade()).toEqual({ status: 'degraded', reasons: ['wal_lag_high'] });
 
-      world.lagBytes = 2 * GB - 1;
+      world.lagBytes = 2 * gb - 1;
       expect(grade()).toEqual({ status: 'degraded', reasons: ['wal_lag_high'] });
     });
 
@@ -256,7 +256,7 @@ describe('gradeWorker', () => {
     replicationState.subscribed = false;
     replicationState.recordFailure('0/50', refused);
     world.apiAwaySince = minutesAgo(6);
-    world.lagBytes = 3 * GB;
+    world.lagBytes = 3 * gb;
     world.eventLoopLagMs = 1500;
 
     expect(grade()).toEqual({ status: 'unhealthy', reasons: ['api_away', 'wal_lag_critical', 'event_loop_lag', 'reading_again'] });

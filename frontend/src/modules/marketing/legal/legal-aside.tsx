@@ -8,7 +8,7 @@ import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import type { TKey } from '~/lib/i18n-locales';
 import type { LegalSubject } from '~/modules/auth/legal/legal-config';
-import { LEGAL_OVERVIEW_ID, type LegalSection } from '~/modules/auth/legal/legal-types';
+import { type LegalSection, legalOverviewId } from '~/modules/auth/legal/legal-types';
 import { SpyNavItem } from '~/modules/common/spy-nav-item';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
@@ -48,7 +48,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
   };
 
   const spySection = useCurrentSection();
-  const currentSection = spySection || LEGAL_OVERVIEW_ID;
+  const currentSection = spySection || legalOverviewId;
 
   return (
     <div className={cn('mb-6 flex w-full flex-col gap-2', className)}>
@@ -57,7 +57,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
         const isExpanded = expanded === id;
         const subjectSections = sections.filter((s) => s.label);
         // Collapsing is a re-click at the subject's overview. Further down, the link scrolls back up and the subject stays open.
-        const isAtSubject = isActive && currentSection === LEGAL_OVERVIEW_ID;
+        const isAtSubject = isActive && currentSection === legalOverviewId;
 
         return (
           <Collapsible
@@ -76,13 +76,13 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
                   <Link
                     to="/legal/$subject"
                     params={{ subject: id }}
-                    hash={isMobile ? '' : LEGAL_OVERVIEW_ID}
+                    hash={isMobile ? '' : legalOverviewId}
                     hashScrollIntoView={{ behavior: 'instant' }}
                     resetScroll={true}
                     draggable={false}
                     // A link to the current subject only changes the hash, which doesn't scroll
                     onClick={() => {
-                      if (isActive && !isAtSubject) requestAnimationFrame(() => scrollToSectionById(LEGAL_OVERVIEW_ID));
+                      if (isActive && !isAtSubject) requestAnimationFrame(() => scrollToSectionById(legalOverviewId));
                     }}
                     className={cn(
                       buttonVariants({ variant: 'ghost' }),

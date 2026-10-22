@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { GenOperationDetail, GenOperationSummary } from 'sdk/docs-types';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { HashUrlButton } from '~/modules/common/hash-url-button';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { OperationRequest } from '~/modules/docs/operations/operation-request';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
 import { SwitchedOffBadge } from '~/modules/docs/operations/switched-off-badge';
@@ -19,7 +19,7 @@ import { getMethodColor } from '../helpers/get-method-color';
 import { tagDetailsQueryOptions } from '../query';
 
 export function openOperationSheet(operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) {
-  useSheeter.getState().create(
+  sheeter.getState().create(
     <Suspense fallback={<Spinner size="lg" className="mt-[40vh]" />}>
       <div className="container pt-3 pb-[50vh]">
         <OperationDetail operation={operation} />

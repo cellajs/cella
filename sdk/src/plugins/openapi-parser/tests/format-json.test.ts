@@ -6,9 +6,9 @@ import { parseOpenApiSpec } from '../parse-spec';
 import type { OpenApiSpec } from '../types';
 
 // The committed SDK spec is always present on a clean checkout; the gitignored backend cache exists only after `pnpm sdk`.
-const PUBLIC_SPEC = resolve(__dirname, '../../../../gen/openapi.json');
-const CACHE_SPEC = resolve(__dirname, '../../../../../backend/openapi.cache.json');
-const BACKEND_SPEC = existsSync(PUBLIC_SPEC) ? PUBLIC_SPEC : CACHE_SPEC;
+const publicSpec = resolve(__dirname, '../../../../gen/openapi.json');
+const cacheSpec = resolve(__dirname, '../../../../../backend/openapi.cache.json');
+const backendSpec = existsSync(publicSpec) ? publicSpec : cacheSpec;
 
 describe('formatJson', () => {
   it('produces valid JSON for primitive values', () => {
@@ -65,7 +65,7 @@ describe('formatJson', () => {
   });
 
   it('produces valid JSON for parsed OpenAPI spec', () => {
-    const specJson = readFileSync(BACKEND_SPEC, 'utf-8');
+    const specJson = readFileSync(backendSpec, 'utf-8');
     const spec = JSON.parse(specJson) as OpenApiSpec;
     const parsed = parseOpenApiSpec(spec);
 

@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
 import type { RefObject } from 'react';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { AppSearch } from '~/modules/navigation/app-search';
 import { tw } from '~/utils/tw';
@@ -9,7 +9,7 @@ import { tw } from '~/utils/tw';
 export function startSearchAction(triggerRef: RefObject<HTMLButtonElement | null>) {
   if (!onlineManager.isOnline()) return toastOffline();
 
-  return useDialoger.getState().create(<AppSearch />, {
+  return dialoger.getState().create(<AppSearch />, {
     id: 'search',
     triggerRef,
     title: i18n.t('c:search'),

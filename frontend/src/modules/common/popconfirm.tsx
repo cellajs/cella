@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 
 interface Props {
   children: ReactNode;
@@ -21,5 +21,5 @@ export function PopConfirm({ children, title }: Props) {
  * hold a form: its items close it and its focus handling drops the buttons, so the confirmation opens as a panel.
  */
 export function openPopConfirm(title: ReactNode, children: ReactNode) {
-  useDropdowner.getState().update({ kind: 'panel', key: Date.now(), content: <PopConfirm title={title}>{children}</PopConfirm> });
+  dropdowner.getState().update({ kind: 'panel', key: Date.now(), content: <PopConfirm title={title}>{children}</PopConfirm> });
 }

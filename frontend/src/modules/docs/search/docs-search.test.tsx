@@ -13,7 +13,7 @@ vi.mock('@tanstack/react-router', () => ({ useNavigate: () => vi.fn() }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 
 const { DocsSearch } = await import('~/modules/docs/search/docs-search');
-const { useDocsSearchStore } = await import('~/modules/docs/search/docs-search-store');
+const { docsSearchStore } = await import('~/modules/docs/search/docs-search-store');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 // jsdom lacks the Web Animations API the scroll area waits on
@@ -47,7 +47,7 @@ beforeEach(async () => {
       disconnect() {}
     },
   );
-  useDocsSearchStore.setState({ recentSearches: [...history] });
+  docsSearchStore.setState({ recentSearches: [...history] });
 
   container = document.body.appendChild(document.createElement('div'));
   root = createRoot(container);
@@ -93,7 +93,7 @@ describe('docs search history', () => {
   it('drops one entry through its remove button', async () => {
     await act(async () => historyRow('passkeys')?.querySelector('button')?.click());
 
-    expect(useDocsSearchStore.getState().recentSearches).toEqual(['sessions', 'tenants']);
+    expect(docsSearchStore.getState().recentSearches).toEqual(['sessions', 'tenants']);
     expect(historyRows()).toEqual(['sessions0', 'tenants1']);
   });
 

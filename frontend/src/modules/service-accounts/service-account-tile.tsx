@@ -7,10 +7,10 @@ import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useRelativeDate } from '~/hooks/use-relative-date';
 import { ConfirmText } from '~/modules/common/confirm-text';
 import { DateTooltip } from '~/modules/common/date-tooltip';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { PopConfirm } from '~/modules/common/popconfirm';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { apiKeysQueryOptions, useRevokeApiKeyMutation } from '~/modules/service-accounts/query';
 import { Badge } from '~/modules/ui/badge';
@@ -36,13 +36,13 @@ export function ServiceAccountTile({ account, path, secrets }: ServiceAccountTil
   const role = account.bindings[0]?.role;
 
   const handleRevoke = (apiKey: ApiKey) => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
     revoke({ path: { ...path, id: account.id, keyId: apiKey.id } });
   };
 
   // A revoked key cannot be restored and whatever uses it stops working, so the click asks first.
   const openRevokeConfirm = (apiKey: ApiKey, event: MouseEvent<HTMLButtonElement>) => {
-    const { create, remove } = useDropdowner.getState();
+    const { create, remove } = dropdowner.getState();
     create(
       <PopConfirm title={<ConfirmText i18nKey="c:confirm.revoke_api_key" values={{ name: apiKey.name }} />}>
         <div className="flex flex-col gap-2 sm:flex-row">

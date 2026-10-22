@@ -14,7 +14,7 @@ import { getValidChannel } from '#/permissions';
 import { log } from '#/utils/logger';
 import { withApiKeyCreator } from './with-api-key-creators';
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const dayMs = 24 * 60 * 60 * 1000;
 
 /**
  * Issues a key; with `rollFrom`, the predecessor keeps working for the overlap window so the caller can deploy the new
@@ -33,7 +33,7 @@ export async function createApiKeyOp(ctx: UserContext, serviceAccountId: string,
   const apiKey = await ctx.var.db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
     if (input.rollFrom) {
-      const expiresAt = new Date(Date.now() + input.rollOverlapDays * DAY_MS).toISOString();
+      const expiresAt = new Date(Date.now() + input.rollOverlapDays * dayMs).toISOString();
       const rolled = await scheduleApiKeyExpiry(txCtx, { actorId: account.id, id: input.rollFrom, expiresAt });
       if (!rolled) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'apiKey' } });
       log.info('ApiKey rolled', { from: input.rollFrom, overlapEnd: expiresAt });

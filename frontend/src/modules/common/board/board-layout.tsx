@@ -15,9 +15,9 @@ import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
 /** Minimum width of an expanded board panel, in px. */
-export const PANEL_MIN_WIDTH = 300;
+export const panelMinWidth = 300;
 /** Minimum width of a collapsed board panel, in px. */
-export const COLLAPSED_PANEL_MIN_WIDTH = 50;
+export const collapsedPanelMinWidth = 50;
 
 export interface BoardLayoutPanel {
   panelId: string;
@@ -144,7 +144,7 @@ export function BoardLayout({
           {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'left' && (
             <DropIndicator edge="left" gap={i === 0 ? 0 : 0.6} />
           )}
-          <ResizablePanel id={panelId} minWidth={PANEL_MIN_WIDTH} collapsedWidth={COLLAPSED_PANEL_MIN_WIDTH} collapsible fade={panelFade}>
+          <ResizablePanel id={panelId} minWidth={panelMinWidth} collapsedWidth={collapsedPanelMinWidth} collapsible fade={panelFade}>
             {reorderable ? (
               <PanelDragWrapper
                 panelId={panelId}

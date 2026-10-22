@@ -323,7 +323,7 @@ describe('the gate that paused writes wait on', () => {
 });
 
 /** Longest first reconnect delay: the initial backoff plus the full jitter. */
-const FIRST_RECONNECT_MS = 7_000;
+const firstReconnectMs = 7_000;
 
 describe('StreamManager server-sent errors', () => {
   afterEach(() => vi.useRealTimers());
@@ -341,7 +341,7 @@ describe('StreamManager server-sent errors', () => {
   it.each(['session_replaced', 'access_changed'])('reconnects after %s: the browser still holds a session', async (code) => {
     const h = await closedByServer(code);
 
-    await vi.advanceTimersByTimeAsync(FIRST_RECONNECT_MS);
+    await vi.advanceTimersByTimeAsync(firstReconnectMs);
 
     expect(FakeEventSource.instances).toHaveLength(2);
     expect(h.es.readyState).toBe(FakeEventSource.OPEN);
@@ -404,7 +404,7 @@ describe('StreamManager silence watchdog', () => {
     expect(vi.getTimerCount()).toBe(1);
     expect(FakeEventSource.instances).toHaveLength(1);
 
-    await vi.advanceTimersByTimeAsync(FIRST_RECONNECT_MS);
+    await vi.advanceTimersByTimeAsync(firstReconnectMs);
     expect(FakeEventSource.instances).toHaveLength(2);
     expect(h.es.readyState).toBe(FakeEventSource.OPEN);
     h.manager.disconnect();
@@ -453,9 +453,9 @@ describe('StreamManager silence watchdog', () => {
     h.es.onerror?.();
     expect(vi.getTimerCount()).toBe(1);
 
-    await vi.advanceTimersByTimeAsync(FIRST_RECONNECT_MS);
+    await vi.advanceTimersByTimeAsync(firstReconnectMs);
     h.es.onerror?.();
-    await vi.advanceTimersByTimeAsync(2 * FIRST_RECONNECT_MS);
+    await vi.advanceTimersByTimeAsync(2 * firstReconnectMs);
     expect(FakeEventSource.instances).toHaveLength(3);
 
     h.es.onerror?.();

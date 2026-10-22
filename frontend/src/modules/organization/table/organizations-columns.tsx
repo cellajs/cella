@@ -10,7 +10,7 @@ import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { countColumn, dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { openPopConfirm } from '~/modules/common/popconfirm';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
@@ -65,7 +65,7 @@ export const useColumns = () => {
         label: i18n.t('c:edit'),
         icon: PencilIcon,
         onSelect: (row, triggerRef) => {
-          useDropdowner.getState().remove();
+          dropdowner.getState().remove();
           openUpdateSheet(row, triggerRef);
         },
       },
@@ -73,7 +73,7 @@ export const useColumns = () => {
         label: i18n.t('c:delete'),
         icon: TrashIcon,
         onSelect: (row) => {
-          const callback = () => useDropdowner.getState().remove();
+          const callback = () => dropdowner.getState().remove();
           openPopConfirm(
             <ConfirmText i18nKey="c:delete_confirm.text" values={{ name: row.name }} />,
             <DeleteOrganizations tenantId={row.tenantId} organizations={[row]} callback={callback} />,

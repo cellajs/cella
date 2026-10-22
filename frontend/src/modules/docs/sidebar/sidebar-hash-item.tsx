@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
@@ -35,7 +35,7 @@ export function SidebarHashItem({ to, hash, isActive, className, children }: Sid
             if (e.metaKey || e.ctrlKey) return;
             e.preventDefault();
             scrollToSectionById(hash);
-            useSheeter.getState().remove('docs-sidebar');
+            sheeter.getState().remove('docs-sidebar');
           }}
         />
       }

@@ -9,7 +9,7 @@ import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/t
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteMemberships } from '~/modules/memberships/delete-memberships';
 import type { MembersTableWrapperProps } from '~/modules/memberships/members-table/members-table';
@@ -80,7 +80,7 @@ export function MembersTableBar({
   };
 
   const openInviteDialog = () => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
 
     createDialog(<InviteUsers channel={channel} mode={null} dialog />, {
       id: 'invite-users',

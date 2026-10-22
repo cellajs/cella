@@ -3,7 +3,7 @@ import { baseDb } from '#/db/db';
 import { log } from '#/utils/logger';
 import { updateLastSeenAt } from './update-last-seen';
 
-const THROTTLE_MS = 5 * 60 * 1000;
+const throttleMs = 5 * 60 * 1000;
 
 /** The stamp's UPDATE, standing in for the database: each call is one write. */
 const write = vi.fn(async () => {});
@@ -28,7 +28,7 @@ describe('updateLastSeenAt', () => {
     const actorId = newActorId();
 
     updateLastSeenAt(actorId);
-    vi.advanceTimersByTime(THROTTLE_MS - 1000);
+    vi.advanceTimersByTime(throttleMs - 1000);
     updateLastSeenAt(actorId);
 
     expect(write).toHaveBeenCalledTimes(1);
@@ -38,7 +38,7 @@ describe('updateLastSeenAt', () => {
     const actorId = newActorId();
 
     updateLastSeenAt(actorId);
-    vi.advanceTimersByTime(THROTTLE_MS + 1000);
+    vi.advanceTimersByTime(throttleMs + 1000);
     updateLastSeenAt(actorId);
 
     expect(write).toHaveBeenCalledTimes(2);
@@ -66,7 +66,7 @@ describe('updateLastSeenAt', () => {
     expect(write).toHaveBeenCalledTimes(1);
 
     // The next window writes again.
-    vi.advanceTimersByTime(THROTTLE_MS + 1000);
+    vi.advanceTimersByTime(throttleMs + 1000);
     updateLastSeenAt(actorId);
     expect(write).toHaveBeenCalledTimes(2);
   });

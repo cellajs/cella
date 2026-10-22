@@ -5,7 +5,7 @@ import type { Env } from '#/core/context';
 import { toClientError } from '#/lib/error';
 import type { McpTool } from '#/modules/mcp/mcp-tools';
 
-const PROTOCOL_VERSION = '2026-07-28';
+const protocolVersion = '2026-07-28';
 
 export interface JsonRpcMessage {
   jsonrpc: '2.0';
@@ -54,7 +54,7 @@ export async function handleMcpMessage(ctx: Context<Env>, message: JsonRpcMessag
     case 'initialize': {
       const requested = message.params?.protocolVersion;
       return respond({
-        protocolVersion: typeof requested === 'string' ? requested : PROTOCOL_VERSION,
+        protocolVersion: typeof requested === 'string' ? requested : protocolVersion,
         capabilities: { tools: { listChanged: false } },
         serverInfo,
         instructions:

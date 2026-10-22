@@ -8,7 +8,7 @@ import { createTotp, generateTotpKey } from 'sdk';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { withStepUp } from '~/modules/auth/step-up';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { meKeys } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
@@ -29,7 +29,7 @@ export function SetupTotp() {
   const { mutate, isPending } = useMutation<CreateTotpResponses[201], ApiError | Error, NonNullable<CreateTotpData['body']>>({
     mutationFn: (body) => withStepUp(() => createTotp({ body })),
     onSuccess: () => {
-      useDialoger.getState().remove('setup-totp');
+      dialoger.getState().remove('setup-totp');
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, hasTotp: true };
@@ -64,7 +64,7 @@ export function SetupTotp() {
   });
 
   const openManualKey = () => {
-    useDialoger.getState().create(<TotpManualKey manualKey={data.manualKey} />, {
+    dialoger.getState().create(<TotpManualKey manualKey={data.manualKey} />, {
       id: 'mfa-key',
       triggerRef,
       title: t('c:totp_manual.title'),
@@ -100,7 +100,7 @@ export function SetupTotp() {
           label={t('c:totp_verify')}
           onSubmit={onSubmit}
           isPending={isPending}
-          onCancel={() => useDialoger.getState().remove('setup-totp')}
+          onCancel={() => dialoger.getState().remove('setup-totp')}
         />
       )}
     </div>

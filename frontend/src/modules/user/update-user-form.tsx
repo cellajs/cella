@@ -12,7 +12,7 @@ import { InputFormField } from '~/modules/common/form-fields/input';
 import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useStepper } from '~/modules/common/stepper/stepper';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUpdateSelfMutation } from '~/modules/me/query';
@@ -66,7 +66,7 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
       toaster.success(message);
 
       form.reset(updatedUser);
-      if (isSheet) useSheeter.getState().remove(formContainerId);
+      if (isSheet) sheeter.getState().remove(formContainerId);
 
       nextStep?.();
 

@@ -13,12 +13,12 @@ import type { AppStreamNotification } from './types';
 import { resolveChannelPath } from './view-declaration';
 
 /** Spread window of a range that carries none from the server, such as a catchup gap. */
-const DEFAULT_SPREAD_WINDOW_MS = 15_000;
+const defaultSpreadWindowMs = 15_000;
 /** Transient fetch errors retry with exponential backoff before falling back to invalidation. */
-const MAX_FLUSH_ATTEMPTS = 3;
-const RETRY_BASE_MS = 2_000;
+const maxFlushAttempts = 3;
+const retryBaseMs = 2_000;
 /** Re-check delay while offline (fetching would fail pointlessly; catchup owns reconnect). */
-const OFFLINE_RECHECK_MS = 5_000;
+const offlineRecheckMs = 5_000;
 
 export interface EnqueueInput {
   entityType: ProductEntityType;
@@ -101,7 +101,7 @@ function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }
   const anchoredAfter = caughtUp > 0 ? caughtUp : afterSeq;
 
   const key = entryKey(entityType, organizationId, channelId);
-  const dueAt = Date.now() + negotiatedDelay(tier, key, input.spreadWindowMs ?? DEFAULT_SPREAD_WINDOW_MS);
+  const dueAt = Date.now() + negotiatedDelay(tier, key, input.spreadWindowMs ?? defaultSpreadWindowMs);
 
   const existing = dirty.get(key);
   if (existing) {
@@ -156,7 +156,7 @@ export async function flushChannelViewNow(
   const entry = dirty.get(entryKey(entityType, organizationId, channelId));
   if (!entry) return 'none';
   dirty.delete(entryKey(entityType, organizationId, channelId));
-  return flushGroup([{ ...entry, attempts: MAX_FLUSH_ATTEMPTS - 1 }]);
+  return flushGroup([{ ...entry, attempts: maxFlushAttempts - 1 }]);
 }
 
 /** Clear all pending work. Called when catchup starts: it recomputes channel-view gaps itself. */
@@ -240,7 +240,7 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
 
   // Offline: fetching fails pointlessly; keep dirty, recheck soon. Catchup owns reconnect.
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-    for (const entry of entries) requeue(entry, OFFLINE_RECHECK_MS);
+    for (const entry of entries) requeue(entry, offlineRecheckMs);
     return 'requeued';
   }
 
@@ -250,8 +250,8 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
   const channelId = coveringChannelId(entries);
   const result = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, { afterSeq, untilSeq }, keys, channelId);
 
-  if (result.status === 'error' && entries.some((entry) => entry.attempts + 1 < MAX_FLUSH_ATTEMPTS)) {
-    for (const entry of entries) requeue({ ...entry, attempts: entry.attempts + 1 }, RETRY_BASE_MS * 2 ** entry.attempts);
+  if (result.status === 'error' && entries.some((entry) => entry.attempts + 1 < maxFlushAttempts)) {
+    for (const entry of entries) requeue({ ...entry, attempts: entry.attempts + 1 }, retryBaseMs * 2 ** entry.attempts);
     return 'requeued';
   }
 

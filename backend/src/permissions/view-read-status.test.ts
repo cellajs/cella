@@ -3,7 +3,7 @@ import { type DeepChannelType, deepHierarchy, deepOverrides, deepReadPolicies as
 import { elevateAcross } from 'shared/testing/elevate';
 import { describe, expect, it } from 'vitest';
 
-const DEEP_ELEVATED = elevateAcross(deepHierarchy, ['admin', 'staff']);
+const deepElevated = elevateAcross(deepHierarchy, ['admin', 'staff']);
 
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { resolveViewReadStatusForPolicies } from './view-read-status';
@@ -12,9 +12,9 @@ import { resolveViewReadStatusForPolicies } from './view-read-status';
  * Catchup prefix authorization: `ok` requires PROOF of unconditional subtree read on the prefix's
  * deepest node, readable-but-unproven is `opaque` (no summaries), no read route is `forbidden`.
  */
-const ROOT_ID = 'org-1';
+const rootId = 'org-1';
 
-const ITEM = 'item' as unknown as ProductEntityType;
+const item = 'item' as unknown as ProductEntityType;
 
 const membership = (channelType: DeepChannelType, channelId: string, role: string): MembershipBaseModel =>
   ({
@@ -22,7 +22,7 @@ const membership = (channelType: DeepChannelType, channelId: string, role: strin
     userId: 'actor',
     channelType,
     channelId,
-    organizationId: ROOT_ID,
+    organizationId: rootId,
     role,
   }) as unknown as MembershipBaseModel;
 
@@ -41,8 +41,8 @@ const statusFor = (
     {
       policies: policies(opts.read ?? (() => 0)),
       memberships: opts.memberships ?? [],
-      entityType: ITEM,
-      organizationId: ROOT_ID,
+      entityType: item,
+      organizationId: rootId,
       actor: { actorId: 'actor', isSystemAdmin: opts.isSystemAdmin ?? false, scopes: null },
       elevatedGrants: opts.elevatedGrants,
       ...deepOverrides,
@@ -59,103 +59,103 @@ describe('resolveViewReadStatus', () => {
   const orgMemberOwnRead = (ct: DeepChannelType, role: string): PolicyCellInput => (ct === 'organization' && role === 'member' ? 'own' : 0);
 
   it('org-wide unconditional read answers the org and every verified prefix in it', () => {
-    const opts = { read: orgAdminRead, memberships: [membership('organization', ROOT_ID, 'admin')] };
-    expect(statusFor(ROOT_ID, opts)).toBe('ok');
-    for (const prefix of [`${ROOT_ID}/c1`, `${ROOT_ID}/c1/s1/p1`]) {
+    const opts = { read: orgAdminRead, memberships: [membership('organization', rootId, 'admin')] };
+    expect(statusFor(rootId, opts)).toBe('ok');
+    for (const prefix of [`${rootId}/c1`, `${rootId}/c1/s1/p1`]) {
       expect(statusFor(prefix, { ...opts, truePath: prefix })).toBe('ok');
     }
   });
 
   it('sysadmin is ok on verified prefixes inside the org, forbidden outside it', () => {
-    expect(statusFor(`${ROOT_ID}/c1`, { isSystemAdmin: true, truePath: `${ROOT_ID}/c1` })).toBe('ok');
+    expect(statusFor(`${rootId}/c1`, { isSystemAdmin: true, truePath: `${rootId}/c1` })).toBe('ok');
     expect(statusFor('other-org/c1', { isSystemAdmin: true })).toBe('forbidden');
   });
 
   it('must not answer a deeper node org-wide via a prefix whose path is unknown', () => {
-    const opts = { read: orgAdminRead, memberships: [membership('organization', ROOT_ID, 'admin')] };
+    const opts = { read: orgAdminRead, memberships: [membership('organization', rootId, 'admin')] };
     // A counters row with a NULL path, or none at all: the first segment is only the client's claim.
-    expect(statusFor(`${ROOT_ID}/other-org`, { ...opts, truePath: null })).toBe('opaque');
-    expect(statusFor(`${ROOT_ID}/c1/s1/p1`, opts)).toBe('opaque');
-    expect(statusFor(`${ROOT_ID}/c1`, { isSystemAdmin: true, truePath: null })).toBe('opaque');
+    expect(statusFor(`${rootId}/other-org`, { ...opts, truePath: null })).toBe('opaque');
+    expect(statusFor(`${rootId}/c1/s1/p1`, opts)).toBe('opaque');
+    expect(statusFor(`${rootId}/c1`, { isSystemAdmin: true, truePath: null })).toBe('opaque');
     // The organization prefix proves itself.
-    expect(statusFor(ROOT_ID, { ...opts, truePath: null })).toBe('ok');
+    expect(statusFor(rootId, { ...opts, truePath: null })).toBe('ok');
   });
 
   it('an intermediate-level grant answers its OWN node, is opaque above and below', () => {
     const opts = { read: courseStaffRead, memberships: [membership('course', 'c1', 'staff')] };
     // The granted course node itself: proof of subtree coverage.
-    expect(statusFor(`${ROOT_ID}/c1`, opts)).toBe('ok');
+    expect(statusFor(`${rootId}/c1`, opts)).toBe('ok');
     // Org level: staff can read some org rows, not provably all → no summaries.
-    expect(statusFor(ROOT_ID, opts)).toBe('opaque');
+    expect(statusFor(rootId, opts)).toBe('opaque');
     // Deeper node under the granted course: covered in truth, but the prefix is client-supplied, so proof stops at the node id.
-    expect(statusFor(`${ROOT_ID}/c1/s1/p1`, opts)).toBe('opaque');
+    expect(statusFor(`${rootId}/c1/s1/p1`, opts)).toBe('opaque');
     // A different course: readable-nothing there, but SOME org scope exists → opaque.
-    expect(statusFor(`${ROOT_ID}/c2`, opts)).toBe('opaque');
+    expect(statusFor(`${rootId}/c2`, opts)).toBe('opaque');
   });
 
   it('a home-level (deepest) grant answers its own node', () => {
     const opts = { read: projectOwnerRead, memberships: [membership('project', 'p1', 'owner')] };
-    expect(statusFor(`${ROOT_ID}/c1/s1/p1`, opts)).toBe('ok');
-    expect(statusFor(`${ROOT_ID}/c1`, opts)).toBe('opaque');
+    expect(statusFor(`${rootId}/c1/s1/p1`, opts)).toBe('ok');
+    expect(statusFor(`${rootId}/c1`, opts)).toBe('opaque');
   });
 
   it('conditional-only readers (read: own) are opaque everywhere in the org', () => {
-    const opts = { read: orgMemberOwnRead, memberships: [membership('organization', ROOT_ID, 'member')] };
-    expect(statusFor(ROOT_ID, opts)).toBe('opaque');
-    expect(statusFor(`${ROOT_ID}/c1`, opts)).toBe('opaque');
+    const opts = { read: orgMemberOwnRead, memberships: [membership('organization', rootId, 'member')] };
+    expect(statusFor(rootId, opts)).toBe('opaque');
+    expect(statusFor(`${rootId}/c1`, opts)).toBe('opaque');
   });
 
   it('SELF views: a home-scoped grant (non-elevated under elevatedGrants) answers its own node', () => {
     // Course student read=1 with elevatedGrants configured: the home-scoped grant covers exactly the course wall (rows homed at c1).
     const courseStudentRead = (ct: DeepChannelType, role: string): PolicyCellInput => (ct === 'course' && role === 'student' ? 1 : 0);
-    const opts = { read: courseStudentRead, memberships: [membership('course', 'c1', 'student')], elevatedGrants: DEEP_ELEVATED };
+    const opts = { read: courseStudentRead, memberships: [membership('course', 'c1', 'student')], elevatedGrants: deepElevated };
 
     // Self view on the granted node: provable because homed rows are exactly the grant.
-    expect(statusFor(`${ROOT_ID}/c1`, { ...opts, depth: 'self' })).toBe('ok');
+    expect(statusFor(`${rootId}/c1`, { ...opts, depth: 'self' })).toBe('ok');
     // Subtree view on the same node: NOT provable (other projects live below).
-    expect(statusFor(`${ROOT_ID}/c1`, { ...opts, depth: 'subtree' })).toBe('opaque');
+    expect(statusFor(`${rootId}/c1`, { ...opts, depth: 'subtree' })).toBe('opaque');
     // Self view on a different course: no grant there.
-    expect(statusFor(`${ROOT_ID}/c2`, { ...opts, depth: 'self' })).toBe('opaque');
+    expect(statusFor(`${rootId}/c2`, { ...opts, depth: 'self' })).toBe('opaque');
   });
 
   it('SELF views: subtree-scoped proofs still apply (self ⊂ subtree)', () => {
-    const opts = { read: courseStaffRead, memberships: [membership('course', 'c1', 'staff')], elevatedGrants: DEEP_ELEVATED };
-    expect(statusFor(`${ROOT_ID}/c1`, { ...opts, depth: 'self' })).toBe('ok');
+    const opts = { read: courseStaffRead, memberships: [membership('course', 'c1', 'staff')], elevatedGrants: deepElevated };
+    expect(statusFor(`${rootId}/c1`, { ...opts, depth: 'self' })).toBe('ok');
   });
 
   it('VERIFIED ancestry: an ancestor grant proves deeper nodes when the path is true', () => {
     const opts = { read: courseStaffRead, memberships: [membership('course', 'c1', 'staff')] };
-    const deep = `${ROOT_ID}/c1/s1/p1`;
+    const deep = `${rootId}/c1/s1/p1`;
 
     // The flipped cell: staff's course grant + verified true path → deep node ok.
     expect(statusFor(deep, { ...opts, truePath: deep })).toBe('ok');
     // Unverified (no counters row): node-id-only proof stays conservative.
     expect(statusFor(deep, { ...opts, truePath: null })).toBe('opaque');
     // Forged ancestry: the node's true path hangs elsewhere → opaque, self-heals.
-    expect(statusFor(deep, { ...opts, truePath: `${ROOT_ID}/c2/s9/p1` })).toBe('opaque');
+    expect(statusFor(deep, { ...opts, truePath: `${rootId}/c2/s9/p1` })).toBe('opaque');
     // Verified path under a DIFFERENT course: no grant on any true ancestor → opaque.
-    const otherDeep = `${ROOT_ID}/c2/s9/p9`;
+    const otherDeep = `${rootId}/c2/s9/p9`;
     expect(statusFor(otherDeep, { ...opts, truePath: otherDeep })).toBe('opaque');
   });
 
   it('VERIFIED ancestry: a mismatch blocks even org-wide readers (cross-org forge guard)', () => {
-    const opts = { read: orgAdminRead, memberships: [membership('organization', ROOT_ID, 'admin')] };
+    const opts = { read: orgAdminRead, memberships: [membership('organization', rootId, 'admin')] };
     // Claim inside this org, but the node truly lives in another org.
-    expect(statusFor(`${ROOT_ID}/c1`, { ...opts, truePath: 'other-org/c1' })).toBe('opaque');
-    expect(statusFor(`${ROOT_ID}/c1`, { ...opts, truePath: `${ROOT_ID}/c1` })).toBe('ok');
+    expect(statusFor(`${rootId}/c1`, { ...opts, truePath: 'other-org/c1' })).toBe('opaque');
+    expect(statusFor(`${rootId}/c1`, { ...opts, truePath: `${rootId}/c1` })).toBe('ok');
   });
 
   it('VERIFIED ancestry: ancestor HOME-grants still never prove deeper self views', () => {
     const courseStudentRead = (ct: DeepChannelType, role: string): PolicyCellInput => (ct === 'course' && role === 'student' ? 1 : 0);
-    const opts = { read: courseStudentRead, memberships: [membership('course', 'c1', 'student')], elevatedGrants: DEEP_ELEVATED };
-    const deep = `${ROOT_ID}/c1/s1/p1`;
+    const opts = { read: courseStudentRead, memberships: [membership('course', 'c1', 'student')], elevatedGrants: deepElevated };
+    const deep = `${rootId}/c1/s1/p1`;
     // The student's course home-grant covers the course WALL, not project walls below.
     expect(statusFor(deep, { ...opts, depth: 'self', truePath: deep })).toBe('opaque');
   });
 
   it('no read route at all is forbidden, as is a prefix outside the org', () => {
-    expect(statusFor(`${ROOT_ID}/c1`, {})).toBe('forbidden');
-    expect(statusFor('other-org/c1', { read: orgAdminRead, memberships: [membership('organization', ROOT_ID, 'admin')] })).toBe('forbidden');
+    expect(statusFor(`${rootId}/c1`, {})).toBe('forbidden');
+    expect(statusFor('other-org/c1', { read: orgAdminRead, memberships: [membership('organization', rootId, 'admin')] })).toBe('forbidden');
     expect(statusFor('', {})).toBe('forbidden');
   });
 });

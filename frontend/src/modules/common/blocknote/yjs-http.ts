@@ -12,22 +12,22 @@ import { applyRemoteUpdate, type YjsConnection } from '~/modules/common/blocknot
 import type { UnsaveableReason } from '~/query/local-user-db';
 
 /** How long the socket may take to sync after starting before HTTP takes over, while the API answers. */
-export const WS_SYNC_DEADLINE_MS = 5_000;
+export const wsSyncDeadlineMs = 5_000;
 /** How often a connection an editor holds pulls peers' edits while the tab is visible. */
-const HTTP_PULL_MS = 10_000;
-/** Local edits wait this long for more before one post carries them all, and never longer than `HTTP_PUSH_MAX_WAIT_MS`. */
-const HTTP_PUSH_DEBOUNCE_MS = 500;
-const HTTP_PUSH_MAX_WAIT_MS = 2_000;
+const httpPullMs = 10_000;
+/** Local edits wait this long for more before one post carries them all, and never longer than `httpPushMaxWaitMs`. */
+const httpPushDebounceMs = 500;
+const httpPushMaxWaitMs = 2_000;
 /**
  * The most update bytes one post carries, under the API's 1 MB body limit once base64url-encoded. Matches the push route's limit.
  * @testSeam
  */
-export const HTTP_CHUNK_BYTES = 512 * 1024;
+export const httpChunkBytes = 512 * 1024;
 /** Focus, or the tab turning visible, pulls at most this often. */
-const HTTP_PULL_GAP_MS = 2_000;
+const httpPullGapMs = 2_000;
 /** A failed request is retried after 1 s, doubling up to the minute the routes' limiter counts a caller in. */
-const HTTP_RETRY_MS = 1_000;
-const HTTP_RETRY_MAX_MS = 60_000;
+const httpRetryMs = 1_000;
+const httpRetryMaxMs = 60_000;
 
 /** The document a link syncs: its entity and the scope the routes check it in. */
 export interface HttpLinkScope {
@@ -82,14 +82,14 @@ function classify(error: unknown): Failure {
   return { kind: 'retry' };
 }
 
-const retryDelay = (attempt: number) => Math.min(HTTP_RETRY_MS * 2 ** attempt, HTTP_RETRY_MAX_MS);
+const retryDelay = (attempt: number) => Math.min(httpRetryMs * 2 ** attempt, httpRetryMaxMs);
 
 /**
  * Merges consecutive updates into posts of at most `cap` bytes, in order. An update larger than `cap` cannot go over
  * HTTP: it is left out, counted in `oversize`, and waits for the socket, which takes up to 2 MB.
  * @testSeam
  */
-export function batchUpdates(updates: Uint8Array[], cap = HTTP_CHUNK_BYTES): { batches: Uint8Array[]; oversize: number } {
+export function batchUpdates(updates: Uint8Array[], cap = httpChunkBytes): { batches: Uint8Array[]; oversize: number } {
   const batches: Uint8Array[] = [];
   let oversize = 0;
   let group: Uint8Array[] = [];
@@ -267,7 +267,7 @@ export function createHttpLink(conn: YjsConnection, scope: HttpLinkScope, hooks:
     }
     let proof = snapshot();
     let update = Y.encodeStateAsUpdate(doc, serverVector);
-    if (update.length > HTTP_CHUNK_BYTES) {
+    if (update.length > httpChunkBytes) {
       for (const batch of batchUpdates(backlog).batches) {
         if (!(await post(batch, s)) || !isCurrent(s)) return false;
       }
@@ -276,7 +276,7 @@ export function createHttpLink(conn: YjsConnection, scope: HttpLinkScope, hooks:
       if (!(await pullUntilAnswered(s))) return false;
       proof = snapshot();
       update = Y.encodeStateAsUpdate(doc, serverVector);
-      if (update.length > HTTP_CHUNK_BYTES) {
+      if (update.length > httpChunkBytes) {
         if (s === session) handshake = 'held';
         return false;
       }
@@ -326,8 +326,8 @@ export function createHttpLink(conn: YjsConnection, scope: HttpLinkScope, hooks:
 
   const schedule = (s: number) => {
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => flush(s), HTTP_PUSH_DEBOUNCE_MS);
-    maxWaitTimer ??= setTimeout(() => flush(s), HTTP_PUSH_MAX_WAIT_MS);
+    debounceTimer = setTimeout(() => flush(s), httpPushDebounceMs);
+    maxWaitTimer ??= setTimeout(() => flush(s), httpPushMaxWaitMs);
   };
 
   // Pulls are for an editor someone looks at: a connection kept only to save its edits pulls nothing.
@@ -335,7 +335,7 @@ export function createHttpLink(conn: YjsConnection, scope: HttpLinkScope, hooks:
     if (active && conn.refCount > 0 && document.visibilityState === 'visible') void pullOnce(session);
   };
   const onFocus = () => {
-    if (Date.now() - lastPullAt >= HTTP_PULL_GAP_MS) pullForEditor();
+    if (Date.now() - lastPullAt >= httpPullGapMs) pullForEditor();
   };
   const onVisibility = () => {
     if (document.visibilityState === 'visible') onFocus();
@@ -351,7 +351,7 @@ export function createHttpLink(conn: YjsConnection, scope: HttpLinkScope, hooks:
       entering = (async () => {
         if (!(await pullUntilAnswered(s))) return false;
         entered = true;
-        pullTimer = setInterval(pullForEditor, HTTP_PULL_MS);
+        pullTimer = setInterval(pullForEditor, httpPullMs);
         window.addEventListener('focus', onFocus);
         document.addEventListener('visibilitychange', onVisibility);
         void pump(s);

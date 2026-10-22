@@ -8,7 +8,7 @@ import { endSession } from '~/modules/auth/end-session';
 import { getPasskeyStepUpCredential } from '~/modules/auth/passkey-credentials';
 import { StepUpDismissed, type StepUpMethod } from '~/modules/auth/step-up-retry';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
@@ -145,13 +145,13 @@ function StepUpDialog({ methods, section, onStepUp }: StepUpDialogProps) {
 export const openStepUpDialog = (methods: StepUpMethod[], section?: string) =>
   new Promise<void>((resolve, reject) => {
     let steppedUp = false;
-    useDialoger.getState().create(
+    dialoger.getState().create(
       <StepUpDialog
         methods={methods}
         section={section}
         onStepUp={() => {
           steppedUp = true;
-          useDialoger.getState().remove('step-up');
+          dialoger.getState().remove('step-up');
           resolve();
         }}
       />,

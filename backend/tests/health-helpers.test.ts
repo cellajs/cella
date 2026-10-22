@@ -10,7 +10,7 @@ import {
   mapProbeComponent,
   type ProbeResult,
   rollupStatus,
-  WORKER_HEALTH_STALE_MS,
+  workerHealthStaleMs,
   worstStatus,
 } from '#/lib/health-helpers';
 
@@ -95,17 +95,17 @@ describe('mapCdcComponent', () => {
   });
 
   it('degrades on a report older than 45 seconds, and still shows what it said', () => {
-    const fresh = mapCdcComponent(connectedSocket, report({ details: { lagBytes: 12 } }, WORKER_HEALTH_STALE_MS));
-    const stale = mapCdcComponent(connectedSocket, report({ details: { lagBytes: 12 } }, WORKER_HEALTH_STALE_MS + 1));
+    const fresh = mapCdcComponent(connectedSocket, report({ details: { lagBytes: 12 } }, workerHealthStaleMs));
+    const stale = mapCdcComponent(connectedSocket, report({ details: { lagBytes: 12 } }, workerHealthStaleMs + 1));
 
     expect(fresh.status).toBe('healthy');
     expect(fresh.reason).toBeUndefined();
-    expect(stale).toMatchObject({ status: 'degraded', reason: 'worker_report_stale', ageMs: WORKER_HEALTH_STALE_MS + 1 });
+    expect(stale).toMatchObject({ status: 'degraded', reason: 'worker_report_stale', ageMs: workerHealthStaleMs + 1 });
     expect(stale.details).toMatchObject({ lagBytes: 12 });
   });
 
   it('must not grade a stale report better than the worker did', () => {
-    const c = mapCdcComponent(connectedSocket, report({ status: 'unhealthy', reasons: ['worker_stuck'] }, WORKER_HEALTH_STALE_MS + 1));
+    const c = mapCdcComponent(connectedSocket, report({ status: 'unhealthy', reasons: ['worker_stuck'] }, workerHealthStaleMs + 1));
 
     expect(c).toMatchObject({ status: 'unhealthy', reason: 'worker_report_stale,worker_stuck' });
   });

@@ -20,7 +20,7 @@ export interface NotificationPushPayload {
 }
 
 /** Parallel sends per batch; push services rate-limit aggressively above small bursts. */
-const CONCURRENCY = 8;
+const concurrency = 8;
 
 /** Sending needs the flag AND both keys; either alone leaves the module receive-only. */
 export const isPushSendConfigured = (): boolean => appConfig.has.push && Boolean(env.VAPID_PUBLIC_KEY) && Boolean(env.VAPID_PRIVATE_KEY);
@@ -79,8 +79,8 @@ export async function sendNotificationPush(userIds: string[], payload: Notificat
     const gone: string[] = [];
     let backOff = false;
 
-    for (let i = 0; i < subscriptions.length && !backOff; i += CONCURRENCY) {
-      const batch = subscriptions.slice(i, i + CONCURRENCY);
+    for (let i = 0; i < subscriptions.length && !backOff; i += concurrency) {
+      const batch = subscriptions.slice(i, i + concurrency);
       await Promise.all(
         batch.map(async (subscription) => {
           try {

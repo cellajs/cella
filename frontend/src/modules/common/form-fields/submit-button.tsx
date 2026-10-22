@@ -2,7 +2,7 @@ import { t } from 'i18next';
 import { LoaderCircleIcon, TriangleAlertIcon } from 'lucide-react';
 import type * as React from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 
@@ -22,7 +22,7 @@ export function SubmitButton({ onClick, children, allowOfflineDelete = false, lo
     }
     if (showOfflineWarning) {
       e.preventDefault();
-      return toaster.warning(t('c:action.offline.text'));
+      return toastOffline();
     }
     onClick?.(e);
   };

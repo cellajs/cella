@@ -5,12 +5,12 @@ import { z } from 'zod';
 // public key alone, so neither the relay nor anything it holds can mint a token. Format is
 // base64url(JSON payload) + '.' + base64url(the Ed25519 signature over the encoded payload).
 
-const DELIMITER = '.';
-const SIGNATURE_BYTES = 64;
+const delimiter = '.';
+const signatureBytes = 64;
 /** DER prefix that wraps a raw 32-byte Ed25519 seed as a PKCS#8 private key (RFC 8410). */
-const PKCS8_ED25519_PREFIX = Buffer.from('302e020100300506032b657004220420', 'hex');
+const pkcs8Ed25519Prefix = Buffer.from('302e020100300506032b657004220420', 'hex');
 /** HKDF info label, so the key material yields this signing key and no other. */
-const KEY_DERIVATION_INFO = 'yjs-token-ed25519';
+const keyDerivationInfo = 'yjs-token-ed25519';
 
 export const yjsTokenPayloadSchema = z.object({
   userId: z.string(),
@@ -35,8 +35,8 @@ export type VerifyYjsTokenResult = { ok: true; payload: YjsTokenPayload } | { ok
  * key's seed derives by HKDF-SHA256, so a generated random secret serves as the key.
  */
 export function yjsTokenSigningKey(material: string): KeyObject {
-  const seed = Buffer.from(hkdfSync('sha256', material, '', KEY_DERIVATION_INFO, 32));
-  return createPrivateKey({ key: Buffer.concat([PKCS8_ED25519_PREFIX, seed]), format: 'der', type: 'pkcs8' });
+  const seed = Buffer.from(hkdfSync('sha256', material, '', keyDerivationInfo, 32));
+  return createPrivateKey({ key: Buffer.concat([pkcs8Ed25519Prefix, seed]), format: 'der', type: 'pkcs8' });
 }
 
 /** The public half of {@link yjsTokenSigningKey}, as base64url of its raw 32 bytes: the value the relay is given. */
@@ -59,17 +59,17 @@ export function signYjsToken(params: Omit<YjsTokenPayload, 'exp'>, signingKey: K
   const payload: YjsTokenPayload = { ...params, exp: Date.now() + ttlMs };
   const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
   const signature = sign(null, Buffer.from(payloadB64), signingKey).toString('base64url');
-  return `${payloadB64}${DELIMITER}${signature}`;
+  return `${payloadB64}${delimiter}${signature}`;
 }
 
 /** Verify and decode a Yjs token signed by {@link signYjsToken}, with the public key only. */
 export function verifyYjsToken(token: string, verifyKey: KeyObject): VerifyYjsTokenResult {
-  const delimiterIndex = token.lastIndexOf(DELIMITER);
+  const delimiterIndex = token.lastIndexOf(delimiter);
   if (delimiterIndex === -1) return { ok: false, reason: 'malformed' };
 
   const payloadB64 = token.slice(0, delimiterIndex);
   const signature = Buffer.from(token.slice(delimiterIndex + 1), 'base64url');
-  if (signature.length !== SIGNATURE_BYTES) return { ok: false, reason: 'bad_signature' };
+  if (signature.length !== signatureBytes) return { ok: false, reason: 'bad_signature' };
   if (!verify(null, Buffer.from(payloadB64), verifyKey, signature)) return { ok: false, reason: 'bad_signature' };
 
   let payload: YjsTokenPayload;

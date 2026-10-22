@@ -13,13 +13,13 @@ import { propagateEmbeddings } from './propagation';
 import { getSyncTier, getTenantIdForOrg } from './sync-priority';
 
 /** Every client learns of a new generation at about the same moment: each waits a random part of this before it refetches. */
-const GENERATION_REFETCH_SPREAD_MS = 10_000;
+const generationRefetchSpreadMs = 10_000;
 
 /** Refetches what is on screen of every synced type and marks the rest stale, after this client's share of the spread. */
 function refetchSyncedQueries(): void {
   setTimeout(() => {
     for (const entityType of getRegisteredProductEntityTypes()) cacheOps.invalidateEntityQueries(getEntityQueryKeys(entityType));
-  }, Math.random() * GENERATION_REFETCH_SPREAD_MS);
+  }, Math.random() * generationRefetchSpreadMs);
 }
 
 /**

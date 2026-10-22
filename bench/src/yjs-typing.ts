@@ -3,7 +3,7 @@ import process from 'node:process';
 import * as decoding from 'lib0/decoding';
 import pg from 'pg';
 import pc from 'picocolors';
-import { BENCH_UUID_PREFIX } from 'shared/utils/bench-identity';
+import { benchUuidPrefix } from 'shared/utils/bench-identity';
 import WebSocket from 'ws';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
@@ -463,7 +463,7 @@ export async function runYjsTyping(options: YjsTypingOptions, sink: YjsTypingSin
   const run: RunState = { sink, phase: 'setup', sentAt: new Map(), peerMs: [], savedMs: [], notifyDelayMs: [], counters: {} };
   const admin = new pg.Pool({ connectionString: DB_URL, max: 2 });
   // Per-user connection and stream budgets span runs.
-  await admin.query("DELETE FROM rate_limits WHERE key LIKE 'password_%' OR strpos(key, $1) > 0", [BENCH_UUID_PREFIX]).catch(() => undefined);
+  await admin.query("DELETE FROM rate_limits WHERE key LIKE 'password_%' OR strpos(key, $1) > 0", [benchUuidPrefix]).catch(() => undefined);
 
   const docIndexes = Array.from({ length: docs }, (_, d) => docOffset + d);
   let nextUser = userOffset;

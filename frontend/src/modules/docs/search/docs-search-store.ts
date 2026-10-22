@@ -28,3 +28,6 @@ export const updateRecentSearches = (value: string) => {
     return searches === state.recentSearches ? state : { recentSearches: searches };
   });
 };
+
+// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
+export { useDocsSearchStore as docsSearchStore };

@@ -6,10 +6,10 @@ import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-regi
 import { findInCache } from '~/query/basic/find-in-list-cache';
 
 /** The fragment a collaborative editor binds in its document; yjs-connections.ts opens the same one. */
-export const YDOC_FRAGMENT = 'document-store';
+export const ydocFragment = 'document-store';
 
 /** How much of a first line a label quotes. */
-const MAX_LINE_LENGTH = 60;
+const maxLineLength = 60;
 
 /** The first line of text in a document's fragment, depth first; null when it holds no text. */
 export function firstLineOf(node: Y.XmlFragment | Y.XmlElement): string | null {
@@ -35,7 +35,7 @@ export function firstLineOfUpdates(updates: Uint8Array[]): string | null {
   const doc = new Y.Doc();
   try {
     for (const update of updates) Y.applyUpdate(doc, update);
-    return firstLineOf(doc.getXmlFragment(YDOC_FRAGMENT));
+    return firstLineOf(doc.getXmlFragment(ydocFragment));
   } finally {
     doc.destroy();
   }
@@ -54,6 +54,6 @@ export function cachedEntityName(entityId: string, entityType?: ProductEntityTyp
 export function yDocLabel({ entityId, entityType, firstLine }: { entityId: string; entityType?: ProductEntityType; firstLine?: string | null }) {
   const name = cachedEntityName(entityId, entityType);
   if (name) return name;
-  if (firstLine) return `“${firstLine.length > MAX_LINE_LENGTH ? `${firstLine.slice(0, MAX_LINE_LENGTH).trimEnd()}…` : firstLine}”`;
+  if (firstLine) return `“${firstLine.length > maxLineLength ? `${firstLine.slice(0, maxLineLength).trimEnd()}…` : firstLine}”`;
   return entityType ? i18n.t(`c:${entityType}` as TKey) : i18n.t('c:unknown');
 }

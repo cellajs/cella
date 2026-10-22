@@ -9,10 +9,10 @@ import { useFocusByRef } from '~/hooks/use-focus-by-ref';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { MatchScope } from '~/modules/common/match-highlight';
 import { type HistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { getDocsSearchClient } from '~/modules/docs/search/client';
 import { DocsSearchRow } from '~/modules/docs/search/docs-search-row';
 import { deleteRecentSearch, updateRecentSearches, useDocsSearchStore } from '~/modules/docs/search/docs-search-store';
@@ -78,9 +78,9 @@ export function DocsSearch() {
   }, [debouncedValue, scope, queryClient]);
 
   const close = () => {
-    useDialoger.getState().remove('docs-search');
+    dialoger.getState().remove('docs-search');
     // On mobile, search opens from the sidebar sheet; close that too.
-    useSheeter.getState().remove('docs-sidebar');
+    sheeter.getState().remove('docs-sidebar');
   };
 
   const onSelect = (selection: SearchSelection) => {

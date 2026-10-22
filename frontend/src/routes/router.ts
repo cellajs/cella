@@ -1,7 +1,7 @@
 import { createRouter } from '@tanstack/react-router';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { navigationStore } from '~/modules/navigation/navigation-store';
+import { uiStore } from '~/modules/ui/ui-store';
 import { appStreamManager } from '~/query/realtime/stream-store';
 import { releaseTabLeadership } from '~/query/realtime/tab-coordinator';
 import { createNotFoundComponent } from '~/routes/-route-utils';
@@ -33,8 +33,8 @@ const getBoundary = (matches?: { staticData: { boundary?: BoundaryType } }[]) =>
 
 const cleanupOnBoundaryChange = (current?: BoundaryType, pending?: BoundaryType) => {
   if (!current || !pending || current === pending) return;
-  useSheeter.getState().remove(undefined, { isCleanup: true });
-  useNavigationStore.getState().setNavSheetOpen(null);
+  sheeter.getState().remove(undefined, { isCleanup: true });
+  navigationStore.getState().setNavSheetOpen(null);
   if (pending === 'public') {
     // Release leadership so a follower tab is promoted and keeps the SSE alive.
     appStreamManager.disconnect();
@@ -52,7 +52,7 @@ router.history.subscribe(({ action }) => {
 router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
   if (!pathChanged) return;
 
-  if (useUIStore.getState().focusView) useUIStore.getState().setFocusView(false);
+  if (uiStore.getState().focusView) uiStore.getState().setFocusView(false);
 
   const pendingMatches = router.matchRoutes(toLocation.pathname, toLocation.search);
   cleanupOnBoundaryChange(getBoundary(router.state.matches), getBoundary(pendingMatches));

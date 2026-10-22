@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { redirectToHomeIfOnboarded } from '~/modules/home/route-logic';
 import { meInvitationsQueryOptions } from '~/modules/me/query';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
-import { useUserStore } from '~/modules/user/user-store';
+import { userStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 import { withSuspense } from '~/routes/-route-utils';
 import { appTitle } from '~/utils/app-title';
@@ -16,7 +16,7 @@ export const Route = createFileRoute('/_app/welcome')({
   // Onboarding picks its steps once, from the user's organizations and pending invitations, so both load first.
   // A failed load falls back to the default steps; the queries retry inside the page.
   loader: async () => {
-    const { user } = useUserStore.getState();
+    const { user } = userStore.getState();
     if (!user) return;
 
     await Promise.allSettled([

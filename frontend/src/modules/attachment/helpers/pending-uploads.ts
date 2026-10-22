@@ -2,7 +2,7 @@ import type { Attachment } from 'sdk';
 import { getFirstName } from 'shared/utils/get-first-name';
 import { hasCloudFile } from 'shared/utils/storage-key';
 import type { TKey } from '~/lib/i18n-locales';
-import { useUserStore } from '~/modules/user/user-store';
+import { userStore } from '~/modules/user/user-store';
 
 /** An attachment whose file has not reached storage yet, seen from a device that does not hold it. */
 export interface PendingUpload {
@@ -55,7 +55,7 @@ export function subscribePendingUploads(listener: () => void): () => void {
 
 /** What a placeholder says: whose device holds the file. */
 export function pendingUploadMessage({ uploader }: PendingUpload): { key: TKey; params?: { name: string } } {
-  if (uploader && uploader.id === useUserStore.getState().user?.id) return { key: 'c:only_on_your_other_device' };
+  if (uploader && uploader.id === userStore.getState().user?.id) return { key: 'c:only_on_your_other_device' };
   const name = getFirstName(uploader?.name);
   return name ? { key: 'c:only_on_device', params: { name } } : { key: 'c:not_uploaded_yet' };
 }

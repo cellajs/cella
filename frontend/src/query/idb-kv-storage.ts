@@ -2,7 +2,7 @@ import type { StateStorage } from 'zustand/middleware';
 import { getLocalUserDb, type LocalUserDatabase } from '~/query/local-user-db';
 
 /** Trailing-debounce window: batches write bursts (e.g. per-frame resize) into one txn. */
-const WRITE_DEBOUNCE_MS = 250;
+const writeDebounceMs = 250;
 
 /** Flush callbacks for every live store, invoked on tab hide for best-effort durability. */
 const flushers = new Set<() => void>();
@@ -50,7 +50,7 @@ export function idbKvStorage(base: string): StateStorage {
       if (!db) return;
       pending = { value, db };
       if (timer) clearTimeout(timer);
-      timer = setTimeout(flush, WRITE_DEBOUNCE_MS);
+      timer = setTimeout(flush, writeDebounceMs);
     },
     removeItem: async () => {
       if (timer) clearTimeout(timer);

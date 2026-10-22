@@ -3,7 +3,7 @@ import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -21,7 +21,7 @@ export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel 
   const createSheet = sheeter.getState().create;
 
   const openSheet = () => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
 
     createSheet(
       <div className="container">

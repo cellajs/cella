@@ -5,10 +5,10 @@ import { findSubjectNames } from '../notification-sources';
 import { findReadableSubjectIds } from './readable-subjects';
 
 /** Rows quoted per channel before the section collapses into "and N more". */
-const ROWS_PER_CHANNEL = 5;
+const rowsPerChannel = 5;
 
 /** Rows considered per digest; a larger backlog is summarised by the overflow counts. */
-const MAX_ROWS = 500;
+const maxRows = 500;
 
 /** Runs from the digest job, outside any request. */
 const dbCtx = { var: { db: baseDb } };
@@ -28,7 +28,7 @@ export interface DigestContent {
  */
 export async function buildDigestForUser(userId: string, since: Date, lng: string): Promise<DigestContent> {
   const empty: DigestContent = { notificationIds: [], sections: [] };
-  const undigested = await findUndigestedNotifications(dbCtx, { userId, since: since.toISOString(), limit: MAX_ROWS });
+  const undigested = await findUndigestedNotifications(dbCtx, { userId, since: since.toISOString(), limit: maxRows });
   const access = undigested.length ? (await getUserAccess(dbCtx, { userIds: [userId] })).get(userId) : undefined;
   if (!access) return empty;
 
@@ -48,7 +48,7 @@ export async function buildDigestForUser(userId: string, since: Date, lng: strin
 
   const sections: DigestSection[] = [];
   for (const [channelId, channelRows] of byChannel) {
-    const visible = channelRows.slice(0, ROWS_PER_CHANNEL);
+    const visible = channelRows.slice(0, rowsPerChannel);
     sections.push({
       channelId,
       channelName: channelNames.get(channelId) ?? '',

@@ -11,7 +11,7 @@ import { useMountedState } from '~/hooks/use-mounted-state';
 import { getChannelListQueries } from '~/lib/entity-modules';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { type HistoryEntry, isHistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
@@ -120,7 +120,7 @@ export function AppSearch() {
       navigate({ to, params, search, ...pageTopHashNav, resetScroll: false });
     }
 
-    useDialoger.getState().remove();
+    dialoger.getState().remove();
   };
 
   return (

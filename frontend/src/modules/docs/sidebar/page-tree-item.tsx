@@ -3,8 +3,8 @@ import { ChevronDownIcon } from 'lucide-react';
 import { useId } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { getSection, scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { type DocPage, PAGE_SECTION_ID } from '~/modules/page/content';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { type DocPage, pageSectionId } from '~/modules/page/content';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
@@ -74,9 +74,9 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
             // and from another page it navigates here; both leave the subtree open.
             if (hasChildren && isExpanded && isActive) {
               e.preventDefault();
-              if (getSection() === PAGE_SECTION_ID) return onToggle(page.id);
-              scrollToSectionById(PAGE_SECTION_ID);
-              useSheeter.getState().remove('docs-sidebar');
+              if (getSection() === pageSectionId) return onToggle(page.id);
+              scrollToSectionById(pageSectionId);
+              sheeter.getState().remove('docs-sidebar');
               return;
             }
             if (hasChildren && !isExpanded) onToggle(page.id);

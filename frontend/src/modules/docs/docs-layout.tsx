@@ -8,7 +8,7 @@ import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { useFirstTimeHint } from '~/hooks/use-first-time-hint';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useScrolledPast } from '~/hooks/use-scrolled-past';
-import { type SheetData, useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { type SheetData, sheeter, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { tagsQueryOptions } from '~/modules/docs/query';
 import { toggleDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
@@ -16,8 +16,8 @@ import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { tw } from '~/utils/tw';
 
-const MIN_SIDEBAR_WIDTH = 220;
-const MAX_SIDEBAR_WIDTH = 400;
+const minSidebarWidth = 220;
+const maxSidebarWidth = 400;
 
 // Safari has no requestIdleCallback
 const scheduleIdle =
@@ -44,7 +44,7 @@ function DocsLayout() {
   const startSidebarResize = (e: React.PointerEvent) => {
     e.preventDefault();
     const startX = e.clientX;
-    const startWidth = sidebarRef.current?.getBoundingClientRect().width ?? MIN_SIDEBAR_WIDTH;
+    const startWidth = sidebarRef.current?.getBoundingClientRect().width ?? minSidebarWidth;
     // The drag writes the variable to the DOM once per frame and commits state on release, so it doesn't re-render the layout and sidebar
     let width: number | null = null;
     let frame = 0;
@@ -53,7 +53,7 @@ function DocsLayout() {
       if (width !== null) wrapperRef.current?.style.setProperty('--docs-sidebar-width', `${width}px`);
     };
     const onMove = (ev: PointerEvent) => {
-      width = Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, startWidth + (ev.clientX - startX)));
+      width = Math.min(maxSidebarWidth, Math.max(minSidebarWidth, startWidth + (ev.clientX - startX)));
       if (!frame) frame = requestAnimationFrame(writeWidth);
     };
     const onUp = () => {
@@ -73,11 +73,11 @@ function DocsLayout() {
 
   // The keyboard path of the same handle: arrows move it in steps, Home and End jump to the limits.
   const resizeSidebarByKey = (e: React.KeyboardEvent) => {
-    const width = sidebarRef.current?.getBoundingClientRect().width ?? MIN_SIDEBAR_WIDTH;
-    const target = { ArrowLeft: width - 16, ArrowRight: width + 16, Home: MIN_SIDEBAR_WIDTH, End: MAX_SIDEBAR_WIDTH }[e.key];
+    const width = sidebarRef.current?.getBoundingClientRect().width ?? minSidebarWidth;
+    const target = { ArrowLeft: width - 16, ArrowRight: width + 16, Home: minSidebarWidth, End: maxSidebarWidth }[e.key];
     if (target === undefined) return;
     e.preventDefault();
-    setResizedSidebarWidth(Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, target)));
+    setResizedSidebarWidth(Math.min(maxSidebarWidth, Math.max(minSidebarWidth, target)));
   };
 
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);
@@ -99,10 +99,10 @@ function DocsLayout() {
   // Below `md` the sheet mounts closed at idle, so a menu tap only slides it in. Leaving the docs or reaching `md` unmounts it.
   useEffect(() => {
     if (isDesktop) return;
-    const handle = scheduleIdle(() => useSheeter.getState().mount(sidebarContent, sidebarSheet));
+    const handle = scheduleIdle(() => sheeter.getState().mount(sidebarContent, sidebarSheet));
     return () => {
       cancelIdle(handle);
-      useSheeter.getState().unmount('docs-sidebar');
+      sheeter.getState().unmount('docs-sidebar');
     };
   }, [isDesktop]);
 
@@ -113,7 +113,7 @@ function DocsLayout() {
       'Escape',
       () => {
         if (sidebarOpen) {
-          useSheeter.getState().remove('docs-sidebar');
+          sheeter.getState().remove('docs-sidebar');
           return;
         }
         navigate({ to: '.', search: (prev) => ({ ...prev, operationTag: undefined }), resetScroll: false, replace: true });
@@ -123,9 +123,9 @@ function DocsLayout() {
 
   const toggleSidebar = () => {
     if (sidebarOpen) {
-      useSheeter.getState().remove('docs-sidebar');
+      sheeter.getState().remove('docs-sidebar');
     } else {
-      useSheeter.getState().create(sidebarContent, sidebarSheet);
+      sheeter.getState().create(sidebarContent, sidebarSheet);
     }
   };
 

@@ -1,8 +1,8 @@
 import type { LogicalReplicationService } from 'pg-logical-replication';
-import { RESOURCE_LIMITS } from '../constants';
+import { resourceLimits } from '../constants';
 import { isPassingError } from './failure';
 
-const { delaysMs, stuckAfter } = RESOURCE_LIMITS.reread;
+const { delaysMs, stuckAfter } = resourceLimits.reread;
 
 /** The failure the worker is reading again from. */
 export interface ReplicationFailure {

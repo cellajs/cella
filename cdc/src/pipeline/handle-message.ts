@@ -1,5 +1,5 @@
 import type { Pgoutput } from 'pg-logical-replication';
-import { RESOURCE_LIMITS } from '../constants';
+import { resourceLimits } from '../constants';
 import { log } from '../lib/pino';
 import { fence } from '../services/fence';
 import { FlushBuffer } from '../services/flush-buffer';
@@ -36,7 +36,7 @@ const flushBuffer = new FlushBuffer(
     // The flush is recorded: whatever failed before is behind the worker.
     replicationState.clearFailure();
   },
-  RESOURCE_LIMITS.buffers.flushWindowMs,
+  resourceLimits.buffers.flushWindowMs,
 );
 
 /**
@@ -52,7 +52,7 @@ flushBuffer.onFailed = (error, position) => {
 const txBuffer = new TransactionBuffer((events) => flushBuffer.enqueue(events));
 
 /** Prefix of the logical message a recount writes right after its snapshot: the marker. */
-export const FENCE_MARKER_PREFIX = 'sync-fence';
+export const fenceMarkerPrefix = 'sync-fence';
 
 /** Data messages whose handler has not returned yet. */
 let inFlightMessages = 0;
@@ -130,7 +130,7 @@ async function applyDataMessage(lsn: string, msg: Pgoutput.Message): Promise<voi
 
   if (tag === 'message') {
     const { prefix, content } = msg as Pgoutput.MessageMessage;
-    if (prefix !== FENCE_MARKER_PREFIX) return;
+    if (prefix !== fenceMarkerPrefix) return;
     // The marker was written right after a recount's snapshot. Once everything before it is recorded, the stream has
     // passed that snapshot. A subscription that ended meanwhile dropped what was pending: its marker is read again.
     const subscription = subscriptionCount;

@@ -1,4 +1,4 @@
-import { RESOURCE_LIMITS } from '../constants';
+import { resourceLimits } from '../constants';
 import { log } from '../lib/pino';
 import type { PendingEvent } from '../types';
 
@@ -46,7 +46,7 @@ export class FlushBuffer {
     processFlush: (transactions: PendingEvent[][]) => Promise<void>,
     acknowledge: (position: string) => Promise<void>,
     windowMs: number,
-    batchSize: number = RESOURCE_LIMITS.buffers.flushBatchSize,
+    batchSize: number = resourceLimits.buffers.flushBatchSize,
   ) {
     this.processFlush = processFlush;
     this.acknowledge = acknowledge;

@@ -7,7 +7,7 @@ import { type ChannelEntityType, hierarchy } from 'shared';
 import type z from 'zod';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { AnimatedArrow } from '~/modules/common/animated-arrow';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import type { EnrichedChannel } from '~/modules/entities/types';
@@ -47,12 +47,12 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
   const [inviteMode, setInviteMode] = useState(baseMode);
 
   // The dialog's caller owns the description copy, so read it once and keep it to compose against.
-  const [baseDescription] = useState(() => (isDialog ? useDialoger.getState().get('invite-users')?.description : undefined));
+  const [baseDescription] = useState(() => (isDialog ? dialoger.getState().get('invite-users')?.description : undefined));
 
   const updateMode = (mode: ('search' | 'email' | 'bulk')[]) => {
     mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
 
-    useDialoger.getState().update('invite-users', {
+    dialoger.getState().update('invite-users', {
       titleContent: (
         <div className="flex items-center gap-2">
           {mode[0] ? (
@@ -86,9 +86,9 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
   // The switch to bulk belongs in the header, beside that copy: in the dismissible alert below, dismissing lost it.
   // Onboarding renders no dialog and no bulk, so there is nothing to place there.
   useEffect(() => {
-    if (!isDialog || !useDialoger.getState().get('invite-users')) return;
+    if (!isDialog || !dialoger.getState().get('invite-users')) return;
 
-    useDialoger.getState().update('invite-users', {
+    dialoger.getState().update('invite-users', {
       description:
         inviteMode === 'email' ? (
           <>

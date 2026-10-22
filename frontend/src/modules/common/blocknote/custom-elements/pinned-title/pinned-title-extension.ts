@@ -4,7 +4,7 @@ import { createExtension } from '@blocknote/core';
 import type { ComputeDropPositionContext } from '@blocknote/core/extensions';
 import { type EditorState, Plugin, PluginKey } from 'prosemirror-state';
 
-const PLUGIN_KEY = new PluginKey('pinned-title');
+const pluginKey = new PluginKey('pinned-title');
 
 type PMNode = EditorState['doc'];
 
@@ -40,7 +40,7 @@ export const pinnedTitleExtension = createExtension(() => ({
   key: 'pinnedTitle' as const,
   prosemirrorPlugins: [
     new Plugin({
-      key: PLUGIN_KEY,
+      key: pluginKey,
       // Never filter remote Yjs steps: a peer that refused one would drift from the shared document.
       filterTransaction: (tr, state) => !tr.docChanged || !!tr.getMeta('y-sync$') || !displacesFirstBlock(state.doc, tr.doc),
     }),

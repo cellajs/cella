@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type LogNotice, YJS_LOG_NOTICE_MAX_IDS } from '#/modules/yjs/helpers/yjs-log';
+import { type LogNotice, yjsLogNoticeMaxIds } from '#/modules/yjs/helpers/yjs-log';
 import { deferred, mockScope } from './helpers';
 
 // The default notifier sends through the pool: none of these tests reaches it.
@@ -95,14 +95,14 @@ describe('log notifier', () => {
   it('splits a document with more rows than one notice may carry into several notices of one send', async () => {
     const send = vi.fn(async (_notices: LogNotice[]) => {});
     const notifier = createLogNotifier(send, 50);
-    const ids = Array.from({ length: YJS_LOG_NOTICE_MAX_IDS + 1 }, (_, i) => i + 1);
+    const ids = Array.from({ length: yjsLogNoticeMaxIds + 1 }, (_, i) => i + 1);
 
     for (const id of ids) notifier.queue(one, id);
     await vi.advanceTimersByTimeAsync(50);
 
     expect(send).toHaveBeenCalledExactlyOnceWith([
-      { ...keyOf(one), logIds: ids.slice(0, YJS_LOG_NOTICE_MAX_IDS) },
-      { ...keyOf(one), logIds: [YJS_LOG_NOTICE_MAX_IDS + 1] },
+      { ...keyOf(one), logIds: ids.slice(0, yjsLogNoticeMaxIds) },
+      { ...keyOf(one), logIds: [yjsLogNoticeMaxIds + 1] },
     ]);
   });
 

@@ -11,42 +11,42 @@ import { create } from 'zustand';
 import type { TKey } from '~/lib/i18n-locales';
 import { yjsTokenKeys, yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
 import { parkUnsaveable } from '~/modules/common/blocknote/unsaveable-notices';
-import { createHttpLink, type HttpLink, type HttpLinkScope, WS_SYNC_DEADLINE_MS } from '~/modules/common/blocknote/yjs-http';
+import { createHttpLink, type HttpLink, type HttpLinkScope, wsSyncDeadlineMs } from '~/modules/common/blocknote/yjs-http';
 import { watchPendingStructs } from '~/modules/common/blocknote/yjs-resync';
 import {
   type AppliedRows,
   createYDocWriter,
   type LoadedYDoc,
   loadYDoc,
-  STORE_LOAD_TIMEOUT_MS,
   storageOrigin,
+  storeLoadTimeoutMs,
   type YDocWriter,
 } from '~/modules/common/blocknote/yjs-store';
 import { onTabMessage, postTabHello, postTabUpdate, type TabMessage, toTabKey } from '~/modules/common/blocknote/yjs-tab-channel';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
+import { userStore, yjsTokenKey } from '~/modules/user/user-store';
 import { getLocalUserDb, type UnsaveableReason, type YDocRecord } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
 
-const GRACE_PERIOD_MS = 30_000;
-const MAX_BACKOFF_MS = 30_000;
+const gracePeriodMs = 30_000;
+const maxBackoffMs = 30_000;
 /** How long a socket waits for its first `Saved` after its handshake Step2, before it takes the relay for one that sends none. */
-const SAVED_FALLBACK_MS = 10_000;
+const savedFallbackMs = 10_000;
 
 // Distinct tokens the relay refused, with no synced connection between them, before the connection stops for good.
-const MAX_TOKEN_FAILURES = 5;
+const maxTokenFailures = 5;
 
 /** WebSocket close codes sent by the Yjs relay; the 4000-4999 range is reserved for application use. */
-const YJS_CLOSE = { TOKEN_INVALID: 4001, ACCESS_DENIED: 4003, BAD_REQUEST: 4400, ENTITY_DELETED: 4410 } as const;
+const yjsCloseCodes = { TOKEN_INVALID: 4001, ACCESS_DENIED: 4003, BAD_REQUEST: 4400, ENTITY_DELETED: 4410 } as const;
 
 /**
  * Message types on the socket: y-websocket's sync, and the relay's own next to sync and awareness (1). `Generation` is
  * the document's generation, sent before every handshake answer; `Saved` is the relay's empty answer, to the sender
  * alone, to each sync Step2 or Update it handled. Must match yjs/src/sync/relay.ts.
  */
-const YJS_MESSAGE = { SYNC: 0, GENERATION: 4, SAVED: 5 } as const;
+const yjsMessageTypes = { SYNC: 0, GENERATION: 4, SAVED: 5 } as const;
 /** The sync subtypes the relay answers with `Saved`. */
-const YJS_SYNC = { STEP2: 1, UPDATE: 2 } as const;
+const yjsSyncSubtypes = { STEP2: 1, UPDATE: 2 } as const;
 
 /** Why a connection ends for good: each reason its edits can never be saved, but a reseed, which rebuilds the connection. */
 export type EndReason = Exclude<UnsaveableReason, 'replaced'>;
@@ -57,7 +57,7 @@ export type EndReason = Exclude<UnsaveableReason, 'replaced'>;
  */
 export type YjsStopReason = 'denied' | 'refused' | 'expired';
 
-const STOP_MESSAGES: Record<YjsStopReason, TKey> = {
+const stopMessages: Record<YjsStopReason, TKey> = {
   denied: 'error:no_permission_for_sync.text',
   refused: 'error:sync_failed.text',
   expired: 'error:sync_token_expired.text',
@@ -68,10 +68,10 @@ const STOP_MESSAGES: Record<YjsStopReason, TKey> = {
  * relay refuses, and a frame too big for the relay, which a reconnect would send again. Every other close is
  * transient: y-websocket backs off, reconnects with the current token and resyncs, so edits made meanwhile reach it.
  */
-const FINAL_CLOSES: ReadonlyMap<number, EndReason> = new Map<number, EndReason>([
-  [YJS_CLOSE.ENTITY_DELETED, 'deleted'],
-  [YJS_CLOSE.ACCESS_DENIED, 'denied'],
-  [YJS_CLOSE.BAD_REQUEST, 'refused'],
+const finalCloses: ReadonlyMap<number, EndReason> = new Map<number, EndReason>([
+  [yjsCloseCodes.ENTITY_DELETED, 'deleted'],
+  [yjsCloseCodes.ACCESS_DENIED, 'denied'],
+  [yjsCloseCodes.BAD_REQUEST, 'refused'],
   [1009, 'refused'],
 ]);
 
@@ -88,7 +88,7 @@ interface SocketLedger {
   saved: number;
   /** The `sent` count that includes the handshake's Step2; 0 until it went out. */
   handshakeAt: number;
-  /** No `Saved` came within SAVED_FALLBACK_MS of the handshake Step2: a relay that sends none, so y-websocket's `synced` stands in. */
+  /** No `Saved` came within savedFallbackMs of the handshake Step2: a relay that sends none, so y-websocket's `synced` stands in. */
   legacy: boolean;
   /** The socket's `Generation` frame arrived and matched; sync frames before it are dropped. */
   generationSeen: boolean;
@@ -239,20 +239,20 @@ function pauseTransports(editSessionId: string, conn: YjsConnection) {
   setTransport(editSessionId, conn, 'none');
 }
 
-/** The relay has `SAVED_FALLBACK_MS` from the handshake Step2 to send this socket's first `Saved`. */
+/** The relay has `savedFallbackMs` from the handshake Step2 to send this socket's first `Saved`. */
 function armSavedFallback(ledger: SocketLedger) {
   if (ledger.saved > 0) return;
   ledger.fallbackTimer = setTimeout(() => {
     ledger.legacy = true;
     ledger.onChange();
-  }, SAVED_FALLBACK_MS);
+  }, savedFallbackMs);
 }
 
 /** The sync subtype of a frame y-websocket sends; null for any other message. */
 function syncSubtype(data: unknown): number | null {
   if (!(data instanceof Uint8Array) || data.length < 2) return null;
   const decoder = decoding.createDecoder(data);
-  if (decoding.readVarUint(decoder) !== YJS_MESSAGE.SYNC) return null;
+  if (decoding.readVarUint(decoder) !== yjsMessageTypes.SYNC) return null;
   return decoding.readVarUint(decoder);
 }
 
@@ -279,9 +279,9 @@ function ledgerSocket(ledger: SocketLedger): typeof WebSocket {
     send(data: Parameters<WebSocket['send']>[0]) {
       super.send(data);
       const subtype = syncSubtype(data);
-      if (subtype !== YJS_SYNC.STEP2 && subtype !== YJS_SYNC.UPDATE) return;
+      if (subtype !== yjsSyncSubtypes.STEP2 && subtype !== yjsSyncSubtypes.UPDATE) return;
       ledger.sent++;
-      if (subtype === YJS_SYNC.STEP2 && ledger.handshakeAt === 0) {
+      if (subtype === yjsSyncSubtypes.STEP2 && ledger.handshakeAt === 0) {
         ledger.handshakeAt = ledger.sent;
         armSavedFallback(ledger);
         ledger.onHandshakeSent();
@@ -310,8 +310,8 @@ function isClean(conn: YjsConnection) {
 /** Where an update applied with the provider as origin came from: the relay, unless {@link applyRemoteUpdate} says otherwise. */
 export type RemoteSource = { kind: 'relay' } | { kind: 'http' } | { kind: 'tab'; rowId: number | null };
 
-const RELAY_SOURCE: RemoteSource = { kind: 'relay' };
-let remoteSource: RemoteSource = RELAY_SOURCE;
+const relaySource: RemoteSource = { kind: 'relay' };
+let remoteSource: RemoteSource = relaySource;
 
 /**
  * Applies an update from the HTTP routes or from another tab. Its origin is the provider, so y-websocket does not
@@ -323,7 +323,7 @@ export function applyRemoteUpdate(conn: YjsConnection, update: Uint8Array, sourc
   try {
     Y.applyUpdate(conn.yDoc, update, conn.provider);
   } finally {
-    remoteSource = RELAY_SOURCE;
+    remoteSource = relaySource;
   }
 }
 
@@ -341,7 +341,7 @@ function stopConnection(editSessionId: string, conn: YjsConnection, reason: YjsS
     stopped: { ...s.stopped, [editSessionId]: true },
     stopReason: reason ? { ...s.stopReason, [editSessionId]: reason } : s.stopReason,
   }));
-  if (reason && toast) toaster.warning(i18n.t(STOP_MESSAGES[reason]));
+  if (reason && toast) toaster.warning(i18n.t(stopMessages[reason]));
 }
 
 /**
@@ -388,7 +388,7 @@ type DocParts = Pick<
 function openDoc(editSessionId: string, entityType: ProductEntityType, tenantId: string): DocParts {
   const serverUrl = toWsUrl(appConfig.yjsUrl!);
   // The session is the entity's document, and a token opens that one document only.
-  const token = useUserStore.getState().yjsTokens[yjsTokenKey(entityType, editSessionId)] ?? '';
+  const token = userStore.getState().yjsTokens[yjsTokenKey(entityType, editSessionId)] ?? '';
 
   const yDoc = new Y.Doc();
   const awareness = new Awareness(yDoc);
@@ -409,7 +409,7 @@ function openDoc(editSessionId: string, entityType: ProductEntityType, tenantId:
     // document and one that has not would merge two histories. The app's tab channel carries the generation.
     disableBc: true,
     connect: false,
-    maxBackoffTime: MAX_BACKOFF_MS,
+    maxBackoffTime: maxBackoffMs,
     WebSocketPolyfill: ledgerSocket(ledger),
   });
   return {
@@ -443,7 +443,7 @@ interface DocScope {
 
 /**
  * Applies the stored document, if any, then connects: the handshake Step1 then carries the stored state. A load slower
- * than STORE_LOAD_TIMEOUT_MS connects without it, and is applied when it arrives (applyStored).
+ * than storeLoadTimeoutMs connects without it, and is applied when it arrives (applyStored).
  */
 function loadConnection(editSessionId: string, conn: YjsConnection, scope: DocScope) {
   if (!getLocalUserDb()) return startConnection(conn);
@@ -451,7 +451,7 @@ function loadConnection(editSessionId: string, conn: YjsConnection, scope: DocSc
   const current = () => connections.get(editSessionId) === conn && conn.provider === provider;
   const timer = setTimeout(() => {
     if (current() && !conn.loaded) startConnection(conn);
-  }, STORE_LOAD_TIMEOUT_MS);
+  }, storeLoadTimeoutMs);
   void loadYDoc({ entityType: scope.entityType, entityId: editSessionId })
     .catch((error) => {
       console.warn(`[yjs] Stored document not loaded for ${editSessionId}`, error);
@@ -601,11 +601,11 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
     if (!isOnline) {
       provider.disconnect();
       pauseTransports(editSessionId, conn);
-    } else if (conn.loaded && !conn.stopped && useUserStore.getState().yjsTokens[tokenKey]) provider.connect();
+    } else if (conn.loaded && !conn.stopped && userStore.getState().yjsTokens[tokenKey]) provider.connect();
   });
 
   // Keep provider params on the latest token so a reconnect (after sleep, or the relay's close at expiry) uses a fresh one.
-  conn.unsubToken = useUserStore.subscribe((state, prevState) => {
+  conn.unsubToken = userStore.subscribe((state, prevState) => {
     const newToken = state.yjsTokens[tokenKey];
     if (newToken) {
       if (provider.params) (provider.params as Record<string, string>).token = newToken;
@@ -650,7 +650,7 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
     // The relay closes an expired or invalid token with 4001, and the refetch this starts reaches the provider params
     // before a later reconnect. Only distinct tokens count: while the API is unreachable every reconnect carries the
     // expired token again, and that must not end collaboration for good once the API is back.
-    if (event.code === YJS_CLOSE.TOKEN_INVALID) {
+    if (event.code === yjsCloseCodes.TOKEN_INVALID) {
       refusedTokens.add(attemptToken);
       void queryClient.invalidateQueries({ queryKey: tokenQueryKey });
       // An open editor's token query refetches on the invalidation. A connection kept only for unsaved edits has none
@@ -658,18 +658,18 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
       if (!queryClient.getQueryCache().find({ queryKey: tokenQueryKey })?.getObserversCount()) {
         queryClient
           .query(yjsTokenQueryOptions({ entityType, entityId: editSessionId, tenantId, organizationId }))
-          .then((token) => useUserStore.getState().setYjsToken(tokenKey, token))
+          .then((token) => userStore.getState().setYjsToken(tokenKey, token))
           .catch((error) => {
-            if (yjsTokenRefusal(error)) useUserStore.getState().setYjsToken(tokenKey, null);
+            if (yjsTokenRefusal(error)) userStore.getState().setYjsToken(tokenKey, null);
           });
       }
-      if (refusedTokens.size < MAX_TOKEN_FAILURES) return;
+      if (refusedTokens.size < maxTokenFailures) return;
       console.warn(`[yjs] Circuit breaker: ${refusedTokens.size} tokens refused in a row for ${editSessionId}`);
       stopConnection(editSessionId, conn, 'expired');
       return;
     }
 
-    const reason = FINAL_CLOSES.get(event.code);
+    const reason = finalCloses.get(event.code);
     if (reason) endUnsaveable(editSessionId, conn, scope, reason);
   });
 
@@ -678,7 +678,7 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
   // the generation. Another one later means the relay reseeded the document, after a delete and a restore or a lost
   // document row, and this document shares no history with the new one: it is dropped here, before y-websocket merges
   // or uploads anything of it. Edits the relay never saved go with it, and the rebuild says so.
-  provider.messageHandlers[YJS_MESSAGE.GENERATION] = (_encoder, decoder) => {
+  provider.messageHandlers[yjsMessageTypes.GENERATION] = (_encoder, decoder) => {
     const generation = decoding.readVarString(decoder);
     if (conn.generation === null) conn.generation = generation;
     else if (conn.generation !== generation) return rebuildConnection(editSessionId, conn, entityType, tenantId, organizationId);
@@ -688,13 +688,13 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
   // The relay joins a socket to the document's session before it answers the handshake, so peers' updates can arrive
   // ahead of the socket's `Generation`, and a document of another generation would merge them. They are dropped: the
   // handshake's Step2, which follows the `Generation`, carries every update the relay logged before it.
-  const readSync = provider.messageHandlers[YJS_MESSAGE.SYNC];
-  provider.messageHandlers[YJS_MESSAGE.SYNC] = (...args) => {
+  const readSync = provider.messageHandlers[yjsMessageTypes.SYNC];
+  provider.messageHandlers[yjsMessageTypes.SYNC] = (...args) => {
     if (ledger.generationSeen) readSync(...args);
   };
 
   // One per Step2 or Update this socket sent, in order. Any `Saved` proves the relay sends them.
-  provider.messageHandlers[YJS_MESSAGE.SAVED] = () => {
+  provider.messageHandlers[yjsMessageTypes.SAVED] = () => {
     ledger.saved++;
     if (ledger.handshakeAt > 0 && ledger.saved >= ledger.handshakeAt && !ledger.handshakeProven) {
       ledger.handshakeProven = true;
@@ -740,7 +740,7 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
     provider.on('sync', handleSync);
   }
 
-  // HTTP takes over when a socket attempt has not synced within WS_SYNC_DEADLINE_MS while the API answers. y-websocket
+  // HTTP takes over when a socket attempt has not synced within wsSyncDeadlineMs while the API answers. y-websocket
   // keeps reconnecting with backoff meanwhile, and the first sync hands the document back. No switch disconnects it.
   conn.http = createHttpLink(conn, scope, {
     onChange: settle,
@@ -760,7 +760,7 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
     conn.wsDeadline = setTimeout(() => {
       conn.wsDeadline = undefined;
       if (!conn.stopped && !provider.synced && onlineManager.isOnline() !== false) void enterHttp();
-    }, WS_SYNC_DEADLINE_MS);
+    }, wsSyncDeadlineMs);
   });
   provider.on('sync', (isSynced: boolean) => {
     if (!isSynced) return;
@@ -883,23 +883,23 @@ export function watchUnstoredYDocs(cb: (docs: UnstoredYDoc[]) => void): () => vo
 }
 
 /** How long boot resume waits for a background connection to upload before it opens the next one. */
-const RESUME_WAIT_MS = 60_000;
+const resumeWaitMs = 60_000;
 /** How often boot resume looks whether a background connection is done. */
-const RESUME_POLL_MS = 1_000;
+const resumePollMs = 1_000;
 
 /**
  * Opens a background connection (no editor holds it) for a stored document with unsynced edits, so they reach the
  * relay without the author reopening it. It fetches its own token, uploads through the handshake, and is reaped once
- * clean. Resolves once it is clean, stopped or gone, or after RESUME_WAIT_MS, so boot resume opens a few at a time.
+ * clean. Resolves once it is clean, stopped or gone, or after resumeWaitMs, so boot resume opens a few at a time.
  */
 export async function resumeConnection(record: YDocRecord): Promise<void> {
   const { entityType, entityId, tenantId, organizationId } = record;
   if (connections.has(entityId)) return;
   const tokenKey = yjsTokenKey(entityType, entityId);
-  if (!useUserStore.getState().yjsTokens[tokenKey]) {
+  if (!userStore.getState().yjsTokens[tokenKey]) {
     try {
       const token = await queryClient.query(yjsTokenQueryOptions({ entityType, entityId, tenantId, organizationId }));
-      useUserStore.getState().setYjsToken(tokenKey, token);
+      userStore.getState().setYjsToken(tokenKey, token);
     } catch (error) {
       // Deleted, or edit rights lost while the edits waited: they can never be saved, so the stored document is parked
       // with a notice to copy it. A network failure is retried when the browser is back online.
@@ -925,10 +925,10 @@ export async function resumeConnection(record: YDocRecord): Promise<void> {
     const started = Date.now();
     const timer = setInterval(() => {
       const done = connections.get(entityId) !== conn || conn.stopped || (conn.loaded && !conn.unsynced);
-      if (!done && Date.now() - started < RESUME_WAIT_MS) return;
+      if (!done && Date.now() - started < resumeWaitMs) return;
       clearInterval(timer);
       resolve();
-    }, RESUME_POLL_MS);
+    }, resumePollMs);
   });
 }
 
@@ -944,7 +944,7 @@ function releaseConnection(editSessionId: string) {
   conn.graceTimer = setTimeout(() => {
     conn.graceTimer = undefined;
     reapConnection(editSessionId, conn);
-  }, GRACE_PERIOD_MS);
+  }, gracePeriodMs);
 }
 
 /**

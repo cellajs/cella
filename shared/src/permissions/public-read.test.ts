@@ -9,7 +9,7 @@ import { matchesRowCondition } from './row-conditions.ts';
  * Parent-derived publication stays outside the engine: SQL and stream dispatch read row-local
  * fields only.
  */
-const NOW = '2026-07-06T12:00:00Z';
+const now = '2026-07-06T12:00:00Z';
 
 const grants = widePublicGrants({ project: true, task: true });
 
@@ -21,7 +21,7 @@ const noPolicies = {};
 
 describe('public read grants: anonymous actor', () => {
   it('grants read when the row publicAt is set', () => {
-    const { can, actions } = getAllDecisions(noPolicies, [], projectSubject(NOW), { publicGrants: grants, ...wideOverrides });
+    const { can, actions } = getAllDecisions(noPolicies, [], projectSubject(now), { publicGrants: grants, ...wideOverrides });
     expect(can.read).toBe(true);
     expect(actions.read.grantedBy).toEqual([{ type: 'public' }]);
   });
@@ -40,12 +40,12 @@ describe('public read grants: anonymous actor', () => {
     expect(getAllDecisions(noPolicies, [], task, { publicGrants: grants, ...wideOverrides }).can.read).toBe(false);
 
     // ...and once the child row itself carries publicAt, it is readable.
-    const publishedTask = wideSubject({ entityType: 'task', id: 't1', channelIds: { organization: 'org1', project: 'p1' }, row: { publicAt: NOW } });
+    const publishedTask = wideSubject({ entityType: 'task', id: 't1', channelIds: { organization: 'org1', project: 'p1' }, row: { publicAt: now } });
     expect(getAllDecisions(noPolicies, [], publishedTask, { publicGrants: grants, ...wideOverrides }).can.read).toBe(true);
   });
 
   it('grants read only: other actions stay denied', () => {
-    const { can } = getAllDecisions(noPolicies, [], projectSubject(NOW), { publicGrants: grants, ...wideOverrides });
+    const { can } = getAllDecisions(noPolicies, [], projectSubject(now), { publicGrants: grants, ...wideOverrides });
     expect(can.read).toBe(true);
     expect(can.create).toBe(false);
     expect(can.update).toBe(false);
@@ -53,12 +53,12 @@ describe('public read grants: anonymous actor', () => {
   });
 
   it('no grant declared for the entity type → no public read', () => {
-    const orgSubject = wideSubject({ entityType: 'organization', id: 'org1', channelIds: {}, row: { publicAt: NOW } });
+    const orgSubject = wideSubject({ entityType: 'organization', id: 'org1', channelIds: {}, row: { publicAt: now } });
     expect(getAllDecisions(noPolicies, [], orgSubject, { publicGrants: grants, ...wideOverrides }).can.read).toBe(false);
   });
 
   it('no publicGrants passed → engine behaves exactly as before', () => {
-    expect(getAllDecisions(noPolicies, [], projectSubject(NOW), { ...wideOverrides }).can.read).toBe(false);
+    expect(getAllDecisions(noPolicies, [], projectSubject(now), { ...wideOverrides }).can.read).toBe(false);
   });
 });
 
@@ -67,7 +67,7 @@ describe("the 'public' row condition: the shared rule", () => {
     // What makes public read enforceable in list endpoints: `'public'` reads only the row's own
     // `publicAt`, so it compiles identically here and in collection SQL. An actor-bound or
     // cross-row rule would not compile, and public rows would drop out of lists.
-    expect(matchesRowCondition('public', { publicAt: NOW }, {})).toBe(true);
+    expect(matchesRowCondition('public', { publicAt: now }, {})).toBe(true);
     expect(matchesRowCondition('public', { publicAt: null }, {})).toBe(false);
     expect(matchesRowCondition('public', {}, {})).toBe(false);
   });

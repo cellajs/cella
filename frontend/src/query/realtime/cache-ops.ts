@@ -10,7 +10,7 @@ import {
   getEqualityFilterKeys,
   hasEntityQueryKeys,
   type SeqRange,
-  SYNC_CHUNK_SIZE,
+  syncChunkSize,
 } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { forEachListQuery, getQueryItems } from '~/query/basic/mutate-query';
@@ -287,10 +287,10 @@ export async function fetchRangeAndPatch(
   const { afterSeq, untilSeq } = range;
   const label = `${entityType} after ${afterSeq} until ${untilSeq}`;
   try {
-    const { items } = await rangeFetch({ organizationId, tenantId, channelId, query: { ...range, limit: SYNC_CHUNK_SIZE } });
+    const { items } = await rangeFetch({ organizationId, tenantId, channelId, query: { ...range, limit: syncChunkSize } });
 
     // A full chunk may truncate the range: report overflow so the caller invalidates without advancing past unseen rows.
-    if (items.length >= SYNC_CHUNK_SIZE) {
+    if (items.length >= syncChunkSize) {
       console.debug(`[CacheOps] Range fetch: ${label} overflows one chunk → invalidation`);
       return { status: 'overflow', items: [], reachedSeq: 0 };
     }

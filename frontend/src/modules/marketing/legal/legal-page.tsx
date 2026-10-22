@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
 import { RegisterSpySections } from '~/hooks/use-scroll-spy';
 import { type LegalSubject, legalConfig } from '~/modules/auth/legal/legal-config';
-import { LEGAL_OVERVIEW_ID } from '~/modules/auth/legal/legal-types';
+import { legalOverviewId } from '~/modules/auth/legal/legal-types';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { MarketingLayout } from '~/modules/marketing/layout';
 import { LegalAside } from '~/modules/marketing/legal/legal-aside';
@@ -43,7 +43,7 @@ export function LegalPage() {
               isActive && (
                 <div
                   key={id}
-                  id={`spy-${LEGAL_OVERVIEW_ID}`}
+                  id={`spy-${legalOverviewId}`}
                   className="prose dark:prose-invert mb-40 min-h-svh max-w-full bg-background px-4 pt-4 md:px-8 lg:mx-auto lg:max-w-4xl"
                 >
                   <h2 className="pt-8 pb-4 font-bold text-2xl">{t(legalConfig[id].label)}</h2>

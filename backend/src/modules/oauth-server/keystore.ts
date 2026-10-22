@@ -6,24 +6,24 @@ import { signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
 import { decryptData, encryptData } from '#/utils/data-encryption';
 import { log } from '#/utils/logger';
 
-const ALG = 'RS256';
-const ENCRYPTION_PURPOSE = 'signing-key';
+const alg = 'RS256';
+const encryptionPurpose = 'signing-key';
 /** How long a process verifies with the public keys it read before it reads them again. */
-const VERIFY_CACHE_MS = 5 * 60 * 1000;
+const verifyCacheMs = 5 * 60 * 1000;
 
 async function mintKey(db: DbOrTx, status: 'current' | 'next'): Promise<void> {
-  const { privateKey, publicKey } = await generateKeyPair(ALG, { extractable: true });
-  const publicJwk = { ...(await exportJWK(publicKey)), alg: ALG, use: 'sig' };
+  const { privateKey, publicKey } = await generateKeyPair(alg, { extractable: true });
+  const publicJwk = { ...(await exportJWK(publicKey)), alg: alg, use: 'sig' };
   const kid = await calculateJwkThumbprint(publicJwk);
-  const privateJwk = { ...(await exportJWK(privateKey)), kid, alg: ALG, use: 'sig' };
+  const privateJwk = { ...(await exportJWK(privateKey)), kid, alg: alg, use: 'sig' };
   // Two processes booting at once both try; the unique index lets one win and the other keeps that key.
   const inserted = await db
     .insert(signingKeysTable)
     .values({
       id: kid,
-      alg: ALG,
+      alg: alg,
       status,
-      privateJwk: encryptData(JSON.stringify(privateJwk), ENCRYPTION_PURPOSE),
+      privateJwk: encryptData(JSON.stringify(privateJwk), encryptionPurpose),
       publicJwk: { ...publicJwk, kid },
     })
     .onConflictDoNothing()
@@ -51,7 +51,7 @@ export async function loadSigningJwks(db: DbOrTx = baseDb): Promise<{ keys: JWK[
   const order = { current: 0, next: 1 } as const;
   const keys = rows
     .sort((a, b) => order[a.status as keyof typeof order] - order[b.status as keyof typeof order])
-    .map((row) => JSON.parse(decryptData(row.privateJwk, ENCRYPTION_PURPOSE)) as JWK);
+    .map((row) => JSON.parse(decryptData(row.privateJwk, encryptionPurpose)) as JWK);
   return { keys };
 }
 
@@ -62,7 +62,7 @@ let verifyCache: { at: number; keySet: ReturnType<typeof createLocalJWKSet> } | 
 
 /** Public keys of every status (retired ones keep verifying), as a local JWKS for in-process verification. */
 export async function getPublicJwkSet(): Promise<ReturnType<typeof createLocalJWKSet>> {
-  if (verifyCache && Date.now() - verifyCache.at < VERIFY_CACHE_MS) return verifyCache.keySet;
+  if (verifyCache && Date.now() - verifyCache.at < verifyCacheMs) return verifyCache.keySet;
   const rows = await baseDb.select({ publicJwk: signingKeysTable.publicJwk }).from(signingKeysTable);
   const keySet = createLocalJWKSet({ keys: rows.map((row) => row.publicJwk as JWK) });
   verifyCache = { at: Date.now(), keySet };

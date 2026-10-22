@@ -1,0 +1,155 @@
+{
+  "backend/src/db/utils/publication-filter.ts": {
+    "PUBLISHED_ROW_FILTER": "publishedRowFilter"
+  },
+  "backend/src/lib/health-helpers.ts": {
+    "WORKER_HEALTH_STALE_MS": "workerHealthStaleMs"
+  },
+  "backend/src/lib/pg-boss.ts": {
+    "JOBS_SCHEMA": "jobsSchema"
+  },
+  "backend/src/middlewares/rate-limiter/points-cache.ts": {
+    "MAX_WINDOW_MS": "maxWindowMs"
+  },
+  "backend/src/mocks/index.ts": {
+    "MOCK_REF_DATE": "mockRefDate",
+    "SCRIPT_ID_PREFIX": "scriptIdPrefix",
+    "SCRIPT_UUID_PREFIX": "scriptUuidPrefix"
+  },
+  "backend/src/mocks/mock-nanoid.ts": {
+    "SCRIPT_ID_PREFIX": "scriptIdPrefix",
+    "SCRIPT_UUID_PREFIX": "scriptUuidPrefix"
+  },
+  "backend/src/mocks/mock-timestamps.ts": {
+    "MOCK_REF_DATE": "mockRefDate"
+  },
+  "backend/src/modules/entities/stream/helpers.ts": {
+    "WORKER_AWAY_PING": "workerAwayPing"
+  },
+  "backend/src/modules/entities/stream/index.ts": {
+    "WORKER_AWAY_PING": "workerAwayPing"
+  },
+  "backend/src/modules/yjs/helpers/description-update.ts": {
+    "YJS_FRAGMENT_NAME": "yjsFragmentName"
+  },
+  "backend/src/modules/yjs/helpers/yjs-log.ts": {
+    "YJS_HTTP_CHUNK_BYTES": "yjsHttpChunkBytes",
+    "YJS_LOG_CHANNEL": "yjsLogChannel",
+    "YJS_LOG_NOTICE_MAX_IDS": "yjsLogNoticeMaxIds",
+    "YJS_MAX_UPDATE_BYTES": "yjsMaxUpdateBytes"
+  },
+  "cdc/src/constants.ts": {
+    "CDC_PUBLICATION_NAME": "cdcPublicationName",
+    "CDC_SLOT_NAME": "cdcSlotName",
+    "RESOURCE_LIMITS": "resourceLimits"
+  },
+  "cdc/src/pipeline/handle-message.ts": {
+    "FENCE_MARKER_PREFIX": "fenceMarkerPrefix"
+  },
+  "frontend/src/modules/attachment/dialog/params.ts": {
+    "ATTACHMENT_DIALOG_PARAM": "attachmentDialogParam"
+  },
+  "frontend/src/modules/attachment/offline/download-queue.ts": {
+    "SKIP_REASON_NO_ORIGINAL_KEY": "skipReasonNoOriginalKey"
+  },
+  "frontend/src/modules/attachment/render/image-zoom.ts": {
+    "MAX_ZOOM": "maxZoom",
+    "MIN_ZOOM": "minZoom",
+    "WHEEL_ZOOM_SENSITIVITY": "wheelZoomSensitivity",
+    "ZOOM_STEP": "zoomStep"
+  },
+  "frontend/src/modules/auth/legal/legal-types.ts": {
+    "LEGAL_OVERVIEW_ID": "legalOverviewId"
+  },
+  "frontend/src/modules/common/blocknote/helpers/title-document.ts": {
+    "TITLE_MAX_LENGTH": "titleMaxLength"
+  },
+  "frontend/src/modules/common/blocknote/storage-warning.ts": {
+    "STORAGE_LOW_FREE_BYTES": "storageLowFreeBytes",
+    "STORAGE_LOW_USED_RATIO": "storageLowUsedRatio"
+  },
+  "frontend/src/modules/common/blocknote/ydoc-label.ts": {
+    "YDOC_FRAGMENT": "ydocFragment"
+  },
+  "frontend/src/modules/common/blocknote/yjs-http.ts": {
+    "HTTP_CHUNK_BYTES": "httpChunkBytes",
+    "WS_SYNC_DEADLINE_MS": "wsSyncDeadlineMs"
+  },
+  "frontend/src/modules/common/blocknote/yjs-resync.ts": {
+    "PARKED_GRACE_MS": "parkedGraceMs",
+    "RESYNC_COOLDOWN_MS": "resyncCooldownMs"
+  },
+  "frontend/src/modules/common/blocknote/yjs-store.ts": {
+    "MAX_STORED_BYTES": "maxStoredBytes",
+    "MAX_STORED_DOCS": "maxStoredDocs",
+    "RESUME_CONCURRENCY": "resumeConcurrency",
+    "STORE_LOAD_TIMEOUT_MS": "storeLoadTimeoutMs",
+    "TRIM_DEBOUNCE_MS": "trimDebounceMs",
+    "TRIM_ROWS": "trimRows"
+  },
+  "frontend/src/modules/common/board/board-layout.tsx": {
+    "COLLAPSED_PANEL_MIN_WIDTH": "collapsedPanelMinWidth",
+    "PANEL_MIN_WIDTH": "panelMinWidth"
+  },
+  "frontend/src/modules/common/data-grid/columns.tsx": {
+    "SELECT_COLUMN_KEY": "selectColumnKey"
+  },
+  "frontend/src/modules/common/data-grid/index.ts": {
+    "SELECT_COLUMN_KEY": "selectColumnKey"
+  },
+  "frontend/src/modules/common/data-table/fetch-all-rows.ts": {
+    "EXPORT_CHUNK_SIZE": "exportChunkSize"
+  },
+  "frontend/src/modules/common/json-viewer/utils.tsx": {
+    "JSON_SCHEMA_TYPES": "jsonSchemaTypes"
+  },
+  "frontend/src/modules/common/morph-animation/shader.ts": {
+    "FRAGMENT_SOURCE": "fragmentSource",
+    "VERTEX_SOURCE": "vertexSource"
+  },
+  "frontend/src/modules/entities/entity-grid/grid.tsx": {
+    "GRID_PREVIEW_LIMIT": "gridPreviewLimit"
+  },
+  "frontend/src/modules/page/content.ts": {
+    "PAGE_SECTION_ID": "pageSectionId"
+  },
+  "frontend/src/modules/page/table/page-tree.ts": {
+    "MAX_PAGE_DEPTH": "maxPageDepth",
+    "PAGES_ROW_HEIGHT": "pagesRowHeight"
+  },
+  "frontend/src/query/basic/entity-query-registry.ts": {
+    "SYNC_CHUNK_SIZE": "syncChunkSize"
+  },
+  "frontend/src/query/offline/prepared-mutation.ts": {
+    "COALESCED": "coalescedResult"
+  },
+  "shared/src/cli-utils/display.ts": {
+    "DIVIDER": "divider"
+  },
+  "shared/src/schema-evolution/define.ts": {
+    "LENS_FORMAT_VERSION": "lensFormatVersion"
+  },
+  "shared/src/schema-evolution/index.ts": {
+    "LENS_FORMAT_VERSION": "lensFormatVersion"
+  },
+  "shared/src/utils/bench-identity.ts": {
+    "BENCH_TENANT_ID": "benchTenantId",
+    "BENCH_UUID_PREFIX": "benchUuidPrefix"
+  },
+  "shared/src/utils/event-loop-monitor.ts": {
+    "EVENT_LOOP_WINDOW_MS": "eventLoopWindowMs"
+  },
+  "yjs/src/constants.ts": {
+    "YJS_AWARENESS_MAX_CLIENTS": "yjsAwarenessMaxClients",
+    "YJS_AWARENESS_MAX_ENTRIES": "yjsAwarenessMaxEntries",
+    "YJS_AWARENESS_RATE_LIMIT": "yjsAwarenessRateLimit",
+    "YJS_CLEANUP_DELAY_MS": "yjsCleanupDelayMs",
+    "YJS_CLEANUP_MAX_ATTEMPTS": "yjsCleanupMaxAttempts",
+    "YJS_COMPACT_DEBOUNCE_MS": "yjsCompactDebounceMs",
+    "YJS_COMPACT_MAX_WAIT_MS": "yjsCompactMaxWaitMs",
+    "YJS_LIVE_TOUCH_MS": "yjsLiveTouchMs",
+    "YJS_LOG_NOTICE_DELAY_MS": "yjsLogNoticeDelayMs",
+    "YJS_MAX_SERVER_ROW_IDS": "yjsMaxServerRowIds",
+    "YJS_PENDING_QUEUE_CAP": "yjsPendingQueueCap"
+  }
+}

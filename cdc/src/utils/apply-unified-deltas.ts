@@ -11,7 +11,7 @@ import { type BatchUnifiedDeltaPlan, frontierNodeKeys, mergeDelta } from './comp
 export type DeltaExecutor = Pick<typeof cdcDb, 'execute'>;
 
 /** Rows per stamp statement: two bind parameters each, far below the protocol's 65,535. */
-const STAMP_CHUNK_SIZE = 5000;
+const stampChunkSize = 5000;
 
 /**
  * UPSERTs one channel_counters row through apply_count_deltas, which merges JSONB deltas as
@@ -94,8 +94,8 @@ export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, db: D
 
   for (const [tableName, rows] of lastSeqByTable) {
     const ids = [...rows.keys()].sort();
-    for (let offset = 0; offset < ids.length; offset += STAMP_CHUNK_SIZE) {
-      const chunk = ids.slice(offset, offset + STAMP_CHUNK_SIZE);
+    for (let offset = 0; offset < ids.length; offset += stampChunkSize) {
+      const chunk = ids.slice(offset, offset + stampChunkSize);
       // The rows are locked in id order first: the UPDATE below joins a VALUES list and takes its locks in no fixed order.
       const idList = sql.join(
         chunk.map((id) => sql`${id}::uuid`),

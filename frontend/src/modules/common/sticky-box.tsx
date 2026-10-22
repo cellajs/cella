@@ -40,17 +40,17 @@ type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
  * publishes one of those variables never consumes it, since it would inherit its own value back
  * from the parent it publishes on. Variable changes animate with the ancestor bar's transition.
  */
-const STACK_VARS = ['--sticky-stack-nav', '--sticky-stack-top'] as const;
+const stackVars = ['--sticky-stack-nav', '--sticky-stack-top'] as const;
 
 /** Offset (px) the stack variables add to the bar's pin line, leaving out the one it publishes itself. */
 export function stackOffset(bar: HTMLElement, publishVar?: string) {
   const barStyles = getComputedStyle(bar);
-  return Math.max(...STACK_VARS.filter((v) => v !== publishVar).map((v) => Number.parseFloat(barStyles.getPropertyValue(v)) || 0));
+  return Math.max(...stackVars.filter((v) => v !== publishVar).map((v) => Number.parseFloat(barStyles.getPropertyValue(v)) || 0));
 }
 
 /** The same offset as a CSS length, so an element that pins with it follows the variables without a rerender. */
 export function stackOffsetCss(publishVar?: string) {
-  const consumedVars = STACK_VARS.filter((v) => v !== publishVar).map((v) => `var(${v}, 0px)`);
+  const consumedVars = stackVars.filter((v) => v !== publishVar).map((v) => `var(${v}, 0px)`);
   return consumedVars.length > 1 ? `max(${consumedVars.join(', ')})` : (consumedVars[0] ?? '0px');
 }
 

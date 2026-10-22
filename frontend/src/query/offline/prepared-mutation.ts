@@ -2,7 +2,7 @@
 export type PreparedVars<TVars> = { kind: 'run'; vars: TVars } | { kind: 'coalesced' } | { kind: 'noop' };
 
 /** Resolved by `mutateAsync` when the intent was coalesced or a no-op: removing a queued mutation does not settle its own promise, so awaiting callers would hang without this. */
-export const COALESCED = Symbol('coalesced');
+export const coalescedResult = Symbol('coalesced');
 
 /** Method syntax keeps a react-query `UseMutationResult` structurally assignable under strictFunctionTypes without a cast, via method-parameter bivariance. */
 interface Mutatable<TData, TVars> {
@@ -20,10 +20,10 @@ export function buildPreparedHandlers<TData, TVars, TInput>(mutation: Mutatable<
     if (prepared.kind === 'run') mutation.mutate(prepared.vars, opts);
   };
 
-  const mutateAsync = async (input: TInput, opts?: unknown): Promise<TData | typeof COALESCED> => {
+  const mutateAsync = async (input: TInput, opts?: unknown): Promise<TData | typeof coalescedResult> => {
     const prepared = prepare(input);
     if (prepared.kind === 'run') return mutation.mutateAsync(prepared.vars, opts);
-    return COALESCED;
+    return coalescedResult;
   };
 
   return { mutate, mutateAsync };

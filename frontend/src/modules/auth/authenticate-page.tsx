@@ -31,8 +31,8 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
 
 // Warn after the slow delay and abort at the timeout, so a down backend never hangs on the browser default.
-const HEALTH_SLOW_MS = 5000;
-const HEALTH_TIMEOUT_MS = 20000;
+const healthSlowMs = 5000;
+const healthTimeoutMs = 20000;
 
 export function AuthenticatePage() {
   const { t } = useTranslation();
@@ -66,7 +66,7 @@ export function AuthenticatePage() {
   } = useQuery({
     queryKey: ['auth', 'health'],
     // Combine the query signal with a hard timeout so an unreachable backend fails deterministically.
-    queryFn: ({ signal }) => getAuthHealth({ signal: AbortSignal.any([signal, AbortSignal.timeout(HEALTH_TIMEOUT_MS)]) }),
+    queryFn: ({ signal }) => getAuthHealth({ signal: AbortSignal.any([signal, AbortSignal.timeout(healthTimeoutMs)]) }),
     staleTime: 0,
     refetchOnMount: 'always',
     retry: false,
@@ -78,7 +78,7 @@ export function AuthenticatePage() {
       setShowSlowWarning(false);
       return;
     }
-    const timer = setTimeout(() => setShowSlowWarning(true), HEALTH_SLOW_MS);
+    const timer = setTimeout(() => setShowSlowWarning(true), healthSlowMs);
     return () => clearTimeout(timer);
   }, [isHealthLoading]);
 

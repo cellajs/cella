@@ -34,7 +34,7 @@ export type InternalDropdown = DropdownData & {
 };
 
 /** How long a trigger shows that the action picked from its dropdown worked. */
-const DONE_DURATION = 1400;
+const doneDuration = 1400;
 
 interface DropdownStoreState {
   dropdown: InternalDropdown | null;
@@ -66,7 +66,7 @@ function markDone(trigger: HTMLElement, label: string) {
   endDone();
   trigger.setAttribute('data-dropdowner-done', '');
   useDropdowner.setState({ done: { trigger, label, open: true, key: Date.now() } });
-  doneTimer = setTimeout(endDone, DONE_DURATION);
+  doneTimer = setTimeout(endDone, doneDuration);
 }
 
 export const useDropdowner = create<DropdownStoreState>((set, get) => ({
@@ -133,3 +133,6 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
 
   get: () => get().dropdown,
 }));
+
+// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
+export { useDropdowner as dropdowner };

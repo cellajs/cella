@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { clampZoom, WHEEL_ZOOM_SENSITIVITY, ZOOM_STEP } from '~/modules/attachment/render/image-zoom';
+import { clampZoom, wheelZoomSensitivity, zoomStep } from '~/modules/attachment/render/image-zoom';
 
 type Offset = { x: number; y: number };
 
@@ -97,7 +97,7 @@ export function usePanZoom(panEnabled: boolean) {
     // wheel continuous, and the clamp sets the floor and ceiling. Steps multiply, so a frame's deltas apply as one.
     onWheel: (e: React.WheelEvent) => {
       const deltaY = e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaY * 16 : e.deltaY;
-      wheelFactor.current *= Math.exp(-deltaY * WHEEL_ZOOM_SENSITIVITY);
+      wheelFactor.current *= Math.exp(-deltaY * wheelZoomSensitivity);
       if (wheelFrame.current) return;
       wheelFrame.current = requestAnimationFrame(() => {
         wheelFrame.current = 0;
@@ -119,8 +119,8 @@ export function usePanZoom(panEnabled: boolean) {
     panBy: (x: number, y: number) => setOffset((prev) => ({ x: prev.x + x, y: prev.y + y })),
     panProps,
     layerStyle: { transform: `matrix(${zoom},0,0,${zoom},var(--pan-x,0),var(--pan-y,0))` },
-    zoomIn: () => setZoom(zoom + ZOOM_STEP),
-    zoomOut: () => setZoom(zoom - ZOOM_STEP),
+    zoomIn: () => setZoom(zoom + zoomStep),
+    zoomOut: () => setZoom(zoom - zoomStep),
     rotateRight: () => setRotation((prev) => (prev + 1) % 4),
     // The image fits its container via CSS (object-contain), so zoom 1 is the natural fit.
     reset: () => {

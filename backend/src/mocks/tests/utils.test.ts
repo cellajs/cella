@@ -5,8 +5,8 @@ import {
   mockNanoid,
   mockTenantId,
   mockUuid,
-  SCRIPT_ID_PREFIX,
-  SCRIPT_UUID_PREFIX,
+  scriptIdPrefix,
+  scriptUuidPrefix,
   setMockContext,
   withFakerSeed,
   withMockContext,
@@ -74,12 +74,12 @@ describe('mockNanoid', () => {
   it('generates IDs without prefix in example context (default)', () => {
     setMockContext('example');
     const id = mockNanoid();
-    expect(id).not.toMatch(new RegExp(`^${SCRIPT_ID_PREFIX}`));
+    expect(id).not.toMatch(new RegExp(`^${scriptIdPrefix}`));
   });
 
   it('generates IDs with gen- prefix in script context', () => {
     const id = withMockContext('script', () => mockNanoid());
-    expect(id).toMatch(new RegExp(`^${SCRIPT_ID_PREFIX}`));
+    expect(id).toMatch(new RegExp(`^${scriptIdPrefix}`));
     expect(id).toHaveLength(24);
   });
 
@@ -87,7 +87,7 @@ describe('mockNanoid', () => {
     setMockContext('example');
     withMockContext('script', () => mockNanoid());
     const id = mockNanoid();
-    expect(id).not.toMatch(new RegExp(`^${SCRIPT_ID_PREFIX}`));
+    expect(id).not.toMatch(new RegExp(`^${scriptIdPrefix}`));
   });
 });
 
@@ -107,7 +107,7 @@ describe('mockUuid', () => {
 
   it('generates UUIDs with 00000000 prefix in script context', () => {
     const id = withMockContext('script', () => mockUuid());
-    expect(id).toMatch(new RegExp(`^${SCRIPT_UUID_PREFIX}`));
+    expect(id).toMatch(new RegExp(`^${scriptUuidPrefix}`));
     expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
   });
 
@@ -121,6 +121,6 @@ describe('mockUuid', () => {
     setMockContext('example');
     withMockContext('script', () => mockUuid());
     const id = mockUuid();
-    expect(id).not.toMatch(new RegExp(`^${SCRIPT_UUID_PREFIX}`));
+    expect(id).not.toMatch(new RegExp(`^${scriptUuidPrefix}`));
   });
 });

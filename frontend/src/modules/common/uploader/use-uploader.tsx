@@ -39,3 +39,6 @@ export const useUploader = create<UploadStoreState>((set, get) => ({
 
   get: () => get().uploaderConfig,
 }));
+
+// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
+export { useUploader as uploader };

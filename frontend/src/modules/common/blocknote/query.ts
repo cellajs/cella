@@ -5,7 +5,7 @@ import type { ProductEntityType } from 'shared';
 import { ApiError } from '~/lib/api';
 
 /** A token lives five minutes and the relay closes its socket then; refetching at four keeps a fresh one ready for the reconnect. */
-const YJS_TOKEN_REFETCH_MS = 4 * 60 * 1000;
+const yjsTokenRefetchMs = 4 * 60 * 1000;
 
 export const yjsTokenKeys = { entity: (entityType: ProductEntityType, entityId: string) => ['yjs', 'token', entityType, entityId] as const };
 
@@ -28,8 +28,8 @@ export const yjsTokenQueryOptions = (params: { entityType: ProductEntityType; en
       const res = await getYjsToken({ path: { tenantId, organizationId }, query: { entityType, entityId } });
       return res.token;
     },
-    staleTime: YJS_TOKEN_REFETCH_MS,
-    refetchInterval: YJS_TOKEN_REFETCH_MS,
+    staleTime: yjsTokenRefetchMs,
+    refetchInterval: yjsTokenRefetchMs,
     refetchIntervalInBackground: true,
     // Overrides the app-wide `false`: backgrounded tabs throttle the interval, so refetch on focus when stale.
     refetchOnWindowFocus: true,

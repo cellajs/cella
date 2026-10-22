@@ -29,7 +29,7 @@ type RenderImageProps = {
 };
 
 /** Pixels one press of a pan button moves the zoomed image. */
-const PAN_STEP = 120;
+const panStep = 120;
 
 interface ControlButtonProps {
   tooltipContent: string;
@@ -87,25 +87,25 @@ export function ReactPanZoom({ image, alt, showButtons, imageClassName, onPanSta
             <>
               <ControlButton
                 tooltipContent={t('c:move_left')}
-                onClick={() => panBy(-PAN_STEP, 0)}
+                onClick={() => panBy(-panStep, 0)}
                 icon={<ArrowLeftIcon className="size-3.5" />}
                 className="border-r-0"
               />
               <ControlButton
                 tooltipContent={t('c:move_up')}
-                onClick={() => panBy(0, -PAN_STEP)}
+                onClick={() => panBy(0, -panStep)}
                 icon={<ArrowUpIcon className="size-3.5" />}
                 className="border-r-0"
               />
               <ControlButton
                 tooltipContent={t('c:move_down')}
-                onClick={() => panBy(0, PAN_STEP)}
+                onClick={() => panBy(0, panStep)}
                 icon={<ArrowDownIcon className="size-3.5" />}
                 className="border-r-0"
               />
               <ControlButton
                 tooltipContent={t('c:move_right')}
-                onClick={() => panBy(PAN_STEP, 0)}
+                onClick={() => panBy(panStep, 0)}
                 icon={<ArrowRightIcon className="size-3.5" />}
                 className="border-r-0"
               />

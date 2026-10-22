@@ -37,7 +37,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { getAndSetMe, getAndSetMeAuthData } from '~/modules/me/helpers';
 import type { Passkey } from '~/modules/me/types';
 import { userQueryKeys } from '~/modules/user/query';
-import { useUserStore } from '~/modules/user/user-store';
+import { userStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 import type { MutationData } from '~/query/types';
 
@@ -97,7 +97,7 @@ export const useUpdateSelfFlagsMutation = () => {
     // Applied before the request and kept when it fails: route guards read flags from the store, so a flag that
     // waited for the answer would send a user who just finished onboarding back into it.
     onMutate: ({ userFlags }) => {
-      useUserStore.setState((state) => {
+      userStore.setState((state) => {
         if (state.user) Object.assign(state.user.userFlags, userFlags);
       });
     },
@@ -163,7 +163,7 @@ export const useDeleteTotpMutation = () => {
 };
 
 const applyUpdatedSelf = (updatedUser: User) => {
-  const { updateUser } = useUserStore.getState();
+  const { updateUser } = userStore.getState();
 
   queryClient.setQueryData(userQueryKeys.detail.byId(updatedUser.id), updatedUser);
   updateUser(updatedUser);

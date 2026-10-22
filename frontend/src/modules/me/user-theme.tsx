@@ -3,11 +3,11 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { uiStore, useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 import { objectEntries } from '~/utils/object-entries';
 
@@ -79,7 +79,7 @@ export function UserTheme({ buttonClassName = '', tooltip = false }: UserThemePr
   }
 
   const openDropdown = () => {
-    const { mode: currentMode, theme: currentTheme } = useUIStore.getState();
+    const { mode: currentMode, theme: currentTheme } = uiStore.getState();
     const isMobile = window.innerWidth < 640;
 
     const items: ThemeItem[] = [
@@ -90,7 +90,7 @@ export function UserTheme({ buttonClassName = '', tooltip = false }: UserThemePr
         checked: currentMode === m.id,
         onSelect: () => {
           setMode(m.id);
-          useDropdowner.getState().remove();
+          dropdowner.getState().remove();
         },
       })),
       {
@@ -101,7 +101,7 @@ export function UserTheme({ buttonClassName = '', tooltip = false }: UserThemePr
         checked: currentTheme === 'none',
         onSelect: () => {
           setTheme('none');
-          useDropdowner.getState().remove();
+          dropdowner.getState().remove();
         },
         separator: true,
       },
@@ -113,12 +113,12 @@ export function UserTheme({ buttonClassName = '', tooltip = false }: UserThemePr
         checked: currentTheme === name,
         onSelect: () => {
           setTheme(name);
-          useDropdowner.getState().remove();
+          dropdowner.getState().remove();
         },
       })),
     ];
 
-    useDropdowner.getState().create(<ThemeDropdownContent items={items} isMobile={isMobile} />, {
+    dropdowner.getState().create(<ThemeDropdownContent items={items} isMobile={isMobile} />, {
       id: 'user-theme',
       triggerId: 'user-theme-trigger',
       triggerRef,

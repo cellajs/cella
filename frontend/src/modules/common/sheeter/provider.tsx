@@ -4,8 +4,8 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useOverlayLock } from '~/modules/common/overlay-store-helpers';
 import { SheeterDrawer } from '~/modules/common/sheeter/drawer';
 import { SheeterSheet } from '~/modules/common/sheeter/sheet';
-import { type InternalSheet, navSheetId, useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { type InternalSheet, navSheetId, sheeter, useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { navigationStore } from '~/modules/navigation/navigation-store';
 import { getRouter } from '~/routes/-router-instance';
 
 /**
@@ -64,17 +64,17 @@ export function Sheeter() {
     return getRouter().subscribe('onBeforeLoad', ({ pathChanged }) => {
       if (!pathChanged) return;
 
-      const navState = useNavigationStore.getState();
-      const sheetsToClose = useSheeter.getState().sheets.filter((s) => s.closeSheetOnRouteChange !== false);
+      const navState = navigationStore.getState();
+      const sheetsToClose = sheeter.getState().sheets.filter((s) => s.closeSheetOnRouteChange !== false);
       if (!sheetsToClose.length) return;
 
       if (!navState.navSheetOpen || !navState.keepNavOpen) {
-        useSheeter.getState().removeOnRouteChange({ isCleanup: true });
+        sheeter.getState().removeOnRouteChange({ isCleanup: true });
         return;
       }
 
       for (const sheet of sheetsToClose.filter((s) => s.id !== navSheetId)) {
-        useSheeter.getState().remove(sheet.id, { isCleanup: true });
+        sheeter.getState().remove(sheet.id, { isCleanup: true });
       }
     });
   }, []);

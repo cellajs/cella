@@ -9,9 +9,9 @@ import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
 import { ssoEntryQueryOptions, ssoStartUrl } from '~/modules/auth/sso-providers';
 import { withStepUp } from '~/modules/auth/step-up';
 import { ConfirmText } from '~/modules/common/confirm-text';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { HelpText } from '~/modules/common/help-text';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
 import { ConnectedAppsList } from '~/modules/me/connected-apps-list';
 import { DeleteSelf } from '~/modules/me/delete-self';
@@ -92,7 +92,7 @@ export function AccountAuthenticationCard() {
   });
 
   const authenticateWithProvider = (provider: EnabledOAuthProvider) => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
     connectProvider(provider);
   };
 
@@ -232,7 +232,7 @@ export function AccountAuthenticationCard() {
                       variant={institution.connectionId === toConnect?.connectionId ? 'default' : 'plain'}
                       loading={connectingTo === institution.connectionId}
                       onClick={() => {
-                        if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+                        if (!onlineManager.isOnline()) return toastOffline();
                         connectInstitution(institution.connectionId);
                       }}
                     >
@@ -256,7 +256,7 @@ export function AccountDeleteCard() {
   const deleteButtonRef = useRef(null);
 
   const openDeleteDialog = () => {
-    useDialoger.getState().create(<DeleteSelf dialog />, {
+    dialoger.getState().create(<DeleteSelf dialog />, {
       id: 'delete-account',
       triggerRef: deleteButtonRef,
       className: 'md:max-w-xl',

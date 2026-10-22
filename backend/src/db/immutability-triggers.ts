@@ -4,18 +4,18 @@ import { entityTables } from '#/tables';
 
 // Immutable column sets
 
-const BASE_ENTITY_COLUMNS = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'] as const;
-const MEMBERSHIP_CHANNEL_ID_COLUMNS = appConfig.channelEntityTypes.map((type) => toColumnName(appConfig.entityIdColumnKeys[type]));
-const BASE_MEMBERSHIP_COLUMNS = ['tenant_id', 'channel_id', 'channel_type', ...MEMBERSHIP_CHANNEL_ID_COLUMNS] as const;
+const baseEntityColumns = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'] as const;
+const membershipChannelIdColumns = appConfig.channelEntityTypes.map((type) => toColumnName(appConfig.entityIdColumnKeys[type]));
+const baseMembershipColumns = ['tenant_id', 'channel_id', 'channel_type', ...membershipChannelIdColumns] as const;
 
 /** Product entities with a parent org (tasks, labels, attachments). */
-const productImmutableColumns = [...BASE_ENTITY_COLUMNS, 'organization_id'] as const;
+const productImmutableColumns = [...baseEntityColumns, 'organization_id'] as const;
 
 /** Active memberships include user_id. */
-export const membershipImmutableColumns = [...BASE_MEMBERSHIP_COLUMNS, 'user_id'] as const;
+export const membershipImmutableColumns = [...baseMembershipColumns, 'user_id'] as const;
 
 /** Inactive memberships allow mutable user_id for re-assignable invitations. */
-const inactiveMembershipImmutableColumns = BASE_MEMBERSHIP_COLUMNS;
+const inactiveMembershipImmutableColumns = baseMembershipColumns;
 
 // SQL builders
 
@@ -45,7 +45,7 @@ export const adminOnlyWriteTriggerName = (tableName: string) => `${tableName}_ad
 
 // Pre-built trigger functions
 
-const baseEntityImmutabilityFunctionSQL = buildFunctionSQL('base_entity_immutable_keys', BASE_ENTITY_COLUMNS);
+const baseEntityImmutabilityFunctionSQL = buildFunctionSQL('base_entity_immutable_keys', baseEntityColumns);
 
 const productImmutabilityFunctionSQL = buildFunctionSQL('product_entity_immutable_keys', productImmutableColumns);
 

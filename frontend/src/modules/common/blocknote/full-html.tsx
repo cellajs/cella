@@ -18,7 +18,7 @@ import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 // DOMPurify's default URI policy strips `blob:`, which this render needs for locally cached images; all other schemes keep the default.
-const ALLOWED_URI_REGEXP = /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i;
+const allowedUriRegexp = /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i;
 
 /**
  * First-pass HTML (unresolved media refs) per organization and document string. Layout-identical to the
@@ -26,13 +26,13 @@ const ALLOWED_URI_REGEXP = /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|b
  * document at full height synchronously; lists that measure rows (virtualizers) see the real height at once.
  */
 const firstPassHtmlCache = new Map<string, string>();
-const FIRST_PASS_CACHE_MAX = 300;
+const firstPassCacheMax = 300;
 
 /** Which media a document may show depends on its organization, so the cache keys on both. */
 const firstPassKey = (document: string, organizationId?: string) => `${organizationId ?? ''}:${document}`;
 
 const cacheFirstPass = (key: string, html: string) => {
-  if (firstPassHtmlCache.size >= FIRST_PASS_CACHE_MAX) {
+  if (firstPassHtmlCache.size >= firstPassCacheMax) {
     const oldest = firstPassHtmlCache.keys().next().value;
     if (oldest !== undefined) firstPassHtmlCache.delete(oldest);
   }
@@ -246,7 +246,7 @@ function BlockNoteFullHtml({
         // select-text opts this content back into text selection inside the focusable, click-to-expand Card.
         className="bn-static-editor bn-default-styles select-text"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: input is sanitized via DOMPurify before render
-        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderState.html, { ALLOWED_URI_REGEXP }) }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderState.html, { ALLOWED_URI_REGEXP: allowedUriRegexp }) }}
       />
     </div>
   );

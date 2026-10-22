@@ -173,14 +173,14 @@ vi.mock('~/env', () => ({ isDebugMode: false }));
 // a test can give the routes' final answer.
 const httpHooks: { end: (reason: string) => void }[] = [];
 vi.mock('~/modules/common/blocknote/yjs-http', () => ({
-  WS_SYNC_DEADLINE_MS: 5_000,
+  wsSyncDeadlineMs: 5_000,
   createHttpLink: (_conn: unknown, _scope: unknown, hooks: { end: (reason: string) => void }) => {
     httpHooks.push(hooks);
     return { enter: () => new Promise(() => {}), leave: () => {}, queue: () => {}, pull: async () => {}, clean: false };
   },
 }));
 
-const { useUserStore, yjsTokenKey } = await import('~/modules/user/user-store');
+const { userStore, yjsTokenKey } = await import('~/modules/user/user-store');
 const { applyRemoteUpdate, useYjsConnection, watchUnstoredYDocs } = await import('~/modules/common/blocknote/yjs-connections');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -194,7 +194,7 @@ let counter = 0;
 async function mountConnection() {
   const entityId = `doc-${++counter}`;
   const tokenKey = yjsTokenKey('attachment', entityId);
-  useUserStore.getState().setYjsToken(tokenKey, 'token-v1');
+  userStore.getState().setYjsToken(tokenKey, 'token-v1');
   let latest: Connection = null;
   const Harness = () => {
     latest = useYjsConnection(entityId, 'attachment', 'tenant-1', 'org-1');
@@ -355,14 +355,14 @@ describe('yjs connection: transient closes', () => {
 
     // y-websocket backs off and resyncs with the same token.
     expect(provider.disconnect).not.toHaveBeenCalled();
-    expect(useUserStore.getState().yjsTokens[tokenKey]).toBe('token-v1');
+    expect(userStore.getState().yjsTokens[tokenKey]).toBe('token-v1');
     expect(state()?.stopped).toBe(false);
     expect(warning).not.toHaveBeenCalled();
   });
 
   it('keeps the provider on the latest token, so a reconnect uses it', async () => {
     const { provider, tokenKey } = await mountConnection();
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, 'token-v2'));
+    await act(async () => userStore.getState().setYjsToken(tokenKey, 'token-v2'));
     expect(provider.params.token).toBe('token-v2');
   });
 });
@@ -392,7 +392,7 @@ describe('yjs connection: final closes', () => {
     const { provider, tokenKey, state } = await mountConnection();
     await act(async () => onlineListener?.(false));
 
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, null));
+    await act(async () => userStore.getState().setYjsToken(tokenKey, null));
     expect(state()?.stopped).toBe(true);
 
     provider.connect.mockClear();
@@ -470,7 +470,7 @@ describe('yjs connection: token refusals', () => {
     await close(provider, 4001);
   };
   /** The refetch a refusal starts lands a new token before the next attempt. */
-  const fetchToken = (tokenKey: string, token: string) => act(async () => useUserStore.getState().setYjsToken(tokenKey, token));
+  const fetchToken = (tokenKey: string, token: string) => act(async () => userStore.getState().setYjsToken(tokenKey, token));
 
   it('must not stop syncing via an API outage at token refresh: an expired token refused again never counts', async () => {
     const { provider, state } = await mountConnection();
@@ -494,7 +494,7 @@ describe('yjs connection: token refusals', () => {
       await act(async () => {});
 
       expect(tokenQuery).toHaveBeenCalledOnce();
-      expect(useUserStore.getState().yjsTokens[tokenKey]).toBe('token-fresh');
+      expect(userStore.getState().yjsTokens[tokenKey]).toBe('token-fresh');
     } finally {
       tokenObservers = 1;
     }
@@ -557,7 +557,7 @@ describe('yjs connection: token refusals', () => {
     expect(provider.destroy).not.toHaveBeenCalled();
 
     // Signed out: the token goes with the user, and the connection with it. Storage is the sign-out's to keep or delete.
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, null));
+    await act(async () => userStore.getState().setYjsToken(tokenKey, null));
     expect(provider.destroy).toHaveBeenCalledTimes(1);
     expect(parked).toEqual([]);
     expect(unloadAsks()).toBe(false);
@@ -798,7 +798,7 @@ describe('yjs connection: updates from the HTTP routes and other tabs', () => {
 describe('yjs connection: a deleted entity', () => {
   afterEach(() => {
     vi.useRealTimers();
-    useUserStore.setState({ user: null });
+    userStore.setState({ user: null });
   });
 
   it('must not keep edits nothing can save once the entity is deleted (4410): it stops, and parks them for the notice', async () => {
@@ -859,13 +859,13 @@ describe('yjs connection: a deleted entity', () => {
 
   it('must not report a deleted entity as denied: a token a 404 withdrew ends the connection as deleted', async () => {
     const { provider, tokenKey, state } = await mountConnection();
-    useUserStore.setState({ user: { id: 'user-1' } as never });
+    userStore.setState({ user: { id: 'user-1' } as never });
     await handshake(provider);
     await relaySaved(provider);
     await editLocally(provider);
 
     tokenError = { status: 404 };
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, null));
+    await act(async () => userStore.getState().setYjsToken(tokenKey, null));
 
     expect(state()?.stopped).toBe(true);
     expect(state()?.deleted).toBe(true);
@@ -876,10 +876,10 @@ describe('yjs connection: a deleted entity', () => {
 
   it('a token a 403 withdrew stops the connection as denied (positive control)', async () => {
     const { tokenKey, state } = await mountConnection();
-    useUserStore.setState({ user: { id: 'user-1' } as never });
+    userStore.setState({ user: { id: 'user-1' } as never });
 
     tokenError = { status: 403 };
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, null));
+    await act(async () => userStore.getState().setYjsToken(tokenKey, null));
 
     expect(state()?.stopped).toBe(true);
     expect(state()?.deleted).toBe(false);
@@ -889,13 +889,13 @@ describe('yjs connection: a deleted entity', () => {
 
   it('must not keep edits a 403 withdrew the token for: they are parked as denied, and the notice replaces the toast', async () => {
     const { provider, entityId, tokenKey, state } = await mountConnection();
-    useUserStore.setState({ user: { id: 'user-1' } as never });
+    userStore.setState({ user: { id: 'user-1' } as never });
     await handshake(provider);
     await relaySaved(provider);
     await editLocally(provider);
 
     tokenError = { status: 403 };
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, null));
+    await act(async () => userStore.getState().setYjsToken(tokenKey, null));
 
     expect(parked).toEqual([{ reason: 'denied', scope: scopeOf(entityId), doc: provider.doc, unsynced: true }]);
     expect(state()?.stopped).toBe(true);

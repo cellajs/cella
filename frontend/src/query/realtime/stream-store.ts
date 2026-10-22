@@ -23,17 +23,17 @@ import {
 import type { AppStreamNotification, StreamState } from './types';
 import { declareViewsFromMemberships } from './view-declaration';
 
-const MAX_FAILURES = 3;
-const CIRCUIT_COOLDOWN_MS = 60_000;
-const INITIAL_BACKOFF_MS = 5_000;
-const MAX_BACKOFF_MS = 30_000;
-const BACKOFF_FACTOR = 2;
-const RECONNECT_JITTER_MS = 2_000; // Random 0-2s added to reconnect delay to avoid thundering herd
-const MIN_UPTIME_MS = 10_000; // Connection must stay up 10s before backoff resets
-const HEALTH_URL = `${appConfig.backendUrl}/auth/health`;
-const NOTIFICATION_BUFFER_CAP = 500; // Buffered live notifications while catchup runs; overflow retries catchup once
-const STREAM_SILENCE_MS = 75_000; // 2.5 keepalive intervals of the server (30s each) without any event: the open stream is dead
-const WORKER_AWAY_PING = 'worker_away'; // What a ping of the app stream carries while the server's CDC worker has not been reading for a minute
+const maxFailures = 3;
+const circuitCooldownMs = 60_000;
+const initialBackoffMs = 5_000;
+const maxBackoffMs = 30_000;
+const backoffFactor = 2;
+const reconnectJitterMs = 2_000; // Random 0-2s added to reconnect delay to avoid thundering herd
+const minUptimeMs = 10_000; // Connection must stay up 10s before backoff resets
+const healthUrl = `${appConfig.backendUrl}/auth/health`;
+const notificationBufferCap = 500; // Buffered live notifications while catchup runs; overflow retries catchup once
+const streamSilenceMs = 75_000; // 2.5 keepalive intervals of the server (30s each) without any event: the open stream is dead
+const workerAwayPing = 'worker_away'; // What a ping of the app stream carries while the server's CDC worker has not been reading for a minute
 
 interface StreamConfig {
   endpoint: string;
@@ -102,7 +102,7 @@ export class StreamManager {
   private consecutiveFailures = 0;
   private circuitOpen = false;
   private circuitOpenedAt: number | null = null;
-  private currentBackoff = INITIAL_BACKOFF_MS;
+  private currentBackoff = initialBackoffMs;
   private connectedAt: number | null = null;
   private healthCheckInProgress = false;
   private visibilityHandler: (() => void) | null = null;
@@ -236,7 +236,7 @@ export class StreamManager {
       this.pendingNotifications = [];
       for (const { notification, eventId } of buffered) this.applyNotification(notification, eventId);
 
-      // Backoff itself resets only after MIN_UPTIME_MS of uptime, checked in handleStreamFailure.
+      // Backoff itself resets only after minUptimeMs of uptime, checked in handleStreamFailure.
       this.consecutiveFailures = 0;
       this.connectedAt = Date.now();
       this.useStore.getState().setState('live');
@@ -274,7 +274,7 @@ export class StreamManager {
     resolveInitialCatchupGate();
 
     // Open circuit breaker for permanent errors or after max failures
-    if (isPermanentError || this.consecutiveFailures >= MAX_FAILURES) {
+    if (isPermanentError || this.consecutiveFailures >= maxFailures) {
       this.openCircuit(isPermanentError ? 'permanent error detected' : 'max consecutive failures');
       return;
     }
@@ -332,7 +332,7 @@ export class StreamManager {
         if (this.buffering) {
           // Cursor advances at drain time so a crash before drain re-fetches from the old cursor.
           if (this.bufferOverflowed) return;
-          if (this.pendingNotifications.length >= NOTIFICATION_BUFFER_CAP) {
+          if (this.pendingNotifications.length >= notificationBufferCap) {
             this.bufferOverflowed = true;
             this.pendingNotifications = [];
             return;
@@ -386,7 +386,7 @@ export class StreamManager {
 
     this.eventSource = eventSource;
     noteActivity();
-    this.watchForSilence(eventSource, STREAM_SILENCE_MS);
+    this.watchForSilence(eventSource, streamSilenceMs);
   }
 
   /** One path for a stream that failed, by a transport error or by silence: count it, close it, then open the circuit or reconnect after the backoff. */
@@ -395,15 +395,15 @@ export class StreamManager {
     console.debug(`[${this.name}] ${reason}`);
 
     // Reset backoff only after stable uptime, so a flapping connection keeps backing off.
-    if (this.connectedAt && Date.now() - this.connectedAt >= MIN_UPTIME_MS) {
-      this.currentBackoff = INITIAL_BACKOFF_MS;
+    if (this.connectedAt && Date.now() - this.connectedAt >= minUptimeMs) {
+      this.currentBackoff = initialBackoffMs;
     }
     this.connectedAt = null;
 
     this.useStore.getState().setState('error');
     this.closeEventSource();
 
-    if (this.consecutiveFailures >= MAX_FAILURES) {
+    if (this.consecutiveFailures >= maxFailures) {
       this.openCircuit('max consecutive SSE failures');
       return;
     }
@@ -411,16 +411,16 @@ export class StreamManager {
     this.scheduleReconnect();
   }
 
-  /** Fails a stream no event arrived on for STREAM_SILENCE_MS: a browser keeps a connection open whose server is gone, and reports no error. */
+  /** Fails a stream no event arrived on for streamSilenceMs: a browser keeps a connection open whose server is gone, and reports no error. */
   private watchForSilence(eventSource: EventSource, delay: number) {
     this.silenceTimeout = setTimeout(() => {
       this.silenceTimeout = null;
       if (this.eventSource !== eventSource) return;
 
-      const remaining = this.lastEventAt + STREAM_SILENCE_MS - Date.now();
+      const remaining = this.lastEventAt + streamSilenceMs - Date.now();
       if (remaining > 0) return this.watchForSilence(eventSource, remaining);
 
-      this.handleStreamFailure(`No event for ${STREAM_SILENCE_MS / 1000}s, closing the silent stream`);
+      this.handleStreamFailure(`No event for ${streamSilenceMs / 1000}s, closing the silent stream`);
     }, delay);
   }
 
@@ -449,9 +449,9 @@ export class StreamManager {
   private scheduleReconnect() {
     if (this.reconnectTimeout || this.circuitOpen) return;
 
-    const jitter = Math.random() * RECONNECT_JITTER_MS;
+    const jitter = Math.random() * reconnectJitterMs;
     const delay = this.currentBackoff + jitter;
-    this.currentBackoff = Math.min(MAX_BACKOFF_MS, this.currentBackoff * BACKOFF_FACTOR);
+    this.currentBackoff = Math.min(maxBackoffMs, this.currentBackoff * backoffFactor);
 
     console.debug(`[${this.name}] Scheduling reconnect in`, Math.round(delay / 1000), 's');
     this.reconnectTimeout = setTimeout(() => {
@@ -468,8 +468,8 @@ export class StreamManager {
     }
 
     const elapsed = Date.now() - (this.circuitOpenedAt ?? 0);
-    if (elapsed < CIRCUIT_COOLDOWN_MS) {
-      const secondsRemaining = Math.round((CIRCUIT_COOLDOWN_MS - elapsed) / 1000);
+    if (elapsed < circuitCooldownMs) {
+      const secondsRemaining = Math.round((circuitCooldownMs - elapsed) / 1000);
       console.debug(`[${this.name}] Circuit cooldown:`, secondsRemaining, 's remaining');
       return;
     }
@@ -480,7 +480,7 @@ export class StreamManager {
     console.debug(`[${this.name}] Circuit cooldown elapsed, checking health`);
 
     try {
-      const response = await fetch(HEALTH_URL);
+      const response = await fetch(healthUrl);
       if (response.ok) {
         console.debug(`[${this.name}] Health check passed, reconnecting`);
         this.reconnect();
@@ -563,7 +563,7 @@ export class StreamManager {
     this.circuitOpen = false;
     this.circuitOpenedAt = null;
     this.connectedAt = null;
-    this.currentBackoff = INITIAL_BACKOFF_MS;
+    this.currentBackoff = initialBackoffMs;
   }
 
   reconnect() {
@@ -618,7 +618,7 @@ export const appStreamManager = new StreamManager('AppStream', {
   processLeaderCatchup: processAppCatchup,
   processNotification: (notification) => handleAppStreamNotification(notification as AppStreamNotification),
   onPing: (data) => {
-    workerAway = data === WORKER_AWAY_PING;
+    workerAway = data === workerAwayPing;
     publishSyncHealth();
   },
 });

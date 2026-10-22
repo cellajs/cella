@@ -102,14 +102,14 @@ const { computeChannelCounters } = await import('#/modules/entities/counters-que
 
 type Tx = Parameters<Parameters<typeof cdcDb.transaction>[0]>[0];
 
-const SCHEMA = 'books_agreement';
+const schema = 'books_agreement';
 const ancestorColumns = 'organization_id uuid NOT NULL, course_id uuid, course_section_id uuid, project_id uuid';
 const productColumns = `id uuid PRIMARY KEY, ${ancestorColumns}, name text, seq bigint NOT NULL DEFAULT 0, deleted_at timestamp, created_at timestamp NOT NULL, updated_at timestamp, stx jsonb`;
 const membershipColumns = `id uuid PRIMARY KEY, ${ancestorColumns}, channel_type text NOT NULL, channel_id uuid NOT NULL, role text NOT NULL`;
 const ddl = [
-  `CREATE SCHEMA ${SCHEMA}`,
+  `CREATE SCHEMA ${schema}`,
   // Unqualified names resolve here first: the recount and the worker's statements name their tables without a schema.
-  `SET LOCAL search_path = ${SCHEMA}, public`,
+  `SET LOCAL search_path = ${schema}, public`,
   'CREATE TABLE organizations (id uuid PRIMARY KEY)',
   'CREATE TABLE courses (id uuid PRIMARY KEY, organization_id uuid NOT NULL)',
   'CREATE TABLE course_sections (id uuid PRIMARY KEY, organization_id uuid NOT NULL, course_id uuid NOT NULL)',
@@ -434,14 +434,14 @@ async function probeReady(): Promise<boolean> {
   }
 }
 
-const READY = await probeReady();
+const ready = await probeReady();
 
 /**
  * The template has one channel level and no embedding. Here the worker's own parser, buffer, deltas and cleanup run
  * over a random workload on synthetic tables, and the backend's recount counts those tables: the two must agree as a
  * verify compares them. All of it happens in one transaction that is rolled back.
  */
-describe.skipIf(!READY)('The books on a deep hierarchy with an embedding (integration)', () => {
+describe.skipIf(!ready)('The books on a deep hierarchy with an embedding (integration)', () => {
   it.each([11, 23, 47, 101])(
     'agree with a recount from the tables after a random workload (seed %i)',
     async (seed) => {
@@ -470,7 +470,7 @@ describe.skipIf(!READY)('The books on a deep hierarchy with an embedding (integr
   );
 
   it('leaves no trace in the database', async () => {
-    const left = await cdcDb.execute(sql`SELECT 1 FROM pg_namespace WHERE nspname = ${SCHEMA}`);
+    const left = await cdcDb.execute(sql`SELECT 1 FROM pg_namespace WHERE nspname = ${schema}`);
 
     expect(left.rows).toEqual([]);
   });

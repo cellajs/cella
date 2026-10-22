@@ -1,17 +1,17 @@
 import type pg from 'pg';
-import { decodeLogNotice, type LogNotice, YJS_LOG_CHANNEL } from '#/modules/yjs/helpers/yjs-log';
+import { decodeLogNotice, type LogNotice, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
 import { log } from '../lib/pino';
 import { createListenerClient } from './db';
 
 /** Reconnect delays: one second after a drop, doubling to thirty while the database stays unreachable. */
-const RECONNECT_MIN_MS = 1000;
-const RECONNECT_MAX_MS = 30_000;
+const reconnectMinMs = 1000;
+const reconnectMaxMs = 30_000;
 
 /** `listening`: notifications arrive. `connecting`: started, and (re)connecting. `off`: never started, or stopped. */
 export type LogListenerStatus = 'listening' | 'connecting' | 'off';
 
 interface ListenerHandlers {
-  /** Each notice a notification on YJS_LOG_CHANNEL carries; a payload that is not one is ignored. */
+  /** Each notice a notification on yjsLogChannel carries; a payload that is not one is ignored. */
   onNotice: (notice: LogNotice) => void;
   /** After every LISTEN, the first included: whatever was notified while no connection listened never arrives. */
   onListening: () => void;
@@ -57,13 +57,13 @@ async function connect(): Promise<void> {
   next.on('error', (err) => drop(next, err));
   next.on('end', () => drop(next));
   next.on('notification', ({ channel, payload }) => {
-    if (channel !== YJS_LOG_CHANNEL || !payload || client !== next) return;
+    if (channel !== yjsLogChannel || !payload || client !== next) return;
     const notice = decodeLogNotice(payload);
     if (notice) handlers?.onNotice(notice);
   });
   try {
     await next.connect();
-    await next.query(`LISTEN ${YJS_LOG_CHANNEL}`);
+    await next.query(`LISTEN ${yjsLogChannel}`);
   } catch (err) {
     drop(next, err);
     return;
@@ -83,7 +83,7 @@ function drop(dead: pg.Client, err?: unknown): void {
   dead.end().catch(() => undefined);
   if (!handlers) return;
   status = 'connecting';
-  const delay = Math.min(RECONNECT_MAX_MS, RECONNECT_MIN_MS * 2 ** attempts++);
+  const delay = Math.min(reconnectMaxMs, reconnectMinMs * 2 ** attempts++);
   log.warn(`Yjs log listener lost its connection: reconnecting in ${delay} ms`, { err });
   retryTimer = setTimeout(() => void connect(), delay);
   // The listener never keeps the process alive at shutdown.

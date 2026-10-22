@@ -11,7 +11,7 @@ vi.mock('~/modules/common/blocknote/yjs-tab-channel', () => ({
   toTabKey: (key: { entityType: string; entityId: string }) => `${key.entityType}:${key.entityId}`,
 }));
 let offlineAccess = true;
-vi.mock('~/modules/ui/ui-store', () => ({ useUIStore: { getState: () => ({ offlineAccess }) } }));
+vi.mock('~/modules/ui/ui-store', () => ({ uiStore: { getState: () => ({ offlineAccess }) } }));
 const warnOnStoragePressure = vi.fn(async (_opts?: { limitsReached?: boolean }) => {});
 vi.mock('~/modules/common/blocknote/storage-warning', () => ({
   warnOnStoragePressure: (opts?: { limitsReached?: boolean }) => warnOnStoragePressure(opts),
@@ -369,15 +369,15 @@ describe('yjs store: trimming', () => {
       const doc = new Y.Doc();
       const writer = startWriter(doc);
       await flushYjsStore();
-      for (let i = 0; i <= store.TRIM_ROWS; i++) {
+      for (let i = 0; i <= store.trimRows; i++) {
         remoteEdit(doc, writer, '.');
         await flushYjsStore();
       }
-      expect((await rows()).length).toBeGreaterThan(store.TRIM_ROWS);
+      expect((await rows()).length).toBeGreaterThan(store.trimRows);
 
-      await vi.advanceTimersByTimeAsync(store.TRIM_DEBOUNCE_MS);
+      await vi.advanceTimersByTimeAsync(store.trimDebounceMs);
       await vi.waitFor(async () => expect(await rows()).toHaveLength(0));
-      expect((await storedText()).length).toBe(store.TRIM_ROWS + 1);
+      expect((await storedText()).length).toBe(store.trimRows + 1);
     } finally {
       vi.useRealTimers();
     }
@@ -398,22 +398,22 @@ describe('yjs store: eviction', () => {
   const storedIds = async () => (await db.yDocs.toArray()).map((r) => r.entityId).sort();
 
   it('evicts the least recently opened documents past the document limit, with their base and rows', async () => {
-    const total = store.MAX_STORED_DOCS + 3;
+    const total = store.maxStoredDocs + 3;
     for (let i = 0; i < total; i++) await seed(`d${String(i).padStart(3, '0')}`, 2 * hour + (total - i) * 1_000);
 
     await evictYDocs();
 
     const ids = await storedIds();
-    expect(ids).toHaveLength(store.MAX_STORED_DOCS);
+    expect(ids).toHaveLength(store.maxStoredDocs);
     expect(ids).not.toContain('d000');
     expect(ids).not.toContain('d002');
     expect(ids).toContain('d003');
-    expect(await db.yDocStates.count()).toBe(store.MAX_STORED_DOCS);
-    expect(await db.yDocUpdates.count()).toBe(store.MAX_STORED_DOCS);
+    expect(await db.yDocStates.count()).toBe(store.maxStoredDocs);
+    expect(await db.yDocUpdates.count()).toBe(store.maxStoredDocs);
   });
 
   it('evicts past the byte budget', async () => {
-    const third = Math.floor(store.MAX_STORED_BYTES / 3);
+    const third = Math.floor(store.maxStoredBytes / 3);
     for (const [i, id] of ['a', 'b', 'c', 'd'].entries()) await seed(id, (5 - i) * hour, { bytes: third });
 
     await evictYDocs();
@@ -421,7 +421,7 @@ describe('yjs store: eviction', () => {
   });
 
   it('must not evict a document with unsynced edits, one open in this tab, one opened within the hour, or parked edits', async () => {
-    const total = store.MAX_STORED_DOCS + 10;
+    const total = store.maxStoredDocs + 10;
     for (let i = 0; i < total; i++) await seed(`d${String(i).padStart(3, '0')}`, 3 * hour);
     await seed('unsynced', 10 * hour, { unsynced: 1 });
     await seed('recent', 10 * 60_000);
@@ -458,7 +458,7 @@ describe('yjs store: eviction', () => {
     await evictYDocs();
     expect(warnOnStoragePressure).toHaveBeenLastCalledWith({ limitsReached: false });
 
-    for (let i = 0; i <= store.MAX_STORED_DOCS; i++) await seed(`u${i}`, 3 * hour, { unsynced: 1 });
+    for (let i = 0; i <= store.maxStoredDocs; i++) await seed(`u${i}`, 3 * hour, { unsynced: 1 });
     await evictYDocs();
     expect(warnOnStoragePressure).toHaveBeenLastCalledWith({ limitsReached: true });
   });
@@ -642,7 +642,7 @@ describe('yjs store: boot resume', () => {
     await resumeYDocs();
 
     expect(resumeConnection.mock.calls.map(([record]) => record.entityId).sort()).toEqual(['u0', 'u1', 'u2', 'u3', 'u4']);
-    expect(most).toBe(store.RESUME_CONCURRENCY);
+    expect(most).toBe(store.resumeConcurrency);
   });
 
   it('a follower tab resumes nothing (positive control: the leader does)', async () => {

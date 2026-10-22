@@ -11,7 +11,7 @@ import { appConfig, type ProductEntityType } from 'shared';
 import type * as Y from 'yjs';
 import { warnOnStoragePressure } from '~/modules/common/blocknote/storage-warning';
 import { postTabUpdate, toTabKey } from '~/modules/common/blocknote/yjs-tab-channel';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { uiStore } from '~/modules/ui/ui-store';
 import {
   getLocalUserDb,
   type LocalUserDatabase,
@@ -24,23 +24,23 @@ import {
 import { isLeader, tabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 
 /** The longest a load may hold up the provider's connect. */
-export const STORE_LOAD_TIMEOUT_MS = 5_000;
-/** A document's update rows are trimmed into its base past this many rows, or past `TRIM_BYTES`. */
-export const TRIM_ROWS = 100;
-const TRIM_BYTES = 256 * 1024;
+export const storeLoadTimeoutMs = 5_000;
+/** A document's update rows are trimmed into its base past this many rows, or past `trimBytes`. */
+export const trimRows = 100;
+const trimBytes = 256 * 1024;
 /** A trim waits this long for more rows, so a burst of edits trims once. */
-export const TRIM_DEBOUNCE_MS = 2_000;
-/** Eviction removes the least recently opened documents past this many, or past `MAX_STORED_BYTES` in all. */
-export const MAX_STORED_DOCS = 200;
-export const MAX_STORED_BYTES = 50 * 1024 * 1024;
+export const trimDebounceMs = 2_000;
+/** Eviction removes the least recently opened documents past this many, or past `maxStoredBytes` in all. */
+export const maxStoredDocs = 200;
+export const maxStoredBytes = 50 * 1024 * 1024;
 /** Eviction leaves a document opened within this window alone: another tab may hold it open. */
-const EVICT_MIN_AGE_MS = 60 * 60_000;
+const evictMinAgeMs = 60 * 60_000;
 /** Eviction runs at most this often after a first store or a trim. */
-const EVICT_INTERVAL_MS = 60_000;
+const evictIntervalMs = 60_000;
 /** Without offline access (session mode), eviction also drops synced documents not opened within this window. */
-const SESSION_KEEP_MS = 2 * 60 * 60_000;
+const sessionKeepMs = 2 * 60 * 60_000;
 /** Background connections boot resume opens at a time. */
-export const RESUME_CONCURRENCY = 3;
+export const resumeConcurrency = 3;
 
 /** The origin a stored state is applied with: no edit of this tab, and nothing to store again. */
 export const storageOrigin = Symbol('yjs-store');
@@ -496,7 +496,7 @@ class StoreWriter implements YDocWriter {
       };
       await db.yDocs.put(next);
       const rows = await rowsOf(db, key).count();
-      return { ...result, trim: rows > TRIM_ROWS || next.updateBytes > TRIM_BYTES };
+      return { ...result, trim: rows > trimRows || next.updateBytes > trimBytes };
     });
   }
 
@@ -535,7 +535,7 @@ export async function flushYjsStore(): Promise<void> {
 
 const trimTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-/** Trims a document `TRIM_DEBOUNCE_MS` after its last call. */
+/** Trims a document `trimDebounceMs` after its last call. */
 function scheduleTrim(key: YDocKey) {
   const id = toTabKey(key);
   clearTimeout(trimTimers.get(id));
@@ -544,7 +544,7 @@ function scheduleTrim(key: YDocKey) {
     setTimeout(() => {
       trimTimers.delete(id);
       void trimYDoc(key).catch((error) => console.warn('[yjs-store] Trim failed', error));
-    }, TRIM_DEBOUNCE_MS),
+    }, trimDebounceMs),
   );
 }
 
@@ -589,10 +589,10 @@ async function relieveQuota(key: YDocKey) {
 let lastEvictionAt = 0;
 let evictionTimer: ReturnType<typeof setTimeout> | undefined;
 
-/** Evicts now, or once `EVICT_INTERVAL_MS` passed since the last run. */
+/** Evicts now, or once `evictIntervalMs` passed since the last run. */
 function scheduleEviction() {
   if (evictionTimer) return;
-  const wait = Math.max(0, lastEvictionAt + EVICT_INTERVAL_MS - Date.now());
+  const wait = Math.max(0, lastEvictionAt + evictIntervalMs - Date.now());
   evictionTimer = setTimeout(() => {
     evictionTimer = undefined;
     void evictYDocs().catch((error) => console.warn('[yjs-store] Eviction failed', error));
@@ -603,9 +603,9 @@ function scheduleEviction() {
 const openKeys = () => new Set([...writers].filter((writer) => !writer.released).map((writer) => toTabKey(writer.key)));
 
 /**
- * Deletes the least recently opened documents while more than `MAX_STORED_DOCS` are stored or more than
- * `MAX_STORED_BYTES` in all, and in session mode every one not opened within `SESSION_KEEP_MS`. Never one with
- * unsynced edits, one open in this tab, or one opened within `EVICT_MIN_AGE_MS` (which may be open in another);
+ * Deletes the least recently opened documents while more than `maxStoredDocs` are stored or more than
+ * `maxStoredBytes` in all, and in session mode every one not opened within `sessionKeepMs`. Never one with
+ * unsynced edits, one open in this tab, or one opened within `evictMinAgeMs` (which may be open in another);
  * parked edits are never evicted. Then warns when the device's storage runs low, or the limits stay reached.
  */
 export async function evictYDocs(): Promise<void> {
@@ -613,9 +613,9 @@ export async function evictYDocs(): Promise<void> {
   if (!db) return;
   lastEvictionAt = Date.now();
   const now = Date.now();
-  const sessionMode = !useUIStore.getState().offlineAccess;
+  const sessionMode = !uiStore.getState().offlineAccess;
   const open = openKeys();
-  const evictable = (record: YDocRecord) => record.unsynced === 0 && !open.has(toTabKey(record)) && now - record.lastOpenedAt > EVICT_MIN_AGE_MS;
+  const evictable = (record: YDocRecord) => record.unsynced === 0 && !open.has(toTabKey(record)) && now - record.lastOpenedAt > evictMinAgeMs;
 
   const records = await db.yDocs.orderBy('lastOpenedAt').toArray();
   let count = records.length;
@@ -623,8 +623,8 @@ export async function evictYDocs(): Promise<void> {
   const victims: YDocRecord[] = [];
   for (const record of records) {
     if (!evictable(record)) continue;
-    const expired = sessionMode && now - record.lastOpenedAt > SESSION_KEEP_MS;
-    if (!expired && count <= MAX_STORED_DOCS && bytes <= MAX_STORED_BYTES) continue;
+    const expired = sessionMode && now - record.lastOpenedAt > sessionKeepMs;
+    if (!expired && count <= maxStoredDocs && bytes <= maxStoredBytes) continue;
     victims.push(record);
     count--;
     bytes -= record.bytes;
@@ -639,7 +639,7 @@ export async function evictYDocs(): Promise<void> {
       }
     });
   }
-  await warnOnStoragePressure({ limitsReached: count > MAX_STORED_DOCS || bytes > MAX_STORED_BYTES });
+  await warnOnStoragePressure({ limitsReached: count > maxStoredDocs || bytes > maxStoredBytes });
 }
 
 /** Stored documents with unsynced edits, then parked ones. */
@@ -739,7 +739,7 @@ export function resumeYDocs(): Promise<void> {
         await resumeConnection(record).catch((error) => console.warn('[yjs-store] Resume failed', error));
       }
     };
-    await Promise.all(Array.from({ length: Math.min(RESUME_CONCURRENCY, queue.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(resumeConcurrency, queue.length) }, worker));
   })().finally(() => {
     resuming = null;
   });

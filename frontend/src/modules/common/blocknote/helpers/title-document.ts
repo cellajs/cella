@@ -7,7 +7,7 @@ import type { CustomBlock, TitleLevel } from '~/modules/common/blocknote/types';
  * Matches backend maxLength.field (backend/src/db/utils/constraints.ts): name column limit.
  * @public
  */
-export const TITLE_MAX_LENGTH = 255;
+export const titleMaxLength = 255;
 
 type LooseBlock = { type: string; props?: Record<string, unknown>; content?: unknown; children?: LooseBlock[] };
 

@@ -20,7 +20,7 @@ type GeoipDatabase<T extends MmdbResponse> = {
   warned: boolean;
 };
 
-const REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const refreshIntervalMs = 24 * 60 * 60 * 1000;
 
 const country: GeoipDatabase<CountryResponse> = {
   kind: 'country',
@@ -145,7 +145,7 @@ export const refreshGeoipDatabases = async (): Promise<Record<GeoipKind, 'update
  * Boot-time download plus a daily re-check, per process: every API replica keeps its own copy current. The timer is
  * unref'd so it never holds the process open; the returned handle stops it on shutdown.
  */
-export const startGeoipRefresh = (intervalMs: number = REFRESH_INTERVAL_MS): (() => void) => {
+export const startGeoipRefresh = (intervalMs: number = refreshIntervalMs): (() => void) => {
   if (!geoipSourceUrl()) return () => {};
   void refreshGeoipDatabases();
   const timer = setInterval(() => void refreshGeoipDatabases(), intervalMs);

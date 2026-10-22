@@ -3,7 +3,7 @@ import { replicationState } from '../services/replication-state';
 import { gradeWorker, type WorkerGrade } from './health';
 import { wsClient } from './websocket-client';
 
-const HEALTH_PUSH_INTERVAL_MS = 15_000;
+const healthPushIntervalMs = 15_000;
 
 /** What the worker pushes to the API: its own grade, which the API passes on, and the generation of the books. */
 export type HealthPush = WorkerGrade & { generation: number };
@@ -30,7 +30,7 @@ export function startHealthReporter(): void {
   if (timer) return;
   // Without this the API shows no report of a worker that just connected until the timer comes round.
   wsClient.onOpen = pushHealth;
-  timer = setInterval(pushHealth, HEALTH_PUSH_INTERVAL_MS);
+  timer = setInterval(pushHealth, healthPushIntervalMs);
   timer.unref?.();
 }
 

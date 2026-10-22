@@ -1,6 +1,6 @@
 import { flushYjsStore } from '~/modules/common/blocknote/yjs-store';
-import { useUIStore } from '~/modules/ui/ui-store';
-import { useUserStore } from '~/modules/user/user-store';
+import { uiStore } from '~/modules/ui/ui-store';
+import { userStore } from '~/modules/user/user-store';
 import { deleteLocalUserDb } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
 
@@ -18,9 +18,9 @@ export const teardownUserState = async (wipe = true): Promise<void> => {
   if (wipe) await deleteLocalUserDb();
 
   // Reset the bootstrap UI session flag (offline access); theme/mode persist.
-  useUIStore.getState().reset();
+  uiStore.getState().reset();
 
   // Nulling the user closes the local DB and resets every per-user store; only a wipe forgets `lastUser`.
-  if (wipe) useUserStore.getState().reset();
-  else useUserStore.setState({ user: null, isSystemAdmin: false, impersonator: null, yjsTokens: {} });
+  if (wipe) userStore.getState().reset();
+  else userStore.setState({ user: null, isSystemAdmin: false, impersonator: null, yjsTokens: {} });
 };

@@ -1,10 +1,10 @@
 import process from 'node:process';
-export const CDC_PUBLICATION_NAME = 'cdc_pub';
+export const cdcPublicationName = 'cdc_pub';
 
 // biome-ignore lint/style/noProcessEnv: constants must stay import-safe; pulling in the env module here would run its validation on every import
-export const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
+export const cdcSlotName = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
 
-export const RESOURCE_LIMITS = {
+export const resourceLimits = {
   // The replication connection
   runtime: {
     /** How often the last acknowledged position is sent again: well inside Postgres's `wal_sender_timeout` of a minute. */

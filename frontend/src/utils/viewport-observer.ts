@@ -7,7 +7,7 @@
 /** Fixed elements track browser chrome (URL bar, toolbars) natively, so only a keyboard-sized occlusion counts. Smaller
  * ones are chrome animation lag: while the chrome slides in or out, innerHeight and visualViewport.height disagree by
  * up to its height until the browser resizes, which can be well after the last viewport event. */
-const MIN_KEYBOARD_PX = 100;
+const minKeyboardPx = 100;
 
 export const initViewportObserver = () => {
   const viewport = window.visualViewport;
@@ -21,7 +21,7 @@ export const initViewportObserver = () => {
     if (viewport.scale > 1.01) return false;
     // Rubber-band overscroll drives offsetTop negative, which would inflate the occlusion.
     const offsetTop = Math.max(0, viewport.offsetTop);
-    return window.innerHeight - viewport.height - offsetTop >= MIN_KEYBOARD_PX;
+    return window.innerHeight - viewport.height - offsetTop >= minKeyboardPx;
   };
 
   const update = () => {

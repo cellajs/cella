@@ -12,12 +12,12 @@ interface DataTableSkeletonProps {
   shrinkTable?: boolean;
 }
 
-const EMPTY_CELL_WIDTHS: string[] = [];
+const emptyCellWidths: string[] = [];
 
 export function DataTableSkeleton({
   columnCount = 4,
   cellHeight = 40,
-  cellsWidths = EMPTY_CELL_WIDTHS,
+  cellsWidths = emptyCellWidths,
   rowCount = 20,
   shrinkTable = false,
 }: DataTableSkeletonProps) {

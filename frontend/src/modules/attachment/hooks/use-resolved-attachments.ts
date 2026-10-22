@@ -13,8 +13,8 @@ type AttachmentMetaFields = Pick<Attachment, 'keys' | 'publicBucket' | 'organiza
 type ResolvableItem = Partial<CarouselItemData> & Partial<AttachmentMetaFields> & { id: string };
 
 /** Transient failures (blob mid-download, cache mid-sync) get a few retries before "not found". */
-const RESOLVE_RETRY_LIMIT = 3;
-const RESOLVE_RETRY_DELAY_MS = 600;
+const resolveRetryLimit = 3;
+const resolveRetryDelayMs = 600;
 
 interface ResolvedAttachmentsResult {
   items: CarouselItemData[];
@@ -128,9 +128,9 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
         setIsLoading(false);
 
         // Retries are bounded per item set: a transient failure means the blob is still downloading or the cache is mid-sync.
-        if (hasTransientErrors && retryCountRef.current < RESOLVE_RETRY_LIMIT) {
+        if (hasTransientErrors && retryCountRef.current < resolveRetryLimit) {
           retryCountRef.current += 1;
-          retryTimer = setTimeout(() => setRetrySignal((v) => v + 1), RESOLVE_RETRY_DELAY_MS);
+          retryTimer = setTimeout(() => setRetrySignal((v) => v + 1), resolveRetryDelayMs);
         }
       }
     };

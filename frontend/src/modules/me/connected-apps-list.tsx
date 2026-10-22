@@ -3,7 +3,7 @@ import { PlugZapIcon, UnplugIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { ScopeBadges } from '~/modules/common/scope-badges';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { meConnectedAppsQueryOptions, useRevokeConnectedAppMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
@@ -18,7 +18,7 @@ export function ConnectedAppsList() {
   const { mutate: revoke, isPending } = useRevokeConnectedAppMutation();
 
   const handleRevoke = (id: string) => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
     revoke({ path: { id } });
   };
 

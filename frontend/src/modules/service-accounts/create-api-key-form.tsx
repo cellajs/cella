@@ -4,7 +4,7 @@ import type { CreateServiceAccountData, CreateServiceAccountResponse } from 'sdk
 import { zCreateServiceAccountBody } from 'sdk/zod.gen';
 import { hierarchy } from 'shared';
 import type { z } from 'zod';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useCreateServiceAccountMutation } from '~/modules/service-accounts/query';
@@ -41,7 +41,7 @@ export function CreateApiKeyForm({ path, onCreated }: CreateApiKeyFormProps) {
   const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { name: '' } });
   const { isDirty } = useFormState({ control: form.control });
 
-  const closeDialog = () => useDialoger.getState().remove(createApiKeyDialogId);
+  const closeDialog = () => dialoger.getState().remove(createApiKeyDialogId);
 
   const onSubmit = (values: FormValues) => {
     const name = values.name.trim();

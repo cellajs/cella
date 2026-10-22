@@ -18,7 +18,7 @@ import { InputFormField } from '~/modules/common/form-fields/input';
 import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SelectRoles } from '~/modules/common/form-fields/select-roles';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
@@ -58,7 +58,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
       if (testOnly) return toaster.success(t('c:success.test_email'));
       form.reset();
       toaster.success(t('c:success.create_newsletter'));
-      useSheeter.getState().remove(formContainerId);
+      sheeter.getState().remove(formContainerId);
       callback?.({ status: 'success' });
     },
   });

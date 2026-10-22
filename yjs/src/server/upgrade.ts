@@ -3,7 +3,7 @@ import type { Duplex } from 'node:stream';
 import { URL } from 'node:url';
 import { MissingAncestorError } from 'shared';
 import type { WebSocket, WebSocketServer } from 'ws';
-import { type SocketContext, YJS_PENDING_QUEUE_CAP } from '../constants';
+import { type SocketContext, yjsPendingQueueCap } from '../constants';
 import { authorizeDoc } from '../data/permissions';
 import { log } from '../lib/pino';
 import { createSerialQueue } from '../lib/serial-queue';
@@ -279,7 +279,7 @@ export function setupConnectionHandler(server: WebSocketServer): void {
       }
       // Bounds memory while a slow verification holds the queue; a verified socket is not capped. A frame dropped here
       // gets no `Saved`, so the socket closes, and the client's next handshake carries what it held.
-      if (!ctx.scope && queue.size >= YJS_PENDING_QUEUE_CAP) {
+      if (!ctx.scope && queue.size >= yjsPendingQueueCap) {
         if (ws.readyState === ws.OPEN) ws.close(1011, 'Too many frames before verification');
         return;
       }

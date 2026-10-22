@@ -14,7 +14,7 @@ import { useColumns } from '~/modules/memberships/pending-table/pending-columns'
 import { pendingMembershipsQueryOptions } from '~/modules/memberships/query';
 import type { PendingMembership } from '~/modules/memberships/types';
 
-const LIMIT = appConfig.requestLimits.pendingMemberships;
+const requestLimit = appConfig.requestLimits.pendingMemberships;
 
 function rowKeyGetter(row: PendingMembership) {
   return row.id;
@@ -33,7 +33,7 @@ export function PendingMembershipsTable({ channel }: PendingMembershipsTableProp
   const { search, setSearch } = useSearchParams<PendingMembershipsSearch>({ saveDataInSearch: false });
 
   const { sort, order } = search;
-  const limit = LIMIT;
+  const limit = requestLimit;
 
   const [columns] = useColumns(
     { tenantId: channel.tenantId, organizationId: channel.organizationId || channel.id },

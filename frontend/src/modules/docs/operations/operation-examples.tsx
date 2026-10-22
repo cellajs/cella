@@ -3,7 +3,7 @@ import i18n from 'i18next';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary } from 'sdk/docs-types';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { tw } from '~/utils/tw';
 import { typesIndexQueryOptions, zodIndexQueryOptions } from '../helpers/extract-types';
@@ -16,7 +16,7 @@ interface OperationExamplesProps {
 }
 
 export function openExamplesSheet(operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) {
-  useSheeter.getState().create(
+  sheeter.getState().create(
     <Suspense fallback={<Spinner size="lg" className="mt-[40vh]" />}>
       <div className="container pt-3 pb-[50vh]">
         <OperationExamples operationId={operation.id} tagName={operation.tags[0]} />

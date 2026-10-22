@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { YJS_CLEANUP_DELAY_MS } from '../constants';
+import { yjsCleanupDelayMs } from '../constants';
 import { deferred, flushMicrotasks, mockScope, mockWebSocket, storageMock } from './helpers';
 
 vi.mock('../data/storage', () => storageMock());
@@ -101,27 +101,27 @@ describe('the periodic sweep', () => {
     vi.useRealTimers();
   });
 
-  it('sweeps every YJS_CLEANUP_DELAY_MS while the relay stays up, so rows posted over HTTP are written without a restart (D15)', async () => {
+  it('sweeps every yjsCleanupDelayMs while the relay stays up, so rows posted over HTTP are written without a restart (D15)', async () => {
     vi.useFakeTimers();
     const doc = staleRow({ entityId: 'entity-posted' });
     vi.mocked(listStaleDocs).mockResolvedValueOnce([]).mockResolvedValueOnce([doc]);
     const stop = startPeriodicSweep();
     try {
-      await vi.advanceTimersByTimeAsync(YJS_CLEANUP_DELAY_MS);
+      await vi.advanceTimersByTimeAsync(yjsCleanupDelayMs);
       expect(listStaleDocs).toHaveBeenCalledTimes(1);
       expect(compactDocument).not.toHaveBeenCalled();
 
       // The rows posted since are listed once they are older than the grace, at the next run.
-      await vi.advanceTimersByTimeAsync(YJS_CLEANUP_DELAY_MS);
+      await vi.advanceTimersByTimeAsync(yjsCleanupDelayMs);
       expect(listStaleDocs).toHaveBeenCalledTimes(2);
-      expect(listStaleDocs).toHaveBeenLastCalledWith(YJS_CLEANUP_DELAY_MS);
+      expect(listStaleDocs).toHaveBeenLastCalledWith(yjsCleanupDelayMs);
       expect(compactDocument).toHaveBeenCalledWith(doc, null);
     } finally {
       stop();
     }
 
     // Stopped, as at shutdown: no run comes due.
-    await vi.advanceTimersByTimeAsync(3 * YJS_CLEANUP_DELAY_MS);
+    await vi.advanceTimersByTimeAsync(3 * yjsCleanupDelayMs);
     expect(listStaleDocs).toHaveBeenCalledTimes(2);
   });
 
@@ -150,7 +150,7 @@ describe('the periodic sweep', () => {
     vi.mocked(listStaleDocs).mockRejectedValueOnce(new Error('db down'));
     const stop = startPeriodicSweep();
     try {
-      await vi.advanceTimersByTimeAsync(2 * YJS_CLEANUP_DELAY_MS);
+      await vi.advanceTimersByTimeAsync(2 * yjsCleanupDelayMs);
       expect(listStaleDocs).toHaveBeenCalledTimes(2);
     } finally {
       stop();

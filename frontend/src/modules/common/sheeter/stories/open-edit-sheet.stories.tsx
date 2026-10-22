@@ -9,7 +9,7 @@ import { openUpdateSheet as openUpdateOrganizationSheet } from '~/modules/organi
 import { openUpdateSheet as openUpdateTenantSheet } from '~/modules/tenants/table/tenants-columns';
 import { openUpdateUserSheet } from '~/modules/user/table/users-columns';
 import type { BaseUser } from '~/modules/user/types';
-import { useUserStore } from '~/modules/user/user-store';
+import { userStore } from '~/modules/user/user-store';
 import { withApp } from '~/stories/with-app';
 
 type Opener = (triggerRef: RefObject<HTMLButtonElement | null>) => void;
@@ -56,10 +56,10 @@ const meta = {
   beforeEach: () => {
     i18n.addResourceBundle('en', 'c', translations, true, true);
     // The user form compares the edited user with the signed-in one.
-    useUserStore.setState({ user: { ...user, id: 'me' } as never });
+    userStore.setState({ user: { ...user, id: 'me' } as never });
     return () => {
       i18n.removeResourceBundle('en', 'c');
-      useUserStore.setState({ user: null });
+      userStore.setState({ user: null });
     };
   },
 } satisfies Meta<typeof EditSheetTrigger>;

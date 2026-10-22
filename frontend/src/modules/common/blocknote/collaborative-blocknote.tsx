@@ -32,7 +32,7 @@ type CollaborativeBlockNoteProps = PassthroughProps & {
 };
 
 /** How long a connection may take before the static says it is connecting: a quick one shows no notice, so its swap to the editor does not reflow. */
-const CONNECTING_NOTICE_MS = 1_000;
+const connectingNoticeMs = 1_000;
 
 /** Whether descriptions save through the Yjs relay: one save mode for every type, fixed by config. */
 const isYjsEnabled = () => appConfig.services.yjs.enabled && !!appConfig.yjsUrl;
@@ -120,7 +120,7 @@ function CollaborativeHost({
   const [connectingNoticed, setConnectingNoticed] = useState(false);
   useEffect(() => {
     if (!connecting) return;
-    const timer = setTimeout(() => setConnectingNoticed(true), CONNECTING_NOTICE_MS);
+    const timer = setTimeout(() => setConnectingNoticed(true), connectingNoticeMs);
     return () => {
       clearTimeout(timer);
       setConnectingNoticed(false);

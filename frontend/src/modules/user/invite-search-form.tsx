@@ -1,7 +1,7 @@
 import { SendIcon } from 'lucide-react';
 import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -44,7 +44,7 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
           }
           if (rejectedIds.length) toaster.info(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }));
 
-          if (isDialog) useDialoger.getState().remove();
+          if (isDialog) dialoger.getState().remove();
         },
       },
     );

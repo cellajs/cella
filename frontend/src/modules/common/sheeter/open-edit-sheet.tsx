@@ -1,7 +1,7 @@
 import i18n from 'i18next';
 import type { ReactNode } from 'react';
 import type { TKey } from '~/lib/i18n-locales';
-import { type TriggerRef, useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter, type TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { ToolCard } from '~/modules/common/tool-card';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { Card, CardContent } from '~/modules/ui/card';
@@ -29,7 +29,7 @@ export function openEditSheet({ id, resource, triggerRef, children, section, aft
   const title = i18n.t('c:edit_resource', { resource: i18n.t(resource).toLowerCase() });
   const cardClass = after ? 'mb-4' : 'mb-20';
 
-  useSheeter.getState().create(
+  sheeter.getState().create(
     <div className={className}>
       {section ? (
         <ToolCard label={section.label} unsaved id={section.id} className={cardClass}>

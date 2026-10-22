@@ -22,11 +22,11 @@ export interface HealthResponse {
   components: Record<string, HealthComponent>;
 }
 
-const RANK: Record<HealthStatus, number> = { healthy: 0, degraded: 1, unhealthy: 2 };
+const statusRank: Record<HealthStatus, number> = { healthy: 0, degraded: 1, unhealthy: 2 };
 
 /** Return the worse (higher-severity) of two statuses. */
 export function worstStatus(a: HealthStatus, b: HealthStatus): HealthStatus {
-  return RANK[a] >= RANK[b] ? a : b;
+  return statusRank[a] >= statusRank[b] ? a : b;
 }
 
 /** Only critical components reach `unhealthy`; others cap at `degraded` so a flaky worker keeps the API registered. */
@@ -39,13 +39,13 @@ export function rollupStatus(components: Record<string, HealthComponent>, critic
   return result;
 }
 
-const EVENT_LOOP_LAG_DEGRADED_MS = 100;
-const EVENT_LOOP_LAG_UNHEALTHY_MS = 1_000;
+const eventLoopLagDegradedMs = 100;
+const eventLoopLagUnhealthyMs = 1_000;
 
 /** Grade a Node service's own runtime from event-loop lag. */
 export function gradeEventLoop(eventLoopLagMs: number): HealthStatus {
-  if (eventLoopLagMs >= EVENT_LOOP_LAG_UNHEALTHY_MS) return 'unhealthy';
-  if (eventLoopLagMs >= EVENT_LOOP_LAG_DEGRADED_MS) return 'degraded';
+  if (eventLoopLagMs >= eventLoopLagUnhealthyMs) return 'unhealthy';
+  if (eventLoopLagMs >= eventLoopLagDegradedMs) return 'degraded';
   return 'healthy';
 }
 
@@ -69,7 +69,7 @@ export function mapDatabaseComponent(connected: boolean, latencyMs: number | nul
 }
 
 /** Worker reports are considered stale (and therefore degrading) after this long without an update. */
-export const WORKER_HEALTH_STALE_MS = 45_000;
+export const workerHealthStaleMs = 45_000;
 
 /** The worker socket as the API holds it. */
 export interface CdcSocketSnapshot {
@@ -104,7 +104,7 @@ export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerRepo
   }
 
   const health = worker?.health ?? null;
-  const stale = !worker || worker.ageMs > WORKER_HEALTH_STALE_MS;
+  const stale = !worker || worker.ageMs > workerHealthStaleMs;
   const ownReason = stale ? 'worker_report_stale' : health ? null : 'worker_report_unreadable';
   const reasons = [...(ownReason ? [ownReason] : []), ...(health?.reasons ?? [])];
 

@@ -5,7 +5,7 @@ import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
 import { type LegalSubject, legalConfig } from '~/modules/auth/legal/legal-config';
 import { LegalDialogNavProvider } from '~/modules/auth/legal/legal-cross-link';
 import { LegalText } from '~/modules/auth/legal/legal-text';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
@@ -17,9 +17,8 @@ function LegalDialog({ initialSubject }: { initialSubject: LegalSubject }) {
   const [subject, setSubject] = useState(initialSubject);
 
   useEffect(() => {
-    const dialoger = useDialoger.getState();
-    dialoger.update('legal', { title: t(legalConfig[subject].label) });
-    dialoger.scrollToTop('legal');
+    dialoger.getState().update('legal', { title: t(legalConfig[subject].label) });
+    dialoger.getState().scrollToTop('legal');
   }, [subject, t]);
 
   return (

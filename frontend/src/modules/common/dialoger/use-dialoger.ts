@@ -72,3 +72,6 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
 
   setTriggerRef: () => {},
 }));
+
+// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
+export { useDialoger as dialoger };

@@ -8,12 +8,12 @@ const pendingDeltas: { channelId: string; productType: ProductEntityType; delta:
 let flushScheduled = false;
 
 /** Max delay before forcing a flush when the browser never goes idle */
-const MAX_DELAY_MS = 5000;
+const maxDelayMs = 5000;
 
 const scheduleIdle =
   typeof requestIdleCallback === 'function'
-    ? (cb: () => void) => requestIdleCallback(cb, { timeout: MAX_DELAY_MS })
-    : (cb: () => void) => setTimeout(cb, MAX_DELAY_MS);
+    ? (cb: () => void) => requestIdleCallback(cb, { timeout: maxDelayMs })
+    : (cb: () => void) => setTimeout(cb, maxDelayMs);
 
 export function applyUnseenDelta(channelId: string, productType: ProductEntityType, delta: number) {
   pendingDeltas.push({ channelId, productType, delta });

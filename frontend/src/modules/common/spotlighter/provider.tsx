@@ -1,10 +1,10 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect } from 'react';
-import { useSpotlighter } from '~/modules/common/spotlighter/use-spotlighter';
+import { spotlighter, useSpotlighter } from '~/modules/common/spotlighter/use-spotlighter';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
 const closeTop = () => {
-  const { stack } = useSpotlighter.getState();
+  const { stack } = spotlighter.getState();
   stack[stack.length - 1]?.onClose();
 };
 

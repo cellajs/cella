@@ -1,4 +1,4 @@
-import { useUserStore } from '~/modules/user/user-store';
+import { userStore } from '~/modules/user/user-store';
 
 // Dynamic import to avoid circular dependency: router -> routeTree.gen -> route files
 const navigate = (to: '/home' | '/welcome', replace = true) => {
@@ -9,13 +9,13 @@ const navigate = (to: '/home' | '/welcome', replace = true) => {
 
 /** onEnter, not beforeLoad: these run after the user store is populated. */
 export const redirectToWelcomeIfOnboarding = () => {
-  const { user } = useUserStore.getState();
+  const { user } = userStore.getState();
   if (!user) return;
   if (!user.userFlags.finishedOnboarding) navigate('/welcome');
 };
 
 export const redirectToHomeIfOnboarded = () => {
-  const { user } = useUserStore.getState();
+  const { user } = userStore.getState();
   if (!user) return;
   if (user.userFlags.finishedOnboarding) navigate('/home');
 };

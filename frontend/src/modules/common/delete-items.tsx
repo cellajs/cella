@@ -1,9 +1,8 @@
 import { onlineManager } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 
 export interface DeleteItemsProps<TItem, TVariables> {
   items: TItem[];
@@ -23,7 +22,6 @@ export interface DeleteItemsProps<TItem, TVariables> {
 /** Delete confirmation for a list of items: on success it closes a dialog and reports the items to `callback`. */
 export function DeleteItems<TItem, TVariables>(props: DeleteItemsProps<TItem, TVariables>) {
   const { items, callback, callbackFirst, mutation } = props;
-  const { t } = useTranslation();
   const removeDialog = useDialoger((state) => state.remove);
 
   const finish = (args: CallbackArgs<TItem[]>) => {
@@ -33,7 +31,7 @@ export function DeleteItems<TItem, TVariables>(props: DeleteItemsProps<TItem, TV
   };
 
   const onDelete = () => {
-    if (props.onlineOnly && !onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (props.onlineOnly && !onlineManager.isOnline()) return toastOffline();
     mutation.mutate(props.toVariables(items), { onSuccess: () => finish({ data: items, status: 'success' }) });
   };
 

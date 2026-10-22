@@ -2,14 +2,14 @@ import { appConfig } from 'shared';
 import type { ProbeResult } from '#/lib/health-helpers';
 
 /** Probes siblings over their real network path; short caching keeps it cheap and the timeout bounds a stall. */
-const PROBE_TIMEOUT_MS = 2_000;
-const PROBE_CACHE_TTL_MS = 10_000;
+const probeTimeoutMs = 2_000;
+const probeCacheTtlMs = 10_000;
 
 const cache = new Map<string, { at: number; result: ProbeResult }>();
 
 export async function probeWorker(baseUrl: string): Promise<ProbeResult> {
   const cached = cache.get(baseUrl);
-  if (cached && Date.now() - cached.at < PROBE_CACHE_TTL_MS) return cached.result;
+  if (cached && Date.now() - cached.at < probeCacheTtlMs) return cached.result;
 
   const result = await runProbe(baseUrl);
   cache.set(baseUrl, { at: Date.now(), result });
@@ -18,7 +18,7 @@ export async function probeWorker(baseUrl: string): Promise<ProbeResult> {
 
 async function runProbe(baseUrl: string): Promise<ProbeResult> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), probeTimeoutMs);
   const startedAt = Date.now();
   try {
     // WebSocket workers advertise ws(s):// URLs, but /health speaks plain HTTP and fetch() rejects the ws scheme

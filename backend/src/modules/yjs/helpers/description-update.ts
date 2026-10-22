@@ -4,7 +4,7 @@ import { serverBlockNoteSchema } from 'shared/utils/blocknote-server-schema';
 import * as Y from 'yjs';
 
 /** Fragment name the client editor binds to: must match yjs-connections.ts in the frontend. */
-export const YJS_FRAGMENT_NAME = 'document-store';
+export const yjsFragmentName = 'document-store';
 
 const createServerEditor = () => BlockNoteEditor.create({ schema: serverBlockNoteSchema });
 
@@ -46,7 +46,7 @@ function parseDescription(description: string | null): ServerPartialBlock[] {
  * description does not convert: not a blocks array, or a block or inline type the server schema lacks.
  */
 export function descriptionToSeed(description: string | null): Uint8Array {
-  const doc = blocksToYDoc(editor(), parseDescription(description), YJS_FRAGMENT_NAME);
+  const doc = blocksToYDoc(editor(), parseDescription(description), yjsFragmentName);
   try {
     return Y.encodeStateAsUpdate(doc);
   } finally {
@@ -82,7 +82,7 @@ export function descriptionToUpdate(state: Uint8Array | null, description: strin
     const updates: Uint8Array[] = [];
     doc.on('update', (update: Uint8Array) => updates.push(update));
     // The fragment converter types full blocks; it fills a partial block's defaults like the seed converter.
-    doc.transact(() => blocksToYXmlFragment(editor(), blocks as ServerBlock[], doc.getXmlFragment(YJS_FRAGMENT_NAME)));
+    doc.transact(() => blocksToYXmlFragment(editor(), blocks as ServerBlock[], doc.getXmlFragment(yjsFragmentName)));
     if (updates.length === 0) return null;
     return updates.length === 1 ? updates[0] : Y.mergeUpdates(updates);
   } finally {
@@ -95,7 +95,7 @@ export function stateToBlocksJson(state: Uint8Array): string {
   const doc = new Y.Doc();
   try {
     Y.applyUpdate(doc, state);
-    return JSON.stringify(yDocToBlocks(editor(), doc, YJS_FRAGMENT_NAME));
+    return JSON.stringify(yDocToBlocks(editor(), doc, yjsFragmentName));
   } finally {
     doc.destroy();
   }

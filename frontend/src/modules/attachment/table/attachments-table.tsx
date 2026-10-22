@@ -19,7 +19,7 @@ import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { isDefaultListView } from '~/query/basic/create-query-keys';
 
-const LIMIT = appConfig.requestLimits.attachments;
+const requestLimit = appConfig.requestLimits.attachments;
 
 /** Defined outside the component so the getter identity stays stable. */
 function rowKeyGetter(row: Attachment) {
@@ -50,7 +50,7 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
 
   // Table state
   const { q, sort, order } = search;
-  const limit = LIMIT;
+  const limit = requestLimit;
 
   const columnsFromHook = useColumns(channel, isSheet);
   const [hiddenOverrides, setHiddenOverrides] = useState<Record<string, boolean>>({});

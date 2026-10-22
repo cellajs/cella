@@ -16,7 +16,7 @@ import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SelectLanguages } from '~/modules/common/form-fields/select-languages';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
@@ -59,7 +59,7 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
       { path: { tenantId: organization.tenantId, id: organization.id }, body },
       {
         onSuccess: (updatedOrganization) => {
-          if (isSheet) useSheeter.getState().remove(formContainerId);
+          if (isSheet) sheeter.getState().remove(formContainerId);
           form.reset(body);
           toaster.success(t('c:success.update_resource', { resource: t('c:organization') }));
           callback?.({ data: updatedOrganization, status: 'success' });

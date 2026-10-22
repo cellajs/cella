@@ -9,7 +9,7 @@ const { getCollab, joinCollab, leaveCollab } = await import('../sync/session-man
 const { runCompaction } = await import('../sync/relay');
 const { runSweep } = await import('../sync/sweep');
 
-const GRACE = 5 * 60 * 1000;
+const grace = 5 * 60 * 1000;
 const fetchMock = vi.fn();
 
 let counter = 0;
@@ -46,7 +46,7 @@ describe('a refused materialize keeps the edits', () => {
     fetchMock.mockResolvedValue({ ok: false, status: 403 });
 
     leaveCollab(ctx, ws as never);
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(storage.deleteDoc).not.toHaveBeenCalled();
@@ -56,7 +56,7 @@ describe('a refused materialize keeps the edits', () => {
 
     // Positive control: once the backend accepts, the edits are written, the row stays and the session ends.
     fetchMock.mockResolvedValue({ ok: true, status: 200 });
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(storage.deleteDoc).not.toHaveBeenCalled();
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, a: 1, b: 2 });
@@ -73,13 +73,13 @@ describe('a refused materialize keeps the edits', () => {
     expect(storage.logs.get(key)).toHaveLength(2);
 
     leaveCollab(ctx, ws as never);
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(storage.deleteDoc).not.toHaveBeenCalled();
     expect(storage.logs.get(key)).toHaveLength(2);
 
     // The rows wait for the next session or the startup sweep; cleanup does not retry in a loop.
     expect(getCollab(ctx)).toBeUndefined();
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -111,7 +111,7 @@ describe("a deleted entity's rows go", () => {
     fetchMock.mockResolvedValue({ ok: false, status: 410 });
 
     leaveCollab(ctx, ws as never);
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
 
     // Nothing can receive the edits any more, unlike an access refusal (403), which keeps them.
     expect(fetchMock).toHaveBeenCalledTimes(1);
