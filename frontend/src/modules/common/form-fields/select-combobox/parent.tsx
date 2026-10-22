@@ -45,7 +45,7 @@ export function SelectParentFormField<TFieldValues extends FieldValues>({
 }: SelectParentFormFieldProps<TFieldValues>) {
   const { items } = useParentChannels(parentType, organizationId, !disabled);
 
-  const options = passedOptions ?? items.map((item) => ({ value: item.id, label: item.name, url: item.thumbnailUrl ?? undefined }));
+  const options = passedOptions ?? items.map((item) => ({ value: item.id, label: item.name, url: item.thumbnailUrl }));
 
   return (
     <ComboboxFormField
@@ -57,7 +57,7 @@ export function SelectParentFormField<TFieldValues extends FieldValues>({
       options={options}
       onSelect={(nextValue) => {
         const selectedItem = items.find((item) => item.id === nextValue);
-        if (selectedItem && onSelect) onSelect(selectedItem);
+        if (selectedItem) onSelect?.(selectedItem);
       }}
       clearable={clearable}
       showAvatar

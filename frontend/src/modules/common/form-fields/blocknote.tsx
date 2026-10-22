@@ -8,13 +8,13 @@ type BaseBlockNoteProps = Omit<CommonBlockNoteProps, 'defaultValue' | 'updateDat
   /** Omit to disable file/media uploads (the editor renders no file panel without it). */
   baseFilePanelProps?: BaseUppyFilePanelProps;
 };
-type BlockNoteContentFormFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
+export type BlockNoteContentFormFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   baseBlockNoteProps: BaseBlockNoteProps;
   autoFocus?: boolean;
   containerClassName?: string;
 };
 
-function BlockNoteContentFormField<TFieldValues extends FieldValues>({
+export function BlockNoteContentFormField<TFieldValues extends FieldValues>({
   control,
   label,
   name,
@@ -22,7 +22,7 @@ function BlockNoteContentFormField<TFieldValues extends FieldValues>({
   disabled,
   autoFocus,
   containerClassName,
-  baseBlockNoteProps: { excludeBlockTypes, baseFilePanelProps, ...restBlockNoteProps },
+  baseBlockNoteProps: { baseFilePanelProps, ...restBlockNoteProps },
 }: BlockNoteContentFormFieldProps<TFieldValues>) {
   return (
     <FormField
@@ -34,14 +34,13 @@ function BlockNoteContentFormField<TFieldValues extends FieldValues>({
           autoFocus,
           editable: !disabled,
           defaultValue: value,
-          excludeBlockTypes,
           updateData: onChange,
-          ariaLabel: typeof label === 'string' ? label : undefined,
+          ariaLabel: label,
           ...restBlockNoteProps,
         };
         return (
           <FormItem name={name} disabled={disabled} className={containerClassName}>
-            {typeof label === 'string' && <FormLabel required={required}>{label}</FormLabel>}
+            {label && <FormLabel required={required}>{label}</FormLabel>}
             {/* The filePanel/baseFilePanelProps union needs two branches: a conditional spread widens it */}
             {baseFilePanelProps ? <BlockNote {...editorProps} baseFilePanelProps={baseFilePanelProps} /> : <BlockNote {...editorProps} />}
             <FormMessage />
@@ -51,5 +50,3 @@ function BlockNoteContentFormField<TFieldValues extends FieldValues>({
     />
   );
 }
-
-export { BlockNoteContentFormField };

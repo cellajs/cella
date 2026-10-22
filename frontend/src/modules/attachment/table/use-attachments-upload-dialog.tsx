@@ -35,7 +35,6 @@ export const useAttachmentsUploadDialog = (
 
     const item = t('c:attachment_other').toLowerCase();
     uploader.getState().create({
-      id: 'upload-attachment',
       personalUpload: false,
       organizationId,
       templateId: 'attachment',

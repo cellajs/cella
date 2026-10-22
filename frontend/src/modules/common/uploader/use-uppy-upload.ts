@@ -35,19 +35,12 @@ export function useUppyUpload() {
         localUppy = await createUppy(uppyOptions, { templateId, organizationId });
 
         localUppy
-          .on('file-editor:complete', (file) => {
-            console.info('File editor complete:', file);
-          })
-          .on('upload', (_uploadId, files) => {
-            console.info('Upload started:', files);
-          })
           .on('error', (error) => {
             console.error('Upload error:', error);
           })
           .on('transloadit:complete', (assembly) => {
             // A failed assembly reports through the error event
             if (assembly.error) return;
-            console.info('Upload complete:', assembly);
             // Inside the chain, so a handler that throws at once also reaches the toast
             Promise.resolve()
               .then(() => onComplete?.(assembly.results as UploadResults<UploadTemplateId>))

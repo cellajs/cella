@@ -10,10 +10,7 @@ import { cn } from '~/utils/cn';
 export function Stepper({ children, className, initialStep = 0, steps, onClickStep }: StepperProps) {
   const [activeStep, setActiveStep] = useState(initialStep);
 
-  // Step reads its position from the index handed down here.
-  const items = Children.toArray(children).map((child, index) =>
-    isValidElement<{ index?: number }>(child) ? cloneElement(child, { index }) : child,
-  );
+  const items = Children.toArray(children).map((child, index) => (isValidElement<StepProps>(child) ? cloneElement(child, { index }) : child));
 
   return (
     <StepperContext.Provider
@@ -30,7 +27,7 @@ export function Stepper({ children, className, initialStep = 0, steps, onClickSt
   );
 }
 
-export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 }: StepProps & { index?: number }) {
+export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 }: StepProps) {
   const { steps, activeStep, onClickStep, setStep } = useStepper();
 
   const isCompletedStep = index < activeStep;

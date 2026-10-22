@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { type InputHTMLAttributes, type KeyboardEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { zMembershipInviteBody } from 'sdk/zod.gen';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -14,7 +14,7 @@ interface SelectEmailsProps {
   value?: string[];
   onChange?: (value: string[]) => void;
   placeholder?: string;
-  inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
+  inputProps?: InputHTMLAttributes<HTMLInputElement>;
 }
 
 /**
@@ -41,7 +41,7 @@ export function SelectEmails({ value: emails = [], onChange, placeholder, inputP
 
   const remove = (email: string) => onChange?.(emails.filter((chip) => chip !== email));
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       // Also on an empty input, so Enter never submits the surrounding form.
       event.preventDefault();

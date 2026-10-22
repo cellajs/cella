@@ -13,10 +13,7 @@ export const storeUploadBlobs = async (files: CustomUppyFile[], organizationId: 
   for (const file of files) await attachmentStorage.storeUploadBlob(file, organizationId, status, { templateId }, file.meta.attachmentId);
 };
 
-/**
- * Prepares files for offline/local storage and returns an assembly response.
- * Stores blobs in Dexie; the upload service uploads them once cloud storage is reachable.
- */
+/** Stores the files on this device, for the upload service to send once cloud storage is reachable, and answers with a completed assembly. */
 export const prepareFilesForOffline = async (
   files: CustomUppyFile[],
   { organizationId, templateId }: UploadTokenQuery,

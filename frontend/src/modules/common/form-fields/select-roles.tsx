@@ -41,12 +41,7 @@ export function RoleOption({ role, renderControl }: RoleOptionProps) {
 const emptyRoles: EntityRole[] = [];
 
 export function SelectRoles({ onChange, value = emptyRoles, label, className }: SelectRolesProps) {
-  const toggleRole = (role: EntityRole) => {
-    const next = value.includes(role)
-      ? value.filter((selectedRole) => selectedRole !== role) // Remove role if it already exists
-      : [...value, role];
-    onChange(next);
-  };
+  const toggleRole = (role: EntityRole) => onChange(value.includes(role) ? value.filter((selectedRole) => selectedRole !== role) : [...value, role]);
 
   return (
     <Fieldset.Root className="flex flex-col gap-2">

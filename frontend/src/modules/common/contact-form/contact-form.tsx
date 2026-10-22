@@ -27,7 +27,12 @@ const formSchema = zCreateRequestBody.extend({ message: zCreateRequestBody.shape
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
+interface ContactFormProps {
+  /** Rendered in the contact dialog, which a sent message closes. */
+  dialog?: boolean;
+}
+
+export function ContactForm({ dialog: isDialog }: ContactFormProps) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
   const isLargeScreen = useBreakpointAbove('lg');

@@ -5,7 +5,7 @@ import type { uploadTemplates } from 'shared/transloadit-config';
 
 type UppyBody = Record<string, unknown>;
 
-/** Assign each file its future row ID and round-trip it through Transloadit metadata. */
+/** `attachmentId` is the id of the row the file becomes, round-tripped through Transloadit; `offlineUploaded` is true without cloud upload. */
 type UppyMeta = { offlineUploaded: boolean; attachmentId?: string };
 
 type TemplateStepKeys<T extends UploadTemplateId> = (typeof uploadTemplates)[T]['use'][number];
@@ -27,7 +27,8 @@ type Stringified<T> = {
 type UserMeta = Stringified<UppyMeta> & {
   filetype: string;
   name: string;
-  relativePath: string; // Can be null as string
+  /** The string 'null' when the file has no relative path. */
+  relativePath: string;
   type: string;
 };
 

@@ -4,7 +4,11 @@ import type { TKey } from '~/lib/i18n-locales';
 import { ResponsiveSelect } from '~/modules/common/form-fields/responsive-select';
 import type { IconComponent } from '~/modules/common/icons/types';
 
-type SortOptionBase = { name: TKey; value: string; icon: IconComponent };
+interface SortOptionBase {
+  name: TKey;
+  value: string;
+  icon: IconComponent;
+}
 
 interface SelectSortProps<T extends readonly SortOptionBase[]> {
   sortOptions: T;

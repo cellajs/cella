@@ -1,5 +1,5 @@
 import { SearchIcon } from 'lucide-react';
-import * as React from 'react';
+import { type ReactNode, useRef } from 'react';
 import type { FieldValues } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
@@ -20,13 +20,20 @@ export interface ComboboxSelectProps {
   options: ComboboxOption[];
   value: string;
   onChange: (value: string) => void;
-  renderOption?: (option: ComboboxOption) => React.ReactNode;
+  renderOption?: (option: ComboboxOption) => ReactNode;
   showAvatar?: boolean;
   clearable?: boolean;
   disabled?: boolean;
   searchableTrigger?: boolean;
   placeholders?: { trigger?: TKey; search?: TKey; notFound?: TKey; resource?: TKey };
 }
+
+const defaultPlaceholders = {
+  trigger: 'c:select',
+  search: 'c:placeholder.search',
+  notFound: 'c:no_resource_found',
+  resource: 'c:item',
+} satisfies ComboboxSelectProps['placeholders'];
 
 /** Single-value combobox form control: a button (or searchable input) trigger over a filterable option list. */
 export function ComboboxSelect({
@@ -42,18 +49,12 @@ export function ComboboxSelect({
 }: ComboboxSelectProps) {
   const { t } = useTranslation();
 
-  const placeholders = {
-    trigger: 'c:select' as TKey,
-    search: 'c:placeholder.search' as TKey,
-    notFound: 'c:no_resource_found' as TKey,
-    resource: 'c:item' as TKey,
-    ...passedPlaceholders,
-  };
+  const placeholders = { ...defaultPlaceholders, ...passedPlaceholders };
   const resource = t(placeholders.resource).toLowerCase();
   const triggerText = t(placeholders.trigger, { resource });
 
   const selectedOption = options.find((option) => option.value === value) ?? null;
-  const anchorRef = React.useRef<HTMLDivElement>(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
 
   const optionLabel = (option: ComboboxOption, avatarClassName?: string) => (
     <>
@@ -107,15 +108,16 @@ export function ComboboxSelect({
   );
 }
 
-type ComboboxFormFieldProps<TFieldValues extends FieldValues> = Pick<BaseFormFieldProps<TFieldValues>, 'control' | 'name' | 'disabled'> &
-  Omit<ComboboxSelectProps, 'value' | 'onChange' | 'disabled' | 'searchableTrigger'> & {
-    /** Without one the field renders an empty label. */
-    label?: string;
-    /** Marks the label as required. */
-    required?: boolean;
-    /** Runs after the field takes the picked value, an empty string once cleared. */
-    onSelect?: (value: string) => void;
-  };
+interface ComboboxFormFieldProps<TFieldValues extends FieldValues>
+  extends Pick<BaseFormFieldProps<TFieldValues>, 'control' | 'name' | 'disabled'>,
+    Omit<ComboboxSelectProps, 'value' | 'onChange' | 'disabled' | 'searchableTrigger'> {
+  /** Without one the field renders an empty label. */
+  label?: string;
+  /** Shows the required star on the label. */
+  required?: boolean;
+  /** Runs after the field takes the picked value, an empty string once cleared. */
+  onSelect?: (value: string) => void;
+}
 
 /** `ComboboxSelect` with a searchable trigger, as a labelled form field. */
 export function ComboboxFormField<TFieldValues extends FieldValues>({

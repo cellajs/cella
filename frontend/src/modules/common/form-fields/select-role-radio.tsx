@@ -7,7 +7,7 @@ import { cn } from '~/utils/cn';
 interface SelectRoleRadioProps extends RoleGroupProps {
   onChange: (value?: EntityRole) => void;
   value?: EntityRole;
-  /** Restrict options to this channel entity's role vocabulary (e.g. course → staff/student/guest). */
+  /** The channel entity whose roles are offered; every role without one. */
   entityType?: ChannelEntityType;
 }
 
@@ -20,7 +20,7 @@ export function SelectRoleRadio({ onChange, value, entityType, label, className 
         <RadioGroup
           // Null selects no role and keeps the group controlled: an undefined value would make it uncontrolled until a role is picked.
           value={value ?? null}
-          onValueChange={(role) => onChange(role as EntityRole)}
+          onValueChange={(role) => onChange(roleOptions.find((option) => option === role))}
           className={cn('inline-flex items-center gap-4', className)}
         />
       }

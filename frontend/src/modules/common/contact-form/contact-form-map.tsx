@@ -54,8 +54,12 @@ function CompanyMarker() {
   );
 }
 
+interface CompanyMapProps {
+  styleUrl: string;
+}
+
 /** Interactive map centred on the company, drawn with the style for the current color mode. */
-function CompanyMap({ styleUrl }: { styleUrl: string }) {
+function CompanyMap({ styleUrl }: CompanyMapProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);
@@ -107,7 +111,7 @@ function CompanyMap({ styleUrl }: { styleUrl: string }) {
   );
 }
 
-function ContactFormMap() {
+export function ContactFormMap() {
   const styleUrl = useUIStore((state) => appConfig.mapStyleUrls[state.mode]);
   const { hasStarted } = useMountedState();
 
@@ -123,5 +127,3 @@ function ContactFormMap() {
     </ErrorBoundary>
   );
 }
-
-export { ContactFormMap };

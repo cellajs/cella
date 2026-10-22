@@ -45,7 +45,7 @@ export function InputFormField<TFieldValues extends FieldValues>({
       control={control}
       name={name}
       render={({ field: { value: formFieldValue, onBlur: fieldOnBlur, ...rest } }) => (
-        <FormItem name={name.toString()}>
+        <FormItem name={name}>
           <FormLabel help={description} className={labelClassName} required={required}>
             {label}
           </FormLabel>

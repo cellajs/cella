@@ -6,9 +6,8 @@ import { flushKvWrites } from '~/query/idb-kv-storage';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
 /**
- * Form state with draft-saving: restores saved drafts on mount, tracks unsaved changes. Drafts persist via a
- * debounced `form.watch` subscription, immediately when a form first turns dirty, and flush on unmount and
- * tab-hide to prevent data loss. `formContainerId` names the element whose `.unsaved-changes` class is toggled.
+ * Form state that keeps a draft: restores it on mount, saves edits debounced and at once when the form turns dirty, and
+ * flushes on unmount and tab-hide. `formContainerId` (default: `formId`) names the element that gets `.unsaved-changes`.
  */
 // biome-ignore lint/suspicious/noExplicitAny: Can be any form context
 export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues, TContext = any>(
@@ -35,9 +34,8 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
   const formIdRef = useRef(formId);
   formIdRef.current = formId;
 
-  // The subscribed isDirty, readable from timers and cleanups: `form.formState.isDirty` is a proxy
-  // read that lags the subscription in both directions (still false right after the first edit,
-  // still true right after a reset), so callbacks must never branch on it directly.
+  // The subscribed isDirty, for timers and cleanups. They never branch on `form.formState.isDirty`: it lags the
+  // subscription both ways (false right after the first edit, true right after a reset).
   const isDirtyRef = useRef(isDirty);
   isDirtyRef.current = isDirty;
 
@@ -71,9 +69,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
       }, 300);
     });
 
-    // Flush an armed debounce, i.e. edits from the last few hundred ms. With no timer armed the
-    // store is already current: the debounce fired, or a reset deliberately cleared the draft
-    // (`formState.isDirty` reads stale-true inside cleanup, so it cannot gate this flush).
+    // Saves the edits a pending debounce holds; with no timer armed the store is already current.
     const flushPendingDraft = () => {
       if (draftTimeoutRef.current === undefined) return;
       clearTimeout(draftTimeoutRef.current);
@@ -81,11 +77,8 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
       saveDraft();
     };
 
-    // Best-effort flush when the tab is hidden: covers backgrounding (the put commits while the page
-    // lives on). It can NOT cover reload/close, since IndexedDB writes issued during unload never
-    // commit; the dirty-flag effect below therefore also writes the values the moment a form turns dirty.
-    // flushKvWrites, because the storage layer's own hide flush has already run by the time this
-    // later-registered listener appends its write.
+    // For a backgrounded tab: writes issued while a page unloads never commit, which the dirty effect below covers.
+    // flushKvWrites, because the storage layer's own hide flush has already run when this later listener adds its write.
     const flushOnHide = () => {
       if (draftTimeoutRef.current === undefined) return;
       flushPendingDraft();
@@ -101,17 +94,14 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
       subscription.unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('pagehide', flushOnHide);
-      // Flush draft on cleanup (unmount or dep change) to prevent data loss
       flushPendingDraft();
     };
   }, [form, setDraftForm, resetDraftForm]);
 
   useEffect(() => {
     toggleUnsavedBadge(isDirty);
-    // Values first, flag second, into the one persisted blob: the flag must never land in storage
-    // without content behind it. A reload cannot flush anything (unload-time IndexedDB writes are
-    // discarded), so this immediate save is what keeps a draft badge truthful after one. Only on
-    // dirty: the clean branch must not clear a stored draft before the mount restore below reads it.
+    // Values before the flag, at once, so a draft badge after a reload always has a draft behind it. Only when dirty:
+    // a clean mount must not clear the stored draft before the restore below reads it.
     if (isDirty) saveDraft();
     setFormDirty(formId, isDirty);
   }, [isDirty]);
@@ -130,7 +120,6 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     ...form,
     isDirty,
     loading,
-    // Always route `onInvalid` through a fallback handler
     handleSubmit: (onValid, onInvalid = defaultOnInvalid) => form.handleSubmit(onValid, onInvalid),
     // Reset also clears the draft and the badge
     reset: (values, keepStateOptions) => {

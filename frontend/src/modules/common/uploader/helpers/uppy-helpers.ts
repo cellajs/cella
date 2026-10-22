@@ -30,7 +30,6 @@ export const createUppy = async (uppyOptions: CustomUppyOptions, tokenQuery: Upl
   let localStatus: UploadStatus = appConfig.has.uploadEnabled ? 'pending' : 'local-only';
 
   try {
-    // Without uploadEnabled all files stay in IndexedDB
     if (appConfig.has.uploadEnabled && onlineManager.isOnline()) {
       cloudToken = await getUploadToken({ query: tokenQuery });
       // Transloadit is configured only when both params and signature come back

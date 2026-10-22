@@ -19,7 +19,6 @@ export const openImageUpload = ({ templateId, organizationId, title, onUploaded 
 
   const [resultStep] = uploadTemplates[templateId].use;
   uploader.getState().create({
-    id: templateId,
     ...(organizationId ? { organizationId, personalUpload: false } : { personalUpload: true }),
     plugins: ['webcam', 'image-editor', 'url'],
     templateId,

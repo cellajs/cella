@@ -1,6 +1,5 @@
 import { CheckIcon } from 'lucide-react';
-import type React from 'react';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { InputTriggerButton } from '~/modules/common/form-fields/input-trigger-button';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
@@ -10,7 +9,7 @@ import { cn } from '~/utils/cn';
 interface ResponsiveSelectOption {
   value: string;
   label: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   /** Language of the label when it differs from the page's, such as a language's own name. */
   lang?: string;
 }
@@ -39,7 +38,7 @@ interface ResponsiveSelectProps {
   align?: 'start' | 'center' | 'end';
 }
 
-/** Select that renders a native dropdown on desktop and a Drawer of options on mobile. */
+/** A select that opens a popup list from `sm` up and a drawer of options below it. */
 export function ResponsiveSelect({
   options,
   value,
@@ -59,8 +58,7 @@ export function ResponsiveSelect({
   const selectedLabel = selectedOption ? labelOf(selectedOption) : placeholder;
   const ariaLabel = title ? `${title}: ${selectedOption?.label ?? placeholder}` : undefined;
 
-  // Title and value read as one item, the value in the weight of the buttons beside it. The title is dimmed at rest
-  // (still above 4.5:1 on a field); increased contrast gives it the full muted text color.
+  // The dimmed title stays above 4.5:1 on a field; the value takes the weight of the buttons beside it.
   const triggerContent =
     showTitle && title ? (
       <span className="flex min-w-0 items-center gap-2">

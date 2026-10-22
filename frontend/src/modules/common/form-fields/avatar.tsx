@@ -22,7 +22,6 @@ export function AvatarFormField({ form, label, name, entity, type }: AvatarFormF
   const setUrl = (url: string | null) => form.setValue(name, url, { shouldDirty: true });
 
   const openUploadDialog = () => {
-    // A user has a profile picture, any other entity a logo.
     const imageName = type && type !== 'user' ? t('c:resource_logo', { resource: t(type) }) : t('c:profile_picture');
     openImageUpload({ templateId: 'avatar', title: t('c:upload_item', { item: imageName.toLowerCase() }), onUploaded: setUrl });
   };

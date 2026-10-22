@@ -15,6 +15,9 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modu
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
 
+// The form a slug is stored in. The input lowers what is typed, as the API does with an upper-case slug.
+const slugPattern = /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/;
+
 type SlugFormFieldProps<TFieldValues extends FieldValues> = Omit<BaseFormFieldProps<TFieldValues>, 'name'> & {
   entityType: ChannelEntityType | 'user';
   tenantId?: string;
@@ -35,7 +38,7 @@ export function SlugFormField<TFieldValues extends FieldValues>({
   nameValue,
   entityType,
   tenantId,
-  prefix: customPrefix,
+  prefix,
 }: SlugFormFieldProps<TFieldValues>) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
@@ -49,8 +52,6 @@ export function SlugFormField<TFieldValues extends FieldValues>({
   const [availability, setAvailability] = useState<'available' | 'blank' | 'notAvailable'>('blank');
   // Availability responses for a value the user has since replaced are ignored.
   const latestSlugRef = useRef('');
-
-  const prefix = customPrefix;
 
   // Repeated on the group's focus state, whose own ring color would hide the answer while the user types
   const availabilityRingClass = cn(
@@ -85,18 +86,12 @@ export function SlugFormField<TFieldValues extends FieldValues>({
     },
   });
 
-  // The form a slug is stored in. The input lowers what is typed, as the API does with an upper-case slug.
-  const isValidSlug = (value: string) => {
-    if (!value || value.trim().length < 2) return false;
-    return /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/.test(value);
-  };
-
   useEffect(() => {
     const value = slug ?? '';
     latestSlugRef.current = value;
 
     if (value.length < 2 || value === previousSlug) return setAvailability('blank');
-    if (!isValidSlug(value)) return setAvailability('notAvailable');
+    if (!slugPattern.test(value)) return setAvailability('notAvailable');
 
     // Valid: neutral until a check answers; user slugs are globally unique and checked by the update API.
     setAvailability('blank');
@@ -112,10 +107,6 @@ export function SlugFormField<TFieldValues extends FieldValues>({
     const fallback = `${derived || slugify(entityType, { lower: true })}-${suffix}`;
     form.setValue(name, derived.length >= 2 || !nameValue?.trim() ? derived : fallback);
   }, [nameValue]);
-
-  const revertSlug = () => {
-    form.resetField(name);
-  };
 
   return (
     <FormField
@@ -143,8 +134,9 @@ export function SlugFormField<TFieldValues extends FieldValues>({
 
             {previousSlug && previousSlug !== slug && (
               <InputGroupAddon align="inline-end">
-                <Button variant="ghost" size="sm" aria-label={t('c:revert_handle')} onClick={revertSlug} className="h-full">
-                  <UndoIcon /> <span className="max-sm:hidden">{t('c:revert')}</span>
+                <Button variant="ghost" size="sm" aria-label={t('c:revert_handle')} onClick={() => form.resetField(name)} className="h-full">
+                  <UndoIcon />
+                  <span className="max-sm:hidden">{t('c:revert')}</span>
                 </Button>
               </InputGroupAddon>
             )}
