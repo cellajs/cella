@@ -22,15 +22,11 @@ export interface NotificationPushPayload {
 /** Parallel sends per batch; push services rate-limit aggressively above small bursts. */
 const CONCURRENCY = 8;
 
+/** web-push's socket idle limit in ms, connecting included: a push service silent this long is abandoned and the batch moves on. */
+const sendTimeoutMs = 10_000;
+
 /** Sending needs the flag AND both keys; either alone leaves the module receive-only. */
 export const isPushSendConfigured = (): boolean => appConfig.has.push && Boolean(env.VAPID_PUBLIC_KEY) && Boolean(env.VAPID_PRIVATE_KEY);
-
-let vapidApplied = false;
-function applyVapidDetails(): void {
-  if (vapidApplied) return;
-  webpush.setVapidDetails(env.VAPID_SUBJECT ?? appConfig.frontendUrl, env.VAPID_PUBLIC_KEY as string, env.VAPID_PRIVATE_KEY as string);
-  vapidApplied = true;
-}
 
 interface SendableSubscription {
   endpoint: string;
@@ -47,10 +43,13 @@ export interface PushSendDeps {
 }
 
 const defaultDeps: PushSendDeps = {
-  send: async (subscription, payload) => {
-    applyVapidDetails();
-    const pushSubscription = { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } };
-    await webpush.sendNotification(pushSubscription, payload, { TTL: 60 * 60 * 24 });
+  send: async ({ endpoint, p256dh, auth }, payload) => {
+    const vapidDetails = {
+      subject: env.VAPID_SUBJECT ?? appConfig.frontendUrl,
+      publicKey: env.VAPID_PUBLIC_KEY as string,
+      privateKey: env.VAPID_PRIVATE_KEY as string,
+    };
+    await webpush.sendNotification({ endpoint, keys: { p256dh, auth } }, payload, { TTL: 60 * 60 * 24, timeout: sendTimeoutMs, vapidDetails });
   },
   findSubscriptions: (userIds) => findSubscriptionsByUserIds(userIds),
   pruneEndpoints: (endpoints) => deleteSubscriptionsByEndpoints(endpoints),
@@ -86,10 +85,16 @@ export async function sendNotificationPush(userIds: string[], payload: Notificat
           try {
             await deps.send(subscription, body);
           } catch (error) {
-            const statusCode = (error as { statusCode?: number }).statusCode;
+            // A timeout or connection error has no status code; the error says what happened.
+            if (!(error instanceof webpush.WebPushError)) {
+              log.warn('Push delivery failed', { error, activityId: payload.activityId });
+              return;
+            }
+            const { statusCode } = error;
             if (statusCode === 404 || statusCode === 410) gone.push(subscription.endpoint);
             else if (statusCode === 429) backOff = true;
-            else log.warn('Push delivery failed', { statusCode, activityId: payload.activityId });
+            // The error also holds the endpoint, which stays out of the log; the body is the push service's reason.
+            else log.warn('Push delivery failed', { statusCode, body: error.body, activityId: payload.activityId });
           }
         }),
       );

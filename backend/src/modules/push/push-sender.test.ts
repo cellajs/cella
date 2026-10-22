@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import webpush from 'web-push';
 import { type NotificationPushPayload, type PushSendDeps, sendNotificationPush } from './push-sender';
 
 const payload: NotificationPushPayload = { t: 'notif', activityId: 'act-1', channelId: 'chan-1', type: 'mention' };
@@ -22,7 +23,7 @@ function makeDeps(overrides: Partial<PushSendDeps> = {}) {
   return { deps, sent, pruned };
 }
 
-const statusError = (statusCode: number) => Object.assign(new Error(`status ${statusCode}`), { statusCode });
+const statusError = (statusCode: number) => new webpush.WebPushError('Received unexpected response code', statusCode, {}, '', 'https://push.test');
 
 describe('sendNotificationPush', () => {
   it('sends to every offline subscriber', async () => {
