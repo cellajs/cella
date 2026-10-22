@@ -289,8 +289,8 @@ export const config = {
   maplePublicIngestKey: 'maple_pk_LnUSK6-_5j3orVrlZ1Hv6I1pxzDh3SJ5',
   /**
    * Hosts a Web Push subscription endpoint may name: the push services of Chrome and most Chromium browsers (FCM),
-   * Firefox, Safari and Edge (WNS). `*.` matches any subdomain. The server POSTs each push to the stored endpoint,
-   * so registration refuses every other host.
+   * Firefox, Safari and Edge (WNS). `*.` matches any subdomain; entries compare lowercased, without one trailing dot.
+   * The server POSTs each push to the stored endpoint, so registration refuses every other host.
    */
   pushServiceHosts: ['fcm.googleapis.com', 'updates.push.services.mozilla.com', 'web.push.apple.com', '*.notify.windows.com'],
 
