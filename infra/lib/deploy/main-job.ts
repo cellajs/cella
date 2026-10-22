@@ -24,10 +24,13 @@ export const MAIN_JOB_EXIT = {
   blocked: 2,
 } as const;
 
-/** What a run's exit code says, for a person and the runner. */
-export function mainJobOutcome(exitCode: number | undefined): 'deployed' | 'blocked' | 'failed' {
-  if (exitCode === MAIN_JOB_EXIT.deployed) return 'deployed';
-  if (exitCode === MAIN_JOB_EXIT.blocked) return 'blocked';
+/**
+ * How a run ended, for a person and the runner. Scaleway reports a run that exited 0 as `succeeded` with no exit code, so the state says
+ * deployed; a `failed` run's exit code tells blocked from failed; every other end (cancelled, an internal error) is failed.
+ */
+export function mainJobOutcome(run: { state: string; exit_code?: number | null }): 'deployed' | 'blocked' | 'failed' {
+  if (run.state === 'succeeded') return 'deployed';
+  if (run.state === 'failed' && run.exit_code === MAIN_JOB_EXIT.blocked) return 'blocked';
   return 'failed';
 }
 
