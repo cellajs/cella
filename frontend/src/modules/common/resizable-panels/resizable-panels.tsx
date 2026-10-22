@@ -231,7 +231,7 @@ function ResizeHint() {
           style={{ background: 'radial-gradient(closest-side, color-mix(in oklch, var(--primary) 35%, transparent), transparent)' }}
         />
       </div>
-      <div className="grow" style={{ backgroundColor: 'color-mix(in oklch, var(--card) 92%, transparent)', backgroundImage: curtainPleats }} />
+      <div className="grow bg-card/92" style={{ backgroundImage: curtainPleats }} />
     </div>
   );
 }

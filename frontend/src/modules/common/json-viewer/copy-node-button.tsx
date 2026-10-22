@@ -1,6 +1,7 @@
-import { CheckIcon, CopyIcon } from 'lucide-react';
+import { CopyIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
+import { CopiedIcon } from '~/modules/common/copied-icon';
 
 interface CopyNodeButtonProps {
   value: unknown;
@@ -23,7 +24,7 @@ export function CopyNodeButton({ value }: CopyNodeButtonProps) {
       aria-label={t('c:copy')}
       title={t('c:copy')}
     >
-      {copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}
+      <CopiedIcon copied={copied} icon={CopyIcon} />
     </button>
   );
 }

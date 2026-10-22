@@ -3,9 +3,13 @@
  * connection state.
  */
 
+import { XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { computeSpanStats } from 'shared/tracing';
 import { clearSpans, getSpans, type SpanData, subscribeToSpans } from '~/lib/tracing';
+import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 interface SyncDevtoolsState {
   activeTab: 'spans' | 'stats' | 'timeline';
@@ -29,119 +33,30 @@ function formatTimeAgo(timestamp: number): string {
 
 const newestFirst = (spans: SpanData[], limit: number) => [...spans].sort((a, b) => b.startTime - a.startTime).slice(0, limit);
 
-function getStatusColor(status: SpanData['status']): string {
+function getStatusColorClass(status: SpanData['status']): string {
   switch (status) {
     case 'ok':
-      return '#22c55e';
+      return 'bg-green-500';
     case 'error':
-      return '#ef4444';
+      return 'bg-red-500';
     default:
-      return '#6b7280';
+      return 'bg-gray-500';
   }
 }
 
-function getCategoryColor(name: string): string {
-  if (name.startsWith('sync.sse')) return '#3b82f6';
-  if (name.startsWith('sync.message')) return '#8b5cf6';
-  if (name.startsWith('sync.cache')) return '#f59e0b';
-  if (name.startsWith('sync.seq')) return '#ec4899';
-  return '#6b7280';
+function getCategoryColorClass(name: string): string {
+  if (name.startsWith('sync.sse')) return 'text-blue-500';
+  if (name.startsWith('sync.message')) return 'text-violet-500';
+  if (name.startsWith('sync.cache')) return 'text-amber-500';
+  if (name.startsWith('sync.seq')) return 'text-pink-500';
+  return 'text-gray-500';
 }
 
-const styles = {
-  container: {
-    position: 'fixed' as const,
-    bottom: '16px',
-    right: '16px',
-    zIndex: 99999,
-    fontFamily: 'ui-monospace, monospace',
-    fontSize: '12px',
-  },
-  toggle: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '50%',
-    background: '#1e293b',
-    border: '2px solid #3b82f6',
-    color: '#fff',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '16px',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-  },
-  panel: {
-    width: '420px',
-    maxHeight: '500px',
-    background: '#0f172a',
-    border: '1px solid #334155',
-    borderRadius: '8px',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-    overflow: 'hidden',
-    display: 'flex',
-    flexDirection: 'column' as const,
-  },
-  header: {
-    padding: '12px',
-    background: '#1e293b',
-    borderBottom: '1px solid #334155',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  title: { color: '#f1f5f9', fontWeight: 600, fontSize: '13px' },
-  tabs: { display: 'flex', gap: '4px' },
-  tab: {
-    padding: '4px 8px',
-    background: 'transparent',
-    border: 'none',
-    color: '#94a3b8',
-    cursor: 'pointer',
-    borderRadius: '4px',
-    fontSize: '11px',
-  },
-  tabActive: { background: '#334155', color: '#f1f5f9' },
-  content: { flex: 1, overflow: 'auto', padding: '8px' },
-  spanRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '6px 8px',
-    borderRadius: '4px',
-    marginBottom: '4px',
-    background: '#1e293b',
-  },
-  spanDot: { width: '8px', height: '8px', borderRadius: '50%' },
-  spanName: { flex: 1, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const },
-  spanDuration: { color: '#94a3b8', fontSize: '11px' },
-  spanTime: { color: '#64748b', fontSize: '10px' },
-  statCard: { background: '#1e293b', borderRadius: '6px', padding: '12px', marginBottom: '8px' },
-  statLabel: { color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase' as const, letterSpacing: '0.5px' },
-  statValue: { color: '#f1f5f9', fontSize: '20px', fontWeight: 600, marginTop: '4px' },
-  statGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' },
-  empty: { color: '#64748b', textAlign: 'center' as const, padding: '24px' },
-  actions: { display: 'flex', gap: '8px', padding: '8px', borderTop: '1px solid #334155' },
-  button: {
-    padding: '6px 12px',
-    background: '#334155',
-    border: 'none',
-    borderRadius: '4px',
-    color: '#e2e8f0',
-    cursor: 'pointer',
-    fontSize: '11px',
-  },
-  filter: {
-    flex: 1,
-    padding: '6px 8px',
-    background: '#1e293b',
-    border: '1px solid #334155',
-    borderRadius: '4px',
-    color: '#e2e8f0',
-    fontSize: '11px',
-    outline: 'none',
-  },
-};
+const emptyClass = tw('p-6 text-center text-slate-500');
+const tabClass = tw('cursor-pointer rounded px-2 py-1 text-slate-400');
+const statCardClass = tw('mb-2 rounded-md bg-slate-800 p-3');
+const statLabelClass = tw('text-2xs text-slate-400 uppercase tracking-wider');
+const statValueClass = tw('mt-1 font-semibold text-slate-100 text-xl');
 
 interface SpanListProps {
   spans: SpanData[];
@@ -152,19 +67,19 @@ function SpanList({ spans, filter }: SpanListProps) {
   const filtered = filter ? spans.filter((span) => span.name.toLowerCase().includes(filter.toLowerCase())) : spans;
 
   if (filtered.length === 0) {
-    return <div style={styles.empty}>No spans recorded yet</div>;
+    return <div className={emptyClass}>No spans recorded yet</div>;
   }
 
   return (
     <div>
       {newestFirst(filtered, 50).map((span) => (
-        <div key={span.spanId} style={styles.spanRow}>
-          <div style={{ ...styles.spanDot, background: getStatusColor(span.status) }} />
-          <div style={{ ...styles.spanName, color: getCategoryColor(span.name) }} title={span.name}>
+        <div key={span.spanId} className="mb-1 flex items-center gap-2 rounded bg-slate-800 px-2 py-1.5">
+          <div className={cn('size-2 rounded-full', getStatusColorClass(span.status))} />
+          <div className={cn('flex-1 truncate', getCategoryColorClass(span.name))} title={span.name}>
             {span.name.replace('sync.', '')}
           </div>
-          <div style={styles.spanDuration}>{formatDuration(span.duration)}</div>
-          <div style={styles.spanTime}>{formatTimeAgo(span.startTime)}</div>
+          <div className="text-slate-400">{formatDuration(span.duration)}</div>
+          <div className="text-2xs text-slate-500">{formatTimeAgo(span.startTime)}</div>
         </div>
       ))}
     </div>
@@ -178,10 +93,10 @@ interface PrefixRowsProps {
 
 function PrefixRows({ values, format = String }: PrefixRowsProps) {
   return (
-    <div style={{ marginTop: '8px' }}>
+    <div className="mt-2">
       {Object.entries(values).map(([prefix, value]) => (
-        <div key={prefix} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: '#e2e8f0' }}>
-          <span style={{ color: getCategoryColor(prefix) }}>{prefix}</span>
+        <div key={prefix} className="flex justify-between py-1 text-slate-200">
+          <span className={getCategoryColorClass(prefix)}>{prefix}</span>
           <span>{format(value)}</span>
         </div>
       ))}
@@ -198,24 +113,24 @@ function StatsView({ spans }: SpansViewProps) {
 
   return (
     <div>
-      <div style={styles.statGrid}>
-        <div style={styles.statCard}>
-          <div style={styles.statLabel}>Total Spans</div>
-          <div style={styles.statValue}>{stats.total}</div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className={statCardClass}>
+          <div className={statLabelClass}>Total Spans</div>
+          <div className={statValueClass}>{stats.total}</div>
         </div>
-        <div style={styles.statCard}>
-          <div style={styles.statLabel}>Errors</div>
-          <div style={{ ...styles.statValue, color: stats.errorCount > 0 ? '#ef4444' : '#22c55e' }}>{stats.errorCount}</div>
+        <div className={statCardClass}>
+          <div className={statLabelClass}>Errors</div>
+          <div className={cn(statValueClass, stats.errorCount > 0 ? 'text-red-500' : 'text-green-500')}>{stats.errorCount}</div>
         </div>
       </div>
 
-      <div style={styles.statCard}>
-        <div style={styles.statLabel}>Spans by Type</div>
+      <div className={statCardClass}>
+        <div className={statLabelClass}>Spans by Type</div>
         <PrefixRows values={stats.byPrefix} />
       </div>
 
-      <div style={styles.statCard}>
-        <div style={styles.statLabel}>Avg Duration by Type</div>
+      <div className={statCardClass}>
+        <div className={statLabelClass}>Avg Duration by Type</div>
         <PrefixRows values={stats.avgDurationMs} format={formatDuration} />
       </div>
     </div>
@@ -227,10 +142,10 @@ function TimelineView({ spans }: SpansViewProps) {
 
   if (spansWithLatency.length === 0) {
     return (
-      <div style={styles.empty}>
+      <div className={emptyClass}>
         No end-to-end latency data yet.
         <br />
-        <span style={{ fontSize: '10px', color: '#64748b' }}>Latency is calculated from CDC timestamp to frontend processing.</span>
+        <span className="text-2xs">Latency is calculated from CDC timestamp to frontend processing.</span>
       </div>
     );
   }
@@ -241,36 +156,28 @@ function TimelineView({ spans }: SpansViewProps) {
 
   return (
     <div>
-      <div style={styles.statCard}>
-        <div style={styles.statLabel}>Avg E2E Latency</div>
-        <div style={styles.statValue}>{formatDuration(avgLatency)}</div>
+      <div className={statCardClass}>
+        <div className={statLabelClass}>Avg E2E Latency</div>
+        <div className={statValueClass}>{formatDuration(avgLatency)}</div>
       </div>
 
-      <div style={styles.statCard}>
-        <div style={styles.statLabel}>Recent Messages (CDC → Frontend)</div>
-        <div style={{ marginTop: '12px' }}>
-          {recent.map(({ span, latency }) => {
-            const width = (latency / maxLatency) * 100;
-
-            return (
-              <div key={span.spanId} style={{ marginBottom: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#94a3b8', marginBottom: '2px' }}>
-                  <span>{String(span.attributes['sync.entity_type'] || 'unknown')}</span>
-                  <span>{formatDuration(latency)}</span>
-                </div>
-                <div style={{ height: '4px', background: '#334155', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      width: `${width}%`,
-                      height: '100%',
-                      background: latency > 500 ? '#ef4444' : latency > 200 ? '#f59e0b' : '#22c55e',
-                      borderRadius: '2px',
-                    }}
-                  />
-                </div>
+      <div className={statCardClass}>
+        <div className={statLabelClass}>Recent Messages (CDC → Frontend)</div>
+        <div className="mt-3">
+          {recent.map(({ span, latency }) => (
+            <div key={span.spanId} className="mb-2">
+              <div className="mb-0.5 flex justify-between text-2xs text-slate-400">
+                <span>{String(span.attributes['sync.entity_type'] || 'unknown')}</span>
+                <span>{formatDuration(latency)}</span>
               </div>
-            );
-          })}
+              <div className="h-1 overflow-hidden rounded-xs bg-slate-700">
+                <div
+                  className={cn('h-full rounded-xs', latency > 500 ? 'bg-red-500' : latency > 200 ? 'bg-amber-500' : 'bg-green-500')}
+                  style={{ width: `${(latency / maxLatency) * 100}%` }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -282,6 +189,7 @@ interface SyncDevtoolsProps {
 }
 
 export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
+  const { t } = useTranslation();
   const [state, setState] = useState<SyncDevtoolsState>({ activeTab: 'spans', filter: '' });
 
   // Mounted only while open, so seed from the buffer: subscribers get no replay
@@ -293,45 +201,43 @@ export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
   }, []);
 
   return (
-    <div style={styles.container}>
-      <div style={styles.panel}>
-        <div style={styles.header}>
-          <div style={styles.title}>⚡ Sync Devtools</div>
-          <div style={styles.tabs}>
-            {(['spans', 'stats', 'timeline'] as const).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                style={{ ...styles.tab, ...(state.activeTab === tab ? styles.tabActive : {}) }}
-                onClick={() => setState((prev) => ({ ...prev, activeTab: tab }))}
-              >
-                {tab}
-              </button>
-            ))}
-            <button type="button" style={styles.tab} onClick={onClose}>
-              ✕
+    <div className="fixed right-4 bottom-4 z-[99999] flex max-h-125 w-105 flex-col overflow-hidden rounded-lg border border-slate-700 bg-slate-900 font-mono text-xs shadow-2xl">
+      <div className="flex items-center justify-between border-slate-700 border-b bg-slate-800 p-3">
+        <div className="font-semibold text-slate-100 text-sm">⚡ Sync Devtools</div>
+        <div className="flex gap-1">
+          {(['spans', 'stats', 'timeline'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              className={cn(tabClass, state.activeTab === tab && 'bg-slate-700 text-slate-100')}
+              onClick={() => setState((prev) => ({ ...prev, activeTab: tab }))}
+            >
+              {tab}
             </button>
-          </div>
-        </div>
-
-        <div style={styles.content}>
-          {state.activeTab === 'spans' && <SpanList spans={spans} filter={state.filter} />}
-          {state.activeTab === 'stats' && <StatsView spans={spans} />}
-          {state.activeTab === 'timeline' && <TimelineView spans={spans} />}
-        </div>
-
-        <div style={styles.actions}>
-          <input
-            type="text"
-            placeholder="Filter spans..."
-            style={styles.filter}
-            value={state.filter}
-            onChange={(event) => setState((prev) => ({ ...prev, filter: event.target.value }))}
-          />
-          <button type="button" style={styles.button} onClick={() => clearSpans()}>
-            Clear
+          ))}
+          <button type="button" className={tabClass} onClick={onClose} aria-label={t('c:close')}>
+            <XIcon className="size-4" />
           </button>
         </div>
+      </div>
+
+      <div className="flex-1 overflow-auto p-2">
+        {state.activeTab === 'spans' && <SpanList spans={spans} filter={state.filter} />}
+        {state.activeTab === 'stats' && <StatsView spans={spans} />}
+        {state.activeTab === 'timeline' && <TimelineView spans={spans} />}
+      </div>
+
+      <div className="flex gap-2 border-slate-700 border-t p-2">
+        <input
+          type="text"
+          placeholder="Filter spans..."
+          className="flex-1 rounded border border-slate-700 bg-slate-800 px-2 py-1.5 text-slate-200 outline-none"
+          value={state.filter}
+          onChange={(event) => setState((prev) => ({ ...prev, filter: event.target.value }))}
+        />
+        <button type="button" className="cursor-pointer rounded bg-slate-700 px-3 py-1.5 text-slate-200" onClick={() => clearSpans()}>
+          Clear
+        </button>
       </div>
     </div>
   );
