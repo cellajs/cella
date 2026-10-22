@@ -1,6 +1,6 @@
 /**
- * tsup `noExternal` and `external` for a service bundle: everything is inlined except the packages
- * below and `packages`, which the service loads from disk.
+ * The `external` patterns of a service bundle: everything is inlined except the packages below and
+ * `packages`, which the service loads from disk.
  * - @opentelemetry/*: the SDK patches modules through the loader registry, so it loads from disk,
  *   and so does anything it instruments. `pg` is here for that reason: PgInstrumentation only ever
  *   sees a module the registry handed it, so an inlined copy emits no query spans.
@@ -16,25 +16,16 @@
  */
 const sharedPatterns = [String.raw`pg(?:\/|$)`, String.raw`@opentelemetry\/`, String.raw`pino(?:-|\/|$)`];
 
-export function keepOnDisk(
-  packages: readonly string[],
-  dependencies: Readonly<Record<string, string>>,
-): { noExternal: RegExp[]; external: RegExp[] } {
-  const patterns = [
+export function keepOnDisk(packages: readonly string[], dependencies: Readonly<Record<string, string>>): { external: RegExp[] } {
+  const external = [
     ...sharedPatterns,
     ...['thread-stream', 'sonic-boom', ...packages].map((name) => `${name.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}(?:\\/|$)`),
-  ];
-  const external = patterns.map((pattern) => new RegExp(`^${pattern}`));
+  ].map((pattern) => new RegExp(`^${pattern}`));
 
   const inlined = Object.keys(dependencies).filter((name) => !external.some((pattern) => pattern.test(name)));
   if (inlined.length) {
     throw new Error(`The bundle inlines these, so move them to devDependencies (or keep them on disk): ${inlined.join(', ')}`);
   }
 
-  return {
-    // tsup's `noExternal` takes precedence over `external`, so the exceptions live in this negative
-    // lookahead; `external` repeats them so subpath imports stay external too.
-    noExternal: [new RegExp(`^(?!(?:${patterns.join('|')}))`)],
-    external,
-  };
+  return { external };
 }

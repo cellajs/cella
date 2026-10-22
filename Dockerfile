@@ -16,7 +16,7 @@
 #              invalidate all services)
 #
 # Per service: `<svc>-deps` (prod install) / `<svc>-builder` (full install +
-# tsup build) → `<svc>` (production target). Targets: `backend` (also reused by
+# rolldown build) → `<svc>` (production target). Targets: `backend` (also reused by
 # the `mcp`, `oauth` and `jobs` services through `reusesImageOf`, each with its
 # own MODE and port), `cdc`, `yjs`. Not used in local dev.
 #
@@ -87,12 +87,14 @@ FROM manifests AS backend-deps
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod --ignore-scripts --filter backend
 
-# Install all dependencies (including dev for build) and build with tsup
+# Install all dependencies (including dev for build) and build with rolldown
 FROM manifests AS backend-builder
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts --filter backend...
 
+# Every workspace tsconfig extends the root one, and the build stops without it.
+COPY tsconfig.json ./
 COPY backend/ ./backend/
 COPY shared/ ./shared/
 COPY sdk/ ./sdk/
@@ -115,7 +117,7 @@ COPY --from=backend-builder --chown=app:app /app/backend/package.json ./backend/
 COPY --from=backend-deps --chown=app:app /app/node_modules ./node_modules
 COPY --from=backend-deps --chown=app:app /app/backend/node_modules ./backend/node_modules
 
-# Runtime data. tsup inlines the shared workspace into backend/dist, and the deps stage installs
+# Runtime data. The bundle inlines the shared workspace into backend/dist, and the deps stage installs
 # the backend's own `dependencies` only, so neither shared's source nor its node_modules is here.
 COPY --from=backend-builder --chown=app:app /app/locales ./locales
 COPY --from=backend-builder --chown=app:app /app/json ./json
@@ -153,13 +155,14 @@ FROM manifests AS cdc-deps
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod --ignore-scripts --filter cdc-worker
 
-# Install all dependencies (including dev for build) and build with tsup
+# Install all dependencies (including dev for build) and build with rolldown
 # Install cdc and shared deps; backend deps needed for bundling backend/src imports
 FROM manifests AS cdc-builder
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts --filter cdc-worker... --filter backend...
 
+COPY tsconfig.json ./
 COPY cdc/ ./cdc/
 COPY backend/src ./backend/src
 COPY shared/ ./shared/
@@ -192,13 +195,14 @@ FROM manifests AS yjs-deps
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --prod --ignore-scripts --filter yjs-worker
 
-# Install all dependencies (including dev for build) and build with tsup
+# Install all dependencies (including dev for build) and build with rolldown
 # Install yjs and shared deps; backend deps needed for bundling backend/src imports
 FROM manifests AS yjs-builder
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile --ignore-scripts --filter yjs-worker... --filter backend...
 
+COPY tsconfig.json ./
 COPY yjs/ ./yjs/
 COPY backend/src ./backend/src
 COPY shared/ ./shared/

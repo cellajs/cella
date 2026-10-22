@@ -193,7 +193,7 @@ Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control objec
 2. **No SSH, no serial-log API.** SecurityGroup drops inbound. The only channels are the S3 boot-diag above and the Scaleway **web** serial console (`::cella::` markers + `BOOT FAILED (exit N)`).
 3. **Reproduce locally.** Pull the exact image tag and `docker run` it with minimal valid env (or `node dist/main.js`). Runtime crashes (`ERR_MODULE_NOT_FOUND`) show in seconds. macOS keychain blocks `docker login` save: use a throwaway `--config` dir with a base64 `auth`.
 4. **Common boot-crash classes**:
-   - Workspace dep left as a bare external (must be in tsup `noExternal`).
+   - Package the image lacks, left as a bare import. An unresolved import fails the build, and a package kept on disk but missing from `dependencies` fails `pnpm boot:check` (CI's build-services job).
    - Multiline secret in a line-based env file.
    - Image SHA predates a DB/secret contract change.
    - node-postgres TLS hostname check vs. the dialed IP (`sslmode=require` + host-pinned `checkServerIdentity`).

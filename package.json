@@ -48,6 +48,7 @@
     "style:audit": "node shared/scripts/check-style.ts --audit",
     "app-shape:check": "node shared/scripts/check-app-shaped-config.ts",
     "template:check": "node shared/scripts/check-template-config.ts",
+    "boot:check": "pnpm docker:test && node shared/scripts/check-service-boot.ts",
     "lint": "pnpm biome check . && pnpm style",
     "lint:fix": "pnpm biome check --write --unsafe && pnpm style",
     "ts": "pnpm -r ts",

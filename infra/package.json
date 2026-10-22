@@ -19,7 +19,7 @@
     "repair-certs": "tsx tasks/repair-certs.ts",
     "diag": "tsx tasks/diag.ts",
     "geoip-refresh": "tsx tasks/geoip-refresh.ts",
-    "boot:build": "rm -rf boot/dist && tsc --noEmit -p boot/tsconfig.json && tsup boot/src/entry.ts --format cjs --platform node --target node26 --out-dir boot/dist",
+    "boot:build": "rm -rf boot/dist && tsc --noEmit -p boot/tsconfig.json && rolldown boot/src/entry.ts --format cjs --platform node --file boot/dist/entry.cjs",
     "boot:image": "pnpm run boot:build && docker build --build-arg NODE_VERSION=$(node -p \"require('../package.json').engines.node\") -t ${BOOT_IMAGE:-infra-boot:dev} boot",
     "compose:generate": "tsx compose/synth.ts",
     "compose:check": "tsx compose/synth.ts --check",
@@ -40,7 +40,7 @@
   "devDependencies": {
     "@types/node": "^26.6.5",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
-    "tsup": "^9.0.0",
+    "rolldown": "~1.2.14",
     "tsx": "^4.23.15",
     "typescript": "6.0.3",
     "vitest": "^5.0.5"
