@@ -34,8 +34,13 @@ export function mainJobOutcome(run: { state: string; exit_code?: number | null }
   return 'failed';
 }
 
-/** The public image a run starts from: Debian with git and curl, and nothing of the app's. Everything else is fetched by the run. */
-export const MAIN_JOB_IMAGE = 'docker.io/library/node:26-bookworm';
+/**
+ * The public image a run starts from, at the root `engines.node` (D26): Debian with git and curl, and nothing of the app's. Everything else
+ * is fetched by the run. The image is part of the definition, so a Node bump owes an apply.
+ */
+export function mainJobImage(nodeVersion: string): string {
+  return `docker.io/library/node:${nodeVersion}-bookworm`;
+}
 
 /**
  * The run's first program, written into the definition at the apply: it fetches the target commit (with the repository read key for a
