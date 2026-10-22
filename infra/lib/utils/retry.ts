@@ -1,4 +1,4 @@
-/** Dependency-free sleep: the boot runner's tsup bundle must not reach into the `shared` workspace package. */
+/** Dependency-free sleep: the boot runner's bundle must not reach into the `shared` workspace package. */
 const defaultSleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 export interface RetryOptions {
