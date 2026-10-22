@@ -11,6 +11,7 @@ import { isPersisted } from '~/modules/attachment/types';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { getLocalUserDb } from '~/query/local-user-db';
 import { subscribeOwnerChange } from '~/query/local-user-storage';
+import { entityIdsOf } from '~/query/offline/mutation-variables';
 import { queryClient } from '~/query/query-client';
 
 /** Variant download priority, in download order. 'raw' is local-only, so never fetched. */
@@ -76,11 +77,10 @@ class AttachmentDownloadService {
 
       if (!matchesKeyPrefix(event.mutation.options.mutationKey, attachmentQueryKeys.delete)) return;
 
-      const deletedAttachments = event.mutation.state.variables as Attachment[] | undefined;
-      if (!deletedAttachments?.length) return;
-
       // Drop blobs and queue rows: a deleted attachment is never re-downloaded and its row would grow the dedupe registry.
-      const ids = deletedAttachments.map((a) => a.id);
+      const ids = entityIdsOf(event.mutation.state.variables);
+      if (!ids.length) return;
+
       attachmentStorage.deleteBlobs(ids).catch((err) => {
         console.error('[DownloadService] Failed to delete local blobs:', err);
       });
