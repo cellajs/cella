@@ -1,5 +1,7 @@
+import { ServerCrashIcon } from 'lucide-react';
 import { type Key, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import {
   type CellRendererProps,
   type CellSelectionMode,
@@ -145,9 +147,9 @@ export function DataTable<TData>({
           columnCount={columns.filter((column) => !column.hidden).length}
         />
       ) : error && !rows?.length ? (
-        <div className="flex size-full flex-col items-center justify-center bg-background">
-          <div className="my-8 text-center text-destructive text-sm">{error.message}</div>
-        </div>
+        <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed">
+          <p className="text-destructive text-sm">{error.message}</p>
+        </ContentPlaceholder>
       ) : !rows?.length ? (
         <NoRows isFiltered={isFiltered} isFetching={isFetching} emptyContent={NoRowsComponent} />
       ) : (

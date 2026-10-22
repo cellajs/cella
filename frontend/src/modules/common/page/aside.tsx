@@ -44,7 +44,7 @@ export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus 
             size="lg"
             data-spy-link={id}
             className={cn(
-              'w-full justify-start text-left hover:bg-accent/50',
+              'w-full justify-start hover:bg-accent/50',
               // The ghost hover swaps the text color, so a destructive row restates its own
               destructive && 'text-destructive hover:text-destructive',
               // Rows at rest sit back like the page tabs; hover, focus and the active row come forward. Dimmed, destructive text drops below 4.5:1

@@ -129,5 +129,5 @@ export function ActiveTabMarker({ indicator }: { indicator: TabIndicator }) {
     if (tab) indicator.reveal(tab);
   }, [indicator]);
 
-  return <span ref={markerRef} className="pointer-events-none absolute inset-x-2 bottom-0" />;
+  return <span ref={markerRef} className="absolute inset-x-2 bottom-0" />;
 }

@@ -31,7 +31,7 @@ function ReorderHandle({ name, onMove, isFirst, isLast }: ReorderHandleProps) {
       type="button"
       data-drag-handle
       aria-label={`${t('c:reorder')}: ${name}`}
-      className="flex size-7 cursor-grab items-center justify-center rounded-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground data-popup-open:bg-accent data-popup-open:text-foreground"
+      className="flex size-7 cursor-grab items-center justify-center rounded-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground data-popup-open:bg-accent/50 data-popup-open:text-foreground"
       onDragStart={() => {
         isDraggingRef.current = true;
         setMenuOpen(false);

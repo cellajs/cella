@@ -33,7 +33,7 @@ export function ColumnsView<TData>({ columns, setColumns, className = '', childr
         {namedColumns.map((column) => (
           <DropdownMenuCheckboxItem
             key={column.key}
-            className="min-h-8"
+            className="min-h-10"
             checked={!column.hidden}
             onCheckedChange={() => setColumns((prev) => prev.map((item) => (item.key === column.key ? { ...item, hidden: !item.hidden } : item)))}
           >

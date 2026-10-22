@@ -56,7 +56,7 @@ export function Export<TData extends Record<string, any>>({ filename, columns, s
   return (
     <DropdownMenu>
       <TooltipButton className={className} toolTipContent={t('c:export_pdf_csv')}>
-        <DropdownMenuTrigger render={<Button variant="outline" className="flex max-xs:hidden" />}>
+        <DropdownMenuTrigger render={<Button variant="outline" className="flex" />}>
           <DownloadIcon />
           <span className="max-xl:hidden">{t('c:export')}</span>
         </DropdownMenuTrigger>
