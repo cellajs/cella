@@ -14,7 +14,6 @@ import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { findClickedMediaBlockId, getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import { openMediaCarousel } from '~/modules/common/blocknote/helpers/open-attachment';
 import { type CustomBlock, isMediaBlock } from '~/modules/common/blocknote/types';
-import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 // DOMPurify's default URI policy strips `blob:`, which this render needs for locally cached images; all other schemes keep the default.
@@ -150,7 +149,6 @@ function BlockNoteFullHtml({
   organizationId,
   onReady,
 }: BlockNoteFullHtmlProps) {
-  const mode = useUIStore((state) => state.mode);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // `ready` once a first pass is computed, an empty one included: an empty document has nothing to wait for.
@@ -229,8 +227,7 @@ function BlockNoteFullHtml({
       id={id}
       ref={containerRef}
       role="presentation"
-      className={cn('bn-container bn-shadcn', dense && 'bn-dense', inline && 'bn-inline', mode === 'dark' && 'dark', className)}
-      data-color-scheme={mode}
+      className={cn('bn-container bn-shadcn', dense && 'bn-dense', inline && 'bn-inline', className)}
       onClick={handleClick}
     >
       <div

@@ -48,7 +48,7 @@ export function SlashMenuList({ items, loadingState, selectedIndex, onItemClick,
 
   return (
     <div
-      className="flex h-fit max-h-[40vh] flex-col overflow-y-auto rounded-lg border-[0.05rem] bg-popover p-1 shadow-[0_0.05rem_0.3rem_0_rgb(0_0_0/0.1)]"
+      className="flex max-h-[40vh] flex-col overflow-y-auto rounded-lg border-[0.05rem] bg-popover p-1 shadow-[0_0.05rem_0.3rem_0_rgb(0_0_0/0.1)]"
       role="listbox"
       ref={menuRef}
     >
