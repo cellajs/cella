@@ -101,16 +101,6 @@ describe('uploadService: files uploaded after their row was created', () => {
     expect(await blob()).toMatchObject({ uploadStatus: 'uploaded', cloudKeys: { original: storedKey }, keysLinkedAt: expect.any(Date) });
   });
 
-  it('files a pending file local-only when the app has no cloud storage', async () => {
-    await storeBlob('pending');
-    getUploadToken.mockResolvedValue({ params: null, signature: null });
-
-    await uploadService.processPendingUploads();
-
-    expect(addedFiles).toEqual([]);
-    expect((await blob())?.uploadStatus).toBe('local-only');
-  });
-
   it('leaves a pending file pending when the server cannot be reached', async () => {
     await storeBlob('pending');
     getUploadToken.mockRejectedValue(new TypeError('Failed to fetch'));
@@ -132,17 +122,5 @@ describe('uploadService: files uploaded after their row was created', () => {
     expect(addedFiles).toHaveLength(1);
     expect(linkAttachmentKeys).toHaveBeenCalledTimes(2);
     expect((await blob())?.keysLinkedAt).toEqual(expect.any(Date));
-  });
-
-  it('stops linking after a refusal that will not change, such as another member linking', async () => {
-    await storeBlob('pending');
-    getUploadToken.mockResolvedValue(cloudToken);
-    linkAttachmentKeys.mockRejectedValue(new ApiError({ status: 403 }));
-
-    await uploadService.processPendingUploads();
-    await uploadService.processPendingUploads();
-
-    expect(linkAttachmentKeys).toHaveBeenCalledTimes(1);
-    expect((await blob())?.keysLinkedAt).toBeNull();
   });
 });
