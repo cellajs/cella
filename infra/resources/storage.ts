@@ -3,7 +3,15 @@ import * as scaleway from '@pulumiverse/scaleway';
 import { sizing } from '../config/sizing';
 import { appStorageNeeds, services } from '../lib/services';
 import { isProduction, naming, region, serviceUrl, tagsAsMap } from '../pulumi-context';
-import { adminApplicationId, backendServiceApplicationId, bootApplicationId, ciDeployApplicationId } from './vm-iam';
+import {
+  backendServiceApplicationId,
+  bootApplicationId,
+  builderApplicationId,
+  ciDeployApplicationId,
+  observerApplicationId,
+  operatorApplicationId,
+  retiredAdminApplicationId,
+} from './identities';
 
 // App-owned buckets follow the service registry: the SPA bucket needs a default-route service, the upload buckets need an s3Access service, and browser CORS exists only when both do. The boot-diag bucket below is unconditional.
 const needs = appStorageNeeds(services);
@@ -13,39 +21,33 @@ const uploadCorsRules = browserOrigin
   : undefined;
 
 /**
- * Admin application S3 access on the CI-scoped bucket policies. Bucket policies are deny-by-default, so without it even an org-admin key 403s on ListObjects/GetBucketCors during `pulumi up --refresh`.
- * Resolved from IAM by name so local and CI ups produce the same policy; an absent admin app drops the statement.
+ * The people's S3 access on the bucket policies: the operator application, which applies the stack, and the retired admin application on the
+ * run that admits the operator with its key. Bucket policies are deny-by-default, so without them even a key with every IAM right 403s on
+ * ListObjects/GetBucketCors during `pulumi up --refresh`. Resolved from IAM by name so local and CI ups produce the same policy; an
+ * application that does not exist drops its statement.
  */
-const adminAccess = (bucketName: pulumi.Input<string>) =>
-  adminApplicationId.apply((adminId) =>
-    adminId
-      ? [
-          {
-            Sid: 'AdminAccess',
-            Effect: 'Allow',
-            Principal: { SCW: `application_id:${adminId}` },
-            Action: ['s3:*'],
-            Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
-          },
-        ]
-      : [],
+const humanAccess = (bucketName: pulumi.Input<string>) =>
+  pulumi.all([operatorApplicationId, retiredAdminApplicationId]).apply(([operatorId, adminId]) =>
+    [
+      { sid: 'OperatorAccess', id: operatorId },
+      { sid: 'AdminAccess', id: adminId },
+    ]
+      .filter((entry): entry is { sid: string; id: string } => Boolean(entry.id))
+      .map(({ sid, id }) => ({
+        Sid: sid,
+        Effect: 'Allow',
+        Principal: { SCW: `application_id:${id}` },
+        Action: ['s3:*'],
+        Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
+      })),
   );
 
-// Full S3 access for the CI deploy application, on every bucket policy: policies are deny-by-default, so without it the deploy key cannot touch the bucket.
-const deployAccess = (bucketName: pulumi.Input<string>) => ({
-  Sid: 'DeployAccess',
-  Effect: 'Allow',
-  Principal: { SCW: pulumi.interpolate`application_id:${ciDeployApplicationId}` },
-  Action: ['s3:*'],
-  Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
-});
-
 /**
- * CI access on buckets holding irreplaceable user data: everything a deploy or refresh needs except `s3:DeleteObjectVersion`, so a leaked CI key can delete objects but not destroy version history.
- * `PutBucketVersioning` stays granted because Pulumi manages the versioning config itself; the residual risk is that a leaked key can suspend future versioning.
- * Scaleway's supported bucket-policy action vocabulary is undocumented, so validate any change to this list on staging before trusting it.
+ * The deploy key's access on every bucket policy: objects only (the frontend's files, GeoIP data, boot diagnostics). A bucket's configuration
+ * and its policy are the apply's, a privileged change the deploy stops on, and no version is deleted, so a leaked deploy key can delete
+ * objects but not their history. Policies are deny-by-default, so without this statement the deploy key cannot touch the bucket.
  */
-const deployAccessNoVersionDelete = (bucketName: pulumi.Input<string>) => ({
+const deployAccess = (bucketName: pulumi.Input<string>) => ({
   Sid: 'DeployAccess',
   Effect: 'Allow',
   Principal: { SCW: pulumi.interpolate`application_id:${ciDeployApplicationId}` },
@@ -57,18 +59,6 @@ const deployAccessNoVersionDelete = (bucketName: pulumi.Input<string>) => ({
     's3:PutObject',
     's3:DeleteObject',
     's3:AbortMultipartUpload',
-    's3:GetBucketTagging',
-    's3:PutBucketTagging',
-    's3:GetBucketVersioning',
-    's3:PutBucketVersioning',
-    // Scaleway spells CORS all-caps; the AWS casing is rejected as an invalid action (MalformedPolicy 400).
-    's3:GetBucketCORS',
-    's3:PutBucketCORS',
-    's3:GetLifecycleConfiguration',
-    's3:PutLifecycleConfiguration',
-    's3:GetBucketAcl',
-    's3:GetBucketLocation',
-    's3:GetBucketWebsite',
   ],
   Resource: [bucketName, pulumi.interpolate`${bucketName}/*`],
 });
@@ -139,7 +129,7 @@ if (frontendBucket) {
     region,
     policy: pulumi.jsonStringify({
       Version: '2023-04-17',
-      Statement: adminAccess(frontendBucket.name).apply((admin) => [
+      Statement: humanAccess(frontendBucket.name).apply((admin) => [
         {
           Sid: 'PublicRead',
           Effect: 'Allow',
@@ -148,6 +138,14 @@ if (frontendBucket) {
           Resource: [pulumi.interpolate`${frontendBucket.name}/*`],
         },
         deployAccess(frontendBucket.name),
+        // The builder writes a release's files, listing them first to skip unchanged ones; it deletes nothing.
+        {
+          Sid: 'BuilderFiles',
+          Effect: 'Allow',
+          Principal: { SCW: pulumi.interpolate`application_id:${builderApplicationId}` },
+          Action: ['s3:ListBucket', 's3:GetObject', 's3:PutObject'],
+          Resource: [frontendBucket.name, pulumi.interpolate`${frontendBucket.name}/*`],
+        },
         ...admin,
       ]),
     }),
@@ -183,7 +181,7 @@ if (publicUploadsBucket) {
     region,
     policy: pulumi.jsonStringify({
       Version: '2023-04-17',
-      Statement: pulumi.all([adminAccess(publicUploadsBucket.name), uploadsSignerAccess(publicUploadsBucket.name)]).apply(([admin, signers]) => [
+      Statement: pulumi.all([humanAccess(publicUploadsBucket.name), uploadsSignerAccess(publicUploadsBucket.name)]).apply(([admin, signers]) => [
         {
           Sid: 'PublicRead',
           Effect: 'Allow',
@@ -191,7 +189,7 @@ if (publicUploadsBucket) {
           Action: ['s3:GetObject'],
           Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
         },
-        deployAccessNoVersionDelete(publicUploadsBucket.name),
+        deployAccess(publicUploadsBucket.name),
         ...admin,
         ...signers,
       ]),
@@ -231,8 +229,8 @@ if (privateUploadsBucket) {
     policy: pulumi.jsonStringify({
       Version: '2023-04-17',
       Statement: pulumi
-        .all([adminAccess(privateUploadsBucket.name), uploadsSignerAccess(privateUploadsBucket.name)])
-        .apply(([admin, signers]) => [deployAccessNoVersionDelete(privateUploadsBucket.name), ...admin, ...signers]),
+        .all([humanAccess(privateUploadsBucket.name), uploadsSignerAccess(privateUploadsBucket.name)])
+        .apply(([admin, signers]) => [deployAccess(privateUploadsBucket.name), ...admin, ...signers]),
     }),
   });
 }
@@ -245,7 +243,11 @@ const bootDiagBucket = new scaleway.object.Bucket(
     tags: tagsAsMap,
     forceDestroy: !isProduction,
     versioning: { enabled: false },
-    lifecycleRules: [{ id: 'expire-boot-diag', enabled: true, expiration: { days: 30 }, prefix: 'boot-diag/' }],
+    // Run records keep as long as Scaleway keeps the job runs they describe (D25).
+    lifecycleRules: [
+      { id: 'expire-boot-diag', enabled: true, expiration: { days: 30 }, prefix: 'boot-diag/' },
+      { id: 'expire-runs', enabled: true, expiration: { days: 60 }, prefix: 'runs/' },
+    ],
   },
   { protect: isProduction },
 );
@@ -255,7 +257,7 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
   region,
   policy: pulumi.jsonStringify({
     Version: '2023-04-17',
-    Statement: pulumi.all([adminAccess(bootDiagBucket.name), bootApplicationId]).apply(([admin, bootId]) => [
+    Statement: pulumi.all([humanAccess(bootDiagBucket.name), bootApplicationId, observerApplicationId]).apply(([admin, bootId, observerId]) => [
       // The boot fetcher writes diagnostics during VM startup.
       ...(bootId
         ? [
@@ -265,6 +267,18 @@ new scaleway.object.BucketPolicy('boot-diag-policy', {
               Principal: { SCW: `application_id:${bootId}` },
               Action: ['s3:PutObject'],
               Resource: [pulumi.interpolate`${bootDiagBucket.name}/boot-diag/*`],
+            },
+          ]
+        : []),
+      // The observer reads what machines wrote about their boot.
+      ...(observerId
+        ? [
+            {
+              Sid: 'ObserverReadBootDiagnostics',
+              Effect: 'Allow',
+              Principal: { SCW: `application_id:${observerId}` },
+              Action: ['s3:ListBucket', 's3:GetObject'],
+              Resource: [bootDiagBucket.name, pulumi.interpolate`${bootDiagBucket.name}/*`],
             },
           ]
         : []),

@@ -46,6 +46,49 @@ describe('storage module', () => {
     expect(publicReads.sort()).toEqual(['frontend-policy', 'public-uploads-policy']);
   });
 
+  it("admits the app's operator on every bucket, so an apply on the operator key can refresh and change them", () => {
+    type Statement = { Sid: string; Principal: unknown; Action: string[] };
+    for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
+      const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
+      const operator = Statement.find((statement) => statement.Sid === 'OperatorAccess');
+      expect(operator?.Principal, policy.name).toEqual({ SCW: 'application_id:cella-operator-id' });
+      expect(operator?.Action, policy.name).toEqual(['s3:*']);
+    }
+  });
+
+  it('lets the deploy key at objects only: no bucket configuration, no policy, no version deleted', () => {
+    type Statement = { Sid: string; Action: string[] };
+    for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
+      const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
+      const deploy = Statement.find((statement) => statement.Sid === 'DeployAccess');
+      expect(deploy, policy.name).toBeDefined();
+      for (const action of deploy?.Action ?? []) {
+        expect(action, policy.name).toMatch(
+          /^s3:(ListBucket|ListBucketMultipartUploads|ListMultipartUploadParts|GetObject|PutObject|DeleteObject|AbortMultipartUpload)$/,
+        );
+      }
+    }
+  });
+
+  it('must not admit the retired admin application outside the run that admits the operator with its key', () => {
+    for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
+      expect(String(policy.inputs.policy), policy.name).not.toContain('cella-production-admin');
+    }
+  });
+
+  it('must not let the observer read user data: of the app buckets it reads the boot diagnostics only', () => {
+    type Statement = { Sid: string; Principal: unknown; Action: string[] };
+    for (const policy of h.resources.filter((r) => /bucketPolicy/i.test(r.type))) {
+      const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
+      const observer = Statement.filter((statement) => JSON.stringify(statement.Principal).includes('cella-observer-id'));
+      if (policy.name === 'boot-diag-policy') {
+        expect(observer.map((statement) => statement.Action)).toEqual([['s3:ListBucket', 's3:GetObject']]);
+      } else {
+        expect(observer, policy.name).toEqual([]);
+      }
+    }
+  });
+
   it('boot diagnostics bucket grants the boot app write to boot-diag/ only, never public read', () => {
     const policies = h.resources.filter((r) => /bucketPolicy/i.test(r.type));
     const policy = policies.find((p) => p.name === 'boot-diag-policy');

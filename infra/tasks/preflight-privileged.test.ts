@@ -14,17 +14,24 @@ import {
 const urn = (type: string, name: string) => `urn:pulumi:production::infra::${type}::${name}`;
 
 describe('isPrivilegedUrn', () => {
-  it('flags database, IAM, VPC and private-network resources and the state bucket policy', () => {
+  it('flags database, IAM, VPC and private-network resources, secret containers, DNS records, buckets with their policies, and the load balancer', () => {
+    expect(isPrivilegedUrn(urn('scaleway:loadbalancers/certificate:Certificate', 'api-cert'))).toBe(true);
+    expect(isPrivilegedUrn(urn('scaleway:loadbalancers/acl:Acl', 'backend-internal-deny-all'))).toBe(true);
+    expect(isPrivilegedUrn(urn('scaleway:loadbalancers/backend:Backend', 'backend-lb-backend'))).toBe(true);
+    expect(isPrivilegedUrn(urn('scaleway:object/bucketPolicy:BucketPolicy', 'frontend-policy'))).toBe(true);
+    expect(isPrivilegedUrn(urn('scaleway:object/bucket:Bucket', 'public-uploads-bucket'))).toBe(true);
     expect(isPrivilegedUrn(urn('scaleway:databases/privilege:Privilege', 'admin-cron-privilege'))).toBe(true);
+    expect(isPrivilegedUrn(urn('scaleway:secrets/secret:Secret', 'secret-cookie-secret@backend'))).toBe(true);
+    expect(isPrivilegedUrn(urn('scaleway:domain/record:Record', 'api-dns'))).toBe(true);
     expect(isPrivilegedUrn(urn('scaleway:iam/policy:Policy', 'vm-backend-policy'))).toBe(true);
     expect(isPrivilegedUrn(urn('scaleway:network/vpc:Vpc', 'main-vpc'))).toBe(true);
     expect(isPrivilegedUrn(urn('scaleway:network/privateNetwork:PrivateNetwork', 'main-pn'))).toBe(true);
     expect(isPrivilegedUrn(urn('scaleway:object/bucketPolicy:BucketPolicy', 'state-bucket-policy'))).toBe(true);
   });
-  it('leaves compute, load balancer, storage and secrets to the CI deploy', () => {
+  it('leaves the machines and secret versions to the deploy', () => {
     expect(isPrivilegedUrn(urn('scaleway:instance/server:Server', 'vm-backend-e67a0456e8'))).toBe(false);
-    expect(isPrivilegedUrn(urn('scaleway:loadbalancers/backend:Backend', 'backend'))).toBe(false);
-    expect(isPrivilegedUrn(urn('scaleway:object/bucketPolicy:BucketPolicy', 'frontend-bucket-policy'))).toBe(false);
+    expect(isPrivilegedUrn(urn('scaleway:instance/privateNic:PrivateNic', 'pnic-backend-e67a0456e8'))).toBe(false);
+
     expect(isPrivilegedUrn(urn('scaleway:secrets/version:Version', 'x'))).toBe(false);
   });
   it('splits a URN into type and name', () => {

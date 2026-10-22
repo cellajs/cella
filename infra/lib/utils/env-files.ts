@@ -1,7 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { actionCommand } from '../operator-actions';
 import { infraDir } from './paths';
 
 /** Parse a dotenv-style file into key/value pairs (no interpolation). */
@@ -15,43 +14,92 @@ export function parseEnvFile(path: string): Record<string, string> {
   return out;
 }
 
+/** The env files every mode reads, in loading order. */
+const baseEnvFiles = (): string[] => [resolve(infraDir, '..', 'backend', '.env'), resolve(infraDir, '..', '.env')];
+
 /** Load backend/.env before the root fallback so infra tasks share the app's local config. Existing environment variables keep precedence over both files. */
 export function loadBaseEnvFiles(): void {
-  for (const envFile of [resolve(infraDir, '..', 'backend', '.env'), resolve(infraDir, '..', '.env')]) {
+  for (const envFile of baseEnvFiles()) {
     if (existsSync(envFile)) process.loadEnvFile(envFile);
   }
 }
 
-/** The names a mode env file used for the admin application key before 0.12: read as `SCW_ADMIN_*` with a rename warning, removed by the actions that write the admin key. */
-export const LEGACY_ADMIN_KEY_NAMES = ['SCW_ACCESS_KEY', 'SCW_SECRET_KEY', 'SCW_STATE_ACCESS_KEY', 'SCW_STATE_SECRET_KEY'] as const;
+/** The project id that a file every mode reads names. Such an id belongs to no single environment. */
+export function sharedFileProjectId(): string | undefined {
+  for (const envFile of baseEnvFiles()) {
+    const id = existsSync(envFile) ? parseEnvFile(envFile).SCW_PROJECT_ID?.trim() : undefined;
+    if (id) return id;
+  }
+  return undefined;
+}
+
+/** The project id a mode's own env file names: every environment has a project of its own, and this is where its id lives. */
+export function ownProjectId(mode: string): string | undefined {
+  const path = modeEnvPath(mode);
+  return (existsSync(path) ? parseEnvFile(path).SCW_PROJECT_ID?.trim() : undefined) || undefined;
+}
+
+/** Names a mode env file held for the admin application key, which is retired: never read, and removed when the observer key is written. */
+export const RETIRED_KEY_NAMES = [
+  'SCW_ADMIN_ACCESS_KEY',
+  'SCW_ADMIN_SECRET_KEY',
+  'SCW_ACCESS_KEY',
+  'SCW_SECRET_KEY',
+  'SCW_STATE_ACCESS_KEY',
+  'SCW_STATE_SECRET_KEY',
+] as const;
+
+/** Where the observer key lives in `infra/.env.<mode>`. */
+export const OBSERVER_KEY_NAMES = { accessKey: 'SCW_OBSERVER_ACCESS_KEY', secretKey: 'SCW_OBSERVER_SECRET_KEY' } as const;
 
 /**
- * The values a parsed mode env file exports, and the warnings it earns. The provider's own `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` never come from
- * the file: in it they meant the admin application key, which now travels as `SCW_ADMIN_*`, and in the process env they keep meaning the key the
- * process was started with (a CI runner, a shell export).
+ * Names whose value a person supplies at the prompt, every run: a privileged key and the Pulumi passphrase. The CLI reads none of them from a
+ * file or the environment, in any form, as a value on disk would let it change infrastructure with nobody at the terminal.
+ */
+const PROMPT_ONLY_NAMES = [
+  'PULUMI_CONFIG_PASSPHRASE',
+  'SCW_OWNER_ACCESS_KEY',
+  'SCW_OWNER_SECRET_KEY',
+  'SCW_BOOTSTRAP_ACCESS_KEY',
+  'SCW_BOOTSTRAP_SECRET_KEY',
+  'SCW_BOOTSTRAP_KEY',
+] as const;
+
+/** Take the prompt-only names out of `env` and return the ones it held, for the CLI to name once. */
+export function dropPromptOnlyEnv(env: NodeJS.ProcessEnv = process.env): string[] {
+  const found = PROMPT_ONLY_NAMES.filter((name) => env[name] !== undefined);
+  for (const name of found) delete env[name];
+  return found;
+}
+
+/**
+ * The values a parsed mode env file exports, and the warnings it earns. A prompt-only name is dropped before its value is looked at, so a
+ * `keychain:` or `op:` reference under one is never resolved. A retired name is dropped the same way: the admin application key is gone, and the
+ * provider's own `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` keep meaning the key the process was started with (a CI runner, a shell export).
  */
 export function modeEnvValues(parsed: Record<string, string>, mode: string): { values: Record<string, string>; warnings: string[] } {
   const values = { ...parsed };
   const warnings: string[] = [];
-  const legacy = ['SCW_ACCESS_KEY', 'SCW_SECRET_KEY'] as const;
-  if (legacy.some((name) => name in values)) {
-    if ('SCW_ADMIN_ACCESS_KEY' in values || 'SCW_ADMIN_SECRET_KEY' in values) {
-      warnings.push(`infra/.env.${mode}: SCW_ACCESS_KEY / SCW_SECRET_KEY are ignored because SCW_ADMIN_* is set; remove them.`);
-    } else {
-      if (values.SCW_ACCESS_KEY !== undefined) values.SCW_ADMIN_ACCESS_KEY = values.SCW_ACCESS_KEY;
-      if (values.SCW_SECRET_KEY !== undefined) values.SCW_ADMIN_SECRET_KEY = values.SCW_SECRET_KEY;
-      warnings.push(
-        `infra/.env.${mode}: SCW_ACCESS_KEY / SCW_SECRET_KEY are read as SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY; rename them (\`${actionCommand('fetch-admin-key')}\` rewrites the file).`,
-      );
-    }
-    for (const name of legacy) delete values[name];
+  const stored = PROMPT_ONLY_NAMES.filter((name) => name in values);
+  for (const name of stored) delete values[name];
+  if (stored.length > 0) {
+    warnings.push(
+      `infra/.env.${mode}: ${stored.join(', ')} ${stored.length === 1 ? 'is' : 'are'} not read. The CLI asks for a privileged key at the prompt and fetches the passphrase with it: remove ${stored.length === 1 ? 'the line' : 'these lines'}.`,
+    );
+  }
+  const retired = RETIRED_KEY_NAMES.filter((name) => name in values);
+  for (const name of retired) delete values[name];
+  if (retired.length > 0) {
+    warnings.push(
+      `infra/.env.${mode}: ${retired.join(', ')} ${retired.length === 1 ? 'is' : 'are'} not read. The admin application key is retired and the observer key (SCW_OBSERVER_*) reads: remove ${retired.length === 1 ? 'the line' : 'these lines'}.`,
+    );
   }
   return { values, warnings };
 }
 
 /**
- * Load `infra/.env.<mode>`, which overrides the ambient env so a staging run cannot inherit production values. The file holds a live secret key
- * and the Pulumi passphrase, so it is tightened to 0600 on sight. Returns the warnings the file earned (superseded key names).
+ * Load `infra/.env.<mode>`, which overrides the ambient env so a staging run cannot inherit production values. The file holds a live secret key,
+ * so it is tightened to 0600 on sight. Returns the warnings the file earned (superseded key names, values the CLI no longer reads).
  */
 export function loadModeEnvFile(mode: string, log: (message: string) => void = () => {}): string[] {
   // A bare infra/.env is never read; naming the file that is read saves a round of prompts for the values it holds.
@@ -108,30 +156,13 @@ export function resolveSecretReference(key: string, value: string, exec: ExecLik
       : ['secret-tool', ['lookup', 'service', ref.service, 'account', ref.account]];
   const res = exec(cmd, args);
   if (res.status !== 0 || res.stdout === '') {
-    throw fail(
-      `keychain entry ${ref.service}/${ref.account} not found`,
-      `store it with \`${actionCommand('store-passphrase')}\`, or ${cmd} directly; ${res.stderr}`,
-    );
+    throw fail(`keychain entry ${ref.service}/${ref.account} not found`, `${cmd} could not read it; ${res.stderr}`);
   }
   return res.stdout.replace(/\r?\n$/, '');
 }
 
-/** Write a secret into the OS keychain under `service`/`account`, replacing an existing entry. */
-export function storeInKeychain(service: string, account: string, value: string, exec: ExecLike = defaultExec, platform = process.platform): void {
-  const res =
-    platform === 'darwin'
-      ? exec('security', ['add-generic-password', '-U', '-s', service, '-a', account, '-w', value])
-      : exec('secret-tool', ['store', `--label=${service} ${account}`, 'service', service, 'account', account], value);
-  if (res.status !== 0) throw new Error(`keychain write for ${service}/${account} failed (${res.stderr.trim() || 'no output'})`);
-}
-
-/** The reference `resolveSecretReference` reads back for a keychain entry. */
-export function keychainReference(service: string, account: string): string {
-  return `keychain:${service}/${account}`;
-}
-
 /** Path of the mode-scoped operator env file. */
-export function modeEnvPath(mode: string): string {
+function modeEnvPath(mode: string): string {
   return resolve(infraDir, `.env.${mode}`);
 }
 
@@ -178,4 +209,24 @@ export function writeModeEnvValues(
 ): { path: string; removed: string[] } {
   const path = modeEnvPath(mode);
   return { path, removed: writeEnvValues(path, values, opts) };
+}
+
+/** The observer key a mode's env file holds, read from the file itself; undefined when it holds none. */
+export function observerKeyInModeFile(mode: string): { accessKey: string; secretKey: string } | undefined {
+  const path = modeEnvPath(mode);
+  if (!existsSync(path)) return undefined;
+  const parsed = parseEnvFile(path);
+  const accessKey = parsed[OBSERVER_KEY_NAMES.accessKey]?.trim();
+  const secretKey = parsed[OBSERVER_KEY_NAMES.secretKey]?.trim();
+  return accessKey && secretKey ? { accessKey, secretKey } : undefined;
+}
+
+/**
+ * Write the observer key to `mode`'s env file and to every other mode file in `modes` that holds one, so the one key of the app's observer
+ * serves them all; the retired names leave each file written. Returns the files written.
+ */
+export function writeObserverKey(mode: string, pair: { accessKey: string; secretKey: string }, modes: readonly string[]): string[] {
+  const targets = [mode, ...modes.filter((other) => other !== mode && observerKeyInModeFile(other))];
+  const values = { [OBSERVER_KEY_NAMES.accessKey]: pair.accessKey, [OBSERVER_KEY_NAMES.secretKey]: pair.secretKey };
+  return targets.map((target) => writeModeEnvValues(target, values, { remove: RETIRED_KEY_NAMES }).path);
 }

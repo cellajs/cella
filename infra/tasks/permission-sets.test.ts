@@ -1,44 +1,54 @@
 import { describe, expect, it } from 'vitest';
-import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS, SERVICE_SECRET_PERMISSION_SETS } from '../lib/scaleway/permissions';
+import { deployRules } from '../lib/scaleway/deploy-policy';
+import { SERVICE_SECRET_PERMISSION_SETS } from '../lib/scaleway/permissions';
 
-// Exact snapshots make every CI privilege change reviewable. Explicit forbidden
-// permissions prevent the key from gaining IAM authority to escalate itself.
+// The deploy key's rights are plan §3.1's: these tests state what it must never hold.
 const FORBIDDEN = ['IAMManager', 'IAMFullAccess', 'ProjectManager', 'OrganizationManager', 'BillingManager', 'BillingFullAccess', 'AccountManager'];
+const rules = deployRules({ slug: 'app', mode: 'production', projectId: 'proj', organizationId: 'org' });
+const setsOf = (rule: (typeof rules)[number]) => rule.permission_set_names;
 
-describe('CI key permission sets', () => {
-  it('PROJECT_PERMISSION_SETS exact membership snapshot', () => {
-    expect([...PROJECT_PERMISSION_SETS].sort()).toEqual([
-      'BlockStorageFullAccess',
-      'ContainerRegistryFullAccess',
-      'IPAMFullAccess',
+describe('deploy key rights', () => {
+  it('must not write IAM or DNS, open a console, or write an image, a snapshot or a security group', () => {
+    const all = rules.flatMap(setsOf);
+    for (const forbidden of [
+      ...FORBIDDEN,
+      'IAMApplicationManager',
       'InstancesFullAccess',
-      'LoadBalancersFullAccess',
-      'ObjectStorageFullAccess',
-      'PrivateNetworksFullAccess',
-      'RelationalDatabasesReadOnly',
-      'SecretManagerFullAccess',
-      'VPCReadOnly',
-    ]);
-  });
-
-  it('ORG_PERMISSION_SETS exact membership snapshot', () => {
-    // IAMReadOnly: org-scoped IAM *read* so `pulumi up` (helpers.ts) and the
-    // deploy's "Verify VM reader IAM grant" step can look up applications/
-    // policies by name. Read-only: IAMManager/IAMFullAccess remain FORBIDDEN.
-    expect([...ORG_PERMISSION_SETS].sort()).toEqual(['DomainsDNSFullAccess', 'IAMReadOnly']);
-  });
-
-  it('does not include any privilege-escalation permission', () => {
-    const all = [...PROJECT_PERMISSION_SETS, ...ORG_PERMISSION_SETS];
-    for (const forbidden of FORBIDDEN) {
-      expect(all, `permission set '${forbidden}' must not be granted to the CI key`).not.toContain(forbidden);
+      'InstancesServerSerialConsoleAccess',
+      'DomainsDNSFullAccess',
+    ]) {
+      expect(all, forbidden).not.toContain(forbidden);
     }
+    expect(all.filter((set) => /^Instances(Image|Snapshot|SecurityGroup)(Create|Write|Delete)$/.test(set))).toEqual([]);
   });
 
-  it('every project permission set ends with FullAccess or ReadOnly', () => {
-    // Catches typos like `InstancesFullAcess` early.
-    for (const p of PROJECT_PERMISSION_SETS) {
-      expect(p, `permission '${p}' must end in FullAccess or ReadOnly`).toMatch(/(FullAccess|ReadOnly)$/);
+  it("must not read a value of the app's secrets: values in the deploy folder only", () => {
+    const valueRules = rules.filter((rule) =>
+      rule.permission_set_names.some((set) => set === 'SecretManagerSecretAccess' || set === 'SecretManagerFullAccess'),
+    );
+    expect(valueRules.map((rule) => rule.condition)).toEqual(['resource.name.startsWith("/app-production/deploy/")']);
+    expect(rules.flatMap(setsOf)).not.toContain('SecretManagerFullAccess');
+  });
+
+  it('reads secret metadata unconditioned: Scaleway refuses a list call under any condition', () => {
+    const metadata = rules.filter((rule) => rule.permission_set_names.includes('SecretManagerReadOnly'));
+    expect(metadata).toHaveLength(1);
+    expect(metadata[0]?.condition).toBeUndefined();
+  });
+
+  it('writes secrets in the runtime folders and the hand-over folder only, never in the engine or deploy folder', () => {
+    const writes = rules.filter((rule) => rule.permission_set_names.includes('SecretManagerSecretWrite'));
+    const condition = writes.map((rule) => rule.condition).join(' || ');
+    expect(condition).toContain('"/app-production/handoff/"');
+    expect(condition).toContain('"/app-production/backend/"');
+    expect(condition).not.toContain('/engine/');
+    expect(condition).not.toContain('/deploy/');
+  });
+
+  it('reads IAM in the organization, and everything else in its own project', () => {
+    for (const rule of rules) {
+      if (rule.organization_id) expect(rule.permission_set_names).toEqual(['IAMReadOnly']);
+      else expect(rule.project_ids).toEqual(['proj']);
     }
   });
 });

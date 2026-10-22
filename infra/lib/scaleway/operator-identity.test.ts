@@ -7,11 +7,12 @@ import {
   envKeyPair,
   formatKeyLine,
   hoursUntilExpiry,
+  organizationIdOfKey,
   resolveOperatorIdentity,
 } from './operator-identity';
-import { principalNames } from './principals';
+import { allPrincipalNames } from './principals';
 
-const names = principalNames('cella', 'production');
+const names = allPrincipalNames({ slug: 'cella', appSlug: 'cella' }, 'production');
 
 /** Route-matched fake fetch: the first entry whose `match` is a substring of the url answers; anything else is a 404. */
 function makeFetch(routes: Array<{ match: string; body: unknown; status?: number }>): FetchLike {
@@ -36,67 +37,39 @@ describe('envKeyPair', () => {
 });
 
 describe('resolveOperatorIdentity', () => {
-  it('reads the admin application key from SCW_ADMIN_* and the Owner API key from SCW_OWNER_*', () => {
-    const id = resolveOperatorIdentity({
-      SCW_ADMIN_ACCESS_KEY: 'SCWADMIN',
-      SCW_ADMIN_SECRET_KEY: 's',
-      SCW_OWNER_ACCESS_KEY: 'SCWOWNER',
-      SCW_OWNER_SECRET_KEY: 'o',
-    });
-    expect(id.admin).toEqual({ accessKey: 'SCWADMIN', secretKey: 's', source: 'SCW_ADMIN_*' });
-    expect(id.owner).toEqual({ accessKey: 'SCWOWNER', secretKey: 'o', source: 'SCW_OWNER_*' });
+  it('reads the observer key from SCW_OBSERVER_*', () => {
+    const id = resolveOperatorIdentity({ SCW_OBSERVER_ACCESS_KEY: 'SCWOBS', SCW_OBSERVER_SECRET_KEY: 's' });
+    expect(id.observer).toEqual({ accessKey: 'SCWOBS', secretKey: 's' });
     expect(id.ambient).toBeUndefined();
     expect(id.warnings).toEqual([]);
   });
-  it("keeps the process's SCW_* pair apart as ambient, never as the admin key", () => {
-    const id = resolveOperatorIdentity({ SCW_ACCESS_KEY: 'SCWCI', SCW_SECRET_KEY: 'c' });
-    expect(id.admin).toBeUndefined();
-    expect(id.ambient).toEqual({ accessKey: 'SCWCI', secretKey: 'c' });
-  });
-  it('treats a half-set pair as absent, with a warning, instead of aborting', () => {
-    const id = resolveOperatorIdentity({ SCW_ADMIN_ACCESS_KEY: 'SCWX' });
-    expect(id.admin).toBeUndefined();
-    expect(id.warnings[0]).toMatch(/must be set together.*ignoring/);
-  });
-  it('reads a deprecated SCW_STATE_* pair as the admin key with a rename warning, and ignores it next to SCW_ADMIN_*', () => {
-    const legacy = resolveOperatorIdentity({ SCW_STATE_ACCESS_KEY: 'SCWST', SCW_STATE_SECRET_KEY: 't' });
-    expect(legacy.admin).toEqual({ accessKey: 'SCWST', secretKey: 't', source: 'SCW_STATE_*' });
-    expect(legacy.warnings[0]).toMatch(/deprecated: rename them to SCW_ADMIN_ACCESS_KEY/);
-    const both = resolveOperatorIdentity({
-      SCW_ADMIN_ACCESS_KEY: 'SCWADMIN',
-      SCW_ADMIN_SECRET_KEY: 's',
-      SCW_STATE_ACCESS_KEY: 'SCWST',
-      SCW_STATE_SECRET_KEY: 't',
-    });
-    expect(both.admin?.accessKey).toBe('SCWADMIN');
-    expect(both.warnings[0]).toMatch(/ignored because SCW_ADMIN_\* is set/);
-  });
-  it('reads a deprecated SCW_BOOTSTRAP_* pair as the Owner API key, honouring the SCW_BOOTSTRAP_KEY misspelling', () => {
-    expect(resolveOperatorIdentity({ SCW_BOOTSTRAP_ACCESS_KEY: 'SCWB', SCW_BOOTSTRAP_SECRET_KEY: 'b' }).owner).toEqual({
-      accessKey: 'SCWB',
-      secretKey: 'b',
-      source: 'SCW_BOOTSTRAP_*',
-    });
-    const alias = resolveOperatorIdentity({ SCW_BOOTSTRAP_KEY: 'SCWB', SCW_BOOTSTRAP_SECRET_KEY: 'b' });
-    expect(alias.owner?.accessKey).toBe('SCWB');
-    expect(alias.warnings[0]).toMatch(/read as SCW_OWNER_ACCESS_KEY/);
-    const both = resolveOperatorIdentity({
-      SCW_OWNER_ACCESS_KEY: 'SCWO',
+  it('must not read a privileged key from the environment: an Owner API key there is no part of the identity', () => {
+    const id = resolveOperatorIdentity({
+      SCW_OWNER_ACCESS_KEY: 'SCWOWNER',
       SCW_OWNER_SECRET_KEY: 'o',
       SCW_BOOTSTRAP_ACCESS_KEY: 'SCWB',
       SCW_BOOTSTRAP_SECRET_KEY: 'b',
     });
-    expect(both.owner?.accessKey).toBe('SCWO');
-    expect(both.warnings[0]).toMatch(/SCW_BOOTSTRAP_\* is ignored/);
+    expect(id).toEqual({ observer: undefined, ambient: undefined, warnings: [] });
   });
-  it('warns when the Owner API key slot holds the admin application key', () => {
+  it('must not read the retired admin application key', () => {
     const id = resolveOperatorIdentity({
-      SCW_ADMIN_ACCESS_KEY: 'SCWX',
+      SCW_ADMIN_ACCESS_KEY: 'SCWADMIN',
       SCW_ADMIN_SECRET_KEY: 's',
-      SCW_OWNER_ACCESS_KEY: 'SCWX',
-      SCW_OWNER_SECRET_KEY: 's',
+      SCW_STATE_ACCESS_KEY: 'X',
+      SCW_STATE_SECRET_KEY: 'y',
     });
-    expect(id.warnings[0]).toMatch(/same key as SCW_ADMIN_\*/);
+    expect(id).toEqual({ observer: undefined, ambient: undefined, warnings: [] });
+  });
+  it("keeps the process's SCW_* pair apart as ambient, never as the observer key", () => {
+    const id = resolveOperatorIdentity({ SCW_ACCESS_KEY: 'SCWCI', SCW_SECRET_KEY: 'c' });
+    expect(id.observer).toBeUndefined();
+    expect(id.ambient).toEqual({ accessKey: 'SCWCI', secretKey: 'c' });
+  });
+  it('treats a half-set pair as absent, with a warning, instead of aborting', () => {
+    const id = resolveOperatorIdentity({ SCW_OBSERVER_ACCESS_KEY: 'SCWX' });
+    expect(id.observer).toBeUndefined();
+    expect(id.warnings[0]).toMatch(/must be set together.*ignoring/);
   });
 });
 
@@ -128,6 +101,56 @@ describe('describeKey / classifyPrincipal', () => {
     expect(desc).toMatchObject({ bearer: 'owner', name: 'flip@example.com' });
     expect(classifyPrincipal(desc, names)).toBe('owner');
     expect(hoursUntilExpiry(desc)).toBeUndefined();
+  });
+});
+
+describe('organizationIdOfKey', () => {
+  const pair = { accessKey: 'SCWK', secretKey: 's' };
+
+  it('must not need the Account API for an application key: IAM names the organization of the key`s own bearer', async () => {
+    const saved = { a: process.env.SCW_ORGANIZATION_ID, b: process.env.SCW_DEFAULT_ORGANIZATION_ID };
+    delete process.env.SCW_ORGANIZATION_ID;
+    delete process.env.SCW_DEFAULT_ORGANIZATION_ID;
+    try {
+      const fetchImpl = makeFetch([
+        { match: '/api-keys/SCWK', body: { access_key: 'SCWK', application_id: 'app-1' } },
+        { match: '/applications/app-1', body: { name: 'cella-operator', organization_id: 'org-9' } },
+        { match: '/account/', body: { message: 'insufficient permissions' }, status: 403 },
+      ]);
+      expect(await organizationIdOfKey(pair, 'proj-1', { fetchImpl })).toBe('org-9');
+    } finally {
+      if (saved.a !== undefined) process.env.SCW_ORGANIZATION_ID = saved.a;
+      if (saved.b !== undefined) process.env.SCW_DEFAULT_ORGANIZATION_ID = saved.b;
+    }
+  });
+
+  it("finds the organization through the key's default project before a project is known, and says what to set when it cannot", async () => {
+    const saved = { a: process.env.SCW_ORGANIZATION_ID, b: process.env.SCW_DEFAULT_ORGANIZATION_ID };
+    delete process.env.SCW_ORGANIZATION_ID;
+    delete process.env.SCW_DEFAULT_ORGANIZATION_ID;
+    try {
+      const withDefault = makeFetch([
+        { match: '/api-keys/SCWK', body: { access_key: 'SCWK', default_project_id: 'proj-default' } },
+        { match: '/account/v3/projects/proj-default', body: { id: 'proj-default', organization_id: 'org-1' } },
+      ]);
+      expect(await organizationIdOfKey(pair, undefined, { fetchImpl: withDefault })).toBe('org-1');
+      const without = makeFetch([{ match: '/api-keys/SCWK', body: { access_key: 'SCWK' } }]);
+      await expect(organizationIdOfKey(pair, undefined, { fetchImpl: without })).rejects.toThrow(/SCW_DEFAULT_ORGANIZATION_ID/);
+    } finally {
+      if (saved.a !== undefined) process.env.SCW_ORGANIZATION_ID = saved.a;
+      if (saved.b !== undefined) process.env.SCW_DEFAULT_ORGANIZATION_ID = saved.b;
+    }
+  });
+
+  it('takes the organization from the environment first', async () => {
+    const saved = process.env.SCW_DEFAULT_ORGANIZATION_ID;
+    process.env.SCW_DEFAULT_ORGANIZATION_ID = 'org-env';
+    try {
+      expect(await organizationIdOfKey(pair, undefined, { fetchImpl: makeFetch([]) })).toBe('org-env');
+    } finally {
+      if (saved === undefined) delete process.env.SCW_DEFAULT_ORGANIZATION_ID;
+      else process.env.SCW_DEFAULT_ORGANIZATION_ID = saved;
+    }
   });
 });
 

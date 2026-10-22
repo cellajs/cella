@@ -1,6 +1,6 @@
 import type { EngineConfig } from '../config/engine-config';
 import { deriveInfra } from '../lib/naming';
-import { buildVmAssertRows } from '../lib/scaleway/vm-assert-rows';
+import { buildGrantRows } from '../lib/scaleway/grant-rows';
 import { appStorageNeeds, deployedServices, enabledServices, serviceEndpoints } from '../lib/services';
 import { isMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
@@ -17,7 +17,8 @@ export const ALLOWED_KEYS = [
   'frontend_bucket',
   'public_bucket',
   'state_bucket',
-  'vm_assert_json',
+  'diag_bucket',
+  'grant_rows_json',
   'enabled_services_json',
   'build_images_matrix',
   'primary_rollout_matrix',
@@ -85,7 +86,8 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
     frontend_bucket: appStorageNeeds(enabled).spaBucket ? naming.frontendBucket : '',
     public_bucket: appStorageNeeds(enabled).uploadBuckets ? naming.publicBucket : '',
     state_bucket: naming.pulumiStateBucket,
-    vm_assert_json: JSON.stringify(buildVmAssertRows(appConfig)),
+    diag_bucket: naming.bootDiagBucket,
+    grant_rows_json: JSON.stringify(buildGrantRows(appConfig)),
     enabled_services_json: JSON.stringify(enabledServiceRows),
     build_images_matrix: JSON.stringify(buildImages),
     primary_rollout_matrix: JSON.stringify(primaryRollout),

@@ -8,23 +8,27 @@ import { parseAclInput } from '../../lib/db-exposure-acl';
 import { closePublicEndpoints, dbInstanceUrn, endpointAddress, exposureOverlayPath, publicEndpoints } from '../../lib/db-public-endpoint';
 import { deriveInfra } from '../../lib/naming';
 import { actionLabel } from '../../lib/operator-actions';
+import { formatPostgresUrl } from '../../lib/postgres-url';
+import { POSTGRES_ROLE_NAMES } from '../../lib/scaleway/db-privileges';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { createRdbClient, type RdbEndpoint } from '../../lib/scaleway/scaleway-rdb';
+import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
+import { engineSecretPath } from '../../lib/scaleway/secret-paths';
 import { pulumiConfigRm, pulumiConfigSet } from '../../lib/stack/pulumi-up';
+import { readStoreOutputs } from '../../lib/stack/store-outputs';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { hardenPublicDsn } from '../../lib/utils/public-dsn';
 import { within } from '../../lib/utils/retry';
+import { rolePasswordSecretName } from '../../tasks/ensure-database';
 import { endAction, endsAction, type InfraContext } from '../shared';
-import { printRevokeReminder } from './owner-key';
-import { type PrivilegedConvergeOptions, runPrivilegedConverge } from './privileged-converge';
+import { type OperatorApplyOptions, runOperatorApply } from './operator-apply';
 
 // Pulumi config keys consumed by resources/stores/postgres-managed.ts and the outputs it exports.
 const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint';
 const DB_ACL_KEY = 'infra:dbPublicAcl';
-// Keys within the primary store's entry of the `storeOutputs` stack output.
-const PUBLIC_DSN_OUTPUT = 'connectionStringAdminPublic';
+// Key within the primary store's entry of the `storeOutputs` stack output.
 const DB_CA_OUTPUT = 'caCertificate';
 const PRIMARY_STORE_ID = Object.keys(appStores)[0] ?? 'primary';
 
@@ -57,23 +61,26 @@ export async function detectPublicIp(): Promise<string | undefined> {
 
 /** Read one key of the primary store's `storeOutputs` entry; empty when absent or unreadable. */
 function readPrimaryStoreOutput(env: NodeJS.ProcessEnv, stack: string, key: string): string {
-  const result = spawnSync('pulumi', ['stack', 'output', 'storeOutputs', '--show-secrets', '--json', '--stack', stack], {
-    cwd: infraDir,
-    env,
-    encoding: 'utf8',
-  });
-  if (result.status !== 0) return '';
-  try {
-    const parsed = JSON.parse(result.stdout ?? '{}') as Record<string, Record<string, string> | undefined>;
-    return (parsed?.[PRIMARY_STORE_ID]?.[key] ?? '').trim();
-  } catch {
-    return '';
-  }
+  return readStoreOutputs(env, stack)[PRIMARY_STORE_ID]?.[key] ?? '';
 }
 
-/** Read the public admin DSN store output (empty when the endpoint is disabled). */
-export function readPublicDsn(env: NodeJS.ProcessEnv, stack: string): string {
-  return readPrimaryStoreOutput(env, stack, PUBLIC_DSN_OUTPUT);
+/**
+ * The admin connection string over the public endpoint, empty while none is open: the endpoint from the store outputs, the admin role's
+ * password from the engine folder, which the operator key of the converge reads. No password passes through the state.
+ */
+export async function readPublicDsn(
+  env: NodeJS.ProcessEnv,
+  stack: string,
+  context: Pick<InfraContext, 'appConfig' | 'environment' | 'projectId'>,
+): Promise<string> {
+  const host = readPrimaryStoreOutput(env, stack, 'publicHost');
+  const port = readPrimaryStoreOutput(env, stack, 'publicPort');
+  const databaseName = readPrimaryStoreOutput(env, stack, 'databaseName');
+  if (!host || !port || !databaseName) return '';
+  const secrets = createSecretManagerClient({ secretKey: convergeSecretKey(env), region: context.appConfig.s3.region, projectId: context.projectId });
+  const kept = await secrets.getSecretByName(rolePasswordSecretName('admin'), engineSecretPath(context.appConfig.slug, context.environment));
+  if (!kept) return '';
+  return formatPostgresUrl(POSTGRES_ROLE_NAMES.admin, await secrets.accessLatestValue(kept.id), host, port, databaseName);
 }
 
 /** Read the database instance CA certificate store output (PEM; empty when unavailable). */
@@ -90,7 +97,7 @@ function writeDbCaFile(env: NodeJS.ProcessEnv, stack: string, environment: strin
   return caPath;
 }
 
-/** The secret key a converge env authenticates with: the Owner API key, or the key minted from it. */
+/** The secret key a converge env authenticates with: the key minted from the operator key for this run. */
 function convergeSecretKey(env: NodeJS.ProcessEnv): string {
   if (!env.SCW_SECRET_KEY) throw new Error('the converge environment carries no SCW_SECRET_KEY');
   return env.SCW_SECRET_KEY;
@@ -113,11 +120,11 @@ async function readDbExposure(context: InfraContext, secretKey: string): Promise
   return { endpoints: publicEndpoints(instance), aclRules: rules.length };
 }
 
-/** The live public endpoints, read with the admin application key within `budgetMs`. Undefined without that key, without an answer in time and on any error, so the menu falls back to the config. */
+/** The live public endpoints, read with the observer key within `budgetMs`. Undefined without that key, without an answer in time and on any error, so the menu falls back to the config. */
 export async function liveDbEndpoints(context: InfraContext, budgetMs = 4_000): Promise<string[] | undefined> {
-  const admin = resolveOperatorIdentity().admin;
-  if (!admin) return undefined;
-  const read = readDbExposure(context, admin.secretKey).then(
+  const { observer } = resolveOperatorIdentity();
+  if (!observer) return undefined;
+  const read = readDbExposure(context, observer.secretKey).then(
     (exposure) => exposure.endpoints.map(endpointAddress),
     () => undefined,
   );
@@ -136,7 +143,7 @@ function refreshDbInstance(env: NodeJS.ProcessEnv, stack: string): void {
 }
 
 /** The converge `prepare` of every expose: refresh the instance so the `up` creates the endpoint whatever the state held, then write the overlay. */
-export function prepareExpose(context: InfraContext, acl: string): NonNullable<PrivilegedConvergeOptions['prepare']> {
+export function prepareExpose(context: InfraContext, acl: string): NonNullable<OperatorApplyOptions['prepare']> {
   return (env, stack) => {
     refreshDbInstance(env, stack);
     const overlay = writeExposureOverlay(context.stackPath, context.environment);
@@ -151,7 +158,7 @@ export function prepareExpose(context: InfraContext, acl: string): NonNullable<P
  * The converge `prepare` of every close. Converging config without the exposure keys never removes the endpoint, so this deletes every public
  * endpoint over the RDB API, waits until a re-read of the instance shows none, and refreshes the instance so the state records none either.
  */
-export function prepareClose(context: InfraContext): NonNullable<PrivilegedConvergeOptions['prepare']> {
+export function prepareClose(context: InfraContext): NonNullable<OperatorApplyOptions['prepare']> {
   return async (env, stack) => {
     // Compat: stacks predating the overlay hold the exposure keys in the committed config.
     if (context.stackYaml?.includes(DB_ENDPOINT_KEY)) pulumiConfigRm(env, stack, DB_ENDPOINT_KEY);
@@ -174,11 +181,11 @@ export function prepareClose(context: InfraContext): NonNullable<PrivilegedConve
 async function convergeOrExit(
   context: InfraContext,
   operation: string,
-  hooks: Pick<PrivilegedConvergeOptions, 'prepare' | 'afterUp'>,
-): Promise<{ env: NodeJS.ProcessEnv; stack: string; ownerKeyPasted: boolean }> {
-  let result: Awaited<ReturnType<typeof runPrivilegedConverge>>;
+  hooks: Pick<OperatorApplyOptions, 'prepare' | 'afterUp'>,
+): Promise<{ env: NodeJS.ProcessEnv; stack: string }> {
+  let result: Awaited<ReturnType<typeof runOperatorApply>>;
   try {
-    result = await runPrivilegedConverge(context, { operation, ...hooks });
+    result = await runOperatorApply(context, { operation, ...hooks });
   } catch (error) {
     if (endsAction(error)) throw error;
     console.error(`${crossMark} ${operation} stopped: ${errorMessage(error)}`);
@@ -192,7 +199,7 @@ async function convergeOrExit(
 }
 
 /**
- * Open the database's public endpoint for scoped operator access: prompt for the client ACL (default the detected /32), converge with the Owner API key, print the admin DSN.
+ * Open the database's public endpoint for scoped operator access: prompt for the client ACL (default the detected /32), converge with the operator key, print the admin DSN.
  * The endpoint is internet-reachable but restricted to the ACL; run "Close public DB access" when finished.
  */
 export async function runExposeDatabase(context: InfraContext): Promise<void> {
@@ -229,7 +236,7 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
   }
 
   let live: { endpoints: RdbEndpoint[]; aclRules: number } | undefined;
-  const { env, stack, ownerKeyPasted } = await convergeOrExit(context, 'expose-db', {
+  const { env, stack } = await convergeOrExit(context, 'expose-db', {
     prepare: prepareExpose(context, acl),
     afterUp: async (e) => {
       live = await readDbExposure(context, convergeSecretKey(e));
@@ -241,7 +248,7 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
   } else if (live) {
     console.info(`${checkMark} Public endpoint ${live.endpoints.map(endpointAddress).join(', ')} is open with ${live.aclRules} ACL rule(s).`);
   }
-  const dsn = readPublicDsn(env, stack);
+  const dsn = await readPublicDsn(env, stack, context);
   if (!dsn) {
     console.warn(
       `${warningMark} Endpoint applied but no public DSN output yet: Scaleway may still be provisioning the load balancer. Re-run to read it.`,
@@ -256,7 +263,6 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
     else console.warn(`  ${warningMark} CA output unavailable; DSN left encrypt-only (sslmode=require). Re-run to pick up the CA.`);
   }
   console.info(`\n  ${pc.bold(`When finished, run "${actionLabel('db-close')}" to close it again.`)}`);
-  if (ownerKeyPasted) printRevokeReminder();
 }
 
 /** Close the database's public endpoint: delete it over the RDB API, converge without the exposure config, and confirm the instance has none left. */
@@ -268,7 +274,7 @@ export async function runUnexposeDatabase(context: InfraContext): Promise<void> 
   }
 
   let left: RdbEndpoint[] | undefined;
-  const { ownerKeyPasted } = await convergeOrExit(context, 'unexpose-db', {
+  await convergeOrExit(context, 'unexpose-db', {
     prepare: prepareClose(context),
     afterUp: async (env) => {
       left = (await readDbExposure(context, convergeSecretKey(env))).endpoints;
@@ -285,5 +291,4 @@ export async function runUnexposeDatabase(context: InfraContext): Promise<void> 
   } else {
     console.info(`\n${checkMark} ${pc.bold('Public endpoint closed.')} The database is private-only again.`);
   }
-  if (ownerKeyPasted) printRevokeReminder();
 }

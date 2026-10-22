@@ -11,13 +11,17 @@ import {
 } from '../tests/helpers/pulumi-mock';
 
 // A new generation refuses to plan without a pinnable boot image; the registry lookup is a network call, so it answers a fixed digest here.
-vi.mock('../lib/scaleway/boot-image', () => ({ resolveBootImage: async () => ({ image: 'infra-boot', digest: `sha256:${'a'.repeat(64)}` }) }));
+vi.mock('../lib/scaleway/release-image', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../lib/scaleway/release-image')>()),
+  resolveReleaseImage: async ({ image }: { image: string }) => ({ image, digest: `sha256:${'a'.repeat(64)}` }),
+}));
 
-/** The deploy's minted keys, as tasks/mint-generation-keys.ts writes them for the Pulumi program. */
+/** The deploy's staged keys, as tasks/stage-generation-keys.ts writes them for the Pulumi program. */
 const keys = {
   bootAccessKey: 'SCWBOOTACCESSKEY',
   bootSecretKey: 'boot-secret-key-value',
-  handoffSecretIds: { backend: 'handoff-backend-id', frontend: 'handoff-frontend-id' },
+  // Keyed by service and release; the test stack's release is `latest`.
+  handoffSecretIds: { 'backend@latest': 'handoff-backend-id', 'frontend@latest': 'handoff-frontend-id' },
 };
 
 let h: MockHarness;
@@ -45,7 +49,7 @@ const cloudInitOf = (server: CapturedResource) => String(unwrapSecret(server.inp
 /** The boot plan a VM writes. */
 const bootPlanOf = (server: CapturedResource) => bootPlanIn(cloudInitOf(server), '/etc/cella/boot-plan.json');
 
-const serviceOf = (server: CapturedResource) => server.name.split('-')[1] as keyof typeof keys.handoffSecretIds;
+const serviceOf = (server: CapturedResource) => server.name.split('-')[1] as 'backend' | 'frontend';
 
 describe('compute module', () => {
   it('attaches the closed security group to every generation VM', () => {
@@ -64,13 +68,25 @@ describe('compute module', () => {
     expect(h.oneOfType('scaleway:registry/namespace:Namespace').inputs.isPublic).toBe(false);
   });
 
-  it('bakes the minted boot key into every VM and hands each VM its own service bundle only', () => {
+  it('pins every image a new machine starts to the digest its release tag resolved to', () => {
+    for (const server of servers) {
+      const tags = bootPlanOf(server)
+        .plan.files.env.split('\n')
+        .filter((line) => /^[A-Z0-9]+_TAG=/.test(line));
+      expect(tags, server.name).toEqual([expect.stringMatching(new RegExp(`^${serviceOf(server).toUpperCase()}_TAG=[^@]+@sha256:a{64}$`))]);
+    }
+  });
+
+  it('bakes the minted boot key into every VM and hands each VM the bundles of the services it carries only', () => {
     for (const server of servers) {
       const cloudInit = cloudInitOf(server);
       expect(cloudInit).toContain(`<<'SCW_ACCESS_KEY_EOF'\n${keys.bootAccessKey}\nSCW_ACCESS_KEY_EOF`);
       expect(cloudInit).toContain(`<<'SCW_SECRET_KEY_EOF'\n${keys.bootSecretKey}\nSCW_SECRET_KEY_EOF`);
       const { plan } = bootPlanOf(server);
-      expect(plan.serviceKeyHandoff?.secretId, server.name).toBe(keys.handoffSecretIds[serviceOf(server)]);
+      expect(
+        plan.serviceKeyHandoffs?.map((handoff) => [handoff.service, handoff.secretId]),
+        server.name,
+      ).toEqual([[serviceOf(server), keys.handoffSecretIds[`${serviceOf(server)}@latest`]]]);
       // Only the upload-signing service gets its key exported as S3 env.
       expect(plan.exportS3Env, server.name).toBe(serviceOf(server) === 'backend' ? true : undefined);
     }
@@ -85,10 +101,12 @@ describe('compute module', () => {
         envVars.filter((name) => secretVars.has(name)),
         server.name,
       ).toEqual([]);
-      // The manifest names each secret's env var and Secret Manager id; any other field would be a value baked into cloud-init.
+      // The manifest names each secret's env var, Secret Manager id and the service whose copy it is; any other field would be a value baked
+      // into cloud-init. On its own machine a service reads its own copies only.
       const manifest = (raw.files as { runtimeSecretManifest: Record<string, unknown>[] }).runtimeSecretManifest;
       for (const entry of manifest) {
-        expect(Object.keys(entry).sort()).toEqual(['envVar', 'required', 'secretId']);
+        expect(Object.keys(entry).sort()).toEqual(['envVar', 'required', 'secretId', 'service']);
+        expect(entry.service, String(entry.envVar)).toBe(serviceOf(server));
         expect(entry.secretId, String(entry.envVar)).toMatch(/^secret-.*-id$/);
       }
       expect(

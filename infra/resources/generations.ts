@@ -54,6 +54,9 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
     blocks,
     secrets,
     computeImage: typeof sizing.computeImage === 'string' ? sizing.computeImage : 'dynamic',
+    // A rotation makes every new machine a new generation, so none keeps a key or a value from before it. Absent until the first rotation,
+    // which keeps the genIds of a stack that never rotated.
+    ...(controlState.rotations?.counter ? { rotation: controlState.rotations.counter } : {}),
   };
 }
 
