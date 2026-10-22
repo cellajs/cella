@@ -39,16 +39,17 @@ function combine(stored: UnsavedYDoc[], unstored: UnstoredYDoc[]): UnsavedEdit[]
 
 /**
  * The edits sign-out would discard, live: the store's rows and the connections that keep saving on the sign-out page,
- * so the list shrinks as they save. Undefined until both sources answered, or while `enabled` is false.
+ * so the list shrinks as they save. Undefined until both sources answered.
  */
-export function useUnsavedEdits(enabled: boolean): UnsavedEdit[] | undefined {
+export function useUnsavedEdits(): UnsavedEdit[] | undefined {
   const [stored, setStored] = useState<UnsavedYDoc[]>();
   const [unstored, setUnstored] = useState<UnstoredYDoc[]>();
 
-  useEffect(() => (enabled ? watchUnsavedYDocs(setStored) : undefined), [enabled]);
-  useEffect(() => (enabled ? watchUnstoredYDocs(setUnstored) : undefined), [enabled]);
+  useEffect(() => watchUnsavedYDocs(setStored), []);
+  useEffect(() => watchUnstoredYDocs(setUnstored), []);
 
-  return useMemo(() => (enabled && stored && unstored ? combine(stored, unstored) : undefined), [enabled, stored, unstored]);
+  // Memoized by hand: the gate hands the list on in an effect, where a new array per render (an uncompiled run) loops.
+  return useMemo(() => (stored && unstored ? combine(stored, unstored) : undefined), [stored, unstored]);
 }
 
 /** The first line of an unsaved document, from memory, its parked row or its stored rows. */
@@ -138,7 +139,7 @@ interface UnsavedEditsGateProps {
  * connections and the editor chunk, which the auth pages otherwise never load.
  */
 export function UnsavedEditsGate({ onChange, open, onConfirm, onCancel }: UnsavedEditsGateProps) {
-  const edits = useUnsavedEdits(true);
+  const edits = useUnsavedEdits();
   useEffect(() => onChange(edits), [edits, onChange]);
   return open && edits?.length ? <UnsavedEditsDialog edits={edits} onConfirm={onConfirm} onCancel={onCancel} /> : null;
 }

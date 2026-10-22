@@ -10,20 +10,23 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
 
-export const mapOAuthProviders = [
+const mapOAuthProviders = [
   { id: 'github', name: 'Github' },
   { id: 'google', name: 'Google' },
   { id: 'microsoft', name: 'Microsoft' },
 ] as const;
 
-type OAuthProvider = (typeof mapOAuthProviders)[number];
+/** The providers the app config enables, in its order. */
+export const enabledOAuthProviders = appConfig.enabledOAuthProviders.flatMap((id) =>
+  mapOAuthProviders.filter((provider) => provider.id === id).map(({ name }) => ({ id, name })),
+);
 
 /**
  * Display OAuth providers to sign in, sign up, accept invitation
  *
  * @param authStep The action type to perform
  */
-export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) {
+export function OAuthProviders({ authStep }: { authStep: AuthStep }) {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
@@ -62,36 +65,24 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
     }
   };
 
-  if (appConfig.enabledOAuthProviders.length < 1) return null;
+  if (!enabledOAuthProviders.length) return null;
 
   return (
     <div data-mode={mode} className="group flex flex-col gap-2">
-      {appConfig.enabledOAuthProviders.map((provider) => {
-        const providerData = mapOAuthProviders.find((p): p is OAuthProvider & { id: typeof provider } => p.id === provider);
-
-        if (!providerData) return null;
-
-        return (
-          <Button
-            loading={loadingProvider === provider}
-            key={provider}
-            type="button"
-            variant="plain"
-            onClick={() => authenticateWithProvider(providerData.id)}
-          >
-            <img
-              data-provider={provider}
-              src={`/static/auth/${provider}-icon.svg`}
-              alt={provider}
-              className="size-4 data-[provider=github]:group-data-[mode=dark]:invert"
-              loading="lazy"
-            />
-            <span>
-              {actionText} {t('c:with').toLowerCase()} {providerData.name}
-            </span>
-          </Button>
-        );
-      })}
+      {enabledOAuthProviders.map(({ id, name }) => (
+        <Button loading={loadingProvider === id} key={id} type="button" variant="plain" onClick={() => authenticateWithProvider(id)}>
+          <img
+            data-provider={id}
+            src={`/static/auth/${id}-icon.svg`}
+            alt={id}
+            className="size-4 data-[provider=github]:group-data-[mode=dark]:invert"
+            loading="lazy"
+          />
+          <span>
+            {actionText} {t('c:with').toLowerCase()} {name}
+          </span>
+        </Button>
+      ))}
     </div>
   );
 }

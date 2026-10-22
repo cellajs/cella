@@ -2,13 +2,23 @@ import { BuildingIcon } from 'lucide-react';
 import { appConfig } from 'shared';
 import { cn } from '~/utils/cn';
 
+/** The support address as a mail link. */
+export function SupportEmailLink({ className }: { className?: string }) {
+  const { supportEmail } = appConfig.company;
+
+  return (
+    <a className={className} href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
+      {supportEmail}
+    </a>
+  );
+}
+
 export function LegalContact({ addressOnly = false, className }: { addressOnly?: boolean; className?: string }) {
   const companyFull = appConfig.company.name;
   const streetAddress = appConfig.company.streetAddress;
   const postcode = appConfig.company.postcode;
   const city = appConfig.company.city;
   const country = appConfig.company.country;
-  const supportEmail = appConfig.company.supportEmail;
   const registration = appConfig.company.registration;
   const vatNumber = appConfig.company.vatNumber;
 
@@ -28,9 +38,7 @@ export function LegalContact({ addressOnly = false, className }: { addressOnly?:
         </li>
         <li>{country}</li>
         <li>
-          <a className="link-inline" href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
-            {supportEmail}
-          </a>
+          <SupportEmailLink className="link-inline" />
         </li>
         {!addressOnly && <li>{registration}</li>}
         {!addressOnly && vatNumber && <li>VAT number: {vatNumber}</li>}

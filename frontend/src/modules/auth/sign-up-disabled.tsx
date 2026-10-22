@@ -1,6 +1,6 @@
 import { Trans, useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { Button } from '~/modules/ui/button';
+import { InlineLinkButton } from '~/modules/auth/inline-link-button';
 import { cn } from '~/utils/cn';
 
 /** Tells a visitor that sign-up is closed; with a waitlist it also offers the way to request an invitation. */
@@ -13,11 +13,7 @@ export function SignUpDisabled({ onRequest, className }: { onRequest: () => void
       {appConfig.has.waitlist && (
         <>
           {' '}
-          <Trans
-            t={t}
-            i18nKey="c:request_invitation.text"
-            components={{ request_anchor: <Button type="button" variant="link" className="h-auto p-0 text-base" onClick={onRequest} /> }}
-          />
+          <Trans t={t} i18nKey="c:request_invitation.text" components={{ request_anchor: <InlineLinkButton onClick={onRequest} /> }} />
         </>
       )}
     </p>

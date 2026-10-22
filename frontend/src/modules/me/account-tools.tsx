@@ -5,8 +5,9 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startOAuthConnect } from 'sdk';
 import { appConfig, type EnabledOAuthProvider, isStrategyEnabled } from 'shared';
-import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
-import { ssoEntryQueryOptions, ssoStartUrl } from '~/modules/auth/sso-providers';
+import { enabledOAuthProviders } from '~/modules/auth/oauth-providers';
+import { ssoEntryQueryOptions } from '~/modules/auth/query';
+import { ssoStartUrl } from '~/modules/auth/sso-providers';
 import { withStepUp } from '~/modules/auth/step-up';
 import { ConfirmText } from '~/modules/common/confirm-text';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -70,7 +71,7 @@ export function AccountAuthenticationCard() {
   // organization yet, so it is offered beside the institutions of their own organizations.
   const { connect } = useSearch({ from: '/_app/account' });
   const listed = authData.institutions.find((institution) => institution.connectionId === connect);
-  const { data: entry } = useQuery({ ...ssoEntryQueryOptions(connect ?? ''), enabled: !!connect && !listed });
+  const { data: entry } = useQuery({ ...ssoEntryQueryOptions(connect), enabled: !!connect && !listed });
   const offered = entry?.status === 'active' ? { connectionId: entry.id, displayName: entry.institution.displayName, connected: false } : undefined;
   const institutions = offered ? [...authData.institutions, offered] : authData.institutions;
   const toConnect = [listed, offered].find((institution) => institution && !institution.connected);
@@ -162,10 +163,8 @@ export function AccountAuthenticationCard() {
               </HelpText>
 
               <div className="mb-6 flex flex-col gap-3 sm:items-start">
-                {appConfig.enabledOAuthProviders.map((id) => {
-                  const provider = mapOAuthProviders.find((provider) => provider.id === id);
-                  if (!provider) return null;
-                  if (enabledOAuth.includes(id)) {
+                {enabledOAuthProviders.map((provider) => {
+                  if (enabledOAuth.includes(provider.id)) {
                     return (
                       <div key={provider.id} className="flex items-center justify-center gap-2 px-3 py-2">
                         <img
@@ -180,13 +179,12 @@ export function AccountAuthenticationCard() {
                     );
                   }
                   return (
-                    // Assert is necessary because apps might not have all providers enabled
                     <Button
                       loading={loadingProvider === provider.id}
                       key={provider.id}
                       type="button"
                       variant="plain"
-                      onClick={() => authenticateWithProvider(provider.id as EnabledOAuthProvider)}
+                      onClick={() => authenticateWithProvider(provider.id)}
                     >
                       <img
                         src={`/static/auth/${provider.id}-icon.svg`}

@@ -1,15 +1,16 @@
 import { useRouter, useSearch } from '@tanstack/react-router';
 import { HeartIcon } from 'lucide-react';
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { appConfig } from 'shared';
 import { endSession } from '~/modules/auth/end-session';
 import type { UnsavedEdit } from '~/modules/auth/unsaved-edits-dialog';
 import { flushYjsStore } from '~/modules/common/blocknote/yjs-store';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
+import { lazyNamed } from '~/utils/lazy-named';
 import { teardownUserState } from '~/utils/teardown-user-state';
 
 // Loaded on demand: the list reaches the Yjs connections and the editor chunk, which the auth pages never need.
-const UnsavedEditsGate = lazy(() => import('~/modules/auth/unsaved-edits-dialog').then((module) => ({ default: module.UnsavedEditsGate })));
+const UnsavedEditsGate = lazyNamed(() => import('~/modules/auth/unsaved-edits-dialog'), 'UnsavedEditsGate');
 
 /**
  * Signs out, after asking while some edits no server holds would go with the session: the dialog lists them live, and

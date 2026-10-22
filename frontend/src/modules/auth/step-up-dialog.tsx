@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getStepUp, type StepUpData, sendStepUpLink, stepUp } from 'sdk';
 import { endSession } from '~/modules/auth/end-session';
+import { InlineLinkButton } from '~/modules/auth/inline-link-button';
 import { getPasskeyStepUpCredential } from '~/modules/auth/passkey-credentials';
+import { authKeys } from '~/modules/auth/query';
 import { StepUpDismissed, type StepUpMethod } from '~/modules/auth/step-up-retry';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -62,7 +64,7 @@ function StepUpDialog({ methods, section, onStepUp }: StepUpDialogProps) {
 
   // Opening the mailed link in this browser steps this session up; the dialog then carries on by itself.
   const { data: state } = useQuery({
-    queryKey: ['auth', 'step-up', sentAt],
+    queryKey: authKeys.stepUp(sentAt),
     queryFn: () => getStepUp(),
     enabled: sentAt !== null,
     refetchInterval: 3000,
@@ -113,10 +115,7 @@ function StepUpDialog({ methods, section, onStepUp }: StepUpDialogProps) {
         )}
         {methods.includes('sign_in') && (
           <p className="text-muted-foreground text-sm">
-            {t('c:step_up_no_email')}{' '}
-            <Button variant="none" className="link-inline inline h-auto cursor-pointer p-0" onClick={signInAgain}>
-              {t('c:sign_in_again')}
-            </Button>
+            {t('c:step_up_no_email')} <InlineLinkButton onClick={signInAgain}>{t('c:sign_in_again')}</InlineLinkButton>
           </p>
         )}
       </div>

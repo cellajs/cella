@@ -3,23 +3,19 @@ import { ArrowRightIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { type CheckEmailData, type CheckEmailResponse, checkEmail } from 'sdk';
-import { zCheckEmailBody } from 'sdk/zod.gen';
 import { appConfig, isStrategyEnabled } from 'shared';
-import type { z } from 'zod';
 import type { ApiError } from '~/lib/api';
+import { AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { SignUpDisabled } from '~/modules/auth/sign-up-disabled';
+import { EmailField, type EmailFormValues, emailFormSchema } from '~/modules/auth/steps/email-field';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
-import { Input } from '~/modules/ui/input';
+import { Form } from '~/modules/ui/field';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 import { formResolver } from '~/utils/form-resolver';
-import { isTouchInteraction } from '~/utils/input-modality';
 
-const emailEnabled = isStrategyEnabled('passkey');
-
-const formSchema = zCheckEmailBody;
-type FormValues = z.infer<typeof formSchema>;
+const passkeyEnabled = isStrategyEnabled('passkey');
+const magicLinkEnabled = isStrategyEnabled('magic');
 
 export function CheckEmailStep() {
   const { t } = useTranslation();
@@ -30,7 +26,7 @@ export function CheckEmailStep() {
 
   const title = inviteOtherAccount ? t('c:invite_sign_in') : appConfig.has.selfRegistration ? t('c:sign_in_or_up') : t('c:sign_in');
 
-  const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { email: '' } });
+  const form = useForm<EmailFormValues>({ resolver: formResolver(emailFormSchema), defaultValues: { email: '' } });
 
   // A browser that never signed in to the address gets the step that does not say whether it has an account.
   const { mutate: _checkEmail, isPending } = useMutation<CheckEmailResponse, ApiError, CheckEmailData['body']>({
@@ -46,41 +42,19 @@ export function CheckEmailStep() {
     },
   });
 
-  const onSubmit = (body: FormValues) => _checkEmail(body);
+  const onSubmit = (body: EmailFormValues) => _checkEmail(body);
 
   return (
     <Form {...form}>
-      <h1 className="mt-4 pb-2 text-center text-2xl">{title}</h1>
-      {inviteOtherAccount && <p className="-mt-2 text-center font-light">{t('c:invite_sign_in.text')}</p>}
-      {/* An invitation in hand needs no sign-up, so its own line above stands alone */}
-      {!appConfig.has.selfRegistration && !inviteOtherAccount && (
-        <SignUpDisabled className="-mt-2" onRequest={() => setStep('waitlist', form.getValues('email'))} />
-      )}
+      <AuthHeader title={title}>
+        {inviteOtherAccount && <p className="font-light">{t('c:invite_sign_in.text')}</p>}
+        {/* An invitation in hand needs no sign-up, so its own line above stands alone */}
+        {!appConfig.has.selfRegistration && !inviteOtherAccount && <SignUpDisabled onRequest={() => setStep('waitlist', form.getValues('email'))} />}
+      </AuthHeader>
 
-      {emailEnabled && (
+      {(passkeyEnabled || magicLinkEnabled) && (
         <form noValidate onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              // Custom css due to html injection by browser extensions
-              <FormItem className="gap-0">
-                {/* Hidden on purpose: the example address is the visible cue */}
-                <FormLabel className="sr-only">{t('c:email')}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    className="h-12"
-                    type="email"
-                    autoFocus={!isTouchInteraction()}
-                    autoComplete="email"
-                    placeholder="name@example.com"
-                  />
-                </FormControl>
-                <FormMessage className="mt-2" />
-              </FormItem>
-            )}
-          />
+          <EmailField control={form.control} />
           <SubmitButton loading={isPending} className="w-full">
             {t('c:continue')}
             <ArrowRightIcon />

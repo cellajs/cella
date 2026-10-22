@@ -17,8 +17,7 @@ export function AuthErrorPage() {
 
   const { error: errorType, tokenId } = useSearch({ from: '/_public/auth/error' });
 
-  const setStep = useAuthStore((state) => state.setStep);
-  const setMagicLinkMode = useAuthStore((state) => state.setMagicLinkMode);
+  const setMagicLinkSent = useAuthStore((state) => state.setMagicLinkSent);
 
   // Resending needs the expired invitation's token id: an address alone would tell anyone who was invited.
   const resendTokenId = errorType === 'invitation_expired' ? tokenId : undefined;
@@ -31,8 +30,7 @@ export function AuthErrorPage() {
   const { mutate: sendRecoveryLink, isPending: isSendingRecoveryLink } = useMutation({
     mutationFn: () => sendSsoRecoveryLink(),
     onSuccess: ({ email }) => {
-      setMagicLinkMode('signin');
-      setStep('magicLinkSent', email);
+      setMagicLinkSent(email, 'signin');
       navigate({ to: '/auth/authenticate', replace: true });
     },
   });

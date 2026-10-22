@@ -2,8 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useParams, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import { AuthHeader } from '~/modules/auth/auth-header';
+import { ssoEntryQueryOptions } from '~/modules/auth/query';
 import { safeRedirectPath } from '~/modules/auth/redirect-path';
-import { ssoEntryQueryOptions, ssoStartUrl } from '~/modules/auth/sso-providers';
+import { ssoStartUrl } from '~/modules/auth/sso-providers';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Spinner } from '~/modules/common/spinner';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
@@ -30,11 +32,12 @@ export function SsoEntryPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col items-center gap-3 text-center">
-        {image && <img src={image} alt="" className="size-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
-        <h1 className="text-2xl">{t('c:sso_entry', { organization: organizationName })}</h1>
+      <AuthHeader
+        image={image && <img src={image} alt="" className="size-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
+        title={t('c:sso_entry', { organization: organizationName })}
+      >
         <p className="text-muted-foreground text-sm">{t('c:sso_entry.text', { institution: institution.displayName, appName: appConfig.name })}</p>
-      </div>
+      </AuthHeader>
 
       {status === 'active' ? (
         <Button className="w-full" render={<a href={ssoStartUrl({ connectionId }, { redirectAfter: safeRedirectPath(redirect) })} />}>

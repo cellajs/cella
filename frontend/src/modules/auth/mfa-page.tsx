@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { signOut } from 'sdk';
 import { AuthEmailButton } from '~/modules/auth/auth-email-button';
+import { AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
 import { TotpStrategy } from '~/modules/auth/totp-strategy';
@@ -25,7 +26,7 @@ export function MfaPage() {
       await signOut();
       toaster.success(t('c:success.cancel_mfa'));
     } catch (error) {
-      console.error('Failed to retrieve data:', error);
+      console.error('Sign out failed:', error);
     } finally {
       clearUserStore();
       navigate({ to: '/auth/authenticate', replace: true });
@@ -34,18 +35,15 @@ export function MfaPage() {
 
   if (signedIn) return <Spinner size="lg" />;
 
-  if (!lastUser?.email) {
-    navigate({ to: '/auth/authenticate', replace: true });
-    return null;
-  }
+  // The route lets no visitor in without an address; cancelling clears it while the route change runs.
+  if (!lastUser?.email) return null;
 
   return (
     <>
-      <h1 className="text-center text-2xl">{t('c:mfa_header')}</h1>
-
-      <AuthEmailButton email={lastUser.email} onClick={handleCancelMfa} />
-
-      <p className="space-x-1 text-center">{t('c:mfa_subheader.text')}</p>
+      <AuthHeader title={t('c:mfa_header')}>
+        <AuthEmailButton email={lastUser.email} onClick={handleCancelMfa} />
+        <p className="space-x-1">{t('c:mfa_subheader.text')}</p>
+      </AuthHeader>
 
       {!isActive && <PasskeyStrategy type="mfa" />}
       <TotpStrategy isActive={isActive} setIsActive={setIsActive} />

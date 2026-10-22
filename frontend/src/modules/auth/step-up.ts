@@ -1,9 +1,20 @@
 import { getStepUp } from 'sdk';
 import { retryAfterStepUp, type StepUpMethod } from '~/modules/auth/step-up-retry';
 
-/** The re-auth dialog, loaded on first use so the query modules that step up stay free of UI imports. */
-const openStepUpDialog = async (methods: StepUpMethod[], section?: string) =>
-  (await import('~/modules/auth/step-up-dialog')).openStepUpDialog(methods, section);
+let pending: Promise<void> | null = null;
+
+/**
+ * The re-auth dialog, loaded on first use so the query modules that step up stay free of UI imports. An action that
+ * asks while one is open waits for the same dialog, so one proof lets every waiting action run again.
+ */
+const openStepUpDialog = (methods: StepUpMethod[], section?: string) => {
+  pending ??= import('~/modules/auth/step-up-dialog')
+    .then((module) => module.openStepUpDialog(methods, section))
+    .finally(() => {
+      pending = null;
+    });
+  return pending;
+};
 
 /**
  * Runs an account-security action; when the server asks the user to prove it's them first, opens the re-auth dialog

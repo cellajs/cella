@@ -44,7 +44,7 @@ export function TotpConfirmationForm({ onSubmit, onCancel, label, isPending }: P
           name="code"
           render={({ field: { value, onChange, onBlur, name, ref } }) => (
             <FormItem name="code" className="mb-6">
-              {label && <FormLabel className="mb-1 justify-center text-center">{label}</FormLabel>}
+              {label && <FormLabel className="mb-1 self-center">{label}</FormLabel>}
               {/* OTPField reads the surrounding Field itself, so it binds to the form value directly. */}
               <InputOTP
                 name={name}

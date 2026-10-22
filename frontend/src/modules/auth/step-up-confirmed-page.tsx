@@ -1,6 +1,7 @@
 import { useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import { AuthHeader } from '~/modules/auth/auth-header';
 import { Button } from '~/modules/ui/button';
 
 /**
@@ -12,12 +13,13 @@ export function StepUpConfirmedPage() {
   const { redirect } = useSearch({ from: '/_public/auth/step-up-confirmed' });
 
   return (
-    <div className="text-center">
-      <h1 className="text-2xl">{t('c:step_up_confirmed')}</h1>
-      <p className="my-4">{t('c:step_up_confirmed.text')}</p>
+    <>
+      <AuthHeader title={t('c:step_up_confirmed')}>
+        <p>{t('c:step_up_confirmed.text')}</p>
+      </AuthHeader>
       <Button variant="plain" render={<a href={redirect ?? appConfig.defaultRedirectPath} />}>
         {t('c:step_up_continue')}
       </Button>
-    </div>
+    </>
   );
 }

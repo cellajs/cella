@@ -1,9 +1,10 @@
-import { queryOptions, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { BuildingIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { type GetAuthHealthResponse, getSsoEntry } from 'sdk';
+import type { GetAuthHealthResponse } from 'sdk';
 import { appConfig, type FederationConfig } from 'shared';
+import { ssoEntryQueryOptions } from '~/modules/auth/query';
 import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import { invitationResumePath } from '~/modules/auth/use-post-auth-redirect';
 import { Button } from '~/modules/ui/button';
@@ -27,10 +28,6 @@ export const ssoStartUrl = (
 /** The logo a federation's config names, if any. Federation keys arrive as plain strings from the API. */
 const federationLogo = (key: string) => (appConfig.federations as Record<string, FederationConfig | undefined>)[key]?.logo;
 
-/** What an institution's entry page shows; public by the connection id. */
-export const ssoEntryQueryOptions = (connectionId: string) =>
-  queryOptions({ queryKey: ['sso-entry', connectionId], queryFn: () => getSsoEntry({ path: { connectionId } }), retry: false });
-
 interface SsoProvidersProps {
   /** The institution the context names (an invitation's organization): its button comes first. */
   connectionId?: string;
@@ -48,10 +45,10 @@ export function SsoProviders({ connectionId, federations = [], primary = false }
   const { t } = useTranslation();
   const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
 
-  const { data: entry } = useQuery({ ...ssoEntryQueryOptions(connectionId ?? ''), enabled: !!connectionId });
+  const { data: entry } = useQuery(ssoEntryQueryOptions(connectionId));
   const redirectAfter = tokenId ? invitationResumePath(tokenId) : safeRedirectPath(redirect);
 
-  const contextual = connectionId && entry?.status === 'active' ? entry : null;
+  const contextual = entry?.status === 'active' ? entry : null;
   const items = [
     ...(contextual
       ? [

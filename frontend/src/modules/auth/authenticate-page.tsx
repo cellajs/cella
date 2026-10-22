@@ -3,25 +3,15 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ArrowLeftIcon, ServerOffIcon, TriangleAlertIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getAuthHealth } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
 import { AuthDivider } from '~/modules/auth/auth-divider';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
+import { authHealthQueryOptions, tokenDataQueryOptions } from '~/modules/auth/query';
 import { SsoProviders } from '~/modules/auth/sso-providers';
-import {
-  AcceptInvitationStep,
-  CheckEmailStep,
-  InvitationStep,
-  InviteOnlyStep,
-  MagicLinkSentStep,
-  SignInStep,
-  SignUpStep,
-  WaitlistStep,
-} from '~/modules/auth/steps';
+import { AcceptInvitationStep, CheckEmailStep, InvitationStep, MagicLinkSentStep, SignInStep, SignUpStep, WaitlistStep } from '~/modules/auth/steps';
 import type { TokenData } from '~/modules/auth/types';
-import { useGetTokenData } from '~/modules/auth/use-get-token-data';
 import { EntityChip } from '~/modules/common/entity-chip';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -30,9 +20,8 @@ import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
 
-// Warn after the slow delay and abort at the timeout, so a down backend never hangs on the browser default.
+// Warn after this delay that the backend is slow to answer.
 const healthSlowMs = 5000;
-const healthTimeoutMs = 20000;
 
 export function AuthenticatePage() {
   const { t } = useTranslation();
@@ -57,20 +46,14 @@ export function AuthenticatePage() {
   const { data: signedInUser } = useQuery({ ...meQueryOptions(), enabled: false });
 
   // A signed-in visitor gets this page's own notice for a spent token, so the global toast stays quiet for them.
-  const { data: tokenData, isLoading, isError: isTokenError } = useGetTokenData('invitation', tokenId, !!tokenId, !!signedInUser);
-
+  const tokenQuery = tokenDataQueryOptions('invitation', tokenId);
   const {
-    data: healthData,
-    isLoading: isHealthLoading,
-    isError: isHealthError,
-  } = useQuery({
-    queryKey: ['auth', 'health'],
-    // Combine the query signal with a hard timeout so an unreachable backend fails deterministically.
-    queryFn: ({ signal }) => getAuthHealth({ signal: AbortSignal.any([signal, AbortSignal.timeout(healthTimeoutMs)]) }),
-    staleTime: 0,
-    refetchOnMount: 'always',
-    retry: false,
-  });
+    data: tokenData,
+    isLoading,
+    isError: isTokenError,
+  } = useQuery({ ...tokenQuery, meta: { ...tokenQuery.meta, suppressGlobalErrorToast: !!signedInUser } });
+
+  const { data: healthData, isLoading: isHealthLoading, isError: isHealthError } = useQuery(authHealthQueryOptions);
 
   const [showSlowWarning, setShowSlowWarning] = useState(false);
   useEffect(() => {
@@ -147,7 +130,6 @@ export function AuthenticatePage() {
       {step === 'signUp' && <SignUpStep tokenData={tokenData} />}
 
       {step === 'waitlist' && <WaitlistStep />}
-      {step === 'inviteOnly' && <InviteOnlyStep />}
       {step === 'magicLinkSent' && <MagicLinkSentStep />}
 
       {isSigningIn && (

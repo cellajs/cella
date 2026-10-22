@@ -1,11 +1,7 @@
 import { appConfig } from 'shared';
-import { legalConfig } from '~/modules/auth/legal/legal-config';
-import { LegalContact } from '~/modules/auth/legal/legal-contact';
+import { LegalContact, SupportEmailLink } from '~/modules/auth/legal/legal-contact';
 import { LegalCrossLink } from '~/modules/auth/legal/legal-cross-link';
 import { LegalSection } from '~/modules/auth/legal/legal-section';
-
-const sections = legalConfig.terms.sections;
-const s = (id: string) => sections.find((sec) => sec.id === id)!;
 
 function TermsText() {
   const lastUpdated = 'October 15, 2026';
@@ -13,16 +9,10 @@ function TermsText() {
   const appName = appConfig.name;
   const company = appConfig.company.name;
   const frontendUrl = appConfig.frontendUrl;
-  const supportEmail = appConfig.company.supportEmail;
-  const email = (
-    <a href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
-      {supportEmail}
-    </a>
-  );
 
   return (
     <div id="terms-content">
-      <LegalSection id={s('overview').id} label={s('overview').label}>
+      <LegalSection subject="terms" id="overview">
         <p className="text-muted-foreground text-sm">Last updated: {lastUpdated}</p>
         <p>
           These Terms of Use ("Terms") govern your use of {appName} (the "Service") at{' '}
@@ -35,7 +25,7 @@ function TermsText() {
         <LegalContact className="mt-8" />
       </LegalSection>
 
-      <LegalSection id={s('agreement').id} label={s('agreement').label}>
+      <LegalSection subject="terms" id="agreement">
         <p>
           By using the Service you enter a binding agreement with {company} on these Terms. If you do not agree, do not use the Service. Our{' '}
           <LegalCrossLink subject="privacy">Privacy Policy</LegalCrossLink> explains how we handle your data. Where your organization has its own
@@ -44,7 +34,7 @@ function TermsText() {
         <p>We announce material changes to these Terms at least two weeks in advance, by email or in the Service.</p>
       </LegalSection>
 
-      <LegalSection id={s('accounts').id} label={s('accounts').label}>
+      <LegalSection subject="terms" id="accounts">
         <p>
           Your organization may set up your account or username. Give accurate details, do not impersonate anyone and do not transfer your account
           without our written consent. By using the Service you confirm that you are old enough to agree to these Terms (or have a parent's or
@@ -52,7 +42,7 @@ function TermsText() {
         </p>
       </LegalSection>
 
-      <LegalSection id={s('acceptable-use').id} label={s('acceptable-use').label}>
+      <LegalSection subject="terms" id="acceptable-use">
         <p>You agree not to:</p>
         <ul>
           <li>Violate any applicable law or regulation.</li>
@@ -69,12 +59,12 @@ function TermsText() {
 
         <h4>Reporting content</h4>
         <p>
-          Report illegal content or abuse to {email}. A person reviews each report. We may remove content or suspend accounts that break these Terms
-          or the law, and tell those affected what we decided and why, unless the law prevents it. They can reply to contest the decision.
+          Report illegal content or abuse to <SupportEmailLink />. A person reviews each report. We may remove content or suspend accounts that break
+          these Terms or the law, and tell those affected what we decided and why, unless the law prevents it. They can reply to contest the decision.
         </p>
       </LegalSection>
 
-      <LegalSection id={s('intellectual-property').id} label={s('intellectual-property').label}>
+      <LegalSection subject="terms" id="intellectual-property">
         <p>
           The Service and its original content, features and functionality are owned by {company} and protected by copyright, trademark and other
           intellectual property laws.
@@ -85,17 +75,17 @@ function TermsText() {
         </p>
       </LegalSection>
 
-      <LegalSection id={s('service-changes').id} label={s('service-changes').label}>
+      <LegalSection subject="terms" id="service-changes">
         <p>
           The Service evolves continuously. We may change, suspend or discontinue any part of the Service, introduce new features or impose limits. We
           will try to give notice of material adverse changes.
         </p>
       </LegalSection>
 
-      <LegalSection id={s('termination').id} label={s('termination').label}>
+      <LegalSection subject="terms" id="termination">
         <p>
           You may delete your account at any time; our <LegalCrossLink subject="privacy">Privacy Policy</LegalCrossLink> says what happens to your
-          data. If you deleted it by mistake, contact {email}: we will try to help but cannot guarantee recovery.
+          data. If you deleted it by mistake, contact <SupportEmailLink />: we will try to help but cannot guarantee recovery.
         </p>
         <p>
           We may suspend or end your access for any reason, including a breach of these Terms. We will try to give notice first so you can retrieve
@@ -108,7 +98,7 @@ function TermsText() {
         </p>
       </LegalSection>
 
-      <LegalSection id={s('disclaimers').id} label={s('disclaimers').label}>
+      <LegalSection subject="terms" id="disclaimers">
         <p>
           To the fullest extent permitted by law, the Service is provided "as is" and "as available", without warranties of any kind, express or
           implied, including merchantability, fitness for a particular purpose or non-infringement. We do not guarantee that the Service will be
@@ -116,7 +106,7 @@ function TermsText() {
         </p>
       </LegalSection>
 
-      <LegalSection id={s('liability').id} label={s('liability').label}>
+      <LegalSection subject="terms" id="liability">
         <p>
           To the fullest extent permitted by law, {company} is not liable for indirect, special, incidental or consequential damages, and our total
           liability is limited to the greater of €100 or the amounts you paid us in the 12 months before the claim. These limits do not apply to
@@ -124,21 +114,21 @@ function TermsText() {
         </p>
       </LegalSection>
 
-      <LegalSection id={s('indemnification').id} label={s('indemnification').label}>
+      <LegalSection subject="terms" id="indemnification">
         <p>
           To the fullest extent permitted by law, you agree to indemnify and hold {company}, its affiliates, officers, agents, employees and partners
           harmless from any claims, damages or expenses arising from your use of the Service or violation of these Terms.
         </p>
       </LegalSection>
 
-      <LegalSection id={s('governing-law').id} label={s('governing-law').label}>
+      <LegalSection subject="terms" id="governing-law">
         <p>
           These Terms are governed by the laws of {appConfig.company.country}, and the competent court where {company} is established decides
           disputes. Nothing in these Terms limits rights that mandatory law where you live gives you.
         </p>
       </LegalSection>
 
-      <LegalSection id={s('general').id} label={s('general').label}>
+      <LegalSection subject="terms" id="general">
         <p>
           These Terms, our Privacy Policy and any agreement between your organization and us are the entire agreement about the Service. If a
           provision is unenforceable, the rest stays in force. Not enforcing a right does not waive it. You may not assign your rights under these

@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import type { ConsentDetails } from '~/lib/oauth-interaction';
-import { consentDetailsQueryOptions, useDecideConsentMutation } from '~/modules/auth/oauth-consent-query';
+import { AuthHeader } from '~/modules/auth/auth-header';
+import { consentDetailsQueryOptions, useDecideConsentMutation } from '~/modules/auth/query';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { ScopeBadges } from '~/modules/common/scope-badges';
 import { Spinner } from '~/modules/common/spinner';
@@ -45,9 +46,10 @@ export function OAuthConsentPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col items-center gap-3 text-center">
-        {client.logoUri && <img src={client.logoUri} alt="" className="size-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
-        <h1 className="text-2xl">{t('c:oauth_consent_header', { name: client.name })}</h1>
+      <AuthHeader
+        image={client.logoUri && <img src={client.logoUri} alt="" className="size-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
+        title={t('c:oauth_consent_header', { name: client.name })}
+      >
         <p className="text-muted-foreground text-sm">{t('c:oauth_consent.text', { name: client.name, appName: appConfig.name })}</p>
         {target.tenant && (
           <p className="text-sm">
@@ -56,7 +58,7 @@ export function OAuthConsentPage() {
               : t('c:oauth_consent_target.tenant', { tenant: target.tenant })}
           </p>
         )}
-      </div>
+      </AuthHeader>
 
       <div className="rounded-md border p-3">
         <ScopeBadges scopes={scopes} withLabels />

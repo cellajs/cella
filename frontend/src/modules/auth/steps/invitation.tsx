@@ -6,19 +6,20 @@ import { type GetAuthHealthResponse, sendMagicLink } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
 import { AuthDivider } from '~/modules/auth/auth-divider';
+import { AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
+import { InlineLinkButton } from '~/modules/auth/inline-link-button';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
-import { SsoProviders, ssoEntryQueryOptions } from '~/modules/auth/sso-providers';
+import { ssoEntryQueryOptions } from '~/modules/auth/query';
+import { SsoProviders } from '~/modules/auth/sso-providers';
 import type { TokenData } from '~/modules/auth/types';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { Button } from '~/modules/ui/button';
 
-const emailEnabled = isStrategyEnabled('passkey');
-const isMagicLinkEnabled = isStrategyEnabled('magic');
+const magicLinkEnabled = isStrategyEnabled('magic');
 
 interface Props {
   tokenData: TokenData;
@@ -33,10 +34,10 @@ interface Props {
  */
 export function InvitationStep({ tokenData, federations }: Props) {
   const { t } = useTranslation();
-  const { setStep, setMagicLinkMode, setInviteOtherAccount } = useAuthStore(
+  const { setStep, setMagicLinkSent, setInviteOtherAccount } = useAuthStore(
     useShallow((state) => ({
       setStep: state.setStep,
-      setMagicLinkMode: state.setMagicLinkMode,
+      setMagicLinkSent: state.setMagicLinkSent,
       setInviteOtherAccount: state.setInviteOtherAccount,
     })),
   );
@@ -45,22 +46,21 @@ export function InvitationStep({ tokenData, federations }: Props) {
   const { email, invitation, ssoConnectionId } = tokenData;
 
   // Shared with the institution button, so the order of the ways in is settled before anything shows.
-  const { data: entry, isLoading: isEntryLoading } = useQuery({ ...ssoEntryQueryOptions(ssoConnectionId ?? ''), enabled: !!ssoConnectionId });
+  const { data: entry, isLoading: isEntryLoading } = useQuery(ssoEntryQueryOptions(ssoConnectionId));
   const institutionFirst = entry?.status === 'active';
 
   const { mutate: sendLink, isPending } = useMutation({
     mutationFn: () => sendMagicLink({ body: { email, redirect } }),
     onSuccess: () => {
       // An account may hold the invited address by now: the link then signs in.
-      setMagicLinkMode(tokenData.userId ? 'signin' : 'signup');
-      setStep('magicLinkSent', email);
+      setMagicLinkSent(email, tokenData.userId ? 'signin' : 'signup');
     },
     onError: () => toaster.error(t('error:reported_try_later')),
   });
 
   if (isEntryLoading) return <Spinner size="lg" />;
 
-  const emailWay = (emailEnabled || isMagicLinkEnabled) && (
+  const emailWay = magicLinkEnabled && (
     <>
       <SubmitButton
         variant={institutionFirst ? 'plain' : 'default'}
@@ -77,13 +77,16 @@ export function InvitationStep({ tokenData, federations }: Props) {
 
   return (
     <>
-      {invitation && <EntityAvatar type={invitation.entityType} name={invitation.entityName} className="mx-auto size-14" />}
-      <h1 className="text-center text-2xl">{t('c:invite_join', { name: invitation?.entityName ?? appConfig.name })}</h1>
-      {invitation && (
-        <p className="text-center font-light">
-          {t('c:invite_join.text', { inviterName: invitation.inviterName, role: t(`c:${invitation.role}`).toLowerCase() })}
-        </p>
-      )}
+      <AuthHeader
+        image={invitation && <EntityAvatar type={invitation.entityType} name={invitation.entityName} className="size-14" />}
+        title={t('c:invite_join', { name: invitation?.entityName ?? appConfig.name })}
+      >
+        {invitation && (
+          <p className="font-light">
+            {t('c:invite_join.text', { inviterName: invitation.inviterName, role: t(`c:${invitation.role}`).toLowerCase() })}
+          </p>
+        )}
+      </AuthHeader>
 
       {institutionFirst ? (
         <>
@@ -103,17 +106,14 @@ export function InvitationStep({ tokenData, federations }: Props) {
       {tokenData.inactiveMembershipId && (
         <p className="text-center">
           {t('c:have_account')}{' '}
-          <Button
-            type="button"
-            variant="link"
-            className="h-auto p-0 text-base"
+          <InlineLinkButton
             onClick={() => {
               setInviteOtherAccount(true);
               setStep('checkEmail', '');
             }}
           >
             {t('c:sign_in')}
-          </Button>
+          </InlineLinkButton>
         </p>
       )}
 

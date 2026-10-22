@@ -11,25 +11,25 @@ vi.stubGlobal('sessionStorage', {
   removeItem: (k: string) => sessionValues.delete(k),
 });
 vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
-// No locks API: liveness detection falls back to the record-age threshold. The user agent is read at import by the UI
-// primitives behind the page module imported below.
-vi.stubGlobal('navigator', { onLine: true, userAgent: '' });
+// No locks API: liveness detection falls back to the record-age threshold.
+vi.stubGlobal('navigator', { onLine: true });
 
 const { bindLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
 const { createIDBPersister, shouldPersistQuery } = await import('~/query/persister');
 const { yjsTokenQueryOptions } = await import('~/modules/common/blocknote/query');
-const { pendingMagicLinkQueryOptions } = await import('~/modules/auth/confirm-sign-in-page');
+const { pendingMagicLinkQueryOptions, tokenDataQueryOptions } = await import('~/modules/auth/query');
 
 bindLocalUserDb('persister-test-user');
 
 // The filter every persisted snapshot passes through, fed the app's own query options, so a query that must stay out
 // of the local database is checked as declared and not as restated here.
 describe('persister query filter', () => {
-  it('must not persist the Yjs token or the pending magic link, while an ordinary query persists', async () => {
+  it('must not persist the Yjs token, the pending magic link or token data, while an ordinary query persists', async () => {
     const queryClient = new QueryClient();
     const yjsToken = yjsTokenQueryOptions({ entityType: 'attachment', entityId: 'attachment-1', tenantId: 'tenant-1', organizationId: 'org-1' });
     await queryClient.query({ ...yjsToken, queryFn: async () => 'a-bearer-token' });
     await queryClient.query({ ...pendingMagicLinkQueryOptions, queryFn: async () => ({ email: 'other@example.com' }) });
+    await queryClient.query({ ...tokenDataQueryOptions('invitation', 'token-1'), queryFn: async () => ({ email: 'invited@example.com' }) });
     await queryClient.query({ queryKey: ['organization', 'list'], queryFn: async () => [] });
 
     const { queries } = dehydrate(queryClient, { shouldDehydrateQuery: shouldPersistQuery });

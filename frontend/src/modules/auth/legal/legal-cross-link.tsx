@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { createContext, type ReactNode, use } from 'react';
+import { InlineLinkButton } from '~/modules/auth/inline-link-button';
 import type { LegalSubject } from '~/modules/auth/legal/legal-config';
 
 /** Null on the `/legal` page itself, where cross-links fall back to router links. */
@@ -11,11 +12,7 @@ export function LegalCrossLink({ subject, children }: { subject: LegalSubject; c
   const navigateInDialog = use(LegalDialogNavContext);
 
   if (navigateInDialog) {
-    return (
-      <button type="button" className="link-inline cursor-pointer font-medium text-primary" onClick={() => navigateInDialog(subject)}>
-        {children}
-      </button>
-    );
+    return <InlineLinkButton onClick={() => navigateInDialog(subject)}>{children}</InlineLinkButton>;
   }
 
   return (

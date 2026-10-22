@@ -12,10 +12,9 @@ type State = {
 
 type Actions = {
   setStep: (step: AuthStep, email: string) => void;
-  setEmail: (email: string) => void;
   setRestrictedMode: (restricted: boolean) => void;
   setSignedIn: (signedIn: boolean) => void;
-  setMagicLinkMode: (mode: 'signin' | 'signup') => void;
+  setMagicLinkSent: (email: string, mode: 'signin' | 'signup') => void;
   setInviteOtherAccount: (inviteOtherAccount: boolean) => void;
   resetSteps: () => void;
 };
@@ -32,10 +31,9 @@ const initial: State = {
 export const useAuthStore = create<State & Actions>((set) => ({
   ...initial,
   setStep: (step, email) => set(() => ({ step, email })),
-  setEmail: (email) => set(() => ({ email })),
   setRestrictedMode: (restrictedMode) => set(() => ({ restrictedMode })),
   setSignedIn: (signedIn) => set(() => ({ signedIn })),
-  setMagicLinkMode: (magicLinkMode) => set(() => ({ magicLinkMode })),
+  setMagicLinkSent: (email, magicLinkMode) => set(() => ({ step: 'magicLinkSent', email, magicLinkMode })),
   setInviteOtherAccount: (inviteOtherAccount) => set(() => ({ inviteOtherAccount })),
   resetSteps: () => set(() => ({ ...initial })),
 }));
