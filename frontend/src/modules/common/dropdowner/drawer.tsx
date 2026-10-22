@@ -1,12 +1,12 @@
 import { useEventListener } from '~/hooks/use-event-listener';
-import { type InternalDropdown, useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner, type InternalDropdown } from '~/modules/common/dropdowner/use-dropdowner';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerVirtualKeyboardProvider } from '~/modules/ui/drawer';
 
 export function DropdownerDrawer({ dropdown }: { dropdown: InternalDropdown }) {
   const { id, content, triggerLabel } = dropdown;
 
   const closeDialog = () => {
-    useDropdowner.getState().remove();
+    dropdowner.getState().remove();
   };
 
   const onOpenChange = (open: boolean) => {

@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { useAlertStore } from '~/modules/common/alerter/alert-store';
+import { alertStore } from '~/modules/common/alerter/alert-store';
 import { revalidateConnectivity } from '~/query/offline/connectivity';
 
 // Sustained-offline duration required before the UI toast appears (ms).
@@ -15,14 +15,14 @@ export const useUiOffline = () => {
   const isOnline = useOnlineManager();
 
   useEffect(() => {
-    const { downAlert, setDownAlert } = useAlertStore.getState();
+    const { downAlert, setDownAlert } = alertStore.getState();
 
     if (isOnline) {
       if (downAlert === 'offline') setDownAlert(null);
       return;
     }
 
-    const timer = setTimeout(() => useAlertStore.getState().setDownAlert('offline'), showDelay);
+    const timer = setTimeout(() => alertStore.getState().setDownAlert('offline'), showDelay);
     return () => clearTimeout(timer);
   }, [isOnline]);
 

@@ -39,3 +39,6 @@ export const useAuthStore = create<State & Actions>((set) => ({
   setInviteOtherAccount: (inviteOtherAccount) => set(() => ({ inviteOtherAccount })),
   resetSteps: () => set(() => ({ ...initial })),
 }));
+
+// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
+export { useAuthStore as authStore };

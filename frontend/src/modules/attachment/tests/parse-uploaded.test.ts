@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 // The user store is only consulted for createdBy/updatedBy stamps on the optimistic entity.
 vi.mock('~/modules/user/user-store', () => ({
-  useUserStore: { getState: () => ({ user: { id: 'user-1' } }) },
+  userStore: { getState: () => ({ user: { id: 'user-1' } }) },
 }));
 
 import { uploadStorage } from 'shared/utils/upload-visibility';

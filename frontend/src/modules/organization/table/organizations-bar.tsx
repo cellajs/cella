@@ -7,7 +7,7 @@ import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/t
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { type SheetTab, SheetTabs } from '~/modules/common/sheet-tabs';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
 import { fetchOrganizationsForExport } from '~/modules/organization/query';
@@ -56,7 +56,7 @@ export function OrganizationsTableBar({
       { id: 'preview', label: 'c:preview', element: <NewsletterPreview /> },
     ];
 
-    useSheeter.getState().create(<SheetTabs tabs={newsletterTabs} />, {
+    sheeter.getState().create(<SheetTabs tabs={newsletterTabs} />, {
       id: 'create-newsletter',
       side: 'right',
       triggerRef: newsletterButtonRef,

@@ -7,7 +7,7 @@ import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useRelativeDate } from '~/hooks/use-relative-date';
 import { ConfirmText } from '~/modules/common/confirm-text';
 import { DateTooltip } from '~/modules/common/date-tooltip';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import { toastOffline } from '~/modules/common/toaster/toaster';
@@ -42,7 +42,7 @@ export function ServiceAccountTile({ account, path, secrets }: ServiceAccountTil
 
   // A revoked key cannot be restored and whatever uses it stops working, so the click asks first.
   const openRevokeConfirm = (apiKey: ApiKey, event: MouseEvent<HTMLButtonElement>) => {
-    const { create, remove } = useDropdowner.getState();
+    const { create, remove } = dropdowner.getState();
     create(
       <PopConfirm title={<ConfirmText i18nKey="c:confirm.revoke_api_key" values={{ name: apiKey.name }} />}>
         <div className="flex flex-col gap-2 sm:flex-row">

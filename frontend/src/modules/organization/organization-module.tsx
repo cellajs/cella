@@ -3,7 +3,7 @@ import type { RefObject } from 'react';
 import type { Organization } from 'sdk';
 import { defineFrontendModule } from '~/lib/module';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { dangerToolBase, detailsToolBase, generalToolBase, tabsToolBase } from '~/modules/entities/channel-settings-tools';
 import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
@@ -21,7 +21,7 @@ const OrganizationsGrid = lazyNamed(() => import('~/modules/organization/organiz
 function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null>) {
   const callback = (args: CallbackArgs<Organization>) => {
     if (args.status === 'success') {
-      useDialoger.getState().remove('create-organization');
+      dialoger.getState().remove('create-organization');
       getRouter().navigate({
         to: '/$tenantId/$organizationSlug/organization/members',
         params: { tenantId: args.data.tenantId, organizationSlug: args.data.slug },
@@ -31,7 +31,7 @@ function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null
 
   const title = i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() });
 
-  return useDialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {
+  return dialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {
     className: 'md:max-w-2xl',
     id: 'create-organization',
     description: i18n.t('c:create_organization.text'),

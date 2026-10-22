@@ -4,7 +4,7 @@ import type { GenComponentSchema, GenOperationDetail, GenOperationSummary, GenRe
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { getSection, isProgrammaticScroll } from '~/hooks/use-scroll-spy-store';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { OperationExamples } from '~/modules/docs/operations/operation-examples';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
 import { TagSchemasTable } from '~/modules/docs/schemas/tag-schemas-table';
@@ -147,8 +147,8 @@ const sidebarOnClose = fn();
 export const SidebarItems: Story = {
   beforeEach: () => {
     sidebarOnClose.mockClear();
-    useSheeter.setState({ sheets: [] });
-    return () => useSheeter.setState({ sheets: [] });
+    sheeter.setState({ sheets: [] });
+    return () => sheeter.setState({ sheets: [] });
   },
   render: () => (
     <WithAnchor id="tag/me/get/me">
@@ -162,7 +162,7 @@ export const SidebarItems: Story = {
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     const openSidebarSheet = () =>
-      useSheeter.getState().create(null, { id: 'docs-sidebar', side: 'left', triggerRef: { current: null }, onClose: sidebarOnClose });
+      sheeter.getState().create(null, { id: 'docs-sidebar', side: 'left', triggerRef: { current: null }, onClose: sidebarOnClose });
 
     const getMe = await canvas.findByRole('link', { name: /^Get me\s*get$/ });
     const sessions = canvas.getByRole('link', { name: /^Get my sessions\s*get$/ });
@@ -179,7 +179,7 @@ export const SidebarItems: Story = {
       await userEvent.click(getMe);
 
       await waitFor(() => expect(getSection()).toBe('tag/me/get/me'));
-      await expect(useSheeter.getState().get('docs-sidebar')).toBeUndefined();
+      await expect(sheeter.getState().get('docs-sidebar')).toBeUndefined();
       await expect(sidebarOnClose).toHaveBeenCalledTimes(1);
       // The click scrolls in place; the router stays where it was
       await expect(getRouter().state.location.pathname).toBe('/');
@@ -190,7 +190,7 @@ export const SidebarItems: Story = {
       openSidebarSheet();
       await userEvent.click(userBase);
 
-      await expect(useSheeter.getState().get('docs-sidebar')).toBeUndefined();
+      await expect(sheeter.getState().get('docs-sidebar')).toBeUndefined();
       await expect(sidebarOnClose).toHaveBeenCalledTimes(2);
       await expect(getRouter().state.location.hash).toBe('');
     });

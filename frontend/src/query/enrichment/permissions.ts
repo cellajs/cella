@@ -2,7 +2,7 @@ import type { MembershipBase } from 'sdk';
 import type { ChannelEntityType, EntityActionType, EntityCanMap, EntityType } from 'shared';
 import { allActionsAllowed, appConfig, computeCan, hierarchy, policyMatrix } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
-import { useUserStore } from '~/modules/user/user-store';
+import { userStore } from '~/modules/user/user-store';
 import type { EnrichableChannel } from '~/query/enrichment/types';
 
 /** Deep compare over the can states (booleans and condition names). */
@@ -51,7 +51,7 @@ export function enrichWithPermissions(
   const existing = item.can;
 
   const grants = [...(item.membership ? [item.membership] : []), ...membershipsAbove(item, channelType, memberships)];
-  const computed = useUserStore.getState().isSystemAdmin ? computeSystemAdminCan(channelType) : computeCan(channelType, grants, policyMatrix);
+  const computed = userStore.getState().isSystemAdmin ? computeSystemAdminCan(channelType) : computeCan(channelType, grants, policyMatrix);
 
   if (!hasCanChanged(existing, computed)) return item;
 

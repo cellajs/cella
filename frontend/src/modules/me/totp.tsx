@@ -3,7 +3,7 @@ import { CheckIcon, RotateCcwKeyIcon, TrashIcon } from 'lucide-react';
 import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ensureStepUp } from '~/modules/auth/step-up';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions, useDeleteTotpMutation } from '~/modules/me/query';
 import { SetupTotp } from '~/modules/me/totp-setup';
@@ -29,7 +29,7 @@ export function Totp() {
     );
     if (!steppedUp) return;
 
-    useDialoger.getState().create(
+    dialoger.getState().create(
       <Suspense fallback={<Skeleton className="mx-auto my-3 size-72.75" />}>
         <SetupTotp />
       </Suspense>,

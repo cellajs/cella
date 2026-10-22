@@ -11,7 +11,7 @@ import { appConfig, type ProductEntityType } from 'shared';
 import type * as Y from 'yjs';
 import { warnOnStoragePressure } from '~/modules/common/blocknote/storage-warning';
 import { postTabUpdate, toTabKey } from '~/modules/common/blocknote/yjs-tab-channel';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { uiStore } from '~/modules/ui/ui-store';
 import {
   getLocalUserDb,
   type LocalUserDatabase,
@@ -613,7 +613,7 @@ export async function evictYDocs(): Promise<void> {
   if (!db) return;
   lastEvictionAt = Date.now();
   const now = Date.now();
-  const sessionMode = !useUIStore.getState().offlineAccess;
+  const sessionMode = !uiStore.getState().offlineAccess;
   const open = openKeys();
   const evictable = (record: YDocRecord) => record.unsynced === 0 && !open.has(toTabKey(record)) && now - record.lastOpenedAt > EVICT_MIN_AGE_MS;
 

@@ -3,7 +3,7 @@ import { SendIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for system-level invite called from stepper flow.
 import { systemInvite as baseSystemInvite } from 'sdk';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -23,7 +23,7 @@ export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: 
 
   const onSuccess = ({ invitesSentCount, rejectedIds }: { rejectedIds: string[]; invitesSentCount: number }, emails: string[]) => {
     onSent();
-    if (isDialog) useDialoger.getState().remove();
+    if (isDialog) dialoger.getState().remove();
 
     if (invitesSentCount > 0) {
       const resource = t('c:user', { count: invitesSentCount }).toLowerCase();

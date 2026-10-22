@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { DialogerDialog } from '~/modules/common/dialoger/dialog';
 import { DialogerDrawer } from '~/modules/common/dialoger/drawer';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useOverlayLock } from '~/modules/common/overlay-store-helpers';
 import { getRouter } from '~/routes/-router-instance';
 
@@ -17,7 +17,7 @@ export function Dialoger() {
 
   useEffect(() => {
     return getRouter().subscribe('onBeforeLoad', ({ pathChanged }) => {
-      if (pathChanged) useDialoger.getState().remove(undefined, { isCleanup: true });
+      if (pathChanged) dialoger.getState().remove(undefined, { isCleanup: true });
     });
   }, []);
 

@@ -6,7 +6,7 @@ import { zCreateRequestBody } from 'sdk/zod.gen';
 import type { z } from 'zod';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { LegalContact } from '~/modules/auth/legal/legal-contact';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
@@ -50,7 +50,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
       onSuccess: () => {
         toaster.success(t('c:message_sent.text'));
 
-        if (isDialog) useDialoger.getState().remove();
+        if (isDialog) dialoger.getState().remove();
         form.reset();
       },
     });

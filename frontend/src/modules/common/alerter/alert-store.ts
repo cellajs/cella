@@ -96,3 +96,6 @@ export const useAlertStore = create<AlertStoreState>()(
     { enabled: isDebugMode, name: 'alert store' },
   ),
 );
+
+// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
+export { useAlertStore as alertStore };

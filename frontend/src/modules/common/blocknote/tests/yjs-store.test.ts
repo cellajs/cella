@@ -11,7 +11,7 @@ vi.mock('~/modules/common/blocknote/yjs-tab-channel', () => ({
   toTabKey: (key: { entityType: string; entityId: string }) => `${key.entityType}:${key.entityId}`,
 }));
 let offlineAccess = true;
-vi.mock('~/modules/ui/ui-store', () => ({ useUIStore: { getState: () => ({ offlineAccess }) } }));
+vi.mock('~/modules/ui/ui-store', () => ({ uiStore: { getState: () => ({ offlineAccess }) } }));
 const warnOnStoragePressure = vi.fn(async (_opts?: { limitsReached?: boolean }) => {});
 vi.mock('~/modules/common/blocknote/storage-warning', () => ({
   warnOnStoragePressure: (opts?: { limitsReached?: boolean }) => warnOnStoragePressure(opts),

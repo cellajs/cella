@@ -133,3 +133,6 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
 
   get: () => get().dropdown,
 }));
+
+// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
+export { useDropdowner as dropdowner };

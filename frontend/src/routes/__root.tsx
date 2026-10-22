@@ -4,7 +4,7 @@ import { pageNotFoundError } from '~/modules/common/error-helpers';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
 import { Root } from '~/modules/common/root';
 import { meQueryOptions } from '~/modules/me/query';
-import { useUserStore } from '~/modules/user/user-store';
+import { userStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 
 // Root boundary components stay local: a cross-module binding read at route-definition eval time can TDZ during HMR.
@@ -27,7 +27,7 @@ export const Route = createRootRouteWithContext()({
     // Let the app layout route handle unauthenticated users on root path (redirects to /about)
     if (location.pathname === '/') return;
 
-    const storedUser = useUserStore.getState().user;
+    const storedUser = userStore.getState().user;
     if (storedUser) return;
 
     try {

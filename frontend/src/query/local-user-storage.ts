@@ -1,7 +1,7 @@
-import { useAlertStore } from '~/modules/common/alerter/alert-store';
-import { useBoardStore } from '~/modules/common/board/board-store';
-import { useDraftStore } from '~/modules/common/form-draft/draft-store';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { alertStore } from '~/modules/common/alerter/alert-store';
+import { boardStore } from '~/modules/common/board/board-store';
+import { draftStore } from '~/modules/common/form-draft/draft-store';
+import { navigationStore } from '~/modules/navigation/navigation-store';
 import { seenStore } from '~/modules/seen/seen-store';
 import { userStore } from '~/modules/user/user-store';
 import { extraLocalUserStores } from '~/query/extra-local-user-stores';
@@ -16,7 +16,7 @@ export interface LocalUserStore {
 }
 
 /** Persisted zustand stores living in `localUserDb.kv`, in-memory while signed out. Each exposes `reset()` for {@link unbind}; an app appends its own via {@link extraLocalUserStores}. */
-const localUserStores = [seenStore, syncStore, useNavigationStore, useDraftStore, useAlertStore, useBoardStore, ...extraLocalUserStores];
+const localUserStores = [seenStore, syncStore, navigationStore, draftStore, alertStore, boardStore, ...extraLocalUserStores];
 
 let boundOwner: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();

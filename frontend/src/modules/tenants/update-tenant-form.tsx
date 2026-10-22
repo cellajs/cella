@@ -12,7 +12,7 @@ import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useTenantUpdateMutation } from '~/modules/tenants/query';
 import { Button } from '~/modules/ui/button';
@@ -68,7 +68,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
       { path: { tenantId: tenant.id }, body },
       {
         onSuccess: (updatedTenant) => {
-          if (isSheet) useSheeter.getState().remove(sheetId);
+          if (isSheet) sheeter.getState().remove(sheetId);
           form.reset(body);
           toaster.success(t('c:success.update_resource', { resource: t('c:tenant') }));
           callback?.({ data: updatedTenant, status: 'success' });

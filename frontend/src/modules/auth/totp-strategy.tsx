@@ -3,7 +3,7 @@ import { SmartphoneIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type ApiError, type SignInWithTotpData, type SignInWithTotpResponse, signInWithTotp } from 'sdk';
-import { useAuthStore } from '~/modules/auth/auth-store';
+import { authStore } from '~/modules/auth/auth-store';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
 import { Button } from '~/modules/ui/button';
@@ -20,7 +20,7 @@ export function TotpStrategy({ isActive, setIsActive }: { isActive: boolean; set
   const { mutate: totpSignIn } = useMutation<SignInWithTotpResponse, ApiError | Error, NonNullable<SignInWithTotpData['body']>>({
     mutationFn: async (body) => await signInWithTotp({ body }),
     onSuccess: () => {
-      useAuthStore.getState().setSignedIn(true);
+      authStore.getState().setSignedIn(true);
       navigateAfterAuth();
     },
   });

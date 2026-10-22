@@ -20,7 +20,7 @@ vi.mock('~/query/query-client', () => ({ queryClient: { removeQueries: vi.fn() }
 vi.mock('~/query/realtime/stream-store', () => ({ appStreamManager: { reconnect: vi.fn() } }));
 
 const { getMe } = await import('sdk');
-const { useUserStore } = await import('~/modules/user/user-store');
+const { userStore } = await import('~/modules/user/user-store');
 const { getAndSetMe, startImpersonationFlow, stopImpersonationFlow } = await import('~/modules/me/helpers');
 
 const person = (id: string, name: string) => ({ id, name, slug: id, thumbnailUrl: null, email: `${id}@example.test`, language: 'en' });
@@ -31,7 +31,7 @@ const adminRef = { id: admin.id, name: admin.name, slug: admin.slug, thumbnailUr
 const asAdmin = { user: admin, isSystemAdmin: true, impersonator: null };
 const asTarget = { user: target, isSystemAdmin: false, impersonator: adminRef };
 
-const state = () => useUserStore.getState();
+const state = () => userStore.getState();
 const lastUserOf = ({ id, email }: typeof admin) => ({ id, email });
 
 describe('who this browser is, as /me answers it', () => {
@@ -65,7 +65,7 @@ describe('who this browser is, as /me answers it', () => {
   });
 
   it('must not leave a stale tab unable to stop: the stop is answered and /me settles who is signed in', async () => {
-    useUserStore.setState({ user: target as never, impersonator: adminRef, lastUser: lastUserOf(admin) });
+    userStore.setState({ user: target as never, impersonator: adminRef, lastUser: lastUserOf(admin) });
     server.me = asAdmin;
 
     await stopImpersonationFlow();

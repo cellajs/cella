@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { MorphRenderer, type MorphVariant } from '~/modules/common/morph-animation/renderer';
 import { FRAGMENT_SOURCE } from '~/modules/common/morph-animation/shader';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { uiStore, useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 /**
@@ -50,7 +50,7 @@ export function MorphAnimation({
 
     const renderer = new MorphRenderer(canvas, variant);
     rendererRef.current = renderer;
-    renderer.setDark(useUIStore.getState().mode === 'dark');
+    renderer.setDark(uiStore.getState().mode === 'dark');
     renderer.setGrid(propsRef.current.grid);
     renderer.setPhone(propsRef.current.isPhone);
     renderer.setOverscan(propsRef.current.overscan);

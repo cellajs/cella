@@ -7,7 +7,7 @@ import { zCreateRequestBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { useCreateRequestMutation } from '~/modules/requests/query';
@@ -51,7 +51,7 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
         navigate({ to: '/about', replace: true });
         toaster.success(t('c:success.waitlist_request', { appName: appConfig.name }));
 
-        if (isDialog) useDialoger.getState().remove();
+        if (isDialog) dialoger.getState().remove();
         callback?.({ status: 'success' });
       },
     });

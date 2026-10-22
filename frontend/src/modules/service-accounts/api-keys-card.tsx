@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ensureStepUp } from '~/modules/auth/step-up';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
@@ -40,7 +40,7 @@ export function ApiKeysCard({ organization }: { organization: EnrichedOrganizati
 
     const onCreated = ({ id, secret }: CreatedApiKey) => setSecrets((prev) => ({ ...prev, [id]: secret }));
 
-    useDialoger.getState().create(<CreateApiKeyForm path={path} onCreated={onCreated} />, {
+    dialoger.getState().create(<CreateApiKeyForm path={path} onCreated={onCreated} />, {
       id: createApiKeyDialogId,
       triggerRef: addButtonRef,
       className: 'md:max-w-xl',

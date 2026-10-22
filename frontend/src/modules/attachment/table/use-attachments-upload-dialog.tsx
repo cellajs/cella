@@ -4,7 +4,7 @@ import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-upl
 import { useAttachmentCreateMutation } from '~/modules/attachment/query';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
-import { useUploader } from '~/modules/common/uploader/use-uploader';
+import { uploader } from '~/modules/common/uploader/use-uploader';
 
 const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize; // for maxNumberOfFiles files at 10MB max each
@@ -22,7 +22,7 @@ export const useAttachmentsUploadDialog = (
       const attachments = parseUploadedAttachments(result, organizationId, placement);
 
       // Close the uploader either way; the optimistic row is what the user watches from here.
-      useUploader.getState().remove();
+      uploader.getState().remove();
 
       if (attachments.length === 0) {
         toaster.error(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }));
@@ -34,7 +34,7 @@ export const useAttachmentsUploadDialog = (
     };
 
     const item = t('c:attachment_other').toLowerCase();
-    useUploader.getState().create({
+    uploader.getState().create({
       id: 'upload-attachment',
       personalUpload: false,
       organizationId,

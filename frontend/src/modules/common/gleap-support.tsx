@@ -4,7 +4,7 @@ import type { User } from 'sdk';
 import { appConfig } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import '~/modules/common/gleap-style.css';
-import { useUserStore } from '~/modules/user/user-store';
+import { userStore, useUserStore } from '~/modules/user/user-store';
 
 declare global {
   interface Window {
@@ -56,7 +56,7 @@ export function GleapSupport() {
 
       if (user && window.Gleap && !window.Gleap.isUserIdentified()) setGleapUser(user);
 
-      const unsubscribe = useUserStore.subscribe((state) => {
+      const unsubscribe = userStore.subscribe((state) => {
         const user = state.user;
 
         if (user) return setGleapUser(user);

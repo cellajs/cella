@@ -2,7 +2,7 @@ import { createElement, type ReactNode } from 'react';
 import { appConfig } from 'shared';
 import { sessionLostTypes } from 'shared/utils/session-lost';
 import { ApiError } from '~/lib/api';
-import { useAlertStore } from '~/modules/common/alerter/alert-store';
+import { alertStore } from '~/modules/common/alerter/alert-store';
 import { ApiErrorDescription } from '~/modules/common/toaster/api-error-description';
 import { RetryWait } from '~/modules/common/toaster/retry-wait';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -50,11 +50,11 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
 
     // Maintenance mode: its banner says the service is down and lies over the toast stack, so no toast follows
     const isDown = [503, 502].includes(statusCode);
-    if (isDown) useAlertStore.getState().setDownAlert('maintenance');
+    if (isDown) alertStore.getState().setDownAlert('maintenance');
     // Authentication service is unavailable
-    else if (statusCode === 500 && isCasualSessionAttempt) return useAlertStore.getState().setDownAlert('auth_unavailable');
+    else if (statusCode === 500 && isCasualSessionAttempt) return alertStore.getState().setDownAlert('auth_unavailable');
     // Offline mode
-    else if (statusCode === 504) return useAlertStore.getState().setDownAlert('offline');
+    else if (statusCode === 504) return alertStore.getState().setDownAlert('offline');
 
     // A /me or /me/menu probe without a valid session shows no error.
     if (isCasualSessionAttempt && statusCode === 401) return;

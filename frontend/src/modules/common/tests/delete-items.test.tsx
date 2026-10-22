@@ -34,8 +34,8 @@ vi.mock('~/modules/common/delete-form', () => ({
 }));
 vi.mock('~/modules/common/dialoger/use-dialoger', () => {
   const state = { remove: () => seen.events.push('close') };
-  const useDialoger = (select: (s: typeof state) => unknown) => select(state);
-  return { useDialoger: Object.assign(useDialoger, { getState: () => state }) };
+  const useDialoger = Object.assign((select: (s: typeof state) => unknown) => select(state), { getState: () => state });
+  return { useDialoger, dialoger: useDialoger };
 });
 vi.mock('~/modules/common/toaster/toaster', () => ({ toastOffline: () => seen.events.push('offline warning') }));
 vi.mock('~/modules/user/query', () => ({ useUserDeleteMutation: deleteMutation }));

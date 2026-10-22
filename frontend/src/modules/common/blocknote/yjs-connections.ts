@@ -24,7 +24,7 @@ import {
 } from '~/modules/common/blocknote/yjs-store';
 import { onTabMessage, postTabHello, postTabUpdate, type TabMessage, toTabKey } from '~/modules/common/blocknote/yjs-tab-channel';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
+import { userStore, yjsTokenKey } from '~/modules/user/user-store';
 import { getLocalUserDb, type UnsaveableReason, type YDocRecord } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
 
@@ -388,7 +388,7 @@ type DocParts = Pick<
 function openDoc(editSessionId: string, entityType: ProductEntityType, tenantId: string): DocParts {
   const serverUrl = toWsUrl(appConfig.yjsUrl!);
   // The session is the entity's document, and a token opens that one document only.
-  const token = useUserStore.getState().yjsTokens[yjsTokenKey(entityType, editSessionId)] ?? '';
+  const token = userStore.getState().yjsTokens[yjsTokenKey(entityType, editSessionId)] ?? '';
 
   const yDoc = new Y.Doc();
   const awareness = new Awareness(yDoc);
@@ -601,11 +601,11 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
     if (!isOnline) {
       provider.disconnect();
       pauseTransports(editSessionId, conn);
-    } else if (conn.loaded && !conn.stopped && useUserStore.getState().yjsTokens[tokenKey]) provider.connect();
+    } else if (conn.loaded && !conn.stopped && userStore.getState().yjsTokens[tokenKey]) provider.connect();
   });
 
   // Keep provider params on the latest token so a reconnect (after sleep, or the relay's close at expiry) uses a fresh one.
-  conn.unsubToken = useUserStore.subscribe((state, prevState) => {
+  conn.unsubToken = userStore.subscribe((state, prevState) => {
     const newToken = state.yjsTokens[tokenKey];
     if (newToken) {
       if (provider.params) (provider.params as Record<string, string>).token = newToken;
@@ -658,9 +658,9 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
       if (!queryClient.getQueryCache().find({ queryKey: tokenQueryKey })?.getObserversCount()) {
         queryClient
           .query(yjsTokenQueryOptions({ entityType, entityId: editSessionId, tenantId, organizationId }))
-          .then((token) => useUserStore.getState().setYjsToken(tokenKey, token))
+          .then((token) => userStore.getState().setYjsToken(tokenKey, token))
           .catch((error) => {
-            if (yjsTokenRefusal(error)) useUserStore.getState().setYjsToken(tokenKey, null);
+            if (yjsTokenRefusal(error)) userStore.getState().setYjsToken(tokenKey, null);
           });
       }
       if (refusedTokens.size < MAX_TOKEN_FAILURES) return;
@@ -896,10 +896,10 @@ export async function resumeConnection(record: YDocRecord): Promise<void> {
   const { entityType, entityId, tenantId, organizationId } = record;
   if (connections.has(entityId)) return;
   const tokenKey = yjsTokenKey(entityType, entityId);
-  if (!useUserStore.getState().yjsTokens[tokenKey]) {
+  if (!userStore.getState().yjsTokens[tokenKey]) {
     try {
       const token = await queryClient.query(yjsTokenQueryOptions({ entityType, entityId, tenantId, organizationId }));
-      useUserStore.getState().setYjsToken(tokenKey, token);
+      userStore.getState().setYjsToken(tokenKey, token);
     } catch (error) {
       // Deleted, or edit rights lost while the edits waited: they can never be saved, so the stored document is parked
       // with a notice to copy it. A network failure is retried when the browser is back online.

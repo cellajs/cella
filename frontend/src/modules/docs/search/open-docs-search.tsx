@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import { type TriggerRef, useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger, type TriggerRef } from '~/modules/common/dialoger/use-dialoger';
 import { DocsSearch } from '~/modules/docs/search/docs-search';
 import { tw } from '~/utils/tw';
 
@@ -7,7 +7,7 @@ import { tw } from '~/utils/tw';
 const hotkeyTriggerRef: TriggerRef = { current: null };
 
 export function openDocsSearch(triggerRef: TriggerRef = hotkeyTriggerRef) {
-  return useDialoger.getState().create(<DocsSearch />, {
+  return dialoger.getState().create(<DocsSearch />, {
     id: 'docs-search',
     triggerRef,
     title: i18n.t('c:search'),
@@ -19,7 +19,6 @@ export function openDocsSearch(triggerRef: TriggerRef = hotkeyTriggerRef) {
 
 /** Hotkey handler: ⌘K/Ctrl-K toggles the dialog. */
 export function toggleDocsSearch() {
-  const dialoger = useDialoger.getState();
-  if (dialoger.get('docs-search')) dialoger.remove('docs-search');
+  if (dialoger.getState().get('docs-search')) dialoger.getState().remove('docs-search');
   else openDocsSearch();
 }

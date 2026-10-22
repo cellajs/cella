@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { updateMe } from 'sdk';
 import { appConfig, type Language } from 'shared';
 import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
@@ -28,7 +28,7 @@ export function UserLanguage({ triggerClassName = '' }: Props) {
     if (!onlineManager.isOnline()) return toastOffline();
     if (window.Gleap) window.Gleap.setLanguage(lng);
     i18n.changeLanguage(lng);
-    useDropdowner.getState().remove();
+    dropdowner.getState().remove();
 
     if (!user) return;
     updateMe({ body: { language: lng } }).then((res) => {
@@ -42,7 +42,7 @@ export function UserLanguage({ triggerClassName = '' }: Props) {
     const currentLang = user?.language || i18n.languages[0];
     const isMobile = window.innerWidth < 640;
 
-    useDropdowner.getState().create(
+    dropdowner.getState().create(
       <div className="flex flex-col">
         {appConfig.languages.map((lang) => (
           <DropdownActionItem

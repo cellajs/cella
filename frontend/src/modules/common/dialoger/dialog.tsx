@@ -2,8 +2,8 @@ import { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useLatestRef } from '~/hooks/use-latest-ref';
-import { type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dialoger, type InternalDialog } from '~/modules/common/dialoger/use-dialoger';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
@@ -31,20 +31,17 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   const inline = !!container;
   const containerElement = container?.ref?.current ?? undefined;
 
-  const removeDialog = () => useDialoger.getState().remove(dialog.id);
+  const removeDialog = () => dialoger.getState().remove(dialog.id);
 
   // The dialog animates out before its entry (and onClose) is removed.
-  const { close: closeDialog, onOpenChangeComplete } = useRemoveAfterExit(
-    () => useDialoger.getState().update(dialog.id, { open: false }),
-    removeDialog,
-  );
+  const { close: closeDialog, onOpenChangeComplete } = useRemoveAfterExit(() => dialoger.getState().update(dialog.id, { open: false }), removeDialog);
 
   const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
     if (!nextOpen && eventDetails.reason === 'escape-key' && isHoverContentOpen()) return;
 
     // An outside press landing on a dropdown must not close the dialog
     if (!nextOpen && eventDetails.reason === 'outside-press') {
-      const dropdown = useDropdowner.getState().dropdown;
+      const dropdown = dropdowner.getState().dropdown;
       if (dropdown || inline) return;
     }
 
@@ -54,7 +51,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
       return;
     }
 
-    if (nextOpen) useDialoger.getState().update(dialog.id, { open: true });
+    if (nextOpen) dialoger.getState().update(dialog.id, { open: true });
     else closeDialog();
   };
 

@@ -1,7 +1,7 @@
 import { useMatch, useNavigate, useSearch } from '@tanstack/react-router';
 import { type ReactNode, useEffect } from 'react';
 import type { SheetData } from '~/modules/common/sheeter/use-sheeter';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
 type SheetOptions = Omit<SheetData, 'id' | 'triggerRef' | 'onClose'>;
@@ -53,7 +53,7 @@ export function useUrlSheet(config: UseUrlSheetConfig) {
     if (!value) return;
 
     const id = `${searchParamKey}-${value}`;
-    if (useSheeter.getState().get(id)) return;
+    if (sheeter.getState().get(id)) return;
 
     const handleClose = (isCleanup?: boolean) => {
       if (!isCleanup) {
@@ -63,11 +63,11 @@ export function useUrlSheet(config: UseUrlSheetConfig) {
     };
 
     queueMicrotask(() => {
-      useSheeter.getState().create(renderContent(value, organizationId), { id, triggerRef: fallbackContentRef, onClose: handleClose, ...options });
+      sheeter.getState().create(renderContent(value, organizationId), { id, triggerRef: fallbackContentRef, onClose: handleClose, ...options });
     });
 
     return () => {
-      useSheeter.getState().remove(id, { isCleanup: true });
+      sheeter.getState().remove(id, { isCleanup: true });
     };
   }, [value, organizationId]);
 }

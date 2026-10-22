@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import i18n from 'i18next';
 import { hierarchy } from 'shared';
 import { expect, spyOn, userEvent, waitFor, within } from 'storybook/test';
-import { useDraftStore } from '~/modules/common/form-draft/draft-store';
+import { draftStore } from '~/modules/common/form-draft/draft-store';
 import { Step, Stepper } from '~/modules/common/stepper/stepper';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedChannel } from '~/modules/entities/types';
@@ -43,7 +43,7 @@ const meta = {
   ),
   beforeEach: ({ parameters }) => {
     requests.length = 0;
-    useDraftStore.getState().reset();
+    draftStore.getState().reset();
     i18n.addResourceBundle('en', 'c', { still_not_accepted: '{{count}} of {{total}} not accepted' });
 
     const fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {

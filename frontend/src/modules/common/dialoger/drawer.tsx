@@ -1,4 +1,4 @@
-import { type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger, type InternalDialog, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
@@ -17,7 +17,7 @@ export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
       updateDialog(dialog.id, { open: false, onClose: undefined });
       dialog.onClose?.();
     },
-    () => useDialoger.getState().remove(dialog.id),
+    () => dialoger.getState().remove(dialog.id),
   );
 
   const onOpenChange = (open: boolean) => {

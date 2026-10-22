@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/u
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
-import { useSheeter } from '../../common/sheeter/use-sheeter';
+import { sheeter } from '../../common/sheeter/use-sheeter';
 import { ActiveIndicator } from './active-indicator';
 
 const tagTypeConfig = {
@@ -90,7 +90,7 @@ function CollapsibleTagItemBase<T>({
             onMouseEnter={!isExpanded ? onPrerender : undefined}
             onClick={() => {
               requestAnimationFrame(() => scrollToSectionById(hash));
-              if (!isMobile) useSheeter.getState().remove('docs-sidebar');
+              if (!isMobile) sheeter.getState().remove('docs-sidebar');
             }}
           />
         }

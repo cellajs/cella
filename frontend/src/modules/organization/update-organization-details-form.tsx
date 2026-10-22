@@ -8,12 +8,12 @@ import type { z } from 'zod';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { persistAttachments } from '~/modules/attachment/helpers/persist-attachments';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { PopConfirm } from '~/modules/common/popconfirm';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
@@ -58,7 +58,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
       { path: { tenantId: organization.tenantId, id: organization.id }, body },
       {
         onSuccess: (updatedOrganization) => {
-          if (isSheet) useSheeter.getState().remove(formContainerId);
+          if (isSheet) sheeter.getState().remove(formContainerId);
           form.reset(body);
           toaster.success(t('c:success.update_resource', { resource: t('c:organization') }));
           callback?.({ data: updatedOrganization, status: 'success' });
@@ -74,7 +74,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
 
   // Discarding drops the unsaved text for good, so the click asks first.
   const openDiscardConfirm = (event: MouseEvent<HTMLButtonElement>) => {
-    const { create, remove } = useDropdowner.getState();
+    const { create, remove } = dropdowner.getState();
     create(
       <PopConfirm title={t('c:confirm.discard_changes')}>
         <div className="flex flex-col gap-2 sm:flex-row">

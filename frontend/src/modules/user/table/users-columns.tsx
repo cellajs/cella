@@ -6,7 +6,7 @@ import { ConfirmText } from '~/modules/common/confirm-text';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { dateColumn, ellipsisColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { openPopConfirm } from '~/modules/common/popconfirm';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
@@ -51,7 +51,7 @@ export const useColumns = () => {
         label: i18n.t('c:edit'),
         icon: PencilIcon,
         onSelect: (row, triggerRef) => {
-          useDropdowner.getState().remove();
+          dropdowner.getState().remove();
           openUpdateUserSheet(row, triggerRef);
         },
       },
@@ -59,7 +59,7 @@ export const useColumns = () => {
         label: i18n.t('c:delete'),
         icon: TrashIcon,
         onSelect: (row) => {
-          const callback = () => useDropdowner.getState().remove();
+          const callback = () => dropdowner.getState().remove();
           openPopConfirm(
             <ConfirmText i18nKey="c:delete_confirm.text" values={{ name: row.name }} />,
             <DeleteUsers users={[row]} callback={callback} />,

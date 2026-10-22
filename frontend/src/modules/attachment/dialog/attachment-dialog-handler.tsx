@@ -2,7 +2,7 @@ import { useMatch, useNavigate, useSearch } from '@tanstack/react-router';
 import { memo, useEffect } from 'react';
 import { AttachmentDialog } from '~/modules/attachment/dialog/attachment-dialog';
 import { ATTACHMENT_DIALOG_PARAM, attachmentDialogOptions, clearAttachmentDialogSearch } from '~/modules/attachment/dialog/params';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
 const dialogId = ATTACHMENT_DIALOG_PARAM;
@@ -15,14 +15,14 @@ function AttachmentDialogHandlerBase() {
 
   useEffect(() => {
     if (!isOpen) return;
-    if (useDialoger.getState().get(dialogId)) return;
+    if (dialoger.getState().get(dialogId)) return;
 
     const close = () => {
       navigate({ to: '.', replace: true, resetScroll: false, search: clearAttachmentDialogSearch });
     };
 
     queueMicrotask(() => {
-      useDialoger.getState().create(
+      dialoger.getState().create(
         <AttachmentDialog />,
         attachmentDialogOptions({
           id: dialogId,
@@ -37,7 +37,7 @@ function AttachmentDialogHandlerBase() {
     });
 
     return () => {
-      useDialoger.getState().remove(dialogId, { isCleanup: true });
+      dialoger.getState().remove(dialogId, { isCleanup: true });
     };
   }, [isOpen, organizationId]);
 

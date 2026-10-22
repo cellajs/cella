@@ -6,7 +6,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { type AlertKeys, useAlertStore } from '~/modules/common/alerter/alert-store';
 import { useUiOffline } from '~/modules/common/alerter/use-ui-offline';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { uiStore } from '~/modules/ui/ui-store';
 import { forceOnline } from '~/query/offline/connectivity';
 
 const downAlertConfig = {
@@ -14,7 +14,7 @@ const downAlertConfig = {
     icon: CloudOffIcon,
     getTitle: () => <Trans t={t} className="font-bold" i18nKey="c:offline" />,
     getContent: (dismissAlert: () => void) => {
-      const offlineAccess = useUIStore.getState().offlineAccess;
+      const offlineAccess = uiStore.getState().offlineAccess;
       const i18nKey = offlineAccess ? 'c:offline_access.offline' : 'c:offline.text';
       const retry = () => {
         forceOnline();

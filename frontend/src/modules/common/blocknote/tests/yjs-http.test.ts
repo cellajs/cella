@@ -147,7 +147,7 @@ vi.mock('~/modules/common/blocknote/yjs-http', () => ({
 http = await vi.importActual<typeof import('~/modules/common/blocknote/yjs-http')>('~/modules/common/blocknote/yjs-http');
 const { HTTP_CHUNK_BYTES, batchUpdates } = http;
 const { ApiError } = await import('~/lib/api');
-const { useUserStore, yjsTokenKey } = await import('~/modules/user/user-store');
+const { userStore, yjsTokenKey } = await import('~/modules/user/user-store');
 const { useYjsConnection } = await import('~/modules/common/blocknote/yjs-connections');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -171,7 +171,7 @@ Object.defineProperty(document, 'visibilityState', { configurable: true, get: ()
 /** Mounts one editor's connection, stored with the mock writer; returns its provider, document and latest hook state. */
 async function mountConnection() {
   const entityId = `doc-${++counter}`;
-  useUserStore.getState().setYjsToken(yjsTokenKey('attachment', entityId), 'token-v1');
+  userStore.getState().setYjsToken(yjsTokenKey('attachment', entityId), 'token-v1');
   let latest: ReturnType<typeof useYjsConnection> = null;
   const Harness = () => {
     latest = useYjsConnection(entityId, 'attachment', 'tenant-1', 'org-1');

@@ -8,7 +8,7 @@ import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { useFirstTimeHint } from '~/hooks/use-first-time-hint';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useScrolledPast } from '~/hooks/use-scrolled-past';
-import { type SheetData, useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { type SheetData, sheeter, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { tagsQueryOptions } from '~/modules/docs/query';
 import { toggleDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
@@ -99,10 +99,10 @@ function DocsLayout() {
   // Below `md` the sheet mounts closed at idle, so a menu tap only slides it in. Leaving the docs or reaching `md` unmounts it.
   useEffect(() => {
     if (isDesktop) return;
-    const handle = scheduleIdle(() => useSheeter.getState().mount(sidebarContent, sidebarSheet));
+    const handle = scheduleIdle(() => sheeter.getState().mount(sidebarContent, sidebarSheet));
     return () => {
       cancelIdle(handle);
-      useSheeter.getState().unmount('docs-sidebar');
+      sheeter.getState().unmount('docs-sidebar');
     };
   }, [isDesktop]);
 
@@ -113,7 +113,7 @@ function DocsLayout() {
       'Escape',
       () => {
         if (sidebarOpen) {
-          useSheeter.getState().remove('docs-sidebar');
+          sheeter.getState().remove('docs-sidebar');
           return;
         }
         navigate({ to: '.', search: (prev) => ({ ...prev, operationTag: undefined }), resetScroll: false, replace: true });
@@ -123,9 +123,9 @@ function DocsLayout() {
 
   const toggleSidebar = () => {
     if (sidebarOpen) {
-      useSheeter.getState().remove('docs-sidebar');
+      sheeter.getState().remove('docs-sidebar');
     } else {
-      useSheeter.getState().create(sidebarContent, sidebarSheet);
+      sheeter.getState().create(sidebarContent, sidebarSheet);
     }
   };
 

@@ -1,7 +1,7 @@
 import { Menu } from '@base-ui/react/menu';
 import { useEffect, useLayoutEffect } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
-import { type InternalDropdown, useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner, type InternalDropdown } from '~/modules/common/dropdowner/use-dropdowner';
 import { FocusTrap } from '~/modules/common/focus-trap';
 import { Popover, PopoverContent } from '~/modules/ui/popover';
 import { cn } from '~/utils/cn';
@@ -49,7 +49,7 @@ export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown })
 
     const observer = new MutationObserver(() => {
       if (!document.body.contains(triggerEl)) {
-        useDropdowner.getState().remove();
+        dropdowner.getState().remove();
       }
     });
 
@@ -65,7 +65,7 @@ export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown })
 
 /** Closes the dropdown unless it was already swapped for another (e.g. a menu item opening a confirmation panel). */
 function removeIfCurrent(key: number) {
-  if (useDropdowner.getState().dropdown?.key === key) useDropdowner.getState().remove();
+  if (dropdowner.getState().dropdown?.key === key) dropdowner.getState().remove();
 }
 
 function MenuDropdown({ dropdown, triggerEl }: { dropdown: InternalDropdown; triggerEl: HTMLElement }) {

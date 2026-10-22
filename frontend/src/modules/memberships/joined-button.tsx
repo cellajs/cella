@@ -4,7 +4,7 @@ import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MembershipBase } from 'sdk';
 import { ConfirmText } from '~/modules/common/confirm-text';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import type { LeaveChannelButtonProps } from '~/modules/memberships/leave-channel-button';
 import { LeaveChannelForm } from '~/modules/memberships/leave-channel-form';
@@ -28,7 +28,7 @@ function JoinedButton({ role, size = 'sm', className, ...props }: JoinedButtonPr
   const { channel } = props;
 
   const openLeaveConfirm = (event: MouseEvent<HTMLButtonElement>) => {
-    const { create, remove } = useDropdowner.getState();
+    const { create, remove } = dropdowner.getState();
     create(
       <PopConfirm title={<ConfirmText i18nKey="c:confirm.leave_channel" values={{ name: channel.name }} />}>
         <LeaveChannelForm

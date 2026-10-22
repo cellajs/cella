@@ -7,7 +7,7 @@ import { useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import { LazyCollaborativeBlockNote } from '~/modules/common/blocknote/lazy-collaborative-blocknote';
 import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
 import { useDescriptionUpdate } from '~/modules/common/blocknote/use-description-update';
-import { type TriggerRef, useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter, type TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
 import { membersListQueryOptions } from '~/modules/memberships/query';
@@ -86,7 +86,7 @@ function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
 
 /** Opens the description editor in a sheet; the same entry point for the table column and the dialog caption. */
 export function openAttachmentDescriptionSheet(attachment: Attachment, triggerRef: TriggerRef) {
-  useSheeter.getState().create(
+  sheeter.getState().create(
     <div className="container w-full sm:pl-8">
       <AttachmentDescriptionForm attachment={attachment} />
     </div>,

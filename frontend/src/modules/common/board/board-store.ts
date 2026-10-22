@@ -114,3 +114,6 @@ export const useBoardStore = create<BoardUIState>()(
     { enabled: isDebugMode, name: 'board store' },
   ),
 );
+
+// Non-hook alias for accessing store outside of React components / as a value (e.g. getState)
+export { useBoardStore as boardStore };

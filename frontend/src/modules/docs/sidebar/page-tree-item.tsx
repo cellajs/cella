@@ -3,7 +3,7 @@ import { ChevronDownIcon } from 'lucide-react';
 import { useId } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { getSection, scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { type DocPage, PAGE_SECTION_ID } from '~/modules/page/content';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
@@ -76,7 +76,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
               e.preventDefault();
               if (getSection() === PAGE_SECTION_ID) return onToggle(page.id);
               scrollToSectionById(PAGE_SECTION_ID);
-              useSheeter.getState().remove('docs-sidebar');
+              sheeter.getState().remove('docs-sidebar');
               return;
             }
             if (hasChildren && !isExpanded) onToggle(page.id);

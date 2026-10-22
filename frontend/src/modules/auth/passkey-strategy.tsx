@@ -4,7 +4,7 @@ import { FingerprintPatternIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type SignInWithPasskeyResponse, signInWithPasskey } from 'sdk';
 import { ApiError } from '~/lib/api';
-import { useAuthStore } from '~/modules/auth/auth-store';
+import { authStore } from '~/modules/auth/auth-store';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
 import { useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
@@ -30,7 +30,7 @@ export function PasskeyStrategy({ type }: PasskeyStrategyProps) {
       return await signInWithPasskey({ body });
     },
     onSuccess: () => {
-      useAuthStore.getState().setSignedIn(true);
+      authStore.getState().setSignedIn(true);
       navigateAfterAuth();
     },
     onError: (error) => {

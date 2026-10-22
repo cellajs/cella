@@ -12,7 +12,7 @@ const mockTeardownUserState = vi.fn();
 vi.mock('~/query/offline/connectivity', () => ({ checkConnectivity: mockCheckConnectivity }));
 vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: mockToaster }));
 vi.mock('~/modules/common/alerter/alert-store', () => ({
-  useAlertStore: { getState: () => ({ setDownAlert: mockSetDownAlert }) },
+  alertStore: { getState: () => ({ setDownAlert: mockSetDownAlert }) },
 }));
 vi.mock('~/routes/router', () => ({ router: { navigate: mockNavigate } }));
 vi.mock('~/utils/teardown-user-state', () => ({ teardownUserState: mockTeardownUserState }));

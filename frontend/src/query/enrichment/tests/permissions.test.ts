@@ -12,7 +12,7 @@ import {
 } from '~/query/enrichment/test-setup';
 
 const session = vi.hoisted(() => ({ isSystemAdmin: false }));
-vi.mock('~/modules/user/user-store', () => ({ useUserStore: { getState: () => session } }));
+vi.mock('~/modules/user/user-store', () => ({ userStore: { getState: () => session } }));
 
 // The real map over the wide fixture: an organization with projects below it, whose admins manage every project and
 // whose members only read them. No role is elevated, so an organization grant reaches no task of a project.

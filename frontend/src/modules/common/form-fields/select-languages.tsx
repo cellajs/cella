@@ -3,7 +3,7 @@ import { type CSSProperties, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type Language } from 'shared';
 import { useMeasure } from '~/hooks/use-measure';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
@@ -72,7 +72,7 @@ export function SelectLanguages({ value, onChange }: SelectLanguagesProps) {
   const { ref: triggerRef, bounds } = useMeasure<HTMLButtonElement>();
 
   const openDropdown = () => {
-    useDropdowner.getState().create(<SelectLanguagesContent initialValue={value} onChange={onChange} triggerWidth={bounds.width} />, {
+    dropdowner.getState().create(<SelectLanguagesContent initialValue={value} onChange={onChange} triggerWidth={bounds.width} />, {
       id: 'select-languages',
       triggerId: 'select-languages',
       triggerRef,

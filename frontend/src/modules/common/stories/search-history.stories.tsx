@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { AppSearch } from '~/modules/navigation/app-search';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { navigationStore } from '~/modules/navigation/navigation-store';
 import { withApp } from '~/stories/with-app';
 
 const history = ['passkeys', 'sessions', 'tenants'];
@@ -16,8 +16,8 @@ const historyOption = (canvas: ReturnType<typeof within>, value: string) => canv
 
 export const AppSearchHistory: Story = {
   beforeEach: () => {
-    useNavigationStore.setState({ recentSearches: [...history] });
-    return () => useNavigationStore.setState({ recentSearches: [] });
+    navigationStore.setState({ recentSearches: [...history] });
+    return () => navigationStore.setState({ recentSearches: [] });
   },
   render: () => (
     <div className="w-[36rem]">
@@ -37,7 +37,7 @@ export const AppSearchHistory: Story = {
     await step('the remove button drops one entry', async () => {
       await userEvent.click(within(historyOption(canvas, 'sessions')).getByRole('button'));
 
-      await expect(useNavigationStore.getState().recentSearches).toEqual(['passkeys', 'tenants']);
+      await expect(navigationStore.getState().recentSearches).toEqual(['passkeys', 'tenants']);
       await waitFor(() => expect(canvas.queryByRole('option', { name: /^sessions/ })).toBeNull());
     });
 

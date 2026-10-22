@@ -9,7 +9,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { ButtonGroup } from '~/modules/ui/button-group';
-import { useSheeter } from '../common/sheeter/use-sheeter';
+import { sheeter } from '../common/sheeter/use-sheeter';
 
 interface JsonActionsProps {
   url: string;
@@ -58,7 +58,7 @@ export function JsonActions({ url, data, filename = 'data.json', resourceName, c
                 resetScroll
                 to={viewerUrl}
                 onClick={() => {
-                  isMobile && useSheeter.getState().remove();
+                  isMobile && sheeter.getState().remove();
                   // Scroll the docs main content area to top (resetScroll only handles window scroll)
                   requestAnimationFrame(() => document.querySelector('main')?.scrollTo({ top: 0 }));
                 }}

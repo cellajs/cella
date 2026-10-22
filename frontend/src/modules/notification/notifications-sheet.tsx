@@ -6,10 +6,10 @@ import type { GetNotificationsResponse } from 'sdk';
 import { useRelativeDate } from '~/hooks/use-relative-date';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { navigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { getProductRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
@@ -65,9 +65,9 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
   const onActivate = () => {
     // Like the account sheet: a pinned nav sheet stays open beside the content. No id, because this sheet is
     // `nav-sheet` from the bars but stacks over the menu sheet from the floating-nav menu header.
-    if (!useNavigationStore.getState().keepNavOpen) {
-      useSheeter.getState().remove();
-      useNavigationStore.getState().setNavSheetOpen(null);
+    if (!navigationStore.getState().keepNavOpen) {
+      sheeter.getState().remove();
+      navigationStore.getState().setNavSheetOpen(null);
     }
     if (!notification.readAt) onOpen({ ids: [notification.id] });
   };
