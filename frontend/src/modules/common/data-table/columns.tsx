@@ -1,6 +1,7 @@
 import { BoxIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { exportDate } from '~/lib/export';
+import type { TKey } from '~/lib/i18n-locales';
 import type { BreakpointKey } from '~/modules/common/data-grid/types';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -101,10 +102,10 @@ export const emailColumn = <T extends { email?: string | null }>(options: EmailC
     ) : null,
 });
 
-/** The header of the row actions column: a name for assistive technology, nothing to see. */
-function EllipsisColumnHeader() {
+/** A column header for assistive technology only, over a column of controls that need no visible title. */
+export function SrOnlyHeader({ label }: { label: TKey }) {
   const { t } = useTranslation();
-  return <span className="sr-only">{t('c:actions')}</span>;
+  return <span className="sr-only">{t(label)}</span>;
 }
 
 /** Row actions behind an ellipsis button; a row without options gets an empty cell. */
@@ -116,7 +117,7 @@ export const ellipsisColumn = <T extends { id: string }>(
   name: '',
   ...(maxBreakpoint && { maxBreakpoint }),
   width: 32,
-  renderHeaderCell: () => <EllipsisColumnHeader />,
+  renderHeaderCell: () => <SrOnlyHeader label="c:actions" />,
   renderCell: ({ row, tabIndex }) => {
     const options = getOptions(row);
     return options.length ? <TableEllipsis row={row} tabIndex={tabIndex} options={options} /> : null;

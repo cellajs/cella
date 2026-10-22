@@ -4,17 +4,15 @@ import { cn } from '~/utils/cn';
 
 interface BoardPanelHeaderProps {
   leading?: ReactNode;
-  title?: ReactNode;
   actions?: ReactNode;
   isCollapsed?: boolean;
   className?: string;
 }
 
-export function BoardPanelHeader({ leading, title, actions, isCollapsed, className }: BoardPanelHeaderProps) {
+export function BoardPanelHeader({ leading, actions, isCollapsed, className }: BoardPanelHeaderProps) {
   return (
     <div className={cn('z-50 flex min-h-13 flex-row items-center gap-2 rounded-lg rounded-b-none border border-b-0 p-2 max-sm:hidden', className)}>
       {leading}
-      {!isCollapsed && title && <div className={cn('min-w-0', hintFadeOut)}>{title}</div>}
       {!isCollapsed && actions && <div className={cn('flex grow items-center justify-end gap-2', hintFadeOut)}>{actions}</div>}
     </div>
   );
@@ -26,9 +24,6 @@ interface BoardPanelBodyProps {
   /** Panel grows with its content, with no fixed viewport height. */
   windowScroll?: boolean;
   className?: string;
-  panelRef?: React.Ref<HTMLDivElement>;
-  topSlot?: ReactNode;
-  bottomSlot?: ReactNode;
   /** The collapsed view's main count, previewed while a resize hint collapses the panel. */
   collapsedCount?: number;
   onMouseEnter?: () => void;
@@ -40,9 +35,6 @@ export function BoardPanelBody({
   hasSelection,
   windowScroll,
   className,
-  panelRef,
-  topSlot,
-  bottomSlot,
   collapsedCount,
   onMouseEnter,
   onFocusCapture,
@@ -57,13 +49,10 @@ export function BoardPanelBody({
         hasSelection && 'is-selected',
         className,
       )}
-      ref={panelRef}
       onMouseEnter={onMouseEnter}
       onFocusCapture={onFocusCapture}
     >
-      {topSlot}
       {children}
-      {bottomSlot}
       {collapsedCount !== undefined && (
         <div aria-hidden className={cn(collapsedCountClass, 'pointer-events-none', hintFadeIn)}>
           {collapsedCount}
@@ -83,7 +72,6 @@ export interface CollapsedSection {
 interface CollapsedPanelViewProps {
   mainCount: number;
   sections?: CollapsedSection[];
-  className?: string;
 }
 
 const emptySections: CollapsedSection[] = [];
@@ -91,18 +79,12 @@ const emptySections: CollapsedSection[] = [];
 // w-12 is a collapsed panel inside its border, so the expanded preview sits where the collapsed count does
 const collapsedCountClass = 'absolute top-[calc(50%-0.5rem)] left-0 w-12 text-center text-muted-foreground text-xs';
 
-export function CollapsedPanelView({ mainCount, sections = emptySections, className }: CollapsedPanelViewProps) {
+export function CollapsedPanelView({ mainCount, sections = emptySections }: CollapsedPanelViewProps) {
   const topSections = sections.filter((s) => s.position === 'top');
   const bottomSections = sections.filter((s) => s.position === 'bottom');
 
   return (
-    <div
-      className={cn(
-        'relative flex flex-1 snap-center flex-col bg-transparent sm:border',
-        'group-data-[highlighted=true]/paneldrop:border-primary',
-        className,
-      )}
-    >
+    <div className="relative flex flex-1 snap-center flex-col bg-transparent group-data-[highlighted=true]/paneldrop:border-primary sm:border">
       {topSections.map((section, i) => (
         <div
           // biome-ignore lint/suspicious/noArrayIndexKey: static sections

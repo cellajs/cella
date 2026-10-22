@@ -67,7 +67,6 @@ export function TagTable<T>({ rows, columns, rowKeyGetter, hideHeader, onPrerend
         rowKeyGetter={rowKeyGetter}
         isLoading={false}
         isFetching={false}
-        limit={rows.length}
         isFiltered={false}
         rowHeight={36}
         hideHeader={hideHeader}

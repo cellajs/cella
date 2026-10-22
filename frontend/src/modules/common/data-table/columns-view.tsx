@@ -1,5 +1,5 @@
 import { SlidersHorizontalIcon } from 'lucide-react';
-import { type Dispatch, type ReactNode, type SetStateAction, useState } from 'react';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -16,18 +16,11 @@ interface Props<TData> {
 
 export function ColumnsView<TData>({ columns, setColumns, className = '', children }: Props<TData>) {
   const { t } = useTranslation();
-  const [columnSearch, setColumnSearch] = useState('');
-
-  const filteredColumns = columns.filter(
-    (column) => typeof column.name === 'string' && column.name && column.name.toLocaleLowerCase().includes(columnSearch.toLocaleLowerCase()),
-  );
+  // Columns without a text name (checkbox, ellipsis) have nothing to list
+  const filteredColumns = columns.filter((column) => typeof column.name === 'string' && column.name);
 
   return (
-    <DropdownMenu
-      onOpenChange={() => {
-        setColumnSearch('');
-      }}
-    >
+    <DropdownMenu>
       <TooltipButton className={className} toolTipContent={t('c:columns_view')}>
         <DropdownMenuTrigger render={<Button variant="outline" className="relative flex" />}>
           {filteredColumns.some((column) => column.hidden) && <Badge className="absolute -top-1 -right-1 z-10 flex size-2 justify-center p-0" />}
@@ -42,7 +35,7 @@ export function ColumnsView<TData>({ columns, setColumns, className = '', childr
             key={column.key}
             className="min-h-8"
             checked={!column.hidden}
-            onCheckedChange={() => setColumns((columns) => columns.map((c) => (c.name === column.name ? { ...c, hidden: !c.hidden } : c)))}
+            onCheckedChange={() => setColumns((columns) => columns.map((c) => (c.key === column.key ? { ...c, hidden: !c.hidden } : c)))}
           >
             {column.name}
           </DropdownMenuCheckboxItem>

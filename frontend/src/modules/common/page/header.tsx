@@ -34,7 +34,10 @@ export function PageHeader({ entity, panel, subline, parents, parent, ...coverPr
     <div className="relative w-full">
       <PageCover id={entity.id} url={entity.bannerUrl} {...coverProps} />
 
-      <div className="absolute bottom-0 flex min-h-18 w-full bg-background/50 px-1 py-1 backdrop-blur-xs dark:bg-background/75" id="pt">
+      <div
+        className="absolute bottom-0 flex min-h-18 w-full bg-background/50 px-1 py-1 backdrop-blur-xs dark:bg-background/75"
+        id={pageTopHashNav.hash}
+      >
         <EntityAvatar
           id={entity.id}
           name={entity.name}

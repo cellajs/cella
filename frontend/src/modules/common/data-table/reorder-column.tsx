@@ -1,6 +1,7 @@
 import { ChevronDownIcon, ChevronUpIcon, GripVerticalIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SrOnlyHeader } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { cn } from '~/utils/cn';
@@ -75,12 +76,6 @@ function ReorderHandle({ name, onMove, isFirst, isLast }: ReorderHandleProps) {
   );
 }
 
-/** The column's name for a screen reader, hidden from sight: a row of grips needs no visible title. */
-function ReorderColumnHeader() {
-  const { t } = useTranslation();
-  return <span className="sr-only">{t('c:order')}</span>;
-}
-
 interface ReorderColumnOptions<TRow> {
   /** The row name the handle's menu button carries. */
   getName: (row: TRow) => string;
@@ -103,7 +98,7 @@ export function reorderColumn<TRow>({ getName, onMove, rowCount, cellClass }: Re
     maxWidth: 36,
     cellClass: cn('flex items-center justify-center', cellClass),
     rowDragHandle: true,
-    renderHeaderCell: () => <ReorderColumnHeader />,
+    renderHeaderCell: () => <SrOnlyHeader label="c:order" />,
     renderCell: ({ row, rowIdx }) => (
       <ReorderHandle name={getName(row)} isFirst={rowIdx === 0} isLast={rowIdx === rowCount - 1} onMove={(step) => onMove(rowIdx, step)} />
     ),

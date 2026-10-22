@@ -1,7 +1,7 @@
 import { RenderExpandToggle } from '~/modules/common/data-grid/cell-renderers';
+import type { TreeRow } from '~/modules/common/data-table/tree/build-tree';
+import { useTreeContext } from '~/modules/common/data-table/tree/tree-context';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { TreeRow } from './build-tree';
-import { useTreeContext } from './tree-context';
 
 const expandToggleColumnKey = 'expand-toggle-column';
 
@@ -37,7 +37,7 @@ const def: ColumnOrColumnGroup<AnyTreeRow> = {
     row._hasChildren
       ? 'flex items-center justify-center p-0! aria-selected:outline-hidden aria-selected:[&_[data-slot=expand-toggle]]:ring-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-ring aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-background'
       : 'flex items-center justify-center p-0!',
-  renderCell: ({ row, tabIndex }) => <ExpandToggleCell row={row} tabIndex={tabIndex ?? -1} />,
+  renderCell: ({ row, tabIndex }) => <ExpandToggleCell row={row} tabIndex={tabIndex} />,
 };
 
 /** Drop-in tree-table column using {@link TreeProvider} handlers and rows from {@link useTreeRows}. */

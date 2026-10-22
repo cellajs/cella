@@ -84,7 +84,6 @@ function OperationsTable() {
           rowClass={(row) => (isSwitchedOff(row) ? 'opacity-60' : undefined)}
           isLoading={false}
           isFetching={false}
-          limit={sortedOperations.length}
           isFiltered={!!q}
           rowHeight={42}
           enableVirtualization

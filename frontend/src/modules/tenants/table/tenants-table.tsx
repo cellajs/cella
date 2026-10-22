@@ -58,7 +58,6 @@ function TenantsTable() {
           onRowsChange,
           columns,
           enableVirtualization: true,
-          limit,
           error,
           isLoading,
           isFetching,

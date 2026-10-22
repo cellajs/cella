@@ -87,7 +87,6 @@ export function AttachmentsTableBar({
             ref={deleteButtonRef}
             variant="destructive"
             onClick={openDeleteDialog}
-            className="relative"
             badge={deletable.length < selected.length ? deletable.length : undefined}
             icon={TrashIcon}
             label="c:delete"

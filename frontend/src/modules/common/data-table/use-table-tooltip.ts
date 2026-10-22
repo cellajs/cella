@@ -12,7 +12,7 @@ const positionTooltip = (reference: HTMLElement, tooltip: HTMLElement, gap = 4) 
 };
 
 /** Data grid tooltip driven by DOM listeners outside React, so hovering never re-renders the grid. */
-export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>, initialDone: boolean) {
+export function useTableTooltip(gridEl: HTMLDivElement | null) {
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const lastShownCellRef = useRef<HTMLElement | null>(null);
@@ -20,8 +20,7 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
   const observerRef = useRef<MutationObserver | null>(null);
 
   useEffect(() => {
-    if (!gridRef?.current) return;
-    const gridEl = gridRef.current;
+    if (!gridEl) return;
     const tooltip = document.createElement('div');
     // A tap fires compatibility mousemoves, so hover only counts for a pointer that can hover (jsdom has no matchMedia).
     const canHover = window.matchMedia?.('(hover: hover)');
@@ -119,7 +118,7 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
       observerRef.current?.disconnect();
       tooltip.remove();
     };
-  }, [initialDone]);
+  }, [gridEl]);
 
   return { tooltipRef };
 }

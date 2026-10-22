@@ -128,7 +128,6 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
           rowKeyGetter,
           columns,
           enableVirtualization: true,
-          limit,
           error,
           isLoading,
           isFetching,

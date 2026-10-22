@@ -3,7 +3,7 @@ import { GripVerticalIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EditCellInput, enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
-import { ExpandToggleColumn } from '~/modules/common/data-table/tree';
+import { ExpandToggleColumn } from '~/modules/common/data-table/tree/expand-toggle-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { docRenderModes } from '~/modules/page/content';
 import type { PageTreeRow } from '~/modules/page/table/page-tree';

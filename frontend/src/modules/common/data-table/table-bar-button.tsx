@@ -5,6 +5,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, type ButtonProps } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 type Props = { icon: IconComponent; label: TKey; badge?: ReactNode } & ButtonProps;
 
@@ -13,10 +14,11 @@ export const TableBarButton = forwardRef<HTMLButtonElement, Props>(function Tabl
   return (
     <Button
       {...props}
+      // The badge sits on the button's corner
+      className={cn('relative', className)}
       render={
         <motion.button
           ref={ref}
-          className={className}
           transition={{ bounce: 0, duration: 0.3, ease: 'easeOut' }}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -24,8 +26,10 @@ export const TableBarButton = forwardRef<HTMLButtonElement, Props>(function Tabl
         />
       }
     >
-      {Icon && <motion.span className="flex items-center">{<Icon />}</motion.span>}
-      {label && <span>{t(label)}</span>}
+      <motion.span className="flex items-center">
+        <Icon />
+      </motion.span>
+      <span>{t(label)}</span>
 
       {badge && <Badge context="button">{badge}</Badge>}
     </Button>

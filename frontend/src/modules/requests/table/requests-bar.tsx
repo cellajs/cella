@@ -104,7 +104,6 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
               <TableBarButton
                 badge={selectedToWaitlist.length < selected.length ? selectedToWaitlist.length : undefined}
                 variant="success"
-                className="relative"
                 label="c:invite"
                 icon={PartyPopperIcon}
                 onClick={approveSelectedRequests}

@@ -93,7 +93,6 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
           rowKeyGetter,
           columns,
           enableVirtualization: true,
-          limit,
           error,
           isLoading,
           isFetching,

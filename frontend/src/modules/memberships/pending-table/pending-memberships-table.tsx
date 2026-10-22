@@ -62,7 +62,6 @@ export function PendingMembershipsTable({ channel }: PendingMembershipsTableProp
           rowKeyGetter,
           columns,
           enableVirtualization: true,
-          limit,
           error,
           isLoading,
           isFetching,

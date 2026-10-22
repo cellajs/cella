@@ -4,7 +4,6 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { exportToCsv, exportToPdf } from '~/lib/export';
 import { fetchAllRows } from '~/modules/common/data-table/fetch-all-rows';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -19,30 +18,40 @@ interface Props<TData> {
   className?: string;
 }
 
+type ExportFormat = 'csv' | 'pdf';
+
+interface ExportItemProps {
+  format: ExportFormat;
+  /** The rows the item exports, shown muted beside the format. */
+  note: string;
+  disabled?: boolean;
+  onClick: () => void;
+}
+
+function ExportItem({ format, note, disabled, onClick }: ExportItemProps) {
+  return (
+    <DropdownMenuItem onClick={onClick} disabled={disabled}>
+      <span>{format.toUpperCase()}</span>
+      <span className="text-muted-foreground text-xs">{note}</span>
+    </DropdownMenuItem>
+  );
+}
+
 // biome-ignore lint/suspicious/noExplicitAny: any is required here
 export function Export<R extends Record<string, any>>({ filename, columns, selectedRows, fetchRows, className = '' }: Props<R>) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
-  const mode = uiStore.getState().mode;
 
-  const exportDefault = async (type: 'csv' | 'pdf') => {
-    if (!isOnline) return toastOffline();
-    const rows = await fetchAllRows(fetchRows);
-    const filenameWithExtension = `${filename}.${type}`;
-
-    if (type === 'csv') return exportToCsv(columns, rows, filenameWithExtension);
-    return exportToPdf(columns, rows, filenameWithExtension, getRouter().state.location.pathname, mode);
+  // Only online menus offer the full export and the PDF, so neither handler checks the connection
+  const download = (format: ExportFormat, rows: R[]) => {
+    const file = `${filename}.${format}`;
+    if (format === 'csv') return exportToCsv(columns, rows, file);
+    return exportToPdf(columns, rows, file, getRouter().state.location.pathname, uiStore.getState().mode);
   };
+  const downloadAll = async (format: ExportFormat) => download(format, await fetchAllRows(fetchRows));
 
-  const exportSelected = async (type: 'csv' | 'pdf') => {
-    if (!selectedRows) return toaster.warning(t('error:no_selected_rows'));
-    const filenameWithExtension = `${filename}.${type}`;
-
-    if (type === 'csv') return exportToCsv(columns, selectedRows, filenameWithExtension);
-
-    if (!isOnline) toastOffline();
-    return exportToPdf(columns, selectedRows, filenameWithExtension, getRouter().state.location.pathname, mode);
-  };
+  const allRowsNote = t('c:all_rows').toLowerCase();
+  const selectedNote = selectedRows?.length ? `${selectedRows.length} ${t('c:selected').toLowerCase()}` : t('c:no_selection').toLowerCase();
 
   return (
     <DropdownMenu>
@@ -56,32 +65,15 @@ export function Export<R extends Record<string, any>>({ filename, columns, selec
         {isOnline && (
           <>
             {/* Label the full-export pair so it reads apart from the selected-rows pair below */}
-            <DropdownMenuItem onClick={() => exportDefault('csv')}>
-              <span>CSV</span>
-              <span className="text-muted-foreground text-xs">{t('c:all_rows').toLowerCase()}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => exportDefault('pdf')}>
-              <span>PDF</span>
-              <span className="text-muted-foreground text-xs">{t('c:all_rows').toLowerCase()}</span>
-            </DropdownMenuItem>
+            <ExportItem format="csv" note={allRowsNote} onClick={() => downloadAll('csv')} />
+            <ExportItem format="pdf" note={allRowsNote} onClick={() => downloadAll('pdf')} />
           </>
         )}
         {selectedRows && (
           <>
-            <DropdownMenuItem onClick={() => exportSelected('csv')} disabled={selectedRows.length === 0}>
-              <span>CSV</span>
-              <span className="text-muted-foreground text-xs">
-                {selectedRows.length ? `${selectedRows.length} ${t('c:selected').toLowerCase()}` : t('c:no_selection').toLowerCase()}
-              </span>
-            </DropdownMenuItem>
-
+            <ExportItem format="csv" note={selectedNote} disabled={!selectedRows.length} onClick={() => download('csv', selectedRows)} />
             {isOnline && (
-              <DropdownMenuItem onClick={() => exportSelected('pdf')} disabled={selectedRows.length === 0}>
-                <span>PDF</span>
-                <span className="text-muted-foreground text-xs">
-                  {selectedRows.length ? `${selectedRows.length} ${t('c:selected').toLowerCase()}` : t('c:no_selection').toLowerCase()}
-                </span>
-              </DropdownMenuItem>
+              <ExportItem format="pdf" note={selectedNote} disabled={!selectedRows.length} onClick={() => download('pdf', selectedRows)} />
             )}
           </>
         )}

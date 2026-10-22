@@ -5,46 +5,39 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~
 import { cn } from '~/utils/cn';
 
 interface DataTableSkeletonProps {
-  rowCount?: number;
   cellHeight?: number;
   columnCount?: number;
+  /** Widths of the first columns; the rest size themselves. */
   cellsWidths?: string[];
-  shrinkTable?: boolean;
 }
 
 const emptyCellWidths: string[] = [];
+/** Keys of the placeholder rows, which never reorder. */
+const rowKeys = Array.from({ length: 20 }, (_, i) => i);
 
-export function DataTableSkeleton({
-  columnCount = 4,
-  cellHeight = 40,
-  cellsWidths = emptyCellWidths,
-  rowCount = 20,
-  shrinkTable = false,
-}: DataTableSkeletonProps) {
+export function DataTableSkeleton({ columnCount = 4, cellHeight = 40, cellsWidths = emptyCellWidths }: DataTableSkeletonProps) {
   const renderCellHeight = cellHeight - 18;
-  const { hasMounted } = useMountedState();
+  const { hasStarted } = useMountedState();
   const isMobile = useBreakpointBelow('sm', false);
-  const effectiveColumnCount = isMobile ? Math.min(columnCount, 3) : columnCount;
+  const columns = Array.from({ length: isMobile ? Math.min(columnCount, 3) : columnCount }, (_, j) => ({ key: j, style: { width: cellsWidths[j] } }));
 
   return (
-    <div className={cn('w-full space-y-3 overflow-auto transition-opacity duration-500', hasMounted ? 'opacity-100' : 'opacity-0')}>
+    <div className={cn('w-full space-y-3 overflow-auto transition-opacity duration-500', hasStarted ? 'opacity-100' : 'opacity-0')}>
       <Table>
         <TableHeader>
-          {Array.from({ length: 1 }).map((_, i) => (
-            <TableRow key={i.toString()} className="hover:bg-transparent">
-              {Array.from({ length: effectiveColumnCount }).map((_, j) => (
-                <TableHead key={j.toString()} style={{ width: cellsWidths[j] || 'auto', minWidth: shrinkTable ? cellsWidths[j] : 'auto' }}>
-                  <Skeleton className={'mt-2 mb-2 w-full'} style={{ height: `${renderCellHeight}px` }} />
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
+          <TableRow className="hover:bg-transparent">
+            {columns.map(({ key, style }) => (
+              <TableHead key={key} style={style}>
+                <Skeleton className={'mt-2 mb-2 w-full'} style={{ height: `${renderCellHeight}px` }} />
+              </TableHead>
+            ))}
+          </TableRow>
         </TableHeader>
         <TableBody>
-          {Array.from({ length: rowCount }).map((_, i) => (
-            <TableRow key={i.toString()} className="hover:bg-transparent">
-              {Array.from({ length: effectiveColumnCount }).map((_, j) => (
-                <TableCell key={j.toString()} style={{ width: cellsWidths[j] || 'auto', minWidth: shrinkTable ? cellsWidths[j] : 'auto' }}>
+          {rowKeys.map((rowKey) => (
+            <TableRow key={rowKey} className="hover:bg-transparent">
+              {columns.map(({ key, style }) => (
+                <TableCell key={key} style={style}>
                   <Skeleton className={'w-full'} style={{ height: `${renderCellHeight}px` }} />
                 </TableCell>
               ))}

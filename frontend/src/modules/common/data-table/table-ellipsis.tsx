@@ -28,11 +28,10 @@ export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options
     if (!triggerRef.current) return;
 
     const { create } = dropdowner.getState();
-    const isMobile = window.innerWidth < 640;
 
     create(
       options.map(({ label, icon: Icon, onSelect }) => (
-        <DropdownActionItem key={label} isMobile={isMobile} icon={Icon} onSelect={() => onSelect(row, triggerRef)}>
+        <DropdownActionItem key={label} icon={Icon} onSelect={() => onSelect(row, triggerRef)}>
           {label}
         </DropdownActionItem>
       )),

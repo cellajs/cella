@@ -1,4 +1,4 @@
-import { type Key, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type Key, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   type CellRendererProps,
@@ -52,8 +52,6 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   isFiltered?: boolean;
   NoRowsComponent?: React.ReactNode;
   fetchMore?: () => Promise<unknown>;
-  /** Accepted for consumer API symmetry; not used by DataTable. */
-  limit?: number;
   /** When this value changes, internal column widths are reset (re-measured from column defaults). */
   resetWidthsKey?: string | number | boolean;
   className?: string;
@@ -87,7 +85,6 @@ export function DataTable<TData>({
   isFiltered,
   NoRowsComponent,
   fetchMore,
-  limit,
   resetWidthsKey,
   className,
   readOnly,
@@ -102,9 +99,10 @@ export function DataTable<TData>({
 }: DataTableProps<TData>) {
   const { t } = useTranslation();
 
-  const gridRef = useRef<HTMLDivElement | null>(null);
+  // The grid div remounts after an empty state; held in state, each new element gets the tooltip listeners
+  const [gridElement, setGridElement] = useState<HTMLDivElement | null>(null);
   const [columnWidths, setColumnWidths] = useState<ColumnWidths>(() => new Map());
-  useTableTooltip(gridRef, !isLoading);
+  useTableTooltip(gridElement);
 
   useEffect(() => {
     setColumnWidths(new Map());
@@ -124,11 +122,7 @@ export function DataTable<TData>({
 
       if (newSize > maxSelectableRows) {
         // A jump of more than one row is a "select all" attempt.
-        if (newSize - currentSize > 1) {
-          toaster.warning(t('c:selection_limit_all', { max: maxSelectableRows }));
-        } else {
-          toaster.warning(t('c:selection_limit', { max: maxSelectableRows }));
-        }
+        toaster.warning(t(newSize - currentSize > 1 ? 'c:selection_limit_all' : 'c:selection_limit', { max: maxSelectableRows }));
         return;
       }
 
@@ -146,7 +140,7 @@ export function DataTable<TData>({
       {(isLoading || !rows) && !error ? (
         <DataTableSkeleton
           cellsWidths={['3rem', '10rem', '4rem']}
-          cellHeight={Number(rowHeight)}
+          cellHeight={rowHeight}
           // Count only visible columns so the skeleton matches what the grid renders.
           columnCount={columns.filter((column) => !column.hidden).length}
         />
@@ -157,7 +151,7 @@ export function DataTable<TData>({
       ) : !rows?.length ? (
         <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
       ) : (
-        <div className="relative grid" ref={gridRef}>
+        <div className="relative grid" ref={setGridElement}>
           <DataGrid
             {...gridProps}
             columns={columns}
