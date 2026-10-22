@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { PencilIcon } from 'lucide-react';
+import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { PagesSidebar } from '~/modules/docs/sidebar/pages-sidebar';
@@ -9,11 +10,11 @@ import { useUserStore } from '~/modules/user/user-store';
 
 interface PagesSectionProps {
   label: string;
-  onClose: () => void;
+  onNavigate: (e: MouseEvent<HTMLAnchorElement>) => void;
 }
 
 /** Sidebar section with the docs pages tree (plus the admin manage-pages shortcut). */
-export function PagesSection({ label, onClose }: PagesSectionProps) {
+export function PagesSection({ label, onNavigate }: PagesSectionProps) {
   const { t } = useTranslation();
   const isSystemAdmin = useUserStore((state) => state.isSystemAdmin);
 
@@ -27,7 +28,7 @@ export function PagesSection({ label, onClose }: PagesSectionProps) {
               variant="ghost"
               size="xs"
               className="h-7 w-8 p-0"
-              render={<Link to="/docs/pages" onClick={onClose} aria-label={t('c:manage_pages')} />}
+              render={<Link to="/docs/pages" onClick={onNavigate} aria-label={t('c:manage_pages')} />}
             >
               <PencilIcon className="size-3.5" />
             </Button>

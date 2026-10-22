@@ -15,21 +15,31 @@ import { getRouter } from '~/routes/-router-instance';
 function useExitingSheets(sheets: InternalSheet[], mode: string) {
   const [seen, setSeen] = useState({ sheets, mode });
   const [exiting, setExiting] = useState<InternalSheet[]>([]);
+  // keepMounted sheets that closed in place and are still sliding out: one unmounted now finishes its exit first
+  const [sliding, setSliding] = useState<string[]>([]);
 
   // Derived during render: in an effect the removed sheet would unmount first and remount closed, with nothing to animate.
   if (seen.sheets !== sheets || seen.mode !== mode) {
     setSeen({ sheets, mode });
     const isLive = (sheet: InternalSheet) => sheets.some((s) => s.id === sheet.id);
+    const isClosed = (id: string) => sheets.some((s) => s.id === id && s.open === false);
 
     // A breakpoint switch remounts every overlay, so an exit in progress cannot finish
-    if (seen.mode !== mode) setExiting([]);
-    else {
-      const removed = seen.sheets.filter((s) => s.open !== false && !isLive(s));
+    if (seen.mode !== mode) {
+      setExiting([]);
+      setSliding([]);
+    } else {
+      const closedInPlace = seen.sheets.filter((s) => s.open !== false && isClosed(s.id)).map((s) => s.id);
+      const removed = seen.sheets.filter((s) => !isLive(s) && (s.open !== false || sliding.includes(s.id)));
+      setSliding((current) => [...current.filter(isClosed), ...closedInPlace]);
       setExiting((current) => [...current.filter((s) => !isLive(s)), ...removed.map((s) => ({ ...s, open: false, onClose: undefined }))]);
     }
   }
 
-  const onExited = (id: string) => setExiting((current) => current.filter((s) => s.id !== id));
+  const onExited = (id: string) => {
+    setExiting((current) => current.filter((s) => s.id !== id));
+    setSliding((current) => current.filter((slidingId) => slidingId !== id));
+  };
 
   return { exiting, onExited };
 }

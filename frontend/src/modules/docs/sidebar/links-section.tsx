@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { useRef } from 'react';
+import { type MouseEvent, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
@@ -10,12 +10,12 @@ import { tw } from '~/utils/tw';
 
 interface LinksSectionProps {
   label: string;
-  onClose: () => void;
+  onNavigate: (e: MouseEvent<HTMLAnchorElement>) => void;
 }
 
 const rowClass = tw('w-full justify-start px-3 font-medium lowercase');
 
-export function LinksSection({ label, onClose }: LinksSectionProps) {
+export function LinksSection({ label, onNavigate }: LinksSectionProps) {
   const { t } = useTranslation();
   const contactRef = useRef<HTMLButtonElement | null>(null);
   const hasStatusPage = !!appConfig.statusUrl?.trim();
@@ -39,7 +39,7 @@ export function LinksSection({ label, onClose }: LinksSectionProps) {
             {t('c:contact_us')}
           </Button>
 
-          <Button variant="ghost" className={rowClass} render={<Link to="/docs/overview" draggable={false} onClick={onClose} />}>
+          <Button variant="ghost" className={rowClass} render={<Link to="/docs/overview" draggable={false} onClick={onNavigate} />}>
             openapi.json
           </Button>
 
@@ -47,7 +47,7 @@ export function LinksSection({ label, onClose }: LinksSectionProps) {
             <Button
               variant="ghost"
               className="w-full justify-start px-3 font-medium"
-              render={<Link to="/docs/page/$" params={{ _splat: 'llms' }} draggable={false} onClick={onClose} />}
+              render={<Link to="/docs/page/$" params={{ _splat: 'llms' }} draggable={false} onClick={onNavigate} />}
             >
               llms.txt
             </Button>

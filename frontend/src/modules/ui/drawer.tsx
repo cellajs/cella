@@ -47,11 +47,14 @@ function DrawerContent({
   className,
   children,
   autoScrollOnDrag,
+  keepMounted,
   ...props
 }: DrawerPrimitive.Popup.Props &
   React.RefAttributes<HTMLDivElement> & {
     /** Enable auto-scrolling when dragging elements near edges. */
     autoScrollOnDrag?: boolean | 'vertical' | 'horizontal';
+    /** Keeps the closed drawer in the DOM with the `hidden` attribute, so reopening it skips the mount. */
+    keepMounted?: boolean;
   }) {
   const popupRef = React.useRef<HTMLDivElement>(null);
 
@@ -62,7 +65,7 @@ function DrawerContent({
   }, [autoScrollOnDrag]);
 
   return (
-    <DrawerPortal>
+    <DrawerPortal keepMounted={keepMounted}>
       <div className="group/drawer-portal contents">
         <DrawerOverlay />
         <DrawerPrimitive.Viewport

@@ -3,12 +3,11 @@ import { SearchIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenTagSummary } from 'sdk/docs-types';
-import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { Logo } from '~/modules/common/logo';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { openDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { ApiReferenceSection } from '~/modules/docs/sidebar/api-reference-section';
+import { closeSidebarSheetAndNavigate } from '~/modules/docs/sidebar/close-sidebar-sheet';
 import { LinksSection } from '~/modules/docs/sidebar/links-section';
 import { PagesSection } from '~/modules/docs/sidebar/pages-section';
 import { UserTheme } from '~/modules/me/user-theme';
@@ -23,14 +22,7 @@ interface DocsSidebarProps {
 /** Sections come from the global docs config (content root index.mdx frontmatter): label, order, visibility. */
 export function DocsSidebar({ tags }: DocsSidebarProps) {
   const { t } = useTranslation();
-  // The sidebar renders as a sheet below `md`, the same threshold as docs-layout's isDesktop
-  const isMobile = useBreakpointBelow('md', false);
   const searchTriggerRef = useRef<HTMLButtonElement>(null);
-
-  const closeSheet = () => {
-    if (!isMobile) return;
-    useSheeter.getState().remove();
-  };
 
   return (
     <SidebarContent className="min-h-dvh flex-none overflow-visible bg-card pt-2 pb-12">
@@ -43,7 +35,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
             draggable={false}
             className="focus-effect active:press ml-1 flex h-8 items-center rounded-md transition-transform hover:scale-105"
             aria-label={t('c:go_to_about')}
-            onClick={closeSheet}
+            onClick={closeSidebarSheetAndNavigate}
           >
             <Logo iconOnly height={28} title={null} />
           </Link>
@@ -54,7 +46,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
             to="/docs"
             draggable={false}
             className="focus-effect flex h-8 items-center rounded-md px-1 font-medium transition-opacity hover:opacity-70"
-            onClick={closeSheet}
+            onClick={closeSidebarSheetAndNavigate}
           >
             {t('c:docs')}
           </Link>
@@ -84,9 +76,9 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
             case 'apiReference':
               return <ApiReferenceSection key={section.id} label={section.label} tags={tags} />;
             case 'pages':
-              return <PagesSection key={section.id} label={section.label} onClose={closeSheet} />;
+              return <PagesSection key={section.id} label={section.label} onNavigate={closeSidebarSheetAndNavigate} />;
             case 'links':
-              return <LinksSection key={section.id} label={section.label} onClose={closeSheet} />;
+              return <LinksSection key={section.id} label={section.label} onNavigate={closeSidebarSheetAndNavigate} />;
             default:
               return null;
           }
