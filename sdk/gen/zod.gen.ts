@@ -1019,15 +1019,15 @@ export const zUpdateMeBody = z.object({
   description: z.string().max(1000000).nullish(),
   firstName: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .nullish(),
   lastName: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .nullish(),
   language: z.enum(['en', 'nl']).optional(),
   newsletter: z.boolean().optional(),
@@ -1358,15 +1358,15 @@ export const zUpdateUserBody = z.object({
   description: z.string().max(1000000).nullish(),
   firstName: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .nullish(),
   lastName: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .nullish(),
   language: z.enum(['en', 'nl']).optional(),
   newsletter: z.boolean().optional(),
@@ -1430,9 +1430,9 @@ export const zGetTenantsResponse = z.object({
 export const zSelfCreateTenantBody = z.object({
   name: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u),
+    .regex(/^[^\p{Cc}<>]+$/u),
 });
 
 /**
@@ -1443,9 +1443,9 @@ export const zSelfCreateTenantResponse = zTenant;
 export const zUpdateTenantBody = z.object({
   name: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .optional(),
   status: z.enum(['active', 'suspended', 'archived']).optional(),
   subscriptionId: z.string().max(255).nullish(),
@@ -1487,9 +1487,9 @@ export const zCreateConnectionBody = z.object({
   issuer: z.enum(['surfconext']),
   displayName: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u),
+    .regex(/^[^\p{Cc}<>]+$/u),
   claimValues: z
     .array(
       z
@@ -1528,9 +1528,9 @@ export const zDeleteConnectionResponse = zConnection;
 export const zUpdateConnectionBody = z.object({
   displayName: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .optional(),
   claimValues: z
     .array(
@@ -1640,9 +1640,9 @@ export const zCreateOrganizationsBody = z
         .regex(/^temp-/),
       name: z
         .string()
-        .min(2)
+        .min(1)
         .max(255)
-        .regex(/^[\p{L}\d\-., '&()]+$/u),
+        .regex(/^[^\p{Cc}<>]+$/u),
       slug: z
         .string()
         .min(2)
@@ -1746,15 +1746,15 @@ export const zUpdateOrganizationBody = z.object({
     .optional(),
   name: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .optional(),
   shortName: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .nullish(),
   country: z.string().max(255).nullish(),
   timezone: z.string().max(255).nullish(),
@@ -2238,17 +2238,17 @@ export const zGetServiceAccountsResponse = z.object({
 export const zCreateServiceAccountBody = z.object({
   name: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u),
+    .regex(/^[^\p{Cc}<>]+$/u),
   role: z.enum(['admin', 'member']),
   key: z
     .object({
       name: z
         .string()
-        .min(2)
+        .min(1)
         .max(255)
-        .regex(/^[\p{L}\d\-., '&()]+$/u),
+        .regex(/^[^\p{Cc}<>]+$/u),
       scopes: z
         .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
         .min(1)
@@ -2280,9 +2280,9 @@ export const zCreateServiceAccountResponse = z.object({
 export const zUpdateServiceAccountBody = z.object({
   name: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .regex(/^[^\p{Cc}<>]+$/u)
     .optional(),
   status: z.enum(['active', 'disabled']).optional(),
 });
@@ -2314,9 +2314,9 @@ export const zGetApiKeysResponse = z.object({
 export const zCreateApiKeyBody = z.object({
   name: z
     .string()
-    .min(2)
+    .min(1)
     .max(255)
-    .regex(/^[\p{L}\d\-., '&()]+$/u),
+    .regex(/^[^\p{Cc}<>]+$/u),
   scopes: z
     .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
     .min(1)

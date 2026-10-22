@@ -279,7 +279,7 @@
             "type": "string",
             "required": true,
             "description": "The institution's name, as the federation's metadata lists it",
-            "minLength": 2,
+            "minLength": 1,
             "maxLength": 255
           },
           "claimValues": {
@@ -459,7 +459,7 @@
             "type": "string",
             "required": false,
             "description": "The institution's name, as the federation's metadata lists it",
-            "minLength": 2,
+            "minLength": 1,
             "maxLength": 255
           },
           "claimValues": {

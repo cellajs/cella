@@ -5769,15 +5769,15 @@
                   },
                   "firstName": {
                     "type": ["string", "null"],
-                    "minLength": 2,
+                    "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                    "pattern": "^[^\\p{Cc}<>]+$"
                   },
                   "lastName": {
                     "type": ["string", "null"],
-                    "minLength": 2,
+                    "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                    "pattern": "^[^\\p{Cc}<>]+$"
                   },
                   "language": {
                     "type": "string",
@@ -8043,15 +8043,15 @@
                   },
                   "firstName": {
                     "type": ["string", "null"],
-                    "minLength": 2,
+                    "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                    "pattern": "^[^\\p{Cc}<>]+$"
                   },
                   "lastName": {
                     "type": ["string", "null"],
-                    "minLength": 2,
+                    "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                    "pattern": "^[^\\p{Cc}<>]+$"
                   },
                   "language": {
                     "type": "string",
@@ -8440,9 +8440,9 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "minLength": 2,
+                    "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                    "pattern": "^[^\\p{Cc}<>]+$"
                   }
                 },
                 "required": ["name"]
@@ -8548,9 +8548,9 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "minLength": 2,
+                    "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                    "pattern": "^[^\\p{Cc}<>]+$"
                   },
                   "status": {
                     "type": "string",
@@ -8791,9 +8791,9 @@
                   },
                   "displayName": {
                     "type": "string",
-                    "minLength": 2,
+                    "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[\\p{L}\\d\\-., '&()]+$",
+                    "pattern": "^[^\\p{Cc}<>]+$",
                     "description": "The institution's name, as the federation's metadata lists it"
                   },
                   "claimValues": {
@@ -8932,9 +8932,9 @@
                 "properties": {
                   "displayName": {
                     "type": "string",
-                    "minLength": 2,
+                    "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[\\p{L}\\d\\-., '&()]+$",
+                    "pattern": "^[^\\p{Cc}<>]+$",
                     "description": "The institution's name, as the federation's metadata lists it"
                   },
                   "claimValues": {
@@ -9580,9 +9580,9 @@
                     },
                     "name": {
                       "type": "string",
-                      "minLength": 2,
+                      "minLength": 1,
                       "maxLength": 255,
-                      "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                      "pattern": "^[^\\p{Cc}<>]+$"
                     },
                     "slug": {
                       "type": "string",
@@ -10532,15 +10532,15 @@
                   },
                   "name": {
                     "type": "string",
-                    "minLength": 2,
+                    "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                    "pattern": "^[^\\p{Cc}<>]+$"
                   },
                   "shortName": {
                     "type": ["string", "null"],
-                    "minLength": 2,
+                    "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                    "pattern": "^[^\\p{Cc}<>]+$"
                   },
                   "country": {
                     "type": ["string", "null"],
@@ -13640,9 +13640,9 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "minLength": 2,
+                    "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                    "pattern": "^[^\\p{Cc}<>]+$"
                   },
                   "role": {
                     "type": "string",
@@ -13653,9 +13653,9 @@
                     "properties": {
                       "name": {
                         "type": "string",
-                        "minLength": 2,
+                        "minLength": 1,
                         "maxLength": 255,
-                        "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                        "pattern": "^[^\\p{Cc}<>]+$"
                       },
                       "scopes": {
                         "type": ["array", "null"],
@@ -14002,9 +14002,9 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "minLength": 2,
+                    "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                    "pattern": "^[^\\p{Cc}<>]+$"
                   },
                   "status": {
                     "type": "string",
@@ -14225,9 +14225,9 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "minLength": 2,
+                    "minLength": 1,
                     "maxLength": 255,
-                    "pattern": "^[\\p{L}\\d\\-., '&()]+$"
+                    "pattern": "^[^\\p{Cc}<>]+$"
                   },
                   "scopes": {
                     "type": ["array", "null"],

@@ -77,7 +77,7 @@
   "invalid_limit": "Limit must be a number, that  greater than 0 and less than or equal to {{max}}",
   "invalid_max_items": "The number of {{name}} cannot exceed {{max}}.",
   "invalid_min_items": "Please add at least {{min}} {{name}} to the list.",
-  "invalid_name": "Name may only contain letters, numbers, spaces and these characters: ,.'-",
+  "invalid_name": "A name cannot contain < or > or a line break",
   "invalid_offset": "Offset must be number, that greater or equal to 0",
   "invalid_param": "Invalid parameters",
   "invalid_param.text": "If you copied a URL, please check if it is correct and complete.",
