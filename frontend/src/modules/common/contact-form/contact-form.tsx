@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import type { SubmitHandler, UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zCreateRequestBody } from 'sdk/zod.gen';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { LegalContact } from '~/modules/auth/legal/legal-contact';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -28,7 +28,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const messageLabel = t('c:message').toLowerCase();
 
   // The request stores an email and a message; a contact request without a message says nothing
-  const formSchema = zCreateRequestBody.extend({ message: z.string().trim().min(1).max(255) });
+  const formSchema = zCreateRequestBody.extend({ message: zCreateRequestBody.shape.message.unwrap().trim().min(1) });
 
   type FormValues = z.infer<typeof formSchema>;
 

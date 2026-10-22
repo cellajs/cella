@@ -365,7 +365,7 @@ export const zConnectedApp = z.object({
 export const zRequest = z.object({
   createdAt: z.string(),
   id: z.uuid(),
-  message: z.string().max(255).nullable(),
+  message: z.string().nullable(),
   email: z.string().max(255),
   type: z.enum(['waitlist', 'newsletter', 'contact']),
   wasInvited: z.boolean(),
@@ -1312,7 +1312,7 @@ export const zGetRequestsResponse = z.object({
 export const zCreateRequestBody = z.object({
   email: z.email().min(4).max(255),
   type: z.enum(['waitlist', 'newsletter', 'contact']),
-  message: z.string().max(255).nullable(),
+  message: z.string().max(5000).nullable(),
 });
 
 /**

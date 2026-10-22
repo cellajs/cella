@@ -1,0 +1,1 @@
+ALTER TABLE "requests" ALTER COLUMN "message" SET DATA TYPE text USING "message"::text;

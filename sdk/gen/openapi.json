@@ -1818,8 +1818,7 @@
             "format": "uuid"
           },
           "message": {
-            "type": ["string", "null"],
-            "maxLength": 255
+            "type": ["string", "null"]
           },
           "email": {
             "type": "string",
@@ -7500,7 +7499,7 @@
                   },
                   "message": {
                     "type": ["string", "null"],
-                    "maxLength": 255
+                    "maxLength": 5000
                   }
                 },
                 "required": ["email", "type", "message"]
