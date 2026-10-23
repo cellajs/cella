@@ -1,18 +1,15 @@
 import { onlineManager, useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { UserRoundXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for an imperative leave-entity flow tied to a confirmation dialog.
 import { type ChannelBase, deleteMyMembership } from 'sdk';
 import { appConfig } from 'shared';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
-import { Button, type ButtonProps } from '~/modules/ui/button';
 import { cacheRemove } from '~/query/basic/cache-mutations';
 import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 import { invalidateMemberships } from '~/query/realtime/membership-ops';
-import { cn } from '~/utils/cn';
 
 type LeaveChannelOptions = {
   /** Where to navigate after leaving; `null` stays put, for surfaces outside the channel itself. */
@@ -20,11 +17,11 @@ type LeaveChannelOptions = {
   callback?: (args: CallbackArgs) => void;
 };
 
-export type LeaveChannelButtonProps = LeaveChannelOptions & { channel: ChannelBase; buttonProps?: ButtonProps };
+export type LeaveChannelProps = LeaveChannelOptions & { channel: ChannelBase };
 
 /**
  * Leaves a channel: removes it from the list cache and refreshes memberships, so the menu updates at once. `leave`
- * warns and does nothing while offline. For an app's own leave control; `LeaveChannelButton` is the default one.
+ * warns and does nothing while offline. For an app's own leave control; `LeaveChannelForm` renders the default one.
  * @public
  */
 export function useLeaveChannel(channel: ChannelBase, { redirectPath = appConfig.defaultRedirectPath, callback }: LeaveChannelOptions = {}) {
@@ -61,28 +58,4 @@ export function useLeaveChannel(channel: ChannelBase, { redirectPath = appConfig
   };
 
   return { leave, isPending };
-}
-
-export function LeaveChannelButton({ channel, buttonProps, redirectPath, callback }: LeaveChannelButtonProps) {
-  const { t } = useTranslation();
-  const { leave: handleLeave } = useLeaveChannel(channel, { redirectPath, callback });
-
-  const handleKeyDown: React.KeyboardEventHandler<HTMLButtonElement> = (e) => {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    handleLeave();
-  };
-
-  return (
-    <Button
-      onClick={handleLeave}
-      onKeyDown={handleKeyDown}
-      {...buttonProps}
-      className={cn('flex w-full items-center justify-start gap-2 rounded-md', buttonProps?.className)}
-      aria-label="Leave"
-    >
-      <UserRoundXIcon />
-      <span>{t('c:leave')}</span>
-    </Button>
-  );
 }

@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
-import { t } from 'i18next';
 import { createContext, type ReactNode, useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import { appConfig, type EntityRole, hierarchy, isUnpublishedDraft } from 'shared';
 import { getMemberStatIcon } from '~/lib/entity-modules';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
@@ -104,6 +104,7 @@ export function ChannelTileRow({ children = <ChannelTileHeading /> }: { children
 
 /** Avatar (or `leading`), name with a draft badge, and the meta line (or `meta`, by default {@link ChannelTileStats}). */
 export function ChannelTileHeading({ leading, meta = <ChannelTileStats /> }: { leading?: ReactNode; meta?: ReactNode }) {
+  const { t } = useTranslation();
   const entity = useTileEntity();
   return (
     <>
@@ -124,6 +125,7 @@ export function ChannelTileHeading({ leading, meta = <ChannelTileStats /> }: { l
  * `memberStatProductTypes` entry and the latest post date. Without counts on the row, the creation date.
  */
 export function ChannelTileStats({ countRole }: { countRole?: EntityRole }) {
+  const { t } = useTranslation();
   const entity = useTileEntity();
   const counts = entity.included?.counts;
   const memberCount = counts && (countRole ? (counts.membership[countRole] ?? 0) : counts.membership.total);
@@ -193,10 +195,12 @@ export function ChannelTileMembers() {
 
 /** Banner overlay: a chip linking to the channel this one sits in. */
 export function ChannelTileParentChip({ parent }: { parent: EnrichedChannel | null | undefined }) {
+  const { t } = useTranslation();
   if (!parent) return null;
   return (
     <Link
       {...getChannelRoute(parent)}
+      {...pageTopHashNav}
       className="focus-effect absolute top-2 right-2 max-w-40 truncate rounded bg-background/60 px-1.5 py-0.5 text-xs backdrop-blur-xs hover:underline"
     >
       {t('c:in_channel', { name: parent.name })}
@@ -211,6 +215,7 @@ export function ChannelTileFooter({ children }: { children: ReactNode }) {
 
 /** Plain-text preview of the description; nothing for a row without a `description` field. It grows, so what follows sits at the bottom. */
 export function ChannelTileDescription() {
+  const { t } = useTranslation();
   const { description } = useTileEntity();
   if (description === undefined) return null;
   return <p className="grow text-muted-foreground text-sm">{(description && descriptionPreview(description)) || t('c:no_description')}</p>;
@@ -221,6 +226,7 @@ export function ChannelTileDescription() {
  * place of both when `hideOwnRole` is set, for grids that describe another user: typically a join button.
  */
 export function ChannelTileMembership({ hideOwnRole = false, fallback = null }: { hideOwnRole?: boolean; fallback?: ReactNode }) {
+  const { t } = useTranslation();
   const entity = useTileEntity();
   if (hideOwnRole) return fallback;
   if (entity.invited) {

@@ -15,7 +15,7 @@ type EntityWithIncluded = EnrichedChannel & Pick<Organization, 'included'>;
 const hasIncluded = (channel: EnrichedChannel): channel is EntityWithIncluded => 'included' in channel;
 
 export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const buttonRef = useRef(null);
 
   const createSheet = sheeter.getState().create;
@@ -44,7 +44,7 @@ export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel 
 
   return (
     <Button ref={buttonRef} disabled={channel.included.counts.membership.pending < 1} variant="ghost" size="xs" onClick={openSheet}>
-      {new Intl.NumberFormat('de-DE').format(channel.included.counts.membership.pending)} {t('c:pending').toLowerCase()}
+      {new Intl.NumberFormat(i18n.language).format(channel.included.counts.membership.pending)} {t('c:pending').toLowerCase()}
     </Button>
   );
 }

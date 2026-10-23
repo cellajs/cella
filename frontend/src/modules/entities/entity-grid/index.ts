@@ -11,6 +11,5 @@ export {
   ChannelTileRow,
   ChannelTileStats,
 } from './channel-tile';
-export { EntityGridBar, type EntityGridSortOption } from './entity-grid-bar';
+export { EntityGridBar } from './entity-grid-bar';
 export { BaseEntityGrid } from './grid';
-export { EntityGridSkeleton } from './skeleton';

@@ -2,7 +2,6 @@ import { onlineManager } from '@tanstack/react-query';
 import { MailIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { isUnconditionalCan } from 'shared';
 import { ConfirmText } from '~/modules/common/confirm-text';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
@@ -11,6 +10,7 @@ import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
+import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import { DeleteMemberships } from '~/modules/memberships/delete-memberships';
 import type { MembersTableWrapperProps } from '~/modules/memberships/members-table/members-table';
 import { PendingMembershipsCount } from '~/modules/memberships/pending-memberships-count';
@@ -20,7 +20,7 @@ import { InviteUsers } from '~/modules/user/invite-users';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 import { tw } from '~/utils/tw';
 
-type MembersTableBarProps = MembersTableWrapperProps & BaseTableBarProps<Member, MembersRouteSearchParams>;
+type MembersTableBarProps = MembersTableWrapperProps & BaseTableBarProps<Member, MembersRouteSearchParams> & { canUpdate: boolean };
 
 export function MembersTableBar({
   channel,
@@ -31,6 +31,7 @@ export function MembersTableBar({
   columns,
   setColumns,
   isSheet = false,
+  canUpdate,
   clearSelection,
 }: MembersTableBarProps) {
   const { t } = useTranslation();
@@ -45,19 +46,19 @@ export function MembersTableBar({
   const { q, role, order, sort } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', role: undefined } });
 
-  const canUpdate = isUnconditionalCan(channel.can?.[channel.entityType]?.update);
+  const organizationId = channelOrganizationId(channel);
   const entityType = channel.entityType;
 
   const onRoleChange = (role?: string) => {
     clearSelection();
-    setSearch({ role: role === 'all' ? undefined : (role as MembersRouteSearchParams['role']) });
+    setSearch({ role: role as MembersRouteSearchParams['role'] });
   };
 
   const openDeleteDialog = () => {
     createDialog(
       <DeleteMemberships
         tenantId={channel.tenantId}
-        organizationId={channel.organizationId || channel.id}
+        organizationId={organizationId}
         entityId={channel.id}
         entityType={channel.entityType}
         dialog
@@ -105,7 +106,7 @@ export function MembersTableBar({
       entityId: channel.id,
       entityType: channel.entityType,
       tenantId: channel.tenantId,
-      organizationId: channel.organizationId || channel.id,
+      organizationId,
     });
   };
 
@@ -117,22 +118,14 @@ export function MembersTableBar({
       searchName="memberSearch"
       actions={canUpdate && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInviteDialog} />}
       countExtra={canUpdate && !barFilters.isFiltered && <PendingMembershipsCount channel={channel} />}
-      filters={<SelectRole entityType={channel.entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10" />}
+      filters={<SelectRole entityType={channel.entityType} value={role} onChange={onRoleChange} className="h-10" />}
       // Export is gated like the other admin actions in this bar; row selection needs the same grant
       export={!isSheet && canUpdate ? { filename: `${entityType} members`, selectedRows: selected, fetchRows: fetchExport } : undefined}
       focusView={!isSheet}
       selection={{
         count: selected.length,
         onClear: clearSelection,
-        children: (
-          <TableBarButton
-            ref={deleteButtonRef}
-            variant="destructive"
-            onClick={openDeleteDialog}
-            icon={TrashIcon}
-            label={channel.id ? 'c:remove' : 'c:delete'}
-          />
-        ),
+        children: <TableBarButton ref={deleteButtonRef} variant="destructive" onClick={openDeleteDialog} icon={TrashIcon} label="c:remove" />,
       }}
       after={<div ref={inviteContainerRef} className="empty:hidden" />}
     />

@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { LogInIcon, MailIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { sendSsoRecoveryLink } from 'sdk';
+import { resendInvitationWithToken, sendSsoRecoveryLink } from 'sdk';
 import { isStrategyEnabled } from 'shared';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { ErrorNotice } from '~/modules/common/error-notice';
@@ -38,7 +38,7 @@ export function AuthErrorPage() {
 
   return (
     <ErrorNotice boundary="public">
-      {resendTokenId && <ResendInvitationButton resendData={{ tokenId: resendTokenId }} />}
+      {resendTokenId && <ResendInvitationButton send={() => resendInvitationWithToken({ body: { tokenId: resendTokenId } })} />}
 
       {offersRecoveryLink && (
         <Button loading={isSendingRecoveryLink} onClick={() => sendRecoveryLink()}>

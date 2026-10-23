@@ -47,8 +47,9 @@ interface TableBarShellProps<TRow extends object> extends ReturnType<typeof useT
   /** Name of the search input. */
   searchName: string;
   allowOfflineSearch?: boolean;
-  columns: ColumnOrColumnGroup<TRow>[];
-  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<TRow>[]>>;
+  /** The column toggle and the export render only with columns; a grid has none. */
+  columns?: ColumnOrColumnGroup<TRow>[];
+  setColumns?: Dispatch<SetStateAction<ColumnOrColumnGroup<TRow>[]>>;
   /** Buttons before the count, hidden while filtered. */
   actions?: ReactNode;
   /** Rendered after the count. */
@@ -105,8 +106,8 @@ export function TableBarShell<TRow extends object>({
           {filters && <FilterBarFilters>{filters}</FilterBarFilters>}
         </TableFilterBar>
 
-        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
-        {exportOptions && <Export className="max-lg:hidden" columns={columns} {...exportOptions} />}
+        {columns && setColumns && <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />}
+        {columns && exportOptions && <Export className="max-lg:hidden" columns={columns} {...exportOptions} />}
         {controls}
         {focusView && <FocusView iconOnly />}
       </TableBarContainer>

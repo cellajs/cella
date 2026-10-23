@@ -14,6 +14,7 @@ import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type AttachmentsTableBarProps = AttachmentsTableProps & BaseTableBarProps<Attachment, AttachmentsRouteSearchParams>;
@@ -35,7 +36,7 @@ export function AttachmentsTableBar({
   // A sub-organization channel homes its uploads on itself; the organization row is the
   // org. Publication is row-local, so the channel's `publicAt` is only the default a new row starts with.
   const isOrganization = channel.entityType === 'organization';
-  const organizationId = channel.organizationId ?? channel.id;
+  const organizationId = channelOrganizationId(channel);
   const publicAt = 'publicAt' in channel && typeof channel.publicAt === 'string' ? channel.publicAt : null;
   const placement = { ...(!isOrganization && { [appConfig.entityIdColumnKeys[channel.entityType]]: channel.id }), publicAt };
   const { open } = useAttachmentsUploadDialog(channel.tenantId, organizationId, placement);

@@ -9,11 +9,9 @@ import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import type {
   DeleteMembership,
-  InfiniteMemberQueryData,
   InviteMember,
   Member,
   MemberChannelProp,
-  MemberQueryData,
   MembershipChannelProp,
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
@@ -56,7 +54,7 @@ export const upsertMyMembershipCache = (membership: MembershipBase) => {
 
 /** Maps the members of every list under `key` and returns each list's previous data for rollback. */
 const patchMemberLists = (key: QueryKey, mapItems: (members: Member[]) => Member[]) => {
-  const previous: [QueryKey, MemberQueryData | InfiniteMemberQueryData][] = [];
+  const previous: MemberChannelProp[] = [];
   forEachListQuery<Member>(key, (queryKey, data) => {
     // A list's total moves only by the rows the write drops from that list.
     const items = getQueryItems(data);
@@ -70,7 +68,7 @@ const patchMemberLists = (key: QueryKey, mapItems: (members: Member[]) => Member
   return previous;
 };
 
-const onError = (_: ApiError, __: InviteMember | MutationUpdateMembership | DeleteMembership, context?: MemberChannelProp[]) => {
+const onError = (_: ApiError, __: MutationUpdateMembership | DeleteMembership, context?: MemberChannelProp[]) => {
   if (context?.length) {
     for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
   }
@@ -100,7 +98,6 @@ export const useInviteMemberMutation = () =>
         invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
       }
     },
-    onError,
   });
 
 export const useMemberUpdateMutation = () =>
@@ -114,11 +111,7 @@ export const useMemberUpdateMutation = () =>
       const { tenantId, organizationId, id } = path;
       const membershipInfo = { id, ...body };
 
-      const context = {
-        queryChannel: [] as MemberChannelProp[],
-        toastMessage: t('c:success.update_item', { item: t('c:membership') }),
-        channelType,
-      };
+      const context: MembershipChannelProp = { queryChannel: [], toastMessage: t('c:success.update_item', { item: t('c:membership') }) };
 
       if (body?.archived !== undefined) {
         context.toastMessage = t(`c:success.${body.archived ? 'archived' : 'restore'}_resource`, { resource: t(`c:${channelType}`) });
@@ -132,8 +125,7 @@ export const useMemberUpdateMutation = () =>
 
       const similarKey = memberQueryKeys.list.similarMembers({ entityId: channelId, entityType: channelType, tenantId, organizationId });
       await queryClient.cancelQueries({ queryKey: similarKey });
-      const previous = patchMemberLists(similarKey, (members) => updateMembers(members, membershipInfo));
-      for (const [queryKey, previousData] of previous) context.queryChannel.push([queryKey, previousData, id]);
+      context.queryChannel = patchMemberLists(similarKey, (members) => updateMembers(members, membershipInfo));
 
       return context;
     },
@@ -260,8 +252,5 @@ export const useChangeEntityRoleMutation = () =>
       cacheUpdate(getEntityQueryKeys(entity.entityType).list.base, [updatedEntity]);
 
       toaster.success(t('c:success.role_updated'));
-    },
-    onError: () => {
-      toaster.error(t('error:error'));
     },
   });

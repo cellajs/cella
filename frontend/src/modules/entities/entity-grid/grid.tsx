@@ -1,16 +1,21 @@
 import type { QueryKey } from '@tanstack/react-query';
-import { t } from 'i18next';
 import { BirdIcon, SearchIcon } from 'lucide-react';
 import { Fragment, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useMountedState } from '~/hooks/use-mounted-state';
 import type { TKey } from '~/lib/i18n-locales';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
-import { EntityGridSkeleton } from '~/modules/entities/entity-grid';
 import { Button } from '~/modules/ui/button';
+import { Skeleton } from '~/modules/ui/skeleton';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
+import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 /** limitedView shows at most this many tiles, and {@link EntityGridBar} hides itself at or below it when unfiltered. */
 export const gridPreviewLimit = 3;
+
+const entityGridClass = tw('grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-6 lg:grid-cols-[repeat(auto-fill,minmax(330px,1fr))]');
 
 type BaseEntityGridProps<TEntity extends { id: string }> = {
   label: TKey;
@@ -20,7 +25,7 @@ type BaseEntityGridProps<TEntity extends { id: string }> = {
   /** Renders one tile; a grid passes its own props through the closure, and tiles keep their identity when those change. */
   renderTile: (entity: TEntity) => ReactNode;
 
-  /** Approximate height of each tile in px, passed to skeleton (default: 180) */
+  /** Approximate height of each tile in px while loading (default: 180, a banner ChannelTile). */
   skeletonHeight?: number;
 
   // state
@@ -45,6 +50,19 @@ type BaseEntityGridProps<TEntity extends { id: string }> = {
 // Total subscriptions need a key unconditionally; this one never matches a cached list.
 const noTotalKey: QueryKey = ['entity-grid', 'no-total'];
 
+function EntityGridSkeleton({ tileHeight = 180 }: { tileHeight?: number }) {
+  const { hasStarted } = useMountedState();
+
+  return (
+    <div className={cn('transition-opacity duration-300', hasStarted ? 'opacity-100' : 'opacity-0', 'mb-12', entityGridClass)}>
+      {Array.from({ length: 6 }).map((_, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: static keys are fine here as this is a skeleton
+        <Skeleton key={index} className="w-full rounded-lg" style={{ height: `${tileHeight}px` }} />
+      ))}
+    </div>
+  );
+}
+
 export function BaseEntityGrid<TEntity extends { id: string }>({
   label,
   entities,
@@ -60,12 +78,8 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
   onExpand,
   queryKey,
 }: BaseEntityGridProps<TEntity>) {
+  const { t } = useTranslation();
   const total = useListQueryTotal(queryKey ?? noTotalKey);
-
-  const fetchMore = async () => {
-    if (!hasNextPage || isLoading || isFetching) return;
-    await fetchNextPage();
-  };
 
   if (isLoading || !entities) return <EntityGridSkeleton tileHeight={skeletonHeight} />;
 
@@ -84,7 +98,7 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
 
   return (
     <div className="mb-12">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 md:grid-cols-2 md:gap-6 lg:grid-cols-[repeat(auto-fill,minmax(330px,1fr))]">
+      <div className={entityGridClass}>
         {visibleEntities.map((entity) => (
           <Fragment key={entity.id}>{renderTile(entity)}</Fragment>
         ))}
@@ -97,7 +111,7 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
           </Button>
         </div>
       ) : (
-        <InfiniteLoader hasNextPage={!!hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} fetchMore={fetchMore} />
+        <InfiniteLoader hasNextPage={!!hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} fetchMore={fetchNextPage} />
       )}
     </div>
   );

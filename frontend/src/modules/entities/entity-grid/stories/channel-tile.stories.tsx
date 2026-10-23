@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { MembershipBase } from 'sdk';
-import { hierarchy } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import { expect, within } from 'storybook/test';
 import {
   ChannelTile,
@@ -22,6 +22,8 @@ import { withApp } from '~/stories/with-app';
 /** The app's organization roles: previews show the most privileged, the stats count the least privileged. */
 const mostPrivileged = hierarchy.getMostPrivilegedRole('organization');
 const leastPrivileged = hierarchy.getLeastPrivilegedRole('organization');
+// The tile counts the app's member-stat products, so the stories post what the app counts
+const postType = appConfig.memberStatProductTypes[0];
 
 const previews = ['Ada Lovelace', 'Grace Hopper', 'Alan Turing'].map((name, index) => ({ id: `user-${index}`, name, thumbnailUrl: null }));
 
@@ -40,8 +42,8 @@ const organization: ChannelTileEntity = {
   included: {
     counts: {
       membership: { [mostPrivileged]: 7, [leastPrivileged]: 41, pending: 2, total: 48 },
-      entities: { attachment: 12 },
-      activity: { attachment: { created: Date.parse('2026-10-01T12:00:00Z') } },
+      entities: { [postType]: 12 },
+      activity: { [postType]: { created: Date.parse('2026-10-01T12:00:00Z') } },
     },
     members: previews,
   },
@@ -118,8 +120,8 @@ export const LargeCounts: Story = {
         members: previews,
         counts: {
           membership: { [mostPrivileged]: 7, [leastPrivileged]: 1407, pending: 2, total: 1414 },
-          entities: { attachment: 21_312 },
-          activity: { attachment: { created: Date.parse('2026-10-01T12:00:00Z') } },
+          entities: { [postType]: 21_312 },
+          activity: { [postType]: { created: Date.parse('2026-10-01T12:00:00Z') } },
         },
       },
     },

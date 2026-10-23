@@ -16,6 +16,7 @@ import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
+import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { isDefaultListView } from '~/query/basic/create-query-keys';
 
@@ -41,8 +42,7 @@ export function AttachmentsTable({ channel, canUpload, isSheet = false }: Attach
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  // A sub-organization channel carries its organization's id; an organization is its own.
-  const organizationId = channel.organizationId ?? channel.id;
+  const organizationId = channelOrganizationId(channel);
   const updateAttachment = useAttachmentUpdateMutation(channel.tenantId, organizationId);
 
   const { q, sort, order } = search;

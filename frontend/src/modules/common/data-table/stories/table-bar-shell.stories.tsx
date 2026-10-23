@@ -23,7 +23,7 @@ const channel = {
   entityType: 'organization',
   tenantId: 'tenant-1',
   organizationId: 'org-1',
-  can: { organization: { update: true }, attachment: { delete: true } },
+  can: { attachment: { delete: true } },
 } as unknown as EnrichedChannel;
 
 type BarArgs = {
@@ -48,13 +48,12 @@ function Bar({ bar, q, role, selected = [], isSheet, canUpdate = true, setSearch
     selected: selected as never[],
   };
   const searchVars = { q, role, limit: 20 } as never;
-  const membersChannel = canUpdate ? channel : ({ ...channel, can: {} } as EnrichedChannel);
 
   if (bar === 'users') return <UsersTableBar {...common} searchVars={searchVars} />;
   if (bar === 'organizations') return <OrganizationsTableBar {...common} searchVars={searchVars} />;
   if (bar === 'tenants') return <TenantsTableBar {...common} searchVars={searchVars} />;
   if (bar === 'requests') return <RequestsTableBar {...common} searchVars={searchVars} />;
-  if (bar === 'members') return <MembersTableBar {...common} searchVars={searchVars} channel={membersChannel} isSheet={isSheet} />;
+  if (bar === 'members') return <MembersTableBar {...common} searchVars={searchVars} channel={channel} isSheet={isSheet} canUpdate={canUpdate} />;
   if (bar === 'attachments') return <AttachmentsTableBar {...common} searchVars={searchVars} channel={channel} isSheet={isSheet} canUpload />;
   return <PagesTableBar total={2} searchVars={{ q }} setSearch={setSearch} columns={[]} setColumns={() => {}} />;
 }

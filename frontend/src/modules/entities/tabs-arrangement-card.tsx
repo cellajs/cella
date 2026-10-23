@@ -72,20 +72,15 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
   const persistedOrderKey = (slotConfig?.order ?? []).join();
   useEffect(() => setDraftOrder(null), [persistedOrderKey]);
 
-  const candidates = getNavTabCandidates(parentRouteId).map(({ id, label, resource, description, order, locked }) => ({
-    id,
-    label,
-    resource,
-    description,
-    order,
-    locked,
-  }));
-  const rows = arrangePlacements(slot, candidates, draftOrder ? { order: draftOrder } : slotConfig).map((tab) => ({
-    ...tab,
-    name: t(tab.label, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' }),
-    description: tab.description ? t(tab.description, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' }) : undefined,
-    visible: !hidden.has(tab.id),
-  }));
+  const rows = arrangePlacements(slot, getNavTabCandidates(parentRouteId), draftOrder ? { order: draftOrder } : slotConfig).map((tab) => {
+    const resource = tab.resource ? t(tab.resource).toLowerCase() : '';
+    return {
+      ...tab,
+      name: t(tab.label, { resource }),
+      description: tab.description ? t(tab.description, { resource }) : undefined,
+      visible: !hidden.has(tab.id),
+    };
+  });
 
   const persistSlot = (nextConfig: SlotToolsConfig) => persist({ [slot]: nextConfig });
 

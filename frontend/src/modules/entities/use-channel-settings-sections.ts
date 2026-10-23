@@ -1,9 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { appConfig, type ChannelEntityType } from 'shared';
-import type { ChannelSlot } from 'shared/placements';
 import type { ToolsConfig } from 'shared/tools-config';
-import { type ChannelEntityContext, getSlotDescriptors, type PlacementDescriptor, resolvePlacementList } from '~/lib/placements';
+import { type ChannelEntityContext, getTools, type PlacementDescriptor, resolvePlacementList } from '~/lib/placements';
 import { heldContextRoles } from '~/modules/entities/context-roles';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
@@ -21,7 +20,7 @@ export type ChannelSettingsSection<C extends ChannelEntityType> = PlacementDescr
  */
 export function useChannelSettingsSections<C extends ChannelEntityType>(entity: ChannelSettingsHost<C>): ChannelSettingsSection<C>[] {
   const channelType = entity.entityType;
-  const slot = `${channelType}.settings` as ChannelSlot;
+  const slot: `${C}.settings` = `${channelType}.settings`;
 
   // Grants: every entity action the actor holds on this channel, resolved per row
   const resolveCan = useResolveCan();
@@ -32,7 +31,7 @@ export function useChannelSettingsSections<C extends ChannelEntityType>(entity: 
   const pairs = heldContextRoles(entity, myMemberships?.items ?? []);
 
   // Cast: registered settings tools carry a render the descriptor type erases
-  const tools = getSlotDescriptors(slot).map((tool) => ({ ...tool, order: tool.order ?? 50 })) as unknown as ChannelSettingsSection<C>[];
+  const tools = getTools(slot) as ChannelSettingsSection<C>[];
 
   return resolvePlacementList(slot, tools, { grants, pairs, slotConfig: entity.toolsConfig?.[slot] });
 }

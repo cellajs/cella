@@ -50,7 +50,6 @@ vi.mock('~/query/query-client', async () => {
 });
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('~/hooks/use-search-params', () => ({ useSearchParams: () => ({ search: seen.search, setSearch: vi.fn() }) }));
-vi.mock('~/hooks/use-route-context', () => ({ useOrganizationLayoutContext: () => ({ organizationId: 'org-1', tenantId: 'tenant-1' }) }));
 vi.mock('~/modules/common/data-table/data-table', () => ({
   DataTable: (props: unknown) => {
     seen.table.push(props);
@@ -73,7 +72,7 @@ vi.mock('~/modules/requests/table/requests-columns', () => ({ useColumns: () => 
 vi.mock('~/modules/memberships/members-table/members-bar', () => ({ MembersTableBar: captureBar }));
 vi.mock('~/modules/memberships/members-table/members-columns', () => ({ useColumns: () => [[], vi.fn()] }));
 vi.mock('~/modules/memberships/pending-table/pending-bar', () => ({ PendingMembershipsTableBar: captureBar }));
-vi.mock('~/modules/memberships/pending-table/pending-columns', () => ({ useColumns: () => [[], vi.fn()] }));
+vi.mock('~/modules/memberships/pending-table/pending-columns', () => ({ useColumns: () => [] }));
 vi.mock('~/modules/attachment/table/attachments-bar', () => ({ AttachmentsTableBar: captureBar }));
 vi.mock('~/modules/attachment/table/attachments-columns', () => ({ useColumns: () => [] }));
 

@@ -130,7 +130,7 @@ function seedMemberLists() {
 }
 
 describe('useMemberUpdateMutation', () => {
-  type Context = { queryChannel: [readonly unknown[], unknown, string | null][]; toastMessage: string };
+  type Context = { queryChannel: [readonly unknown[], unknown][]; toastMessage: string };
   const variables = {
     path: { id: 'm-u1', tenantId: 'tenant-1', organizationId: 'org-1' },
     body: { role: 'admin' as const },
@@ -163,10 +163,7 @@ describe('useMemberUpdateMutation', () => {
 
     // One rollback entry per list of the channel, holding the data from before the write.
     expect(context.queryChannel).toHaveLength(3);
-    for (const [key, previous, id] of context.queryChannel) {
-      expect(previous).toBe(before.get(key));
-      expect(id).toBe('m-u1');
-    }
+    for (const [key, previous] of context.queryChannel) expect(previous).toBe(before.get(key));
   });
 
   it('onSuccess: refetches role-filtered lists and writes the server membership into the others', async () => {

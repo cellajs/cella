@@ -156,7 +156,7 @@ describe('date columns', () => {
     },
     {
       name: 'pending memberships invited',
-      columns: () => columnsOf(() => pending.useColumns({ tenantId: 'tenant-1', organizationId: 'org-1' }, true)),
+      columns: () => columnsOf(() => pending.useColumns({ tenantId: 'tenant-1', organizationId: 'org-1' })),
       key: 'createdAt',
       config: { key: 'createdAt', name: 'c:invited_at', ...listedDate },
       row: { createdAt: created },

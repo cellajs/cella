@@ -1,13 +1,13 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+// biome-ignore lint/style/noRestrictedImports: colocated mutation for a single-button resend flow.
+import { resendPendingInvitation } from 'sdk';
 import { dateColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { ResendPendingInvitationCell } from '~/modules/memberships/pending-table/resend-pending-cell';
+import { ResendInvitationButton } from '~/modules/memberships/resend-invitation-button';
 import type { PendingMembership } from '~/modules/memberships/types';
 import { UserCell } from '~/modules/user/user-cell';
 
-/** `canResend`: the viewer holds `update` on the channel, which a resend needs. */
-export const useColumns = (path: { tenantId: string; organizationId: string }, canResend: boolean) => {
+export const useColumns = (path: { tenantId: string; organizationId: string }) => {
   const { t } = useTranslation();
 
   const columns: ColumnOrColumnGroup<PendingMembership>[] = [
@@ -30,17 +30,15 @@ export const useColumns = (path: { tenantId: string; organizationId: string }, c
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) => row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
     },
-  ];
-
-  if (canResend) {
-    columns.push({
+    {
       key: 'resend',
       name: '',
       width: 120,
-      placeholderValue: '-',
-      renderCell: ({ row }) => <ResendPendingInvitationCell {...path} membershipId={row.id} />,
-    });
-  }
+      renderCell: ({ row }) => (
+        <ResendInvitationButton variant="ghost" size="sm" send={() => resendPendingInvitation({ path: { ...path, id: row.id } })} />
+      ),
+    },
+  ];
 
-  return useState<ColumnOrColumnGroup<PendingMembership>[]>(columns);
+  return columns;
 };

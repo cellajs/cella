@@ -6,12 +6,12 @@ import type { MembershipBase } from 'sdk';
 import { ConfirmText } from '~/modules/common/confirm-text';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
-import type { LeaveChannelButtonProps } from '~/modules/memberships/leave-channel-button';
+import type { LeaveChannelProps } from '~/modules/memberships/leave-channel-button';
 import { LeaveChannelForm } from '~/modules/memberships/leave-channel-form';
 import { Button, type buttonVariants } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-type JoinedButtonProps = Omit<LeaveChannelButtonProps, 'buttonProps'> & {
+type JoinedButtonProps = LeaveChannelProps & {
   /** Membership role shown on the trigger ("✓ Admin"). */
   role?: MembershipBase['role'] | null;
   size?: VariantProps<typeof buttonVariants>['size'];
