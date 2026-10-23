@@ -319,6 +319,40 @@ describe('RLS Security Tests', () => {
         ),
       ).rejects.toThrow(/read-only transaction/);
     });
+
+    it('must not inline an id outside the id alphabet into the text that opens the transaction', async () => {
+      let ran = false;
+      const attempt = tenantReadById(`${TEST_TENANT_A}', true), set_config('app.tenant_id', '${TEST_TENANT_B}`, async () => {
+        ran = true;
+      });
+      await expect(attempt).rejects.toThrow(/id alphabet/);
+      expect(ran).toBe(false);
+    });
+
+    it('keeps a nested transaction a savepoint: its failure undoes its own work and keeps the tenant context', async () => {
+      const after = await tenantReadById(TEST_TENANT_A, async (tx) => {
+        await tx.execute(sql`SELECT set_config('app.probe', 'outer', true)`);
+        await expect(
+          tx.transaction(async (inner) => {
+            await inner.execute(sql`SELECT set_config('app.probe', 'inner', true)`);
+            throw new Error('inner failure');
+          }),
+        ).rejects.toThrow('inner failure');
+        return getRows<{ probe: string; tenant: string }>(
+          await tx.execute(sql`SELECT current_setting('app.probe', true) AS probe, current_setting('app.tenant_id', true) AS tenant`),
+        );
+      });
+      expect(after[0]).toEqual({ probe: 'outer', tenant: TEST_TENANT_A });
+    });
+
+    it('returns the connection of a failed transaction to the pool', async () => {
+      const pool = adminDb.$client;
+      const poolMax = 'totalCount' in pool ? (pool.options.max ?? 10) : 10;
+      for (let attempt = 0; attempt <= poolMax; attempt++) {
+        await expect(tenantReadById(TEST_TENANT_A, () => Promise.reject(new Error('failed read')))).rejects.toThrow('failed read');
+      }
+      await expect(tenantReadById(TEST_TENANT_A, async () => 'served')).resolves.toBe('served');
+    });
   });
 });
 

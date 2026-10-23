@@ -1,4 +1,14 @@
-import { type NodePgClient, type NodePgDatabase, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
+import { DefaultLogger, type Logger } from 'drizzle-orm';
+import {
+  type NodePgClient,
+  type NodePgDatabase,
+  NodePgSession,
+  NodePgTransaction,
+  nodePgCodecs,
+  drizzle as pgDrizzle,
+} from 'drizzle-orm/node-postgres';
+import { PgDialect } from 'drizzle-orm/pg-core';
+import type { Pool } from 'pg';
 import { appConfig } from 'shared';
 import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
 
@@ -34,6 +44,12 @@ interface CreatePgConnectionOptions {
 /** A connection quiet this long gets TCP keepalive probes, so a dead peer or a middlebox idle timeout ends it. */
 const keepAliveIdleMs = 30_000;
 
+/** The dialect drizzle builds for a node-postgres client given neither `jit` nor `codecs`, as every client here is. */
+const dialect = new PgDialect({ codecs: nodePgCodecs });
+
+/** The query logger of each client that has one, so a transaction opened on its pool logs alike. */
+const queryLoggers = new WeakMap<PgDB, Logger>();
+
 /**
  * A drizzle client on a pool of its own, for the API and both workers. Drizzle's query logger prints every query with
  * the values it bound (tokens, email addresses) to stdout, so `debug` turns it on in development only.
@@ -44,8 +60,9 @@ const keepAliveIdleMs = 30_000;
 export const createPgConnection = (
   url: string,
   { max, sslCa, debug = false, connectionTimeoutMillis = 10_000, sessionTimeouts }: CreatePgConnectionOptions,
-): PgDB =>
-  pgDrizzle({
+): PgDB => {
+  const logger = debug && appConfig.mode === 'development' ? new DefaultLogger() : undefined;
+  const db = pgDrizzle({
     connection: {
       connectionString: stripPostgresSslParams(url),
       connectionTimeoutMillis,
@@ -60,5 +77,54 @@ export const createPgConnection = (
       ...(sessionTimeouts ? { lock_timeout: sessionTimeouts.lockMs, statement_timeout: sessionTimeouts.statementMs } : {}),
       ...(sessionTimeouts?.idleInTransactionMs ? { idle_in_transaction_session_timeout: sessionTimeouts.idleInTransactionMs } : {}),
     },
-    logger: debug && appConfig.mode === 'development',
+    logger,
   });
+  if (logger) queryLoggers.set(db, logger);
+  return db;
+};
+
+/** Only a pg Pool counts its clients; the NODB stub yields undefined. */
+const isPool = (client: unknown): client is Pool => typeof client === 'object' && client !== null && 'totalCount' in client;
+
+/**
+ * Runs `fn` in a transaction on a connection of its own from the client's pool, started by `opening`: BEGIN and the
+ * statements that must precede the rest, sent as one simple-protocol message, so they cost one round trip where
+ * drizzle's `transaction()` spends one on BEGIN alone. Otherwise it behaves like drizzle's: a nested `transaction()` is
+ * a savepoint, a failure rolls back, and a connection that failed is destroyed, never returned to the pool.
+ * @param opening - Text with no bound parameters: every value in it is already escaped.
+ * @throws When the client has no pool, or whatever the opening or `fn` throws.
+ */
+export async function transactionOpenedWith<T>(db: PgDB, opening: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+  const pool = db.$client;
+  if (!isPool(pool)) throw new Error('A transaction opened in one round trip needs a pg pool');
+  const client = await pool.connect();
+  let broken: Error | undefined;
+  const onError = (error: Error) => {
+    broken ??= error;
+  };
+  client.on('error', onError);
+  try {
+    await client.query(opening);
+  } catch (error) {
+    // BEGIN may have run before the statement that failed: destroying the connection ends what it started.
+    client.off('error', onError);
+    client.release(true);
+    throw error;
+  }
+  const tx: Tx = new NodePgTransaction(dialect, new NodePgSession(client, dialect, {}, { logger: queryLoggers.get(db) }), {}, undefined, false);
+  try {
+    const result = await fn(tx);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    if (!broken) {
+      await client.query('ROLLBACK').catch((rollbackError: Error) => {
+        broken = rollbackError;
+      });
+    }
+    throw error;
+  } finally {
+    if (!broken) client.off('error', onError);
+    client.release(broken);
+  }
+}

@@ -31,6 +31,8 @@ export const attachmentsTable = snakeCase.table(
   },
   (table) => [
     ...productIndexes('attachments', table),
+    // The list's default order, read backward: `.desc()` would emit NULLS LAST, which an `ORDER BY ... DESC` cannot use.
+    index('attachments_organization_id_created_at_index').on(table.organizationId, table.createdAt, table.id),
     index('attachments_group_id_index').on(table.groupId),
     // An index per sub-organization ancestor column; none for org-homed rows.
     ...channelRelationIndexes('attachments', table, 'attachment'),

@@ -98,7 +98,7 @@ async function run(): Promise<SideEffectBlock> {
       const perPolicy = contract.map(({ name, command, expression }) => {
         const expressionCheck =
           expression === 'tenant'
-            ? `pg_get_expr(p.polqual, p.polrelid) LIKE '%app.tenant_id%' AND pg_get_expr(p.polqual, p.polrelid) LIKE '%tenant_id)::text = current_setting%'`
+            ? `pg_get_expr(p.polqual, p.polrelid) LIKE '%app.tenant_id%' AND pg_get_expr(p.polqual, p.polrelid) LIKE '%tenant_id)::text = ( SELECT current_setting(''app.tenant_id''%'`
             : `COALESCE(pg_get_expr(p.polwithcheck, p.polrelid), pg_get_expr(p.polqual, p.polrelid)) = 'true'`;
         return `  IF NOT EXISTS (
     SELECT 1 FROM pg_policy p JOIN pg_class c ON c.oid = p.polrelid
