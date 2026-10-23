@@ -39,21 +39,20 @@ describe('persister query filter', () => {
   });
 });
 
-const pausedMutation = (key: string) =>
-  ({
-    mutationKey: ['attachment', 'update'],
-    state: {
-      context: undefined,
-      data: undefined,
-      error: null,
-      failureCount: 0,
-      failureReason: null,
-      isPaused: true,
-      status: 'pending',
-      variables: { id: key, ops: { name: key } },
-      submittedAt: Date.now(),
-    },
-  }) as unknown as NonNullable<PersistedClient['clientState']['mutations']>[number];
+const pausedMutation = (key: string): PersistedClient['clientState']['mutations'][number] => ({
+  mutationKey: ['attachment', 'update'],
+  state: {
+    context: undefined,
+    data: undefined,
+    error: null,
+    failureCount: 0,
+    failureReason: null,
+    isPaused: true,
+    status: 'pending',
+    variables: { id: key, ops: { name: key } },
+    submittedAt: Date.now(),
+  },
+});
 
 const clientWith = (mutations: PersistedClient['clientState']['mutations']): PersistedClient => ({
   timestamp: Date.now(),
@@ -61,7 +60,7 @@ const clientWith = (mutations: PersistedClient['clientState']['mutations']): Per
   clientState: { queries: [], mutations },
 });
 
-describe('persister per-tab mutation records (D5)', () => {
+describe('persister per-tab mutation records', () => {
   const persister = createIDBPersister('rq');
 
   beforeEach(async () => {

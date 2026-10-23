@@ -1,8 +1,8 @@
 import type { ApiError } from '~/lib/api';
 
-/** Shared by queries and mutations; passed as `meta: { ... }` on `useQuery`, `useMutation`, or `queryOptions`. A type alias: `Register` takes a meta only when it extends `Record<string, unknown>`, and an interface does not. */
+/** The `meta` of every query and mutation. A type alias: `Register` takes a meta only when it extends `Record<string, unknown>`, and an interface does not. */
 export type QueryMeta = {
-  /** Skip dehydrating this query into the persisted IDB cache. Default: true. */
+  /** `false` keeps the query out of the persisted cache. Default: true. */
   persist?: boolean;
   /** Skips the global error toast; a predicate suppresses only the errors it matches. */
   suppressGlobalErrorToast?: boolean | ((error: ApiError) => boolean);
@@ -13,7 +13,7 @@ export type QueryMeta = {
   variablesVersion?: number;
 };
 
-// Makes ApiError the default error type for every TanStack Query hook and types `meta` for the suppression flag.
+// Makes ApiError the default error type of every TanStack Query hook, and QueryMeta the type of every `meta`.
 declare module '@tanstack/react-query' {
   interface Register {
     defaultError: ApiError;

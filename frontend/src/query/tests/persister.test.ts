@@ -47,10 +47,8 @@ const { uiStore } = await import('~/modules/ui/ui-store');
 const { bindLocalUserDb, deleteLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
 const { registerVariablesVersion } = await import('~/query/offline/mutation-variables');
 
-// Snapshot of the listeners registered at import time: a reload fires `beforeunload`, so a teardown wired there would wipe the session cache on every refresh.
+// Snapshot of the listeners registered at import time: a reload fires `beforeunload`, so a teardown registered there would wipe the session cache on every refresh.
 const importTimeWindowListeners = new Map(addWindowListener.mock.calls.map(([type, listener]) => [type, listener]));
-
-// Helpers
 
 function makeQuery(hash: string, entityType: string, dataUpdatedAt: number, data: unknown = null) {
   return {
@@ -115,8 +113,6 @@ async function holdTabLock(tabId: string): Promise<() => void> {
 async function deleteDb() {
   await deleteLocalUserDb();
 }
-
-// Tests
 
 describe('per-query IDB persister', () => {
   beforeEach(async () => {
@@ -643,7 +639,7 @@ describe('session persister survives reload', () => {
   });
 
   it('registers no beforeunload teardown that would wipe the session cache on reload', () => {
-    // `beforeunload` cannot tell a reload from a closed tab, so age-based orphan cleanup preserves reload caches while reclaiming closed sessions.
+    // `beforeunload` cannot tell a reload from a closed tab, so the startup sweep reclaims closed tabs' scopes and a reloaded tab keeps its scope.
     expect(importTimeWindowListeners.has('beforeunload')).toBe(false);
   });
 });

@@ -45,8 +45,6 @@ describe('onError network error detection', () => {
     }
   });
 
-  // --- False positive protection ---
-
   it('should NOT trigger probe for unrelated TypeError', () => {
     onError(new TypeError('Cannot read properties of undefined'));
     expect(mockCheckConnectivity).not.toHaveBeenCalled();
@@ -121,6 +119,13 @@ describe('onError toast', () => {
     mockToaster.error.mockClear();
     onError(new ApiError({ status: 500, type: 'server_error', severity: 'error' }));
     expect(descriptionOf(mockToaster.error)?.props).toMatchObject({ cause: undefined });
+  });
+
+  it('toasts a fatal failure as an error', () => {
+    onError(new ApiError({ status: 500, type: 'server_error', severity: 'fatal', requestId: 'req-5' }));
+
+    expect(mockToaster.error).toHaveBeenCalledWith('error:server_error', expect.anything());
+    expect(mockToaster.info).not.toHaveBeenCalled();
   });
 
   it('explains a refusal without a request id', () => {

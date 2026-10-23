@@ -6,7 +6,7 @@ import type { FailedSyncRecord } from '~/query/offline/failed-sync';
 
 type DehydratedQuery = DehydratedState['queries'][number];
 
-/** Generic key/value row backing migrated zustand stores (value = JSON string). */
+/** A key/value row of a per-user zustand store. */
 export interface KvRecord {
   /** Store base name, e.g. `seen`, `sync`, `navigation`. */
   key: string;
@@ -25,9 +25,9 @@ export interface PersistedQueryRecord {
   dataUpdatedAt: number;
 }
 
-/** React Query meta row, one per scope: the bundled queries (every query that is not a product query), mutations, and cache-bust version. */
+/** A React Query meta row: a scope's bundled queries (every query that is not a product query) and version stamps, or one tab's paused mutations. */
 export interface PersistedMetaRecord {
-  /** Scope key: `rq` (offline) or `s-<uuid>` (session). */
+  /** A scope's row: `rq` (offline) or `s-<uuid>` (session). A tab's row: `<scope>:mut:<tabSessionId>`, with no queries. */
   key: string;
   timestamp: number;
   buster: string;
@@ -122,7 +122,7 @@ export class LocalUserDatabase extends Dexie {
   blobs!: Dexie.Table<AttachmentBlob, string>;
   /** Background download queue for offline attachment caching. */
   downloadQueue!: Dexie.Table<DownloadQueueEntry, string>;
-  /** Quarantined mutations that exhausted retries (offline replay failures). */
+  /** Queued mutations kept for repair: replays the server refused with a 4xx, and ones this bundle cannot read. */
   failedSync!: Dexie.Table<FailedSyncRecord, number>;
   /** Collaborative documents opened for editing: metadata only, so a scan over all of them loads no state. */
   yDocs!: Dexie.Table<YDocRecord, [ProductEntityType, string]>;
@@ -178,14 +178,14 @@ export function bindLocalUserDb(ownerId: string): LocalUserDatabase {
   return currentDb;
 }
 
-/** Close and unbind the current per-user DB (sign-out / account switch). */
+/** Close and unbind the current per-user DB; its data stays on disk. */
 export function closeLocalUserDb(): void {
   currentDb?.close();
   currentDb = null;
   currentOwnerId = null;
 }
 
-/** Permanently delete the current per-user DB for account removal. */
+/** Close the current per-user DB and delete it from disk: a hard sign-out. */
 export async function deleteLocalUserDb(): Promise<void> {
   const owner = currentOwnerId;
   closeLocalUserDb();

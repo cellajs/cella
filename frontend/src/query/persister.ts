@@ -18,9 +18,7 @@ const inCurrentShape = (mutations: DehydratedMutation[]): DehydratedMutation[] =
 
 const sessionKeyPrefix = 's-';
 const sessionIdStorageKey = `${appConfig.slug}-tab-session-id`;
-const orphanMaxAgeMs = 2 * 60 * 60 * 1000; // 2 hours
-
-// Query classification
+const orphanMaxAgeMs = 2 * 60 * 60 * 1000;
 
 /** What the persister writes: a query that succeeded and does not opt out through `meta: { persist: false }` (a bearer token, another account's data). */
 export const shouldPersistQuery = (query: Query): boolean => query.state.status === 'success' && query.meta?.persist !== false;
@@ -38,15 +36,14 @@ const tabSessionId = getTabSessionId();
 const sessionScope = `${sessionKeyPrefix}${tabSessionId}`;
 const hasWebLocks = typeof navigator !== 'undefined' && 'locks' in navigator;
 
-// Paused mutations persist per tab so no tab overwrites another's queue; restore absorbs records whose tab lock is dead, falling back to record age without Web Locks.
 /** Tabs of every bundle version lock and query this name, so it never changes. */
 const tabLockPrefix = `${appConfig.slug}-mutation-owner:`;
 
 const mutationRecordPrefix = (scope: string) => `${scope}:mut:`;
 
+/** Holds this tab's lock until the tab closes: other tabs' restore and session sweep read it as this tab being open. */
 function holdTabLock(): void {
   if (!hasWebLocks) return;
-  // Held forever (released by tab close); other tabs detect liveness via locks.query().
   void navigator.locks.request(`${tabLockPrefix}${tabSessionId}`, () => new Promise(() => {}));
 }
 
@@ -78,22 +75,19 @@ async function deleteScope(db: LocalUserDatabase, scope: string): Promise<void> 
 /** What the bundled queries are diffed by: each query's hash and data timestamp. */
 const snapshotOf = (queries: DehydratedQuery[]) => JSON.stringify(queries.map(({ queryHash, state }) => [queryHash, state.dataUpdatedAt]));
 
-// Persister factory
-
-/** Throttle full-cache dehydration and IndexedDB persistence to one write per interval. */
+/** One IndexedDB write per interval: the latest snapshot wins. */
 const persistThrottleMs = 1000;
 
 /** Chunk size for the lens boot-migration pass (records per Dexie transaction). */
 const migrationChunkSize = 200;
 
-/** In-memory change trackers per persister, reset on owner (DB) rebind. */
 const trackerResets: Array<() => void> = [];
 
 /**
  * IndexedDB persister backed by the live `localUserDb`: product entity queries get one record each for incremental diffing, every other query is bundled into the meta record.
  * Every operation no-ops while no per-user DB is bound (signed out).
  */
-export function createIDBPersister(scope = 'rq') {
+export function createIDBPersister(scope: string) {
   const isSessionScope = scope.startsWith(sessionKeyPrefix);
   const tabMutationKey = `${mutationRecordPrefix(scope)}${tabSessionId}`;
   /** queryHash to last persisted dataUpdatedAt, product queries only. */
@@ -112,7 +106,6 @@ export function createIDBPersister(scope = 'rq') {
   }
   trackerResets.push(resetTracker);
 
-  /** Remove all records for this scope: queries, the meta record, and per-tab mutation records. */
   async function clearScope(db: LocalUserDatabase) {
     await db.transaction('rw', db.queries, db.meta, () => deleteScope(db, scope));
     resetTracker();
@@ -131,7 +124,10 @@ export function createIDBPersister(scope = 'rq') {
     resetTracker();
   }
 
-  /** Migrate cached rows, bundled queries, and mutation variables in restart-safe chunks; the schema pointer advances only in the final metadata transaction. */
+  /**
+   * Migrate cached rows, bundled queries and mutation variables in chunks. The lenses are idempotent, so a pass cut
+   * short runs again safely; the schema pointer advances only in the final metadata write.
+   */
   async function migrateScopeToCurrent(db: LocalUserDatabase, fromVersion: number) {
     const records = await db.queries.where('scope').equals(scope).toArray();
     for (let i = 0; i < records.length; i += migrationChunkSize) {
@@ -146,8 +142,7 @@ export function createIDBPersister(scope = 'rq') {
       if (rewritten.length > 0) await db.queries.bulkPut(rewritten);
     }
 
-    // Per-tab mutation records migrate in the same pass (their variables carry old shapes too). The variables upgrade
-    // goes first, so the lenses find the rows under the keys this bundle reads.
+    // Each tab's queue migrates too, after the variables upgrade, so the lenses find the rows under the keys this bundle reads.
     const mutationRecords = await db.meta.where('key').startsWith(mutationRecordPrefix(scope)).toArray();
     for (const record of mutationRecords) {
       await db.meta.put({ ...record, mutations: migrateMutations(inCurrentShape(record.mutations ?? []), fromVersion) });
@@ -274,7 +269,7 @@ export function createIDBPersister(scope = 'rq') {
 
   return {
     persistClient: async (client: PersistedClient) => {
-      if (!getLocalUserDb()) return; // Signed out → in-memory only
+      if (!getLocalUserDb()) return;
       pendingClient = client;
       if (!timer) {
         timer = setTimeout(flush, persistThrottleMs);
@@ -292,7 +287,7 @@ export function createIDBPersister(scope = 'rq') {
 
     restoreClient: async (): Promise<PersistedClient | undefined> => {
       const db = getLocalUserDb();
-      if (!db) return undefined; // Signed out → in-memory cache
+      if (!db) return undefined;
       try {
         let meta = await db.meta.get(scope);
         if (!meta) return undefined;
@@ -341,7 +336,7 @@ export function createIDBPersister(scope = 'rq') {
 
         // Restores shared data, this tab's record, and orphaned tab records; live tabs keep theirs, and age substitutes when lock liveness is undetectable.
         const prefix = mutationRecordPrefix(scope);
-        const mutationRecords = (await db.meta.where('key').startsWith(prefix).toArray()) ?? [];
+        const mutationRecords = await db.meta.where('key').startsWith(prefix).toArray();
         const live = await liveTabSessionIds();
         const restoredMutations = [...(meta.mutations ?? [])];
         const absorbedKeys: string[] = [];
@@ -355,7 +350,6 @@ export function createIDBPersister(scope = 'rq') {
         }
         if (absorbedKeys.length > 0) await db.meta.bulkDelete(absorbedKeys);
 
-        // A mutation queued by an older bundle is brought to the variables shape this one reads, or quarantined.
         const mutations = inCurrentShape(restoredMutations);
 
         return {
@@ -391,7 +385,6 @@ export const persister = createIDBPersister('rq');
 /** Session-scoped persister: per-tab scope, survives reload, reclaimed after the tab closes. */
 export const sessionPersister = createIDBPersister(sessionScope);
 
-/** The persister the offline access switch names now. */
 const currentPersister = () => (uiStore.getState().offlineAccess ? persister : sessionPersister);
 
 /**
@@ -457,5 +450,4 @@ export async function cleanupOrphanedSessions(): Promise<void> {
   }
 }
 
-// Advertise this tab's liveness to other tabs' restore and session sweep.
 holdTabLock();

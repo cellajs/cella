@@ -41,7 +41,8 @@ export function idbKvStorage(key: string): StateStorage {
 
   return {
     getItem: async () => {
-      if (pending) return pending.value; // read-after-write: pending value wins over disk
+      // A write still in the debounce window is newer than the disk.
+      if (pending) return pending.value;
       const row = await getLocalUserDb()?.kv.get(key);
       return row?.value ?? null;
     },

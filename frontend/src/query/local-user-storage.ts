@@ -27,9 +27,7 @@ export { subscribeOwnerChange } from '~/query/local-user-db';
 /** Owner to bind: the current user, unless impersonated (then ephemeral, no durable DB). */
 function resolveOwner(): string | null {
   const { user, impersonator } = userStore.getState();
-  if (impersonator) return null;
-  const id = user?.id;
-  return typeof id === 'string' && id.length > 0 ? id : null;
+  return impersonator ? null : user?.id || null;
 }
 
 async function hydrateAll(): Promise<void> {

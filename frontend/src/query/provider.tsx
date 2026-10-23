@@ -32,7 +32,7 @@ interface QueryClientProviderProps {
   children: ReactNode;
 }
 
-/** Adds cache persistence and offline support: the persister is session or IndexedDB per offlineAccess. */
+/** Provides the query client with its persisted cache, and starts the services that work from it. */
 export function QueryClientProvider({ children }: QueryClientProviderProps) {
   const offlineAccess = useUIStore((state) => state.offlineAccess);
   const toggleOfflineAccess = useUIStore((state) => state.toggleOfflineAccess);
@@ -45,10 +45,8 @@ export function QueryClientProvider({ children }: QueryClientProviderProps) {
     cleanupOrphanedSessions();
   }, []);
 
-  // Stored collaborative documents: evicted past their limits, and unsynced ones uploaded by the leader tab.
   useEffect(() => startYjsStore(), []);
 
-  // Started at mount, not module eval, to avoid a circular-import TDZ during HMR: provider -> download-service -> attachment/query -> realtime -> query/index -> provider.
   useEffect(() => {
     downloadService.start();
 

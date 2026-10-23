@@ -16,7 +16,7 @@ interface StxVariables {
   stx?: { mutationId?: string; replayed?: boolean };
 }
 
-/** stx mutations carry stx.mutationId on the variables (single or batch shape). */
+/** The stx mutation id of a mutation's variables; a batch's comes from its first item. */
 function mutationIdOf(variables: unknown): string | undefined {
   const stxVariables = variables as StxVariables | StxVariables[] | undefined;
   return Array.isArray(stxVariables) ? stxVariables[0]?.stx?.mutationId : stxVariables?.stx?.mutationId;
@@ -46,26 +46,10 @@ function quarantineOnClientError(error: ApiError, variables: unknown, mutationKe
   quarantineFailedSync({ mutationId, entityType, clientCacheVersion: appConfig.clientCacheVersion, status, variables, error }).catch(() => {});
 }
 
-const mutationCacheConfig = {
-  onError: (error: ApiError, variables: unknown, _onMutateResult: unknown, mutation: { meta?: QueryMeta; options?: { mutationKey?: unknown } }) => {
-    quarantineOnClientError(error, variables, mutation.options?.mutationKey);
-    return handleError(error, mutation.meta);
-  },
-  onSuccess: (_data: unknown, variables: unknown) => {
-    const mutationId = mutationIdOf(variables);
-    if (mutationId) replayingMutationIds.delete(mutationId);
-    return handleSuccess();
-  },
-};
-
-const queryCacheConfig = {
-  onError: (error: ApiError, query: { meta?: QueryMeta }) => handleError(error, query.meta),
-  onSuccess: handleSuccess,
-};
-
-const defaultStaleTime = 1000 * 30 * 1; // 30 seconds
-const offlineStaleTime = Number.POSITIVE_INFINITY; // Infinite when offline
-const defaultGcTime = 1000 * 60 * 60 * 24 * 7; // 7 days
+const defaultStaleTime = 30 * 1000;
+/** Offline, no query goes stale by age; `Infinity` and not `'static'`, so an invalidated query still refetches. */
+const offlineStaleTime = Number.POSITIVE_INFINITY;
+const defaultGcTime = 7 * 24 * 60 * 60 * 1000;
 
 function handleOnlineStatus() {
   onlineManager.setOnline(navigator.onLine);
@@ -92,16 +76,25 @@ function flagPausedMutations(client: QueryClient): void {
   });
 }
 
-/**
- * QueryClient instance preserved across HMR to keep the cache intact.
- *
- * @link https://tanstack.com/query/latest/docs/reference/QueryClient
- */
+/** The app's one query client, kept across HMR so the cache survives a module update. */
 export const queryClient: QueryClient =
-  (import.meta.hot?.data?.queryClient as QueryClient) ??
+  import.meta.hot?.data?.queryClient ??
   new QueryClient({
-    mutationCache: new MutationCache(mutationCacheConfig),
-    queryCache: new QueryCache(queryCacheConfig),
+    mutationCache: new MutationCache({
+      onError: (error, variables, _onMutateResult, mutation) => {
+        quarantineOnClientError(error, variables, mutation.options.mutationKey);
+        return handleError(error, mutation.meta);
+      },
+      onSuccess: (_data, variables) => {
+        const mutationId = mutationIdOf(variables);
+        if (mutationId) replayingMutationIds.delete(mutationId);
+        return handleSuccess();
+      },
+    }),
+    queryCache: new QueryCache({
+      onError: (error, query) => handleError(error, query.meta),
+      onSuccess: handleSuccess,
+    }),
     defaultOptions: {
       queries: {
         networkMode: 'offlineFirst',
@@ -110,7 +103,7 @@ export const queryClient: QueryClient =
 
         refetchOnMount: false,
         refetchOnWindowFocus: false,
-        refetchOnReconnect: true, // Automatically refetch when coming back online
+        refetchOnReconnect: true,
 
         retry: false,
       },
@@ -126,31 +119,26 @@ export const queryClient: QueryClient =
 if (!import.meta.hot?.data?.listenersAttached) flagPausedMutations(queryClient);
 
 let resolveCacheRestored: () => void;
-/**
- * Resolves once PersistQueryClientProvider has restored the IDB cache.
- * @public
- */
-export const cacheRestored: Promise<void> =
-  (import.meta.hot?.data?.cacheRestored as Promise<void>) ?? new Promise<void>((resolve) => (resolveCacheRestored = resolve));
+/** Resolves once PersistQueryClientProvider has restored the persisted cache. */
+export const cacheRestored: Promise<void> = import.meta.hot?.data?.cacheRestored ?? new Promise<void>((resolve) => (resolveCacheRestored = resolve));
 export function markCacheRestored() {
   resolveCacheRestored();
 }
 
-// Preserve queryClient and listener state across HMR
 if (import.meta.hot) {
   import.meta.hot.data.queryClient = queryClient;
   import.meta.hot.data.cacheRestored = cacheRestored;
   import.meta.hot.data.listenersAttached = true;
 }
 
-/** `true` while offline with offline access on: nothing goes stale, so nothing refetches. `false` restores the default. */
+/** `true` while offline with offline access on; `false` restores the default. */
 export function setOfflineStaleTime(offline: boolean): void {
   const staleTime = offline ? offlineStaleTime : defaultStaleTime;
   queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, staleTime } });
   console.debug(`[Query] StaleTime: ${offline ? 'infinite (offline)' : `${defaultStaleTime / 1000}s`}`);
 }
 
-/** Called when going from offline to online. */
+/** Back online: every query goes stale, and the mounted ones refetch in the background. */
 export function silentRevalidateOnReconnect(): void {
   queryClient.invalidateQueries({ refetchType: 'active' });
   console.debug('[Query] Silent revalidation on reconnect');
