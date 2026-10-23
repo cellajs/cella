@@ -2,8 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { PaperclipIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
-import { appConfig } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
+import { canUploadAttachments } from '~/modules/attachment/helpers/can-upload-attachments';
 import { attachmentsCanonicalOptions, attachmentsListQueryOptions, useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
 import { AttachmentsTableBar } from '~/modules/attachment/table/attachments-bar';
@@ -37,9 +37,7 @@ export interface AttachmentsTableProps {
 }
 
 export function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTableProps) {
-  // Create has no row to resolve 'own' against: upload takes an unconditional grant on a channel in `attachmentUploadTargets`.
-  const isUploadTarget = appConfig.attachmentUploadTargets.some((type) => type === channel.entityType);
-  const allowUpload = canUpload ?? (isUploadTarget && channel.can?.attachment?.create === true);
+  const allowUpload = canUpload ?? canUploadAttachments(channel);
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
@@ -83,7 +81,7 @@ export function AttachmentsTable({ channel, canUpload, isSheet = false }: Attach
       <AttachmentsTableBar
         channel={channel}
         selected={selected}
-        searchVars={{ ...search, limit: appConfig.requestLimits.attachments }}
+        searchVars={search}
         setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
