@@ -3,7 +3,7 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 
 interface Props {
   children: ReactNode;
-  /** The question asked: a `ConfirmText` when it names what the action hits, so that name shows in bold. */
+  /** The question asked: a `NamedText` when it names what the action hits, so that name shows in bold. */
   title: ReactNode;
 }
 

@@ -38,7 +38,7 @@
 
 ## Requirements
 
-- Node.js 26, best the exact version of the root `package.json` `engines.node`, which CI and the images run (`node -v`)
+- Node.js 26
 - [Docker](https://docs.docker.com/get-docker/)
 - [git over ssh](https://docs.github.com/en/authentication/connecting-to-github-with-ssh) and the [gh cli](https://cli.github.com/)
 

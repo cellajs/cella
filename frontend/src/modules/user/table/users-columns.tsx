@@ -2,11 +2,11 @@ import i18n from 'i18next';
 import { PencilIcon, TrashIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ConfirmText } from '~/modules/common/confirm-text';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { dateColumn, ellipsisColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { NamedText } from '~/modules/common/named-text';
 import { openPopConfirm } from '~/modules/common/popconfirm';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
@@ -60,10 +60,7 @@ export const useColumns = () => {
         icon: TrashIcon,
         onSelect: (row) => {
           const callback = () => useDropdowner.getState().remove();
-          openPopConfirm(
-            <ConfirmText i18nKey="c:delete_confirm.text" values={{ name: row.name }} />,
-            <DeleteUsers users={[row]} callback={callback} />,
-          );
+          openPopConfirm(<NamedText i18nKey="c:delete_confirm.text" name={row.name} />, <DeleteUsers users={[row]} callback={callback} />);
         },
       },
     ]),

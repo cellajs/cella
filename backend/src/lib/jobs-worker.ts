@@ -16,6 +16,14 @@ import '#/modules'; // composition root: registers every backend module, whose j
 const INSTALL_WAIT_MS = 5 * 60 * 1000;
 const INSTALL_POLL_MS = 5_000;
 
+/** Time until a run, as coarse as a startup line needs: 43m, 5h 43m, 2d 5h. */
+function timeUntil(at: Date): string {
+  const minutes = Math.max(1, Math.ceil((at.getTime() - Date.now()) / 60_000));
+  const [days, hours, mins] = [Math.floor(minutes / 1440), Math.floor((minutes % 1440) / 60), minutes % 60];
+  if (days) return `${days}d ${hours}h`;
+  return hours ? `${hours}h ${mins}m` : `${mins}m`;
+}
+
 /** Starts the maintainer instance, waiting out a store that a companion is still installing or upgrading. */
 async function startMaintainer() {
   const deadline = Date.now() + INSTALL_WAIT_MS;
@@ -58,9 +66,13 @@ export async function startJobsWorker(options: { port?: number; inProcess?: bool
   await scheduleJobs(boss);
   await workDeclared(boss);
 
-  const jobs = getBackendJobs().map((job) => `${job.name} (${job.cron})`);
-  const queues = getBackendQueues().map((queue) => `${queue.name}${queue.handler ? '' : ' (no handler here)'}`);
-  baseLog.info(`jobs: scheduling ${jobs.join(', ') || 'no cron jobs'}; queues: ${queues.join(', ') || 'none'}`);
+  const nextRuns = getBackendJobs()
+    .map((job) => ({ name: job.name, at: boss.previewSchedule(job.cron, { count: 1 })[0] }))
+    .sort((a, b) => a.at.getTime() - b.at.getTime())
+    .map((run) => `${run.name} in ${timeUntil(run.at)}`);
+  const queues = getBackendQueues().map((queue) => `${queue.name}${queue.handler ? '' : ' (worked elsewhere)'}`);
+  const scheduled = nextRuns.length ? `${nextRuns.length} periodic jobs, next runs: ${nextRuns.join(', ')}` : 'no periodic jobs';
+  baseLog.info(`Jobs worker: ${scheduled}${queues.length ? `; working queues: ${queues.join(', ')}` : ''}`);
 
   let server: ServerType | undefined;
   if (!options.inProcess) {

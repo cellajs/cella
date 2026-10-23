@@ -1,12 +1,12 @@
 import { TrashIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Suspense, useRef } from 'react';
-import { Trans, useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import type { PlacementDescriptor } from '~/lib/placements';
-import { ConfirmText } from '~/modules/common/confirm-text';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { NamedText } from '~/modules/common/named-text';
 import { ToolCard } from '~/modules/common/tool-card';
 import { Button } from '~/modules/ui/button';
 
@@ -67,7 +67,7 @@ export function DeleteToolCard({ name, resource, dialogId, renderDialog }: Delet
       triggerRef: deleteButtonRef,
       className: 'md:max-w-xl',
       title: t('c:delete_resource', { resource: resourceName }),
-      description: <ConfirmText i18nKey="c:confirm.delete_resource" values={{ name, resource: resourceName }} />,
+      description: <NamedText i18nKey="c:confirm.delete_resource" name={name} values={{ resource: resourceName }} />,
     });
   };
 
@@ -75,7 +75,7 @@ export function DeleteToolCard({ name, resource, dialogId, renderDialog }: Delet
     <ToolCard
       label="c:delete_resource"
       resource={resource}
-      description={<Trans t={t} i18nKey="c:delete_resource_notice.text" values={{ name, resource: resourceName }} />}
+      description={<NamedText i18nKey="c:delete_resource_notice.text" name={name} values={{ resource: resourceName }} />}
     >
       <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
         <TrashIcon className="size-4" />

@@ -1,12 +1,12 @@
 import { MailIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ConfirmText } from '~/modules/common/confirm-text';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
+import { NamedText } from '~/modules/common/named-text';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteUsers } from '~/modules/user/delete-users';
@@ -66,7 +66,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       className: 'max-w-xl',
       title: t('c:delete'),
       description: (
-        <ConfirmText
+        <NamedText
           i18nKey="c:confirm.delete_resource"
           values={{
             name: selected.map((u) => u.email).join(', '),

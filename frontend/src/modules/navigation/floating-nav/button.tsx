@@ -78,6 +78,8 @@ export function FloatingNavButton({
       onTouchCancel={handleTouchCancel}
       className={cn(
         'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 flex items-center rounded-full bg-secondary opacity-100 shadow-xl transition-[translate,scale,opacity] duration-300 ease-in-out hover:bg-secondary active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
+        // A translucent ring sets the button off from whatever scrolls under it, a grey card of its own fill included
+        'more-contrast:ring-foreground/30 ring-4 ring-foreground/12',
         // With a label the width is content-driven: the icon keeps its centered-in-circle offset via pl-4, the pill grows to the right
         label ? 'h-14 w-auto min-w-14 justify-start gap-0 pl-4' : 'size-14 justify-center',
         // Animate out while the floating selection action bar or the on-screen keyboard is shown; hiding moves by translate, which skips layout

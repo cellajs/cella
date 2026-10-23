@@ -25,8 +25,6 @@ application query.
 | A permission bug exposes data within the active tenant | RLS cannot help because the row still matches the tenant |
 | Application scope and RLS both fail | Cross-tenant isolation can fail |
 
-A service account's tenant comes from its account, never from the URL: `tenantGuard` compares the two before any lookup, and an access token carries a tenant-qualified audience, so a machine caller cannot probe another tenant ([Interoperability](./INTEROPERABILITY.md)).
-
 Per-operation checks: [Enforcement paths](./PERMISSIONS.md#enforcement-paths). Listener and database boundaries: [Deployment](./DEPLOYMENT.md#overview). Request limits: [Authentication](./AUTHENTICATION.md#rate-limits) and [Interoperability](./INTEROPERABILITY.md#quotas-and-limits). Secret handling: [Architecture](./ARCHITECTURE.md#trust-boundaries) and [Observability](./OTEL.md#redaction). Security test guidance: [Testing](./TESTING.md#goals).
 
 ## What RLS covers
