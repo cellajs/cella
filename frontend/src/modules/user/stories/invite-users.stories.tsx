@@ -29,13 +29,14 @@ const requests: { path: string; search: string; body: { emails: string[]; role?:
 
 /**
  * The invite forms: one address per chip or a pasted text block, sent as a system invite without a channel and as
- * a membership invite with one. The API answers with `parameters.rejected` of the addresses rejected.
+ * a membership invite with one. The API knows the addresses in `parameters.known` as members or invited before; the
+ * form checks addresses as they are added, and only the sends are recorded.
  */
 const meta = {
   title: 'user/InviteUsers',
   component: InviteUsers,
   decorators: [withApp],
-  parameters: { layout: 'centered', rejected: 0 },
+  parameters: { layout: 'centered', known: {} },
   render: (args) => (
     <div className="w-[32rem]">
       <InviteUsers {...args} />
@@ -44,18 +45,27 @@ const meta = {
   beforeEach: ({ parameters }) => {
     requests.length = 0;
     draftStore.getState().reset();
-    i18n.addResourceBundle('en', 'c', { still_not_accepted: '{{count}} of {{total}} not accepted' });
-
+    // Story tests run without the app's translations; these are the texts the plays read.
+    i18n.addResourceBundle('en', 'c', {
+      invite_count_one: 'Invite {{count}}',
+      invite_count_other: 'Invite {{count}}',
+      invite_group_member_one: '{{count}} already a member, left out',
+      invite_result_invited_one: '{{count}} invited',
+      invite_result_member: '{{email}} is already a member.',
+    });
     const fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
       const request = input instanceof Request ? input : new Request(input, init);
       const body = await request.json();
       const url = new URL(request.url);
-      requests.push({ path: url.pathname, search: url.search, body });
+      const json = (data: unknown) => new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
 
-      const rejected: number = parameters.rejected;
-      const rejectedIds = Array.from({ length: rejected }, (_, index) => `rejected-${index}`);
-      const response = { data: [], rejectedIds, invitesSentCount: body.emails.length - rejected };
-      return new Response(JSON.stringify(response), { headers: { 'Content-Type': 'application/json' } });
+      const known: Record<string, 'member' | 'remind'> = parameters.known;
+      const outcomes = body.emails.map((email: string) => ({ email, outcome: known[email] ?? 'invite' }));
+      if (url.pathname.endsWith('/memberships/check')) return json({ outcomes });
+
+      requests.push({ path: url.pathname, search: url.search, body });
+      if (url.pathname.endsWith('/system/invite')) return json({ data: [], rejectedIds: [], invitesSentCount: body.emails.length });
+      return json({ data: [], outcomes, held: false });
     });
     const success = spyOn(toaster, 'success');
     const info = spyOn(toaster, 'info');
@@ -85,7 +95,7 @@ export const ShouldSendSystemInvite: Story = {
 
     await expect(canvas.queryByRole('radiogroup')).not.toBeInTheDocument();
     await userEvent.type(canvas.getByRole('textbox'), 'a@x.com{Enter}b@x.com{Enter}');
-    await userEvent.click(canvas.getByRole('button', { name: /invite$/i }));
+    await userEvent.click(canvas.getByRole('button', { name: /^invite/i }));
 
     await waitFor(() => expect(toaster.success).toHaveBeenCalledTimes(1));
     await expect(requests).toEqual([
@@ -102,16 +112,22 @@ export const ShouldSendMembershipInvite: Story = {
   name: 'when emails are invited to a channel, should send a membership invite with the role',
   tags: playTags,
   args: { mode: 'email', channel },
-  parameters: { rejected: 1 },
+  parameters: { known: { 'b@x.com': 'member' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
     await expect(canvas.getByRole('radiogroup')).toBeInTheDocument();
     await userEvent.type(canvas.getByRole('textbox'), 'a@x.com{Enter}b@x.com{Enter}');
-    await userEvent.click(canvas.getByRole('button', { name: /invite$/i }));
+    // The member is checked and left out of the count
+    await waitFor(() => expect(canvas.getByRole('button', { name: /^invite/i })).toHaveTextContent(i18n.t('c:invite_count', { count: 1 })));
+    await userEvent.click(canvas.getByRole('button', { name: /^invite/i }));
 
-    await waitFor(() => expect(toaster.info).toHaveBeenCalledWith('1 of 2 not accepted'));
-    await expect(toaster.success).toHaveBeenCalledTimes(1);
+    await waitFor(() =>
+      expect(toaster.success).toHaveBeenCalledWith(i18n.t('c:invite_result_invited', { count: 1 }), {
+        description: i18n.t('c:invite_result_member', { email: 'b@x.com' }),
+      }),
+    );
+    await expect(toaster.info).not.toHaveBeenCalled();
     await expect(requests).toEqual([
       {
         path: expect.stringMatching(/\/tenant-1\/org-1\/memberships$/),
@@ -130,10 +146,10 @@ export const ShouldCountChips: Story = {
     const canvas = within(canvasElement);
 
     await userEvent.type(canvas.getByRole('textbox'), 'a@x.com{Enter}b@x.com{Enter}c@x.com{Enter}');
-    await expect(canvas.getByRole('button', { name: /invite$/i })).toHaveTextContent('3');
+    await expect(canvas.getByRole('button', { name: /^invite/i })).toHaveTextContent('3');
 
     await userEvent.keyboard('{Backspace}');
-    await expect(canvas.getByRole('button', { name: /invite$/i })).toHaveTextContent('2');
+    await expect(canvas.getByRole('button', { name: /^invite/i })).toHaveTextContent('2');
   },
 };
 
@@ -183,7 +199,7 @@ export const ShouldAdvanceStepper: Story = {
     await expect(canvas.getByText('Step footer')).toBeInTheDocument();
     await userEvent.type(canvas.getByRole('textbox'), 'a@x.com{Enter}');
     await expect(canvas.queryByRole('button', { name: /cancel/i })).not.toBeInTheDocument();
-    await userEvent.click(canvas.getByRole('button', { name: /invite$/i }));
+    await userEvent.click(canvas.getByRole('button', { name: /^invite/i }));
 
     await expect(await canvas.findByText('Next step content')).toBeVisible();
     await expect(requests).toHaveLength(1);
@@ -194,11 +210,11 @@ export const ShouldSendBulkInvite: Story = {
   name: 'when text with addresses is pasted in the bulk form, should invite the addresses it holds',
   tags: playTags,
   args: { mode: 'bulk', channel },
-  parameters: { rejected: 1 },
+  parameters: { known: { 'b@x.com': 'member' } },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     const textarea = canvas.getByRole('textbox');
-    const submit = canvas.getByRole('button', { name: /invite$/i });
+    const submit = canvas.getByRole('button', { name: /^invite/i });
 
     await step('submit stays disabled until the text holds an address', async () => {
       await expect(submit).toBeDisabled();
@@ -207,16 +223,21 @@ export const ShouldSendBulkInvite: Story = {
       await userEvent.clear(textarea);
     });
 
-    await step('the addresses are extracted, lowercased and deduplicated', async () => {
+    await step('the addresses are extracted, lowercased and deduplicated, and the member is grouped apart', async () => {
       await userEvent.click(textarea);
       await userEvent.paste('Team: a@x.com; B@X.com\nalso a@x.com, and not-an-address');
       await expect(submit).toBeEnabled();
-      await expect(submit).toHaveTextContent('2');
+      await expect(await canvas.findByText(i18n.t('c:invite_group_member', { count: 1 }))).toBeVisible();
+      await expect(submit).toHaveTextContent(i18n.t('c:invite_count', { count: 1 }));
     });
 
-    await step('a sent invite clears the text and counts rejections against the sent addresses', async () => {
+    await step('a sent invite clears the text and says the member was left out', async () => {
       await userEvent.click(submit);
-      await waitFor(() => expect(toaster.info).toHaveBeenCalledWith('1 of 2 not accepted'));
+      await waitFor(() =>
+        expect(toaster.success).toHaveBeenCalledWith(i18n.t('c:invite_result_invited', { count: 1 }), {
+          description: i18n.t('c:invite_result_member', { email: 'b@x.com' }),
+        }),
+      );
       await expect(requests).toEqual([
         expect.objectContaining({
           path: expect.stringMatching(/\/tenant-1\/org-1\/memberships$/),
@@ -241,6 +262,6 @@ export const ShouldCancelBulkForm: Story = {
     await userEvent.click(await canvas.findByRole('button', { name: /cancel/i }));
 
     await expect(textarea).toHaveValue('');
-    await expect(canvas.getByRole('button', { name: /invite$/i })).toBeDisabled();
+    await expect(canvas.getByRole('button', { name: /^invite/i })).toBeDisabled();
   },
 };

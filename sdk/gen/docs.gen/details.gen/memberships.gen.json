@@ -4,7 +4,7 @@
     "responses": [
       {
         "status": 200,
-        "description": "Created memberships and invite count",
+        "description": "What happened to each address",
         "contentType": "application/json",
         "schema": {
           "type": "object",
@@ -42,39 +42,49 @@
                 }
               }
             },
-            "rejectedIds": {
+            "outcomes": {
               "type": "array",
               "required": true,
-              "description": "Identifiers of items that could not be processed",
-              "itemType": "string"
+              "itemType": "object",
+              "ref": "#/components/schemas/InviteOutcome",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "required": true,
+                    "description": "The primary email address, shown to every user who shares an organization with this one.",
+                    "format": "email"
+                  },
+                  "outcome": {
+                    "type": "string",
+                    "required": true,
+                    "description": "`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.",
+                    "enum": ["invite", "remind", "add", "member"]
+                  },
+                  "invitedAt": { "type": "string", "required": false },
+                  "declinedAt": { "type": "string", "required": false },
+                  "role": {
+                    "type": "string",
+                    "required": false,
+                    "enum": ["admin", "member"]
+                  }
+                },
+                "ref": "#/components/schemas/InviteOutcome"
+              }
             },
-            "rejectionReasons": {
-              "type": "object",
-              "required": false,
-              "description": "Map of reason code to rejected item IDs",
-              "additionalProperties": { "type": "array", "required": false, "itemType": "string" }
-            },
-            "invitesSentCount": { "type": "number", "required": true }
+            "held": { "type": "boolean", "required": true }
           },
           "contentType": "application/json"
         },
         "example": {
-          "data": [
-            {
-              "id": "09ca1a84-3edb-4069-b434-4af619287b19",
-              "tenantId": "x38fpc",
-              "channelType": "organization",
-              "channelId": "dbf3564f-37da-4f50-aea9-4469003a047f",
-              "userId": "cf39cd03-3802-43e4-83b7-1b24808a153d",
-              "organizationId": "dbf3564f-37da-4f50-aea9-4469003a047f",
-              "role": "member",
-              "displayOrder": 30,
-              "muted": false,
-              "archived": false
-            }
+          "data": [],
+          "outcomes": [
+            { "email": "sara.devries@example.com", "outcome": "invite" },
+            { "email": "p.okafor@example.net", "outcome": "remind", "invitedAt": "2026-10-20T09:12:00.000Z" },
+            { "email": "lena@example.com", "outcome": "member", "role": "member" }
           ],
-          "rejectedIds": [],
-          "invitesSentCount": 1
+          "held": false
         }
       },
       {
@@ -257,6 +267,137 @@
             "minItems": 1,
             "maxItems": 50,
             "itemType": "string"
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "checkMembershipInvite",
+    "responses": [
+      {
+        "status": 200,
+        "description": "What an invite would do with each address",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "outcomes": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "ref": "#/components/schemas/InviteOutcome",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "required": true,
+                    "description": "The primary email address, shown to every user who shares an organization with this one.",
+                    "format": "email"
+                  },
+                  "outcome": {
+                    "type": "string",
+                    "required": true,
+                    "description": "`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.",
+                    "enum": ["invite", "remind", "add", "member"]
+                  },
+                  "invitedAt": { "type": "string", "required": false },
+                  "declinedAt": { "type": "string", "required": false },
+                  "role": {
+                    "type": "string",
+                    "required": false,
+                    "enum": ["admin", "member"]
+                  }
+                },
+                "ref": "#/components/schemas/InviteOutcome"
+              }
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "outcomes": [
+            { "email": "sara.devries@example.com", "outcome": "invite" },
+            { "email": "p.okafor@example.net", "outcome": "remind", "invitedAt": "2026-10-20T09:12:00.000Z" },
+            { "email": "lena@example.com", "outcome": "member", "role": "member" }
+          ]
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "query": {
+        "properties": {
+          "entityId": { "type": "string", "required": true, "maxLength": 50 },
+          "entityType": {
+            "type": "string",
+            "required": true,
+            "enum": ["organization"]
+          }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "emails": {
+            "type": "array",
+            "required": true,
+            "minItems": 1,
+            "maxItems": 50,
+            "itemType": "string",
+            "format": "email",
+            "minLength": 4,
+            "maxLength": 255
           }
         },
         "required": true,
@@ -812,6 +953,10 @@
                     "enum": ["admin", "member", null]
                   },
                   "createdAt": { "type": "string", "required": true },
+                  "remindedAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
                   "createdBy": {
                     "type": ["object", "null"],
                     "required": true,
@@ -832,6 +977,7 @@
               "email": "doug_larkin@hotmail.com",
               "role": "member",
               "createdAt": "2024-11-21T01:19:53.533Z",
+              "remindedAt": "2024-11-21T01:19:53.533Z",
               "createdBy": {
                 "id": "617f1449-7605-4cc9-8f52-1e3f100f6db2",
                 "kind": "user",
@@ -845,6 +991,7 @@
               "email": "santos.jacobi12@gmail.com",
               "role": "member",
               "createdAt": "2024-10-29T04:35:17.725Z",
+              "remindedAt": "2024-10-29T04:35:17.725Z",
               "createdBy": {
                 "id": "ba7cf4de-5ede-48cc-9fef-453bf074c2ef",
                 "kind": "user",
@@ -941,6 +1088,63 @@
     "operationId": "resendPendingInvitation",
     "responses": [
       { "status": 204, "description": "Invitation resent" },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "withdrawPendingInvitation",
+    "responses": [
+      { "status": 204, "description": "Invitation withdrawn" },
       {
         "status": 400,
         "description": "Bad request: problem processing request.",

@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { isInviteEmail } from '~/modules/common/form-fields/select-emails';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Textarea } from '~/modules/ui/textarea';
+import { InviteGroups } from '~/modules/user/invite-groups';
 import { InviteFormFooter, type InviteFormProps, useInviteFormDraft, useInviteSubmit } from '~/modules/user/invite-submit';
+import { useInviteCheck } from '~/modules/user/use-invite-check';
 
 /** Unique, lowercased addresses an invite accepts, from any pasted text (commas, newlines, address-book dumps). */
 const extractEmails = (text: string): string[] => {
@@ -31,6 +33,7 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Inv
   };
 
   const emails = form.getValues('emails') ?? [];
+  const check = useInviteCheck(channel, emails);
 
   return (
     <Form {...form}>
@@ -48,8 +51,9 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Inv
           <div className="text-muted-foreground text-sm">{t('c:emails_recognized', { count: emails.length })}</div>
           <FormField control={form.control} name="emails" render={() => <FormMessage />} />
         </FormItem>
+        <InviteGroups emails={emails} check={check} />
 
-        <InviteFormFooter form={form} channel={channel} count={emails.length} loading={isPending} onCancel={clear}>
+        <InviteFormFooter form={form} channel={channel} counts={check.counts} loading={isPending} onCancel={clear}>
           {children}
         </InviteFormFooter>
       </form>

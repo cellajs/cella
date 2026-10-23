@@ -172,7 +172,7 @@ export const mockInactiveMembershipResponse = (key = 'inactive-membership:defaul
 /** Pending-invitation list row: the invited address, role and inviter, with no account fields. */
 const mockPendingMembershipResponse = (key = 'pending-membership:default') => {
   const { id, email, role, createdAt, createdBy } = mockInactiveMembershipResponse(key);
-  return { id, email, role, createdAt, createdBy };
+  return { id, email, role, createdAt, remindedAt: createdAt, createdBy };
 };
 
 export const mockPaginatedPendingMembershipsResponse = (count = 2) => mockPaginated(mockPendingMembershipResponse, count);
@@ -184,8 +184,12 @@ const mockMemberResponse = (key = 'member:default') => {
 
 export const mockPaginatedMembersResponse = (count = 2) => mockPaginated(mockMemberResponse, count);
 
-export const mockMembershipInviteResponse = (key = 'membership-invite:default') => ({
-  data: [mockMembershipBase(`${key}:membership`)],
-  rejectedIds: [] as string[],
-  invitesSentCount: 1,
-});
+const mockInviteOutcomes = () => [
+  { email: 'sara.devries@example.com', outcome: 'invite' as const },
+  { email: 'p.okafor@example.net', outcome: 'remind' as const, invitedAt: '2026-10-20T09:12:00.000Z' },
+  { email: 'lena@example.com', outcome: 'member' as const, role: 'member' as const },
+];
+
+export const mockMembershipCheckResponse = () => ({ outcomes: mockInviteOutcomes() });
+
+export const mockMembershipInviteResponse = () => ({ data: [], outcomes: mockInviteOutcomes(), held: false });

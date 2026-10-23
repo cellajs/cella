@@ -3,6 +3,7 @@
 export {
   acceptInvitationToken,
   checkEmail,
+  checkMembershipInvite,
   checkSlug,
   confirmMagicLink,
   createApiKey,
@@ -112,6 +113,7 @@ export {
   updateServiceAccount,
   updateTenant,
   updateUser,
+  withdrawPendingInvitation,
 } from './sdk.gen';
 export type {
   AcceptInvitationTokenData,
@@ -130,6 +132,11 @@ export type {
   CheckEmailErrors,
   CheckEmailResponse,
   CheckEmailResponses,
+  CheckMembershipInviteData,
+  CheckMembershipInviteError,
+  CheckMembershipInviteErrors,
+  CheckMembershipInviteResponse,
+  CheckMembershipInviteResponses,
   CheckSlugData,
   CheckSlugError,
   CheckSlugErrors,
@@ -448,6 +455,7 @@ export type {
   HandleMembershipInvitationResponse,
   HandleMembershipInvitationResponses,
   InactiveMembership,
+  InviteOutcome,
   InvokeTokenData,
   InvokeTokenError,
   InvokeTokenErrors,
@@ -668,4 +676,9 @@ export type {
   User,
   UserBase,
   UserMinimalBase,
+  WithdrawPendingInvitationData,
+  WithdrawPendingInvitationError,
+  WithdrawPendingInvitationErrors,
+  WithdrawPendingInvitationResponse,
+  WithdrawPendingInvitationResponses,
 } from './types.gen';
