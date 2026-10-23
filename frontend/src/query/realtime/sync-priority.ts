@@ -82,7 +82,7 @@ function isMutedOrArchived(organizationId: string, channelId: string | null): bo
   return membership ? membership.muted || membership.archived : false;
 }
 
-/** Set the sole sync priority: viewed scopes live, muted scopes on open, and others in background. */
+/** The one sync priority: viewed scopes live, muted scopes on open, the others in the background. */
 export function getSyncTier(entityType: string, organizationId: string, channelId: string | null): SyncTier {
   if (!isProduct(entityType)) return tierOnOpen;
   if (isViewingChannel(organizationId, channelId)) return tierViewing;

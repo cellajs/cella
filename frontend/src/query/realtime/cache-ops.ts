@@ -198,7 +198,7 @@ function applyServerEntity(
   // A new row no home list spliced and no filtered list refetches stays invisible: a key-shape bug, canonical data cached outside keys.list.home.
   if (organizationId && homeChannelId && !seen && !spliced && !sawFilteredList) {
     console.warn(
-      `[CacheOps] New ${entityType} row ${entity.id} landed in no list cache: ` +
+      `[CacheOps] New ${entityType} row ${entity.id} reached no list cache: ` +
         `no canonical home list ${JSON.stringify(keys.list.home(organizationId, homeChannelId))} and no filtered list to invalidate.`,
     );
   }
@@ -227,7 +227,7 @@ export async function fetchEntityAndUpdateList(
   try {
     const entity = await queryClient.query<ItemData>({
       queryKey: keys.detail.byId(entityId),
-      staleTime: 0, // Always fetch fresh on SSE notification
+      staleTime: 0,
       meta: { organizationId, tenantId: tenantId ?? undefined },
     });
     if (!entity) return;
@@ -238,7 +238,7 @@ export async function fetchEntityAndUpdateList(
     // The notification says create: active filtered lists refetch to place the new row.
     if (action === 'create') invalidateFilteredLists(entityType, keys.list.org(organizationId), [entity]);
   } catch {
-    // No query defaults registered for this entity type, fall back to list invalidation
+    // Any failure (no query defaults for the type, a network error, a 403 or 404): every list of the type refetches.
     invalidateEntityList(keys, 'all');
   }
 }
@@ -253,9 +253,9 @@ export interface RangeFetchResult {
 
 const failedRange = (status: Exclude<RangeFetchResult['status'], 'ok'>): RangeFetchResult => ({ status, items: [], reachedSeq: 0 });
 
-// Product rows carry the org sequence; read it defensively (ItemData is intentionally loose).
+/** The org sequence a product row carries, which `ItemData` does not type. */
 const seqOf = (item: ItemData): number | undefined => {
-  const seq = (item as { seq?: unknown }).seq;
+  const { seq } = asRecord(item);
   return typeof seq === 'number' ? seq : undefined;
 };
 

@@ -1,3 +1,4 @@
+import type { StreamNotification } from 'sdk';
 import { appConfig, type ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
@@ -6,21 +7,11 @@ import { forEachListQuery, mapListItems } from '~/query/basic/mutate-query';
 import type { ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
 
-/** Wire-compatible propagation hint. Product types stay a plain union to tolerate types this app's config omits. */
-type PropagationHintInput = {
-  embeddedProduct: ProductEntityType;
-  /** Advisory on the wire: host fan-out derives from this app's productEmbeddings config. */
-  hostProduct?: ProductEntityType;
-  hostColumn?: string;
-  update: string[];
-  remove: string[];
-};
+/** The part of a propagation hint the client reads: its host fields are advisory, and this app's productEmbeddings config says where embedded copies are cached. */
+type PropagationHint = Pick<NonNullable<StreamNotification['propagation']>, 'embeddedProduct' | 'update' | 'remove'>;
 
-/**
- * Patch stale embedded-product references across every host column productEmbeddings declares for the changed product.
- * The hint's host fields are advisory: local config is the authority on where this client caches embedded copies.
- */
-export function propagateEmbeddings(hint: PropagationHintInput): void {
+/** Patch stale embedded-product references across every host column productEmbeddings declares for the changed product. */
+export function propagateEmbeddings(hint: PropagationHint): void {
   const { embeddedProduct, update, remove } = hint;
   if (update.length === 0 && remove.length === 0) return;
 
@@ -57,9 +48,9 @@ function patchHostCaches(
     if (patched !== data) queryClient.setQueryData(queryKey, patched);
   });
 
-  for (const [queryKey, host] of queryClient.getQueriesData({ queryKey: keys.detail.base })) {
+  for (const [queryKey, host] of queryClient.getQueriesData<ItemData>({ queryKey: keys.detail.base })) {
     if (!host) continue;
-    const patched = patchSingleHost(host as ItemData, hostColumn, updateSet, removeSet, freshEmbedded);
+    const patched = patchSingleHost(host, hostColumn, updateSet, removeSet, freshEmbedded);
     if (patched !== host) {
       queryClient.setQueryData(queryKey, patched);
     }
@@ -122,7 +113,7 @@ function patchSingleHost(
   if (Array.isArray(embedded) && embedded.every((item) => typeof item === 'string')) {
     const ids: string[] = embedded;
     if (!ids.some((id) => removeSet.has(id))) return host;
-    return { ...host, [hostColumn]: ids.filter((id) => !removeSet.has(id)) } as ItemData;
+    return { ...host, [hostColumn]: ids.filter((id) => !removeSet.has(id)) };
   }
 
   // Array column of embedded objects.
@@ -137,17 +128,17 @@ function patchSingleHost(
         return fresh && isFresher(item, fresh) ? fresh : item;
       });
 
-    return { ...host, [hostColumn]: patched } as ItemData;
+    return { ...host, [hostColumn]: patched };
   }
 
   // Single object column.
   if (embedded && typeof embedded === 'object' && 'id' in embedded) {
     const cached = embedded as { id: string; updatedAt?: string };
     if (removeSet.has(cached.id)) {
-      return { ...host, [hostColumn]: null } as ItemData;
+      return { ...host, [hostColumn]: null };
     }
     const fresh = updateSet.has(cached.id) ? freshEmbedded.get(cached.id) : undefined;
-    if (fresh && isFresher(cached, fresh)) return { ...host, [hostColumn]: fresh } as ItemData;
+    if (fresh && isFresher(cached, fresh)) return { ...host, [hostColumn]: fresh };
   }
 
   return host;

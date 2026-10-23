@@ -11,7 +11,7 @@ function invalidateAllChannelDetails(): void {
   }
 }
 
-/** Invalidate the channel entity list for `channelType`; falls back to invalidating all context details when null/unknown. */
+/** Invalidate the channel entity list for `channelType`; a null or unregistered type marks every channel detail stale. */
 export function invalidateChannelList(channelType: ChannelEntityType | null): void {
   if (channelType && hasEntityQueryKeys(channelType)) {
     // The `list` prefix covers every filtered list variant for this channel type.
@@ -27,7 +27,7 @@ export function invalidateMemberQueries(organizationId: string | null): void {
       queryKey: memberQueryKeys.list.base,
       predicate: (query) =>
         query.queryKey.some(
-          (segment) => typeof segment === 'object' && segment !== null && (segment as { organizationId?: string }).organizationId === organizationId,
+          (segment) => typeof segment === 'object' && segment !== null && 'organizationId' in segment && segment.organizationId === organizationId,
         ),
       refetchType: 'active',
     });

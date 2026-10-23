@@ -140,7 +140,7 @@ afterEach(() => {
 });
 
 describe('server rows and the description', () => {
-  it('lands the server description in the detail and in every list holding the row', async () => {
+  it('writes the server description to the detail and to every list holding the row', async () => {
     seedCaches(row('local'));
     serverReturns(row('server', { stx: written({ description: 'T2' }) }));
 

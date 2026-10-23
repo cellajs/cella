@@ -4,17 +4,15 @@ import { meKeys } from '~/modules/me/query';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { queryClient } from '~/query/query-client';
+import { syncStore } from '~/query/realtime/sync-store';
 import { deriveGrantBoundaryViews } from '~/query/realtime/views';
-import { syncStore } from './sync-store';
 
 /** Sub-organization channel types: every channel below the organization carries a server-computed `path`. */
 const nestedChannelTypes = hierarchy.channelTypes.filter((type) => hierarchy.getParent(type) !== null);
 
 /**
- * Root-first id path of a cached channel row, or null when uncached; the engine then keeps the
- * organization-wide view, so this is precision, never a correctness dependency. `channelType` is null
- * when the caller knows only the id, as in the fetch prioritizer's covering-prefix computation; every
- * nested channel type is searched then. Cella's single-channel hierarchy has no nested types.
+ * Root-first id path of a cached channel row, or null when uncached: the engine then keeps the organization-wide view, so
+ * this adds precision, never correctness. A null `channelType` (the caller knows only the id) searches every nested type.
  */
 export function resolveChannelPath(channelType: string | null, channelId: string): string | null {
   const types = channelType ? [channelType] : nestedChannelTypes;
@@ -46,10 +44,7 @@ export function declareViewsFromMemberships(): void {
     if (!declaredKeys.has(key)) store.removeSyncView(key);
   }
 
-  // Stored orgs the caller is no longer (or never was) a member of: prune them, or they accumulate
-  // forever in the persisted store; every dead org costs one view per entity type in each catchup
-  // body until the request overflows the server's views cap and catchup fails outright. Only prune
-  // against a loaded membership cache; `data` undefined just means memberships have not arrived yet.
+  // Prune stored orgs the caller is not a member of, but only against a loaded cache: `data` is undefined until memberships arrive.
   if (data) {
     const memberOrganizationIds = new Set(memberships.map((membership) => membership.organizationId));
     for (const organizationId of Object.keys(syncStore.getState().orgs)) {

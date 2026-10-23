@@ -4,20 +4,20 @@ import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-que
 import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-state';
 import { sourceId } from '~/query/offline/stx-utils';
 import { queryClient } from '~/query/query-client';
-import * as cacheOps from './cache-ops';
-import { propagateEmbeddings } from './propagation';
-import { getSyncTier, isViewingChannel, type SyncTier, tierBackground } from './sync-priority';
-import { publishSyncedRows } from './sync-signals';
-import { syncStore } from './sync-store';
-import type { AppStreamNotification } from './types';
-import { resolveChannelPath } from './view-declaration';
+import * as cacheOps from '~/query/realtime/cache-ops';
+import { propagateEmbeddings } from '~/query/realtime/propagation';
+import { getSyncTier, isViewingChannel, type SyncTier, tierBackground } from '~/query/realtime/sync-priority';
+import { publishSyncedRows } from '~/query/realtime/sync-signals';
+import { syncStore } from '~/query/realtime/sync-store';
+import type { AppStreamNotification } from '~/query/realtime/types';
+import { resolveChannelPath } from '~/query/realtime/view-declaration';
 
 /** Spread window of a range that carries none from the server, such as a catchup gap. */
 const defaultSpreadWindowMs = 15_000;
 /** Transient fetch errors retry with exponential backoff before falling back to invalidation. */
 const maxFlushAttempts = 3;
 const retryBaseMs = 2_000;
-/** Re-check delay while offline (fetching would fail pointlessly; catchup owns reconnect). */
+/** Re-check delay while offline, where a fetch would fail; catchup reconciles on reconnect. */
 const offlineRecheckMs = 5_000;
 
 export interface EnqueueInput {
@@ -84,7 +84,7 @@ function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
 
   const store = syncStore.getState();
   const caughtUp = channelId ? store.getChannelSeq(organizationId, channelId, entityType) : store.getOrgSeq(organizationId, entityType);
-  if (untilSeq <= caughtUp) return; // already have this range
+  if (untilSeq <= caughtUp) return;
 
   // Anchoring after the caught-up position heals missed-notification gaps and trims already-ingested overlap; with no baseline, trust the notification's own range.
   const anchoredAfter = caughtUp > 0 ? caughtUp : afterSeq;
@@ -108,7 +108,8 @@ function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
   const existing = dirty.get(key);
   if (existing) {
     mergeRange(existing, entry);
-    existing.dueAt = Math.min(existing.dueAt, dueAt); // more news never postpones
+    // More news never postpones.
+    existing.dueAt = Math.min(existing.dueAt, dueAt);
   } else {
     dirty.set(key, entry);
   }
@@ -176,7 +177,8 @@ async function flushDue(): Promise<void> {
   const due: DirtyEntry[] = [];
   for (const [key, entry] of dirty) {
     if (entry.dueAt > now) continue;
-    dirty.delete(key); // in-flight ranges leave the map; overlapping re-notifications re-enqueue
+    // In-flight ranges leave the map; overlapping re-notifications re-enqueue.
+    dirty.delete(key);
     due.push(entry);
   }
   // Covering fetch: all due channels of one (entityType, org) share one bounded fetch, and rows route to their home lists during patching.
@@ -216,7 +218,7 @@ function coveringChannelId(entries: DirtyEntry[]): string | undefined {
   return common.length > 1 ? common[common.length - 1] : undefined;
 }
 
-// A promised seq that never arrived drops sync to the staleTime fallback until a clean catchup reconciles. Logs once per entry.
+/** A promised seq that never arrived drops sync to the staleTime fallback until a clean catchup reconciles; logs once per drop of trust. */
 function enterBasicFetchMode(context: Record<string, unknown>): void {
   if (!isSyncDeliveryTrusted()) return;
   setSyncDeliveryTrusted(false);
@@ -228,7 +230,6 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
   const { entityType, organizationId } = entries[0];
   const tenantId = entries.find((entry) => entry.tenantId)?.tenantId ?? null;
 
-  // Offline: fetching fails pointlessly; keep dirty, recheck soon. Catchup owns reconnect.
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     for (const entry of entries) requeue(entry, offlineRecheckMs);
     return 'requeued';
@@ -254,7 +255,7 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
       // The fetch covered (afterSeq, untilSeq] for every channel under the covering prefix, so each due channel advances to the shared upper bound.
       for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
     }
-    // Row contents for subscribers that derive state from them; the org id is the fallback home for rows without ancestor ids.
+    // The org id is the fallback home for rows without ancestor ids.
     publishSyncedRows({ entityType, organizationId, rows: result.items as { id: string }[], degraded: false });
   } else {
     // Overflow, unsupported, or exhausted retries: the list refetch owns recovery, and the watermark advances to prevent a fetch loop.
@@ -262,7 +263,6 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
     cacheOps.invalidateEntityListForOrg(keys, organizationId, anyViewing ? 'active' : 'none');
     for (const entry of entries) advanceCaughtUp({ ...entry, untilSeq });
     if (entries.some((entry) => entry.hasCreates)) invalidateUnseenCounts(entityType);
-    // Activity happened but no rows were delivered, so subscribers must fall back to invalidation.
     publishSyncedRows({ entityType, organizationId, rows: [], degraded: true });
   }
 
@@ -286,7 +286,7 @@ function advanceCaughtUp(entry: DirtyEntry): void {
 function requeue(entry: DirtyEntry, delayMs: number): void {
   const key = entryKey(entry.entityType, entry.organizationId, entry.channelId);
   const existing = dirty.get(key);
-  // A newer notification re-enqueued this channel view mid-flight: merge our range back into it.
+  // A newer notification re-enqueued this channel view mid-flight: merge this range back into it.
   if (existing) mergeRange(existing, entry);
   else dirty.set(key, { ...entry, dueAt: Date.now() + delayMs });
   armTimer();
@@ -322,15 +322,15 @@ function installListeners(): void {
   });
 
   // Back online: retry what accumulated while offline.
-  window.addEventListener('online', () => armTimer());
+  window.addEventListener('online', armTimer);
 
-  // A mounting view puts its pending scope on the live tier; this also covers panels opened without navigation and notifications landing just before mount.
+  // A mounting view puts its pending scope on the live tier; this also covers panels opened without navigation and notifications that arrive just before mount.
   queryClient.getQueryCache().subscribe((event) => {
     if (event.type === 'observerAdded' && dirty.size > 0) promoteLiveChannels();
   });
 
   // Navigation flushes pending scopes and route context promotes org-level scopes; the lazy import keeps the route tree out of this module's importer graph.
   void import('~/routes/router').then(({ router }) => {
-    router.subscribe('onLoad', () => promoteLiveChannels());
+    router.subscribe('onLoad', promoteLiveChannels);
   });
 }

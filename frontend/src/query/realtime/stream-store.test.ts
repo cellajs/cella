@@ -144,7 +144,7 @@ function createHarness(overrides?: { fetchAndProcessCatchup?: (cursor: string | 
           };
         })),
     processLeaderCatchup: () => Promise.resolve(),
-    processNotification: (n) => {
+    processNotification: (n: unknown) => {
       order.push(`process:${(n as { id: string }).id}`);
       processed.push(n);
     },

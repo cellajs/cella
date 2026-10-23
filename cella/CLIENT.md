@@ -114,5 +114,5 @@ Boot order, cached data first:
 1. Bootstrap stores hydrate from `localStorage`, identifying a returning user before any request.
 2. The app route waits for `localUserStorageReady()`: the per-user database is bound and its stores hydrated, sync cursor included.
 3. The persister restores the cache scope.
-4. One tab is elected leader, performs catchup, and owns the live connection. Paused mutations resume after that catchup.
+4. One tab is elected leader, performs catchup, and owns the live connection. Paused mutations resume after that catchup, or once the stream stops reconnecting.
 5. Route loaders fill the current view. Background fill freshens the current organization's lists, other organizations with offline access.

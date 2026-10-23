@@ -1,16 +1,16 @@
 import type { GetMyMembershipsResponse, PostAppCatchupResponse } from 'sdk';
-import { appConfig, type ProductEntityType } from 'shared';
+import { appConfig, isProduct } from 'shared';
 import { meKeys } from '~/modules/me/query';
 import { seenKeys } from '~/modules/seen/helpers';
 import { type EntityQueryKeys, getEntityQueryKeys, getRegisteredProductEntityTypes, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-state';
 import { queryClient } from '~/query/query-client';
+import * as cacheOps from '~/query/realtime/cache-ops';
+import { attachPendingPropagation, enqueueCatchupRange, flushChannelViewNow, resetFetchPrioritizer } from '~/query/realtime/fetch-prioritizer';
+import * as membershipOps from '~/query/realtime/membership-ops';
+import { propagateEmbeddings } from '~/query/realtime/propagation';
+import { getSyncTier, getTenantIdForOrg } from '~/query/realtime/sync-priority';
 import { syncStore } from '~/query/realtime/sync-store';
-import * as cacheOps from './cache-ops';
-import { attachPendingPropagation, enqueueCatchupRange, flushChannelViewNow, resetFetchPrioritizer } from './fetch-prioritizer';
-import * as membershipOps from './membership-ops';
-import { propagateEmbeddings } from './propagation';
-import { getSyncTier, getTenantIdForOrg } from './sync-priority';
 
 /** Every client learns of a new generation at about the same moment: each waits a random part of this before it refetches. */
 const generationRefetchSpreadMs = 10_000;
@@ -30,12 +30,9 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   const { changes, views } = response;
   const syncState = syncStore.getState();
 
-  // Another generation: the server corrected or rebuilt its sync books, and no cursor of before says anything about
-  // them. Cursors are back at 0, so the views below store their frontiers as baselines.
   if (syncState.adoptGeneration(response.generation)) refetchSyncedQueries();
-  let hadGap = false; // any view still behind the server frontier this cycle
+  let hadGap = false;
 
-  // ── Views: product entity sync per (org, entityType) ──────────────────────
   if (views?.length) {
     if (!baselineOnly) resetFetchPrioritizer();
 
@@ -47,7 +44,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       }
 
       const [organizationId, entityType] = splitViewKey(answer.key);
-      if (!organizationId || !entityType || !hasEntityQueryKeys(entityType)) continue;
+      if (!organizationId || !isProduct(entityType) || !hasEntityQueryKeys(entityType)) continue;
 
       if (answer.status === 'forbidden') {
         console.debug(`[CatchupProcessor] View ${answer.key}: forbidden → dropped`);
@@ -68,8 +65,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
       const frontier = answer.frontiers?.[entityType] ?? 0;
       const clientCursor = syncState.getOrgSeq(organizationId, entityType);
 
-      // First session for this org view: store the frontier and let route loaders or hydration supply the data. A list that is
-      // cached already was read before this stream was live, so the frontier says nothing about it: it is refetched.
+      // First session for this view: the frontier is the baseline, and a list cached already was read before the stream was live, so it refetches.
       if (baselineOnly || clientCursor === 0) {
         if (hasAnyCachedList(keys, organizationId)) {
           cacheOps.invalidateEntityListForOrg(keys, organizationId, 'active');
@@ -79,7 +75,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
         continue;
       }
 
-      if (frontier <= clientCursor) continue; // caught up
+      if (frontier <= clientCursor) continue;
       hadGap = true;
 
       const tenantId = syncState.getOrgTenantId(organizationId) ?? getTenantIdForOrg(organizationId);
@@ -91,10 +87,9 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
         continue;
       }
 
-      // Every gap goes through the fetch prioritizer: background orgs advance at their negotiated flush.
-      // The viewing org flushes immediately and is awaited, so waitForActiveCatchup resolves against a reconciled cache.
+      // Every gap goes through the fetch prioritizer; the viewing org flushes now and is awaited, so waitForActiveCatchup resolves against a reconciled cache.
       enqueueCatchupRange({
-        entityType: entityType as ProductEntityType,
+        entityType,
         organizationId,
         tenantId,
         channelId: null,
@@ -108,7 +103,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
         continue;
       }
 
-      const outcome = await flushChannelViewNow(entityType as ProductEntityType, organizationId, null);
+      const outcome = await flushChannelViewNow(entityType, organizationId, null);
       console.debug(`[CatchupProcessor] View ${answer.key}: gap=${frontier - clientCursor} → ${outcome}`);
     }
 
@@ -135,8 +130,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
     // Propagation runs after the range fetch that carries the fresh embedded rows: now for the viewing org, whose flush was awaited above, and at flush for a background org whose range is still pending.
     if (!baselineOnly && propagation?.length) {
       for (const hint of propagation) {
-        const embeddedProduct = hint.embeddedProduct as ProductEntityType;
-        const pending = hasEntityQueryKeys(embeddedProduct) && attachPendingPropagation(embeddedProduct, organizationId, hint);
+        const pending = hasEntityQueryKeys(hint.embeddedProduct) && attachPendingPropagation(hint.embeddedProduct, organizationId, hint);
         if (!pending) propagateEmbeddings(hint);
       }
     }
@@ -218,7 +212,7 @@ function processRegisteredViewAnswer(
     console.debug(`[CatchupProcessor] View ${answer.key}: baseline → cursor ${frontier}`);
     return;
   }
-  if (frontier <= view.cursor) return; // unchanged: skip refetches, the precision win
+  if (frontier <= view.cursor) return;
 
   invalidateTypes();
   syncState.setViewCursor(answer.key, frontier);
@@ -232,7 +226,7 @@ function splitViewKey(key: string): [string | undefined, string | undefined] {
   return [key.slice(0, separatorIndex), key.slice(separatorIndex + 1)];
 }
 
-/** Mirrors the patch target of fetchRangeAndPatch: with nothing cached a range fetch has nothing to patch, and mount hydration resets the cursor itself. */
+/** Mirrors the patch target of fetchRangeAndPatch: with nothing cached, a range fetch has nothing to patch. */
 function hasAnyCachedList(keys: EntityQueryKeys, organizationId: string): boolean {
   return queryClient.getQueriesData({ queryKey: keys.list.org(organizationId) }).some(([, data]) => data !== undefined);
 }
@@ -245,7 +239,7 @@ function verifyViewCounts(views: NonNullable<PostAppCatchupResponse['views']>): 
   for (const answer of views) {
     if (answer.status !== 'ok' || !answer.counts) continue;
     const [organizationId, entityType] = splitViewKey(answer.key);
-    if (!organizationId || !entityType || !hasEntityQueryKeys(entityType)) continue;
+    if (!organizationId || !isProduct(entityType) || !hasEntityQueryKeys(entityType)) continue;
 
     const serverCount = answer.counts[entityType];
     if (serverCount === undefined) continue;

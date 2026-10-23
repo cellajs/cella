@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import type { PostAppCatchupResponse } from 'sdk';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { createStore } from 'zustand/vanilla';
+import { createSignal } from '~/query/realtime/sync-signals';
+import type { AppStreamNotification } from '~/query/realtime/types';
 import { markBundleStale } from '~/query/schema-version-guard';
-import { createSignal } from './sync-signals';
-import type { AppStreamNotification } from './types';
 
 const channelName = 'tab-sync';
 const leaderLockName = 'tab-leader';
@@ -47,14 +47,15 @@ let lastSyncHealth: SyncHealth | null = null;
 let initPromise: Promise<void> | null = null;
 
 /** Resolves when `signal` aborts. A lock callback awaits this to hold the lock releasably, freeing it for a waiting follower without closing the tab. */
-const untilAborted = (signal: AbortSignal): Promise<void> =>
-  new Promise<void>((resolve) => {
+function untilAborted(signal: AbortSignal): Promise<void> {
+  return new Promise<void>((resolve) => {
     if (signal.aborted) return resolve();
     signal.addEventListener('abort', () => resolve(), { once: true });
   });
+}
 
 /** Idempotent: resolves once leader status is known, reusing the in-flight promise on repeat calls. */
-export const initTabCoordinator = async (): Promise<void> => {
+export async function initTabCoordinator(): Promise<void> {
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
@@ -78,13 +79,13 @@ export const initTabCoordinator = async (): Promise<void> => {
   })();
 
   return initPromise;
-};
+}
 
 /**
  * Release leadership so a waiting follower is promoted. Call when the tab leaves the authenticated app: a tab holding leadership while not streaming starves every follower.
  * Clearing `initPromise` lets a later return re-run the election and restore the pending promotion request.
  */
-export const releaseTabLeadership = (): void => {
+export function releaseTabLeadership(): void {
   const store = tabCoordinatorStore.getState();
 
   lockController?.abort();
@@ -93,33 +94,19 @@ export const releaseTabLeadership = (): void => {
 
   store.setIsLeader(false);
   store.setIsReady(false);
-};
+}
 
 /** Acquire the leader lock (first tab to acquire it becomes leader); resolves once leader status is known. */
-const attemptLeaderElection = (): Promise<void> => {
+function attemptLeaderElection(): Promise<void> {
   const store = tabCoordinatorStore.getState();
   // One controller per election: aborting releases the lock this tab holds or awaits. `ifAvailable` cannot take a signal, so the callback checks it by hand.
   lockController = new AbortController();
   const { signal } = lockController;
 
   return new Promise<void>((resolveElection) => {
-    if (navigator.locks.query) {
-      navigator.locks.query().then((state) => {
-        const heldLocks = state.held?.filter((l) => l.name === leaderLockName) ?? [];
-        const pendingLocks = state.pending?.filter((l) => l.name === leaderLockName) ?? [];
-        console.debug('[TabCoordinator] Lock state before election:', {
-          held: heldLocks.length,
-          pending: pendingLocks.length,
-          heldDetails: heldLocks,
-        });
-      });
-    }
-
     // `ifAvailable` resolves leader status immediately; a plain request would block until the held lock frees.
     navigator.locks
       .request(leaderLockName, { ifAvailable: true }, async (lock) => {
-        console.debug('[TabCoordinator] Lock request callback, lock acquired:', !!lock);
-
         if (lock) {
           console.debug('[TabCoordinator] Acquired leader lock');
           store.setIsLeader(true);
@@ -138,8 +125,6 @@ const attemptLeaderElection = (): Promise<void> => {
 
         // Runs in the background; does not block initialization.
         waitForLeadership(signal);
-
-        return undefined;
       })
       .catch((error) => {
         console.debug('[TabCoordinator] Leader election error:', error);
@@ -149,10 +134,10 @@ const attemptLeaderElection = (): Promise<void> => {
         resolveElection();
       });
   });
-};
+}
 
 /** Follower tabs queue here and take over when the current leader closes or releases. */
-const waitForLeadership = (signal: AbortSignal): void => {
+function waitForLeadership(signal: AbortSignal): void {
   const store = tabCoordinatorStore.getState();
 
   navigator.locks
@@ -170,9 +155,9 @@ const waitForLeadership = (signal: AbortSignal): void => {
         console.debug('[TabCoordinator] Leadership wait error:', error);
       }
     });
-};
+}
 
-const handleBroadcastMessage = (event: MessageEvent<BroadcastMessage>): void => {
+function handleBroadcastMessage(event: MessageEvent<BroadcastMessage>): void {
   const store = tabCoordinatorStore.getState();
   const message = event.data;
 
@@ -181,7 +166,7 @@ const handleBroadcastMessage = (event: MessageEvent<BroadcastMessage>): void => 
       // A newer bundle runs in another tab, stop persisting (schema-version-guard).
       markBundleStale();
     } else if (message.version < currentSchemaVersion) {
-      // An older tab announced itself after we booted, re-announce so it learns.
+      // An older tab announced itself after this one booted: announce again so it learns.
       broadcastChannel?.postMessage({ type: 'schema-version', version: currentSchemaVersion } satisfies BroadcastMessage);
     }
     // Every tab announces its version as it opens: the leader answers with the health of its stream, which a new tab has no way to know.
@@ -189,45 +174,41 @@ const handleBroadcastMessage = (event: MessageEvent<BroadcastMessage>): void => 
     return;
   }
 
-  if (message.type === 'sync-health' && !store.isLeader) syncHealthSignal.publish(message.health);
-
-  // The leader already processed this from its own SSE connection.
-  if (message.type === 'stream-notification' && !store.isLeader) notificationSignal.publish(message.notification);
-
-  if (message.type === 'catchup' && !store.isLeader) {
-    // The leader processes the answer itself, where its request returns.
-    catchupSignal.publish({ response: message.response, baselineOnly: message.baselineOnly });
-  }
-};
+  // The leader acts on its own stream: its notifications as they arrive, a catchup answer where its request returns.
+  if (store.isLeader) return;
+  if (message.type === 'sync-health') syncHealthSignal.publish(message.health);
+  if (message.type === 'stream-notification') notificationSignal.publish(message.notification);
+  if (message.type === 'catchup') catchupSignal.publish({ response: message.response, baselineOnly: message.baselineOnly });
+}
 
 /** Called by the leader with each catchup answer: followers send no catchup request of their own. */
-export const broadcastCatchup = (response: PostAppCatchupResponse, baselineOnly: boolean): void => {
+export function broadcastCatchup(response: PostAppCatchupResponse, baselineOnly: boolean): void {
   broadcastChannel?.postMessage({ type: 'catchup', response, baselineOnly } satisfies BroadcastMessage);
-};
+}
 
 /** Followers register here to receive the leader's catchup answers. */
 export const onCatchup = catchupSignal.subscribe;
 
 /** Called by the leader when the health of its stream changes: a follower has no stream of its own to judge by. */
-export const broadcastSyncHealth = (health: SyncHealth): void => {
+export function broadcastSyncHealth(health: SyncHealth): void {
   lastSyncHealth = health;
   broadcastChannel?.postMessage({ type: 'sync-health', health } satisfies BroadcastMessage);
-};
+}
 
 /** Followers register here to receive the health of the leader's stream. */
 export const onSyncHealth = syncHealthSignal.subscribe;
 
 /** Called by the leader for each SSE notification it receives. */
-export const broadcastNotification = (notification: AppStreamNotification): void => {
+export function broadcastNotification(notification: AppStreamNotification): void {
   broadcastChannel?.postMessage({ type: 'stream-notification', notification } satisfies BroadcastMessage);
-};
+}
 
 /** Followers register here to receive the leader's notifications. */
 export const onNotification = notificationSignal.subscribe;
 
-export const isLeader = (): boolean => {
+export function isLeader(): boolean {
   return tabCoordinatorStore.getState().isLeader;
-};
+}
 
 /** Initializes multi-tab coordination. Only mounted in AppLayout. */
 export function TabCoordinator() {

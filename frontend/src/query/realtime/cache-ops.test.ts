@@ -121,7 +121,7 @@ describe('realtime cache ops', () => {
     expect(queryClient.getQueryData(keys.list.home('org-1', 'project-1'))).toEqual({ items: [], total: 0 });
   });
 
-  it('does not splice into the bare org prefix key and warns that the row landed nowhere', async () => {
+  it('does not splice into the bare org prefix key and warns that the row reached no list', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const keys = createEntityKeys<Record<string, never>>(task);
     registerEntityQueryKeys(task, keys, async () => ({
@@ -135,10 +135,10 @@ describe('realtime cache ops', () => {
     await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
 
     expect(queryClient.getQueryData(keys.list.org('org-1'))).toEqual({ items: [], total: 0 });
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('landed in no list cache'));
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('reached no list cache'));
   });
 
-  it('invalidates filtered lists for a new row instead of splicing (server-side filter unknown)', async () => {
+  it('invalidates filtered lists for a new row without splicing it (the server-side filter is unknown)', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     registerEntityQueryKeys('attachment', keys, async () => ({
       items: [{ id: 'attachment-2', organizationId: 'org-1', name: 'fresh' }],

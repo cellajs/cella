@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { useStore } from 'zustand';
 import { useUIStore } from '~/modules/ui/ui-store';
-import { appStreamManager } from './stream-store';
-import { runSyncService } from './sync-service';
+import { appStreamManager } from '~/query/realtime/stream-store';
+import { runSyncService } from '~/query/realtime/sync-service';
 
 const debugLabel = 'AppStream';
 
-/** Connects to the app-scoped stream for real-time sync (CDC -> ActivityBus pipeline). StreamManager owns all reconnect logic, including visibility and leader changes. Mount in AppLayout. */
+/** Connects the app stream and seeds offline caches once it is live; StreamManager owns every reconnect, visibility and leader changes included. Mount in AppLayout. */
 export function AppStream() {
   // Only the connection state: the cursor advances on every event and nothing here renders it.
   const streamState = useStore(appStreamManager.store, (state) => state.state);

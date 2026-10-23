@@ -1,12 +1,12 @@
 import { buildEntitySyncQueries } from '~/entity-sync-queries';
 import type { UserMenuItem } from '~/modules/me/types';
 import { queryClient } from '~/query/query-client';
+import { getRouteOrganizationId } from '~/query/realtime/sync-priority';
 import { waitFor } from '~/utils/wait-for';
-import { getRouteOrganizationId } from './sync-priority';
 
 /** Seeds offline caches once the stream is live: the current organization first, then the rest when offline access is on. `signal` cancels on unmount or retrigger. */
 export async function runSyncService(offlineAccess: boolean, signal: AbortSignal): Promise<void> {
-  // Brief wait so a fleet of tabs does not all hit the server at connect time.
+  // Starts a second after the stream went live, behind the requests of the page itself.
   await waitFor(1000);
   if (signal.aborted) return;
 
@@ -32,7 +32,8 @@ export async function runSyncService(offlineAccess: boolean, signal: AbortSignal
   if (offlineAccess) {
     for (const item of lowPriority) {
       if (signal.aborted) return;
-      await waitFor(500); // Stagger requests to avoid server overload
+      // Staggered, so the background seeding does not burst the server.
+      await waitFor(500);
       await syncMenuItem(item, offlineAccess);
     }
   }
@@ -49,7 +50,7 @@ export async function runSyncService(offlineAccess: boolean, signal: AbortSignal
 async function syncMenuItem(item: UserMenuItem, offlineAccess: boolean): Promise<void> {
   if (item.membership.archived) return;
 
-  // For an organization the entity is the org itself; sub-contexts get organizationId from enrichment.
+  // For an organization the entity is the org itself; a channel below it gets organizationId from enrichment.
   const organizationId = item.entityType === 'organization' ? item.id : (item.organizationId ?? '');
   const queries = buildEntitySyncQueries({
     targetEntityId: item.id,

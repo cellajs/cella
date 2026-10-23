@@ -4,16 +4,16 @@ import { invalidateUnseenCounts } from '~/modules/seen/query';
 import { applyUnfetchableRemovalUnseen } from '~/modules/seen/unseen-sync';
 import { type EntityQueryKeys, getEntityQueryKeys, type SeqRange } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline/stx-utils';
+import * as cacheOps from '~/query/realtime/cache-ops';
+import { enqueueRange } from '~/query/realtime/fetch-prioritizer';
+import * as membershipOps from '~/query/realtime/membership-ops';
+import { propagateEmbeddings } from '~/query/realtime/propagation';
+import { getSyncTier } from '~/query/realtime/sync-priority';
+import { publishChangeEvent } from '~/query/realtime/sync-signals';
 import { syncStore } from '~/query/realtime/sync-store';
-import * as cacheOps from './cache-ops';
-import { enqueueRange } from './fetch-prioritizer';
-import * as membershipOps from './membership-ops';
-import { propagateEmbeddings } from './propagation';
-import { getSyncTier } from './sync-priority';
-import { publishChangeEvent } from './sync-signals';
-import type { AppStreamNotification, ProductNotification } from './types';
+import type { AppStreamNotification, ProductNotification } from '~/query/realtime/types';
 
-/** Notifications omit entity data, so each handler either invalidates or fetches a seq range. */
+/** Notifications carry no entity data: each one is answered with an invalidation or a seq-range fetch. */
 export function handleAppStreamNotification(notification: AppStreamNotification): void {
   const { subjectId, action, organizationId, tenantId, channelType, seq, _trace } = notification;
 
@@ -43,12 +43,12 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       // A self-membership in a new org arrives on the user channel, so reconnect to register on that org channel. Imported dynamically because stream-store imports this module.
       if (action === 'create' && isUnknownOrg) {
         console.debug('[handleAppStreamNotification] Membership in unknown org, reconnecting stream');
-        void import('./stream-store').then(({ appStreamManager }) => appStreamManager.reconnect());
+        void import('~/query/realtime/stream-store').then(({ appStreamManager }) => appStreamManager.reconnect());
       }
       return;
     }
 
-    // kind === 'product', so productType is narrowed to a product entity type.
+    // The type narrows to a product here; the check guards a product type this bundle does not know.
     const entityType = notification.productType;
     if (!isProduct(entityType)) return console.error('Unknown entityType in app stream notification:', entityType);
 
@@ -76,7 +76,6 @@ function enqueueNotifiedRange(notification: ProductNotification, organizationId:
   });
 }
 
-/** Targets invalidation by channelType: create and delete hit that channel list, update hits member queries and refreshes user data for role changes. */
 function handleMembershipNotification(
   action: AppStreamNotification['action'],
   organizationId: string | null,
@@ -98,7 +97,6 @@ function handleMembershipNotification(
   console.debug(`[handleMembershipNotification] ${action} channelType=${channelType} organizationId=${organizationId}`);
 }
 
-/** Product entity events carry no data, so each is answered with invalidation or a seq-range refetch. */
 function handleProductNotification(notification: ProductNotification, keys: EntityQueryKeys): void {
   const { productType: entityType, subjectId: entityId, action, stx, organizationId, tenantId, seq, propagation } = notification;
   const channelId = notification.channelId ?? null;
@@ -138,7 +136,7 @@ function handleProductNotification(notification: ProductNotification, keys: Enti
           .then(() => {
             if (propagation) propagateEmbeddings(propagation);
           })
-          .catch((error) => console.warn('[AppStream] Entity fetch failed:', error));
+          .catch((error) => console.warn('[handleProductNotification] Entity fetch failed:', error));
       }
 
       // Seq-less events have no synced rows, so they trigger an exact unseen-count recount.

@@ -1,12 +1,7 @@
 import type { ProductEntityType } from 'shared';
-import type { AppStreamNotification } from './types';
+import type { AppStreamNotification } from '~/query/realtime/types';
 
-/**
- * A change the stream announced. Mirrors the stream envelope; no row data is available yet.
- *
- * Dispatch is permission-filtered but not tier-filtered, so this covers every readable change
- * including muted and archived channels, whose rows are only fetched when opened.
- */
+/** A change the stream announced, in the fields of its envelope; no row data yet. */
 export interface ChangeEventSignal {
   kind: AppStreamNotification['kind'];
   action: AppStreamNotification['action'];
@@ -16,17 +11,12 @@ export interface ChangeEventSignal {
   subjectId: string | null;
 }
 
-/**
- * Rows that just landed from a sequence-range sync.
- *
- * `degraded` marks a range the fetch could not deliver (overflow, unsupported, exhausted retries):
- * activity did occur, but `rows` is empty, so subscribers that derive state from row contents must
- * fall back to invalidation.
- */
+/** Rows a sequence-range fetch just delivered. */
 export interface SyncedRowsSignal {
   entityType: ProductEntityType;
   organizationId: string;
   rows: { id: string; [key: string]: unknown }[];
+  /** A range the fetch could not deliver (overflow, unsupported, exhausted retries): `rows` is empty, and a subscriber that derives state from rows invalidates. */
   degraded: boolean;
 }
 
@@ -36,7 +26,7 @@ type Handler<T> = (signal: T) => void;
 export function createSignal<T>(name: string) {
   const handlers = new Set<Handler<T>>();
 
-  /** Handlers must not throw; one bad subscriber may not break the sync flow. */
+  /** A throwing handler is logged and skipped, so one bad subscriber cannot break the sync flow. */
   const publish = (signal: T): void => {
     for (const handler of handlers) {
       try {
@@ -60,16 +50,10 @@ export function createSignal<T>(name: string) {
 const changeEvent = createSignal<ChangeEventSignal>('ChangeEventSignal');
 const syncedRows = createSignal<SyncedRowsSignal>('SyncedRowsSignal');
 
-/**
- * Subscribe to announced changes; use it to trigger work. Published by the app stream handler for
- * every notification, before any tier decision, carrying ids only.
- */
+/** Subscribe to announced changes to trigger work: every readable notification, before any tier decision, muted and archived channels included. */
 export const onChangeEvent = changeEvent.subscribe;
 export const publishChangeEvent = changeEvent.publish;
 
-/**
- * Subscribe to fetched rows; use it to derive state from row contents. Published by the fetch
- * prioritizer once a range settles, never for scopes it defers to open-time.
- */
+/** Subscribe to fetched rows to derive state from them: the fetch prioritizer publishes a range once it settles, a muted scope's notified ranges when it is opened. */
 export const onSyncedRows = syncedRows.subscribe;
 export const publishSyncedRows = syncedRows.publish;

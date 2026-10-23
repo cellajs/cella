@@ -175,7 +175,7 @@ describe('catchup processor (view-driven)', () => {
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
   });
 
-  it('never advances the cursor silently: a failed delta fetch invalidates before advancing', async () => {
+  it('never advances the cursor without a fallback: a failed delta fetch invalidates before advancing', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     const rangeFetch = vi.fn(async () => {
       throw new Error('network down');

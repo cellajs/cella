@@ -6,9 +6,9 @@ import { isDebugMode } from '~/env';
 import { reportCriticalError } from '~/lib/tracing';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { setSyncStreamHealthy, setSyncWorkerAway } from '~/query/basic/sync-stale-state';
+import { handleAppStreamNotification } from '~/query/realtime/app-stream-handler';
+import { processAppCatchup } from '~/query/realtime/catchup-processor';
 import { type CatchupViewRequest, syncStore } from '~/query/realtime/sync-store';
-import { handleAppStreamNotification } from './app-stream-handler';
-import { processAppCatchup } from './catchup-processor';
 import {
   broadcastCatchup,
   broadcastNotification,
@@ -20,21 +20,26 @@ import {
   onSyncHealth,
   type SyncHealth,
   tabCoordinatorStore,
-} from './tab-coordinator';
-import type { AppStreamNotification, StreamState } from './types';
-import { declareViewsFromMemberships } from './view-declaration';
+} from '~/query/realtime/tab-coordinator';
+import type { AppStreamNotification, StreamState } from '~/query/realtime/types';
+import { declareViewsFromMemberships } from '~/query/realtime/view-declaration';
 
 const maxFailures = 3;
 const circuitCooldownMs = 60_000;
 const initialBackoffMs = 5_000;
 const maxBackoffMs = 30_000;
 const backoffFactor = 2;
-const reconnectJitterMs = 2_000; // Random 0-2s added to reconnect delay to avoid thundering herd
-const minUptimeMs = 10_000; // Connection must stay up 10s before backoff resets
+/** A random share of this is added to each reconnect delay, so streams that dropped together do not reconnect together. */
+const reconnectJitterMs = 2_000;
+/** A connection that stayed up this long starts the backoff from the beginning when it fails: a flapping one keeps backing off. */
+const minUptimeMs = 10_000;
 const healthUrl = `${appConfig.backendUrl}/auth/health`;
-const notificationBufferCap = 500; // Buffered live notifications while catchup runs; overflow retries catchup once
-const streamSilenceMs = 75_000; // 2.5 keepalive intervals of the server (30s each) without any event: the open stream is dead
-const workerAwayPing = 'worker_away'; // What a ping of the app stream carries while the server's CDC worker has not been reading for a minute
+/** Live notifications buffered while catchup runs. */
+const notificationBufferCap = 500;
+/** 2.5 of the server's 30-second keepalive intervals without any event: the open stream is dead. */
+const streamSilenceMs = 75_000;
+/** What a ping of the app stream carries while the server's CDC worker has not been reading for a minute. */
+const workerAwayPing = 'worker_away';
 
 interface StreamConfig {
   endpoint: string;
@@ -43,8 +48,7 @@ interface StreamConfig {
   fetchAndProcessCatchup: (cursor: string | null) => Promise<string | null>;
   /** A follower's side of catchup: process the answer the leader passed on. */
   processLeaderCatchup: (response: PostAppCatchupResponse, baselineOnly: boolean) => Promise<void>;
-  /** Process a single live SSE notification. */
-  processNotification: (notification: unknown) => void;
+  processNotification: (notification: AppStreamNotification) => void;
   /** Called with the data of every keepalive: empty, or the standing fact the server repeats with each one. */
   onPing?: (data: string) => void;
 }
@@ -93,7 +97,7 @@ function resolveInitialCatchupGate() {
   initialCatchupResolve = null;
 }
 
-/** Manages SSE connection lifecycle with Zustand store for state. Exported for tests. */
+/** Owns one SSE connection: catchup, reconnect, backoff and the circuit breaker. Exported for tests. */
 export class StreamManager {
   private config: StreamConfig;
   private eventSource: EventSource | null = null;
@@ -130,7 +134,7 @@ export class StreamManager {
     return this.eventSource?.readyState === EventSource.OPEN;
   }
 
-  /** Subscribe before catchup and buffer live events, so a change in the registration window lands in either snapshot or buffer. */
+  /** Subscribe before catchup and buffer live events, so a change in the registration window reaches either the snapshot or the buffer. */
   async connect() {
     // Idempotent, cleaned up in disconnect.
     this.startVisibilityReconnect();
@@ -245,7 +249,7 @@ export class StreamManager {
     }
   }
 
-  /** Shared failure path for catchup/tab-coordination errors: error state, gate release, circuit/backoff. */
+  /** The one failure path of a catchup or a tab election. */
   private handleCatchupFailure(error: unknown) {
     this.consecutiveFailures++;
     const isPermanentError = this.isPermanentError(error);
@@ -257,7 +261,6 @@ export class StreamManager {
     // Open the gate on failure too, so paused mutations are not stuck forever.
     resolveInitialCatchupGate();
 
-    // Open circuit breaker for permanent errors or after max failures
     if (isPermanentError || this.consecutiveFailures >= maxFailures) {
       this.openCircuit(isPermanentError ? 'permanent error detected' : 'max consecutive failures');
       return;
@@ -266,7 +269,6 @@ export class StreamManager {
     this.scheduleReconnect();
   }
 
-  /** Advance the stream cursor, pass one notification on to the follower tabs and hand it to the app-level processor. */
   private applyNotification(notification: AppStreamNotification, eventId: string | undefined) {
     if (eventId) {
       this.store.getState().setCursor(eventId);
@@ -278,18 +280,13 @@ export class StreamManager {
   }
 
   private isPermanentError(error: unknown): boolean {
-    if (error && typeof error === 'object' && 'status' in error) {
-      const status = (error as { status: number }).status;
-      return status === 401 || status === 403;
-    }
+    if (error && typeof error === 'object' && 'status' in error) return error.status === 401 || error.status === 403;
     const message = error instanceof Error ? error.message : String(error);
     return message.includes('Access denied') || message.includes('Unauthorized');
   }
 
   private connectSSE(signal: AbortSignal) {
     const { endpoint, withCredentials } = this.config;
-
-    const sseUrl = new URL(endpoint);
 
     // A stream that is still open here is replaced, and its watchdog goes with it.
     this.closeEventSource();
@@ -298,7 +295,7 @@ export class StreamManager {
     this.bufferOverflowed = false;
     this.pendingNotifications = [];
     let catchupStarted = false;
-    const eventSource = new EventSource(sseUrl.toString(), { withCredentials });
+    const eventSource = new EventSource(endpoint, { withCredentials });
     const noteActivity = () => {
       this.lastEventAt = Date.now();
     };
@@ -348,10 +345,10 @@ export class StreamManager {
 
     // Server-sent error event with a typed payload; the bare transport Event goes to `onerror`.
     eventSource.addEventListener('error', (event) => {
-      if (!(event instanceof MessageEvent) || !event.data) return; // transport error -> falls through to onerror
+      if (!(event instanceof MessageEvent) || !event.data) return;
       noteActivity();
       try {
-        const payload = JSON.parse(event.data) as { code?: string; message?: string };
+        const payload: { code?: string; message?: string } = JSON.parse(event.data);
         const permanent = payload.code === 'unauthorized' || payload.code === 'forbidden' || payload.code === 'tenant_revoked';
         console.debug(`[${this.name}] Server stream error:`, payload);
         this.closeEventSource();
@@ -378,7 +375,6 @@ export class StreamManager {
     this.consecutiveFailures++;
     console.debug(`[${this.name}] ${reason}`);
 
-    // Reset backoff only after stable uptime, so a flapping connection keeps backing off.
     if (this.connectedAt && Date.now() - this.connectedAt >= minUptimeMs) {
       this.currentBackoff = initialBackoffMs;
     }
@@ -422,7 +418,7 @@ export class StreamManager {
     this.circuitOpen = true;
     this.circuitOpenedAt = Date.now();
     console.warn(`[${this.name}] Circuit breaker opened:`, reason);
-    // The stream gave up for now: paused mutations replay through the API, which arbitrates them by their `replayed` stx.
+    // The stream stopped reconnecting until the cooldown ends: paused mutations replay through the API, which arbitrates them by their `replayed` stx.
     resolveInitialCatchupGate();
 
     // Cancel the pending reconnect so it cannot fire while the circuit is open.
@@ -485,7 +481,7 @@ export class StreamManager {
   private startVisibilityReconnect() {
     if (this.visibilityHandler) return;
     this.visibilityHandler = () => {
-      const shouldReconnect = this.config.useTabCoordination ? isLeader() : true;
+      const shouldReconnect = !this.config.useTabCoordination || isLeader();
       if (document.visibilityState === 'visible' && shouldReconnect && !this.isConnected()) {
         console.debug(`[${this.name}] Tab visible, attempting reconnect...`);
         this.attemptReconnect();
@@ -543,7 +539,7 @@ export class StreamManager {
     this.store.getState().setState('disconnected');
   }
 
-  /** Reset circuit breaker and failure count. Call when auth state changes. */
+  /** Clears the circuit and the backoff; call when the auth state changes. */
   resetCircuitBreaker() {
     this.consecutiveFailures = 0;
     this.circuitOpen = false;
@@ -558,8 +554,6 @@ export class StreamManager {
     this.connect();
   }
 }
-
-// App Stream
 
 type CatchupBody = NonNullable<Parameters<typeof postAppCatchup>[0]>['body'];
 type CatchupView = NonNullable<CatchupBody['views']>[number];
@@ -591,7 +585,7 @@ export const appStreamManager = new StreamManager('AppStream', {
     return response.cursor ?? null;
   },
   processLeaderCatchup: processAppCatchup,
-  processNotification: (notification) => handleAppStreamNotification(notification as AppStreamNotification),
+  processNotification: handleAppStreamNotification,
   onPing: (data) => {
     workerAway = data === workerAwayPing;
     publishSyncHealth();
@@ -603,15 +597,12 @@ let workerAway = false;
 let publishedHealth: SyncHealth | null = null;
 
 /** Mirrors the health of live delivery into the basic layer without a circular import: either fact enables time-based freshness. */
-const applySyncHealth = (health: SyncHealth): void => {
+function applySyncHealth(health: SyncHealth): void {
   setSyncStreamHealthy(health.streamHealthy);
   setSyncWorkerAway(health.workerAway);
-};
+}
 
-/**
- * Takes the health of live delivery from this tab's own stream, and tells the follower tabs when it changed. Catch-up
- * reconciles every connection, so of the stream only a hard error counts. A follower has no stream to judge by.
- */
+/** Takes the health of live delivery from this tab's own stream and tells the follower tabs when it changed. Of the stream only the `error` state counts: each reconnect runs a catchup. */
 function publishSyncHealth(): void {
   if (!isLeader()) return;
   const health: SyncHealth = { streamHealthy: appStreamManager.store.getState().state !== 'error', workerAway };

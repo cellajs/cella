@@ -5,8 +5,11 @@ import { isDebugMode } from '~/env';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface OrgSyncState {
+  /** Empty until a notification or a membership names it. */
   tenantId: string;
+  /** Org-slot cursors by entity type, and the membership signal under `membership`. */
   seqs: Record<string, number>;
+  /** Cursors of the channels below the organization, by channel id and then entity type. */
   contexts: Record<string, Record<string, number>>;
 }
 
@@ -66,12 +69,10 @@ interface SyncStoreState {
   reset: () => void;
 }
 
-const initStore = {
-  cursor: null as string | null,
-  generation: null as number | null,
-  orgs: {} as Record<string, OrgSyncState>,
-  views: {} as Record<string, RegisteredSyncView>,
-};
+const initStore: Pick<SyncStoreState, 'cursor' | 'generation' | 'orgs' | 'views'> = { cursor: null, generation: null, orgs: {}, views: {} };
+
+/** The server's cap on catchup views (`streamCatchupBodySchema`): a longer body fails the SDK's validation, and with it the whole catchup. */
+const maxCatchupViews = 256;
 
 /** View identity for the re-baseline rule: prefixes + types + depth (order-insensitive). */
 function viewIdentity(view: Omit<RegisteredSyncView, 'cursor'>): string {
@@ -89,7 +90,7 @@ function ensureOrg(orgs: Record<string, OrgSyncState>, organizationId: string, t
   return existing;
 }
 
-/** Vanilla Zustand store for offline sync state: per-org sequences plus the global cursor. */
+/** This user's sync cursors, persisted: the stream cursor, the org and channel sequences, and the registered views. */
 export const syncStore = createStore<SyncStoreState>()(
   devtools(
     persist(
@@ -186,12 +187,10 @@ export const syncStore = createStore<SyncStoreState>()(
           for (const [key, view] of Object.entries(get().views)) {
             views.push({ key, ...view });
           }
-          // Server cap (streamCatchupBodySchema): an oversized body fails SDK validation client-side,
-          // killing the whole catchup. Truncation degrades to partial sync (dropped views simply do
-          // not advance this cycle), which beats no sync at all; org pruning keeps this unreachable.
-          if (views.length > 256) {
-            console.warn(`[SyncStore] Catchup views truncated ${views.length} → 256; sync coverage is partial`);
-            return views.slice(0, 256);
+          // A partial sync beats none: the dropped views do not advance this cycle, and org pruning keeps this unreachable.
+          if (views.length > maxCatchupViews) {
+            console.warn(`[SyncStore] Catchup views truncated ${views.length} → ${maxCatchupViews}; sync coverage is partial`);
+            return views.slice(0, maxCatchupViews);
           }
           return views;
         },
