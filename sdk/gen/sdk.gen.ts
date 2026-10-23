@@ -221,6 +221,9 @@ import type {
   PostAppCatchupData,
   PostAppCatchupErrors,
   PostAppCatchupResponses,
+  PublishOrganizationData,
+  PublishOrganizationErrors,
+  PublishOrganizationResponses,
   PullYjsDocumentData,
   PullYjsDocumentErrors,
   PullYjsDocumentResponses,
@@ -464,6 +467,8 @@ import {
   zMicrosoftQuery,
   zPostAppCatchupBody,
   zPostAppCatchupResponse,
+  zPublishOrganizationPath,
+  zPublishOrganizationResponse,
   zPullYjsDocumentBody,
   zPullYjsDocumentPath,
   zPullYjsDocumentResponse,
@@ -3603,6 +3608,43 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Publish organization
+ *
+ * Publishes a draft organization, then sends the invitations it held for every role except its prepare roles. Safe to repeat: on a published organization it sends invitations an earlier call left waiting.
+ *
+ * **PUT /{tenantId}/organizations/{id}/publish** ·· [publishOrganization](https://www.cellajs.com/docs/operations?operationTag=organizations#tag/organizations/PUT/{tenantId}/organizations/{id}/publish) ·· [publishOrganization](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/organizations/{id}/publish) ·· [publishOrganization](https://www.cellajs.com/docs/operations?operationTag=channel#tag/channel/PUT/{tenantId}/organizations/{id}/publish) ·· _organizations_cella_channel_
+ *
+ * @param {publishOrganizationData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const publishOrganization = <ThrowOnError extends boolean = true>(
+  options: Options<PublishOrganizationData, ThrowOnError>,
+): RequestResult<PublishOrganizationResponses, PublishOrganizationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).put<PublishOrganizationResponses, PublishOrganizationErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zPublishOrganizationPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zPublishOrganizationResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/organizations/{id}/publish',
+    ...options,
   });
 
 /**

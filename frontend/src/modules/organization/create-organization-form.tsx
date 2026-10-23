@@ -4,6 +4,7 @@ import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { zCreateOrganizationsBody } from 'sdk/zod.gen';
+import { hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { z } from 'zod';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
@@ -16,9 +17,11 @@ import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
+import { prepareRolesText } from '~/modules/entities/draft-roles';
 import { useOrganizationCreateMutation } from '~/modules/organization/query';
 import { useSelfCreateTenantMutation } from '~/modules/tenants/query';
-import { Form } from '~/modules/ui/field';
+import { Form, FormField, FormItem, FormLabel } from '~/modules/ui/field';
+import { Switch } from '~/modules/ui/switch';
 import { formResolver } from '~/utils/form-resolver';
 
 interface CreateOrganizationFormProps {
@@ -39,7 +42,7 @@ export function CreateOrganizationForm({ dialog: isDialog, children, callback }:
   const { nextStep } = useStepper();
   const nameLabel = t('c:name').toLowerCase();
 
-  const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: { name: '', slug: '' } };
+  const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: { name: '', slug: '', draft: false } };
 
   const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 
@@ -89,6 +92,20 @@ export function CreateOrganizationForm({ dialog: isDialog, children, callback }:
           nameValue={name}
           prefix="/~/"
         />
+        {hierarchy.canDraft('organization') && (
+          <FormField
+            control={form.control}
+            name="draft"
+            render={({ field }) => (
+              <FormItem name="draft" className="flex flex-row items-center gap-3">
+                <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                <div>
+                  <FormLabel help={t('c:start_as_draft.text', { prepareRoles: prepareRolesText('organization') })}>{t('c:start_as_draft')}</FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
+        )}
 
         <div className="flex flex-col gap-2 sm:flex-row">
           <SubmitButton disabled={!form.isDirty} loading={selfCreateTenantMutation.isPending || createMutation.isPending}>

@@ -1940,6 +1940,31 @@
     "entityType": "organization"
   },
   {
+    "id": "publishOrganization",
+    "hash": "tag/organizations/PUT/{tenantId}/organizations/{id}/publish",
+    "method": "put",
+    "path": "/{tenantId}/organizations/{id}/publish",
+    "tags": ["organizations"],
+    "summary": "Publish organization",
+    "description": "Publishes a draft organization, then sends the invitations it held for every role except its prepare roles. Safe to repeat: on a published organization it sends invitations an earlier call left waiting.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["userGuard", "tenantGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["organizations"],
+      "owner": ["cella"],
+      "entity": ["channel"]
+    },
+    "entityType": "organization"
+  },
+  {
     "id": "getAttachments",
     "hash": "tag/attachments/GET/{tenantId}/{organizationId}/attachments",
     "method": "get",

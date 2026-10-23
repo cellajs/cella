@@ -127,6 +127,12 @@ export const organizationsSeed = async () => {
       .onConflictDoNothing();
   }
 
+  // One organization the seed admin administers starts as a draft, so publishing can be tried by hand
+  const draftOrganizationId = adminMemberships.find((membership) => !membership.archived)?.channelId;
+  if (draftOrganizationId) {
+    await db.update(organizationsTable).set({ publishedAt: null }).where(eq(organizationsTable.id, draftOrganizationId));
+  }
+
   succeedSpinner(`Created ${TENANTS_COUNT} tenants, one organization each (${TENANTS_COUNT * ORGANIZATIONS_PER_TENANT} total), ${MEMBERS_COUNT} members per org`);
 };
 

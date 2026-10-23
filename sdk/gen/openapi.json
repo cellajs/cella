@@ -2000,10 +2000,10 @@
           "subscriptionId": null,
           "subscriptionStatus": "none",
           "subscriptionPlan": null,
-          "createdAt": "2024-01-14T10:00:28.012Z",
-          "updatedAt": "2024-03-05T22:43:30.502Z",
+          "createdAt": "2024-08-28T03:48:14.133Z",
+          "updatedAt": "2024-09-06T15:18:56.716Z",
           "organization": {
-            "id": "ebefa691-88f5-48a0-89ae-90751aba8e7d",
+            "id": "6368460b-12e3-4ecb-9d45-0400fa84460e",
             "name": "Lubowitz, Waters and Haley",
             "slug": "lubowitz-waters-and-haley",
             "thumbnailUrl": null,
@@ -2131,8 +2131,8 @@
             "thumbnailUrl": null
           },
           "updatedBy": null,
-          "createdAt": "2024-05-28T05:49:31.389Z",
-          "updatedAt": "2024-09-09T15:07:51.965Z"
+          "createdAt": "2024-03-17T20:40:57.755Z",
+          "updatedAt": "2024-07-18T19:45:29.960Z"
         },
         "x-tags": ["data", "connections", "cella"]
       },
@@ -8403,10 +8403,10 @@
                       "subscriptionId": null,
                       "subscriptionStatus": "none",
                       "subscriptionPlan": null,
-                      "createdAt": "2024-06-26T03:38:34.095Z",
-                      "updatedAt": "2024-07-23T13:11:01.378Z",
+                      "createdAt": "2024-04-22T01:41:22.859Z",
+                      "updatedAt": "2024-10-06T12:23:00.668Z",
                       "organization": {
-                        "id": "5fcdcd77-a74d-4675-a4be-219ac431684e",
+                        "id": "6124da3a-8d5c-4d2d-b512-87940f2ce1f6",
                         "name": "Predovic, Bahringer and Morar",
                         "slug": "predovic-bahringer-and-morar",
                         "thumbnailUrl": null,
@@ -8442,10 +8442,10 @@
                       "subscriptionId": null,
                       "subscriptionStatus": "none",
                       "subscriptionPlan": null,
-                      "createdAt": "2024-11-09T09:16:10.228Z",
-                      "updatedAt": "2024-11-14T01:28:51.991Z",
+                      "createdAt": "2024-09-02T00:08:53.116Z",
+                      "updatedAt": "2024-10-30T00:10:58.044Z",
                       "organization": {
-                        "id": "2be8971c-945c-4a5c-b51f-a622b9660ef8",
+                        "id": "4c5fab3a-28de-47d0-9e1f-39a8e4d9f8ba",
                         "name": "Crooks, Kuphal and Roob-Blick",
                         "slug": "crooks-kuphal-and-roob-blick",
                         "thumbnailUrl": null,
@@ -8561,10 +8561,10 @@
                   "subscriptionId": null,
                   "subscriptionStatus": "none",
                   "subscriptionPlan": null,
-                  "createdAt": "2024-04-26T09:12:24.404Z",
-                  "updatedAt": "2024-09-10T10:26:27.437Z",
+                  "createdAt": "2024-12-09T17:40:09.637Z",
+                  "updatedAt": "2024-12-31T03:23:08.766Z",
                   "organization": {
-                    "id": "cd6777fe-de38-4aaa-8092-92837613a8e9",
+                    "id": "1a2fce3a-e05d-430a-9598-ad7fd22b6d2b",
                     "name": "Lubowitz, Waters and Haley",
                     "slug": "lubowitz-waters-and-haley",
                     "thumbnailUrl": null,
@@ -8724,10 +8724,10 @@
                   "subscriptionId": null,
                   "subscriptionStatus": "none",
                   "subscriptionPlan": null,
-                  "createdAt": "2024-12-19T21:15:55.155Z",
-                  "updatedAt": "2024-12-25T04:18:49.147Z",
+                  "createdAt": "2024-11-21T23:09:30.104Z",
+                  "updatedAt": "2024-12-12T21:32:54.232Z",
                   "organization": {
-                    "id": "aca82b32-fe04-44cf-88d2-d4ef18b42a3e",
+                    "id": "1d33da9c-5945-46be-9665-6b4fdf07395c",
                     "name": "Lubowitz, Waters and Haley",
                     "slug": "lubowitz-waters-and-haley",
                     "thumbnailUrl": null,
@@ -8815,8 +8815,8 @@
                       "thumbnailUrl": null
                     },
                     "updatedBy": null,
-                    "createdAt": "2024-07-01T01:41:32.360Z",
-                    "updatedAt": "2024-11-27T07:03:21.284Z"
+                    "createdAt": "2024-10-21T04:10:53.514Z",
+                    "updatedAt": "2024-11-08T21:35:18.269Z"
                   }
                 ],
                 "schema": {
@@ -8961,8 +8961,8 @@
                     "thumbnailUrl": null
                   },
                   "updatedBy": null,
-                  "createdAt": "2024-03-22T06:22:57.326Z",
-                  "updatedAt": "2024-10-19T13:53:06.727Z"
+                  "createdAt": "2024-12-28T15:30:13.194Z",
+                  "updatedAt": "2024-12-29T16:24:17.864Z"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Connection"
@@ -9108,8 +9108,8 @@
                     "thumbnailUrl": null
                   },
                   "updatedBy": null,
-                  "createdAt": "2024-11-12T00:07:09.606Z",
-                  "updatedAt": "2024-12-01T10:53:58.739Z"
+                  "createdAt": "2024-03-16T00:45:54.815Z",
+                  "updatedAt": "2024-09-10T09:11:15.318Z"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Connection"
@@ -9198,8 +9198,8 @@
                     "thumbnailUrl": null
                   },
                   "updatedBy": null,
-                  "createdAt": "2024-04-04T19:04:28.689Z",
-                  "updatedAt": "2024-12-16T15:27:49.082Z"
+                  "createdAt": "2024-07-25T12:15:48.951Z",
+                  "updatedAt": "2024-09-14T12:46:20.724Z"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Connection"
@@ -9708,6 +9708,10 @@
                       "minLength": 2,
                       "maxLength": 255,
                       "pattern": "^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$"
+                    },
+                    "draft": {
+                      "type": "boolean",
+                      "description": "Create unpublished: only its prepare roles are invited until it is published. Ignored unless the hierarchy declares `drafts` for organizations."
                     }
                   },
                   "required": ["id", "name", "slug"]
@@ -10835,6 +10839,150 @@
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Organization"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/organizations/{id}/publish": {
+      "put": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "publishOrganization",
+        "tags": ["organizations", "cella", "channel"],
+        "summary": "Publish organization",
+        "description": "Publishes a draft organization, then sends the invitations it held for every role except its prepare roles. Safe to repeat: on a published organization it sends invitations an earlier call left waiting.",
+        "x-guard": ["userGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organization was published",
+            "content": {
+              "application/json": {
+                "example": {
+                  "organization": {
+                    "createdAt": "2024-12-25T15:04:42.969Z",
+                    "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+                    "entityType": "organization",
+                    "tenantId": "d1lgzb",
+                    "name": "Spencer, Pouros and Bergnaum",
+                    "updatedAt": "2024-12-25T15:04:42.969Z",
+                    "slug": "spencer-pouros-and-bergnaum",
+                    "thumbnailUrl": null,
+                    "bannerUrl": null,
+                    "createdBy": null,
+                    "updatedBy": null,
+                    "publishedAt": "2024-12-25T15:04:42.969Z",
+                    "public": false,
+                    "toolsConfig": {},
+                    "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+                    "shortName": "Spencer,",
+                    "country": "Sweden",
+                    "timezone": "Europe/Vaduz",
+                    "defaultLanguage": "en",
+                    "languages": ["en"],
+                    "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
+                    "color": "#cda6af",
+                    "logoUrl": null,
+                    "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
+                    "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
+                    "chatSupport": true,
+                    "organizationFlags": {},
+                    "setupConfig": {},
+                    "included": {
+                      "membership": {
+                        "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
+                        "tenantId": "d1lgzb",
+                        "channelType": "organization",
+                        "channelId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+                        "userId": "2effb0cf-d2bd-45e6-abcd-21de08509c32",
+                        "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+                        "role": "member",
+                        "displayOrder": 18,
+                        "muted": false,
+                        "archived": false
+                      },
+                      "counts": {
+                        "membership": {
+                          "admin": 30,
+                          "member": 63,
+                          "pending": 13,
+                          "total": 93
+                        },
+                        "entities": {
+                          "attachment": 178
+                        },
+                        "entitiesSelf": {
+                          "attachment": 119
+                        },
+                        "activity": {
+                          "attachment": {
+                            "created": 1734107615547,
+                            "updated": 1734969019663
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "invitationsSent": 12
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "organization": {
+                      "$ref": "#/components/schemas/Organization"
+                    },
+                    "invitationsSent": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Invitations held while it was a draft and sent now."
+                    }
+                  },
+                  "required": ["organization", "invitationsSent"]
                 }
               }
             }

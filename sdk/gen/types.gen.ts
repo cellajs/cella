@@ -4759,6 +4759,10 @@ export type CreateOrganizationsData = {
     id: string;
     name: string;
     slug: string;
+    /**
+     * Create unpublished: only its prepare roles are invited until it is published. Ignored unless the hierarchy declares `drafts` for organizations.
+     */
+    draft?: boolean;
   }>;
   path: {
     tenantId: string;
@@ -5035,6 +5039,60 @@ export type UpdateOrganizationResponses = {
 };
 
 export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
+
+export type PublishOrganizationData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/{tenantId}/organizations/{id}/publish';
+};
+
+export type PublishOrganizationErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type PublishOrganizationError = PublishOrganizationErrors[keyof PublishOrganizationErrors];
+
+export type PublishOrganizationResponses = {
+  /**
+   * Organization was published
+   */
+  200: {
+    organization: Organization;
+    /**
+     * Invitations held while it was a draft and sent now.
+     */
+    invitationsSent: number;
+  };
+};
+
+export type PublishOrganizationResponse = PublishOrganizationResponses[keyof PublishOrganizationResponses];
 
 export type DeleteAttachmentsData = {
   body: {

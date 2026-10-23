@@ -1658,6 +1658,7 @@ export const zCreateOrganizationsBody = z
         .min(2)
         .max(255)
         .regex(/^[a-zA-Z0-9]+(-{0,3}[a-zA-Z0-9]+)*$/),
+      draft: z.boolean().optional(),
     }),
   )
   .min(1)
@@ -1810,6 +1811,19 @@ export const zUpdateOrganizationPath = z.object({
  * Organization was updated
  */
 export const zUpdateOrganizationResponse = zOrganization;
+
+export const zPublishOrganizationPath = z.object({
+  tenantId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * Organization was published
+ */
+export const zPublishOrganizationResponse = z.object({
+  organization: zOrganization,
+  invitationsSent: z.int().gte(0),
+});
 
 export const zDeleteAttachmentsBody = z.object({
   ids: z.array(z.string()).min(1).max(50),

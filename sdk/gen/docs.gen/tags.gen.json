@@ -62,7 +62,7 @@
   {
     "name": "organizations",
     "description": "Endpoints for managing organizations, which are core channel entities and the highest ancestor\n    in the entity hierarchy. Organizations define access boundaries and are typically the primary scope for\n    permissions and resource management.",
-    "count": 5,
+    "count": 6,
     "kind": "module"
   },
   {

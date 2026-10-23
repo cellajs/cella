@@ -48,9 +48,9 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
   const { slug: entitySlug, name: entityName } = entity;
 
   // Draft context (publishedAt null): invites are recorded but emails are held and existing users are not added, all released at publish.
-  // The context's most-privileged role (first in its vocabulary) stays live so staff can collaborate in drafts.
+  // The channel's prepare roles (`drafts.prepareRoles` in the hierarchy) stay live so those people can set the draft up.
   const channelIsDraft = entity.publishedAt === null;
-  const deferDispatch = channelIsDraft && role !== hierarchy.getRoles(entityType)[0];
+  const deferDispatch = channelIsDraft && !hierarchy.getPrepareRoles(entityType).includes(role);
 
   const currentOrgMemberships = await countMembershipsByChannel(ctx, { channelType: 'organization', channelId: organization.id });
   const pendingInvites = await countPendingInvitesByChannel(ctx, { channelType: 'organization', channelId: organization.id });

@@ -5,13 +5,14 @@ import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for system-level invite called from stepper flow.
 import { systemInvite as baseSystemInvite } from 'sdk';
 import { zMembershipInviteBody } from 'sdk/zod.gen';
-import { type ChannelEntityType, hierarchy } from 'shared';
+import { type ChannelEntityType, hierarchy, isUnpublishedDraft } from 'shared';
 import type z from 'zod';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
+import { NamedText } from '~/modules/common/named-text';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
@@ -86,7 +87,7 @@ interface InviteFormFooterProps extends Omit<InviteFormProps, 'dialog'> {
   onCancel: () => void;
 }
 
-/** Role choice for a channel invite, then the submit button with the address count. */
+/** Role choice for a channel invite, with when its email goes out in a draft channel, then the submit button with the address count. */
 export function InviteFormFooter({ form, channel, count, loading, onCancel, children }: InviteFormFooterProps) {
   const { t } = useTranslation();
 
@@ -97,8 +98,17 @@ export function InviteFormFooter({ form, channel, count, loading, onCancel, chil
           control={form.control}
           name="role"
           render={({ field: { value, onChange } }) => (
-            <FormItem className="ml-3 flex-row items-center gap-4">
+            <FormItem className="ml-3 flex-row flex-wrap items-center gap-x-4 gap-y-2">
               <SelectRoleRadio value={value} onChange={onChange} entityType={channel.entityType} label={t('c:role')} />
+              {isUnpublishedDraft(channel) && (
+                <p className="basis-full text-muted-foreground text-sm">
+                  <NamedText
+                    i18nKey={hierarchy.getPrepareRoles(channel.entityType).includes(value) ? 'c:invite_prepare.text' : 'c:invite_held.text'}
+                    name={channel.name}
+                    values={{ roles: t(`c:${value}`, { count: 2 }) }}
+                  />
+                </p>
+              )}
               <FormMessage />
             </FormItem>
           )}

@@ -1,14 +1,16 @@
-import { and, count, eq, getColumns, inArray, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { EntityRole, OrganizationFlags, OrganizationSetupConfig } from 'shared';
 import type { ToolsConfig } from 'shared/tools-config';
-import type { ActorContext, DbContext } from '#/core/context';
+import type { ActorContext, DbContext, UserContext } from '#/core/context';
 import { mergeJsonbShallow } from '#/db/utils/jsonb-merge';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
+import { updateStamps } from '#/db/utils/stamps';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { getChannelCountsSelect } from '#/modules/entities/entities-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationFlagsSelect, setupConfigSelect } from '#/modules/organization/helpers/select';
 import { organizationsTable } from '#/modules/organization/organization-db';
+import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { textSearchFilter } from '#/utils/sql';
 
@@ -69,6 +71,22 @@ export const updateOrganization = async (ctx: ActorContext, { id, values }: Upda
     .where(and(eq(organizationsTable.id, id), eq(organizationsTable.tenantId, tenantId)))
     .returning();
   return updated;
+};
+
+interface PublishOrganizationOpts {
+  id: string;
+}
+
+/** Stamps a draft organization published. Undefined when it was not a draft, also when another call published it first. */
+export const publishOrganization = async (ctx: UserContext, { id }: PublishOrganizationOpts) => {
+  const { db, tenantId, user } = ctx.var;
+  const at = getIsoDate();
+  const [published] = await db
+    .update(organizationsTable)
+    .set({ publishedAt: at, ...updateStamps(user.id, at) })
+    .where(and(eq(organizationsTable.id, id), eq(organizationsTable.tenantId, tenantId), isNull(organizationsTable.publishedAt)))
+    .returning();
+  return published;
 };
 
 interface DeleteOrganizationsByIdsOpts {
