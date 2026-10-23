@@ -1,6 +1,6 @@
 import { Trans, useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { InlineLinkButton } from '~/modules/auth/inline-link-button';
+import { InlineLinkButton } from '~/modules/common/inline-link-button';
 
 interface SignUpDisabledProps {
   onRequest: () => void;

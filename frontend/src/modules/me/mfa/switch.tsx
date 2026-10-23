@@ -1,10 +1,10 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { CircleAlertIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ConfirmMfaToggle } from '~/modules/me/mfa/confirmation';
 import { meAuthQueryOptions } from '~/modules/me/query';
+import { WarningNote } from '~/modules/me/warning-note';
 import { Switch } from '~/modules/ui/switch';
 import { useCurrentUser } from '~/modules/user/user-store';
 
@@ -12,8 +12,7 @@ export function MfaSwitch() {
   const { t } = useTranslation();
   const user = useCurrentUser();
   const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
-  const hasPasskey = authData.passkeys.length > 0;
-  const hasTotp = authData.hasTotp;
+  const canEnable = authData.passkeys.length > 0 && authData.hasTotp;
 
   const createDialog = useDialoger((state) => state.create);
 
@@ -38,22 +37,12 @@ export function MfaSwitch() {
           id="mfaRequired"
           ref={triggerRef}
           aria-label={t('c:mfa')}
-          disabled={!hasPasskey || !hasTotp}
+          disabled={!canEnable}
           checked={user.mfaRequired}
           onCheckedChange={handleToggleMfa}
         />
-        {user.mfaRequired && (
-          <p className="flex items-center gap-2">
-            <CircleAlertIcon className="size-3.5 shrink-0 text-warning" />
-            <span className="text-muted-foreground text-sm">{t('c:mfa_enabled.text')}</span>
-          </p>
-        )}
-        {(!hasPasskey || !hasTotp) && (
-          <p className="flex items-center gap-2">
-            <CircleAlertIcon className="size-3.5 shrink-0 text-warning" />
-            <span className="text-muted-foreground text-sm">{t('c:mfa_disabled.text')}</span>
-          </p>
-        )}
+        {user.mfaRequired && <WarningNote>{t('c:mfa_enabled.text')}</WarningNote>}
+        {!canEnable && <WarningNote>{t('c:mfa_disabled.text')}</WarningNote>}
       </div>
     </div>
   );

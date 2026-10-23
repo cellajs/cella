@@ -8,7 +8,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { AuthDivider } from '~/modules/auth/auth-divider';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
-import { InlineLinkButton } from '~/modules/auth/inline-link-button';
 import { LegalNotice } from '~/modules/auth/legal-notice';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
 import { ssoEntryQueryOptions } from '~/modules/auth/query';
@@ -16,6 +15,7 @@ import { SsoProviders } from '~/modules/auth/sso-providers';
 import type { TokenData } from '~/modules/auth/types';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
+import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 

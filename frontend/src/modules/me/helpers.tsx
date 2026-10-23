@@ -1,4 +1,4 @@
-import { getMe, getMyAuth, startImpersonation, stopImpersonation } from 'sdk';
+import { getMe, startImpersonation, stopImpersonation } from 'sdk';
 import { meKeys } from '~/modules/me/query';
 import { getCurrentUser, userStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
@@ -15,11 +15,6 @@ export const getAndSetMe = async () => {
   if (!me.impersonator && previousUserId && previousUserId !== me.user.id) window.location.reload();
 
   return me.user;
-};
-
-export const getAndSetMeAuthData = async () => {
-  const authInfo = await getMyAuth();
-  return authInfo;
 };
 
 /** Drops me and membership caches and reconnects SSE so the new identity's role and memberships apply. */

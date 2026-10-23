@@ -1,35 +1,36 @@
 import 'fake-indexeddb/auto';
+import '~/query/tests/query-client-env';
 import { dehydrate, QueryClient } from '@tanstack/react-query';
 import type { PersistedClient } from '@tanstack/react-query-persist-client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Node test env: persister.ts touches sessionStorage + window at module load.
+// Node test env: persister.ts touches sessionStorage at module load. The env's navigator has no locks API, so liveness
+// detection falls back to the record-age threshold.
 const sessionValues = new Map<string, string>();
 vi.stubGlobal('sessionStorage', {
   getItem: (k: string) => sessionValues.get(k) ?? null,
   setItem: (k: string, v: string) => sessionValues.set(k, v),
   removeItem: (k: string) => sessionValues.delete(k),
 });
-vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
-// No locks API: liveness detection falls back to the record-age threshold.
-vi.stubGlobal('navigator', { onLine: true });
 
 const { bindLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
 const { createIDBPersister, shouldPersistQuery } = await import('~/query/persister');
 const { yjsTokenQueryOptions } = await import('~/modules/common/blocknote/query');
 const { pendingMagicLinkQueryOptions, tokenDataQueryOptions } = await import('~/modules/auth/query');
+const { totpKeyQueryOptions } = await import('~/modules/me/query');
 
 bindLocalUserDb('persister-test-user');
 
 // The filter every persisted snapshot passes through, fed the app's own query options, so a query that must stay out
 // of the local database is checked as declared and not as restated here.
 describe('persister query filter', () => {
-  it('must not persist the Yjs token, the pending magic link or token data, while an ordinary query persists', async () => {
+  it('must not persist the Yjs token, the pending magic link, token data or a TOTP key, while an ordinary query persists', async () => {
     const queryClient = new QueryClient();
     const yjsToken = yjsTokenQueryOptions({ entityType: 'attachment', entityId: 'attachment-1', tenantId: 'tenant-1', organizationId: 'org-1' });
     await queryClient.query({ ...yjsToken, queryFn: async () => 'a-bearer-token' });
     await queryClient.query({ ...pendingMagicLinkQueryOptions, queryFn: async () => ({ email: 'other@example.com' }) });
     await queryClient.query({ ...tokenDataQueryOptions('invitation', 'token-1'), queryFn: async () => ({ email: 'invited@example.com' }) });
+    await queryClient.query({ ...totpKeyQueryOptions(), queryFn: async () => ({ totpUri: 'otpauth://totp/x', manualKey: 'SECRET' }) });
     await queryClient.query({ queryKey: ['organization', 'list'], queryFn: async () => [] });
 
     const { queries } = dehydrate(queryClient, { shouldDehydrateQuery: shouldPersistQuery });

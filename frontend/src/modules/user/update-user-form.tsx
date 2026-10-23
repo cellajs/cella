@@ -5,7 +5,6 @@ import { zUpdateUserBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
-import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { AvatarFormField } from '~/modules/common/form-fields/avatar';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
@@ -16,12 +15,11 @@ import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { useUpdateSelfMutation } from '~/modules/me/query';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { Label } from '~/modules/ui/label';
-import { useUserUpdateMutation } from '~/modules/user/query';
+import { useUpdateUser } from '~/modules/user/query';
 import { useCurrentUser } from '~/modules/user/user-store';
 import { formResolver } from '~/utils/form-resolver';
 
@@ -38,18 +36,15 @@ interface UpdateUserFormProps {
   /** Show only essential fields (avatar, name) for onboarding */
   compact?: boolean;
   children?: React.ReactNode;
-  callback?: (args: CallbackArgs<User>) => void;
 }
 
-export function UpdateUserForm({ user, callback, sheet: isSheet, compact, children }: UpdateUserFormProps) {
+export function UpdateUserForm({ user, sheet: isSheet, compact, children }: UpdateUserFormProps) {
   const { t } = useTranslation();
   const currentUser = useCurrentUser();
   const isSelf = currentUser.id === user.id;
   const { nextStep } = useStepper();
 
-  const updateSelf = useUpdateSelfMutation();
-  const updateUser = useUserUpdateMutation();
-  const isPending = updateSelf.isPending || updateUser.isPending;
+  const { mutate: updateUser, isPending } = useUpdateUser(user.id);
 
   const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: user };
 
@@ -59,25 +54,17 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
   useBeforeUnload(form.isDirty);
 
   const onSubmit = (values: FormValues) => {
-    if (!user) return;
+    updateUser(values, {
+      onSuccess: (updatedUser) => {
+        const message = isSelf ? t('c:success.profile_updated') : t('c:success.update_item', { item: t('c:user') });
+        toaster.success(message);
 
-    const onSuccess = (updatedUser: User) => {
-      const message = isSelf ? t('c:success.profile_updated') : t('c:success.update_item', { item: t('c:user') });
-      toaster.success(message);
+        form.reset(updatedUser);
+        if (isSheet) sheeter.getState().remove(formContainerId);
 
-      form.reset(updatedUser);
-      if (isSheet) sheeter.getState().remove(formContainerId);
-
-      nextStep();
-
-      callback?.({ data: updatedUser, status: 'success' });
-    };
-
-    if (isSelf) {
-      updateSelf.mutate(values, { onSuccess });
-    } else {
-      updateUser.mutate({ path: { id: user.id }, body: values }, { onSuccess });
-    }
+        nextStep();
+      },
+    });
   };
 
   return (

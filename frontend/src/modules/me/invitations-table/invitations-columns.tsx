@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dateColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -18,71 +17,68 @@ export const useColumns = () => {
 
   const { mutate: handleInvitation } = useHandleInvitationMutation();
 
-  const columns: ColumnOrColumnGroup<Invitation>[] = useMemo(
-    () => [
-      {
-        key: 'name',
-        name: '',
+  const columns: ColumnOrColumnGroup<Invitation>[] = [
+    {
+      key: 'name',
+      name: '',
 
-        renderCell: ({ row }) => (
-          <>
-            <EntityAvatar type={row.entity.entityType} className="size-8" id={row.entity.id} name={row.entity.name} url={row.entity.thumbnailUrl} />
-            <span className="ml-2 truncate font-medium">{row.entity.name || '-'}</span>
-          </>
-        ),
-      },
-      {
-        key: 'entityType',
-        name: t('c:type'),
+      renderCell: ({ row }) => (
+        <>
+          <EntityAvatar type={row.entity.entityType} className="size-8" id={row.entity.id} name={row.entity.name} url={row.entity.thumbnailUrl} />
+          <span className="ml-2 truncate font-medium">{row.entity.name || '-'}</span>
+        </>
+      ),
+    },
+    {
+      key: 'entityType',
+      name: t('c:type'),
 
-        renderCell: ({ row }) => <span>{t(`c:${row.entity.entityType}`)}</span>,
-      },
-      {
-        key: 'role',
-        name: t('c:role'),
+      renderCell: ({ row }) => <span>{t(`c:${row.entity.entityType}`)}</span>,
+    },
+    {
+      key: 'role',
+      name: t('c:role'),
 
-        width: 100,
-        placeholderValue: '-',
-        renderCell: ({ row }) =>
-          row.inactiveMembership.role ? (
-            <div className="group relative inline-flex size-full items-center gap-1">{t(`c:${row.inactiveMembership.role}`)}</div>
-          ) : null,
-      },
-      dateColumn<Invitation>('createdAt', { name: t('c:invited_at'), sortable: false, get: (row) => row.inactiveMembership.createdAt }),
-      {
-        key: 'createdBy',
-        name: t('c:invited_by'),
+      width: 100,
+      placeholderValue: '-',
+      renderCell: ({ row }) =>
+        row.inactiveMembership.role ? (
+          <div className="group relative inline-flex size-full items-center gap-1">{t(`c:${row.inactiveMembership.role}`)}</div>
+        ) : null,
+    },
+    dateColumn<Invitation>('createdAt', { name: t('c:invited_at'), sortable: false, get: (row) => row.inactiveMembership.createdAt }),
+    {
+      key: 'createdBy',
+      name: t('c:invited_by'),
 
-        minBreakpoint: 'md',
-        minWidth: 160,
-        placeholderValue: '-',
-        renderCell: ({ row, tabIndex }) =>
-          row.inactiveMembership.createdBy && <UserCell compactable user={row.inactiveMembership.createdBy} tabIndex={tabIndex} />,
-      },
-      {
-        key: 'actions',
-        name: '',
+      minBreakpoint: 'md',
+      minWidth: 160,
+      placeholderValue: '-',
+      renderCell: ({ row, tabIndex }) =>
+        row.inactiveMembership.createdBy && <UserCell compactable user={row.inactiveMembership.createdBy} tabIndex={tabIndex} />,
+    },
+    {
+      key: 'actions',
+      name: '',
 
-        width: 200,
-        renderCell: ({ row }) => (
-          <div className="flex w-full max-w-50 gap-2">
-            {actionButtons.map(({ label, variant, action }) => (
-              <Button
-                className="w-full"
-                key={action}
-                size="xs"
-                variant={variant}
-                onClick={() => handleInvitation({ path: { id: row.inactiveMembership.id, acceptOrReject: action } })}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
-        ),
-      },
-    ],
-    [],
-  );
+      width: 200,
+      renderCell: ({ row }) => (
+        <div className="flex w-full max-w-50 gap-2">
+          {actionButtons.map(({ label, variant, action }) => (
+            <Button
+              className="w-full"
+              key={action}
+              size="xs"
+              variant={variant}
+              onClick={() => handleInvitation({ path: { id: row.inactiveMembership.id, acceptOrReject: action } })}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+      ),
+    },
+  ];
 
   return columns;
 };

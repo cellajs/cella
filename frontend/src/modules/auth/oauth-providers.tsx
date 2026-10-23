@@ -20,6 +20,15 @@ export const enabledOAuthProviders = appConfig.enabledOAuthProviders.flatMap((id
   oauthProviders.filter((provider) => provider.id === id).map(({ name }) => ({ id, name })),
 );
 
+interface OAuthProviderIconProps {
+  id: EnabledOAuthProvider;
+}
+
+/** A provider's logo, beside text that names the provider. */
+export function OAuthProviderIcon({ id }: OAuthProviderIconProps) {
+  return <img src={`/static/auth/${id}-icon.svg`} alt="" className={cn('size-4', id === 'github' && 'dark:invert')} loading="lazy" />;
+}
+
 interface OAuthProvidersProps {
   /** Picks the buttons' wording: sign in, sign up, or continue on any other step. */
   authStep: AuthStep;
@@ -61,7 +70,7 @@ export function OAuthProviders({ authStep }: OAuthProvidersProps) {
     <div className="flex flex-col gap-2">
       {enabledOAuthProviders.map(({ id, name }) => (
         <Button loading={loadingProvider === id} key={id} variant="plain" onClick={() => authenticateWithProvider(id)}>
-          <img src={`/static/auth/${id}-icon.svg`} alt="" className={cn('size-4', id === 'github' && 'dark:invert')} loading="lazy" />
+          <OAuthProviderIcon id={id} />
           <span>{t(labelKey, { provider: name })}</span>
         </Button>
       ))}

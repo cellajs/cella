@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isInviteEmail } from '~/modules/common/form-fields/select-emails';
-import type { EnrichedChannel } from '~/modules/entities/types';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Textarea } from '~/modules/ui/textarea';
-import { InviteFormFooter, useInviteSubmit } from '~/modules/user/invite-submit';
-import { useInviteFormDraft } from '~/modules/user/invite-users';
+import { InviteFormFooter, type InviteFormProps, useInviteFormDraft, useInviteSubmit } from '~/modules/user/invite-submit';
 
 /** Unique, lowercased addresses an invite accepts, from any pasted text (commas, newlines, address-book dumps). */
 const extractEmails = (text: string): string[] => {
@@ -13,21 +11,16 @@ const extractEmails = (text: string): string[] => {
   return [...new Set(matches.map((email) => email.toLowerCase()))].filter(isInviteEmail);
 };
 
-interface Props {
-  channel?: EnrichedChannel;
-  dialog?: boolean;
-  children?: React.ReactNode;
-}
-
-export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Props) {
+export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: InviteFormProps) {
   const { t } = useTranslation();
 
-  const [rawText, setRawText] = useState('');
+  // Null until the user types: until then the box shows the addresses the shared draft restored, such as the email form's chips.
+  const [rawText, setRawText] = useState<string | null>(null);
   const form = useInviteFormDraft(channel?.id, channel?.entityType);
 
   const clear = () => {
     form.reset();
-    setRawText('');
+    setRawText(null);
   };
 
   const { onSubmit, isPending } = useInviteSubmit(channel, isDialog, clear);
@@ -45,7 +38,7 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Pro
         <FormItem name="bulk-emails">
           <FormLabel help={t('c:paste_emails.text')}>{t('c:paste_emails')}</FormLabel>
           <Textarea
-            value={rawText}
+            value={rawText ?? emails.join('\n')}
             onChange={(event) => onTextChange(event.target.value)}
             placeholder={t('c:paste_emails.placeholder')}
             autoResize

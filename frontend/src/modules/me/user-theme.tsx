@@ -1,8 +1,8 @@
-import { BanIcon, CheckIcon, CircleIcon, MoonIcon, SunIcon } from 'lucide-react';
+import { BanIcon, CircleIcon, MoonIcon, SunIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
+import { DropdownSelectItem } from '~/modules/common/dropdowner/dropdown-select-item';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -22,21 +22,20 @@ interface ThemeItem {
   separator?: boolean;
 }
 
-function ThemeDropdownContent({ items, isMobile }: { items: ThemeItem[]; isMobile: boolean }) {
+function ThemeDropdownContent({ items }: { items: ThemeItem[] }) {
   return (
     <div className="flex flex-col">
       {items.map((item) => (
         <div key={item.key}>
           {item.separator && <div className="my-1 border-t" />}
-          <DropdownActionItem isMobile={isMobile} variant="ghost" className="w-full justify-between gap-4" onSelect={item.onSelect}>
+          <DropdownSelectItem selected={item.checked} onSelect={item.onSelect}>
             <span className="flex items-center gap-2">
               <span className={item.iconClass} style={item.iconStyle}>
                 <item.icon />
               </span>
               {item.label}
             </span>
-            <CheckIcon className={cn('text-success', item.checked ? 'visible' : 'invisible')} />
-          </DropdownActionItem>
+          </DropdownSelectItem>
         </div>
       ))}
     </div>
@@ -80,7 +79,6 @@ export function UserTheme({ buttonClassName = '', tooltip = false }: UserThemePr
 
   const openDropdown = () => {
     const { mode: currentMode, theme: currentTheme } = uiStore.getState();
-    const isMobile = window.innerWidth < 640;
 
     const items: ThemeItem[] = [
       ...modes.map((m) => ({
@@ -118,7 +116,7 @@ export function UserTheme({ buttonClassName = '', tooltip = false }: UserThemePr
       })),
     ];
 
-    dropdowner.getState().create(<ThemeDropdownContent items={items} isMobile={isMobile} />, {
+    dropdowner.getState().create(<ThemeDropdownContent items={items} />, {
       id: 'user-theme',
       triggerId: 'user-theme-trigger',
       triggerRef,

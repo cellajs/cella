@@ -8,7 +8,6 @@ const server = vi.hoisted(() => ({ me: null as unknown }));
 
 vi.mock('sdk', () => ({
   getMe: vi.fn(async () => server.me),
-  getMyAuth: vi.fn(),
   startImpersonation: vi.fn(async () => {}),
   stopImpersonation: vi.fn(async () => {}),
 }));

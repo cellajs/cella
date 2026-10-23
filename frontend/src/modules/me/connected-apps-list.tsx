@@ -15,7 +15,7 @@ export function ConnectedAppsList() {
   const {
     data: { items },
   } = useSuspenseQuery(meConnectedAppsQueryOptions());
-  const { mutate: revoke, isPending } = useRevokeConnectedAppMutation();
+  const { mutate: revoke, isPending, variables } = useRevokeConnectedAppMutation();
 
   const handleRevoke = (id: string) => {
     if (!onlineManager.isOnline()) return toastOffline();
@@ -40,7 +40,13 @@ export function ConnectedAppsList() {
                 <span className="text-muted-foreground text-xs">{t('c:connected_on', { date: dateShort(app.createdAt) })}</span>
               </div>
             </div>
-            <Button variant="plain" size="sm" className="ml-auto" loading={isPending} onClick={() => handleRevoke(app.id)}>
+            <Button
+              variant="plain"
+              size="sm"
+              className="ml-auto"
+              loading={isPending && variables?.path.id === app.id}
+              onClick={() => handleRevoke(app.id)}
+            >
               <UnplugIcon />
               <span className="max-md:hidden">{t('c:revoke')}</span>
             </Button>

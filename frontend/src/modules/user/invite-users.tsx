@@ -1,44 +1,39 @@
 import { AtSignIcon, ChevronRightIcon, InfoIcon, SearchIcon } from 'lucide-react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { type ComponentType, useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { zMembershipInviteBody } from 'sdk/zod.gen';
-import { type ChannelEntityType, hierarchy } from 'shared';
-import type z from 'zod';
+import type { TKey } from '~/lib/i18n-locales';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { AnimatedArrow } from '~/modules/common/animated-arrow';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
-import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
-import type { EnrichedChannel } from '~/modules/entities/types';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { InviteBulkEmailForm } from '~/modules/user/invite-bulk-email-form';
 import { InviteEmailForm } from '~/modules/user/invite-email-form';
 import { InviteSearchForm } from '~/modules/user/invite-search-form';
-import { formResolver } from '~/utils/form-resolver';
+import type { InviteFormProps } from '~/modules/user/invite-submit';
 
-const InviteFormSchema = zMembershipInviteBody;
-export type InviteFormValues = z.infer<typeof InviteFormSchema>;
+type InviteMode = 'email' | 'search' | 'bulk';
 
-/** The target vocabulary's least-privileged role, falling back to the organization's floor. */
-const defaultInviteRole = (entityType?: ChannelEntityType): InviteFormValues['role'] =>
-  hierarchy.getLeastPrivilegedRole(entityType ?? 'organization') as InviteFormValues['role'];
+/** Per mode: the crumb in the dialog title, the explanation above the form, and the form. */
+const inviteModes: Record<InviteMode, { title: TKey; explain: TKey; Form: ComponentType<InviteFormProps> }> = {
+  email: { title: 'c:email', explain: 'c:explain.invite_email.text', Form: InviteEmailForm },
+  search: { title: 'c:search', explain: 'c:explain.invite_search.text', Form: InviteSearchForm },
+  bulk: { title: 'c:email_bulk', explain: 'c:explain.invite_bulk.text', Form: InviteBulkEmailForm },
+};
 
-export function useInviteFormDraft(entityId?: string, entityType?: ChannelEntityType) {
-  return useFormWithDraft<InviteFormValues>(`invite-users${entityId ? `-${entityId}` : ''}`, {
-    formContainerId: 'invite-users',
-    formOptions: {
-      resolver: formResolver(InviteFormSchema),
-      defaultValues: { emails: [], role: defaultInviteRole(entityType) },
-    },
-  });
-}
+/** The modes to start from; bulk opens from the email mode's link. */
+const inviteTiles = [
+  { mode: 'email', icon: AtSignIcon, label: 'c:invite_by_email' },
+  { mode: 'search', icon: SearchIcon, label: 'c:invite_by_name' },
+] as const;
 
-interface InviteUsersProps {
-  channel?: EnrichedChannel;
-  dialog?: boolean;
-  mode?: 'search' | 'email' | 'bulk' | null;
-  children?: React.ReactNode;
+/** The dialog title's crumb renders outside this component's MotionConfig, so both read this transition. */
+const modeTransition = { type: 'spring', bounce: 0, duration: 0.4 } as const;
+
+interface InviteUsersProps extends InviteFormProps {
+  mode?: InviteMode | null;
 }
 
 export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) {
@@ -49,8 +44,8 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
   // The dialog's caller owns the description copy, so read it once and keep it to compose against.
   const [baseDescription] = useState(() => (isDialog ? dialoger.getState().get('invite-users')?.description : undefined));
 
-  const updateMode = (mode: ('search' | 'email' | 'bulk')[]) => {
-    mode[0] ? setInviteMode(mode[0]) : setInviteMode(null);
+  const updateMode = (mode: InviteMode[]) => {
+    setInviteMode(mode[0] ?? null);
 
     dialoger.getState().update('invite-users', {
       titleContent: (
@@ -71,10 +66,10 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+                transition={modeTransition}
               >
                 <ChevronRightIcon className="opacity-50" />
-                <UnsavedBadge title={mode[0] === 'search' ? t('c:search') : mode[0] === 'bulk' ? t('c:email_bulk') : t('c:email')} />
+                <UnsavedBadge title={t(inviteModes[mode[0]].title)} />
               </motion.span>
             )}
           </AnimatePresence>
@@ -93,19 +88,7 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
         inviteMode === 'email' ? (
           <>
             {baseDescription}{' '}
-            <Trans
-              t={t}
-              i18nKey="c:invite_bulk_link"
-              components={{
-                bulk_anchor: (
-                  <button
-                    type="button"
-                    className="focus-effect link-inline cursor-pointer rounded-sm font-medium text-primary"
-                    onClick={() => updateMode(['bulk'])}
-                  />
-                ),
-              }}
-            />
+            <Trans t={t} i18nKey="c:invite_bulk_link" components={{ bulk_anchor: <InlineLinkButton onClick={() => updateMode(['bulk'])} /> }} />
           </>
         ) : (
           baseDescription
@@ -113,61 +96,41 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
     });
   }, [inviteMode, isDialog, baseDescription]);
 
+  const current = inviteMode ? inviteModes[inviteMode] : null;
+
   return (
-    <MotionConfig transition={{ type: 'spring', bounce: 0, duration: 0.4 }}>
+    <MotionConfig transition={modeTransition}>
       <AnimatePresence mode="popLayout">
         {!inviteMode && (
           <motion.div key="invite-initial" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
             <ToggleGroup
               type="multiple"
-              onValueChange={(v) => updateMode(v as ('search' | 'email')[])}
+              onValueChange={(v) => updateMode(v as InviteMode[])}
               className="w-full items-stretch gap-2 py-3 max-sm:flex-col sm:h-40 sm:gap-3"
             >
-              <ToggleGroupItem size="tile" variant="tile" value="email" aria-label="Add by email" className="w-auto grow py-6 sm:py-10">
-                <AtSignIcon className="size-12" strokeWidth={1} />
-                <div className="flex flex-col truncate pl-3">
-                  <p>{t('c:invite_by_email')}</p>
-                  <div className="mt-1 flex flex-row items-center truncate opacity-50 transition-opacity group-hover/toggle:opacity-100">
-                    <strong>{t('c:continue')}</strong>
-                    <AnimatedArrow />
+              {inviteTiles.map(({ mode, icon: Icon, label }) => (
+                <ToggleGroupItem key={mode} size="tile" variant="tile" value={mode} className="w-auto grow py-6 sm:py-10">
+                  <Icon className="size-12" strokeWidth={1} />
+                  <div className="flex flex-col truncate pl-3">
+                    <p>{t(label)}</p>
+                    <div className="mt-1 flex flex-row items-center truncate opacity-50 transition-opacity group-hover/toggle:opacity-100">
+                      <strong>{t('c:continue')}</strong>
+                      <AnimatedArrow />
+                    </div>
                   </div>
-                </div>
-              </ToggleGroupItem>
-              <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users" className="w-auto grow py-6 sm:py-10">
-                <SearchIcon className="size-12" strokeWidth={1} />
-                <div className="flex flex-col truncate pl-3">
-                  <div>{t('c:invite_by_name')}</div>
-                  <div className="mt-1 flex flex-row items-center truncate opacity-50 transition-opacity group-hover/toggle:opacity-100">
-                    <strong>{t('c:continue')}</strong>
-                    <AnimatedArrow />
-                  </div>
-                </div>
-              </ToggleGroupItem>
+                </ToggleGroupItem>
+              ))}
             </ToggleGroup>
           </motion.div>
         )}
-        {inviteMode && (
+        {current && (
           <motion.div key="invite-form" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col gap-4">
             <AlertBanner id={`invite_${inviteMode}`} variant="success" icon={InfoIcon}>
-              {t(
-                inviteMode === 'search'
-                  ? 'c:explain.invite_search.text'
-                  : inviteMode === 'bulk'
-                    ? 'c:explain.invite_bulk.text'
-                    : 'c:explain.invite_email.text',
-              )}
+              {t(current.explain)}
             </AlertBanner>
-            {inviteMode === 'email' ? (
-              <InviteEmailForm channel={channel} dialog={isDialog}>
-                {children}
-              </InviteEmailForm>
-            ) : inviteMode === 'bulk' ? (
-              <InviteBulkEmailForm channel={channel} dialog={isDialog}>
-                {children}
-              </InviteBulkEmailForm>
-            ) : (
-              <InviteSearchForm channel={channel} dialog={isDialog} />
-            )}
+            <current.Form channel={channel} dialog={isDialog}>
+              {children}
+            </current.Form>
           </motion.div>
         )}
       </AnimatePresence>

@@ -14,7 +14,7 @@ export const yjsTokenKey = (entityType: ProductEntityType, entityId: string) => 
 
 /** i18next emits languageChanged even for the current language, which re-renders every useTranslation consumer. */
 const syncLanguage = (language?: User['language']) => {
-  const lng = language || 'en';
+  const lng = language || appConfig.defaultLanguage;
   if (i18n.language !== lng) i18n.changeLanguage(lng);
 };
 
@@ -35,7 +35,6 @@ interface UserStoreState {
   lastUser: LastUser | null; // Identity of the last signed-out user
   yjsTokens: Record<string, string>; // Map of "entityType:entityId" → signed Yjs token (not persisted)
   setMe: (me: Me) => void; // What `/me` answered, in one write; also updates lastUser, unless impersonated
-  setLastUser: (lastUser: LastUser) => void;
   setYjsToken: (key: string, token: string | null) => void;
   updateUser: (user: User) => void; // Also adjusts lastUser, unless impersonated
   reset: () => void;
@@ -74,11 +73,6 @@ export const useUserStore = create<UserStoreState>()(
 
           syncLanguage(user.language);
           syncContrast(user.contrast);
-        },
-        setLastUser: (lastUser) => {
-          set((state) => {
-            state.lastUser = { id: lastUser.id, email: lastUser.email };
-          });
         },
         setYjsToken: (key, token) => {
           set((state) => {

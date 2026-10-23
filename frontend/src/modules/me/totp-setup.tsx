@@ -1,67 +1,41 @@
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
-import { CircleAlertIcon, CopyCheckIcon, CopyIcon, RefreshCwIcon } from 'lucide-react';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { CopyIcon, RefreshCwIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import type { ApiError, CreateTotpData, CreateTotpResponses, MeAuthData } from 'sdk';
-import { createTotp, generateTotpKey } from 'sdk';
+import { Trans, useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
-import { withStepUp } from '~/modules/auth/step-up';
 import { TotpConfirmationForm } from '~/modules/auth/totp-confirmation-form';
+import { CopiedIcon } from '~/modules/common/copied-icon';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster/toaster';
-import { meKeys } from '~/modules/me/query';
+import { InlineLinkButton } from '~/modules/common/inline-link-button';
+import { totpKeyQueryOptions, useCreateTotpMutation } from '~/modules/me/query';
+import { WarningNote } from '~/modules/me/warning-note';
 import { Button } from '~/modules/ui/button';
+
+/** The key's challenge cookie lives 5 minutes; the setup expires the key slightly before, to avoid a race. */
+const keyExpiryMs = 4.5 * 60 * 1000;
 
 export function SetupTotp() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
 
   const [formVersion, setFormVersion] = useState(0);
-  const [expired, setExpired] = useState(false);
+  const [expiredUri, setExpiredUri] = useState<string | null>(null);
 
-  // Cookie TTL is 5 minutes; expire slightly before to avoid a race.
+  const { data, refetch, isFetching } = useSuspenseQuery(totpKeyQueryOptions());
+  const { mutate: createTotp, isPending } = useCreateTotpMutation();
+
+  // Armed per key, so a wrong code leaves the expiry where it is; the refresh's new key is fresh again.
   useEffect(() => {
-    const timer = setTimeout(() => setExpired(true), 4.5 * 60 * 1000);
+    const timer = setTimeout(() => setExpiredUri(data.totpUri), keyExpiryMs);
     return () => clearTimeout(timer);
-  }, [formVersion]);
+  }, [data.totpUri]);
 
-  const { mutate, isPending } = useMutation<CreateTotpResponses[201], ApiError | Error, NonNullable<CreateTotpData['body']>>({
-    mutationFn: (body) => withStepUp(() => createTotp({ body })),
-    onSuccess: () => {
-      dialoger.getState().remove('setup-totp');
-      queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
-        if (!oldData) return oldData;
-        return { ...oldData, hasTotp: true };
-      });
-      toaster.success(t('c:success.totp_added'));
-    },
-    onError: () => {
-      // Remount the form so the code must be entered again
-      setFormVersion((v) => v + 1);
-    },
-  });
+  const closeSetup = () => dialoger.getState().remove('setup-totp');
 
-  const onSubmit = (body: { code: string }) => {
-    mutate(body);
-  };
-
-  const regenerate = () => {
-    queryClient.invalidateQueries({ queryKey: ['totp', 'uri'] });
-    setExpired(false);
-    setFormVersion((v) => v + 1);
-  };
+  // A wrong code remounts the form, so the code must be entered again.
+  const onSubmit = (body: { code: string }) => createTotp(body, { onSuccess: closeSetup, onError: () => setFormVersion((v) => v + 1) });
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
-
-  // A new key once the QR code expired may come after the step-up window: the re-auth dialog opens, then it loads.
-  // Only the refresh button asks for one: a refetch on reconnect would open that dialog, and mail its link, unasked.
-  const { data } = useSuspenseQuery({
-    queryKey: ['totp', 'uri'],
-    queryFn: () => withStepUp(() => generateTotpKey()),
-    staleTime: 0,
-    refetchOnReconnect: false,
-  });
 
   const openManualKey = () => {
     dialoger.getState().create(<TotpManualKey manualKey={data.manualKey} />, {
@@ -75,27 +49,21 @@ export function SetupTotp() {
 
   return (
     <div className="group flex flex-col gap-2">
-      <div className="flex items-center justify-center gap-2">
-        <CircleAlertIcon className="size-3.5 shrink-0 text-warning" />
-        <div className="text-muted-foreground text-sm">
-          <span>{t('c:totp_manual.footer_description')}</span>
-          <Button ref={triggerRef} variant="none" className="link-inline inline h-auto cursor-pointer p-0" onClick={openManualKey}>
-            {t('c:totp_manual.button_text')}
-          </Button>
-        </div>
-      </div>
+      <WarningNote className="justify-center">
+        <Trans t={t} i18nKey="c:totp_manual_link" components={{ key_anchor: <InlineLinkButton ref={triggerRef} onClick={openManualKey} /> }} />
+      </WarningNote>
 
       <QRCodeSVG className="mx-auto my-3 mb-6 border-8 border-white" value={data.totpUri} size={275} />
-      {expired ? (
+      {expiredUri === data.totpUri ? (
         <div className="flex flex-col items-center gap-3 py-2">
           <p className="text-muted-foreground text-sm">{t('c:totp_qr.expired')}</p>
-          <Button variant="plain" onClick={regenerate}>
+          <Button variant="plain" loading={isFetching} onClick={() => refetch()}>
             <RefreshCwIcon className="size-3.5" />
             {t('c:refresh')}
           </Button>
         </div>
       ) : (
-        <TotpConfirmationForm key={formVersion} onSubmit={onSubmit} loading={isPending} onCancel={() => dialoger.getState().remove('setup-totp')} />
+        <TotpConfirmationForm key={formVersion} onSubmit={onSubmit} loading={isPending} onCancel={closeSetup} />
       )}
     </div>
   );
@@ -117,7 +85,7 @@ function TotpManualKey({ manualKey }: { manualKey: string }) {
         data-tooltip-content={copied ? t('c:copied') : t('c:copy')}
         onClick={() => copyToClipboard(manualKey)}
       >
-        {copied ? <CopyCheckIcon /> : <CopyIcon />}
+        <CopiedIcon copied={copied} icon={CopyIcon} />
       </Button>
     </div>
   );

@@ -1,13 +1,11 @@
 import { Link } from '@tanstack/react-router';
-import { FlameKindlingIcon, UserRoundCogIcon } from 'lucide-react';
+import { UserRoundCogIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GetUserResponse } from 'sdk';
-import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { PageHeader } from '~/modules/common/page/header';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { useUpdateSelfMutation } from '~/modules/me/query';
-import { useUserUpdateMutation } from '~/modules/user/query';
+import { useUpdateUser } from '~/modules/user/query';
 import { UserProfileSubline } from '~/modules/user/user-profile-subline';
 import { useUserStore } from '~/modules/user/user-store';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -26,20 +24,9 @@ export function UserProfilePage({ user, organizationId, isSheet }: Props) {
 
   const isSelf = !!currentUser && currentUser.id === user.id;
 
-  const updateSelf = useUpdateSelfMutation();
-  const updateUser = useUserUpdateMutation();
+  const { mutate: updateUser } = useUpdateUser(user.id);
 
-  const coverUpdateCallback = (bannerUrl: string) => {
-    const callbacks = { onSuccess: () => toaster.success(t('c:success.upload_cover')) };
-
-    if (isSelf) {
-      updateSelf.mutate({ bannerUrl }, callbacks);
-    } else {
-      updateUser.mutate({ path: { id: user.id }, body: { bannerUrl } }, callbacks);
-    }
-  };
-
-  if (!user) return <ContentPlaceholder icon={FlameKindlingIcon} title="error:no_user_found" />;
+  const coverUpdateCallback = (bannerUrl: string) => updateUser({ bannerUrl }, { onSuccess: () => toaster.success(t('c:success.upload_cover')) });
 
   return (
     <>

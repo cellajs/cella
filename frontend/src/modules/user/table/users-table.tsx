@@ -9,8 +9,6 @@ import { UsersTableBar } from '~/modules/user/table/users-bar';
 import { useColumns } from '~/modules/user/table/users-columns';
 import type { BaseUser, UsersRouteSearchParams } from '~/modules/user/types';
 
-const requestLimit = appConfig.requestLimits.users;
-
 function rowKeyGetter(row: BaseUser) {
   return row.id;
 }
@@ -19,12 +17,11 @@ function UsersTable() {
   const { search, setSearch } = useSearchParams<UsersRouteSearchParams>({ from: '/_app/system/users' });
 
   const { q, role, sort, order } = search;
-  const limit = requestLimit;
 
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = usersListQueryOptions({ ...search, limit });
+  const queryOptions = usersListQueryOptions(search);
   const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
   const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
 
@@ -33,7 +30,7 @@ function UsersTable() {
       <UsersTableBar
         queryKey={queryOptions.queryKey}
         selected={selected}
-        searchVars={{ q, role, sort, order, limit }}
+        searchVars={{ q, role, sort, order, limit: appConfig.requestLimits.users }}
         setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}

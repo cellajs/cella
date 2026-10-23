@@ -2,18 +2,10 @@ import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
-import type { EnrichedChannel } from '~/modules/entities/types';
 import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
-import { InviteFormFooter, useInviteSubmit } from '~/modules/user/invite-submit';
-import { useInviteFormDraft } from '~/modules/user/invite-users';
+import { InviteFormFooter, type InviteFormProps, useInviteFormDraft, useInviteSubmit } from '~/modules/user/invite-submit';
 
-interface Props {
-  channel?: EnrichedChannel;
-  dialog?: boolean;
-  children?: React.ReactNode;
-}
-
-export function InviteEmailForm({ channel, dialog: isDialog, children }: Props) {
+export function InviteEmailForm({ channel, dialog: isDialog, children }: InviteFormProps) {
   const { t } = useTranslation();
 
   const { nextStep } = useStepper();

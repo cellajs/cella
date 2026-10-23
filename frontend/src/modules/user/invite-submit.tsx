@@ -1,9 +1,14 @@
 import { useMutation } from '@tanstack/react-query';
 import { SendIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 // biome-ignore lint/style/noRestrictedImports: colocated mutation for system-level invite called from stepper flow.
 import { systemInvite as baseSystemInvite } from 'sdk';
+import { zMembershipInviteBody } from 'sdk/zod.gen';
+import { type ChannelEntityType, hierarchy } from 'shared';
+import type z from 'zod';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -12,7 +17,32 @@ import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { FormField, FormItem, FormMessage } from '~/modules/ui/field';
-import type { InviteFormValues, useInviteFormDraft } from '~/modules/user/invite-users';
+import { formResolver } from '~/utils/form-resolver';
+
+type InviteFormValues = z.infer<typeof zMembershipInviteBody>;
+
+/** The target vocabulary's least-privileged role, falling back to the organization's floor. */
+const defaultInviteRole = (entityType?: ChannelEntityType): InviteFormValues['role'] =>
+  hierarchy.getLeastPrivilegedRole(entityType ?? 'organization') as InviteFormValues['role'];
+
+/** The three invite forms of one channel share this form and its draft, so a switch of mode keeps the addresses. */
+export function useInviteFormDraft(entityId?: string, entityType?: ChannelEntityType) {
+  return useFormWithDraft<InviteFormValues>(`invite-users${entityId ? `-${entityId}` : ''}`, {
+    formContainerId: 'invite-users',
+    formOptions: {
+      resolver: formResolver(zMembershipInviteBody),
+      defaultValues: { emails: [], role: defaultInviteRole(entityType) },
+    },
+  });
+}
+
+export interface InviteFormProps {
+  /** Without one the form sends a system invite. */
+  channel?: EnrichedChannel;
+  dialog?: boolean;
+  /** Takes the place of the cancel button, as the onboarding footer does. */
+  children?: ReactNode;
+}
 
 /**
  * Sends an invite form as a membership invite to `channel`, or as a system invite without one. A sent invite calls
@@ -23,7 +53,7 @@ export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: 
 
   const onSuccess = ({ invitesSentCount, rejectedIds }: { rejectedIds: string[]; invitesSentCount: number }, emails: string[]) => {
     onSent();
-    if (isDialog) dialoger.getState().remove();
+    if (isDialog) dialoger.getState().remove('invite-users');
 
     if (invitesSentCount > 0) {
       const resource = t('c:user', { count: invitesSentCount }).toLowerCase();
@@ -52,14 +82,11 @@ export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: 
   return { onSubmit, isPending: isPending || isSystemInvitePending };
 }
 
-interface InviteFormFooterProps {
+interface InviteFormFooterProps extends Omit<InviteFormProps, 'dialog'> {
   form: ReturnType<typeof useInviteFormDraft>;
-  channel?: EnrichedChannel;
   count: number;
   isPending: boolean;
   onCancel: () => void;
-  /** Takes the place of the cancel button, as the onboarding footer does. */
-  children?: React.ReactNode;
 }
 
 /** Role choice for a channel invite, then the submit button with the address count. */
@@ -87,7 +114,7 @@ export function InviteFormFooter({ form, channel, count, isPending, onCancel, ch
             <Badge variant="secondary" context="button">
               {count}
             </Badge>
-          )}{' '}
+          )}
           <SendIcon />
           {t('c:invite')}
         </SubmitButton>

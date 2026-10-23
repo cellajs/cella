@@ -1,5 +1,3 @@
-import { onlineManager } from '@tanstack/react-query';
-import { useRef } from 'react';
 import type { UserMinimalBase } from 'sdk';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useOpenUserSheet } from '~/modules/user/use-open-user-sheet';
@@ -19,7 +17,6 @@ const compactUserNameClass = 'in-data-[is-compact=true]:sr-only';
 
 export function UserCell({ user, tabIndex, compactable, className, readOnly }: BaseProps & { user: UserMinimalBase }) {
   const openUserSheet = useOpenUserSheet();
-  const cellRef = useRef<HTMLButtonElement | null>(null);
 
   // While compacted the name is visually hidden, so the compact-scoped table tooltip shows it.
   const compactTooltip = compactable && user.name ? { 'data-tooltip': 'compact', 'data-tooltip-content': user.name } : undefined;
@@ -35,19 +32,13 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: B
 
   return (
     <Button
-      ref={cellRef}
       variant="cell"
       size="cell"
       className={className}
       tabIndex={tabIndex}
       draggable={false}
       {...compactTooltip}
-      onClick={(e) => {
-        // Offline the opener only toasts, so the click must not fall through either.
-        if (onlineManager.isOnline() && (e.metaKey || e.ctrlKey)) return;
-        e.preventDefault();
-        openUserSheet(user.id);
-      }}
+      onClick={() => openUserSheet(user.id)}
     >
       <EntityAvatar type="user" className="group-active/cell-button:press size-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
       <span

@@ -1,11 +1,11 @@
 import { onlineManager, useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
-import { BuildingIcon, CheckIcon, TrashIcon } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { BuildingIcon, TrashIcon } from 'lucide-react';
+import { type ReactNode, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startOAuthConnect } from 'sdk';
-import { appConfig, type EnabledOAuthProvider, isStrategyEnabled } from 'shared';
-import { enabledOAuthProviders } from '~/modules/auth/oauth-providers';
+import { appConfig, isStrategyEnabled } from 'shared';
+import { enabledOAuthProviders, OAuthProviderIcon } from '~/modules/auth/oauth-providers';
 import { ssoEntryQueryOptions } from '~/modules/auth/query';
 import { ssoStartUrl } from '~/modules/auth/sso-providers';
 import { withStepUp } from '~/modules/auth/step-up';
@@ -15,6 +15,7 @@ import { HelpText } from '~/modules/common/help-text';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
 import { ConnectedAppsList } from '~/modules/me/connected-apps-list';
+import { ConnectedStatus } from '~/modules/me/connected-status';
 import { DeleteSelf } from '~/modules/me/delete-self';
 import { MfaSwitch } from '~/modules/me/mfa/switch';
 import { PasskeysList } from '~/modules/me/passkeys/list';
@@ -26,7 +27,6 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { useCurrentUser } from '~/modules/user/user-store';
-import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
 const cardClass = tw('mx-auto sm:w-full');
@@ -61,6 +61,22 @@ export function AccountConnectedAppsCard() {
   );
 }
 
+interface AuthSectionTitleProps {
+  title: string;
+  help: string;
+  /** Follows the title, before the help toggle. */
+  children?: ReactNode;
+}
+
+function AuthSectionTitle({ title, help, children }: AuthSectionTitleProps) {
+  return (
+    <HelpText content={help}>
+      <h3 className="font-semibold">{title}</h3>
+      {children}
+    </HelpText>
+  );
+}
+
 export function AccountAuthenticationCard() {
   const { t } = useTranslation();
   const user = useCurrentUser();
@@ -76,173 +92,108 @@ export function AccountAuthenticationCard() {
   const institutions = offered ? [...authData.institutions, offered] : authData.institutions;
   const toConnect = [listed, offered].find((institution) => institution && !institution.connected);
 
-  const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
-  const [connectingTo, setConnectingTo] = useState<string | null>(null);
+  // A provider or connection id. State, so the spinner outlasts the mutation until the browser has left.
+  const [connecting, setConnecting] = useState<string | null>(null);
 
-  // The backend pins the provider's callback to this account first; the browser then leaves for the provider.
-  const { mutate: connectProvider } = useMutation({
-    mutationFn: async (_provider: EnabledOAuthProvider) => {
+  // The backend pins the next sign-in's callback to this account; the browser then leaves for that sign-in, which links the identity.
+  const { mutate: startConnect } = useMutation({
+    mutationFn: async (_target: { id: string; url: string }) => {
       await withStepUp(() => startOAuthConnect());
     },
-    onMutate: (provider) => setLoadingProvider(provider),
-    onSuccess: (_data, provider) => {
-      const params = new URLSearchParams({ type: 'connect', redirectAfter: window.location.pathname + window.location.hash });
-      window.location.assign(`${appConfig.backendAuthUrl}/${provider}?${params.toString()}`);
-    },
-    onError: () => setLoadingProvider(null),
+    onMutate: ({ id }) => setConnecting(id),
+    onSuccess: (_data, { url }) => window.location.assign(url),
+    onError: () => setConnecting(null),
   });
 
-  const authenticateWithProvider = (provider: EnabledOAuthProvider) => {
+  const connectTo = (id: string, signInUrl: (search: { type: 'connect'; redirectAfter: string }) => string) => {
     if (!onlineManager.isOnline()) return toastOffline();
-    connectProvider(provider);
+    startConnect({ id, url: signInUrl({ type: 'connect', redirectAfter: window.location.pathname + window.location.hash }) });
   };
-
-  // The same pin, then the institution's sign-in with `type=connect`: its callback links the identity to this account.
-  const { mutate: connectInstitution } = useMutation({
-    mutationFn: async (_connectionId: string) => {
-      await withStepUp(() => startOAuthConnect());
-    },
-    onMutate: (connectionId) => setConnectingTo(connectionId),
-    onSuccess: (_data, connectionId) => {
-      window.location.assign(ssoStartUrl({ connectionId }, { type: 'connect', redirectAfter: window.location.pathname + window.location.hash }));
-    },
-    onError: () => setConnectingTo(null),
-  });
 
   return (
     <ToolCard label="c:authentication" description={t('c:authentication.text')} className={cardClass}>
       <div className="text-sm">
-        {
-          /* MFA */
-          isStrategyEnabled('passkey') && isStrategyEnabled('totp') && (
-            <>
-              <HelpText content={t('c:mfa.text')}>
-                <div className="flex items-center">
-                  <p className="font-semibold">{t('c:mfa')}</p>
-                  {!user.mfaRequired && (
-                    <Badge size="xs" variant="outline" className="ml-2 border-success text-success max-sm:hidden">
-                      {t('c:recommended')}
-                    </Badge>
-                  )}
-                </div>
-              </HelpText>
-              <MfaSwitch />
-            </>
-          )
-        }
-        {
-          /* Passkeys */
-          isStrategyEnabled('passkey') && (
-            <>
-              <HelpText content={t('c:passkey.text')}>
-                <p className="font-semibold">{t('c:passkeys')}</p>
-              </HelpText>
-              <PasskeysList />
-            </>
-          )
-        }
-
-        {
-          /* TOTP */
-          isStrategyEnabled('totp') && (
-            <>
-              <HelpText content={t('c:totp.text')}>
-                <p className="font-semibold">{t('c:totp')}</p>
-              </HelpText>
-              <Totp />
-            </>
-          )
-        }
-
-        {
-          /* OAuth */
-          isStrategyEnabled('oauth') && (
-            <>
-              <HelpText content={t('c:oauth.text')}>
-                <p className="font-semibold">{t('c:oauth')}</p>
-              </HelpText>
-
-              <div className="mb-6 flex flex-col gap-3 sm:items-start">
-                {enabledOAuthProviders.map((provider) => {
-                  if (enabledOAuth.includes(provider.id)) {
-                    return (
-                      <div key={provider.id} className="flex items-center justify-center gap-2 px-3 py-2">
-                        <img
-                          src={`/static/auth/${provider.id}-icon.svg`}
-                          alt={provider.id}
-                          className={cn('mr-2 size-4', provider.id === 'github' && 'dark:invert')}
-                          loading="lazy"
-                        />
-                        <CheckIcon strokeWidth={3} className="size-4.5 text-success" />
-                        {`${t('c:already_connected_to')} ${provider.name}`}
-                      </div>
-                    );
-                  }
-                  return (
-                    <Button
-                      loading={loadingProvider === provider.id}
-                      key={provider.id}
-                      type="button"
-                      variant="plain"
-                      onClick={() => authenticateWithProvider(provider.id)}
-                    >
-                      <img
-                        src={`/static/auth/${provider.id}-icon.svg`}
-                        alt={provider.id}
-                        className={cn('size-4', provider.id === 'github' && 'dark:invert')}
-                        loading="lazy"
-                      />
-                      {`${t('c:add')} ${provider.name} ${t('c:account').toLowerCase()}`}
-                    </Button>
-                  );
-                })}
-              </div>
-            </>
-          )
-        }
-
-        {
-          /* Institution accounts: the connections of the organizations the user belongs to */
-          isStrategyEnabled('sso') && institutions.length > 0 && (
-            <>
-              <HelpText content={t('c:institution_accounts.text')}>
-                <p className="font-semibold">{t('c:institution_accounts')}</p>
-              </HelpText>
-
-              {toConnect && (
-                <Alert className="mb-3">
-                  <AlertDescription>{t('c:connect_institution_prompt.text', { institution: toConnect.displayName })}</AlertDescription>
-                </Alert>
+        {isStrategyEnabled('passkey') && isStrategyEnabled('totp') && (
+          <>
+            <AuthSectionTitle title={t('c:mfa')} help={t('c:mfa.text')}>
+              {!user.mfaRequired && (
+                <Badge size="xs" variant="outline" className="border-success text-success max-sm:hidden">
+                  {t('c:recommended')}
+                </Badge>
               )}
+            </AuthSectionTitle>
+            <MfaSwitch />
+          </>
+        )}
 
-              <div className="mb-6 flex flex-col gap-3 sm:items-start">
-                {institutions.map((institution) =>
-                  institution.connected ? (
-                    <div key={institution.connectionId} className="flex items-center justify-center gap-2 px-3 py-2">
-                      <BuildingIcon className="mr-2 size-4" />
-                      <CheckIcon strokeWidth={3} className="size-4.5 text-success" />
-                      {t('c:connected_to_institution', { institution: institution.displayName })}
-                    </div>
-                  ) : (
-                    <Button
-                      key={institution.connectionId}
-                      type="button"
-                      variant={institution.connectionId === toConnect?.connectionId ? 'default' : 'plain'}
-                      loading={connectingTo === institution.connectionId}
-                      onClick={() => {
-                        if (!onlineManager.isOnline()) return toastOffline();
-                        connectInstitution(institution.connectionId);
-                      }}
-                    >
-                      <BuildingIcon className="size-4" />
-                      {t('c:connect_institution', { institution: institution.displayName })}
-                    </Button>
-                  ),
-                )}
-              </div>
-            </>
-          )
-        }
+        {isStrategyEnabled('passkey') && (
+          <>
+            <AuthSectionTitle title={t('c:passkeys')} help={t('c:passkey.text')} />
+            <PasskeysList />
+          </>
+        )}
+
+        {isStrategyEnabled('totp') && (
+          <>
+            <AuthSectionTitle title={t('c:totp')} help={t('c:totp.text')} />
+            <Totp />
+          </>
+        )}
+
+        {isStrategyEnabled('oauth') && (
+          <>
+            <AuthSectionTitle title={t('c:oauth')} help={t('c:oauth.text')} />
+            <div className="mb-6 flex flex-col gap-3 sm:items-start">
+              {enabledOAuthProviders.map(({ id, name }) =>
+                enabledOAuth.includes(id) ? (
+                  <ConnectedStatus key={id} icon={<OAuthProviderIcon id={id} />}>
+                    {t('c:connected_to_provider', { provider: name })}
+                  </ConnectedStatus>
+                ) : (
+                  <Button
+                    key={id}
+                    variant="plain"
+                    loading={connecting === id}
+                    onClick={() => connectTo(id, (search) => `${appConfig.backendAuthUrl}/${id}?${new URLSearchParams(search)}`)}
+                  >
+                    <OAuthProviderIcon id={id} />
+                    {t('c:add_provider_account', { provider: name })}
+                  </Button>
+                ),
+              )}
+            </div>
+          </>
+        )}
+
+        {isStrategyEnabled('sso') && institutions.length > 0 && (
+          <>
+            <AuthSectionTitle title={t('c:institution_accounts')} help={t('c:institution_accounts.text')} />
+            {toConnect && (
+              <Alert className="mb-3">
+                <AlertDescription>{t('c:connect_institution_prompt.text', { institution: toConnect.displayName })}</AlertDescription>
+              </Alert>
+            )}
+            <div className="mb-6 flex flex-col gap-3 sm:items-start">
+              {institutions.map(({ connectionId, displayName, connected }) =>
+                connected ? (
+                  <ConnectedStatus key={connectionId} icon={<BuildingIcon />}>
+                    {t('c:connected_to_institution', { institution: displayName })}
+                  </ConnectedStatus>
+                ) : (
+                  <Button
+                    key={connectionId}
+                    variant={connectionId === toConnect?.connectionId ? 'default' : 'plain'}
+                    loading={connecting === connectionId}
+                    onClick={() => connectTo(connectionId, (search) => ssoStartUrl({ connectionId }, search))}
+                  >
+                    <BuildingIcon />
+                    {t('c:connect_institution', { institution: displayName })}
+                  </Button>
+                ),
+              )}
+            </div>
+          </>
+        )}
       </div>
     </ToolCard>
   );
@@ -254,7 +205,7 @@ export function AccountDeleteCard() {
   const deleteButtonRef = useRef(null);
 
   const openDeleteDialog = () => {
-    dialoger.getState().create(<DeleteSelf dialog />, {
+    dialoger.getState().create(<DeleteSelf />, {
       id: 'delete-account',
       triggerRef: deleteButtonRef,
       className: 'md:max-w-xl',

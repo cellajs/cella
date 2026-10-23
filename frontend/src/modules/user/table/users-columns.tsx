@@ -1,11 +1,10 @@
-import i18n from 'i18next';
 import { PencilIcon, TrashIcon } from 'lucide-react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ConfirmText } from '~/modules/common/confirm-text';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { dateColumn, ellipsisColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { openPopConfirm } from '~/modules/common/popconfirm';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
@@ -48,7 +47,7 @@ export const useColumns = () => {
     },
     ellipsisColumn<BaseUser>(() => [
       {
-        label: i18n.t('c:edit'),
+        label: t('c:edit'),
         icon: PencilIcon,
         onSelect: (row, triggerRef) => {
           dropdowner.getState().remove();
@@ -56,7 +55,7 @@ export const useColumns = () => {
         },
       },
       {
-        label: i18n.t('c:delete'),
+        label: t('c:delete'),
         icon: TrashIcon,
         onSelect: (row) => {
           const callback = () => dropdowner.getState().remove();
@@ -89,5 +88,5 @@ export const useColumns = () => {
     },
   ];
 
-  return useState<ColumnOrColumnGroup<BaseUser>[]>(columns);
+  return useColumnVisibility(columns);
 };

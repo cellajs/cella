@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { PaperclipIcon } from 'lucide-react';
-import { type Dispatch, type SetStateAction, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
@@ -14,7 +13,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
 import type { EnrichedChannel } from '~/modules/entities/types';
@@ -50,18 +49,7 @@ export function AttachmentsTable({ channel, canUpload, isSheet = false }: Attach
 
   const { q, sort, order } = search;
 
-  const [hiddenOverrides, setHiddenOverrides] = useState<Record<string, boolean>>({});
-  const columns = useColumns(channel, isSheet).map((column) => ({ ...column, hidden: hiddenOverrides[column.key] ?? column.hidden }));
-  const setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Attachment>[]>> = (updater) => {
-    const nextColumns = typeof updater === 'function' ? updater(columns) : updater;
-    setHiddenOverrides((prev) => {
-      const next = { ...prev };
-      for (const column of nextColumns) {
-        if (column.hidden !== undefined) next[column.key] = column.hidden;
-      }
-      return next;
-    });
-  };
+  const [columns, setColumns] = useColumnVisibility(useColumns(channel, isSheet));
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   // Default view (no search, default sort) reads the canonical org query that SyncService prefetches; any other filter uses the infinite query.

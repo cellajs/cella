@@ -1,10 +1,11 @@
 import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
-import { CheckIcon, RotateCcwKeyIcon, TrashIcon } from 'lucide-react';
+import { RotateCcwKeyIcon, TrashIcon } from 'lucide-react';
 import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ensureStepUp } from '~/modules/auth/step-up';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
+import { ConnectedStatus } from '~/modules/me/connected-status';
 import { meAuthQueryOptions, useDeleteTotpMutation } from '~/modules/me/query';
 import { SetupTotp } from '~/modules/me/totp-setup';
 import { Button } from '~/modules/ui/button';
@@ -46,20 +47,12 @@ export function Totp() {
 
   const handleDeleteTOTP = () => {
     if (!onlineManager.isOnline()) return toastOffline();
-    if (user.mfaRequired) return toaster.info(t('c:delete_mfa_last', { method: 'TOTP' }));
-
     deleteTotp();
   };
 
   return (
     <div className="mb-6 flex gap-2 max-sm:flex-col">
-      {hasTotp && (
-        <div className="flex items-center gap-2 px-3">
-          <RotateCcwKeyIcon className="mr-2 size-4" />
-          <CheckIcon strokeWidth={3} className="size-4.5 text-success" />
-          <span>{t('c:totp_activated')}</span>
-        </div>
-      )}
+      {hasTotp && <ConnectedStatus icon={<RotateCcwKeyIcon />}>{t('c:totp_activated')}</ConnectedStatus>}
       {hasTotp ? (
         <Button key="deleteTotp" type="button" variant="plain" loading={isPending} disabled={user.mfaRequired} onClick={handleDeleteTOTP}>
           <TrashIcon className="size-4" />

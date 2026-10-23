@@ -32,7 +32,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
 
   const onRoleChange = (role?: string) => {
     clearSelection();
-    setSearch({ role: role === 'all' ? undefined : (role as UsersRouteSearchParams['role']) });
+    setSearch({ role: role as UsersRouteSearchParams['role'] });
   };
 
   const openInviteDialog = () => {
@@ -70,7 +70,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
           i18nKey="c:confirm.delete_resource"
           values={{
             name: selected.map((u) => u.email).join(', '),
-            resource: selected.length > 1 ? t('c:user_other').toLowerCase() : t('c:user').toLowerCase(),
+            resource: t('c:user', { count: selected.length }).toLowerCase(),
           }}
         />
       ),
@@ -84,7 +84,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       label="c:user"
       searchName="userSearch"
       actions={<TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInviteDialog} />}
-      filters={<SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10" />}
+      filters={<SelectRole value={role} onChange={onRoleChange} className="h-10" />}
       selection={{
         count: selected.length,
         onClear: clearSelection,

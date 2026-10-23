@@ -1,4 +1,5 @@
 {
+  "add_provider_account": "{{provider}}-account toevoegen",
   "all_rows": "Alle rijen",
   "allowed_sign_in_methods": "Toegestane inlogmethoden",
   "allowed_sign_in_methods.text": "Leeg staat elke ingeschakelde methode toe. Een lid dat een instellingsaccount koppelde, moet dan via die instelling inloggen.",
@@ -10,6 +11,7 @@
   "claim_values.text": "De domeinen die de federatie voor deze instelling doorgeeft, gescheiden door komma's. Een login moet er een van doorgeven.",
   "connect_institution": "{{institution}}-account koppelen",
   "connected_to_institution": "Gekoppeld aan {{institution}}",
+  "connected_to_provider": "Account gekoppeld aan {{provider}}",
   "connect_institution_prompt.text": "Je bent ingelogd. Koppel nu je {{institution}}-account om voortaan daarmee in te loggen.",
   "highlight": "Markeren",
   "item_one": "{{count}} item",

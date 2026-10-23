@@ -1,28 +1,22 @@
 import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
-import { CheckIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { updateMe } from 'sdk';
 import { appConfig, type Language } from 'shared';
-import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
+import { DropdownSelectItem } from '~/modules/common/dropdowner/dropdown-select-item';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { toastOffline } from '~/modules/common/toaster/toaster';
+import { useUpdateSelfMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
-import { cn } from '~/utils/cn';
 
-interface Props {
-  triggerClassName?: string;
-}
-
-export function UserLanguage({ triggerClassName = '' }: Props) {
+export function UserLanguage() {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const user = useUserStore((state) => state.user);
-  const updateUser = useUserStore((state) => state.updateUser);
   const language = user?.language || i18n.languages[0];
+  const { mutate: updateSelf } = useUpdateSelfMutation();
 
   const changeLanguage = (lng: Language) => {
     if (!onlineManager.isOnline()) return toastOffline();
@@ -30,31 +24,18 @@ export function UserLanguage({ triggerClassName = '' }: Props) {
     i18n.changeLanguage(lng);
     dropdowner.getState().remove();
 
-    if (!user) return;
-    updateMe({ body: { language: lng } }).then((res) => {
-      updateUser(res);
-    });
+    if (user) updateSelf({ language: lng });
   };
 
   if (appConfig.languages.length < 2) return null;
 
   const openDropdown = () => {
-    const currentLang = user?.language || i18n.languages[0];
-    const isMobile = window.innerWidth < 640;
-
     dropdowner.getState().create(
       <div className="flex flex-col">
         {appConfig.languages.map((lang) => (
-          <DropdownActionItem
-            key={lang}
-            isMobile={isMobile}
-            variant="ghost"
-            className="w-full justify-between gap-4"
-            onSelect={() => changeLanguage(lang)}
-          >
+          <DropdownSelectItem key={lang} selected={language === lang} onSelect={() => changeLanguage(lang)}>
             <span lang={lang}>{t(`c:${lang}`)}</span>
-            <CheckIcon className={cn('text-success', currentLang === lang ? 'visible' : 'invisible')} />
-          </DropdownActionItem>
+          </DropdownSelectItem>
         ))}
       </div>,
       { id: 'user-language', triggerId: 'user-language-trigger', triggerRef, kind: 'menu' },
@@ -66,7 +47,7 @@ export function UserLanguage({ triggerClassName = '' }: Props) {
       ref={triggerRef}
       variant="ghost"
       size="icon"
-      className={cn('data-dropdowner-active:bg-foreground/8', triggerClassName)}
+      className="data-dropdowner-active:bg-foreground/8"
       aria-label={`${language.toUpperCase()}, ${t('c:change_language')}`}
       onClick={openDropdown}
     >

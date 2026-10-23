@@ -3,8 +3,10 @@ import type { User } from 'sdk';
 import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from 'sdk';
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
+import { useUpdateSelfMutation } from '~/modules/me/query';
 import { usersSearchDefaults } from '~/modules/user/search-params-schemas';
 import type { BaseUser } from '~/modules/user/types';
+import { useUserStore } from '~/modules/user/user-store';
 import { cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
@@ -41,7 +43,7 @@ export const usersListQueryOptions = (params: UsersListParams) => {
   });
 };
 
-export const useUserUpdateMutation = () => {
+const useUserUpdateMutation = () => {
   const queryClient = useQueryClient();
   const listKey = keys.list.base;
 
@@ -57,6 +59,18 @@ export const useUserUpdateMutation = () => {
     },
     gcTime: 1000 * 10,
   });
+};
+
+/** Saves a user's profile: the signed-in user's through `/me`, which also updates the user store, anyone else's as an admin. */
+export const useUpdateUser = (userId: string) => {
+  const isSelf = useUserStore((state) => state.user?.id === userId);
+  const updateSelf = useUpdateSelfMutation();
+  const updateUser = useUserUpdateMutation();
+
+  const mutate = (body: UpdateUserData['body'], options?: { onSuccess?: (user: User) => void }) =>
+    isSelf ? updateSelf.mutate(body, options) : updateUser.mutate({ path: { id: userId }, body }, options);
+
+  return { mutate, isPending: updateSelf.isPending || updateUser.isPending };
 };
 
 export const useUserDeleteMutation = () => {

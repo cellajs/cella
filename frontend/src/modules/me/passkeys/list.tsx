@@ -2,19 +2,16 @@ import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { FingerprintPatternIcon, PlusIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { PasskeyTile } from '~/modules/me/passkeys/tile';
 import { meAuthQueryOptions, useCreatePasskeyMutation, useDeletePasskeyMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
-import { useCurrentUser } from '~/modules/user/user-store';
 
 export function PasskeysList() {
   const { t } = useTranslation();
 
-  const user = useCurrentUser();
-
   const { mutate: createPasskey } = useCreatePasskeyMutation();
-  const { mutate: deletePasskey, isPending } = useDeletePasskeyMutation();
+  const { mutate: deletePasskey, isPending, variables } = useDeletePasskeyMutation();
 
   const {
     data: { passkeys },
@@ -23,7 +20,6 @@ export function PasskeysList() {
 
   const handleDeletePasskey = (id: string) => {
     if (!onlineManager.isOnline()) return toastOffline();
-    if (user.mfaRequired && passkeys.length <= 1) return toaster.info(t('c:delete_mfa_last', { method: 'the last passkey' }));
     deletePasskey({ path: { id } });
   };
   return (
@@ -43,8 +39,8 @@ export function PasskeysList() {
             <PasskeyTile
               passkey={passkey}
               key={passkey.id}
-              handleDeletePasskey={handleDeletePasskey}
-              isPending={isPending}
+              onDelete={handleDeletePasskey}
+              loading={isPending && variables?.path.id === passkey.id}
               onlyPasskeyLeft={passkeys.length === 1}
             />
           )}

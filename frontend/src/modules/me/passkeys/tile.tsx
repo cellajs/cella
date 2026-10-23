@@ -1,86 +1,63 @@
-import { ChevronDownIcon, KeyRoundIcon, MonitorIcon, SmartphoneIcon, TrashIcon } from 'lucide-react';
-import { useState } from 'react';
+import { KeyRoundIcon, TrashIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { TooltipButton } from '~/modules/common/tooltip-button';
+import { DeviceTile, DeviceTileDetail } from '~/modules/me/device-tile';
 import type { Passkey } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { Card, CardContent } from '~/modules/ui/card';
 import { useCurrentUser } from '~/modules/user/user-store';
-import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
 
 interface PasskeyTileProps {
   passkey: Passkey;
-  handleDeletePasskey: (id: string) => void;
-  isPending: boolean;
+  onDelete: (id: string) => void;
+  /** This passkey's delete is running. */
+  loading: boolean;
   onlyPasskeyLeft: boolean;
 }
 
-export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPasskeyLeft }: PasskeyTileProps) {
+export function PasskeyTile({ passkey, onDelete, loading, onlyPasskeyLeft }: PasskeyTileProps) {
   const { t } = useTranslation();
   const user = useCurrentUser();
 
-  const [expanded, setExpanded] = useState(false);
-
-  const DeviceIcon = passkey.deviceType === 'desktop' ? MonitorIcon : SmartphoneIcon;
-
   return (
-    <Card className="group/tile w-full py-0 transition-all focus-ring:has-[button:focus]:ring-2 sm:py-0" data-expanded={expanded}>
-      <CardContent className="flex gap-2 p-2 sm:gap-3 sm:p-3 lg:items-center">
-        <DeviceIcon className="size-4 max-sm:mt-0.5 sm:size-8" strokeWidth={1.5} />
-
-        <div className="flex w-full flex-col gap-1 overflow-hidden">
-          <div className="flex items-start gap-1 max-md:flex-col md:gap-2">
-            <span className="text-sm max-sm:hidden">{passkey.deviceName || t('c:unknown_device')}</span>
-            <TooltipButton toolTipContent={passkey.nameOnDevice} side="top">
-              <Badge size="xs" variant="outline" className="max-w-48 truncate">
-                <KeyRoundIcon className="size-3 shrink-0" />
-                <span className="truncate">{passkey.nameOnDevice}</span>
-              </Badge>
-            </TooltipButton>
-          </div>
-
-          <div className="flex flex-wrap items-start gap-x-2 gap-y-1 text-muted-foreground text-sm md:gap-x-5">
-            <p className="truncate">
-              <span className="sr-only">{t('c:created_at')}: </span>
-              {dateShort(passkey.createdAt)}
-            </p>
-            <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline">
-              <span className="sr-only">OS: </span>
-              {passkey.deviceOs}
-            </p>
-            <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline">
-              <span className="sr-only">{t('c:browser')}: </span>
-              {passkey.browser}
-            </p>
-
-            <Button
-              variant="link"
-              onClick={() => setExpanded((v) => !v)}
-              aria-expanded={expanded}
-              size="xs"
-              className="h-auto p-0 outline-0 ring-offset-0 transition-opacity focus-visible:opacity-100 focus-visible:ring-transparent group-hover/tile:opacity-100 sm:opacity-0 lg:hidden"
-            >
-              <div className="group-data-[expanded=true]/tile:hidden">More</div>
-              <div className="group-data-[expanded=false]/tile:hidden">Less</div>
-              <ChevronDownIcon className={cn('size-3 transition-transform', expanded && 'rotate-180')} />
-            </Button>
-          </div>
+    <DeviceTile
+      deviceType={passkey.deviceType}
+      title={
+        <div className="flex items-start gap-1 max-md:flex-col md:gap-2">
+          <span className="text-sm max-sm:hidden">{passkey.deviceName || t('c:unknown_device')}</span>
+          <TooltipButton toolTipContent={passkey.nameOnDevice} side="top">
+            <Badge size="xs" variant="outline" className="max-w-48 truncate">
+              <KeyRoundIcon className="size-3 shrink-0" />
+              <span className="truncate">{passkey.nameOnDevice}</span>
+            </Badge>
+          </TooltipButton>
         </div>
-
+      }
+      details={
+        <>
+          <DeviceTileDetail label={t('c:created_at')}>{dateShort(passkey.createdAt)}</DeviceTileDetail>
+          <DeviceTileDetail label={t('c:os')} expandable>
+            {passkey.deviceOs}
+          </DeviceTileDetail>
+          <DeviceTileDetail label={t('c:browser')} expandable>
+            {passkey.browser}
+          </DeviceTileDetail>
+        </>
+      }
+      action={
         <Button
           variant="plain"
           size="sm"
           className="ml-auto text-sm"
-          loading={isPending}
+          loading={loading}
           disabled={user.mfaRequired && onlyPasskeyLeft}
-          onClick={() => handleDeletePasskey(passkey.id)}
+          onClick={() => onDelete(passkey.id)}
         >
           <TrashIcon />
           <span className="max-md:hidden">{t('c:delete')}</span>
         </Button>
-      </CardContent>
-    </Card>
+      }
+    />
   );
 }

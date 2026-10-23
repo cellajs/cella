@@ -2,6 +2,9 @@ import { queryOptions, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type {
   AcceptInvitationTokenResponse,
+  CreateTotpData,
+  CreateTotpResponses,
+  DeleteMeResponse,
   DeletePasskeyData,
   DeletePasskeyResponse,
   DeleteTotpResponse,
@@ -12,19 +15,25 @@ import type {
   MeAuthData,
   RevokeConnectedAppData,
   RevokeConnectedAppResponse,
+  RevokeMySessionsResponse,
   ToggleMfaData,
   User,
 } from 'sdk';
 import {
   acceptInvitationToken,
   createPasskey,
+  createTotp,
+  deleteMe,
   deletePasskey,
   deleteTotp,
+  generateTotpKey,
   getConnectedApps,
+  getMyAuth,
   getMyInvitations,
   getMyMemberships,
   handleMembershipInvitation,
   revokeConnectedApp,
+  revokeMySessions,
   toggleMfa,
   type UpdateMeData,
   updateMe,
@@ -34,7 +43,7 @@ import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credent
 import { ensureStepUp, withStepUp } from '~/modules/auth/step-up';
 import { StepUpDismissed } from '~/modules/auth/step-up-retry';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { getAndSetMe, getAndSetMeAuthData } from '~/modules/me/helpers';
+import { getAndSetMe } from '~/modules/me/helpers';
 import type { Passkey } from '~/modules/me/types';
 import { userQueryKeys } from '~/modules/user/query';
 import { userStore } from '~/modules/user/user-store';
@@ -47,12 +56,15 @@ export const meKeys = {
   invites: ['me', 'invites'] as const,
   connectedApps: ['me', 'connected-apps'] as const,
   memberships: ['me', 'memberships'] as const,
-  register: { passkey: ['me', 'register', 'passkey'] as const },
+  totpKey: ['me', 'totp-key'] as const,
+  register: { passkey: ['me', 'register', 'passkey'] as const, totp: ['me', 'register', 'totp'] as const },
   update: { info: ['me', 'update', 'info'] as const, flags: ['me', 'update', 'flags'] as const },
   delete: {
     passkey: ['me', 'delete', 'passkey'] as const,
     connectedApp: ['me', 'delete', 'connected-app'] as const,
     totp: ['me', 'delete', 'totp'] as const,
+    sessions: ['me', 'delete', 'sessions'] as const,
+    self: ['me', 'delete', 'self'] as const,
   },
   handleInvitation: ['me', 'handle-invitation'] as const,
   acceptInvitationToken: ['me', 'accept-invitation-token'] as const,
@@ -62,11 +74,25 @@ export const meKeys = {
 // persisted entry would let a session revoked between visits pass the guard and skip getAndSetMe's store write.
 export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe, meta: { persist: false } });
 
-export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: getAndSetMeAuthData });
+export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: () => getMyAuth() });
 
 export const meConnectedAppsQueryOptions = () => queryOptions({ queryKey: meKeys.connectedApps, queryFn: () => getConnectedApps() });
 
 export const meInvitationsQueryOptions = () => queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
+
+/**
+ * A new authenticator key with its QR code. Once confirmed the key is the account's second factor, so it stays out of
+ * the local database and leaves the cache when the setup closes. `static`: only the setup's refresh asks for a new key,
+ * since a key requested after the step-up window opens the re-auth dialog, and mails its link, unasked.
+ */
+export const totpKeyQueryOptions = () =>
+  queryOptions({
+    queryKey: meKeys.totpKey,
+    queryFn: () => withStepUp(() => generateTotpKey()),
+    staleTime: 'static',
+    gcTime: 0,
+    meta: { persist: false },
+  });
 
 export const useUpdateSelfMutation = () => {
   return useMutation<User, ApiError, Omit<UpdateMeData['body'], 'role' | 'userFlags'>>({
@@ -148,6 +174,21 @@ export const useDeletePasskeyMutation = () => {
   });
 };
 
+/** Confirms the authenticator key with its first code; the key leaves the cache with it. */
+export const useCreateTotpMutation = () =>
+  useMutation<CreateTotpResponses[201], ApiError, CreateTotpData['body']>({
+    mutationKey: meKeys.register.totp,
+    mutationFn: (body) => withStepUp(() => createTotp({ body })),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: meKeys.totpKey });
+      queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
+        if (!oldData) return oldData;
+        return { ...oldData, hasTotp: true };
+      });
+      toaster.success(t('c:success.totp_added'));
+    },
+  });
+
 export const useDeleteTotpMutation = () => {
   return useMutation<DeleteTotpResponse, ApiError, void>({
     mutationKey: meKeys.delete.totp,
@@ -161,6 +202,13 @@ export const useDeleteTotpMutation = () => {
     },
   });
 };
+
+/** Deletes the signed-in account; the caller signs out. */
+export const useDeleteSelfMutation = () =>
+  useMutation<DeleteMeResponse, ApiError, void>({
+    mutationKey: meKeys.delete.self,
+    mutationFn: () => withStepUp(() => deleteMe()),
+  });
 
 const applyUpdatedSelf = (updatedUser: User) => {
   const { updateUser } = userStore.getState();
@@ -218,3 +266,21 @@ export const useRevokeConnectedAppMutation = () => {
     },
   });
 };
+
+/** Revokes sessions by id; each cached session takes the server's revoked row, so it moves to the history. */
+export const useRevokeSessionsMutation = () =>
+  useMutation<RevokeMySessionsResponse['data'], ApiError, string[]>({
+    mutationKey: meKeys.delete.sessions,
+    mutationFn: async (ids) => {
+      const { data } = await revokeMySessions({ body: { ids } });
+      return data;
+    },
+    onSuccess: (revoked) => {
+      const revokedById = new Map(revoked.map((session) => [session.id, session]));
+      queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
+        if (!oldData) return oldData;
+        return { ...oldData, sessions: oldData.sessions.map((session) => ({ ...session, ...revokedById.get(session.id) })) };
+      });
+      toaster.success(t('c:success.revoke_resource', { resource: t(revoked.length === 1 ? 'c:session' : 'c:sessions') }));
+    },
+  });
