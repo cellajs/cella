@@ -1,4 +1,4 @@
-import type { ProductEntityType } from 'shared';
+import { appConfig, type ProductEntityType } from 'shared';
 import { reportCriticalError } from '~/lib/tracing';
 import { getLocalUserDb } from '~/query/local-user-db';
 
@@ -22,14 +22,28 @@ export interface FailedSyncRecord {
   createdAt: number;
 }
 
+/** The product type a mutation key starts with. */
+function productTypeOf(mutationKey: unknown): ProductEntityType | undefined {
+  const head = Array.isArray(mutationKey) ? mutationKey[0] : undefined;
+  return appConfig.productEntityTypes.find((type) => type === head);
+}
+
+/** What a caller passes: `mutationKey` names the product type, and the running bundle's cache version is stamped here. */
+type QuarantineInput = Omit<FailedSyncRecord, 'id' | 'createdAt' | 'clientCacheVersion'> & { mutationKey?: unknown; clientCacheVersion?: string };
+
 /** Quarantine a failed mutation. De-duplicates on `mutationId`. No-ops while signed out. */
-export async function quarantineFailedSync(record: Omit<FailedSyncRecord, 'id' | 'createdAt'>): Promise<void> {
+export async function quarantineFailedSync({ mutationKey, ...record }: QuarantineInput): Promise<void> {
   const db = getLocalUserDb();
   if (!db) return;
   try {
     const existing = await db.failedSync.where('mutationId').equals(record.mutationId).first();
     if (existing) return;
-    await db.failedSync.add({ ...record, createdAt: Date.now() });
+    await db.failedSync.add({
+      entityType: productTypeOf(mutationKey),
+      clientCacheVersion: appConfig.clientCacheVersion,
+      ...record,
+      createdAt: Date.now(),
+    });
   } catch (error) {
     console.error('[failed-sync] Failed to quarantine mutation:', error);
     reportCriticalError('offline.quarantine_failed', error, { mutation_id: record.mutationId });

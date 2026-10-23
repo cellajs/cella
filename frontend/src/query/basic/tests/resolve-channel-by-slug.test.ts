@@ -16,14 +16,13 @@ const stored: Channel = { ...listRow, included: { counts: { membership: { pendin
  * Resolves `acme` with the row found in a list cache and a detail fetch that answers `stored`: as a route does on entry,
  * or with `revalidateIfStale: false` as on a param change within the route (`stay`).
  */
-const resolveOnEnter = (fetchDetail: () => Promise<Channel>, revalidateIfStale = true) =>
+const resolveOnEnter = (fetchDetail: () => Promise<Channel>, revalidateIfStale = true, findInCache: () => Channel | undefined = () => listRow) =>
   resolveChannelBySlug({
     idOrSlug: 'acme',
     tenantId: 'ten-1',
-    findInCache: () => listRow,
+    findInCache,
     detailQueryOptions: (id) => ({ queryKey: detailKey(id), queryFn: fetchDetail }),
     fetchBySlug: fetchDetail,
-    slugFetchCacheKey: detailKey,
     revalidateIfStale,
     params: { organizationSlug: 'acme' },
     buildSlugOverrides: (entity) => ({ organizationSlug: entity.slug }),
@@ -65,5 +64,13 @@ describe('resolveChannelBySlug', () => {
 
     expect(await resolveOnEnter(fetchDetail)).toEqual(stored);
     expect(fetchDetail).not.toHaveBeenCalled();
+  });
+
+  it('fetches by slug when no row is cached, and caches the answer under the key of its detail query', async () => {
+    const fetchBySlug = vi.fn(async () => stored);
+
+    expect(await resolveOnEnter(fetchBySlug, true, () => undefined)).toEqual(stored);
+    expect(queryClient.getQueryData(detailKey('org-1'))).toEqual(stored);
+    expect(fetchBySlug).toHaveBeenCalledTimes(1);
   });
 });

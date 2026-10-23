@@ -1,7 +1,7 @@
 import '~/query/tests/query-client-env';
 import type { QueryKey } from '@tanstack/react-query';
 import { afterEach, describe, expect, it } from 'vitest';
-import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
+import { changeListData } from '~/query/basic/helpers';
 import type { ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData, QueryData } from '~/query/types';
@@ -26,7 +26,7 @@ const readInfinite = (key: QueryKey) => queryClient.getQueryData<InfiniteQueryDa
 
 afterEach(() => queryClient.clear());
 
-describe('changeQueryData (flat)', () => {
+describe('changeListData on a flat list', () => {
   const seed = () => {
     queryClient.setQueryData(flatKey, { items: rows('a', 'b'), total: 2 });
     return readFlat(flatKey);
@@ -35,7 +35,7 @@ describe('changeQueryData (flat)', () => {
   it('create miss: prepends the new row whatever the key sort and counts it', () => {
     queryClient.setQueryData(oldestFirstKey, { items: rows('a'), total: 1 });
 
-    changeQueryData(oldestFirstKey, rows('c'), 'create');
+    changeListData(oldestFirstKey, rows('c'), 'create');
 
     expect(readFlat(oldestFirstKey)).toEqual({ items: rows('c', 'a'), total: 2 });
   });
@@ -43,7 +43,7 @@ describe('changeQueryData (flat)', () => {
   it('create hit: keeps the data object when every row is cached', () => {
     const before = seed();
 
-    changeQueryData(flatKey, rows('a'), 'create');
+    changeListData(flatKey, rows('a'), 'create');
 
     expect(readFlat(flatKey)).toBe(before);
   });
@@ -51,7 +51,7 @@ describe('changeQueryData (flat)', () => {
   it('create with partial overlap: adds and counts only the rows not cached', () => {
     seed();
 
-    changeQueryData(flatKey, rows('b', 'c'), 'create');
+    changeListData(flatKey, rows('b', 'c'), 'create');
 
     expect(readFlat(flatKey)).toEqual({ items: rows('c', 'a', 'b'), total: 3 });
   });
@@ -59,7 +59,7 @@ describe('changeQueryData (flat)', () => {
   it('update hit: replaces the matching row and keeps the others and the total', () => {
     const before = seed();
 
-    changeQueryData(flatKey, named('b', 'renamed'), 'update');
+    changeListData(flatKey, named('b', 'renamed'), 'update');
 
     const after = readFlat(flatKey);
     expect(after?.items).toEqual([{ id: 'a' }, { id: 'b', name: 'renamed' }]);
@@ -70,7 +70,7 @@ describe('changeQueryData (flat)', () => {
   it('update miss: keeps the data object', () => {
     const before = seed();
 
-    changeQueryData(flatKey, named('x', 'nope'), 'update');
+    changeListData(flatKey, named('x', 'nope'), 'update');
 
     expect(readFlat(flatKey)).toBe(before);
   });
@@ -78,7 +78,7 @@ describe('changeQueryData (flat)', () => {
   it('remove hit: drops the row and counts only rows that were cached', () => {
     seed();
 
-    changeQueryData(flatKey, rows('a', 'x'), 'remove');
+    changeListData(flatKey, rows('a', 'x'), 'remove');
 
     expect(readFlat(flatKey)).toEqual({ items: rows('b'), total: 1 });
   });
@@ -86,19 +86,19 @@ describe('changeQueryData (flat)', () => {
   it('remove miss: keeps the data object', () => {
     const before = seed();
 
-    changeQueryData(flatKey, rows('x'), 'remove');
+    changeListData(flatKey, rows('x'), 'remove');
 
     expect(readFlat(flatKey)).toBe(before);
   });
 
   it('does nothing for an uncached key', () => {
-    changeQueryData(flatKey, rows('a'), 'create');
+    changeListData(flatKey, rows('a'), 'create');
 
     expect(readFlat(flatKey)).toBeUndefined();
   });
 });
 
-describe('changeInfiniteQueryData', () => {
+describe('changeListData on a paged list', () => {
   const twoPages = () => {
     queryClient.setQueryData(newestFirstKey, infinite([rows('a', 'b'), rows('c')], 3));
     return readInfinite(newestFirstKey);
@@ -107,7 +107,7 @@ describe('changeInfiniteQueryData', () => {
   it('create miss: prepends on a newest-first key and adds to the total', () => {
     queryClient.setQueryData(newestFirstKey, infinite([rows('a', 'b')], 2));
 
-    changeInfiniteQueryData(newestFirstKey, rows('c'), 'create');
+    changeListData(newestFirstKey, rows('c'), 'create');
 
     expect(readInfinite(newestFirstKey)).toEqual(infinite([rows('c', 'a', 'b')], 3));
   });
@@ -115,7 +115,7 @@ describe('changeInfiniteQueryData', () => {
   it('create miss: appends on an oldest-first key', () => {
     queryClient.setQueryData(oldestFirstKey, infinite([rows('a', 'b')], 2));
 
-    changeInfiniteQueryData(oldestFirstKey, rows('c'), 'create');
+    changeListData(oldestFirstKey, rows('c'), 'create');
 
     expect(ids(readInfinite(oldestFirstKey)?.pages[0].items ?? [])).toEqual(['a', 'b', 'c']);
   });
@@ -124,7 +124,7 @@ describe('changeInfiniteQueryData', () => {
     const key = ['task', 'list', { sort: 'name', order: 'asc' }];
     queryClient.setQueryData(key, infinite([rows('a')], 1));
 
-    changeInfiniteQueryData(key, rows('b'), 'create');
+    changeListData(key, rows('b'), 'create');
 
     expect(ids(readInfinite(key)?.pages[0].items ?? [])).toEqual(['b', 'a']);
   });
@@ -133,7 +133,7 @@ describe('changeInfiniteQueryData', () => {
     queryClient.setQueryData(newestFirstKey, infinite([rows('a', 'b')], 2));
     const before = readInfinite(newestFirstKey);
 
-    changeInfiniteQueryData(newestFirstKey, rows('b'), 'create');
+    changeListData(newestFirstKey, rows('b'), 'create');
 
     expect(readInfinite(newestFirstKey)).toBe(before);
   });
@@ -141,7 +141,7 @@ describe('changeInfiniteQueryData', () => {
   it('create miss: inserts a newest-first row on the first page only', () => {
     twoPages();
 
-    changeInfiniteQueryData(newestFirstKey, rows('x'), 'create');
+    changeListData(newestFirstKey, rows('x'), 'create');
 
     const after = readInfinite(newestFirstKey);
     expect(after?.pages.map((page) => ids(page.items))).toEqual([['x', 'a', 'b'], ['c']]);
@@ -151,7 +151,7 @@ describe('changeInfiniteQueryData', () => {
   it('create miss: appends an oldest-first row to the last page only', () => {
     queryClient.setQueryData(oldestFirstKey, infinite([rows('a', 'b'), rows('c')], 3));
 
-    changeInfiniteQueryData(oldestFirstKey, rows('x'), 'create');
+    changeListData(oldestFirstKey, rows('x'), 'create');
 
     expect(readInfinite(oldestFirstKey)?.pages.map((page) => ids(page.items))).toEqual([
       ['a', 'b'],
@@ -162,7 +162,7 @@ describe('changeInfiniteQueryData', () => {
   it('create hit: keeps the data object when the row is cached on a later page', () => {
     const before = twoPages();
 
-    changeInfiniteQueryData(newestFirstKey, rows('c'), 'create');
+    changeListData(newestFirstKey, rows('c'), 'create');
 
     expect(readInfinite(newestFirstKey)).toBe(before);
   });
@@ -170,7 +170,7 @@ describe('changeInfiniteQueryData', () => {
   it('update hit: replaces the row on its page and keeps the other page, the totals and page params', () => {
     const before = twoPages();
 
-    changeInfiniteQueryData(newestFirstKey, named('c', 'renamed'), 'update');
+    changeListData(newestFirstKey, named('c', 'renamed'), 'update');
 
     const after = readInfinite(newestFirstKey);
     expect(after?.pages[1].items).toEqual([{ id: 'c', name: 'renamed' }]);
@@ -182,7 +182,7 @@ describe('changeInfiniteQueryData', () => {
   it('update miss: keeps the data object', () => {
     const before = twoPages();
 
-    changeInfiniteQueryData(newestFirstKey, named('x', 'nope'), 'update');
+    changeListData(newestFirstKey, named('x', 'nope'), 'update');
 
     expect(readInfinite(newestFirstKey)).toBe(before);
   });
@@ -190,7 +190,7 @@ describe('changeInfiniteQueryData', () => {
   it('remove hit: drops the row from its page and lowers the total on every page', () => {
     const before = twoPages();
 
-    changeInfiniteQueryData(newestFirstKey, rows('b', 'x'), 'remove');
+    changeListData(newestFirstKey, rows('b', 'x'), 'remove');
 
     const after = readInfinite(newestFirstKey);
     expect(after?.pages.map((page) => ids(page.items))).toEqual([['a'], ['c']]);
@@ -201,13 +201,13 @@ describe('changeInfiniteQueryData', () => {
   it('remove miss: keeps the data object', () => {
     const before = twoPages();
 
-    changeInfiniteQueryData(newestFirstKey, rows('x'), 'remove');
+    changeListData(newestFirstKey, rows('x'), 'remove');
 
     expect(readInfinite(newestFirstKey)).toBe(before);
   });
 
   it('does nothing for an uncached key', () => {
-    changeInfiniteQueryData(newestFirstKey, rows('a'), 'create');
+    changeListData(newestFirstKey, rows('a'), 'create');
 
     expect(readInfinite(newestFirstKey)).toBeUndefined();
   });

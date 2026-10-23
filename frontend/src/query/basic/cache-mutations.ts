@@ -1,11 +1,11 @@
-import type { QueryClient, QueryKey } from '@tanstack/react-query';
-import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
-import { forEachListQuery, isQueryData } from '~/query/basic/mutate-query';
+import type { QueryClient, QueryFilters, QueryKey } from '@tanstack/react-query';
+import { changeListData } from '~/query/basic/helpers';
+import { forEachListQuery } from '~/query/basic/mutate-query';
 import type { ItemData, QueryDataActions } from '~/query/basic/types';
 
 /** Runs against every query that prefix-matches `queryKey`. */
 function mutateMatchingQueries(queryKey: QueryKey, items: ItemData[], action: QueryDataActions) {
-  forEachListQuery(queryKey, (key, data) => (isQueryData(data) ? changeQueryData : changeInfiniteQueryData)(key, items, action));
+  forEachListQuery(queryKey, (key) => changeListData(key, items, action));
 }
 
 /** Add items to all queries that prefix-match `queryKey`. */
@@ -23,12 +23,17 @@ export function cacheRemove(queryKey: QueryKey, items: ItemData[]) {
   mutateMatchingQueries(queryKey, items, 'remove');
 }
 
-export function removeDetailQueriesById(client: QueryClient, detailBase: QueryKey, ids: Iterable<string | number>) {
-  const idsToRemove = new Set(ids);
-  if (idsToRemove.size === 0) return;
-
+/** The detail queries of `ids` under `detailBase`, their descendants included; null for no ids. */
+function detailsById(detailBase: QueryKey, ids: Iterable<string | number>): QueryFilters | null {
+  const idSet = new Set<unknown>(ids);
+  if (idSet.size === 0) return null;
   const idIndex = detailBase.length;
-  client.removeQueries({ queryKey: detailBase, predicate: ({ queryKey }) => idsToRemove.has(queryKey[idIndex] as string | number) });
+  return { queryKey: detailBase, predicate: ({ queryKey }) => idSet.has(queryKey[idIndex]) };
+}
+
+export function removeDetailQueriesById(client: QueryClient, detailBase: QueryKey, ids: Iterable<string | number>) {
+  const filters = detailsById(detailBase, ids);
+  if (filters) client.removeQueries(filters);
 }
 
 /**
@@ -38,12 +43,11 @@ export function removeDetailQueriesById(client: QueryClient, detailBase: QueryKe
  * the immediate form: its other callbacks read a missing detail as "deleted".
  */
 export function removeDetailQueriesOnceUnobserved(client: QueryClient, detailBase: QueryKey, ids: Iterable<string | number>) {
-  const idsToRemove = new Set(ids);
-  if (idsToRemove.size === 0) return;
+  const filters = detailsById(detailBase, ids);
+  if (!filters) return;
 
-  const idIndex = detailBase.length;
   const cache = client.getQueryCache();
-  for (const query of cache.findAll({ queryKey: detailBase, predicate: ({ queryKey }) => idsToRemove.has(queryKey[idIndex] as string | number) })) {
+  for (const query of cache.findAll(filters)) {
     if (query.getObserversCount() === 0) {
       cache.remove(query);
       continue;

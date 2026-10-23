@@ -25,7 +25,6 @@ export function enrichWithAncestorSlugs(item: EnrichableChannel, ancestors: read
 
   for (const ancestorType of ancestors) {
     const idKey = appConfig.entityIdColumnKeys[ancestorType];
-    if (!idKey) continue;
     const ancestorId = getField(membership, idKey) ?? getField(item, idKey);
     if (typeof ancestorId !== 'string') continue;
     slugs[ancestorType] = slugIndex.get(ancestorType)?.get(ancestorId) ?? ancestorId;

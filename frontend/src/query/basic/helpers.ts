@@ -31,25 +31,19 @@ const changeListItems = (data: BaseQueryItem<ItemData>, items: ItemData[], actio
   );
 };
 
-/** Paged lists insert new rows in the key's createdAt order. */
-export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
-  const { order } = getQueryKeySortOrder(queryKey);
-  queryClient.setQueryData<BaseQueryItem<ItemData>>(queryKey, (data) => data && changeListItems(data, items, action, order));
-};
-
-/** Flat lists prepend new rows. */
-export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
-  queryClient.setQueryData<BaseQueryItem<ItemData>>(queryKey, (data) => data && changeListItems(data, items, action));
-};
+/** Applies create, update or remove to the list cached under `queryKey`: a paged list inserts new rows in the key's createdAt order, a flat list prepends them. */
+export function changeListData(queryKey: QueryKey, items: ItemData[], action: QueryDataActions): void {
+  queryClient.setQueryData<BaseQueryItem<ItemData>>(
+    queryKey,
+    (data) => data && changeListItems(data, items, action, isInfiniteQueryData(data) ? getQueryKeySortOrder(queryKey) : undefined),
+  );
+}
 
 // Apply create/update/remove to an items array, optionally inserting new items in `insertOrder`.
 const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action: QueryDataActions, insertOrder?: 'asc' | 'desc') => {
   switch (action) {
-    case 'create': {
-      const existingIds = new Set(items.map(({ id }) => id));
-      const newItems = dataItems.filter((i) => !existingIds.has(i.id));
-      return insertOrder === 'asc' ? [...items, ...newItems] : [...newItems, ...items];
-    }
+    case 'create':
+      return insertOrder === 'asc' ? [...items, ...dataItems] : [...dataItems, ...items];
 
     case 'update': {
       const updates = new Map(dataItems.map((i) => [i.id, i]));
@@ -60,8 +54,5 @@ const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action
       const deleteIds = new Set(dataItems.map(({ id }) => id));
       return items.filter((item) => !deleteIds.has(item.id));
     }
-
-    default:
-      return items;
   }
 };

@@ -1,4 +1,5 @@
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
+import { asRecord } from 'shared/utils/as-record';
 import { cacheUpdate } from '~/query/basic/cache-mutations';
 import type { ItemData } from '~/query/basic/types';
 
@@ -17,10 +18,11 @@ export function mergeServerResponse<T extends { id: string; stx?: unknown; updat
   const { cached, serverEntity, mutatedKeys, derivedKeys = {}, skipKeys } = opts;
   if (!cached) return serverEntity;
 
+  const serverRow = asRecord(serverEntity);
   const serverUpdates: Record<string, unknown> = {};
   for (const key of [...mutatedKeys, ...mutatedKeys.flatMap((mutated) => derivedKeys[mutated] ?? [])]) {
     if (skipKeys?.includes(key)) continue;
-    serverUpdates[key] = (serverEntity as Record<string, unknown>)[key];
+    serverUpdates[key] = serverRow[key];
   }
 
   return {
@@ -28,8 +30,8 @@ export function mergeServerResponse<T extends { id: string; stx?: unknown; updat
     ...serverUpdates,
     stx: serverEntity.stx,
     updatedAt: serverEntity.updatedAt,
-    ...('updatedBy' in serverEntity ? { updatedBy: (serverEntity as Record<string, unknown>).updatedBy } : {}),
-  } as T;
+    ...('updatedBy' in serverEntity ? { updatedBy: serverRow.updatedBy } : {}),
+  };
 }
 
 export function syncEntityToCache<T extends ItemData>(opts: { entity: T; listKey: QueryKey; detailKey: QueryKey; queryClient: QueryClient }) {

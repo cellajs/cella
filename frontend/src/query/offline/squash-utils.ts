@@ -30,15 +30,12 @@ export function squashPendingMutation<TOps extends object>(
   if (!canCoalesce()) return { ops: newOps, stx: newStx };
 
   const mutationCache = queryClient.getMutationCache();
-  const mutations = mutationCache.findAll({ mutationKey });
 
   // Accumulate oldest-first so newer queued edits win, then the incoming edit wins over all.
   let mergedOps: Record<string, unknown> = {};
   let inheritedTimestamps: Record<string, string> = {};
 
-  for (const mutation of mutations) {
-    if (!isQueued(mutation)) continue;
-
+  for (const mutation of mutationCache.findAll({ mutationKey, predicate: isQueued })) {
     const queued = queuedUpdateOf(mutation.state.variables);
     if (queued?.id !== entityId) continue;
 
@@ -63,9 +60,7 @@ export function removePausedCreates(queryClient: QueryClient, createMutationKey:
   const cancelled: string[] = [];
   const mutationCache = queryClient.getMutationCache();
 
-  for (const mutation of mutationCache.findAll({ mutationKey: createMutationKey })) {
-    if (!isQueued(mutation)) continue;
-
+  for (const mutation of mutationCache.findAll({ mutationKey: createMutationKey, predicate: isQueued })) {
     const { variables } = mutation.state;
     const rows = createRowsOf(variables);
     const kept = rows.filter((row) => !(typeof row.id === 'string' && idSet.has(row.id)));
@@ -95,12 +90,7 @@ export function squashIntoPendingCreate<TOps extends object>(
   if (Object.values(ops).some((value) => isArrayDelta(value))) return false;
   if (Object.keys(ops).some((key) => !creatableKeys.includes(key))) return false;
 
-  const mutationCache = queryClient.getMutationCache();
-  const mutations = mutationCache.findAll({ mutationKey: createMutationKey });
-
-  for (const mutation of mutations) {
-    if (!isQueued(mutation)) continue;
-
+  for (const mutation of queryClient.getMutationCache().findAll({ mutationKey: createMutationKey, predicate: isQueued })) {
     const target = createRowsOf(mutation.state.variables).find((row) => row.id === entityId);
     if (!target) continue;
 

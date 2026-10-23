@@ -1,6 +1,6 @@
 import type { DehydratedState } from '@tanstack/react-query';
 import type { StxBase } from 'sdk';
-import { appConfig, type ProductEntityType } from 'shared';
+import { isRecord } from 'shared/utils/as-record';
 import type { QueryOrgContext } from '~/query/types';
 import { quarantineFailedSync } from './failed-sync';
 
@@ -18,30 +18,29 @@ export type DeleteVariables<TRow> = QueryOrgContext & { rows: TRow[]; stx?: StxB
 
 type Row = Record<string, unknown>;
 
-const isRow = (value: unknown): value is Row => typeof value === 'object' && value !== null && !Array.isArray(value);
-const rowsIn = (value: unknown): Row[] => (Array.isArray(value) ? value.filter(isRow) : isRow(value) ? [value] : []);
+const rowsIn = (value: unknown): Row[] => (Array.isArray(value) ? value.filter(isRecord) : isRecord(value) ? [value] : []);
 
 /**
  * The rows of a queued create, as the live objects of its variables: an edit folds into one of them. A create that
  * carries its one row under `data`, or at the top level with its `id`, reads as a list of one.
  */
 export const createRowsOf = (variables: unknown): Row[] => {
-  if (!isRow(variables)) return [];
+  if (!isRecord(variables)) return [];
   return typeof variables.id === 'string' ? [variables] : rowsIn(variables.data);
 };
 
 /** What a queued update holds, or null for variables that are no update of one row. */
 export const queuedUpdateOf = (variables: unknown): { id: string; ops: Row; fieldTimestamps: Record<string, string> } | null => {
-  if (!isRow(variables) || typeof variables.id !== 'string') return null;
-  const stx = isRow(variables.stx) ? variables.stx : {};
+  if (!isRecord(variables) || typeof variables.id !== 'string') return null;
+  const stx = isRecord(variables.stx) ? variables.stx : {};
   // Cast: the stamps are the strings the stx helpers wrote; a queue restored from disk is this app's own.
-  const fieldTimestamps = (isRow(stx.fieldTimestamps) ? stx.fieldTimestamps : {}) as Record<string, string>;
-  return { id: variables.id, ops: isRow(variables.ops) ? variables.ops : {}, fieldTimestamps };
+  const fieldTimestamps = (isRecord(stx.fieldTimestamps) ? stx.fieldTimestamps : {}) as Record<string, string>;
+  return { id: variables.id, ops: isRecord(variables.ops) ? variables.ops : {}, fieldTimestamps };
 };
 
 /** The ids of the rows a queued mutation creates, changes or deletes. */
 export const entityIdsOf = (variables: unknown): string[] => {
-  if (!isRow(variables)) return [];
+  if (!isRecord(variables)) return [];
   return [variables, ...rowsIn(variables.data), ...rowsIn(variables.rows)].flatMap((row) => (typeof row.id === 'string' ? [row.id] : []));
 };
 
@@ -84,14 +83,17 @@ const stamped = (mutation: StoredMutation, variablesVersion: number): StoredMuta
 export const withVariablesVersion = (mutation: StoredMutation): StoredMutation =>
   mutation.meta?.variablesVersion === undefined ? stamped(mutation, variablesVersionOf(mutation.mutationKey)) : mutation;
 
-/** The stx mutation id of queued variables in any shape this app has used, for the quarantine record. */
-const mutationIdOf = (variables: unknown): string | undefined => {
-  const holders = Array.isArray(variables) ? variables : isRow(variables) ? [variables, ...rowsIn(variables.data)] : [];
+/**
+ * The stx mutation id of queued variables in any shape this app has used: a batch, the top level, or rows under `data`.
+ * @public
+ */
+export function mutationIdOf(variables: unknown): string | undefined {
+  const holders = Array.isArray(variables) ? variables : isRecord(variables) ? [variables, ...rowsIn(variables.data)] : [];
   for (const holder of holders) {
-    if (isRow(holder) && isRow(holder.stx) && typeof holder.stx.mutationId === 'string') return holder.stx.mutationId;
+    if (isRecord(holder) && isRecord(holder.stx) && typeof holder.stx.mutationId === 'string') return holder.stx.mutationId;
   }
   return undefined;
-};
+}
 
 /**
  * Brings one mutation of a restored queue to the shape this bundle reads, before it is hydrated. A record without a
@@ -117,11 +119,9 @@ export function upgradePersistedMutation(mutation: StoredMutation): StoredMutati
   }
   if (upgraded !== null) return { ...stamped(mutation, registered.version), state: { ...mutation.state, variables: upgraded } };
 
-  const entityType = appConfig.productEntityTypes.find((type: ProductEntityType) => type === mutation.mutationKey?.[0]);
   void quarantineFailedSync({
     mutationId: mutationIdOf(variables) ?? `queued:${JSON.stringify(mutation.mutationKey)}:${mutation.state.submittedAt}`,
-    entityType,
-    clientCacheVersion: appConfig.clientCacheVersion,
+    mutationKey: mutation.mutationKey,
     // Never sent: no server answered it.
     status: 0,
     variables,

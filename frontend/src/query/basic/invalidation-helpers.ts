@@ -8,8 +8,7 @@ import { getEntityQueryKeys } from './entity-query-registry';
 export function removePendingMutations(queryClient: QueryClient, updateKey: QueryKey, ids: string[]): void {
   const idSet = new Set(ids);
   const mutationCache = queryClient.getMutationCache();
-  for (const mutation of mutationCache.findAll({ mutationKey: updateKey })) {
-    if (!isQueued(mutation)) continue;
+  for (const mutation of mutationCache.findAll({ mutationKey: updateKey, predicate: isQueued })) {
     const id = queuedUpdateOf(mutation.state.variables)?.id;
     if (id && idSet.has(id)) mutationCache.remove(mutation);
   }

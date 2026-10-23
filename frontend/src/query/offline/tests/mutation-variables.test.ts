@@ -150,6 +150,7 @@ describe('a queue restored by a newer bundle', () => {
     expect(quarantineFailedSync).toHaveBeenCalledTimes(1);
     expect(quarantineFailedSync.mock.lastCall?.[0]).toMatchObject({
       mutationId: 'mut-1',
+      mutationKey: deleteKey,
       status: 0,
       variables: { tenantId: 't', unknownShape: true, stx },
       error: { reason: 'variables_version', storedVersion: 1, currentVersion: 2 },

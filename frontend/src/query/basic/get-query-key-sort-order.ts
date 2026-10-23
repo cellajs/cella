@@ -1,13 +1,12 @@
 import type { QueryKey } from '@tanstack/react-query';
 
-export const getQueryKeySortOrder = (queryKey: QueryKey) => {
+export const getQueryKeySortOrder = (queryKey: QueryKey): 'asc' | 'desc' => {
   const sortData = queryKey.find(
     (el): el is { sort: string; order?: 'asc' | 'desc' } => typeof el === 'object' && el !== null && 'sort' in el && 'order' in el,
   );
 
   // Any sort other than createdAt lists newest first.
-  const order = sortData?.sort === 'createdAt' ? (sortData.order ?? 'desc') : 'desc';
-  return { hasSortData: !!sortData, sort: sortData?.sort, order };
+  return sortData?.sort === 'createdAt' ? (sortData.order ?? 'desc') : 'desc';
 };
 
 /** The order a list takes when its search names none: a hand-arranged `displayOrder` reads ascending, every other column newest or highest first. */

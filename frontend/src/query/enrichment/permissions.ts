@@ -1,6 +1,6 @@
 import type { MembershipBase } from 'sdk';
 import type { ChannelEntityType, EntityActionType, EntityCanMap, EntityType } from 'shared';
-import { allActionsAllowed, appConfig, computeCan, hierarchy, policyMatrix } from 'shared';
+import { allActionsAllowed, computeCan, hierarchy, policyMatrix } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { userStore } from '~/modules/user/user-store';
 import type { EnrichableChannel } from '~/query/enrichment/types';
@@ -34,8 +34,7 @@ function computeSystemAdminCan(channelType: ChannelEntityType): EntityCanMap {
 
 /** The actor's memberships on the channels above the row, found by the ancestor ids the row carries. */
 function membershipsAbove(item: EnrichableChannel, channelType: ChannelEntityType, memberships: MembershipBase[]): MembershipBase[] {
-  const row = asRecord(item);
-  const ancestorIds = new Set(hierarchy.getOrderedAncestors(channelType).map((ancestor) => row[appConfig.entityIdColumnKeys[ancestor]]));
+  const ancestorIds = new Set(hierarchy.resolveNonNullAncestors(channelType, asRecord(item)).map(({ id }) => id));
   return memberships.filter((membership) => membership.channelId !== item.id && ancestorIds.has(membership.channelId));
 }
 
@@ -43,11 +42,7 @@ function membershipsAbove(item: EnrichableChannel, channelType: ChannelEntityTyp
  * Permission map keyed by entity type, self plus hierarchy descendants, computed as the backend decides: from the actor's
  * membership on the row and their memberships on the channels above it. A system admin gets every action, with or without a membership.
  */
-export function enrichWithPermissions(
-  item: EnrichableChannel,
-  channelType: ChannelEntityType,
-  memberships: MembershipBase[] = [],
-): EnrichableChannel {
+export function enrichWithPermissions(item: EnrichableChannel, channelType: ChannelEntityType, memberships: MembershipBase[]): EnrichableChannel {
   const existing = item.can;
 
   const grants = [...(item.membership ? [item.membership] : []), ...membershipsAbove(item, channelType, memberships)];

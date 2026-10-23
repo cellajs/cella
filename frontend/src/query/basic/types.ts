@@ -1,6 +1,3 @@
-import type { ChannelIdColumns } from 'shared';
-import type { InfiniteQueryData, QueryData } from '~/query/types';
-
 export interface ItemData {
   id: string;
   membership?: { id: string } | null;
@@ -12,9 +9,4 @@ export type RoutableItemData = ItemData & { entityType: string; organizationId?:
 /** An org-scoped entity that can be inserted into a canonical home list. */
 export type OrgRoutableItemData = RoutableItemData & { organizationId: string };
 
-export type ItemDataWithChannel = ItemData & Partial<ChannelIdColumns>;
-
 export type QueryDataActions = 'create' | 'update' | 'remove';
-
-export type EntityQueryData = QueryData<ItemData>;
-export type InfiniteEntityQueryData = InfiniteQueryData<ItemData>;

@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { appConfig, hierarchy } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
-import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
+import { changeListData } from '~/query/basic/helpers';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData, OrgRoutableItemData, RoutableItemData } from '~/query/basic/types';
 import { getEntityQueryKeys } from './entity-query-registry';
@@ -64,17 +64,16 @@ export function spliceEntityIntoListCaches(
 
     if (!isQueryData<ItemData>(queryData) && !isInfiniteQueryData<ItemData>(queryData)) continue;
     const cachedItem = getQueryItems(queryData).find((item) => item.id === entity.id);
-    const change = isQueryData(queryData) ? changeQueryData : changeInfiniteQueryData;
 
     if (removeOnParentChannelChange && cachedItem && hasParentChannelChanged(cachedItem, entity)) {
-      change(queryKey, [entity], 'remove');
+      changeListData(queryKey, [entity], 'remove');
       continue;
     }
 
     const isHomeList = !!organizationId && !!homeChannelId && matchesCanonicalHome(queryKey, organizationId, homeChannelId);
     seen = seen || !!cachedItem;
     spliced ||= !cachedItem && isHomeList;
-    change(queryKey, [rowFor ? rowFor(cachedItem) : entity], cachedItem || !isHomeList ? 'update' : 'create');
+    changeListData(queryKey, [rowFor ? rowFor(cachedItem) : entity], cachedItem || !isHomeList ? 'update' : 'create');
   }
 
   return { seen, spliced, sawFilteredList };

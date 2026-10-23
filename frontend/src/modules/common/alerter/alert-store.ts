@@ -34,7 +34,7 @@ const cancelRecovery = () => {
 const startRecovery = (onRecovered: () => void) => {
   recoveryController = new AbortController();
   const { signal } = recoveryController;
-  awaitRecovery({ signal, factor: 1 }).then((recovered) => {
+  awaitRecovery(signal).then((recovered) => {
     if (recovered && !signal.aborted) onRecovered();
   });
 };

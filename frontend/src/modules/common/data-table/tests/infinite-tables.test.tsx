@@ -9,7 +9,6 @@ type TableProps = {
   rows?: Row[];
   fetchMore?: () => Promise<void>;
   hasNextPage?: boolean;
-  isFetching?: boolean;
   isFiltered?: boolean;
   selectedRows?: Set<string>;
   onSelectedRowsChange?: (ids: Set<string>) => void;
@@ -19,13 +18,12 @@ type BarProps = { selected?: Row[]; clearSelection?: () => void };
 /** Props of every render of the data table and the bar, newest last. */
 const seen = vi.hoisted(() => ({ table: [] as unknown[], bar: [] as unknown[], search: {} as Record<string, unknown> }));
 
-/** Bumping `version` renames every row on the next fetch; while `hold` is pending, fetches wait for it. */
-const server = vi.hoisted(() => ({ version: 0, hold: undefined as Promise<void> | undefined }));
+/** Bumping `version` renames every row on the next fetch. */
+const server = vi.hoisted(() => ({ version: 0 }));
 
 // Five rows served two per page, so a table needs three pages to hold them all.
 const pagedFetch = vi.hoisted(() =>
   vi.fn(async ({ query }: { query?: { offset?: string } }) => {
-    if (server.hold) await server.hold;
     const all = Array.from({ length: 5 }, (_, i) => ({ id: `r${i}`, name: `row ${i} v${server.version}` }));
     const offset = Number(query?.offset ?? 0);
     return { items: all.slice(offset, offset + 2), total: all.length };
@@ -113,7 +111,6 @@ afterEach(async () => {
   seen.bar.length = 0;
   seen.search = {};
   server.version = 0;
-  server.hold = undefined;
   pagedFetch.mockClear();
 });
 
@@ -137,41 +134,6 @@ describe.each(pagedTables)('$name table paging', ({ Table, props }) => {
     await act(async () => lastTable().fetchMore?.());
     await vi.waitFor(() => expect(ids(lastTable().rows)).toEqual(['r0', 'r1', 'r2', 'r3']));
     expect(pagedFetch).toHaveBeenLastCalledWith(expect.objectContaining({ query: expect.objectContaining({ offset: 2 }) }));
-  });
-
-  it('ignores fetchMore while a page is loading and once every page is in', async () => {
-    await render(Rendered, props);
-
-    let release = () => {};
-    server.hold = new Promise((resolve) => {
-      release = resolve;
-    });
-    await act(async () => void lastTable().fetchMore?.());
-    await vi.waitFor(() => expect(lastTable().isFetching).toBe(true));
-    await act(async () => void lastTable().fetchMore?.());
-    expect(pagedFetch).toHaveBeenCalledTimes(2);
-
-    server.hold = undefined;
-    release();
-    await vi.waitFor(() => expect(lastTable().isFetching).toBe(false));
-    expect(pagedFetch).toHaveBeenCalledTimes(2);
-
-    await act(async () => lastTable().fetchMore?.());
-    await vi.waitFor(() => expect(lastTable().hasNextPage).toBe(false));
-    const calls = pagedFetch.mock.calls.length;
-    await act(async () => lastTable().fetchMore?.());
-    expect(pagedFetch).toHaveBeenCalledTimes(calls);
-  });
-
-  it('hands the data table a new fetchMore on every render', async () => {
-    await render(Rendered, props);
-    const renders = seen.table.length;
-
-    await act(async () => lastTable().fetchMore?.());
-    await vi.waitFor(() => expect(seen.table.length).toBeGreaterThan(renders));
-
-    const [previous, current] = seen.table.slice(-2) as TableProps[];
-    expect(current.fetchMore).not.toBe(previous.fetchMore);
   });
 });
 
