@@ -1,14 +1,17 @@
 import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'shared';
+import { waitFor } from '~/utils/wait-for';
 
-// /health defaults to shallow (204). ?depth=full for JSON diagnostics.
-const HEALTH_URL = `${appConfig.backendUrl}/health`;
-const FULL_HEALTH_URL = `${HEALTH_URL}?depth=full`;
-const CACHE_TTL_MS = 10_000;
+/** Shallow by default (204); `?depth=full` answers with JSON diagnostics. */
+const healthUrl = `${appConfig.backendUrl}/health`;
+const fullHealthUrl = `${healthUrl}?depth=full`;
+const cacheTtlMs = 10_000;
+const probeTimeoutMs = 5000;
+const recoveryPollMs = 5000;
 
-// Re-probe before declaring offline: mobile PWAs freeze the network radio when backgrounded, so the first fetches after resume fail until it reconnects.
-const PROBE_RETRIES = 2;
-const PROBE_RETRY_DELAY_MS = 750;
+/** Re-probe before declaring offline: mobile PWAs freeze the network radio when backgrounded, so the first fetches after resume fail until it reconnects. */
+const probeRetries = 2;
+const probeRetryDelayMs = 750;
 
 let lastCheckAt = 0;
 let lastResult: boolean | null = null;
@@ -16,12 +19,7 @@ let inFlight: Promise<boolean> | null = null;
 
 /** Probes `/health` after network failures to catch a false-positive browser online state; probes are cached and deduplicated, and a failure pauses queries and mutations through `onlineManager`. */
 export async function checkConnectivity(): Promise<boolean> {
-  const now = Date.now();
-
-  if (lastResult !== null && now - lastCheckAt < CACHE_TTL_MS) {
-    return lastResult;
-  }
-
+  if (lastResult !== null && Date.now() - lastCheckAt < cacheTtlMs) return lastResult;
   if (inFlight) return inFlight;
 
   inFlight = probeHealth();
@@ -33,20 +31,14 @@ export async function checkConnectivity(): Promise<boolean> {
   }
 }
 
-/** Single HEAD request to /health. Returns true if reachable, false on any failure. */
 async function fetchHealthOnce(): Promise<boolean> {
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-
-    const response = await fetch(HEALTH_URL, {
+    const response = await fetch(healthUrl, {
       method: 'HEAD',
       // no-store bypasses the browser cache so the request reaches the network; a CDN-cached 204 still proves the path to the edge works.
       cache: 'no-store',
-      signal: controller.signal,
+      signal: AbortSignal.timeout(probeTimeoutMs),
     });
-
-    clearTimeout(timeout);
     return response.ok;
   } catch {
     return false;
@@ -55,10 +47,10 @@ async function fetchHealthOnce(): Promise<boolean> {
 
 async function probeHealth(): Promise<boolean> {
   let isReachable = false;
-  for (let attempt = 0; attempt <= PROBE_RETRIES; attempt++) {
+  for (let attempt = 0; attempt <= probeRetries; attempt++) {
     isReachable = await fetchHealthOnce();
     if (isReachable) break;
-    if (attempt < PROBE_RETRIES) await new Promise((resolve) => setTimeout(resolve, PROBE_RETRY_DELAY_MS));
+    if (attempt < probeRetries) await waitFor(probeRetryDelayMs);
   }
 
   lastCheckAt = Date.now();
@@ -89,27 +81,16 @@ export function forceOnline() {
   onlineManager.setOnline(true);
 }
 
-type AwaitRecoveryOptions = { signal: AbortSignal; factor?: number };
-
-/** Polls /health?depth=full with exponential backoff; full depth verifies DB connectivity, not only network reachability. */
-export async function awaitRecovery({ signal, factor = 1.5 }: AwaitRecoveryOptions): Promise<boolean> {
-  let delay = 5000;
-  const maxDelay = 600_000;
-  const maxAttempts = 10;
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    if (signal?.aborted) return false;
-
+/** Polls /health?depth=full until it answers or `signal` aborts; full depth verifies DB connectivity, not only network reachability. */
+export async function awaitRecovery(signal: AbortSignal): Promise<boolean> {
+  while (!signal.aborted) {
     try {
-      const response = await fetch(FULL_HEALTH_URL);
+      const response = await fetch(fullHealthUrl);
       if (response.ok) return true;
     } catch {
       // Backend still unreachable.
     }
-
-    delay = Math.min(maxDelay, delay * factor);
-    await new Promise((resolve) => setTimeout(resolve, delay));
+    await waitFor(recoveryPollMs);
   }
-
   return false;
 }

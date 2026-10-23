@@ -6,19 +6,21 @@ import { isDebugMode } from '~/env';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 import { awaitRecovery, forceOnline } from '~/query/offline/connectivity';
 
-export type AlertKeys = 'offline' | 'backend_not_ready' | 'maintenance' | 'auth_unavailable';
+export type AlertKey = 'offline' | 'backend_not_ready' | 'maintenance' | 'auth_unavailable';
 
 // Alerts with higher priority should not be overwritten by lower ones
-const alertPriority: Record<AlertKeys, number> = { maintenance: 3, backend_not_ready: 2, auth_unavailable: 1, offline: 0 };
+const alertPriority: Record<AlertKey, number> = { maintenance: 3, backend_not_ready: 2, auth_unavailable: 1, offline: 0 };
 
 interface AlertStoreState {
-  alertsSeen: string[]; // Seen alert IDs (to prevent duplicate notifications)
-  downAlert: AlertKeys | null; // Down alert type
+  /** Ids of the banners the user dismissed, which stay hidden. */
+  alertsSeen: string[];
+  downAlert: AlertKey | null;
 
-  setAlertSeen: (alertSeen: string) => void; // Adds an alert to the seen list
-  resetAlertSeen: (alertSeen: string[]) => void; // Resets seen alerts to a new array
-  setDownAlert: (downLevel: AlertKeys | null) => void; // Sets the current down alert type
-  reset: () => void; // Resets in-memory state to initial (call on sign-out)
+  /** Adds one id to `alertsSeen`. */
+  setAlertSeen: (alertId: string) => void;
+  setDownAlert: (downAlert: AlertKey | null) => void;
+  /** Back to the initial state, on sign-out. */
+  reset: () => void;
 }
 
 let recoveryController: AbortController | null = null;
@@ -28,56 +30,49 @@ const cancelRecovery = () => {
   recoveryController = null;
 };
 
+/** Polls /health and runs `onRecovered` once it answers, unless a newer alert or a reset cancelled the poll first. */
+const startRecovery = (onRecovered: () => void) => {
+  recoveryController = new AbortController();
+  const { signal } = recoveryController;
+  awaitRecovery(signal).then((recovered) => {
+    if (recovered && !signal.aborted) onRecovered();
+  });
+};
+
 const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = { downAlert: appConfig.maintenance ? 'maintenance' : null, alertsSeen: [] };
 
-/**
- * Store for app-wide alerts and UI specific alerts in `alertsSeen`.
- * Owns recovery lifecycle: when a recoverable alert is set, auto-polls /health.
- */
+/** The current down alert and the dismissed banners; a recoverable down alert polls /health until it clears. */
 export const useAlertStore = create<AlertStoreState>()(
   devtools(
     immer(
       persist(
         (set, get) => ({
           ...initStore,
-          setAlertSeen: (alertSeen) => {
+          setAlertSeen: (alertId) => {
             set((state) => {
-              state.alertsSeen.push(alertSeen);
+              state.alertsSeen.push(alertId);
             });
           },
-          setDownAlert: (alert) => {
+          setDownAlert: (downAlert) => {
             const current = get().downAlert;
             // Re-setting the same alert would restart recovery polling
-            if (current === alert) return;
+            if (current === downAlert) return;
 
-            if (alert && current && alertPriority[alert] < alertPriority[current]) return;
+            if (downAlert && current && alertPriority[downAlert] < alertPriority[current]) return;
 
             cancelRecovery();
             set((state) => {
-              state.downAlert = alert;
+              state.downAlert = downAlert;
             });
 
-            // Auto-recovery: poll /health for recoverable alerts
-            if (alert === 'offline' && navigator.onLine) {
-              recoveryController = new AbortController();
-              awaitRecovery({ signal: recoveryController.signal, factor: 1 }).then((recovered) => {
-                if (recovered && !recoveryController?.signal.aborted) forceOnline();
-              });
-            } else if (alert === 'backend_not_ready') {
-              recoveryController = new AbortController();
-              awaitRecovery({ signal: recoveryController.signal, factor: 1 }).then((recovered) => {
-                if (recovered && !recoveryController?.signal.aborted) {
-                  set((state) => {
-                    state.downAlert = null;
-                  });
-                }
-              });
+            if (downAlert === 'offline' && navigator.onLine) startRecovery(forceOnline);
+            else if (downAlert === 'backend_not_ready') {
+              startRecovery(() =>
+                set((state) => {
+                  state.downAlert = null;
+                }),
+              );
             }
-          },
-          resetAlertSeen: (alertsSeen) => {
-            set((state) => {
-              state.alertsSeen = alertsSeen;
-            });
           },
           reset: () => {
             cancelRecovery();
@@ -96,3 +91,5 @@ export const useAlertStore = create<AlertStoreState>()(
     { enabled: isDebugMode, name: 'alert store' },
   ),
 );
+
+export { useAlertStore as alertStore };

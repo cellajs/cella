@@ -1,15 +1,28 @@
 import type { ConfigMode } from 'shared';
 
+/** The favicon the badge is drawn on: the first of these the page has. */
+const iconSelectors = [
+  "link[rel='icon'][sizes='64x64']",
+  "link[rel='icon'][sizes='32x32']",
+  "link[rel='icon'][type='image/png']",
+  "link[rel='icon']",
+];
+
+const appendIcon = (href: string, sizes?: string) => {
+  const link = document.createElement('link');
+  link.rel = 'icon';
+  link.type = 'image/png';
+  if (sizes) link.sizes = sizes;
+  link.href = href;
+  document.head.appendChild(link);
+};
+
 /** Overlays the mode initial ("D" for development, "S" for staging) on the favicon. No-op in production. */
 export const initFaviconBadge = (mode: ConfigMode) => {
   if (mode === 'production') return;
 
   try {
-    const sourceFavicon =
-      (document.querySelector("link[rel='icon'][sizes='64x64']") as HTMLLinkElement | null) ??
-      (document.querySelector("link[rel='icon'][sizes='32x32']") as HTMLLinkElement | null) ??
-      (document.querySelector("link[rel='icon'][type='image/png']") as HTMLLinkElement | null) ??
-      (document.querySelector("link[rel='icon']") as HTMLLinkElement | null);
+    const sourceFavicon = iconSelectors.map((selector) => document.querySelector<HTMLLinkElement>(selector)).find(Boolean);
     if (!sourceFavicon) return;
 
     const img = new Image();
@@ -53,28 +66,10 @@ export const initFaviconBadge = (mode: ConfigMode) => {
       for (const node of document.querySelectorAll("link[rel='icon']")) node.remove();
 
       if (icon32) {
-        const favicon32 = document.createElement('link');
-        favicon32.rel = 'icon';
-        favicon32.type = 'image/png';
-        favicon32.sizes = '32x32';
-        favicon32.href = icon32;
-        document.head.appendChild(favicon32);
-
-        const fallbackFavicon = document.createElement('link');
-        fallbackFavicon.rel = 'icon';
-        fallbackFavicon.type = 'image/png';
-        fallbackFavicon.href = icon32;
-        document.head.appendChild(fallbackFavicon);
+        appendIcon(icon32, '32x32');
+        appendIcon(icon32);
       }
-
-      if (icon16) {
-        const favicon16 = document.createElement('link');
-        favicon16.rel = 'icon';
-        favicon16.type = 'image/png';
-        favicon16.sizes = '16x16';
-        favicon16.href = icon16;
-        document.head.appendChild(favicon16);
-      }
+      if (icon16) appendIcon(icon16, '16x16');
     };
   } catch (error) {
     console.error('Error adding badge to favicon:', error);

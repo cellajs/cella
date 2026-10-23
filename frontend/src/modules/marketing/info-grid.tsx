@@ -7,13 +7,13 @@ import { Badge } from '~/modules/ui/badge';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
-export type InfoGridItem<C extends string = string> = {
+export interface InfoGridItem<C extends string = string> {
   id: string;
   /** Category used for grouping when `categoryIcons` is provided. */
   category?: C;
   /** Stack layers rendered as badges after the title. */
   layers?: readonly string[];
-};
+}
 
 interface InfoTileProps {
   id: string;
@@ -30,8 +30,8 @@ function InfoTile({ id, namespace, layers, image, tileClassName = 'bg-card' }: I
 
   if (image) {
     return (
-      <div className={cn('relative overflow-hidden rounded-lg p-2', tileClassName)}>
-        <div className="flex h-44 flex-col justify-between gap-2 rounded-md p-2 sm:p-6">
+      <div className={cn('overflow-hidden rounded-lg p-2', tileClassName)}>
+        <div className="flex h-44 flex-col gap-2 rounded-md p-2 sm:p-6">
           {/* Decorative: the heading below names it */}
           <img src={`/static/marketing/features/${id}.svg`} alt="" className="mb-2 size-8 object-contain dark:invert" loading="lazy" />
           <h3 className="font-medium">{t(title)}</h3>
@@ -62,8 +62,6 @@ interface InfoGridProps<C extends string> {
   namespace?: string;
   /** Icon per category. When set, items are grouped by category with a header. */
   categoryIcons?: Record<C, IconComponent>;
-  /** Hide the per-category icon + title headers (e.g. when a parent section already provides one). */
-  hideCategoryHeader?: boolean;
   /** Render an SVG image icon per tile (from `/static/marketing/features/<id>.svg`). */
   image?: boolean;
   /** Background classes for each tile. Defaults to `bg-card`. */
@@ -78,7 +76,6 @@ export function InfoGrid<C extends string>({
   items,
   namespace = 'features',
   categoryIcons,
-  hideCategoryHeader,
   image,
   tileClassName,
   expandable,
@@ -104,12 +101,10 @@ export function InfoGrid<C extends string>({
           const categoryItems = items.filter((item) => item.category === category);
           return (
             <div key={category}>
-              {!hideCategoryHeader && (
-                <h2 className="mb-6 flex items-center gap-2 pl-6 font-semibold text-xl">
-                  <CategoryIcon className="size-5 text-muted-foreground" />
-                  {t(`about:${namespace}.category_${category}` as TKey)}
-                </h2>
-              )}
+              <h2 className="mb-6 flex items-center gap-2 pl-6 font-semibold text-xl">
+                <CategoryIcon className="size-5 text-muted-foreground" />
+                {t(`about:${namespace}.category_${category}` as TKey)}
+              </h2>
               <div className="grid gap-4 md:grid-cols-2">{categoryItems.map(renderTile)}</div>
             </div>
           );

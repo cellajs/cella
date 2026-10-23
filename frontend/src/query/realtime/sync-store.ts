@@ -5,9 +5,12 @@ import { isDebugMode } from '~/env';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface OrgSyncState {
+  /** Empty until a notification or a membership names it. */
   tenantId: string;
+  /** Org-slot cursors by entity type, and the membership signal under `membership`. */
   seqs: Record<string, number>;
-  contexts: Record<string, Record<string, number>>;
+  /** Cursors of the channels below the organization, by channel id and then entity type. */
+  channels: Record<string, Record<string, number>>;
 }
 
 /** One catchup view request: org-sequence cursor over a prefix set (see streamCatchupBodySchema). */
@@ -33,12 +36,9 @@ interface SyncStoreState {
   cursor: string | null;
   /** Generation of the server's sync books this client's cursors belong to; null before the first catchup. */
   generation: number | null;
-  lastSyncAt: string | null;
   orgs: Record<string, OrgSyncState>;
   /** Grant-boundary views registered by the app (views.ts), keyed by view key. */
   views: Record<string, RegisteredSyncView>;
-  /** Server-known sequence per view including muted notifications, not persisted: catchup rebuilds it, while persisted org state holds caught-up sequences. */
-  known: Record<string, Record<string, number>>;
 
   setCursor: (cursor: string | null) => void;
   /**
@@ -47,18 +47,15 @@ interface SyncStoreState {
    * @returns true when the client held another generation and its synced data needs a refetch.
    */
   adoptGeneration: (generation: number | undefined) => boolean;
-  setLastSyncAt: (timestamp: string | null) => void;
-  setOrgTenantId: (orgId: string, tenantId: string) => void;
-  getOrgTenantId: (orgId: string) => string | null;
+  /** Creates the org entry the next catchup declares views for; a non-empty tenant id replaces the stored one. */
+  trackOrg: (organizationId: string, tenantId?: string) => void;
+  getOrgTenantId: (organizationId: string) => string | null;
   /** Drop a stale org (and its views) from the persisted store; orgs are otherwise never pruned and each one costs entity-type views in every catchup body. */
-  removeOrg: (orgId: string) => void;
-  setOrgSeq: (orgId: string, entityType: string, seq: number) => void;
-  getOrgSeq: (orgId: string, entityType: string) => number;
-  setChannelSeq: (orgId: string, channelId: string, entityType: string, seq: number) => void;
-  getChannelSeq: (orgId: string, channelId: string, entityType: string) => number;
-  /** Record the latest server-mentioned seq for a channel view (monotonic max-merge). */
-  setKnownSeq: (channelViewId: string, entityType: string, seq: number) => void;
-  getKnownSeq: (channelViewId: string, entityType: string) => number;
+  removeOrg: (organizationId: string) => void;
+  setOrgSeq: (organizationId: string, entityType: string, seq: number) => void;
+  getOrgSeq: (organizationId: string, entityType: string) => number;
+  setChannelSeq: (organizationId: string, channelId: string, entityType: string, seq: number) => void;
+  getChannelSeq: (organizationId: string, channelId: string, entityType: string) => number;
   /**
    * Register a grant-boundary view. Identity is prefix set plus entity types plus depth, and any identity change resets the cursor to 0:
    * a grown prefix set has history predating the cursor that a range fetch would skip.
@@ -72,32 +69,28 @@ interface SyncStoreState {
   reset: () => void;
 }
 
-const initStore = {
-  cursor: null as string | null,
-  generation: null as number | null,
-  lastSyncAt: null as string | null,
-  orgs: {} as Record<string, OrgSyncState>,
-  views: {} as Record<string, RegisteredSyncView>,
-  known: {} as Record<string, Record<string, number>>,
-};
+const initStore: Pick<SyncStoreState, 'cursor' | 'generation' | 'orgs' | 'views'> = { cursor: null, generation: null, orgs: {}, views: {} };
+
+/** The server's cap on catchup views (`streamCatchupBodySchema`): a longer body fails the SDK's validation, and with it the whole catchup. */
+const maxCatchupViews = 256;
 
 /** View identity for the re-baseline rule: prefixes + types + depth (order-insensitive). */
 function viewIdentity(view: Omit<RegisteredSyncView, 'cursor'>): string {
   return `${[...view.prefixes].sort().join(',')}|${[...view.entityTypes].sort().join(',')}|${view.depth}`;
 }
 
-function ensureOrg(orgs: Record<string, OrgSyncState>, orgId: string, tenantId?: string): OrgSyncState {
-  const existing = orgs[orgId];
+function ensureOrg(orgs: Record<string, OrgSyncState>, organizationId: string, tenantId?: string): OrgSyncState {
+  const existing = orgs[organizationId];
   if (!existing) {
-    const created: OrgSyncState = { tenantId: tenantId ?? '', seqs: {}, contexts: {} };
-    orgs[orgId] = created;
+    const created: OrgSyncState = { tenantId: tenantId ?? '', seqs: {}, channels: {} };
+    orgs[organizationId] = created;
     return created;
   }
   if (tenantId) existing.tenantId = tenantId;
   return existing;
 }
 
-/** Vanilla Zustand store for offline sync state: per-org sequences plus the global cursor and last-sync time. */
+/** This user's sync cursors, persisted: the stream cursor, the org and channel sequences, and the registered views. */
 export const syncStore = createStore<SyncStoreState>()(
   devtools(
     persist(
@@ -105,95 +98,85 @@ export const syncStore = createStore<SyncStoreState>()(
         ...initStore,
 
         setCursor: (cursor) =>
-          set((s) => {
-            s.cursor = cursor;
-          }),
-        setLastSyncAt: (ts) =>
-          set((s) => {
-            s.lastSyncAt = ts;
+          set((state) => {
+            state.cursor = cursor;
           }),
         adoptGeneration: (generation) => {
           const held = get().generation;
           if (generation === undefined || generation === held) return false;
-          set((s) => {
-            s.generation = generation;
+          set((state) => {
+            state.generation = generation;
             if (held === null) return;
-            for (const org of Object.values(s.orgs)) {
+            for (const org of Object.values(state.orgs)) {
               for (const entityType of Object.keys(org.seqs)) org.seqs[entityType] = 0;
-              org.contexts = {};
+              org.channels = {};
             }
-            for (const view of Object.values(s.views)) view.cursor = 0;
-            s.known = {};
+            for (const view of Object.values(state.views)) view.cursor = 0;
           });
           return held !== null;
         },
 
-        setOrgTenantId: (orgId, tenantId) =>
-          set((s) => {
-            ensureOrg(s.orgs, orgId, tenantId);
+        trackOrg: (organizationId, tenantId) =>
+          set((state) => {
+            ensureOrg(state.orgs, organizationId, tenantId);
           }),
-        getOrgTenantId: (orgId) => get().orgs[orgId]?.tenantId || null,
+        getOrgTenantId: (organizationId) => get().orgs[organizationId]?.tenantId || null,
 
-        removeOrg: (orgId) =>
-          set((s) => {
-            delete s.orgs[orgId];
-            for (const [key, view] of Object.entries(s.views)) {
-              if (view.organizationId === orgId) delete s.views[key];
+        removeOrg: (organizationId) =>
+          set((state) => {
+            delete state.orgs[organizationId];
+            for (const [key, view] of Object.entries(state.views)) {
+              if (view.organizationId === organizationId) delete state.views[key];
             }
           }),
 
-        setOrgSeq: (orgId, entityType, seq) =>
-          set((s) => {
-            ensureOrg(s.orgs, orgId).seqs[entityType] = seq;
+        setOrgSeq: (organizationId, entityType, seq) =>
+          set((state) => {
+            ensureOrg(state.orgs, organizationId).seqs[entityType] = seq;
           }),
-        getOrgSeq: (orgId, entityType) => get().orgs[orgId]?.seqs[entityType] ?? 0,
+        getOrgSeq: (organizationId, entityType) => get().orgs[organizationId]?.seqs[entityType] ?? 0,
 
-        // Org-homed channel views arrive with channelId === orgId live but at org level in catchup; both normalize to the org slot so they share one caught-up cursor.
-        setChannelSeq: (orgId, channelId, entityType, seq) =>
-          set((s) => {
-            const org = ensureOrg(s.orgs, orgId);
-            if (channelId === orgId) {
+        // Org-homed channel views arrive with channelId === organizationId live but at org level in catchup; both normalize to the org slot so they share one caught-up cursor.
+        setChannelSeq: (organizationId, channelId, entityType, seq) =>
+          set((state) => {
+            const org = ensureOrg(state.orgs, organizationId);
+            if (channelId === organizationId) {
               org.seqs[entityType] = seq;
               return;
             }
-            org.contexts[channelId] ??= {};
-            org.contexts[channelId][entityType] = seq;
+            org.channels[channelId] ??= {};
+            org.channels[channelId][entityType] = seq;
           }),
-        getChannelSeq: (orgId, channelId, entityType) =>
-          channelId === orgId ? (get().orgs[orgId]?.seqs[entityType] ?? 0) : (get().orgs[orgId]?.contexts[channelId]?.[entityType] ?? 0),
+        getChannelSeq: (organizationId, channelId, entityType) =>
+          channelId === organizationId
+            ? (get().orgs[organizationId]?.seqs[entityType] ?? 0)
+            : (get().orgs[organizationId]?.channels[channelId]?.[entityType] ?? 0),
 
         declareSyncView: (key, view) =>
-          set((s) => {
-            const existing = s.views[key];
+          set((state) => {
+            const existing = state.views[key];
             const cursor = existing && viewIdentity(existing) === viewIdentity(view) ? existing.cursor : 0;
-            s.views[key] = { ...view, cursor };
+            state.views[key] = { ...view, cursor };
           }),
         removeSyncView: (key) =>
-          set((s) => {
-            delete s.views[key];
+          set((state) => {
+            delete state.views[key];
           }),
         setViewCursor: (key, cursor) =>
-          set((s) => {
-            if (s.views[key]) s.views[key].cursor = cursor;
+          set((state) => {
+            if (state.views[key]) state.views[key].cursor = cursor;
           }),
         getView: (key) => get().views[key],
-
-        setKnownSeq: (channelViewId, entityType, seq) =>
-          set((s) => {
-            s.known[channelViewId] ??= {};
-            if (seq > (s.known[channelViewId][entityType] ?? 0)) s.known[channelViewId][entityType] = seq;
-          }),
-        getKnownSeq: (channelViewId, entityType) => get().known[channelViewId]?.[entityType] ?? 0,
 
         getCatchupViews: (entityTypes) => {
           const { orgs } = get();
           const views: CatchupViewRequest[] = [];
-          for (const [orgId, org] of Object.entries(orgs)) {
+          for (const [organizationId, org] of Object.entries(orgs)) {
             for (const entityType of entityTypes) {
               views.push({
-                key: `${orgId}:${entityType}`,
-                organizationId: orgId,
-                prefixes: [orgId],
+                key: `${organizationId}:${entityType}`,
+                organizationId,
+                prefixes: [organizationId],
                 entityTypes: [entityType],
                 // Only the org slot proves org-wide ingestion, since child-channel cursors cover their own subtree; 0 means no baseline, so catchup stores the frontier and route loaders supply data.
                 cursor: org.seqs[entityType] ?? 0,
@@ -204,12 +187,10 @@ export const syncStore = createStore<SyncStoreState>()(
           for (const [key, view] of Object.entries(get().views)) {
             views.push({ key, ...view });
           }
-          // Server cap (streamCatchupBodySchema): an oversized body fails SDK validation client-side,
-          // killing the whole catchup. Truncation degrades to partial sync (dropped views simply do
-          // not advance this cycle), which beats no sync at all; org pruning keeps this unreachable.
-          if (views.length > 256) {
-            console.warn(`[SyncStore] Catchup views truncated ${views.length} → 256; sync coverage is partial`);
-            return views.slice(0, 256);
+          // A partial sync beats none: the dropped views do not advance this cycle, and org pruning keeps this unreachable.
+          if (views.length > maxCatchupViews) {
+            console.warn(`[SyncStore] Catchup views truncated ${views.length} → ${maxCatchupViews}; sync coverage is partial`);
+            return views.slice(0, maxCatchupViews);
           }
           return views;
         },
@@ -218,12 +199,14 @@ export const syncStore = createStore<SyncStoreState>()(
       })),
       {
         name: 'sync',
+        // Version 1 renamed `contexts` to `channels`: older cursors are dropped, so the next catchup re-baselines
+        version: 1,
+        migrate: () => ({}),
         skipHydration: true,
         storage: createJSONStorage(() => idbKvStorage('sync')),
         partialize: (state) => ({
           cursor: state.cursor,
           generation: state.generation,
-          lastSyncAt: state.lastSyncAt,
           orgs: state.orgs,
           views: state.views,
         }),

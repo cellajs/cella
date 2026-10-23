@@ -8,7 +8,7 @@ import * as Y from 'yjs';
 
 const { queryClient } = await import('~/query/query-client');
 const { bindLocalUserDb, closeLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
-const { useUserStore } = await import('~/modules/user/user-store');
+const { userStore } = await import('~/modules/user/user-store');
 const { teardownUserState } = await import('~/utils/teardown-user-state');
 const { createYDocWriter } = await import('~/modules/common/blocknote/yjs-store');
 
@@ -49,7 +49,7 @@ afterEach(async () => {
 describe('teardownUserState', () => {
   it.each([true, false])("must not carry one account's cache, queued edits or database over to the next (wipe: %s)", async (wipe) => {
     const user = { id: 'user-a', email: 'a@example.test' };
-    useUserStore.setState({ user: user as never, lastUser: user });
+    userStore.setState({ user: user as never, lastUser: user });
     await bindLocalUserDb('user-a').kv.put({ key: 'k', value: 'v' });
     queryClient.setQueryData(['thing', 'a'], { owner: 'user-a' });
     await pauseMutation('user-a');
@@ -59,10 +59,10 @@ describe('teardownUserState', () => {
     // Nothing of the account stays in the query client, whichever way it left.
     expect(queryClient.getQueryCache().getAll()).toEqual([]);
     expect(queryClient.getMutationCache().getAll()).toEqual([]);
-    expect(useUserStore.getState().user).toBeNull();
+    expect(userStore.getState().user).toBeNull();
     // A hard sign-out deletes the database and the identity hint; a lost session keeps both for the same user's next sign-in.
     expect(await Dexie.exists(dbName('user-a'))).toBe(!wipe);
-    expect(useUserStore.getState().lastUser).toEqual(wipe ? null : user);
+    expect(userStore.getState().lastUser).toEqual(wipe ? null : user);
     if (wipe) expect(getLocalUserDb()).toBeNull();
 
     // The next account signs in in this tab and the provider resumes what is paused: only its own edit is sent.
@@ -75,7 +75,7 @@ describe('teardownUserState', () => {
 
   it("must not lose a collaborative edit still queued at a lost session: it is stored first, unsynced, for the user's next one", async () => {
     const user = { id: 'user-a', email: 'a@example.test' };
-    useUserStore.setState({ user: user as never, lastUser: user });
+    userStore.setState({ user: user as never, lastUser: user });
     bindLocalUserDb('user-a');
     const doc = new Y.Doc();
     const writer = createYDocWriter({ entityType: 'attachment', entityId: 'doc-1' });

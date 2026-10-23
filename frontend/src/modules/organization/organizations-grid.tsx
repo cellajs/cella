@@ -1,41 +1,35 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useSearchParams } from '~/hooks/use-search-params';
+import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { BaseEntityGrid, ChannelTile, EntityGridBar } from '~/modules/entities/entity-grid';
+import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { useUserStore } from '~/modules/user/user-store';
-import { organizationsListQueryOptions } from './query';
 
 type OrgSearch = Parameters<typeof organizationsListQueryOptions>[0];
 
-interface Props {
+interface OrganizationsGridProps {
   fixedQuery?: Partial<OrgSearch>;
   focusView?: boolean;
   saveDataInSearch?: boolean;
-  /** When true, show only 3 items with a "Show all" button */
+  /** Opens as the grid's preview, without the search bar, until its "Show all" button expands it. */
   limitedView?: boolean;
 }
 
-export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, limitedView: initialLimitedView }: Props) {
+export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, limitedView: initialLimitedView }: OrganizationsGridProps) {
   const [expanded, setExpanded] = useState(false);
   const limitedView = initialLimitedView && !expanded;
 
   const { search: baseSearch, setSearch } = useSearchParams({ saveDataInSearch });
 
-  const search: OrgSearch = { ...baseSearch, ...(fixedQuery ?? {}) };
+  const search: OrgSearch = { ...baseSearch, ...fixedQuery };
 
   const ofAnotherUser = useUserStore((state) => !!search.relatableUserId && search.relatableUserId !== state.user?.id);
 
   const queryOptions = organizationsListQueryOptions({ ...search, include: 'counts,members' });
 
-  const q = search.q ?? '';
-  const isFiltered = !!q;
+  const isFiltered = !!search.q;
 
-  const { data, isFetching, isLoading, error, hasNextPage, fetchNextPage } = useInfiniteQuery({
-    ...queryOptions,
-    select: (data) => data.pages.flatMap((p) => p.items),
-  });
-
-  const entities = data;
+  const { rows: entities, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
 
   return (
     <div className="flex h-full flex-col gap-2">
@@ -43,9 +37,8 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
         <EntityGridBar
           queryKey={queryOptions.queryKey}
           searchVars={baseSearch}
-          label={'c:organization'}
+          label="c:organization"
           entityType="organization"
-          // Discovery grid: a role filter collapses the scope to membership-only; bar stays for short lists
           roleFilter={false}
           alwaysShow
           setSearch={setSearch}
@@ -61,7 +54,7 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
         isFetching={isFetching}
         error={error}
         hasNextPage={hasNextPage}
-        fetchNextPage={fetchNextPage}
+        fetchMore={fetchMore}
         isFiltered={isFiltered}
         limitedView={limitedView}
         onExpand={() => setExpanded(true)}

@@ -26,21 +26,21 @@ function AppFooterLink({ id, href }: FooterLinkProps) {
 
   return (
     <li>
-      <Button size="xs" variant="ghost" className="" render={<Link to={href} draggable={false} />}>
+      <Button size="xs" variant="ghost" render={<Link to={href} draggable={false} />}>
         {t(`c:${id}` as TKey)}
       </Button>
     </li>
   );
 }
 
-interface FooterLinksProps {
+interface AppFooterLinksProps {
   links?: FooterLinkProps[];
   className?: string;
 }
 
-export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: FooterLinksProps) {
+export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: AppFooterLinksProps) {
   const { t } = useTranslation();
-  const contactButtonRef = useRef(null);
+  const contactButtonRef = useRef<HTMLButtonElement>(null);
   const statusUrl = appConfig.statusUrl?.trim();
   const footerLinks = statusUrl ? [...links, { id: 'status', href: statusUrl }] : links;
 
@@ -50,14 +50,7 @@ export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: F
         <AppFooterLink key={link.id} id={link.id} href={link.href} />
       ))}
       <li>
-        <Button
-          ref={contactButtonRef}
-          variant="ghost"
-          className=""
-          size="xs"
-          aria-label="Open contact form"
-          onClick={() => contactFormHandler(contactButtonRef)}
-        >
+        <Button ref={contactButtonRef} variant="ghost" size="xs" onClick={() => contactFormHandler(contactButtonRef)}>
           {t('c:contact')}
         </Button>
       </li>
@@ -65,7 +58,11 @@ export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: F
   );
 }
 
-export function AppFooter({ className = '' }) {
+interface AppFooterProps {
+  className?: string;
+}
+
+export function AppFooter({ className = '' }: AppFooterProps) {
   const { t } = useTranslation();
   return (
     <footer className={cn('flex flex-col gap-2', className)}>

@@ -641,6 +641,20 @@ export type Attachment = {
   viewCount?: number;
 };
 
+export type InviteOutcome = {
+  /**
+   * The primary email address, shown to every user who shares an organization with this one.
+   */
+  email: string;
+  /**
+   * `invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.
+   */
+  outcome: 'invite' | 'remind' | 'add' | 'member';
+  invitedAt?: string;
+  declinedAt?: string;
+  role?: 'admin' | 'member';
+};
+
 /**
  * An actor that is not a person, in one tenant: API keys run as it, and it holds role bindings like a member holds memberships. An organization admin creates one, for example with Create API key in organization settings.
  */
@@ -4759,6 +4773,10 @@ export type CreateOrganizationsData = {
     id: string;
     name: string;
     slug: string;
+    /**
+     * Create unpublished: only its prepare roles are invited until it is published. Ignored unless the hierarchy declares `drafts` for organizations.
+     */
+    draft?: boolean;
   }>;
   path: {
     tenantId: string;
@@ -5035,6 +5053,60 @@ export type UpdateOrganizationResponses = {
 };
 
 export type UpdateOrganizationResponse = UpdateOrganizationResponses[keyof UpdateOrganizationResponses];
+
+export type PublishOrganizationData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/{tenantId}/organizations/{id}/publish';
+};
+
+export type PublishOrganizationErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type PublishOrganizationError = PublishOrganizationErrors[keyof PublishOrganizationErrors];
+
+export type PublishOrganizationResponses = {
+  /**
+   * Organization was published
+   */
+  200: {
+    organization: Organization;
+    /**
+     * Invitations held while it was a draft and sent now.
+     */
+    invitationsSent: number;
+  };
+};
+
+export type PublishOrganizationResponse = PublishOrganizationResponses[keyof PublishOrganizationResponses];
 
 export type DeleteAttachmentsData = {
   body: {
@@ -5703,7 +5775,7 @@ export type MembershipInviteError = MembershipInviteErrors[keyof MembershipInvit
 
 export type MembershipInviteResponses = {
   /**
-   * Created memberships and invite count
+   * What happened to each address
    */
   200: {
     data: Array<{
@@ -5718,21 +5790,67 @@ export type MembershipInviteResponses = {
       muted?: boolean;
       displayOrder?: number;
     }>;
-    /**
-     * Identifiers of items that could not be processed
-     */
-    rejectedIds: Array<string>;
-    /**
-     * Map of reason code to rejected item IDs
-     */
-    rejectionReasons?: {
-      [key: string]: Array<string>;
-    };
-    invitesSentCount: number;
+    outcomes: Array<InviteOutcome>;
+    held: boolean;
   };
 };
 
 export type MembershipInviteResponse = MembershipInviteResponses[keyof MembershipInviteResponses];
+
+export type CheckMembershipInviteData = {
+  body: {
+    emails: Array<string>;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    entityId: string;
+    entityType: 'organization';
+  };
+  url: '/{tenantId}/{organizationId}/memberships/check';
+};
+
+export type CheckMembershipInviteErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CheckMembershipInviteError = CheckMembershipInviteErrors[keyof CheckMembershipInviteErrors];
+
+export type CheckMembershipInviteResponses = {
+  /**
+   * What an invite would do with each address
+   */
+  200: {
+    outcomes: Array<InviteOutcome>;
+  };
+};
+
+export type CheckMembershipInviteResponse = CheckMembershipInviteResponses[keyof CheckMembershipInviteResponses];
 
 export type UpdateMembershipData = {
   body: {
@@ -6004,6 +6122,7 @@ export type GetPendingMembershipsResponses = {
       email: string;
       role: 'admin' | 'member' | null;
       createdAt: string;
+      remindedAt: string | null;
       createdBy: ActorRef | null;
     }>;
     total: number;
@@ -6060,6 +6179,55 @@ export type ResendPendingInvitationResponses = {
 };
 
 export type ResendPendingInvitationResponse = ResendPendingInvitationResponses[keyof ResendPendingInvitationResponses];
+
+export type WithdrawPendingInvitationData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/memberships/pending/{id}';
+};
+
+export type WithdrawPendingInvitationErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type WithdrawPendingInvitationError = WithdrawPendingInvitationErrors[keyof WithdrawPendingInvitationErrors];
+
+export type WithdrawPendingInvitationResponses = {
+  /**
+   * Invitation withdrawn
+   */
+  204: void;
+};
+
+export type WithdrawPendingInvitationResponse = WithdrawPendingInvitationResponses[keyof WithdrawPendingInvitationResponses];
 
 export type MarkSeenData = {
   body: {

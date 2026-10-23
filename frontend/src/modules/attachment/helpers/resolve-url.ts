@@ -1,11 +1,11 @@
 import type { Attachment } from 'sdk';
 import { parseMediaRef } from 'shared/utils/media-ref';
-import { type CloudFileVariant, getCloudUrl, getPrivateFileUrlById, getPublicFileUrl, getVariantKey } from '~/modules/attachment/file-url';
+import { type CloudFileVariant, getCloudUrl, getPublicFileUrl, getVariantKey } from '~/modules/attachment/file-url';
 import { isPendingUpload, markPendingUpload, PendingUploadError } from '~/modules/attachment/helpers/pending-uploads';
 import type { BlobVariant } from '~/modules/attachment/offline/attachments-db';
 import { downloadService } from '~/modules/attachment/offline/download-service';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
-import { PresignRejectedError } from '~/modules/attachment/presign-batch';
+import { getPresignedUrlBatched, PresignRejectedError } from '~/modules/attachment/presign-batch';
 import { fetchAttachment, findAttachmentInCache } from '~/modules/attachment/query';
 
 interface ResolvedUrl {
@@ -19,7 +19,7 @@ export interface ResolveOptions {
 }
 
 /** Cloud-key fields needed to build a URL without consulting the react-query cache. */
-type AttachmentMeta = Pick<Attachment, 'keys' | 'publicBucket' | 'organizationId' | 'tenantId'> & Partial<Pick<Attachment, 'createdBy'>>;
+export type AttachmentMeta = Pick<Attachment, 'keys' | 'publicBucket' | 'organizationId' | 'tenantId'> & Partial<Pick<Attachment, 'createdBy'>>;
 
 /**
  * Local blob first, then cloud; a cloud hit queues a background download so the next view is served locally. Throws
@@ -98,7 +98,7 @@ export async function resolveBlockNoteFileRef(ref: string, ctx: RefContext = {})
   }
 
   // A row that is gone or denied renders nothing, as an invalid reference does; a failed request stays an error.
-  return getPrivateFileUrlById(media.id, variant, tenantId, organizationId).catch(async (error) => {
+  return getPresignedUrlBatched(media.id, variant, tenantId, organizationId).catch(async (error) => {
     if (!(error instanceof PresignRejectedError)) throw error;
     // An uncached row may be readable but not uploaded yet: the permission-checked read tells it apart from gone or denied.
     const row = await fetchAttachment(tenantId, organizationId, media.id);

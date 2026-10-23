@@ -9,10 +9,10 @@ import { memberRole } from '../../../tests/fixtures';
 import { streamSubscriberManager } from './stream';
 import './entities-listeners';
 
-const ORG = 'org-listeners';
+const org = 'org-listeners';
 
 const membership = (role: EntityRole, userId: string): MembershipBaseModel =>
-  ({ id: `mem-${ORG}-${userId}`, userId, channelType: 'organization', channelId: ORG, organizationId: ORG, role }) as unknown as MembershipBaseModel;
+  ({ id: `mem-${org}-${userId}`, userId, channelType: 'organization', channelId: org, organizationId: org, role }) as unknown as MembershipBaseModel;
 
 /** A subscriber whose stream records what it was sent and whether it was closed. */
 const fakeSubscriber = (userId: string) => {
@@ -29,11 +29,11 @@ const fakeSubscriber = (userId: string) => {
   } as unknown as SSEStreamingApi;
   const subscriber: AppStreamSubscriber = {
     id: crypto.randomUUID(),
-    channel: `org:${ORG}`,
+    channel: `org:${org}`,
     stream,
     userId,
     sessionId: `session-${userId}`,
-    organizationIds: new Set([ORG]),
+    organizationIds: new Set([org]),
     isSystemAdmin: false,
     systemAccessAllowed: false,
     memberships: [membership(memberRole, userId)],
@@ -51,10 +51,10 @@ const membershipEvent = (action: 'create' | 'delete', userId: string): ActivityE
     entityType: null,
     resourceType: 'membership',
     tableName: 'memberships',
-    subjectId: `mem-${ORG}-${userId}`,
+    subjectId: `mem-${org}-${userId}`,
     tenantId: 'tenant-1',
-    organizationId: ORG,
-    rowData: { id: `mem-${ORG}-${userId}`, userId, channelType: 'organization', channelId: ORG, organizationId: ORG, role: memberRole },
+    organizationId: org,
+    rowData: { id: `mem-${org}-${userId}`, userId, channelType: 'organization', channelId: org, organizationId: org, role: memberRole },
     rows: null,
     trace: null,
     stx: null,
@@ -106,7 +106,7 @@ describe('entities listeners: a product change on open streams', () => {
   );
   const row = (id: string, extra: Record<string, unknown> = {}) => ({
     id,
-    organizationId: ORG,
+    organizationId: org,
     ...noDeeperAncestors,
     createdBy: 'author-user',
     ...extra,
@@ -123,7 +123,7 @@ describe('entities listeners: a product change on open streams', () => {
       tableName: 'attachments',
       subjectId: rows[0].rowData.id,
       tenantId: 'tenant-1',
-      organizationId: ORG,
+      organizationId: org,
       rowData: null,
       rows,
       trace: null,
@@ -146,7 +146,7 @@ describe('entities listeners: a product change on open streams', () => {
 
     expect(reader.sent.map((message) => JSON.parse(message.data))).toEqual([
       expect.objectContaining({ action: 'update', subjectId: 'att-kept', seq: 4, batchUntilSeq: 6, count: 2 }),
-      expect.objectContaining({ action: 'moveOut', subjectId: 'att-lost', path: ORG, batchUntilSeq: null, count: 1 }),
+      expect.objectContaining({ action: 'moveOut', subjectId: 'att-lost', path: org, batchUntilSeq: null, count: 1 }),
     ]);
   });
 });

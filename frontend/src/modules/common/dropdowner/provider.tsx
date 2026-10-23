@@ -5,9 +5,7 @@ import { DropdownerDropdown } from '~/modules/common/dropdowner/dropdown';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { useOverlayLock } from '~/modules/common/overlay-store-helpers';
 
-/**
- * Renders dropdowns as drawers on mobile and popovers on desktop.
- */
+/** Renders the open dropdown: a drawer on mobile, a menu or panel popup on desktop. */
 export function Dropdowner() {
   const dropdown = useDropdowner((state) => state.dropdown);
   const isMobile = useBreakpointBelow('sm');

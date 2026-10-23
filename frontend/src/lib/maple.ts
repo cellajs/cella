@@ -1,6 +1,6 @@
 import { MapleBrowser } from '@maple-dev/browser';
 import { appConfig } from 'shared';
-import { mapleEnabled } from './maple-enabled';
+import { mapleEnabled } from '~/lib/maple-enabled';
 
 // Errors, traces and web vitals only: no session replay, no cookies or lasting visitor id, and no user id.
 if (mapleEnabled) {

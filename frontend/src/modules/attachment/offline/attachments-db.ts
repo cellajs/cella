@@ -86,16 +86,18 @@ export interface DownloadQueueEntry {
   attempts: number;
 }
 
+function boundDb() {
+  const db = getLocalUserDb();
+  if (!db) throw new Error('[attachmentsDb] No localUserDb bound (signed out)');
+  return db;
+}
+
 /** Blob and download-queue tables of the active per-user localUserDb; accessors throw while signed out, so guard with `getLocalUserDb()`. */
 export const attachmentsDb = {
   get blobs(): Dexie.Table<AttachmentBlob, string> {
-    const db = getLocalUserDb();
-    if (!db) throw new Error('[attachmentsDb] No localUserDb bound (signed out)');
-    return db.blobs;
+    return boundDb().blobs;
   },
   get downloadQueue(): Dexie.Table<DownloadQueueEntry, string> {
-    const db = getLocalUserDb();
-    if (!db) throw new Error('[attachmentsDb] No localUserDb bound (signed out)');
-    return db.downloadQueue;
+    return boundDb().downloadQueue;
   },
 };

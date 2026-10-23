@@ -39,7 +39,7 @@ export async function writeError(stream: SSEStreamingApi, payload: StreamErrorPa
  * What a ping of the app stream says while no CDC worker has been reading for a minute. Any other ping is empty: live
  * changes arrive as they happen.
  */
-export const WORKER_AWAY_PING = 'worker_away';
+export const workerAwayPing = 'worker_away';
 
 /**
  * A `ping` event. EventSource hands a named event to client code and hides a comment line, so this is how a client

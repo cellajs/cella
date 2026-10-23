@@ -1,3 +1,4 @@
+import type { StreamNotification } from 'sdk';
 import { appConfig, type ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
@@ -6,21 +7,11 @@ import { forEachListQuery, mapListItems } from '~/query/basic/mutate-query';
 import type { ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
 
-/** Wire-compatible propagation hint. Product types stay a plain union to tolerate types this app's config omits. */
-type PropagationHintInput = {
-  embeddedProduct: ProductEntityType;
-  /** Advisory on the wire: host fan-out derives from this app's productEmbeddings config. */
-  hostProduct?: ProductEntityType;
-  hostColumn?: string;
-  update: string[];
-  remove: string[];
-};
+/** The part of a propagation hint the client reads: its host fields are advisory, and this app's productEmbeddings config says where embedded copies are cached. */
+type PropagationHint = Pick<NonNullable<StreamNotification['propagation']>, 'embeddedProduct' | 'update' | 'remove'>;
 
-/**
- * Patch stale embedded-product references across every host column productEmbeddings declares for the changed product.
- * The hint's host fields are advisory: local config is the authority on where this client caches embedded copies.
- */
-export function propagateEmbeddings(hint: PropagationHintInput): void {
+/** Patch stale embedded-product references across every host column productEmbeddings declares for the changed product. */
+export function propagateEmbeddings(hint: PropagationHint): void {
   const { embeddedProduct, update, remove } = hint;
   if (update.length === 0 && remove.length === 0) return;
 
@@ -57,9 +48,9 @@ function patchHostCaches(
     if (patched !== data) queryClient.setQueryData(queryKey, patched);
   });
 
-  for (const [queryKey, host] of queryClient.getQueriesData({ queryKey: keys.detail.base })) {
+  for (const [queryKey, host] of queryClient.getQueriesData<ItemData>({ queryKey: keys.detail.base })) {
     if (!host) continue;
-    const patched = patchSingleHost(host as ItemData, hostColumn, updateSet, removeSet, freshEmbedded);
+    const patched = patchSingleHost(host, hostColumn, updateSet, removeSet, freshEmbedded);
     if (patched !== host) {
       queryClient.setQueryData(queryKey, patched);
     }
@@ -101,6 +92,12 @@ function patchItems(
   return mutated ? result : items;
 }
 
+/** A fresh embedded copy replaces a cached one without a stamp or with an older one. Same age or older keeps the cached copy, so a concurrent edit is not undone. */
+function isFresher(cached: { updatedAt?: string }, fresh: ItemData): boolean {
+  const freshUpdatedAt = asRecord(fresh).updatedAt;
+  return !cached.updatedAt || (!!freshUpdatedAt && freshUpdatedAt > cached.updatedAt);
+}
+
 /** Patch a single host product's embedded column. Returns same reference if unchanged. */
 function patchSingleHost(
   host: ItemData,
@@ -116,7 +113,7 @@ function patchSingleHost(
   if (Array.isArray(embedded) && embedded.every((item) => typeof item === 'string')) {
     const ids: string[] = embedded;
     if (!ids.some((id) => removeSet.has(id))) return host;
-    return { ...host, [hostColumn]: ids.filter((id) => !removeSet.has(id)) } as ItemData;
+    return { ...host, [hostColumn]: ids.filter((id) => !removeSet.has(id)) };
   }
 
   // Array column of embedded objects.
@@ -127,37 +124,21 @@ function patchSingleHost(
     const patched = embedded
       .filter((item: { id?: string }) => !item.id || !removeSet.has(item.id))
       .map((item: { id?: string; updatedAt?: string }) => {
-        if (!item.id || !updateSet.has(item.id)) return item;
-        const fresh = freshEmbedded.get(item.id);
-        if (!fresh) return item;
-        const freshRecord = asRecord(fresh);
-        if (item.updatedAt && freshRecord.updatedAt && freshRecord.updatedAt > item.updatedAt) return fresh;
-        if (!item.updatedAt) return fresh;
-        // Same age or older: keep the cached copy so a concurrent edit is not undone.
-        return item;
+        const fresh = item.id && updateSet.has(item.id) ? freshEmbedded.get(item.id) : undefined;
+        return fresh && isFresher(item, fresh) ? fresh : item;
       });
 
-    return { ...host, [hostColumn]: patched } as ItemData;
+    return { ...host, [hostColumn]: patched };
   }
 
   // Single object column.
   if (embedded && typeof embedded === 'object' && 'id' in embedded) {
-    const obj = embedded as { id: string; updatedAt?: string };
-    if (removeSet.has(obj.id)) {
-      return { ...host, [hostColumn]: null } as ItemData;
+    const cached = embedded as { id: string; updatedAt?: string };
+    if (removeSet.has(cached.id)) {
+      return { ...host, [hostColumn]: null };
     }
-    if (updateSet.has(obj.id)) {
-      const fresh = freshEmbedded.get(obj.id);
-      if (fresh) {
-        const freshRecord = asRecord(fresh);
-        if (obj.updatedAt && freshRecord.updatedAt && freshRecord.updatedAt > obj.updatedAt) {
-          return { ...host, [hostColumn]: fresh } as ItemData;
-        }
-        if (!obj.updatedAt) {
-          return { ...host, [hostColumn]: fresh } as ItemData;
-        }
-      }
-    }
+    const fresh = updateSet.has(cached.id) ? freshEmbedded.get(cached.id) : undefined;
+    if (fresh && isFresher(cached, fresh)) return { ...host, [hostColumn]: fresh };
   }
 
   return host;

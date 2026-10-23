@@ -6,13 +6,13 @@ import { zCreateRequestBody } from 'sdk/zod.gen';
 import type { z } from 'zod';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { LegalContact } from '~/modules/auth/legal/legal-contact';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useCreateRequestMutation } from '~/modules/requests/query';
-import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
 import { useUserStore } from '~/modules/user/user-store';
 import { formResolver } from '~/utils/form-resolver';
@@ -20,17 +20,24 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const ContactFormMap = lazyNamed(() => import('~/modules/common/contact-form/contact-form-map'), 'ContactFormMap');
 
-export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
+export const contactFormDialogId = 'contact-form';
+
+// The request stores an email and a message; a contact request without a message says nothing
+const formSchema = zCreateRequestBody.extend({ message: zCreateRequestBody.shape.message.unwrap().trim().min(1) });
+
+type FormValues = z.infer<typeof formSchema>;
+
+interface ContactFormProps {
+  /** Rendered in the contact dialog, which a sent message closes. */
+  dialog?: boolean;
+}
+
+export function ContactForm({ dialog: isDialog }: ContactFormProps) {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  const isMediumScreen = useBreakpointAbove('lg');
+  const isLargeScreen = useBreakpointAbove('lg');
   const emailLabel = t('c:email').toLowerCase();
   const messageLabel = t('c:message').toLowerCase();
-
-  // The request stores an email and a message; a contact request without a message says nothing
-  const formSchema = zCreateRequestBody.extend({ message: zCreateRequestBody.shape.message.unwrap().trim().min(1) });
-
-  type FormValues = z.infer<typeof formSchema>;
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
@@ -39,10 +46,6 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
 
   const form = useFormWithDraft<FormValues>('contact-form', { formOptions });
 
-  const cancel = () => {
-    form.reset();
-  };
-
   const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
   const onSubmit: SubmitHandler<FormValues> = (body) => {
@@ -50,7 +53,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
       onSuccess: () => {
         toaster.success(t('c:message_sent.text'));
 
-        if (isDialog) useDialoger.getState().remove();
+        if (isDialog) dialoger.getState().remove(contactFormDialogId);
         form.reset();
       },
     });
@@ -66,7 +69,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             label={t('c:email')}
             labelClassName="max-sm:sr-only"
             type="email"
-            autocomplete="email"
+            autoComplete="email"
             placeholder={t('c:placeholder.your_input', { inputLabel: emailLabel })}
             icon={<MailIcon />}
             required
@@ -85,19 +88,18 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             <SubmitButton loading={isPending} icon={<SendIcon />}>
               {t('c:send')}
             </SubmitButton>
-            <Button type="reset" variant="secondary" onClick={cancel} className={form.isDirty ? '' : 'invisible'}>
-              {t('c:cancel')}
-            </Button>
+            <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />
           </div>
         </form>
       </Form>
-      {!isMediumScreen && <LegalContact className="my-4 w-full sm:my-0" addressOnly />}
-      {isMediumScreen && (
-        <div className="w-full overflow-hidden rounded-md bg-accent md:mb-12">
+      {isLargeScreen ? (
+        <div className="mb-12 w-full overflow-hidden rounded-md bg-accent">
           <Suspense>
             <ContactFormMap />
           </Suspense>
         </div>
+      ) : (
+        <LegalContact className="my-4 w-full sm:my-0" addressOnly />
       )}
     </div>
   );

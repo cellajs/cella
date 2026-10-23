@@ -7,7 +7,7 @@ const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
 const { registerDescriptionDerivation } = await import('~/modules/common/blocknote/description-derivation');
-const { patchCollaborativeDescription } = await import('~/modules/common/blocknote/use-description-update');
+const { patchCollaborativeDescription } = await import('~/modules/common/blocknote/description-updater');
 
 type Row = { id: string; organizationId: string; description: string | null; keywords: string; name: string };
 

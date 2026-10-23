@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('shared', () => ({ appConfig: { slug: 'test' } }));
 
 const { bindLocalUserDb, closeLocalUserDb, notifyOwnerChange } = await import('~/query/local-user-db');
-const { onTabMessage, postTabUpdate, toTabKey } = await import('~/modules/common/blocknote/yjs-tab-channel');
+const { onTabMessage, postTabMessage, yDocKeyString } = await import('~/modules/common/blocknote/yjs-tab-channel');
 type TabMessage = Parameters<Parameters<typeof onTabMessage>[0]>[0];
 
 /** Binds `owner`'s database as sign-in does, and tells the owner listeners, as local-user-storage does once bound. */
@@ -17,15 +17,15 @@ function signIn(owner: string | null) {
 /** Another tab of `owner`: a channel of its own on that user's name. */
 function otherTab(owner: string) {
   const received: TabMessage[] = [];
-  const channel = new BroadcastChannel(`test:${owner}:ydocs`);
+  const channel = new BroadcastChannel(`test:${owner}:ydoc-tabs`);
   channel.onmessage = (event: MessageEvent<TabMessage>) => received.push(event.data);
   return { channel, received };
 }
 
 const update = (rowId: number | null) =>
   ({
-    t: 'update',
-    key: toTabKey({ entityType: 'attachment', entityId: 'doc-1' }),
+    kind: 'update',
+    key: yDocKeyString({ entityType: 'attachment', entityId: 'doc-1' }),
     generation: 'gen-1',
     update: new Uint8Array([1, 2]),
     rowId,
@@ -51,10 +51,10 @@ describe('yjs tab channel', () => {
 
     // Signed out, or impersonating: nothing goes out.
     signIn(null);
-    postTabUpdate(update(1));
+    postTabMessage(update(1));
 
     signIn('user-b');
-    postTabUpdate(update(2));
+    postTabMessage(update(2));
     tabA.channel.postMessage(update(3));
     tabB.channel.postMessage(update(4));
 

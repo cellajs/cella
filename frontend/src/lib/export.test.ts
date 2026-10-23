@@ -10,7 +10,7 @@ async function csvText(columns: { key: string; name: string }[], rows: Record<st
     return 'blob:export';
   });
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-  await exportToCsv(columns, rows, 'export.csv');
+  exportToCsv(columns, rows, 'export.csv');
   return file ? file.text() : '';
 }
 

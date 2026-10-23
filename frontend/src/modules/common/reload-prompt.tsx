@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
 
-const SW_UPDATE_INTERVAL = 15 * 60 * 1000;
+const swUpdateInterval = 15 * 60 * 1000;
 const reloadToastId = 'reload-prompt';
 
 /** Registers the service worker and, when a new version is waiting, shows a persistent toast to reload. */
@@ -32,7 +32,8 @@ export function ReloadPrompt() {
       const interval = setInterval(() => {
         console.debug('[ServiceWorker] Periodic update check');
         registration.update();
-      }, SW_UPDATE_INTERVAL);
+      }, swUpdateInterval);
+
       const check = () => {
         if (document.visibilityState === 'visible') {
           console.debug('[ServiceWorker] Visibility/online update check');
@@ -87,8 +88,7 @@ export function ReloadPrompt() {
         },
       });
 
-    // The gap between click and reload is the new service worker's activate phase, so the
-    // button spins until the page goes away. A hard reload follows if nothing happens in 5s.
+    // The button spins through the new worker's activate phase; a hard reload follows if nothing happens in 5s
     const reload = () => {
       showPrompt(true);
       setTimeout(() => window.location.reload(), 5000);

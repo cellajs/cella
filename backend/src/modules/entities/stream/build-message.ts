@@ -7,9 +7,9 @@ import { streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamEvent, AppStreamMembershipEvent } from './types';
 
 /** ~20ms of client spread per online org subscriber: 10 users → near-instant, 3000 → ~60s. */
-const SPREAD_MS_PER_SUBSCRIBER = 20;
+const spreadMsPerSubscriber = 20;
 /** Never let a client lag more than this behind by server suggestion (client tiers cap lower). */
-const MAX_SPREAD_WINDOW_MS = 120_000;
+const maxSpreadWindowMs = 120_000;
 
 /**
  * A spread window scaled by the org channel's online audience and DB pool pressure. Identical for
@@ -20,7 +20,7 @@ function computeSpreadWindow(organizationId: string | null): number | null {
   const audience = streamSubscriberManager.getByChannel(`org:${organizationId}`).length;
   if (audience <= 1) return 0;
   const pressure = Math.min(dbPoolPressure(), 2);
-  return Math.min(Math.round(audience * SPREAD_MS_PER_SUBSCRIBER * (1 + pressure)), MAX_SPREAD_WINDOW_MS);
+  return Math.min(Math.round(audience * spreadMsPerSubscriber * (1 + pressure)), maxSpreadWindowMs);
 }
 
 /** The single source of the `kind` discriminant: product entity sync, or membership change. */

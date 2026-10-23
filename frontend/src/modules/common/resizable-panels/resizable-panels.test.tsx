@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 
-const { ResizablePanel, ResizablePanelGroup, ResizableSeparator } = await import('./resizable-panels');
+const { ResizablePanel, ResizablePanelGroup, ResizableSeparator } = await import('~/modules/common/resizable-panels/resizable-panels');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 

@@ -176,7 +176,7 @@ describe('wsClient.send', () => {
     const { sendMessageToApi } = await import('../services/activity-service');
     const { FlushBuffer } = await import('../services/flush-buffer');
     const { replicationState } = await import('../services/replication-state');
-    const { RESOURCE_LIMITS } = await import('../constants');
+    const { resourceLimits } = await import('../constants');
     const { mockCdcActivity, mockPendingEvent } = await import('./factories');
     wsClient.connect();
     latest().open();
@@ -186,7 +186,7 @@ describe('wsClient.send', () => {
     const buffer = new FlushBuffer(async () => sendMessageToApi(mockCdcActivity(), { id: 'row-1', size: 10n }, {} as never), acknowledge, 10, 1);
     buffer.onFailed = (error, position) => replicationState.recordFailure(position, error);
 
-    for (let read = 1; read <= RESOURCE_LIMITS.reread.stuckAfter; read++) {
+    for (let read = 1; read <= resourceLimits.reread.stuckAfter; read++) {
       await buffer.enqueue([mockPendingEvent({ lsn: '0/50' })]);
       expect(replicationState.failure).toMatchObject({ position: '0/50', count: read, passing: false, error: expect.stringContaining('BigInt') });
       await buffer.reset();

@@ -1,7 +1,7 @@
 import * as decoding from 'lib0/decoding';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
-import { PARKED_GRACE_MS, RESYNC_COOLDOWN_MS, watchPendingStructs } from '../yjs-resync';
+import { parkedGraceMs, resyncCooldownMs, watchPendingStructs } from '~/modules/common/blocknote/yjs-resync';
 
 function fakeDoc(): Y.Doc & { park: (on: boolean) => void } {
   const doc = new Y.Doc();
@@ -38,7 +38,7 @@ describe('watchPendingStructs', () => {
 
     // A new park restarts the grace period, counted from the poll that notices it.
     doc.park(true);
-    vi.advanceTimersByTime(PARKED_GRACE_MS);
+    vi.advanceTimersByTime(parkedGraceMs);
     expect(provider.ws.send).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1_000);
     expect(provider.ws.send).toHaveBeenCalledTimes(1);
@@ -52,7 +52,7 @@ describe('watchPendingStructs', () => {
     expect(decoding.readVarUint8Array(decoder)).toEqual(Y.encodeStateVector(doc));
 
     // Still parked: the next one waits for the cooldown, and for a live socket.
-    vi.advanceTimersByTime(RESYNC_COOLDOWN_MS - 1_000);
+    vi.advanceTimersByTime(resyncCooldownMs - 1_000);
     expect(provider.ws.send).toHaveBeenCalledTimes(1);
     provider.wsconnected = false;
     vi.advanceTimersByTime(2_000);

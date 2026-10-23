@@ -58,7 +58,8 @@ export const env = createEnv({
     // Mode-bound secrets (env-mode-secrets.ts): each is required below only in the modes that read it.
     UNSUBSCRIBE_SECRET: secretString('UNSUBSCRIBE_SECRET').optional(),
 
-    // Web Push (has.push): both keys present enables sending; VAPID_SUBJECT defaults to the frontend URL.
+    // Web Push (has.push): both keys present enables sending. VAPID_SUBJECT must be a `mailto:` or `https:` URL; unset, it
+    // falls back to the frontend URL, which web-push refuses in development (http://localhost), so push stays off there.
     VAPID_PUBLIC_KEY: z.string().optional(),
     VAPID_PRIVATE_KEY: z.string().optional(),
     VAPID_SUBJECT: z.string().optional(),

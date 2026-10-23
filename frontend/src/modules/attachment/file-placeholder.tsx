@@ -1,30 +1,31 @@
 import { FileArchiveIcon, FileHeadphoneIcon, FileIcon, FileImageIcon, FilePlayIcon, FileSpreadsheetIcon, FileTextIcon } from 'lucide-react';
 
-const contentTypeMap = [
+/** The first match wins, so every family comes before the document catch-all (`vnd`, `text`). */
+const contentTypeIcons = [
+  { match: ['spreadsheet', 'excel', 'csv'], icon: FileSpreadsheetIcon },
+  { match: ['zip', 'rar'], icon: FileArchiveIcon },
   { match: ['image'], icon: FileImageIcon },
   { match: ['video'], icon: FilePlayIcon },
-  { match: ['pdf', 'msword', 'vnd', 'text'], icon: FileTextIcon },
   { match: ['audio'], icon: FileHeadphoneIcon },
-  { match: ['csv', 'xslx'], icon: FileSpreadsheetIcon },
-  { match: ['zip', 'rar'], icon: FileArchiveIcon },
+  { match: ['pdf', 'msword', 'vnd', 'text'], icon: FileTextIcon },
 ];
 
 export function getFileIcon(contentType?: string) {
   if (contentType) {
-    const found = contentTypeMap.find(({ match }) => match.some((type) => contentType.includes(type)));
+    const found = contentTypeIcons.find(({ match }) => match.some((type) => contentType.includes(type)));
     if (found) return found.icon;
   }
   return FileIcon;
 }
 
-interface Props {
+interface FilePlaceholderProps {
   contentType?: string;
   strokeWidth?: number;
-  /** Size the icon here (icon-* / size-*); defaults to size-5. */
+  /** The icon's classes, `size-*` included; defaults to `size-5`. */
   className?: string;
 }
 
-export function FilePlaceholder({ contentType, strokeWidth, className = 'size-5' }: Props) {
+export function FilePlaceholder({ contentType, strokeWidth, className = 'size-5' }: FilePlaceholderProps) {
   const FileIconComponent = getFileIcon(contentType);
   return <FileIconComponent strokeWidth={strokeWidth} className={className} />;
 }

@@ -11,20 +11,24 @@ import { systemUploadPrefix } from 'shared/utils/upload-visibility';
 import type { z } from 'zod';
 import type { ApiError } from '~/lib/api';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
-import { blocknoteFieldIsDirty } from '~/modules/common/blocknote/helpers/blocknote-field-is-dirty';
-import type { CallbackArgs } from '~/modules/common/data-table/types';
+import { blocknoteHasContent } from '~/modules/common/blocknote/helpers/blocknote-has-content';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
-import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
+import { blockNoteFieldClass, LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SelectRoles } from '~/modules/common/form-fields/select-roles';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { Button } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
+import { Label } from '~/modules/ui/label';
 import type { MutationData } from '~/query/types';
+import { cn } from '~/utils/cn';
 import { formResolver } from '~/utils/form-resolver';
+
+/** The id of the form's draft and of the sheet it renders in, which shows the unsaved badge. */
+export const newsletterFormId = 'create-newsletter';
 
 // A newsletter goes out to every member it picks, so it never leaves without a subject
 const formSchema = zSendNewsletterBody.extend({ subject: zSendNewsletterBody.shape.subject.trim().min(1) });
@@ -32,70 +36,60 @@ const formSchema = zSendNewsletterBody.extend({ subject: zSendNewsletterBody.sha
 type FormValues = z.infer<typeof formSchema>;
 interface CreateNewsletterFormProps {
   organizationIds: string[];
-  callback?: (args: CallbackArgs) => void;
 }
 
-export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsletterFormProps) {
+export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormProps) {
   const { t } = useTranslation();
-  const subjectLabel = t('c:subject').toLowerCase();
 
-  const [testOnly, setTestOnly] = useState<boolean>(false);
+  const [testOnly, setTestOnly] = useState(false);
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
     defaultValues: { organizationIds, subject: '', roles: [], content: '' },
   };
 
-  const formContainerId = 'create-newsletter';
-  const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
+  const form = useFormWithDraft<FormValues>(newsletterFormId, { formOptions });
 
-  // SendIcon newsletter
-  const { mutate: _sendNewsletter, isPending } = useMutation<SendNewsletterResponse, ApiError, MutationData<SendNewsletterData>>({
-    mutationFn: async ({ body, query }) => {
-      return await sendNewsletter({ body, query });
-    },
+  const { mutate: send, isPending } = useMutation<SendNewsletterResponse, ApiError, MutationData<SendNewsletterData>>({
+    mutationFn: (variables) => sendNewsletter(variables),
     onSuccess: () => {
       if (testOnly) return toaster.success(t('c:success.test_email'));
       form.reset();
       toaster.success(t('c:success.create_newsletter'));
-      useSheeter.getState().remove(formContainerId);
-      callback?.({ status: 'success' });
+      sheeter.getState().remove(newsletterFormId);
     },
   });
 
-  const onSubmit = async (data: FormValues) => {
-    // Imported on submit: blocksToHTML builds a headless BlockNoteEditor, and importing it here keeps
-    // @blocknote/core off the boot path for everyone who never opens this form.
+  const onSubmit = async (values: FormValues) => {
+    // Imported on submit, so @blocknote/core stays off the boot path.
     const { blocksToHTML } = await import('~/modules/common/blocknote/helpers/blocknote-helpers');
-    // Set organizationIds here to avoind having them in draft & converting string blocks to HTML
-    const body = { ...data, organizationIds, content: blocksToHTML(data.content) };
-    _sendNewsletter({ body, query: { toSelf: !!testOnly } });
+    // The selected organizations, not a restored draft's, and the blocks as HTML.
+    const body = { ...values, organizationIds, content: blocksToHTML(values.content) };
+    send({ body, query: { toSelf: testOnly } });
   };
-
-  const cancel = () => form.reset();
 
   const canSend = () => {
     if (!form.isDirty) return false;
     const { content, roles } = form.getValues();
-    return blocknoteFieldIsDirty(content) && roles.length > 0;
+    return blocknoteHasContent(content) && roles.length > 0;
   };
 
-  const isDirty = () => {
+  const hasInput = () => {
     if (!form.isDirty) return false;
     const { content, roles, subject } = form.getValues();
-    return roles.length > 0 || subject.length > 0 || blocknoteFieldIsDirty(content);
+    return roles.length > 0 || subject.length > 0 || blocknoteHasContent(content);
   };
 
   if (form.loading) return null;
 
   return (
     <Form {...form}>
-      <form noValidate onSubmit={form.handleSubmit(onSubmit)} id="newsletter-form" className="flex h-max flex-col gap-6 pb-8">
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6 pb-8">
         <InputFormField
           control={form.control}
           inputClassName="font-bold"
           name="subject"
-          placeholder={t('c:placeholder.type_input', { inputLabel: subjectLabel })}
+          placeholder={t('c:placeholder.type_input', { inputLabel: t('c:subject').toLowerCase() })}
           label={t('c:subject')}
           required
         />
@@ -109,11 +103,10 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
           baseBlockNoteProps={{
             id: `${appConfig.name}-blocknote-newsletter`,
             trailingBlock: false,
-            className:
-              'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-effect disabled:cursor-not-allowed disabled:opacity-50',
+            className: cn(blockNoteFieldClass, 'pl-10'),
             // Newsletter images go to the public bucket under the system prefix, where email clients load them.
             baseFilePanelProps: { mediaMode: 'public-no-attachment', templateId: 'newsletter', organizationId: systemUploadPrefix },
-            excludeFileBlockTypes: ['video', 'audio', 'file'],
+            excludeMediaBlockTypes: ['video', 'audio', 'file'],
           }}
         />
 
@@ -122,16 +115,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
           name="roles"
           render={({ field: { value, onChange } }) => (
             <FormItem>
-              <SelectRoles
-                value={value}
-                onValueChange={onChange}
-                label={
-                  <>
-                    {t('c:roles')}
-                    <span className="ml-1 opacity-50">*</span>
-                  </>
-                }
-              />
+              <SelectRoles value={value} onChange={onChange} label={t('c:roles')} required />
               <FormMessage />
             </FormItem>
           )}
@@ -147,14 +131,10 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
           <SubmitButton disabled={!canSend()} loading={isPending} icon={<SendIcon />}>
             {testOnly ? t('c:send_test_email') : t('c:send')}
           </SubmitButton>
-          <Button type="reset" variant="secondary" className={isDirty() ? '' : 'invisible'} aria-label={t('c:cancel')} onClick={cancel}>
-            {t('c:cancel')}
-          </Button>
+          <CancelButton dirty={hasInput()} onClick={() => form.reset()} />
           <div className="flex items-center gap-2 max-sm:mt-2">
-            <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="ml-4 size-4" />
-            <label htmlFor="testOnly" className="items-center text-sm">
-              {t('c:test_email')}
-            </label>
+            <Checkbox id="testOnly" checked={testOnly} onCheckedChange={setTestOnly} className="ml-4 size-4" />
+            <Label htmlFor="testOnly">{t('c:test_email')}</Label>
           </div>
         </div>
       </form>

@@ -71,7 +71,7 @@ function DescriptionSlotDemo() {
             updateData={setDescription}
             contentApiRef={slot.apiRef}
             onEditorReady={slot.onEditorReady}
-            onEscapeClick={() => setEditing(false)}
+            onEscape={() => setEditing(false)}
             sideMenu={false}
             dense
           />

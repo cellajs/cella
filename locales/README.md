@@ -31,7 +31,8 @@ Settings for `.vscode/settings.json` (gitignored, once per contributor):
 - Two- or three-word translations have a two-word key
 - Above three words is a sentence
 - Action related sentences have a prefix such as `question.`, `confirm.` or `success.`
-- A confirmation that names what it hits wraps that part in `<strong>` (`Revoke API key <strong>{{name}}</strong>?`), never in quotes, and renders through `ConfirmText`, which shows it in bold
+- A sentence that names something wraps the name in `<strong>` (`Revoke API key <strong>{{name}}</strong>?`), never in quotes, and renders through `NamedText`, which shows it in semibold and cuts a `name` longer than 40 characters in the middle
+- A sheet or dialog opened over an entity page names that entity (`Manage users invited to join <strong>{{name}}</strong>.`) rather than saying "this organization": the page header is out of view behind it. Texts that describe a kind of tab or card stay generic.
 - Other (explanation related) sentences have a suffix `.text`
 - Only the first letter of the first word is uppercase. For explicit lowercase, lowercase at the usage site (`.toLowerCase()` or an interpolation value such as `resourceLowerCase`).
 - Sort JSON translation keys alphabetically

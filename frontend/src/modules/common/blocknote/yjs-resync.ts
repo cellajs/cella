@@ -2,10 +2,10 @@ import * as encoding from 'lib0/encoding';
 import * as Y from 'yjs';
 
 /** Structs stay parked this long before the watch treats the document as stuck. */
-export const PARKED_GRACE_MS = 2_000;
+export const parkedGraceMs = 2_000;
 /** Minimum spacing between two resyncs of the same connection. */
-export const RESYNC_COOLDOWN_MS = 10_000;
-const POLL_MS = 1_000;
+export const resyncCooldownMs = 10_000;
+const pollMs = 1_000;
 
 interface ResyncableProvider {
   wsconnected: boolean;
@@ -22,29 +22,25 @@ function encodeSyncStep1(doc: Y.Doc) {
 }
 
 /**
- * Self-healing for a lost update. When an inbound update depends on one that never arrived, Yjs
- * parks it and everything after it in `store.pendingStructs`: edits stop propagating while the
- * connection looks healthy, and nothing else notices. A fresh Step1 on the live socket clears it:
- * the relay answers it as it answers a handshake, with exactly the missing range, then asks for what
- * it lacks itself. The watch polls the store and sends one once the park has lasted
- * `PARKED_GRACE_MS` while connected, with a cooldown so a gap the relay itself cannot fill does not
- * turn into a resync storm. The socket stays open, so a resync costs no upgrade or authorization.
+ * Resyncs a document stuck on a lost update. Yjs parks an inbound update whose dependency never arrived, and everything
+ * after it, in `store.pendingStructs`: edits stop while the connection looks healthy. A fresh Step1 on the open socket
+ * clears it, with no upgrade or authorization: the relay answers it as a handshake, with exactly the missing range, and
+ * asks for what it lacks. The cooldown keeps a gap the relay cannot fill from turning into a resync storm.
  */
 export function watchPendingStructs(doc: Y.Doc, provider: ResyncableProvider, now: () => number = Date.now): () => void {
   let parkedSince = 0;
   let lastResyncAt = 0;
 
   const check = () => {
-    const store = doc.store as unknown as { pendingStructs: unknown };
-    const parked = store.pendingStructs !== null && store.pendingStructs !== undefined;
+    const parked = doc.store.pendingStructs !== null;
     const time = now();
     if (!parked) {
       parkedSince = 0;
       return;
     }
     if (parkedSince === 0) parkedSince = time;
-    if (time - parkedSince < PARKED_GRACE_MS) return;
-    if (time - lastResyncAt < RESYNC_COOLDOWN_MS) return;
+    if (time - parkedSince < parkedGraceMs) return;
+    if (time - lastResyncAt < resyncCooldownMs) return;
     if (!provider.wsconnected || !provider.ws) return;
 
     lastResyncAt = time;
@@ -52,6 +48,6 @@ export function watchPendingStructs(doc: Y.Doc, provider: ResyncableProvider, no
     provider.ws.send(encodeSyncStep1(doc));
   };
 
-  const timer = setInterval(check, POLL_MS);
+  const timer = setInterval(check, pollMs);
   return () => clearInterval(timer);
 }

@@ -7,7 +7,7 @@ clientCacheBump: false
 
 Replace the delete `prepare` copied into each product's `query.ts` with `prepareProductDelete` from
 `~/query/offline/prepare-delete`, and a leave-channel mutation copied from `LeaveChannelButton` with `useLeaveChannel`
-from `~/modules/memberships/leave-channel-button`.
+from `~/modules/memberships/use-leave-channel`.
 
 ## What & why
 

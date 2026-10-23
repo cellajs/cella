@@ -1,30 +1,30 @@
-import { type ChannelEntityType, isProduct, type ProductEntityType } from 'shared';
+import { type ChannelEntityType, isProduct } from 'shared';
 import { syncSpanNames, withSpanSync } from '~/lib/tracing';
 import { invalidateUnseenCounts } from '~/modules/seen/query';
 import { applyUnfetchableRemovalUnseen } from '~/modules/seen/unseen-sync';
-import { type EntityQueryKeys, getEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import { type EntityQueryKeys, getEntityQueryKeys, type SeqRange } from '~/query/basic/entity-query-registry';
 import { sourceId } from '~/query/offline/stx-utils';
+import * as cacheOps from '~/query/realtime/cache-ops';
+import { enqueueRange } from '~/query/realtime/fetch-prioritizer';
+import * as membershipOps from '~/query/realtime/membership-ops';
+import { propagateEmbeddings } from '~/query/realtime/propagation';
+import { getSyncTier } from '~/query/realtime/sync-priority';
+import { publishChangeEvent } from '~/query/realtime/sync-signals';
 import { syncStore } from '~/query/realtime/sync-store';
-import * as cacheOps from './cache-ops';
-import { enqueueRange } from './fetch-prioritizer';
-import * as membershipOps from './membership-ops';
-import { propagateEmbeddings } from './propagation';
-import { getSyncTier } from './sync-priority';
-import { publishChangeEvent } from './sync-signals';
-import type { AppStreamNotification } from './types';
+import type { AppStreamNotification, ProductNotification } from '~/query/realtime/types';
 
-/** Notifications omit entity data, so each handler either invalidates or fetches a seq range. */
+/** Notifications carry no entity data: each one is answered with an invalidation or a seq-range fetch. */
 export function handleAppStreamNotification(notification: AppStreamNotification): void {
-  const { subjectId, action, stx, organizationId, tenantId, channelType, seq, _trace } = notification;
+  const { subjectId, action, organizationId, tenantId, channelType, seq, _trace } = notification;
 
-  const spanAttrs = { 'sync.entity_type': notification.productType, 'sync.action': action, 'sync.entity_id': subjectId, _trace };
+  const spanAttributes = { 'sync.entity_type': notification.productType, 'sync.action': action, 'sync.entity_id': subjectId, _trace };
 
-  withSpanSync(syncSpanNames.messageProcess, spanAttrs, () => {
-    // Checked before setOrgTenantId creates the entry: an org the sync store never saw means the SSE connection is not registered on its channel.
+  withSpanSync(syncSpanNames.messageProcess, spanAttributes, () => {
+    // Checked before trackOrg creates the entry: an org the sync store never saw means the SSE connection is not registered on its channel.
     const isUnknownOrg = !!organizationId && !syncStore.getState().orgs[organizationId];
 
     if (organizationId && tenantId) {
-      syncStore.getState().setOrgTenantId(organizationId, tenantId);
+      syncStore.getState().trackOrg(organizationId, tenantId);
     }
 
     // Announced before any tier decision, so state derived from synced entities can react even for scopes whose rows are only fetched when opened.
@@ -43,51 +43,39 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       // A self-membership in a new org arrives on the user channel, so reconnect to register on that org channel. Imported dynamically because stream-store imports this module.
       if (action === 'create' && isUnknownOrg) {
         console.debug('[handleAppStreamNotification] Membership in unknown org, reconnecting stream');
-        void import('./stream-store').then((m) => m.appStreamManager.reconnect());
+        void import('~/query/realtime/stream-store').then(({ appStreamManager }) => appStreamManager.reconnect());
       }
       return;
     }
 
-    // kind === 'product', so productType is narrowed to a product entity type.
+    // The type narrows to a product here; the check guards a product type this bundle does not know.
     const entityType = notification.productType;
     if (!isProduct(entityType)) return console.error('Unknown entityType in app stream notification:', entityType);
 
     // Create, update, and soft-delete tombstones merge into prioritized lazy fetches; hard deletes have no fetchable row and take the invalidation path below.
     if (action !== 'delete' && notification.batchUntilSeq && seq != null && organizationId) {
-      enqueueRange({
-        entityType,
-        organizationId,
-        tenantId: tenantId ?? null,
-        channelId: notification.channelId ?? null,
-        afterSeq: seq - 1,
-        untilSeq: notification.batchUntilSeq,
-        isCreate: action === 'create',
-        spreadWindowMs: notification.spreadWindow ?? undefined,
-        propagation: notification.propagation ?? undefined,
-      });
+      enqueueNotifiedRange(notification, organizationId, { afterSeq: seq - 1, untilSeq: notification.batchUntilSeq });
       return;
     }
 
-    const keys = getEntityQueryKeys(entityType);
-    if (!organizationId || !subjectId) return console.error('Missing organizationId/subjectId for product entity event:', entityType, subjectId);
-
-    handleEntityNotification(
-      entityType,
-      subjectId,
-      action,
-      stx,
-      organizationId,
-      tenantId,
-      seq ?? null,
-      notification.channelId ?? null,
-      keys,
-      notification.propagation,
-      notification.spreadWindow ?? null,
-    );
+    handleProductNotification(notification, getEntityQueryKeys(entityType));
   });
 }
 
-/** Targets invalidation by channelType: create and delete hit that channel list, update hits member queries and refreshes user data for role changes. */
+/** Hands a notified range to the fetch prioritizer, which fetches it on the tier of its scope. */
+function enqueueNotifiedRange(notification: ProductNotification, organizationId: string, range: SeqRange): void {
+  enqueueRange({
+    entityType: notification.productType,
+    organizationId,
+    tenantId: notification.tenantId ?? null,
+    channelId: notification.channelId ?? null,
+    ...range,
+    isCreate: notification.action === 'create',
+    spreadWindowMs: notification.spreadWindow ?? undefined,
+    propagation: notification.propagation ?? undefined,
+  });
+}
+
 function handleMembershipNotification(
   action: AppStreamNotification['action'],
   organizationId: string | null,
@@ -95,6 +83,7 @@ function handleMembershipNotification(
 ): void {
   switch (action) {
     case 'create':
+    case 'delete':
       membershipOps.invalidateChannelList(channelType);
       membershipOps.invalidateMemberships();
       break;
@@ -103,34 +92,23 @@ function handleMembershipNotification(
       membershipOps.invalidateMemberQueries(organizationId);
       membershipOps.refreshMe();
       break;
-
-    case 'delete':
-      membershipOps.invalidateChannelList(channelType);
-      membershipOps.invalidateMemberships();
-      break;
   }
 
   console.debug(`[handleMembershipNotification] ${action} channelType=${channelType} organizationId=${organizationId}`);
 }
 
-/** Product entity events carry no data, so each is answered with invalidation or a seq-range refetch. */
-function handleEntityNotification(
-  entityType: ProductEntityType,
-  entityId: string,
-  action: AppStreamNotification['action'],
-  stx: AppStreamNotification['stx'],
-  organizationId: string,
-  tenantId: string | null,
-  seq: number | null,
-  channelId: string | null,
-  keys: EntityQueryKeys,
-  propagation?: AppStreamNotification['propagation'],
-  spreadWindow?: number | null,
-): void {
+function handleProductNotification(notification: ProductNotification, keys: EntityQueryKeys): void {
+  const { productType: entityType, subjectId: entityId, action, stx, organizationId, tenantId, seq, propagation } = notification;
+  const channelId = notification.channelId ?? null;
+  if (!organizationId || !entityId) {
+    console.error('Missing organizationId/subjectId for product entity event:', entityType, entityId);
+    return;
+  }
+
   // Own create/update echoes patch STX without fetching; deletes always invalidate, because row STX names the last writer and not necessarily the deleter.
   if (action !== 'delete' && stx?.sourceId === sourceId) {
     cacheOps.patchEntityStxInCache(entityType, entityId, stx, organizationId);
-    console.debug('[handleEntityNotification] Echo: patched stx, skipped data fetch:', stx.mutationId);
+    console.debug('[handleProductNotification] Echo: patched stx, skipped data fetch:', stx.mutationId);
     return;
   }
 
@@ -140,19 +118,9 @@ function handleEntityNotification(
   switch (action) {
     case 'create':
     case 'update':
-      if (seq !== null) {
+      if (seq != null) {
         // A single event is a width-1 batch on the same lazy path; the watermark advances only after a successful flush, since advancing earlier would skip the range forever.
-        enqueueRange({
-          entityType,
-          organizationId,
-          tenantId,
-          channelId,
-          afterSeq: seq - 1,
-          untilSeq: seq,
-          isCreate: action === 'create',
-          spreadWindowMs: spreadWindow ?? undefined,
-          propagation: propagation ?? undefined,
-        });
+        enqueueNotifiedRange(notification, organizationId, { afterSeq: seq - 1, untilSeq: seq });
         // Unseen accounting happens at flush time: unseen-sync counts the fetched rows.
         break;
       }
@@ -164,11 +132,11 @@ function handleEntityNotification(
       } else {
         // Propagation is chained after the fetch so fresh source data is in cache.
         cacheOps
-          .fetchEntityAndUpdateList(entityId, keys, action, organizationId, tenantId ?? undefined, entityType)
+          .fetchEntityAndUpdateList(entityType, entityId, keys, action, organizationId, tenantId)
           .then(() => {
             if (propagation) propagateEmbeddings(propagation);
           })
-          .catch((err) => console.warn('[AppStream] Entity fetch failed:', err));
+          .catch((error) => console.warn('[handleProductNotification] Entity fetch failed:', error));
       }
 
       // Seq-less events have no synced rows, so they trigger an exact unseen-count recount.
@@ -192,5 +160,5 @@ function handleEntityNotification(
       break;
   }
 
-  console.debug(`[handleEntityNotification] ${entityType}:${action} viewing=${isViewing}`);
+  console.debug(`[handleProductNotification] ${entityType}:${action} viewing=${isViewing}`);
 }

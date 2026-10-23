@@ -32,7 +32,7 @@ interface CreatePgConnectionOptions {
 }
 
 /** A connection quiet this long gets TCP keepalive probes, so a dead peer or a middlebox idle timeout ends it. */
-const KEEP_ALIVE_IDLE_MS = 30_000;
+const keepAliveIdleMs = 30_000;
 
 /**
  * A drizzle client on a pool of its own, for the API and both workers. Drizzle's query logger prints every query with
@@ -53,7 +53,7 @@ export const createPgConnection = (
       ssl: verifiedPostgresSsl(url, sslCa),
       // Long-lived pooled connections (the job lock) sit idle for minutes.
       keepAlive: true,
-      keepAliveInitialDelayMillis: KEEP_ALIVE_IDLE_MS,
+      keepAliveInitialDelayMillis: keepAliveIdleMs,
       // Every session runs in UTC: zone-less columns (the partition keys) and a migration's casts read as UTC wherever the server runs.
       options: '-c TimeZone=UTC',
       // Sent as startup parameters, so the server enforces them even after the client is gone.

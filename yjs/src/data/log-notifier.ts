@@ -1,6 +1,6 @@
-import { type LogNotice, YJS_LOG_NOTICE_MAX_IDS } from '#/modules/yjs/helpers/yjs-log';
+import { type LogNotice, yjsLogNoticeMaxIds } from '#/modules/yjs/helpers/yjs-log';
 import { notifyYjsLog } from '#/modules/yjs/operations/notify-yjs-log';
-import { type DocKey, YJS_LOG_NOTICE_DELAY_MS } from '../constants';
+import { type DocKey, yjsLogNoticeDelayMs } from '../constants';
 import { log } from '../lib/pino';
 import { db } from './db';
 
@@ -9,7 +9,7 @@ type SendNotices = (notices: LogNotice[]) => Promise<void>;
 
 /**
  * Collects the rows a relay appended, each once its append committed, and announces them `delayMs` after the first of
- * a batch: one notice per document with every row id it collected (split at YJS_LOG_NOTICE_MAX_IDS), all in one `send`.
+ * a batch: one notice per document with every row id it collected (split at yjsLogNoticeMaxIds), all in one `send`.
  * A row whose append rolled back is never queued, so no relay hears of it. One send runs at a time: a notifying commit
  * waits for the cluster-wide notify lock, which another notifier may hold for seconds, and a send that waits holds a
  * pool connection, so concurrent sends could take the connections the appends need. Rows queued meanwhile go in the
@@ -32,12 +32,12 @@ export function createLogNotifier(send: SendNotices, delayMs: number) {
   const sendPending = async (): Promise<void> => {
     const notices: LogNotice[] = [];
     for (const { doc, ids } of pending.values()) {
-      for (let at = 0; at < ids.length; at += YJS_LOG_NOTICE_MAX_IDS) {
+      for (let at = 0; at < ids.length; at += yjsLogNoticeMaxIds) {
         notices.push({
           tenantId: doc.tenantId,
           entityType: doc.entityType,
           entityId: doc.entityId,
-          logIds: ids.slice(at, at + YJS_LOG_NOTICE_MAX_IDS),
+          logIds: ids.slice(at, at + yjsLogNoticeMaxIds),
         });
       }
     }
@@ -75,4 +75,4 @@ export function createLogNotifier(send: SendNotices, delayMs: number) {
 }
 
 /** The relay's notifier: each batch is one `pg_notify` statement on the pool, a transaction of its own. */
-export const logNotifier = createLogNotifier((notices) => notifyYjsLog({ var: { db } }, { notices }), YJS_LOG_NOTICE_DELAY_MS);
+export const logNotifier = createLogNotifier((notices) => notifyYjsLog({ var: { db } }, { notices }), yjsLogNoticeDelayMs);

@@ -1,7 +1,34 @@
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { getSignedUrl as s3SignedUrl } from '@aws-sdk/s3-request-presigner';
 import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
 import { env } from '#/env';
-import { presignGetObject } from '#/modules/attachment/helpers/presign-get-object';
+
+let s3Client: S3Client | undefined;
+
+function getS3Client(): S3Client {
+  if (s3Client) return s3Client;
+
+  const accessKeyId = env.S3_ACCESS_KEY_ID;
+  const secretAccessKey = env.S3_ACCESS_KEY_SECRET;
+
+  // Blank keys reach the signer as invalid credentials and return an opaque 500. Fail with a
+  // typed 503 so a deployment without S3 configured is diagnosable.
+  if (!accessKeyId || !secretAccessKey) {
+    throw new AppError(503, 'server_error', 'error', {
+      name: 'S3NotConfigured',
+      message: 'S3 credentials are not configured, cannot sign object URLs',
+    });
+  }
+
+  s3Client = new S3Client({
+    region: appConfig.s3.region,
+    endpoint: `https://${appConfig.s3.host}`,
+    credentials: { accessKeyId, secretAccessKey },
+  });
+
+  return s3Client;
+}
 
 interface GetUrlOptions {
   publicBucket: boolean;
@@ -21,25 +48,5 @@ export async function getSignedUrlFromKey(Key: string, { publicBucket, bucketNam
 
   if (publicBucket) return `https://${bucketName}.${appConfig.s3.host}/${Key}`;
 
-  const accessKeyId = env.S3_ACCESS_KEY_ID;
-  const secretAccessKey = env.S3_ACCESS_KEY_SECRET;
-
-  // Blank keys would sign a URL the bucket rejects. Fail with a typed 503 so a deployment without S3 configured is
-  // diagnosable.
-  if (!accessKeyId || !secretAccessKey) {
-    throw new AppError(503, 'server_error', 'error', {
-      name: 'S3NotConfigured',
-      message: 'S3 credentials are not configured, cannot sign object URLs',
-    });
-  }
-
-  return presignGetObject({
-    host: appConfig.s3.host,
-    region: appConfig.s3.region,
-    bucket: bucketName,
-    key: Key,
-    accessKeyId,
-    secretAccessKey,
-    expiresIn,
-  });
+  return s3SignedUrl(getS3Client(), new GetObjectCommand({ Bucket: bucketName, Key }), { expiresIn });
 }

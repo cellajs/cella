@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { Button } from '~/modules/ui/button';
-import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '~/modules/ui/totp';
+import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '~/modules/ui/input-otp';
 
 /**
  * One-time password (OTP) input components for secure authentication flows.

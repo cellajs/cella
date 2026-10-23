@@ -158,8 +158,8 @@ export function FieldError({
 
 // RHF + base-ui Field integration
 
-export type LabelDirectionType = 'top' | 'left';
-const LabelDirectionContext = React.createContext<LabelDirectionType>('top');
+export type LabelDirection = 'top' | 'left';
+const LabelDirectionContext = React.createContext<LabelDirection>('top');
 
 interface FieldStateContextValue {
   invalid: boolean;
@@ -179,14 +179,13 @@ type FormProps<TFieldValues extends FieldValues, TContext = unknown, TTransforme
   TFieldValues,
   TContext,
   TTransformedValues
-> & { unsavedChanges?: boolean; labelDirection?: LabelDirectionType };
+> & { labelDirection?: LabelDirection };
 
 export function Form<TFieldValues extends FieldValues, TContext = unknown, TTransformedValues extends FieldValues = TFieldValues>({
   children,
-  unsavedChanges,
   labelDirection = 'top',
   ...props
-}: FormProps<TFieldValues, TContext, TTransformedValues> & { unsavedChanges?: boolean }) {
+}: FormProps<TFieldValues, TContext, TTransformedValues>) {
   return (
     <FormProvider {...props}>
       <LabelDirectionContext.Provider value={labelDirection}>{children}</LabelDirectionContext.Provider>
@@ -218,7 +217,7 @@ export function FormField<TFieldValues extends FieldValues = FieldValues, TName 
   );
 }
 
-export function FormItem({ className, name, ...props }: Omit<React.ComponentProps<'div'>, 'name'> & { name?: string }) {
+export function FormItem({ className, name, ...props }: Omit<React.ComponentProps<'div'>, 'name'> & { name?: string; disabled?: boolean }) {
   const labelDirection = React.useContext(LabelDirectionContext);
   const { invalid, isDirty, isTouched } = useFieldState();
 
@@ -230,19 +229,30 @@ export function FormItem({ className, name, ...props }: Omit<React.ComponentProp
       invalid={invalid}
       dirty={isDirty}
       touched={isTouched}
-      className={cn(`${labelDirection === 'top' ? 'flex-col' : 'flex-row items-center'} flex gap-2`, className)}
+      className={cn('flex gap-2', labelDirection === 'top' ? 'flex-col' : 'items-center', className)}
       {...props}
     />
   );
+}
+
+/** The star after a required field's label or legend. */
+export function RequiredMark() {
+  return <span className="ml-1 text-muted-foreground/70">*</span>;
 }
 
 export function FormLabel({
   className,
   nativeLabel = true,
   help,
+  required,
   children,
   ...props
-}: React.ComponentProps<'label'> & { nativeLabel?: boolean; help?: React.ReactNode }) {
+}: React.ComponentProps<'label'> & {
+  nativeLabel?: boolean;
+  help?: React.ReactNode;
+  /** Puts a star after the label. */
+  required?: boolean;
+}) {
   const [helpOpen, setHelpOpen] = React.useState(false);
 
   const label = (
@@ -253,6 +263,7 @@ export function FormLabel({
       {...props}
     >
       {children}
+      {required && <RequiredMark />}
     </Field.Label>
   );
 
@@ -262,7 +273,7 @@ export function FormLabel({
     <div className="flex flex-col">
       <div className="flex items-center gap-2">
         {label}
-        <HelpToggle open={helpOpen} onToggle={() => setHelpOpen(!helpOpen)} className="-my-1" />
+        <HelpToggle open={helpOpen} onToggle={() => setHelpOpen((open) => !open)} className="-my-1" />
       </div>
       <HelpCollapse open={helpOpen}>
         <Field.Description render={<div />}>{help}</Field.Description>

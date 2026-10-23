@@ -1,4 +1,4 @@
-import { JOBS_SCHEMA } from '#/lib/pg-boss';
+import { jobsSchema } from '#/lib/pg-boss';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 /**
@@ -37,13 +37,13 @@ async function run(): Promise<SideEffectBlock> {
   const migrationSql = `-- Job store (pg-boss) privileges for runtime_role
 -- The schema itself is installed by the migrate companion on the admin DSN; see
 -- backend/scripts/db/install-jobs-schema.ts, which applies these same grants right after installing.
-${jobsGrantsSql(JOBS_SCHEMA)}`;
+${jobsGrantsSql(jobsSchema)}`;
 
   return {
     tag: 'jobs_grants',
     title: 'Job store privileges',
     sql: migrationSql,
-    notes: [`Job store schema: ${JOBS_SCHEMA} (runtime_role: table privileges, default privileges for later tables)`],
+    notes: [`Job store schema: ${jobsSchema} (runtime_role: table privileges, default privileges for later tables)`],
   };
 }
 

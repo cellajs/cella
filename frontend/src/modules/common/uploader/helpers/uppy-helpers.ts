@@ -1,15 +1,21 @@
 import { onlineManager } from '@tanstack/react-query';
-import { Uppy } from '@uppy/core';
-import Transloadit from '@uppy/transloadit';
+import Audio from '@uppy/audio';
+import { type Body, type Meta, Uppy } from '@uppy/core';
+import ImageEditor from '@uppy/image-editor';
+import ScreenCapture from '@uppy/screen-capture';
+import Transloadit, { COMPANION_ALLOWED_HOSTS, COMPANION_URL } from '@uppy/transloadit';
+import Url from '@uppy/url';
+import Webcam, { type WebcamOptions } from '@uppy/webcam';
 // biome-ignore lint/style/noRestrictedImports: runtime token fetcher inside Uppy assembly callback; not eligible for a React Query hook.
 import { getUploadToken, type UploadToken } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, type UploadTemplateId } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
-import { makeBlobKey, type UploadContext, type UploadStatus } from '~/modules/attachment/offline/attachments-db';
+import { makeBlobKey, type UploadStatus } from '~/modules/attachment/offline/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
-import { prepareFilesForOffline } from '~/modules/common/uploader/helpers/prepare-for-offline';
-import type { CustomUppy, CustomUppyFile, CustomUppyOpt } from '~/modules/common/uploader/types';
+import { getImageEditorOptions, isImageTemplate } from '~/modules/common/uploader/helpers/image-editor-options';
+import { prepareFilesForOffline, storeUploadBlobs } from '~/modules/common/uploader/helpers/prepare-for-offline';
+import type { CustomUppy, CustomUppyFile, CustomUppyOptions, Plugins } from '~/modules/common/uploader/types';
 import type { UploadTokenQuery } from '~/modules/me/types';
 import { cleanFileName } from '~/utils/clean-file-name';
 
@@ -17,26 +23,23 @@ import { cleanFileName } from '~/utils/clean-file-name';
  * Local-first Uppy instance: the blob is stored in IndexedDB first, then uploaded when Transloadit
  * is configured and the app is online. Offline uploads queue as pending.
  */
-export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, tokenQuery: UploadTokenQuery): Promise<CustomUppy> => {
+export const createUppy = async (uppyOptions: CustomUppyOptions, tokenQuery: UploadTokenQuery): Promise<CustomUppy> => {
   let cloudToken: UploadToken | null = null;
   let hasCloudUpload = false;
   // Only a server without cloud storage files the upload as local-only; offline or after a failed token request it waits as pending.
   let localStatus: UploadStatus = appConfig.has.uploadEnabled ? 'pending' : 'local-only';
 
   try {
-    // Without uploadEnabled all files stay in IndexedDB
     if (appConfig.has.uploadEnabled && onlineManager.isOnline()) {
       cloudToken = await getUploadToken({ query: tokenQuery });
       // Transloadit is configured only when both params and signature come back
       hasCloudUpload = !!(cloudToken?.params && cloudToken?.signature);
       if (!hasCloudUpload) localStatus = 'local-only';
     }
-  } catch (err) {
-    if (!(err instanceof Error && err.message.includes('Failed to fetch'))) {
-      console.error('Failed to get upload token:', err);
+  } catch (error) {
+    if (!(error instanceof Error && error.message.includes('Failed to fetch'))) {
+      console.error('Failed to get upload token:', error);
     }
-    cloudToken = null;
-    hasCloudUpload = false;
   }
 
   const uppy = new Uppy({
@@ -54,35 +57,20 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
   });
 
   uppy.on('upload', async (_uploadId, uploadFiles) => {
-    const filesMap = Object.fromEntries(uploadFiles.map((f) => [f.id, f]));
-
-    const isOnline = onlineManager.isOnline();
-
-    if (!hasCloudUpload) {
-      const assembly = await prepareFilesForOffline(filesMap, tokenQuery, localStatus);
-      uppy.cancelAll();
-      uppy.emit('transloadit:complete', assembly);
-      return;
-    }
-
-    if (!isOnline) {
-      const assembly = await prepareFilesForOffline(filesMap, tokenQuery, 'pending');
+    // With cloud upload, localStatus is 'pending': offline the files wait for the connection
+    if (!hasCloudUpload || !onlineManager.isOnline()) {
+      const assembly = await prepareFilesForOffline(uploadFiles, tokenQuery, localStatus);
       uppy.cancelAll();
       uppy.emit('transloadit:complete', assembly);
       return;
     }
 
     // Store the blob before uploading so a failed upload can retry from IndexedDB
-    const organizationId = tokenQuery.organizationId;
-    if (organizationId) {
-      const uploadContext: UploadContext = { templateId: tokenQuery.templateId };
-      for (const file of uploadFiles) {
-        await attachmentStorage.storeUploadBlob(file, organizationId, 'pending', uploadContext, file.meta.attachmentId);
-      }
-    }
+    const { organizationId, templateId } = tokenQuery;
+    if (organizationId) await storeUploadBlobs(uploadFiles, organizationId, templateId, 'pending');
   });
 
-  if (hasCloudUpload && cloudToken?.params && cloudToken?.signature) {
+  if (cloudToken?.params && cloudToken?.signature) {
     uppy.use(Transloadit, {
       waitForEncoding: true,
       alwaysRunAssembly: true,
@@ -95,7 +83,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
       if (assembly.ok !== 'ASSEMBLY_COMPLETED') return;
 
       for (const upload of assembly.uploads || []) {
-        const attachmentId = uploadAttachmentId(upload);
+        const attachmentId = attachmentIdOf(upload);
         if (attachmentId) await attachmentStorage.markUploaded(makeBlobKey(attachmentId, 'raw'));
       }
     });
@@ -103,7 +91,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
     uppy.on('transloadit:assembly-error', async (assembly, error) => {
       const errorMessage = error?.message || 'Upload failed';
       for (const upload of assembly.uploads || []) {
-        const attachmentId = uploadAttachmentId(upload);
+        const attachmentId = attachmentIdOf(upload);
         if (attachmentId) await attachmentStorage.markFailed(makeBlobKey(attachmentId, 'raw'), errorMessage);
       }
     });
@@ -116,7 +104,7 @@ export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, toke
  * The attachment id an assembly upload carries. Minted in `onBeforeFileAdded` and round-tripped
  * through Transloadit as `user_meta`, so it is the same id the blob was stored under.
  */
-const uploadAttachmentId = (upload: { user_meta?: Record<string, unknown> }): string | undefined => {
+const attachmentIdOf = (upload: { user_meta?: Record<string, unknown> }): string | undefined => {
   const id = upload.user_meta?.attachmentId;
   return typeof id === 'string' && id.length > 0 ? id : undefined;
 };
@@ -127,4 +115,19 @@ const onBeforeFileAdded = (file: CustomUppyFile) => {
   // Mint the attachment id up front so the local blob is stored under the id its row will get
   file.meta.attachmentId = generateId();
   return file;
+};
+
+const webmVideo = 'video/webm;codecs=vp9';
+
+/** Adds the named source plugins. An image template takes webcam pictures only, and its editor crops to the template's aspect ratio. */
+export const registerUppyPlugins = (uppy: CustomUppy, plugins: Plugins, templateId: UploadTemplateId) => {
+  if (plugins.includes('webcam')) {
+    const webcamOptions: WebcamOptions<Meta, Body> = { videoConstraints: { width: 1280, height: 720 }, preferredVideoMimeType: webmVideo };
+    if (isImageTemplate(templateId)) webcamOptions.modes = ['picture'];
+    uppy.use(Webcam, webcamOptions);
+  }
+  if (plugins.includes('image-editor')) uppy.use(ImageEditor, getImageEditorOptions(templateId));
+  if (plugins.includes('audio')) uppy.use(Audio);
+  if (plugins.includes('url')) uppy.use(Url, { companionUrl: COMPANION_URL, companionAllowedHosts: COMPANION_ALLOWED_HOSTS });
+  if (plugins.includes('screen-capture')) uppy.use(ScreenCapture, { preferredVideoMimeType: webmVideo });
 };

@@ -2,11 +2,12 @@ import { appConfig } from 'shared';
 import { defineFrontendModule } from '~/lib/module';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const AccountGeneralCard = lazyNamed(() => import('~/modules/me/account-tools'), 'AccountGeneralCard');
-const AccountSessionsCard = lazyNamed(() => import('~/modules/me/account-tools'), 'AccountSessionsCard');
-const AccountAuthenticationCard = lazyNamed(() => import('~/modules/me/account-tools'), 'AccountAuthenticationCard');
-const AccountConnectedAppsCard = lazyNamed(() => import('~/modules/me/account-tools'), 'AccountConnectedAppsCard');
-const AccountDeleteCard = lazyNamed(() => import('~/modules/me/account-tools'), 'AccountDeleteCard');
+const accountTools = () => import('~/modules/me/account-tools');
+const AccountGeneralCard = lazyNamed(accountTools, 'AccountGeneralCard');
+const AccountSessionsCard = lazyNamed(accountTools, 'AccountSessionsCard');
+const AccountAuthenticationCard = lazyNamed(accountTools, 'AccountAuthenticationCard');
+const AccountConnectedAppsCard = lazyNamed(accountTools, 'AccountConnectedAppsCard');
+const AccountDeleteCard = lazyNamed(accountTools, 'AccountDeleteCard');
 
 defineFrontendModule({
   name: 'me',

@@ -1,13 +1,13 @@
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { attachmentsDb } from '../offline/attachments-db';
+import { attachmentsDb } from '~/modules/attachment/offline/attachments-db';
 
-vi.mock('shared', async () => ({ appConfig: (await import('./test-setup')).mockAttachmentAppConfig }));
+vi.mock('shared', async () => ({ appConfig: (await import('~/modules/attachment/tests/test-setup')).mockAttachmentAppConfig }));
 
+import { isUploadCandidate } from '~/modules/attachment/offline/is-upload-candidate';
+import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
+import { mockAttachmentAppConfig } from '~/modules/attachment/tests/test-setup';
 import { bindLocalUserDb } from '~/query/local-user-db';
-import { attachmentStorage } from '../offline/storage-service';
-import { isUploadCandidate } from '../offline/upload-retry';
-import { mockAttachmentAppConfig } from './test-setup';
 
 // Attachment tables live in the per-user localUserDb; bind one so `attachmentsDb` resolves.
 bindLocalUserDb('test-user');

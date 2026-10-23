@@ -3,58 +3,57 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
 import type { UserMenuItem } from '~/modules/me/types';
+import { sortAndFilterMenu } from '~/modules/navigation/menu-sheet/helpers/sort-and-filter-menu';
 import { MenuSheetItem } from '~/modules/navigation/menu-sheet/item';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
-interface MenuSheetItemsProps {
-  data: UserMenuItem[];
-  type: ChannelEntityType;
+/** The row a section shows while it has no items. */
+export function MenuSheetNoItems({ entityType }: { entityType: ChannelEntityType }) {
+  const { t } = useTranslation();
+
+  return <li className="py-2 text-center text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: t(entityType).toLowerCase() })}</li>;
+}
+
+interface MenuSheetItemsListProps {
+  items: UserMenuItem[];
+  entityType: ChannelEntityType;
   isArchived: boolean;
   options?: MenuSectionOptions;
   className?: string;
 }
 
-export function MenuSheetItems({ data, type, isArchived, options, className }: MenuSheetItemsProps) {
+export function MenuSheetItemsList({ items, entityType, isArchived, options, className }: MenuSheetItemsListProps) {
   const { t } = useTranslation();
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
 
-  const buttonRef = useRef(null);
+  const createButtonRef = useRef<HTMLButtonElement>(null);
 
-  const renderNoItems = () =>
-    options?.createAction ? (
+  if (items.length === 0) {
+    if (!options?.createAction) return <MenuSheetNoItems entityType={entityType} />;
+
+    return (
       <li className="flex items-center">
-        <Button ref={buttonRef} className="w-full" variant="ghost" onClick={() => options.createAction?.(buttonRef)}>
+        <Button ref={createButtonRef} className="w-full" variant="ghost" onClick={() => options.createAction?.(createButtonRef)}>
           <PlusIcon className="size-3.5" />
           <span className="text-sm">
-            {t('c:create_your_first')} {t(type).toLowerCase()}
+            {t('c:create_your_first')} {t(entityType).toLowerCase()}
           </span>
         </Button>
       </li>
-    ) : (
-      <li className="py-2 text-center text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: t(type).toLowerCase() })}</li>
     );
+  }
 
-  const renderItems = () => {
-    const filteredItems = data
-      .filter((item) => (isArchived ? item.membership.archived : !item.membership.archived))
-      .sort((a, b) => a.membership.displayOrder - b.membership.displayOrder);
-    return (
-      <>
-        {filteredItems.map((item) => (
-          <li className={item.submenu?.length && detailedMenu ? 'submenu-section relative my-1' : 'my-1'} key={item.id}>
-            <MenuSheetItem item={item} className={className} icon={options?.icon} />
-            {!item.membership.archived && !!item.submenu?.length && detailedMenu && (
-              <ul>
-                <MenuSheetItems type={item.submenu[0].entityType} data={item.submenu} isArchived={false} />
-              </ul>
-            )}
-          </li>
-        ))}
-      </>
-    );
-  };
-
-  return data.length === 0 ? renderNoItems() : renderItems();
+  return sortAndFilterMenu(items, isArchived).map((item) => (
+    <li className={cn('my-1', !!item.submenu?.length && detailedMenu && 'submenu-section relative')} key={item.id}>
+      <MenuSheetItem item={item} className={className} icon={options?.icon} />
+      {!item.membership.archived && !!item.submenu?.length && detailedMenu && (
+        <ul>
+          <MenuSheetItemsList entityType={item.submenu[0].entityType} items={item.submenu} isArchived={false} />
+        </ul>
+      )}
+    </li>
+  ));
 }

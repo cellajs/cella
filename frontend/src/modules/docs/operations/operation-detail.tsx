@@ -1,45 +1,53 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import i18n from 'i18next';
-import { Suspense } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenOperationDetail, GenOperationSummary } from 'sdk/docs-types';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { HashUrlButton } from '~/modules/common/hash-url-button';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { Spinner } from '~/modules/common/spinner';
+import { MethodLabel } from '~/modules/docs/operations/method-label';
 import { OperationRequest } from '~/modules/docs/operations/operation-request';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
 import { SwitchedOffBadge } from '~/modules/docs/operations/switched-off-badge';
+import { tagDetailsQueryOptions } from '~/modules/docs/query';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
-import { Spinner } from '../../common/spinner';
-import { getHashUrl } from '../hash-url';
-import { getMethodColor } from '../helpers/get-method-color';
-import { tagDetailsQueryOptions } from '../query';
+
+interface OperationDocSheetOptions {
+  id: string;
+  title: string;
+  trigger: HTMLButtonElement | HTMLAnchorElement;
+  content: ReactNode;
+}
+
+/** Opens operation docs in a right-hand sheet, with a spinner while the content suspends. */
+export function openOperationDocSheet({ id, title, trigger, content }: OperationDocSheetOptions) {
+  sheeter.getState().create(
+    <Suspense fallback={<Spinner size="lg" className="mt-[40vh]" />}>
+      <div className="container pt-3 pb-[50vh]">{content}</div>
+    </Suspense>,
+    { id, title, triggerRef: { current: trigger }, side: 'right', className: tw('max-w-full lg:max-w-4xl') },
+  );
+}
 
 export function openOperationSheet(operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) {
-  useSheeter.getState().create(
-    <Suspense fallback={<Spinner size="lg" className="mt-[40vh]" />}>
-      <div className="container pt-3 pb-[50vh]">
-        <OperationDetail operation={operation} />
-      </div>
-    </Suspense>,
-    {
-      id: `operation-${operation.id}`,
-      triggerRef: { current: trigger },
-      side: 'right',
-      className: tw('max-w-full lg:max-w-4xl'),
-      title: i18n.t('c:docs.operation_detail'),
-    },
-  );
+  openOperationDocSheet({
+    id: `operation-${operation.id}`,
+    title: i18n.t('c:docs.operation_detail'),
+    trigger,
+    content: <OperationDetail operation={operation} />,
+  });
 }
 
 function useResolvedDetail(operation: GenOperationSummary, detail?: GenOperationDetail) {
   const tagName = operation.tags[0] ?? '';
   const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   if (detail) return detail;
-  return tagDetails?.find((d) => d.operationId === operation.id);
+  return tagDetails.find((entry) => entry.operationId === operation.id);
 }
 
 interface OperationDetailProps {
@@ -54,11 +62,11 @@ function OperationDetail({ operation, detail: detailProp, className }: Operation
 
   return (
     <Card id={`spy-${operation.hash}`} className={cn('border-0', className)}>
-      <CardHeader className="group">
+      <CardHeader className="group/hash-url">
         <div className="flex items-center justify-between">
           <CardTitle level={3} className="gap-2 leading-8 sm:text-xl">
             {operation.summary}
-            <HashUrlButton url={getHashUrl(operation.hash)} />
+            <HashUrlButton hash={operation.hash} />
           </CardTitle>
           <div className="shrink-0 px-2 py-0.5 font-mono text-muted-foreground text-sm max-sm:hidden">{operation.id}</div>
         </div>
@@ -66,10 +74,8 @@ function OperationDetail({ operation, detail: detailProp, className }: Operation
       </CardHeader>
       <CardContent>
         <div className="mb-4 flex items-center gap-4 max-sm:flex-col max-sm:items-start max-sm:gap-1">
-          <Badge className={cn('font-mono uppercase', getMethodColor(operation.method), 'rounded-none bg-transparent p-0 text-md shadow-none')}>
-            {operation.method.toUpperCase()}
-          </Badge>
-          <code className="break-all font-mono text-muted-foreground sm:text-lg">{operation.path}</code>
+          <MethodLabel method={operation.method} size="md" />
+          <code className="break-all text-muted-foreground sm:text-lg">{operation.path}</code>
           {operation.deprecated && (
             <Badge variant="outline" className="border-warning text-warning">
               {t('c:deprecated')}
@@ -99,9 +105,9 @@ export function TagOperationsList({ operations }: TagOperationsListProps) {
 
   const tagName = operations.length > 0 ? operations[0].tags[0] : '';
   const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
-  const detailsMap = new Map(tagDetails.map((d) => [d.operationId, d]));
+  const detailsById = new Map(tagDetails.map((detail) => [detail.operationId, detail]));
 
-  // Guard against empty operations to prevent fetching with undefined tag name
+  // Without operations the tag name is '', whose query fetches nothing; this skips the empty dashed list
   if (operations.length === 0) return null;
 
   return (
@@ -110,7 +116,7 @@ export function TagOperationsList({ operations }: TagOperationsListProps) {
         <OperationDetail
           key={operation.hash}
           operation={operation}
-          detail={detailsMap.get(operation.id)}
+          detail={detailsById.get(operation.id)}
           className="rounded-none last:rounded-b-lg"
         />
       ))}

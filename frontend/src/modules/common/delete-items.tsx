@@ -1,14 +1,13 @@
 import { onlineManager } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 
 export interface DeleteItemsProps<TItem, TVariables> {
   items: TItem[];
   /** The delete mutation, created by the caller inside the dropdowner or dialog content that renders this form. */
-  mutation: { mutate: (variables: TVariables, options: { onSuccess: () => void }) => void; isPending: boolean };
+  mutation: { mutate: (variables: TVariables, options?: { onSuccess: () => void }) => void; isPending: boolean };
   toVariables: (items: TItem[]) => TVariables;
   dialog?: boolean;
   callback?: (args: CallbackArgs<TItem[]>) => void;
@@ -18,12 +17,13 @@ export interface DeleteItemsProps<TItem, TVariables> {
   callbackFirst?: boolean;
   /** Replaces the default cancel, which settles `callback` and closes a dialog. */
   onCancel?: () => void;
+  /** For a delete that is optimistic and queues offline: finish right after `mutate`, and let the press through offline. */
+  optimistic?: boolean;
 }
 
 /** Delete confirmation for a list of items: on success it closes a dialog and reports the items to `callback`. */
 export function DeleteItems<TItem, TVariables>(props: DeleteItemsProps<TItem, TVariables>) {
   const { items, callback, callbackFirst, mutation } = props;
-  const { t } = useTranslation();
   const removeDialog = useDialoger((state) => state.remove);
 
   const finish = (args: CallbackArgs<TItem[]>) => {
@@ -32,11 +32,13 @@ export function DeleteItems<TItem, TVariables>(props: DeleteItemsProps<TItem, TV
     if (!callbackFirst) callback?.(args);
   };
 
-  const onDelete = () => {
-    if (props.onlineOnly && !onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
-    mutation.mutate(props.toVariables(items), { onSuccess: () => finish({ data: items, status: 'success' }) });
+  const handleDelete = () => {
+    if (props.onlineOnly && !onlineManager.isOnline()) return toastOffline();
+    const succeed = () => finish({ data: items, status: 'success' });
+    mutation.mutate(props.toVariables(items), props.optimistic ? undefined : { onSuccess: succeed });
+    if (props.optimistic) succeed();
   };
 
-  const onCancel = props.onCancel ?? (() => finish({ status: 'settle' }));
-  return <DeleteForm onDelete={onDelete} onCancel={onCancel} pending={mutation.isPending} />;
+  const handleCancel = props.onCancel ?? (() => finish({ status: 'settle' }));
+  return <DeleteForm allowOfflineDelete={props.optimistic} onDelete={handleDelete} onCancel={handleCancel} pending={mutation.isPending} />;
 }

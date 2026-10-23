@@ -6,27 +6,27 @@ import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface BoardUIState {
   panelCollapseState: Record<string, boolean>;
-  togglePanelCollapsedState: (panelId: string, newState: boolean) => void;
+  togglePanelCollapsedState: (panelId: string, collapsed: boolean) => void;
 
   activeBoardId: string | null;
   activeBoardType: string | null;
   setActiveBoard: (boardId: string, boardType: string) => void;
 
-  // Set by hover/focus on desktop or tab on mobile; only one panel can be active
+  /** Set by hover or focus on desktop and by tab on mobile; one panel at a time. */
   activePanelId: string | null;
   setActivePanel: (panelId: string | null) => void;
 
-  // Board layouts: boardId => (panelId => size in pixels)
+  /** boardId => (panelId => width in px). */
   boardLayouts: Record<string, Record<string, number>>;
   updateBoardLayout: (boardId: string, layout: Record<string, number>) => void;
 
-  // Local displayOrder for panels the server does not own, in the same fractional-indexing
-  // convention as membership.displayOrder so one comparator sorts both kinds together.
+  /** Local displayOrder of panels the server does not own, fractional like membership.displayOrder so one comparator sorts both. */
   boardPanelOrders: Record<string, Record<string, number>>;
   setPanelOrder: (boardId: string, panelId: string, displayOrder: number) => void;
   prunePanelOrders: (boardId: string, knownPanelIds: string[]) => void;
 
-  reset: () => void; // Resets in-memory state to initial (call on sign-out)
+  /** Restores the initial state; called on sign-out. */
+  reset: () => void;
 }
 
 const initStore: Pick<
@@ -47,11 +47,11 @@ export const useBoardStore = create<BoardUIState>()(
       immer((set, get) => ({
         ...initStore,
 
-        togglePanelCollapsedState: (panelId, newState) => {
+        togglePanelCollapsedState: (panelId, collapsed) => {
           set((state) => {
             const current = state.panelCollapseState[panelId] ?? false;
-            if (newState === current) return;
-            state.panelCollapseState[panelId] = newState;
+            if (collapsed === current) return;
+            state.panelCollapseState[panelId] = collapsed;
           });
         },
 
@@ -77,18 +77,18 @@ export const useBoardStore = create<BoardUIState>()(
 
         setPanelOrder: (boardId, panelId, displayOrder) => {
           set((state) => {
-            const map = state.boardPanelOrders[boardId] ?? {};
-            if (map[panelId] === displayOrder) return;
-            map[panelId] = displayOrder;
-            state.boardPanelOrders[boardId] = map;
+            const orders = state.boardPanelOrders[boardId] ?? {};
+            if (orders[panelId] === displayOrder) return;
+            orders[panelId] = displayOrder;
+            state.boardPanelOrders[boardId] = orders;
           });
         },
 
         prunePanelOrders: (boardId, knownPanelIds) => {
-          const map = get().boardPanelOrders[boardId];
-          if (!map) return;
+          const orders = get().boardPanelOrders[boardId];
+          if (!orders) return;
           const known = new Set(knownPanelIds);
-          const stale = Object.keys(map).filter((panelId) => !known.has(panelId));
+          const stale = Object.keys(orders).filter((panelId) => !known.has(panelId));
           if (stale.length === 0) return;
           set((state) => {
             const target = state.boardPanelOrders[boardId];
@@ -114,3 +114,5 @@ export const useBoardStore = create<BoardUIState>()(
     { enabled: isDebugMode, name: 'board store' },
   ),
 );
+
+export { useBoardStore as boardStore };

@@ -2,11 +2,11 @@ import type * as React from 'react';
 import { useAutoResize } from '~/hooks/use-auto-resize';
 import { cn } from '~/utils/cn';
 
-export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+export interface TextareaProps extends React.ComponentProps<'textarea'> {
   autoResize?: boolean;
 }
 
-export function Textarea({ className, autoResize = false, ref, ...props }: React.ComponentProps<'textarea'> & { autoResize?: boolean }) {
+export function Textarea({ className, autoResize = false, ref, ...props }: TextareaProps) {
   const { areaRef } = useAutoResize(autoResize);
 
   // A caller's ref (e.g. react-hook-form's) and the auto-resize ref both need the node.

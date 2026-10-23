@@ -1,6 +1,6 @@
 import { redactFailedQuery } from './failed-query.ts';
 
-const REDACTED = '[REDACTED]';
+const redacted = '[REDACTED]';
 
 /**
  * Query keys whose value is a secret, matched case-insensitively: the app's own tokens (magic link, unsubscribe, Yjs),
@@ -56,9 +56,9 @@ const userinfoPattern = /(:\/\/)[^/?#@\s]+@/g;
  */
 export const scrubUrl = (input: string): string => {
   if (!input) return input;
-  let scrubbed = input.replace(userinfoPattern, `$1${REDACTED}@`);
-  for (const pattern of secretPathPatterns) scrubbed = scrubbed.replace(pattern, `$1${REDACTED}`);
-  return scrubbed.replace(sensitiveQueryPattern, `$1$2=${REDACTED}`);
+  let scrubbed = input.replace(userinfoPattern, `$1${redacted}@`);
+  for (const pattern of secretPathPatterns) scrubbed = scrubbed.replace(pattern, `$1${redacted}`);
+  return scrubbed.replace(sensitiveQueryPattern, `$1$2=${redacted}`);
 };
 
 /**

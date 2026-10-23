@@ -6,7 +6,7 @@ import { descriptionToSeedOrEmpty } from '#/modules/yjs/helpers/description-upda
 import type { LogNotice } from '#/modules/yjs/helpers/yjs-log';
 import { classifyUpdate, mergeLog } from '#/modules/yjs/helpers/yjs-state';
 import type { DocKey, DocScope, SocketContext } from '../constants';
-import { YJS_AWARENESS_MAX_ENTRIES, YJS_AWARENESS_RATE_LIMIT, YJS_COMPACT_DEBOUNCE_MS, YJS_COMPACT_MAX_WAIT_MS } from '../constants';
+import { yjsAwarenessMaxEntries, yjsAwarenessRateLimit, yjsCompactDebounceMs, yjsCompactMaxWaitMs } from '../constants';
 import { appendUpdate, type LogRow, loadDocument, readLogOf, seedDocument } from '../data/storage';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';
@@ -35,7 +35,7 @@ const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
 const savedFrame = encoding.encode((encoder) => encoding.writeVarUint(encoder, YMessage.Saved));
 
 /** Between two awareness frames a socket relays. */
-const awarenessWindowMs = 1000 / YJS_AWARENESS_RATE_LIMIT;
+const awarenessWindowMs = 1000 / yjsAwarenessRateLimit;
 
 /** A socket's awareness rate window: what it sent inside the window waits here and is relayed as one frame when the window ends. */
 interface AwarenessWindow {
@@ -113,11 +113,11 @@ interface AwarenessEntry {
   state: string;
 }
 
-/** The entries of an awareness update; null, before any is decoded, for one with more than YJS_AWARENESS_MAX_ENTRIES. */
+/** The entries of an awareness update; null, before any is decoded, for one with more than yjsAwarenessMaxEntries. */
 function decodeAwarenessEntries(update: Uint8Array): AwarenessEntry[] | null {
   const decoder = decoding.createDecoder(update);
   const count = decoding.readVarUint(decoder);
-  if (count > YJS_AWARENESS_MAX_ENTRIES) return null;
+  if (count > yjsAwarenessMaxEntries) return null;
   const entries: AwarenessEntry[] = [];
   for (let i = 0; i < count; i++) {
     entries.push({
@@ -189,7 +189,7 @@ function holdAwareness(
     const owner = collab.awarenessOwners.get(entry.clientId);
     if (owner && owner.userId !== ctx.userId) continue;
     const held = rate.held.get(entry.clientId);
-    if (held ? held.clock <= entry.clock : rate.held.size < YJS_AWARENESS_MAX_ENTRIES) rate.held.set(entry.clientId, entry);
+    if (held ? held.clock <= entry.clock : rate.held.size < yjsAwarenessMaxEntries) rate.held.set(entry.clientId, entry);
   }
   if (rate.held.size === 0) return;
   rate.timer ??= setTimeout(() => {
@@ -205,7 +205,7 @@ function holdAwareness(
 /**
  * Applies one frame. Sync frames reach this only through the socket's serial queue, after entity
  * authorization, so they run in arrival order; awareness is ephemeral, relayed only from an
- * authorized open socket, at most YJS_AWARENESS_RATE_LIMIT frames a second per socket. Both act in
+ * authorized open socket, at most yjsAwarenessRateLimit frames a second per socket. Both act in
  * the socket's authorized scope.
  */
 export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uint8Array): Promise<void> {
@@ -464,19 +464,19 @@ export function relayUnseenEverywhere(): void {
 }
 
 /**
- * One compaction per quiet window; a new update restarts the wait, up to a deadline YJS_COMPACT_MAX_WAIT_MS after the
+ * One compaction per quiet window; a new update restarts the wait, up to a deadline yjsCompactMaxWaitMs after the
  * first update since the last run, so someone typing without pause still reaches viewers and the row.
  */
 function scheduleCompaction(collab: CollabSession): void {
   if (collab.compactTimer) clearTimeout(collab.compactTimer);
   const now = Date.now();
-  collab.compactDueAt ??= now + YJS_COMPACT_MAX_WAIT_MS;
+  collab.compactDueAt ??= now + yjsCompactMaxWaitMs;
   collab.compactTimer = setTimeout(
     () => {
       collab.compactTimer = undefined;
       void runCompaction(collab);
     },
-    Math.max(0, Math.min(YJS_COMPACT_DEBOUNCE_MS, collab.compactDueAt - now)),
+    Math.max(0, Math.min(yjsCompactDebounceMs, collab.compactDueAt - now)),
   );
 }
 

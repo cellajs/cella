@@ -1,15 +1,14 @@
-import type { ReactNode, RefObject } from 'react';
+import type { ReactNode } from 'react';
 import { create } from 'zustand';
-import { withDefaults } from '~/modules/common/overlay-store-helpers';
+import { type TriggerRef, withDefaults } from '~/modules/common/overlay-store-helpers';
 
 export type DropdownKind = 'menu' | 'panel';
 
 export type DropdownData = {
   id: number | string;
   triggerId: string;
-  triggerRef: RefObject<HTMLButtonElement | null>;
+  triggerRef: TriggerRef;
   align?: 'start' | 'center' | 'end';
-  modal?: boolean;
   /**
    * 'menu' uses Base UI's Menu primitive (roving focus, arrow keys, typeahead); 'panel' uses a
    * Popover with a focus trap for arbitrary content. Defaults to 'panel'.
@@ -29,12 +28,11 @@ export type InternalDropdown = DropdownData & {
   /** The trigger's accessible name at open time; names the mobile drawer that stands in for the dropdown. */
   triggerLabel?: string;
   align: 'start' | 'center' | 'end';
-  modal: boolean;
   kind: DropdownKind;
 };
 
-/** How long a trigger shows that the action picked from its dropdown worked. */
-const DONE_DURATION = 1400;
+/** How long (ms) a trigger shows that the action picked from its dropdown worked. */
+const doneDuration = 1400;
 
 interface DropdownStoreState {
   dropdown: InternalDropdown | null;
@@ -66,7 +64,7 @@ function markDone(trigger: HTMLElement, label: string) {
   endDone();
   trigger.setAttribute('data-dropdowner-done', '');
   useDropdowner.setState({ done: { trigger, label, open: true, key: Date.now() } });
-  doneTimer = setTimeout(endDone, DONE_DURATION);
+  doneTimer = setTimeout(endDone, doneDuration);
 }
 
 export const useDropdowner = create<DropdownStoreState>((set, get) => ({
@@ -83,8 +81,7 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
 
     // The same trigger toggles the dropdown closed
     if (current?.triggerId === data.triggerId) {
-      set({ dropdown: null, lastRemovedTriggerId: data.triggerId, lastRemovedAt: Date.now() });
-      current.onClose?.();
+      get().remove();
       return data.id;
     }
 
@@ -102,7 +99,7 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
     // Blur active element to prevent aria-hidden conflict when modal sets aria-hidden on ancestors
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 
-    const defaults: Pick<InternalDropdown, 'align' | 'modal' | 'kind'> = { align: 'start', modal: true, kind: 'panel' };
+    const defaults: Pick<InternalDropdown, 'align' | 'kind'> = { align: 'start', kind: 'panel' };
     const trigger = data.triggerRef.current;
     const triggerLabel = trigger?.getAttribute('aria-label') || trigger?.textContent?.trim() || undefined;
     set({ dropdown: { ...withDefaults(defaults, data), content, triggerLabel, key: Date.now() } });
@@ -133,3 +130,8 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
 
   get: () => get().dropdown,
 }));
+
+/** Whether a dropdown is open: an overlay under it then ignores outside presses, which belong to the dropdown. */
+export const isDropdownOpen = () => !!useDropdowner.getState().dropdown;
+
+export { useDropdowner as dropdowner };

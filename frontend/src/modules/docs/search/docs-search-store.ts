@@ -1,28 +1,25 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { addRecentSearch } from '~/utils/recent-searches';
+import { addRecentSearch, withoutRecentSearch } from '~/utils/recent-searches';
 
 interface DocsSearchStoreState {
   recentSearches: string[];
 }
 
-/**
- * Recent docs searches. Persisted to localStorage, not the per-user idb kv store: docs is public
- * and idb no-ops while signed out, which would drop history for anonymous visitors.
- */
+/** Recent docs searches, in localStorage: the per-user idb store no-ops while signed out, which would drop an anonymous visitor's history. */
 export const useDocsSearchStore = create<DocsSearchStoreState>()(
-  persist(() => ({ recentSearches: [] as string[] }), { name: 'docs-search', storage: createJSONStorage(() => localStorage) }),
+  persist<DocsSearchStoreState>(() => ({ recentSearches: [] }), { name: 'docs-search', storage: createJSONStorage(() => localStorage) }),
 );
 
-export const deleteRecentSearch = (value: string) => {
+export const removeRecentSearch = (value: string) => {
   useDocsSearchStore.setState((state) => {
-    const searches = state.recentSearches.filter((entry) => entry !== value);
-    return searches.length === state.recentSearches.length ? state : { recentSearches: searches };
+    const searches = withoutRecentSearch(state.recentSearches, value);
+    return searches === state.recentSearches ? state : { recentSearches: searches };
   });
 };
 
 /** Record a submitted query: most recent on top, normalized/containment dedupe. */
-export const updateRecentSearches = (value: string) => {
+export const saveRecentSearch = (value: string) => {
   useDocsSearchStore.setState((state) => {
     const searches = addRecentSearch(state.recentSearches, value);
     return searches === state.recentSearches ? state : { recentSearches: searches };

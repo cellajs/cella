@@ -157,7 +157,7 @@ vi.mock('~/modules/common/blocknote/query', () => ({
   yjsTokenKeys: { entity: (...key: unknown[]) => key },
   yjsTokenQueryOptions: (params: unknown) => ({ params }),
   // As the token route answers: 404 for a deleted entity, 403 for one the caller may not edit.
-  yjsTokenRefusal: (error: { status: number } | null) => (error?.status === 404 ? 'deleted' : error?.status === 403 ? 'refused' : null),
+  yjsTokenRefusal: (error: { status: number } | null) => (error?.status === 404 ? 'deleted' : error?.status === 403 ? 'denied' : null),
 }));
 vi.mock('~/modules/common/blocknote/yjs-resync', () => ({ watchPendingStructs: () => () => {} }));
 /** What each end for good handed to parking: its reason and scope, the document, and whether it held unsynced edits then. */
@@ -167,18 +167,18 @@ vi.mock('~/modules/common/blocknote/unsaveable-notices', () => ({
     parked.push({ reason, scope, doc: conn.yDoc, unsynced: conn.unsynced }),
 }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
-// The API never answers here, so the socket alone syncs; yjs-http.test.ts covers the HTTP link. Its hooks are kept, so
+// The API never answers here, so the socket alone syncs; yjs-http.test.ts covers the HTTP link. Its handlers are kept, so
 // a test can give the routes' final answer.
-const httpHooks: { end: (reason: string) => void }[] = [];
+const httpHandlers: { onEnd: (reason: string) => void }[] = [];
 vi.mock('~/modules/common/blocknote/yjs-http', () => ({
-  WS_SYNC_DEADLINE_MS: 5_000,
-  createHttpLink: (_conn: unknown, _scope: unknown, hooks: { end: (reason: string) => void }) => {
-    httpHooks.push(hooks);
+  wsSyncDeadlineMs: 5_000,
+  createHttpLink: (_conn: unknown, handlers: { onEnd: (reason: string) => void }) => {
+    httpHandlers.push(handlers);
     return { enter: () => new Promise(() => {}), leave: () => {}, queue: () => {}, pull: async () => {}, clean: false };
   },
 }));
 
-const { useUserStore, yjsTokenKey } = await import('~/modules/user/user-store');
+const { userStore, yjsTokenKey } = await import('~/modules/user/user-store');
 const { useYjsConnection, watchUnstoredYDocs } = await import('~/modules/common/blocknote/yjs-connections');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -192,10 +192,10 @@ let counter = 0;
 async function mountConnection() {
   const entityId = `doc-${++counter}`;
   const tokenKey = yjsTokenKey('attachment', entityId);
-  useUserStore.getState().setYjsToken(tokenKey, 'token-v1');
+  userStore.getState().setYjsToken(tokenKey, 'token-v1');
   let latest: Connection = null;
   const Harness = () => {
-    latest = useYjsConnection(entityId, 'attachment', 'tenant-1', 'org-1');
+    latest = useYjsConnection({ entityType: 'attachment', entityId, tenantId: 'tenant-1', organizationId: 'org-1', enabled: true });
     return null;
   };
   const container = document.createElement('div');
@@ -275,7 +275,7 @@ describe('yjs connection: opening', () => {
 
     // Withdrawn while offline, the token ends the connection there and then, and coming back online leaves it ended.
     await act(async () => onlineListener?.(false));
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, null));
+    await act(async () => userStore.getState().setYjsToken(tokenKey, null));
     expect(state()?.stopped).toBe(true);
     await act(async () => onlineListener?.(true));
     expect(provider.connect).toHaveBeenCalledOnce();
@@ -329,14 +329,14 @@ describe('yjs connection: transient closes', () => {
 
     // y-websocket backs off and resyncs with the same token.
     expect(provider.disconnect).not.toHaveBeenCalled();
-    expect(useUserStore.getState().yjsTokens[tokenKey]).toBe('token-v1');
+    expect(userStore.getState().yjsTokens[tokenKey]).toBe('token-v1');
     expect(state()?.stopped).toBe(false);
     expect(warning).not.toHaveBeenCalled();
   });
 
   it('keeps the provider on the latest token, so a reconnect uses it', async () => {
     const { provider, tokenKey } = await mountConnection();
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, 'token-v2'));
+    await act(async () => userStore.getState().setYjsToken(tokenKey, 'token-v2'));
     expect(provider.params.token).toBe('token-v2');
   });
 });
@@ -346,7 +346,7 @@ describe('yjs connection: a reseeded document', () => {
     const { provider, state } = await mountConnection();
     await announce(provider, 'gen-1');
     await act(async () => provider.emit('sync', true));
-    expect(state()?.synced).toBe(true);
+    expect(state()).toMatchObject({ ready: true, transport: 'ws' });
 
     // A local edit; a reconnect announces the same generation, and nothing happens.
     provider.doc.onUpdate?.(new Uint8Array(), 'editor');
@@ -365,7 +365,7 @@ describe('yjs connection: a reseeded document', () => {
     expect(next.awareness).not.toBe(provider.awareness);
     expect(provider.awareness?.destroy).toHaveBeenCalledTimes(1);
     expect(next.connect).toHaveBeenCalledOnce();
-    expect(state()?.synced).toBe(false);
+    expect(state()).toMatchObject({ ready: false, transport: 'none' });
     expect(state()?.rebuilds).toBe(1);
     expect(state()?.stopped).toBe(false);
     // The edits the relay never saved are parked with the dropped document, and the notice replaces a toast.
@@ -376,7 +376,7 @@ describe('yjs connection: a reseeded document', () => {
     await announce(next, 'gen-2');
     await act(async () => next.emit('sync', true));
     expect(next.destroy).not.toHaveBeenCalled();
-    expect(state()?.synced).toBe(true);
+    expect(state()).toMatchObject({ ready: true, transport: 'ws' });
   });
 });
 
@@ -390,8 +390,8 @@ describe('yjs connection: token refusals', () => {
     await act(async () => provider.emit('status', { status: 'connected' }));
     await close(provider, 4001);
   };
-  /** The refetch a refusal starts lands a new token before the next attempt. */
-  const fetchToken = (tokenKey: string, token: string) => act(async () => useUserStore.getState().setYjsToken(tokenKey, token));
+  /** The refetch a refusal starts stores a new token before the next attempt. */
+  const fetchToken = (tokenKey: string, token: string) => act(async () => userStore.getState().setYjsToken(tokenKey, token));
 
   it('must not stop syncing via an API outage at token refresh, nor retry forever: five distinct tokens refused with no sync between stop it, and the edits stay', async () => {
     const { provider, tokenKey, state } = await mountConnection();
@@ -433,7 +433,7 @@ describe('yjs connection: token refusals', () => {
     expect(provider.destroy).not.toHaveBeenCalled();
 
     // Signed out: the token goes with the user, and the connection with it, still without parking.
-    await act(async () => useUserStore.getState().setYjsToken(tokenKey, null));
+    await act(async () => userStore.getState().setYjsToken(tokenKey, null));
     expect(provider.destroy).toHaveBeenCalledTimes(1);
     expect(parked).toEqual([]);
   });
@@ -447,7 +447,7 @@ describe('yjs connection: token refusals', () => {
       await act(async () => {});
 
       expect(tokenQuery).toHaveBeenCalledOnce();
-      expect(useUserStore.getState().yjsTokens[tokenKey]).toBe('token-fresh');
+      expect(userStore.getState().yjsTokens[tokenKey]).toBe('token-fresh');
     } finally {
       tokenObservers = 1;
     }
@@ -535,15 +535,15 @@ describe('yjs connection: ending for good', () => {
   const withdrawToken =
     (status: number) =>
     ({ tokenKey }: Mounted) => {
-      useUserStore.setState({ user: { id: 'user-1' } as never });
+      userStore.setState({ user: { id: 'user-1' } as never });
       tokenError = { status };
-      useUserStore.getState().setYjsToken(tokenKey, null);
+      userStore.getState().setYjsToken(tokenKey, null);
     };
   const closeWith =
     (code: number) =>
     ({ provider }: Mounted) =>
       provider.emit('connection-close', { code, reason: '' }, provider);
-  const httpAnswer = (reason: 'deleted' | 'denied' | 'refused') => () => httpHooks.at(-1)?.end(reason);
+  const httpAnswer = (reason: 'deleted' | 'denied' | 'refused') => () => httpHandlers.at(-1)?.onEnd(reason);
 
   /** Each final answer, by the relay's socket, the HTTP routes or the token route, and the reason its edits are parked under. */
   const finalAnswers: [string, (mounted: Mounted) => void, 'deleted' | 'denied' | 'refused'][] = [
@@ -559,7 +559,7 @@ describe('yjs connection: ending for good', () => {
   ];
 
   afterEach(() => {
-    useUserStore.setState({ user: null });
+    userStore.setState({ user: null });
   });
 
   it.each(finalAnswers)(

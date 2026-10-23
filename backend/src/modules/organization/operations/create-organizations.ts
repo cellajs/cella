@@ -1,4 +1,4 @@
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
@@ -14,7 +14,7 @@ import { log } from '#/utils/logger';
 import { filterWithRejection, takeWithRestriction } from '#/utils/rejection-utils';
 import { defaultWelcomeText } from '#json/text-blocks.json';
 
-type CreateOrganizationItem = { id: string; name: string; slug: string };
+type CreateOrganizationItem = { id: string; name: string; slug: string; draft?: boolean };
 
 export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOrganizationItem[], tenantId: string) {
   // Normalize old-shape field names to their current names before any body access
@@ -63,6 +63,8 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOr
       welcomeText: defaultWelcomeText,
       defaultLanguage: appConfig.defaultLanguage,
       createdBy: user.id,
+      // A draft holds its invitations until it is published
+      ...(item.draft && hierarchy.canDraft('organization') && { publishedAt: null }),
     })),
   });
 

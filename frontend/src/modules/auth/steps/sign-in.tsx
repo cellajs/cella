@@ -4,45 +4,38 @@ import { ArrowRightIcon, MailIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { type SignInWithPasskeyData, sendMagicLink, signInWithPasskey } from 'sdk';
-import { zCheckEmailBody } from 'sdk/zod.gen';
+import { sendMagicLink, signInWithPasskey } from 'sdk';
 import { appConfig, isStrategyEnabled } from 'shared';
-import type { z } from 'zod';
 import { useShallow } from 'zustand/react/shallow';
-import type { ApiError } from '~/lib/api';
 import { AuthEmailButton } from '~/modules/auth/auth-email-button';
+import { AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import type { ConditionalMediationResult } from '~/modules/auth/passkey-credentials';
 import { isConditionalMediationAvailable, startConditionalMediation } from '~/modules/auth/passkey-credentials';
 import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
+import { invitationResumePath, useNavigateAfterAuth } from '~/modules/auth/post-auth-redirect';
 import { SignUpDisabled } from '~/modules/auth/sign-up-disabled';
-import { invitationResumePath, useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
+import { EmailField, type EmailFormValues, emailFormSchema } from '~/modules/auth/steps/email-field';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
+import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { Button } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
-import { Input } from '~/modules/ui/input';
+import { Form } from '~/modules/ui/field';
 import { useUserStore } from '~/modules/user/user-store';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 import { formResolver } from '~/utils/form-resolver';
-import { isTouchInteraction } from '~/utils/input-modality';
 
-const emailEnabled = isStrategyEnabled('passkey');
-const isMagicLinkEnabled = isStrategyEnabled('magic');
-
-const formSchema = zCheckEmailBody;
-type FormValues = z.infer<typeof formSchema>;
+const passkeyEnabled = isStrategyEnabled('passkey');
+const magicLinkEnabled = isStrategyEnabled('magic');
 
 export function SignInStep() {
   const { t } = useTranslation();
-  const { email, resetSteps, restrictedMode, setStep, setSignedIn, setMagicLinkMode, inviteOtherAccount } = useAuthStore(
+  const { email, resetAuthStore, restrictedMode, setStep, setMagicLinkSent, inviteOtherAccount } = useAuthStore(
     useShallow((state) => ({
       email: state.email,
-      resetSteps: state.resetSteps,
+      resetAuthStore: state.reset,
       restrictedMode: state.restrictedMode,
       setStep: state.setStep,
-      setSignedIn: state.setSignedIn,
-      setMagicLinkMode: state.setMagicLinkMode,
+      setMagicLinkSent: state.setMagicLinkSent,
       inviteOtherAccount: state.inviteOtherAccount,
     })),
   );
@@ -56,10 +49,10 @@ export function SignInStep() {
   const abortRef = useRef<AbortController | null>(null);
   const [conditionalMediationSupported, setConditionalMediationSupported] = useState(false);
 
-  const form = useForm<FormValues>({ resolver: formResolver(formSchema), defaultValues: { email } });
+  const form = useForm<EmailFormValues>({ resolver: formResolver(emailFormSchema), defaultValues: { email } });
 
   useEffect(() => {
-    if (!isStrategyEnabled('passkey')) return;
+    if (!passkeyEnabled) return;
     isConditionalMediationAvailable().then(setConditionalMediationSupported);
   }, []);
 
@@ -72,9 +65,7 @@ export function SignInStep() {
 
     const handleCredential = async (data: ConditionalMediationResult) => {
       try {
-        const body: NonNullable<SignInWithPasskeyData['body']> = data;
-        await signInWithPasskey({ body });
-        setSignedIn(true);
+        await signInWithPasskey({ body: data });
         navigateAfterAuth();
       } catch {
         toaster.error(t('error:passkey_verification_failed'));
@@ -95,12 +86,9 @@ export function SignInStep() {
   const { mutate: sendMagic, isPending: isSending } = useMutation({
     // An invitation in hand: the magic link returns here, so it can be confirmed as the account signed in to.
     mutationFn: () => sendMagicLink({ body: { email: form.getValues('email'), redirect: tokenId ? invitationResumePath(tokenId) : redirect } }),
-    onSuccess: () => {
-      setMagicLinkMode('signin');
-      setStep('magicLinkSent', form.getValues('email'));
-    },
+    onSuccess: () => setMagicLinkSent(form.getValues('email'), 'signin'),
     // An address an institution governs sends no link: its entry page takes over, keeping the redirect.
-    onError: (error: ApiError) => {
+    onError: (error) => {
       const connectionId = error.type === 'sso_required' ? error.meta?.connectionId : undefined;
       if (typeof connectionId !== 'string') return;
       navigate({ to: '/auth/sso/$connectionId', params: { connectionId }, search: redirect ? { redirect } : {}, replace: true });
@@ -109,19 +97,16 @@ export function SignInStep() {
 
   // Without magic links a passkey signs in: the one the browser offers names the account.
   const onSubmit = () => {
-    if (isMagicLinkEnabled) return sendMagic();
+    if (magicLinkEnabled) return sendMagic();
     startMediation();
-    setTimeout(() => {
-      const submitButton = document.querySelector('button[type="submit"]') as HTMLButtonElement;
-      submitButton?.focus();
-    }, 0);
+    setTimeout(() => document.querySelector<HTMLButtonElement>('button[type="submit"]')?.focus(), 0);
   };
 
   const resetAuth = () => {
     // Answering an invitation with another account: back to choosing the address, the invitation stays in hand.
     if (inviteOtherAccount) return setStep('checkEmail', '');
     clearUserStore();
-    resetSteps();
+    resetAuthStore();
   };
 
   const getTitle = () => {
@@ -133,45 +118,21 @@ export function SignInStep() {
 
   return (
     <Form {...form}>
-      {restrictedMode ? (
-        <>
-          <h1 className="mt-4 text-center text-2xl">{getTitle()}</h1>
+      <AuthHeader title={getTitle()}>
+        {restrictedMode ? (
           <NewHere onStep={(nextStep) => setStep(nextStep, form.getValues('email'))} />
-        </>
-      ) : (
-        <h1 className="text-center text-2xl">
-          {getTitle()} <br />
-          <AuthEmailButton email={email} onClick={resetAuth} disabled={!!tokenId && !inviteOtherAccount} className="mt-2" />
-        </h1>
-      )}
+        ) : (
+          <AuthEmailButton email={email} onClick={resetAuth} disabled={!!tokenId && !inviteOtherAccount} />
+        )}
+      </AuthHeader>
 
-      {(emailEnabled || isMagicLinkEnabled) && (
-        <form noValidate onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem className={restrictedMode ? '-mb-2 gap-0' : 'hidden'}>
-                {/* Hidden on purpose: the example address is the visible cue */}
-                <FormLabel className="sr-only">{t('c:email')}</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    disabled={!restrictedMode}
-                    type="email"
-                    className="h-12"
-                    autoFocus={restrictedMode && !isTouchInteraction()}
-                    autoComplete={restrictedMode ? 'email' : 'off'}
-                    placeholder="name@example.com"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      {/* Built at submit time: a handler that reads a ref, handed over during render, keeps the compiler off this step */}
+      {(passkeyEnabled || magicLinkEnabled) && (
+        <form noValidate onSubmit={(event) => form.handleSubmit(onSubmit, defaultOnInvalid)(event)} className="flex flex-col gap-4">
+          <EmailField control={form.control} hidden={!restrictedMode} />
 
-          <SubmitButton loading={isMagicLinkEnabled && isSending} className="w-full">
-            {isMagicLinkEnabled ? (
+          <SubmitButton loading={isSending} className="w-full">
+            {magicLinkEnabled ? (
               <>
                 <MailIcon />
                 {t('c:magic_link_send')}
@@ -184,7 +145,7 @@ export function SignInStep() {
             )}
           </SubmitButton>
 
-          {isStrategyEnabled('passkey') && <PasskeyStrategy type="authentication" />}
+          {passkeyEnabled && <PasskeyStrategy type="authentication" />}
         </form>
       )}
     </Form>
@@ -198,11 +159,8 @@ function NewHere({ onStep }: { onStep: (step: 'signUp' | 'waitlist') => void }) 
   if (!appConfig.has.selfRegistration) return <SignUpDisabled onRequest={() => onStep('waitlist')} />;
 
   return (
-    <p className="text-center">
-      {t('c:new_here')}{' '}
-      <Button type="button" variant="link" className="h-auto p-0 text-base" onClick={() => onStep('signUp')}>
-        {t('c:sign_up')}
-      </Button>
+    <p>
+      {t('c:new_here')} <InlineLinkButton onClick={() => onStep('signUp')}>{t('c:sign_up')}</InlineLinkButton>
     </p>
   );
 }

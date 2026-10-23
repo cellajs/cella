@@ -1,17 +1,16 @@
-import i18n from 'i18next';
 import { PencilIcon, TrashIcon } from 'lucide-react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ConfirmText } from '~/modules/common/confirm-text';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { dateColumn, ellipsisColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { NamedText } from '~/modules/common/named-text';
 import { openPopConfirm } from '~/modules/common/popconfirm';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { DeleteUsers } from '~/modules/user/delete-users';
-import { ImpersonateRow } from '~/modules/user/table/impersonate-row';
+import { ImpersonateCell } from '~/modules/user/table/impersonate-cell';
 import type { BaseUser } from '~/modules/user/types';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { UserCell } from '~/modules/user/user-cell';
@@ -44,27 +43,25 @@ export const useColumns = () => {
       name: '',
       minBreakpoint: 'md',
       width: 32,
-      renderCell: ({ row, tabIndex }) => <ImpersonateRow user={row} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => <ImpersonateCell user={row} tabIndex={tabIndex} />,
     },
     ellipsisColumn<BaseUser>(() => [
       {
-        label: i18n.t('c:edit'),
+        label: t('c:edit'),
         icon: PencilIcon,
         onSelect: (row, triggerRef) => {
-          useDropdowner.getState().remove();
+          dropdowner.getState().remove();
           openUpdateUserSheet(row, triggerRef);
         },
       },
       {
-        label: i18n.t('c:delete'),
+        label: t('c:delete'),
         icon: TrashIcon,
-        onSelect: (row) => {
-          const callback = () => useDropdowner.getState().remove();
+        onSelect: (row) =>
           openPopConfirm(
-            <ConfirmText i18nKey="c:delete_confirm.text" values={{ name: row.name }} />,
-            <DeleteUsers users={[row]} callback={callback} />,
-          );
-        },
+            <NamedText i18nKey="c:delete_confirm.text" name={row.name} />,
+            <DeleteUsers users={[row]} callback={() => dropdowner.getState().remove()} />,
+          ),
       },
     ]),
     emailColumn({ name: t('c:email'), minBreakpoint: 'md', resizable: true }),
@@ -75,7 +72,7 @@ export const useColumns = () => {
       minBreakpoint: 'md',
       resizable: true,
       width: 100,
-      renderCell: ({ row }) => <div>{row.role ? t(row.role) : t('c:user')}</div>,
+      renderCell: ({ row }) => (row.role ? t(`c:${row.role}`) : t('c:user')),
     },
     dateColumn('createdAt', { name: t('c:created_at') }),
     {
@@ -89,5 +86,5 @@ export const useColumns = () => {
     },
   ];
 
-  return useState<ColumnOrColumnGroup<BaseUser>[]>(columns);
+  return useColumnVisibility(columns);
 };

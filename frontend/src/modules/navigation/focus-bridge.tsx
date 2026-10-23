@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { closeNavSheet } from '~/modules/navigation/nav-sheet';
+import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
@@ -14,14 +14,21 @@ export function FocusTarget({ target }: { target: keyof typeof focusTargets }) {
 
 /** Adds `tabindex=-1` when needed, so portaled content can take focus. */
 function focusById(id: string) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '-1');
-  el.focus();
+  const element = document.getElementById(id);
+  if (!element) return;
+  if (!element.hasAttribute('tabindex')) element.setAttribute('tabindex', '-1');
+  element.focus();
 }
 
+/** Where each bridge sends focus, and its label while it has focus. */
+const bridges = {
+  'to-sheet': { target: focusTargets.sheet, label: 'c:go_to_panel' },
+  'to-content': { target: focusTargets.content, label: 'c:go_to_content' },
+  'to-sidebar': { target: focusTargets.sidebar, label: 'c:go_to_navigation' },
+} as const;
+
 interface FocusBridgeProps {
-  direction: 'to-sheet' | 'to-sidebar' | 'to-content';
+  direction: keyof typeof bridges;
   className?: string;
 }
 
@@ -31,18 +38,16 @@ export function FocusBridge({ direction, className }: FocusBridgeProps) {
 
   if (direction === 'to-sheet' && !navSheetOpen) return null;
 
-  const labels = { 'to-sheet': t('c:go_to_panel'), 'to-content': t('c:go_to_content'), 'to-sidebar': t('c:go_to_navigation') };
-
-  const targets = { 'to-sheet': focusTargets.sheet, 'to-content': focusTargets.content, 'to-sidebar': focusTargets.sidebar };
+  const { target, label } = bridges[direction];
 
   const handleClick = () => {
-    if (direction !== 'to-sheet' && !useNavigationStore.getState().keepNavOpen) {
-      useSheeter.getState().remove('nav-sheet');
+    if (direction !== 'to-sheet' && !navigationStore.getState().keepNavOpen) {
+      closeNavSheet();
       // Waits a frame for the closing sheet to release the page; its finalFocus then leaves focus on the target.
-      requestAnimationFrame(() => focusById(targets[direction]));
+      requestAnimationFrame(() => focusById(target));
       return;
     }
-    focusById(targets[direction]);
+    focusById(target);
   };
 
   return (
@@ -50,9 +55,9 @@ export function FocusBridge({ direction, className }: FocusBridgeProps) {
       variant="ghost"
       size="sm"
       onClick={handleClick}
-      className={cn('sr-only focus:not-sr-only focus:absolute focus:z-200 max-sm:hidden', className)}
+      className={cn('sr-only focus:not-sr-only focus:relative focus:z-200 max-sm:hidden', className)}
     >
-      {labels[direction]}
+      {t(label)}
     </Button>
   );
 }

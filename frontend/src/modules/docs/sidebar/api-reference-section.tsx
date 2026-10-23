@@ -1,164 +1,129 @@
-import { useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
-import { Suspense, useState } from 'react';
+import { type MouseEvent, type ReactNode, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { GenTagSummary } from 'sdk/docs-types';
 import { operationsQueryOptions, schemasQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
+import { DocsSidebarSection, sidebarStickyRowClass } from '~/modules/docs/sidebar/docs-sidebar-section';
 import { OperationsSidebar } from '~/modules/docs/sidebar/operations-sidebar';
 import { SchemasSidebar } from '~/modules/docs/sidebar/schemas-sidebar';
 import { buttonVariants } from '~/modules/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
-import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel } from '~/modules/ui/sidebar';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger, collapsiblePanelClass } from '~/modules/ui/collapsible';
+import { SidebarGroupContent } from '~/modules/ui/sidebar';
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
 
-/** Search params of the operations and schemas routes; the router types location.search as the union of all routes. */
-type DocsSearch = { operationTag?: string; schemaTag?: string; q?: string };
+type ApiSection = 'operations' | 'schemas';
 
 interface ApiReferenceSectionProps {
   label: string;
-  tags: GenTagSummary[];
 }
 
 /** Expansion is derived from the route, mutually exclusive, with a per-section forced-collapse override. */
-export function ApiReferenceSection({ label, tags }: ApiReferenceSectionProps) {
+export function ApiReferenceSection({ label }: ApiReferenceSectionProps) {
   const { t } = useTranslation();
 
-  const { data: schemas } = useQuery(schemasQueryOptions);
+  const { data: tags } = useSuspenseQuery(tagsQueryOptions);
+  const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
 
   // Narrow selects: the whole router state changes several times per navigation
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const activeOperationTag = useRouterState({ select: (state) => (state.location.search as DocsSearch).operationTag });
-  const activeSchemaTag = useRouterState({ select: (state) => (state.location.search as DocsSearch).schemaTag });
-  const hasQuery = useRouterState({ select: (state) => !!(state.location.search as DocsSearch).q });
+  const activeOperationTag = useRouterState({ select: (state) => state.location.search.operationTag });
+  const activeSchemaTag = useRouterState({ select: (state) => state.location.search.schemaTag });
+  const hasQuery = useRouterState({ select: (state) => !!state.location.search.q });
   const isOperationsRoute = pathname === '/docs/operations';
   const isOperationsTableRoute = pathname === '/docs/operations/table';
-  const isSchemasRoute = pathname.includes('/docs/schemas');
-
-  // Operations expand only in list view, not table view
-  const expandedSection = isOperationsRoute ? 'operations' : isSchemasRoute ? 'schemas' : null;
+  const isSchemasRoute = pathname === '/docs/schemas';
 
   // Start collapsed when landing directly via URL without search params
   const hasOperationSearchParams = !!activeOperationTag || hasQuery;
   const hasSchemasSearchParams = !!activeSchemaTag;
   const initialForcedCollapsed =
     isOperationsRoute && !hasOperationSearchParams ? 'operations' : isSchemasRoute && !hasSchemasSearchParams ? 'schemas' : null;
-  const [forcedCollapsed, setForcedCollapsed] = useState<string | null>(initialForcedCollapsed);
+  const [forcedCollapsed, setForcedCollapsed] = useState<ApiSection | null>(initialForcedCollapsed);
+
+  // On its own route a section's link toggles it; elsewhere it navigates and clears only that section's forced collapse
+  const handleSectionClick = (event: MouseEvent, section: ApiSection, isRoute: boolean) => {
+    if (isRoute) event.preventDefault();
+    setForcedCollapsed((prev) => (prev === section ? null : isRoute ? section : prev));
+  };
 
   const prefetchOperations = () => {
     void queryClient.query(operationsQueryOptions).catch(() => {});
     void queryClient.query(tagsQueryOptions).catch(() => {});
   };
 
-  const isListMode = !isOperationsTableRoute;
-  const isOperationsActive = isOperationsRoute || isOperationsTableRoute;
-
   return (
-    <SidebarGroup>
-      <div className="flex items-center gap-3 px-4 pr-1 pb-1">
-        <SidebarGroupLabel className="p-0 text-muted-foreground lowercase">{label}</SidebarGroupLabel>
+    <DocsSidebarSection label={label}>
+      <ApiReferenceGroup
+        to="/docs/operations"
+        label={t('c:operation', { count: 2 })}
+        count={tags.reduce((sum, tag) => sum + tag.count, 0)}
+        isActive={isOperationsRoute || isOperationsTableRoute}
+        isOpen={isOperationsRoute && forcedCollapsed !== 'operations'}
+        onClick={(event) => handleSectionClick(event, 'operations', isOperationsRoute)}
+        onPrefetch={prefetchOperations}
+      >
+        <OperationsSidebar activeTag={activeOperationTag} />
+      </ApiReferenceGroup>
+      <ApiReferenceGroup
+        to="/docs/schemas"
+        label={t('c:schema', { count: 2 })}
+        count={schemas.length}
+        isActive={isSchemasRoute}
+        isOpen={isSchemasRoute && forcedCollapsed !== 'schemas'}
+        onClick={(event) => handleSectionClick(event, 'schemas', isSchemasRoute)}
+      >
+        <SchemasSidebar activeTag={activeSchemaTag} />
+      </ApiReferenceGroup>
+    </DocsSidebarSection>
+  );
+}
+
+interface ApiReferenceGroupProps {
+  to: '/docs/operations' | '/docs/schemas';
+  label: string;
+  /** Shown while the group is closed. */
+  count: number;
+  isActive: boolean;
+  isOpen: boolean;
+  onClick: (event: MouseEvent) => void;
+  onPrefetch?: () => void;
+  children: ReactNode;
+}
+
+/** A tier-1 row of the API reference, with its tag list below. */
+function ApiReferenceGroup({ to, label, count, isActive, isOpen, onClick, onPrefetch, children }: ApiReferenceGroupProps) {
+  return (
+    <Collapsible open={isOpen}>
+      <div className={sidebarStickyRowClass}>
+        <CollapsibleTrigger
+          render={
+            <Link
+              to={to}
+              search={(prev) => prev}
+              onMouseEnter={onPrefetch}
+              onFocus={onPrefetch}
+              draggable={false}
+              onClick={onClick}
+              className={cn(
+                buttonVariants({ variant: 'ghost' }),
+                'group/api-reference-group w-full justify-start lowercase',
+                isActive && 'bg-accent font-semibold',
+              )}
+            />
+          }
+        >
+          <span>{label}</span>
+          {!isOpen && <span className="text-muted-foreground text-xs">{count}</span>}
+          <ChevronDownIcon className="ml-auto opacity-40 transition-transform duration-200 group-data-panel-open/api-reference-group:rotate-180" />
+        </CollapsibleTrigger>
       </div>
-
-      <SidebarGroupContent>
-        <SidebarGroup className="p-1 pt-0">
-          <Collapsible open={isListMode && expandedSection === 'operations' && forcedCollapsed !== 'operations'}>
-            {/* Sticky tier-1 row: opaque bg so section content passes underneath */}
-            <div className="group/menu-item relative sticky top-2 z-10 bg-card">
-              <CollapsibleTrigger
-                render={
-                  <Link
-                    to="/docs/operations"
-                    search={(prev) => prev}
-                    onMouseEnter={prefetchOperations}
-                    onFocus={prefetchOperations}
-                    draggable={false}
-                    onClick={(e) => {
-                      if (isOperationsRoute) {
-                        e.preventDefault();
-                        setForcedCollapsed((prev) => (prev === 'operations' ? null : 'operations'));
-                      } else {
-                        // Only clear if operations was forcibly collapsed, preserve other section's state
-                        setForcedCollapsed((prev) => (prev === 'operations' ? null : prev));
-                      }
-                    }}
-                    className={cn(
-                      buttonVariants({ variant: 'ghost' }),
-                      'group w-full items-center justify-start px-3 font-medium lowercase',
-                      isOperationsActive && 'bg-accent font-semibold',
-                    )}
-                  />
-                }
-              >
-                <span>{t('c:operation', { count: 2 })}</span>
-                {(!isListMode || expandedSection !== 'operations' || forcedCollapsed === 'operations') && (
-                  <span className="text-muted-foreground text-xs">{tags.reduce((sum, tag) => sum + tag.count, 0)}</span>
-                )}
-                <ChevronDownIcon
-                  className={cn(
-                    'ml-auto size-4 opacity-40 transition-transform duration-200',
-                    isListMode && expandedSection === 'operations' && forcedCollapsed !== 'operations' && 'rotate-180',
-                  )}
-                />
-              </CollapsibleTrigger>
-            </div>
-            <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
-              <SidebarGroupContent>
-                <Suspense fallback={null}>
-                  <OperationsSidebar activeTag={activeOperationTag} />
-                </Suspense>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </Collapsible>
-        </SidebarGroup>
-
-        <SidebarGroup className="p-1 pt-0">
-          <Collapsible open={expandedSection === 'schemas' && forcedCollapsed !== 'schemas'}>
-            <div className="group/menu-item relative sticky top-2 z-10 bg-card">
-              <CollapsibleTrigger
-                render={
-                  <Link
-                    to="/docs/schemas"
-                    search={(prev) => prev}
-                    draggable={false}
-                    onClick={(e) => {
-                      if (isSchemasRoute) {
-                        e.preventDefault();
-                        setForcedCollapsed((prev) => (prev === 'schemas' ? null : 'schemas'));
-                      } else {
-                        setForcedCollapsed((prev) => (prev === 'schemas' ? null : prev));
-                      }
-                    }}
-                    className={cn(
-                      buttonVariants({ variant: 'ghost' }),
-                      'group w-full justify-start px-3 font-medium lowercase',
-                      isSchemasRoute && 'bg-accent font-semibold',
-                    )}
-                  />
-                }
-              >
-                <span>{t('c:schema', { count: 2 })}</span>
-                {(expandedSection !== 'schemas' || forcedCollapsed === 'schemas') && schemas && (
-                  <span className="text-muted-foreground text-xs">{schemas.length}</span>
-                )}
-                <ChevronDownIcon
-                  className={cn(
-                    'ml-auto size-4 opacity-40 transition-transform duration-200',
-                    expandedSection === 'schemas' && forcedCollapsed !== 'schemas' && 'rotate-180',
-                  )}
-                />
-              </CollapsibleTrigger>
-            </div>
-            <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
-              <SidebarGroupContent>
-                <Suspense fallback={null}>
-                  <SchemasSidebar activeTag={activeSchemaTag} />
-                </Suspense>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </Collapsible>
-        </SidebarGroup>
-      </SidebarGroupContent>
-    </SidebarGroup>
+      <CollapsibleContent className={collapsiblePanelClass}>
+        <SidebarGroupContent>
+          <Suspense fallback={null}>{children}</Suspense>
+        </SidebarGroupContent>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

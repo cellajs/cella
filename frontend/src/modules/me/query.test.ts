@@ -8,7 +8,7 @@ vi.mock('@tanstack/react-query', async (importOriginal) => ({
 }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
 
-const { useUserStore } = await import('~/modules/user/user-store');
+const { userStore } = await import('~/modules/user/user-store');
 const { useUpdateSelfFlagsMutation } = await import('~/modules/me/query');
 
 type FlagsOptions = { onMutate: (variables: { userFlags?: { finishedOnboarding?: boolean } }) => unknown };
@@ -16,11 +16,11 @@ type FlagsOptions = { onMutate: (variables: { userFlags?: { finishedOnboarding?:
 /** The mocked useMutation hands back its options, which the hook's return type does not describe. */
 const options = () => useUpdateSelfFlagsMutation() as unknown as FlagsOptions;
 
-const storedFlags = () => useUserStore.getState().user?.userFlags;
+const storedFlags = () => userStore.getState().user?.userFlags;
 
 describe('useUpdateSelfFlagsMutation', () => {
   beforeEach(() => {
-    useUserStore.setState({ user: { id: 'user-1', email: 'user-1@example.test', userFlags: { finishedOnboarding: false } } as never });
+    userStore.setState({ user: { id: 'user-1', email: 'user-1@example.test', userFlags: { finishedOnboarding: false } } as never });
   });
 
   it('sets the flag in the store before the server answers, where the home route guard reads it', () => {

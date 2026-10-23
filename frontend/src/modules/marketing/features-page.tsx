@@ -5,8 +5,8 @@ import { featureCategoryIcons, featuresPageItems } from '~/modules/marketing/mar
 
 export function FeaturesPage() {
   return (
-    <MarketingLayout>
-      <AboutSection title="c:features">
+    <MarketingLayout title="c:features">
+      <AboutSection>
         <div className="mx-auto max-w-5xl md:px-8">
           <InfoGrid items={featuresPageItems} categoryIcons={featureCategoryIcons} />
         </div>

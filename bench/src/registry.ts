@@ -1,5 +1,5 @@
 import type pg from 'pg';
-import { BENCH_UUID_PREFIX } from 'shared/utils/bench-identity';
+import { benchUuidPrefix } from 'shared/utils/bench-identity';
 import type { PgDB } from '#/db/create-connection';
 
 export interface BenchSeedContext {
@@ -56,7 +56,7 @@ export const getBenchSeedName = (seed: BenchSeed): string => (seed.kind === 'cus
  */
 export const getBenchSeedCleanupWhere = (seed: TableBenchSeed): string => {
   if (seed.idVariant) {
-    const prefix = `${BENCH_UUID_PREFIX}${seed.idVariant}`;
+    const prefix = `${benchUuidPrefix}${seed.idVariant}`;
     return `id BETWEEN '${prefix}-000000000000'::uuid AND '${prefix}-ffffffffffff'::uuid`;
   }
   if (seed.cleanupWhere) return seed.cleanupWhere;

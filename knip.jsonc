@@ -65,9 +65,10 @@
         "src/modules/common/list-skeleton.tsx",
         "src/modules/common/page/local-tab-nav.tsx",
         "src/modules/marketing/about/faq.tsx",
+        "src/hooks/use-organization-layout-context.ts",
         "src/utils/clean-url.ts",
         "src/utils/date-full.ts",
-        "src/utils/in-numbers-array.ts",
+        "src/utils/is-in-range.ts",
         "src/utils/stable-array.ts",
         // vite.config.ts aliases jspdf's optional packages to it.
         "vite/jspdf-optional-stub.ts",

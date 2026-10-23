@@ -157,7 +157,7 @@ describe('what the leader tells the other tabs', () => {
     expect(isLeader()).toBe(false);
     const catchups: unknown[] = [];
     const healths: unknown[] = [];
-    const stopCatchup = onCatchup((response, baselineOnly) => catchups.push([response, baselineOnly]));
+    const stopCatchup = onCatchup(({ response, baselineOnly }) => catchups.push([response, baselineOnly]));
     const stopHealth = onSyncHealth((health) => healths.push(health));
 
     for (const message of posted) receive(message);

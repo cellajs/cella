@@ -7,8 +7,7 @@ type Order = 'asc' | 'desc';
 type SetSearch = (newValues: any) => void;
 
 export const useSortColumns = (sort: Sort | undefined, order: Order | undefined, setSearch: SetSearch) => {
-  let sortColumns: SortColumn[] = [];
-  if (sort && order) sortColumns = [{ columnKey: sort, direction: order === 'asc' ? 'ASC' : 'DESC' }];
+  const sortColumns: SortColumn[] = sort && order ? [{ columnKey: sort, direction: order === 'asc' ? 'ASC' : 'DESC' }] : [];
 
   const setSortColumns = (newSortColumns: SortColumn[]) => {
     if (newSortColumns.length === 0) return setSearch({ sort: undefined, order: undefined });

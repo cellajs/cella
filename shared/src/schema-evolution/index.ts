@@ -14,7 +14,7 @@ export type {
   RetypeDelta,
   SetRenameDelta,
 } from './define.ts';
-export { defineLens, LENS_FORMAT_VERSION, resolveAddDefault } from './define.ts';
+export { defineLens, lensFormatVersion, resolveAddDefault } from './define.ts';
 export type { NormalizeOpsOptions, RegistryHooks } from './engine.ts';
 export {
   configureLensTelemetry,

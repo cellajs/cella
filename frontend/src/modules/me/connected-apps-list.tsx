@@ -3,35 +3,35 @@ import { PlugZapIcon, UnplugIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { ScopeBadges } from '~/modules/common/scope-badges';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { meConnectedAppsQueryOptions, useRevokeConnectedAppMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { dateShort } from '~/utils/date-short';
 
-/** The OAuth consents of the current user (MCP clients, registered apps); revoking one deletes its tokens. */
+/** The OAuth consents of the current user: MCP clients and registered apps. */
 export function ConnectedAppsList() {
   const { t } = useTranslation();
   const {
     data: { items },
   } = useSuspenseQuery(meConnectedAppsQueryOptions());
-  const { mutate: revoke, isPending } = useRevokeConnectedAppMutation();
+  const { mutate: revoke, isPending, variables } = useRevokeConnectedAppMutation();
 
   const handleRevoke = (id: string) => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
     revoke({ path: { id } });
   };
 
   if (!items.length)
     return (
-      <ContentPlaceholder size="sm" icon={PlugZapIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:connected_apps').toLowerCase() }} />
+      <ContentPlaceholder size="sm" icon={PlugZapIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:connected_apps').toLowerCase() }} />
     );
 
   return (
     <div className="flex flex-col gap-2">
       {items.map((app) => (
-        <Card key={app.id} className="w-full py-0 sm:py-0">
-          <CardContent className="flex items-center gap-3 p-3!">
+        <Card key={app.id} className="py-0 sm:py-0">
+          <CardContent className="flex items-center gap-3 p-3 sm:px-3">
             <PlugZapIcon className="size-5 shrink-0 opacity-70" />
             <div className="flex min-w-0 grow flex-col gap-1">
               <span className="truncate font-medium">{app.clientName}</span>
@@ -40,7 +40,7 @@ export function ConnectedAppsList() {
                 <span className="text-muted-foreground text-xs">{t('c:connected_on', { date: dateShort(app.createdAt) })}</span>
               </div>
             </div>
-            <Button variant="plain" size="sm" className="ml-auto" loading={isPending} onClick={() => handleRevoke(app.id)}>
+            <Button variant="plain" size="sm" loading={isPending && variables?.path.id === app.id} onClick={() => handleRevoke(app.id)}>
               <UnplugIcon />
               <span className="max-md:hidden">{t('c:revoke')}</span>
             </Button>

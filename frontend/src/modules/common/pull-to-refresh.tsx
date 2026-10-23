@@ -1,5 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useBodyClass } from '~/hooks/use-body-class';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
@@ -14,8 +16,9 @@ const emptyPhase = 30;
 
 type Phase = 'idle' | 'refreshing' | 'exiting';
 
-function getScrollParent(el: Element | null): Element | null {
-  let current = el;
+/** Nearest ancestor that scrolls and has content to scroll; null when only the page does. */
+function getScrollingAncestor(element: Element | null): Element | null {
+  let current = element;
   while (current && current !== document.documentElement) {
     const style = getComputedStyle(current);
     const overflowY = style.overflowY;
@@ -27,14 +30,15 @@ function getScrollParent(el: Element | null): Element | null {
   return null;
 }
 
-type Props = {
+interface PullToRefreshProps {
   onRefresh: () => void | Promise<void>;
   refreshThreshold?: number;
   maximumPullLength?: number;
   isDisabled?: boolean;
-};
+}
 
-export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLength = 200, isDisabled = false }: Props) {
+export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLength = 200, isDisabled = false }: PullToRefreshProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [pullPosition, setPullPosition] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -80,12 +84,12 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
       setPull(0);
     };
 
-    const startPull = (e: TouchEvent) => {
-      const touch = e.targetTouches[0];
+    const startPull = (event: TouchEvent) => {
+      const touch = event.targetTouches[0];
       if (!touch || touch.clientY > window.innerHeight * 0.4 || window.scrollY > 0) return;
 
       // Only start at the top of the touch target's scroll parent; the walk reads styles, so it runs last
-      const scrollParent = getScrollParent(e.target as Element | null);
+      const scrollParent = getScrollingAncestor(event.target instanceof Element ? event.target : null);
       if (scrollParent && scrollParent.scrollTop > 0) return;
 
       setPhase('idle'); // cancel any in-progress exit animation
@@ -93,10 +97,10 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
       isDraggingRef.current = true;
     };
 
-    const onPull = (e: TouchEvent) => {
+    const movePull = (event: TouchEvent) => {
       if (!isDraggingRef.current || pullStartRef.current === null) return;
 
-      const touch = e.targetTouches[0];
+      const touch = event.targetTouches[0];
       if (!touch) return;
 
       const rawDelta = touch.screenY - pullStartRef.current;
@@ -132,14 +136,14 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
 
     // Native pull-to-refresh is off through overscroll-none on html and body, so the listeners stay passive
     window.addEventListener('touchstart', startPull, { passive: true });
-    window.addEventListener('touchmove', onPull, { passive: true });
+    window.addEventListener('touchmove', movePull, { passive: true });
     window.addEventListener('touchend', endPull);
     // A touch the browser takes over (scroll, system gesture) must not leave the pull half-drawn
     window.addEventListener('touchcancel', cancelPull);
 
     return () => {
       window.removeEventListener('touchstart', startPull);
-      window.removeEventListener('touchmove', onPull);
+      window.removeEventListener('touchmove', movePull);
       window.removeEventListener('touchend', endPull);
       window.removeEventListener('touchcancel', cancelPull);
       // An overlay opening mid-pull disables this: drop the pull so it never freezes on screen
@@ -147,15 +151,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
     };
   }, [disabled, maximumPullLength, refreshThreshold]);
 
-  useEffect(() => {
-    const className = 'overflow-hidden';
-
-    isPulling ? document.body.classList.add(className) : document.body.classList.remove(className);
-
-    return () => {
-      document.body.classList.remove(className);
-    };
-  }, [isPulling]);
+  useBodyClass({ 'overflow-hidden': isPulling });
 
   const progressPull = Math.max(0, pullPosition - emptyPhase);
   const clamped = Math.min(progressPull, refreshThreshold);
@@ -182,7 +178,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
   const isExiting = phase === 'exiting';
   // Moved by transform, so the release and exit glides run on the compositor while the refresh re-renders the page
   const offset = isExiting ? -20 : isRefreshing ? 48 : Math.min(pullPosition / 1.5, 120);
-  const opacity = isExiting ? 0 : isActive || pullPosition > 0 ? 1 : 0;
+  const opacity = isExiting ? 0 : isActive || isPulling ? 1 : 0;
   const transition = isDraggingRef.current
     ? 'none'
     : isExiting
@@ -191,8 +187,8 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
 
   return (
     <div
-      onTransitionEnd={(e) => {
-        if (isExiting && e.propertyName === 'opacity') setPhase('idle');
+      onTransitionEnd={(event) => {
+        if (isExiting && event.propertyName === 'opacity') setPhase('idle');
       }}
       style={{ transform: `translateY(${offset}px)`, opacity, transition }}
       className="fixed inset-x-1/2 top-0 z-300 size-8 -translate-x-1/2"
@@ -202,7 +198,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
         viewBox="0 0 40 40"
         style={isActive ? { transition: 'none' } : { transform: `rotate(${pullPosition * 2}deg)`, transition: 'transform 0.1s ease-out' }}
       >
-        <title>Pull to refresh</title>
+        <title>{t('c:pull_to_refresh')}</title>
         <circle
           cx="20"
           cy="20"

@@ -1,11 +1,9 @@
-import { queryOptions } from '@tanstack/react-query';
-import { appConfig } from 'shared';
-import { versionedUrl } from '~/modules/docs/query';
+import { upperFirst } from '~/modules/docs/helpers/upper-first';
 
 export type DefinitionIndex = Map<string, string>;
 
 /** Index every exported definition of a TS source file as Map<exportName, fullDefinitionCode>. */
-function buildIndex(content: string): DefinitionIndex {
+export function buildIndex(content: string): DefinitionIndex {
   const index: DefinitionIndex = new Map();
   const exportRegex = /^export (?:const|type) (\w+)/gm;
   let match: RegExpExecArray | null = exportRegex.exec(content);
@@ -55,95 +53,31 @@ function buildIndex(content: string): DefinitionIndex {
   return index;
 }
 
-export const zodIndexQueryOptions = queryOptions({
-  queryKey: ['docs', 'zod-index'],
-  queryFn: async () => {
-    const res = await fetch(versionedUrl(`${appConfig.frontendUrl}/static/zod.gen.ts`));
-    return buildIndex(await res.text());
-  },
-  staleTime: Number.POSITIVE_INFINITY,
-});
+/** The definitions the index holds under these names, headed by their sdk source file, or a comment naming what is missing. */
+function definitionCode(index: DefinitionIndex, names: string[], file: 'zod.gen.ts' | 'types.gen.ts') {
+  const definitions = names.flatMap((name) => index.get(name) ?? []);
+  if (!definitions.length) return `// ${names.join(' / ')} not found in sdk/${file}`;
+  return `// From sdk/${file}\n${definitions.join('\n\n')}`;
+}
 
-export const typesIndexQueryOptions = queryOptions({
-  queryKey: ['docs', 'types-index'],
-  queryFn: async () => {
-    const res = await fetch(versionedUrl(`${appConfig.frontendUrl}/static/types.gen.ts`));
-    return buildIndex(await res.text());
-  },
-  staleTime: Number.POSITIVE_INFINITY,
-});
+export const getZodCodeForSchema = (zodIndex: DefinitionIndex, schemaName: string) => definitionCode(zodIndex, [`z${schemaName}`], 'zod.gen.ts');
 
-const toPascalCase = (str: string): string => {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-};
+export const getTypeCodeForSchema = (typesIndex: DefinitionIndex, schemaName: string) => definitionCode(typesIndex, [schemaName], 'types.gen.ts');
 
 /** Error responses (status >= 400) resolve by responseName, success responses by operationId + 'Response'. */
-export const getZodCodeForResponse = (zodIndex: DefinitionIndex, operationId: string, status: number, responseName?: string): string => {
-  const isError = status >= 400;
-  const schemaName = isError && responseName ? responseName : `${toPascalCase(operationId)}Response`;
-  const name = `z${schemaName}`;
-  const definition = zodIndex.get(name);
+export const getZodCodeForResponse = (zodIndex: DefinitionIndex, operationId: string, status: number, responseName?: string) =>
+  getZodCodeForSchema(zodIndex, status >= 400 && responseName ? responseName : `${upperFirst(operationId)}Response`);
 
-  if (!definition) {
-    return `// Schema ${name} not found in zod.gen.ts`;
-  }
-
-  return `// From sdk/zod.gen.ts\n${definition}`;
-};
-
-export const getTypeCodeForResponse = (typesIndex: DefinitionIndex, operationId: string, status: number): string => {
-  const pascalCaseOpId = toPascalCase(operationId);
-  const isSuccess = status >= 200 && status < 300;
-  const typeName = isSuccess ? `${pascalCaseOpId}Responses` : `${pascalCaseOpId}Errors`;
-  const definition = typesIndex.get(typeName);
-
-  if (!definition) {
-    return `// Type ${typeName} not found in sdk exports`;
-  }
-
-  return `// From sdk\n${definition}`;
-};
+export const getTypeCodeForResponse = (typesIndex: DefinitionIndex, operationId: string, status: number) =>
+  definitionCode(typesIndex, [`${upperFirst(operationId)}${status >= 200 && status < 300 ? 'Responses' : 'Errors'}`], 'types.gen.ts');
 
 /** Combines the available Path / Query / Body schemas: zod.gen.ts has no composite `Data` schema. */
-export const getZodCodeForRequest = (zodIndex: DefinitionIndex, operationId: string): string => {
-  const base = `z${toPascalCase(operationId)}`;
-  const parts = (['Path', 'Query', 'Body'] as const).map((part) => zodIndex.get(`${base}${part}`)).filter((def): def is string => Boolean(def));
+export const getZodCodeForRequest = (zodIndex: DefinitionIndex, operationId: string) =>
+  definitionCode(
+    zodIndex,
+    ['Path', 'Query', 'Body'].map((part) => `z${upperFirst(operationId)}${part}`),
+    'zod.gen.ts',
+  );
 
-  if (parts.length === 0) {
-    return `// No request schemas (${base}Path / ${base}Query / ${base}Body) found in zod.gen.ts`;
-  }
-
-  return `// From sdk/zod.gen.ts\n${parts.join('\n\n')}`;
-};
-
-export const getTypeCodeForRequest = (typesIndex: DefinitionIndex, operationId: string): string => {
-  const typeName = `${toPascalCase(operationId)}Data`;
-  const definition = typesIndex.get(typeName);
-
-  if (!definition) {
-    return `// Type ${typeName} not found in sdk exports`;
-  }
-
-  return `// From sdk\n${definition}`;
-};
-
-export const getZodCodeForSchema = (zodIndex: DefinitionIndex, schemaName: string): string => {
-  const name = `z${schemaName}`;
-  const definition = zodIndex.get(name);
-
-  if (!definition) {
-    return `// Schema ${name} not found in zod.gen.ts`;
-  }
-
-  return `// From sdk/zod.gen.ts\n${definition}`;
-};
-
-export const getTypeCodeForSchema = (typesIndex: DefinitionIndex, schemaName: string): string => {
-  const definition = typesIndex.get(schemaName);
-
-  if (!definition) {
-    return `// Type ${schemaName} not found in types.gen.ts`;
-  }
-
-  return `// From sdk/types.gen.ts\n${definition}`;
-};
+export const getTypeCodeForRequest = (typesIndex: DefinitionIndex, operationId: string) =>
+  definitionCode(typesIndex, [`${upperFirst(operationId)}Data`], 'types.gen.ts');

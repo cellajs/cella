@@ -4,7 +4,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PullToRefresh } from '~/modules/common/pull-to-refresh';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { uiStore } from '~/modules/ui/ui-store';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -12,7 +12,7 @@ let root: Root;
 let container: HTMLDivElement;
 
 beforeEach(async () => {
-  useUIStore.setState({ uiLocks: [] });
+  uiStore.setState({ uiLocks: [] });
   container = document.createElement('div');
   document.body.append(container);
   root = createRoot(container);
@@ -57,7 +57,7 @@ describe('pull to refresh', () => {
     await touch('touchstart', 10);
     await touch('touchmove', 200);
 
-    await act(async () => useUIStore.getState().lockUI('sheeter'));
+    await act(async () => uiStore.getState().lockUI('sheeter'));
 
     expect(isIndicatorShown()).toBe(false);
     expect(document.body.classList.contains('overflow-hidden')).toBe(false);

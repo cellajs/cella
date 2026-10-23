@@ -2,7 +2,7 @@
 .uppy-Container .uppy-DashboardContent-save,
 .uppy-Container .uppy-Dashboard-browse,
 .uppy-Container .uppy-Dashboard-link {
-  color: var(--primary); /* Replace with your desired color */
+  color: var(--primary);
 }
 
 .uppy-Container .uppy-Dashboard-browse:focus,

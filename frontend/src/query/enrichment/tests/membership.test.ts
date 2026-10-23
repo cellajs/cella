@@ -4,14 +4,11 @@ import {
   makeMembership,
   mockAppConfig,
   mockComputeCan,
-  mockGetEntityQueryKeys,
   mockGetRegisteredEntityTypes,
-  mockHasEntityQueryKeys,
   mockHierarchy,
   mockPolicyMatrix,
-  mockRegisterEntityQueryKeys,
   queryClient,
-} from '~/query/enrichment/test-setup';
+} from '~/query/enrichment/tests/test-setup';
 
 vi.mock('shared', () => ({
   appConfig: mockAppConfig,
@@ -22,12 +19,7 @@ vi.mock('shared', () => ({
 }));
 vi.mock('~/query/query-client', () => ({ queryClient }));
 vi.mock('~/modules/me/query', () => ({ meKeys: { memberships: ['me', 'memberships'], invites: ['me', 'invites'] } }));
-vi.mock('~/query/basic/entity-query-registry', () => ({
-  getEntityQueryKeys: mockGetEntityQueryKeys,
-  getRegisteredEntityTypes: mockGetRegisteredEntityTypes,
-  hasEntityQueryKeys: mockHasEntityQueryKeys,
-  registerEntityQueryKeys: mockRegisterEntityQueryKeys,
-}));
+vi.mock('~/query/basic/entity-query-registry', () => ({ getRegisteredEntityTypes: mockGetRegisteredEntityTypes }));
 
 const { initChannelEnrichment } = await import('~/query/enrichment/init-enrichment');
 

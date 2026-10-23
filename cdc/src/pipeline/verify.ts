@@ -5,16 +5,16 @@ import { isForwardOnlyCounterKey, isPlainCountKey } from '#/modules/entities/cou
 import { computeChannelCounters, recalculateCounters } from '#/modules/entities/counters-queries';
 import { clearBooksRequest, findBooksRequest, requestBooks } from '#/modules/entities/sync-requests';
 import { type SyncCorrection, type SyncFence, syncIncidentsTable, syncStateId, syncStateTable } from '#/modules/entities/sync-state-db';
-import { RESOURCE_LIMITS } from '../constants';
+import { resourceLimits } from '../constants';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import { pushHealth } from '../network/health-reporter';
 import { type CounterDeltas, fence } from '../services/fence';
 import { replicationState } from '../services/replication-state';
 import { replicationStatus } from '../services/replication-status';
-import { FENCE_MARKER_PREFIX, runBetweenFlushes } from './handle-message';
+import { fenceMarkerPrefix, runBetweenFlushes } from './handle-message';
 
-const { countTimeoutMs, verifyTimeoutMs, rebuildIntervalMs, verifyHourUtc, requestPollMs } = RESOURCE_LIMITS.books;
+const { countTimeoutMs, verifyTimeoutMs, rebuildIntervalMs, verifyHourUtc, requestPollMs } = resourceLimits.books;
 
 type Counters = Map<string, Record<string, number>>;
 type Executor = Pick<typeof cdcDb, 'execute'>;
@@ -68,7 +68,7 @@ async function takeSnapshot(tx: Transaction): Promise<string> {
  * in the WAL at once, whatever becomes of the transaction that counts.
  */
 async function emitMarker(marker: string): Promise<void> {
-  await cdcDb.execute(sql`SELECT pg_logical_emit_message(false, ${FENCE_MARKER_PREFIX}, ${marker})`);
+  await cdcDb.execute(sql`SELECT pg_logical_emit_message(false, ${fenceMarkerPrefix}, ${marker})`);
 }
 
 /**

@@ -33,10 +33,10 @@ function groupBy<T>(items: T[], keyOf: (item: T) => string): Map<string, T[]> {
 }
 
 /** Rows per activity insert: a row binds about twenty parameters, and one statement takes 65,535 at most. */
-const ACTIVITY_CHUNK_SIZE = 1000;
+const activityChunkSize = 1000;
 
 /** Row ids per read of the seq a change's row already holds, when the change is delivered again: one parameter each. */
-const READ_BACK_CHUNK_SIZE = 5000;
+const readBackChunkSize = 5000;
 
 /** The product type of a change's row; null for a row that is no product: a membership, a tenant, a channel. */
 const productTypeOf = ({ result: { tableMeta } }: PendingEvent): ProductEntityType | null =>
@@ -55,8 +55,8 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
   let counted: CounterDeltas = new Map();
   await cdcDb.transaction(async (tx) => {
     const insertedIds = new Set<string>();
-    for (let offset = 0; offset < prepared.length; offset += ACTIVITY_CHUNK_SIZE) {
-      const chunk = prepared.slice(offset, offset + ACTIVITY_CHUNK_SIZE).map((item) => item.activity);
+    for (let offset = 0; offset < prepared.length; offset += activityChunkSize) {
+      const chunk = prepared.slice(offset, offset + activityChunkSize).map((item) => item.activity);
       const inserted = await tx.insert(activitiesTable).values(chunk).onConflictDoNothing().returning({ id: activitiesTable.id });
       for (const row of inserted) insertedIds.add(row.id);
     }
@@ -81,9 +81,9 @@ async function recordFlush(prepared: PreparedEvent[]): Promise<void> {
     for (const [tableName, results] of groupBy(again, (result) => result.activity.tableName)) {
       const seqById = new Map<string, number>();
       const ids = [...new Set(results.map((result) => result.rowData.id))];
-      for (let offset = 0; offset < ids.length; offset += READ_BACK_CHUNK_SIZE) {
+      for (let offset = 0; offset < ids.length; offset += readBackChunkSize) {
         const idList = sql.join(
-          ids.slice(offset, offset + READ_BACK_CHUNK_SIZE).map((id) => sql`${id}::uuid`),
+          ids.slice(offset, offset + readBackChunkSize).map((id) => sql`${id}::uuid`),
           sql`, `,
         );
         const stored = await tx.execute<{ id: string; seq: string }>(sql`SELECT id, seq FROM ${sql.identifier(tableName)} WHERE id IN (${idList})`);

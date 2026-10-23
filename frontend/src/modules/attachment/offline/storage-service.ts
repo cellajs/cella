@@ -32,11 +32,10 @@ class AttachmentStorageService {
           ? previewFallbackChain
           : displayFallbackChain;
 
-    for (const v of chain) {
-      const key = makeBlobKey(attachmentId, v);
-      const blob = await this.getBlob(key);
+    for (const candidate of chain) {
+      const blob = await this.getBlob(makeBlobKey(attachmentId, candidate));
       if (blob) {
-        return { blob, actualVariant: v };
+        return { blob, actualVariant: candidate };
       }
     }
     return null;
@@ -126,8 +125,8 @@ class AttachmentStorageService {
         return false;
       }
 
-      const exists = await attachmentsDb.blobs.get(rawKey);
-      if (exists) {
+      const rawBlob = await attachmentsDb.blobs.get(rawKey);
+      if (rawBlob) {
         await attachmentsDb.blobs.delete(rawKey);
         // A shared URL may have fallen back to the removed raw blob.
         this.invalidateSharedBlobUrls(attachmentId);
@@ -141,12 +140,10 @@ class AttachmentStorageService {
     }
   }
 
-  /** Single primary-key lookup on the composite key. */
   async hasVariant(attachmentId: string, variant: BlobVariant): Promise<boolean> {
     try {
-      const key = makeBlobKey(attachmentId, variant);
-      const exists = await attachmentsDb.blobs.get(key);
-      return !!exists;
+      const blob = await attachmentsDb.blobs.get(makeBlobKey(attachmentId, variant));
+      return !!blob;
     } catch {
       return false;
     }
@@ -155,7 +152,7 @@ class AttachmentStorageService {
   async getStoredVariants(attachmentId: string): Promise<BlobVariant[]> {
     try {
       const blobs = await attachmentsDb.blobs.where('attachmentId').equals(attachmentId).toArray();
-      return blobs.map((b) => b.variant);
+      return blobs.map((blob) => blob.variant);
     } catch {
       return [];
     }
@@ -173,19 +170,19 @@ class AttachmentStorageService {
       throw new Error('File data must be a Blob');
     }
 
-    const blobData = file.data;
-    const size = file.size ?? blobData.size ?? 0;
+    const blob = file.data;
+    const size = file.size ?? blob.size ?? 0;
 
     // Fall back to file.id while no attachment id exists yet.
     const actualAttachmentId = attachmentId || file.id;
     const key = makeBlobKey(actualAttachmentId, 'raw');
 
-    const blob: AttachmentBlob = {
+    const record: AttachmentBlob = {
       id: key,
       attachmentId: actualAttachmentId,
       variant: 'raw',
       organizationId,
-      blob: blobData,
+      blob,
       filename: file.name || undefined,
       uploadContext,
       size,
@@ -199,31 +196,31 @@ class AttachmentStorageService {
     };
 
     try {
-      await attachmentsDb.blobs.add(blob);
+      await attachmentsDb.blobs.add(record);
       this.invalidateSharedBlobUrls(actualAttachmentId);
-      return blob;
+      return record;
     } catch (error) {
       console.error('[AttachmentStorage] Failed to store upload blob:', error);
       throw error;
     }
   }
 
-  /** Get a blob by composite key (`id:variant`). */
-  private async getBlob(id: string): Promise<AttachmentBlob | undefined> {
+  /** Get a blob by composite key (`attachmentId:variant`). */
+  private async getBlob(blobKey: string): Promise<AttachmentBlob | undefined> {
     try {
-      return await attachmentsDb.blobs.get(id);
+      return await attachmentsDb.blobs.get(blobKey);
     } catch (error) {
-      console.error(`[AttachmentStorage] Failed to get blob (${id}):`, error);
+      console.error(`[AttachmentStorage] Failed to get blob (${blobKey}):`, error);
       return undefined;
     }
   }
 
   /** Delete every variant blob of each attachment id. */
-  async deleteBlobs(ids: string[]): Promise<void> {
+  async deleteBlobs(attachmentIds: string[]): Promise<void> {
     try {
-      for (const id of ids) {
-        await attachmentsDb.blobs.where('attachmentId').equals(id).delete();
-        this.invalidateSharedBlobUrls(id);
+      for (const attachmentId of attachmentIds) {
+        await attachmentsDb.blobs.where('attachmentId').equals(attachmentId).delete();
+        this.invalidateSharedBlobUrls(attachmentId);
       }
     } catch (error) {
       console.error('[AttachmentStorage] Failed to delete blobs:', error);
@@ -231,20 +228,19 @@ class AttachmentStorageService {
     }
   }
 
-  async updateUploadStatus(id: string, status: UploadStatus, error?: string): Promise<void> {
+  async updateUploadStatus(blobKey: string, status: UploadStatus, error?: string): Promise<void> {
     try {
       const updates: Partial<AttachmentBlob> = { uploadStatus: status };
 
       // Every failure bumps the attempt count and schedules the next retry slot, which the upload-service retry selector reads.
       if (status === 'failed') {
-        const blob = await attachmentsDb.blobs.get(id);
+        const blob = await attachmentsDb.blobs.get(blobKey);
         if (blob) {
           const attempts = blob.uploadAttempts ?? 0;
           updates.uploadAttempts = attempts + 1;
           updates.lastError = error ?? blob.lastError ?? 'Upload failed';
 
-          const config = appConfig.localBlobStorage;
-          const delays = config?.uploadRetryDelays ?? [60000, 300000, 900000];
+          const delays = appConfig.localBlobStorage.uploadRetryDelays;
           const delay = delays[Math.min(attempts, delays.length - 1)];
           updates.nextRetryAt = new Date(Date.now() + delay);
         }
@@ -255,25 +251,25 @@ class AttachmentStorageService {
         updates.nextRetryAt = null;
       }
 
-      await attachmentsDb.blobs.update(id, updates);
+      await attachmentsDb.blobs.update(blobKey, updates);
     } catch (error) {
-      console.error(`[AttachmentStorage] Failed to update upload status (${id}):`, error);
+      console.error(`[AttachmentStorage] Failed to update upload status (${blobKey}):`, error);
       throw error;
     }
   }
 
-  async markUploaded(id: string): Promise<void> {
-    await this.updateUploadStatus(id, 'uploaded');
+  async markUploaded(blobKey: string): Promise<void> {
+    await this.updateUploadStatus(blobKey, 'uploaded');
   }
 
-  async markFailed(id: string, error: string): Promise<void> {
-    await this.updateUploadStatus(id, 'failed', error);
+  async markFailed(blobKey: string, error: string): Promise<void> {
+    await this.updateUploadStatus(blobKey, 'failed', error);
   }
 
   /** Marks a deferred upload uploaded, keeping its stored keys on the blob until the attachment row has them. */
-  async markUploadedWithKeys(id: string, keys: Attachment['keys'], convertedContentType: string | null): Promise<void> {
-    await attachmentsDb.blobs.update(id, { cloudKeys: keys, cloudConvertedContentType: convertedContentType, keysLinkedAt: null, linkAttempts: 0 });
-    await this.markUploaded(id);
+  async markUploadedWithKeys(blobKey: string, cloudKeys: Attachment['keys'], cloudConvertedContentType: string | null): Promise<void> {
+    await attachmentsDb.blobs.update(blobKey, { cloudKeys, cloudConvertedContentType, keysLinkedAt: null, linkAttempts: 0 });
+    await this.markUploaded(blobKey);
   }
 
   /** Uploaded blobs whose attachment row still lacks their keys, while attempts remain. */
@@ -285,15 +281,15 @@ class AttachmentStorageService {
       .toArray();
   }
 
-  async markKeysLinked(id: string): Promise<void> {
-    await attachmentsDb.blobs.update(id, { keysLinkedAt: new Date(), lastError: null });
+  async markKeysLinked(blobKey: string): Promise<void> {
+    await attachmentsDb.blobs.update(blobKey, { keysLinkedAt: new Date(), lastError: null });
   }
 
-  async recordLinkFailure(id: string, error: string, attempts: number): Promise<void> {
-    await attachmentsDb.blobs.update(id, { linkAttempts: attempts, lastError: error });
+  async recordLinkFailure(blobKey: string, error: string, attempts: number): Promise<void> {
+    await attachmentsDb.blobs.update(blobKey, { linkAttempts: attempts, lastError: error });
   }
 
-  /** Get total storage used by blobs for an organization. */
+  /** Bytes the organization's stored blobs take on this device. */
   async getStorageUsed(organizationId: string): Promise<number> {
     try {
       const blobs = await attachmentsDb.blobs.where('organizationId').equals(organizationId).toArray();

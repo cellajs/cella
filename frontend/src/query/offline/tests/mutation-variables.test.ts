@@ -111,6 +111,7 @@ describe('a queue restored by a newer bundle', () => {
     const [first, second, third] = quarantineFailedSync.mock.calls.map(([record]) => record);
     expect(first).toMatchObject({
       mutationId: 'mut-1',
+      mutationKey: deleteKey,
       status: 0,
       variables: { tenantId: 't', unknownShape: true, stx },
       error: { reason: 'variables_version', storedVersion: 1, currentVersion: 2 },

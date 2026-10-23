@@ -17,6 +17,9 @@ export const authenticateRouteSearchParamsSchema = z.object({
 /** The page that asked for the confirmation link, section included. */
 export const stepUpConfirmedRouteSearchParamsSchema = z.object({ redirect: redirectSearchSchema });
 
+/** The page the institution's sign-in returns to. */
+export const ssoEntryRouteSearchParamsSchema = z.object({ redirect: redirectSearchSchema });
+
 export const authErrorRouteSearchParamsSchema = z.object({ tokenId: z.string().optional() }).extend(errorSearchSchema.shape);
 
 /** The authorization server's interaction id, carried through sign-in and back. */

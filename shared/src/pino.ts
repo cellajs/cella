@@ -160,8 +160,8 @@ export const createLogger = ({
 
 // Suppress repeats of the same warn/error/fatal line within this window, which retry loops and
 // reconnects would otherwise flood. The first line after the window reports `repeated: N`.
-const DEDUP_WINDOW_MS = 30_000;
-const DEDUP_MAX_KEYS = 500;
+const dedupWindowMs = 30_000;
+const dedupMaxKeys = 500;
 
 /** Wrap non-Error throwables so the `err` serializer always yields { type, message, stack }. */
 const toError = (err: unknown): Error => {
@@ -191,13 +191,13 @@ export const createLog = (logger: pino.Logger): Log => {
     const key = `${severity}:${msg}`;
     const now = Date.now();
     const entry = recent.get(key);
-    if (entry && now - entry.lastEmitAt < DEDUP_WINDOW_MS) {
+    if (entry && now - entry.lastEmitAt < dedupWindowMs) {
       entry.suppressed += 1;
       return { emit: false };
     }
-    if (recent.size >= DEDUP_MAX_KEYS) {
+    if (recent.size >= dedupMaxKeys) {
       for (const [staleKey, stale] of recent) {
-        if (now - stale.lastEmitAt >= DEDUP_WINDOW_MS) recent.delete(staleKey);
+        if (now - stale.lastEmitAt >= dedupWindowMs) recent.delete(staleKey);
       }
     }
     recent.set(key, { lastEmitAt: now, suppressed: 0 });

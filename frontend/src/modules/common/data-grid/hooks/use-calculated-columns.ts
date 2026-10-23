@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { renderValue } from '../cell-renderers';
-import { SELECT_COLUMN_KEY } from '../columns';
+import { selectColumnKey } from '../columns';
 import { renderHeaderCell } from '../render-header-cell';
 import type {
   ActiveModes,
@@ -33,9 +33,9 @@ interface ColumnMetric {
   left: number;
 }
 
-const DEFAULT_COLUMN_WIDTH = 'auto';
-const DEFAULT_COLUMN_MIN_WIDTH = 50;
-const DEFAULT_ACTIVE_MODES: ActiveModes = { compact: false, mobile: false };
+const defaultColumnWidth = 'auto';
+const defaultColumnMinWidth = 50;
+const defaultActiveModes: ActiveModes = { compact: false, mobile: false };
 
 interface CalculatedColumnsArgs<R, SR> {
   rawColumns: readonly ColumnOrColumnGroup<R, SR>[];
@@ -52,10 +52,10 @@ export function useCalculatedColumns<R, SR>({
   getColumnWidth,
   currentBreakpoint = 'lg',
 
-  activeModes = DEFAULT_ACTIVE_MODES,
+  activeModes = defaultActiveModes,
 }: CalculatedColumnsArgs<R, SR>) {
-  const defaultWidth = defaultColumnOptions?.width ?? DEFAULT_COLUMN_WIDTH;
-  const defaultMinWidth = defaultColumnOptions?.minWidth ?? DEFAULT_COLUMN_MIN_WIDTH;
+  const defaultWidth = defaultColumnOptions?.width ?? defaultColumnWidth;
+  const defaultMinWidth = defaultColumnOptions?.minWidth ?? defaultColumnMinWidth;
   const defaultMaxWidth = defaultColumnOptions?.maxWidth ?? undefined;
   const defaultRenderCell = defaultColumnOptions?.renderCell ?? renderValue;
   const defaultRenderHeaderCell = defaultColumnOptions?.renderHeaderCell ?? renderHeaderCell;
@@ -167,8 +167,8 @@ export function useCalculatedColumns<R, SR>({
     }
 
     columns.sort(({ key: aKey, frozen: frozenA }, { key: bKey, frozen: frozenB }) => {
-      if (aKey === SELECT_COLUMN_KEY) return -1;
-      if (bKey === SELECT_COLUMN_KEY) return 1;
+      if (aKey === selectColumnKey) return -1;
+      if (bKey === selectColumnKey) return 1;
 
       if (frozenA) {
         if (frozenB) return 0;

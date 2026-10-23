@@ -7,6 +7,13 @@ const mockTeardownUserState = vi.fn();
 vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: mockToaster }));
 vi.mock('~/routes/router', () => ({ router: { navigate: vi.fn() } }));
 vi.mock('~/utils/teardown-user-state', () => ({ teardownUserState: mockTeardownUserState }));
+// A translation is its own key; a test names the keys that exist.
+const knownKeys = vi.hoisted(() => new Set<string>());
+vi.mock('i18next', () => {
+  const t = (key: string) => key;
+  const exists = (key: string) => knownKeys.has(key);
+  return { default: { t, exists }, t, exists };
+});
 
 const { ApiError } = await import('~/lib/api');
 const { onError } = await import('~/query/on-error');
@@ -28,4 +35,13 @@ describe('onError 401 handling', () => {
     // `false` keeps the local database, and the offline work in it, for the same user's next sign-in.
     expect(mockTeardownUserState).toHaveBeenCalledWith(false);
   });
+});
+
+it('toasts a fatal failure as an error', () => {
+  vi.clearAllMocks();
+  knownKeys.add('error:server_error');
+  onError(new ApiError({ status: 500, type: 'server_error', severity: 'fatal', requestId: 'req-5' }));
+
+  expect(mockToaster.error).toHaveBeenCalledWith('error:server_error', expect.anything());
+  expect(mockToaster.info).not.toHaveBeenCalled();
 });

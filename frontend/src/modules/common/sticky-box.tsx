@@ -1,23 +1,29 @@
-import { type ComponentProps, useEffect, useRef, useState } from 'react';
-import { isProgrammaticScroll } from '~/hooks/use-scroll-spy-store';
+import { type ComponentProps, type CSSProperties, useEffect, useRef, useState } from 'react';
+import { isProgrammaticScroll } from '~/hooks/scroll-spy-store';
 
 /** Nearest scrolling ancestor of `node`, or `window` when none is found before `document.body`. */
 export function getScrollParent(node: HTMLElement): HTMLElement | Window {
   let parent: HTMLElement | null = node;
   // biome-ignore lint/suspicious/noAssignInExpressions: required for short-circuit assignment pattern
   while ((parent = parent.parentElement)) {
-    const overflowYVal = getComputedStyle(parent, null).getPropertyValue('overflow-y');
+    const overflowY = getComputedStyle(parent, null).getPropertyValue('overflow-y');
     if (parent === document.body) return window;
-    if (overflowYVal === 'auto' || overflowYVal === 'scroll' || overflowYVal === 'overlay') {
+    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') {
       return parent;
     }
   }
   return window;
 }
 
+/** Scroll offset of a scroll parent from `getScrollParent`. */
+const scrollTopOf = (scrollParent: HTMLElement | Window) => (scrollParent instanceof Window ? scrollParent.scrollY : scrollParent.scrollTop);
+
+/** Viewport position of a scroll parent's top edge: 0 for the window. */
+const viewportTopOf = (scrollParent: HTMLElement | Window) => (scrollParent instanceof Window ? 0 : scrollParent.getBoundingClientRect().top);
+
 const passiveArg = { passive: true } as const;
 
-type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
+interface StickyBoxProps extends Omit<ComponentProps<'div'>, 'ref'> {
   /** Offset (px) from the top of the scroll container at which the bar pins. */
   offsetTop?: number;
   /** Release the bar this many px before the bottom of its containing block (e.g. to clear a footer). */
@@ -31,26 +37,21 @@ type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
   hideWhenOutOfView?: boolean;
   /** CSS custom property the bar publishes its height to on the parent, e.g. `--sticky-stack-nav`. */
   publishVar?: string;
-};
+}
 
-/**
- * Pins a header within its scroll container using CSS sticky positioning. Tall sidebars should
- * use plain sticky CSS. The bar pins at the larger of `--sticky-stack-top` (section bars, which
- * fold the nav offset in) and `--sticky-stack-nav` (page tabs), plus `offsetTop`. A bar that
- * publishes one of those variables never consumes it, since it would inherit its own value back
- * from the parent it publishes on. Variable changes animate with the ancestor bar's transition.
- */
-const STACK_VARS = ['--sticky-stack-nav', '--sticky-stack-top'] as const;
+const stackVars = ['--sticky-stack-nav', '--sticky-stack-top'] as const;
 
 /** Offset (px) the stack variables add to the bar's pin line, leaving out the one it publishes itself. */
 export function stackOffset(bar: HTMLElement, publishVar?: string) {
   const barStyles = getComputedStyle(bar);
-  return Math.max(...STACK_VARS.filter((v) => v !== publishVar).map((v) => Number.parseFloat(barStyles.getPropertyValue(v)) || 0));
+  return Math.max(
+    ...stackVars.filter((stackVar) => stackVar !== publishVar).map((stackVar) => Number.parseFloat(barStyles.getPropertyValue(stackVar)) || 0),
+  );
 }
 
 /** The same offset as a CSS length, so an element that pins with it follows the variables without a rerender. */
 export function stackOffsetCss(publishVar?: string) {
-  const consumedVars = STACK_VARS.filter((v) => v !== publishVar).map((v) => `var(${v}, 0px)`);
+  const consumedVars = stackVars.filter((stackVar) => stackVar !== publishVar).map((stackVar) => `var(${stackVar}, 0px)`);
   return consumedVars.length > 1 ? `max(${consumedVars.join(', ')})` : (consumedVars[0] ?? '0px');
 }
 
@@ -59,6 +60,14 @@ export function stackOffsetCss(publishVar?: string) {
  * slid back out, `parked` just above the pin line without having animated there (its place had scrolled off anyway).
  */
 type HidePhase = 'flow' | 'parked' | 'pinned' | 'hidden';
+
+/**
+ * Pins a header within its scroll container using CSS sticky positioning. Tall sidebars should
+ * use plain sticky CSS. The bar pins at the larger of `--sticky-stack-top` (section bars, which
+ * fold the nav offset in) and `--sticky-stack-nav` (page tabs), plus `offsetTop`. A bar that
+ * publishes one of those variables never consumes it, since it would inherit its own value back
+ * from the parent it publishes on. Variable changes animate with the ancestor bar's transition.
+ */
 export function StickyBox({
   enabled = true,
   offsetTop = 0,
@@ -86,17 +95,17 @@ export function StickyBox({
       return;
     }
     const scrollParent = getScrollParent(sentinel);
-    const root = scrollParent === window ? null : (scrollParent as HTMLElement);
-    const io = new IntersectionObserver(
+    const root = scrollParent instanceof Window ? null : scrollParent;
+    const observer = new IntersectionObserver(
       ([entry]) => {
-        const rb = entry.rootBounds;
-        if (!rb) return;
-        setStuck(!entry.isIntersecting && entry.boundingClientRect.top < rb.top);
+        const { rootBounds } = entry;
+        if (!rootBounds) return;
+        setStuck(!entry.isIntersecting && entry.boundingClientRect.top < rootBounds.top);
       },
       { root, rootMargin: `${-offsetTop}px 0px 0px 0px`, threshold: [0] },
     );
-    io.observe(sentinel);
-    return () => io.disconnect();
+    observer.observe(sentinel);
+    return () => observer.disconnect();
   }, [enabled, offsetTop]);
 
   // Release sticky positioning early when the bar approaches the configured bottom offset.
@@ -114,8 +123,7 @@ export function StickyBox({
       raf = requestAnimationFrame(() => {
         const parentRect = parent.getBoundingClientRect();
         const barHeight = bar.offsetHeight;
-        const scrollTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top;
-        const stickyBottom = scrollTop + stackOffset(bar, publishVar) + offsetTop + barHeight;
+        const stickyBottom = viewportTopOf(scrollParent) + stackOffset(bar, publishVar) + offsetTop + barHeight;
         const spaceBelow = parentRect.bottom - stickyBottom;
         // Offset from the sentinel: at the release boundary it equals the stuck position exactly
         const naturalTop = sentinelRef.current?.getBoundingClientRect().top ?? parentRect.top;
@@ -126,13 +134,13 @@ export function StickyBox({
     check();
     scrollParent.addEventListener('scroll', check, passiveArg);
     window.addEventListener('resize', check, passiveArg);
-    const ro = new ResizeObserver(check);
-    ro.observe(parent);
+    const observer = new ResizeObserver(check);
+    observer.observe(parent);
     return () => {
       cancelAnimationFrame(raf);
       scrollParent.removeEventListener('scroll', check);
       window.removeEventListener('resize', check);
-      ro.disconnect();
+      observer.disconnect();
     };
   }, [enabled, offsetBottom, offsetTop, publishVar]);
 
@@ -145,7 +153,7 @@ export function StickyBox({
       return;
     }
     const scrollParent = getScrollParent(sentinel);
-    let lastScrollY = scrollParent === window ? window.scrollY : (scrollParent as HTMLElement).scrollTop;
+    let lastScrollY = scrollTopOf(scrollParent);
     let accumulated = 0;
     let scrollingUp = false;
     let ticking = false;
@@ -153,7 +161,7 @@ export function StickyBox({
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(() => {
-        const currentY = scrollParent === window ? window.scrollY : (scrollParent as HTMLElement).scrollTop;
+        const currentY = scrollTopOf(scrollParent);
         const delta = currentY - lastScrollY;
         // A direction counts once it has carried 10px; a programmatic scroll never reveals the bar
         accumulated = Math.sign(delta) === Math.sign(accumulated) ? accumulated + delta : delta;
@@ -161,8 +169,7 @@ export function StickyBox({
         else if (Math.abs(accumulated) > 10) scrollingUp = accumulated < 0;
 
         // The bar's own place, measured from the pin line: the sentinel marks its top wherever the bar itself is drawn
-        const rootTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top;
-        const placeTop = sentinel.getBoundingClientRect().top - rootTop - offsetTop - stackOffset(bar, publishVar);
+        const placeTop = sentinel.getBoundingClientRect().top - viewportTopOf(scrollParent) - offsetTop - stackOffset(bar, publishVar);
         const placeOffScreen = placeTop + bar.offsetHeight <= 0;
 
         setPhase((prev) => {
@@ -189,10 +196,10 @@ export function StickyBox({
     if (!publishVar || !enabled || !bar || !host) return;
     const publish = () => host.style.setProperty(publishVar, `${bar.offsetHeight}px`);
     publish();
-    const ro = new ResizeObserver(publish);
-    ro.observe(bar);
+    const observer = new ResizeObserver(publish);
+    observer.observe(bar);
     return () => {
-      ro.disconnect();
+      observer.disconnect();
       host.style.removeProperty(publishVar);
     };
   }, [publishVar, enabled]);
@@ -206,7 +213,7 @@ export function StickyBox({
   }
 
   // `top` must never transition: it would interpolate the stuck/released switch and park at stale offsets
-  const barStyle: React.CSSProperties = { ...style, position: 'sticky', top: `calc(${stackOffsetCss(publishVar)} + ${offsetTop}px)` };
+  const barStyle: CSSProperties = { ...style, position: 'sticky', top: `calc(${stackOffsetCss(publishVar)} + ${offsetTop}px)` };
   if (clampedTop !== null) {
     barStyle.position = 'relative';
     barStyle.top = clampedTop;

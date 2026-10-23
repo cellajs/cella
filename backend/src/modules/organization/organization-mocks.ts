@@ -68,6 +68,8 @@ export const mockOrganizationResponse = (
 
     return { ...base, included: { membership, counts: generateMockChannelCounts('organization', `${key}:counts`) } };
   });
+export const mockOrganizationPublishResponse = () => ({ organization: mockOrganizationResponse(), invitationsSent: 12 });
+
 export const mockPaginatedOrganizationsResponse = (count = 2) => mockPaginated(mockOrganizationResponse, count);
 
 export const mockBatchOrganizationsResponse = (count = 2) => mockBatchResponse(mockOrganizationResponse, count);

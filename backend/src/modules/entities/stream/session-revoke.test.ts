@@ -4,7 +4,7 @@ import '#/modules/entities/entities-listeners';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { streamSubscriberManager } from './subscriber-manager';
 
-const USER = 'user-revoke';
+const user = 'user-revoke';
 
 /** Registers a subscriber whose stream records SSE writes and the abort/close calls the listener makes. */
 const register = (sessionId: string) => {
@@ -14,13 +14,13 @@ const register = (sessionId: string) => {
     abort: () => (stream.aborted = true),
     close: async () => (stream.closed = true),
   });
-  const subscriber = { id: sessionId, stream, userId: USER, sessionId, memberships: [] } as unknown as AppStreamSubscriber;
-  streamSubscriberManager.register(subscriber, [`user:${USER}`]);
+  const subscriber = { id: sessionId, stream, userId: user, sessionId, memberships: [] } as unknown as AppStreamSubscriber;
+  streamSubscriberManager.register(subscriber, [`user:${user}`]);
   return stream;
 };
 
 const errorEvent = (code: string, message: string) => ({ event: 'error', data: JSON.stringify({ code, message }) });
-const registeredIds = () => streamSubscriberManager.getByChannel(`user:${USER}`).map((s) => s.id);
+const registeredIds = () => streamSubscriberManager.getByChannel(`user:${user}`).map((s) => s.id);
 
 afterEach(() => {
   for (const id of registeredIds()) streamSubscriberManager.unregister(id);
@@ -31,7 +31,7 @@ describe('session.revoked closes the streams bound to the ended sessions', () =>
     const ended = register('session-1');
     const kept = register('session-2');
 
-    authEvents.emit('session.revoked', { userId: USER, sessionIds: ['session-1'], reason: 'sign_out' });
+    authEvents.emit('session.revoked', { userId: user, sessionIds: ['session-1'], reason: 'sign_out' });
     await vi.waitFor(() => expect(ended.closed).toBe(true));
 
     expect(ended.written).toEqual([errorEvent('unauthorized', 'Session revoked')]);

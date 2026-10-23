@@ -1,4 +1,4 @@
-const MAX_RECENT_SEARCHES = 5;
+const maxRecentSearches = 5;
 
 /** Comparison form: lowercased, whitespace and special characters stripped. */
 const normalize = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
@@ -22,7 +22,12 @@ export function addRecentSearch(searches: string[], value: string): string[] {
     rest.push(entry);
   }
 
-  return [keep, ...rest].slice(0, MAX_RECENT_SEARCHES);
+  return [keep, ...rest].slice(0, maxRecentSearches);
+}
+
+/** Removes a query. Returns the original array if it holds no such entry. */
+export function withoutRecentSearch(searches: string[], value: string): string[] {
+  return searches.includes(value) ? searches.filter((entry) => entry !== value) : searches;
 }
 
 /** Value a search input takes: a bare history index picks that entry, but only while the input was empty (the history list is showing). */

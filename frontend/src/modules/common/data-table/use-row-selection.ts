@@ -4,11 +4,11 @@ import { useMemo, useState } from 'react';
 export function useRowSelection<TRow extends { id: string }>(rows: TRow[] | undefined) {
   const [selected, setSelected] = useState<TRow[]>([]);
 
-  const onSelectedRowsChange = (value: Set<string>) => {
-    if (rows) setSelected(rows.filter((row) => value.has(row.id)));
+  const onSelectedRowsChange = (rowIds: Set<string>) => {
+    if (rows) setSelected(rows.filter((row) => rowIds.has(row.id)));
   };
 
-  const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
+  const selectedRowIds = useMemo(() => new Set(selected.map((row) => row.id)), [selected]);
 
   return { selected, selectedRowIds, onSelectedRowsChange, clearSelection: () => setSelected([]) };
 }

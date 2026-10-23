@@ -123,7 +123,7 @@ export const scope: ScopeState[] = [
     open: async (page) => {
       await page.getByRole('button', { name: 'Invite' }).click();
       await settle(page);
-      await page.getByRole('button', { name: 'Add by email' }).click();
+      await page.getByRole('button', { name: /invite with email/i }).click();
       await settle(page);
     },
   },

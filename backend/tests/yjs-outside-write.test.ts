@@ -13,8 +13,8 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { updateAttachmentOp } from '#/modules/attachment/operations/update-attachment';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';
-import { descriptionToSeed, descriptionToUpdate, stateToBlocksJson, YJS_FRAGMENT_NAME } from '#/modules/yjs/helpers/description-update';
-import { decodeLogNotice, YJS_LOG_CHANNEL, type YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
+import { descriptionToSeed, descriptionToUpdate, stateToBlocksJson, yjsFragmentName } from '#/modules/yjs/helpers/description-update';
+import { decodeLogNotice, type YjsDocScope, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
 import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
 import { appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
@@ -44,7 +44,7 @@ const texts = (state: Uint8Array | null) =>
 const blockGroups = (state: Uint8Array) => {
   const doc = new Y.Doc();
   Y.applyUpdate(doc, state);
-  const groups = doc.getXmlFragment(YJS_FRAGMENT_NAME).length;
+  const groups = doc.getXmlFragment(yjsFragmentName).length;
   doc.destroy();
   return groups;
 };
@@ -66,9 +66,9 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
     listener = new pg.Client({ connectionString: testDatabaseUrl });
     await listener.connect();
     listener.on('notification', ({ channel, payload }) => {
-      if (channel === YJS_LOG_CHANNEL) heard.push(payload ?? '');
+      if (channel === yjsLogChannel) heard.push(payload ?? '');
     });
-    await listener.query(`LISTEN ${YJS_LOG_CHANNEL}`);
+    await listener.query(`LISTEN ${yjsLogChannel}`);
   });
 
   afterAll(async () => {
@@ -167,7 +167,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
   /** Returns once a notification sent now is heard: notifications arrive in commit order, so every earlier one has too. */
   const barrier = async () => {
     const token = `barrier-${randomUUID()}`;
-    await adminDb.execute(sql`SELECT pg_notify(${YJS_LOG_CHANNEL}, ${token})`);
+    await adminDb.execute(sql`SELECT pg_notify(${yjsLogChannel}, ${token})`);
     await vi.waitUntil(() => heard.includes(token), { timeout: 5000, interval: 10 });
   };
 

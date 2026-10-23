@@ -15,8 +15,8 @@ import { appendOutsideWrite, cleanupSeed, outsideUpdate, pushOverHttp, seedOrg, 
 // the materialize POST is recorded. Sessions stamp their rows live every 100 ms; cleanup runs 500 ms after the last leave.
 vi.mock('../../constants', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../constants')>()),
-  YJS_LIVE_TOUCH_MS: 100,
-  YJS_CLEANUP_DELAY_MS: 500,
+  yjsLiveTouchMs: 100,
+  yjsCleanupDelayMs: 500,
 }));
 vi.mock('../../data/permissions', () => ({ authorizeDoc: vi.fn(async (_userId: string, requested: DocScope) => ({ scope: requested })) }));
 vi.mock('../../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
@@ -234,7 +234,7 @@ describe('relay end to end', () => {
     await admin.query("UPDATE yjs_documents SET updated_at = now() - interval '1 day' WHERE entity_id = $1", [ids.idle]);
     await admin.query("UPDATE yjs_updates SET created_at = now() - interval '1 day' WHERE entity_id = $1", [ids.idle]);
     await seedOrphan(ids.orphan, 'orphaned');
-    // The live session's next stamp, every YJS_LIVE_TOUCH_MS, makes the row fresh again; the sweep runs after it.
+    // The live session's next stamp, every yjsLiveTouchMs, makes the row fresh again; the sweep runs after it.
     await until(async () => {
       const { rows } = await admin.query<{ fresh: boolean }>(
         "SELECT updated_at > now() - interval '1 minute' AS fresh FROM yjs_documents WHERE entity_id = $1",
@@ -346,7 +346,7 @@ describe('relay end to end', () => {
     timeout: 60_000,
   }, async () => {
     // Two documents no session on this relay holds, each with a push logged now: the stamped one first, so its log is
-    // as old as the other's at every run. Another relay's live session stamps it every YJS_LIVE_TOUCH_MS.
+    // as old as the other's at every run. Another relay's live session stamps it every yjsLiveTouchMs.
     for (const entityId of [ids.stamped, ids.posted]) {
       const generation = await seedAtRest(entityId);
       const read = (await loadDocument(ctx(entityId)))!;

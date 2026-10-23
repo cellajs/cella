@@ -2,7 +2,11 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useDownloader } from '~/hooks/use-downloader';
+
+const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));
+vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { error: toastError } }));
+
+const { useDownloader } = await import('~/hooks/use-downloader');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -43,6 +47,6 @@ describe('useDownloader', () => {
     await act(() => downloader.download('https://cdn.example.com/a.pdf', 'report.pdf'));
 
     expect(clicked).toEqual([]);
-    expect(downloader.error?.message).toBe('404 Not Found');
+    expect(toastError).toHaveBeenCalledTimes(1);
   });
 });

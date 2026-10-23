@@ -10,11 +10,11 @@ import { orgGuard } from './org-guard';
 
 // The org row is served from the cache, so the database is reached only on a miss, where this stub
 // returns no row. Membership shape is what the guard actually reads.
-const TENANT_ID = 'tenant-1';
-const ORG_ID = 'org-1';
-const OTHER_ORG_ID = 'org-2';
+const tenantId = 'tenant-1';
+const orgId = 'org-1';
+const otherOrgId = 'org-2';
 
-const orgRow = { id: ORG_ID, tenantId: TENANT_ID, entityType: 'organization', name: 'Org', slug: 'org', organizationFlags: {}, setupConfig: {} };
+const orgRow = { id: orgId, tenantId: tenantId, entityType: 'organization', name: 'Org', slug: 'org', organizationFlags: {}, setupConfig: {} };
 
 /**
  * Membership row as the guard sees it. `channelType` is widened past cella's own vocabulary on
@@ -28,14 +28,14 @@ const membership = (channelType: string, organizationId: string) =>
 const emptyDb = { select: () => ({ from: () => ({ where: () => Promise.resolve([]) }) }) };
 
 const mockCtx = (opts: { memberships: unknown[]; isSystemAdmin?: boolean; organizationId?: string; tenantId?: string; db?: unknown }) => ({
-  req: { param: () => opts.organizationId ?? ORG_ID },
+  req: { param: () => opts.organizationId ?? orgId },
   var: {
     db: (opts.db ?? emptyDb) as never,
     memberships: opts.memberships,
     // The guard reads the actor's bindings; for a session those are the memberships.
     actor: { kind: 'user', id: 'user-1', bindings: opts.memberships, scopes: null },
     isSystemAdmin: opts.isSystemAdmin ?? false,
-    tenantId: opts.tenantId ?? TENANT_ID,
+    tenantId: opts.tenantId ?? tenantId,
   },
   set: vi.fn(),
 });
@@ -58,22 +58,22 @@ const runExpectingError = async (ctx: ReturnType<typeof mockCtx>) => {
 describe('orgGuard — organization access', () => {
   beforeEach(() => {
     clearOrgCache();
-    setOrgCache(TENANT_ID, ORG_ID, orgRow as never);
+    setOrgCache(tenantId, orgId, orgRow as never);
   });
 
   it('admits an organization-level member and exposes the row on the context', async () => {
-    const ctx = mockCtx({ memberships: [membership('organization', ORG_ID)] });
+    const ctx = mockCtx({ memberships: [membership('organization', orgId)] });
 
     const next = await run(ctx);
 
     expect(next).toHaveBeenCalled();
-    expect(ctx.set).toHaveBeenCalledWith('organizationId', ORG_ID);
+    expect(ctx.set).toHaveBeenCalledWith('organizationId', orgId);
     const [, organization] = ctx.set.mock.calls.find(([key]) => key === 'organization') ?? [];
     expect((organization as { membership: unknown }).membership).toMatchObject({ channelType: 'organization' });
   });
 
   it('admits a member of a channel below the organization', async () => {
-    const ctx = mockCtx({ memberships: [membership('course', ORG_ID)] });
+    const ctx = mockCtx({ memberships: [membership('course', orgId)] });
 
     const next = await run(ctx);
 
@@ -81,7 +81,7 @@ describe('orgGuard — organization access', () => {
   });
 
   it('leaves membership null for a sub-channel member, since there is no organization-level row', async () => {
-    const ctx = mockCtx({ memberships: [membership('course', ORG_ID)] });
+    const ctx = mockCtx({ memberships: [membership('course', orgId)] });
 
     await run(ctx);
 
@@ -91,7 +91,7 @@ describe('orgGuard — organization access', () => {
 
   // A caller without a foothold gets the answer a missing organization gets, so the id is never confirmed.
   it('must not confirm the organization to a caller whose only membership is in another organization', async () => {
-    const ctx = mockCtx({ memberships: [membership('course', OTHER_ORG_ID)] });
+    const ctx = mockCtx({ memberships: [membership('course', otherOrgId)] });
 
     const error = await runExpectingError(ctx);
 

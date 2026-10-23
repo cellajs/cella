@@ -1,14 +1,12 @@
-// GLSL for the morph animation; design notes and tuned-value provenance in ./README.md
-
 /** Fullscreen triangle from gl_VertexID; no attributes or buffers needed. */
-export const VERTEX_SOURCE = `#version 300 es
+export const vertexSource = `#version 300 es
 void main(){
   vec2 v = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
   gl_Position = vec4(v * 2.0 - 1.0, 0.0, 1.0);
 }`;
 
-/** Soft-edge "liquid pixel" renderer over the blended shape field. */
-export const FRAGMENT_SOURCE = `#version 300 es
+/** Soft-edge "liquid pixel" renderer over the blended shape field; design notes in README.md. */
+export const fragmentSource = `#version 300 es
 precision highp float;
 uniform vec2 uRes;
 uniform float uTime;

@@ -14,7 +14,6 @@ export const publicCountsQueryOptions = () =>
   queryOptions({
     queryKey: ['marketing', 'public-counts'],
     queryFn: () => getPublicCounts(),
-    // Zeros as placeholder, not initialData: initialData enters the cache as fresh real data,
-    // which suppresses the first fetch entirely under global refetchOnMount: false.
+    // Zeros as placeholder: initialData would enter the cache as fresh data, so the global refetchOnMount: false would skip the first fetch.
     placeholderData: (prev) => prev ?? zeroCounts,
   });

@@ -10,7 +10,7 @@ vi.mock('sdk', () => ({ getYjsToken: vi.fn() }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
 
 const { useYjsToken } = await import('~/modules/common/blocknote/hooks/use-yjs-token');
-const { useUserStore, yjsTokenKey } = await import('~/modules/user/user-store');
+const { userStore, yjsTokenKey } = await import('~/modules/user/user-store');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -45,22 +45,22 @@ afterEach(async () => {
   await act(async () => root?.unmount());
   root = undefined;
   vi.mocked(getYjsToken).mockReset();
-  useUserStore.getState().setYjsToken(tokenKey, null);
+  userStore.getState().setYjsToken(tokenKey, null);
 });
 
 describe('useYjsToken refusals', () => {
   it('must not keep a token the route refuses, nor read a deleted entity as view only: a 404 gives deleted, a 403 view only, each withdrawing the held token without a retry', async () => {
     const answers = [
-      [404, { token: undefined, refused: false, deleted: true }],
-      [403, { token: undefined, refused: true, deleted: false }],
+      [404, { token: undefined, denied: false, deleted: true }],
+      [403, { token: undefined, denied: true, deleted: false }],
     ] as const;
     for (const [status, expected] of answers) {
-      useUserStore.getState().setYjsToken(tokenKey, 'token-v1');
+      userStore.getState().setYjsToken(tokenKey, 'token-v1');
       vi.mocked(getYjsToken).mockReset();
       vi.mocked(getYjsToken).mockRejectedValue(new ApiError({ status }));
 
       expect(await renderToken()).toEqual(expected);
-      expect(useUserStore.getState().yjsTokens[tokenKey]).toBeUndefined();
+      expect(userStore.getState().yjsTokens[tokenKey]).toBeUndefined();
       // No retry changes a refusal.
       expect(getYjsToken).toHaveBeenCalledOnce();
       await act(async () => root?.unmount());

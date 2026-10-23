@@ -1,13 +1,13 @@
 /** Rows per export fetch; the backend rejects limits above 1000, so exports page in chunks. */
-export const EXPORT_CHUNK_SIZE = 1000;
+export const exportChunkSize = 1000;
 
 /** Pages through fetchRows until a short chunk signals the end; one capped fetch would truncate the export. */
 export async function fetchAllRows<T>(fetchRows: (limit: number, offset: number) => Promise<T[]>): Promise<T[]> {
   const rows: T[] = [];
   while (true) {
-    const chunk = await fetchRows(EXPORT_CHUNK_SIZE, rows.length);
+    const chunk = await fetchRows(exportChunkSize, rows.length);
     rows.push(...chunk);
-    if (chunk.length < EXPORT_CHUNK_SIZE) break;
+    if (chunk.length < exportChunkSize) break;
   }
   return rows;
 }

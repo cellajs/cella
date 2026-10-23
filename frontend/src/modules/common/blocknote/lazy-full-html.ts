@@ -4,18 +4,13 @@ import { lazyNamed } from '~/utils/lazy-named';
 /** One shared lazy instance so preloading resolves the same wrapper every consumer uses, avoiding a Suspense spinner flash. */
 export const BlockNoteFullHtml = lazyNamed(() => import('~/modules/common/blocknote/full-html'), 'BlockNoteFullHtml');
 
-// Once warm, later mounts skip the gate: per-card compute lands within a frame and already-seen
-// documents render synchronously from the first-pass cache, so gating again would only add a
-// skeleton flash.
+// Once warm, later mounts skip the gate: a card computes within a frame and a seen document renders from the first-pass cache.
 let rendererWarm = false;
 
 /**
- * Warms the static document renderer and precomputes the given documents' first-pass HTML,
- * reporting when they can all render at full height in their first commit. Pass `null` while the
- * documents are not known yet, and the organization the renderer receives, so the precomputed pass
- * is the one it looks up. Holding a list's skeleton on this flag turns lazy-chunk load plus
- * per-card async HTML passes (which pop in and re-measure virtualized rows) into one reveal.
- * Flips true once per mount and stays true; later documents compute on demand.
+ * Warms the static renderer and precomputes the documents' first-pass HTML; true once they all render at full height in their
+ * first commit, so a list's skeleton reveals once. Pass `null` until the documents are known, and the organization the renderer
+ * receives. Flips true once per mount; later documents compute on demand.
  */
 export function useStaticDocumentsReady(documents: string[] | null, organizationId?: string): boolean {
   const [ready, setReady] = useState(rendererWarm);
@@ -41,7 +36,7 @@ export function useStaticDocumentsReady(documents: string[] | null, organization
       helpers.getHeadlessEditor();
       for (const document of documents) fullHtml.precomputeDocumentHtml(document, organizationId);
       rendererWarm = true;
-      if (mountedRef.current) setReady(true);
+      setReady(true);
     })();
   }, [ready, documents, organizationId]);
   return ready;

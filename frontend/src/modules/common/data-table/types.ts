@@ -3,8 +3,6 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { ApiError } from 'sdk';
 import type { ColumnOrColumnGroup as GridColumnOrColumnGroup } from '~/modules/common/data-grid';
 
-export type BaseTableSearchVariables<T> = T & { limit: number };
-
 /** Grid columns narrowed to keyed entries for table chrome; the grid filters hidden entries. */
 export type ColumnOrColumnGroup<TData> = GridColumnOrColumnGroup<TData> & {
   key: string;
@@ -12,15 +10,15 @@ export type ColumnOrColumnGroup<TData> = GridColumnOrColumnGroup<TData> & {
   exportValue?: (row: TData) => string | number | null | undefined;
 };
 
-export type BaseTableBarProps<T, K> = {
+export interface BaseTableBarProps<T, K> {
   selected: T[];
   queryKey: QueryKey;
   columns: ColumnOrColumnGroup<T>[];
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<T>[]>>;
   clearSelection: () => void;
-  searchVars: BaseTableSearchVariables<K>;
+  searchVars: K;
   setSearch: (newValues: Partial<K>, saveSearch?: boolean) => void;
-};
+}
 
 export type CallbackArgs<T = void> =
   | (T extends void ? { status: 'success' } : { status: 'success'; data: T })

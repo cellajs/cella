@@ -3,7 +3,7 @@ import type { ActorRef } from 'sdk';
 import type { ChannelEntityType, EntityActionType, EntityType } from 'shared';
 import { appConfig, resolveCan } from 'shared';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
-import { useUserStore } from '~/modules/user/user-store';
+import { userStore } from '~/modules/user/user-store';
 import { enrichWithMembership } from '~/query/enrichment/membership';
 import { enrichWithPermissions } from '~/query/enrichment/permissions';
 import type { EnrichableChannel } from '~/query/enrichment/types';
@@ -12,7 +12,7 @@ import { queryClient } from '~/query/query-client';
 // Nav gating only hides links; these guards apply the same `can` answer in `beforeLoad`, and the backend enforces.
 
 export function requireSystemAdmin(): void {
-  if (useUserStore.getState().isSystemAdmin) return;
+  if (userStore.getState().isSystemAdmin) return;
   throw redirect({ to: appConfig.defaultRedirectPath, replace: true });
 }
 
@@ -39,7 +39,7 @@ export async function requireEntityAction(
   const enriched = enrichWithPermissions(enrichWithMembership(entity, memberships), channelType, memberships);
   // The guard asks about the channel itself or rows placed at it, so the row's home is the channel.
   const home = { row: entity.id, channel: entity.id };
-  const allowed = resolveCan(enriched.can?.[entityType]?.[action], entity.createdBy?.id ?? null, useUserStore.getState().user?.id, home);
+  const allowed = resolveCan(enriched.can?.[entityType]?.[action], entity.createdBy?.id ?? null, userStore.getState().user?.id, home);
   if (allowed) return;
   throw redirect({ to: redirectTo, params: true, replace: true });
 }

@@ -8,9 +8,9 @@ const { getCollab, joinCollab, leaveCollab, broadcastToCollab, setUnseenRowHandl
 const { deleteDoc, touchDoc } = await import('../data/storage');
 const { compactDocument } = await import('../sync/compaction');
 
-const GRACE = 5 * 60 * 1000;
-/** How often a session stamps its row live: well inside GRACE, the startup sweep's cutoff. */
-const LIVE_STAMP = 60 * 1000;
+const grace = 5 * 60 * 1000;
+/** How often a session stamps its row live: well inside grace, the startup sweep's cutoff. */
+const liveStamp = 60 * 1000;
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -58,7 +58,7 @@ describe('joinCollab / leaveCollab', () => {
     leaveCollab(ctx, ws as never);
     joinCollab(ctx, ws as never);
     expect(collab.cleanupTimer).toBeUndefined();
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(compactDocument).not.toHaveBeenCalled();
     expect(getCollab(ctx)).toBe(collab);
   });
@@ -71,7 +71,7 @@ describe('joinCollab / leaveCollab', () => {
     collab.compactDueAt = Date.now() + 10_000;
     leaveCollab(ctx, ws as never);
 
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
 
     expect(compactDocument).toHaveBeenCalledWith(ctx, null);
     expect(deleteDoc).not.toHaveBeenCalled();
@@ -86,7 +86,7 @@ describe('joinCollab / leaveCollab', () => {
     joinCollab(ctx, ws as never);
     vi.mocked(compactDocument).mockResolvedValueOnce('gone');
     leaveCollab(ctx, ws as never);
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(deleteDoc).toHaveBeenCalledWith(ctx);
     expect(getCollab(ctx)).toBeUndefined();
   });
@@ -98,10 +98,10 @@ describe('joinCollab / leaveCollab', () => {
     vi.mocked(compactDocument).mockResolvedValueOnce('retry');
     leaveCollab(ctx, ws as never);
 
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(getCollab(ctx)).toBeDefined();
 
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(compactDocument).toHaveBeenCalledTimes(2);
     expect(getCollab(ctx)).toBeUndefined();
   });
@@ -112,7 +112,7 @@ describe('joinCollab / leaveCollab', () => {
     joinCollab(ctx, ws as never);
     vi.mocked(compactDocument).mockRejectedValueOnce(new Error('db down'));
     leaveCollab(ctx, ws as never);
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(deleteDoc).not.toHaveBeenCalled();
     expect(getCollab(ctx)).toBeDefined();
   });
@@ -124,7 +124,7 @@ describe('joinCollab / leaveCollab', () => {
     vi.mocked(compactDocument).mockResolvedValueOnce('gone');
     vi.mocked(deleteDoc).mockRejectedValueOnce(new Error('db down'));
     leaveCollab(ctx, ws as never);
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(getCollab(ctx)).toBeUndefined();
   });
 
@@ -136,7 +136,7 @@ describe('joinCollab / leaveCollab', () => {
     void withDocLock(collab, () => gate.promise);
     leaveCollab(ctx, ws as never);
 
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(compactDocument).not.toHaveBeenCalled();
     joinCollab(ctx, ws as never);
     gate.release();
@@ -157,7 +157,7 @@ describe('joinCollab / leaveCollab', () => {
       return 'ok';
     });
     leaveCollab(ctx, ws as never);
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(compactDocument).toHaveBeenCalledTimes(1);
 
     // A socket joins after cleanup checked for clients, while its compaction is still writing.
@@ -172,7 +172,7 @@ describe('joinCollab / leaveCollab', () => {
 
     // Positive control: once the joiner leaves, cleanup runs to the end.
     leaveCollab(ctx, joiner as never);
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(compactDocument).toHaveBeenCalledTimes(2);
     expect(getCollab(ctx)).toBeUndefined();
   });
@@ -187,7 +187,7 @@ describe('joinCollab / leaveCollab', () => {
     const first = mockWebSocket();
     joinCollab(ctx, first as never);
     leaveCollab(ctx, first as never);
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(compactDocument).toHaveBeenCalledTimes(1);
 
     // A socket joins while cleanup compacts and leaves again, arming a cleanup of its own.
@@ -200,7 +200,7 @@ describe('joinCollab / leaveCollab', () => {
     // An editor opens the document and stays.
     const live = mockWebSocket();
     const session = joinCollab(ctx, live as never);
-    await vi.advanceTimersByTimeAsync(GRACE * 2);
+    await vi.advanceTimersByTimeAsync(grace * 2);
 
     expect(getCollab(ctx)).toBe(session);
     expect(session.clients.has(live as never)).toBe(true);
@@ -217,7 +217,7 @@ describe('joinCollab / leaveCollab', () => {
     const first = mockWebSocket();
     const collab = joinCollab(ctx, first as never);
     leaveCollab(ctx, first as never);
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
 
     // It joins after the compaction read the log: what it logs waits for the next compaction.
     const passing = mockWebSocket();
@@ -229,7 +229,7 @@ describe('joinCollab / leaveCollab', () => {
     expect(getCollab(ctx)).toBe(collab);
 
     // Positive control: the cleanup its leave armed compacts once more, then forgets the session.
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(compactDocument).toHaveBeenCalledTimes(2);
     expect(getCollab(ctx)).toBeUndefined();
   });
@@ -247,7 +247,7 @@ describe('joinCollab / leaveCollab', () => {
 
     // Positive control: a join cancels the one cleanup, and none runs.
     joinCollab(ctx, mockWebSocket() as never);
-    await vi.advanceTimersByTimeAsync(GRACE * 2);
+    await vi.advanceTimersByTimeAsync(grace * 2);
     expect(compactDocument).not.toHaveBeenCalled();
     expect(getCollab(ctx)).toBe(collab);
   });
@@ -259,13 +259,13 @@ describe('joinCollab / leaveCollab', () => {
     vi.mocked(compactDocument).mockResolvedValue('retry');
     leaveCollab(ctx, ws as never);
 
-    await vi.advanceTimersByTimeAsync(GRACE * 12);
+    await vi.advanceTimersByTimeAsync(grace * 12);
     expect(compactDocument).toHaveBeenCalledTimes(12);
     expect(getCollab(ctx)).toBeUndefined();
     expect(deleteDoc).not.toHaveBeenCalled();
 
     // No timer is left behind: nothing runs again.
-    await vi.advanceTimersByTimeAsync(GRACE * 12);
+    await vi.advanceTimersByTimeAsync(grace * 12);
     expect(compactDocument).toHaveBeenCalledTimes(12);
     vi.mocked(compactDocument).mockReset();
     vi.mocked(compactDocument).mockResolvedValue('ok');
@@ -307,20 +307,20 @@ describe('live stamps', () => {
     joinCollab(ctx, peer as never);
     expect(touchDoc).toHaveBeenCalledTimes(1);
 
-    await vi.advanceTimersByTimeAsync(LIVE_STAMP);
+    await vi.advanceTimersByTimeAsync(liveStamp);
     expect(touchDoc).toHaveBeenCalledTimes(2);
 
     // Idle through its grace period, the session stays live until cleanup forgets it.
-    await vi.advanceTimersByTimeAsync(LIVE_STAMP / 2);
+    await vi.advanceTimersByTimeAsync(liveStamp / 2);
     leaveCollab(ctx, ws as never);
     leaveCollab(ctx, peer as never);
-    await vi.advanceTimersByTimeAsync(GRACE);
+    await vi.advanceTimersByTimeAsync(grace);
     expect(getCollab(ctx)).toBeUndefined();
-    expect(touchDoc).toHaveBeenCalledTimes(2 + GRACE / LIVE_STAMP);
+    expect(touchDoc).toHaveBeenCalledTimes(2 + grace / liveStamp);
     expect(touchDoc).toHaveBeenLastCalledWith(collab.scope);
 
-    await vi.advanceTimersByTimeAsync(LIVE_STAMP * 3);
-    expect(touchDoc).toHaveBeenCalledTimes(2 + GRACE / LIVE_STAMP);
+    await vi.advanceTimersByTimeAsync(liveStamp * 3);
+    expect(touchDoc).toHaveBeenCalledTimes(2 + grace / liveStamp);
   });
 
   it('catches up when the newest log row is one the session never relayed: a notification was missed', async () => {
@@ -332,9 +332,9 @@ describe('live stamps', () => {
       collab.seen.add(7);
       vi.mocked(touchDoc).mockResolvedValueOnce({ exists: true, lastLogId: 7 }).mockResolvedValueOnce({ exists: true, lastLogId: 8 });
 
-      await vi.advanceTimersByTimeAsync(LIVE_STAMP);
+      await vi.advanceTimersByTimeAsync(liveStamp);
       expect(caughtUp).not.toHaveBeenCalled();
-      await vi.advanceTimersByTimeAsync(LIVE_STAMP);
+      await vi.advanceTimersByTimeAsync(liveStamp);
       expect(caughtUp).toHaveBeenCalledExactlyOnceWith(collab);
     } finally {
       setUnseenRowHandler(() => undefined);
@@ -347,7 +347,7 @@ describe('live stamps', () => {
     try {
       vi.mocked(touchDoc).mockResolvedValue({ exists: true, lastLogId: 9 });
       joinCollab(uniqueCtx(), mockWebSocket() as never);
-      await vi.advanceTimersByTimeAsync(LIVE_STAMP);
+      await vi.advanceTimersByTimeAsync(liveStamp);
       expect(caughtUp).not.toHaveBeenCalled();
     } finally {
       vi.mocked(touchDoc).mockResolvedValue({ exists: true, lastLogId: null });
@@ -367,13 +367,13 @@ describe('a retired document', () => {
     collab.generation = 'gen-1';
     vi.mocked(touchDoc).mockResolvedValueOnce({ exists: false, lastLogId: null });
 
-    await vi.advanceTimersByTimeAsync(LIVE_STAMP);
+    await vi.advanceTimersByTimeAsync(liveStamp);
 
     expect(ws.closed).toEqual({ code: 1013, reason: 'Document retired' });
     expect(peer.closed).toEqual({ code: 1013, reason: 'Document retired' });
     expect(getCollab(ctx)).toBeUndefined();
     // No timer is left on it: the sockets' reconnects open a session of their own.
-    await vi.advanceTimersByTimeAsync(GRACE * 2);
+    await vi.advanceTimersByTimeAsync(grace * 2);
     expect(touchDoc).toHaveBeenCalledTimes(2);
     expect(compactDocument).not.toHaveBeenCalled();
   });
@@ -383,7 +383,7 @@ describe('a retired document', () => {
     const ws = mockWebSocket();
     vi.mocked(touchDoc).mockResolvedValueOnce({ exists: false, lastLogId: null }).mockResolvedValueOnce({ exists: false, lastLogId: null });
     const collab = joinCollab(ctx, ws as never);
-    await vi.advanceTimersByTimeAsync(LIVE_STAMP);
+    await vi.advanceTimersByTimeAsync(liveStamp);
     expect(touchDoc).toHaveBeenCalledTimes(2);
     expect(getCollab(ctx)).toBe(collab);
     expect(ws.closed).toBeNull();

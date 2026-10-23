@@ -1,32 +1,48 @@
 import { type ReactCustomBlockRenderProps, useExtensionState } from '@blocknote/react';
 import { useEffect } from 'react';
+import type { checklistItemConfig } from 'shared/utils/blocknote-schema-configs';
 import { nanoid } from 'shared/utils/nanoid';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
-import type { checklistItemConfig } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
 import { updateBlockWithoutHistory } from '~/modules/common/blocknote/helpers/blocknote-helpers';
-import { cn } from '~/utils/cn';
 
 type ChecklistItemRenderProps = ReactCustomBlockRenderProps<typeof checklistItemConfig>;
 
+export const newCheckboxId = () => nanoid(12);
+
+interface ChecklistItemViewProps {
+  checked: boolean;
+  checkboxId: string;
+  contentRef: (node: HTMLElement | null) => void;
+  /** The editor's checkbox toggles the item; the exported HTML's is read-only. */
+  input: { readOnly: true } | { disabled: boolean; onChange: () => void };
+}
+
+/** A checklist item's markup, in the editor and in exported HTML. */
+export function ChecklistItemView({ checked, checkboxId, contentRef, input }: ChecklistItemViewProps) {
+  return (
+    <div className="checklist-item" data-checked={checked}>
+      <div contentEditable={false} className="checklist-checkbox-wrapper">
+        <input type="checkbox" checked={checked} data-checkbox-id={checkboxId} className="checklist-checkbox" {...input} />
+      </div>
+      <p className="checklist-content" ref={contentRef} />
+    </div>
+  );
+}
+
 export function ChecklistItemRender({ block, editor, contentRef }: ChecklistItemRenderProps) {
-  // Assign a checkboxId when missing or duplicated, which happens when Enter splits a block.
+  // Assign a checkboxId when missing or duplicated: an Enter split gives both halves the same props, and the first keeps the id.
   useEffect(() => {
     const id = block.props.checkboxId;
-
-    if (!id) {
-      // Defer to avoid flushSync inside React lifecycle
-      setTimeout(() => updateBlockWithoutHistory(editor, block, { props: { checkboxId: nanoid(12) } }), 0);
-      return;
+    let needsId = !id;
+    if (id) {
+      editor.forEachBlock((other) => {
+        if (other.type !== 'checklistItem' || other.props.checkboxId !== id) return true;
+        needsId = other.id !== block.id;
+        return false;
+      });
     }
-
-    // Detect duplicate checkboxIds from block splits where both halves get the same props.
-    for (const b of editor.document) {
-      if (b.type !== 'checklistItem') continue;
-      if ((b.props as { checkboxId?: string }).checkboxId !== id) continue;
-      if (b.id === block.id) break; // This is the first occurrence, keep its ID
-      setTimeout(() => updateBlockWithoutHistory(editor, block, { props: { checkboxId: nanoid(12) } }), 0);
-      break;
-    }
+    // Defer to avoid flushSync inside React lifecycle
+    if (needsId) setTimeout(() => updateBlockWithoutHistory(editor, block, { props: { checkboxId: newCheckboxId() } }), 0);
   }, [block.id, block.props.checkboxId, editor]);
 
   const { persisted } = useExtensionState(checkedExtension, { editor });
@@ -39,18 +55,11 @@ export function ChecklistItemRender({ block, editor, contentRef }: ChecklistItem
   };
 
   return (
-    <div className="checklist-item" data-checked={isChecked}>
-      <div contentEditable={false} className="checklist-checkbox-wrapper">
-        <input
-          type="checkbox"
-          checked={isChecked}
-          disabled={!persisted}
-          onChange={handleToggle}
-          data-checkbox-id={block.props.checkboxId}
-          className="checklist-checkbox"
-        />
-      </div>
-      <p className={cn('checklist-content', isChecked && 'checklist-checked')} ref={contentRef} />
-    </div>
+    <ChecklistItemView
+      checked={isChecked}
+      checkboxId={block.props.checkboxId}
+      contentRef={contentRef}
+      input={{ disabled: !persisted, onChange: handleToggle }}
+    />
   );
 }

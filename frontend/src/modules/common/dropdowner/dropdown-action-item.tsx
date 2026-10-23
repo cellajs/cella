@@ -1,47 +1,51 @@
-import { Menu } from '@base-ui/react/menu';
 import type { ReactNode } from 'react';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Button, type ButtonProps } from '~/modules/ui/button';
+import { DropdownMenuItem } from '~/modules/ui/dropdown-menu';
 import { cn } from '~/utils/cn';
 
-interface Props {
-  isMobile: boolean;
+interface DropdownActionItemProps {
+  /** Renders the drawer row; defaults to the breakpoint at which the dropdowner renders a drawer. */
+  isMobile?: boolean;
   onSelect?: () => void;
   icon?: IconComponent;
   children: ReactNode;
   variant?: ButtonProps['variant'];
   className?: ButtonProps['className'];
-  /**
-   * Close the menu after selection (desktop only). Defaults to true; pass false when the item
-   * swaps in a confirmation panel via `useDropdowner.update`.
-   */
+  /** Close the menu after selection (desktop only, default true); false for an item that opens a confirmation (`openPopConfirm`). */
   closeOnSelect?: boolean;
 }
 
-export function DropdownActionItem({ isMobile, onSelect, icon: Icon, children, variant = 'secondary', className, closeOnSelect = true }: Props) {
-  if (isMobile) {
+export function DropdownActionItem({
+  isMobile,
+  onSelect,
+  icon: Icon,
+  children,
+  variant = 'secondary',
+  className,
+  closeOnSelect = true,
+}: DropdownActionItemProps) {
+  const isDrawer = useBreakpointBelow('sm');
+
+  if (isMobile ?? isDrawer) {
     return (
-      <div className="sm:p-1">
-        <Button onClick={onSelect} variant={variant} className={cn('flex w-full items-center', className)}>
-          {Icon && <Icon />}
-          {children}
-        </Button>
-      </div>
+      <Button onClick={onSelect} variant={variant} className={cn('flex w-full', className)}>
+        {Icon && <Icon />}
+        {children}
+      </Button>
     );
   }
 
   return (
-    <Menu.Item
+    <DropdownMenuItem
+      variant={variant === 'destructive' ? 'destructive' : 'default'}
       closeOnClick={closeOnSelect}
       onClick={onSelect}
-      className={cn(
-        'relative flex min-h-10 w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden data-highlighted:bg-accent data-highlighted:text-accent-foreground',
-        variant === 'destructive' && 'text-destructive data-highlighted:bg-destructive data-highlighted:text-destructive-foreground',
-        className,
-      )}
+      className={className}
     >
       {Icon && <Icon />}
       {children}
-    </Menu.Item>
+    </DropdownMenuItem>
   );
 }

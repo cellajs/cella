@@ -4,8 +4,8 @@ import { parseOpenApiSpec } from '../parse-spec';
 import type { OpenApiSpec, OpenApiTag } from '../types';
 
 // Derive config-dependent expectations so the fixture survives config renames.
-const ENTITY_TYPE = config.entityTypes[0]; // e.g. 'user'
-const MODULE_TAG = `${ENTITY_TYPE}s`; // e.g. 'users'
+const entityType = config.entityTypes[0]; // e.g. 'user'
+const moduleTag = `${entityType}s`; // e.g. 'users'
 
 // Hand-owned fixtures isolate parser transformations from ordinary API contract churn.
 describe('parseOpenApiSpec', () => {
@@ -223,7 +223,7 @@ const goldenSpec = {
     'x-extensions': [{ key: 'x-guard', id: 'xGuard', description: 'Route guards', kind: 'middleware' }],
   },
   tags: [
-    { name: MODULE_TAG, description: 'User operations', kind: 'module' },
+    { name: moduleTag, description: 'User operations', kind: 'module' },
     { name: 'admin', kind: 'owner' }, // excluded from operations + sidebar
     { name: 'data', kind: 'schema', description: 'Default schemas', 'x-default': true },
     { name: 'system', kind: 'schema', description: 'System schemas' },
@@ -233,7 +233,7 @@ const goldenSpec = {
       get: {
         operationId: 'getUsers',
         summary: 'List users',
-        tags: [MODULE_TAG, 'admin'],
+        tags: [moduleTag, 'admin'],
         'x-guard': ['isAuthenticated'],
         parameters: [{ name: 'q', in: 'query', required: false, schema: { type: 'string' } }],
         responses: {
@@ -274,16 +274,16 @@ describe('parseOpenApiSpec, golden fixture', () => {
 
   it('strips excluded (non-module) tags from operations but keeps them grouped by kind', () => {
     expect(getUsers).toBeDefined();
-    expect(getUsers?.tags).toEqual([MODULE_TAG]); // 'admin' (owner kind) removed
-    expect(getUsers?.tagsByKind).toEqual({ module: [MODULE_TAG], owner: ['admin'] });
+    expect(getUsers?.tags).toEqual([moduleTag]); // 'admin' (owner kind) removed
+    expect(getUsers?.tagsByKind).toEqual({ module: [moduleTag], owner: ['admin'] });
   });
 
   it('derives entityType from a module tag matching a configured entity type', () => {
-    expect(getUsers?.entityType).toBe(ENTITY_TYPE);
+    expect(getUsers?.entityType).toBe(entityType);
   });
 
   it('produces a deterministic operation hash and capability flags', () => {
-    expect(getUsers?.hash).toBe(`tag/${MODULE_TAG}/GET/users`);
+    expect(getUsers?.hash).toBe(`tag/${moduleTag}/GET/users`);
     expect(getUsers).toMatchObject({ hasParams: true, hasRequestBody: false, hasResponseBody: true, hasExample: true, deprecated: false });
   });
 
@@ -294,7 +294,7 @@ describe('parseOpenApiSpec, golden fixture', () => {
 
   it('lists only module-kind tags in the sidebar with per-tag counts', () => {
     // 'admin' (owner) and 'data'/'system' (schema) must not appear in the tag sidebar.
-    expect(result.tags).toEqual([{ name: MODULE_TAG, description: 'User operations', count: 1, kind: 'module' }]);
+    expect(result.tags).toEqual([{ name: moduleTag, description: 'User operations', count: 1, kind: 'module' }]);
   });
 
   it('buckets component schemas by x-tags with an x-default fallback', () => {
@@ -324,7 +324,7 @@ describe('parseOpenApiSpec, golden fixture', () => {
   });
 
   it('resolves a $ref response, lifting the referenced component example and request params', () => {
-    const detail = result.tagDetails.get(MODULE_TAG)?.[0];
+    const detail = result.tagDetails.get(moduleTag)?.[0];
     const ok = detail?.responses.find((r) => r.status === 200);
     expect(ok?.name).toBe('User');
     expect(ok?.ref).toBe('#/components/schemas/User');

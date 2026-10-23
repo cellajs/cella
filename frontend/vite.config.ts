@@ -80,7 +80,7 @@ const ON_DEMAND_APP =
  * tab channel and storage warning (teardown, eviction, the sign-out list), and the parked-edits check the app layout
  * mounts. Each loads Yjs or BlockNote only on demand, so the boot path stays free of the editor chunk.
  */
-const YJS_REGISTRY = /[\\/]blocknote[\\/](yjs-editor|yjs-store|yjs-tab-channel|storage-warning|parked-notices-on-boot)\./;
+const YJS_REGISTRY = /[\\/]blocknote[\\/](yjs-owned-fields|yjs-store|yjs-tab-channel|storage-warning|parked-notices-on-boot)\./;
 
 /**
  * The docs modules boot-time code reads: the module registration, the query registry and the search params. Every

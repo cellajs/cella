@@ -1,8 +1,13 @@
 import type { IconComponent } from '~/modules/common/icons/types';
 import { cn } from '~/utils/cn';
 
+interface DropdownerTriggerIconProps {
+  icon: IconComponent;
+  className?: string;
+}
+
 /** A dropdown trigger's icon, drawn over by a check while the dropdowner marks the trigger done (`complete`). */
-export function DropdownerTriggerIcon({ icon: Icon, className }: { icon: IconComponent; className?: string }) {
+export function DropdownerTriggerIcon({ icon: Icon, className }: DropdownerTriggerIconProps) {
   return (
     <span className="inline-grid place-items-center">
       <Icon

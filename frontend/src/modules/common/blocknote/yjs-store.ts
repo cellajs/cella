@@ -1,17 +1,12 @@
-/**
- * Stores collaborative documents opened for editing in the per-user database (the Yjs tables of local-user-db.ts), so
- * they load before the provider connects and stay editable offline. A `local` row holds an edit no server answer has
- * proven saved, and only a proof clears it.
- */
-
 import { onlineManager } from '@tanstack/react-query';
 import { liveQuery } from 'dexie';
 import { useEffect, useState } from 'react';
 import { appConfig, type ProductEntityType } from 'shared';
+import { isRecord } from 'shared/utils/as-record';
 import type * as Y from 'yjs';
 import { warnOnStoragePressure } from '~/modules/common/blocknote/storage-warning';
-import { postTabUpdate, toTabKey } from '~/modules/common/blocknote/yjs-tab-channel';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { postTabMessage, yDocKeyString } from '~/modules/common/blocknote/yjs-tab-channel';
+import { uiStore } from '~/modules/ui/ui-store';
 import {
   getLocalUserDb,
   type LocalUserDatabase,
@@ -20,27 +15,31 @@ import {
   type YDocKey,
   type YDocRecord,
   type YDocUpdateRecord,
+  type YjsDocScope,
 } from '~/query/local-user-db';
 import { isLeader, tabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 
 /** The longest a load may hold up the provider's connect. */
-export const STORE_LOAD_TIMEOUT_MS = 5_000;
-/** A document's update rows are trimmed into its base past this many rows, or past `TRIM_BYTES`. */
-const TRIM_ROWS = 100;
-const TRIM_BYTES = 256 * 1024;
+export const storeLoadTimeoutMs = 5_000;
+/** A document's update rows are trimmed into its base past this many rows, or past `trimBytes`. */
+const trimRows = 100;
+const trimBytes = 256 * 1024;
 /** A trim waits this long for more rows, so a burst of edits trims once. */
-const TRIM_DEBOUNCE_MS = 2_000;
-/** Eviction removes the least recently opened documents past this many, or past `MAX_STORED_BYTES` in all. */
-export const MAX_STORED_DOCS = 200;
-const MAX_STORED_BYTES = 50 * 1024 * 1024;
+const trimDebounceMs = 2_000;
+/** Eviction removes the least recently opened documents past this many, or past `maxStoredBytes` in all. */
+export const maxStoredDocs = 200;
+const maxStoredBytes = 50 * 1024 * 1024;
 /** Eviction leaves a document opened within this window alone: another tab may hold it open. */
-const EVICT_MIN_AGE_MS = 60 * 60_000;
+const evictMinAgeMs = 60 * 60_000;
 /** Eviction runs at most this often after a first store or a trim. */
-const EVICT_INTERVAL_MS = 60_000;
+const evictIntervalMs = 60_000;
 /** Without offline access (session mode), eviction also drops synced documents not opened within this window. */
-const SESSION_KEEP_MS = 2 * 60 * 60_000;
+const sessionKeepMs = 2 * 60 * 60_000;
 /** Background connections boot resume opens at a time. */
-const RESUME_CONCURRENCY = 3;
+const resumeConcurrency = 3;
+
+/** Whether descriptions save through the Yjs relay: one save mode for every type, fixed by config. */
+export const isYjsEnabled = () => appConfig.services.yjs.enabled && !!appConfig.yjsUrl;
 
 /** The origin a stored state is applied with: no edit of this tab, and nothing to store again. */
 export const storageOrigin = Symbol('yjs-store');
@@ -64,9 +63,7 @@ export interface LoadedYDoc {
 }
 
 /** A document whose edits no server holds: stored with unsynced edits, or parked as unsaveable. */
-export interface UnsavedYDoc extends YDocKey {
-  tenantId: string;
-  organizationId: string;
+export interface UnsavedYDoc extends YjsDocScope {
   /** Why the edits can never be saved, once parked; null while they are stored and wait for a server. */
   parked: UnsaveableReason | null;
   /** The parked row in `unsaveableYDocs`, which a discard deletes; absent while not parked. */
@@ -83,7 +80,10 @@ export interface StoreScope {
 /** The proof that the server holds a document's local rows: a saved handshake, or a connection that turned clean. */
 export type StoreProof = { kind: 'handshake'; applied: AppliedRows; vector: Uint8Array } | { kind: 'clean' };
 
-/** Writes one connection's document to the store. */
+/**
+ * Writes the document of a connection opened for editing to the per-user database, so it loads before the provider
+ * connects and stays editable offline. A `local` row holds an edit no server answer proved saved; only a proof clears it.
+ */
 export interface YDocWriter {
   /** Starts storing: a full snapshot, plus a local row when `unsynced`. Idempotent. */
   start(doc: Y.Doc, scope: StoreScope, unsynced: boolean): void;
@@ -145,8 +145,8 @@ function track(task: Promise<void>): Promise<void> {
 
 /** True for the browser's quota error, which Dexie may wrap. */
 function isQuotaError(error: unknown): boolean {
-  const names = [(error as Error | undefined)?.name, (error as { inner?: Error } | undefined)?.inner?.name];
-  return names.includes('QuotaExceededError');
+  if (!isRecord(error)) return false;
+  return error.name === 'QuotaExceededError' || (isRecord(error.inner) && error.inner.name === 'QuotaExceededError');
 }
 
 /** Deletes a document's metadata, base and rows; inside a `rw` transaction over the three tables. */
@@ -220,7 +220,7 @@ class StoreWriter implements YDocWriter {
   constructor(
     readonly key: YDocKey,
     private readonly db: LocalUserDatabase,
-    private readonly opts: YDocWriterOptions,
+    private readonly options: YDocWriterOptions,
   ) {}
 
   get pending() {
@@ -241,7 +241,7 @@ class StoreWriter implements YDocWriter {
     this.batch.start = true;
     if (unsynced) this.batch.fullLocal = true;
     this.schedule();
-    if (unsynced) this.opts.onChange?.();
+    if (unsynced) this.options.onChange?.();
   }
 
   append(update: Uint8Array, local: boolean, fromTab?: { rowId: number | null }) {
@@ -256,7 +256,7 @@ class StoreWriter implements YDocWriter {
     if (local && !fromTab) this.batch.local.push(update);
     else this.batch.remote.push(update);
     this.schedule();
-    if (this.pending !== wasPending) this.opts.onChange?.();
+    if (this.pending !== wasPending) this.options.onChange?.();
   }
 
   /** Writes what is queued now; resolves once every write so far committed. */
@@ -276,7 +276,7 @@ class StoreWriter implements YDocWriter {
       .finally(() => {
         this.writing--;
         if (holdsLocal) this.writingLocal--;
-        this.opts.onChange?.();
+        this.options.onChange?.();
         if (this.released && !this.busy) writers.delete(this);
       });
   }
@@ -290,10 +290,9 @@ class StoreWriter implements YDocWriter {
     return this.enqueueTask(async () => {
       const scope = this.scope;
       if (this.closed || !scope) return;
-      const k = keyPath(this.key);
       await this.db
         .transaction('rw', this.db.yDocs, this.db.yDocUpdates, async () => {
-          const record = await this.db.yDocs.get(k);
+          const record = await this.db.yDocs.get(keyPath(this.key));
           // Another generation's rows are another history, which this proof says nothing about.
           if (!record || record.generation !== scope.generation) return;
           await rowsOf(this.db, this.key)
@@ -318,8 +317,7 @@ class StoreWriter implements YDocWriter {
     const scope = this.scope;
     this.close();
     // Before `start` the writer knows no generation, so `doc` may hold another history: the stored state alone. After
-    // it, `doc` is read now, since the caller destroys it right after; Yjs is loaded by then, as the writer's first
-    // write loaded it.
+    // it, `doc` is read now, since the caller destroys it next; the writer's first write loaded Yjs.
     const state = scope && yjsLoaded ? yjsLoaded.encodeStateAsUpdate(doc) : null;
     return this.enqueueTask(async () => {
       const Yjs = await loadYjs();
@@ -345,7 +343,6 @@ class StoreWriter implements YDocWriter {
     });
   }
 
-  /** The document was destroyed with its connection: flush what it holds, and no longer count it as open. */
   private release() {
     this.released = true;
     void this.flush();
@@ -383,7 +380,7 @@ class StoreWriter implements YDocWriter {
 
   private broadcast(update: Uint8Array, rowId: number | null) {
     if (!this.scope) return;
-    postTabUpdate({ t: 'update', key: toTabKey(this.key), generation: this.scope.generation, update, rowId });
+    postTabMessage({ kind: 'update', key: yDocKeyString(this.key), generation: this.scope.generation, update, rowId });
   }
 
   private async write(batch: Batch) {
@@ -418,7 +415,7 @@ class StoreWriter implements YDocWriter {
     if (commit?.created) this.ownRows.clear();
     if (commit?.ownRowId) {
       this.ownRows.add(commit.ownRowId);
-      this.opts.applied?.ids.add(commit.ownRowId);
+      this.options.applied?.ids.add(commit.ownRowId);
     }
     if (local) this.broadcast(local, commit?.superseded ? null : (commit?.broadcastRowId ?? null));
     if (commit?.trim) scheduleTrim(this.key);
@@ -447,8 +444,7 @@ class StoreWriter implements YDocWriter {
         record = undefined;
       }
 
-      const addRow = (update: Uint8Array, isLocal: boolean) =>
-        db.yDocUpdates.add({ ...key, update, local: isLocal ? 1 : 0, tabId: storeTabId }) as Promise<number>;
+      const addRow = (update: Uint8Array, isLocal: boolean) => db.yDocUpdates.add({ ...key, update, local: isLocal ? 1 : 0, tabId: storeTabId });
 
       if (!record) {
         // First stored, or deleted under this tab: the whole document, with one local row of it when unsynced. Own
@@ -496,14 +492,14 @@ class StoreWriter implements YDocWriter {
       };
       await db.yDocs.put(next);
       const rows = await rowsOf(db, key).count();
-      return { ...result, trim: rows > TRIM_ROWS || next.updateBytes > TRIM_BYTES };
+      return { ...result, trim: rows > trimRows || next.updateBytes > trimBytes };
     });
   }
 
   private fail(error: unknown) {
     console.warn('[yjs-store] Storing failed; edits stay in memory and still sync online', error);
     this.failed = true;
-    this.opts.onChange?.();
+    this.options.onChange?.();
     if (isQuotaError(error)) void warnOnStoragePressure({ limitsReached: true });
   }
 }
@@ -521,11 +517,11 @@ export async function loadYDoc(key: YDocKey): Promise<LoadedYDoc | null> {
 }
 
 /** A writer for one document's rows, on the bound user's database; null while none is bound. */
-export function createYDocWriter(key: YDocKey, opts: YDocWriterOptions = {}): YDocWriter | null {
+export function createYDocWriter(key: YDocKey, options: YDocWriterOptions = {}): YDocWriter | null {
   const db = getLocalUserDb();
   if (!db) return null;
   void loadYjs();
-  return new StoreWriter({ entityType: key.entityType, entityId: key.entityId }, db, opts);
+  return new StoreWriter({ entityType: key.entityType, entityId: key.entityId }, db, options);
 }
 
 /** Resolves once every queued update is committed. */
@@ -535,16 +531,16 @@ export async function flushYjsStore(): Promise<void> {
 
 const trimTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-/** Trims a document `TRIM_DEBOUNCE_MS` after its last call. */
+/** Trims a document `trimDebounceMs` after its last call. */
 function scheduleTrim(key: YDocKey) {
-  const id = toTabKey(key);
+  const id = yDocKeyString(key);
   clearTimeout(trimTimers.get(id));
   trimTimers.set(
     id,
     setTimeout(() => {
       trimTimers.delete(id);
       void trimYDoc(key).catch((error) => console.warn('[yjs-store] Trim failed', error));
-    }, TRIM_DEBOUNCE_MS),
+    }, trimDebounceMs),
   );
 }
 
@@ -589,10 +585,10 @@ async function relieveQuota(key: YDocKey) {
 let lastEvictionAt = 0;
 let evictionTimer: ReturnType<typeof setTimeout> | undefined;
 
-/** Evicts now, or once `EVICT_INTERVAL_MS` passed since the last run. */
+/** Evicts now, or once `evictIntervalMs` passed since the last run. */
 function scheduleEviction() {
   if (evictionTimer) return;
-  const wait = Math.max(0, lastEvictionAt + EVICT_INTERVAL_MS - Date.now());
+  const wait = Math.max(0, lastEvictionAt + evictIntervalMs - Date.now());
   evictionTimer = setTimeout(() => {
     evictionTimer = undefined;
     void evictYDocs().catch((error) => console.warn('[yjs-store] Eviction failed', error));
@@ -600,22 +596,21 @@ function scheduleEviction() {
 }
 
 /** Keys of the documents open in this tab. */
-const openKeys = () => new Set([...writers].filter((writer) => !writer.released).map((writer) => toTabKey(writer.key)));
+const openKeys = () => new Set([...writers].filter((writer) => !writer.released).map((writer) => yDocKeyString(writer.key)));
 
 /**
- * Deletes the least recently opened documents while more than `MAX_STORED_DOCS` are stored or more than
- * `MAX_STORED_BYTES` in all, and in session mode every one not opened within `SESSION_KEEP_MS`. Never one with
- * unsynced edits, one open in this tab, or one opened within `EVICT_MIN_AGE_MS` (which may be open in another);
- * parked edits are never evicted. Then warns when the device's storage runs low, or the limits stay reached.
+ * Deletes the least recently opened documents past `maxStoredDocs` or `maxStoredBytes`, and in session mode past
+ * `sessionKeepMs`: never one with unsynced edits, open in this tab or opened within `evictMinAgeMs`, and never parked
+ * edits. Then warns when the device's storage runs low, or the limits stay reached.
  */
 export async function evictYDocs(): Promise<void> {
   const db = getLocalUserDb();
   if (!db) return;
   lastEvictionAt = Date.now();
   const now = Date.now();
-  const sessionMode = !useUIStore.getState().offlineAccess;
+  const sessionMode = !uiStore.getState().offlineAccess;
   const open = openKeys();
-  const evictable = (record: YDocRecord) => record.unsynced === 0 && !open.has(toTabKey(record)) && now - record.lastOpenedAt > EVICT_MIN_AGE_MS;
+  const evictable = (record: YDocRecord) => record.unsynced === 0 && !open.has(yDocKeyString(record)) && now - record.lastOpenedAt > evictMinAgeMs;
 
   const records = await db.yDocs.orderBy('lastOpenedAt').toArray();
   let count = records.length;
@@ -623,8 +618,8 @@ export async function evictYDocs(): Promise<void> {
   const victims: YDocRecord[] = [];
   for (const record of records) {
     if (!evictable(record)) continue;
-    const expired = sessionMode && now - record.lastOpenedAt > SESSION_KEEP_MS;
-    if (!expired && count <= MAX_STORED_DOCS && bytes <= MAX_STORED_BYTES) continue;
+    const expired = sessionMode && now - record.lastOpenedAt > sessionKeepMs;
+    if (!expired && count <= maxStoredDocs && bytes <= maxStoredBytes) continue;
     victims.push(record);
     count--;
     bytes -= record.bytes;
@@ -639,13 +634,14 @@ export async function evictYDocs(): Promise<void> {
       }
     });
   }
-  await warnOnStoragePressure({ limitsReached: count > MAX_STORED_DOCS || bytes > MAX_STORED_BYTES });
+  await warnOnStoragePressure({ limitsReached: count > maxStoredDocs || bytes > maxStoredBytes });
 }
 
-/** Stored documents with unsynced edits, then parked ones. */
+const listUnsyncedYDocs = (db: LocalUserDatabase) => db.yDocs.filter((record) => record.unsynced === 1).toArray();
+
 async function readUnsaved(db: LocalUserDatabase): Promise<UnsavedYDoc[]> {
   return db.transaction('r', db.yDocs, db.unsaveableYDocs, async () => {
-    const stored = await db.yDocs.filter((record) => record.unsynced === 1).toArray();
+    const stored = await listUnsyncedYDocs(db);
     const parked = await db.unsaveableYDocs.toArray();
     return [
       ...stored.map(({ entityType, entityId, tenantId, organizationId }) => ({ entityType, entityId, tenantId, organizationId, parked: null })),
@@ -662,15 +658,15 @@ async function readUnsaved(db: LocalUserDatabase): Promise<UnsavedYDoc[]> {
 }
 
 /** A live query on the bound user's database, resubscribed when another user binds; `empty` while none is. */
-function watchLocalUserDb<T>(query: (db: LocalUserDatabase) => Promise<T>, empty: T, cb: (value: T) => void): () => void {
+function watchLocalUserDb<T>(query: (db: LocalUserDatabase) => Promise<T>, empty: T, onChange: (value: T) => void): () => void {
   let subscription: { unsubscribe: () => void } | null = null;
   const subscribe = () => {
     subscription?.unsubscribe();
     subscription = null;
     const db = getLocalUserDb();
-    if (!db) return cb(empty);
+    if (!db) return onChange(empty);
     subscription = liveQuery(() => query(db)).subscribe({
-      next: cb,
+      next: onChange,
       error: (error) => console.error('[yjs-store] Live query failed', error),
     });
   };
@@ -683,9 +679,9 @@ function watchLocalUserDb<T>(query: (db: LocalUserDatabase) => Promise<T>, empty
   };
 }
 
-/** Stored rows with unsynced edits plus parked ones, live; for the sign-out dialog. */
-export function watchUnsavedYDocs(cb: (docs: UnsavedYDoc[]) => void): () => void {
-  return watchLocalUserDb(readUnsaved, [], cb);
+/** The unsaved documents, live, for the sign-out dialog. */
+export function watchUnsavedYDocs(onChange: (docs: UnsavedYDoc[]) => void): () => void {
+  return watchLocalUserDb(readUnsaved, [], onChange);
 }
 
 type StoredState = { stored: boolean; unsynced: boolean };
@@ -694,12 +690,12 @@ type StoredState = { stored: boolean; unsynced: boolean };
 export function useStoredYDoc(key: YDocKey | undefined): StoredState | undefined {
   const entityType = key?.entityType;
   const entityId = key?.entityId;
-  const id = entityType && entityId ? `${entityType}:${entityId}` : null;
+  const id = entityType && entityId ? yDocKeyString({ entityType, entityId }) : null;
   const [state, setState] = useState<{ id: string; value: StoredState } | null>(null);
 
   useEffect(() => {
     if (!entityType || !entityId) return;
-    const id = `${entityType}:${entityId}`;
+    const id = yDocKeyString({ entityType, entityId });
     return watchLocalUserDb(
       (db) => db.yDocs.get([entityType, entityId]),
       undefined,
@@ -714,13 +710,6 @@ export function useStoredYDoc(key: YDocKey | undefined): StoredState | undefined
   return id && state?.id === id ? state.value : undefined;
 }
 
-/** Documents with unsynced edits a background connection should upload. */
-async function listUnsyncedYDocs(): Promise<YDocRecord[]> {
-  const db = getLocalUserDb();
-  if (!db) return [];
-  return db.yDocs.filter((record) => record.unsynced === 1).toArray();
-}
-
 let resuming: Promise<void> | null = null;
 
 /**
@@ -730,8 +719,9 @@ let resuming: Promise<void> | null = null;
 function resumeYDocs(): Promise<void> {
   if (resuming) return resuming;
   resuming = (async () => {
-    if (!isLeader() || !onlineManager.isOnline() || !appConfig.services.yjs.enabled || !appConfig.yjsUrl) return;
-    const queue = await listUnsyncedYDocs();
+    const db = getLocalUserDb();
+    if (!db || !isLeader() || !onlineManager.isOnline() || !isYjsEnabled()) return;
+    const queue = await listUnsyncedYDocs(db);
     if (queue.length === 0) return;
     const { resumeConnection } = await import('~/modules/common/blocknote/yjs-connections');
     const worker = async () => {
@@ -739,7 +729,7 @@ function resumeYDocs(): Promise<void> {
         await resumeConnection(record).catch((error) => console.warn('[yjs-store] Resume failed', error));
       }
     };
-    await Promise.all(Array.from({ length: Math.min(RESUME_CONCURRENCY, queue.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(resumeConcurrency, queue.length) }, worker));
   })().finally(() => {
     resuming = null;
   });
@@ -751,23 +741,23 @@ function resumeYDocs(): Promise<void> {
  * unsynced documents, again when it becomes leader and when the browser is back online. Returns the stop.
  */
 export function startYjsStore(): () => void {
-  const onBound = () => {
+  const evictAndResume = () => {
     if (!getLocalUserDb()) return;
     void evictYDocs().catch((error) => console.warn('[yjs-store] Eviction failed', error));
     void resumeYDocs();
   };
   const stops = [
     subscribeOwnerChange((owner) => {
-      if (owner) onBound();
+      if (owner) evictAndResume();
     }),
     tabCoordinatorStore.subscribe((state, prev) => {
       if (state.isLeader && !prev.isLeader) void resumeYDocs();
     }),
-    onlineManager.subscribe((online) => {
-      if (online) void resumeYDocs();
+    onlineManager.subscribe((isOnline) => {
+      if (isOnline) void resumeYDocs();
     }),
   ];
-  onBound();
+  evictAndResume();
   return () => {
     for (const stop of stops) stop();
   };

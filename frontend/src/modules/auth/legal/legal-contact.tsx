@@ -2,25 +2,39 @@ import { BuildingIcon } from 'lucide-react';
 import { appConfig } from 'shared';
 import { cn } from '~/utils/cn';
 
-export function LegalContact({ addressOnly = false, className }: { addressOnly?: boolean; className?: string }) {
-  const companyFull = appConfig.company.name;
-  const streetAddress = appConfig.company.streetAddress;
-  const postcode = appConfig.company.postcode;
-  const city = appConfig.company.city;
-  const country = appConfig.company.country;
-  const supportEmail = appConfig.company.supportEmail;
-  const registration = appConfig.company.registration;
-  const vatNumber = appConfig.company.vatNumber;
+interface SupportEmailLinkProps {
+  className?: string;
+}
+
+/** The support address as a mail link. */
+export function SupportEmailLink({ className }: SupportEmailLinkProps) {
+  const { supportEmail } = appConfig.company;
 
   return (
-    <div className={cn('not-prose flex', className)}>
-      <span className="mr-6 flex flex-col items-center">
-        <BuildingIcon className="mt-1 shrink-0" />
+    <a className={className} href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
+      {supportEmail}
+    </a>
+  );
+}
+
+interface LegalContactProps {
+  /** Leaves out the registration and VAT lines. */
+  addressOnly?: boolean;
+  className?: string;
+}
+
+export function LegalContact({ addressOnly = false, className }: LegalContactProps) {
+  const { name, streetAddress, postcode, city, country, registration, vatNumber } = appConfig.company;
+
+  return (
+    <div className={cn('not-prose flex gap-6', className)}>
+      <span className="flex flex-col items-center">
+        <BuildingIcon className="mt-1" />
         <span className="mt-1 w-px grow bg-border" />
       </span>
       <ul>
         <li className="mb-2">
-          <strong>{companyFull}</strong>
+          <strong>{name}</strong>
         </li>
         <li>{streetAddress}</li>
         <li>
@@ -28,9 +42,7 @@ export function LegalContact({ addressOnly = false, className }: { addressOnly?:
         </li>
         <li>{country}</li>
         <li>
-          <a className="link-inline" href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
-            {supportEmail}
-          </a>
+          <SupportEmailLink className="link-inline" />
         </li>
         {!addressOnly && <li>{registration}</li>}
         {!addressOnly && vatNumber && <li>VAT number: {vatNumber}</li>}

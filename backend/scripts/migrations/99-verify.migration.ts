@@ -9,7 +9,7 @@ import { membershipRuleTriggers } from '#/db/membership-rules';
 import { rlsPolicyContract } from '#/db/rls-helpers';
 import { entityTables, resourceTables } from '#/tables';
 import { publicationRowFilter } from '#/db/utils/publication-filter';
-import { CDC_PUBLICATION_NAME } from '../../../cdc/src/constants';
+import { cdcPublicationName } from '../../../cdc/src/constants';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 import { MAINTENANCE_PROCEDURE, partitionConfigs } from './10-partitions.migration';
 import { classifyRlsTables } from './10-rls.migration';
@@ -182,12 +182,12 @@ ${partitionChecks}
     missing := array_append(missing, 'procedure:${MAINTENANCE_PROCEDURE}'); END IF;
 
   -- CDC publication (${publicationTableCount} tracked tables)
-  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = '${CDC_PUBLICATION_NAME}') THEN
-    missing := array_append(missing, 'publication:${CDC_PUBLICATION_NAME}');
-  ELSIF (SELECT count(DISTINCT tablename) FROM pg_publication_tables WHERE pubname = '${CDC_PUBLICATION_NAME}') <> ${publicationTableCount} THEN
-    missing := array_append(missing, 'publication-tables:${CDC_PUBLICATION_NAME}');
-  ELSIF (SELECT count(*) FROM pg_publication_tables WHERE pubname = '${CDC_PUBLICATION_NAME}' AND rowfilter IS NOT NULL) <> ${rowFilteredCount} THEN
-    missing := array_append(missing, 'publication-rowfilters:${CDC_PUBLICATION_NAME}');
+  IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = '${cdcPublicationName}') THEN
+    missing := array_append(missing, 'publication:${cdcPublicationName}');
+  ELSIF (SELECT count(DISTINCT tablename) FROM pg_publication_tables WHERE pubname = '${cdcPublicationName}') <> ${publicationTableCount} THEN
+    missing := array_append(missing, 'publication-tables:${cdcPublicationName}');
+  ELSIF (SELECT count(*) FROM pg_publication_tables WHERE pubname = '${cdcPublicationName}' AND rowfilter IS NOT NULL) <> ${rowFilteredCount} THEN
+    missing := array_append(missing, 'publication-rowfilters:${cdcPublicationName}');
   END IF;
 
   IF array_length(missing, 1) > 0 THEN

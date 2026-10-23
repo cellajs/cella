@@ -75,7 +75,7 @@ export const getErrorInfo = ({ error, errorFromQuery }: { error?: ErrorNoticeErr
   const title = key ? i18n.t(key as TKey, options) : getFallbackTitle(error);
 
   const ownMessage = getOwnMessage(error);
-  const isInfo = !!error && 'severity' in error && error.severity === 'info';
+  const isInfo = error instanceof ApiError && error.severity === 'info';
   const text = textKey && !isInfo ? i18n.t(textKey as TKey, options) : ownMessage;
 
   return { title, message: text === title ? '' : text };

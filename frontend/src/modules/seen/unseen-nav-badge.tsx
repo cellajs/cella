@@ -1,19 +1,12 @@
+import { CountBadge } from '~/modules/common/count-badge';
+import type { NavBadgeProps } from '~/modules/navigation/types';
 import { useTotalUnseenCount } from '~/modules/seen/use-unseen-count';
 import { cn } from '~/utils/cn';
 
-export function UnseenNavBadge({ isActive, className }: { isActive: boolean; className?: string }) {
+export function UnseenNavBadge({ isActive, className }: NavBadgeProps) {
   const totalUnseenCount = useTotalUnseenCount();
 
   if (isActive || totalUnseenCount === 0) return null;
 
-  return (
-    <span
-      className={cn(
-        'absolute flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 font-bold text-2xs text-primary-foreground leading-none',
-        className,
-      )}
-    >
-      {totalUnseenCount > 99 ? '99+' : totalUnseenCount}
-    </span>
-  );
+  return <CountBadge count={totalUnseenCount} className={cn('absolute', className)} />;
 }

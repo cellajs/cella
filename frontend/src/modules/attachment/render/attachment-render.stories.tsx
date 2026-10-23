@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { AttachmentRender } from '~/modules/attachment/render/attachment-render';
-import { MAX_ZOOM, MIN_ZOOM } from '~/modules/attachment/render/image-zoom';
+import { maxZoom, minZoom } from '~/modules/attachment/render/use-pan-zoom';
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#4f46e5"/></svg>`;
 const imageUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 
-const onPanStateToggle = fn();
+const onPanModeChange = fn();
 const onBackdropClick = fn();
 
 /** The dialog image viewer: wheel and button zoom, rotation, a pan toggle, reset and letterbox dismiss. */
@@ -20,16 +20,16 @@ const meta = {
   args: {
     type: 'image/svg+xml',
     url: imageUrl,
-    altName: 'attachment',
+    alt: 'attachment',
     imagePanZoom: true,
     showButtons: true,
     itemClassName: 'object-contain',
     containerClassName: 'stage relative flex h-[500px] w-[900px] items-center justify-center overflow-hidden',
-    onPanStateToggle,
+    onPanModeChange,
     onBackdropClick,
   },
   beforeEach: () => {
-    onPanStateToggle.mockClear();
+    onPanModeChange.mockClear();
     onBackdropClick.mockClear();
   },
 } satisfies Meta<typeof AttachmentRender>;
@@ -93,9 +93,9 @@ export const Viewer: Story = {
 
     await step('wheel zoom stays within the floor and the ceiling', async () => {
       for (let i = 0; i < 12; i++) await wheel(img, -500);
-      await waitFor(() => expect(panLayerOf(img).scale).toBe(MAX_ZOOM));
+      await waitFor(() => expect(panLayerOf(img).scale).toBe(maxZoom));
       for (let i = 0; i < 12; i++) await wheel(img, 500);
-      await waitFor(() => expect(panLayerOf(img).scale).toBe(MIN_ZOOM));
+      await waitFor(() => expect(panLayerOf(img).scale).toBe(minZoom));
     });
 
     await step('the zoom buttons step by 0.2', async () => {
@@ -121,8 +121,8 @@ export const Viewer: Story = {
 
     await step('with the pan toggle on, a drag moves the image', async () => {
       await userEvent.click(pan);
-      // The toggle reports whether the carousel may take drags: not while panning
-      await expect(onPanStateToggle).toHaveBeenLastCalledWith(false);
+      // The toggle reports the pan mode it switched to
+      await expect(onPanModeChange).toHaveBeenLastCalledWith(true);
 
       await drag(img, 40, 25);
       await waitFor(() => expect(panLayerOf(img)).toMatchObject({ x: 40, y: 25 }));
@@ -130,7 +130,7 @@ export const Viewer: Story = {
       await waitFor(() => expect(panLayerOf(img)).toMatchObject({ x: 30, y: 30 }));
 
       await userEvent.click(pan);
-      await expect(onPanStateToggle).toHaveBeenLastCalledWith(true);
+      await expect(onPanModeChange).toHaveBeenLastCalledWith(false);
       await drag(img, 40, 25);
       await expect(panLayerOf(img)).toMatchObject({ x: 30, y: 30 });
     });

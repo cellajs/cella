@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { tenantIdLength } from '#/db/utils/constraints';
-import { decodeLogNotice, encodeLogNotice, type LogNotice, YJS_LOG_NOTICE_MAX_IDS } from '#/modules/yjs/helpers/yjs-log';
+import { decodeLogNotice, encodeLogNotice, type LogNotice, yjsLogNoticeMaxIds } from '#/modules/yjs/helpers/yjs-log';
 
 describe('log notices', () => {
   const key = { tenantId: 'tenant-1', entityType: 'attachment', entityId: randomUUID() };
@@ -25,7 +25,7 @@ describe('log notices', () => {
   it('stays far below the 8,000-byte limit on a notification, at the longest keys', () => {
     const longestKey = { tenantId: 'x'.repeat(tenantIdLength), entityType: 'x'.repeat(50), entityId: randomUUID() };
     expect(Buffer.byteLength(encodeLogNotice({ ...longestKey, logIds: [Number.MAX_SAFE_INTEGER] }))).toBeLessThan(250);
-    const fullest = { ...longestKey, logIds: Array.from({ length: YJS_LOG_NOTICE_MAX_IDS }, (_, n) => Number.MAX_SAFE_INTEGER - n) };
+    const fullest = { ...longestKey, logIds: Array.from({ length: yjsLogNoticeMaxIds }, (_, n) => Number.MAX_SAFE_INTEGER - n) };
     expect(Buffer.byteLength(encodeLogNotice(fullest))).toBeLessThan(8000);
   });
 

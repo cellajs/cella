@@ -1,20 +1,20 @@
 import type { FieldValues } from 'react-hook-form';
 import { BlockNote } from '~/modules/common/blocknote/blocknote-editor';
 import type { BaseUppyFilePanelProps, CommonBlockNoteProps } from '~/modules/common/blocknote/types';
-import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
+import type { BaseFormFieldProps } from '~/modules/common/form-fields/types';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
 type BaseBlockNoteProps = Omit<CommonBlockNoteProps, 'defaultValue' | 'updateData' | 'filePanel' | 'baseFilePanelProps'> & {
   /** Omit to disable file/media uploads (the editor renders no file panel without it). */
   baseFilePanelProps?: BaseUppyFilePanelProps;
 };
-type BlockNoteFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
+export type BlockNoteContentFormFieldProps<TFieldValues extends FieldValues> = BaseFormFieldProps<TFieldValues> & {
   baseBlockNoteProps: BaseBlockNoteProps;
   autoFocus?: boolean;
   containerClassName?: string;
 };
 
-function BlockNoteContentFormField<TFieldValues extends FieldValues>({
+export function BlockNoteContentFormField<TFieldValues extends FieldValues>({
   control,
   label,
   name,
@@ -22,8 +22,8 @@ function BlockNoteContentFormField<TFieldValues extends FieldValues>({
   disabled,
   autoFocus,
   containerClassName,
-  baseBlockNoteProps: { excludeBlockTypes, baseFilePanelProps, ...restBlockNoteProps },
-}: BlockNoteFieldProps<TFieldValues>) {
+  baseBlockNoteProps: { baseFilePanelProps, ...restBlockNoteProps },
+}: BlockNoteContentFormFieldProps<TFieldValues>) {
   return (
     <FormField
       control={control}
@@ -32,20 +32,15 @@ function BlockNoteContentFormField<TFieldValues extends FieldValues>({
         const editorProps = {
           commitOnEveryChange: true,
           autoFocus,
+          editable: !disabled,
           defaultValue: value,
-          excludeBlockTypes,
           updateData: onChange,
-          ariaLabel: typeof label === 'string' ? label : undefined,
+          ariaLabel: label,
           ...restBlockNoteProps,
         };
         return (
-          <FormItem name={name} aria-disabled={disabled} className={containerClassName}>
-            {typeof label === 'string' && (
-              <FormLabel>
-                {label}
-                {required && <span className="ml-1 opacity-50">*</span>}
-              </FormLabel>
-            )}
+          <FormItem name={name} disabled={disabled} className={containerClassName}>
+            {label && <FormLabel required={required}>{label}</FormLabel>}
             {/* The filePanel/baseFilePanelProps union needs two branches: a conditional spread widens it */}
             {baseFilePanelProps ? <BlockNote {...editorProps} baseFilePanelProps={baseFilePanelProps} /> : <BlockNote {...editorProps} />}
             <FormMessage />
@@ -55,5 +50,3 @@ function BlockNoteContentFormField<TFieldValues extends FieldValues>({
     />
   );
 }
-
-export { BlockNoteContentFormField };

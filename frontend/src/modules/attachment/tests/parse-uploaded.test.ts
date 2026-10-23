@@ -2,14 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 
 // The user store is only consulted for createdBy/updatedBy stamps on the optimistic entity.
 vi.mock('~/modules/user/user-store', () => ({
-  useUserStore: { getState: () => ({ user: { id: 'user-1' } }) },
+  userStore: { getState: () => ({ user: { id: 'user-1' } }) },
 }));
 
 import { uploadStorage } from 'shared/utils/upload-visibility';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
-import type { UploadedFile, UploadedUppyFile } from '~/modules/common/uploader/types';
+import type { UploadedFile, UploadResults } from '~/modules/common/uploader/types';
 
-type AttachmentResult = UploadedUppyFile<'attachment'>;
+type AttachmentResult = UploadResults<'attachment'>;
 
 /** A Transloadit `:original` result. `user_meta` carries the id minted in `onBeforeFileAdded`. */
 function makeOriginal(overrides: Record<string, unknown> = {}) {

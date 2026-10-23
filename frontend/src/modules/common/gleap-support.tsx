@@ -4,7 +4,7 @@ import type { User } from 'sdk';
 import { appConfig } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import '~/modules/common/gleap-style.css';
-import { useUserStore } from '~/modules/user/user-store';
+import { userStore } from '~/modules/user/user-store';
 
 declare global {
   interface Window {
@@ -12,20 +12,19 @@ declare global {
   }
 }
 
-window.ononline = () => {
+/** Starts Gleap with its own button hidden: the app's support buttons open the widget. */
+function initGleap() {
   Gleap.initialize(appConfig.gleapToken);
   Gleap.showFeedbackButton(false);
-};
+}
+
+window.ononline = initGleap;
 
 window.onoffline = () => {
   Gleap.destroy();
 };
 
-// Gleap initializes with its own button hidden; openGleapSupport() opens the widget
-if (navigator.onLine) {
-  Gleap.initialize(appConfig.gleapToken);
-  Gleap.showFeedbackButton(false);
-}
+if (navigator.onLine) initGleap();
 
 function setGleapUser(user: User) {
   if (!window.Gleap) return;
@@ -39,24 +38,18 @@ function setGleapUser(user: User) {
   }
 }
 
-export function openGleapSupport() {
-  if (window.Gleap) {
-    Gleap.open();
-  }
-}
-
 /** Connects the application session to the Gleap support widget. */
 export function GleapSupport() {
-  const user = useUserStore((state) => state.user);
   const isOnline = useOnlineManager();
 
   useEffect(() => {
     if (isOnline) {
       window.Gleap = Gleap;
 
-      if (user && window.Gleap && !window.Gleap.isUserIdentified()) setGleapUser(user);
+      const { user } = userStore.getState();
+      if (user && !Gleap.isUserIdentified()) setGleapUser(user);
 
-      const unsubscribe = useUserStore.subscribe((state) => {
+      const unsubscribe = userStore.subscribe((state) => {
         const user = state.user;
 
         if (user) return setGleapUser(user);
@@ -73,7 +66,7 @@ export function GleapSupport() {
 
     window.Gleap?.destroy();
     window.Gleap = undefined;
-  }, [isOnline, user]);
+  }, [isOnline]);
 
   return null;
 }

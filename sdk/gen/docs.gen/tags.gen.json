@@ -44,7 +44,7 @@
   {
     "name": "memberships",
     "description": "Endpoints for managing memberships, which represent one-to-one relationships between a\n    user and a contextual entity such as an organization. Each membership includes role information and\n    status flags such as archived or muted. Memberships can also reference parent entities to easily have a\n    hierarchical context available.",
-    "count": 7,
+    "count": 9,
     "kind": "module"
   },
   {
@@ -62,7 +62,7 @@
   {
     "name": "organizations",
     "description": "Endpoints for managing organizations, which are core channel entities and the highest ancestor\n    in the entity hierarchy. Organizations define access boundaries and are typically the primary scope for\n    permissions and resource management.",
-    "count": 5,
+    "count": 6,
     "kind": "module"
   },
   {

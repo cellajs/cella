@@ -1,57 +1,36 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
+import { useStore } from 'zustand';
 import { useUIStore } from '~/modules/ui/ui-store';
-import { appStreamManager } from './stream-store';
-import { runSyncService } from './sync-service';
-import type { UseAppStreamOptions, UseAppStreamReturn } from './types';
+import { appStreamManager } from '~/query/realtime/stream-store';
+import { runSyncService } from '~/query/realtime/sync-service';
 
 const debugLabel = 'AppStream';
 
-/** React wrapper around appStreamManager. StreamManager owns all reconnect logic, including visibility and leader changes. */
-function useAppStream(options: UseAppStreamOptions = {}): Omit<UseAppStreamReturn, 'cursor'> {
-  const { enabled = true } = options;
-
+/** Connects the app stream and seeds offline caches once it is live; StreamManager owns every reconnect, visibility and leader changes included. Mount in AppLayout. */
+export function AppStream() {
   // Only the connection state: the cursor advances on every event and nothing here renders it.
-  const state = appStreamManager.useStore((s) => s.state);
+  const streamState = useStore(appStreamManager.store, (state) => state.state);
+  const offlineAccess = useUIStore((state) => state.offlineAccess);
 
   // Route beforeLoad owns the disconnect lifecycle.
   useEffect(() => {
-    if (enabled) {
-      appStreamManager.connect();
-    } else {
-      appStreamManager.disconnect();
-    }
-  }, [enabled]);
+    appStreamManager.connect();
+  }, []);
 
   useEffect(() => {
-    if (state === 'live') console.debug(`[${debugLabel}] Connected and live`);
-    if (state === 'error') console.debug(`[${debugLabel}] Connection error, will retry...`);
-  }, [state]);
+    if (streamState === 'live') console.debug(`[${debugLabel}] Connected and live`);
+    if (streamState === 'error') console.debug(`[${debugLabel}] Connection error, will retry...`);
+  }, [streamState]);
 
-  const syncAbortRef = useRef<AbortController | null>(null);
-  const offlineAccess = useUIStore((s) => s.offlineAccess);
-
+  // The cleanup aborts this sync run on re-trigger or unmount.
   useEffect(() => {
-    // Abort the previous sync run on re-trigger or cleanup.
-    syncAbortRef.current?.abort();
+    if (streamState !== 'live') return;
+    const controller = new AbortController();
+    runSyncService(offlineAccess, controller.signal).catch((error) => {
+      if (!controller.signal.aborted) console.debug(`[${debugLabel}] Sync service error:`, error);
+    });
+    return () => controller.abort();
+  }, [streamState, offlineAccess]);
 
-    if (state === 'live') {
-      const controller = new AbortController();
-      syncAbortRef.current = controller;
-      runSyncService(offlineAccess, controller.signal).catch((err) => {
-        if (!controller.signal.aborted) console.debug(`[${debugLabel}] Sync service error:`, err);
-      });
-    }
-
-    return () => {
-      syncAbortRef.current?.abort();
-    };
-  }, [state, offlineAccess]);
-
-  return { state, reconnect: () => appStreamManager.reconnect(), disconnect: () => appStreamManager.disconnect() };
-}
-
-/** Connects to the app-scoped stream for real-time sync (CDC -> ActivityBus pipeline). Mount in AppLayout. */
-export function AppStream() {
-  useAppStream();
   return null;
 }

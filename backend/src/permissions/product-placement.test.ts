@@ -9,7 +9,7 @@ import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import type { EntityModel } from '#/tables';
 
 // The deep fixture's product and hierarchy are typed apart from the app's config, as its other suites cast them.
-const ITEM = 'item' as unknown as ProductEntityType;
+const item = 'item' as unknown as ProductEntityType;
 const deep = (nullable?: Parameters<typeof makeDeepHierarchy>[0]) => makeDeepHierarchy(nullable) as unknown as EntityHierarchy;
 
 /** `item` lives at any depth, the organization included. */
@@ -23,14 +23,14 @@ const uuid = (n: number) => `00000000-0000-4000-8000-00000000000${n}`;
 
 describe('placementFieldsSchema', () => {
   it('offers one optional id per channel a row may live in', () => {
-    expect(Object.keys(placementFieldsSchema(ITEM, { hierarchy: anyDepth }))).toEqual(['projectId', 'courseSectionId', 'courseId']);
-    const fields = placementFieldsSchema(ITEM, { hierarchy: mixed });
+    expect(Object.keys(placementFieldsSchema(item, { hierarchy: anyDepth }))).toEqual(['projectId', 'courseSectionId', 'courseId']);
+    const fields = placementFieldsSchema(item, { hierarchy: mixed });
     expect(Object.keys(fields)).toEqual(['projectId', 'courseSectionId', 'courseId']);
     for (const field of Object.values(fields)) expect(field.safeParse(undefined).success).toBe(true);
   });
 
   it('requires the id where a row has one place to live', () => {
-    const fields = placementFieldsSchema(ITEM, { hierarchy: strict });
+    const fields = placementFieldsSchema(item, { hierarchy: strict });
     expect(Object.keys(fields)).toEqual(['projectId']);
     expect(fields.projectId.safeParse(undefined).success).toBe(false);
     expect(fields.projectId.safeParse(uuid(1)).success).toBe(true);
@@ -44,19 +44,19 @@ describe('placementFieldsSchema', () => {
 
 describe('validatePlacement', () => {
   it('lets a row without an id live in the organization, unless the product asks for a channel', () => {
-    expect(validatePlacement(ITEM, {}, { hierarchy: anyDepth })).toBeNull();
-    expect(validatePlacement(ITEM, {}, { hierarchy: anyDepth, requireChannel: true })?.path).toEqual(['projectId']);
+    expect(validatePlacement(item, {}, { hierarchy: anyDepth })).toBeNull();
+    expect(validatePlacement(item, {}, { hierarchy: anyDepth, requireChannel: true })?.path).toEqual(['projectId']);
   });
 
   it('asks for an id where the organization is no place for the row', () => {
-    expect(validatePlacement(ITEM, {}, { hierarchy: mixed })?.type).toBe('home_required');
-    expect(validatePlacement(ITEM, { courseId: uuid(1) }, { hierarchy: mixed })).toBeNull();
-    expect(validatePlacement(ITEM, { courseSectionId: uuid(2) }, { hierarchy: mixed })).toBeNull();
-    expect(validatePlacement(ITEM, {}, { hierarchy: strict })?.path).toEqual(['projectId']);
+    expect(validatePlacement(item, {}, { hierarchy: mixed })?.type).toBe('home_required');
+    expect(validatePlacement(item, { courseId: uuid(1) }, { hierarchy: mixed })).toBeNull();
+    expect(validatePlacement(item, { courseSectionId: uuid(2) }, { hierarchy: mixed })).toBeNull();
+    expect(validatePlacement(item, {}, { hierarchy: strict })?.path).toEqual(['projectId']);
   });
 
   it('refuses two ids, naming the deepest', () => {
-    const issue = validatePlacement(ITEM, { courseId: uuid(1), courseSectionId: uuid(2) }, { hierarchy: mixed });
+    const issue = validatePlacement(item, { courseId: uuid(1), courseSectionId: uuid(2) }, { hierarchy: mixed });
     expect(issue).toEqual({ path: ['courseSectionId'], type: 'ambiguous_placement', message: expect.any(String) });
   });
 });
@@ -76,31 +76,31 @@ describe('resolvePlacement', () => {
   };
 
   it('stamps the home and the chain above it from the home row, and nulls the levels below', async () => {
-    const section = await resolvePlacement(ctx, ITEM, { courseSectionId: uuid(2), name: 'ignored' }, { hierarchy: anyDepth, resolveHome });
+    const section = await resolvePlacement(ctx, item, { courseSectionId: uuid(2), name: 'ignored' }, { hierarchy: anyDepth, resolveHome });
     expect(section.columns).toEqual({ projectId: null, courseSectionId: uuid(2), courseId: uuid(1) });
     expect(section.home?.type).toBe('courseSection');
 
-    const project = await resolvePlacement(ctx, ITEM, { projectId: uuid(3) }, { hierarchy: anyDepth, resolveHome });
+    const project = await resolvePlacement(ctx, item, { projectId: uuid(3) }, { hierarchy: anyDepth, resolveHome });
     expect(project.columns).toEqual({ projectId: uuid(3), courseSectionId: uuid(2), courseId: uuid(1) });
   });
 
   it('keeps a null the home row holds for an ancestor of its own', async () => {
-    const { columns } = await resolvePlacement(ctx, ITEM, { projectId: uuid(4) }, { hierarchy: anyDepth, resolveHome });
+    const { columns } = await resolvePlacement(ctx, item, { projectId: uuid(4) }, { hierarchy: anyDepth, resolveHome });
     expect(columns).toEqual({ projectId: uuid(4), courseSectionId: null, courseId: uuid(1) });
   });
 
   it('reads the chain above the home off the home row, one lookup per row', async () => {
     seen.length = 0;
-    const { columns } = await resolvePlacement(ctx, ITEM, { projectId: uuid(3) }, { hierarchy: anyDepth, resolveHome });
+    const { columns } = await resolvePlacement(ctx, item, { projectId: uuid(3) }, { hierarchy: anyDepth, resolveHome });
     expect(columns).toEqual({ projectId: uuid(3), courseSectionId: uuid(2), courseId: uuid(1) });
     expect(seen).toEqual([[uuid(3), 'project']]);
   });
 
   it('refuses what the schema check refuses, so a strict column never holds a null', async () => {
-    await expect(resolvePlacement(ctx, ITEM, {}, { hierarchy: strict, resolveHome })).rejects.toMatchObject({ status: 400, type: 'home_required' });
-    await expect(resolvePlacement(ctx, ITEM, {}, { hierarchy: anyDepth, requireChannel: true, resolveHome })).rejects.toMatchObject({ status: 400 });
+    await expect(resolvePlacement(ctx, item, {}, { hierarchy: strict, resolveHome })).rejects.toMatchObject({ status: 400, type: 'home_required' });
+    await expect(resolvePlacement(ctx, item, {}, { hierarchy: anyDepth, requireChannel: true, resolveHome })).rejects.toMatchObject({ status: 400 });
     const twoIds = { courseId: uuid(1), courseSectionId: uuid(2) };
-    await expect(resolvePlacement(ctx, ITEM, twoIds, { hierarchy: anyDepth, resolveHome })).rejects.toMatchObject({
+    await expect(resolvePlacement(ctx, item, twoIds, { hierarchy: anyDepth, resolveHome })).rejects.toMatchObject({
       status: 400,
       type: 'ambiguous_placement',
     });
@@ -108,7 +108,7 @@ describe('resolvePlacement', () => {
 
   it('homes a row without an id in the organization: every column null, no lookup', async () => {
     seen.length = 0;
-    const placed = await resolvePlacement(ctx, ITEM, {}, { hierarchy: anyDepth, resolveHome });
+    const placed = await resolvePlacement(ctx, item, {}, { hierarchy: anyDepth, resolveHome });
     expect(placed).toEqual({ columns: { projectId: null, courseSectionId: null, courseId: null }, home: null });
     expect(seen).toEqual([]);
   });
@@ -130,8 +130,8 @@ describe('the home column of a collection read', () => {
 
   it('is the declared parent column, whether or not that ancestor is nullable', () => {
     // The scope resolver collects home grants at the parent level in both hierarchies, so the predicate compares there.
-    expect(compiled(ITEM, anyDepth)).toContain('"project_id" in');
-    expect(compiled(ITEM, strict)).toContain('"project_id" in');
+    expect(compiled(item, anyDepth)).toContain('"project_id" in');
+    expect(compiled(item, strict)).toContain('"project_id" in');
   });
 
   it('is the parent column of the app attachment table', () => {

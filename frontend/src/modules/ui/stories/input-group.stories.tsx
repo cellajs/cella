@@ -211,7 +211,7 @@ export const ButtonSizes: Story = {
       <InputGroup>
         <InputGroupInput placeholder="Icon button" />
         <InputGroupAddon align="inline-end">
-          <InputGroupButton size="size-3.5">
+          <InputGroupButton size="icon-sm">
             <SearchIcon className="size-4" />
           </InputGroupButton>
         </InputGroupAddon>

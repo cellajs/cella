@@ -190,7 +190,7 @@ A route gate asks the same map before the page loads: `requireEntityAction` (`fr
 
 | Path | Guard or helper | What it checks | On failure |
 | --- | --- | --- | --- |
-| Guard chain | `userGuard` → `tenantGuard` → `orgGuard` | Authenticated, in-tenant (member, system admin, or the tenant's creator while it has no organization), org member or system admin. Never consults the policy matrix. | 401 or 403 before the handler; the tenant is one 403 whether missing, inactive or not the actor's, the organization one 404 whether missing or without a foothold ([Refusals](#refusals)) |
+| Guard chain | [Guards](#guards), such as `userGuard` → `tenantGuard` → `orgGuard` | Who acts, and whether they are in the tenant and the organization. Never consults the policy matrix. | 401 or 403 before the handler; the tenant is one 403 whether missing, inactive or not the actor's, the organization one 404 whether missing or without a foothold ([Refusals](#refusals)) |
 | Single row | `getValidProduct`, `getValidChannel` via `buildSubjectFromEntity` | Loads the row, rejects it outside the request tenant or organization, passes it as `subject.row`, runs the engine | 404 for a row that is missing, out of scope, a draft that does not show to the caller or one the caller may not read; 403 only for an action denied on a row the caller reads |
 | Create | `canCreateEntity` | No row exists yet. The subject describes the would-be placement | 403 |
 | Bulk | `splitByPermission` | The single-row checks for every id: scope, the draft rule, read, then the action. Splits allowed from rejected | `rejectedIds` in request order, one list for every reason; 403 only when nothing is allowed |
@@ -206,6 +206,25 @@ export type CollectionReadWhere =
   | { kind: "none" } // no readable scope: return [] without querying
   | { kind: "where"; where: SQL };
 ```
+
+### Guards
+
+Every route lists its guards in `xGuard`, and they run in that order before the handler. The first proves who acts; the next ones check that the actor is in the tenant and the organization the URL names. Organization content runs behind `[userGuard, tenantGuard, orgGuard]`, or `actorGuard` in place of `userGuard` where an API key or access token may call too; the user's own account runs behind `[userGuard]` alone.
+
+| Guard | Admits |
+| --- | --- |
+| `publicGuard` | Anyone, with no actor |
+| `userGuard` | A session cookie: the signed-in user, or an admin impersonating them. System admin only from an allowed IP address |
+| `serviceGuard` | A secret API key (its service account) or an access token (a service account, or the user who consented), masked by its scopes. Never system admin, never a browser `Origin` |
+| `tokenGuard` | An access token only, for the MCP face; without one, a 401 with the RFC 9728 challenge that tells an MCP client where to authorize |
+| `actorGuard` | Any of the three proofs: a key or token goes to `serviceGuard`, a cookie to `userGuard` |
+| `tenantGuard` | An actor with a foothold in the URL's tenant: a member, a system admin, or its creator while it has no organization. A service account only in its own tenant. Applies the tenant's [sign-in policy](./AUTHENTICATION.md#institutional-sign-in-sso) |
+| `orgGuard` | An actor bound to the organization or to a channel below it, or a system admin |
+| `stepUpGuard` | A session that recently proved its user's presence again, never an impersonation ([Step-up](./AUTHENTICATION.md#step-up)) |
+| `sysAdminGuard` | The system admin role from an allowed IP address, never an impersonation |
+| `relatableGuard` | A caller who shares an organization with the user the request names, or a system admin |
+
+`tenantGuard` and `orgGuard` read the actor's bindings, whatever proved it, so a service account passes them as a member does. They turn away only an actor with no foothold at all; what a member may do with a row is the engine's answer, on the paths above.
 
 ## Refusals
 
@@ -224,7 +243,7 @@ Unexpected server errors include internal details in client responses only in de
 | A link or invitation of another account: opened while signed in as someone else, bound to another user, or the race that binds it lost | 409 `user_mismatch` | The request conflicts with the signed-in account, not with its own shape |
 | An address or provider account another account holds (`oauth_email_exists`, `oauth_conflict`, `oauth_wrong_email`) | 409, severity `warn` | The caller's state, not a fault of the app |
 | Not signed in, or a session that ended | 401 `unauthorized`, `no_session`, `session_expired` or `session_revoked` | The frontend redirects to sign-in on these types alone; any other 401 refuses a proof while signed in |
-| An account-security route without a recent proof of presence | 403 `step_up_required` naming the methods | [Interoperability](./INTEROPERABILITY.md#guards) |
+| An account-security route without a recent proof of presence | 403 `step_up_required` naming the methods | [Authentication](./AUTHENTICATION.md#step-up) |
 | An action on the account itself while impersonating: stepping up, revoking the user's sessions, every `stepUpGuard` route and every system route, impersonating again included | 403 `impersonation_forbidden` (`refuseImpersonation`: in the step-up and session handlers, and in `stepUpGuard` and `sysAdminGuard` before their own answers) | The admin acts as the user, never on the account, its sessions or how it is protected |
 
 ## What members see

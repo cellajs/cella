@@ -1,14 +1,9 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import i18n from 'i18next';
-import { Suspense } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary } from 'sdk/docs-types';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { Spinner } from '~/modules/common/spinner';
-import { tw } from '~/utils/tw';
-import { typesIndexQueryOptions, zodIndexQueryOptions } from '../helpers/extract-types';
-import { schemasQueryOptions, tagDetailsQueryOptions } from '../query';
-import { ResponsesAccordion } from './operation-responses';
+import { openOperationDocSheet } from '~/modules/docs/operations/operation-detail';
+import { ResponsesAccordion } from '~/modules/docs/operations/operation-responses';
+import { schemasQueryOptions, tagDetailsQueryOptions, useDefinitionIndexes } from '~/modules/docs/query';
 
 interface OperationExamplesProps {
   operationId: string;
@@ -16,45 +11,28 @@ interface OperationExamplesProps {
 }
 
 export function openExamplesSheet(operation: GenOperationSummary, trigger: HTMLButtonElement | HTMLAnchorElement) {
-  useSheeter.getState().create(
-    <Suspense fallback={<Spinner size="lg" className="mt-[40vh]" />}>
-      <div className="container pt-3 pb-[50vh]">
-        <OperationExamples operationId={operation.id} tagName={operation.tags[0]} />
-      </div>
-    </Suspense>,
-    {
-      id: `examples-${operation.id}`,
-      triggerRef: { current: trigger },
-      side: 'right',
-      className: tw('max-w-full lg:max-w-4xl'),
-      title: i18n.t('c:docs.success_response'),
-    },
-  );
+  openOperationDocSheet({
+    id: `examples-${operation.id}`,
+    title: i18n.t('c:docs.success_response'),
+    trigger,
+    content: <OperationExamples operationId={operation.id} tagName={operation.tags[0]} />,
+  });
 }
 
-/** Wrap the parent component in a Suspense boundary for optimal batching. */
+/** Suspends until its four queries resolve; `openExamplesSheet` gives it the boundary. */
 export function OperationExamples({ operationId, tagName }: OperationExamplesProps) {
-  const { t } = useTranslation();
-
-  const { data: operations } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
+  const { data: tagDetails } = useSuspenseQuery(tagDetailsQueryOptions(tagName));
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
-  const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
-  const { data: typesIndex } = useSuspenseQuery(typesIndexQueryOptions);
+  const { zodIndex, typesIndex } = useDefinitionIndexes();
 
-  const operation = operations.find((op) => op.operationId === operationId);
-  const responses = operation?.responses ?? [];
-
+  const detail = tagDetails.find((entry) => entry.operationId === operationId);
   // The sheet is titled "Success response": error examples stay on the operation page.
-  const successResponsesWithExamples = responses.filter((r) => r.status >= 200 && r.status < 300 && r.example !== undefined);
-
-  if (successResponsesWithExamples.length === 0) {
-    return <div className="py-4 text-center text-muted-foreground">{t('c:docs.no_examples_defined')}</div>;
-  }
+  const successResponses = (detail?.responses ?? []).filter((response) => response.status >= 200 && response.status < 300);
 
   return (
     <ResponsesAccordion
       examplesOnly
-      responses={successResponsesWithExamples}
+      responses={successResponses}
       schemas={schemas}
       operationId={operationId}
       zodIndex={zodIndex}

@@ -28,7 +28,7 @@ const validateSchemaTags = (doc: Record<string, unknown>) => {
 };
 
 /** zod-openapi serializes RegExp via `String(re)`, yielding `^foo$/u`; JSON Schema patterns are source-only. */
-const FLAG_SUFFIX = /\/[gimsuy]+$/;
+const flagSuffix = /\/[gimsuy]+$/;
 const stripRegexFlagsFromPatterns = (node: unknown): void => {
   if (Array.isArray(node)) {
     for (const item of node) stripRegexFlagsFromPatterns(item);
@@ -36,8 +36,8 @@ const stripRegexFlagsFromPatterns = (node: unknown): void => {
   }
   if (node === null || typeof node !== 'object') return;
   const obj = node as Record<string, unknown>;
-  if (typeof obj.pattern === 'string' && FLAG_SUFFIX.test(obj.pattern)) {
-    obj.pattern = obj.pattern.replace(FLAG_SUFFIX, '');
+  if (typeof obj.pattern === 'string' && flagSuffix.test(obj.pattern)) {
+    obj.pattern = obj.pattern.replace(flagSuffix, '');
   }
   for (const v of Object.values(obj)) stripRegexFlagsFromPatterns(v);
 };

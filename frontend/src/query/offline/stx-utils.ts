@@ -1,6 +1,6 @@
 import type { StxBase } from 'sdk';
 import { uuidv7 } from 'uuidv7';
-import { createFieldTimestamps, sourceId } from './hlc';
+import { createFieldTimestamps, sourceId } from '~/query/offline/hlc';
 
 export { sourceId };
 
@@ -10,10 +10,9 @@ export function createStxForCreate(): StxBase {
 }
 
 /**
- * HLC timestamps per changed scalar field. AWSet fields are commutative and need none. Build it when the edit is made
- * and pass it in the mutation's variables: an update that pauses offline is then flagged `replayed` there (the query
- * client does it), so the server arbitrates it by these timestamps. A live edit carries no flag and is ordered by
- * server arrival, so a skewed device clock cannot lose it.
+ * HLC timestamps per changed scalar field; AWSet fields are commutative and need none. Build it when the edit is made, into the
+ * variables: an update that pauses offline is flagged `replayed` by the query client and arbitrated by these timestamps, while a live
+ * edit is ordered by server arrival, so a skewed device clock cannot lose it.
  */
 export function createStxForUpdate(scalarFieldNames: string[] = []): StxBase {
   return { mutationId: uuidv7(), sourceId, fieldTimestamps: createFieldTimestamps(scalarFieldNames) };

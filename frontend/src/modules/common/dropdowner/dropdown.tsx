@@ -1,14 +1,23 @@
-import { Menu } from '@base-ui/react/menu';
 import { useEffect, useLayoutEffect } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
-import { type InternalDropdown, useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner, type InternalDropdown } from '~/modules/common/dropdowner/use-dropdowner';
 import { FocusTrap } from '~/modules/common/focus-trap';
+import { DropdownMenu, DropdownMenuContent } from '~/modules/ui/dropdown-menu';
 import { Popover, PopoverContent } from '~/modules/ui/popover';
-import { cn } from '~/utils/cn';
 import { isTouchInteraction } from '~/utils/input-modality';
 
-export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown }) {
-  const triggerEl = dropdown.triggerRef?.current;
+/** Closes the dropdown unless it was already swapped for another (e.g. a menu item opening a confirmation panel). */
+function removeIfCurrent(key: number) {
+  if (dropdowner.getState().dropdown?.key === key) dropdowner.getState().remove();
+}
+
+interface DropdownerDropdownProps {
+  dropdown: InternalDropdown;
+}
+
+export function DropdownerDropdown({ dropdown }: DropdownerDropdownProps) {
+  const trigger = dropdown.triggerRef?.current;
+  const triggerFocusRef = useLatestRef(trigger ?? null);
 
   // Portaled content can jump the document scroll to the top while the popup still sits at
   // (0,0), across several async frames. Pin the pre-open scroll position and snap back on any
@@ -28,7 +37,7 @@ export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown })
     const onScroll = () => {
       if (released) return;
       if (scroller.scrollTop !== pinned.top || scroller.scrollLeft !== pinned.left) {
-        scroller.scrollTo({ top: pinned.top, left: pinned.left, behavior: 'instant' as ScrollBehavior });
+        scroller.scrollTo({ top: pinned.top, left: pinned.left, behavior: 'instant' });
       }
     };
 
@@ -45,63 +54,44 @@ export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown })
   }, []);
 
   useEffect(() => {
-    if (!triggerEl) return;
+    if (!trigger) return;
 
     const observer = new MutationObserver(() => {
-      if (!document.body.contains(triggerEl)) {
-        useDropdowner.getState().remove();
+      if (!document.body.contains(trigger)) {
+        dropdowner.getState().remove();
       }
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, [triggerEl]);
+  }, [trigger]);
 
-  if (!triggerEl) return null;
+  if (!trigger) return null;
 
-  if (dropdown.kind === 'menu') return <MenuDropdown dropdown={dropdown} triggerEl={triggerEl} />;
-  return <PanelDropdown dropdown={dropdown} triggerEl={triggerEl} />;
-}
-
-/** Closes the dropdown unless it was already swapped for another (e.g. a menu item opening a confirmation panel). */
-function removeIfCurrent(key: number) {
-  if (useDropdowner.getState().dropdown?.key === key) useDropdowner.getState().remove();
-}
-
-function MenuDropdown({ dropdown, triggerEl }: { dropdown: InternalDropdown; triggerEl: HTMLElement }) {
-  const triggerFocusRef = useLatestRef(triggerEl);
-
-  const onOpenChange = (nextOpen: boolean) => {
+  const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) removeIfCurrent(dropdown.key);
   };
 
-  return (
-    <Menu.Root key={dropdown.key} open={true} onOpenChange={onOpenChange} modal={false}>
-      <Menu.Portal>
-        <Menu.Positioner anchor={triggerEl} align={dropdown.align} sideOffset={4} className="z-301">
-          <Menu.Popup
-            className={cn('min-w-32 rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-hidden', dropdown.popupClassName)}
-            finalFocus={triggerFocusRef}
-          >
-            {dropdown.content}
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
-    </Menu.Root>
-  );
-}
-
-function PanelDropdown({ dropdown, triggerEl }: { dropdown: InternalDropdown; triggerEl: HTMLElement }) {
-  const triggerFocusRef = useLatestRef(triggerEl);
-
-  const onOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) removeIfCurrent(dropdown.key);
-  };
+  if (dropdown.kind === 'menu') {
+    return (
+      <DropdownMenu key={dropdown.key} open onOpenChange={handleOpenChange} modal={false}>
+        <DropdownMenuContent
+          anchor={trigger}
+          align={dropdown.align}
+          positionerClassName="z-301"
+          className={dropdown.popupClassName}
+          finalFocus={triggerFocusRef}
+        >
+          {dropdown.content}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
 
   return (
-    <Popover key={dropdown.key} open={true} onOpenChange={onOpenChange} modal={false}>
+    <Popover key={dropdown.key} open onOpenChange={handleOpenChange} modal={false}>
       <PopoverContent
-        anchor={triggerEl}
+        anchor={trigger}
         align={dropdown.align}
         positionerClassName="z-301"
         className="p-0"

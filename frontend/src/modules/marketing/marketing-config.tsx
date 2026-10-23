@@ -17,18 +17,17 @@ import {
 import { appConfig, type EntityType } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import type { TKey } from '~/lib/i18n-locales';
+import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { ElementIcon } from '~/modules/common/icons/element';
 import { GithubIcon } from '~/modules/common/icons/github';
 import type { IconComponent } from '~/modules/common/icons/types';
 import type { InfoCard } from '~/modules/marketing/about/info-cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import type { ShowcaseItem } from '~/modules/marketing/about/showcase';
+import type { FooterLinkProps } from '~/modules/marketing/footer';
+import type { InfoGridItem } from '~/modules/marketing/info-grid';
 
-/**
- * The app's own marketing copy: nav and footer links, the feature and sync capability lists, info
- * cards, pricing plans, FAQ, counters, screenshots and showcases. Pinned in `cella/cella.config.ts`,
- * so the app copy always wins a sync; the pages in this module read these exports by name.
- */
+// The app's marketing copy. The module's pages import each export by name: edit the values, keep the names.
 
 // Nav
 
@@ -43,10 +42,10 @@ export const marketingNavConfig = [
 
 /** @public */
 export const socials = [
-  { title: 'Social', href: appConfig.company.socialUrl, icon: CloudIcon },
-  { title: 'Chat', href: appConfig.company.element, icon: ElementIcon },
-  { title: 'GitHub', href: appConfig.company.githubUrl, icon: GithubIcon },
-];
+  { title: 'c:social', href: appConfig.company.socialUrl, icon: CloudIcon },
+  { title: 'c:chat', href: appConfig.company.element, icon: ElementIcon },
+  { title: 'c:github', href: appConfig.company.githubUrl, icon: GithubIcon },
+] satisfies (FooterLinkProps & { icon: IconComponent })[];
 
 export const footerSections = [
   {
@@ -68,14 +67,14 @@ export const footerSections = [
     title: 'c:connect',
     links: [{ title: 'c:contact_us', href: '/contact' }, ...socials],
   },
-];
+] satisfies { title: TKey; hideOnMobile?: boolean; links: FooterLinkProps[] }[];
 
 // Legal
 
 export const legalLinks = [
   { title: 'c:legal', href: '/legal' },
   { title: 'c:accessibility', href: '/accessibility' },
-];
+] satisfies FooterLinkProps[];
 
 // About - Stack (tech-stack tile grid on /about)
 
@@ -90,8 +89,7 @@ export const stackItems = [
   { id: 'pulumi' },
 ];
 
-// Features page with categorised capability list (/features).
-// Each item maps to translation keys `about:features.<id>` and `about:features.<id>.text`.
+// Features page (/features): each item reads `about:features.<id>` and `about:features.<id>.text`.
 
 export type FeatureCategory = 'security' | 'auth' | 'ux' | 'dx' | 'deploy' | 'performance' | 'data';
 
@@ -105,9 +103,7 @@ export const featureCategoryIcons = {
   data: DatabaseIcon,
 } as const satisfies Record<FeatureCategory, IconComponent>;
 
-export type FeaturesPageItem = { id: string; category: FeatureCategory };
-
-export const featuresPageItems: FeaturesPageItem[] = [
+export const featuresPageItems: InfoGridItem<FeatureCategory>[] = [
   // Data modelling
   { id: 'explicit_routes', category: 'data' },
   { id: 'entity_hierarchy', category: 'data' },
@@ -166,9 +162,7 @@ export const featuresPageItems: FeaturesPageItem[] = [
   { id: 'load_testing', category: 'performance' },
 ];
 
-// Sync engine capability list (/sync-engine). Kept separate from featuresPageItems so this page can
-// group into sub-categories. Translation keys: item → `about:features.<id>` / `.text`; category →
-// `about:features.category_<category>`. `layers` tags which stack part a capability runs in (badges).
+// Sync engine page (/sync-engine): the features page's keys, its own categories, and `layers` badges for where each capability runs.
 
 export type SyncCategory = 'realtime' | 'offline' | 'consistency' | 'resilience';
 
@@ -181,7 +175,9 @@ export const syncCategoryIcons = {
 
 export type SyncLayer = 'client' | 'api' | 'cdc' | 'yjs';
 
-export type SyncPageItem = { id: string; category: SyncCategory; layers: SyncLayer[] };
+export interface SyncPageItem extends InfoGridItem<SyncCategory> {
+  layers: SyncLayer[];
+}
 
 export const syncPageItems: SyncPageItem[] = [
   // Realtime & collaboration
@@ -233,16 +229,9 @@ export const cards: InfoCard[] = [
 // About - Pricing plan
 
 export const pricingPlans: PricingPlan[] = [
-  { id: 'donate', action: 'contact_us', priceId: null, featureCount: 5, borderColor: '' },
-  {
-    id: 'build',
-    action: 'waitlist_request',
-    priceId: null,
-    featureCount: 4,
-    borderColor: 'ring-4 ring-primary/5',
-    popular: true,
-  },
-  { id: 'partner', action: 'contact_us', priceId: null, featureCount: 3, borderColor: '' },
+  { id: 'donate', action: 'contact_us', featureCount: 5 },
+  { id: 'build', action: 'waitlist_request', featureCount: 4, className: 'ring-4 ring-primary/5', popular: true },
+  { id: 'partner', action: 'contact_us', featureCount: 3 },
 ];
 
 // About - FAQ
@@ -265,51 +254,24 @@ export const counts = [
 
 export const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoints' }, { id: 'dedicated-community' }];
 
+/** A WebP slide at `/static/marketing/<path>`; `name` is its alt text. */
+const screenshot = (path: string, name: string): CarouselItemData => ({
+  id: nanoid(),
+  url: `/static/marketing/${path}`,
+  name,
+  filename: path.split('/').at(-1),
+  contentType: 'image/webp',
+});
+
 export const whyLightSlides = [
-  {
-    id: nanoid(),
-    url: '/static/marketing/screenshots/system-page.webp',
-    name: 'System page',
-    filename: 'system-page.webp',
-    contentType: 'image/webp',
-  },
-  {
-    id: nanoid(),
-    url: '/static/marketing/screenshots/org-page.webp',
-    name: 'Organization page',
-    filename: 'org-page.webp',
-    contentType: 'image/webp',
-  },
-  {
-    id: nanoid(),
-    url: '/static/marketing/screenshots/settings.webp',
-    name: 'User settings page',
-    filename: 'settings.webp',
-    contentType: 'image/webp',
-  },
+  screenshot('screenshots/system-page.webp', 'System page'),
+  screenshot('screenshots/org-page.webp', 'Organization page'),
+  screenshot('screenshots/settings.webp', 'User settings page'),
 ];
 export const whyDarkSlides = [
-  {
-    id: nanoid(),
-    url: '/static/marketing/screenshots/system-page-dark.webp',
-    name: 'System page',
-    filename: 'system-page-dark.webp',
-    contentType: 'image/webp',
-  },
-  {
-    id: nanoid(),
-    url: '/static/marketing/screenshots/org-page-dark.webp',
-    name: 'Organization page',
-    filename: 'org-page-dark.webp',
-    contentType: 'image/webp',
-  },
-  {
-    id: nanoid(),
-    url: '/static/marketing/screenshots/settings-dark.webp',
-    name: 'User settings page',
-    filename: 'settings-dark.webp',
-    contentType: 'image/webp',
-  },
+  screenshot('screenshots/system-page-dark.webp', 'System page'),
+  screenshot('screenshots/org-page-dark.webp', 'Organization page'),
+  screenshot('screenshots/settings-dark.webp', 'User settings page'),
 ];
 
 // About - Showcase
@@ -320,13 +282,7 @@ export const showcaseItems: ShowcaseItem[] = [
     url: 'https://www.raak.dev',
     cellaLoc: 142000,
     totalLoc: 162000,
-    lightItems: [
-      { id: nanoid(), url: '/static/marketing/showcases/raak-1.webp', contentType: 'image/webp' },
-      { id: nanoid(), url: '/static/marketing/showcases/raak-2.webp', contentType: 'image/webp' },
-    ],
-    darkItems: [
-      { id: nanoid(), url: '/static/marketing/showcases/raak-1-dark.webp', contentType: 'image/webp' },
-      { id: nanoid(), url: '/static/marketing/showcases/raak-2-dark.webp', contentType: 'image/webp' },
-    ],
+    lightItems: [screenshot('showcases/raak-1.webp', 'raak board'), screenshot('showcases/raak-2.webp', 'raak task')],
+    darkItems: [screenshot('showcases/raak-1-dark.webp', 'raak board'), screenshot('showcases/raak-2-dark.webp', 'raak task')],
   },
 ];

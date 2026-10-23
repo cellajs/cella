@@ -1,10 +1,11 @@
 import type { DehydratedState, Query } from '@tanstack/react-query';
-import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
+import type { PersistedClient, Persister, PersistQueryClientOptions } from '@tanstack/react-query-persist-client';
 import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { reportCriticalError } from '~/lib/tracing';
-import { entityTypeOf, migrateMutations, migrateQueryState } from '~/query/cache-migration';
-import { getLocalUserDb, type LocalUserDatabase, type PersistedQueryRecord } from '~/query/local-user-db';
+import { uiStore } from '~/modules/ui/ui-store';
+import { entityTypeOf, migrateMutations, migrateQueryState, productTypeOf } from '~/query/cache-migration';
+import { getLocalUserDb, type LocalUserDatabase, type PersistedMetaRecord, type PersistedQueryRecord } from '~/query/local-user-db';
 import { upgradePersistedMutation, withVariablesVersion } from '~/query/offline/mutation-variables';
 import { isBundleStale, markBundleStale } from '~/query/schema-version-guard';
 
@@ -15,97 +16,98 @@ type DehydratedMutation = DehydratedState['mutations'][number];
 const inCurrentShape = (mutations: DehydratedMutation[]): DehydratedMutation[] =>
   mutations.flatMap((mutation) => upgradePersistedMutation(mutation) ?? []);
 
-const SESSION_KEY_PREFIX = 's-';
-const SESSION_ID_STORAGE_KEY = `${appConfig.slug}-tab-session-id`;
-const ORPHAN_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
-
-// Query classification
-
-const productSet = new Set<string>(appConfig.productEntityTypes);
-
-function isProductQuery(queryKey: unknown): boolean {
-  const key = queryKey as unknown[];
-  const entity = Array.isArray(key) ? key[0] : undefined;
-  return typeof entity === 'string' && productSet.has(entity);
-}
+const sessionKeyPrefix = 's-';
+const sessionIdStorageKey = `${appConfig.slug}-tab-session-id`;
+const orphanMaxAgeMs = 2 * 60 * 60 * 1000;
 
 /** What the persister writes: a query that succeeded and does not opt out through `meta: { persist: false }` (a bearer token, another account's data). */
 export const shouldPersistQuery = (query: Query): boolean => query.state.status === 'success' && query.meta?.persist !== false;
 
 function getTabSessionId(): string {
-  let id = sessionStorage.getItem(SESSION_ID_STORAGE_KEY);
+  let id = sessionStorage.getItem(sessionIdStorageKey);
   if (!id) {
     id = crypto.randomUUID();
-    sessionStorage.setItem(SESSION_ID_STORAGE_KEY, id);
+    sessionStorage.setItem(sessionIdStorageKey, id);
   }
   return id;
 }
 
-// Paused mutations persist per tab so no tab overwrites another's queue; restore absorbs records whose tab lock is dead, falling back to record age without Web Locks.
-const MUTATION_LOCK_PREFIX = `${appConfig.slug}-mutation-owner:`;
+const tabSessionId = getTabSessionId();
+const sessionScope = `${sessionKeyPrefix}${tabSessionId}`;
+const hasWebLocks = typeof navigator !== 'undefined' && 'locks' in navigator;
+
+/** Tabs of every bundle version lock and query this name, so it never changes. */
+const tabLockPrefix = `${appConfig.slug}-mutation-owner:`;
 
 const mutationRecordPrefix = (scope: string) => `${scope}:mut:`;
 
-function holdMutationOwnershipLock(): void {
-  if (typeof navigator === 'undefined' || !('locks' in navigator)) return;
-  // Held forever (released by tab close); other tabs detect liveness via locks.query().
-  void navigator.locks.request(`${MUTATION_LOCK_PREFIX}${getTabSessionId()}`, () => new Promise(() => {}));
+/** Holds this tab's lock until the tab closes: other tabs' restore and session sweep read it as this tab being open. */
+function holdTabLock(): void {
+  if (!hasWebLocks) return;
+  void navigator.locks.request(`${tabLockPrefix}${tabSessionId}`, () => new Promise(() => {}));
 }
 
-/** Tab session ids currently holding a mutation-ownership lock; null when undetectable. */
+/** Tab session ids currently holding a tab lock; null when undetectable. */
 async function liveTabSessionIds(): Promise<Set<string> | null> {
-  if (typeof navigator === 'undefined' || !('locks' in navigator) || !navigator.locks.query) return null;
+  if (!hasWebLocks) return null;
   try {
     const { held } = await navigator.locks.query();
     return new Set(
       (held ?? [])
         .map((lock) => lock.name ?? '')
-        .filter((name) => name.startsWith(MUTATION_LOCK_PREFIX))
-        .map((name) => name.slice(MUTATION_LOCK_PREFIX.length)),
+        .filter((name) => name.startsWith(tabLockPrefix))
+        .map((name) => name.slice(tabLockPrefix.length)),
     );
   } catch {
     return null;
   }
 }
 
-// Persister factory
+/** Delete a scope's queries, its meta record and every tab's mutation record; call it inside a `queries` and `meta` transaction. */
+async function deleteScope(db: LocalUserDatabase, scope: string): Promise<void> {
+  const ids = await db.queries.where('scope').equals(scope).primaryKeys();
+  await db.queries.bulkDelete(ids);
+  await db.meta.delete(scope);
+  const mutationKeys = await db.meta.where('key').startsWith(mutationRecordPrefix(scope)).primaryKeys();
+  await db.meta.bulkDelete(mutationKeys);
+}
 
-/** Throttle full-cache dehydration and IndexedDB persistence to one write per interval. */
-const PERSIST_THROTTLE_MS = 1000;
+/** What the bundled queries are diffed by: each query's hash and data timestamp. */
+const snapshotOf = (queries: DehydratedQuery[]) => JSON.stringify(queries.map(({ queryHash, state }) => [queryHash, state.dataUpdatedAt]));
 
-/** In-memory change trackers per persister, reset on owner (DB) rebind. */
+/** One IndexedDB write per interval: the latest snapshot wins. */
+const persistThrottleMs = 1000;
+
+/** Chunk size for the lens boot-migration pass (records per Dexie transaction). */
+const migrationChunkSize = 200;
+
 const trackerResets: Array<() => void> = [];
 
 /**
- * IndexedDB persister backed by the live `localUserDb`: product entity queries get one record each for incremental diffing, context queries bundle into the meta record.
+ * IndexedDB persister backed by the live `localUserDb`: product entity queries get one record each for incremental diffing, every other query is bundled into the meta record.
  * Every operation no-ops while no per-user DB is bound (signed out).
  */
-export function createIDBPersister(scope = 'rq') {
+export function createIDBPersister(scope: string) {
+  const isSessionScope = scope.startsWith(sessionKeyPrefix);
+  const tabMutationKey = `${mutationRecordPrefix(scope)}${tabSessionId}`;
   /** queryHash to last persisted dataUpdatedAt, product queries only. */
   const lastPersistedAt = new Map<string, number>();
-  /** Snapshot of the last persisted context queries, for diffing. */
-  let lastChannelSnapshot = '';
+  /** Snapshot of the last persisted bundled queries, for diffing. */
+  let lastBundledSnapshot = '';
   /** Snapshot of this tab's last persisted paused mutations, for diffing. */
   let lastMutationsSnapshot = '';
   let pendingClient: PersistedClient | null = null;
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
 
   function resetTracker() {
     lastPersistedAt.clear();
-    lastChannelSnapshot = '';
+    lastBundledSnapshot = '';
     lastMutationsSnapshot = '';
   }
   trackerResets.push(resetTracker);
 
-  /** Remove all records for this scope: queries, the meta record, and per-tab mutation records. */
   async function clearScope(db: LocalUserDatabase) {
-    await db.transaction('rw', db.queries, db.meta, async () => {
-      const ids = await db.queries.where('scope').equals(scope).primaryKeys();
-      await db.queries.bulkDelete(ids);
-      await db.meta.delete(scope);
-      const mutationKeys = await db.meta.where('key').startsWith(mutationRecordPrefix(scope)).primaryKeys();
-      await db.meta.bulkDelete(mutationKeys);
-    });
+    await db.transaction('rw', db.queries, db.meta, () => deleteScope(db, scope));
     resetTracker();
   }
 
@@ -122,14 +124,14 @@ export function createIDBPersister(scope = 'rq') {
     resetTracker();
   }
 
-  /** Chunk size for the lens boot-migration pass (records per Dexie transaction). */
-  const MIGRATION_CHUNK_SIZE = 200;
-
-  /** Migrate cached rows, context queries, and mutation variables in restart-safe chunks; the schema pointer advances only in the final metadata transaction. */
+  /**
+   * Migrate cached rows, bundled queries and mutation variables in chunks. The lenses are idempotent, so a pass cut
+   * short runs again safely; the schema pointer advances only in the final metadata write.
+   */
   async function migrateScopeToCurrent(db: LocalUserDatabase, fromVersion: number) {
     const records = await db.queries.where('scope').equals(scope).toArray();
-    for (let i = 0; i < records.length; i += MIGRATION_CHUNK_SIZE) {
-      const chunk = records.slice(i, i + MIGRATION_CHUNK_SIZE);
+    for (let i = 0; i < records.length; i += migrationChunkSize) {
+      const chunk = records.slice(i, i + migrationChunkSize);
       // Rewrites precede the write: Dexie transactions auto-commit on non-Dexie awaits and the lens chain is async.
       const rewritten: PersistedQueryRecord[] = [];
       for (const record of chunk) {
@@ -140,8 +142,7 @@ export function createIDBPersister(scope = 'rq') {
       if (rewritten.length > 0) await db.queries.bulkPut(rewritten);
     }
 
-    // Per-tab mutation records migrate in the same pass (their variables carry old shapes too). The variables upgrade
-    // goes first, so the lenses find the rows under the keys this bundle reads.
+    // Each tab's queue migrates too, after the variables upgrade, so the lenses find the rows under the keys this bundle reads.
     const mutationRecords = await db.meta.where('key').startsWith(mutationRecordPrefix(scope)).toArray();
     for (const record of mutationRecords) {
       await db.meta.put({ ...record, mutations: migrateMutations(inCurrentShape(record.mutations ?? []), fromVersion) });
@@ -149,30 +150,30 @@ export function createIDBPersister(scope = 'rq') {
 
     const meta = await db.meta.get(scope);
     if (!meta) return;
-    const channelQueries: typeof meta.channelQueries = [];
-    for (const q of meta.channelQueries ?? []) {
-      const entityType = entityTypeOf(q.queryKey);
-      channelQueries.push(entityType ? { ...q, state: await migrateQueryState(entityType, q.state, fromVersion) } : q);
+    const bundledQueries: DehydratedQuery[] = [];
+    for (const query of meta.channelQueries ?? []) {
+      const entityType = entityTypeOf(query.queryKey);
+      bundledQueries.push(entityType ? { ...query, state: await migrateQueryState(entityType, query.state, fromVersion) } : query);
     }
     const mutations = migrateMutations(inCurrentShape(meta.mutations ?? []), fromVersion);
     // Final write advances the pointer atomically with the last rewritten data.
-    await db.meta.put({ ...meta, channelQueries, mutations, schemaVersion: currentSchemaVersion });
+    await db.meta.put({ ...meta, channelQueries: bundledQueries, mutations, schemaVersion: currentSchemaVersion });
     console.debug(`[QueryPersister] Lens migration v${fromVersion} → v${currentSchemaVersion} complete (${scope})`);
   }
 
   /** Cross-tab mutual exclusion for the migration pass (Web Locks when available). */
-  async function withMigrationLock(fn: () => Promise<void>) {
-    if (typeof navigator !== 'undefined' && 'locks' in navigator) {
-      await navigator.locks.request(`cache-migration:${scope}`, fn);
+  async function withMigrationLock(migrate: () => Promise<void>) {
+    if (hasWebLocks) {
+      await navigator.locks.request(`cache-migration:${scope}`, migrate);
     } else {
-      await fn();
+      await migrate();
     }
   }
 
   async function flush() {
     const client = pendingClient;
     pendingClient = null;
-    timeoutId = null;
+    timer = null;
     if (!client) return;
 
     if (isBundleStale()) return;
@@ -194,63 +195,47 @@ export function createIDBPersister(scope = 'rq') {
       const mutations = client.clientState.mutations.map(withVariablesVersion);
 
       const productQueries: DehydratedQuery[] = [];
-      const channelQueries: DehydratedQuery[] = [];
-      for (const q of queries) {
-        if (isProductQuery(q.queryKey)) productQueries.push(q);
-        else channelQueries.push(q);
+      const bundledQueries: DehydratedQuery[] = [];
+      for (const query of queries) {
+        if (productTypeOf(query.queryKey)) productQueries.push(query);
+        else bundledQueries.push(query);
       }
 
       const upserts: PersistedQueryRecord[] = [];
       const currentHashes = new Set<string>();
 
-      for (const q of productQueries) {
-        currentHashes.add(q.queryHash);
-        const prev = lastPersistedAt.get(q.queryHash);
-        if (prev === q.state.dataUpdatedAt) continue;
-
-        upserts.push({
-          id: `${scope}:${q.queryHash}`,
-          scope,
-          queryHash: q.queryHash,
-          queryKey: q.queryKey,
-          state: q.state,
-          dataUpdatedAt: q.state.dataUpdatedAt,
-        });
-        lastPersistedAt.set(q.queryHash, q.state.dataUpdatedAt);
+      for (const { queryHash, queryKey, state } of productQueries) {
+        currentHashes.add(queryHash);
+        if (lastPersistedAt.get(queryHash) === state.dataUpdatedAt) continue;
+        upserts.push({ id: `${scope}:${queryHash}`, scope, queryHash, queryKey, state, dataUpdatedAt: state.dataUpdatedAt });
       }
 
-      const removals: string[] = [];
-      for (const hash of lastPersistedAt.keys()) {
-        if (!currentHashes.has(hash)) {
-          removals.push(`${scope}:${hash}`);
-          lastPersistedAt.delete(hash);
-        }
-      }
+      const removedHashes = [...lastPersistedAt.keys()].filter((hash) => !currentHashes.has(hash));
+      const removals = removedHashes.map((hash) => `${scope}:${hash}`);
 
-      const channelSnapshot = JSON.stringify(channelQueries.map((q) => [q.queryHash, q.state.dataUpdatedAt]));
-      const channelChanged = channelSnapshot !== lastChannelSnapshot;
+      const bundledSnapshot = snapshotOf(bundledQueries);
+      const bundledChanged = bundledSnapshot !== lastBundledSnapshot;
 
-      // Paused mutations go to this tab's own record; the shared meta record stays mutation-free so no tab clobbers another's queue.
+      // Paused mutations go to this tab's record; the shared meta record stays mutation-free so no tab clobbers another's queue.
       const mutationsSnapshot = JSON.stringify(mutations);
       const mutationsChanged = mutationsSnapshot !== lastMutationsSnapshot;
-      const ownMutationKey = `${mutationRecordPrefix(scope)}${getTabSessionId()}`;
 
       const hasProductChanges = upserts.length > 0 || removals.length > 0;
-      if (hasProductChanges || channelChanged || mutationsChanged) {
+      if (hasProductChanges || bundledChanged || mutationsChanged) {
         await db.transaction('rw', db.queries, db.meta, async () => {
           if (upserts.length > 0) await db.queries.bulkPut(upserts);
           if (removals.length > 0) await db.queries.bulkDelete(removals);
           if (mutationsChanged) {
             if (mutations.length > 0) {
               await db.meta.put({
-                key: ownMutationKey,
+                key: tabMutationKey,
                 timestamp: client.timestamp,
                 buster: client.buster,
                 mutations,
                 channelQueries: [],
               });
             } else {
-              await db.meta.delete(ownMutationKey);
+              await db.meta.delete(tabMutationKey);
             }
           }
           await db.meta.put({
@@ -260,15 +245,20 @@ export function createIDBPersister(scope = 'rq') {
             clientCacheVersion: appConfig.clientCacheVersion,
             schemaVersion: currentSchemaVersion,
             mutations: [],
-            channelQueries,
+            channelQueries: bundledQueries,
           });
         });
-        lastChannelSnapshot = channelSnapshot;
-        lastMutationsSnapshot = mutationsSnapshot;
+        // The trackers follow a committed write to the database still bound, so the next flush retries a failed one.
+        if (getLocalUserDb() === db) {
+          for (const { queryHash, dataUpdatedAt } of upserts) lastPersistedAt.set(queryHash, dataUpdatedAt);
+          for (const hash of removedHashes) lastPersistedAt.delete(hash);
+          lastBundledSnapshot = bundledSnapshot;
+          lastMutationsSnapshot = mutationsSnapshot;
+        }
 
         console.debug(
           `[QueryPersister] Wrote ${upserts.length} product changed, removed ${removals.length}, ` +
-            `${channelChanged ? `${channelQueries.length} context bundled` : 'context unchanged'}` +
+            `${bundledChanged ? `${bundledQueries.length} bundled` : 'bundle unchanged'}` +
             `${mutationsChanged ? `, ${mutations.length} paused mutations (tab record)` : ''} (${scope})`,
         );
       }
@@ -279,49 +269,45 @@ export function createIDBPersister(scope = 'rq') {
 
   return {
     persistClient: async (client: PersistedClient) => {
-      if (!getLocalUserDb()) return; // Signed out → in-memory only
+      if (!getLocalUserDb()) return;
       pendingClient = client;
-      if (!timeoutId) {
-        timeoutId = setTimeout(flush, PERSIST_THROTTLE_MS);
+      if (!timer) {
+        timer = setTimeout(flush, persistThrottleMs);
       }
     },
 
     /** Force-flush any pending throttled write immediately. */
     flush: async () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
       }
       await flush();
     },
 
     restoreClient: async (): Promise<PersistedClient | undefined> => {
       const db = getLocalUserDb();
-      if (!db) return undefined; // Signed out → in-memory cache
+      if (!db) return undefined;
       try {
         let meta = await db.meta.get(scope);
         if (!meta) return undefined;
 
         // A clientCacheVersion mismatch wipes cached query data but keeps queued mutations; a missing version seeds without wiping.
-        const persistedVersion = meta.clientCacheVersion ?? appConfig.clientCacheVersion;
-        if (persistedVersion !== appConfig.clientCacheVersion) {
-          if (scope.startsWith(SESSION_KEY_PREFIX)) {
-            // Session scopes are cold, so wipe them entirely.
-            await clearScope(db);
-            return undefined;
-          }
+        const versionChanged = (meta.clientCacheVersion ?? appConfig.clientCacheVersion) !== appConfig.clientCacheVersion;
+        // Upgrade rows and queued mutations when their lens ordinal trails the bundle; a missing ordinal seeds current.
+        const pointer = meta.schemaVersion ?? currentSchemaVersion;
+        if (isSessionScope && (versionChanged || pointer !== currentSchemaVersion)) {
+          // Session scopes are cold, so wipe them entirely.
+          await clearScope(db);
+          return undefined;
+        }
+
+        if (versionChanged) {
           await bustQueriesKeepMutations(db);
           meta = (await db.meta.get(scope)) ?? meta;
         }
 
-        // Upgrade rows and queued mutations when their lens ordinal trails the bundle; a missing ordinal seeds current.
-        const pointer = meta.schemaVersion ?? currentSchemaVersion;
         if (pointer !== currentSchemaVersion) {
-          if (scope.startsWith(SESSION_KEY_PREFIX)) {
-            // Session scopes are cold, so wipe them.
-            await clearScope(db);
-            return undefined;
-          }
           if (pointer > currentSchemaVersion) {
             // Disk is ahead after another tab migrated forward or a rollback deploy: stop persisting and let the PWA update flow replace this bundle.
             markBundleStale();
@@ -337,38 +323,33 @@ export function createIDBPersister(scope = 'rq') {
         }
 
         const productRecords = await db.queries.where('scope').equals(scope).toArray();
+        for (const { queryHash, dataUpdatedAt } of productRecords) lastPersistedAt.set(queryHash, dataUpdatedAt);
 
-        for (const q of productRecords) {
-          lastPersistedAt.set(q.queryHash, q.dataUpdatedAt);
-        }
+        const bundledQueries = meta.channelQueries ?? [];
+        // Seed the snapshot the next write diffs against.
+        lastBundledSnapshot = snapshotOf(bundledQueries);
 
         const allQueries: DehydratedQuery[] = [
-          ...productRecords.map((q) => ({ queryHash: q.queryHash, queryKey: q.queryKey, state: q.state, dehydratedAt: q.dataUpdatedAt })),
-          ...(meta.channelQueries ?? []),
+          ...productRecords.map(({ queryHash, queryKey, state, dataUpdatedAt }) => ({ queryHash, queryKey, state, dehydratedAt: dataUpdatedAt })),
+          ...bundledQueries,
         ];
 
-        // Seed the snapshot the next write diffs against.
-        const restoredChannelQueries = meta.channelQueries ?? [];
-        lastChannelSnapshot = JSON.stringify(restoredChannelQueries.map((q) => [q.queryHash, q.state.dataUpdatedAt]));
-
-        // Restores shared data, this tab's record, and orphaned tab records; live tabs keep their own, and age substitutes when lock liveness is undetectable.
+        // Restores shared data, this tab's record, and orphaned tab records; live tabs keep theirs, and age substitutes when lock liveness is undetectable.
         const prefix = mutationRecordPrefix(scope);
-        const mutationRecords = (await db.meta.where('key').startsWith(prefix).toArray()) ?? [];
+        const mutationRecords = await db.meta.where('key').startsWith(prefix).toArray();
         const live = await liveTabSessionIds();
-        const ownKey = `${prefix}${getTabSessionId()}`;
         const restoredMutations = [...(meta.mutations ?? [])];
         const absorbedKeys: string[] = [];
         for (const record of mutationRecords) {
           const tabId = record.key.slice(prefix.length);
-          const own = record.key === ownKey;
-          const dead = live ? !live.has(tabId) : record.timestamp < Date.now() - ORPHAN_MAX_AGE_MS;
-          if (!own && !dead) continue;
+          const fromThisTab = record.key === tabMutationKey;
+          const fromDeadTab = live ? !live.has(tabId) : record.timestamp < Date.now() - orphanMaxAgeMs;
+          if (!fromThisTab && !fromDeadTab) continue;
           restoredMutations.push(...(record.mutations ?? []));
-          if (!own) absorbedKeys.push(record.key);
+          if (!fromThisTab) absorbedKeys.push(record.key);
         }
         if (absorbedKeys.length > 0) await db.meta.bulkDelete(absorbedKeys);
 
-        // A mutation queued by an older bundle is brought to the variables shape this one reads, or quarantined.
         const mutations = inCurrentShape(restoredMutations);
 
         return {
@@ -402,7 +383,40 @@ export function createIDBPersister(scope = 'rq') {
 export const persister = createIDBPersister('rq');
 
 /** Session-scoped persister: per-tab scope, survives reload, reclaimed after the tab closes. */
-export const sessionPersister = createIDBPersister(`${SESSION_KEY_PREFIX}${getTabSessionId()}`);
+export const sessionPersister = createIDBPersister(sessionScope);
+
+const currentPersister = () => (uiStore.getState().offlineAccess ? persister : sessionPersister);
+
+/**
+ * What PersistQueryClientProvider restores and saves with. It subscribes once, so every call asks `currentPersister`
+ * again and the offline access switch applies without a reload. No age limit: the persister guards the cache's lifetime
+ * itself (the cache version, the lens pointer, the session sweep), and an expired restore would delete queued writes too.
+ */
+export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
+  persister: {
+    persistClient: (client) => currentPersister().persistClient(client),
+    restoreClient: () => currentPersister().restoreClient(),
+    removeClient: () => currentPersister().removeClient(),
+  },
+  maxAge: Number.POSITIVE_INFINITY,
+  dehydrateOptions: {
+    // Only paused mutations persist: active ones may hold non-cloneable streaming data.
+    shouldDehydrateMutation: (mutation) => mutation.state.isPaused,
+    shouldDehydrateQuery: shouldPersistQuery,
+  },
+};
+
+// The write throttle holds back up to a second of changes: a hidden page stores them now, best effort as idb-kv-storage does.
+if (typeof document !== 'undefined') {
+  const flushPersisters = () => {
+    void persister.flush();
+    void sessionPersister.flush();
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushPersisters();
+  });
+  window.addEventListener('pagehide', flushPersisters);
+}
 
 /** Reset persister change trackers (called on owner rebind so they match the freshly bound DB). */
 export function resetPersisters(): void {
@@ -410,27 +424,23 @@ export function resetPersisters(): void {
 }
 
 /**
- * Remove session records left behind by closed tabs, older than ORPHAN_MAX_AGE_MS and excluding the current tab.
- * The sole reclaim path for session scopes: a reload must keep its scope, so nothing is torn down on unload. Call once on app startup; no-ops while signed out.
+ * Remove the session scopes of closed tabs, each with its queued writes: a scope no tab holds the lock of (a loading tab
+ * holds none yet) and older than orphanMaxAgeMs, never this tab's. The sole reclaim path for session scopes: a reload
+ * must keep its scope, so nothing is torn down on unload. Call once on app startup; no-ops while signed out.
  */
 export async function cleanupOrphanedSessions(): Promise<void> {
   const db = getLocalUserDb();
   if (!db) return;
   try {
-    const cutoff = Date.now() - ORPHAN_MAX_AGE_MS;
-    const currentSessionScope = `${SESSION_KEY_PREFIX}${getTabSessionId()}`;
-    const allMeta = await db.meta.toArray();
-    const orphanScopes = allMeta
-      .filter((m) => m.key.startsWith(SESSION_KEY_PREFIX) && m.key !== currentSessionScope && m.timestamp < cutoff)
-      .map((m) => m.key);
+    const live = await liveTabSessionIds();
+    const cutoff = Date.now() - orphanMaxAgeMs;
+    const isClosedTabScope = ({ key, timestamp }: PersistedMetaRecord) =>
+      !key.includes(':mut:') && key !== sessionScope && timestamp < cutoff && !live?.has(key.slice(sessionKeyPrefix.length));
+    const orphanScopes = (await db.meta.where('key').startsWith(sessionKeyPrefix).toArray()).filter(isClosedTabScope).map(({ key }) => key);
 
     if (orphanScopes.length > 0) {
       await db.transaction('rw', db.queries, db.meta, async () => {
-        for (const orphanScope of orphanScopes) {
-          const ids = await db.queries.where('scope').equals(orphanScope).primaryKeys();
-          await db.queries.bulkDelete(ids);
-          await db.meta.delete(orphanScope);
-        }
+        for (const orphanScope of orphanScopes) await deleteScope(db, orphanScope);
       });
       console.debug(`[QueryPersister] Cleaned up ${orphanScopes.length} orphaned session(s)`);
     }
@@ -440,5 +450,4 @@ export async function cleanupOrphanedSessions(): Promise<void> {
   }
 }
 
-// Advertise this tab's liveness for mutation-record ownership.
-holdMutationOwnershipLock();
+holdTabLock();

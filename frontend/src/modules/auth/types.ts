@@ -1,11 +1,9 @@
 import type { GeneratePasskeyChallengeData, GetTokenDataResponse } from 'sdk';
 
-type PasskeyChallengeType = NonNullable<GeneratePasskeyChallengeData['body']>['type'];
+export type PasskeyChallengeBody = GeneratePasskeyChallengeData['body'];
 
-export interface PasskeyCredentialProps {
-  type: PasskeyChallengeType;
-}
+export type PasskeyVerifyType = Exclude<PasskeyChallengeBody['type'], 'registration'>;
 
 export type TokenData = GetTokenDataResponse;
 
-export type AuthStep = 'checkEmail' | 'signIn' | 'signUp' | 'invitation' | 'inviteOnly' | 'waitlist' | 'mfa' | 'magicLinkSent';
+export type AuthStep = 'checkEmail' | 'signIn' | 'signUp' | 'invitation' | 'waitlist' | 'magicLinkSent';

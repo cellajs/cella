@@ -3,16 +3,20 @@ import { FlameKindlingIcon, ServerCrashIcon, WifiOffIcon } from 'lucide-react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { Spinner } from '~/modules/common/spinner';
+import { userQueryOptions } from '~/modules/user/query';
+import { UserProfile } from '~/modules/user/user-profile';
 import { useUserStore } from '~/modules/user/user-store';
-import { userQueryOptions } from './query';
-import { UserProfilePage as UserProfile } from './user-profile';
 
-export function UserSheet({ id, organizationId }: { id: string; organizationId: string | undefined }) {
+interface UserSheetProps {
+  id: string;
+  organizationId: string | undefined;
+}
+
+export function UserSheet({ id, organizationId }: UserSheetProps) {
   const isOnline = useOnlineManager();
-  const currentUser = useUserStore((state) => state.user);
-  const isSelf = currentUser?.id === id;
+  const isSelf = useUserStore((state) => state.user?.id === id);
 
-  const { data: user, isLoading, isError } = useQuery({ ...userQueryOptions(id) });
+  const { data: user, isLoading, isError } = useQuery(userQueryOptions(id));
 
   if (isLoading) return <Spinner size="lg" className="mt-[45vh]" />;
   if (isError) return <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed" />;

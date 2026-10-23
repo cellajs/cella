@@ -2,24 +2,20 @@ import type { GetUnseenCountsResponse } from 'sdk';
 import type { ProductEntityType } from 'shared';
 import { seenKeys } from '~/modules/seen/helpers';
 import { queryClient } from '~/query/query-client';
+import { scheduleIdle } from '~/utils/schedule-idle';
 
 // Deltas batch into one idle cache write; counts clamp at zero and exact recounts absorb residual drift.
 const pendingDeltas: { channelId: string; productType: ProductEntityType; delta: number }[] = [];
 let flushScheduled = false;
 
 /** Max delay before forcing a flush when the browser never goes idle */
-const MAX_DELAY_MS = 5000;
-
-const scheduleIdle =
-  typeof requestIdleCallback === 'function'
-    ? (cb: () => void) => requestIdleCallback(cb, { timeout: MAX_DELAY_MS })
-    : (cb: () => void) => setTimeout(cb, MAX_DELAY_MS);
+const maxDelayMs = 5000;
 
 export function applyUnseenDelta(channelId: string, productType: ProductEntityType, delta: number) {
   pendingDeltas.push({ channelId, productType, delta });
   if (flushScheduled) return;
   flushScheduled = true;
-  scheduleIdle(flushDeltas);
+  scheduleIdle(flushDeltas, maxDelayMs);
 }
 
 function flushDeltas() {

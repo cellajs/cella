@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// tab-nav.tsx transitively imports use-breakpoints.tsx, which reads `window` at module load.
+// tab-nav.tsx transitively imports use-breakpoints.ts, which reads `window` at module load.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // A minimal fake router: only the fields resolveNavTabs reads (routesById, children, options, path).
@@ -11,7 +11,8 @@ vi.mock('~/routes/-router-instance', () => ({ getRouter: () => ({ routesById }) 
 import { assumeNoSurfaces, withSurface } from 'shared/testing/surfaces';
 import type { TKey } from '~/lib/i18n-locales';
 import { defineFrontendModule } from '~/lib/module';
-import { assertSurfaces, type GuardNavTabsOptions, guardNavTabs } from '~/modules/common/page/tab-nav';
+import type { ResolvePlacementOptions } from '~/lib/placements';
+import { assertSurfaces, guardNavTabs } from '~/modules/common/page/tab-nav';
 
 // Fixtures use synthetic labels that are not real translation keys.
 const key = (s: string) => s as TKey;
@@ -64,7 +65,7 @@ describe('guardNavTabs forwards bare-parent and disabled-tab navigations in befo
   type Match = { routeId: string; fullPath: string; params: unknown };
 
   /** Runs the guard, returning the thrown redirect's navigation options (undefined = passed). */
-  function runGuard(matches: Match[], options?: GuardNavTabsOptions) {
+  function runGuard(matches: Match[], options?: Pick<ResolvePlacementOptions, 'slotConfig'>) {
     try {
       guardNavTabs(matches, '/org', options);
     } catch (thrown) {

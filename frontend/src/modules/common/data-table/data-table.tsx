@@ -1,5 +1,7 @@
-import { type Key, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ServerCrashIcon } from 'lucide-react';
+import { type Key, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import {
   type CellRendererProps,
   type CellSelectionMode,
@@ -8,16 +10,16 @@ import {
   type DataGridProps,
   type RenderRowProps,
 } from '~/modules/common/data-grid';
+import { DataTableSkeleton } from '~/modules/common/data-table/data-table-skeleton';
 import { InfiniteLoader } from '~/modules/common/data-table/infinite-loader';
 import { NoRows } from '~/modules/common/data-table/no-rows';
-import { DataTableSkeleton } from '~/modules/common/data-table/table-skeleton';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useFetchMoreOnDemand } from '~/modules/common/data-table/use-fetch-more-on-demand';
 import { useTableTooltip } from '~/modules/common/data-table/use-table-tooltip';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { cn } from '~/utils/cn';
 
-const MAX_SELECTABLE_ROWS = 1000;
+const maxSelectableRows = 1000;
 
 /** DataGrid props forwarded unchanged through `gridProps`, retaining their source types and docs. */
 type ForwardedGridProps<TData> = Pick<
@@ -44,16 +46,15 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   rows: TData[] | undefined;
   rowKeyGetter: (row: TData) => string;
 
-  /** Query/async state: DataTable's own concern (skeleton, error, empty, infinite scroll). */
+  // Query state, from which DataTable renders the skeleton, the error, the empty state and the infinite scroll
   hasNextPage: boolean;
   error?: Error | null;
   isLoading?: boolean;
   isFetching?: boolean;
   isFiltered?: boolean;
-  NoRowsComponent?: React.ReactNode;
+  /** The empty state while nothing is filtered, usually a ContentPlaceholder. */
+  NoRowsComponent?: ReactNode;
   fetchMore?: () => Promise<unknown>;
-  /** Accepted for consumer API symmetry; not used by DataTable. */
-  limit?: number;
   /** When this value changes, internal column widths are reset (re-measured from column defaults). */
   resetWidthsKey?: string | number | boolean;
   className?: string;
@@ -61,16 +62,16 @@ interface DataTableProps<TData> extends ForwardedGridProps<TData> {
   readOnly?: boolean;
   enableVirtualization?: boolean;
 
-  /** Selection: DataTable wraps onSelectedRowsChange with the max-selection cap. */
   selectedRows?: Set<string>;
+  /** Skipped for a change past maxSelectableRows, which toasts a warning. */
   onSelectedRowsChange?: (selectedRows: Set<string>) => void;
 
-  /** Renderers: DataTable bundles these into a stable `renderers` object. */
   renderRow?: (key: Key, props: RenderRowProps<TData, unknown>) => ReactNode;
   renderCell?: (key: Key, props: CellRendererProps<TData, unknown>) => ReactNode;
 
   /** Cell selection mode (focus + range). Defaulted to 'none' when readOnly. @default 'cell' */
   cellSelectionMode?: CellSelectionMode;
+  /** Row height in px, for the grid and its skeleton. Defaults to 52. */
   rowHeight?: number;
 }
 
@@ -87,7 +88,6 @@ export function DataTable<TData>({
   isFiltered,
   NoRowsComponent,
   fetchMore,
-  limit,
   resetWidthsKey,
   className,
   readOnly,
@@ -102,9 +102,10 @@ export function DataTable<TData>({
 }: DataTableProps<TData>) {
   const { t } = useTranslation();
 
-  const gridRef = useRef<HTMLDivElement | null>(null);
+  // The grid div remounts after an empty state; held in state, each new element gets the tooltip listeners
+  const [gridElement, setGridElement] = useState<HTMLDivElement | null>(null);
   const [columnWidths, setColumnWidths] = useState<ColumnWidths>(() => new Map());
-  useTableTooltip(gridRef, !isLoading);
+  useTableTooltip(gridElement);
 
   useEffect(() => {
     setColumnWidths(new Map());
@@ -112,7 +113,7 @@ export function DataTable<TData>({
 
   // Virtualized tables use the grid's near-end state; fully rendered tables use InfiniteLoader observation.
   const [nearEnd, setNearEnd] = useState(false);
-  useFetchMoreOnDemand({ demand: !!enableVirtualization && nearEnd, hasNextPage, isFetching: !!isFetching, error: !!error, fetchMore });
+  useFetchMoreOnDemand({ demand: !!enableVirtualization && nearEnd, hasNextPage, isFetching: !!isFetching, hasError: !!error, fetchMore });
 
   // Memoized because `DataGrid` passes it to memoized rows; a fresh function each render defeats that memo.
   const handleSelectedRowsChange = useCallback(
@@ -122,13 +123,9 @@ export function DataTable<TData>({
       const currentSize = selectedRows?.size ?? 0;
       const newSize = newSelectedRows.size;
 
-      if (newSize > MAX_SELECTABLE_ROWS) {
+      if (newSize > maxSelectableRows) {
         // A jump of more than one row is a "select all" attempt.
-        if (newSize - currentSize > 1) {
-          toaster.warning(t('c:selection_limit_all', { max: MAX_SELECTABLE_ROWS }));
-        } else {
-          toaster.warning(t('c:selection_limit', { max: MAX_SELECTABLE_ROWS }));
-        }
+        toaster.warning(t(newSize - currentSize > 1 ? 'c:selection_limit_all' : 'c:selection_limit', { max: maxSelectableRows }));
         return;
       }
 
@@ -145,19 +142,19 @@ export function DataTable<TData>({
       {/* A failed first load has no rows, so the skeleton shows only while no error is known. */}
       {(isLoading || !rows) && !error ? (
         <DataTableSkeleton
-          cellsWidths={['3rem', '10rem', '4rem']}
-          cellHeight={Number(rowHeight)}
+          cellWidths={['3rem', '10rem', '4rem']}
+          cellHeight={rowHeight}
           // Count only visible columns so the skeleton matches what the grid renders.
           columnCount={columns.filter((column) => !column.hidden).length}
         />
       ) : error && !rows?.length ? (
-        <div className="flex size-full flex-col items-center justify-center bg-background text-muted-foreground">
-          <div className="my-8 text-center text-destructive text-sm">{error.message}</div>
-        </div>
+        <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed">
+          <p className="text-destructive text-sm">{error.message}</p>
+        </ContentPlaceholder>
       ) : !rows?.length ? (
-        <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
+        <NoRows isFiltered={isFiltered} isFetching={isFetching} emptyContent={NoRowsComponent} />
       ) : (
-        <div className="relative grid" ref={gridRef}>
+        <div className="relative grid" ref={setGridElement}>
           <DataGrid
             {...gridProps}
             columns={columns}

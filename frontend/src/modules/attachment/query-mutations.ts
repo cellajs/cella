@@ -6,16 +6,12 @@ import type { CreateVariables, DeleteVariables, UpdateVariables } from '~/query/
 import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
 
 type CreateAttachmentItem = CreateAttachmentsData['body'][number];
-/**
- * Id keys of the sub-organization ancestors an app homes attachments under (none in
- * cella). Cached rows carry them nullable, so creates accept them as-is and omit null (org-homed)
- * from the wire body; optimistic `Attachment` rows thus remain valid create input.
- */
+/** Id keys of the sub-organization ancestors an app homes attachments under (none in cella); null means org-homed. */
 type PlacementKey = EntityIdColumnKey<Exclude<AncestorChannelType<'attachment'>, 'organization'>>;
-const placementKeys = hierarchy
+const placementKeys: readonly string[] = hierarchy
   .getOrderedAncestors('attachment')
   .filter((type) => type !== 'organization')
-  .map((type) => appConfig.entityIdColumnKeys[type]) as readonly string[];
+  .map((type) => appConfig.entityIdColumnKeys[type]);
 
 // Placement keys keep the row's own nullability: a strict ancestor stays `string`, so an optimistic row validates.
 export type CreateAttachmentInput = (Omit<CreateAttachmentItem, 'stx' | PlacementKey> & Partial<Pick<Attachment, PlacementKey>>)[];

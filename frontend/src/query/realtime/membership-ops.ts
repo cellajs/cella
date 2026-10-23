@@ -1,7 +1,6 @@
-import { getMyMemberships } from 'sdk';
 import { appConfig, type ChannelEntityType } from 'shared';
 import { getAndSetMe } from '~/modules/me/helpers';
-import { meKeys } from '~/modules/me/query';
+import { meKeys, myMembershipsQueryOptions } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
@@ -12,7 +11,7 @@ function invalidateAllChannelDetails(): void {
   }
 }
 
-/** Invalidate the channel entity list for `channelType`; falls back to invalidating all context details when null/unknown. */
+/** Invalidate the channel entity list for `channelType`; a null or unregistered type marks every channel detail stale. */
 export function invalidateChannelList(channelType: ChannelEntityType | null): void {
   if (channelType && hasEntityQueryKeys(channelType)) {
     // The `list` prefix covers every filtered list variant for this channel type.
@@ -27,7 +26,9 @@ export function invalidateMemberQueries(organizationId: string | null): void {
     queryClient.invalidateQueries({
       queryKey: memberQueryKeys.list.base,
       predicate: (query) =>
-        query.queryKey.some((k) => typeof k === 'object' && k !== null && (k as { organizationId?: string }).organizationId === organizationId),
+        query.queryKey.some(
+          (segment) => typeof segment === 'object' && segment !== null && 'organizationId' in segment && segment.organizationId === organizationId,
+        ),
       refetchType: 'active',
     });
   } else {
@@ -43,7 +44,8 @@ export function invalidateMemberships(): void {
 
 /** `query` deduplicates against an in-flight getMyMemberships, which invalidateQueries would not, avoiding a redundant fetch on app init. */
 export function fetchMemberships(): Promise<unknown> {
-  return queryClient.query({ queryKey: meKeys.memberships, queryFn: async ({ signal }) => getMyMemberships({ signal }) });
+  // The client's default stale time: a catchup within 30 seconds of the route loader's read fetches nothing.
+  return queryClient.query({ ...myMembershipsQueryOptions(), staleTime: 30_000 });
 }
 
 /** Called after membership updates, since a role change alters permissions. */

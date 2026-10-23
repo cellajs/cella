@@ -1,7 +1,7 @@
 import { isRecord } from '../utils/as-record.ts';
 import type { DeepPartial } from './types.ts';
 
-const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+const forbiddenKeys = new Set(['__proto__', 'constructor', 'prototype']);
 
 export function mergeDeep<T extends {}, U extends DeepPartial<T>>(target: T, ...sources: U[]) {
   if (!sources.length) return target;
@@ -9,7 +9,7 @@ export function mergeDeep<T extends {}, U extends DeepPartial<T>>(target: T, ...
 
   if (isRecord(target) && source && isRecord(source)) {
     for (const key in source) {
-      if (!Object.hasOwn(source, key) || FORBIDDEN_KEYS.has(key)) continue;
+      if (!Object.hasOwn(source, key) || forbiddenKeys.has(key)) continue;
       if (isRecord(source[key as keyof object])) {
         if (!target[key as keyof object]) Object.assign(target, { [key]: {} });
         mergeDeep(target[key as keyof object], source[key as keyof object]);

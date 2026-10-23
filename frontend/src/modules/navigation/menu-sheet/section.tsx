@@ -6,16 +6,16 @@ import type { ChannelEntityType } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
+import { collapseMotion } from '~/modules/common/collapse-motion';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import type { UserMenuItem } from '~/modules/me/types';
-import { collapseMotion } from '~/modules/navigation/menu-sheet/helpers/collapse-motion';
+import { MenuSheetArchivedToggle } from '~/modules/navigation/menu-sheet/archived-toggle';
 import { collectChannelIds } from '~/modules/navigation/menu-sheet/helpers/collect-channel-ids';
-import { MenuSheetItemsEdit } from '~/modules/navigation/menu-sheet/items-edit-list';
-import { MenuSheetItems } from '~/modules/navigation/menu-sheet/items-list';
-import { SectionArchiveButton } from '~/modules/navigation/menu-sheet/section-archive-button';
-import { MenuSectionButton } from '~/modules/navigation/menu-sheet/section-button';
-import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
+import { MenuSheetItemsList } from '~/modules/navigation/menu-sheet/items-list';
+import { MenuSheetItemsListEdit } from '~/modules/navigation/menu-sheet/items-list-edit';
+import { MenuSheetSectionButton } from '~/modules/navigation/menu-sheet/section-button';
+import { closeNavSheet } from '~/modules/navigation/nav-sheet';
+import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
 export type MenuSectionOptions = {
   label: TKey;
@@ -25,50 +25,45 @@ export type MenuSectionOptions = {
 };
 
 interface MenuSheetSectionProps {
-  data: UserMenuItem[];
+  items: UserMenuItem[];
   options: MenuSectionOptions;
 }
 
-export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
+export function MenuSheetSection({ items, options }: MenuSheetSectionProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
-  const { toggleSection, setNavSheetOpen } = navigationStore.getState();
+  const toggleSection = useNavigationStore((state) => state.toggleSection);
 
   const [isEditing, setIsEditing] = useState(false);
 
   // Own entries only: toggling one section re-renders that section alone
-  const archivedSectionType = `${options.entityType}-archived`;
-  const isArchivedVisible = useNavigationStore((state) => state.activeSections?.[archivedSectionType] ?? true);
+  const archivedSectionKey = `${options.entityType}-archived`;
+  const isArchivedVisible = useNavigationStore((state) => state.activeSections?.[archivedSectionKey] ?? true);
   const isSectionVisible = useNavigationStore((state) => state.activeSections?.[options.entityType] ?? true);
-  const archivedItems = data.filter((i) => i.membership?.archived);
+  const archivedItems = items.filter((item) => item.membership.archived);
   const archivedCount = archivedItems.length;
-  const activeChannelIds = collectChannelIds(data, { archived: false });
-  const archivedChannelIds = collectChannelIds(data, { archived: true });
+  const activeChannelIds = collectChannelIds(items, { archived: false });
+  const archivedChannelIds = collectChannelIds(items, { archived: true });
 
-  const handleCreateAction = (ref: RefObject<HTMLButtonElement | null>) => {
-    if (isMobile) {
-      sheeter.getState().remove('nav-sheet');
-      setNavSheetOpen(null);
-    }
+  const handleCreate = (ref: RefObject<HTMLButtonElement | null>) => {
+    if (isMobile) closeNavSheet();
     options.createAction?.(ref);
   };
 
-  const toggleIsEditing = () => {
-    setIsEditing(!isEditing);
-  };
+  const handleToggleEditing = () => setIsEditing((prev) => !prev);
 
-  const archiveToggleClick = () => toggleSection(archivedSectionType);
+  const handleToggleArchived = () => toggleSection(archivedSectionKey);
 
   return (
     <div className="group/menu-section px-3" data-visible={isSectionVisible}>
-      <MenuSectionButton
-        data={data}
+      <MenuSheetSectionButton
+        items={items}
         channelIds={activeChannelIds}
         options={options}
         isEditing={isEditing}
         isSectionVisible={isSectionVisible}
-        toggleIsEditing={toggleIsEditing}
-        handleCreateAction={handleCreateAction}
+        onToggleEditing={handleToggleEditing}
+        onCreate={handleCreate}
       />
       <AnimatePresence initial={false}>
         {isEditing && (
@@ -86,33 +81,24 @@ export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
       </AnimatePresence>
       <AnimatePresence initial={false}>
         {isSectionVisible && (
-          <motion.ul key={options.entityType} {...collapseMotion} transition={{ duration: 0.2, ease: 'easeInOut' }} className="overflow-hidden">
+          <motion.ul key={options.entityType} {...collapseMotion} className="overflow-hidden">
             {isEditing ? (
-              <MenuSheetItemsEdit data={data} isArchived={false} options={options} />
+              <MenuSheetItemsListEdit items={items} isArchived={false} options={options} />
             ) : (
-              <MenuSheetItems type={options.entityType} data={data} isArchived={false} options={options} />
+              <MenuSheetItemsList entityType={options.entityType} items={items} isArchived={false} options={options} />
             )}
-            {!!data.length && (
+            {!!items.length && (
               <li className="group/archived" data-has-archived={!!archivedCount} data-submenu={false} data-archived-visible={isArchivedVisible}>
                 {(!!archivedCount || isEditing) && (
-                  <SectionArchiveButton
-                    archiveToggleClick={archiveToggleClick}
-                    archivedCount={archivedCount}
-                    archivedChannelIds={archivedChannelIds}
-                  />
+                  <MenuSheetArchivedToggle onToggle={handleToggleArchived} archivedCount={archivedCount} archivedChannelIds={archivedChannelIds} />
                 )}
                 <AnimatePresence initial={false}>
                   {isArchivedVisible && (
-                    <motion.ul
-                      key={`${options.entityType}-archived`}
-                      {...collapseMotion}
-                      transition={{ duration: 0.2, ease: 'easeInOut' }}
-                      className="overflow-hidden"
-                    >
+                    <motion.ul key={archivedSectionKey} {...collapseMotion} className="overflow-hidden">
                       {isEditing ? (
-                        <MenuSheetItemsEdit data={data} isArchived={true} options={options} />
+                        <MenuSheetItemsListEdit items={items} isArchived={true} options={options} />
                       ) : (
-                        <MenuSheetItems type={options.entityType} data={data} options={options} isArchived={true} />
+                        <MenuSheetItemsList entityType={options.entityType} items={items} options={options} isArchived={true} />
                       )}
                     </motion.ul>
                   )}

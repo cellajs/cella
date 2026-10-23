@@ -1,7 +1,7 @@
 import { type RefObject, useCallback, useLayoutEffect, useRef, useState } from 'react';
 
 /** A measured height within this of the height already assumed is subpixel noise (zoom, rounding), not a resize. */
-const HEIGHT_TOLERANCE = 0.5;
+const heightTolerance = 0.5;
 
 interface MeasuredRowHeightsArgs<R> {
   gridRef: RefObject<HTMLDivElement | null>;
@@ -63,11 +63,11 @@ export function useMeasuredRowHeights<R>({ gridRef, rows, rowHeight, enabled, he
           const height = entry.borderBoxSize?.[0]?.blockSize ?? entry.target.getBoundingClientRect().height;
           const estimate = typeof rowHeight === 'number' ? rowHeight : rowHeight(row);
           const assumed = (next ?? base).get(key) ?? estimate;
-          if (Math.abs(height - assumed) < HEIGHT_TOLERANCE) continue;
+          if (Math.abs(height - assumed) < heightTolerance) continue;
 
           next ??= new Map(base);
           // A row back at its estimate needs no entry: positions fall back to the estimate
-          if (Math.abs(height - estimate) < HEIGHT_TOLERANCE) next.delete(key);
+          if (Math.abs(height - estimate) < heightTolerance) next.delete(key);
           else next.set(key, height);
         }
 

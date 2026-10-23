@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Connection, Tenant } from 'sdk';
 import {
+  type Connection,
   type CreateConnectionData,
   createConnection,
   type DeleteConnectionData,
@@ -10,6 +10,7 @@ import {
   getTenants,
   type SelfCreateTenantData,
   selfCreateTenant,
+  type Tenant,
   type UpdateConnectionData,
   type UpdateTenantData,
   updateConnection,
@@ -32,13 +33,13 @@ const tenantQueryKeys = {
 };
 
 export const tenantsListQueryOptions = (params: TenantsListParams) => {
-  const defaults = tenantsSearchDefaults;
   const {
-    q = defaults.q,
+    q = tenantsSearchDefaults.q,
     status,
-    sort = defaults.sort,
-    order = defaults.order,
-    limit = appConfig.requestLimits.users, // Use users limit as fallback
+    sort = tenantsSearchDefaults.sort,
+    order = tenantsSearchDefaults.order,
+    // requestLimits has no tenants entry
+    limit = appConfig.requestLimits.users,
   } = params;
   const filters = { q, status, sort, order };
 

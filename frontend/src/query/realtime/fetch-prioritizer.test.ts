@@ -33,8 +33,9 @@ const { queryClient } = await import('~/query/query-client');
 const { enqueueRange, flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');
 const { onSyncedRows } = await import('./sync-signals');
 
-const BACKGROUND = { min: 2_000, max: 30_000 };
-const VIEWING = { min: 0, max: 0 };
+const background = { min: 2_000, max: 30_000 };
+const viewing = { min: 0, max: 0 };
+const onOpen = { min: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY };
 
 const base = { entityType: 'attachment' as const, organizationId: 'org-1', tenantId: 'tenant-1', channelId: null, isCreate: false };
 
@@ -46,7 +47,7 @@ describe('fetch-prioritizer', () => {
     setSyncDeliveryTrusted(true);
     // reachedSeq Infinity = full delivery (reaches any untilSeq) unless a test overrides it.
     fetchRangeAndPatch.mockResolvedValue({ status: 'ok', items: [], reachedSeq: Number.POSITIVE_INFINITY });
-    getSyncTier.mockReturnValue(BACKGROUND);
+    getSyncTier.mockReturnValue(background);
   });
 
   afterEach(() => {
@@ -153,7 +154,7 @@ describe('fetch-prioritizer', () => {
     expect(fetchRangeAndPatch).not.toHaveBeenCalled();
 
     // The channel view's view mounts: its list query gains an observer and the tier turns live.
-    getSyncTier.mockReturnValue(VIEWING);
+    getSyncTier.mockReturnValue(viewing);
     const observer = new QueryObserver(queryClient, { queryKey: ['attachment', 'list', 'org-1'], queryFn: async () => [] });
     const unsubscribe = observer.subscribe(() => {});
 
@@ -161,6 +162,31 @@ describe('fetch-prioritizer', () => {
 
     expect(fetchRangeAndPatch).toHaveBeenCalledTimes(1);
     expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 4, untilSeq: 8 });
+
+    unsubscribe();
+    queryClient.clear();
+  });
+
+  it('holds the changes of a muted channel view until it is opened, then fetches them', async () => {
+    getSyncTier.mockReturnValue(onOpen);
+    enqueueRange({ ...base, channelId: 'project-9', afterSeq: 3, untilSeq: 7 });
+    // No timer either: a browser runs a timeout past 2^31-1 ms at once, and would spin.
+    expect(vi.getTimerCount()).toBe(0);
+
+    await vi.advanceTimersByTimeAsync(60_000);
+    // A hidden tab tops up every scope but this one.
+    await flushAllNow();
+    expect(fetchRangeAndPatch).not.toHaveBeenCalled();
+
+    // The channel is opened: its list query gains an observer and the tier turns live.
+    getSyncTier.mockReturnValue(viewing);
+    const observer = new QueryObserver(queryClient, { queryKey: ['attachment', 'list', 'org-1', 'project-9'], queryFn: async () => [] });
+    const unsubscribe = observer.subscribe(() => {});
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(fetchRangeAndPatch).toHaveBeenCalledTimes(1);
+    expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 3, untilSeq: 7 });
+    expect(syncStore.getState().getChannelSeq('org-1', 'project-9', 'attachment')).toBe(7);
 
     unsubscribe();
     queryClient.clear();

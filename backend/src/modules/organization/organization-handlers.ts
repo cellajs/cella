@@ -4,6 +4,7 @@ import { createOrganizationsOp } from '#/modules/organization/operations/create-
 import { deleteOrganizationsOp } from '#/modules/organization/operations/delete-organizations';
 import { getOrganizationOp } from '#/modules/organization/operations/get-organization';
 import { getOrganizationsOp } from '#/modules/organization/operations/get-organizations';
+import { publishOrganizationOp } from '#/modules/organization/operations/publish-organization';
 import { updateOrganizationOp } from '#/modules/organization/operations/update-organization';
 import { organizationRoutes } from '#/modules/organization/organization-routes';
 import { defaultHook } from '#/utils/default-hook';
@@ -31,6 +32,12 @@ app.openapi(organizationRoutes.getOrganization, async (ctx) => {
 app.openapi(organizationRoutes.updateOrganization, async (ctx) => {
   const { id } = ctx.req.valid('param');
   const data = await updateOrganizationOp(ctx, id, ctx.req.valid('json'));
+  return ctx.json(data, 200);
+});
+
+app.openapi(organizationRoutes.publishOrganization, async (ctx) => {
+  const { id } = ctx.req.valid('param');
+  const data = await publishOrganizationOp(ctx, id);
   return ctx.json(data, 200);
 });
 

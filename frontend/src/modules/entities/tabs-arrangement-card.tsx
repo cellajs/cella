@@ -37,10 +37,10 @@ function rowKeyGetter(row: TabRow) {
 
 // The label cell stacks a tab's name and description, centred in the row
 const labelCellClass = tw('flex-col items-stretch justify-center py-2');
-// Below `sm` a row grows as its description unfolds. The top padding seats the name where a centred row has it (1.5rem is
-// the help toggle's height), and the other cells keep to the row's first line, so nothing shifts while the text opens beneath
+// Below `sm` the top padding seats the name where a centred row has it (1.5rem: the help toggle's height) as the description unfolds
 const helpLabelCellClass = tw('max-sm:justify-start max-sm:pt-[calc((var(--rdg-row-height)-1.5rem)/2)] max-sm:pb-3');
-const firstLineCellClass = tw('max-sm:h-(--rdg-row-height) max-sm:self-start');
+// Below `sm` the other cells keep to the row's first line, so nothing shifts while a description unfolds beneath
+const firstLineCellClass = tw('justify-center max-sm:h-(--rdg-row-height) max-sm:self-start');
 
 function renderRowDragPreview(row: TabRow) {
   return <div className="rounded border bg-background px-2 py-1 text-sm shadow-md">{row.name}</div>;
@@ -48,22 +48,18 @@ function renderRowDragPreview(row: TabRow) {
 
 interface TabsArrangementCardProps {
   entity: EnrichedChannel & { toolsConfig?: ToolsConfig };
-  /** The tabbed surface whose candidates are managed (route navTabs plus registry slot tools). */
+  /** Layout route whose tabs it arranges: its `navTab` child routes plus the tools of its `tabsSlot`. */
   parentRouteId: string;
   /** Persists the next toolsConfig through the channel's update mutation. */
-  persist: (toolsConfig: ToolsConfig) => void;
+  onPersist: (toolsConfig: ToolsConfig) => void;
 }
 
-/**
- * Arranges a channel surface's tabs, persisted in `toolsConfig['<channelType>.tabs']`. Candidates
- * list ungated, so tabs the viewer's own grants would hide stay manageable; `locked` tabs cannot be
- * hidden. UI visibility only, never authorization.
- */
-export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArrangementCardProps) {
+/** Orders and hides a channel's tabs in `toolsConfig['<channelType>.tabs']`, listed ungated so the viewer's grants hide none; UI only, never authorization. */
+export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsArrangementCardProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
 
-  const slot = `${entity.entityType}.tabs` as ChannelSlot;
+  const slot: ChannelSlot = `${entity.entityType}.tabs`;
   const slotConfig = entity.toolsConfig?.[slot];
   const hidden = new Set(slotConfig?.hidden ?? []);
 
@@ -72,22 +68,17 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
   const persistedOrderKey = (slotConfig?.order ?? []).join();
   useEffect(() => setDraftOrder(null), [persistedOrderKey]);
 
-  const candidates = getNavTabCandidates(parentRouteId).map(({ id, label, resource, description, order, locked }) => ({
-    id,
-    label,
-    resource,
-    description,
-    order,
-    locked,
-  }));
-  const rows = arrangePlacements(slot, candidates, draftOrder ? { order: draftOrder } : slotConfig).map((tab) => ({
-    ...tab,
-    name: t(tab.label, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' }),
-    description: tab.description ? t(tab.description, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' }) : undefined,
-    visible: !hidden.has(tab.id),
-  }));
+  const rows = arrangePlacements(slot, getNavTabCandidates(parentRouteId), draftOrder ? { order: draftOrder } : slotConfig).map((tab) => {
+    const resource = tab.resource ? t(tab.resource).toLowerCase() : '';
+    return {
+      ...tab,
+      name: t(tab.label, { resource }),
+      description: tab.description ? t(tab.description, { resource }) : undefined,
+      visible: !hidden.has(tab.id),
+    };
+  });
 
-  const persistSlot = (nextConfig: SlotToolsConfig) => persist({ [slot]: nextConfig });
+  const persistSlot = (nextConfig: SlotToolsConfig) => onPersist({ [slot]: nextConfig });
 
   const toggleHidden = (id: string, visible: boolean) => {
     const nextHidden = rows.filter((row) => (row.id === id ? !visible : !row.visible)).map((row) => row.id);
@@ -156,8 +147,8 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       key: 'visible',
       name: t('c:visible'),
       width: 64,
-      cellClass: cn('flex items-center justify-center', firstLineCellClass),
-      headerCellClass: 'text-center',
+      cellClass: firstLineCellClass,
+      headerCellClass: 'justify-center',
       renderCell: ({ row }) =>
         row.locked ? (
           <LockIcon className="size-3.5 opacity-50" aria-label={t('c:locked')} />

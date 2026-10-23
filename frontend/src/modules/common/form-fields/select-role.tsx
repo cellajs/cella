@@ -11,7 +11,7 @@ interface SelectRoleProps {
   className?: string;
 }
 
-/** Single-role select. Renders a drawer on mobile. */
+/** A role filter whose "All" option reads and writes `undefined`. */
 export function SelectRole({ entityType, onChange, value, className }: SelectRoleProps) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
@@ -23,8 +23,8 @@ export function SelectRole({ entityType, onChange, value, className }: SelectRol
   return (
     <ResponsiveSelect
       options={options}
-      value={value === undefined || value === 'all' ? 'all' : value}
-      onChange={(role: string) => onChange(role === 'all' ? undefined : role)}
+      value={value ?? 'all'}
+      onChange={(role) => onChange(role === 'all' ? undefined : role)}
       placeholder={t('c:placeholder.select_role')}
       title={t('c:role')}
       showTitle

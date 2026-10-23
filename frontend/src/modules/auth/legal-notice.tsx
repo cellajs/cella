@@ -1,13 +1,12 @@
-import { type RefObject, Suspense, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { type ReactNode, Suspense, useEffect, useRef, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
 import { type LegalSubject, legalConfig } from '~/modules/auth/legal/legal-config';
 import { LegalDialogNavProvider } from '~/modules/auth/legal/legal-cross-link';
-import { LegalText } from '~/modules/auth/legal/legal-text';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { InlineLinkButton } from '~/modules/common/inline-link-button';
 import { Spinner } from '~/modules/common/spinner';
-import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
@@ -15,47 +14,34 @@ import { tw } from '~/utils/tw';
 function LegalDialog({ initialSubject }: { initialSubject: LegalSubject }) {
   const { t } = useTranslation();
   const [subject, setSubject] = useState(initialSubject);
+  const SubjectText = legalConfig[subject].component;
 
   useEffect(() => {
-    const dialoger = useDialoger.getState();
-    dialoger.update('legal', { title: t(legalConfig[subject].label) });
-    dialoger.scrollToTop('legal');
+    dialoger.getState().update('legal', { title: t(legalConfig[subject].label) });
+    dialoger.getState().scrollToTop('legal');
   }, [subject, t]);
 
   return (
     <LegalDialogNavProvider value={setSubject}>
       <Suspense fallback={<Spinner size="lg" className="mt-10" />}>
-        <LegalText subject={subject} />
+        <div className="prose dark:prose-invert max-w-none">
+          <SubjectText />
+        </div>
       </Suspense>
     </LegalDialogNavProvider>
   );
 }
 
-// The links take the notice's font size, which a caller may shrink.
-const linkClassName = tw('h-auto p-0 text-[length:inherit]');
-
-// Fetched while the notice is read, so the dialog opens at full height with no spinner.
-const linkedTexts = [legalConfig.terms.component, legalConfig.privacy.component];
-
-interface LegalNoticeProps {
-  email?: string;
-  mode?: 'waitlist' | 'signup' | 'verify' | 'continue';
-  className?: string;
-}
-
-export function LegalNotice({ email = '', mode = 'signup', className }: LegalNoticeProps) {
+/** Opens one legal text in the legal dialog; `Trans` hands it the link text. */
+function LegalNoticeLink({ subject, children }: { subject: LegalSubject; children?: ReactNode }) {
   const { t } = useTranslation();
-  const createDialog = useDialoger((state) => state.create);
-  usePreloadLazyComponents(linkedTexts);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const termsButtonRef = useRef(null);
-  const privacyButtonRef = useRef(null);
-
-  const openDialog = (legalSubject: LegalSubject, triggerRef: RefObject<HTMLButtonElement | null>) => () => {
-    createDialog(<LegalDialog initialSubject={legalSubject} />, {
+  const openDialog = () => {
+    dialoger.getState().create(<LegalDialog initialSubject={subject} />, {
       id: 'legal',
       triggerRef,
-      title: t(legalConfig[legalSubject].label),
+      title: t(legalConfig[subject].label),
       className: tw('p-6 md:max-w-4xl'),
       outsideScroll: true,
       drawerOnMobile: false,
@@ -63,19 +49,41 @@ export function LegalNotice({ email = '', mode = 'signup', className }: LegalNot
   };
 
   return (
-    <p className={cn('space-x-1 text-center', className)}>
-      {mode === 'continue' && <span>{t('c:legal_notice_continue.text')}</span>}
-      {mode === 'signup' && <span>{email ? t('c:legal_notice_email.text', { email }) : t('c:legal_notice.text')}</span>}
-      {mode === 'waitlist' && <span>{t('c:legal_notice_waitlist.text', { email })}</span>}
-      {mode === 'verify' && <span>{t('c:request_verification.legal_notice')}</span>}
-      <Button ref={termsButtonRef} type="button" variant="link" className={linkClassName} onClick={openDialog('terms', termsButtonRef)}>
-        {t('c:terms').toLocaleLowerCase()}
-      </Button>
-      <span>&</span>
-      <Button ref={privacyButtonRef} type="button" variant="link" className={linkClassName} onClick={openDialog('privacy', privacyButtonRef)}>
-        {t('c:privacy_policy').toLocaleLowerCase()}
-      </Button>
-      <span>of {appConfig.company.name}.</span>
+    <InlineLinkButton ref={triggerRef} onClick={openDialog}>
+      {children}
+    </InlineLinkButton>
+  );
+}
+
+// Fetched while the notice is read, so the dialog opens at full height with no spinner.
+const linkedTexts = [legalConfig.terms.component, legalConfig.privacy.component];
+
+const noticeKeys = {
+  signup: 'c:legal_notice.text',
+  continue: 'c:legal_notice_continue.text',
+  waitlist: 'c:legal_notice_waitlist.text',
+  verify: 'c:request_verification.legal_notice',
+} as const;
+
+interface LegalNoticeProps {
+  /** Named in the sign-up sentence. */
+  email?: string;
+  mode: keyof typeof noticeKeys;
+  className?: string;
+}
+
+export function LegalNotice({ email, mode, className }: LegalNoticeProps) {
+  const { t } = useTranslation();
+  usePreloadLazyComponents(linkedTexts);
+
+  return (
+    <p className={cn('text-center', className)}>
+      <Trans
+        t={t}
+        i18nKey={mode === 'signup' && email ? 'c:legal_notice_email.text' : noticeKeys[mode]}
+        values={{ email, company: appConfig.company.name }}
+        components={{ terms: <LegalNoticeLink subject="terms" />, privacy: <LegalNoticeLink subject="privacy" /> }}
+      />
     </p>
   );
 }

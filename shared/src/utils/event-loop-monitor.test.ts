@@ -8,7 +8,7 @@ vi.mock('node:perf_hooks', () => ({ monitorEventLoopDelay: () => histogram }));
 const ms = (value: number) => value * 1e6;
 
 /** A loop that fires its 20 ms timer on time. */
-const IDLE = ms(20.9);
+const idle = ms(20.9);
 
 describe('getEventLoopLagMs', () => {
   let getEventLoopLagMs: () => number;
@@ -21,7 +21,7 @@ describe('getEventLoopLagMs', () => {
     histogram.reset.mockClear();
     const monitor = await import('./event-loop-monitor');
     getEventLoopLagMs = monitor.getEventLoopLagMs;
-    windowMs = monitor.EVENT_LOOP_WINDOW_MS;
+    windowMs = monitor.eventLoopWindowMs;
   });
 
   afterEach(() => {
@@ -34,7 +34,7 @@ describe('getEventLoopLagMs', () => {
 
   it("reads near 0 on an idle loop: the timer's own interval is no delay", () => {
     getEventLoopLagMs();
-    histogram.mean = IDLE;
+    histogram.mean = idle;
 
     expect(getEventLoopLagMs()).toBe(0.9);
   });
@@ -53,7 +53,7 @@ describe('getEventLoopLagMs', () => {
     // The window with the burst ends. The loop is idle from here on.
     vi.advanceTimersByTime(windowMs);
     expect(histogram.reset).toHaveBeenCalledTimes(1);
-    histogram.mean = IDLE;
+    histogram.mean = idle;
     expect(getEventLoopLagMs()).toBe(500);
 
     vi.advanceTimersByTime(windowMs);

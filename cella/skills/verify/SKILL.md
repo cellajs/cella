@@ -24,6 +24,6 @@ description: Build, launch, and drive the cella frontend to verify UI changes at
 
 ## Gotchas
 
-- `use-scroll-visibility.ts` ignores single-frame scroll jumps > 150px (`MAX_GESTURE_DELTA`) and has a 500ms initial cooldown, so `window.scrollBy(0, 1000)` will NOT hide floating nav buttons. Simulate gestures: repeated `page.mouse.wheel(0, ~100)` ticks at ~60ms intervals, after waiting ~1s post-load.
+- `use-scroll-visibility.ts` ignores single-frame scroll jumps > 150px (`maxGestureDelta`) and has a 500ms initial cooldown, so `window.scrollBy(0, 1000)` will NOT hide floating nav buttons. Simulate gestures: repeated `page.mouse.wheel(0, ~100)` ticks at ~60ms intervals, after waiting ~1s post-load.
 - Floating nav buttons: `#floating-nav` container, item ids like `marketing-menu` / `docs-menu`; hidden = `opacity-0` class on the button.
 - The dev-mode "Testing credentials" banner, fixed to the bottom of public pages, can overlap bottom-anchored UI in screenshots.

@@ -58,8 +58,8 @@ interface FindInvitationAccountsOpts {
 }
 
 /**
- * The accounts behind invited addresses, one row per address an account holds: its primary address, and whether it is
- * a member of the channel and of the organization. Addresses no account holds have no row.
+ * The accounts behind invited addresses, one row per address an account holds: its primary address, its membership
+ * of the channel (with the role) and whether it is a member of the organization. Addresses no account holds have no row.
  */
 export const findInvitationAccounts = async (ctx: OrgContext, { emails, entityType, entityId }: FindInvitationAccountsOpts) => {
   const { db, organizationId } = ctx.var;
@@ -71,6 +71,7 @@ export const findInvitationAccounts = async (ctx: OrgContext, { emails, entityTy
       userId: usersTable.id,
       primaryEmail: usersTable.email,
       membershipId: membershipsTable.id,
+      membershipRole: membershipsTable.role,
       orgMembershipId: orgMemberships.id,
     })
     .from(emailsTable)
@@ -100,8 +101,8 @@ export const findInvitationsToAddresses = async (ctx: DbContext, { emails, chann
       id: inactiveMembershipsTable.id,
       email: inactiveMembershipsTable.email,
       userId: inactiveMembershipsTable.userId,
+      role: inactiveMembershipsTable.role,
       rejectedAt: inactiveMembershipsTable.rejectedAt,
-      // Last dispatch timestamps for the reminder throttle (remindedAt ?? createdAt)
       createdAt: inactiveMembershipsTable.createdAt,
       remindedAt: inactiveMembershipsTable.remindedAt,
     })
@@ -505,7 +506,14 @@ export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: Find
   const orderBy = getOrderColumns({ sort, order, fallback: ['createdAt', 'desc'], columns: { createdAt: table.createdAt }, tieBreaker: table.id });
 
   const pendingMembershipsQuery = db
-    .select({ id: table.id, role: table.role, email: table.email, createdAt: table.createdAt, createdBy: table.createdBy })
+    .select({
+      id: table.id,
+      role: table.role,
+      email: table.email,
+      createdAt: table.createdAt,
+      remindedAt: table.remindedAt,
+      createdBy: table.createdBy,
+    })
     .from(table)
     .where(and(eq(table.channelId, entityId), eq(table.organizationId, organizationId), isNull(table.rejectedAt)));
 
@@ -563,6 +571,17 @@ interface InactiveMembershipIdOpts {
 
 export const deleteInactiveMembership = async (ctx: DbContext, { id }: InactiveMembershipIdOpts) => {
   await ctx.var.db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id));
+};
+
+interface UpdateInactiveMembershipsOpts {
+  ids: string[];
+  values: { role?: EntityRole; rejectedAt?: null; remindedAt?: string | null };
+}
+
+/** Invitations sent again: a declined one opens again, a higher role replaces a lower one, the last email moves. */
+export const updateInactiveMemberships = async (ctx: DbContext, { ids, values }: UpdateInactiveMembershipsOpts) => {
+  if (!ids.length) return;
+  await ctx.var.db.update(inactiveMembershipsTable).set(values).where(inArray(inactiveMembershipsTable.id, ids));
 };
 
 /** Stamps a membership invitation rejected now. */

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { verifyToken } from '../server/auth';
 import { createExpiredToken, createSignedToken, signPayload } from './helpers';
 
-const RELAY_SECRET = 'test-yjs-relay-secret-for-unit-tests';
+const relaySecret = 'test-yjs-relay-secret-for-unit-tests';
 const claims = () => ({
   userId: 'user-1',
   entityType: 'task',
@@ -25,7 +25,7 @@ describe('verifyToken', () => {
 
   it('must not accept a token minted with the relay secret', () => {
     const payloadB64 = encode(claims());
-    const mac = createHmac('sha256', RELAY_SECRET).update(payloadB64).digest();
+    const mac = createHmac('sha256', relaySecret).update(payloadB64).digest();
     // The relay holds this secret: neither a truncated-hex HMAC nor a full MAC passes as a signature.
     for (const signature of [mac.toString('hex').slice(0, 16), mac.toString('base64url'), mac.toString('hex')]) {
       expect(verifyToken(`${payloadB64}.${signature}`)).toEqual({ ok: false, reason: 'bad_signature' });

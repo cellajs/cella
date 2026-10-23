@@ -3,18 +3,21 @@ import { createContext, type ReactNode, useContext, useRef } from 'react';
 
 const ScrollResetContext = createContext<(() => void) | null>(null);
 
+interface ScrollResetProps {
+  children: ReactNode;
+}
+
 /**
  * Zero-height sentinel in document flow; any descendant calls `useScrollReset()` to scroll back to it.
  * Nestable. An inner `ScrollReset` overrides the outer context.
  */
-export function ScrollReset({ children }: { children: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
+export function ScrollReset({ children }: ScrollResetProps) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const scrollToReset = () => {
-    const el = ref.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    // Only scroll when the sentinel is above the viewport
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const rect = sentinel.getBoundingClientRect();
     if (rect.top < 0) {
       window.scrollTo({ top: Math.floor(window.scrollY + rect.top), behavior: 'instant' });
     }
@@ -22,7 +25,7 @@ export function ScrollReset({ children }: { children: ReactNode }) {
 
   return (
     <ScrollResetContext.Provider value={scrollToReset}>
-      <div ref={ref} className="h-0" aria-hidden />
+      <div ref={sentinelRef} className="h-0" aria-hidden />
       <div className="min-h-svh">{children}</div>
     </ScrollResetContext.Provider>
   );

@@ -5,7 +5,7 @@ import pc from 'picocolors';
 import { baseDb } from '#/db/db';
 import { declaredQueues } from '#/lib/jobs';
 import { readJobsHealth } from '#/lib/jobs-health';
-import { JOBS_SCHEMA, jobsOptions } from '#/lib/pg-boss';
+import { jobsSchema, jobsOptions } from '#/lib/pg-boss';
 import '#/modules'; // composition root: the declared queues and jobs to compare the store against
 
 /**
@@ -37,13 +37,13 @@ async function main(): Promise<void> {
   const json = process.argv.includes('--json');
   const snapshot = await readJobsHealth();
   if (!snapshot.installed) {
-    console.error(`Job store schema ${JOBS_SCHEMA} is not installed: run \`pnpm migrate\` (or boot the API in development).`);
+    console.error(`Job store schema ${jobsSchema} is not installed: run \`pnpm migrate\` (or boot the API in development).`);
     process.exit(1);
   }
 
   const boss = new PgBoss(jobsOptions('producer', { useListenNotify: false }));
   await boss.start();
-  const schema = sql.raw(JOBS_SCHEMA);
+  const schema = sql.raw(jobsSchema);
   try {
     const schedules = await boss.getSchedules();
     const reindex = await boss.getReindexCommands();
@@ -59,7 +59,7 @@ async function main(): Promise<void> {
       return;
     }
 
-    console.info(pc.bold(`Job store ${JOBS_SCHEMA}`), `scheduler last ran ${ago(snapshot.cronAgeMs)} ago`);
+    console.info(pc.bold(`Job store ${jobsSchema}`), `scheduler last ran ${ago(snapshot.cronAgeMs)} ago`);
     console.info('');
     console.info(pc.bold('Queues'));
     for (const queue of snapshot.queues) {
