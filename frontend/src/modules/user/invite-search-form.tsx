@@ -1,11 +1,13 @@
 import { useWatch } from 'react-hook-form';
 import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { InviteFormFooter, type InviteFormProps, useInviteFormDraft, useInviteSubmit } from '~/modules/user/invite-submit';
+import { useInviteCheck } from '~/modules/user/use-invite-check';
 import { UserCombobox } from '~/modules/user/user-combobox';
 
 export function InviteSearchForm({ channel, dialog: isDialog, children }: InviteFormProps) {
   const form = useInviteFormDraft(channel?.id, channel?.entityType);
-  const count = useWatch({ control: form.control, name: 'emails' })?.length ?? 0;
+  const emails = useWatch({ control: form.control, name: 'emails' }) ?? [];
+  const check = useInviteCheck(channel, emails);
 
   const { onSubmit, isPending } = useInviteSubmit(channel, isDialog, () => form.reset(undefined, { keepDirtyValues: true }));
 
@@ -24,7 +26,7 @@ export function InviteSearchForm({ channel, dialog: isDialog, children }: Invite
             </FormItem>
           )}
         />
-        <InviteFormFooter form={form} channel={channel} count={count} loading={isPending} onCancel={() => form.reset()}>
+        <InviteFormFooter form={form} channel={channel} counts={check.counts} loading={isPending} onCancel={() => form.reset()}>
           {children}
         </InviteFormFooter>
       </form>

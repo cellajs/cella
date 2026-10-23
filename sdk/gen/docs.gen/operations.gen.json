@@ -1940,6 +1940,31 @@
     "entityType": "organization"
   },
   {
+    "id": "publishOrganization",
+    "hash": "tag/organizations/PUT/{tenantId}/organizations/{id}/publish",
+    "method": "put",
+    "path": "/{tenantId}/organizations/{id}/publish",
+    "tags": ["organizations"],
+    "summary": "Publish organization",
+    "description": "Publishes a draft organization, then sends the invitations it held for every role except its prepare roles. Safe to repeat: on a published organization it sends invitations an earlier call left waiting.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["userGuard", "tenantGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["organizations"],
+      "owner": ["cella"],
+      "entity": ["channel"]
+    },
+    "entityType": "organization"
+  },
+  {
     "id": "getAttachments",
     "hash": "tag/attachments/GET/{tenantId}/{organizationId}/attachments",
     "method": "get",
@@ -2182,7 +2207,7 @@
     "path": "/{tenantId}/{organizationId}/memberships",
     "tags": ["memberships"],
     "summary": "Create memberships",
-    "description": "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization. A created membership carries muted, archived and display order only when it is the caller's own.",
+    "description": "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a declined one opens again, a higher role replaces a lower one), an organization member added at once, or a member left out. Re-adding an address always sends its invitation again. A created membership carries muted, archived and display order only when it is the caller's own.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
@@ -2211,6 +2236,29 @@
     "hasRequestBody": true,
     "hasResponseBody": true,
     "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["memberships"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "checkMembershipInvite",
+    "hash": "tag/memberships/POST/{tenantId}/{organizationId}/memberships/check",
+    "method": "post",
+    "path": "/{tenantId}/{organizationId}/memberships/check",
+    "tags": ["memberships"],
+    "summary": "Check addresses before inviting",
+    "description": "Says per address what an invite would do, from what the caller already sees: members by their listed address and the channel's own invitations. Writes and sends nothing. Requires update permission on the channel.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
     "extensions": {
       "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["pointsLimiter"],
@@ -2329,6 +2377,29 @@
     "extensions": {
       "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["spamLimiter", "pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["memberships"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "withdrawPendingInvitation",
+    "hash": "tag/memberships/DELETE/{tenantId}/{organizationId}/memberships/pending/{id}",
+    "method": "delete",
+    "path": "/{tenantId}/{organizationId}/memberships/pending/{id}",
+    "tags": ["memberships"],
+    "summary": "Withdraw pending invitation",
+    "description": "Withdraws an invitation, named by its own id, with its links, so its seat frees. Requires update permission on the invited channel.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
     "tagsByKind": {

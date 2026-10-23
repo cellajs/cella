@@ -3,11 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { resendPendingInvitation } from 'sdk';
 import { dateColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import type { EnrichedChannel } from '~/modules/entities/types';
 import { ResendInvitationButton } from '~/modules/memberships/resend-invitation-button';
 import type { PendingMembership } from '~/modules/memberships/types';
+import { WithdrawInvitationButton } from '~/modules/memberships/withdraw-invitation-button';
 import { ActorCell } from '~/modules/user/actor-cell';
+import { dateShort } from '~/utils/date-short';
 
-export const useColumns = (path: { tenantId: string; organizationId: string }) => {
+export const useColumns = (path: { tenantId: string; organizationId: string }, channel: EnrichedChannel) => {
   const { t } = useTranslation();
 
   const columns: ColumnOrColumnGroup<PendingMembership>[] = [
@@ -21,6 +24,11 @@ export const useColumns = (path: { tenantId: string; organizationId: string }) =
     },
     dateColumn('createdAt', { name: t('c:invited_at') }),
     {
+      ...dateColumn('remindedAt', { name: t('c:last_email'), sortable: false }),
+      // A held invitation in a draft has had no email yet
+      renderCell: ({ row }) => (row.remindedAt ? dateShort(row.remindedAt) : t('c:not_sent_yet')),
+    },
+    {
       key: 'createdBy',
       name: t('c:invited_by'),
       minBreakpoint: 'md',
@@ -29,11 +37,14 @@ export const useColumns = (path: { tenantId: string; organizationId: string }) =
       renderCell: ({ row, tabIndex }) => row.createdBy && <ActorCell compactable actor={row.createdBy} tabIndex={tabIndex} />,
     },
     {
-      key: 'resend',
+      key: 'actions',
       name: '',
-      width: 120,
+      width: 220,
       renderCell: ({ row }) => (
-        <ResendInvitationButton variant="ghost" size="sm" send={() => resendPendingInvitation({ path: { ...path, id: row.id } })} />
+        <div className="flex gap-1">
+          <ResendInvitationButton variant="ghost" size="sm" send={() => resendPendingInvitation({ path: { ...path, id: row.id } })} />
+          <WithdrawInvitationButton channel={channel} invitationId={row.id} />
+        </div>
       ),
     },
   ];

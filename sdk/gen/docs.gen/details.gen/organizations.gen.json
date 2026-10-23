@@ -467,6 +467,11 @@
               "required": true,
               "minLength": 2,
               "maxLength": 255
+            },
+            "draft": {
+              "type": "boolean",
+              "required": false,
+              "description": "Create unpublished: only its prepare roles are invited until it is published. Ignored unless the hierarchy declares `drafts` for organizations."
             }
           }
         },
@@ -1902,6 +1907,388 @@
         },
         "required": true,
         "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "publishOrganization",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Organization was published",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "organization": {
+              "type": "object",
+              "required": true,
+              "description": "The channel entity every other channel nests under, owning memberships and roles. Tenant and organization are 1:1: an organization belongs to one tenant, and that tenant holds no other. Returned with `included` data: the signed-in user's membership, counts and member previews.",
+              "properties": {
+                "id": { "type": "string", "required": true, "format": "uuid" },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["organization"]
+                },
+                "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                "name": { "type": "string", "required": true, "maxLength": 255 },
+                "createdAt": { "type": "string", "required": true },
+                "createdBy": {
+                  "type": ["object", "null"],
+                  "required": true,
+                  "ref": "#/components/schemas/ActorRef",
+                  "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
+                },
+                "updatedAt": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "updatedBy": {
+                  "type": ["object", "null"],
+                  "required": true,
+                  "ref": "#/components/schemas/ActorRef",
+                  "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
+                },
+                "slug": { "type": "string", "required": true, "maxLength": 255 },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 2048
+                },
+                "bannerUrl": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 2048
+                },
+                "publishedAt": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "public": { "type": "boolean", "required": true },
+                "toolsConfig": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "organization.settings": {
+                      "type": "object",
+                      "required": false,
+                      "properties": {
+                        "order": { "type": "array", "required": false, "itemType": "string" },
+                        "hidden": { "type": "array", "required": false, "itemType": "string" }
+                      }
+                    },
+                    "organization.tabs": {
+                      "type": "object",
+                      "required": false,
+                      "properties": {
+                        "order": { "type": "array", "required": false, "itemType": "string" },
+                        "hidden": { "type": "array", "required": false, "itemType": "string" }
+                      }
+                    }
+                  }
+                },
+                "path": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "shortName": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 255
+                },
+                "country": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 255
+                },
+                "timezone": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 255
+                },
+                "defaultLanguage": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["en", "nl"]
+                },
+                "languages": {
+                  "type": "array",
+                  "required": true,
+                  "minItems": 1,
+                  "itemType": "string",
+                  "enum": ["en", "nl"]
+                },
+                "notificationEmail": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 255
+                },
+                "color": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 255
+                },
+                "logoUrl": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 2048
+                },
+                "websiteUrl": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 2048
+                },
+                "welcomeText": {
+                  "type": ["string", "null"],
+                  "required": true,
+                  "maxLength": 1000000
+                },
+                "chatSupport": { "type": "boolean", "required": true },
+                "organizationFlags": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {}
+                },
+                "setupConfig": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {}
+                },
+                "included": {
+                  "type": "object",
+                  "required": true,
+                  "properties": {
+                    "membership": {
+                      "type": "object",
+                      "required": false,
+                      "description": "A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
+                      "properties": {
+                        "id": { "type": "string", "required": true, "format": "uuid" },
+                        "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+                        "channelType": {
+                          "type": "string",
+                          "required": true,
+                          "enum": ["organization"]
+                        },
+                        "channelId": { "type": "string", "required": true, "format": "uuid" },
+                        "userId": { "type": "string", "required": true, "format": "uuid" },
+                        "role": {
+                          "type": "string",
+                          "required": true,
+                          "enum": ["admin", "member"]
+                        },
+                        "archived": { "type": "boolean", "required": true },
+                        "muted": { "type": "boolean", "required": true },
+                        "displayOrder": {
+                          "type": "number",
+                          "required": true,
+                          "minimum": -140737488355328,
+                          "maximum": 140737488355327
+                        },
+                        "organizationId": { "type": "string", "required": true, "format": "uuid" }
+                      },
+                      "ref": "#/components/schemas/MembershipBase"
+                    },
+                    "counts": {
+                      "type": "object",
+                      "required": false,
+                      "properties": {
+                        "membership": {
+                          "type": "object",
+                          "required": true,
+                          "properties": {
+                            "admin": { "type": "number", "required": true },
+                            "member": { "type": "number", "required": true },
+                            "pending": { "type": "number", "required": true },
+                            "total": { "type": "number", "required": true }
+                          }
+                        },
+                        "entities": {
+                          "type": "object",
+                          "required": true,
+                          "properties": {
+                            "attachment": { "type": "number", "required": true }
+                          }
+                        },
+                        "entitiesSelf": {
+                          "type": "object",
+                          "required": true,
+                          "properties": {
+                            "attachment": { "type": "number", "required": true }
+                          }
+                        },
+                        "activity": {
+                          "type": "object",
+                          "required": true,
+                          "properties": {
+                            "attachment": {
+                              "type": "object",
+                              "required": true,
+                              "properties": {
+                                "created": {
+                                  "type": ["number", "null"],
+                                  "required": true
+                                },
+                                "updated": {
+                                  "type": ["number", "null"],
+                                  "required": true
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "members": {
+                      "type": "array",
+                      "required": false,
+                      "itemType": "object",
+                      "ref": "#/components/schemas/UserMinimalBase",
+                      "items": {
+                        "type": "object",
+                        "description": "The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`.",
+                        "properties": {
+                          "id": { "type": "string", "required": true },
+                          "name": { "type": "string", "required": true },
+                          "slug": { "type": "string", "required": true },
+                          "thumbnailUrl": {
+                            "type": ["string", "null"],
+                            "required": true
+                          },
+                          "entityType": {
+                            "type": "string",
+                            "required": true,
+                            "enum": ["user"]
+                          }
+                        },
+                        "ref": "#/components/schemas/UserMinimalBase"
+                      }
+                    }
+                  }
+                }
+              },
+              "ref": "#/components/schemas/Organization"
+            },
+            "invitationsSent": {
+              "type": "integer",
+              "required": true,
+              "description": "Invitations held while it was a draft and sent now.",
+              "minimum": 0
+            }
+          },
+          "contentType": "application/json"
+        },
+        "example": {
+          "organization": {
+            "createdAt": "2024-12-25T15:04:42.969Z",
+            "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+            "entityType": "organization",
+            "tenantId": "d1lgzb",
+            "name": "Spencer, Pouros and Bergnaum",
+            "updatedAt": "2024-12-25T15:04:42.969Z",
+            "slug": "spencer-pouros-and-bergnaum",
+            "thumbnailUrl": null,
+            "bannerUrl": null,
+            "createdBy": null,
+            "updatedBy": null,
+            "publishedAt": "2024-12-25T15:04:42.969Z",
+            "public": false,
+            "toolsConfig": {},
+            "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+            "shortName": "Spencer,",
+            "country": "Sweden",
+            "timezone": "Europe/Vaduz",
+            "defaultLanguage": "en",
+            "languages": ["en"],
+            "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
+            "color": "#cda6af",
+            "logoUrl": null,
+            "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
+            "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
+            "chatSupport": true,
+            "organizationFlags": {},
+            "setupConfig": {},
+            "included": {
+              "membership": {
+                "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
+                "tenantId": "d1lgzb",
+                "channelType": "organization",
+                "channelId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+                "userId": "2effb0cf-d2bd-45e6-abcd-21de08509c32",
+                "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
+                "role": "member",
+                "displayOrder": 18,
+                "muted": false,
+                "archived": false
+              },
+              "counts": {
+                "membership": {
+                  "admin": 30,
+                  "member": 63,
+                  "pending": 13,
+                  "total": 93
+                },
+                "entities": { "attachment": 178 },
+                "entitiesSelf": { "attachment": 119 },
+                "activity": {
+                  "attachment": { "created": 1734107615547, "updated": 1734969019663 }
+                }
+              }
+            }
+          },
+          "invitationsSent": 12
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
+        }
       }
     }
   }

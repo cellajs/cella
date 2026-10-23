@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { getMyInvitations, getPendingMemberships, membershipInvite } from 'sdk';
+import { getMyInvitations, getPendingMemberships, membershipInvite, publishOrganization } from 'sdk';
 import type { EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { UserContext } from '#/core/context';
@@ -22,8 +22,8 @@ setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
 
 afterEach(async () => await clearDatabase());
 
-// Unpublished contexts hold invites until the publish flow calls `dispatchDeferredInvites`.
-// The template creates published contexts, so these tests explicitly clear `publishedAt`.
+// Unpublished contexts hold invites until publishing calls `dispatchDeferredInvites`; the hierarchy's `drafts.prepareRoles`
+// (admin, for an organization) are invited at once.
 describe('Draft context invite deferral', async () => {
   const call = await createAppClient();
 
@@ -31,13 +31,17 @@ describe('Draft context invite deferral', async () => {
   const publisherContext = (user: { id: string }) => ({ var: { db, user } }) as unknown as UserContext;
 
   const createDraftOrgWorld = async () => {
-    const organization = await createTestOrganization();
+    const organization = await createTestOrganization({ publishedAt: null });
     const admin = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
     const sessionCookie = await createTestSession(admin);
-    // The template always publishes at creation; draft state is an app-specific flow.
-    await db.update(organizationsTable).set({ publishedAt: null }).where(eq(organizationsTable.id, organization.id));
     return { organization, admin, sessionCookie };
   };
+
+  const publish = (organization: { id: string; tenantId: string }, sessionCookie: string) =>
+    call(publishOrganization, {
+      path: { tenantId: organization.tenantId, id: organization.id },
+      headers: { ...defaultHeaders, Cookie: sessionCookie },
+    });
 
   const invite = async (organization: { id: string; tenantId: string }, emails: string[], role: EntityRole, sessionCookie: string) => {
     return await call(membershipInvite, {
@@ -72,7 +76,7 @@ describe('Draft context invite deferral', async () => {
     expect(memberships).toHaveLength(1); // only the inviting admin
   });
 
-  it('keeps the most-privileged role live: admin invites dispatch on a draft context', async () => {
+  it('keeps prepare roles live: admin invites dispatch on a draft context', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
 
     const { response } = await invite(organization, ['co-admin@example.com'], adminRole, sessionCookie);
@@ -85,8 +89,31 @@ describe('Draft context invite deferral', async () => {
     expect(mailer.prepareEmails).toHaveBeenCalledOnce();
   });
 
-  it('hides deferred invites from the invitee until dispatch', async () => {
-    const { organization, admin, sessionCookie } = await createDraftOrgWorld();
+  it('lists a prepare-role invitation to an account while the context is a draft, so the emailed invitee can answer it', async () => {
+    const { organization, sessionCookie } = await createDraftOrgWorld();
+    const coAdmin = await createTestUser('co-admin@example.com');
+
+    await invite(organization, [coAdmin.email], adminRole, sessionCookie);
+
+    const { data } = await call(getMyInvitations, { headers: { ...defaultHeaders, Cookie: await createTestSession(coAdmin) } });
+    expect((data as { items: unknown[] }).items).toHaveLength(1);
+  });
+
+  it('refuses a member who publishes, leaving the draft and its held invitations as they were', async () => {
+    const { organization, sessionCookie } = await createDraftOrgWorld();
+    await invite(organization, ['held@example.com'], memberRole, sessionCookie);
+    const member = await createOrganizationAdminUser('member@example.com', organization.id, memberRole, organization.tenantId);
+
+    const { response } = await publish(organization, await createTestSession(member));
+    expect(response.status).toBe(403);
+
+    const [stored] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, organization.id));
+    expect(stored.publishedAt).toBeNull();
+    expect(mailsTo('held@example.com')).toHaveLength(0);
+  });
+
+  it('hides deferred invites from the invitee until the organization is published', async () => {
+    const { organization, sessionCookie } = await createDraftOrgWorld();
     const invitee = await createTestUser('invitee@example.com');
 
     await invite(organization, [invitee.email], memberRole, sessionCookie);
@@ -98,9 +125,8 @@ describe('Draft context invite deferral', async () => {
     expect(before.response.status).toBe(200);
     expect((before.data as { items: unknown[] }).items).toHaveLength(0);
 
-    // An app's publish flow: stamp publishedAt, then release the held invites
-    await db.update(organizationsTable).set({ publishedAt: new Date().toISOString() }).where(eq(organizationsTable.id, organization.id));
-    await dispatchDeferredInvites(publisherContext(admin), { channelIds: [organization.id] });
+    const { data: published } = await publish(organization, sessionCookie);
+    expect(published).toMatchObject({ invitationsSent: 1, organization: { id: organization.id, publishedAt: expect.any(String) } });
 
     const after = await myInvitations();
     expect((after.data as { items: unknown[] }).items).toHaveLength(1);
@@ -187,35 +213,26 @@ describe('Draft context invite deferral', async () => {
     expect(listed.filter((item) => item.id === held.id)).toEqual([expect.objectContaining({ email: 'deferred@example.com' })]);
   });
 
-  it('throttles reminder emails to once per 7 days on published contexts', async () => {
+  it('sends a pending invitation again whenever its address is added again', async () => {
     const organization = await createTestOrganization();
     const admin = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
     const sessionCookie = await createTestSession(admin);
     const invitee = await createTestUser('pending@example.com');
 
     await invite(organization, [invitee.email], memberRole, sessionCookie);
+    const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const [initial] = await getInactiveRows(organization.id);
-    expect(initial.remindedAt).not.toBeNull(); // the first mail stamps as a reminder does
+    await db.update(inactiveMembershipsTable).set({ remindedAt: hourAgo }).where(eq(inactiveMembershipsTable.id, initial.id));
 
-    // The pending invite was mailed at creation, so an immediate re-invite sends no reminder.
-    await invite(organization, [invitee.email], memberRole, sessionCookie);
-    const [afterEarlyReinvite] = await getInactiveRows(organization.id);
-    expect(afterEarlyReinvite.remindedAt).toBe(initial.remindedAt);
-    expect(mailsTo(invitee.email)).toHaveLength(1);
-
-    // The throttle check reads remindedAt, not the immutable createdAt.
-    const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
-    await db.update(inactiveMembershipsTable).set({ remindedAt: eightDaysAgo }).where(eq(inactiveMembershipsTable.id, initial.id));
-    const [aged] = await getInactiveRows(organization.id);
-
-    await invite(organization, [invitee.email], memberRole, sessionCookie);
-    const [afterDueReinvite] = await getInactiveRows(organization.id);
-    expect(afterDueReinvite.remindedAt).not.toBeNull();
-    expect(afterDueReinvite.remindedAt).not.toBe(aged.remindedAt);
-    expect(new Date(afterDueReinvite.remindedAt!).getTime()).toBeGreaterThan(Date.now() - 24 * 60 * 60 * 1000);
+    // Re-adding the address is as deliberate as the resend button, so the email goes out again at once.
+    const { data } = await invite(organization, [invitee.email], memberRole, sessionCookie);
+    expect(data).toMatchObject({ outcomes: [{ email: invitee.email, outcome: 'remind', invitedAt: initial.createdAt }] });
+    expect(mailsTo(invitee.email)).toHaveLength(2);
+    const [reminded] = await getInactiveRows(organization.id);
+    expect(reminded.remindedAt).not.toBe(hourAgo);
   });
 
-  it('reminds a pending invitation to a new address as one to an account, minting no further link', async () => {
+  it('reminds a pending invitation to a new address with a fresh link that retires the one mailed before', async () => {
     const organization = await createTestOrganization();
     const admin = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
     const sessionCookie = await createTestSession(admin);
@@ -224,16 +241,12 @@ describe('Draft context invite deferral', async () => {
     await invite(organization, [newcomer], memberRole, sessionCookie);
     const [initial] = await getInactiveRows(organization.id);
     const [initialLink] = await linksOf(initial.id);
-    const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
-    await db.update(inactiveMembershipsTable).set({ remindedAt: eightDaysAgo }).where(eq(inactiveMembershipsTable.id, initial.id));
 
-    const { data } = await invite(organization, [newcomer], memberRole, sessionCookie);
-    expect(data).toMatchObject({ rejectedIds: [], invitesSentCount: 0 });
-    const [reminded] = await getInactiveRows(organization.id);
-    expect(new Date(reminded.remindedAt!).getTime()).toBeGreaterThan(Date.now() - 24 * 60 * 60 * 1000);
-    // The emailed link stays the one link: a reminder mints no token.
-    const links = await db.select().from(tokensTable).where(eq(tokensTable.email, newcomer));
-    expect(links.map((link) => link.id)).toEqual([initialLink.id]);
+    await invite(organization, [newcomer], memberRole, sessionCookie);
+    const links = await linksOf(initial.id);
+    expect(links).toHaveLength(1);
+    expect(links[0].id).not.toBe(initialLink.id);
+    expect(links[0].secret).toBe(hashToken(mailedLink('inviteLink').token));
   });
 
   it('dispatches a held invite to an invitee who signed up meanwhile as one to an account, minting no link', async () => {

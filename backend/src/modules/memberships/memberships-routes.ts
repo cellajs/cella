@@ -4,8 +4,10 @@ import { orgGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   memberListQuerySchema,
-  memberMembershipSchema,
+  membershipCheckBodySchema,
+  membershipCheckResponseSchema,
   membershipCreateBodySchema,
+  membershipInviteResponseSchema,
   membershipUpdateBodySchema,
   pendingMembershipListQuerySchema,
   pendingMembershipSchema,
@@ -24,6 +26,7 @@ import {
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { mockChannelBase } from '#/schemas/entity-base-mocks';
 import {
+  mockMembershipCheckResponse,
   mockMembershipInviteResponse,
   mockMembershipResponse,
   mockPaginatedMembersResponse,
@@ -39,15 +42,20 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     xRateLimiter: [spamLimiter, bulkPointsLimiter],
     summary: 'Create memberships',
     description:
-      "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization. A created membership carries muted, archived and display order only when it is the caller's own.",
+      "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a declined one opens again, a higher role replaces a lower one), an organization member added at once, or a member left out. Re-adding an address always sends its invitation again. A created membership carries muted, archived and display order only when it is the caller's own.",
     request: { params: tenantOrgParamSchema, query: entityWithTypeQuerySchema, body: jsonBody(membershipCreateBodySchema) },
-    responses: {
-      200: json(
-        'Created memberships and invite count',
-        batchResponseSchema(memberMembershipSchema).extend({ invitesSentCount: z.number() }),
-        mockMembershipInviteResponse(),
-      ),
-    },
+    responses: { 200: json('What happened to each address', membershipInviteResponseSchema, mockMembershipInviteResponse()) },
+  }),
+  checkMembershipInvite: xRoute({
+    method: 'post',
+    path: '/check',
+    xGuard: [userGuard, tenantGuard, orgGuard],
+    xRateLimiter: [singlePointsLimiter],
+    summary: 'Check addresses before inviting',
+    description:
+      "Says per address what an invite would do, from what the caller already sees: members by their listed address and the channel's own invitations. Writes and sends nothing. Requires update permission on the channel.",
+    request: { params: tenantOrgParamSchema, query: entityWithTypeQuerySchema, body: jsonBody(membershipCheckBodySchema) },
+    responses: { 200: json('What an invite would do with each address', membershipCheckResponseSchema, mockMembershipCheckResponse()) },
   }),
   deleteMemberships: xRoute({
     method: 'delete',
@@ -110,6 +118,17 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
       'Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.',
     request: { params: idInTenantOrgParamSchema },
     responses: { 204: { description: 'Invitation resent' } },
+  }),
+  withdrawPendingInvitation: xRoute({
+    method: 'delete',
+    path: '/pending/{id}',
+    xGuard: [userGuard, tenantGuard, orgGuard],
+    xRateLimiter: [singlePointsLimiter],
+    summary: 'Withdraw pending invitation',
+    description:
+      'Withdraws an invitation, named by its own id, with its links, so its seat frees. Requires update permission on the invited channel.',
+    request: { params: idInTenantOrgParamSchema },
+    responses: { 204: { description: 'Invitation withdrawn' } },
   }),
 });
 

@@ -289,4 +289,16 @@ describe('EntityHierarchyBuilder', () => {
       ).toThrow('elevates unknown role');
     });
   });
+
+  describe('drafts', () => {
+    it('throws when a prepare role is not one of the channel roles, or none is listed', () => {
+      const builder = createEntityHierarchy(roles).user().organization({ roles: roles.all });
+      expect(() => builder.channel('workspace', { parent: 'organization', roles: ['member'], drafts: { prepareRoles: ['admin'] as any } })).toThrow(
+        'unknown prepare role',
+      );
+      expect(() => builder.channel('workspace', { parent: 'organization', roles: ['member'], drafts: { prepareRoles: [] } })).toThrow(
+        'without prepareRoles',
+      );
+    });
+  });
 });

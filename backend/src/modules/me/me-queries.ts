@@ -1,5 +1,5 @@
-import { and, eq, getColumns, isNotNull, isNull, sql } from 'drizzle-orm';
-import { appConfig } from 'shared';
+import { and, eq, getColumns, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import { appConfig, hierarchy } from 'shared';
 import type { DbContext, UserContext } from '#/core/context';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
@@ -66,6 +66,7 @@ export const findPendingInvitations = async (ctx: DbContext, { userId }: FindPen
       const cols = getColumns(entityTable);
       const keys = Object.keys(channelBaseSchema.shape) as (keyof typeof channelBaseSchema.shape)[];
       const channelBaseSelect = pick(cols, keys);
+      const prepareRoles = hierarchy.getPrepareRoles(entityType);
 
       return db
         .select({ entity: channelBaseSelect, inactiveMembership: inactiveMembershipsTable })
@@ -76,8 +77,9 @@ export const findPendingInvitations = async (ctx: DbContext, { userId }: FindPen
             eq(inactiveMembershipsTable.channelType, entityType),
             eq(inactiveMembershipsTable.userId, userId),
             isNull(inactiveMembershipsTable.rejectedAt),
-            // Invites in an unpublished context stay hidden until the context is published.
-            isNotNull(cols.publishedAt),
+            // An invitation to an unpublished context stays hidden until it is published, except one for a prepare role:
+            // its email went out at once, so the invitee must be able to answer it.
+            or(isNotNull(cols.publishedAt), prepareRoles.length ? inArray(inactiveMembershipsTable.role, prepareRoles) : undefined),
           ),
         );
     }),

@@ -1,5 +1,13 @@
-import { infiniteQueryOptions } from '@tanstack/react-query';
-import { type GetMembersData, type GetPendingMembershipsData, getMembers, getPendingMemberships } from 'sdk';
+import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
+import {
+  type ChannelBase,
+  checkMembershipInvite,
+  type GetMembersData,
+  type GetPendingMembershipsData,
+  getMembers,
+  getPendingMemberships,
+  type InviteOutcome,
+} from 'sdk';
 import { appConfig } from 'shared';
 import { membersSearchDefaults } from '~/modules/memberships/search-params-schemas';
 import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
@@ -23,6 +31,34 @@ const keys = {
 };
 
 export const memberQueryKeys = keys;
+
+/** The most addresses one invite or check request takes; more go out in batches of this size. */
+const inviteBatchSize = 50;
+
+/** Splits addresses into request-sized batches. */
+export const inviteBatches = (emails: string[]) =>
+  Array.from({ length: Math.ceil(emails.length / inviteBatchSize) }, (_, index) =>
+    emails.slice(index * inviteBatchSize, (index + 1) * inviteBatchSize),
+  );
+
+type InviteCheckChannel = Pick<ChannelBase, 'id' | 'entityType' | 'tenantId'> & { organizationId?: string | null };
+
+/** What an invite would do with each address. Without a channel (a system invite) nothing is checked. */
+export const inviteCheckQueryOptions = (channel: InviteCheckChannel | undefined, emails: string[]) =>
+  queryOptions({
+    queryKey: ['invites', 'check', channel?.id, emails] as const,
+    queryFn: async ({ signal }): Promise<InviteOutcome[]> => {
+      if (!channel) return [];
+      const path = { tenantId: channel.tenantId, organizationId: channel.organizationId || channel.id };
+      const query = { entityId: channel.id, entityType: channel.entityType };
+      const results = await Promise.all(
+        inviteBatches(emails).map((batch) => checkMembershipInvite({ path, query, body: { emails: batch }, signal })),
+      );
+      return results.flatMap(({ outcomes }) => outcomes);
+    },
+    enabled: !!channel && emails.length > 0,
+    staleTime: 30_000,
+  });
 
 export const membersListQueryOptions = (params: MembersListParams) => {
   const {

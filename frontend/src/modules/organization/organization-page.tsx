@@ -2,14 +2,17 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet } from '@tanstack/react-router';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isUnpublishedDraft } from 'shared';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { PageHeader } from '~/modules/common/page/header';
 import { PageTabNav } from '~/modules/common/page/tab-nav';
 import { ScrollReset } from '~/modules/common/scroll-reset';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { heldContextRoles } from '~/modules/entities/context-roles';
+import { DraftBanner } from '~/modules/entities/draft-banner';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
+import { PublishOrganizationForm } from '~/modules/organization/publish-organization-form';
 import { organizationQueryOptions, useOrganizationUpdateMutation } from '~/modules/organization/query';
 import { lazyNamed } from '~/utils/lazy-named';
 
@@ -63,6 +66,9 @@ export function OrganizationPage({ organizationId, tenantId }: OrganizationPageP
           )
         }
       />
+      {isUnpublishedDraft(organization) && canUpdate && (
+        <DraftBanner channel={organization} publishForm={(close) => <PublishOrganizationForm organization={organization} close={close} />} />
+      )}
       <ScrollReset>
         <PageTabNav
           title={organization.name}

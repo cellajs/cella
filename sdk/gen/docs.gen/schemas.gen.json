@@ -372,8 +372,8 @@
         "thumbnailUrl": null
       },
       "updatedBy": null,
-      "createdAt": "2024-05-28T05:49:31.389Z",
-      "updatedAt": "2024-09-09T15:07:51.965Z"
+      "createdAt": "2024-11-27T03:41:04.670Z",
+      "updatedAt": "2024-12-24T20:07:53.341Z"
     }
   },
   {
@@ -1865,10 +1865,10 @@
       "subscriptionId": null,
       "subscriptionStatus": "none",
       "subscriptionPlan": null,
-      "createdAt": "2024-01-14T10:00:28.012Z",
-      "updatedAt": "2024-03-05T22:43:30.502Z",
+      "createdAt": "2024-06-24T12:34:02.933Z",
+      "updatedAt": "2024-10-14T07:51:08.139Z",
       "organization": {
-        "id": "ebefa691-88f5-48a0-89ae-90751aba8e7d",
+        "id": "eba65105-308b-466e-9bec-73dbac7c025f",
         "name": "Lubowitz, Waters and Haley",
         "slug": "lubowitz-waters-and-haley",
         "thumbnailUrl": null,
@@ -2330,6 +2330,37 @@
       "severity": "warn",
       "timestamp": "2025-01-01T12:00:00.000Z"
     }
+  },
+  {
+    "name": "InviteOutcome",
+    "ref": "#/components/schemas/InviteOutcome",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "required": true,
+          "description": "The primary email address, shown to every user who shares an organization with this one.",
+          "format": "email"
+        },
+        "outcome": {
+          "type": "string",
+          "required": true,
+          "description": "`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out.",
+          "enum": ["invite", "remind", "add", "member"]
+        },
+        "invitedAt": { "type": "string", "required": false },
+        "declinedAt": { "type": "string", "required": false },
+        "role": {
+          "type": "string",
+          "required": false,
+          "enum": ["admin", "member"]
+        }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {}
   },
   {
     "name": "NotFoundError",

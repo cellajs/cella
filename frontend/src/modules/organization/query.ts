@@ -8,6 +8,9 @@ import {
   getOrganization,
   getOrganizations,
   type Organization,
+  type PublishOrganizationData,
+  type PublishOrganizationResponse,
+  publishOrganization,
   type UpdateOrganizationData,
   updateOrganization,
 } from 'sdk';
@@ -121,6 +124,24 @@ export const useOrganizationUpdateMutation = () => {
       queryClient.invalidateQueries({ queryKey: keys.detail.base });
       // Directly update detail cache so beforeLoad doesn't use stale slug for URL rewrite
       queryClient.setQueryData(keys.detail.byId(updatedOrganization.id), updatedOrganization);
+    },
+    onSettled: () => {
+      invalidateIfLastMutation(queryClient, keys.all, listKey);
+    },
+  });
+};
+
+/** Publishes a draft organization; the response also says how many held invitations went out. */
+export const useOrganizationPublishMutation = () => {
+  const queryClient = useQueryClient();
+  const listKey = keys.list.base;
+
+  return useMutation<PublishOrganizationResponse, ApiError, MutationData<PublishOrganizationData>>({
+    mutationKey: [...keys.update, 'publish'],
+    mutationFn: ({ path }) => publishOrganization({ path }),
+    onSuccess: ({ organization }) => {
+      cacheUpdate(listKey, [organization]);
+      queryClient.setQueryData(keys.detail.byId(organization.id), organization);
     },
     onSettled: () => {
       invalidateIfLastMutation(queryClient, keys.all, listKey);

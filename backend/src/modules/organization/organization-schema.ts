@@ -62,7 +62,15 @@ export const organizationWithMembershipSchema = organizationSchema.extend({
 
 /** Wire registration: lens-widened schemas bound to the organization entity at runtime. */
 export const organizationContract = evolutionContract.channel('organization', {
-  createItem: z.object({ id: validTempIdSchema, name: validNameSchema, slug: validSlugSchema }),
+  createItem: z.object({
+    id: validTempIdSchema,
+    name: validNameSchema,
+    slug: validSlugSchema,
+    draft: z.boolean().optional().openapi({
+      description:
+        'Create unpublished: only its prepare roles are invited until it is published. Ignored unless the hierarchy declares `drafts` for organizations.',
+    }),
+  }),
   updateBody: createInsertSchema(organizationsTable, {
     slug: validSlugSchema,
     name: validNameSchema,
@@ -102,6 +110,11 @@ export const organizationContract = evolutionContract.channel('organization', {
       toolsConfig: true,
     })
     .partial(),
+});
+
+export const organizationPublishResponseSchema = z.object({
+  organization: organizationSchema,
+  invitationsSent: z.number().int().min(0).openapi({ description: 'Invitations held while it was a draft and sent now.' }),
 });
 
 /** Array schema for batch creates - rejects duplicate slugs */

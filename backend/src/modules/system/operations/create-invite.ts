@@ -1,5 +1,4 @@
 import type { UserContext } from '#/core/context';
-import { AppError } from '#/core/error';
 import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
 import { findSystemInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
 import { sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
@@ -11,7 +10,6 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
   const user = ctx.var.user;
 
   const normalizedEmails = [...new Set(emails.map((e) => e.toLowerCase().trim()))];
-  if (normalizedEmails.length === 0) throw new AppError(400, 'no_recipients', 'warn');
 
   const now = new Date();
 

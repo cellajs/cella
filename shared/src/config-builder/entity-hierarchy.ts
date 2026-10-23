@@ -45,6 +45,15 @@ interface ChannelEntry<R extends string = string> {
    * homed at this level. Undeclared roles are home-scoped. Compiled into `elevatedGrants`.
    */
   elevated?: readonly string[];
+  /** Present when the channel can start as a draft; see {@link ChannelDrafts}. */
+  drafts?: ChannelDrafts;
+}
+/**
+ * A draft channel shows to its own members and holds its invitations until it is published, except
+ * those for `prepareRoles`, who are invited at once to set it up.
+ */
+interface ChannelDrafts<R extends string = string> {
+  prepareRoles: readonly R[];
 }
 interface ProductEntry {
   kind: 'product';
@@ -97,6 +106,8 @@ class EntityHierarchyBuilder<
     roles: RO;
     /** Roles whose product grants cover the whole organization; see {@link channel}. */
     elevated?: readonly RO[number][];
+    /** Lets an organization start as a draft; see {@link channel}. */
+    drafts?: ChannelDrafts<RO[number]>;
   }): EntityHierarchyBuilder<
     TRoles,
     TChannels | 'organization',
@@ -109,6 +120,7 @@ class EntityHierarchyBuilder<
     this.validateName('organization');
     this.validateRoles('organization', options.roles);
     this.validateElevated('organization', options.roles, options.elevated);
+    this.validateDrafts('organization', options.roles, options.drafts);
     return new EntityHierarchyBuilder<
       TRoles,
       TChannels | 'organization',
@@ -124,6 +136,7 @@ class EntityHierarchyBuilder<
         parent: null,
         roles: options.roles,
         elevated: options.elevated,
+        drafts: options.drafts,
       }),
     );
   }
@@ -149,6 +162,11 @@ class EntityHierarchyBuilder<
        * through the compiled `elevatedGrants` set.
        */
       elevated?: readonly RO[number][];
+      /**
+       * Lets the channel start as a draft. Invitations for `prepareRoles` go out at once, so those
+       * people can set it up; the rest wait until it is published.
+       */
+      drafts?: ChannelDrafts<RO[number]>;
     },
   ): EntityHierarchyBuilder<
     TRoles,
@@ -168,6 +186,7 @@ class EntityHierarchyBuilder<
     this.validateRelatedChannels(name, options.parent, options.relatedChannels);
     this.validateOrganizationRoles(name, options.roles, options.organizationRoles);
     this.validateElevated(name, options.roles, options.elevated);
+    this.validateDrafts(name, options.roles, options.drafts);
     return new EntityHierarchyBuilder<
       TRoles,
       TChannels | N,
@@ -185,8 +204,20 @@ class EntityHierarchyBuilder<
         relatedChannels: options.relatedChannels,
         organizationRoles: options.organizationRoles as Readonly<Record<string, string>> | undefined,
         elevated: options.elevated,
+        drafts: options.drafts,
       }),
     );
+  }
+
+  /** At least one prepare role, each one of the channel's own: a draft nobody can be invited to prepare stays empty. */
+  private validateDrafts(name: string, roles: readonly string[], drafts?: ChannelDrafts): void {
+    if (!drafts) return;
+    if (drafts.prepareRoles.length === 0) throw new Error(`EntityHierarchy: channel "${name}" declares drafts without prepareRoles`);
+    for (const role of drafts.prepareRoles) {
+      if (!roles.includes(role)) {
+        throw new Error(`EntityHierarchy: channel "${name}" lists unknown prepare role "${role}". Own roles: ${roles.join(', ')}`);
+      }
+    }
   }
 
   /** Each elevated role must be one of the channel's own roles. */
@@ -490,6 +521,18 @@ export class EntityHierarchy<
     const role = this.getRoles(channelType)[0];
     if (!role) throw new Error(`Entity type '${channelType}' is not a channel or declares no roles`);
     return role;
+  };
+
+  /** True when the channel declares `drafts`, so it can be created unpublished. */
+  readonly canDraft = (channelType: string): boolean => {
+    const entry = this.entities.get(channelType);
+    return entry?.kind === 'channel' && !!entry.drafts;
+  };
+
+  /** Roles invited at once while the channel is a draft; empty when it declares no `drafts`. */
+  readonly getPrepareRoles = <T extends string>(channelType: T): readonly ChannelRole<TRoleMap, TRoles, T>[] => {
+    const entry = this.entities.get(channelType);
+    return entry?.kind === 'channel' ? ((entry.drafts?.prepareRoles ?? []) as readonly ChannelRole<TRoleMap, TRoles, T>[]) : [];
   };
 
   /**
