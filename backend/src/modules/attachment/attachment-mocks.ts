@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { appConfig } from 'shared';
 import { generateMockEntityChannelIdColumns, mockBatchResponse, mockNanoid, mockPaginated, mockProductColumns, withFakerSeed } from '#/mocks';
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
-import { mockAuditUsers } from '#/schemas/entity-base-mocks';
+import { mockActorRefs } from '#/schemas/entity-base-mocks';
 
 /** Deterministic: the same key produces the same data. */
 export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
@@ -24,10 +24,10 @@ export const mockAttachment = (key = 'attachment:default'): AttachmentModel =>
     };
   });
 
-/** Attachment wire response with audit-user IDs hydrated to minimal user objects. */
+/** Attachment wire response with its writer ids resolved to actor references. */
 export const mockAttachmentResponse = (key = 'attachment:default') => {
   const attachment = mockAttachment(key);
-  return { ...attachment, ...mockAuditUsers(attachment, key) };
+  return { ...attachment, ...mockActorRefs(attachment, key), deletedBy: null };
 };
 
 export const mockPaginatedAttachmentsResponse = (count = 2) => mockPaginated(mockAttachmentResponse, count);

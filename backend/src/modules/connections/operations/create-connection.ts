@@ -1,6 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { withActorRef } from '#/modules/actors/actor-refs';
 import { isFederationConfigured, isFederationKey } from '#/modules/auth/sso/helpers/federations';
 import { findConnectionsClaiming, insertConnection } from '#/modules/connections/connections-queries';
 import type { createConnectionBodySchema } from '#/modules/connections/connections-schema';
@@ -39,5 +40,5 @@ export async function createConnectionOp(ctx: UserContext, input: CreateConnecti
 
   log.info('Connection created', { connectionId: connection.id, tenantId: connection.tenantId, issuer });
 
-  return connection;
+  return withActorRef(ctx, connection);
 }

@@ -1,64 +1,28 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  isSyncDeliveryTrusted,
-  setSyncDeliveryTrusted,
-  setSyncStreamHealthy,
-  setSyncWorkerAway,
-  syncStaleTime,
-} from '~/query/basic/sync-stale-state';
+import { afterEach, describe, expect, it } from 'vitest';
+import { setSyncDeliveryTrusted, setSyncStreamHealthy, setSyncWorkerAway, syncStaleTime } from '~/query/basic/sync-stale-state';
 
 const fiveMinutes = 5 * 60 * 1000;
 
-/** Verifies that healthy catch-up state keeps restored product queries fresh across reloads. */
+/** The healthy default; module-level flags are shared across cases. */
+const restoreHealthy = () => {
+  setSyncStreamHealthy(true);
+  setSyncDeliveryTrusted(true);
+  setSyncWorkerAway(false);
+};
+
 describe('syncStaleTime freshness contract', () => {
-  // Module-level flags are shared; reset to the healthy default around each case.
-  beforeEach(() => {
-    setSyncStreamHealthy(true);
-    setSyncDeliveryTrusted(true);
-    setSyncWorkerAway(false);
-  });
-  afterEach(() => {
-    setSyncStreamHealthy(true);
-    setSyncDeliveryTrusted(true);
-    setSyncWorkerAway(false);
-  });
+  afterEach(restoreHealthy);
 
-  it('is infinite while the stream is healthy and deliveries are trusted (catchup owns freshness)', () => {
+  it("keeps product queries fresh only while the stream is healthy, deliveries reconcile and the server's worker reads", () => {
+    restoreHealthy();
     expect(syncStaleTime()).toBe(Number.POSITIVE_INFINITY);
-  });
 
-  it('starts healthy+trusted on a fresh module load so the first reload prefetch trusts the warm cache', async () => {
-    vi.resetModules();
-    const fresh = await import('~/query/basic/sync-stale-state');
-    expect(fresh.syncStaleTime()).toBe(Number.POSITIVE_INFINITY);
-  });
-
-  it('falls back to a 5 minute stale time when the stream is unhealthy (error state)', () => {
-    setSyncStreamHealthy(false);
-    expect(syncStaleTime()).toBe(fiveMinutes);
-  });
-
-  it('falls back to 5 minutes when a delivery shortfall breaks trust, even while the stream is healthy', () => {
-    setSyncDeliveryTrusted(false);
-    expect(isSyncDeliveryTrusted()).toBe(false);
-    expect(syncStaleTime()).toBe(fiveMinutes);
-  });
-
-  it("must not trust an open stream while the server's worker is away: it is healthy and brings nothing", () => {
-    setSyncWorkerAway(true);
-    expect(syncStaleTime()).toBe(fiveMinutes);
-
-    setSyncWorkerAway(false);
-    expect(syncStaleTime()).toBe(Number.POSITIVE_INFINITY);
-  });
-
-  it('restores infinite freshness once the stream is healthy again and trust is regained', () => {
-    setSyncStreamHealthy(false);
-    setSyncDeliveryTrusted(false);
-    expect(syncStaleTime()).toBe(fiveMinutes);
-
-    setSyncStreamHealthy(true);
-    setSyncDeliveryTrusted(true);
-    expect(syncStaleTime()).toBe(Number.POSITIVE_INFINITY);
+    // A worker that is away leaves the stream open and healthy, and brings nothing.
+    for (const fail of [() => setSyncStreamHealthy(false), () => setSyncDeliveryTrusted(false), () => setSyncWorkerAway(true)]) {
+      fail();
+      expect(syncStaleTime()).toBe(fiveMinutes);
+      restoreHealthy();
+      expect(syncStaleTime()).toBe(Number.POSITIVE_INFINITY);
+    }
   });
 });

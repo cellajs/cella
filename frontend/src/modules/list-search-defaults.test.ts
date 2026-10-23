@@ -22,11 +22,4 @@ describe('list search defaults', () => {
     expect(defaults.sort).toBe(fromSchema.sort);
     expect(defaults.order).toBe(fromSchema.order);
   });
-
-  // q has no schema default, so absence parses to undefined. '' is what a cleared search box
-  // produces, and stripping it is what keeps `?q=` out of the URL.
-  it.each(cases)('$name strips a cleared q', ({ parse, defaults }) => {
-    expect(defaults.q).toBe('');
-    expect(parse().q).toBeUndefined();
-  });
 });

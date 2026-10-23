@@ -12,7 +12,7 @@ export const attachmentsTable = snakeCase.table(
   {
     ...productColumns('attachment'),
     // Storage placement only: bytes in the public S3 bucket, served from the CDN. Row
-    // readability for non-members is the separate `publicAt` grant.
+    // readability for non-members is the separate `public` flag.
     publicBucket: boolean().notNull().default(false),
     bucketName: varchar({ length: maxLength.field }).notNull(),
     /** Upload batch grouping (multi-file uploads shown as one carousel), not ownership. */

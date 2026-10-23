@@ -20,6 +20,7 @@ const tenantColumns = pick(tenantsTable, [
   'subscriptionPlan',
   'createdAt',
   'updatedAt',
+  'updatedBy',
 ]);
 
 /** Tenant rows joined with the organization each holds (organizations.tenant_id is unique). */

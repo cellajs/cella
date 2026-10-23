@@ -3,8 +3,8 @@ import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
 
 /** The device runs low on storage below this much free space, or past `storageLowUsedRatio` of its quota. */
-export const storageLowFreeBytes = 100 * 1024 * 1024;
-export const storageLowUsedRatio = 0.9;
+const storageLowFreeBytes = 100 * 1024 * 1024;
+const storageLowUsedRatio = 0.9;
 
 const warnedKey = `${appConfig.slug}:storage-low-warned`;
 let warnedHere = false;
@@ -29,7 +29,7 @@ function markWarned() {
 }
 
 /** Whether an estimate says the device runs low on storage; unknown sizes are not low. */
-export function isStorageLow({ usage, quota }: StorageEstimate): boolean {
+function isStorageLow({ usage, quota }: StorageEstimate): boolean {
   if (usage === undefined || !quota) return false;
   return quota - usage < storageLowFreeBytes || usage / quota > storageLowUsedRatio;
 }

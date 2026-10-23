@@ -6,6 +6,7 @@ import { findPendingInactiveMembership, stampInactiveMembershipsReminded } from 
 import { sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
 import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
+import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 /** The replacement token: the old token's invitation linkage under a new secret and lifetime. */
@@ -73,7 +74,7 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: TokenRecor
       organization: 'defaultLanguage' in entity ? entity : null,
       invited,
     });
-    await stampInactiveMembershipsReminded(ctx, { ids: [invitation.id], remindedAt: new Date().toISOString() });
+    await stampInactiveMembershipsReminded(ctx, { ids: [invitation.id], remindedAt: getIsoDate() });
     log.info('Membership invitation has been resent', { inactiveMembershipId: invitation.id, tokenId });
   } else {
     await sendInvitationMails(ctx, { sender: sender ?? { name: 'System' }, invited });

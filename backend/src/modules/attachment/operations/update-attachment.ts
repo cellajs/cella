@@ -2,14 +2,14 @@ import type { z } from '@hono/zod-openapi';
 import { deriveDocument } from 'shared/utils/derive-description-core';
 import type { ActorContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
+import { updateStamps } from '#/db/utils/stamps';
 import { stripChangedFields } from '#/db/utils/strip-changed-fields';
 import { dispatchMutation } from '#/lib/mutation-bus';
+import { withActorRef } from '#/modules/actors/actor-refs';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { updateAttachment } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentUpdateStxBodySchema } from '#/modules/attachment/attachment-schema';
-import { withAuditUser } from '#/modules/user/operations/with-audit-users';
 import { getValidProduct } from '#/permissions/get-valid-product';
-import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 type UpdateAttachmentInput = z.infer<typeof attachmentUpdateStxBodySchema>;
@@ -45,8 +45,7 @@ export async function updateAttachmentOp(
       ...(resolved.changed && resolved.values.description !== undefined
         ? { keywords: deriveDocument(resolved.values.description as string | null).keywords }
         : {}),
-      updatedAt: getIsoDate(),
-      updatedBy: actorId,
+      ...updateStamps(actorId),
       // The stx names the fields this write wrote, for CDC and the yjs module's handler: a write that changes none keeps
       // the stored stx without the earlier write's set.
       stx: resolved.changed ? resolved.stx : stripChangedFields(attachmentsTable.stx),
@@ -60,5 +59,5 @@ export async function updateAttachmentOp(
   log.info('Attachment updated', { attachmentId: updatedAttachmentRecord.id });
 
   // Resolved by id for every response shape: the context carries an actor id, not a user row to stub from.
-  return withAuditUser(ctx, updatedAttachmentRecord);
+  return withActorRef(ctx, updatedAttachmentRecord);
 }

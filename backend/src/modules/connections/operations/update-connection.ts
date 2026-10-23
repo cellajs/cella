@@ -1,6 +1,8 @@
 import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { updateStamps } from '#/db/utils/stamps';
+import { withActorRef } from '#/modules/actors/actor-refs';
 import { findConnectionById, findConnectionsClaiming, updateConnection } from '#/modules/connections/connections-queries';
 import type { updateConnectionBodySchema } from '#/modules/connections/connections-schema';
 
@@ -29,7 +31,7 @@ export async function updateConnectionOp(ctx: UserContext, id: string, input: Up
   const updated = await updateConnection(ctx, {
     id: existing.id,
     tenantId: ctx.var.tenantId,
-    values: { displayName, claimValues, status, jitProvisioning, config },
+    values: { displayName, claimValues, status, jitProvisioning, config, ...updateStamps(ctx.var.actor.id) },
   });
-  return updated;
+  return withActorRef(ctx, updated);
 }

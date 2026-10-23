@@ -9,6 +9,7 @@ import { getExtensionValueMetadata } from '#/core/x-middleware';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
 import { errorResponses, productBaseSchema, registerAllErrorResponses } from '#/schemas';
+import { actorRefSchema } from '#/schemas/actor-ref';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 import { streamNotificationSchema } from '#/schemas/stream-schemas';
@@ -76,6 +77,7 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   });
 
   // Register base schemas (not auto-registered as they're only used for extending other schemas)
+  registry.register('ActorRef', actorRefSchema);
   registry.register('UserMinimalBase', userMinimalBaseSchema);
   registry.register('UserBase', userBaseSchema);
   registry.register('ChannelBase', channelBaseSchema);

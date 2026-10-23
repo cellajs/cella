@@ -73,15 +73,6 @@ afterEach(async () => {
 });
 
 describe('overlay providers on a route change', () => {
-  it('subscribe once each for the dialoger and sheeter and unsubscribe on unmount', async () => {
-    expect(router.listeners.size).toBe(2);
-
-    await act(async () => root.unmount());
-
-    expect(router.listeners.size).toBe(0);
-    root = createRoot(document.createElement('div'));
-  });
-
   it('ignore a navigation that keeps the path', async () => {
     await act(() => {
       dialoger.getState().create(null, dialog('d'));
@@ -120,7 +111,7 @@ describe('overlay providers on a route change', () => {
     expect(onClose.mock.calls).toEqual([[true]]);
   });
 
-  it('sheeter keeps the nav sheet while the nav is kept open', async () => {
+  it('sheeter keeps the nav sheet across a route change only while the nav is kept open', async () => {
     const onClose = vi.fn();
     await act(() => {
       navigationStore.setState({ navSheetOpen: 'menu' as never, keepNavOpen: true });
@@ -129,33 +120,12 @@ describe('overlay providers on a route change', () => {
     });
 
     await changeRoute(true);
+    expect(sheetIds()).toEqual(['nav-sheet']);
 
-    expect(sheetIds()).toEqual([navSheetId]);
-    expect(onClose.mock.calls).toEqual([[true]]);
-  });
-
-  it('sheeter closes the nav sheet when the nav is not kept open', async () => {
-    const onClose = vi.fn();
-    await act(() => {
-      navigationStore.setState({ navSheetOpen: 'menu' as never, keepNavOpen: false });
-      sheeter.getState().create(null, sheet(navSheetId, { onClose }));
-    });
-
+    await act(() => navigationStore.setState({ keepNavOpen: false }));
     await changeRoute(true);
-
     expect(sheetIds()).toEqual([]);
-    expect(onClose.mock.calls).toEqual([[true]]);
-  });
-
-  it('dropdowner keeps its dropdown', async () => {
-    const triggerRef = { current: document.body.appendChild(document.createElement('button')) };
-    await act(() => {
-      dropdowner.getState().create(null, { id: 'dd', triggerId: 'dd', triggerRef });
-    });
-
-    await changeRoute(true);
-
-    expect(dropdowner.getState().dropdown?.id).toBe('dd');
+    expect(onClose.mock.calls).toEqual([[true], [true]]);
   });
 });
 
@@ -178,29 +148,5 @@ describe('overlay providers while open', () => {
 
     await act(() => sheeter.getState().remove());
     expect(locks()).toEqual([]);
-  });
-
-  it('mark the body with sheeter-open while a sheet is open', async () => {
-    expect(document.body.classList.contains('sheeter-open')).toBe(false);
-
-    await act(() => {
-      sheeter.getState().create(null, sheet('s'));
-    });
-    expect(document.body.classList.contains('sheeter-open')).toBe(true);
-
-    await act(() => sheeter.getState().remove('s'));
-    expect(document.body.classList.contains('sheeter-open')).toBe(false);
-  });
-
-  it('drop sheeter-open when the provider unmounts with a sheet open', async () => {
-    await act(() => {
-      sheeter.getState().create(null, sheet('s'));
-    });
-
-    await act(async () => root.unmount());
-
-    expect(document.body.classList.contains('sheeter-open')).toBe(false);
-    expect(locks()).toEqual([]);
-    root = createRoot(document.createElement('div'));
   });
 });

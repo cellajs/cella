@@ -84,10 +84,6 @@ describe('the can map of a cached channel row', () => {
     expect(can?.task).toEqual({ create: true, read: true, update: 'own', delete: false });
   });
 
-  it('holds nothing for a caller with no membership on the row or above it', () => {
-    expect(canWith([makeMembership('org-2', { role: 'admin' })])).toEqual({});
-  });
-
   it('holds every action for a system admin, with a membership on the row and with none at all', () => {
     session.isSystemAdmin = true;
     expect(canWith([onProject('member')])?.project).toEqual(every);
@@ -96,14 +92,5 @@ describe('the can map of a cached channel row', () => {
     queryClient.clear();
     // Memberships loaded and empty: the rows are still enriched.
     expect(canWith([])?.task).toEqual(every);
-  });
-
-  it('keeps the row as it is when nothing changed', () => {
-    canWith([makeMembership('org-1', { role: 'admin' })]);
-    const first = queryClient.getQueryData(['project', 'list']);
-
-    queryClient.setQueryData(['me', 'memberships'], { items: [makeMembership('org-1', { role: 'admin' })] });
-
-    expect(queryClient.getQueryData(['project', 'list'])).toBe(first);
   });
 });

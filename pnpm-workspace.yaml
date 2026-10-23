@@ -48,3 +48,10 @@ packages:
   - yjs
   - bench
   - a11y
+updateConfig:
+  # Packages that `pnpm outdated`, `pnpm update --latest` and `pnpm cella audit` leave out. `pnpm audit` still checks them.
+  ignoreDependencies:
+    # 2.6 rewrites about 280 files and adds new lint errors, so it waits for an upgrade of its own (cella#1450).
+    - '@biomejs/biome'
+    # This package only hosts the JS compiler API for SDK codegen; 7, the native rewrite, no longer has that API.
+    - typescript

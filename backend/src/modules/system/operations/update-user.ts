@@ -1,12 +1,12 @@
 import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
 import { updateUser } from '#/modules/system/system-queries';
 import { findUserById } from '#/modules/user/user-queries';
 import type { userUpdateBodySchema } from '#/modules/user/user-schema';
-import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 type UpdateUserInput = z.infer<typeof userUpdateBodySchema>;
@@ -34,8 +34,7 @@ export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUs
     thumbnailUrl,
     slug,
     name: [firstName, lastName].filter(Boolean).join(' ') || slug,
-    updatedAt: getIsoDate(),
-    updatedBy: user.id,
+    ...updateStamps(user.id),
   };
   const updatedUser = await updateUser(ctx, { id: targetUser.id, values });
   invalidateCache.user(updatedUser.id);

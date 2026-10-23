@@ -13,7 +13,8 @@ import {
   validIdSchema,
   validUuidSchema,
 } from '#/schemas';
-import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
+import { nullableActorRefSchema } from '#/schemas/actor-ref';
+import { auditShape } from '#/schemas/entity-base';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { mockInactiveMembershipResponse, mockMembershipBase, mockMembershipResponse } from './memberships-mocks';
 
@@ -22,6 +23,7 @@ const entityRoleSchema = z.enum(roles.all);
 const membershipSchema = z
   .object({
     ...createSelectSchema(membershipsTable).shape,
+    ...auditShape,
     // Override enum columns with explicit schemas to preserve literal types
     role: entityRoleSchema,
     channelType: channelEntityTypeSchema,
@@ -37,7 +39,7 @@ export const inactiveMembershipSchema = z
     ...createSelectSchema(inactiveMembershipsTable).shape,
     role: entityRoleSchema,
     channelType: channelEntityTypeSchema,
-    createdBy: nullableUserMinimalBaseSchema,
+    createdBy: nullableActorRefSchema,
   })
   .openapi('InactiveMembership', {
     description:
@@ -105,5 +107,5 @@ export const pendingMembershipSchema = z.object({
   email: userBaseSchema.shape.email,
   role: membershipSchema.shape.role.nullable(),
   createdAt: membershipSchema.shape.createdAt,
-  createdBy: nullableUserMinimalBaseSchema,
+  createdBy: nullableActorRefSchema,
 });

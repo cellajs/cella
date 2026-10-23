@@ -9,6 +9,7 @@ import { sendInvitationMails } from '#/modules/memberships/operations/invitation
 import { findUserById } from '#/modules/user/user-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import type { EntityModel } from '#/tables';
+import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 /**
@@ -43,6 +44,6 @@ async function remindInvitee(ctx: UserContext, invitation: InactiveMembershipMod
     organization: ctx.var.organization,
     invited: [{ email: invitation.email, userId: invitation.userId }],
   });
-  await stampInactiveMembershipsReminded(ctx, { ids: [invitation.id], remindedAt: new Date().toISOString() });
+  await stampInactiveMembershipsReminded(ctx, { ids: [invitation.id], remindedAt: getIsoDate() });
   log.info('Membership invitation has been resent', { inactiveMembershipId: invitation.id });
 }

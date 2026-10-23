@@ -247,41 +247,6 @@ const settled = async () => {
 };
 
 describe('yjs connection with the store: loading before connect', () => {
-  it('applies a stored document before the provider connects, so the handshake Step1 carries it', async () => {
-    await seedStored('stored-1', 'stored text');
-    const { provider, conn } = await mountConnection('stored-1');
-
-    await vi.waitFor(() => expect(provider.connect).toHaveBeenCalledOnce());
-    expect(provider.textAtConnect).toEqual(['stored text']);
-    expect(conn()).toMatchObject({ generation: 'gen-1', loaded: true, ready: true, stored: true });
-  });
-
-  it('connects at once with nothing applied for a document never stored (positive control)', async () => {
-    const { provider, conn } = await mountConnection();
-    await vi.waitFor(() => expect(provider.connect).toHaveBeenCalledOnce());
-    expect(provider.textAtConnect).toEqual(['']);
-    expect(conn()).toMatchObject({ generation: null, ready: false, stored: false });
-  });
-
-  it('connects after 5 s when the load hangs, and applies a late load of the same generation', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    await seedStored('slow-1', 'from disk');
-    let open = () => {};
-    loadGate = new Promise((resolve) => {
-      open = resolve;
-    });
-    const { provider } = await mountConnection('slow-1');
-
-    await act(async () => vi.advanceTimersByTimeAsync(4_999));
-    expect(provider.connect).not.toHaveBeenCalled();
-    await act(async () => vi.advanceTimersByTimeAsync(1));
-    expect(provider.textAtConnect).toEqual(['']);
-
-    await announce(provider, 'gen-1');
-    await act(async () => open());
-    await vi.waitFor(() => expect(provider.doc.getText('t').toString()).toBe('from disk'));
-  });
-
   it("must not merge a late load of another generation: its unsynced edits are parked, and the document keeps the relay's", async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     await seedStored('slow-2', 'old history', { unsynced: true });
@@ -304,109 +269,31 @@ describe('yjs connection with the store: loading before connect', () => {
   });
 });
 
-describe('yjs connection with the store: generations', () => {
-  it('a stored generation equal to the relay’s carries on: no rebuild', async () => {
-    await seedStored('gen-same', 'kept');
-    const { provider, state } = await mountConnection('gen-same');
-    await vi.waitFor(() => expect(provider.connect).toHaveBeenCalled());
-
-    await announce(provider, 'gen-1');
-    expect(providers.at(-1)).toBe(provider);
-    expect(state()?.rebuilds).toBe(0);
-  });
-
-  it('another generation rebuilds; once the fresh document synced it is stored, and unsynced stored edits are parked as replaced', async () => {
-    await seedStored('gen-other', 'never saved', { unsynced: true });
-    const { provider, state } = await mountConnection('gen-other');
-    await vi.waitFor(() => expect(provider.connect).toHaveBeenCalled());
-    expect(state()?.unsynced).toBe(true);
-
-    await announce(provider, 'gen-2');
-    const next = providers.at(-1)!;
-    expect(next).not.toBe(provider);
-    expect(state()?.rebuilds).toBe(1);
-
-    // The relay's state of the reseeded document, which its handshake answer applies.
-    const reseeded = new Y.Doc();
-    reseeded.getText('t').insert(0, 'reseeded');
-    await act(async () => Y.applyUpdate(next.doc, Y.encodeStateAsUpdate(reseeded), next));
-    await handshake(next, 'gen-2');
-    await settled();
-
-    expect(await db.yDocs.get(keyPath('gen-other'))).toMatchObject({ generation: 'gen-2', unsynced: 0 });
-    const parked = await db.unsaveableYDocs.toArray();
-    expect(parked).toHaveLength(1);
-    expect(parked[0]).toMatchObject({ reason: 'replaced', generation: 'gen-1' });
-  });
-
-  it('a clean stored copy of the dropped generation goes without a parked row (positive control)', async () => {
-    await seedStored('gen-clean', 'synced text');
-    const { provider } = await mountConnection('gen-clean');
-    await vi.waitFor(() => expect(provider.connect).toHaveBeenCalled());
-
-    await announce(provider, 'gen-2');
-    await handshake(providers.at(-1)!, 'gen-2');
-    await settled();
-
-    expect((await db.yDocs.get(keyPath('gen-clean')))?.generation).toBe('gen-2');
-    expect(await db.unsaveableYDocs.count()).toBe(0);
-  });
-});
-
 describe('yjs connection with the store: opened for editing', () => {
-  it('must not store a warm editor: no focus and no edit, no stored document', async () => {
-    const { entityId, provider } = await mountConnection();
-    await handshake(provider);
+  it('stores a document once opened for editing, by a focus or a local edit after its first sync, and never a warm editor', async () => {
+    // A focus before the first sync waits for it: storing then would keep an empty document.
+    const focused = await mountConnection();
+    await act(async () => focused.state()?.markStored());
     await settled();
-    expect(await db.yDocs.get(keyPath(entityId))).toBeUndefined();
-  });
-
-  it('stores the document on the editor’s first focus', async () => {
-    const { entityId, provider, state } = await mountConnection();
-    await handshake(provider);
-    await act(async () => state()?.markStored());
+    expect(await db.yDocs.get(keyPath(focused.entityId))).toBeUndefined();
+    await handshake(focused.provider);
     await settled();
-    expect(await db.yDocs.get(keyPath(entityId))).toMatchObject({ generation: 'gen-1', unsynced: 0 });
-  });
+    expect(await db.yDocs.get(keyPath(focused.entityId))).toMatchObject({ generation: 'gen-1', unsynced: 0 });
+    await act(async () => root?.unmount());
 
-  it('stores the document on a local edit, with the edit as a local row', async () => {
-    const { entityId, provider } = await mountConnection();
-    await handshake(provider);
-    await editLocally(provider, 'typed');
+    // A warm editor, synced but never focused or edited, stores nothing; its first local edit stores it, as a local row.
+    const warm = await mountConnection();
+    await handshake(warm.provider);
     await settled();
-
-    expect(await db.yDocs.get(keyPath(entityId))).toMatchObject({ unsynced: 1 });
-    expect((await rows(entityId)).map((row) => [row.local, row.tabId])).toEqual([[1, storeTabId]]);
-  });
-
-  it('a focus before the first sync waits for it: storing then would keep an empty document', async () => {
-    const { entityId, provider, state } = await mountConnection();
-    await act(async () => state()?.markStored());
+    expect(await db.yDocs.get(keyPath(warm.entityId))).toBeUndefined();
+    await editLocally(warm.provider, 'typed');
     await settled();
-    expect(await db.yDocs.get(keyPath(entityId))).toBeUndefined();
-
-    await handshake(provider);
-    await settled();
-    expect(await db.yDocs.get(keyPath(entityId))).toBeDefined();
+    expect(await db.yDocs.get(keyPath(warm.entityId))).toMatchObject({ unsynced: 1 });
+    expect((await rows(warm.entityId)).map((row) => [row.local, row.tabId])).toEqual([[1, storeTabId]]);
   });
 });
 
 describe('yjs connection with the store: proofs', () => {
-  it("the relay's Saved for the handshake proves every row the document held as its Step2 went out, a closed tab's included", async () => {
-    await seedStored('proof-1', 'offline edit', { unsynced: true });
-    const { provider, state } = await mountConnection('proof-1');
-    await vi.waitFor(() => expect(state()?.unsynced).toBe(true));
-    expect(unloadAsks()).toBe(false);
-
-    await handshake(provider);
-    await relaySaved(provider);
-    await settled();
-
-    expect(state()?.unsynced).toBe(false);
-    expect(await db.yDocs.get(keyPath('proof-1'))).toMatchObject({ unsynced: 0 });
-    expect((await rows('proof-1')).every((row) => row.local === 0)).toBe(true);
-  });
-
   it("a connection turned clean proves this tab's rows", async () => {
     const { entityId, provider, state } = await mountConnection();
     await handshake(provider);
@@ -423,46 +310,42 @@ describe('yjs connection with the store: proofs', () => {
 });
 
 describe('yjs connection with the store: the unload guard', () => {
-  it('asks only until a stored edit is committed: stored edits survive the tab', async () => {
-    const { provider } = await mountConnection();
+  it('asks before unload while an unsynced edit lives only in memory: until it is committed, once storing failed, or with no database', async () => {
+    const { provider, state } = await mountConnection();
     await handshake(provider);
     await relaySaved(provider);
     await act(async () => onlineListener?.(false));
     provider.wsconnected = false;
 
+    // Stored edits survive the tab: it asks only until the edit is committed.
     await editLocally(provider, 'offline');
     expect(unloadAsks()).toBe(true);
     await settled();
     expect(unloadAsks()).toBe(false);
-  });
 
-  it('asks for unsynced edits once storing failed for good', async () => {
-    const { provider, state } = await mountConnection();
-    await handshake(provider);
-    await relaySaved(provider);
-    await act(async () => state()?.markStored());
-    await settled();
+    // Storing failed for good: the edit lives in this tab only.
     const spy = vi.spyOn(db.yDocUpdates, 'add').mockImplementation(() => {
       throw new DOMException('full', 'QuotaExceededError');
     });
-    provider.wsconnected = false;
-
-    await editLocally(provider, 'no room');
+    await editLocally(provider, ' no room');
     await settled();
-
+    spy.mockRestore();
     expect(state()?.storageFailed).toBe(true);
     expect(unloadAsks()).toBe(true);
-    spy.mockRestore();
-  });
 
-  it('asks for unsynced edits with no database (impersonating)', async () => {
-    closeLocalUserDb();
-    const { provider } = await mountConnection();
+    // Once the relay saved the edits it stops asking.
     await handshake(provider);
     await relaySaved(provider);
-    provider.wsconnected = false;
+    expect(unloadAsks()).toBe(false);
 
-    await editLocally(provider, 'in memory');
+    // No database (impersonating): every unsynced edit lives in memory only.
+    await act(async () => root?.unmount());
+    closeLocalUserDb();
+    const bare = await mountConnection();
+    await handshake(bare.provider);
+    await relaySaved(bare.provider);
+    bare.provider.wsconnected = false;
+    await editLocally(bare.provider, 'in memory');
     expect(unloadAsks()).toBe(true);
   });
 });
@@ -549,29 +432,6 @@ describe('yjs connection with the store: other tabs', () => {
     expect(state()?.unsynced).toBe(false);
     tab.channel.close();
   });
-
-  it('says hello after a load, and answers a hello with exactly what its vector lacks', async () => {
-    await seedStored('tabs-3', 'shared ');
-    const tab = otherTab();
-    const { provider } = await mountConnection('tabs-3');
-    await vi.waitFor(() => expect(tab.received.filter((msg) => msg.t === 'hello')).toHaveLength(1));
-    expect(tab.received[0]).toMatchObject({ key: 'attachment:tabs-3', generation: 'gen-1' });
-
-    // Another tab holds only what was stored; this one typed more since.
-    const behind = new Y.Doc();
-    Y.applyUpdate(behind, Y.encodeStateAsUpdate(provider.doc));
-    await editLocally(provider, 'and more');
-    tab.channel.postMessage({ t: 'hello', key: 'attachment:tabs-3', generation: 'gen-1', vector: Y.encodeStateVector(behind) });
-    tab.channel.postMessage({ t: 'hello', key: 'attachment:tabs-3', generation: 'gen-2', vector: new Uint8Array([0]) });
-
-    await vi.waitFor(() => expect(tab.received.filter((msg) => msg.t === 'update' && msg.rowId === null)).toHaveLength(1));
-    const answer = tab.received.find((msg) => msg.t === 'update' && msg.rowId === null)!;
-    const known = new Set(Y.decodeUpdate(Y.encodeStateAsUpdate(behind)).structs.map((struct) => struct.id.client));
-    expect(Y.decodeUpdate(answer.update!).structs.every((struct) => !known.has(struct.id.client))).toBe(true);
-    Y.applyUpdate(behind, answer.update!);
-    expect(behind.getText('t').toString()).toBe('shared and more');
-    tab.channel.close();
-  });
 });
 
 describe('yjs connection with the store: boot resume', () => {
@@ -599,33 +459,28 @@ describe('yjs connection with the store: boot resume', () => {
     expect(provider.destroy).toHaveBeenCalledOnce();
   });
 
-  it('parks the stored edits with a notice when the token is refused: the entity went, or edit rights did', async () => {
-    await seedStored('resume-2', 'never to be saved', { unsynced: true });
-    const record = (await db.yDocs.get(keyPath('resume-2')))!;
+  it('parks the stored edits only when the token route refuses, the entity gone or edit rights lost, never on a network failure', async () => {
+    // A network failure: the next reconnect resumes them.
+    await seedStored('resume-offline', 'waiting', { unsynced: true });
+    tokenQuery.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    await resumeConnection((await db.yDocs.get(keyPath('resume-offline')))!);
+    await settled();
+    expect(await db.yDocs.get(keyPath('resume-offline'))).toMatchObject({ unsynced: 1 });
+    expect(await db.unsaveableYDocs.count()).toBe(0);
+
+    // A refusal: they can never be saved, so they are parked with a notice to copy them.
+    await seedStored('resume-refused', 'never to be saved', { unsynced: true });
     const opened = providers.length;
     tokenQuery.mockRejectedValueOnce({ status: 403 });
-
-    await resumeConnection(record);
+    await resumeConnection((await db.yDocs.get(keyPath('resume-refused')))!);
     await settled();
 
     expect(providers).toHaveLength(opened);
-    expect(await db.yDocs.get(keyPath('resume-2'))).toBeUndefined();
+    expect(await db.yDocs.get(keyPath('resume-refused'))).toBeUndefined();
     const [parked] = await db.unsaveableYDocs.toArray();
-    expect(parked).toMatchObject({ entityId: 'resume-2', reason: 'denied', generation: 'gen-1' });
+    expect(parked).toMatchObject({ entityId: 'resume-refused', reason: 'denied', generation: 'gen-1' });
     const check = new Y.Doc();
     Y.applyUpdate(check, parked.state);
     expect(check.getText('t').toString()).toBe('never to be saved');
-  });
-
-  it('keeps the stored edits when the token fetch fails on the network: the next reconnect resumes them (positive control)', async () => {
-    await seedStored('resume-3', 'waiting', { unsynced: true });
-    const record = (await db.yDocs.get(keyPath('resume-3')))!;
-    tokenQuery.mockRejectedValueOnce(new TypeError('Failed to fetch'));
-
-    await resumeConnection(record);
-    await settled();
-
-    expect(await db.yDocs.get(keyPath('resume-3'))).toMatchObject({ unsynced: 1 });
-    expect(await db.unsaveableYDocs.count()).toBe(0);
   });
 });

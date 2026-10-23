@@ -3,7 +3,7 @@
 import type { EnabledOAuthProvider } from 'shared';
 import type { PasskeyModel } from '#/modules/auth/passkeys/passkeys-db';
 import type { SessionModel } from '#/modules/auth/sessions/sessions-db';
-import type { UserMinimalBase } from '#/modules/user/helpers/audit-user';
+import type { UserMinimalBase } from '#/modules/user/helpers/user-minimal';
 import type { UserModel } from '#/modules/user/user-db';
 
 export interface MeResponse {

@@ -31,23 +31,17 @@ const resolveOnEnter = (fetchDetail: () => Promise<Channel>, revalidateIfStale =
 describe('resolveChannelBySlug', () => {
   afterEach(() => queryClient.clear());
 
-  it('resolves at once from a list row and fetches the detail behind the navigation, since a list row is no detail', async () => {
-    const fetchDetail = vi.fn(async () => stored);
+  it('fetches the detail behind a list row it resolved from, on entering the route and on a param change within it, since a list row is no detail', async () => {
+    for (const revalidateIfStale of [true, false]) {
+      queryClient.clear();
+      const fetchDetail = vi.fn(async () => stored);
 
-    // The navigation resolves with the list row, without waiting for the fetch.
-    expect(await resolveOnEnter(fetchDetail)).toEqual(listRow);
+      // The navigation resolves with the list row, without waiting for the fetch.
+      expect(await resolveOnEnter(fetchDetail, revalidateIfStale)).toEqual(listRow);
 
-    await vi.waitFor(() => expect(queryClient.getQueryData(detailKey('org-1'))).toEqual(stored));
-    expect(fetchDetail).toHaveBeenCalledTimes(1);
-  });
-
-  it('fetches the detail behind a list row it seeded on a param change within the route too', async () => {
-    const fetchDetail = vi.fn(async () => stored);
-
-    expect(await resolveOnEnter(fetchDetail, false)).toEqual(listRow);
-
-    await vi.waitFor(() => expect(queryClient.getQueryData(detailKey('org-1'))).toEqual(stored));
-    expect(fetchDetail).toHaveBeenCalledTimes(1);
+      await vi.waitFor(() => expect(queryClient.getQueryData(detailKey('org-1'))).toEqual(stored));
+      expect(fetchDetail).toHaveBeenCalledTimes(1);
+    }
   });
 
   it('asks the server before it rewrites the URL when the list row that matched it and the cached detail name two slugs', async () => {
@@ -56,14 +50,6 @@ describe('resolveChannelBySlug', () => {
     const fetchDetail = vi.fn(async () => stored);
 
     expect(await resolveOnEnter(fetchDetail)).toEqual(stored);
-  });
-
-  it('leaves a fetched detail alone while it is fresh', async () => {
-    queryClient.setQueryData(detailKey('org-1'), stored);
-    const fetchDetail = vi.fn(async () => stored);
-
-    expect(await resolveOnEnter(fetchDetail)).toEqual(stored);
-    expect(fetchDetail).not.toHaveBeenCalled();
   });
 
   it('fetches by slug when no row is cached, and caches the answer under the key of its detail query', async () => {

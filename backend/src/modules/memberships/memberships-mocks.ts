@@ -4,7 +4,7 @@ import { mockPaginated, mockPastIsoDate, mockTenantId, mockUuid, withFakerSeed }
 import type { InactiveMembershipModel } from '#/modules/memberships/inactive-memberships-db';
 import type { InsertMembershipModel, MembershipModel } from '#/modules/memberships/memberships-db';
 import type { UserModel } from '#/modules/user/user-db';
-import { mockUserBase, mockUserMinimalBase } from '#/schemas/entity-base-mocks';
+import { mockActorRef, mockUserBase } from '#/schemas/entity-base-mocks';
 
 /** MembershipBase type defined here to avoid circular dependency with memberships-schema */
 type MembershipBase = Omit<MembershipModel, 'createdAt' | 'createdBy' | 'updatedAt' | 'updatedBy'>;
@@ -135,8 +135,11 @@ const mockMembership = (key = 'membership:default', options: MockMembershipBaseO
     return { ...base, createdAt, createdBy: base.userId, updatedAt: createdAt, updatedBy: null };
   });
 
-/** Membership response example; its wire shape matches the stored membership shape. */
-export const mockMembershipResponse = mockMembership;
+/** Membership response example: the stored row with its writers resolved to references. */
+export const mockMembershipResponse = (key = 'membership:default', options: MockMembershipBaseOptions = {}) => {
+  const membership = mockMembership(key, options);
+  return { ...membership, createdBy: mockActorRef(`${key}:created-by`, membership.createdBy ?? undefined), updatedBy: null };
+};
 
 /** Deterministic stored inactive-membership row. */
 const mockInactiveMembership = (key = 'inactive-membership:default', options: MockMembershipBaseOptions = {}): InactiveMembershipModel =>
@@ -163,7 +166,7 @@ const mockInactiveMembership = (key = 'inactive-membership:default', options: Mo
 /** Inactive membership wire response with its creator hydrated. */
 export const mockInactiveMembershipResponse = (key = 'inactive-membership:default', options: MockMembershipBaseOptions = {}) => {
   const membership = mockInactiveMembership(key, options);
-  return { ...membership, createdBy: mockUserMinimalBase(`${key}:created-by`, membership.createdBy) };
+  return { ...membership, createdBy: mockActorRef(`${key}:created-by`, membership.createdBy) };
 };
 
 /** Pending-invitation list row: the invited address, role and inviter, with no account fields. */

@@ -33,12 +33,9 @@ const earliestStart = (cadence: keyof typeof maxWindowDays, now: Date): Date => 
  */
 export const windowStart = (recipient: { digest: string; lastDigestAt: string | null }, now: Date): Date => {
   const earliest = earliestStart(recipient.digest === 'weekly' ? 'weekly' : 'daily', now).getTime();
-  const last = recipient.lastDigestAt ? utcTimestamp(recipient.lastDigestAt).getTime() : earliest;
+  const last = recipient.lastDigestAt ? new Date(recipient.lastDigestAt).getTime() : earliest;
   return new Date(Math.max(last, earliest));
 };
-
-/** A `timestamp` (without zone) column value, which holds UTC: JavaScript would read the bare text as local time. */
-const utcTimestamp = (value: string): Date => new Date(`${value.replace(' ', 'T')}Z`);
 
 /**
  * One digest pass.

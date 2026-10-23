@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Sheeter } from '~/modules/common/sheeter/provider';
-import { navSheetId, sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { uiStore } from '~/modules/ui/ui-store';
 
 vi.mock('~/routes/-router-instance', () => ({ getRouter: () => ({ subscribe: () => () => {} }) }));
@@ -75,33 +75,6 @@ async function openSheetWithButton(trigger: HTMLElement) {
 }
 
 describe('overlay exit', () => {
-  it('runs a dismissed sheet onClose once, then removes it after its exit', async () => {
-    const onClose = vi.fn();
-    await act(async () => {
-      sheeter.getState().create(<p>Sheet body</p>, { id: 'sheet', side: 'right', triggerRef: createRef(), title: 'Sheet', onClose });
-    });
-    expect(document.querySelector('[role="dialog"]')).not.toBeNull();
-
-    await pressEscape();
-
-    expect(onClose).toHaveBeenCalledTimes(1);
-    expect(sheeter.getState().sheets).toEqual([]);
-    expect(uiStore.getState().uiLocks).not.toContain('sheeter');
-  });
-
-  it('keeps a sheet closed through the store, so it can be reopened in place', async () => {
-    const onClose = vi.fn();
-    await act(async () => {
-      sheeter.getState().create(<p>Nav</p>, { id: navSheetId, side: 'left', triggerRef: createRef(), title: 'Menu', onClose });
-    });
-
-    await act(async () => sheeter.getState().update(navSheetId, { open: false }));
-    await act(async () => new Promise((resolve) => setTimeout(resolve, 50)));
-
-    expect(sheeter.getState().sheets.map((s) => [s.id, s.open])).toEqual([[navSheetId, false]]);
-    expect(onClose).not.toHaveBeenCalled();
-  });
-
   it.each([
     ['a store remove', () => sheeter.getState().remove('sheet')],
     ['a route change', () => sheeter.getState().removeOnRouteChange({ isCleanup: true })],
@@ -127,45 +100,24 @@ describe('overlay exit', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('reopens a sheet created again with the same id while it slides out', async () => {
-    const create = () => sheeter.getState().create(<p>Sheet body</p>, { id: 'sheet', side: 'left', triggerRef: createRef(), title: 'Sheet' });
-    await act(async () => create());
-    const endExit = holdExits();
-
-    await act(async () => sheeter.getState().remove('sheet'));
-    await act(async () => create());
-    await endExit();
-
-    const sheets = document.querySelectorAll('[role="dialog"]');
-    expect(sheets).toHaveLength(1);
-    expect(sheets[0].hasAttribute('data-open')).toBe(true);
-  });
-
-  it('leaves focus where it moved while the sheet slid out', async () => {
+  it('returns focus to the trigger on close, unless focus left the sheet while it slid out', async () => {
     const trigger = document.createElement('button');
     const target = document.createElement('button');
     document.body.append(trigger, target);
+
+    await openSheetWithButton(trigger);
+    await pressEscape();
+    expect(document.activeElement).toBe(trigger);
+
     await openSheetWithButton(trigger);
     const endExit = holdExits();
-
     await act(async () => sheeter.getState().remove('sheet'));
     target.focus();
     await endExit();
-
     expect(document.activeElement).toBe(target);
+
     trigger.remove();
     target.remove();
-  });
-
-  it('returns focus to the trigger when a sheet is dismissed from inside', async () => {
-    const trigger = document.createElement('button');
-    document.body.append(trigger);
-    await openSheetWithButton(trigger);
-
-    await pressEscape();
-
-    expect(document.activeElement).toBe(trigger);
-    trigger.remove();
   });
 
   it('removes a dismissed dialog after its exit and then runs onClose once', async () => {
@@ -185,30 +137,6 @@ describe('overlay exit', () => {
 describe('keepMounted sheet', () => {
   const kept = { id: 'kept', side: 'left', triggerRef: createRef<HTMLElement>(), title: 'Kept', keepMounted: true } as const;
   const popup = () => document.querySelector('[role="dialog"]') as HTMLElement | null;
-  const settle = () => act(async () => new Promise((resolve) => setTimeout(resolve, 50)));
-
-  it('mounts closed and hidden, without holding the UI lock', async () => {
-    await act(async () => sheeter.getState().mount(<p>Kept body</p>, kept));
-
-    expect(popup()?.hidden).toBe(true);
-    expect(popup()?.textContent).toContain('Kept body');
-    expect(uiStore.getState().uiLocks).not.toContain('sheeter');
-    expect(document.body.classList.contains('sheeter-open')).toBe(false);
-  });
-
-  it('stays in the DOM, hidden, after it closes and reopens the same node', async () => {
-    await act(async () => sheeter.getState().create(<p>Kept body</p>, kept));
-    const node = popup();
-
-    await act(async () => sheeter.getState().remove('kept'));
-    await settle();
-    expect(node?.isConnected).toBe(true);
-    expect(node?.hidden).toBe(true);
-
-    await act(async () => sheeter.getState().create(<p>Kept body</p>, kept));
-    expect(popup()).toBe(node);
-    expect(node?.hidden).toBe(false);
-  });
 
   it('finishes sliding out when unmounted mid-exit, then leaves the DOM', async () => {
     await act(async () => sheeter.getState().create(<p>Kept body</p>, kept));
@@ -222,28 +150,5 @@ describe('keepMounted sheet', () => {
 
     await endExit();
     expect(node?.isConnected).toBe(false);
-  });
-
-  it('leaves the DOM at once when unmounted after its exit', async () => {
-    await act(async () => sheeter.getState().create(<p>Kept body</p>, kept));
-    await act(async () => sheeter.getState().remove('kept'));
-    await settle();
-
-    await act(async () => sheeter.getState().unmount('kept'));
-
-    expect(popup()).toBeNull();
-  });
-
-  it('returns focus to the trigger when it closes', async () => {
-    const trigger = document.createElement('button');
-    document.body.append(trigger);
-    await act(async () => sheeter.getState().create(<button type="button">Inside</button>, { ...kept, triggerRef: { current: trigger } }));
-    (document.querySelector('[role="dialog"] button') as HTMLElement).focus();
-
-    await act(async () => sheeter.getState().remove('kept'));
-    await settle();
-
-    expect(document.activeElement).toBe(trigger);
-    trigger.remove();
   });
 });

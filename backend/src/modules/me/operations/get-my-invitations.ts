@@ -1,6 +1,6 @@
 import type { UserContext } from '#/core/context';
+import { withActorRefs } from '#/modules/actors/actor-refs';
 import { findPendingInvitations } from '#/modules/me/me-queries';
-import { withAuditUsers } from '#/modules/user/operations/with-audit-users';
 
 export async function getMyInvitationsOp(ctx: UserContext) {
   const user = ctx.var.user;
@@ -8,7 +8,7 @@ export async function getMyInvitationsOp(ctx: UserContext) {
   const rawItems = await findPendingInvitations(ctx, { userId: user.id });
 
   const allMemberships = rawItems.map((item) => item.inactiveMembership);
-  const populatedMemberships = await withAuditUsers(ctx, allMemberships);
+  const populatedMemberships = await withActorRefs(ctx, allMemberships);
   const items = rawItems.map((item, i) => ({ ...item, inactiveMembership: populatedMemberships[i] }));
   const total = items.length;
 

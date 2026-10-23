@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, varchar } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, varchar } from 'drizzle-orm/pg-core';
 import {
   appConfig,
   type ChannelEntityType,
@@ -51,7 +51,7 @@ const baseColumns = {
   id: varchar('id').primaryKey(),
   createdBy: varchar('created_by'),
   // Public readability, denormalized onto the row exactly as `productColumns` carries it.
-  publicAt: varchar('public_at'),
+  public: boolean('public').notNull().default(false),
   [rootIdKey]: varchar(rootColumnName).notNull(),
   // Intermediate nullable ancestors (always null here, rows home at homeType or root), so the
   // compiled scope conditions of elevated intermediate-channel grants find their columns.
@@ -71,24 +71,22 @@ const parityTable = pgTable(
 
 const users = ['u1', 'u2'] as const;
 
-const publicAtValue = '2026-07-06T12:00:00Z';
-
 interface ParityRow {
   id: string;
   homeChannelId: string | null;
   createdBy: string | null;
-  publicAt: string | null;
+  public: boolean;
 }
 
-/** Fixed row set: every home-channel (or the single org) × creator × published-or-not. */
+/** Fixed row set: every home-channel (or the single org) × creator × public-or-not. */
 const homeSlots: (string | null)[] = homeType ? homeInstances : [null];
 const parityRows: ParityRow[] = homeSlots.flatMap((homeChannelId) =>
   [...users, null].flatMap((createdBy) =>
-    [null, publicAtValue].map((publicAt) => ({
-      id: `${homeChannelId ?? 'root'}:${createdBy ?? 'nobody'}:${publicAt ? 'public' : 'private'}`,
+    [false, true].map((isPublic) => ({
+      id: `${homeChannelId ?? 'root'}:${createdBy ?? 'nobody'}:${isPublic ? 'public' : 'private'}`,
       homeChannelId,
       createdBy,
-      publicAt,
+      public: isPublic,
     })),
   ),
 );
@@ -185,8 +183,8 @@ const rowSubject = (row: ParityRow): SubjectForPermission => ({
   id: row.id,
   createdBy: row.createdBy,
   channelIds: { [root]: rootId, ...(homeType && row.homeChannelId !== null ? { [homeType]: row.homeChannelId } : {}) },
-  // Row data every row-derived rule reads: `'own'` via createdBy, public read via publicAt.
-  row: { createdBy: row.createdBy, publicAt: row.publicAt },
+  // Row data every row-derived rule reads: `'own'` via createdBy, public read via the public flag.
+  row: { createdBy: row.createdBy, public: row.public },
 });
 
 /** Path 1: the engine's per-row read decision. */
@@ -233,7 +231,7 @@ beforeAll(async () => {
     create table test_permission_parity_rows (
       id varchar primary key,
       created_by varchar,
-      public_at varchar,
+      public boolean not null default false,
       ${rootColumnName} varchar not null${homeColumnName ? `,\n      ${homeColumnName} varchar not null` : ''}${intermediateColumnsDdl}
     )
   `),
@@ -241,7 +239,7 @@ beforeAll(async () => {
   const values = parityRows.map((r) => ({
     id: r.id,
     createdBy: r.createdBy,
-    publicAt: r.publicAt,
+    public: r.public,
     [rootIdKey]: rootId,
     ...(homeIdKey && r.homeChannelId !== null ? { [homeIdKey]: r.homeChannelId } : {}),
   }));
@@ -614,7 +612,7 @@ const rowChannelColumns = (row: ParityRow): Record<string, unknown> => ({
 const dispatchRow = (row: ParityRow): Record<string, unknown> => ({
   id: row.id,
   createdBy: row.createdBy,
-  publicAt: row.publicAt,
+  public: row.public,
   ...rowChannelColumns(row),
 });
 
@@ -664,7 +662,7 @@ describe('three-way mirror parity: SQL ≍ engine ≍ dispatch under the real ap
       for (const row of parityRows) {
         const event = dispatchEvent(row);
         const draft = { ...dispatchRow(row), publishedAt: null };
-        const published = { ...draft, publishedAt: publicAtValue };
+        const published = { ...draft, publishedAt: '2026-07-06T12:00:00Z' };
 
         const engineAllowed = checkAccess({ actorId: userId, isSystemAdmin, memberships, scopes: null }, 'read', rowSubject(row)).allowed;
         // A published row dispatches exactly like the engine decides; the same row as a draft never dispatches.

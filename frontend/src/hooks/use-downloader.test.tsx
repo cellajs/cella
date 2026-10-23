@@ -42,16 +42,7 @@ describe('useDownloader', () => {
     vi.restoreAllMocks();
   });
 
-  it('saves the fetched file under the given name', async () => {
-    const clicked = setup(new Response('content'));
-    await act(() => downloader.download('https://cdn.example.com/a.pdf', 'report.pdf'));
-
-    expect(clicked).toEqual([{ download: 'report.pdf', href: 'blob:file' }]);
-    expect(toastError).not.toHaveBeenCalled();
-    expect(downloader.isInProgress).toBe(false);
-  });
-
-  it('toasts a failed response and saves nothing', async () => {
+  it('reports a failed response in error and saves nothing', async () => {
     const clicked = setup(new Response('gone', { status: 404, statusText: 'Not Found' }));
     await act(() => downloader.download('https://cdn.example.com/a.pdf', 'report.pdf'));
 

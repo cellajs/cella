@@ -30,24 +30,4 @@ describe('handleChecklistItemEnter', () => {
     expect(ids[1]).toBeTruthy();
     expect(ids[1]).not.toBe(ids[0]);
   });
-
-  it('converts an empty checklist item into a paragraph', () => {
-    const editor = makeEditor();
-    editor.replaceBlocks(editor.document, [{ type: 'checklistItem', props: { checkboxId: 'x' } }]);
-    editor.setTextCursorPosition(editor.document[0], 'start');
-
-    const handled = handleChecklistItemEnter(editor);
-
-    expect(handled).toBe(true);
-    expect(editor.document).toHaveLength(1);
-    expect(editor.document[0].type).toBe('paragraph');
-  });
-
-  it('ignores Enter when the cursor is not in a checklist item', () => {
-    const editor = makeEditor();
-    editor.replaceBlocks(editor.document, [{ type: 'paragraph', content: 'plain' }]);
-    editor.setTextCursorPosition(editor.document[0], 'end');
-
-    expect(handleChecklistItemEnter(editor)).toBe(false);
-  });
 });

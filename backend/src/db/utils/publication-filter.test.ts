@@ -17,7 +17,7 @@ const authoredDraftProduct = pgTable('test_pub_notes', {
 const normalize = (s: string) => s.replaceAll('"', '').replace(/[()]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
 const compile = (predicate: SQL | undefined) => new PgDialect().sqlToQuery(predicate as SQL);
 
-// Channel-entity shape: has publishedAt (defaultNow invitee gate) but is NOT a product.
+// Channel-entity shape: has publishedAt (the invitation gate) but is NOT a product.
 const channel = pgTable('test_pub_courses', {
   id: varchar('id').primaryKey(),
   publishedAt: timestamp('published_at', { mode: 'string' }).defaultNow(),

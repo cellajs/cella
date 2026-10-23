@@ -26,15 +26,12 @@ describe('API client error responses', () => {
     expect(error).toMatchObject(body);
   });
 
-  it("reads a proxy's gateway page as the service being unavailable", async () => {
+  it("throws an ApiError typed by its status for a response without the API's error body: a proxy's page, none, or foreign JSON", async () => {
     for (const status of [502, 503, 504]) {
       const error = await failWith(new Response('<html><body>Bad Gateway</body></html>', { status }));
-
       expect(error, String(status)).toMatchObject({ status, type: 'service_unavailable', severity: 'error' });
     }
-  });
 
-  it('gives a body-less error its status alone, and a JSON body without a type the same', async () => {
     expect(await failWith(new Response('', { status: 500 }))).toMatchObject({ status: 500, type: 'server_error', severity: 'error' });
 
     const notFound = await failWith(new Response('Not Found', { status: 404 }));

@@ -75,36 +75,20 @@ describe('persister per-tab mutation records', () => {
     await db?.meta.clear();
   });
 
-  it('writes paused mutations to a per-tab record and keeps the shared meta record mutation-free', async () => {
-    await persister.persistClient(clientWith([pausedMutation('m1')]));
+  // A queue in the shared meta record let one tab's write overwrite another tab's queue: each tab writes its own record.
+  it('restores every queued mutation once: no tab overwrites the queue of another, or takes over one still open', async () => {
+    const db = getLocalUserDb();
+    const tabIdKey = [...sessionValues.keys()].find((key) => key.endsWith('-tab-session-id')) as string;
+    const thisTab = sessionValues.get(tabIdKey) as string;
+
+    await persister.persistClient(clientWith([pausedMutation('own')]));
     await persister.flush();
-
-    const db = getLocalUserDb();
-    const records = (await db?.meta.toArray()) ?? [];
-    const shared = records.find((r) => r.key === 'rq');
-    const tabRecord = records.find((r) => r.key.startsWith('rq:mut:'));
-
-    expect(shared?.mutations).toEqual([]);
-    expect(tabRecord?.mutations).toHaveLength(1);
-  });
-
-  it('restores its own tab record after a refresh (same session id)', async () => {
-    await persister.persistClient(clientWith([pausedMutation('m1')]));
-    await persister.flush();
-
-    const restored = await persister.restoreClient();
-    expect(restored?.clientState.mutations).toHaveLength(1);
-    // The own record is NOT deleted at restore: a crash before the next flush must not lose it.
-    const db = getLocalUserDb();
-    expect(((await db?.meta.toArray()) ?? []).some((r) => r.key.startsWith('rq:mut:'))).toBe(true);
-  });
-
-  it('absorbs and removes a DEAD tab record (age fallback without locks API)', async () => {
-    const db = getLocalUserDb();
-    await db?.meta.put({ key: 'rq', timestamp: Date.now(), buster: '', mutations: [], channelQueries: [] });
+    // A tab that is still open has written its own queue (each tab reads its id once, so its record is written here)...
+    await db?.meta.put({ key: 'rq:mut:other-live-tab', timestamp: Date.now(), buster: '', mutations: [pausedMutation('other')], channelQueries: [] });
+    // ...and a tab that crashed hours ago left one behind (without the locks API, age tells a dead tab).
     await db?.meta.put({
       key: 'rq:mut:dead-tab',
-      timestamp: Date.now() - 3 * 60 * 60 * 1000, // older than the 2h orphan threshold
+      timestamp: Date.now() - 3 * 60 * 60 * 1000,
       buster: '',
       mutations: [pausedMutation('crashed')],
       channelQueries: [],
@@ -112,36 +96,9 @@ describe('persister per-tab mutation records', () => {
 
     const restored = await persister.restoreClient();
 
-    expect(restored?.clientState.mutations).toHaveLength(1);
-    expect(((await db?.meta.toArray()) ?? []).some((r) => r.key === 'rq:mut:dead-tab')).toBe(false);
-  });
-
-  it('leaves a fresh (assumed-live) foreign tab record alone', async () => {
-    const db = getLocalUserDb();
-    await db?.meta.put({ key: 'rq', timestamp: Date.now(), buster: '', mutations: [], channelQueries: [] });
-    await db?.meta.put({ key: 'rq:mut:other-live-tab', timestamp: Date.now(), buster: '', mutations: [pausedMutation('other')], channelQueries: [] });
-
-    const restored = await persister.restoreClient();
-
-    expect(restored?.clientState.mutations).toHaveLength(0);
-    expect(((await db?.meta.toArray()) ?? []).some((r) => r.key === 'rq:mut:other-live-tab')).toBe(true);
-  });
-
-  it('clears the per-tab record once the queue empties', async () => {
-    await persister.persistClient(clientWith([pausedMutation('m1')]));
-    await persister.flush();
-    await persister.persistClient(clientWith([]));
-    await persister.flush();
-
-    const db = getLocalUserDb();
-    expect(((await db?.meta.toArray()) ?? []).some((r) => r.key.startsWith('rq:mut:'))).toBe(false);
-  });
-
-  it('still restores mutations from the legacy shared-record shape', async () => {
-    const db = getLocalUserDb();
-    await db?.meta.put({ key: 'rq', timestamp: Date.now(), buster: '', mutations: [pausedMutation('legacy')], channelQueries: [] });
-
-    const restored = await persister.restoreClient();
-    expect(restored?.clientState.mutations).toHaveLength(1);
+    expect(restored?.clientState.mutations.map(({ state }) => (state.variables as { id: string }).id).sort()).toEqual(['crashed', 'own']);
+    // The open tab keeps its record, the dead one's is taken over, and this tab's own stays until its next write.
+    const keys = ((await db?.meta.toArray()) ?? []).map((record) => record.key);
+    expect(keys.sort()).toEqual(['rq', 'rq:mut:other-live-tab', `rq:mut:${thisTab}`].sort());
   });
 });

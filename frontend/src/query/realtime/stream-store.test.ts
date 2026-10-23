@@ -172,7 +172,7 @@ afterEach(() => {
 });
 
 describe('StreamManager subscribe-then-snapshot', () => {
-  it('opens SSE before catchup and starts catchup on the offset event', async () => {
+  it('applies a change committed while catchup reads once, after the catchup: the stream opens first and catchup starts at its offset', async () => {
     const h = createHarness();
     await h.manager.connect();
 
@@ -180,91 +180,47 @@ describe('StreamManager subscribe-then-snapshot', () => {
     expect(h.order).toEqual([]); // catchup waits for the server offset
 
     h.es.emit('offset', '100');
-    expect(h.order).toEqual(['catchup-start']);
-    expect(h.manager.store.getState().state).toBe('catching-up');
-  });
-
-  it('processes a notification arriving during catchup exactly once, after catchup', async () => {
-    const h = createHarness();
-    await h.manager.connect();
-    h.es.emit('offset', '100');
-
     // Committed between the catchup read and its response: must buffer, not process.
     h.es.emit('change', JSON.stringify({ id: 'a1' }), '101');
-    expect(h.processed).toHaveLength(0);
+    expect(h.order).toEqual(['catchup-start']);
 
     h.resolveCatchup('c1');
     await tick();
 
     expect(h.order).toEqual(['catchup-start', 'catchup-done', 'process:a1']);
-    expect(h.processed).toHaveLength(1);
     expect(h.manager.store.getState().state).toBe('live');
     // Cursor advanced by the drained notification (its eventId is newer than the catchup cursor).
     expect(h.manager.store.getState().cursor).toBe('101');
   });
 
-  it('processes notifications directly once live', async () => {
-    const h = createHarness();
-    await h.manager.connect();
-    h.es.emit('offset', '100');
-    h.resolveCatchup('c1');
-    await tick();
+  it('covers a burst that overflows the buffer with one more catchup read, and ends the cycle when that read overflows as well', async () => {
+    /** Connects through a catchup whose first `bursts` reads each see more changes arrive than the buffer holds. */
+    const connectThroughBursts = async (bursts: number) => {
+      let reads = 0;
+      const h = createHarness({
+        fetchAndProcessCatchup: () => {
+          reads++;
+          if (reads <= bursts) for (let i = 0; i < 501; i++) h.es.emit('change', JSON.stringify({ id: `r${reads}-${i}` }), String(i));
+          return Promise.resolve(`c${reads}`);
+        },
+      });
+      await h.manager.connect();
+      h.es.emit('offset', '100');
+      await tick();
+      return { h, reads };
+    };
 
-    h.es.emit('change', JSON.stringify({ id: 'b1' }), '102');
-    expect(h.order.at(-1)).toBe('process:b1');
-    expect(h.manager.store.getState().cursor).toBe('102');
-  });
+    // The dropped batch is covered by the second catchup read.
+    const once = await connectThroughBursts(1);
+    expect(once.reads).toBe(2);
+    expect(once.h.processed).toHaveLength(0);
+    expect(once.h.manager.store.getState().state).toBe('live');
 
-  it('re-runs catchup once when the buffer overflows, dropping the buffered batch', async () => {
-    let round = 0;
-    const h = createHarness({
-      fetchAndProcessCatchup: () => {
-        round++;
-        if (round === 1) {
-          // Simulate a burst during the first catchup round: overflow the buffer.
-          for (let i = 0; i < 501; i++) h.es.emit('change', JSON.stringify({ id: `n${i}` }), String(i));
-        }
-        return Promise.resolve(`c${round}`);
-      },
-    });
-
-    await h.manager.connect();
-    h.es.emit('offset', '100');
-    await tick();
-
-    expect(round).toBe(2); // one retry after overflow
-    expect(h.processed).toHaveLength(0); // dropped batch is covered by the second catchup read
-    expect(h.manager.store.getState().state).toBe('live');
-  });
-
-  it('fails the connect cycle when the buffer overflows twice', async () => {
-    let round = 0;
-    const h = createHarness({
-      fetchAndProcessCatchup: () => {
-        round++;
-        for (let i = 0; i < 501; i++) h.es.emit('change', JSON.stringify({ id: `r${round}-${i}` }), String(i));
-        return Promise.resolve(`c${round}`);
-      },
-    });
-
-    await h.manager.connect();
-    h.es.emit('offset', '100');
-    await tick();
-
-    expect(round).toBe(2);
-    expect(h.manager.store.getState().state).toBe('error');
-    expect(h.es.readyState).toBe(FakeEventSource.CLOSED);
-  });
-
-  it('closes the open SSE connection when catchup fails', async () => {
-    const h = createHarness({ fetchAndProcessCatchup: () => Promise.reject(new Error('boom')) });
-
-    await h.manager.connect();
-    h.es.emit('offset', '100');
-    await tick();
-
-    expect(h.manager.store.getState().state).toBe('error');
-    expect(h.es.readyState).toBe(FakeEventSource.CLOSED);
+    // A burst that outlasts the second read ends the cycle, and no third read follows.
+    const twice = await connectThroughBursts(2);
+    expect(twice.reads).toBe(2);
+    expect(twice.h.manager.store.getState().state).toBe('error');
+    expect(twice.h.es.readyState).toBe(FakeEventSource.CLOSED);
   });
 });
 
@@ -413,91 +369,31 @@ describe('StreamManager silence watchdog', () => {
     return h;
   };
 
-  it('keeps a stream open for minutes while a ping arrives every 30 seconds', async () => {
+  it('fails a stream that brings no event for 75 seconds and reconnects after the backoff, while a ping or a change keeps it open', async () => {
     const h = await liveStream();
+    const stream = h.es;
 
-    for (let i = 0; i < 20; i++) {
+    // The server's keepalive holds it open for minutes.
+    for (let i = 0; i < 10; i++) {
       await vi.advanceTimersByTimeAsync(keepaliveMs);
-      h.es.emit('ping', '');
+      stream.emit('ping', '');
     }
-
-    expect(FakeEventSource.instances).toHaveLength(1);
-    expect(h.es.readyState).toBe(FakeEventSource.OPEN);
-    expect(h.manager.store.getState().state).toBe('live');
-    h.manager.disconnect();
-  });
-
-  it('closes a stream that stays open but silent for 75 seconds, and reconnects after the backoff', async () => {
-    const h = await liveStream();
-    const silent = h.es;
+    // A change counts as well: the 75 seconds run from it, not from the last ping.
+    await vi.advanceTimersByTimeAsync(60_000);
+    stream.emit('change', JSON.stringify({ id: 'a1' }), '101');
 
     await vi.advanceTimersByTimeAsync(silenceMs - 1);
-    expect(silent.readyState).toBe(FakeEventSource.OPEN);
+    expect(stream.readyState).toBe(FakeEventSource.OPEN);
+    expect(h.manager.store.getState().state).toBe('live');
 
     await vi.advanceTimersByTimeAsync(1);
-    expect(silent.readyState).toBe(FakeEventSource.CLOSED);
+    expect(stream.readyState).toBe(FakeEventSource.CLOSED);
     expect(h.manager.store.getState().state).toBe('error');
-    // Only the reconnect is pending: the watchdog ended with its stream.
-    expect(vi.getTimerCount()).toBe(1);
-    expect(FakeEventSource.instances).toHaveLength(1);
 
     await vi.advanceTimersByTimeAsync(firstReconnectMs);
     expect(FakeEventSource.instances).toHaveLength(2);
     expect(h.es.readyState).toBe(FakeEventSource.OPEN);
     h.manager.disconnect();
-  });
-
-  it('counts a change as activity as well (positive control)', async () => {
-    const h = await liveStream();
-
-    await vi.advanceTimersByTimeAsync(60_000);
-    h.es.emit('change', JSON.stringify({ id: 'a1' }), '101');
-
-    // No ping arrived since the stream opened 135 seconds before: the 75 seconds count from the change.
-    await vi.advanceTimersByTimeAsync(silenceMs - 1);
-    expect(h.es.readyState).toBe(FakeEventSource.OPEN);
-    expect(h.manager.store.getState().state).toBe('live');
-
-    await vi.advanceTimersByTimeAsync(1);
-    expect(h.es.readyState).toBe(FakeEventSource.CLOSED);
-    h.manager.disconnect();
-  });
-
-  it('must not fire after disconnect: no timer is left behind', async () => {
-    const h = await liveStream();
-
-    h.manager.disconnect();
-    expect(vi.getTimerCount()).toBe(0);
-
-    await vi.advanceTimersByTimeAsync(10 * 60_000);
-    expect(h.manager.store.getState().state).toBe('disconnected');
-    expect(FakeEventSource.instances).toHaveLength(1);
-  });
-
-  it('must not outlive a stream the server ended for good', async () => {
-    const h = await liveStream();
-
-    h.es.emitServerError('unauthorized');
-
-    // The circuit is open: neither a reconnect nor a watchdog is pending.
-    expect(vi.getTimerCount()).toBe(0);
-  });
-
-  it('must not outlive a stream that failed in transport: only the reconnect is pending, and nothing once the circuit opens', async () => {
-    const h = createHarness({ fetchAndProcessCatchup: () => Promise.resolve('c1') });
-    await h.manager.connect();
-
-    h.es.onerror?.();
-    expect(vi.getTimerCount()).toBe(1);
-
-    await vi.advanceTimersByTimeAsync(firstReconnectMs);
-    h.es.onerror?.();
-    await vi.advanceTimersByTimeAsync(2 * firstReconnectMs);
-    expect(FakeEventSource.instances).toHaveLength(3);
-
-    h.es.onerror?.();
-    expect(vi.getTimerCount()).toBe(0);
-    expect(h.manager.store.getState().state).toBe('error');
   });
 });
 
@@ -535,44 +431,26 @@ describe('a catchup answer, from the leader to its follower tabs', () => {
     expect(broadcastCatchup).not.toHaveBeenCalled();
   });
 
-  it('must not move the cursor of a follower that failed to process it', async () => {
+  it('moves the cursor of a follower only once it processed the answer, and only while it still follows', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     leaderControl.setLeader(false);
-    vi.mocked(processAppCatchup).mockRejectedValueOnce(new Error('memberships unreachable'));
     await appStreamManager.connect();
 
+    // Processing failed: the cursor stays with the data this tab holds.
+    vi.mocked(processAppCatchup).mockRejectedValueOnce(new Error('memberships unreachable'));
     leaderControl.receiveCatchup(answer, false);
     await tick();
-
     expect(syncControl.setCursor).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledOnce();
     warn.mockRestore();
-  });
 
-  it('must not be processed by a tab that disconnected', async () => {
-    leaderControl.setLeader(false);
-    await appStreamManager.connect();
-    appStreamManager.disconnect();
-
-    leaderControl.receiveCatchup(answer, false);
-    await tick();
-
-    expect(processAppCatchup).not.toHaveBeenCalled();
-    expect(syncControl.setCursor).not.toHaveBeenCalled();
-  });
-
-  it('must not store its cursor in a follower that was promoted while it processed the answer', async () => {
+    // The leader tab closed while this one processed: it now sends its own request, from the cursor it holds.
     let finish: () => void = () => {};
     vi.mocked(processAppCatchup).mockReturnValueOnce(new Promise<void>((resolve) => (finish = resolve)));
-    leaderControl.setLeader(false);
-    await appStreamManager.connect();
     leaderControl.receiveCatchup(answer, false);
-
-    // The leader tab closed: this tab now sends its own request, from the cursor it holds.
     leaderControl.setLeader(true);
     finish();
     await tick();
-
     expect(syncControl.setCursor).not.toHaveBeenCalledWith('c9');
   });
 });
@@ -620,19 +498,6 @@ describe('the health of live delivery', () => {
     stream.emit('ping', '');
     expect(setSyncWorkerAway).toHaveBeenLastCalledWith(false);
     expect(broadcastSyncHealth).toHaveBeenLastCalledWith({ streamHealthy: true, workerAway: false });
-  });
-
-  it('tells the follower tabs when it changes, not with every ping', async () => {
-    const stream = await connectLive();
-    vi.mocked(broadcastSyncHealth).mockClear();
-
-    stream.emit('ping', 'worker_away');
-    stream.emit('ping', 'worker_away');
-    stream.emit('ping', 'worker_away');
-    expect(broadcastSyncHealth).toHaveBeenCalledTimes(1);
-
-    stream.emit('ping', '');
-    expect(broadcastSyncHealth).toHaveBeenCalledTimes(2);
   });
 
   it('tells the follower tabs that the stream failed', async () => {

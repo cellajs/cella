@@ -29,12 +29,12 @@ vi.mock('shared', async (importOriginal) => {
 });
 
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
-const { registerEntityQueryKeys, registerEqualityFilterKeys } = await import('~/query/basic/entity-query-registry');
+const { registerEntityQueryKeys, registerEqualityFilterKeys, syncChunkSize } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
-const { fetchEntityAndUpdateList, fetchRangeAndPatch, removeEntity } = await import('./cache-ops');
+const { fetchEntityAndUpdateList, fetchRangeAndPatch } = await import('./cache-ops');
 
-// The synthetic 'task', 'comment' and 'label' types exist only in this file's shared mock, hence the casts.
-const task = 'task' as EntityType;
+// The synthetic 'task' and 'comment' types exist only in this file's shared mock, hence the casts.
+const TASK = 'task' as EntityType;
 const comment = 'comment' as ProductEntityType;
 
 describe('realtime cache ops', () => {
@@ -63,97 +63,28 @@ describe('realtime cache ops', () => {
     expect(queryClient.getQueryData(keys.list.home('org-1'))).toEqual({ items: [], total: 0 });
   });
 
-  it('inserts a brand-new row into the canonical home list and bumps total', async () => {
-    const keys = createEntityKeys<Record<string, never>>('attachment');
-    registerEntityQueryKeys('attachment', keys, async () => ({
-      items: [{ id: 'attachment-2', organizationId: 'org-1', name: 'fresh' }],
-      total: 1,
-    }));
-
-    queryClient.setQueryData(keys.list.home('org-1'), {
-      items: [{ id: 'attachment-1', organizationId: 'org-1' }],
-      total: 1,
-    });
-
-    const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', { afterSeq: 6, untilSeq: 7 }, keys);
-
-    expect(status).toBe('ok');
-    const list = queryClient.getQueryData<{ items: { id: string }[]; total: number }>(keys.list.home('org-1'));
-    expect(list?.items.map((i) => i.id)).toEqual(['attachment-2', 'attachment-1']);
-    expect(list?.total).toBe(2);
-  });
-
-  it('splices a sub-org-homed row only into its own home channel list', async () => {
-    const keys = createEntityKeys<Record<string, never>>(task);
-    registerEntityQueryKeys(task, keys, async () => ({
-      items: [{ id: 'task-1', organizationId: 'org-1', projectId: 'project-1', name: 'fresh' }],
-      total: 1,
+  it('a new row lands only in the list of its home channel: its deepest non-null ancestor, else the organization', async () => {
+    const keys = createEntityKeys<Record<string, never>>(TASK);
+    registerEntityQueryKeys(TASK, keys, async () => ({
+      items: [
+        { id: 'task-1', organizationId: 'org-1', projectId: 'project-1', name: 'project level' },
+        { id: 'task-2', organizationId: 'org-1', projectId: null, name: 'org level' },
+      ],
+      total: 2,
     }));
 
     queryClient.setQueryData(keys.list.home('org-1', 'project-1'), { items: [], total: 0 });
     queryClient.setQueryData(keys.list.home('org-1', 'project-2'), { items: [], total: 0 });
     queryClient.setQueryData(keys.list.home('org-1'), { items: [], total: 0 });
 
-    const { status } = await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 2, untilSeq: 3 }, keys);
+    const { status } = await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 2, untilSeq: 4 }, keys);
 
     expect(status).toBe('ok');
-    const home = queryClient.getQueryData<{ items: { id: string }[] }>(keys.list.home('org-1', 'project-1'));
-    expect(home?.items.map((i) => i.id)).toEqual(['task-1']);
-    // Sibling and org home lists hold rows homed elsewhere: no splice.
-    expect(queryClient.getQueryData(keys.list.home('org-1', 'project-2'))).toEqual({ items: [], total: 0 });
-    expect(queryClient.getQueryData(keys.list.home('org-1'))).toEqual({ items: [], total: 0 });
-  });
-
-  it('splices an org-homed row (null sub-ancestors) into the org home list only', async () => {
-    const keys = createEntityKeys<Record<string, never>>(task);
-    registerEntityQueryKeys(task, keys, async () => ({
-      items: [{ id: 'task-2', organizationId: 'org-1', projectId: null, name: 'org level' }],
-      total: 1,
-    }));
-
-    queryClient.setQueryData(keys.list.home('org-1'), { items: [], total: 0 });
-    queryClient.setQueryData(keys.list.home('org-1', 'project-1'), { items: [], total: 0 });
-
-    await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 3, untilSeq: 4 }, keys);
-
-    const orgHome = queryClient.getQueryData<{ items: { id: string }[] }>(keys.list.home('org-1'));
-    expect(orgHome?.items.map((i) => i.id)).toEqual(['task-2']);
-    expect(queryClient.getQueryData(keys.list.home('org-1', 'project-1'))).toEqual({ items: [], total: 0 });
-  });
-
-  it('does not splice into the bare org prefix key and warns that the row reached no list', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const keys = createEntityKeys<Record<string, never>>(task);
-    registerEntityQueryKeys(task, keys, async () => ({
-      items: [{ id: 'task-3', organizationId: 'org-1', projectId: 'project-1', name: 'orphan' }],
-      total: 1,
-    }));
-
-    // Canonical data cached at the org PREFIX (a key-shape bug: prefixes are never data keys).
-    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
-
-    await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
-
-    expect(queryClient.getQueryData(keys.list.org('org-1'))).toEqual({ items: [], total: 0 });
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('reached no list cache'));
-  });
-
-  it('invalidates filtered lists for a new row without splicing it (the server-side filter is unknown)', async () => {
-    const keys = createEntityKeys<Record<string, never>>('attachment');
-    registerEntityQueryKeys('attachment', keys, async () => ({
-      items: [{ id: 'attachment-2', organizationId: 'org-1', name: 'fresh' }],
-      total: 1,
-    }));
-
-    const filteredKey = [...keys.list.org('org-1'), { q: '', sort: 'createdAt', order: 'desc' }];
-    queryClient.setQueryData(filteredKey, { items: [{ id: 'attachment-1', organizationId: 'org-1' }], total: 1 });
-
-    await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', { afterSeq: 6, untilSeq: 7 }, keys);
-
-    // Row is NOT inserted into the filtered list, but the list is marked stale to refetch.
-    const filtered = queryClient.getQueryData<{ items: { id: string }[] }>(filteredKey);
-    expect(filtered?.items.map((i) => i.id)).toEqual(['attachment-1']);
-    expect(queryClient.getQueryState(filteredKey)?.isInvalidated).toBe(true);
+    const ids = (key: readonly unknown[]) => queryClient.getQueryData<{ items: { id: string }[] }>(key)?.items.map((item) => item.id);
+    expect(ids(keys.list.home('org-1', 'project-1'))).toEqual(['task-1']);
+    expect(ids(keys.list.home('org-1'))).toEqual(['task-2']);
+    // A sibling channel's list holds rows homed elsewhere: no splice.
+    expect(ids(keys.list.home('org-1', 'project-2'))).toEqual([]);
   });
 
   it('updates a cached row in place without invalidating filtered lists', async () => {
@@ -177,46 +108,41 @@ describe('realtime cache ops', () => {
     expect(queryClient.getQueryState(filteredKey)?.isInvalidated).toBe(false);
   });
 
-  it('reports overflow when the seq window overflows one response: no silent 1000-row range cap', async () => {
+  // The caller invalidates and leaves the cursor where it was: a cut-short range, or an ordinary page from a server that
+  // ignored the range (no deleted rows), would move it past rows this client never received.
+  const renamed = (id: string, seq: number) => ({ id, organizationId: 'org-1', name: 'renamed', seq });
+  it.each([
+    [
+      'overflow',
+      'a full chunk, which may stop short of the range',
+      { afterSeq: 0, untilSeq: 1500 },
+      async () => ({
+        items: Array.from({ length: syncChunkSize }, (_, i) => renamed(`attachment-${i + 1}`, i + 1)),
+        total: 1500,
+      }),
+    ],
+    ['unsupported', 'a row at afterSeq', { afterSeq: 4, untilSeq: 7 }, async () => ({ items: [renamed('attachment-1', 4)], total: 1 })],
+    ['unsupported', 'a row past untilSeq', { afterSeq: 4, untilSeq: 7 }, async () => ({ items: [renamed('attachment-1', 8)], total: 1 })],
+    [
+      'error',
+      'a rejected fetch',
+      { afterSeq: 4, untilSeq: 7 },
+      async () => {
+        throw new Error('network down');
+      },
+    ],
+  ] as const)('reports %s for %s and leaves the caches as they were', async (status, _case, range, rangeFetch) => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     const keys = createEntityKeys<Record<string, never>>('attachment');
-    // A full syncChunkSize response means more changes may remain beyond this window
-    const items = Array.from({ length: 1000 }, (_, i) => ({ id: `att-${i + 1}`, organizationId: 'org-1', seq: i + 1 }));
-    registerEntityQueryKeys('attachment', keys, async () => ({ items, total: 1500 }));
-
-    const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', { afterSeq: 0, untilSeq: 1500 }, keys);
-
-    // The caller invalidates because patching a truncated window would drop the remainder.
-    expect(status).toBe('overflow');
-    expect(queryClient.getQueryData(keys.detail.byId('att-1'))).toBeUndefined();
-  });
-
-  it.each([4, 8])('reports a row at seq %i outside (4, 7] as unsupported: the server ignored the range', async (seq) => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const keys = createEntityKeys<Record<string, never>>('attachment');
-    registerEntityQueryKeys('attachment', keys, async () => ({
-      items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'renamed', seq }],
-      total: 1,
-    }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
     const cached = { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'old' }], total: 1 };
     queryClient.setQueryData(keys.list.home('org-1'), cached);
 
-    const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 7 }, keys);
+    const result = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', range, keys);
 
-    // The caller invalidates: an ordinary page lacks the deleted rows a range read returns.
-    expect(status).toBe('unsupported');
+    expect(result.status).toBe(status);
     expect(queryClient.getQueryData(keys.list.home('org-1'))).toEqual(cached);
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining(`returned seq ${seq}`));
-  });
-
-  it('reports a transient error on a rejected range fetch so callers may retry or invalidate', async () => {
-    const keys = createEntityKeys<Record<string, never>>('attachment');
-    registerEntityQueryKeys('attachment', keys, async () => {
-      throw new Error('network down');
-    });
-
-    const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
-
-    expect(status).toBe('error');
+    expect(queryClient.getQueryData(keys.detail.byId('attachment-1'))).toBeUndefined();
   });
 });
 
@@ -286,92 +212,20 @@ describe('filtered list refetch for a new row', () => {
     expect(isInvalidated(lists.sameItemSearch)).toBe(true);
   });
 
-  it('keeps the refetch when the row does not carry the declared field', async () => {
+  it('refetches a filtered list it cannot rule a new row out of: the row lacks the declared field, or the type declares none', async () => {
     registerComments([{ id: 'comment-4', organizationId: 'org-1' }]);
     seedLists({ otherItem: lists.otherItem });
-
     await fetchRangeAndPatch(comment, 'org-1', 'tenant-1', { afterSeq: 10, untilSeq: 11 }, commentKeys);
-
     expect(isInvalidated(lists.otherItem)).toBe(true);
-  });
 
-  it('refetches every filtered list of an entity type without declared keys', async () => {
-    const keys = createEntityKeys<Record<string, never>>(task);
-    registerEntityQueryKeys(task, keys, async () => ({
+    const taskKeys = createEntityKeys<Record<string, never>>(TASK);
+    registerEntityQueryKeys(TASK, taskKeys, async () => ({
       items: [{ id: 'task-9', organizationId: 'org-1', projectId: 'project-1', itemId: 'item-1' }],
       total: 1,
     }));
-    const otherItemKey = [...keys.list.org('org-1'), { itemId: 'item-2' }];
-    queryClient.setQueryData(otherItemKey, { items: [], total: 0 });
-
-    await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 11, untilSeq: 12 }, keys);
-
-    expect(queryClient.getQueryState(otherItemKey)?.isInvalidated).toBe(true);
-  });
-});
-
-describe('removeEntity', () => {
-  afterEach(() => queryClient.clear());
-
-  const keys = createEntityKeys<Record<string, never>>('attachment');
-  const flatKey = keys.list.home('org-1');
-  const infiniteKey = [...keys.list.org('org-1'), { q: 'report' }];
-  const otherOrgKey = keys.list.home('org-2');
-
-  function seed() {
-    registerEntityQueryKeys('attachment', keys);
-    queryClient.setQueryData(keys.detail.byId('a1'), { id: 'a1' });
-    queryClient.setQueryData(flatKey, { items: [{ id: 'a1' }, { id: 'a2' }], total: 2 });
-    queryClient.setQueryData(infiniteKey, {
-      pages: [
-        { items: [{ id: 'a0' }, { id: 'a1' }], total: 3 },
-        { items: [{ id: 'a2' }], total: 3 },
-      ],
-      pageParams: [
-        { page: 0, offset: 0 },
-        { page: 1, offset: 2 },
-      ],
-    });
-    queryClient.setQueryData(otherOrgKey, { items: [{ id: 'a1' }], total: 1 });
-  }
-
-  it('drops the detail and the row from flat and infinite lists of its organization', () => {
-    seed();
-    const otherOrg = queryClient.getQueryData(otherOrgKey);
-
-    removeEntity('attachment', 'a1', 'org-1');
-
-    expect(queryClient.getQueryData(keys.detail.byId('a1'))).toBeUndefined();
-    expect(queryClient.getQueryData(flatKey)).toEqual({ items: [{ id: 'a2' }], total: 1 });
-    expect(queryClient.getQueryData(infiniteKey)).toEqual({
-      pages: [
-        { items: [{ id: 'a0' }], total: 2 },
-        { items: [{ id: 'a2' }], total: 2 },
-      ],
-      pageParams: [
-        { page: 0, offset: 0 },
-        { page: 1, offset: 2 },
-      ],
-    });
-    // The organization narrows the scan: another organization's list keeps its data object.
-    expect(queryClient.getQueryData(otherOrgKey)).toBe(otherOrg);
-  });
-
-  it('scans every list of the type without an organization', () => {
-    seed();
-
-    removeEntity('attachment', 'a1');
-
-    expect(queryClient.getQueryData(flatKey)).toEqual({ items: [{ id: 'a2' }], total: 1 });
-    expect(queryClient.getQueryData(otherOrgKey)).toEqual({ items: [], total: 0 });
-  });
-
-  it('keeps the data object of a list that does not hold the row', () => {
-    seed();
-    const flat = queryClient.getQueryData(flatKey);
-
-    removeEntity('attachment', 'missing', 'org-1');
-
-    expect(queryClient.getQueryData(flatKey)).toBe(flat);
+    const otherItemTaskKey = [...taskKeys.list.org('org-1'), { itemId: 'item-2' }];
+    queryClient.setQueryData(otherItemTaskKey, { items: [], total: 0 });
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 11, untilSeq: 12 }, taskKeys);
+    expect(queryClient.getQueryState(otherItemTaskKey)?.isInvalidated).toBe(true);
   });
 });

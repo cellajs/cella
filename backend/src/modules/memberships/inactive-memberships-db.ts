@@ -1,11 +1,11 @@
-import { index, snakeCase, timestamp, unique, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, snakeCase, unique, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig, hierarchy, roles } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { membershipChannelColumns } from '#/db/utils/channel-relation-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -17,19 +17,19 @@ export const inactiveMembershipsTable = snakeCase.table(
   {
     createdAt: timestampColumns.createdAt,
     id: uuid().primaryKey().$defaultFn(generateId),
-    tenantId: varchar('tenant_id', { length: tenantIdLength })
+    tenantId: varchar({ length: tenantIdLength })
       .notNull()
       .references(() => tenantsTable.id),
     channelType: varchar({ enum: appConfig.channelEntityTypes }).notNull(),
-    channelId: uuid('channel_id').notNull(),
+    channelId: uuid().notNull(),
     email: varchar({ length: maxLength.field }).notNull(),
     userId: uuid()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
     role: varchar({ enum: roleEnum }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
-    rejectedAt: timestamp({ mode: 'string' }),
+    rejectedAt: isoTimestamp(),
     /** When the invitation's mail last went out. Null while it is held: made in a draft channel and never mailed. */
-    remindedAt: timestamp({ mode: 'string' }),
+    remindedAt: isoTimestamp(),
     createdBy: uuid()
       .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' })

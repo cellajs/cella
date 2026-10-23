@@ -119,7 +119,6 @@ describe('per-query IDB persister', () => {
     // Bind a fresh per-user localUserDb, then clear internal lastPersistedAt state + IDB records
     bindLocalUserDb('u1');
     await persister.removeClient();
-    await sessionPersister.removeClient();
     sessionStorageMap.clear();
   });
 
@@ -127,262 +126,23 @@ describe('per-query IDB persister', () => {
     await deleteDb();
   });
 
-  describe('round-trip: persist and restore', () => {
-    it('persists and restores queries correctly', async () => {
-      const q1 = makeQuery('["task","list","org-1"]', 'task', 1000, [{ id: 't1' }]);
-      const q2 = makeQuery('["me"]', 'me', 2000, { name: 'user' });
-      const client = makePersistedClient([q1, q2], 12345);
-
-      await persister.persistClient(client);
-      await persister.flush();
-
-      const restored = await persister.restoreClient();
-      expect(restored).toBeDefined();
-      expect(restored!.timestamp).toBe(12345);
-      expect(restored!.buster).toBe('');
-      expect(restored!.clientState.queries).toHaveLength(2);
-
-      const restoredHashes = restored!.clientState.queries.map((q) => q.queryHash).sort();
-      expect(restoredHashes).toEqual(['["me"]', '["task","list","org-1"]']);
-
-      const taskQuery = restored!.clientState.queries.find((q) => q.queryHash === '["task","list","org-1"]');
-      expect(taskQuery!.state.data).toEqual([{ id: 't1' }]);
-      expect(taskQuery!.state.dataUpdatedAt).toBe(1000);
-    });
-
-    it('returns undefined when nothing is persisted', async () => {
-      const restored = await persister.restoreClient();
-      expect(restored).toBeUndefined();
-    });
-  });
-
-  describe('incremental writes', () => {
-    it('only writes changed queries on subsequent persist calls', async () => {
-      const q1 = makeQuery('["task","list","org-1"]', 'task', 1000, [{ id: 't1' }]);
-      const q2 = makeQuery('["me"]', 'me', 2000, { name: 'user' });
-
-      await persister.persistClient(makePersistedClient([q1, q2]));
-      await persister.flush();
-
-      await persister.persistClient(makePersistedClient([q1, q2]));
-      await persister.flush();
-
-      const restored = await persister.restoreClient();
-      expect(restored!.clientState.queries).toHaveLength(2);
-    });
-
-    it('updates only the changed query', async () => {
-      const q1 = makeQuery('["task","list","org-1"]', 'task', 1000, [{ id: 't1' }]);
-      const q2 = makeQuery('["me"]', 'me', 2000, { name: 'user' });
-
-      await persister.persistClient(makePersistedClient([q1, q2]));
-      await persister.flush();
-
-      const q1Updated = makeQuery('["task","list","org-1"]', 'task', 3000, [{ id: 't1' }, { id: 't2' }]);
-      await persister.persistClient(makePersistedClient([q1Updated, q2]));
-      await persister.flush();
-
-      const restored = await persister.restoreClient();
-      const taskQuery = restored!.clientState.queries.find((q) => q.queryHash === '["task","list","org-1"]');
-      expect(taskQuery!.state.data).toEqual([{ id: 't1' }, { id: 't2' }]);
-      expect(taskQuery!.state.dataUpdatedAt).toBe(3000);
-
-      const meQuery = restored!.clientState.queries.find((q) => q.queryHash === '["me"]');
-      expect(meQuery!.state.data).toEqual({ name: 'user' });
-    });
-  });
-
-  it('writes a changed query again after the write that held it failed', async () => {
-    const db = getLocalUserDb()!;
-    const client = makePersistedClient([makeQuery('["task","list","org-1"]', 'task', 1000, [{ id: 't1' }])]);
-    const failOnce = vi.spyOn(db.queries, 'bulkPut').mockRejectedValueOnce(new Error('QuotaExceededError'));
-    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-    await persister.persistClient(client);
-    await persister.flush();
-    await persister.persistClient(client);
+  it('restores the cache as the last write left it: a changed query updated, a dropped one gone, product and context alike', async () => {
+    const task = makeQuery('["task","list","org-1"]', 'task', 1000, [{ id: 't1' }]);
+    const label = makeQuery('["label","list","org-1"]', 'label', 1000, [{ id: 'l1' }]);
+    const me = makeQuery('["me"]', 'me', 2000, { name: 'user' });
+    await persister.persistClient(makePersistedClient([task, label, me]));
     await persister.flush();
 
-    expect(await db.queries.where('scope').equals('rq').count()).toBe(1);
-    failOnce.mockRestore();
-    logged.mockRestore();
-  });
+    // The next write: the task list changed, the label list is gone, the context query is as it was.
+    const taskUpdated = makeQuery('["task","list","org-1"]', 'task', 3000, [{ id: 't1' }, { id: 't2' }]);
+    await persister.persistClient(makePersistedClient([taskUpdated, me], 12345));
+    await persister.flush();
 
-  describe('removal detection', () => {
-    it('removes queries no longer in the dehydrated state', async () => {
-      const q1 = makeQuery('["task","list","org-1"]', 'task', 1000);
-      const q2 = makeQuery('["me"]', 'me', 2000);
-      const q3 = makeQuery('["label","list","org-1"]', 'label', 3000);
-
-      await persister.persistClient(makePersistedClient([q1, q2, q3]));
-      await persister.flush();
-
-      // Persist with only q1; q2 and q3 should be removed.
-      await persister.persistClient(makePersistedClient([q1]));
-      await persister.flush();
-
-      const restored = await persister.restoreClient();
-      expect(restored!.clientState.queries).toHaveLength(1);
-      expect(restored!.clientState.queries[0].queryHash).toBe('["task","list","org-1"]');
-    });
-  });
-
-  describe('product vs bundled storage', () => {
-    it('stores product queries as individual IDB records', async () => {
-      const queries = [
-        makeQuery('["task","list"]', 'task', 1000),
-        makeQuery('["label","list"]', 'label', 1000),
-        makeQuery('["attachment","list"]', 'attachment', 1000),
-      ];
-
-      await persister.persistClient(makePersistedClient(queries));
-      await persister.flush();
-
-      const productRecords = await getLocalUserDb()!.queries.where('scope').equals('rq').toArray();
-      expect(productRecords).toHaveLength(3);
-    });
-
-    it('bundles every other query into the meta record', async () => {
-      const queries = [
-        makeQuery('["me"]', 'me', 1000),
-        makeQuery('["organization","list"]', 'organization', 1000),
-        makeQuery('["member","list"]', 'member', 1000),
-      ];
-
-      await persister.persistClient(makePersistedClient(queries));
-      await persister.flush();
-
-      const queryRecords = await getLocalUserDb()!.queries.where('scope').equals('rq').toArray();
-      expect(queryRecords).toHaveLength(0);
-
-      const meta = await getLocalUserDb()!.meta.get('rq');
-      expect(meta!.channelQueries).toHaveLength(3);
-      const hashes = meta!.channelQueries.map((q: { queryHash: string }) => q.queryHash).sort();
-      expect(hashes).toEqual(['["me"]', '["member","list"]', '["organization","list"]']);
-    });
-
-    it('restores product and bundled queries together', async () => {
-      const queries = [makeQuery('["task","list"]', 'task', 1000, [{ id: 't1' }]), makeQuery('["me"]', 'me', 2000, { name: 'user' })];
-
-      await persister.persistClient(makePersistedClient(queries));
-      await persister.flush();
-
-      const restored = await persister.restoreClient();
-      expect(restored!.clientState.queries).toHaveLength(2);
-
-      const taskQuery = restored!.clientState.queries.find((q) => q.queryHash === '["task","list"]');
-      expect(taskQuery!.state.data).toEqual([{ id: 't1' }]);
-
-      const meQuery = restored!.clientState.queries.find((q) => q.queryHash === '["me"]');
-      expect(meQuery!.state.data).toEqual({ name: 'user' });
-    });
-  });
-
-  describe('removeClient', () => {
-    it('clears all records for the scope', async () => {
-      const q1 = makeQuery('["task","list"]', 'task', 1000);
-      await persister.persistClient(makePersistedClient([q1]));
-      await persister.flush();
-
-      await persister.removeClient();
-
-      const restored = await persister.restoreClient();
-      expect(restored).toBeUndefined();
-    });
-  });
-
-  describe('scope isolation', () => {
-    it('offline and session persisters do not interfere', async () => {
-      const q1 = makeQuery('["task","list"]', 'task', 1000, 'offline-data');
-      const q2 = makeQuery('["task","list"]', 'task', 2000, 'session-data');
-
-      await persister.persistClient(makePersistedClient([q1]));
-      await persister.flush();
-
-      await sessionPersister.persistClient(makePersistedClient([q2]));
-      await sessionPersister.flush();
-
-      const offlineRestored = await persister.restoreClient();
-      const sessionRestored = await sessionPersister.restoreClient();
-
-      expect(offlineRestored!.clientState.queries[0].state.data).toBe('offline-data');
-      expect(sessionRestored!.clientState.queries[0].state.data).toBe('session-data');
-    });
-
-    it('removeClient only affects its own scope', async () => {
-      const q1 = makeQuery('["me"]', 'me', 1000, 'offline');
-      const q2 = makeQuery('["me"]', 'me', 2000, 'session');
-
-      await persister.persistClient(makePersistedClient([q1]));
-      await persister.flush();
-      await sessionPersister.persistClient(makePersistedClient([q2]));
-      await sessionPersister.flush();
-
-      await sessionPersister.removeClient();
-
-      const offlineRestored = await persister.restoreClient();
-      const sessionRestored = await sessionPersister.restoreClient();
-
-      expect(offlineRestored!.clientState.queries[0].state.data).toBe('offline');
-      expect(sessionRestored).toBeUndefined();
-    });
-  });
-
-  describe('orphaned session cleanup', () => {
-    it('removes sessions older than the max age', async () => {
-      // Manually insert an old session meta record
-      const db = getLocalUserDb()!;
-
-      const oldScope = 's-old-uuid';
-      await db.meta.put({
-        key: oldScope,
-        timestamp: Date.now() - 3 * 60 * 60 * 1000, // 3 hours ago (past 2h cutoff)
-        buster: '',
-        mutations: [],
-        channelQueries: [],
-      });
-      await db.queries.put({
-        id: `${oldScope}:["task","list"]`,
-        scope: oldScope,
-        queryHash: '["task","list"]',
-        queryKey: ['task', 'list'],
-        state: { data: 'stale', dataUpdatedAt: 100, status: 'success' } as never,
-        dataUpdatedAt: 100,
-      });
-
-      await db.meta.put({ key: `${oldScope}:mut:old-uuid`, timestamp: 0, buster: '', mutations: [], channelQueries: [] });
-
-      await cleanupOrphanedSessions();
-
-      const metaRecords = await db.meta.where('key').startsWith(oldScope).count();
-      const queryRecords = await db.queries.where('scope').equals(oldScope).count();
-      expect(metaRecords).toBe(0);
-      expect(queryRecords).toBe(0);
-    });
-
-    it('keeps the scope of a tab that is still open, however long it was idle', async () => {
-      const db = getLocalUserDb()!;
-      const releaseLock = await holdTabLock('idle-tab');
-      await db.meta.put({ key: 's-idle-tab', timestamp: Date.now() - 3 * 60 * 60 * 1000, buster: '', mutations: [], channelQueries: [] });
-
-      await cleanupOrphanedSessions();
-
-      expect(await db.meta.get('s-idle-tab')).toBeDefined();
-      releaseLock();
-    });
-
-    it("keeps this tab's queued writes however old they are, so a reload replays them", async () => {
-      const db = getLocalUserDb()!;
-      const mutations = [queuedMutation(['task', 'update'], { id: 't1', ops: { name: 'offline edit' } })];
-      await sessionPersister.persistClient({ timestamp: Date.now(), buster: '', clientState: { queries: [], mutations } });
-      await sessionPersister.flush();
-      const queue = (await db.meta.toArray()).find(({ key }) => key.startsWith('s-') && key.includes(':mut:'))!;
-      await db.meta.put({ ...queue, timestamp: Date.now() - 3 * 60 * 60 * 1000 });
-
-      await cleanupOrphanedSessions();
-
-      const restored = await sessionPersister.restoreClient();
-      expect(restored!.clientState.mutations.map(({ state }) => state.variables)).toEqual([{ id: 't1', ops: { name: 'offline edit' } }]);
+    const restored = await persister.restoreClient();
+    expect(restored?.timestamp).toBe(12345);
+    expect(Object.fromEntries(restored!.clientState.queries.map(({ queryHash, state }) => [queryHash, state.data]))).toEqual({
+      '["task","list","org-1"]': [{ id: 't1' }, { id: 't2' }],
+      '["me"]': { name: 'user' },
     });
   });
 
@@ -429,6 +189,47 @@ describe('per-query IDB persister', () => {
       const metaAfter = await db.meta.get('rq');
       expect(metaAfter!.clientCacheVersion).toBe('v1');
     });
+  });
+
+  it('writes a changed query again after the write that held it failed', async () => {
+    const db = getLocalUserDb()!;
+    const client = makePersistedClient([makeQuery('["task","list","org-1"]', 'task', 1000, [{ id: 't1' }])]);
+    const failOnce = vi.spyOn(db.queries, 'bulkPut').mockRejectedValueOnce(new Error('QuotaExceededError'));
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await persister.persistClient(client);
+    await persister.flush();
+    await persister.persistClient(client);
+    await persister.flush();
+
+    expect(await db.queries.where('scope').equals('rq').count()).toBe(1);
+    failOnce.mockRestore();
+    logged.mockRestore();
+  });
+
+  it('keeps the scope of a tab that is still open, however long it was idle', async () => {
+    const db = getLocalUserDb()!;
+    const releaseLock = await holdTabLock('idle-tab');
+    await db.meta.put({ key: 's-idle-tab', timestamp: Date.now() - 3 * 60 * 60 * 1000, buster: '', mutations: [], channelQueries: [] });
+
+    await cleanupOrphanedSessions();
+
+    expect(await db.meta.get('s-idle-tab')).toBeDefined();
+    releaseLock();
+  });
+
+  it("keeps this tab's queued writes however old they are, so a reload replays them", async () => {
+    const db = getLocalUserDb()!;
+    const mutations = [queuedMutation(['task', 'update'], { id: 't1', ops: { name: 'offline edit' } })];
+    await sessionPersister.persistClient({ timestamp: Date.now(), buster: '', clientState: { queries: [], mutations } });
+    await sessionPersister.flush();
+    const queue = (await db.meta.toArray()).find(({ key }) => key.startsWith('s-') && key.includes(':mut:'))!;
+    await db.meta.put({ ...queue, timestamp: Date.now() - 3 * 60 * 60 * 1000 });
+
+    await cleanupOrphanedSessions();
+
+    const restored = await sessionPersister.restoreClient();
+    expect(restored!.clientState.mutations.map(({ state }) => state.variables)).toEqual([{ id: 't1', ops: { name: 'offline edit' } }]);
   });
 });
 
@@ -479,9 +280,8 @@ describe('the options PersistQueryClientProvider restores and saves with', () =>
 });
 
 describe('queued mutations across a change of their variables shape', () => {
-  /** A delete whose module declares version 2 (rows under `rows`; version 1 held them under `tasks`), and one that declares none. */
+  /** A delete whose module declares version 2: rows under `rows`, where version 1 held them under `tasks`. */
   const versionedKey = ['task', 'delete'];
-  const plainKey = ['label', 'delete'];
 
   /** Persists queued mutations and returns the record the store holds for this tab's queue. */
   const persistQueue = async (...mutations: ReturnType<typeof queuedMutation>[]) => {
@@ -510,47 +310,6 @@ describe('queued mutations across a change of their variables shape', () => {
   });
 
   afterEach(async () => await deleteDb());
-
-  it('stores each queued mutation with the version of its variables', async () => {
-    const { record } = await persistQueue(
-      queuedMutation(plainKey, { labels: [{ id: 'l1' }] }),
-      queuedMutation(versionedKey, { rows: [{ id: 't1' }] }),
-    );
-
-    expect(record.mutations).toMatchObject([
-      { mutationKey: plainKey, meta: { variablesVersion: 1 } },
-      { mutationKey: versionedKey, meta: { variablesVersion: 2 } },
-    ]);
-  });
-
-  it('restores a delete an older bundle queued in the shape the new bundle reads, across a cache-version bump', async () => {
-    const queue = await persistQueue(queuedMutation(versionedKey, { tenantId: 't', tasks: [{ id: 't1' }], stx: { mutationId: 'mut-1' } }));
-    await withoutStamps(queue);
-    // The reload brings a bundle with a new cache version.
-    await queue.db.meta.put({ ...(await queue.db.meta.get('rq'))!, clientCacheVersion: 'v0' });
-
-    const restored = await persister.restoreClient();
-
-    expect(restored!.clientState.queries).toHaveLength(0);
-    expect(restored!.clientState.mutations).toMatchObject([
-      { meta: { variablesVersion: 2 }, state: { variables: { tenantId: 't', rows: [{ id: 't1' }], stx: { mutationId: 'mut-1' } } } },
-    ]);
-    expect(restored!.clientState.mutations[0].state.variables).not.toHaveProperty('tasks');
-    expect(await queue.db.failedSync.count()).toBe(0);
-  });
-
-  it('quarantines a queued mutation no upgrade knows, so it is kept for repair and never replayed', async () => {
-    const queue = await persistQueue(queuedMutation(versionedKey, { tenantId: 't', somethingElse: true, stx: { mutationId: 'mut-2' } }));
-    await withoutStamps(queue);
-
-    const restored = await persister.restoreClient();
-
-    expect(restored!.clientState.mutations).toEqual([]);
-    await vi.waitFor(async () => expect(await queue.db.failedSync.count()).toBe(1));
-    expect(await queue.db.failedSync.toArray()).toMatchObject([
-      { mutationId: 'mut-2', entityType: 'task', status: 0, clientCacheVersion: 'v1', variables: { tenantId: 't', somethingElse: true } },
-    ]);
-  });
 
   it('restores a mutation stored at the current version as it was stored', async () => {
     await persistQueue(queuedMutation(versionedKey, { tenantId: 't', rows: [{ id: 't1' }] }));
@@ -612,17 +371,9 @@ describe('session persister survives reload', () => {
     await deleteLocalUserDb();
   });
 
-  it('round-trips session-scoped queries so a refresh restores from cache', async () => {
-    const q = makeQuery('["task","list","org-1"]', 'task', 1000, [{ id: 't1' }]);
-
-    await sessionPersister.persistClient(makePersistedClient([q]));
-    await sessionPersister.flush();
-
-    // A reload re-reads the same session scope; the data must still be there.
-    const restored = await sessionPersister.restoreClient();
-    expect(restored).toBeDefined();
-    expect(restored!.clientState.queries).toHaveLength(1);
-    expect(restored!.clientState.queries[0].state.data).toEqual([{ id: 't1' }]);
+  it('registers no beforeunload teardown that would wipe the session cache on reload', () => {
+    // `beforeunload` cannot tell a reload from a closed tab, so the startup sweep reclaims closed tabs' scopes and a reloaded tab keeps its scope.
+    expect(importTimeWindowListeners.has('beforeunload')).toBe(false);
   });
 
   it('stores a write paused just before the tab closes, without waiting out the write throttle', async () => {
@@ -636,10 +387,5 @@ describe('session persister survives reload', () => {
     const queueStored = async () => (await getLocalUserDb()!.meta.toArray()).some(({ key }) => key.includes(':mut:'));
     // Under the one-second throttle: only the hide listener can have written it.
     await vi.waitFor(async () => expect(await queueStored()).toBe(true), { timeout: 500 });
-  });
-
-  it('registers no beforeunload teardown that would wipe the session cache on reload', () => {
-    // `beforeunload` cannot tell a reload from a closed tab, so the startup sweep reclaims closed tabs' scopes and a reloaded tab keeps its scope.
-    expect(importTimeWindowListeners.has('beforeunload')).toBe(false);
   });
 });

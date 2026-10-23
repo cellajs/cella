@@ -5,7 +5,18 @@ export type ClientOptions = {
 };
 
 /**
- * The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`.
+ * Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone.
+ */
+export type ActorRef = {
+  id: string;
+  kind: 'user' | 'service';
+  name: string;
+  slug: string | null;
+  thumbnailUrl: string | null;
+};
+
+/**
+ * The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`.
  */
 export type UserMinimalBase = {
   id: string;
@@ -50,7 +61,7 @@ export type ChannelBase = {
 };
 
 /**
- * The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields.
+ * The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields and adds its writers as `ActorRef`s.
  */
 export type ProductBase = {
   id: string;
@@ -58,8 +69,6 @@ export type ProductBase = {
   createdAt: string;
   updatedAt: string | null;
   description: string | null;
-  createdBy: UserMinimalBase | null;
-  updatedBy: UserMinimalBase | null;
   entityType: 'attachment';
   keywords: string;
 };
@@ -303,7 +312,6 @@ export type User = {
     finishedOnboarding: boolean;
   };
   updatedAt: string | null;
-  updatedBy: string | null;
   lastSeenAt: string | null;
   lastSignInAt: string | null;
 };
@@ -381,7 +389,7 @@ export type InactiveMembership = {
   role: 'admin' | 'member';
   rejectedAt: string | null;
   remindedAt: string | null;
-  createdBy: UserMinimalBase | null;
+  createdBy: ActorRef | null;
   organizationId: string;
 };
 
@@ -456,12 +464,13 @@ export type Tenant = {
     allowUnregisteredClients: boolean;
   };
   authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'surfconext'>;
-  createdBy: string | null;
   subscriptionId: string | null;
   subscriptionStatus: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
   subscriptionPlan: string | null;
   createdAt: string;
+  createdBy: ActorRef | null;
   updatedAt: string | null;
+  updatedBy: ActorRef | null;
   /**
    * The organization this tenant holds, or null if none
    */
@@ -496,9 +505,10 @@ export type Connection = {
      */
     logoUrl?: string;
   };
-  createdBy: string | null;
   createdAt: string;
+  createdBy: ActorRef | null;
   updatedAt: string | null;
+  updatedBy: ActorRef | null;
 };
 
 /**
@@ -516,19 +526,19 @@ export type ProtectedResourceMetadata = {
  * The channel entity every other channel nests under, owning memberships and roles. Tenant and organization are 1:1: an organization belongs to one tenant, and that tenant holds no other. Returned with `included` data: the signed-in user's membership, counts and member previews.
  */
 export type Organization = {
-  createdAt: string;
   id: string;
   entityType: 'organization';
   tenantId: string;
   name: string;
+  createdAt: string;
+  createdBy: ActorRef | null;
   updatedAt: string | null;
+  updatedBy: ActorRef | null;
   slug: string;
   thumbnailUrl: string | null;
   bannerUrl: string | null;
-  createdBy: UserMinimalBase | null;
-  updatedBy: UserMinimalBase | null;
   publishedAt: string | null;
-  publicAt: string | null;
+  public: boolean;
   toolsConfig: {
     'organization.settings'?: {
       order?: Array<string>;
@@ -587,20 +597,20 @@ export type Organization = {
  * A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.
  */
 export type Attachment = {
-  createdAt: string;
   id: string;
   entityType: 'attachment';
   tenantId: string;
   name: string;
+  createdAt: string;
+  createdBy: ActorRef | null;
   updatedAt: string | null;
+  updatedBy: ActorRef | null;
   stx: StxBase;
   description: string | null;
   keywords: string;
-  createdBy: UserMinimalBase | null;
-  updatedBy: UserMinimalBase | null;
   deletedAt: string | null;
-  deletedBy: string | null;
-  publicAt: string | null;
+  deletedBy: ActorRef | null;
+  public: boolean;
   seq: number;
   /**
    * When true, the file is stored in the public bucket and served from the CDN without a presigned URL.
@@ -646,10 +656,10 @@ export type ServiceAccount = {
     role: 'admin' | 'member';
   }>;
   oauthClientId: string | null;
-  createdBy: string | null;
-  updatedBy: string | null;
   createdAt: string;
+  createdBy: ActorRef | null;
   updatedAt: string | null;
+  updatedBy: ActorRef | null;
   lastSeenAt: string | null;
 };
 
@@ -667,7 +677,7 @@ export type ApiKey = {
   expiresAt: string | null;
   revokedAt: string | null;
   revokedBy: string | null;
-  createdBy: UserMinimalBase | null;
+  createdBy: ActorRef | null;
   createdAt: string;
 };
 
@@ -5179,7 +5189,6 @@ export type CreateAttachmentsData = {
      * MIME type of the server-converted variant; null when none.
      */
     convertedContentType?: string | null;
-    publicAt?: string | null;
     stx: StxBase;
   }>;
   path: {
@@ -5782,9 +5791,9 @@ export type UpdateMembershipResponses = {
     channelId: string;
     userId: string;
     role: 'admin' | 'member';
-    createdBy: string | null;
+    createdBy: ActorRef | null;
     updatedAt: string | null;
-    updatedBy: string | null;
+    updatedBy: ActorRef | null;
     organizationId: string;
     archived?: boolean;
     muted?: boolean;
@@ -5995,7 +6004,7 @@ export type GetPendingMembershipsResponses = {
       email: string;
       role: 'admin' | 'member' | null;
       createdAt: string;
-      createdBy: UserMinimalBase | null;
+      createdBy: ActorRef | null;
     }>;
     total: number;
   };

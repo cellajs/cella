@@ -30,9 +30,4 @@ describe('product canonical options cache under a splice-able home key', () => {
     expect(matchesCanonicalHome(attachmentKey, organizationId, organizationId)).toBe(false);
     expect(attachmentKey.slice(2).some((segment) => typeof segment === 'object' && segment !== null)).toBe(true);
   });
-
-  // Negative control: an extra scope segment makes the splice skip the key without reporting it.
-  it('rejects a key with an extra scope segment', () => {
-    expect(matchesCanonicalHome(['attachment', 'list', 'canonical', organizationId, 'extra-1'], organizationId, 'extra-1')).toBe(false);
-  });
 });

@@ -1,10 +1,10 @@
 import { getTableColumns } from 'drizzle-orm';
-import { index, snakeCase, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { AccessScope } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { ActorId } from '#/db/utils/ids';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 
@@ -32,8 +32,8 @@ export const apiKeysTable = snakeCase.table(
     /** Mask over the actor's bindings; null = unmasked. Values come from `accessScopes.all`. */
     scopes: varchar({ length: maxLength.field }).$type<AccessScope>().array(),
     /** Null: never expires. Keeps its zone like `timestampColumns.expiresAt`: the guard reads it in JavaScript. */
-    expiresAt: timestamp({ withTimezone: true, mode: 'string' }),
-    revokedAt: timestamp({ mode: 'string' }),
+    expiresAt: isoTimestamp(),
+    revokedAt: isoTimestamp(),
     revokedBy: uuid()
       .references(() => actorsTable.id, { onDelete: 'set null' })
       .$type<ActorId>(),

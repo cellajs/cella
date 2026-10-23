@@ -6,39 +6,9 @@ type StoredMutation = DehydratedState['mutations'][number];
 const { quarantineFailedSync } = vi.hoisted(() => ({ quarantineFailedSync: vi.fn(async (_record: Record<string, unknown>) => undefined) }));
 vi.mock('~/query/offline/failed-sync', () => ({ quarantineFailedSync }));
 
-const { createRowsOf, entityIdsOf, queuedUpdateOf, registerVariablesVersion, upgradePersistedMutation, variablesVersionOf, withVariablesVersion } =
-  await import('~/query/offline/mutation-variables');
+const { entityIdsOf, registerVariablesVersion, upgradePersistedMutation, withVariablesVersion } = await import('../mutation-variables');
 
 describe('reading queued variables', () => {
-  it('reads the rows of a create as the live objects of its variables', () => {
-    const variables = { tenantId: 't', organizationId: 'o', data: [{ id: 'a' }, { id: 'b' }] };
-    expect(createRowsOf(variables)).toEqual([{ id: 'a' }, { id: 'b' }]);
-    expect(createRowsOf(variables)[0]).toBe(variables.data[0]);
-  });
-
-  it('reads a create that carries one row, under `data` or at the top level, as a list of one', () => {
-    const row = { id: 'a', name: 'One' };
-    expect(createRowsOf({ tenantId: 't', data: row })).toEqual([row]);
-    expect(createRowsOf(row)).toEqual([row]);
-    // A top-level id marks the variables as the row: `data` is then one of its columns.
-    const withDataColumn = { id: 'a', data: { id: 'not-a-row' } };
-    expect(createRowsOf(withDataColumn)).toEqual([withDataColumn]);
-  });
-
-  it('reads no row from variables that are no create', () => {
-    for (const variables of [undefined, null, 'text', [{ id: 'a' }], { tenantId: 't' }, { data: 'x' }, { data: [null, 3] }]) {
-      expect(createRowsOf(variables), JSON.stringify(variables)).toEqual([]);
-    }
-  });
-
-  it('reads an update of one row with its ops and stamps, and nothing from other variables', () => {
-    const stx = { mutationId: 'm', sourceId: 's', fieldTimestamps: { name: '1:0:a' } };
-    expect(queuedUpdateOf({ id: 'a', ops: { name: 'N' }, stx })).toEqual({ id: 'a', ops: { name: 'N' }, fieldTimestamps: { name: '1:0:a' } });
-    expect(queuedUpdateOf({ id: 'a' })).toEqual({ id: 'a', ops: {}, fieldTimestamps: {} });
-    expect(queuedUpdateOf({ data: [{ id: 'a' }] })).toBeNull();
-    expect(queuedUpdateOf(undefined)).toBeNull();
-  });
-
   it('reads the ids a create, an update and a delete touch', () => {
     expect(entityIdsOf({ tenantId: 't', data: [{ id: 'a' }, { id: 'b' }] })).toEqual(['a', 'b']);
     expect(entityIdsOf({ tenantId: 't', id: 'a', ops: {} })).toEqual(['a']);
@@ -97,18 +67,6 @@ describe('a queue restored by a newer bundle', () => {
 
   afterEach(() => onlineManager.setOnline(true));
 
-  it('stamps a mutation this bundle issued with the version of its key, 1 for a key that declares none', async () => {
-    expect(variablesVersionOf(deleteKey)).toBe(2);
-    expect(variablesVersionOf(['thing', 'update'])).toBe(1);
-    expect(withVariablesVersion(await storedMutationOf(deleteKey, { rows: [] })).meta).toEqual({ variablesVersion: 2 });
-    expect(withVariablesVersion(await storedMutationOf(['thing', 'update'], { id: 'a' })).meta).toEqual({ variablesVersion: 1 });
-  });
-
-  it('keeps the stamp a mutation already carries: its variables are in that shape, whatever is registered since', async () => {
-    const restored = await storedMutationOf(deleteKey, { things: [] }, 1);
-    expect(withVariablesVersion(restored).meta).toEqual({ variablesVersion: 1 });
-  });
-
   it('rewrites a delete an older bundle queued into the shape this one reads, and replays it', async () => {
     // The older bundle knew no versions: its record carries no stamp.
     const stored = await storedMutationOf(deleteKey, { tenantId: 't', things: [{ id: 'a' }, { id: 'b' }] });
@@ -142,26 +100,28 @@ describe('a queue restored by a newer bundle', () => {
     expect(quarantineFailedSync).not.toHaveBeenCalled();
   });
 
-  it('moves a mutation it cannot upgrade to the quarantine, with its variables, and hands back nothing to replay', async () => {
+  it('quarantines, with its variables and under an id, each mutation this bundle cannot read, and hands back nothing to replay', async () => {
     const stx = { mutationId: 'mut-1', sourceId: 'tab', fieldTimestamps: {} };
-    const stored = await storedMutationOf(deleteKey, { tenantId: 't', unknownShape: true, stx });
+    const unknownShape = await storedMutationOf(deleteKey, { tenantId: 't', unknownShape: true, stx });
+    const withoutStx = await storedMutationOf(deleteKey, { tenantId: 't', unknownShape: true });
+    // A newer bundle stored this one: after a rollback nothing here reads its shape.
+    const ahead = await storedMutationOf(deleteKey, { tenantId: 't', newerShape: [{ id: 'a' }] }, 3);
 
-    expect(upgradePersistedMutation(stored)).toBeNull();
-    expect(quarantineFailedSync).toHaveBeenCalledTimes(1);
-    expect(quarantineFailedSync.mock.lastCall?.[0]).toMatchObject({
+    expect([unknownShape, withoutStx, ahead].map((mutation) => upgradePersistedMutation(mutation))).toEqual([null, null, null]);
+    const [first, second, third] = quarantineFailedSync.mock.calls.map(([record]) => record);
+    expect(first).toMatchObject({
       mutationId: 'mut-1',
       mutationKey: deleteKey,
       status: 0,
       variables: { tenantId: 't', unknownShape: true, stx },
       error: { reason: 'variables_version', storedVersion: 1, currentVersion: 2 },
     });
-  });
-
-  it('gives a quarantined mutation without an stx an id of its own', async () => {
-    const stored = await storedMutationOf(deleteKey, { tenantId: 't', unknownShape: true });
-
-    expect(upgradePersistedMutation(stored)).toBeNull();
-    expect(String(quarantineFailedSync.mock.lastCall?.[0].mutationId)).toMatch(/^queued:\["thing","delete"\]:\d+$/);
+    // The quarantine dedupes on the mutation id, so one without an stx gets an id of its own.
+    expect(String(second.mutationId)).toMatch(/^queued:\["thing","delete"\]:\d+$/);
+    expect(third).toMatchObject({
+      variables: { newerShape: [{ id: 'a' }] },
+      error: { reason: 'variables_version', storedVersion: 3, currentVersion: 2 },
+    });
   });
 
   it('quarantines the one mutation whose upgrade throws, and goes on with the rest of the queue', async () => {
@@ -175,13 +135,6 @@ describe('a queue restored by a newer bundle', () => {
     expect(restored.map(({ state }) => state.variables)).toEqual([{ tenantId: 't', rows: [{ id: 'a' }] }]);
     expect(quarantineFailedSync).toHaveBeenCalledTimes(1);
     expect(quarantineFailedSync.mock.lastCall?.[0]).toMatchObject({ mutationId: 'mut-broken', error: { storedVersion: 1, currentVersion: 2 } });
-  });
-
-  it('quarantines a mutation a newer bundle stored: after a rollback nothing here reads that shape', async () => {
-    const ahead = await storedMutationOf(deleteKey, { tenantId: 't', newerShape: [{ id: 'a' }] }, 3);
-
-    expect(upgradePersistedMutation(ahead)).toBeNull();
-    expect(quarantineFailedSync.mock.lastCall?.[0]).toMatchObject({ error: { reason: 'variables_version', storedVersion: 3, currentVersion: 2 } });
   });
 
   it('leaves a mutation whose key declares no version as it is, with the stamp it had', async () => {

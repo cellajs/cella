@@ -74,11 +74,6 @@
                   "type": ["string", "null"],
                   "required": true
                 },
-                "updatedBy": {
-                  "type": ["string", "null"],
-                  "required": true,
-                  "format": "uuid"
-                },
                 "lastSeenAt": {
                   "type": ["string", "null"],
                   "required": true
@@ -100,7 +95,7 @@
               "required": true,
               "ref": "#/components/schemas/UserMinimalBase",
               "description": "The system admin acting as the user through an impersonation; null on the user's own session.",
-              "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
+              "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a response names a user: a member list, the actor of a notification. A row names its writers as `ActorRef`."
             }
           },
           "ref": "#/components/schemas/Me",
@@ -246,11 +241,6 @@
             "updatedAt": {
               "type": ["string", "null"],
               "required": true
-            },
-            "updatedBy": {
-              "type": ["string", "null"],
-              "required": true,
-              "format": "uuid"
             },
             "lastSeenAt": {
               "type": ["string", "null"],
@@ -508,11 +498,6 @@
             "updatedAt": {
               "type": ["string", "null"],
               "required": true
-            },
-            "updatedBy": {
-              "type": ["string", "null"],
-              "required": true,
-              "format": "uuid"
             },
             "lastSeenAt": {
               "type": ["string", "null"],
@@ -957,8 +942,8 @@
                       "createdBy": {
                         "type": ["object", "null"],
                         "required": true,
-                        "ref": "#/components/schemas/UserMinimalBase",
-                        "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
+                        "ref": "#/components/schemas/ActorRef",
+                        "refDescription": "Who wrote a row: a user or a service account, with the id, kind, name and avatar a cell renders. Embedded wherever a row names its writer, as `createdBy`, `updatedBy` and `deletedBy`; null once the actor is gone."
                       },
                       "organizationId": { "type": "string", "required": true, "format": "uuid" }
                     },
@@ -997,10 +982,10 @@
                 "createdAt": "2024-11-13T15:29:06.546Z",
                 "createdBy": {
                   "id": "915e1951-a439-40dc-9303-6bdbd6aea838",
+                  "kind": "user",
                   "name": "Sister Monahan",
                   "slug": "sister.monahan13",
-                  "thumbnailUrl": null,
-                  "entityType": "user"
+                  "thumbnailUrl": null
                 },
                 "organizationId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
                 "tenantId": "i5coyr"
@@ -1030,10 +1015,10 @@
                 "createdAt": "2024-04-11T17:15:50.993Z",
                 "createdBy": {
                   "id": "7dee4eb2-c5eb-4722-91aa-d911de2e383b",
+                  "kind": "user",
                   "name": "John Morar",
                   "slug": "john.morar34",
-                  "thumbnailUrl": null,
-                  "entityType": "user"
+                  "thumbnailUrl": null
                 },
                 "organizationId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
                 "tenantId": "gwylqy"

@@ -1,8 +1,8 @@
-import { index, snakeCase, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, snakeCase, text, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { usersTable } from '#/modules/user/user-db';
 
 /**
@@ -26,12 +26,12 @@ export const pushSubscriptionsTable = snakeCase.table(
     /** Auth secret (`getKey('auth')`), base64url. */
     auth: text().notNull(),
     /** Browser-reported expiry; null means no fixed expiry (the common case). */
-    expirationTime: timestamp({ mode: 'string' }),
+    expirationTime: isoTimestamp(),
     /** Coarse device hint for the user's own subscription list; never parsed. */
     userAgent: varchar({ length: maxLength.field }),
     createdAt: timestampColumns.createdAt,
     /** Bumped on re-subscribe, so stale rows are identifiable if pruning ever needs it. */
-    lastSeenAt: timestamp({ mode: 'string' }),
+    lastSeenAt: isoTimestamp(),
   },
   (table) => [index('push_subscriptions_user_index').on(table.userId)],
 );

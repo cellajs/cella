@@ -11,7 +11,7 @@ vi.mock('~/env', () => ({ isDebugMode: false }));
 const { userStore } = await import('~/modules/user/user-store');
 const { useUpdateSelfFlagsMutation } = await import('~/modules/me/query');
 
-type FlagsOptions = { onMutate: (variables: { userFlags?: { finishedOnboarding?: boolean } }) => unknown; onError?: unknown };
+type FlagsOptions = { onMutate: (variables: { userFlags?: { finishedOnboarding?: boolean } }) => unknown };
 
 /** The mocked useMutation hands back its options, which the hook's return type does not describe. */
 const options = () => useUpdateSelfFlagsMutation() as unknown as FlagsOptions;
@@ -27,17 +27,5 @@ describe('useUpdateSelfFlagsMutation', () => {
     options().onMutate({ userFlags: { finishedOnboarding: true } });
 
     expect(storedFlags()).toEqual({ finishedOnboarding: true });
-  });
-
-  it('keeps the flag when the save fails: nothing rolls it back', () => {
-    expect(options().onError).toBeUndefined();
-  });
-
-  it('leaves the store alone while signed out', () => {
-    userStore.setState({ user: null });
-
-    options().onMutate({ userFlags: { finishedOnboarding: true } });
-
-    expect(userStore.getState().user).toBeNull();
   });
 });

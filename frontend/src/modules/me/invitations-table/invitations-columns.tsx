@@ -5,7 +5,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useHandleInvitationMutation } from '~/modules/me/query';
 import type { Invitation } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
-import { UserCell } from '~/modules/user/user-cell';
+import { ActorCell } from '~/modules/user/actor-cell';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -48,7 +48,7 @@ export const useColumns = () => {
       minWidth: 160,
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) =>
-        row.inactiveMembership.createdBy && <UserCell compactable user={row.inactiveMembership.createdBy} tabIndex={tabIndex} />,
+        row.inactiveMembership.createdBy && <ActorCell compactable actor={row.inactiveMembership.createdBy} tabIndex={tabIndex} />,
     },
     {
       key: 'actions',

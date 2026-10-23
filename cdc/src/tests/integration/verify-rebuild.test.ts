@@ -91,7 +91,10 @@ describe.skipIf(!ready)('Verify and rebuild (integration)', () => {
   const syncState = async () => (await cdcDb.select().from(syncStateTable).where(eq(syncStateTable.id, 'sync')))[0];
   const generation = async () => (await syncState())?.generation ?? 1;
   const lastIncident = async () => (await cdcDb.select().from(syncIncidentsTable).orderBy(desc(syncIncidentsTable.createdAt)).limit(1))[0];
-  const dbNow = async () => (await cdcDb.execute<{ now: string }>(sql`SELECT clock_timestamp()::timestamp::text AS now`)).rows[0].now;
+  // ISO UTC text like every timestamp column, so the string comparisons below order correctly.
+  const dbNow = async () =>
+    (await cdcDb.execute<{ now: string }>(sql`SELECT to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS now`)).rows[0]
+      .now;
   const incidentsSince = async (since: string) =>
     await cdcDb.select().from(syncIncidentsTable).where(sql`${syncIncidentsTable.createdAt} > ${since}`).orderBy(syncIncidentsTable.createdAt);
   /** The reasons of the rebuilds since a moment, in order. */

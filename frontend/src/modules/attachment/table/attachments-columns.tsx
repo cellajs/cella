@@ -15,7 +15,7 @@ import { openPopConfirm } from '~/modules/common/popconfirm';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
 import { SeenMark } from '~/modules/seen/seen-mark';
-import { UserCell } from '~/modules/user/user-cell';
+import { ActorCell } from '~/modules/user/actor-cell';
 import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
 import { formatBytes } from '~/utils/format-bytes';
@@ -154,7 +154,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
       hidden: true,
       minWidth: 160,
       placeholderValue: '-',
-      renderCell: ({ row, tabIndex }) => row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => row.createdBy && <ActorCell compactable actor={row.createdBy} tabIndex={tabIndex} />,
     },
     {
       key: 'updatedAt',
@@ -170,7 +170,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
       hidden: true,
       width: 160,
       placeholderValue: '-',
-      renderCell: ({ row, tabIndex }) => row.updatedBy && <UserCell compactable user={row.updatedBy} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => row.updatedBy && <ActorCell compactable actor={row.updatedBy} tabIndex={tabIndex} />,
     },
   ];
 };

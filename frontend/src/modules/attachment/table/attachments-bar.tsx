@@ -34,11 +34,11 @@ export function AttachmentsTableBar({
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
   // A sub-organization channel homes its uploads on itself; the organization row is the
-  // org. Publication is row-local, so the channel's `publicAt` is only the default a new row starts with.
+  // org. Public read is row-local, so the channel's `public` flag is only the value a new row starts with.
   const isOrganization = channel.entityType === 'organization';
   const organizationId = channelOrganizationId(channel);
-  const publicAt = 'publicAt' in channel && typeof channel.publicAt === 'string' ? channel.publicAt : null;
-  const placement = { ...(!isOrganization && { [appConfig.entityIdColumnKeys[channel.entityType]]: channel.id }), publicAt };
+  const isPublic = 'public' in channel && channel.public === true;
+  const placement = { ...(!isOrganization && { [appConfig.entityIdColumnKeys[channel.entityType]]: channel.id }), public: isPublic };
   const { open } = useAttachmentsUploadDialog(channel.tenantId, organizationId, placement);
   const canDelete = useCanDeleteAttachment(channel);
 

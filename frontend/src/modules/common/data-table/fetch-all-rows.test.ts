@@ -1,37 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 import { exportChunkSize, fetchAllRows } from './fetch-all-rows';
 
+/** `limitMax` of the backend's pagination schema (backend/src/schemas/common-schemas.ts): a larger page is rejected. */
+const backendLimitMax = 1000;
+
 describe('fetchAllRows', () => {
-  it('exports a result set larger than one chunk completely (no silent 1000-row cap)', async () => {
-    const total = exportChunkSize + 500;
-    const all = Array.from({ length: total }, (_, i) => ({ id: `row-${i}` }));
-    const fetchRows = vi.fn(async (limit: number, offset: number) => all.slice(offset, offset + limit));
+  it('exports every row in pages the backend accepts, stopping at the first short page', async () => {
+    // More than one page, an exact page multiple (an empty last page ends it) and a single short page.
+    for (const total of [exportChunkSize + 500, exportChunkSize, 1]) {
+      const all = Array.from({ length: total }, (_, i) => ({ id: `row-${i}` }));
+      const fetchRows = vi.fn(async (limit: number, offset: number) => all.slice(offset, offset + limit));
 
-    const rows = await fetchAllRows(fetchRows);
-
-    expect(rows).toHaveLength(total);
-    expect(rows[total - 1]).toEqual({ id: `row-${total - 1}` });
-    expect(fetchRows).toHaveBeenCalledTimes(2);
-    expect(fetchRows).toHaveBeenNthCalledWith(1, exportChunkSize, 0);
-    expect(fetchRows).toHaveBeenNthCalledWith(2, exportChunkSize, exportChunkSize);
-  });
-
-  it('stops after one fetch when everything fits in a single chunk', async () => {
-    const fetchRows = vi.fn(async () => [{ id: 'only' }]);
-
-    const rows = await fetchAllRows(fetchRows);
-
-    expect(rows).toEqual([{ id: 'only' }]);
-    expect(fetchRows).toHaveBeenCalledTimes(1);
-  });
-
-  it('handles an exact chunk-multiple result set (final empty chunk terminates)', async () => {
-    const all = Array.from({ length: exportChunkSize }, (_, i) => ({ id: `row-${i}` }));
-    const fetchRows = vi.fn(async (limit: number, offset: number) => all.slice(offset, offset + limit));
-
-    const rows = await fetchAllRows(fetchRows);
-
-    expect(rows).toHaveLength(exportChunkSize);
-    expect(fetchRows).toHaveBeenCalledTimes(2);
+      expect(await fetchAllRows(fetchRows)).toEqual(all);
+      expect(fetchRows).toHaveBeenCalledTimes(Math.floor(total / exportChunkSize) + 1);
+      expect(fetchRows.mock.calls.every(([limit]) => limit <= backendLimitMax)).toBe(true);
+    }
   });
 });

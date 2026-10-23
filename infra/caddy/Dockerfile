@@ -8,7 +8,7 @@
 # Build context is the repo root (same as backend/cdc/yjs). Example:
 #   docker build -f infra/caddy/Dockerfile --build-arg RELEASE_SHA=$GIT_SHA .
 
-FROM caddy:2.8-alpine
+FROM caddy:2.11-alpine
 
 ARG RELEASE_SHA=dev
 ENV RELEASE_SHA=${RELEASE_SHA}

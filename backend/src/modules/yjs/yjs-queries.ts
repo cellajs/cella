@@ -3,6 +3,7 @@ import { appConfig, type ProductEntityType, toTableName } from 'shared';
 import type { DbContext } from '#/core/context';
 import type { YjsDocKey, YjsDocScope, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
+import { getIsoDate } from '#/utils/iso-date';
 
 // No `#/env` import and no pool: the Yjs relay imports this file, and passes its own transaction as `ctx.var.db`.
 
@@ -58,7 +59,7 @@ export const insertYjsDocument = async (ctx: DbContext, { doc, state }: InsertYj
   const { entityType, entityId, tenantId, organizationId } = doc;
   await ctx.var.db
     .insert(yjsDocumentsTable)
-    .values({ entityType, entityId, tenantId, organizationId, state: Buffer.from(state), updatedAt: sql`now()` })
+    .values({ entityType, entityId, tenantId, organizationId, state: Buffer.from(state), updatedAt: getIsoDate() })
     .onConflictDoNothing({ target: [yjsDocumentsTable.entityType, yjsDocumentsTable.entityId] });
 };
 

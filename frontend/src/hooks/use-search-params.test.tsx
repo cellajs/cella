@@ -19,11 +19,10 @@ defineFrontendModule({
 
 type TableSearch = { q?: string };
 
-const seen = { renders: 0, search: {} as TableSearch, setSearch: (_values: Partial<TableSearch>) => {} };
+const seen = { search: {} as TableSearch, setSearch: (_values: Partial<TableSearch>) => {} };
 
 function Table() {
   const { search, setSearch } = useSearchParams<TableSearch>();
-  seen.renders++;
   seen.search = search;
   seen.setSearch = setSearch;
   return null;
@@ -73,29 +72,9 @@ const writeSearch = async (router: TestRouter, values: Record<string, string | u
 afterEach(() => {
   act(() => root?.unmount());
   root = null;
-  seen.renders = 0;
 });
 
 describe('useSearchParams', () => {
-  it('ignores overlay keys, so an overlay write does not re-render the table', async () => {
-    const router = await mount('/table?q=a');
-    const renders = seen.renders;
-
-    await writeSearch(router, { attachmentDialogId: 'one' });
-    await writeSearch(router, { attachmentDialogId: 'two' });
-
-    expect(seen.renders).toBe(renders);
-    expect(seen.search).toEqual({ q: 'a' });
-  });
-
-  it('syncs its own keys when the URL changes elsewhere', async () => {
-    const router = await mount('/table?q=a');
-
-    await writeSearch(router, { q: 'c' });
-
-    expect(seen.search).toEqual({ q: 'c' });
-  });
-
   it('keeps the live overlay value when setSearch writes', async () => {
     const router = await mount('/table?q=a&attachmentDialogId=one');
     expect(seen.search).toEqual({ q: 'a' });

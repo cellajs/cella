@@ -34,6 +34,7 @@ export const seededTitleDocument = (name: string, level: TitleLevel = 1) => JSON
 /**
  * Pure split of parsed blocks: block 0 text → name, the rest (sans trailing empties) → body. A block 0 without
  * inline content (an image moved to the top) holds no title, so it stays in the body.
+ * @public
  */
 export const splitTitleBlocks = (blocks: LooseBlock[]): { name: string; body: LooseBlock[] } => {
   const [first, ...rest] = blocks;

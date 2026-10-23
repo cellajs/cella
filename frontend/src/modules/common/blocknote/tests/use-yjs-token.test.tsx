@@ -49,29 +49,22 @@ afterEach(async () => {
 });
 
 describe('useYjsToken refusals', () => {
-  it('must not read a deleted entity as view only: a 404 gives deleted and withdraws the held token', async () => {
-    userStore.getState().setYjsToken(tokenKey, 'token-v1');
-    vi.mocked(getYjsToken).mockRejectedValue(new ApiError({ status: 404 }));
+  it('must not keep a token the route refuses, nor read a deleted entity as view only: a 404 gives deleted, a 403 view only, each withdrawing the held token without a retry', async () => {
+    const answers = [
+      [404, { token: undefined, denied: false, deleted: true }],
+      [403, { token: undefined, denied: true, deleted: false }],
+    ] as const;
+    for (const [status, expected] of answers) {
+      userStore.getState().setYjsToken(tokenKey, 'token-v1');
+      vi.mocked(getYjsToken).mockReset();
+      vi.mocked(getYjsToken).mockRejectedValue(new ApiError({ status }));
 
-    expect(await renderToken()).toEqual({ token: undefined, denied: false, deleted: true });
-    expect(userStore.getState().yjsTokens[tokenKey]).toBeUndefined();
-    // No retry changes a refusal.
-    expect(getYjsToken).toHaveBeenCalledOnce();
-  });
-
-  it('a 403 gives denied, view only, and withdraws the held token', async () => {
-    userStore.getState().setYjsToken(tokenKey, 'token-v1');
-    vi.mocked(getYjsToken).mockRejectedValue(new ApiError({ status: 403 }));
-
-    expect(await renderToken()).toEqual({ token: undefined, denied: true, deleted: false });
-    expect(userStore.getState().yjsTokens[tokenKey]).toBeUndefined();
-    expect(getYjsToken).toHaveBeenCalledOnce();
-  });
-
-  it('a token the route issues is neither, and goes into the user store (positive control)', async () => {
-    vi.mocked(getYjsToken).mockResolvedValue({ token: 'token-v2' } as never);
-
-    expect(await renderToken()).toEqual({ token: 'token-v2', denied: false, deleted: false });
-    expect(userStore.getState().yjsTokens[tokenKey]).toBe('token-v2');
+      expect(await renderToken()).toEqual(expected);
+      expect(userStore.getState().yjsTokens[tokenKey]).toBeUndefined();
+      // No retry changes a refusal.
+      expect(getYjsToken).toHaveBeenCalledOnce();
+      await act(async () => root?.unmount());
+      root = undefined;
+    }
   });
 });

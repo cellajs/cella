@@ -1,8 +1,8 @@
-import { boolean, index, jsonb, snakeCase, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, index, jsonb, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 import { connectionsTable } from '#/modules/connections/connections-db';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -32,12 +32,12 @@ export const identitiesTable = snakeCase.table(
     subject: varchar({ length: maxLength.field }).notNull(),
     email: varchar({ length: maxLength.field }),
     verified: boolean().notNull().default(false),
-    verifiedAt: timestamp({ mode: 'string' }),
+    verifiedAt: isoTimestamp(),
     /** The connection (an institution's trust) an sso identity came through; null for social identities. */
     connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'set null' }),
     /** Claims snapshot for sso identities (affiliations, acr); nothing reads it for authorization. */
     data: jsonb().$type<Record<string, unknown>>(),
-    lastUsedAt: timestamp({ mode: 'string' }),
+    lastUsedAt: isoTimestamp(),
   },
   (table) => [
     index('identities_user_id_idx').on(table.userId),

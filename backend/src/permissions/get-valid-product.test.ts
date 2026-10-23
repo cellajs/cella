@@ -32,7 +32,7 @@ describe('getValidProduct request scope', () => {
     entityType: 'attachment',
     tenantId: tenant,
     organizationId: org,
-    publicAt: null,
+    public: false,
     ...overrides,
   });
 

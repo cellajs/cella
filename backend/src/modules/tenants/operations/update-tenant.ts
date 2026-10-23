@@ -2,7 +2,9 @@ import type { z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { withActorRef } from '#/modules/actors/actor-refs';
 import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { findTenant, updateTenant } from '#/modules/tenants/tenants-queries';
@@ -30,7 +32,7 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
   const values = {
     ...otherUpdates,
     ...(mergedRestrictions ? { restrictions: mergedRestrictions } : {}),
-    updatedAt: new Date().toISOString(),
+    ...updateStamps(ctx.var.user.id),
   };
   const updated = await updateTenant(ctx, { targetTenantId: tenantId, values });
 
@@ -39,5 +41,5 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
   log.info('Tenant updated', { tenantId, updates });
 
   // An update leaves the tenant's organization and connections as they were.
-  return { ...existing, ...updated, restrictions: normalizeRestrictions(updated.restrictions) };
+  return withActorRef(ctx, { ...existing, ...updated, restrictions: normalizeRestrictions(updated.restrictions) });
 }

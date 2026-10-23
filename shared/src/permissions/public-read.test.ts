@@ -5,29 +5,27 @@ import type { SubjectForPermission } from './engine/types.ts';
 import { matchesRowCondition } from './row-conditions.ts';
 
 /**
- * Membership-independent reads from the row's own `publicAt`, over the wide synthetic hierarchy.
+ * Membership-independent reads from the row's own `public` flag, over the wide synthetic hierarchy.
  * Parent-derived publication stays outside the engine: SQL and stream dispatch read row-local
  * fields only.
  */
-const now = '2026-07-06T12:00:00Z';
-
 const grants = widePublicGrants({ project: true, task: true });
 
-const projectSubject = (publicAt: string | null): SubjectForPermission =>
-  wideSubject({ entityType: 'project', id: 'p1', channelIds: { organization: 'org1' }, row: { publicAt } });
+const projectSubject = (isPublic: boolean): SubjectForPermission =>
+  wideSubject({ entityType: 'project', id: 'p1', channelIds: { organization: 'org1' }, row: { public: isPublic } });
 
 // No policies at all: everything below must come from public grants alone.
 const noPolicies = {};
 
 describe('public read grants: anonymous actor', () => {
-  it('grants read when the row publicAt is set', () => {
-    const { can, actions } = getAllDecisions(noPolicies, [], projectSubject(now), { publicGrants: grants, ...wideOverrides });
+  it('grants read when the row is public', () => {
+    const { can, actions } = getAllDecisions(noPolicies, [], projectSubject(true), { publicGrants: grants, ...wideOverrides });
     expect(can.read).toBe(true);
     expect(actions.read.grantedBy).toEqual([{ type: 'public' }]);
   });
 
-  it('denies when publicAt is null or row data is absent', () => {
-    expect(getAllDecisions(noPolicies, [], projectSubject(null), { publicGrants: grants, ...wideOverrides }).can.read).toBe(false);
+  it('denies when the row is not public or row data is absent', () => {
+    expect(getAllDecisions(noPolicies, [], projectSubject(false), { publicGrants: grants, ...wideOverrides }).can.read).toBe(false);
 
     const noRow = wideSubject({ entityType: 'project', id: 'p1', channelIds: { organization: 'org1' } });
     expect(getAllDecisions(noPolicies, [], noRow, { publicGrants: grants, ...wideOverrides }).can.read).toBe(false);
@@ -35,17 +33,17 @@ describe('public read grants: anonymous actor', () => {
 
   it('reads the row itself, never an ancestor: a public parent does NOT publish its children', () => {
     // The parent project is public, the task is not: publication never cascades through the
-    // engine. An app that wants it propagates `publicAt` to the child row.
-    const task = wideSubject({ entityType: 'task', id: 't1', channelIds: { organization: 'org1', project: 'p1' }, row: { publicAt: null } });
+    // engine. An app that wants it copies the `public` flag to the child row.
+    const task = wideSubject({ entityType: 'task', id: 't1', channelIds: { organization: 'org1', project: 'p1' }, row: { public: false } });
     expect(getAllDecisions(noPolicies, [], task, { publicGrants: grants, ...wideOverrides }).can.read).toBe(false);
 
-    // ...and once the child row itself carries publicAt, it is readable.
-    const publishedTask = wideSubject({ entityType: 'task', id: 't1', channelIds: { organization: 'org1', project: 'p1' }, row: { publicAt: now } });
+    // ...and once the child row itself is public, it is readable.
+    const publishedTask = wideSubject({ entityType: 'task', id: 't1', channelIds: { organization: 'org1', project: 'p1' }, row: { public: true } });
     expect(getAllDecisions(noPolicies, [], publishedTask, { publicGrants: grants, ...wideOverrides }).can.read).toBe(true);
   });
 
   it('grants read only: other actions stay denied', () => {
-    const { can } = getAllDecisions(noPolicies, [], projectSubject(now), { publicGrants: grants, ...wideOverrides });
+    const { can } = getAllDecisions(noPolicies, [], projectSubject(true), { publicGrants: grants, ...wideOverrides });
     expect(can.read).toBe(true);
     expect(can.create).toBe(false);
     expect(can.update).toBe(false);
@@ -53,22 +51,22 @@ describe('public read grants: anonymous actor', () => {
   });
 
   it('no grant declared for the entity type → no public read', () => {
-    const orgSubject = wideSubject({ entityType: 'organization', id: 'org1', channelIds: {}, row: { publicAt: now } });
+    const orgSubject = wideSubject({ entityType: 'organization', id: 'org1', channelIds: {}, row: { public: true } });
     expect(getAllDecisions(noPolicies, [], orgSubject, { publicGrants: grants, ...wideOverrides }).can.read).toBe(false);
   });
 
   it('no publicGrants passed → engine behaves exactly as before', () => {
-    expect(getAllDecisions(noPolicies, [], projectSubject(now), { ...wideOverrides }).can.read).toBe(false);
+    expect(getAllDecisions(noPolicies, [], projectSubject(true), { ...wideOverrides }).can.read).toBe(false);
   });
 });
 
 describe("the 'public' row condition: the shared rule", () => {
-  it('is actor-independent and reads only the row: it matches for anonymous actors when publicAt is set', () => {
+  it('is actor-independent and reads only the row: it matches for anonymous actors when the row is public', () => {
     // What makes public read enforceable in list endpoints: `'public'` reads only the row's own
-    // `publicAt`, so it compiles identically here and in collection SQL. An actor-bound or
+    // `public` flag, so it compiles identically here and in collection SQL. An actor-bound or
     // cross-row rule would not compile, and public rows would drop out of lists.
-    expect(matchesRowCondition('public', { publicAt: now }, {})).toBe(true);
-    expect(matchesRowCondition('public', { publicAt: null }, {})).toBe(false);
+    expect(matchesRowCondition('public', { public: true }, {})).toBe(true);
+    expect(matchesRowCondition('public', { public: false }, {})).toBe(false);
     expect(matchesRowCondition('public', {}, {})).toBe(false);
   });
 });

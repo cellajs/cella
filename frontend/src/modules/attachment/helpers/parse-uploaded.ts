@@ -48,8 +48,8 @@ export const uploadedFileKeys = (
 export const parseUploadedAttachments = (
   result: UploadResults<'attachment'>,
   organizationId: string,
-  /** The deepest home channel id column (`{ projectId }`) plus the channel's `publicAt` default; omitted = org-homed, private. */
-  placement?: Record<string, string | null>,
+  /** The deepest home channel id column (`{ projectId }`) plus the channel's `public` flag; omitted = org-homed, private. */
+  placement?: Record<string, string | boolean | null>,
 ): Attachment[] => {
   const originalFiles = result[':original'] ?? [];
   const groupId = originalFiles.length > 1 ? generateId() : null;

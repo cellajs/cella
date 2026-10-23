@@ -22,13 +22,13 @@ import { isLeader, tabCoordinatorStore } from '~/query/realtime/tab-coordinator'
 /** The longest a load may hold up the provider's connect. */
 export const storeLoadTimeoutMs = 5_000;
 /** A document's update rows are trimmed into its base past this many rows, or past `trimBytes`. */
-export const trimRows = 100;
+const trimRows = 100;
 const trimBytes = 256 * 1024;
 /** A trim waits this long for more rows, so a burst of edits trims once. */
-export const trimDebounceMs = 2_000;
+const trimDebounceMs = 2_000;
 /** Eviction removes the least recently opened documents past this many, or past `maxStoredBytes` in all. */
 export const maxStoredDocs = 200;
-export const maxStoredBytes = 50 * 1024 * 1024;
+const maxStoredBytes = 50 * 1024 * 1024;
 /** Eviction leaves a document opened within this window alone: another tab may hold it open. */
 const evictMinAgeMs = 60 * 60_000;
 /** Eviction runs at most this often after a first store or a trim. */
@@ -36,7 +36,7 @@ const evictIntervalMs = 60_000;
 /** Without offline access (session mode), eviction also drops synced documents not opened within this window. */
 const sessionKeepMs = 2 * 60 * 60_000;
 /** Background connections boot resume opens at a time. */
-export const resumeConcurrency = 3;
+const resumeConcurrency = 3;
 
 /** Whether descriptions save through the Yjs relay: one save mode for every type, fixed by config. */
 export const isYjsEnabled = () => appConfig.services.yjs.enabled && !!appConfig.yjsUrl;
@@ -716,7 +716,7 @@ let resuming: Promise<void> | null = null;
  * In the leader tab, uploads the stored documents with unsynced edits through background connections, a few at a time:
  * without it, edits made offline in a tab since closed reach other users only when their author reopens the document.
  */
-export function resumeYDocs(): Promise<void> {
+function resumeYDocs(): Promise<void> {
   if (resuming) return resuming;
   resuming = (async () => {
     const db = getLocalUserDb();

@@ -119,7 +119,7 @@ const makeRandomizer = (seed: number) => {
     const channelTypes: WideChannelType[] = ['organization', 'workspace', 'project'];
     const organization = pick(orgs);
     const createdBy = random() < 0.3 ? null : pick(users);
-    const row = { createdBy, ...(random() < 0.3 ? { publicAt: '2026-07-01T00:00:00Z' } : {}) };
+    const row = { createdBy, ...(random() < 0.3 ? { public: true } : {}) };
 
     if (random() < 0.6) {
       return wideSubject({

@@ -54,6 +54,8 @@ export const createPgConnection = (
       // Long-lived pooled connections (the job lock) sit idle for minutes.
       keepAlive: true,
       keepAliveInitialDelayMillis: keepAliveIdleMs,
+      // Every session runs in UTC: zone-less columns (the partition keys) and a migration's casts read as UTC wherever the server runs.
+      options: '-c TimeZone=UTC',
       // Sent as startup parameters, so the server enforces them even after the client is gone.
       ...(sessionTimeouts ? { lock_timeout: sessionTimeouts.lockMs, statement_timeout: sessionTimeouts.statementMs } : {}),
       ...(sessionTimeouts?.idleInTransactionMs ? { idle_in_transaction_session_timeout: sessionTimeouts.idleInTransactionMs } : {}),

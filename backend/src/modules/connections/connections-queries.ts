@@ -115,7 +115,7 @@ export const insertConnection = async (ctx: DbContext, { values }: InsertConnect
 interface UpdateConnectionOpts {
   id: string;
   tenantId: string;
-  values: Partial<Pick<InsertConnectionModel, 'displayName' | 'claimValues' | 'status' | 'jitProvisioning' | 'config'>>;
+  values: Partial<Pick<InsertConnectionModel, 'displayName' | 'claimValues' | 'status' | 'jitProvisioning' | 'config' | 'updatedAt' | 'updatedBy'>>;
 }
 
 export const updateConnection = async (ctx: DbContext, { id, tenantId, values }: UpdateConnectionOpts) => {

@@ -1,6 +1,6 @@
-import { index, jsonb, primaryKey, snakeCase, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { index, jsonb, primaryKey, snakeCase, varchar } from 'drizzle-orm/pg-core';
 import { maxLength } from '#/db/utils/constraints';
-import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { isoTimestamp, timestampColumns } from '#/db/utils/timestamp-columns';
 
 /**
  * The authorization server's store, one row per model instance (Grant, Session, Interaction, AuthorizationCode,
@@ -18,8 +18,8 @@ export const oidcPayloadsTable = snakeCase.table(
     /** The consenting user, lifted from the payload so "Connected apps" and a per-user revoke are index reads. */
     accountId: varchar({ length: maxLength.field }),
     uid: varchar({ length: maxLength.field }),
-    expiresAt: timestamp({ mode: 'string' }),
-    consumedAt: timestamp({ mode: 'string' }),
+    expiresAt: isoTimestamp(),
+    consumedAt: isoTimestamp(),
     createdAt: timestampColumns.createdAt,
   },
   (table) => [

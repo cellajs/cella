@@ -50,32 +50,16 @@ describe('failedSync quarantine is gated on replay', () => {
     vi.clearAllMocks();
   });
 
-  it('quarantines a restored (paused) mutation that fails replay with a 4xx', async () => {
-    const { mutation, variables } = buildMutation('m-replay', true);
+  it('quarantines a 4xx only from a mutation replayed out of the offline queue: never from a live edit, nor once its replay succeeded', async () => {
+    const replayed = buildMutation('m-replay', true);
+    const succeeded = buildMutation('m-ok', true);
+    const live = buildMutation('m-live', false);
     markReplayingMutations();
+    await cacheHandlers.onSuccess(null, succeeded.variables, undefined, succeeded.mutation);
 
-    await failMutation(mutation, variables);
+    for (const { mutation, variables } of [replayed, succeeded, live]) await failMutation(mutation, variables);
 
     expect(quarantineFailedSync).toHaveBeenCalledTimes(1);
     expect(quarantineFailedSync).toHaveBeenCalledWith(expect.objectContaining({ mutationId: 'm-replay', entityType: 'attachment', status: 400 }));
-  });
-
-  it('leaves a live (never paused) mutation to the error toast', async () => {
-    const { mutation, variables } = buildMutation('m-live', false);
-    markReplayingMutations();
-
-    await failMutation(mutation, variables);
-
-    expect(quarantineFailedSync).not.toHaveBeenCalled();
-  });
-
-  it('forgets a replayed mutation once it succeeds, so a later live failure is not quarantined', async () => {
-    const { mutation, variables } = buildMutation('m-ok', true);
-    markReplayingMutations();
-    await cacheHandlers.onSuccess(null, variables, undefined, mutation);
-
-    await failMutation(mutation, variables);
-
-    expect(quarantineFailedSync).not.toHaveBeenCalled();
   });
 });

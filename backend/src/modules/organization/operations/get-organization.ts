@@ -1,8 +1,8 @@
 import type { ActorContext } from '#/core/context';
+import { withActorRef } from '#/modules/actors/actor-refs';
 import { getChannelCounts } from '#/modules/entities/entities-queries';
 import { isMembershipRow, toMembershipBase } from '#/modules/memberships/helpers/select';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
-import { withAuditUser } from '#/modules/user/operations/with-audit-users';
 import { getValidChannel } from '#/permissions';
 
 export async function getOrganizationOp(ctx: ActorContext, id: string, opts: { bySlug?: boolean; include: string[] }) {
@@ -18,7 +18,7 @@ export async function getOrganizationOp(ctx: ActorContext, id: string, opts: { b
 
   const [counts, organizationWithAudit] = await Promise.all([
     includeCounts ? getChannelCounts(ctx, { entityType: organization.entityType, entityId: organization.id }) : undefined,
-    withAuditUser(ctx, organization),
+    withActorRef(ctx, organization),
   ]);
 
   const included: { counts?: typeof counts; membership?: ReturnType<typeof toMembershipBase> } = {};

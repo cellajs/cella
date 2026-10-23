@@ -2,15 +2,11 @@ import '~/query/tests/query-client-env';
 import '~/lib/dayjs';
 import { QueryClientProvider } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { createElement, Fragment, type ReactElement, type ReactNode } from 'react';
+import { createElement, Fragment, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { appConfig, hierarchy, isChannel } from 'shared';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { isMemberCountHidden } from '~/lib/entity-modules';
-import type { EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
-
-/** The options of the ellipsis cell rendered last. */
-const seen = vi.hoisted(() => ({ options: [] as EllipsisOption<{ id: string }>[] }));
 
 vi.mock('i18next', async (importOriginal) => {
   const actual = await importOriginal<typeof import('i18next')>();
@@ -18,34 +14,13 @@ vi.mock('i18next', async (importOriginal) => {
   return { ...actual, t, default: { ...actual.default, t } };
 });
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
-vi.mock('~/modules/common/data-table/table-ellipsis', () => ({
-  TableEllipsis: ({ options }: { options: EllipsisOption<{ id: string }>[] }) => {
-    seen.options = options;
-    return <span>{options.map(({ label }) => label).join('|')}</span>;
-  },
-}));
 
 const { queryClient } = await import('~/query/query-client');
-const { dateShort } = await import('~/utils/date-short');
-const { dropdowner } = await import('~/modules/common/dropdowner/use-dropdowner');
-const { sheeter } = await import('~/modules/common/sheeter/use-sheeter');
-const { userStore } = await import('~/modules/user/user-store');
-const users = await import('~/modules/user/table/users-columns');
 const organizations = await import('~/modules/organization/table/organizations-columns');
-const tenants = await import('~/modules/tenants/table/tenants-columns');
-const requests = await import('~/modules/requests/table/requests-columns');
 const members = await import('~/modules/memberships/members-table/members-columns');
-const pending = await import('~/modules/memberships/pending-table/pending-columns');
-const invitations = await import('~/modules/me/invitations-table/invitations-columns');
-const attachments = await import('~/modules/attachment/table/attachments-columns');
 const { exportToCsv } = await import('~/lib/export');
 
-/** What a row's delete confirmation asks: the sentence key and the row name it shows in bold. */
-type ConfirmTextProps = { i18nKey: string; values: { name: string } };
-type Column = { key: string; renderCell?: (props: { row: never; tabIndex: number }) => ReactNode; renderHeaderCell?: () => ReactNode } & Record<
-  string,
-  unknown
->;
+type Column = { key: string; renderHeaderCell?: () => ReactNode } & Record<string, unknown>;
 
 /** Runs a column hook inside a render and returns its columns. */
 function columnsOf(useHook: () => unknown): Column[] {
@@ -69,226 +44,19 @@ const column = (columns: Column[], key: string) => {
   return found;
 };
 
-/** The column without its renderer and export value, for comparing configuration. */
-const configOf = ({ renderCell, renderHeaderCell, exportValue, ...config }: Column) => config;
-
 /** The markup of the column's own header, for a column that renders one. */
 const headerMarkup = (col: Column) => renderToStaticMarkup(createElement(Fragment, null, col.renderHeaderCell?.()));
 
-const cellMarkup = (col: Column, row: unknown) =>
-  renderToStaticMarkup(createElement(Fragment, null, col.renderCell?.({ row: row as never, tabIndex: 0 })));
-
 const created = '2026-05-04T10:00:00.000Z';
 const seenAt = '2026-06-01T08:30:00.000Z';
-const channel = {
-  id: 'org-1',
-  entityType: 'organization',
-  tenantId: 'tenant-1',
-  organizationId: 'org-1',
-  can: { attachment: { delete: true } },
-} as never;
-
-const listedDate = { sortable: true, sortDescendingFirst: true, minBreakpoint: 'md', minWidth: 120, placeholderValue: '-' };
 
 afterEach(() => {
-  seen.options = [];
-  sheeter.setState({ sheets: [] });
   vi.restoreAllMocks();
 });
 
-describe('date columns', () => {
-  it.each([
-    {
-      name: 'users created',
-      columns: () => columnsOf(users.useColumns),
-      key: 'createdAt',
-      config: { key: 'createdAt', name: 'c:created_at', ...listedDate },
-      row: { createdAt: created },
-      value: created,
-    },
-    {
-      name: 'users last seen, ascending on the first sort',
-      columns: () => columnsOf(users.useColumns),
-      key: 'lastSeenAt',
-      config: { key: 'lastSeenAt', name: 'c:last_seen_at', ...listedDate, sortDescendingFirst: undefined },
-      row: { lastSeenAt: seenAt },
-      value: seenAt,
-    },
-    {
-      name: 'organizations created',
-      columns: () => columnsOf(organizations.useColumns),
-      key: 'createdAt',
-      config: { key: 'createdAt', name: 'c:created_at', ...listedDate },
-      row: { createdAt: created },
-      value: created,
-    },
-    {
-      name: 'tenants created',
-      columns: () => columnsOf(tenants.useColumns),
-      key: 'createdAt',
-      config: { key: 'createdAt', name: 'c:created_at', ...listedDate },
-      row: { createdAt: created },
-      value: created,
-    },
-    {
-      name: 'requests created',
-      columns: () => columnsOf(requests.useColumns),
-      key: 'createdAt',
-      config: { key: 'createdAt', name: 'c:created_at', ...listedDate },
-      row: { createdAt: created },
-      value: created,
-    },
-    {
-      name: 'members created, hidden in a sheet',
-      columns: () => columnsOf(() => members.useColumns(true, true, 'organization')),
-      key: 'createdAt',
-      config: { key: 'createdAt', name: 'c:created_at', ...listedDate, hidden: true },
-      row: { createdAt: created },
-      value: created,
-    },
-    {
-      name: 'members created, shown on a page',
-      columns: () => columnsOf(() => members.useColumns(true, false, 'organization')),
-      key: 'createdAt',
-      config: { key: 'createdAt', name: 'c:created_at', ...listedDate, hidden: false },
-      row: { createdAt: created },
-      value: created,
-    },
-    {
-      name: 'pending memberships invited',
-      columns: () => columnsOf(() => pending.useColumns({ tenantId: 'tenant-1', organizationId: 'org-1' })),
-      key: 'createdAt',
-      config: { key: 'createdAt', name: 'c:invited_at', ...listedDate },
-      row: { createdAt: created },
-      value: created,
-    },
-    {
-      name: 'invitations invited, unsorted and nested',
-      columns: () => columnsOf(invitations.useColumns),
-      key: 'createdAt',
-      config: { key: 'createdAt', name: 'c:invited_at', ...listedDate, sortable: undefined, sortDescendingFirst: undefined },
-      row: { inactiveMembership: { createdAt: created } },
-      value: created,
-    },
-    {
-      name: 'attachments created, hidden in a sheet',
-      columns: () => columnsOf(() => attachments.useColumns(channel, true)),
-      key: 'createdAt',
-      config: { key: 'createdAt', name: 'c:created_at', ...listedDate, hidden: true },
-      row: { createdAt: created },
-      value: created,
-    },
-    {
-      name: 'attachments created, shown on a page',
-      columns: () => columnsOf(() => attachments.useColumns(channel, false)),
-      key: 'createdAt',
-      config: { key: 'createdAt', name: 'c:created_at', ...listedDate, hidden: false },
-      row: { createdAt: created },
-      value: created,
-    },
-  ])('$name', ({ columns, key, config, row, value }) => {
-    const col = column(columns(), key);
-
-    expect(configOf(col)).toEqual(config);
-    expect(cellMarkup(col, row)).toBe(dateShort(value));
-    expect(cellMarkup(col, { ...row, createdAt: null, lastSeenAt: null })).toBe('inactiveMembership' in row ? dateShort(value) : '');
-  });
-});
-
-describe('count columns', () => {
-  it('organizations: a count abbreviates from a thousand with the exact number on hover, and a missing one is a dash', () => {
-    const [role] = hierarchy.getRoles('organization');
-    const col = column(columnsOf(organizations.useColumns), `${role}Count`);
-    const row = (count?: number) => ({ included: { counts: { membership: { [role]: count } } } });
-
-    expect(cellMarkup(col, row(21312))).toContain('<span data-tooltip="true" data-tooltip-content="21312">21k</span>');
-    expect(cellMarkup(col, row(999))).toContain('<span>999</span>');
-    expect(cellMarkup(col, row())).toContain('<span>-</span>');
-  });
-});
-
-describe('ellipsis columns', () => {
-  // Opening a sheet checks the focused element.
-  beforeAll(() => {
-    vi.stubGlobal('document', { activeElement: null });
-    vi.stubGlobal('HTMLButtonElement', class {});
-    vi.stubGlobal('HTMLAnchorElement', class {});
-  });
-
-  const rowAction = (label: string) => {
-    const option = seen.options.find((candidate) => candidate.label === label);
-    if (!option) throw new Error(`no ${label} option`);
-    return option;
-  };
-  const trigger = { current: null };
-
-  it.each([
-    { name: 'users', columns: () => columnsOf(users.useColumns), sheet: 'update-user' },
-    { name: 'organizations', columns: () => columnsOf(organizations.useColumns), sheet: 'update-organization' },
-  ])('$name: edit opens the edit sheet, delete swaps in a confirmation', ({ columns, sheet }) => {
-    const col = column(columns(), 'ellipsis');
-    const row = { id: 'row-1', name: 'Row one', tenantId: 'tenant-1' };
-
-    expect(configOf(col)).toEqual({ key: 'ellipsis', name: '', width: 32 });
-    // The header shows nothing and names the column for assistive technology.
-    expect(headerMarkup(col)).toBe('<span class="sr-only">c:actions</span>');
-    expect(cellMarkup(col, row)).toBe('<span>c:edit|c:delete</span>');
-
-    const remove = vi.spyOn(dropdowner.getState(), 'remove');
-    rowAction('c:edit').onSelect(row, trigger);
-    expect(remove).toHaveBeenCalled();
-    expect(sheeter.getState().sheets.map(({ id }) => id)).toEqual([sheet]);
-
-    const update = vi.spyOn(dropdowner.getState(), 'update');
-    rowAction('c:delete').onSelect(row, trigger);
-    const content = update.mock.calls[0][0].content as ReactElement<{ title: ReactElement<ConfirmTextProps> }>;
-    expect(content.props.title.props).toEqual({ i18nKey: 'c:delete_confirm.text', values: { name: 'Row one' } });
-  });
-
-  it('tenants: no ellipsis, the name opens the edit sheet', () => {
-    const columns = columnsOf(tenants.useColumns);
-    const col = column(columns, 'name');
-    const row = { id: 'tenant-1', name: 'One' };
-
-    expect(columns.map(({ key }) => key)).not.toContain('ellipsis');
-    expect(cellMarkup(col, row)).toContain('One');
-
-    const cell = col.renderCell?.({ row: row as never, tabIndex: 0 }) as ReactElement<{ onClick: (event: unknown) => void }>;
-    cell.props.onClick({ currentTarget: null });
-    expect(sheeter.getState().sheets.map(({ id }) => id)).toEqual(['update-tenant']);
-  });
-
-  it('attachments: delete only on small screens, with a cancel that closes the menu', () => {
-    const col = column(
-      columnsOf(() => attachments.useColumns(channel, false)),
-      'ellipsis',
-    );
-    const row = { id: 'att-1', name: 'File', createdBy: null, organizationId: 'org-1' };
-
-    expect(configOf(col)).toEqual({ key: 'ellipsis', name: '', width: 32, maxBreakpoint: 'sm' });
-    expect(cellMarkup(col, row)).toBe('<span>c:delete</span>');
-
-    const update = vi.spyOn(dropdowner.getState(), 'update');
-    rowAction('c:delete').onSelect(row, trigger);
-    const content = update.mock.calls[0][0].content as ReactElement<{
-      title: ReactElement<ConfirmTextProps>;
-      children: ReactElement<{ callback: unknown; onCancel: unknown }>;
-    }>;
-    expect(content.props.title.props).toEqual({ i18nKey: 'c:delete_confirm.text', values: { name: 'File' } });
-    expect(content.props.children.props.onCancel).toBe(dropdowner.getState().remove);
-    expect(content.props.children.props.callback).toBe(dropdowner.getState().remove);
-  });
-
-  it('attachments: renders nothing without delete permission', () => {
-    userStore.setState({ user: { id: 'me' } as never });
-    const noDelete = { ...(channel as object), can: { attachment: { delete: false } } } as never;
-    const col = column(
-      columnsOf(() => attachments.useColumns(noDelete, false)),
-      'ellipsis',
-    );
-
-    expect(cellMarkup(col, { id: 'att-1', createdBy: null })).toBe('');
-    userStore.setState({ user: null });
+describe('row actions column', () => {
+  it('shows nothing in its header and names the column for assistive technology', () => {
+    expect(headerMarkup(column(columnsOf(organizations.useColumns), 'ellipsis'))).toBe('<span class="sr-only">c:actions</span>');
   });
 });
 

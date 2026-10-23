@@ -1,5 +1,6 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { baseDb } from '#/db/db';
+import { getIsoDate } from '#/utils/iso-date';
 import { pushSubscriptionsTable } from './push-subscription-db';
 
 export interface PushSubscriptionInput {
@@ -18,7 +19,7 @@ export interface PushSubscriptionInput {
 export async function upsertPushSubscription(input: PushSubscriptionInput) {
   const [row] = await baseDb
     .insert(pushSubscriptionsTable)
-    .values({ ...input, lastSeenAt: new Date().toISOString() })
+    .values({ ...input, lastSeenAt: getIsoDate() })
     .onConflictDoUpdate({
       target: pushSubscriptionsTable.endpoint,
       set: {
@@ -27,7 +28,7 @@ export async function upsertPushSubscription(input: PushSubscriptionInput) {
         auth: input.auth,
         expirationTime: input.expirationTime,
         userAgent: input.userAgent,
-        lastSeenAt: new Date().toISOString(),
+        lastSeenAt: getIsoDate(),
       },
     })
     .returning({ id: pushSubscriptionsTable.id, endpoint: pushSubscriptionsTable.endpoint });

@@ -51,6 +51,9 @@ registerTag({
   description: 'Operations on product entities (content entities without membership, e.g. tasks, pages, attachments).',
 });
 
+// No routes of its own: the supertable behind every `*By` column, so `ActorRef` has a tag to sit under.
+registerTag({ tag: 'actors', kind: 'module', parent: 'cella', description: 'Who writes rows: users and service accounts.' });
+
 // Per-operation hide: a route adds `'internal'` to its `tags` to drop from docs while staying in the SDK.
 registerTag({ tag: 'internal', kind: 'hidden', description: 'Operations hidden from the public API reference.' });
 

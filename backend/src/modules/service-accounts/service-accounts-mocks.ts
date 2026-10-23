@@ -4,7 +4,7 @@ import { mockPaginated, mockPastIsoDate, mockTenantId, mockUuid, withFakerSeed }
 import { checksumOf } from '#/modules/service-accounts/helpers/api-key';
 import type { ApiKeyWithCreator } from '#/modules/service-accounts/operations/with-api-key-creators';
 import type { ServiceAccountWithActivity } from '#/modules/service-accounts/service-accounts-queries';
-import { mockUserMinimalBase } from '#/schemas/entity-base-mocks';
+import { mockActorRef } from '#/schemas/entity-base-mocks';
 
 export const mockServiceAccountResponse = (key = 'serviceAccount:default'): ServiceAccountWithActivity =>
   withFakerSeed(key, () => {
@@ -51,7 +51,7 @@ export const mockApiKeyResponse = (key = 'apiKey:default'): ApiKeyWithCreator =>
     createdAt: mockPastIsoDate(),
   }));
   // Outside the seed above: a seeded mock ends by unseeding the generator, so a value drawn after it differs per run.
-  return { ...apiKey, createdBy: mockUserMinimalBase(`${key}:created-by`) };
+  return { ...apiKey, createdBy: mockActorRef(`${key}:created-by`) };
 };
 
 export const mockCreatedApiKeyResponse = (key = 'createdApiKey:default') => ({ ...mockApiKeyResponse(key), secret: exampleSecret });

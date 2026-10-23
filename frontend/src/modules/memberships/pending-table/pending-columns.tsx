@@ -5,7 +5,7 @@ import { dateColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { ResendInvitationButton } from '~/modules/memberships/resend-invitation-button';
 import type { PendingMembership } from '~/modules/memberships/types';
-import { UserCell } from '~/modules/user/user-cell';
+import { ActorCell } from '~/modules/user/actor-cell';
 
 export const useColumns = (path: { tenantId: string; organizationId: string }) => {
   const { t } = useTranslation();
@@ -26,7 +26,7 @@ export const useColumns = (path: { tenantId: string; organizationId: string }) =
       minBreakpoint: 'md',
       minWidth: 160,
       placeholderValue: '-',
-      renderCell: ({ row, tabIndex }) => row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => row.createdBy && <ActorCell compactable actor={row.createdBy} tabIndex={tabIndex} />,
     },
     {
       key: 'resend',

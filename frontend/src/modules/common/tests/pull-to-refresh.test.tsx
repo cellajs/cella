@@ -53,7 +53,7 @@ describe('pull to refresh', () => {
     expect(document.body.classList.contains('overflow-hidden')).toBe(false);
   });
 
-  it('drops a pull when an overlay opens mid-pull', async () => {
+  it('drops a pull when an overlay opens mid-pull, and starts none while it stays open', async () => {
     await touch('touchstart', 10);
     await touch('touchmove', 200);
 
@@ -61,11 +61,8 @@ describe('pull to refresh', () => {
 
     expect(isIndicatorShown()).toBe(false);
     expect(document.body.classList.contains('overflow-hidden')).toBe(false);
-  });
 
-  it('starts no pull while an overlay is open', async () => {
-    await act(async () => uiStore.getState().lockUI('sheeter'));
-
+    await touch('touchend');
     await touch('touchstart', 10);
     await touch('touchmove', 200);
 
