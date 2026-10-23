@@ -48,7 +48,7 @@ function FooterLinks() {
     <nav>
       <ul className="grid grid-cols-2 gap-8 sm:grid-cols-3">
         {footerSections.map((section) => (
-          <li key={section.title} className={section.hideOnMobile ? 'max-sm:hidden' : ''}>
+          <li key={section.title} className={cn(section.hideOnMobile && 'max-sm:hidden')}>
             <div className={headingClass}>{t(section.title as TKey)}</div>
 
             <ul className={textClass}>
@@ -83,44 +83,42 @@ export function MarketingFooter() {
   const legalFooterLinks = statusUrl ? [...legalLinks, { title: 'c:status', href: statusUrl }] : legalLinks;
 
   return (
-    <div className="relative">
-      <section className="rich-gradient dark-gradient relative min-h-[30vw] pt-[15vw]">
-        <BackgroundCurve position="top" />
-        <div className="container flex max-w-5xl flex-col items-center gap-4 px-8 pt-8">
-          <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
-            <FooterLinks />
-            <div className="">
-              <div className={headingClass}>{t('c:request_info')}</div>
-              <div className={textClass}>{t('c:request_info.text', { appName: appConfig.name })}</div>
-              <SubscribeNewsletterForm />
-            </div>
+    <section className="rich-gradient dark-gradient relative min-h-[30vw] pt-[15vw]">
+      <BackgroundCurve position="top" />
+      <div className="container flex max-w-5xl flex-col items-center gap-4 px-8 pt-8">
+        <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
+          <FooterLinks />
+          <div>
+            <div className={headingClass}>{t('c:request_info')}</div>
+            <div className={textClass}>{t('c:request_info.text', { appName: appConfig.name })}</div>
+            <SubscribeNewsletterForm />
           </div>
-
-          <Link
-            to="/about"
-            replace={location.pathname === '/about'}
-            hash=""
-            draggable={false}
-            onClick={() => {
-              scrollTo(0, 0);
-            }}
-            className="focus-effect active:press mt-12 rounded-sm p-1 transition-transform sm:hover:scale-105"
-            aria-label={t('c:go_to_about')}
-          >
-            <Logo textColor="white" iconColor="#b07a939e" title={t('c:go_to_about')} />
-          </Link>
-
-          <ul className="mt-6 mb-12 flex flex-wrap justify-center gap-x-4 gap-y-4 border-white/20 border-t pt-12 text-center text-sm text-white/60">
-            {legalFooterLinks.map((link) => (
-              <li key={link.title}>
-                <FooterLink title={link.title} href={link.href} />
-              </li>
-            ))}
-          </ul>
-
-          <Credits className="text-white/60" />
         </div>
-      </section>
-    </div>
+
+        <Link
+          to="/about"
+          replace={location.pathname === '/about'}
+          hash=""
+          draggable={false}
+          onClick={() => {
+            scrollTo(0, 0);
+          }}
+          className="focus-effect active:press mt-12 rounded-sm p-1 transition-transform sm:hover:scale-105"
+          aria-label={t('c:go_to_about')}
+        >
+          <Logo textColor="white" iconColor="#b07a939e" title={t('c:go_to_about')} />
+        </Link>
+
+        <ul className="mt-6 mb-12 flex flex-wrap justify-center gap-4 border-white/20 border-t pt-12 text-center text-sm text-white/60">
+          {legalFooterLinks.map((link) => (
+            <li key={link.title}>
+              <FooterLink title={link.title} href={link.href} />
+            </li>
+          ))}
+        </ul>
+
+        <Credits className="text-white/60" />
+      </div>
+    </section>
   );
 }

@@ -26,7 +26,7 @@ export function LegalPage() {
 
   return (
     <MarketingLayout title={t('c:legal')}>
-      <div className="container my-4 gap-4 md:mt-8 md:flex md:flex-row">
+      <div className="container my-4 gap-4 md:mt-8 md:flex">
         <div className="mx-auto md:mt-3 md:w-1/4 md:min-w-48">
           <SimpleHeader className="p-3" text={t('c:legal_text', { appName: appConfig.name })} />
           {/* Only the nav pins: a sticky intro ate the short viewport of a phone, where the aside stacks above the text */}
@@ -35,7 +35,7 @@ export function LegalPage() {
           </div>
         </div>
 
-        <div className="flex min-h-svh flex-col gap-8 md:w-3/4">
+        <div className="flex min-h-svh flex-col md:w-3/4">
           <div
             key={currentSubject}
             id={`spy-${legalOverviewId}`}

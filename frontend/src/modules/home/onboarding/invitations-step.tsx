@@ -43,7 +43,7 @@ export function InvitationsStep({ children }: InvitationsStepProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      {invitations.length === 0 && <p className="font-normal text-muted-foreground text-sm">{t('c:no_invitations_left.text')}</p>}
+      {invitations.length === 0 && <p className="text-muted-foreground text-sm">{t('c:no_invitations_left.text')}</p>}
 
       <ul className="flex flex-col gap-3">
         {invitations.map(({ entity, inactiveMembership }) => (

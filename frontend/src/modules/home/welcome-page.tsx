@@ -21,7 +21,7 @@ function WelcomePage() {
   return (
     <>
       <Dialog open={onboardingState !== 'completed'} onOpenChange={handleOpenChange}>
-        <DialogContent className="mt-0 flex h-dvh max-h-none min-w-full flex-col overflow-y-auto rounded-none border-0 bg-background/75 p-0">
+        <DialogContent className="flex h-dvh max-h-none min-w-full flex-col rounded-none bg-background/75 p-0">
           <span className="sr-only">
             <DialogTitle>Welcome</DialogTitle>
           </span>

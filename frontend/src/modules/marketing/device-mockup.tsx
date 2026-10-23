@@ -17,10 +17,9 @@ export function DeviceMockup({ lightItems, darkItems, type, className }: DeviceM
   const items = mode === 'dark' ? darkItems : lightItems;
 
   const { ref, inView } = useInView();
-  const mockupClass = cn('transition-opacity duration-700 ease-out', inView ? 'opacity-100' : 'opacity-0');
 
   return (
-    <div className={cn('relative', mockupClass, className)} ref={ref}>
+    <div className={cn('relative transition-opacity duration-700 ease-out', !inView && 'opacity-0', className)} ref={ref}>
       {/* Grain shadow grounding the device on its surface. First in DOM, so the device paints over the 70% of it that
           sits behind the device, and the last 30% reaches past the bottom edge. */}
       <div

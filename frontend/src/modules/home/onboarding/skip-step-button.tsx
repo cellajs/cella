@@ -36,7 +36,7 @@ export function SkipStepButton({ onComplete }: SkipStepButtonProps) {
   };
 
   return (
-    <div className="flex w-full gap-2 max-sm:justify-stretch">
+    <div className="flex w-full gap-2">
       {isOptionalStep && (
         <Button ref={skipButtonRef} onClick={skipStep} variant="secondary" className="max-sm:w-full">
           <RedoIcon />

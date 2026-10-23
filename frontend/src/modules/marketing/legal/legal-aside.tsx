@@ -85,8 +85,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
                     }}
                     className={cn(
                       buttonVariants({ variant: 'ghost' }),
-                      'group focus-inset w-full pl-5 text-left font-medium',
-                      'group-data-[active=true]/subject:bg-accent group-data-[active=true]/subject:font-semibold',
+                      'group focus-inset w-full pl-5 text-left font-medium group-data-[active=true]/subject:bg-accent group-data-[active=true]/subject:font-semibold',
                     )}
                   />
                 }
@@ -98,7 +97,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
               </CollapsibleTrigger>
               {/* keepMounted preserves the data-spy-active marks the scroll spy sets on rows outside React */}
               <CollapsibleContent keepMounted className={collapsiblePanelClass}>
-                <div className="relative flex flex-col px-0 py-1">
+                <div className="flex flex-col py-1">
                   {subjectSections.map(({ id: sectionId, label: sectionLabel }) => (
                     <SpyNavItem
                       key={sectionId}

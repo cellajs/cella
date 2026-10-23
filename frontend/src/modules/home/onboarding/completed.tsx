@@ -42,7 +42,7 @@ export function OnboardingCompleted() {
   }, [mutate, resetSections, hasOrganization, orgQuery.isFetching]);
 
   return (
-    <div className="relative z-1 mx-auto flex h-svh min-w-full max-w-3xl flex-col items-center justify-center gap-6 p-4 text-center">
+    <div className="relative z-1 flex h-svh min-w-full flex-col items-center justify-center gap-6 p-4 text-center">
       <Confetti />
 
       {user.userFlags.finishedOnboarding && (

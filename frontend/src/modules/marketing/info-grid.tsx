@@ -30,8 +30,8 @@ function InfoTile({ id, namespace, layers, image, tileClassName = 'bg-card' }: I
 
   if (image) {
     return (
-      <div className={cn('relative overflow-hidden rounded-lg p-2', tileClassName)}>
-        <div className="flex h-44 flex-col justify-between gap-2 rounded-md p-2 sm:p-6">
+      <div className={cn('overflow-hidden rounded-lg p-2', tileClassName)}>
+        <div className="flex h-44 flex-col gap-2 rounded-md p-2 sm:p-6">
           {/* Decorative: the heading below names it */}
           <img src={`/static/marketing/features/${id}.svg`} alt="" className="mb-2 size-8 object-contain dark:invert" loading="lazy" />
           <h3 className="font-medium">{t(title)}</h3>

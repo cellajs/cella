@@ -19,12 +19,10 @@ export function MarketingLayout({ title, children }: MarketingLayoutProps) {
     <div>
       <MarketingNav />
       <Suspense fallback={<Spinner size="lg" className="mt-[45vh]" />}>
-        <main className="max-w-none px-0">
+        <main>
           {/* Gradient keeps the hero's height, centered and clipped, so a short header shows its middle instead of a squashed copy */}
-          <section className="rich-gradient relative overflow-hidden py-14 pb-16 after:top-1/2 after:h-[max(100%,90vh)] after:-translate-y-1/2 sm:min-h-40 sm:py-20">
-            {title && (
-              <h1 className="mx-auto mt-12 mb-4 max-w-2xl px-4 text-center font-semibold text-4xl sm:w-full md:text-5xl">{t(title as TKey)}</h1>
-            )}
+          <section className="rich-gradient relative overflow-hidden pt-14 pb-16 after:top-1/2 after:h-[max(100%,90vh)] after:-translate-y-1/2 sm:min-h-40 sm:py-20">
+            {title && <h1 className="mx-auto mt-12 mb-4 max-w-2xl px-4 text-center font-semibold text-4xl md:text-5xl">{t(title as TKey)}</h1>}
             <BackgroundCurve height="clamp(1.5rem, 4vw, 3rem)" />
           </section>
 

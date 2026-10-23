@@ -18,12 +18,12 @@ export function CallToAction() {
           variant="ghost"
           size="xl"
           render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />}
-          className="glow-button relative rounded-full bg-background/95 px-10 hover:bg-background! active:bg-background"
+          className="glow-button relative rounded-full bg-background/95 px-10 hover:bg-background active:bg-background"
           press={false}
         >
           {t('c:start_building')}
         </Button>
-        <Button ref={buttonRef} variant="plain" size="xl" onClick={() => contactFormHandler(buttonRef)} className="flex gap-1 rounded-full px-10">
+        <Button ref={buttonRef} variant="plain" size="xl" onClick={() => contactFormHandler(buttonRef)} className="rounded-full px-10">
           {t('c:talk_to_us')}
         </Button>
       </div>

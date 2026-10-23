@@ -46,7 +46,7 @@ export function Showcase() {
   const darkItems = showcaseItems.flatMap((item) => item.darkItems);
 
   return (
-    <div className="relative mx-auto mt-20 mb-12 flex max-w-3xl items-start gap-8 max-sm:flex-col lg:mb-16">
+    <div className="mx-auto mt-20 mb-12 flex max-w-3xl items-start gap-8 max-sm:flex-col lg:mb-16">
       <div className="w-full">
         <div className="flex flex-wrap">
           {showcaseItems.map((item, index) => {
@@ -57,8 +57,8 @@ export function Showcase() {
               <div className="w-full" key={item.id}>
                 <div className="flex">
                   <div className="w-full">
-                    <a href={item.url} target="_blank" rel="noreferrer" className="focus-effect mt-4 block rounded-md">
-                      <h3 className="group mb-2 font-medium text-xl 2xl:text-[1.38rem]">
+                    <a href={item.url} target="_blank" rel="noreferrer" className="group/external-link focus-effect mt-4 block rounded-md">
+                      <h3 className="mb-2 font-medium text-xl 2xl:text-[1.38rem]">
                         {t(title)}
                         <ExternalArrow />
                       </h3>
@@ -72,9 +72,9 @@ export function Showcase() {
           })}
         </div>
       </div>
-      <div className="">
+      <div>
         <Suspense fallback={<Spinner />}>
-          <DeviceMockup className="" type="mobile" lightItems={lightItems} darkItems={darkItems} />
+          <DeviceMockup type="mobile" lightItems={lightItems} darkItems={darkItems} />
         </Suspense>
       </div>
     </div>

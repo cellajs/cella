@@ -131,7 +131,7 @@ export function MarketingNav() {
           <span className="sr-only">
             <DrawerTitle>Navigation</DrawerTitle>
           </span>
-          <div className="flex flex-col items-stretch gap-2 px-4">
+          <div className="flex flex-col gap-2 px-4">
             <UserTheme buttonClassName="xs:hidden m-1 self-end" />
             <Button variant="ghost" size="lg" render={<Link to="/about" hash="" replace={isAboutPage} draggable={false} onClick={closeDrawer} />}>
               {t('c:about')}

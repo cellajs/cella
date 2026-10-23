@@ -3,7 +3,6 @@ import { XIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
-import { useMountedState } from '~/hooks/use-mounted-state';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { Step, Stepper } from '~/modules/common/stepper/stepper';
 import { InvitationsStep } from '~/modules/home/onboarding/invitations-step';
@@ -18,7 +17,6 @@ import { InviteUsers } from '~/modules/user/invite-users';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { useCurrentUser } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic/flatten';
-import { cn } from '~/utils/cn';
 
 export type OnboardingState = 'start' | 'stepper' | 'completed';
 
@@ -30,15 +28,9 @@ interface OnboardingProps {
 
 export function Onboarding({ state, onStart, onComplete }: OnboardingProps) {
   const user = useCurrentUser();
-  const { hasStarted } = useMountedState();
   const { t } = useTranslation();
 
   const [organization, setOrganization] = useState<Organization | null>(null);
-
-  const animateClass = cn(
-    'transition-all duration-500 ease-out will-change-transform',
-    hasStarted ? 'opacity-100' : 'translate-y-4 scale-95 opacity-0',
-  );
 
   const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ relatableUserId: user.id }));
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);
@@ -53,10 +45,10 @@ export function Onboarding({ state, onStart, onComplete }: OnboardingProps) {
 
   return (
     <div className="flex min-h-[90svh] flex-col items-center sm:min-h-svh">
-      <div className="mt-auto mb-auto w-full">
+      <div className="my-auto w-full">
         {state === 'start' && <WelcomeText invitations={invitations} onStart={onStart} />}
         {state === 'stepper' && (
-          <div className={cn('mx-auto mt-0 flex max-w-3xl flex-col justify-center gap-4 px-4 py-8 sm:w-10/12', animateClass)}>
+          <div className="mx-auto flex max-w-3xl starting:translate-y-4 starting:scale-95 flex-col gap-4 px-4 py-8 starting:opacity-0 transition-all duration-500 ease-out will-change-transform sm:w-10/12">
             {steps.length === 1 && <h2 className="flex justify-center font-semibold text-lg">{steps[0].label}</h2>}
             <Stepper
               steps={steps}
@@ -88,9 +80,7 @@ export function Onboarding({ state, onStart, onComplete }: OnboardingProps) {
                           {skipButton}
                         </CreateOrganizationForm>
                       )}
-                      {id === 'organization' && !!organization && (
-                        <p className="font-normal text-muted-foreground text-sm">{t('c:already_created_org.text')}</p>
-                      )}
+                      {id === 'organization' && !!organization && <p className="text-muted-foreground text-sm">{t('c:already_created_org.text')}</p>}
                       {id === 'invitation' && organization && (
                         <InviteUsers channel={organization} mode="email">
                           {skipButton}
@@ -98,7 +88,7 @@ export function Onboarding({ state, onStart, onComplete }: OnboardingProps) {
                       )}
                       {id === 'invitation' && !organization && (
                         <div>
-                          <p className="mb-4 font-normal text-muted-foreground text-sm">{t('c:need_org_to_invite.text')}</p>
+                          <p className="mb-4 text-muted-foreground text-sm">{t('c:need_org_to_invite.text')}</p>
                           {skipButton}
                         </div>
                       )}

@@ -15,7 +15,7 @@ export function FAQ() {
 
           return (
             <AccordionItem key={faq.id} value={faq.id}>
-              <AccordionTrigger className="px-3 text-left text-xl">{t(question)}</AccordionTrigger>
+              <AccordionTrigger className="px-3 text-xl">{t(question)}</AccordionTrigger>
               <AccordionContent className="px-3 pb-8 text-lg">
                 <Trans
                   t={t}

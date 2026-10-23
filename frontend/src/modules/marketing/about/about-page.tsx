@@ -38,7 +38,7 @@ export function AboutPage() {
     <>
       <MarketingNav />
 
-      <main className="container max-w-none px-0">
+      <main>
         {/* Hero landing */}
         <Hero
           key={'welcome'}
@@ -83,7 +83,7 @@ export function AboutPage() {
           </div>
           <Button variant="ghost" size="lg" className="group max-sm:hidden" onClick={() => scrollToSectionById('benefits')}>
             <span className="font-normal text-base opacity-70 group-hover:opacity-100">{t('about:continue_below_fold')}</span>
-            <ArrowDownIcon className="animate-bounce opacity-70 [animation-iteration-count:5] group-hover:opacity-100 motion-reduce:animate-none" />
+            <ArrowDownIcon className="repeat-5 animate-bounce opacity-70 group-hover:opacity-100 motion-reduce:animate-none" />
           </Button>
         </Hero>
 

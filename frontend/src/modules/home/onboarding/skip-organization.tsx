@@ -23,7 +23,7 @@ export function SkipOrganization({ onComplete }: SkipOrganizationProps) {
   };
 
   return (
-    <div className="flex gap-2 sm:flex-row">
+    <div className="flex gap-2">
       <Button type="submit" variant="destructive" onClick={skip}>
         {t('c:skip')}
       </Button>

@@ -25,10 +25,10 @@ const isFlexLayout = pricingPlans.length < 3;
 
 /** @public */
 export function Pricing() {
-  const layoutClass = isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3';
-
   return (
-    <div className={cn('mx-auto mt-8 max-w-7xl', layoutClass, 'gap-8')}>
+    <div
+      className={cn('mx-auto mt-8 max-w-7xl gap-8', isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3')}
+    >
       {pricingPlans.map((plan, planIndex) => (
         <PricingPlanCard key={plan.id} plan={plan} planIndex={planIndex} />
       ))}
@@ -70,22 +70,16 @@ function PricingPlanCard({ plan: { id, className, featureCount, popular, discoun
   };
 
   return (
-    <div
-      className={cn(
-        'relative flex flex-col justify-between rounded-lg border bg-card p-6',
-        className,
-        isFlexLayout ? 'w-full md:w-1/2 lg:w-1/3' : 'w-full',
-      )}
-    >
+    <div className={cn('relative flex flex-col justify-between rounded-lg border bg-card p-6', isFlexLayout && 'md:w-1/2 lg:w-1/3', className)}>
       {popular && (
-        <Badge size="sm" className="absolute top-0 left-1/2 -translate-x-2/4 -translate-y-2/4 px-4 py-1 text-center">
+        <Badge size="sm" className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1 text-center">
           🚀 {t('about:pricing.popular')}
         </Badge>
       )}
       <div className="mt-4">
         <h3 className="flex w-full justify-center text-center font-bold text-2xl">
           {t(title)}
-          {popular && <SparklesIcon className="ml-1 w-5 text-primary" />}
+          {popular && <SparklesIcon className="ml-1 size-5 text-primary" />}
         </h3>
         <div className="mt-4 flex items-center justify-center text-muted-foreground">
           {discount && (
@@ -97,15 +91,13 @@ function PricingPlanCard({ plan: { id, className, featureCount, popular, discoun
           <span>/ {t('c:year')}</span>
         </div>
 
-        <div className="mt-4 text-center text-muted-foreground">
-          <span className="">{t(text)}</span>
-        </div>
+        <div className="mt-4 text-center text-muted-foreground">{t(text)}</div>
 
         <ul className="mt-4 space-y-2">
           {Array.from({ length: featureCount }).map((_, featureIndex) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
             <li key={`${id}-${featureIndex}`} className="flex items-center text-sm">
-              <CheckIcon className="mr-2 size-6 p-1 text-sm text-success" />
+              <CheckIcon className="mr-2 size-6 p-1 text-success" />
               {t(`about:pricing.plan_${planIndex + 1}.${featureIndex + 1}` as TKey)}
             </li>
           ))}

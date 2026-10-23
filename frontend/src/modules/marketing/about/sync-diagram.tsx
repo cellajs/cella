@@ -625,7 +625,7 @@ export function SyncDiagram() {
                       transition={{ delay: isVm ? vmAt.fold : foldTimeline.swap, duration: foldTimeline.swap }}
                       className="absolute inset-0 flex items-center justify-center"
                     >
-                      <Icon className="size-5 text-foreground sm:size-7 md:size-8" strokeWidth={1.5} />
+                      <Icon className="size-5 sm:size-7 md:size-8" />
                     </motion.div>
                     <div
                       aria-hidden={!isVm}
@@ -640,7 +640,7 @@ export function SyncDiagram() {
                           className="flex flex-col items-center gap-1"
                         >
                           <div className="flex size-6 items-center justify-center rounded-md border sm:size-7 md:size-8">
-                            <ServerIcon className="size-3.5 text-foreground sm:size-4" strokeWidth={1.5} />
+                            <ServerIcon className="size-3.5 sm:size-4" />
                           </div>
                           <span className="text-2xs text-muted-foreground leading-none">{worker.label}</span>
                         </motion.div>
@@ -651,7 +651,7 @@ export function SyncDiagram() {
                       initial={false}
                       animate={{ opacity: isVm ? 1 : 0 }}
                       transition={isVm ? { delay: vmAt.workers, duration: foldTimeline.swap } : { duration: 0.2 }}
-                      className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap font-medium text-foreground text-xs"
+                      className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap font-medium text-xs"
                     >
                       One VM
                     </motion.span>
@@ -664,7 +664,7 @@ export function SyncDiagram() {
                   }}
                   className="flex size-11 items-center justify-center rounded-xl border bg-background shadow-sm sm:size-14 md:size-16"
                 >
-                  <Icon className="size-5 text-foreground sm:size-7 md:size-8" strokeWidth={1.5} />
+                  <Icon className="size-5 sm:size-7 md:size-8" />
                 </div>
               )}
               <span

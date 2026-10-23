@@ -37,20 +37,18 @@ export function ContactPage() {
                 <div className="mx-auto mb-5 flex size-24 items-center justify-center rounded-full bg-accent/50 text-primary sm:size-32">
                   <method.icon className="size-12" strokeWidth={1} />
                 </div>
-                <div className="text-center">
-                  <h3 className="mb-3 font-semibold text-lg">{t(method.title)}</h3>
-                  <p>
-                    <a
-                      href={method.link}
-                      className="group focus-effect link-decoration active:link-decoration-strong rounded-md p-0.5 text-sm hover:underline sm:text-base"
-                      target={isWebPage ? '_blank' : undefined}
-                      rel={isWebPage ? 'noreferrer' : undefined}
-                    >
-                      {method.textKey ? t(method.textKey) : method.text}
-                      <ExternalArrow />
-                    </a>
-                  </p>
-                </div>
+                <h3 className="mb-3 font-semibold text-lg">{t(method.title)}</h3>
+                <p>
+                  <a
+                    href={method.link}
+                    className="group/external-link focus-effect link-decoration active:link-decoration-strong rounded-md p-0.5 text-sm hover:underline sm:text-base"
+                    target={isWebPage ? '_blank' : undefined}
+                    rel={isWebPage ? 'noreferrer' : undefined}
+                  >
+                    {method.textKey ? t(method.textKey) : method.text}
+                    <ExternalArrow />
+                  </a>
+                </p>
               </div>
             );
           })}

@@ -7,7 +7,7 @@ import { syncCategoryIcons, syncPageItems } from '~/modules/marketing/marketing-
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
-const pillClass = tw('mx-auto max-w-3xl rounded-full bg-accent/50 px-4 py-2 text-center text-foreground leading-normal');
+const pillClass = tw('mx-auto max-w-3xl rounded-full bg-accent/50 px-4 py-2 text-center');
 
 /**
  * Dedicated sync engine page explaining Cella's selective-sync approach and how it works.
@@ -17,13 +17,13 @@ export function SyncEnginePage() {
 
   return (
     <MarketingLayout title="about:selective_sync.title">
-      <AboutSection text="about:selective_sync.text" textComponents={{ em: <em className="italic" /> }}>
-        <p className="mx-auto mb-6 max-w-3xl text-foreground leading-normal">
+      <AboutSection text="about:selective_sync.text" textComponents={{ em: <em /> }}>
+        <p className="mx-auto mb-6 max-w-3xl">
           <Trans
             t={t}
             i18nKey="about:cella_approach_intro"
             components={{
-              strong: <strong className="font-semibold text-foreground" />,
+              strong: <strong className="font-semibold" />,
             }}
           />
         </p>
