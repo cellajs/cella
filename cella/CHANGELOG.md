@@ -1,5 +1,96 @@
 # Changelog
 
+## [0.21.0](https://github.com/cellajs/cella/compare/0.20.0...0.21.0) (2026-10-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* **backend:** tenant reads open in one round trip, read their RLS settings once, and attachments page from an index ([#1490](https://github.com/cellajs/cella/issues/1490))
+* tuning bundle: Inter font, phone-native chrome, OpenAPI spec cleanup and UI fixes ([#1488](https://github.com/cellajs/cella/issues/1488))
+* channels declare drafts in the hierarchy, and an organization can start as a draft and be published ([#1485](https://github.com/cellajs/cella/issues/1485))
+* the names and paths the consistency sweep held back for the forks change in one step ([#1484](https://github.com/cellajs/cella/issues/1484))
+* **backend:** emails render without a re-parse, safer Web Push sending, 11 fewer packages ([#1452](https://github.com/cellajs/cella/issues/1452))
+* consistency sweep, all 20 stacked PRs in one branch for manual testing, net -3,177 lines ([#1481](https://github.com/cellajs/cella/issues/1481))
+* ConfirmText is NamedText and sheets name their entity; the route guards are documented once ([#1482](https://github.com/cellajs/cella/issues/1482))
+* one vocabulary for row stamps: auditColumns, ActorRef writers, a public flag, ISO timestamps ([#1451](https://github.com/cellajs/cella/issues/1451))
+* **backend:** rolldown builds the services, and CI boots what it built ([#1453](https://github.com/cellajs/cella/issues/1453))
+* forms say in plain words what a field needs, and ask less ([#1440](https://github.com/cellajs/cella/issues/1440))
+* **frontend:** a slug rewrite keeps the route below it, so a notification link reaches its channel ([#1444](https://github.com/cellajs/cella/issues/1444))
+* **deps:** 614 fewer packages, lighter images and boot path: react-doctor, serwist, SigV4, lefthook ([#1439](https://github.com/cellajs/cella/issues/1439))
+* **bench:** own load runner replaces Artillery ([#1437](https://github.com/cellajs/cella/issues/1437))
+* range reads take afterSeq and untilSeq, and list paging params are integers ([#1432](https://github.com/cellajs/cella/issues/1432))
+
+### 🎉 New features
+
+* **bench:** own load runner replaces Artillery ([#1437](https://github.com/cellajs/cella/issues/1437)) ([409f19d](https://github.com/cellajs/cella/commit/409f19d12729ccc9bd35d42518995e4a4d300ef3))
+* channels declare drafts in the hierarchy, and an organization can start as a draft and be published ([#1485](https://github.com/cellajs/cella/issues/1485)) ([7bf6aa8](https://github.com/cellajs/cella/commit/7bf6aa8ab89dae1f0140c2e1a624c773252147be))
+* forms say in plain words what a field needs, and ask less ([#1440](https://github.com/cellajs/cella/issues/1440)) ([88acbc9](https://github.com/cellajs/cella/commit/88acbc903e3ba05e12d868326f307fd225d22abf))
+* range reads take afterSeq and untilSeq, and list paging params are integers ([#1432](https://github.com/cellajs/cella/issues/1432)) ([691c346](https://github.com/cellajs/cella/commit/691c346ae9daf6794a0e037bf387971ad99a5115))
+* the menu's organization section starts collapsed beside other sections, and the edit tenant sheet names its tenant ([#1491](https://github.com/cellajs/cella/issues/1491)) ([4f624fa](https://github.com/cellajs/cella/commit/4f624faf2aa65586ba63e5abf10ccb3efc07d94e))
+
+
+### 🐞 Bug fixes
+
+* **attachment:** an offline upload reaches other devices once it uploads, and until then they see whose device has it ([#1430](https://github.com/cellajs/cella/issues/1430)) ([eb4d2c0](https://github.com/cellajs/cella/commit/eb4d2c0560ce0309ce1b51c8685bf64ac8854038))
+* **backend:** `pnpm s3:cors` adds origins to the shared buckets and prints the list they then allow ([#1427](https://github.com/cellajs/cella/issues/1427)) ([2b6c304](https://github.com/cellajs/cella/commit/2b6c3048d4f9fb4ee0b07eb4ccf3608759ed36c0))
+* **cdc:** the counter upsert test reads drizzle rc.5 query chunks ([#1489](https://github.com/cellajs/cella/issues/1489)) ([58a76d7](https://github.com/cellajs/cella/commit/58a76d7368a43d4b2b5ee93f4f406792642cf2f7))
+* **frontend:** a deployed page on another host than frontendUrl goes there before it renders ([#1421](https://github.com/cellajs/cella/issues/1421)) ([0d77d64](https://github.com/cellajs/cella/commit/0d77d6483a2a3b1ce996ce7cbb4b6fa674be5411))
+* **frontend:** a dropdown sheet with a search field sits above the on-screen keyboard, and iOS no longer zooms into that field ([#1435](https://github.com/cellajs/cella/issues/1435)) ([82f324f](https://github.com/cellajs/cella/commit/82f324f91024b74b6ce4d418fb25df4197464aa7))
+* **frontend:** a PDF that cannot load shows the download placeholder in the viewer, not the page error ([#1426](https://github.com/cellajs/cella/issues/1426)) ([fe1f341](https://github.com/cellajs/cella/commit/fe1f341e9e02fc17eab74a7f828584586360761a))
+* **frontend:** a slug rewrite keeps the route below it, so a notification link reaches its channel ([#1444](https://github.com/cellajs/cella/issues/1444)) ([6bc9145](https://github.com/cellajs/cella/commit/6bc91451be4e93772440ded75ac889a5c7d337cf))
+* **frontend:** a tab bar opens on its active tab, so one that replaces a skeleton no longer glides in ([#1438](https://github.com/cellajs/cella/issues/1438)) ([e7fb176](https://github.com/cellajs/cella/commit/e7fb17603e8459e3fde3d728bb41da54e8b1a2dc))
+* **frontend:** channel tile avatars get a translucent black ring, like their letter ([#1425](https://github.com/cellajs/cella/issues/1425)) ([5cf5dad](https://github.com/cellajs/cella/commit/5cf5dad3897b451660fb59e14ee47528c44e7bf8))
+* **frontend:** channel tiles show counts from a thousand up as 1.4k, like the table count columns ([#1424](https://github.com/cellajs/cella/issues/1424)) ([b3adc1b](https://github.com/cellajs/cella/commit/b3adc1b1ee370be085c232ca68a42c23f1b2ee2c))
+* **frontend:** deleting an attachment removes its file from the device ([#1447](https://github.com/cellajs/cella/issues/1447)) ([c43ac0e](https://github.com/cellajs/cella/commit/c43ac0e241209f9a41196abd2bd8ac45f655781d))
+* **frontend:** leaving another host clears its service workers and caches, and a loopback preview stays put ([#1423](https://github.com/cellajs/cella/issues/1423)) ([35144ed](https://github.com/cellajs/cella/commit/35144ede68e87e85ecb21f35df99ce9e767e0c4b))
+* **frontend:** MFA notice reads Setup MFA, phones scale text to 19px ([#1441](https://github.com/cellajs/cella/issues/1441)) ([a77695b](https://github.com/cellajs/cella/commit/a77695b30dbc88e6b9381dd8acc2e453ee7930a0))
+* **infra:** a refreshing apply keeps the load balancer's acls, which the frontends no longer rewrite ([#1382](https://github.com/cellajs/cella/issues/1382)) ([ea3bdfa](https://github.com/cellajs/cella/commit/ea3bdfa2e81a9f64f8a5e07f4e91a25734d941e3))
+* **infra:** the backend VM receives the Transloadit key and secret, so deployed uploads reach the bucket ([#1429](https://github.com/cellajs/cella/issues/1429)) ([1abfcd2](https://github.com/cellajs/cella/commit/1abfcd2e1703a0f649beadedba0ca37b1931e126))
+* **infra:** the frontend proxy runs Caddy 2.11, installs run pnpm 11.28.7 and Node moves to 26.12.1, each a security fix ([#1457](https://github.com/cellajs/cella/issues/1457)) ([4a7c1fc](https://github.com/cellajs/cella/commit/4a7c1fc25107c67bcc230c15084f206ea4578cc2))
+* **sdk:** component schemas sort by the owner tag kind, not the misspelt ownership ([#1464](https://github.com/cellajs/cella/issues/1464)) ([ee3b0ec](https://github.com/cellajs/cella/commit/ee3b0ec9323fcfddd1bf108afc392dc9b444a615))
+
+
+### 🔧 Small improvements
+
+* **a11y:** keep the checks that decide something ([#1436](https://github.com/cellajs/cella/issues/1436)) ([75e58e3](https://github.com/cellajs/cella/commit/75e58e33efa01cdd4ff2d6c89b095ee1feddceeb))
+* **backend:** emails render without a re-parse, safer Web Push sending, 11 fewer packages ([#1452](https://github.com/cellajs/cella/issues/1452)) ([8651239](https://github.com/cellajs/cella/commit/8651239e16e7a6b8b560f099ac63544eceaa9205))
+* **backend:** tenant reads open in one round trip, read their RLS settings once, and attachments page from an index ([#1490](https://github.com/cellajs/cella/issues/1490)) ([362dc17](https://github.com/cellajs/cella/commit/362dc1768355f6ebc46dcbc13154b4c5bfaccc84))
+* ConfirmText is NamedText and sheets name their entity; the route guards are documented once ([#1482](https://github.com/cellajs/cella/issues/1482)) ([a41ef29](https://github.com/cellajs/cella/commit/a41ef29c4673f2ec18ed26428649a8d51c247c94))
+* consistency sweep, all 20 stacked PRs in one branch for manual testing, net -3,177 lines ([#1481](https://github.com/cellajs/cella/issues/1481)) ([6e886c9](https://github.com/cellajs/cella/commit/6e886c91d1b3b94788790a6741e258e5ff5da6dd))
+* **frontend:** ship the 6 grammars the app highlights, not 255 ([#1442](https://github.com/cellajs/cella/issues/1442)) ([09275e6](https://github.com/cellajs/cella/commit/09275e6cb0ce8bce09774696f1ed15b0e9545175))
+* **frontend:** the mobile docs sidebar starts sliding sooner when it opens and when a link in it is tapped ([#1443](https://github.com/cellajs/cella/issues/1443)) ([fd104fa](https://github.com/cellajs/cella/commit/fd104fa5370e7cffcda3aa81a054824c33448a1d))
+* one vocabulary for row stamps: auditColumns, ActorRef writers, a public flag, ISO timestamps ([#1451](https://github.com/cellajs/cella/issues/1451)) ([01d6140](https://github.com/cellajs/cella/commit/01d6140b93132f2ca2c8c046eaf7603b2e3525e7))
+* the names and paths the consistency sweep held back for the forks change in one step ([#1484](https://github.com/cellajs/cella/issues/1484)) ([a56973b](https://github.com/cellajs/cella/commit/a56973becd99aefd39c4cdd94515c03912e1cc8f))
+
+
+### 📖 Documentation
+
+* **agents:** a test earns its place for four reasons, and a perf or UI PR adds none by default ([#1445](https://github.com/cellajs/cella/issues/1445)) ([302bf7c](https://github.com/cellajs/cella/commit/302bf7c9a838772fdf96ada41986dda18f30bc13))
+* **agents:** a test is judged by its assertion, not by its count ([#1455](https://github.com/cellajs/cella/issues/1455)) ([5535fa4](https://github.com/cellajs/cella/commit/5535fa467f221aed30ffa69c5c4d83cd53c751fc))
+* **skills:** the consistency sweep's Tailwind pass names the icon shrink trap ([#1483](https://github.com/cellajs/cella/issues/1483)) ([f58434d](https://github.com/cellajs/cella/commit/f58434d297046c9b52340eae2dc67e8ef47bbadf))
+
+
+### 🏗️ Build & deps
+
+* **backend:** rolldown builds the services, and CI boots what it built ([#1453](https://github.com/cellajs/cella/issues/1453)) ([27a663d](https://github.com/cellajs/cella/commit/27a663d50ffdbc362aa48001243366d01a5a3b7c))
+
+
+### 🧹 Chores
+
+* **deps:** 614 fewer packages, lighter images and boot path: react-doctor, serwist, SigV4, lefthook ([#1439](https://github.com/cellajs/cella/issues/1439)) ([1a0854c](https://github.com/cellajs/cella/commit/1a0854cf332ac39f7f0085e98256cd529cfc85be))
+* **deps:** dependency updates, servers on OpenTelemetry 3.0 ([#1450](https://github.com/cellajs/cella/issues/1450)) ([cf5d456](https://github.com/cellajs/cella/commit/cf5d45667309fa6dd15bcc86d4dcfb404bccd1e5))
+* **deps:** drizzle-orm 1.0.0-rc.5, and a failed query's error no longer carries its values ([#1487](https://github.com/cellajs/cella/issues/1487)) ([6b44f70](https://github.com/cellajs/cella/commit/6b44f7086bb9666bfb1175e42bafeef5f2443112))
+* **deps:** pnpm cella audit stops offering typescript 7 and biome 2.6, which stay held on purpose ([#1456](https://github.com/cellajs/cella/issues/1456)) ([2cd0cf3](https://github.com/cellajs/cella/commit/2cd0cf3b8a577b5d03183abbbe02b4324a41b878))
+* tuning bundle: Inter font, phone-native chrome, OpenAPI spec cleanup and UI fixes ([#1488](https://github.com/cellajs/cella/issues/1488)) ([d0cb7e0](https://github.com/cellajs/cella/commit/d0cb7e021e96f0c666f44af8cc14c6dd6f803c4d))
+* ui tuning ([#1428](https://github.com/cellajs/cella/issues/1428)) ([88bbcdd](https://github.com/cellajs/cella/commit/88bbcdda929819eff2646e2a82a5ea4fb899ab66))
+* ui tuning ([#1434](https://github.com/cellajs/cella/issues/1434)) ([47a55d1](https://github.com/cellajs/cella/commit/47a55d174f6cf9f6417c2f0cdea266400fb4cbe7))
+
+
+### 🧪 Tests
+
+* **frontend:** the attachment suite keeps the 25 tests that earn their place ([#1448](https://github.com/cellajs/cella/issues/1448)) ([cf6e1b3](https://github.com/cellajs/cella/commit/cf6e1b320fb189316dba6a24f8c4f0cd855980d6))
+* **frontend:** the frontend suite keeps the tests that earn their place ([#1458](https://github.com/cellajs/cella/issues/1458)) ([339b17f](https://github.com/cellajs/cella/commit/339b17f78820ddae6aa13ebcccc017a8bc1ffc62))
+
 ## [0.20.0](https://github.com/cellajs/cella/compare/0.19.0...0.20.0) (2026-10-19)
 
 
