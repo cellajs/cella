@@ -3,11 +3,11 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Request } from 'sdk';
 import { appConfig } from 'shared';
-import { ConfirmText } from '~/modules/common/confirm-text';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { NamedText } from '~/modules/common/named-text';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { DeleteRequests } from '~/modules/requests/delete-requests';
 import { fetchRequestsForExport, requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
@@ -56,7 +56,7 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
       className: 'max-w-xl',
       title: t('c:delete'),
       description: (
-        <ConfirmText
+        <NamedText
           i18nKey="c:confirm.delete_counted_resource"
           values={{
             count: selected.length,

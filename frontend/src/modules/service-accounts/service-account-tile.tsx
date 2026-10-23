@@ -5,10 +5,10 @@ import { useTranslation } from 'react-i18next';
 import type { ApiKey, ServiceAccount } from 'sdk';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useRelativeDate } from '~/hooks/use-relative-date';
-import { ConfirmText } from '~/modules/common/confirm-text';
 import { DateTooltip } from '~/modules/common/date-tooltip';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { NamedText } from '~/modules/common/named-text';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -44,7 +44,7 @@ export function ServiceAccountTile({ account, path, secrets }: ServiceAccountTil
   const openRevokeConfirm = (apiKey: ApiKey, event: MouseEvent<HTMLButtonElement>) => {
     const { create, remove } = useDropdowner.getState();
     create(
-      <PopConfirm title={<ConfirmText i18nKey="c:confirm.revoke_api_key" values={{ name: apiKey.name }} />}>
+      <PopConfirm title={<NamedText i18nKey="c:confirm.revoke_api_key" name={apiKey.name} />}>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button
             variant="destructive"

@@ -2,6 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
+import { NamedText } from '~/modules/common/named-text';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedChannel } from '~/modules/entities/types';
@@ -35,7 +36,7 @@ export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel 
         side: 'right',
         className: tw('max-w-full lg:max-w-4xl'),
         title: t('c:pending_invitations'),
-        description: t('c:pending_invitations.text', { entityType: t(`c:${channel.entityType}`).toLowerCase() }),
+        description: <NamedText i18nKey="c:pending_invitations.text" name={channel.name} />,
       },
     );
   };

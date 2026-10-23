@@ -51,15 +51,7 @@ Access tokens are RS256 JWTs the OAuth face signs: `sub` is the actor, `actor_ki
 
 ### Guards
 
-| Guard | Accepts | Sets |
-| --- | --- | --- |
-| `userGuard` | Session cookie | The user, memberships, actor |
-| `serviceGuard` | API key or access token | The actor (service account, or the consenting user masked by the token) |
-| `tokenGuard` | Access token only | Same as above; answers 401 with the RFC 9728 challenge |
-| `actorGuard` | Any of the three | Whichever applies |
-| `stepUpGuard` | After `userGuard`: a session with a recent proof of its user's presence, never an impersonation | Nothing; refuses with 403 `step_up_required` and the methods the user can offer |
-
-`tenantGuard` and `orgGuard` follow and read the actor's bindings, whatever proved it. `stepUpGuard` guards the account-security routes, minting an API key among them, so no API key or access token reaches them; the routes, the proofs and the window: [Authentication, Step-up](./AUTHENTICATION.md#step-up).
+Which proof each guard admits, and the tenant and organization guards that follow it: [Permissions, Guards](./PERMISSIONS.md#guards). `stepUpGuard` guards the account-security routes, minting an API key among them, so no API key or access token reaches them: [Authentication, Step-up](./AUTHENTICATION.md#step-up).
 
 ### Quotas and limits
 
