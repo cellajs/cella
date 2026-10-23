@@ -64,13 +64,13 @@ const useUserUpdateMutation = () => {
 /** Saves a user's profile: the signed-in user's through `/me`, which also updates the user store, anyone else's as an admin. */
 export const useUpdateUser = (userId: string) => {
   const isSelf = useUserStore((state) => state.user?.id === userId);
-  const updateSelf = useUpdateSelfMutation();
-  const updateUser = useUserUpdateMutation();
+  const selfMutation = useUpdateSelfMutation();
+  const adminMutation = useUserUpdateMutation();
 
   const mutate = (body: UpdateUserData['body'], options?: { onSuccess?: (user: User) => void }) =>
-    isSelf ? updateSelf.mutate(body, options) : updateUser.mutate({ path: { id: userId }, body }, options);
+    isSelf ? selfMutation.mutate(body, options) : adminMutation.mutate({ path: { id: userId }, body }, options);
 
-  return { mutate, isPending: updateSelf.isPending || updateUser.isPending };
+  return { mutate, isPending: selfMutation.isPending || adminMutation.isPending };
 };
 
 export const useUserDeleteMutation = () => {

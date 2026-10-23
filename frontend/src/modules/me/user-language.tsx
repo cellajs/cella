@@ -15,16 +15,16 @@ export function UserLanguage() {
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const user = useUserStore((state) => state.user);
-  const language = user?.language || i18n.languages[0];
+  const currentLanguage = user?.language || i18n.languages[0];
   const { mutate: updateSelf } = useUpdateSelfMutation();
 
-  const changeLanguage = (lng: Language) => {
+  const changeLanguage = (language: Language) => {
     if (!onlineManager.isOnline()) return toastOffline();
-    if (window.Gleap) window.Gleap.setLanguage(lng);
-    i18n.changeLanguage(lng);
+    if (window.Gleap) window.Gleap.setLanguage(language);
+    i18n.changeLanguage(language);
     dropdowner.getState().remove();
 
-    if (user) updateSelf({ language: lng });
+    if (user) updateSelf({ language });
   };
 
   if (appConfig.languages.length < 2) return null;
@@ -32,9 +32,9 @@ export function UserLanguage() {
   const openDropdown = () => {
     dropdowner.getState().create(
       <div className="flex flex-col">
-        {appConfig.languages.map((lang) => (
-          <DropdownSelectItem key={lang} selected={language === lang} onSelect={() => changeLanguage(lang)}>
-            <span lang={lang}>{t(`c:${lang}`)}</span>
+        {appConfig.languages.map((language) => (
+          <DropdownSelectItem key={language} selected={currentLanguage === language} onSelect={() => changeLanguage(language)}>
+            <span lang={language}>{t(`c:${language}`)}</span>
           </DropdownSelectItem>
         ))}
       </div>,
@@ -48,10 +48,10 @@ export function UserLanguage() {
       variant="ghost"
       size="icon"
       className="data-dropdowner-active:bg-foreground/8"
-      aria-label={`${language.toUpperCase()}, ${t('c:change_language')}`}
+      aria-label={`${currentLanguage.toUpperCase()}, ${t('c:change_language')}`}
       onClick={openDropdown}
     >
-      <span className="font-normal">{language.toUpperCase()}</span>
+      <span className="font-normal">{currentLanguage.toUpperCase()}</span>
     </Button>
   );
 }

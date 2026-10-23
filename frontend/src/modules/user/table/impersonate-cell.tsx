@@ -7,7 +7,7 @@ import { Button } from '~/modules/ui/button';
 import type { BaseUser } from '~/modules/user/types';
 import { getRouter } from '~/routes/-router-instance';
 
-interface Props {
+interface ImpersonateCellProps {
   user: BaseUser;
   tabIndex: number;
 }
@@ -23,7 +23,7 @@ async function handleStartImpersonation(targetUserId: string) {
   }
 }
 
-export function ImpersonateRow({ user, tabIndex }: Props) {
+export function ImpersonateCell({ user, tabIndex }: ImpersonateCellProps) {
   return (
     <Button
       variant="cell"

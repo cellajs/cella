@@ -2,7 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { ConfirmMfaToggle } from '~/modules/me/mfa/confirmation';
+import { MfaConfirmation } from '~/modules/me/mfa/confirmation';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { WarningNote } from '~/modules/me/warning-note';
 import { Switch } from '~/modules/ui/switch';
@@ -21,7 +21,7 @@ export function MfaSwitch() {
   const handleToggleMfa = (mfaRequired: boolean) => {
     const action = mfaRequired ? 'enable' : 'disable';
 
-    createDialog(<ConfirmMfaToggle mfaRequired={mfaRequired} />, {
+    createDialog(<MfaConfirmation mfaRequired={mfaRequired} />, {
       id: 'mfa-confirmation',
       triggerRef,
       className: 'max-w-xl',

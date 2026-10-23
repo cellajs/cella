@@ -25,7 +25,7 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Inv
 
   const { onSubmit, isPending } = useInviteSubmit(channel, isDialog, clear);
 
-  const onTextChange = (text: string) => {
+  const handleTextChange = (text: string) => {
     setRawText(text);
     form.setValue('emails', extractEmails(text), { shouldDirty: true });
   };
@@ -39,7 +39,7 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Inv
           <FormLabel help={t('c:paste_emails.text')}>{t('c:paste_emails')}</FormLabel>
           <Textarea
             value={rawText ?? emails.join('\n')}
-            onChange={(event) => onTextChange(event.target.value)}
+            onChange={(event) => handleTextChange(event.target.value)}
             placeholder={t('c:paste_emails.placeholder')}
             autoResize
             className="min-h-24"
@@ -49,7 +49,7 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Inv
           <FormField control={form.control} name="emails" render={() => <FormMessage />} />
         </FormItem>
 
-        <InviteFormFooter form={form} channel={channel} count={emails.length} isPending={isPending} onCancel={clear}>
+        <InviteFormFooter form={form} channel={channel} count={emails.length} loading={isPending} onCancel={clear}>
           {children}
         </InviteFormFooter>
       </form>

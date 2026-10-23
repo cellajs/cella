@@ -15,7 +15,7 @@ export const useColumns = () => {
     { label: t('c:reject'), variant: 'destructive', action: 'reject' },
   ] as const;
 
-  const { mutate: handleInvitation } = useHandleInvitationMutation();
+  const { mutate: answerInvitation } = useHandleInvitationMutation();
 
   const columns: ColumnOrColumnGroup<Invitation>[] = [
     {
@@ -70,7 +70,7 @@ export const useColumns = () => {
               key={action}
               size="xs"
               variant={variant}
-              onClick={() => handleInvitation({ path: { id: row.inactiveMembership.id, acceptOrReject: action } })}
+              onClick={() => answerInvitation({ path: { id: row.inactiveMembership.id, acceptOrReject: action } })}
             >
               {label}
             </Button>

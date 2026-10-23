@@ -9,10 +9,10 @@ import { useCurrentUser } from '~/modules/user/user-store';
 const slot = 'account.settings';
 
 /** Hosts the `account.settings` slot: sections come from the tool registry, with no grants or context-role pairs. */
-function UserAccountPage() {
+export function AccountPage() {
   const user = useCurrentUser();
 
-  const sections = resolvePlacementList(slot, getTools('account.settings'));
+  const sections = resolvePlacementList(slot, getTools(slot));
 
   return (
     <div className="container my-4 gap-4 md:mt-8 md:flex md:flex-row">
@@ -33,5 +33,3 @@ function UserAccountPage() {
     </div>
   );
 }
-
-export { UserAccountPage };

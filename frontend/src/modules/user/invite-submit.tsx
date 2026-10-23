@@ -51,7 +51,7 @@ export interface InviteFormProps {
 export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: boolean | undefined, onSent: () => void) {
   const { t } = useTranslation();
 
-  const onSuccess = ({ invitesSentCount, rejectedIds }: { rejectedIds: string[]; invitesSentCount: number }, emails: string[]) => {
+  const handleSuccess = ({ invitesSentCount, rejectedIds }: { rejectedIds: string[]; invitesSentCount: number }, emails: string[]) => {
     onSent();
     if (isDialog) dialoger.getState().remove('invite-users');
 
@@ -65,7 +65,7 @@ export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: 
   const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
   const { mutate: systemInvite, isPending: isSystemInvitePending } = useMutation({
     mutationFn: (body: InviteFormValues) => baseSystemInvite({ body }),
-    onSuccess: (result, body) => onSuccess(result, body.emails),
+    onSuccess: (result, body) => handleSuccess(result, body.emails),
   });
 
   const onSubmit = (body: InviteFormValues) => {
@@ -76,7 +76,7 @@ export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: 
     const path = { tenantId: channel.tenantId, organizationId: organizationId };
     const query = { entityId: channel.id, entityType: channel.entityType };
 
-    membershipInvite({ body, path, query, channel }, { onSuccess: (result) => onSuccess(result, body.emails) });
+    membershipInvite({ body, path, query, channel }, { onSuccess: (result) => handleSuccess(result, body.emails) });
   };
 
   return { onSubmit, isPending: isPending || isSystemInvitePending };
@@ -85,12 +85,12 @@ export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: 
 interface InviteFormFooterProps extends Omit<InviteFormProps, 'dialog'> {
   form: ReturnType<typeof useInviteFormDraft>;
   count: number;
-  isPending: boolean;
+  loading: boolean;
   onCancel: () => void;
 }
 
 /** Role choice for a channel invite, then the submit button with the address count. */
-export function InviteFormFooter({ form, channel, count, isPending, onCancel, children }: InviteFormFooterProps) {
+export function InviteFormFooter({ form, channel, count, loading, onCancel, children }: InviteFormFooterProps) {
   const { t } = useTranslation();
 
   return (
@@ -109,7 +109,7 @@ export function InviteFormFooter({ form, channel, count, isPending, onCancel, ch
       )}
 
       <div className="flex flex-col gap-2 sm:flex-row">
-        <SubmitButton disabled={!count} loading={isPending} className="relative">
+        <SubmitButton disabled={!count} loading={loading} className="relative">
           {!!count && (
             <Badge variant="secondary" context="button">
               {count}

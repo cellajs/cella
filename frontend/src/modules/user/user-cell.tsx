@@ -1,10 +1,11 @@
 import type { UserMinimalBase } from 'sdk';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { Button } from '~/modules/ui/button';
 import { useOpenUserSheet } from '~/modules/user/use-open-user-sheet';
 import { cn } from '~/utils/cn';
-import { Button } from '../ui/button';
 
-interface BaseProps {
+interface UserCellProps {
+  user: UserMinimalBase;
   tabIndex: number;
   compactable?: boolean;
   className?: string;
@@ -15,7 +16,7 @@ interface BaseProps {
 // DataGrid sets data-is-compact on its root/merged slots; keep the name accessible while hiding it visually.
 const compactUserNameClass = 'in-data-[is-compact=true]:sr-only';
 
-export function UserCell({ user, tabIndex, compactable, className, readOnly }: BaseProps & { user: UserMinimalBase }) {
+export function UserCell({ user, tabIndex, compactable, className, readOnly }: UserCellProps) {
   const openUserSheet = useOpenUserSheet();
 
   // While compacted the name is visually hidden, so the compact-scoped table tooltip shows it.

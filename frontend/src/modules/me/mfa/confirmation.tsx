@@ -5,8 +5,13 @@ import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useToggleMfaMutation } from '~/modules/me/query';
 import { Button } from '~/modules/ui/button';
 
+interface MfaConfirmationProps {
+  /** The setting to switch to: `true` turns MFA on. */
+  mfaRequired: boolean;
+}
+
 /** Confirms turning MFA on or off; a session that is not stepped up first proves the user's second factor. */
-export function ConfirmMfaToggle({ mfaRequired }: { mfaRequired: boolean }) {
+export function MfaConfirmation({ mfaRequired }: MfaConfirmationProps) {
   const { t } = useTranslation();
   const removeDialog = useDialoger((state) => state.remove);
 

@@ -19,12 +19,12 @@ export function InviteSearchForm({ channel, dialog: isDialog, children }: Invite
           name="emails"
           render={({ field: { onChange, value } }) => (
             <FormItem>
-              <UserCombobox value={value} onValueChange={onChange} channel={channel} />
+              <UserCombobox value={value} onChange={onChange} channel={channel} />
               <FormMessage />
             </FormItem>
           )}
         />
-        <InviteFormFooter form={form} channel={channel} count={count} isPending={isPending} onCancel={() => form.reset()}>
+        <InviteFormFooter form={form} channel={channel} count={count} loading={isPending} onCancel={() => form.reset()}>
           {children}
         </InviteFormFooter>
       </form>

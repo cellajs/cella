@@ -6,7 +6,7 @@ import { appConfig } from 'shared';
 import { getTools, resolvePlacementList } from '~/lib/placements';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { SimpleHeader } from '~/modules/common/simple-header';
-import { InvitationsTable } from '~/modules/me/invitations-table';
+import { InvitationsTable } from '~/modules/me/invitations-table/invitations-table';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 import { useCurrentUser } from '~/modules/user/user-store';

@@ -24,13 +24,13 @@ import {
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { usersListQueryOptions } from '~/modules/user/query';
 
-interface Props {
+interface UserComboboxProps {
   value: string[];
-  onValueChange: (items: string[]) => void;
+  onChange: (emails: string[]) => void;
   channel: ChannelBase & { organizationId?: string };
 }
 
-export function UserCombobox({ value, onValueChange, channel }: Props) {
+export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
   const nameLabel = t('c:name').toLowerCase();
@@ -39,16 +39,16 @@ export function UserCombobox({ value, onValueChange, channel }: Props) {
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const handleUnselect = (item: string) => {
-    onValueChange(value.filter((v) => v !== item));
+  const handleUnselect = (email: string) => {
+    onChange(value.filter((selected) => selected !== email));
   };
 
   const queryOptions = usersListQueryOptions({ q: debouncedSearchQuery });
 
   const { data, isFetching } = useInfiniteQuery(queryOptions);
 
-  const items = data?.pages.flatMap((p) => p.items) ?? [];
-  const userIds = items.map((u) => u.id).join(',');
+  const items = data?.pages.flatMap((page) => page.items) ?? [];
+  const userIds = items.map((user) => user.id).join(',');
 
   const { data: membersData } = useInfiniteQuery({
     ...membersListQueryOptions({
@@ -61,7 +61,7 @@ export function UserCombobox({ value, onValueChange, channel }: Props) {
     enabled: items.length > 0,
   });
 
-  const existingMemberIds = new Set(membersData?.pages.flatMap((p) => p.items.map((m) => m.id)) ?? []);
+  const existingMemberIds = new Set(membersData?.pages.flatMap((page) => page.items.map((member) => member.id)) ?? []);
 
   const variants = {
     hidden: { opacity: 0, y: -5, scale: 0.98 },
@@ -72,11 +72,11 @@ export function UserCombobox({ value, onValueChange, channel }: Props) {
   return (
     <Combobox<string, true>
       multiple
-      items={items.map((u) => u.email)}
-      itemToStringLabel={(v) => v}
-      itemToStringValue={(v) => v}
+      items={items.map((user) => user.email)}
+      itemToStringLabel={(email) => email}
+      itemToStringValue={(email) => email}
       value={value}
-      onValueChange={onValueChange}
+      onValueChange={onChange}
       inputValue={searchQuery}
       onInputValueChange={setSearchQuery}
       filter={() => true}
@@ -90,30 +90,30 @@ export function UserCombobox({ value, onValueChange, channel }: Props) {
         }
       >
         {value?.length ? (
-          value.map((el) => (
+          value.map((email) => (
             <Badge
               size="sm"
               variant="secondary"
-              key={el}
+              key={email}
               className="max-w-60 data-disabled:bg-muted-foreground data-fixed:bg-muted-foreground data-disabled:text-muted-foreground/50 data-fixed:text-muted data-disabled:hover:bg-muted-foreground data-fixed:hover:bg-muted-foreground"
             >
-              <span className="truncate">{el}</span>
+              <span className="truncate">{email}</span>
               {/* biome-ignore lint/a11y/useSemanticElements: a native <button> cannot be nested inside the trigger <button>; this is an intentional removable-chip control. */}
               <span
                 role="button"
                 tabIndex={0}
                 aria-label={t('c:remove')}
                 className="focus-effect -m-1 ml-1 rounded-full py-1"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleUnselect(el);
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  handleUnselect(email);
                 }}
-                onKeyDown={(e) => {
-                  if (e.key !== 'Enter' && e.key !== ' ') return;
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleUnselect(el);
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' && event.key !== ' ') return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  handleUnselect(email);
                 }}
               >
                 <XIcon className="size-4 opacity-50 hover:opacity-100" />

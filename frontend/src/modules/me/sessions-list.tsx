@@ -28,7 +28,7 @@ export function SessionsList() {
   const endedAt = (session: Session) => new Date(sessionEndedAt(session)).getTime();
   const history = allSessions.filter((session) => !isLiveSession(session)).sort((a, b) => endedAt(b) - endedAt(a));
 
-  const { mutate: revoke, isPending } = useRevokeSessionsMutation();
+  const { mutate: revoke, isPending, variables } = useRevokeSessionsMutation();
 
   const handleRevoke = (ids: string[]) => {
     if (!onlineManager.isOnline()) return toastOffline();
@@ -42,7 +42,7 @@ export function SessionsList() {
           className="max-xs:w-full"
           variant="plain"
           size="sm"
-          disabled={isPending}
+          loading={isPending && variables?.length === revocable.length}
           onClick={() => handleRevoke(revocable.map((session) => session.id))}
         >
           <UnplugIcon />
@@ -57,8 +57,8 @@ export function SessionsList() {
               session={session}
               key={session.id}
               isCurrentDevice={isCurrentDevice(session)}
-              handleRevoke={handleRevoke}
-              isPending={isPending}
+              onRevoke={handleRevoke}
+              loading={isPending && variables?.includes(session.id)}
             />
           )}
           initialDisplayCount={3}

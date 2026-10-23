@@ -32,7 +32,7 @@ export function InviteEmailForm({ channel, dialog: isDialog, children }: InviteF
           )}
         />
 
-        <InviteFormFooter form={form} channel={channel} count={emails?.length ?? 0} isPending={isPending} onCancel={() => form.reset()}>
+        <InviteFormFooter form={form} channel={channel} count={emails?.length ?? 0} loading={isPending} onCancel={() => form.reset()}>
           {children}
         </InviteFormFooter>
       </form>

@@ -13,7 +13,7 @@ type LastUser = Pick<MeUser, 'id' | 'email'>;
 export const yjsTokenKey = (entityType: ProductEntityType, entityId: string) => `${entityType}:${entityId}`;
 
 /** i18next emits languageChanged even for the current language, which re-renders every useTranslation consumer. */
-const syncLanguage = (language?: User['language']) => {
+const mirrorLanguage = (language?: User['language']) => {
   const lng = language || appConfig.defaultLanguage;
   if (i18n.language !== lng) i18n.changeLanguage(lng);
 };
@@ -22,7 +22,7 @@ const syncLanguage = (language?: User['language']) => {
  * Mirrors the stored contrast preference into the UI store, which Themer watches. The UI store is what applies it,
  * so the choice survives sign-out and reaches the public pages, where no user exists to read it from.
  */
-const syncContrast = (contrast?: User['contrast']) => {
+const mirrorContrast = (contrast?: User['contrast']) => {
   uiStore.getState().setContrast(contrast ?? 'system');
 };
 
@@ -59,8 +59,8 @@ export const useUserStore = create<UserStoreState>()(
             lastUser: state.impersonator ? state.lastUser : { id: user.id, email: user.email },
           }));
 
-          syncLanguage(user.language);
-          syncContrast(user.contrast);
+          mirrorLanguage(user.language);
+          mirrorContrast(user.contrast);
         },
         setMe: ({ user, isSystemAdmin, impersonator }) => {
           set((state) => {
@@ -71,8 +71,8 @@ export const useUserStore = create<UserStoreState>()(
             if (!impersonator) state.lastUser = { id: user.id, email: user.email };
           });
 
-          syncLanguage(user.language);
-          syncContrast(user.contrast);
+          mirrorLanguage(user.language);
+          mirrorContrast(user.contrast);
         },
         setYjsToken: (key, token) => {
           set((state) => {

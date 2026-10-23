@@ -10,15 +10,15 @@ import { UserProfileSubline } from '~/modules/user/user-profile-subline';
 import { useUserStore } from '~/modules/user/user-store';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const ProfilePageContent = lazyNamed(() => import('~/modules/user/user-profile-content'), 'UserProfileContent');
+const UserProfileContent = lazyNamed(() => import('~/modules/user/user-profile-content'), 'UserProfileContent');
 
-interface Props {
+interface UserProfileProps {
   user: GetUserResponse;
   organizationId?: string;
   isSheet?: boolean;
 }
 
-export function UserProfilePage({ user, organizationId, isSheet }: Props) {
+export function UserProfile({ user, organizationId, isSheet }: UserProfileProps) {
   const { t } = useTranslation();
   const currentUser = useUserStore((state) => state.user);
 
@@ -26,14 +26,14 @@ export function UserProfilePage({ user, organizationId, isSheet }: Props) {
 
   const { mutate: updateUser } = useUpdateUser(user.id);
 
-  const coverUpdateCallback = (bannerUrl: string) => updateUser({ bannerUrl }, { onSuccess: () => toaster.success(t('c:success.upload_cover')) });
+  const updateCover = (bannerUrl: string) => updateUser({ bannerUrl }, { onSuccess: () => toaster.success(t('c:success.upload_cover')) });
 
   return (
     <>
       <PageHeader
         entity={user}
         canUpdate={isSelf}
-        coverUpdateCallback={coverUpdateCallback}
+        coverUpdateCallback={updateCover}
         subline={<UserProfileSubline user={user} />}
         panel={
           isSelf && (
@@ -53,7 +53,7 @@ export function UserProfilePage({ user, organizationId, isSheet }: Props) {
       />
       <Suspense>
         {/* No wrapper: the content owns its own container, so it can run a full-width tab nav */}
-        <ProfilePageContent user={user} organizationId={organizationId} isSheet={isSheet} />
+        <UserProfileContent user={user} organizationId={organizationId} isSheet={isSheet} />
       </Suspense>
     </>
   );

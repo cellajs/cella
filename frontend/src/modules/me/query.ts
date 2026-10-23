@@ -222,7 +222,7 @@ export const myMembershipsQueryOptions = () =>
   queryOptions({ queryKey: meKeys.memberships, queryFn: ({ signal }) => getMyMemberships({ signal }), staleTime: 0 });
 
 /** Once an invitation is answered: refresh memberships so the menu rebuilds, drop the invite from cache, and say so. */
-const onInvitationSettled = async (settledEntity: { id: string }, action: 'accept' | 'reject') => {
+const applySettledInvitation = async (settledEntity: { id: string }, action: 'accept' | 'reject') => {
   await queryClient.invalidateQueries({ queryKey: meKeys.memberships });
 
   queryClient.setQueryData<GetMyInvitationsResponse>(meKeys.invites, (oldData) => {
@@ -238,7 +238,7 @@ export const useHandleInvitationMutation = () =>
   useMutation<HandleMembershipInvitationResponse, ApiError, MutationData<HandleMembershipInvitationData>>({
     mutationKey: meKeys.handleInvitation,
     mutationFn: ({ path }) => handleMembershipInvitation({ path }),
-    onSuccess: (settledEntity, { path: { acceptOrReject } }) => onInvitationSettled(settledEntity, acceptOrReject),
+    onSuccess: (settledEntity, { path: { acceptOrReject } }) => applySettledInvitation(settledEntity, acceptOrReject),
   });
 
 /** Accepts the invitation behind the single-use token cookie, as the signed-in account. */
@@ -246,7 +246,7 @@ export const useAcceptInvitationTokenMutation = () =>
   useMutation<AcceptInvitationTokenResponse, ApiError, void>({
     mutationKey: meKeys.acceptInvitationToken,
     mutationFn: () => acceptInvitationToken(),
-    onSuccess: (settledEntity) => onInvitationSettled(settledEntity, 'accept'),
+    onSuccess: (settledEntity) => applySettledInvitation(settledEntity, 'accept'),
   });
 
 /** Revoking a consent deletes its tokens server-side; the list drops the row without a refetch. */

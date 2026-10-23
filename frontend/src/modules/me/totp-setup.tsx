@@ -15,7 +15,7 @@ import { Button } from '~/modules/ui/button';
 /** The key's challenge cookie lives 5 minutes; the setup expires the key slightly before, to avoid a race. */
 const keyExpiryMs = 4.5 * 60 * 1000;
 
-export function SetupTotp() {
+export function TotpSetup() {
   const { t } = useTranslation();
 
   const [formVersion, setFormVersion] = useState(0);
@@ -30,16 +30,16 @@ export function SetupTotp() {
     return () => clearTimeout(timer);
   }, [data.totpUri]);
 
-  const closeSetup = () => dialoger.getState().remove('setup-totp');
+  const closeSetup = () => dialoger.getState().remove('totp-setup');
 
   // A wrong code remounts the form, so the code must be entered again.
-  const onSubmit = (body: { code: string }) => createTotp(body, { onSuccess: closeSetup, onError: () => setFormVersion((v) => v + 1) });
+  const onSubmit = (body: { code: string }) => createTotp(body, { onSuccess: closeSetup, onError: () => setFormVersion((version) => version + 1) });
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const openManualKey = () => {
     dialoger.getState().create(<TotpManualKey manualKey={data.manualKey} />, {
-      id: 'mfa-key',
+      id: 'totp-manual-key',
       triggerRef,
       title: t('c:totp_manual.title'),
       description: t('c:totp_manual.description'),

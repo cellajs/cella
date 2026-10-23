@@ -7,7 +7,7 @@ import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ConnectedStatus } from '~/modules/me/connected-status';
 import { meAuthQueryOptions, useDeleteTotpMutation } from '~/modules/me/query';
-import { SetupTotp } from '~/modules/me/totp-setup';
+import { TotpSetup } from '~/modules/me/totp-setup';
 import { Button } from '~/modules/ui/button';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { useCurrentUser } from '~/modules/user/user-store';
@@ -22,7 +22,7 @@ export function Totp() {
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
-  const openSetupTotp = async () => {
+  const openTotpSetup = async () => {
     // The key request and the code check need a stepped-up session: the user proves it before the setup opens.
     const steppedUp = await ensureStepUp().then(
       () => true,
@@ -32,10 +32,10 @@ export function Totp() {
 
     dialoger.getState().create(
       <Suspense fallback={<Skeleton className="mx-auto my-3 size-72.75" />}>
-        <SetupTotp />
+        <TotpSetup />
       </Suspense>,
       {
-        id: 'setup-totp',
+        id: 'totp-setup',
         title: t('c:totp_qr.title'),
         description: t('c:totp_qr.description'),
         triggerRef,
@@ -45,7 +45,7 @@ export function Totp() {
     );
   };
 
-  const handleDeleteTOTP = () => {
+  const handleDeleteTotp = () => {
     if (!onlineManager.isOnline()) return toastOffline();
     deleteTotp();
   };
@@ -54,12 +54,12 @@ export function Totp() {
     <div className="mb-6 flex gap-2 max-sm:flex-col">
       {hasTotp && <ConnectedStatus icon={<RotateCcwKeyIcon />}>{t('c:totp_activated')}</ConnectedStatus>}
       {hasTotp ? (
-        <Button key="deleteTotp" type="button" variant="plain" loading={isPending} disabled={user.mfaRequired} onClick={handleDeleteTOTP}>
+        <Button key="deleteTotp" type="button" variant="plain" loading={isPending} disabled={user.mfaRequired} onClick={handleDeleteTotp}>
           <TrashIcon className="size-4" />
           <span>{t('c:delete')}</span>
         </Button>
       ) : (
-        <Button key="createTotp" type="button" variant="plain" onClick={openSetupTotp}>
+        <Button key="createTotp" type="button" variant="plain" onClick={openTotpSetup}>
           <RotateCcwKeyIcon className="size-4" />
           <span>{t('c:totp_setup')}</span>
         </Button>

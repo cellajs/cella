@@ -4,7 +4,7 @@ import { getTools, resolvePlacementList } from '~/lib/placements';
 
 const slot = 'user.profile';
 
-interface Props {
+interface UserProfileContentProps {
   user: UserBase;
   organizationId?: string;
   isSheet?: boolean;
@@ -16,7 +16,7 @@ interface Props {
  * contributes the organizations grid. The page does not wrap this: each tool owns its container
  * (so it can run full width) and its top padding.
  */
-export function UserProfileContent({ user, organizationId, isSheet = false }: Props) {
+export function UserProfileContent({ user, organizationId, isSheet = false }: UserProfileContentProps) {
   const tools = resolvePlacementList(slot, getTools(slot));
 
   return (

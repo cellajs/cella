@@ -10,7 +10,7 @@ import { openPopConfirm } from '~/modules/common/popconfirm';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { DeleteUsers } from '~/modules/user/delete-users';
-import { ImpersonateRow } from '~/modules/user/table/impersonate-row';
+import { ImpersonateCell } from '~/modules/user/table/impersonate-cell';
 import type { BaseUser } from '~/modules/user/types';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { UserCell } from '~/modules/user/user-cell';
@@ -43,7 +43,7 @@ export const useColumns = () => {
       name: '',
       minBreakpoint: 'md',
       width: 32,
-      renderCell: ({ row, tabIndex }) => <ImpersonateRow user={row} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => <ImpersonateCell user={row} tabIndex={tabIndex} />,
     },
     ellipsisColumn<BaseUser>(() => [
       {

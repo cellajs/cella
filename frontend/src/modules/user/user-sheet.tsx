@@ -3,9 +3,9 @@ import { FlameKindlingIcon, ServerCrashIcon, WifiOffIcon } from 'lucide-react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { Spinner } from '~/modules/common/spinner';
+import { userQueryOptions } from '~/modules/user/query';
+import { UserProfile } from '~/modules/user/user-profile';
 import { useUserStore } from '~/modules/user/user-store';
-import { userQueryOptions } from './query';
-import { UserProfilePage as UserProfile } from './user-profile';
 
 export function UserSheet({ id, organizationId }: { id: string; organizationId: string | undefined }) {
   const isOnline = useOnlineManager();

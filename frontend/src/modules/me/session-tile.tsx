@@ -30,11 +30,12 @@ interface SessionTileProps {
   /** Session from the same device as the current session (matched on deviceIdHash). */
   isCurrentDevice?: boolean;
   /** Absent in the history list: a revoked or expired session has nothing left to revoke. */
-  handleRevoke?: (sessionIds: string[]) => void;
-  isPending?: boolean;
+  onRevoke?: (sessionIds: string[]) => void;
+  /** This session's revoke is running. */
+  loading?: boolean;
 }
 
-export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending }: SessionTileProps) {
+export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: SessionTileProps) {
   const { t, i18n } = useTranslation();
   /** A federation names itself in config; every other method has a locale key. */
   const strategyLabel = (strategy: NonNullable<Session['authStrategy']>) =>
@@ -119,8 +120,8 @@ export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending 
       }
       action={
         !session.isCurrent &&
-        handleRevoke && (
-          <Button variant="plain" size="sm" className="ml-auto text-sm" disabled={isPending} onClick={() => handleRevoke([session.id])}>
+        onRevoke && (
+          <Button variant="plain" size="sm" className="ml-auto text-sm" loading={loading} onClick={() => onRevoke([session.id])}>
             <UnplugIcon />
             <span className="max-md:hidden">{t('c:revoke')}</span>
           </Button>

@@ -9,7 +9,7 @@ import { appTitle } from '~/utils/app-title';
 import { getErrorInfo } from '~/utils/get-error-info';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const UserAccountPage = lazyNamed(() => import('~/modules/me/account-page'), 'UserAccountPage');
+const AccountPage = lazyNamed(() => import('~/modules/me/account-page'), 'AccountPage');
 
 /**
  * Accepts `error`/`severity` search params from backend OAuth connect redirects, toasts them, then strips them. `connect`
@@ -34,5 +34,5 @@ export const Route = createFileRoute('/_app/account')({
     const userAuthOptions = meAuthQueryOptions();
     return queryClient.query({ ...userAuthOptions, staleTime: 'static' });
   },
-  component: withSuspenseSpinner(UserAccountPage),
+  component: withSuspenseSpinner(AccountPage),
 });

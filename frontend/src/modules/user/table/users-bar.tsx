@@ -30,7 +30,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
   const { role } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', role: undefined } });
 
-  const onRoleChange = (role?: string) => {
+  const handleRoleChange = (role?: string) => {
     clearSelection();
     setSearch({ role: role as UsersRouteSearchParams['role'] });
   };
@@ -69,7 +69,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
         <ConfirmText
           i18nKey="c:confirm.delete_resource"
           values={{
-            name: selected.map((u) => u.email).join(', '),
+            name: selected.map((user) => user.email).join(', '),
             resource: t('c:user', { count: selected.length }).toLowerCase(),
           }}
         />
@@ -84,7 +84,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       label="c:user"
       searchName="userSearch"
       actions={<TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInviteDialog} />}
-      filters={<SelectRole value={role} onChange={onRoleChange} className="h-10" />}
+      filters={<SelectRole value={role} onChange={handleRoleChange} className="h-10" />}
       selection={{
         count: selected.length,
         onClear: clearSelection,

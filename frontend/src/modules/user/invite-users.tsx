@@ -36,22 +36,22 @@ interface InviteUsersProps extends InviteFormProps {
   mode?: InviteMode | null;
 }
 
-export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, children }: InviteUsersProps) {
+export function InviteUsers({ channel, dialog: isDialog, mode: initialMode, children }: InviteUsersProps) {
   const { t } = useTranslation();
 
-  const [inviteMode, setInviteMode] = useState(baseMode);
+  const [inviteMode, setInviteMode] = useState(initialMode);
 
   // The dialog's caller owns the description copy, so read it once and keep it to compose against.
   const [baseDescription] = useState(() => (isDialog ? dialoger.getState().get('invite-users')?.description : undefined));
 
-  const updateMode = (mode: InviteMode[]) => {
-    setInviteMode(mode[0] ?? null);
+  const updateMode = (mode: InviteMode | null) => {
+    setInviteMode(mode);
 
     dialoger.getState().update('invite-users', {
       titleContent: (
         <div className="flex items-center gap-2">
-          {mode[0] ? (
-            <button type="button" onClick={() => updateMode([])}>
+          {mode ? (
+            <button type="button" onClick={() => updateMode(null)}>
               {t('c:invite')}
             </button>
           ) : (
@@ -60,7 +60,7 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
             </div>
           )}
           <AnimatePresence>
-            {mode[0] && (
+            {mode && (
               <motion.span
                 className="flex items-center gap-2"
                 initial={{ opacity: 0 }}
@@ -69,7 +69,7 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
                 transition={modeTransition}
               >
                 <ChevronRightIcon className="opacity-50" />
-                <UnsavedBadge title={t(inviteModes[mode[0]].title)} />
+                <UnsavedBadge title={t(inviteModes[mode].title)} />
               </motion.span>
             )}
           </AnimatePresence>
@@ -88,7 +88,7 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
         inviteMode === 'email' ? (
           <>
             {baseDescription}{' '}
-            <Trans t={t} i18nKey="c:invite_bulk_link" components={{ bulk_anchor: <InlineLinkButton onClick={() => updateMode(['bulk'])} /> }} />
+            <Trans t={t} i18nKey="c:invite_bulk_link" components={{ bulk_anchor: <InlineLinkButton onClick={() => updateMode('bulk')} /> }} />
           </>
         ) : (
           baseDescription
@@ -105,7 +105,7 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
           <motion.div key="invite-initial" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
             <ToggleGroup
               type="multiple"
-              onValueChange={(v) => updateMode(v as InviteMode[])}
+              onValueChange={(value) => updateMode((value as InviteMode[])[0] ?? null)}
               className="w-full items-stretch gap-2 py-3 max-sm:flex-col sm:h-40 sm:gap-3"
             >
               {inviteTiles.map(({ mode, icon: Icon, label }) => (

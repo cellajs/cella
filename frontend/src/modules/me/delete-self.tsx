@@ -10,7 +10,7 @@ export function DeleteSelf() {
 
   const { mutate: deleteSelf, isPending } = useDeleteSelfMutation();
 
-  const onDelete = () =>
+  const deleteAndSignOut = () =>
     deleteSelf(undefined, {
       onSuccess: () => {
         navigate({ to: '/auth/sign-out', replace: true, search: { force: true } });
@@ -18,5 +18,5 @@ export function DeleteSelf() {
       },
     });
 
-  return <DeleteForm onDelete={onDelete} onCancel={closeDialog} pending={isPending} />;
+  return <DeleteForm onDelete={deleteAndSignOut} onCancel={closeDialog} pending={isPending} />;
 }

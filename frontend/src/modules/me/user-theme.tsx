@@ -16,8 +16,8 @@ interface ThemeItem {
   label: string;
   icon: IconComponent;
   iconStyle?: React.CSSProperties;
-  iconClass?: string;
-  checked: boolean;
+  iconClassName?: string;
+  selected: boolean;
   onSelect: () => void;
   separator?: boolean;
 }
@@ -28,9 +28,9 @@ function ThemeDropdownContent({ items }: { items: ThemeItem[] }) {
       {items.map((item) => (
         <div key={item.key}>
           {item.separator && <div className="my-1 border-t" />}
-          <DropdownSelectItem selected={item.checked} onSelect={item.onSelect}>
+          <DropdownSelectItem selected={item.selected} onSelect={item.onSelect}>
             <span className="flex items-center gap-2">
-              <span className={item.iconClass} style={item.iconStyle}>
+              <span className={item.iconClassName} style={item.iconStyle}>
                 <item.icon />
               </span>
               {item.label}
@@ -81,13 +81,13 @@ export function UserTheme({ buttonClassName = '', tooltip = false }: UserThemePr
     const { mode: currentMode, theme: currentTheme } = uiStore.getState();
 
     const items: ThemeItem[] = [
-      ...modes.map((m) => ({
-        key: m.id,
-        label: m.label,
-        icon: m.icon,
-        checked: currentMode === m.id,
+      ...modes.map((option) => ({
+        key: option.id,
+        label: option.label,
+        icon: option.icon,
+        selected: currentMode === option.id,
         onSelect: () => {
-          setMode(m.id);
+          setMode(option.id);
           dropdowner.getState().remove();
         },
       })),
@@ -95,8 +95,8 @@ export function UserTheme({ buttonClassName = '', tooltip = false }: UserThemePr
         key: 'none',
         label: t('c:without_color'),
         icon: BanIcon,
-        iconClass: 'opacity-50',
-        checked: currentTheme === 'none',
+        iconClassName: 'opacity-50',
+        selected: currentTheme === 'none',
         onSelect: () => {
           setTheme('none');
           dropdowner.getState().remove();
@@ -108,7 +108,7 @@ export function UserTheme({ buttonClassName = '', tooltip = false }: UserThemePr
         label: (name as string)[0].toUpperCase() + (name as string).slice(1),
         icon: CircleIcon,
         iconStyle: { color },
-        checked: currentTheme === name,
+        selected: currentTheme === name,
         onSelect: () => {
           setTheme(name);
           dropdowner.getState().remove();

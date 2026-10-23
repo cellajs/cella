@@ -36,7 +36,7 @@ export function DeviceTile({ deviceType, title, details, action }: DeviceTilePro
             <Button
               variant="link"
               size="auto"
-              onClick={() => setExpanded((v) => !v)}
+              onClick={() => setExpanded((prev) => !prev)}
               aria-expanded={expanded}
               className="ring-offset-0 transition-opacity focus-visible:opacity-100 focus-visible:ring-transparent group-hover/tile:opacity-100 sm:opacity-0 lg:hidden"
             >
