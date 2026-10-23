@@ -18,7 +18,7 @@ export const useColumns = (path: { tenantId: string; organizationId: string }) =
 
       width: 100,
       placeholderValue: '-',
-      renderCell: ({ row }) => (row.role ? <div className="group relative inline-flex size-full items-center gap-1">{t(row.role)}</div> : null),
+      renderCell: ({ row }) => row.role && t(row.role),
     },
     dateColumn('createdAt', { name: t('c:invited_at') }),
     {

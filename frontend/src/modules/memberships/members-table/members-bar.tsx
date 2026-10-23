@@ -120,7 +120,7 @@ export function MembersTableBar({
       searchName="memberSearch"
       actions={canUpdate && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInviteDialog} />}
       countExtra={canUpdate && !barFilters.isFiltered && <PendingMembershipsCount channel={channel} />}
-      filters={<SelectRole entityType={channel.entityType} value={role} onChange={onRoleChange} className="h-10" />}
+      filters={<SelectRole entityType={channel.entityType} value={role} onChange={onRoleChange} />}
       // Export is gated like the other admin actions in this bar; row selection needs the same grant
       export={
         !isSheet && canUpdate ? { filename: `${appConfig.slug}-${channel.slug}-members`, selectedRows: selected, fetchRows: fetchExport } : undefined

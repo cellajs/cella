@@ -54,7 +54,7 @@ function EntityGridSkeleton({ tileHeight = 180 }: { tileHeight?: number }) {
   const { hasStarted } = useMountedState();
 
   return (
-    <div className={cn('transition-opacity duration-300', hasStarted ? 'opacity-100' : 'opacity-0', 'mb-12', entityGridClass)}>
+    <div data-started={hasStarted} className={cn(entityGridClass, 'mb-12 transition-opacity duration-300 data-[started=false]:opacity-0')}>
       {Array.from({ length: 6 }).map((_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static keys are fine here as this is a skeleton
         <Skeleton key={index} className="w-full rounded-lg" style={{ height: `${tileHeight}px` }} />

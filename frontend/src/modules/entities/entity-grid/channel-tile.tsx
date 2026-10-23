@@ -48,7 +48,7 @@ export function ChannelTileCard({ entity, className, children }: { entity: Chann
     <ChannelTileContext.Provider value={entity}>
       <Card
         className={cn(
-          'has-[.tile-link:active]:press gap-0 overflow-hidden py-0 shadow-xs transition sm:gap-0 sm:py-0 [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:focus-visible)]:ring-ring [&:has(.tile-link:focus-visible)]:ring-offset-2 [&:has(.tile-link:focus-visible)]:ring-offset-background [&:has(.tile-link:hover)]:shadow-sm',
+          'has-[.tile-link:active]:press gap-0 overflow-hidden py-0 shadow-xs transition has-[.tile-link:hover]:shadow-sm has-[.tile-link:focus-visible]:ring-2 has-[.tile-link:focus-visible]:ring-ring has-[.tile-link:focus-visible]:ring-offset-2 has-[.tile-link:focus-visible]:ring-offset-background sm:gap-0 sm:py-0',
           className,
         )}
       >
@@ -68,7 +68,7 @@ function TileLink({ className, children }: { className?: string; children: React
       params={params}
       search={search}
       {...pageTopHashNav}
-      className={cn('group tile-link focus-visible:outline-hidden focus-visible:ring-0', className)}
+      className={cn('group/tile-link tile-link focus-visible:outline-hidden', className)}
     >
       {children}
     </Link>
@@ -80,13 +80,13 @@ export function ChannelTileBanner({ overlay, children = <ChannelTileHeading /> }
   const entity = useTileEntity();
   return (
     <div className="relative">
-      <TileLink className="relative block w-full">
+      <TileLink className="block">
         <div
-          className={cn('relative flex aspect-3/1 min-h-30 w-full flex-col bg-center bg-cover', !entity.bannerUrl && numberToColorClass(entity.id))}
+          className={cn('relative flex aspect-3/1 min-h-30 flex-col bg-center bg-cover', !entity.bannerUrl && numberToColorClass(entity.id))}
           style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}
         >
           <div className="grow" />
-          <div className="flex min-h-14 w-full items-center gap-3 bg-background/50 px-4 py-2 backdrop-blur-xs transition-colors group-hover:bg-background/70 dark:bg-background/75 dark:group-hover:bg-background/85">
+          <div className="flex min-h-14 items-center gap-3 bg-background/50 px-4 py-2 backdrop-blur-xs transition-colors group-hover/tile-link:bg-background/70 dark:bg-background/75 dark:group-hover/tile-link:bg-background/85">
             {children}
           </div>
         </div>
@@ -229,13 +229,7 @@ export function ChannelTileMembership({ hideOwnRole = false, fallback = null }: 
   const { t } = useTranslation();
   const entity = useTileEntity();
   if (hideOwnRole) return fallback;
-  if (entity.invited) {
-    return (
-      <Badge variant="secondary" className="self-start">
-        {t('c:pending')}
-      </Badge>
-    );
-  }
+  if (entity.invited) return <Badge variant="secondary">{t('c:pending')}</Badge>;
   if (entity.membership) return <JoinedButton channel={entity} role={entity.membership.role} className="w-full" redirectPath={null} />;
   return fallback;
 }

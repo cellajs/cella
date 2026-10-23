@@ -40,7 +40,7 @@ const labelCellClass = tw('flex-col items-stretch justify-center py-2');
 // Below `sm` a row grows as its description unfolds. The top padding seats the name where a centred row has it (1.5rem is
 // the help toggle's height), and the other cells keep to the row's first line, so nothing shifts while the text opens beneath
 const helpLabelCellClass = tw('max-sm:justify-start max-sm:pt-[calc((var(--rdg-row-height)-1.5rem)/2)] max-sm:pb-3');
-const firstLineCellClass = tw('max-sm:h-(--rdg-row-height) max-sm:self-start');
+const firstLineCellClass = tw('justify-center max-sm:h-(--rdg-row-height) max-sm:self-start');
 
 function renderRowDragPreview(row: TabRow) {
   return <div className="rounded border bg-background px-2 py-1 text-sm shadow-md">{row.name}</div>;
@@ -151,7 +151,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       key: 'visible',
       name: t('c:visible'),
       width: 64,
-      cellClass: cn('flex items-center justify-center', firstLineCellClass),
+      cellClass: firstLineCellClass,
       headerCellClass: 'text-center',
       renderCell: ({ row }) =>
         row.locked ? (

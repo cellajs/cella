@@ -70,8 +70,8 @@ export function EntityGridBar({
       actions={actions}
       filters={
         <>
-          <SelectSort value={sort ?? sortOptions[0].value} onChange={(sort) => setSearch({ sort })} className="h-10" sortOptions={sortOptions} />
-          {roleFilter && <SelectRole entityType={entityType} value={role} onChange={(role) => setSearch({ role })} className="h-10" />}
+          <SelectSort value={sort ?? sortOptions[0].value} onChange={(sort) => setSearch({ sort })} sortOptions={sortOptions} />
+          {roleFilter && <SelectRole entityType={entityType} value={role} onChange={(role) => setSearch({ role })} />}
         </>
       }
       controls={viewToggle}

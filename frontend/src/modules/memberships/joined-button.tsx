@@ -45,9 +45,9 @@ function JoinedButton({ role, size = 'sm', className, ...props }: JoinedButtonPr
   };
 
   return (
-    <Button size={size} variant="success" className={cn('group', className)} onClick={openLeaveConfirm}>
-      <CheckIcon className="group-hover:hidden group-focus-visible:hidden group-data-dropdowner-active:hidden" />
-      <XIcon className="hidden group-hover:block group-focus-visible:block group-data-dropdowner-active:block" />
+    <Button size={size} variant="success" className={cn('group/joined-button', className)} onClick={openLeaveConfirm}>
+      <CheckIcon className="group-hover/joined-button:hidden group-focus-visible/joined-button:hidden group-data-dropdowner-active/joined-button:hidden" />
+      <XIcon className="hidden group-hover/joined-button:block group-focus-visible/joined-button:block group-data-dropdowner-active/joined-button:block" />
       <span className="max-xs:hidden">{role ? t(role) : t('c:joined')}</span>
       <span className="sr-only">{t('c:leave')}</span>
     </Button>

@@ -36,8 +36,7 @@ export const useColumns = (canUpdate: boolean, isSheet: boolean, entityType: Cha
       sortable: true,
       resizable: true,
       placeholderValue: '-',
-      renderCell: ({ row }) =>
-        row.membership ? <div className="group relative inline-flex size-full items-center gap-1">{t(row.membership.role)}</div> : null,
+      renderCell: ({ row }) => row.membership && t(row.membership.role),
       exportValue: (row) => row.membership && t(row.membership.role),
       width: 100,
       ...(canUpdate && {
