@@ -1,7 +1,6 @@
 import { BirdIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Request } from 'sdk';
-import { appConfig } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table/data-table';
@@ -37,7 +36,7 @@ export function RequestsTable() {
         selected={selected}
         columns={columns}
         setColumns={setColumns}
-        searchVars={{ ...search, limit: appConfig.requestLimits.requests }}
+        searchVars={search}
         setSearch={setSearch}
         clearSelection={clearSelection}
       />
