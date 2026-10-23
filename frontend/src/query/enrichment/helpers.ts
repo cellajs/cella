@@ -19,12 +19,8 @@ export function getCachedInvitedIds(): ReadonlySet<string> | null {
   return invites ? new Set(invites.items.map(({ entity }) => entity.id)) : null;
 }
 
-function getMembershipEntityId(membership: MembershipBase): string | null {
-  return membership.channelId;
-}
-
 export function findMembership(memberships: MembershipBase[], entityId: string): MembershipBase | null {
-  return memberships.find((membership) => getMembershipEntityId(membership) === entityId) ?? null;
+  return memberships.find((membership) => membership.channelId === entityId) ?? null;
 }
 
 /** Channel types hosting this entity as a menu subentity, from menuStructure config, including types that are not hierarchy ancestors. */

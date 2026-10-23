@@ -1,10 +1,10 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { StxBase } from 'sdk';
-import { isArrayDelta, mergeArrayDeltas } from './array-delta';
-import { canCoalesce, isQueued } from './mutation-queue';
-import { createRowsOf, queuedUpdateOf } from './mutation-variables';
+import { isArrayDelta, mergeArrayDeltas } from '~/query/offline/array-delta';
+import { canCoalesce, isQueued } from '~/query/offline/mutation-queue';
+import { createRowsOf, queuedUpdateOf } from '~/query/offline/mutation-variables';
 
-// Merge two ops objects: scalar fields are overwritten by `newer`; AWSet deltas are merged via mergeArrayDeltas.
+/** Scalar fields take `newer`'s value; an AWSet delta both objects carry merges through mergeArrayDeltas. */
 function mergeOps<TOps extends object>(older: Record<string, unknown>, newer: TOps): Record<string, unknown> & TOps {
   const merged = { ...older, ...newer };
   for (const [key, value] of Object.entries(newer)) {
@@ -41,8 +41,6 @@ export function squashPendingMutation<TOps extends object>(
 
     mergedOps = mergeOps(mergedOps, queued.ops);
     inheritedTimestamps = { ...inheritedTimestamps, ...queued.fieldTimestamps };
-
-    // Remove old mutation; the new one will carry merged ops and merged timestamps.
     mutationCache.remove(mutation);
   }
 
@@ -87,7 +85,7 @@ export function squashIntoPendingCreate<TOps extends object>(
   creatableKeys: readonly string[],
 ): boolean {
   if (!canCoalesce()) return false;
-  if (Object.values(ops).some((value) => isArrayDelta(value))) return false;
+  if (Object.values(ops).some(isArrayDelta)) return false;
   if (Object.keys(ops).some((key) => !creatableKeys.includes(key))) return false;
 
   for (const mutation of queryClient.getMutationCache().findAll({ mutationKey: createMutationKey, predicate: isQueued })) {

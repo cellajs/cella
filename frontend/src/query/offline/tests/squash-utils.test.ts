@@ -1,7 +1,7 @@
 import { MutationObserver, onlineManager, QueryClient } from '@tanstack/react-query';
 import type { StxBase } from 'sdk';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { removePausedCreates, squashIntoPendingCreate, squashPendingMutation } from '../squash-utils';
+import { removePausedCreates, squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
 
 /** Build a minimal stx carrying the given field timestamps. */
 function stxWith(fieldTimestamps: Record<string, string> = {}): StxBase {

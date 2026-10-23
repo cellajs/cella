@@ -1,6 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import { afterEach, describe, expect, it } from 'vitest';
-import { canCoalesce, isActive, isPending, isQueued } from '../mutation-queue';
+import { canCoalesce, isActive, isPending, isQueued } from '~/query/offline/mutation-queue';
 
 const paused = { state: { status: 'pending', isPaused: true } };
 const inFlight = { state: { status: 'pending', isPaused: false } };

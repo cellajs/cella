@@ -15,7 +15,7 @@ function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | nul
   return aKeys.some((type) => a[type] !== b[type]);
 }
 
-/** Reads a pre-built index, falling back to the ancestor id when a slug is not indexed; rewriteUrlToSlug corrects the URL later. Returns the original reference if unchanged. */
+/** Reads a pre-built index, falling back to the ancestor id when a slug is not indexed; rewriteUrlToSlug corrects the URL later. */
 export function enrichWithAncestorSlugs(item: EnrichableChannel, ancestors: readonly ChannelEntityType[], slugIndex: SlugIndex): EnrichableChannel {
   if (ancestors.length === 0) return item;
 

@@ -23,7 +23,7 @@ vi.mock('shared', async (importOriginal) => {
   };
 });
 
-// The change* helpers write through the module-singleton queryClient, so tests use that instance.
+// changeListData writes through the module-singleton queryClient, so tests use that instance.
 const { queryClient } = await import('~/query/query-client');
 const { insertEntitiesIntoHome, spliceEntityIntoListCaches } = await import('~/query/basic/apply-entity-to-lists');
 

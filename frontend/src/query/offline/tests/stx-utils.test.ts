@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createStxForCreate, createStxForDelete, createStxForUpdate, sourceId } from '../stx-utils';
+import { sourceId } from '~/query/offline/hlc';
+import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
 
-// Covers stx metadata shape for create, update and delete.
 describe('createStxForCreate', () => {
   it('produces empty fieldTimestamps with unique mutationId', () => {
     const stx = createStxForCreate();
@@ -26,7 +26,6 @@ describe('createStxForUpdate', () => {
     expect(stx.sourceId).toBe(sourceId);
     expect(stx.mutationId).toBeTruthy();
     expect(Object.keys(stx.fieldTimestamps)).toEqual(['name', 'status']);
-    // Each timestamp should be a non-empty HLC string
     for (const ts of Object.values(stx.fieldTimestamps)) {
       expect(typeof ts).toBe('string');
       expect(ts.length).toBeGreaterThan(0);

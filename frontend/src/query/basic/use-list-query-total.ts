@@ -2,10 +2,10 @@ import type { QueryKey } from '@tanstack/react-query';
 import { hashKey } from '@tanstack/react-query';
 import { useSyncExternalStore } from 'react';
 import { queryClient } from '~/query/query-client';
-import type { InfiniteQueryData } from '~/query/types';
+import type { BaseQueryItem } from '~/query/types';
 
 /** Live total from an infinite or flat list query. Returns null while fetching when only initialData is present, so no stale count is shown. */
-export function useListQueryTotal<T = unknown>(queryKey: QueryKey) {
+export function useListQueryTotal(queryKey: QueryKey) {
   const keyHash = hashKey(queryKey);
 
   return useSyncExternalStore(
@@ -15,7 +15,7 @@ export function useListQueryTotal<T = unknown>(queryKey: QueryKey) {
       }),
 
     () => {
-      const queryState = queryClient.getQueryState<InfiniteQueryData<T> | { items: T[]; total: number }>(queryKey);
+      const queryState = queryClient.getQueryState<BaseQueryItem<unknown>>(queryKey);
       if (!queryState?.data) return null;
 
       if (queryState.dataUpdatedAt === 0 && queryState.fetchStatus === 'fetching') return null;

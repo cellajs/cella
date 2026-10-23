@@ -25,10 +25,7 @@ type ResolveChannelBySlugConfig<T extends { id: string; slug: string }, TParams 
   buildSlugOverrides: (entity: T) => Partial<Record<keyof TParams, string>>;
 };
 
-/**
- * Resolves a channel entity from a route param that may be an id or a slug.
- * Reads the list cache, seeds and reads the detail cache, fetches by slug when no id is cached, redirects to /home when nothing resolves, and rewrites the URL to the canonical slug.
- */
+/** Resolves an id-or-slug route param from the list cache, the detail cache it seeds, or a slug fetch; redirects to /home when nothing resolves, else rewrites the URL to the slug. */
 export async function resolveChannelBySlug<
   T extends { id: string; slug: string },
   TParams extends Record<string, string>,
@@ -55,21 +52,19 @@ export async function resolveChannelBySlug<
   if (cached) {
     const options = detailQueryOptions(cached.id);
 
-    // Seeding the detail cache lets the cache-first read below return without blocking on a fetch. The seed is a list
-    // row and no detail (no counts), so it is stamped as never fetched and revalidated below whatever the navigation
-    // cause: observers do not refetch on mount.
+    // The list row seeds the detail so the cache-first read below returns at once. A list row is no detail (no counts), so
+    // the seed is stamped never fetched and revalidated below whatever the navigation: observers do not refetch on mount.
     const seeded = !queryClient.getQueryData<T>(options.queryKey);
     if (seeded) queryClient.setQueryData<T>(options.queryKey, cached, { updatedAt: 0 });
 
-    // `staleTime: 'static'` returns a cached entry without blocking, whatever its age; the second read honors the
-    // options' own staleTime, so a stale entry refetches behind the navigation that already resolved.
-    // Background revalidation is online-only so an offline entry never leaves the detail query in an error state.
+    // `staleTime: 'static'` returns a cached entry at once whatever its age; the plain read refetches a stale one behind the
+    // resolved navigation, online only, so an offline entry never leaves the detail query in an error state.
     if (readRequiresOnline && !isOnline) {
       entity = queryClient.getQueryData<T>(options.queryKey);
     } else {
       const read = await queryClient.query({ ...options, staleTime: 'static' });
-      // The list row that matched the URL and the detail name two slugs: one of them is behind a rename, and a rewrite
-      // to the older slug lands on a channel that no longer answers to it. The server's row decides.
+      // The list row that matched the URL and the detail name two slugs: one is behind a rename, and a rewrite to the older
+      // slug points at a slug the channel gave up. The server's row decides.
       const slugsDisagree = isOnline && read.slug !== cached.slug;
       entity = slugsDisagree ? await queryClient.query({ ...options, staleTime: 0 }) : read;
       if (!slugsDisagree && (revalidateIfStale || seeded) && isOnline) void queryClient.query(options).catch(() => {});

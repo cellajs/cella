@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { isSyncDeliveryTrusted, setSyncDeliveryTrusted, setSyncStreamHealthy, setSyncWorkerAway, syncStaleTime } from './sync-stale-state';
+import {
+  isSyncDeliveryTrusted,
+  setSyncDeliveryTrusted,
+  setSyncStreamHealthy,
+  setSyncWorkerAway,
+  syncStaleTime,
+} from '~/query/basic/sync-stale-state';
 
 const fiveMinutes = 5 * 60 * 1000;
 
@@ -23,7 +29,7 @@ describe('syncStaleTime freshness contract', () => {
 
   it('starts healthy+trusted on a fresh module load so the first reload prefetch trusts the warm cache', async () => {
     vi.resetModules();
-    const fresh = await import('./sync-stale-state');
+    const fresh = await import('~/query/basic/sync-stale-state');
     expect(fresh.syncStaleTime()).toBe(Number.POSITIVE_INFINITY);
   });
 

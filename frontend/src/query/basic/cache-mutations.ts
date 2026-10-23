@@ -23,10 +23,7 @@ function changePageItems<T extends ItemData>(pageItems: T[], changedItems: T[], 
   }
 }
 
-/**
- * Applies create, update or remove to list data. Totals move only by rows that enter or leave, so a partial overlap
- * cannot drift them; new rows enter one page, the first when `insertOrder` lists newest first, else the last.
- */
+/** Totals move only by rows that enter or leave, so a partial overlap cannot drift them; new rows enter the first page, or the last when `insertOrder` is 'asc'. */
 function changeListItems(data: BaseQueryItem<ItemData>, items: ItemData[], action: QueryDataAction, insertOrder?: 'asc' | 'desc') {
   const cachedIds = new Set(getQueryItems(data).map(({ id }) => id));
   const changedItems = items.filter(({ id }) => (action === 'create' ? !cachedIds.has(id) : cachedIds.has(id)));
@@ -49,7 +46,7 @@ function changeListItems(data: BaseQueryItem<ItemData>, items: ItemData[], actio
   );
 }
 
-/** Applies create, update or remove to the list cached under `queryKey`: a paged list inserts new rows in the key's createdAt order, a flat list prepends them. */
+/** A paged list takes new rows in the createdAt order its key names, newest first by default; a flat list prepends them. */
 export function changeListData(queryKey: QueryKey, items: ItemData[], action: QueryDataAction): void {
   queryClient.setQueryData<BaseQueryItem<ItemData>>(
     queryKey,
@@ -57,7 +54,6 @@ export function changeListData(queryKey: QueryKey, items: ItemData[], action: Qu
   );
 }
 
-/** Runs against every query that prefix-matches `queryKey`. */
 function changeMatchingLists(queryKey: QueryKey, items: ItemData[], action: QueryDataAction) {
   forEachListQuery(queryKey, (key) => changeListData(key, items, action));
 }
@@ -91,10 +87,9 @@ export function removeDetailQueriesById(client: QueryClient, detailBase: QueryKe
 }
 
 /**
- * {@link removeDetailQueriesById} for a delete the server has confirmed while a page of the deleted row may still be
- * open, as a channel deleted from its own settings: a detail that page shows goes when the page lets go of it. Removed
- * under its observer it would be fetched again at once, for a row that no longer exists. An optimistic delete keeps
- * the immediate form: its other callbacks read a missing detail as "deleted".
+ * {@link removeDetailQueriesById} for a confirmed delete whose page may still be open: a detail a page shows goes once the page
+ * lets go of it, since its observer would fetch it again at once. An optimistic delete uses the immediate form: its callbacks
+ * read a missing detail as deleted.
  */
 export function removeDetailQueriesOnceUnobserved(client: QueryClient, detailBase: QueryKey, ids: Iterable<string | number>) {
   const filters = detailsById(detailBase, ids);

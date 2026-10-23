@@ -3,13 +3,10 @@ import {
   makeInfiniteData,
   makeMembership,
   mockAppConfig,
-  mockGetEntityQueryKeys,
   mockGetRegisteredEntityTypes,
-  mockHasEntityQueryKeys,
   mockHierarchy,
-  mockRegisterEntityQueryKeys,
   queryClient,
-} from '~/query/enrichment/test-setup';
+} from '~/query/enrichment/tests/test-setup';
 
 const session = vi.hoisted(() => ({ isSystemAdmin: false }));
 vi.mock('~/modules/user/user-store', () => ({ userStore: { getState: () => session } }));
@@ -41,12 +38,7 @@ vi.mock('shared', async (importOriginal) => {
 });
 vi.mock('~/query/query-client', () => ({ queryClient }));
 vi.mock('~/modules/me/query', () => ({ meKeys: { memberships: ['me', 'memberships'], invites: ['me', 'invites'] } }));
-vi.mock('~/query/basic/entity-query-registry', () => ({
-  getEntityQueryKeys: mockGetEntityQueryKeys,
-  getRegisteredEntityTypes: mockGetRegisteredEntityTypes,
-  hasEntityQueryKeys: mockHasEntityQueryKeys,
-  registerEntityQueryKeys: mockRegisterEntityQueryKeys,
-}));
+vi.mock('~/query/basic/entity-query-registry', () => ({ getRegisteredEntityTypes: mockGetRegisteredEntityTypes }));
 
 const { initChannelEnrichment } = await import('~/query/enrichment/init-enrichment');
 

@@ -2,9 +2,9 @@ import type { QueryClient } from '@tanstack/react-query';
 import { appConfig, hierarchy } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { changeListData } from '~/query/basic/cache-mutations';
+import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData, OrgRoutableItemData, RoutableItemData } from '~/query/basic/types';
-import { getEntityQueryKeys } from './entity-query-registry';
 
 /** Deepest non-null ancestor, or the org for org-homed rows. Matches resolve-row-channel, so cache placement and stream routing cannot disagree. */
 export function resolveHomeChannelId(entityType: string, entity: ItemData): string | null {
@@ -20,7 +20,7 @@ export function matchesCanonicalHome(queryKey: readonly unknown[], organizationI
   return queryKey.length === 4 && queryKey[2] === organizationId && queryKey[3] === homeChannelId;
 }
 
-/** True when the row moved to a different parent channel (any context id column differs). */
+/** Only the channel id columns both copies carry count, so a partial row never reads as moved. */
 function hasParentChannelChanged(cached: ItemData, incoming: ItemData): boolean {
   const cachedRow = asRecord(cached);
   const incomingRow = asRecord(incoming);
@@ -71,7 +71,7 @@ export function spliceEntityIntoListCaches(
     }
 
     const isHomeList = !!organizationId && !!homeChannelId && matchesCanonicalHome(queryKey, organizationId, homeChannelId);
-    seen = seen || !!cachedItem;
+    seen ||= !!cachedItem;
     spliced ||= !cachedItem && isHomeList;
     changeListData(queryKey, [rowFor ? rowFor(cachedItem) : entity], cachedItem || !isHomeList ? 'update' : 'create');
   }

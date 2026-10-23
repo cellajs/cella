@@ -1,8 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mergeServerResponse, syncEntityToCache } from '../update-success-utils';
+import { mergeServerResponse, syncEntityToCache } from '~/query/offline/update-success-utils';
 
-// Mock cacheUpdate so we can verify it's called
 vi.mock('~/query/basic/cache-mutations', () => ({ cacheUpdate: vi.fn() }));
 
 import { cacheUpdate } from '~/query/basic/cache-mutations';
@@ -16,7 +15,6 @@ interface FakeEntity {
   updatedBy: string;
 }
 
-// Covers mutation onSuccess cache writes to list and detail cache.
 describe('syncEntityToCache', () => {
   let queryClient: QueryClient;
 
@@ -41,7 +39,6 @@ describe('syncEntityToCache', () => {
       updatedBy: 'user-1',
     };
 
-    // Pre-populate detail cache
     queryClient.setQueryData<FakeEntity>(detailKey, {
       id: 'e1',
       name: 'Old',
@@ -53,12 +50,10 @@ describe('syncEntityToCache', () => {
 
     syncEntityToCache({ entity, listKey, detailKey, queryClient });
 
-    // Detail cache updated
     const detail = queryClient.getQueryData<FakeEntity>(detailKey);
     expect(detail?.name).toBe('Updated');
     expect(detail?.stx?.fieldTimestamps?.name).toBe('200:0001:aaa');
 
-    // List cache cacheUpdate was called
     expect(cacheUpdate).toHaveBeenCalledWith(listKey, [entity]);
   });
 
@@ -76,9 +71,7 @@ describe('syncEntityToCache', () => {
 
     syncEntityToCache({ entity, listKey, detailKey, queryClient });
 
-    // Detail cache should NOT be created from scratch
     expect(queryClient.getQueryData(detailKey)).toBeUndefined();
-    // But list cache update is still called
     expect(cacheUpdate).toHaveBeenCalledWith(listKey, [entity]);
   });
 });

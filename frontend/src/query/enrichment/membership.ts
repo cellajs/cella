@@ -11,7 +11,6 @@ function hasMembershipChanged(a: MembershipBase | null, b: MembershipBase | null
   return comparedKeys.some((key) => a[key] !== b[key]);
 }
 
-/** Returns the original reference when nothing changed. */
 export function enrichWithMembership(item: EnrichableChannel, memberships: MembershipBase[]): EnrichableChannel {
   const existing = item.membership ?? null;
   const resolved = findMembership(memberships, item.id) ?? existing;

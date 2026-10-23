@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isDefaultListView } from './create-query-keys';
+import { isDefaultListView } from '~/query/basic/create-query-keys';
 
 const defaults = { q: '', sort: 'createdAt', order: 'desc' } as const;
 

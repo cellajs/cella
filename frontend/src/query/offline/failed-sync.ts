@@ -22,7 +22,6 @@ export interface FailedSyncRecord {
   createdAt: number;
 }
 
-/** The product type a mutation key starts with. */
 function productTypeOf(mutationKey: unknown): ProductEntityType | undefined {
   const head = Array.isArray(mutationKey) ? mutationKey[0] : undefined;
   return appConfig.productEntityTypes.find((type) => type === head);

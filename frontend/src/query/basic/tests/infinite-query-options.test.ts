@@ -1,13 +1,13 @@
+import '~/query/tests/query-client-env';
 import { describe, expect, it } from 'vitest';
+import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
 import type { PageParams, QueryData } from '~/query/types';
-import { baseInfiniteQueryOptions } from './infinite-query-options';
 
 const { getNextPageParam } = baseInfiniteQueryOptions;
 
 const page = (count: number, total: number): QueryData<unknown> => ({ items: Array.from({ length: count }, (_, i) => i), total });
 
-const next = (pages: QueryData<unknown>[]): PageParams | undefined | null =>
-  getNextPageParam(pages[pages.length - 1], pages, { page: 0, offset: 0 }, []);
+const next = (pages: QueryData<unknown>[]): PageParams | undefined | null => getNextPageParam(pages[pages.length - 1], pages);
 
 describe('baseInfiniteQueryOptions.getNextPageParam', () => {
   it('advances offset by the fetched count while rows remain', () => {

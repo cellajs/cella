@@ -9,6 +9,5 @@ export function preserveIncluded(oldData: unknown, newData: unknown): unknown {
 
   if (!oldEntity?.included || !newEntity) return replaceEqualDeep(oldData, newData);
 
-  // Old fields the new data does not provide are kept.
   return replaceEqualDeep(oldData, { ...newEntity, included: { ...oldEntity.included, ...newEntity.included } });
 }

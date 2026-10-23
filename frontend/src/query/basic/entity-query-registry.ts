@@ -6,7 +6,6 @@ export interface EntityQueryKeys {
   list: {
     base: readonly unknown[];
     org: (organizationId: string) => readonly unknown[];
-    /** Canonical home list key: one flat list per home channel (org-homed rows: omit homeChannelId) */
     home: (organizationId: string, homeChannelId?: string) => readonly unknown[];
   };
   detail: { base: readonly unknown[]; byId: (id: string) => readonly unknown[] };
@@ -84,7 +83,6 @@ export function getRegisteredEntityTypes(): string[] {
   return Array.from(entityQueryKeysRegistry.keys());
 }
 
-/** Registered entity types that are product entities: client-wired and product-classified. */
 export function getRegisteredProductEntityTypes(): ProductEntityType[] {
   return getRegisteredEntityTypes().filter(isProduct);
 }
@@ -95,9 +93,8 @@ export function getEntityRangeFetch(entityType: string): RangeFetch | undefined 
 }
 
 /**
- * Declares list filter keys that a row matches only when its field of the same name equals the filter value, as `itemId` on
- * a `{ itemId }` list. A new row then skips a filtered list that sets one of these keys to another value; a list that sets
- * none of them keeps the refetch.
+ * Declares list filter keys a row matches only when its field of the same name equals the filter value, as `itemId` on a `{ itemId }`
+ * list: a new row skips a filtered list that sets one of them to another value, and a list that sets none still refetches.
  */
 export function registerEqualityFilterKeys(entityType: EntityType, filterKeys: readonly string[]): void {
   equalityFilterKeysRegistry.set(entityType, filterKeys);

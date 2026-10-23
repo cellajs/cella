@@ -6,48 +6,9 @@ export const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, gcTime: 0 } },
 });
 
-/** Matches the StandardEntityKeys shape. */
-function createMockEntityKeys(entityType: string) {
-  return {
-    all: [entityType],
-    list: {
-      base: [entityType, 'list'] as readonly unknown[],
-      filtered: (filters: object) => [entityType, 'list', filters],
-    },
-    detail: {
-      base: [entityType, 'detail'] as readonly unknown[],
-      byId: (id: string) => [entityType, 'detail', id] as readonly unknown[],
-    },
-    create: [entityType, 'create'],
-    update: [entityType, 'update'],
-    delete: [entityType, 'delete'],
-  };
-}
-
-const mockEntityQueryRegistry = new Map<string, ReturnType<typeof createMockEntityKeys>>();
-
-mockEntityQueryRegistry.set('organization', createMockEntityKeys('organization'));
-mockEntityQueryRegistry.set('workspace', createMockEntityKeys('workspace'));
-mockEntityQueryRegistry.set('project', createMockEntityKeys('project'));
-
-/** Returns mocked entity query keys for enrichment tests. */
-export function mockGetEntityQueryKeys(entityType: string) {
-  return mockEntityQueryRegistry.get(entityType);
-}
-
-/** Returns mocked registered entity types for enrichment tests. */
+/** The types the mocked registry holds: the wide fixture's channel types, the only ones enrichment reads. */
 export function mockGetRegisteredEntityTypes(): string[] {
-  return Array.from(mockEntityQueryRegistry.keys());
-}
-
-/** Checks mocked entity query-key registration in enrichment tests. */
-export function mockHasEntityQueryKeys(entityType: string): boolean {
-  return mockEntityQueryRegistry.has(entityType);
-}
-
-/** Registers mocked entity query keys for enrichment tests. */
-export function mockRegisterEntityQueryKeys(entityType: string, keys: ReturnType<typeof createMockEntityKeys>): void {
-  mockEntityQueryRegistry.set(entityType, keys);
+  return [...wideHierarchy.channelTypes];
 }
 
 interface TestMembership {

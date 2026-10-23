@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildPreparedHandlers, coalescedResult, type PreparedVars } from '../prepared-mutation';
+import { buildPreparedHandlers, coalescedResult, type PreparedVars } from '~/query/offline/prepared-mutation';
 
 type Vars = { id: string; value: number };
 

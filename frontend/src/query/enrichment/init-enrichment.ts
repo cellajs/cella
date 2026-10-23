@@ -8,10 +8,9 @@ import { enrichWithPermissions } from '~/query/enrichment/permissions';
 import type { EnrichableChannel, EnrichableListData } from '~/query/enrichment/types';
 import { queryClient } from '~/query/query-client';
 
-/** Re-entrancy guard: prevents the subscriber from reacting to its own cache writes */
+/** Re-entrancy guard: keeps the subscriber from reacting to its own cache writes. */
 let isEnriching = false;
 
-/** Hierarchy ancestors plus menu parents, per entity type. */
 const extendedAncestorsCache = new Map<ChannelEntityType, readonly ChannelEntityType[]>();
 
 /** Ancestors for URL building: hierarchy ancestors first, then menu parents not already included. */
@@ -42,7 +41,6 @@ function enrichItem(
   return result;
 }
 
-/** Returns the same reference when nothing changed. */
 function enrichListData(data: EnrichableListData, viewer: ViewerState, entityType: ChannelEntityType, slugIndex: SlugIndex): EnrichableListData {
   const ancestors = getExtendedAncestors(entityType);
   let dataChanged = false;
@@ -103,7 +101,7 @@ function enrichEntityType(entityType: ChannelEntityType, viewer: ViewerState, sl
 
   const ancestors = getExtendedAncestors(entityType);
   for (const query of cache.findAll({ queryKey: [entityType, 'detail'] })) {
-    const data = (query.state.data ?? null) as EnrichableChannel | null;
+    const data = query.state.data as EnrichableChannel | undefined;
     if (!data?.id) continue;
     const enriched = enrichItem(data, viewer, entityType, ancestors, slugIndex);
     if (enriched !== data) setCacheData(query.queryKey, enriched);
@@ -139,7 +137,6 @@ function enrichTypeAndChildren(entityType: ChannelEntityType) {
   enrichTypes([entityType, ...childTypes]);
 }
 
-/** Initializes cache enrichment for channel entities and memberships. */
 export function initChannelEnrichment(): () => void {
   return queryClient.getQueryCache().subscribe((event) => {
     if (event.type !== 'updated' || isEnriching) return;

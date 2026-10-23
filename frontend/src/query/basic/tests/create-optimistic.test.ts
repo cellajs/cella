@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { getSchemaDefaults } from '../create-optimistic';
+import { getSchemaDefaults } from '~/query/basic/create-optimistic';
 
 /**
  * The default walker reads zod's `def` payloads, whose field names are the library's to change.
  * These cases pin one schema per branch, so a zod upgrade that renames a payload field fails
- * here. A silent failure would degrade every optimistic entity to nulls.
+ * here. Otherwise the walker logs only at debug level and degrades every optimistic entity to nulls.
  */
 describe('getSchemaDefaults', () => {
   it('defaults each primitive to its empty value', () => {

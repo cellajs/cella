@@ -7,7 +7,7 @@ const { quarantineFailedSync } = vi.hoisted(() => ({ quarantineFailedSync: vi.fn
 vi.mock('~/query/offline/failed-sync', () => ({ quarantineFailedSync }));
 
 const { createRowsOf, entityIdsOf, queuedUpdateOf, registerVariablesVersion, upgradePersistedMutation, variablesVersionOf, withVariablesVersion } =
-  await import('../mutation-variables');
+  await import('~/query/offline/mutation-variables');
 
 describe('reading queued variables', () => {
   it('reads the rows of a create as the live objects of its variables', () => {

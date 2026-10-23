@@ -3,17 +3,18 @@ import type { ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
 import type { BaseQueryItem, BaseQueryResponse, InfiniteQueryData, PageParams, QueryData } from '~/query/types';
 
-/** Handles both standard and infinite query data. */
-export const getQueryItems = <TItem>(data: BaseQueryItem<TItem>) => (isQueryData(data) ? data.items : data.pages.flatMap(({ items }) => items));
+export function getQueryItems<TItem>(data: BaseQueryItem<TItem>) {
+  return isQueryData(data) ? data.items : data.pages.flatMap(({ items }) => items);
+}
 
-export const isQueryData = <TItem>(data: unknown): data is QueryData<TItem> => {
+export function isQueryData<TItem>(data: unknown): data is QueryData<TItem> {
   return typeof data === 'object' && data !== null && 'items' in data && 'total' in data;
-};
+}
 
 /** Assumes standard `PageParams` of the form `{ page: number; offset: number }`. */
-export const isInfiniteQueryData = <TItem>(data: unknown): data is InfiniteQueryData<TItem> => {
+export function isInfiniteQueryData<TItem>(data: unknown): data is InfiniteQueryData<TItem> {
   return typeof data === 'object' && data !== null && 'pages' in data && 'pageParams' in data;
-};
+}
 
 /** Visits every flat or paged list cached under `prefix`. */
 export function forEachListQuery<TItem = ItemData>(prefix: QueryKey, visit: (queryKey: QueryKey, data: BaseQueryItem<TItem>) => void): void {
@@ -22,10 +23,7 @@ export function forEachListQuery<TItem = ItemData>(prefix: QueryKey, visit: (que
   }
 }
 
-/**
- * Maps list items page by page and adds `totalDelta` to every total. A page whose items come back as the same array
- * keeps its object, so without a change or a delta the data object itself returns.
- */
+/** Maps items page by page and adds `totalDelta` to every total; a page whose items come back as the same array keeps its object, and so does unchanged data. */
 export function mapListItems<TItem>(
   data: BaseQueryItem<TItem>,
   mapItems: (items: TItem[], pageIndex: number) => TItem[],
@@ -47,6 +45,6 @@ export function mapListItems<TItem>(
 }
 
 /** Matches every query whose key starts with `queryKey`. */
-export const getSimilarQueries = <TItem, TPageParam = PageParams>(queryKey: QueryKey): BaseQueryResponse<TItem, TPageParam>[] => {
+export function getSimilarQueries<TItem, TPageParam = PageParams>(queryKey: QueryKey): BaseQueryResponse<TItem, TPageParam>[] {
   return queryClient.getQueriesData<BaseQueryItem<TItem, TPageParam>>({ queryKey });
-};
+}

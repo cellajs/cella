@@ -2,14 +2,14 @@ import { onlineManager } from '@tanstack/react-query';
 import { appConfig } from 'shared';
 import { waitFor } from '~/utils/wait-for';
 
-// /health defaults to shallow (204). ?depth=full for JSON diagnostics.
+/** Shallow by default (204); `?depth=full` answers with JSON diagnostics. */
 const healthUrl = `${appConfig.backendUrl}/health`;
 const fullHealthUrl = `${healthUrl}?depth=full`;
 const cacheTtlMs = 10_000;
 const probeTimeoutMs = 5000;
 const recoveryPollMs = 5000;
 
-// Re-probe before declaring offline: mobile PWAs freeze the network radio when backgrounded, so the first fetches after resume fail until it reconnects.
+/** Re-probe before declaring offline: mobile PWAs freeze the network radio when backgrounded, so the first fetches after resume fail until it reconnects. */
 const probeRetries = 2;
 const probeRetryDelayMs = 750;
 
@@ -19,12 +19,7 @@ let inFlight: Promise<boolean> | null = null;
 
 /** Probes `/health` after network failures to catch a false-positive browser online state; probes are cached and deduplicated, and a failure pauses queries and mutations through `onlineManager`. */
 export async function checkConnectivity(): Promise<boolean> {
-  const now = Date.now();
-
-  if (lastResult !== null && now - lastCheckAt < cacheTtlMs) {
-    return lastResult;
-  }
-
+  if (lastResult !== null && Date.now() - lastCheckAt < cacheTtlMs) return lastResult;
   if (inFlight) return inFlight;
 
   inFlight = probeHealth();
@@ -36,7 +31,6 @@ export async function checkConnectivity(): Promise<boolean> {
   }
 }
 
-/** Single HEAD request to /health. Returns true if reachable, false on any failure. */
 async function fetchHealthOnce(): Promise<boolean> {
   try {
     const response = await fetch(healthUrl, {

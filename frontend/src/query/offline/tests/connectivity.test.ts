@@ -21,7 +21,7 @@ describe('connectivity probe', () => {
   });
 
   async function importModule() {
-    return import('../connectivity');
+    return import('~/query/offline/connectivity');
   }
 
   // --- Cache TTL ---

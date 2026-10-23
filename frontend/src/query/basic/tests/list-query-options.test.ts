@@ -215,7 +215,9 @@ describe('list query factories', () => {
 });
 
 describe('included parts on mount', () => {
-  const cached = (rows: { included?: Record<string, unknown> }[]) => ({ state: { data: { pages: [{ items: rows, total: rows.length }] } } });
+  const cached = (rows: { included?: Record<string, unknown> }[]) => ({
+    state: { data: { pages: [{ items: rows, total: rows.length }], pageParams: [{ page: 0, offset: 0 }] } },
+  });
 
   it('refetches a fresh list missing an asked-for part, and only then', () => {
     const askingForBoth = organizationsListQueryOptions({ include: 'counts,members' }).refetchOnMount as (query: unknown) => unknown;

@@ -6,9 +6,8 @@ type StandardEntityKeys<TEntityType extends EntityType, TFilters extends object 
     base: [TEntityType, 'list'];
     /** Org-scoped prefix: prefix-matches all list queries for one org. A scan/invalidation prefix, never a data key. */
     org: (organizationId: string) => [TEntityType, 'list', string];
-    /** Filter-qualified list key, with no org segment. */
     filtered: (filters: TFilters) => [TEntityType, 'list', TFilters];
-    /** Canonical home list: one flat list per home channel (org-homed rows: omit homeChannelId) */
+    /** Canonical home list: one flat list per home channel; org-homed rows omit homeChannelId. */
     home: (organizationId: string, homeChannelId?: string) => [TEntityType, 'list', string, string];
   };
   detail: { base: [TEntityType, 'detail']; byId: (id: TId) => [TEntityType, 'detail', TId] };
