@@ -8,7 +8,19 @@ import {
   type UploadContext,
   type UploadStatus,
 } from '~/modules/attachment/offline/attachments-db';
+import { groupBy } from '~/modules/attachment/offline/group-by';
+import type { OfflineFilesRules } from '~/modules/attachment/offline/offline-files-store';
 import type { CustomUppyFile } from '~/modules/common/uploader/types';
+
+/** A blob the offline budget may drop: a download, or an upload whose file and keys already reached the cloud. */
+const isEvictable = (blob: AttachmentBlob) =>
+  blob.source === 'download' || (blob.uploadStatus === 'uploaded' && (!blob.cloudKeys || !!blob.keysLinkedAt));
+
+/** The file itself in its stored forms; the thumbnail and preview are the previews a tier keeps apart. */
+const fileVariants = new Set<BlobVariant>(['raw', 'original', 'converted']);
+
+/** Age rank of a blob's attachment, larger is newer. */
+const rankOf = (blob: AttachmentBlob) => blob.attachmentCreatedAt ?? blob.storedAt.getTime();
 
 /** Fallback chain for blob resolution, in lookup order. */
 const displayFallbackChain: BlobVariant[] = ['converted', 'original', 'raw'];
@@ -87,6 +99,7 @@ class AttachmentStorageService {
     organizationId: string,
     blob: Blob,
     contentType: string,
+    attachmentCreatedAt: number,
   ): Promise<AttachmentBlob> {
     const key = makeBlobKey(attachmentId, variant);
 
@@ -101,6 +114,7 @@ class AttachmentStorageService {
       source: 'download',
       uploadStatus: 'uploaded',
       storedAt: new Date(),
+      attachmentCreatedAt,
     };
 
     try {
@@ -289,14 +303,37 @@ class AttachmentStorageService {
     await attachmentsDb.blobs.update(blobKey, { linkAttempts: attempts, lastError: error });
   }
 
-  /** Bytes the organization's stored blobs take on this device. */
-  async getStorageUsed(organizationId: string): Promise<number> {
-    try {
-      const blobs = await attachmentsDb.blobs.where('organizationId').equals(organizationId).toArray();
-      return blobs.reduce((total, blob) => total + blob.size, 0);
-    } catch {
-      return 0;
+  /** Bytes the evictable blobs take on this device, and the oldest attachment among them; the offline budget reads both. */
+  async offlineUsage(): Promise<{ bytes: number; oldestRank: number }> {
+    const blobs = (await attachmentsDb.blobs.toArray()).filter(isEvictable);
+    return {
+      bytes: blobs.reduce((total, blob) => total + blob.size, 0),
+      oldestRank: blobs.reduce((oldest, blob) => Math.min(oldest, rankOf(blob)), Number.POSITIVE_INFINITY),
+    };
+  }
+
+  /** Drops the evictable blobs a tier does not keep, then the oldest attachments' until the rest fits its budget. */
+  async trimToTier({ previews, files, budget }: OfflineFilesRules): Promise<void> {
+    const blobs = (await attachmentsDb.blobs.toArray()).filter(isEvictable);
+    const keepsVariant = (blob: AttachmentBlob) => (fileVariants.has(blob.variant) ? files : previews);
+    const keptVariants = blobs.filter(keepsVariant);
+    const dropped = blobs.filter((blob) => !keepsVariant(blob));
+
+    const newestFirst = [...groupBy(keptVariants, (blob) => blob.attachmentId).values()].sort((a, b) => rankOf(b[0]) - rankOf(a[0]));
+    let keptBytes = 0;
+    let full = false;
+    for (const attachmentBlobs of newestFirst) {
+      const bytes = attachmentBlobs.reduce((total, blob) => total + blob.size, 0);
+      // Past the first attachment that does not fit, every older one goes too: the budget keeps the newest.
+      full ||= keptBytes + bytes > budget;
+      if (full) dropped.push(...attachmentBlobs);
+      else keptBytes += bytes;
     }
+    if (dropped.length === 0) return;
+
+    await attachmentsDb.blobs.bulkDelete(dropped.map((blob) => blob.id));
+    for (const attachmentId of new Set(dropped.map((blob) => blob.attachmentId))) this.invalidateSharedBlobUrls(attachmentId);
+    console.debug(`[AttachmentStorage] Trimmed ${dropped.length} blobs to the offline tier`);
   }
 }
 

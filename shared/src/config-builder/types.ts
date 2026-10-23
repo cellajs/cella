@@ -88,6 +88,7 @@ export interface UppyRestrictionsConfig {
 export interface LocalBlobStorageConfig {
   enabled: boolean;
   maxFileSize: number;
+  /** Bytes downloaded files may take on one device, across organizations: the budget of the largest offline files tier. */
   maxTotalSize: number;
   allowedContentTypes: string[];
   excludedContentTypes: string[];

@@ -2501,7 +2501,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
 /**
  * Create attachments
  *
- * Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity.
+ * Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.
  *
  * **POST /{tenantId}/{organizationId}/attachments** ·· [createAttachments](https://www.cellajs.com/docs/operations?operationTag=attachments#tag/attachments/POST/{tenantId}/{organizationId}/attachments) ·· _attachments · cella · product_
  *

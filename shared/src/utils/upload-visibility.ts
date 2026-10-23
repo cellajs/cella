@@ -8,6 +8,9 @@ type TemplateStorage = { use: readonly string[]; publicBucket?: boolean; systemA
 /** Storage prefix of system uploads (newsletter images). Organization ids are UUIDs, so none can equal it. */
 export const systemUploadPrefix = 'system';
 
+/** Files one upload may carry: the attachment uploader's batch. The signed assembly params hold every template to it. */
+export const maxFilesPerUpload = 20;
+
 /**
  * Where uploads through `templateId` are stored: public-read in the public bucket when the template says so, else
  * private in the private bucket. The template decides, never the client: the signed upload, the row the server stamps

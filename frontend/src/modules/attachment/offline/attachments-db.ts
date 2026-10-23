@@ -64,6 +64,9 @@ export interface AttachmentBlob {
   linkAttempts?: number;
 
   storedAt: Date;
+
+  /** The attachment's `createdAt` in ms, on downloaded blobs: the offline budget keeps the newest. Uploads rank by `storedAt`. */
+  attachmentCreatedAt?: number;
 }
 
 /** Queue of attachments to cache locally for offline viewing, kept separate from blob storage. */
@@ -73,7 +76,7 @@ export interface DownloadQueueEntry {
 
   organizationId: string;
 
-  /** Download priority; lower runs first. */
+  /** Download priority, lower runs first: the attachment's negated `createdAt` in ms, so the newest goes first. */
   priority: number;
 
   /** Download status; 'skipped' means filtered out (too large / wrong type), see skipReason. */

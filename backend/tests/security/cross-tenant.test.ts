@@ -130,7 +130,9 @@ describe('Cross-tenant API isolation', async () => {
     let storedKey: string;
 
     beforeAll(async () => {
-      const body = attachmentBody(presignAttachmentId, homeA);
+      const body = attachmentBody(presignAttachmentId, homeA, {
+        keys: { original: `${tenantA.organization.id}/${tenantA.user.id}/${presignAttachmentId}.pdf` },
+      });
       storedKey = body.keys.original;
       const { response } = await call(createAttachments, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },

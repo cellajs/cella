@@ -271,7 +271,7 @@ export const config = {
   localBlobStorage: {
     enabled: true,
     maxFileSize: 10 * 1024 * 1024,
-    maxTotalSize: 100 * 1024 * 1024,
+    maxTotalSize: 1024 * 1024 * 1024,
     allowedContentTypes: [] as string[],
     excludedContentTypes: ['video/*'] as string[],
     downloadConcurrency: 2,

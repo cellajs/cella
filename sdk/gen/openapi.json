@@ -84,6 +84,10 @@
             "name": "presignedUrl",
             "description": "File link requests per user: 2000 per hour"
           },
+          "uploadTokenLimiter": {
+            "name": "uploadToken",
+            "description": "Upload tokens per user: 300 per hour"
+          },
           "totpVerificationLimiter": {
             "name": "totpVerification",
             "description": "Failed TOTP codes per IP: 5 per hour, then blocked for 30 minutes"
@@ -6429,7 +6433,7 @@
         "summary": "Get upload token",
         "description": "Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. Only a system admin gets a newsletter image token.",
         "x-guard": ["userGuard"],
-        "x-rate-limiter": [],
+        "x-rate-limiter": ["uploadTokenLimiter"],
         "x-cache": [],
         "parameters": [
           {
@@ -10847,21 +10851,16 @@
             "cookieAuth": []
           },
           {
-            "apiKey": ["attachment:write"]
+            "apiKey": []
           },
           {
-            "oauth2": ["attachment:write"]
+            "oauth2": []
           }
         ],
         "operationId": "createAttachments",
         "tags": ["attachments", "cella", "product"],
         "summary": "Create attachments",
-        "description": "Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity.",
-        "x-tool": {
-          "description": "Register already uploaded files as attachments. Give each a name, filename, MIME type, size and the storage key of the upload.",
-          "approvalRequired": true,
-          "entity": "attachment"
-        },
+        "description": "Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.",
         "x-guard": ["actorGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],

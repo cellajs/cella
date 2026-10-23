@@ -44,7 +44,7 @@ describe('mcp-server', () => {
     const res = await handle(['attachment:read'], { jsonrpc: '2.0', id: 2, method: 'tools/list' });
     const { tools } = (res?.result ?? {}) as { tools: McpToolDescriptor[] };
     const names = tools.map((tool) => tool.name);
-    expect(names).toEqual(expect.arrayContaining(['getAttachments', 'getAttachment', 'createAttachments', 'updateAttachment', 'deleteAttachments']));
+    expect(names).toEqual(expect.arrayContaining(['getAttachments', 'getAttachment', 'updateAttachment', 'deleteAttachments']));
     const byName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
     const properties = (name: string) => Object.keys((byName[name].inputSchema as { properties: object }).properties);
     expect(byName.updateAttachment._meta.scope).toBe('attachment:write');
@@ -53,7 +53,6 @@ describe('mcp-server', () => {
     expect(byName.updateAttachment.inputSchema).toMatchObject({ type: 'object', additionalProperties: false });
     expect(properties('updateAttachment')).toEqual(expect.arrayContaining(['id', 'ops']));
     expect(properties('updateAttachment')).not.toContain('stx');
-    expect(properties('createAttachments')).toEqual(['items']);
     expect(tools.find((tool) => tool.name === 'getAttachments')?.annotations.readOnlyHint).toBe(true);
     expect(tools.find((tool) => tool.name === 'deleteAttachments')?.annotations.destructiveHint).toBe(true);
   });

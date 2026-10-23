@@ -1,3 +1,4 @@
+import { offlineFilesStore } from '~/modules/attachment/offline/offline-files-store';
 import { alertStore } from '~/modules/common/alerter/alert-store';
 import { boardStore } from '~/modules/common/board/board-store';
 import { draftStore } from '~/modules/common/form-draft/draft-store';
@@ -16,7 +17,7 @@ export interface LocalUserStore {
 }
 
 /** Persisted zustand stores living in `localUserDb.kv`, in-memory while signed out. Each exposes `reset()` for {@link unbind}; an app appends its own via {@link extraLocalUserStores}. */
-const localUserStores = [seenStore, syncStore, navigationStore, draftStore, alertStore, boardStore, ...extraLocalUserStores];
+const localUserStores = [seenStore, syncStore, navigationStore, draftStore, alertStore, boardStore, offlineFilesStore, ...extraLocalUserStores];
 
 let boundOwner: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();

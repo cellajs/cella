@@ -7,7 +7,7 @@ import { attachmentStorage } from '~/modules/attachment/offline/storage-service'
 /** Skip reason the download service writes for a row queued before its cloud keys arrived; `enqueue` matches on it to re-queue. */
 export const skipReasonNoOriginalKey = 'No originalKey';
 
-/** Valid transitions for the download service; `failed` is terminal here, and reviving is an `enqueue` decision that writes the row directly. */
+/** Valid transitions for the download service; `failed` and `downloaded` are terminal here, and reviving (`enqueue`, `reviveDownloaded`) writes the row directly. */
 const transitions: Record<DownloadStatus, DownloadStatus[]> = {
   pending: ['downloading', 'skipped'],
   downloading: ['downloaded', 'failed'],
@@ -160,15 +160,17 @@ function matchesMimePattern(mimeType: string, pattern: string): boolean {
   return mimeType === pattern;
 }
 
-function calculatePriority(attachment: Attachment): number {
-  const type = attachment.contentType || '';
-  if (type.startsWith('image/')) return 1;
-  if (type.startsWith('audio/')) return 2;
-  if (type === 'application/pdf') return 3;
-  if (type.startsWith('text/')) return 4;
-  if (type.startsWith('video/')) return 10;
-  return 5;
+/** Newest first: the offline budget keeps the newest attachments, so they are the ones worth fetching first. */
+const calculatePriority = (attachment: Attachment): number => -Date.parse(attachment.createdAt);
+
+/** Sends finished entries back to `pending` when the offline tier grows: they lack the variants it adds. */
+async function reviveDownloaded(): Promise<void> {
+  try {
+    await attachmentsDb.downloadQueue.filter((entry) => entry.status === 'downloaded').modify({ status: 'pending' });
+  } catch (error) {
+    console.error('[DownloadQueue] Failed to revive downloaded entries:', error);
+  }
 }
 
 /** Queue API for background downloading of cloud attachments. */
-export const downloadQueue = { enqueue, transition, remove };
+export const downloadQueue = { enqueue, transition, remove, reviveDownloaded };

@@ -41,6 +41,15 @@ export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', [['userI
   description: 'File link requests per user: 2000 per hour',
 });
 
+/**
+ * A budget: each token signs one assembly of up to `maxFilesPerUpload` files. The uploader asks one as it opens and
+ * one per assembly, and the offline upload service one per file it sends.
+ */
+export const uploadTokenLimiter = rateLimiter('limit', 'uploadToken', [['userId', 'ip']], {
+  limits: { points: 300, duration: 60 * 60, blockDuration: 0 },
+  description: 'Upload tokens per user: 300 per hour',
+});
+
 /** Keyed by IP, across accounts. Each account also has its own budget, with a lockout mail, in `verifyTotp`. */
 export const totpVerificationLimiter = rateLimiter('failseries', 'totpVerification', ['ip'], {
   limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30, successStatusCodes: proofSuccessStatusCodes },

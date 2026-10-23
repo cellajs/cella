@@ -53,13 +53,9 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
     path: '/',
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
-    xTool: {
-      description: 'Register already uploaded files as attachments. Give each a name, filename, MIME type, size and the storage key of the upload.',
-      approvalRequired: true,
-      entity: 'attachment',
-    },
     summary: 'Create attachments',
-    description: 'Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity.',
+    description:
+      "Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity. Every storage key must lie under the caller's own upload prefix and name a stored object; the size comes from storage.",
     request: { params: tenantOrgParamSchema, body: jsonBody(attachmentCreateManyStxBodySchema, mockCreateAttachmentsBody()) },
     responses: {
       200: json('Attachments already created (idempotent)', attachmentCreateResponseSchema, mockBatchAttachmentsResponse()),
