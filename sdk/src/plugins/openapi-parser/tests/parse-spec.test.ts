@@ -224,7 +224,7 @@ const goldenSpec = {
   },
   tags: [
     { name: moduleTag, description: 'User operations', kind: 'module' },
-    { name: 'admin', kind: 'ownership' }, // excluded from operations + sidebar
+    { name: 'admin', kind: 'owner' }, // excluded from operations + sidebar
     { name: 'data', kind: 'schema', description: 'Default schemas', 'x-default': true },
     { name: 'system', kind: 'schema', description: 'System schemas' },
   ] as OpenApiTag[],
@@ -274,8 +274,8 @@ describe('parseOpenApiSpec, golden fixture', () => {
 
   it('strips excluded (non-module) tags from operations but keeps them grouped by kind', () => {
     expect(getUsers).toBeDefined();
-    expect(getUsers?.tags).toEqual([moduleTag]); // 'admin' (ownership kind) removed
-    expect(getUsers?.tagsByKind).toEqual({ module: [moduleTag], ownership: ['admin'] });
+    expect(getUsers?.tags).toEqual([moduleTag]); // 'admin' (owner kind) removed
+    expect(getUsers?.tagsByKind).toEqual({ module: [moduleTag], owner: ['admin'] });
   });
 
   it('derives entityType from a module tag matching a configured entity type', () => {
@@ -293,7 +293,7 @@ describe('parseOpenApiSpec, golden fixture', () => {
   });
 
   it('lists only module-kind tags in the sidebar with per-tag counts', () => {
-    // 'admin' (ownership) and 'data'/'system' (schema) must not appear in the tag sidebar.
+    // 'admin' (owner) and 'data'/'system' (schema) must not appear in the tag sidebar.
     expect(result.tags).toEqual([{ name: moduleTag, description: 'User operations', count: 1, kind: 'module' }]);
   });
 
@@ -312,7 +312,7 @@ describe('parseOpenApiSpec, golden fixture', () => {
     ]);
   });
 
-  it('sorts component schemas by ownership, then module, then name', () => {
+  it('sorts component schemas by owner, then module, then name', () => {
     expect(result.schemas.map((s) => s.name)).toEqual(['Alpha', 'User', 'Zebra']);
   });
 

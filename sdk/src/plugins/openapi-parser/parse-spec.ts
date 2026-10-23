@@ -307,14 +307,14 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
     componentSchemas.push(componentSchema);
   }
 
-  // Sorted by ownership, module, and name for stable output; untagged schemas sort last at their level.
+  // Sorted by owner, module, and name for stable output; untagged schemas sort last at their level.
   componentSchemas.sort((a, b) => {
-    const ownershipA = a.tagsByKind?.ownership?.[0] ?? '';
-    const ownershipB = b.tagsByKind?.ownership?.[0] ?? '';
-    if (ownershipA !== ownershipB) {
-      if (!ownershipA) return 1;
-      if (!ownershipB) return -1;
-      return ownershipA.localeCompare(ownershipB);
+    const ownerA = a.tagsByKind?.owner?.[0] ?? '';
+    const ownerB = b.tagsByKind?.owner?.[0] ?? '';
+    if (ownerA !== ownerB) {
+      if (!ownerA) return 1;
+      if (!ownerB) return -1;
+      return ownerA.localeCompare(ownerB);
     }
     const moduleA = a.tagsByKind?.module?.[0] ?? '';
     const moduleB = b.tagsByKind?.module?.[0] ?? '';
