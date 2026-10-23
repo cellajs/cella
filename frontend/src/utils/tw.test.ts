@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { tw } from './tw';
+import { tw } from '~/utils/tw';
 
 describe('tw', () => {
   it('returns the class string of a call or a tagged template unchanged', () => {

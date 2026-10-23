@@ -3,7 +3,7 @@ import { LucideProvider } from 'lucide-react';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Themer } from '~/modules/common/themer';
-import './styling/tailwind.css';
+import '~/styling/tailwind.css';
 import '~/lib/dayjs';
 import '~/lib/i18n';
 import '~/lib/otel';
@@ -21,7 +21,6 @@ import { initFaviconBadge } from '~/utils/init-favicon-badge';
 import { initInputModality } from '~/utils/input-modality';
 import { initViewportObserver } from '~/utils/viewport-observer';
 
-// Configure the SDK client with runtime settings (credentials, error handling, etc.)
 client.setConfig(createClientConfig());
 
 const root = document.getElementById('root');
@@ -61,11 +60,7 @@ if (canonicalUrl) {
   }).render(
     <StrictMode>
       <Themer />
-      {/* size="1rem" keeps the emitted width/height attributes truthful: they mirror the
-        `:where(svg.lucide)` CSS default, not lucide's misleading px 24. Sizing itself
-        stays class-based (icon-* utilities); classes override both the rule and the attrs.
-        The cast bridges a lucide-react typing gap: LucideConfig narrows size to number,
-        while the icons consuming the context accept LucideProps' string | number. */}
+      {/* size="1rem" mirrors the :where(svg.lucide) default in the width/height attributes; LucideConfig types size as a number. */}
       <LucideProvider size={'1rem' as unknown as number} strokeWidth={appConfig.theme.strokeWidth}>
         <QueryClientProvider>
           <AppRouter />

@@ -17,10 +17,10 @@ export const Route = createFileRoute('/_public/auth/authenticate')({
     authStore.getState().reset();
 
     // Invitation flow: a signed-in visitor stays to confirm the invitation as their account. Probed on every pass,
-    // so a sign-in made on this page lands on the confirm step too.
+    // so a sign-in made on this page reaches the confirm step too.
     if (search.tokenId) {
       try {
-        await queryClient.query({ ...meQueryOptions() });
+        await queryClient.query(meQueryOptions());
       } catch {
         queryClient.removeQueries({ queryKey: meKeys.all, exact: true }); // No valid session -> sign-up or sign-in steps
       }

@@ -10,15 +10,12 @@ export function useDownloader() {
   const download = async (url: string, filename?: string) => {
     if (isInProgress) return;
     setIsInProgress(true);
-    try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-      downloadFile(filename || 'file', await response.blob());
-    } catch {
-      toaster.error(i18n.t('error:download_failed'));
-    } finally {
-      setIsInProgress(false);
-    }
+    const blob = await fetch(url)
+      .then((response) => (response.ok ? response.blob() : null))
+      .catch(() => null);
+    if (blob) downloadFile(filename || 'file', blob);
+    else toaster.error(i18n.t('error:download_failed'));
+    setIsInProgress(false);
   };
 
   return { download, isInProgress };

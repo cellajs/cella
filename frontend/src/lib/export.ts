@@ -6,7 +6,7 @@ import type { Mode } from '~/modules/ui/ui-store';
 
 dayjs.extend(localizedFormat);
 
-// biome-ignore lint/suspicious/noExplicitAny: any is required here
+// biome-ignore lint/suspicious/noExplicitAny: rows of any entity, read by column key; their cells reach jspdf-autotable as they are.
 type Row = Record<string, any>;
 
 /** A date as an export writes it, for a column's `exportValue`; a missing date stays missing. */
@@ -51,7 +51,7 @@ export async function exportToPdf<R extends Row>(columns: ColumnOrColumnGroup<R>
 
 /** The header row and the body rows of the columns the export shows. */
 const toTable = <R extends Row>(columns: ColumnOrColumnGroup<R>[], rows: R[]) => {
-  const shown = columns.filter((column) => isExportedColumn(column));
+  const shown = columns.filter(isExportedColumn);
   return { head: [shown.map((column) => String(column.name))], body: formatRows(rows, shown) };
 };
 

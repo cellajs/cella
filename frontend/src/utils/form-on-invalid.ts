@@ -59,7 +59,7 @@ const showsInline = (form: HTMLFormElement | undefined, fieldName: string) =>
 
 // Resolve a camelCase field name to a translated label via c:{snake_case} convention
 const resolveFieldLabel = (fieldName: string): string => {
-  const leaf = fieldName.includes('.') ? fieldName.split('.').pop()! : fieldName;
+  const leaf = fieldName.slice(fieldName.lastIndexOf('.') + 1);
   const key = leaf.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
   const translated = t(`c:${key}` as TKey);
   // If i18next returns the key itself, fall back to the raw field name

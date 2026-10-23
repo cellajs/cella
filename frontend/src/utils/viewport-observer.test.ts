@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { initViewportObserver } from './viewport-observer';
+import { initViewportObserver } from '~/utils/viewport-observer';
 
 let frames: FrameRequestCallback[] = [];
 const flushFrames = () => {

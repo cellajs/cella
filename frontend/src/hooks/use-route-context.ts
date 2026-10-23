@@ -1,10 +1,9 @@
 import { useRouterState } from '@tanstack/react-router';
 import type { Organization } from 'sdk';
 
-// String route IDs avoid circular imports between route files and component modules, which break Vite HMR.
-
 type OrganizationContext = { organization: Organization; tenantId: string };
 
+// Finds the match by its context shape: importing the layout route would make a route file and a component import each other (breaks Vite HMR).
 const findOrganizationContext = (matches: { context: unknown }[]) =>
   matches.find((match) => {
     const context = match.context as Record<string, unknown>;

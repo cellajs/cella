@@ -1,6 +1,6 @@
 import { type ComponentType, type ReactNode, Suspense } from 'react';
 import { pageNotFoundError } from '~/modules/common/error-helpers';
-import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
+import { ErrorNotice } from '~/modules/common/error-notice';
 import { Spinner } from '~/modules/common/spinner';
 import type { BoundaryType } from '~/routes/types';
 
@@ -18,7 +18,7 @@ export const withSuspenseSpinner = (Component: ComponentType) => withSuspense(Co
 
 export const createErrorComponent = (boundary: BoundaryType, homePath?: string) => {
   const ErrorComponent = ({ error, reset }: { error: unknown; reset: () => void }) => (
-    <ErrorNotice error={error as ErrorNoticeError} resetErrorBoundary={reset} boundary={boundary} homePath={homePath} />
+    <ErrorNotice error={error} resetErrorBoundary={reset} boundary={boundary} homePath={homePath} />
   );
   ErrorComponent.displayName = `ErrorComponent(${boundary})`;
   return ErrorComponent;
@@ -29,8 +29,6 @@ export const createNotFoundComponent = (boundary: BoundaryType, homePath?: strin
   NotFoundComponent.displayName = `NotFoundComponent(${boundary})`;
   return NotFoundComponent;
 };
-
-// === Static route components ===
 
 export function ErrorNoticePageComponent() {
   return <ErrorNotice boundary="public" />;

@@ -9,7 +9,7 @@ import { pageHead } from '~/utils/app-title';
 export const Route = createFileRoute('/_app/home')({
   validateSearch: z.object({
     skipWelcome: z.boolean().optional(),
-    // The user sheet can be opened from home surfaces
+    // The home page opens the user sheet
     userSheetId: z.string().optional(),
   }),
   staticData: { isAuth: true },

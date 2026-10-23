@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cn } from './cn';
+import { cn } from '~/utils/cn';
 
 describe('cn', () => {
   it.each([

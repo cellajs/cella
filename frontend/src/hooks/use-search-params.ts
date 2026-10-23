@@ -9,6 +9,7 @@ type RoutesById = keyof typeof router.routesById;
 
 interface UseSearchParamsOptions {
   from?: RoutesById;
+  /** Reads and writes the state in the URL; default true. Without it the state stays local. */
   saveDataInSearch?: boolean;
 }
 
@@ -29,7 +30,7 @@ const serializeSearch = (search: Record<string, unknown>) => {
   return JSON.stringify(withoutOverlays);
 };
 
-/** Query param state; with `saveDataInSearch` it reads and writes the URL. Routes own defaults and stripping. */
+/** Query param state of a table or list. Routes own defaults and stripping. */
 export function useSearchParams<T extends Record<string, string | string[] | undefined>>({
   from,
   saveDataInSearch = true,
@@ -75,7 +76,7 @@ export function useSearchParams<T extends Record<string, string | string[] | und
     }
   };
 
-  // The URL write from setSearch lands here too; only a change made elsewhere (back, link, defaults) needs new state.
+  // The URL write from setSearch reaches this effect too; only a change made elsewhere (back, link, defaults) needs new state.
   useEffect(() => {
     if (!saveDataInSearch || serializeSearch(currentSearch) === searchKey) return;
     setCurrentSearch(readSearch());

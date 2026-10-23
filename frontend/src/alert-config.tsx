@@ -22,7 +22,6 @@ if (appConfig.mode === 'development') {
   });
 }
 
-// In production mode, show a notice that the app is a pre-release version
 if (appConfig.mode === 'production') {
   alerts.push({
     id: 'prerelease',

@@ -14,13 +14,14 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 import type { BoundaryType } from '~/routes/types';
 import { cn } from '~/utils/cn';
-import { type ErrorNoticeError, getErrorInfo } from '~/utils/get-error-info';
+import { getErrorInfo } from '~/utils/get-error-info';
 
 export type { ErrorNoticeError } from '~/utils/get-error-info';
 
 interface ErrorNoticeProps {
   boundary: BoundaryType;
-  error?: ErrorNoticeError;
+  /** Any thrown value, as error boundaries hand it over; one that is no `Error` reads as none. */
+  error?: unknown;
   children?: ReactNode;
   resetErrorBoundary?: () => void;
   homePath?: string;
@@ -55,10 +56,11 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
 
   const [showDetails, setShowDetails] = useState(false);
 
+  const knownError = error instanceof Error ? error : undefined;
   // Only an API error carries a severity, request details and a connection to sign in through
-  const apiError = error instanceof ApiError ? error : undefined;
-  const severity = error ? apiError?.severity : severityFromQuery;
-  const { title, message } = getErrorInfo({ error, errorFromQuery });
+  const apiError = knownError instanceof ApiError ? knownError : undefined;
+  const severity = knownError ? apiError?.severity : severityFromQuery;
+  const { title, message } = getErrorInfo({ error: knownError, errorFromQuery });
 
   // A tenant that requires signing in through an institution names the connection; its entry page takes it from here.
   const ssoConnectionId = apiError?.type === 'sso_required' ? apiError.meta?.connectionId : undefined;
@@ -170,7 +172,5 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
 
 /** The `fallbackRender` of an error boundary inside the `boundary` layout. */
 export function errorNoticeFallback(boundary: BoundaryType) {
-  return ({ error, resetErrorBoundary }: FallbackProps) => (
-    <ErrorNotice boundary={boundary} error={error instanceof Error ? error : null} resetErrorBoundary={resetErrorBoundary} />
-  );
+  return ({ error, resetErrorBoundary }: FallbackProps) => <ErrorNotice boundary={boundary} error={error} resetErrorBoundary={resetErrorBoundary} />;
 }

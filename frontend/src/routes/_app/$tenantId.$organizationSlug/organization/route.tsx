@@ -7,7 +7,7 @@ import { pageHead } from '~/utils/app-title';
 export const Route = createFileRoute('/_app/$tenantId/$organizationSlug/organization')({
   staticData: { isAuth: true, floatingNavButtons: { left: 'menu' }, tabsSlot: 'organization.tabs' },
   beforeLoad: ({ context, matches }) => {
-    // Lands on the first tab the surface resolves and forwards away from disabled tabs.
+    // Opens the first tab the surface resolves and forwards away from disabled tabs.
     guardNavTabs(matches, '/_app/$tenantId/$organizationSlug/organization', {
       slotConfig: context.organization?.toolsConfig?.['organization.tabs'],
     });

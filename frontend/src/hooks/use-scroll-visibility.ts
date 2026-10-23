@@ -92,7 +92,6 @@ export const useScrollVisibility = (enabled = true, containerRef?: RefObject<HTM
         shownAtRef.current = Date.now();
         setIsVisible(true);
       } else if (Date.now() - shownAtRef.current > minVisibleMs) {
-        // Anti-flap: hide only once the grace period since showing has passed.
         setIsVisible(false);
       }
     };

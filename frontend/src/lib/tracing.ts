@@ -2,12 +2,10 @@ import { type Span, SpanStatusCode } from '@opentelemetry/api';
 import type { IncomingTraceContext, SpanData, TraceContext } from 'shared/tracing';
 import { frontendSpanNames } from 'shared/tracing';
 import { isDebugMode } from '~/env';
-import { spanStore, tracer } from './otel';
+import { spanStore, tracer } from '~/lib/otel';
 
 export type { SpanData };
 export { frontendSpanNames as syncSpanNames };
-
-// Public API for devtools
 
 export function getSpans(): SpanData[] {
   return spanStore.getSpans();
@@ -20,8 +18,6 @@ export function subscribeToSpans(callback: (spans: SpanData[]) => void): () => v
 export function clearSpans(): void {
   spanStore.clear();
 }
-
-// Span attribute helpers
 
 interface SpanAttributes {
   [key: string]: string | number | boolean | null | undefined | IncomingTraceContext;
@@ -40,8 +36,6 @@ function applyAttributes(span: Span, attributes: SpanAttributes): void {
     if (_trace.traceId) span.setAttribute('sync.cdc_trace_id', _trace.traceId);
   }
 }
-
-// withSpan helpers
 
 function failSpan(span: Span, error: unknown): void {
   const exception = error instanceof Error ? error : new Error(String(error));

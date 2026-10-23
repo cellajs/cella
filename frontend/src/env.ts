@@ -6,7 +6,6 @@ const flag = z
   .default('false')
   .transform((value) => value === 'true');
 
-/** Provides validated environment variables for the frontend. */
 export const env = createEnv({
   client: { VITE_DEBUG_MODE: flag, VITE_DEBUG_I18N: flag, VITE_DEBUG_UI: flag, VITE_MAPLE: flag },
   clientPrefix: 'VITE_',
@@ -14,7 +13,6 @@ export const env = createEnv({
   emptyStringAsUndefined: true,
 });
 
-/** Reports whether frontend debug mode is enabled. */
 export const isDebugMode = env.VITE_DEBUG_MODE;
 
 /** Reports whether Maple telemetry is opted in for local development. */

@@ -4,26 +4,21 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import type { ChannelListQueryFactory, ChannelListQueryMap } from '~/query/types';
 
-/**
- * A channel entity's frontend wiring, declared by the module that owns the entity: an app adding a
- * channel fills in its own `<name>-module.tsx` and edits no central map.
- */
+/** A channel entity's frontend registration, declared by its module: an app adding a channel edits no central map. */
 export interface ChannelModuleConfig {
   entityType: ChannelEntityType;
   /** Menu sheet section for this channel; a channel without one stays out of the menu. */
   menuSection?: Omit<MenuSectionOptions, 'entityType'>;
   /**
-   * List query behind the menu, the search sheet and parent pickers. Wrap the factory in an arrow so
-   * the (ESM live) binding is read at call time: a direct reference throws "Cannot access X before
-   * initialization" when the module file evaluates mid-cycle, for example during Vite HMR before the
-   * entity query module has initialized.
+   * List query behind the menu, the search sheet and parent pickers. Wrap the factory in an arrow so the binding is read at
+   * call time: a direct reference throws "Cannot access X before initialization" when the file evaluates mid-cycle (Vite HMR).
    */
   listQuery?: ChannelListQueryFactory;
   /** Keeps this channel's member-count column out of the members table until a user toggles it on. */
   hiddenMemberCount?: boolean;
 }
 
-/** A product entity's frontend wiring, declared by the module that owns the entity. */
+/** A product entity's frontend registration, declared by its module. */
 export interface ProductModuleConfig {
   entityType: ProductEntityType;
   /** Icon of this product's per-member stat column, shown when `appConfig.memberStatProductTypes` lists the type. */

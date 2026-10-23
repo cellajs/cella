@@ -10,9 +10,7 @@ const enCommonExtended = { ...enCommon, ...enApp };
 /** Any valid translation key: bare `c` keys plus `c:`/`about:`/`error:` prefixed ones, per i18next-resources.d.ts. */
 export type TKey = ParseKeys;
 
-const locales = { en: { about: enAbout, appError: enAppError, c: enCommonExtended, error: enError } };
-
-export { locales };
+export const locales = { en: { about: enAbout, appError: enAppError, c: enCommonExtended, error: enError } };
 
 if (import.meta.hot) {
   import.meta.hot.accept(async (newModule) => {

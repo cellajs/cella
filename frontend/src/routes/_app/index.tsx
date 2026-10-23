@@ -7,7 +7,7 @@ import { withSuspense } from '~/routes/-route-utils';
 import { pageHead } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_app/')({
-  // The user sheet can be opened from home surfaces
+  // Renders the home page, which opens the user sheet
   validateSearch: z.object({ userSheetId: z.string().optional() }),
   head: () => pageHead(i18n.t('c:home')),
   staticData: { isAuth: true },

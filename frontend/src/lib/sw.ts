@@ -101,8 +101,8 @@ async function focusOrOpenApp(url: string): Promise<void> {
   if ('navigate' in existing) await existing.navigate(url);
 }
 
-// The push service rotated the subscription: re-subscribe with the same key and re-register, or
-// the device silently stops receiving until the user toggles push off and on again.
+// The push service rotated the subscription: re-subscribe with the same key and re-register, or the device receives no
+// pushes until the user toggles push off and on again.
 self.addEventListener('pushsubscriptionchange', (event) => event.waitUntil(resubscribe(event.oldSubscription)));
 
 async function resubscribe(oldSubscription: PushSubscription | null): Promise<void> {

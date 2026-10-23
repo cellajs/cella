@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { canonicalOriginUrl, leaveForCanonicalOrigin } from './canonical-origin';
+import { canonicalOriginUrl, leaveForCanonicalOrigin } from '~/utils/canonical-origin';
 
 const at = (href: string) => {
   const { origin, hostname, pathname, search, hash } = new URL(href);

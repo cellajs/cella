@@ -7,18 +7,14 @@ import { channelRouteConfig } from '~/routes-config';
 import { getField } from '~/utils/get-field';
 
 /**
- * One entry of `channelRouteConfig` (`routes-config.tsx`, which apps pin and fill with their channels). `paramName` is
- * used both when the entity is the route target AND when it appears as an ancestor in another entity's route.
- *
- * The one piece of a channel's frontend wiring that stays central: the router types `to` from the literal `path`
- * strings, and a registry filled at runtime hands back a widened `string`. A channel's menu section, list query and
- * members-table defaults live in its own `<name>-module` file; which tabs its page shows, and the one a link lands on,
- * come from `appConfig.surfaces`. What a notification deep link opens is the product's own `deepLinkParam`, not a
- * channel's.
+ * One entry of `channelRouteConfig` (`routes-config.tsx`, which apps pin and fill with their channels): the one piece of a
+ * channel's frontend configuration that stays central, since the router types `to` from the literal `path` strings and a
+ * registry filled at runtime hands back a widened `string`. A channel's menu section, list query and members-table
+ * defaults live in its own `<name>-module` file; which tabs its page shows, and the one a link opens, come from
+ * `appConfig.surfaces`. What a notification deep link opens is the product's own `deepLinkParam`.
  */
 export type ChannelRouteEntry = {
-  /** Route path template for this entity: its tabbed layout route, so links stay tab-less and
-   *  the layout's `beforeLoad` picks the landing tab against the channel's stored arrangement. */
+  /** The tabbed layout route, so links stay tab-less and the layout's `beforeLoad` picks the tab from the channel's stored arrangement. */
   path: string;
   /** Route param name this entity's slug fills (both as self and as ancestor) */
   paramName: string;
@@ -26,7 +22,7 @@ export type ChannelRouteEntry = {
   subitemOf?: { entityType: ChannelEntityType; searchParam: string };
 };
 
-/** Nav hint for entity links: lands forward navigation on the header (`id="pt"`), or on top for a page without one; back/forward keeps cached scroll. */
+/** Nav hint for entity links: scrolls forward navigation to the header (`id="pt"`), or to the top without one; back/forward keeps cached scroll. */
 export const pageTopHashNav: { hash: string; hashScrollIntoView: ScrollIntoViewOptions } = {
   hash: 'pt',
   hashScrollIntoView: { block: 'start', behavior: 'instant' },
@@ -119,7 +115,7 @@ export interface ProductLocation {
 }
 
 /**
- * Search that opens the subject on the page it lands on, from the subject product's `deepLinkParam`. Both its own
+ * Search that opens the subject on the target page, from the subject product's `deepLinkParam`. Both its own
  * param and its host's go in: whichever the target route does not declare in `validateSearch`, the router strips.
  */
 function getSubjectSearch({ entityType, subjectId, contextId }: ProductLocation): Record<string, string> {

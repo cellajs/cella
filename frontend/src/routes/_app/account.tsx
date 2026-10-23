@@ -14,7 +14,7 @@ const AccountPage = lazyNamed(() => import('~/modules/me/account-page'), 'Accoun
 
 /**
  * Accepts `error`/`severity` search params from backend OAuth connect redirects, toasts them, then strips them. `connect`
- * names an institution's connection the authentication card offers to connect: where an SSO recovery link lands.
+ * names an institution's connection the authentication card offers to connect: where an SSO recovery link leads.
  */
 export const Route = createFileRoute('/_app/account')({
   staticData: { isAuth: true },
@@ -31,9 +31,6 @@ export const Route = createFileRoute('/_app/account')({
       throw redirect({ to: '/account', search: {}, replace: true });
     }
   },
-  loader: async () => {
-    const userAuthOptions = meAuthQueryOptions();
-    return queryClient.query({ ...userAuthOptions, staleTime: 'static' });
-  },
+  loader: () => queryClient.query({ ...meAuthQueryOptions(), staleTime: 'static' }),
   component: withSuspenseSpinner(AccountPage),
 });

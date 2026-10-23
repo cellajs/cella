@@ -10,7 +10,7 @@ import { formErrorMessage } from '~/utils/form-error-message';
 
 /** i18n options: bundled preload for the default language, HTTP-loaded namespaces for the rest. */
 const initOptions: InitOptions = {
-  resources: locales, // Preload default ('en') translations
+  resources: locales,
   debug: env.VITE_DEBUG_I18N,
   ns: ['c', 'about', 'error', 'appError'],
   partialBundledLanguages: true,

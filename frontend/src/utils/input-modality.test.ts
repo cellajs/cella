@@ -10,7 +10,7 @@ const pointerDown = (pointerType: string) => {
 const load = async (coarse: boolean) => {
   vi.resetModules();
   vi.stubGlobal('matchMedia', (query: string) => ({ matches: coarse && query === '(pointer: coarse)' }));
-  const modality = await import('./input-modality');
+  const modality = await import('~/utils/input-modality');
   modality.initInputModality();
   return modality;
 };

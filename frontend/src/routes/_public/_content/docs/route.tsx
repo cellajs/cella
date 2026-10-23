@@ -16,7 +16,7 @@ export const Route = createFileRoute('/_public/_content/docs')({
   loader: async () => {
     // Prefetch tags and schemas (used for error response deduplication)
     const [tags] = await Promise.all([queryClient.query(tagsQueryOptions), queryClient.query(schemasQueryOptions)]);
-    // Eagerly prefetch tag details so child routes don't waterfall (skip empty tags)
+    // Eagerly prefetch tag details so child routes don't waterfall
     for (const tag of tags) {
       if (tag.count > 0) prefetchTagDetails(tag.name);
     }

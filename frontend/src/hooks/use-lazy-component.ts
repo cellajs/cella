@@ -4,7 +4,7 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 /** Lazily loads `exportName` from a dynamic import `delay` ms after mount, through the latest render's `loader`; null until then. */
 export function useLazyComponent<
-  // biome-ignore lint/suspicious/noExplicitAny: the constraint only; each call keeps its component's own props.
+  // biome-ignore lint/suspicious/noExplicitAny: the constraint only, as `lazyNamed` writes it.
   TModule extends Record<TKey, ComponentType<any>>,
   TKey extends keyof TModule,
 >(loader: () => Promise<TModule>, exportName: TKey, delay: number): LazyExoticComponent<TModule[TKey]> | null {

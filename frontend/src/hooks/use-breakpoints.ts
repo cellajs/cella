@@ -4,9 +4,8 @@ import { appConfig } from 'shared';
 const breakpoints: { [key: string]: string } = appConfig.theme.screenSizes;
 const sortedBreakpoints = Object.keys(breakpoints).sort((a, b) => Number.parseInt(breakpoints[a], 10) - Number.parseInt(breakpoints[b], 10));
 
-// One media query per breakpoint, so JS agrees with the CSS `md:` variants. `window.innerWidth` does not: on
-// mobile it can follow the visual viewport (pinch zoom, overflowing content) and flip layouts the CSS never flips.
-// jsdom has no matchMedia; tests fall back to innerWidth there.
+// One media query per breakpoint keeps JS in step with the CSS `md:` variants; on mobile `window.innerWidth` can follow the
+// visual viewport (pinch zoom, overflowing content). jsdom has no matchMedia, so tests read innerWidth.
 const mediaQueries = new Map(
   sortedBreakpoints.map((breakpoint) => [breakpoint, window.matchMedia?.(`(min-width: ${breakpoints[breakpoint]})`) ?? null] as const),
 );
@@ -44,7 +43,6 @@ function updateGlobalBreakpoint() {
   }
 }
 
-// Attach the listeners once per app lifecycle
 for (const query of mediaQueries.values()) {
   query?.addEventListener('change', updateGlobalBreakpoint);
 }

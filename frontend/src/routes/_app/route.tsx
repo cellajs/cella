@@ -33,23 +33,18 @@ export const Route = createFileRoute('/_app')({
       } else {
         // Redirect without awaiting `/me` to keep first paint fast; background hydration restores valid sessions.
         void queryClient.query({ ...meQueryOptions(), staleTime: 'static' }).catch(() => {});
-
-        console.info('Not authenticated -> redirect to sign in');
-
         throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: location.pathname + location.searchStr } });
       }
     }
 
-    console.info('Continuing user with session');
     // The stream needs localUserDb open and the sync store rehydrated for a valid cursor, else catchup resyncs from `now`.
     await localUserStorageReady();
     // Start stream early so catchup runs in parallel with route loaders
     appStreamManager.connect();
-    // Only a definitive 401 means the session is gone and the stream has nothing to subscribe to. A network failure or
-    // 5xx leaves it connected: disconnect() also drops its own visibility and leader reconnect handlers, so nothing
-    // would bring the stream back for the rest of the session.
+    // Only a 401 ends the session. A network failure or 5xx keeps the stream: disconnect() also drops its visibility and
+    // leader reconnect handlers, so nothing would bring it back for the rest of the session.
     queryClient.query({ ...meQueryOptions(), staleTime: 'static' }).catch((error) => {
-      if (error instanceof ApiError && Number(error.status) === 401) appStreamManager.disconnect();
+      if (error instanceof ApiError && error.status === 401) appStreamManager.disconnect();
     });
   },
 

@@ -4,9 +4,7 @@
  * the keyboard moves, and a class write on <body> restyles everything.
  */
 
-/** Fixed elements track browser chrome (URL bar, toolbars) natively, so only a keyboard-sized occlusion counts. Smaller
- * ones are chrome animation lag: while the chrome slides in or out, innerHeight and visualViewport.height disagree by
- * up to its height until the browser resizes, which can be well after the last viewport event. */
+/** Fixed UI follows browser chrome (URL bar, toolbars) natively; a smaller occlusion is chrome animation lag, so only a keyboard counts. */
 const minKeyboardPx = 100;
 
 export const initViewportObserver = () => {

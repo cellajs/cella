@@ -10,12 +10,8 @@ import { routeTree } from '~/routes/routeTree.gen';
 import type { BoundaryType } from '~/routes/types';
 import { setSkipPageEnter } from '~/utils/nav-transition';
 
-/**
- * The router instance
- *
- * @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction
- */
-const router = createRouter({
+/** @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction */
+export const router = createRouter({
   scrollRestoration: true,
   scrollRestorationBehavior: 'instant',
   defaultHashScrollIntoView: { block: 'start', behavior: 'instant' },
@@ -43,7 +39,6 @@ const cleanupOnBoundaryChange = (current?: BoundaryType, pending?: BoundaryType)
   }
 };
 
-// Router lifecycle subscriptions
 // Whether the latest history action navigated forward (PUSH, REPLACE); BACK, FORWARD and GO traverse the history.
 let isForward = true;
 router.history.subscribe(({ action }) => {
@@ -77,5 +72,3 @@ declare module '@tanstack/react-router' {
     router: typeof router;
   }
 }
-
-export { router };

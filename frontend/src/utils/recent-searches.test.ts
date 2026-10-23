@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addRecentSearch, resolveSearchInput, withoutRecentSearch } from './recent-searches';
+import { addRecentSearch, resolveSearchInput, withoutRecentSearch } from '~/utils/recent-searches';
 
 describe('addRecentSearch', () => {
   it('puts the most recent search on top', () => {
