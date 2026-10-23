@@ -859,6 +859,8 @@
   "unsubscribe_title": "Unsubscribed successfully",
   "unverified": "Unverified",
   "update": "Update",
+  "update_tenant.text": "Tenant <strong>{{id}}</strong> holds the organization <strong>{{name}}</strong>.",
+  "update_tenant_no_organization.text": "Tenant <strong>{{id}}</strong> holds no organization yet.",
   "updated": "Updated",
   "updated_at": "Updated",
   "updated_by": "Updated by",

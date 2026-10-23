@@ -10,6 +10,8 @@ interface OpenEditSheetOptions {
   id: string;
   /** The edited resource, such as `c:user`. */
   resource: TKey;
+  /** Names the edited item under the title, usually a `NamedText`. */
+  description?: ReactNode;
   triggerRef: TriggerRef;
   /** The edit form, rendered in the first card. */
   children: ReactNode;
@@ -24,7 +26,16 @@ interface OpenEditSheetOptions {
 }
 
 /** Opens a right-side sheet that edits one resource: the form in a card, the title (or the section card) with an unsaved badge. */
-export function openEditSheet({ id, resource, triggerRef, children, section, after, className = tw('container w-full') }: OpenEditSheetOptions) {
+export function openEditSheet({
+  id,
+  resource,
+  description,
+  triggerRef,
+  children,
+  section,
+  after,
+  className = tw('container w-full'),
+}: OpenEditSheetOptions) {
   const title = i18n.t('c:edit_resource', { resource: i18n.t(resource).toLowerCase() });
   const cardClass = after ? 'mb-4' : 'mb-20';
 
@@ -41,6 +52,7 @@ export function openEditSheet({ id, resource, triggerRef, children, section, aft
       side: 'right',
       className: tw('max-w-full lg:max-w-4xl'),
       title,
+      description,
       // A sectioned sheet shows the badge per section, on the card the form marks.
       titleContent: section ? undefined : <UnsavedBadge title={title} />,
     },
