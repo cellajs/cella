@@ -20,8 +20,8 @@ interface NavigationStoreState {
   detailedMenu: boolean; // Menu sheet shows submenus
   setDetailedMenu: (detailedMenu: boolean) => void;
 
-  activeSections: Record<string, boolean> | null; // Expanded state per section, including archived ones
-  toggleSection: (sectionKey: string) => void;
+  activeSections: Record<string, boolean> | null; // Expanded state per section the user toggled, including archived ones
+  setSectionOpen: (sectionKey: string, open: boolean) => void;
   resetSections: () => void;
 
   navSheetPanel: string | null; // Open bottom panel of a nav sheet; at most one
@@ -89,11 +89,9 @@ export const useNavigationStore = create<NavigationStoreState>()(
               state.floatingNavActive = floatingNavActive;
             });
           },
-          toggleSection: (sectionKey) => {
+          setSectionOpen: (sectionKey, open) => {
             set((state) => {
-              if (!state.activeSections) state.activeSections = { [sectionKey]: false };
-              else if (state.activeSections[sectionKey] !== undefined) state.activeSections[sectionKey] = !state.activeSections[sectionKey];
-              else state.activeSections = { ...state.activeSections, ...{ [sectionKey]: false } };
+              state.activeSections = { ...state.activeSections, [sectionKey]: open };
             });
           },
           resetSections: () => {

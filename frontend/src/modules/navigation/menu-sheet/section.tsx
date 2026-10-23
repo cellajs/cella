@@ -2,7 +2,7 @@ import { InfoIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type RefObject, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ChannelEntityType } from 'shared';
+import { appConfig, type ChannelEntityType } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
@@ -32,14 +32,16 @@ interface MenuSheetSectionProps {
 export function MenuSheetSection({ items, options }: MenuSheetSectionProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
-  const toggleSection = useNavigationStore((state) => state.toggleSection);
+  const setSectionOpen = useNavigationStore((state) => state.setSectionOpen);
 
   const [isEditing, setIsEditing] = useState(false);
 
   // Own entries only: toggling one section re-renders that section alone
   const archivedSectionKey = `${options.entityType}-archived`;
   const isArchivedVisible = useNavigationStore((state) => state.activeSections?.[archivedSectionKey] ?? true);
-  const isSectionVisible = useNavigationStore((state) => state.activeSections?.[options.entityType] ?? true);
+  // Beside other sections the organization one starts collapsed: users seldom navigate there
+  const isOpenByDefault = options.entityType !== 'organization' || appConfig.menuStructure.length === 1;
+  const isSectionVisible = useNavigationStore((state) => state.activeSections?.[options.entityType] ?? isOpenByDefault);
   const archivedItems = items.filter((item) => item.membership.archived);
   const archivedCount = archivedItems.length;
   const activeChannelIds = collectChannelIds(items, { archived: false });
@@ -52,7 +54,7 @@ export function MenuSheetSection({ items, options }: MenuSheetSectionProps) {
 
   const handleToggleEditing = () => setIsEditing((prev) => !prev);
 
-  const handleToggleArchived = () => toggleSection(archivedSectionKey);
+  const handleToggleArchived = () => setSectionOpen(archivedSectionKey, !isArchivedVisible);
 
   return (
     <div className="group/menu-section px-3" data-visible={isSectionVisible}>
