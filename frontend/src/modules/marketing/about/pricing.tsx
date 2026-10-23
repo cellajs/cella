@@ -15,9 +15,8 @@ import { cn } from '~/utils/cn';
 export interface PricingPlan {
   id: string;
   action: 'sign_in' | 'contact_us' | 'waitlist_request';
-  priceId: string | null;
   featureCount: number;
-  borderColor: string;
+  className?: string;
   popular?: boolean;
   discount?: string;
 }
@@ -43,7 +42,7 @@ interface PricingPlanCardProps {
   planIndex: number;
 }
 
-function PricingPlanCard({ plan: { id, borderColor, featureCount, popular, discount, action }, planIndex }: PricingPlanCardProps) {
+function PricingPlanCard({ plan: { id, className, featureCount, popular, discount, action }, planIndex }: PricingPlanCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -74,7 +73,7 @@ function PricingPlanCard({ plan: { id, borderColor, featureCount, popular, disco
     <div
       className={cn(
         'relative flex flex-col justify-between rounded-lg border bg-card p-6',
-        borderColor,
+        className,
         isFlexLayout ? 'w-full md:w-1/2 lg:w-1/3' : 'w-full',
       )}
     >

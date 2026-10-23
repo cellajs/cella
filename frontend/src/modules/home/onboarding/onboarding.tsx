@@ -6,9 +6,9 @@ import type { Organization } from 'sdk';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { Step, Stepper } from '~/modules/common/stepper/stepper';
-import { StepperFooter } from '~/modules/home/onboarding/footer';
 import { InvitationsStep } from '~/modules/home/onboarding/invitations-step';
 import { getOnboardingSteps } from '~/modules/home/onboarding/onboarding-steps';
+import { SkipStepButton } from '~/modules/home/onboarding/skip-step-button';
 import { WelcomeText } from '~/modules/home/onboarding/welcome-text';
 import { meInvitationsQueryOptions } from '~/modules/me/query';
 import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
@@ -20,14 +20,15 @@ import { useCurrentUser } from '~/modules/user/user-store';
 import { flattenInfiniteData } from '~/query/basic/flatten';
 import { cn } from '~/utils/cn';
 
-export type OnboardingStates = 'start' | 'stepper' | 'completed';
+export type OnboardingState = 'start' | 'stepper' | 'completed';
 
 interface OnboardingProps {
-  onboarding: OnboardingStates;
-  setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void;
+  state: OnboardingState;
+  onStart: () => void;
+  onComplete: () => void;
 }
 
-export function Onboarding({ onboarding, setOnboardingState }: OnboardingProps) {
+export function Onboarding({ state, onStart, onComplete }: OnboardingProps) {
   const user = useCurrentUser();
   const { hasStarted } = useMountedState();
   const { t } = useTranslation();
@@ -48,13 +49,13 @@ export function Onboarding({ onboarding, setOnboardingState }: OnboardingProps) 
   // route loads both queries first, so the lock sees real data.
   const [steps] = useState(() => getOnboardingSteps({ hasOrganizations: organizations.length > 0, hasInvitations: invitations.length > 0 }));
 
-  const stepFooter = <StepperFooter onComplete={() => setOnboardingState('completed')} />;
+  const skipButton = <SkipStepButton onComplete={onComplete} />;
 
   return (
     <div className="flex min-h-[90svh] flex-col items-center sm:min-h-svh">
       <div className="mt-auto mb-auto w-full">
-        {onboarding === 'start' && <WelcomeText invitations={invitations} onboardingToStepper={() => setOnboardingState('stepper')} />}
-        {onboarding === 'stepper' && (
+        {state === 'start' && <WelcomeText invitations={invitations} onStart={onStart} />}
+        {state === 'stepper' && (
           <div className={cn('mx-auto mt-0 flex max-w-3xl flex-col justify-center gap-4 px-4 py-8 sm:w-10/12', animateClass)}>
             {steps.length === 1 && <h2 className="flex justify-center font-semibold text-lg">{steps[0].label}</h2>}
             <Stepper
@@ -72,10 +73,10 @@ export function Onboarding({ onboarding, setOnboardingState }: OnboardingProps) 
                       </CardHeader>
                     )}
                     <CardContent>
-                      {id === 'invitations' && <InvitationsStep>{stepFooter}</InvitationsStep>}
+                      {id === 'invitations' && <InvitationsStep>{skipButton}</InvitationsStep>}
                       {id === 'profile' && (
                         <UpdateUserForm user={user} compact>
-                          {stepFooter}
+                          {skipButton}
                         </UpdateUserForm>
                       )}
                       {id === 'organization' && !organization && (
@@ -84,7 +85,7 @@ export function Onboarding({ onboarding, setOnboardingState }: OnboardingProps) 
                             if (args.status === 'success') setOrganization(args.data);
                           }}
                         >
-                          {stepFooter}
+                          {skipButton}
                         </CreateOrganizationForm>
                       )}
                       {id === 'organization' && !!organization && (
@@ -92,13 +93,13 @@ export function Onboarding({ onboarding, setOnboardingState }: OnboardingProps) 
                       )}
                       {id === 'invitation' && organization && (
                         <InviteUsers channel={organization} mode="email">
-                          {stepFooter}
+                          {skipButton}
                         </InviteUsers>
                       )}
                       {id === 'invitation' && !organization && (
                         <div>
                           <p className="mb-4 font-normal text-muted-foreground text-sm">{t('c:need_org_to_invite.text')}</p>
-                          {stepFooter}
+                          {skipButton}
                         </div>
                       )}
                     </CardContent>

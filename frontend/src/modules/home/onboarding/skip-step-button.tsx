@@ -6,12 +6,12 @@ import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { SkipOrganization, skipOrganizationDialogId } from '~/modules/home/onboarding/skip-organization';
 import { Button } from '~/modules/ui/button';
 
-interface StepperFooterProps {
+interface SkipStepButtonProps {
   onComplete: () => void;
 }
 
-/** Skipping the organization step asks for confirmation; other optional steps skip straight through. */
-export function StepperFooter({ onComplete }: StepperFooterProps) {
+/** Skips an optional step, the organization step after a confirmation; calls `onComplete` once every step is done. */
+export function SkipStepButton({ onComplete }: SkipStepButtonProps) {
   const { nextStep, isOptionalStep, currentStep, hasCompletedAllSteps } = useStepper();
   const { t } = useTranslation();
 

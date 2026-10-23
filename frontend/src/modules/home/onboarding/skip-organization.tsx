@@ -13,21 +13,21 @@ export function SkipOrganization({ onComplete }: SkipOrganizationProps) {
 
   const removeDialog = useDialoger((state) => state.remove);
 
-  const onDelete = () => {
+  const skip = () => {
     removeDialog(skipOrganizationDialogId);
     onComplete();
   };
 
-  const onCancel = () => {
+  const cancel = () => {
     removeDialog(skipOrganizationDialogId);
   };
 
   return (
     <div className="flex gap-2 sm:flex-row">
-      <Button type="submit" variant="destructive" onClick={onDelete}>
+      <Button type="submit" variant="destructive" onClick={skip}>
         {t('c:skip')}
       </Button>
-      <Button type="reset" variant="secondary" onClick={onCancel}>
+      <Button type="reset" variant="secondary" onClick={cancel}>
         {t('c:cancel')}
       </Button>
     </div>

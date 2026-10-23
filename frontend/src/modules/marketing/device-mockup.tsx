@@ -1,6 +1,6 @@
 import { useInView } from '~/hooks/use-in-view';
 import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/attachments-carousel';
-import { DeviceFrame, type DeviceType } from '~/modules/marketing/device-mockup-frame';
+import { DeviceMockupFrame, type DeviceType } from '~/modules/marketing/device-mockup-frame';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
@@ -37,11 +37,11 @@ export function DeviceMockup({ lightItems, darkItems, type, className }: DeviceM
           } as React.CSSProperties
         }
       />
-      <DeviceFrame
+      <DeviceMockupFrame
         type={type}
         inView={inView}
-        renderCarousel={(className) => {
-          return <AttachmentsCarousel items={items || []} isDialog={false} containerClassName={className} />;
+        renderCarousel={(containerClassName) => {
+          return <AttachmentsCarousel items={items || []} isDialog={false} containerClassName={containerClassName} />;
         }}
       />
     </div>

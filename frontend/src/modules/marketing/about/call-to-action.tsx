@@ -7,7 +7,7 @@ import { Button } from '~/modules/ui/button';
 export function CallToAction() {
   const { t } = useTranslation();
 
-  const ref = useRef(null);
+  const buttonRef = useRef(null);
 
   return (
     <div className="mx-auto grid max-w-4xl text-center">
@@ -23,7 +23,7 @@ export function CallToAction() {
         >
           {t('c:start_building')}
         </Button>
-        <Button ref={ref} variant="plain" size="xl" onClick={() => contactFormHandler(ref)} className="flex gap-1 rounded-full px-10">
+        <Button ref={buttonRef} variant="plain" size="xl" onClick={() => contactFormHandler(buttonRef)} className="flex gap-1 rounded-full px-10">
           {t('c:talk_to_us')}
         </Button>
       </div>

@@ -23,8 +23,6 @@ import { MarketingNav } from '~/modules/marketing/nav';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 
-export type AboutSectionId = (typeof aboutSectionIds)[number];
-
 const aboutSectionIds = ['welcome', 'benefits', 'stack', 'integrations', 'showcase', 'call-to-action'];
 
 const installCommand = 'pnpm create @cellajs/cella';

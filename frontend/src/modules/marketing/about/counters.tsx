@@ -24,7 +24,12 @@ export function useCountUp(start: number, end: number, duration = 1500) {
   return value;
 }
 
-function CountUp({ start, end }: { start: number; end: number }) {
+interface CountUpProps {
+  start: number;
+  end: number;
+}
+
+function CountUp({ start, end }: CountUpProps) {
   const value = useCountUp(start, end);
   return <>{value.toLocaleString()}</>;
 }

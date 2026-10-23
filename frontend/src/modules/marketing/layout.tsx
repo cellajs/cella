@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { Spinner } from '~/modules/common/spinner';
-import { BackgroundCurve } from '~/modules/marketing/about/hero';
+import { BackgroundCurve } from '~/modules/marketing/background-curve';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
 

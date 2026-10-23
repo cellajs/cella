@@ -20,7 +20,12 @@ export type ShowcaseItem = {
   darkItems: CarouselItemData[];
 };
 
-function CellaShare({ cellaLoc, totalLoc }: { cellaLoc: number; totalLoc: number }) {
+interface CellaShareProps {
+  cellaLoc: number;
+  totalLoc: number;
+}
+
+function CellaShare({ cellaLoc, totalLoc }: CellaShareProps) {
   const { t } = useTranslation();
   const { ref, inView } = useInView({ once: true });
   const percentage = Math.round((cellaLoc / totalLoc) * 100);

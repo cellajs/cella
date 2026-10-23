@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import { Logo } from '~/modules/common/logo';
-import { BackgroundCurve } from '~/modules/marketing/about/hero';
+import { BackgroundCurve } from '~/modules/marketing/background-curve';
 import { footerSections, legalLinks } from '~/modules/marketing/marketing-config';
 import { SubscribeNewsletterForm } from '~/modules/marketing/subscribe-newsletter-form';
 import { cn } from '~/utils/cn';

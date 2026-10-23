@@ -8,11 +8,15 @@ import { organizationQueryKeys } from '~/modules/organization/query';
 import { Button } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
 
+interface InvitationsStepProps {
+  children?: ReactNode;
+}
+
 /**
  * Lets an invited user answer each pending invitation, always by an explicit click: an invitation claimed by its
  * address was never opened by this user. Moves on once the last one is answered.
  */
-export function InvitationsStep({ children }: { children?: ReactNode }) {
+export function InvitationsStep({ children }: InvitationsStepProps) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
@@ -22,10 +26,10 @@ export function InvitationsStep({ children }: { children?: ReactNode }) {
   const { mutate: handleInvitation, isPending } = useHandleInvitationMutation();
 
   // Only an answer given here moves on; revisiting the step with nothing left stays put.
-  const previousCount = useRef(invitations.length);
+  const previousCountRef = useRef(invitations.length);
   useEffect(() => {
-    if (previousCount.current > 0 && invitations.length === 0) nextStep();
-    previousCount.current = invitations.length;
+    if (previousCountRef.current > 0 && invitations.length === 0) nextStep();
+    previousCountRef.current = invitations.length;
   }, [invitations.length]);
 
   const answer = (id: string, acceptOrReject: 'accept' | 'reject') =>

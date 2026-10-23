@@ -233,16 +233,9 @@ export const cards: InfoCard[] = [
 // About - Pricing plan
 
 export const pricingPlans: PricingPlan[] = [
-  { id: 'donate', action: 'contact_us', priceId: null, featureCount: 5, borderColor: '' },
-  {
-    id: 'build',
-    action: 'waitlist_request',
-    priceId: null,
-    featureCount: 4,
-    borderColor: 'ring-4 ring-primary/5',
-    popular: true,
-  },
-  { id: 'partner', action: 'contact_us', priceId: null, featureCount: 3, borderColor: '' },
+  { id: 'donate', action: 'contact_us', featureCount: 5 },
+  { id: 'build', action: 'waitlist_request', featureCount: 4, className: 'ring-4 ring-primary/5', popular: true },
+  { id: 'partner', action: 'contact_us', featureCount: 3 },
 ];
 
 // About - FAQ

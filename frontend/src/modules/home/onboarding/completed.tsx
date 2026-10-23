@@ -21,7 +21,7 @@ export function OnboardingCompleted() {
 
   const { mutate } = useUpdateSelfFlagsMutation();
 
-  const didRun = useRef(false);
+  const didRunRef = useRef(false);
   const createButtonRef = useRef<HTMLButtonElement>(null);
 
   const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ relatableUserId: user.id }));
@@ -33,10 +33,10 @@ export function OnboardingCompleted() {
 
   useEffect(() => {
     // Run once, after the org list has either resolved or finished fetching.
-    if (didRun.current) return;
+    if (didRunRef.current) return;
     if (orgQuery.isFetching) return;
 
-    didRun.current = true;
+    didRunRef.current = true;
     mutate({ userFlags: { finishedOnboarding: true } });
     if (hasOrganization) resetSections();
   }, [mutate, resetSections, hasOrganization, orgQuery.isFetching]);

@@ -116,59 +116,59 @@ const noFold: Fold = { nodes: [], edges: [] };
 type EdgeTiming = { delay: number; duration: number };
 
 // A line no mode times draws from the start, over the fade time.
-const fallbackAnim: EdgeTiming = { delay: 0, duration: animTimeline.fade };
+const fallbackTiming: EdgeTiming = { delay: 0, duration: animTimeline.fade };
 
 // `lead` is the pause before the mode-specific node appears: the full hold on first reveal, 0 on a toggle.
 // `foldAt` is when the last worker line has pulled back in Part 4, which runs on its own clock from the switch.
 const buildTimeline = (lead: number, foldAt = 0) => {
-  const T_CDC = animTimeline.fade + lead;
-  const T_REPLICATION = T_CDC + animTimeline.cdcIn + animTimeline.gap;
-  const T_SQL_CDC = T_REPLICATION + animTimeline.draw + animTimeline.gap;
-  const T_WS = T_SQL_CDC + animTimeline.sqlDraw + animTimeline.gap;
-  const T_SSE = T_WS + animTimeline.draw + animTimeline.gap;
+  const cdcAt = animTimeline.fade + lead;
+  const replicationAt = cdcAt + animTimeline.cdcIn + animTimeline.gap;
+  const cdcSqlAt = replicationAt + animTimeline.draw + animTimeline.gap;
+  const websocketAt = cdcSqlAt + animTimeline.sqlDraw + animTimeline.gap;
+  const sseAt = websocketAt + animTimeline.draw + animTimeline.gap;
 
   // The Yjs timeline adds the collaboration path to the full CDC flow.
-  const T_YJS_NODE = T_SSE + animTimeline.draw + animTimeline.gap;
-  const T_WS_YJS = T_YJS_NODE + animTimeline.cdcIn + animTimeline.gap;
-  const T_YJS_PERSIST = T_WS_YJS + animTimeline.draw + animTimeline.gap;
-  const T_YJS_SAVE = T_YJS_PERSIST + animTimeline.sqlDraw + animTimeline.gap;
+  const yjsAt = sseAt + animTimeline.draw + animTimeline.gap;
+  const yjsWebsocketAt = yjsAt + animTimeline.cdcIn + animTimeline.gap;
+  const yjsPersistAt = yjsWebsocketAt + animTimeline.draw + animTimeline.gap;
+  const yjsSaveAt = yjsPersistAt + animTimeline.sqlDraw + animTimeline.gap;
 
   // The VM timeline: fold, widen, then draw the two connections to the VM.
-  const T_VM_DRAW = foldAt + foldTimeline.morph + animTimeline.gap;
+  const vmDrawAt = foldAt + foldTimeline.morph + animTimeline.gap;
   const vmAt = { fold: foldAt, workers: foldAt + foldTimeline.swap };
 
   // A node no mode delays shows from the start.
   const nodeDelay: Record<SyncMode, Partial<Record<NodeKey, number>>> = {
     rest: {},
-    cdc: { cdc: T_CDC },
-    yjs: { cdc: T_CDC, yjs: T_YJS_NODE },
+    cdc: { cdc: cdcAt },
+    yjs: { cdc: cdcAt, yjs: yjsAt },
     vm: {},
   };
 
-  const cdcEdgeAnim = {
-    'cdc-database': { delay: T_SQL_CDC, duration: animTimeline.sqlDraw },
-    'database-cdc': { delay: T_REPLICATION, duration: animTimeline.draw },
-    'cdc-api': { delay: T_WS, duration: animTimeline.draw },
-    'api-client': { delay: T_SSE, duration: animTimeline.draw },
+  const cdcEdgeTiming = {
+    'cdc-database': { delay: cdcSqlAt, duration: animTimeline.sqlDraw },
+    'database-cdc': { delay: replicationAt, duration: animTimeline.draw },
+    'cdc-api': { delay: websocketAt, duration: animTimeline.draw },
+    'api-client': { delay: sseAt, duration: animTimeline.draw },
   };
 
-  const edgeAnim: Record<SyncMode, Partial<Record<string, EdgeTiming>>> = {
+  const edgeTiming: Record<SyncMode, Partial<Record<string, EdgeTiming>>> = {
     rest: {},
-    cdc: cdcEdgeAnim,
+    cdc: cdcEdgeTiming,
     yjs: {
-      ...cdcEdgeAnim,
-      'client-yjs': { delay: T_WS_YJS, duration: animTimeline.draw },
-      'yjs-database': { delay: T_YJS_PERSIST, duration: animTimeline.sqlDraw },
-      'yjs-api': { delay: T_YJS_SAVE, duration: animTimeline.draw },
+      ...cdcEdgeTiming,
+      'client-yjs': { delay: yjsWebsocketAt, duration: animTimeline.draw },
+      'yjs-database': { delay: yjsPersistAt, duration: animTimeline.sqlDraw },
+      'yjs-api': { delay: yjsSaveAt, duration: animTimeline.draw },
     },
     vm: {
-      'api-client': { delay: T_VM_DRAW, duration: animTimeline.draw },
-      'vm-wal': { delay: T_VM_DRAW, duration: animTimeline.draw },
-      'vm-socket': { delay: T_VM_DRAW + animTimeline.gap, duration: animTimeline.draw },
+      'api-client': { delay: vmDrawAt, duration: animTimeline.draw },
+      'vm-wal': { delay: vmDrawAt, duration: animTimeline.draw },
+      'vm-socket': { delay: vmDrawAt + animTimeline.gap, duration: animTimeline.draw },
     },
   };
 
-  return { nodeDelay, edgeAnim, vmAt };
+  return { nodeDelay, edgeTiming, vmAt };
 };
 
 // Runs of the 0.6 s dash cycle per start: 4.8 s, under the five seconds after which moving content needs a pause control.
@@ -197,6 +197,19 @@ const splitLanes = (line: Line) => {
     { lane: 'fwd', seg: { x1: mx + ux * gap, y1: my + uy * gap, x2: line.x2, y2: line.y2 } },
     { lane: 'rev', seg: { x1: mx - ux * gap, y1: my - uy * gap, x2: line.x1, y2: line.y1 } },
   ];
+};
+
+// How far from a node's center its lines end. A square box gets the circle through its corners, so diagonal lines clear it too.
+// The API server widened into the VM gets its own edges with the same clearance, eased in while it widens.
+const trimOf = (geometry: Geometry, key: NodeKey, ux: number, uy: number) => {
+  const { w, h } = geometry.halves[key];
+  const stretch = Math.min(1, (w / h - 1) * 2);
+  if (stretch <= 0) return Math.hypot(w, h) + edgePadding;
+  const side = geometry.halves.database?.w ?? h;
+  const round = Math.SQRT2 * side + edgePadding;
+  const clearance = round - side;
+  const edge = Math.min((w + clearance) / (Math.abs(ux) || 1e-6), (h + clearance) / (Math.abs(uy) || 1e-6));
+  return round + (edge - round) * stretch;
 };
 
 interface ArrowMarkerProps {
@@ -258,15 +271,15 @@ function EdgeLabel({ position, fill, show, delay, children }: EdgeLabelProps) {
 export function SyncDiagram() {
   const containerRef = useRef<HTMLDivElement>(null);
   const boxRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [geom, setGeom] = useState<Geometry | null>(null);
+  const [geometry, setGeometry] = useState<Geometry | null>(null);
   // Tracks which lines have finished drawing, so arrowheads/dashes appear only then.
   const [drawn, setDrawn] = useState<Record<string, boolean>>({});
   const [mode, setMode] = useState<SyncMode>('rest');
   const activeNodes = modeConfig[mode].nodes;
   const activeEdges = modeConfig[mode].edges;
   // Only edges a part introduces get moving dashes; earlier lines stay static. Part 4 is the exception: there every line flows.
-  const prevMode = modeOrder[modeOrder.indexOf(mode) - 1];
-  const introducedEdges = new Set(activeEdges.filter((edge) => !prevMode || !modeConfig[prevMode].edges.includes(edge)));
+  const precedingMode = modeOrder[modeOrder.indexOf(mode) - 1];
+  const introducedEdges = new Set(activeEdges.filter((edge) => !precedingMode || !modeConfig[precedingMode].edges.includes(edge)));
   const [lead, setLead] = useState<number>(animTimeline.hold);
   // What the previous part showed and Part 4 folds away: these stay mounted to pull back and fade out.
   const [fold, setFold] = useState<Fold>(noFold);
@@ -278,8 +291,8 @@ export function SyncDiagram() {
   // Time (s) subtracted from delays so a toggle animates only the new part. The
   // shared structure from earlier parts stays put while the new flow draws in from t≈0.
   const [rebase, setRebase] = useState(0);
-  const [hint, setHint] = useState(true);
-  const { nodeDelay, edgeAnim, vmAt } = buildTimeline(lead, foldAt);
+  const [showHint, setShowHint] = useState(true);
+  const { nodeDelay, edgeTiming, vmAt } = buildTimeline(lead, foldAt);
   const { t } = useTranslation();
   // Motion here is finite: the dashes march for under five seconds each time they start, the hint arrow nudges five times,
   // and both rest offscreen, below `sm` (the arrow is hidden there) and for a reader who asked for reduced motion.
@@ -291,7 +304,7 @@ export function SyncDiagram() {
   // Keeps everything the previous part showed and animates only the delta.
   const switchMode = (target: SyncMode) => {
     if (target === mode) return;
-    setHint(false);
+    setShowHint(false);
     const prev = modeConfig[mode];
     const next = modeConfig[target];
     const newEdges = next.edges.filter((edge) => !prev.edges.includes(edge));
@@ -310,10 +323,10 @@ export function SyncDiagram() {
       setFold({ nodes: prev.nodes.filter((node) => !next.nodes.includes(node)), edges: foldOrder.filter((edge) => prev.edges.includes(edge)) });
       setRebase(0);
     } else {
-      const { nodeDelay: nd, edgeAnim: ea } = buildTimeline(0);
+      const toggleTimeline = buildTimeline(0);
       const newDelays = [
-        ...newEdges.map((edge) => ea[target][edge]?.delay ?? 0),
-        ...next.nodes.filter((node) => !prev.nodes.includes(node)).map((node) => nd[target][node] ?? 0),
+        ...newEdges.map((edge) => toggleTimeline.edgeTiming[target][edge]?.delay ?? 0),
+        ...next.nodes.filter((node) => !prev.nodes.includes(node)).map((node) => toggleTimeline.nodeDelay[target][node] ?? 0),
       ];
       setRebase(newDelays.length ? Math.min(...newDelays) : 0);
     }
@@ -343,7 +356,7 @@ export function SyncDiagram() {
         centers[key] = { x: bRect.left + bRect.width / 2 - cRect.left, y: bRect.top + bRect.height / 2 - cRect.top };
         halves[key] = { w: bRect.width / 2, h: bRect.height / 2 };
       }
-      setGeom({ width: cRect.width, height: cRect.height, centers, halves });
+      setGeometry({ width: cRect.width, height: cRect.height, centers, halves });
     };
 
     measure();
@@ -354,30 +367,17 @@ export function SyncDiagram() {
     return () => ro.disconnect();
   }, [mode]);
 
-  // How far from a node's center its lines end. A square box gets the circle through its corners, so diagonal lines clear it too.
-  // The API server widened into the VM gets its own edges with the same clearance, eased in while it widens.
-  const trimOf = (geometry: Geometry, key: NodeKey, ux: number, uy: number) => {
-    const { w, h } = geometry.halves[key];
-    const stretch = Math.min(1, (w / h - 1) * 2);
-    if (stretch <= 0) return Math.hypot(w, h) + edgePadding;
-    const side = geometry.halves.database?.w ?? h;
-    const round = Math.SQRT2 * side + edgePadding;
-    const clearance = round - side;
-    const edge = Math.min((w + clearance) / (Math.abs(ux) || 1e-6), (h + clearance) / (Math.abs(uy) || 1e-6));
-    return round + (edge - round) * stretch;
-  };
-
   // `offset` shifts the whole line perpendicular, to run parallel lines side by side.
   const trimmedLine = (from: NodeKey, to: NodeKey, offset = 0) => {
-    if (!geom) return null;
-    const a = geom.centers[from];
-    const b = geom.centers[to];
+    if (!geometry) return null;
+    const a = geometry.centers[from];
+    const b = geometry.centers[to];
     if (!a || !b) return null;
     const { ux, uy } = unitVector(b.x - a.x, b.y - a.y);
     const px = -uy * offset;
     const py = ux * offset;
-    const fromTrim = trimOf(geom, from, ux, uy);
-    const toTrim = trimOf(geom, to, ux, uy);
+    const fromTrim = trimOf(geometry, from, ux, uy);
+    const toTrim = trimOf(geometry, to, ux, uy);
     return {
       x1: a.x + ux * fromTrim + px,
       y1: a.y + uy * fromTrim + py,
@@ -396,7 +396,7 @@ export function SyncDiagram() {
     <div ref={inViewRef} className="mx-auto mb-8 flex w-full max-w-3xl flex-col items-center">
       {/* Mode toggle switches the diagram's nodes, edges, and timeline. */}
       <div className="relative mb-6">
-        {hint && (
+        {showHint && (
           <div className="absolute top-1/2 right-full mr-3 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap text-muted-foreground max-sm:hidden">
             {t('about:try_me')}
             <motion.span
@@ -415,9 +415,9 @@ export function SyncDiagram() {
           }}
           variant="merged"
         >
-          {modeOrder.map((m) => (
-            <ToggleGroupItem key={m} value={m}>
-              {t(modeText[m].label)}
+          {modeOrder.map((syncMode) => (
+            <ToggleGroupItem key={syncMode} value={syncMode}>
+              {t(modeText[syncMode].label)}
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
@@ -439,11 +439,11 @@ export function SyncDiagram() {
       {/* biome-ignore lint/a11y/useSemanticElements: decorative diagram acts as a click-to-reveal toggle; a real <button> can't wrap the SVG + absolutely-positioned nodes */}
       <div
         ref={containerRef}
-        onClick={() => setShowAllLabels((v) => !v)}
+        onClick={() => setShowAllLabels((prev) => !prev)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            setShowAllLabels((v) => !v);
+            setShowAllLabels((prev) => !prev);
           }
         }}
         role="button"
@@ -453,8 +453,8 @@ export function SyncDiagram() {
         className="relative aspect-4/3 w-full cursor-pointer sm:aspect-video md:aspect-5/2"
       >
         {/* SVG overlay drawn in real pixel space and re-measured on resize. */}
-        {geom && (
-          <svg className="absolute inset-0 size-full" viewBox={`0 0 ${geom.width} ${geom.height}`} aria-hidden="true">
+        {geometry && (
+          <svg className="absolute inset-0 size-full" viewBox={`0 0 ${geometry.width} ${geometry.height}`} aria-hidden="true">
             <title>Cella sync engine data flow</title>
 
             <defs>
@@ -495,10 +495,10 @@ export function SyncDiagram() {
               if (!activeEdges.includes(key)) return null;
               const line = trimmedLine(from, to, offset);
               if (!line) return null;
-              const anim = edgeAnim[mode][key] ?? fallbackAnim;
-              const delay = startDelay(anim.delay, drawn[key]);
+              const timing = edgeTiming[mode][key] ?? fallbackTiming;
+              const delay = startDelay(timing.delay, drawn[key]);
               const arrow = drawn[key] ? 'url(#request-arrow)' : undefined;
-              const relevant = introducedEdges.has(key);
+              const isIntroduced = introducedEdges.has(key);
               return (
                 <EdgeGroup key={key} id={key} line={line} onHover={setHovered}>
                   <motion.line
@@ -510,15 +510,15 @@ export function SyncDiagram() {
                     markerEnd={arrow}
                     initial={{ pathLength: 0, opacity: 0 }}
                     animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ pathLength: { delay, duration: anim.duration, ease: 'easeInOut' }, opacity: { delay, duration: 0.001 } }}
-                    onAnimationComplete={() => setDrawn((d) => ({ ...d, [key]: true }))}
+                    transition={{ pathLength: { delay, duration: timing.duration, ease: 'easeInOut' }, opacity: { delay, duration: 0.001 } }}
+                    onAnimationComplete={() => setDrawn((prevDrawn) => ({ ...prevDrawn, [key]: true }))}
                   />
                   {label && (
                     <EdgeLabel
                       position={labelPos(line, labelOffset)}
                       fill={requestStroke}
-                      show={relevant || hovered === key || showAllLabels}
-                      delay={relevant ? delay + anim.duration : 0}
+                      show={isIntroduced || hovered === key || showAllLabels}
+                      delay={isIntroduced ? delay + timing.duration : 0}
                     >
                       {label}
                     </EdgeLabel>
@@ -532,16 +532,16 @@ export function SyncDiagram() {
               if (!activeEdges.includes(key)) return null;
               const line = trimmedLine(from, to, offset);
               if (!line) return null;
-              const anim = edgeAnim[mode][key] ?? fallbackAnim;
+              const timing = edgeTiming[mode][key] ?? fallbackTiming;
               // In Part 4 the socket line runs where the HTTP label sits, so that label moves below it: right under on hover, a row lower when all labels show.
               const underSocket = isVm && key === 'client-api';
-              const delay = startDelay(anim.delay, drawn[key]);
-              const animateDashes = introducedEdges.has(key);
+              const delay = startDelay(timing.delay, drawn[key]);
+              const isIntroduced = introducedEdges.has(key);
               // Part 4 is the whole picture, so all its lines flow, starting together once its last line is drawn.
-              const flows = isVm ? Boolean(drawn['vm-wal'] && drawn['vm-socket']) : animateDashes;
-              const flowDashes = flows && inView && !reducedMotion;
+              const flows = isVm ? Boolean(drawn['vm-wal'] && drawn['vm-socket']) : isIntroduced;
+              const animateDashes = flows && inView && !reducedMotion;
               // Part 4 names none of its lines by itself, so no line stands out; hover and the label toggle still reveal each name.
-              const ownLabel = animateDashes && !isVm;
+              const labelsItself = isIntroduced && !isVm;
               const lanes = bidirectional ? splitLanes(line) : [{ lane: 'flow', seg: line }];
               return (
                 <EdgeGroup key={key} id={key} line={line} onHover={setHovered}>
@@ -555,8 +555,8 @@ export function SyncDiagram() {
                         strokeLinecap="round"
                         strokeDasharray="5 5"
                         markerEnd={`url(#stream-arrow-${key})`}
-                        animate={{ strokeDashoffset: flowDashes ? [0, -10] : 0 }}
-                        transition={flowDashes ? { repeat: dashRuns - 1, ease: 'linear', duration: 0.6 } : { duration: 0 }}
+                        animate={{ strokeDashoffset: animateDashes ? [0, -10] : 0 }}
+                        transition={animateDashes ? { repeat: dashRuns - 1, ease: 'linear', duration: 0.6 } : { duration: 0 }}
                       />
                     ))
                   ) : (
@@ -568,15 +568,15 @@ export function SyncDiagram() {
                       strokeLinecap="round"
                       initial={{ pathLength: 0, opacity: 0 }}
                       animate={{ pathLength: 1, opacity: 1 }}
-                      transition={{ pathLength: { delay, duration: anim.duration, ease: 'easeInOut' }, opacity: { delay, duration: 0.001 } }}
-                      onAnimationComplete={() => setDrawn((d) => ({ ...d, [key]: true }))}
+                      transition={{ pathLength: { delay, duration: timing.duration, ease: 'easeInOut' }, opacity: { delay, duration: 0.001 } }}
+                      onAnimationComplete={() => setDrawn((prevDrawn) => ({ ...prevDrawn, [key]: true }))}
                     />
                   )}
                   <EdgeLabel
                     position={labelPos(line, underSocket ? (showAllLabels ? 40 : 28) : labelOffset)}
                     fill={stroke}
-                    show={ownLabel || hovered === key || showAllLabels}
-                    delay={ownLabel ? delay + anim.duration : 0}
+                    show={labelsItself || hovered === key || showAllLabels}
+                    delay={labelsItself ? delay + timing.duration : 0}
                   >
                     {label}
                   </EdgeLabel>

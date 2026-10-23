@@ -1,9 +1,9 @@
 export type DeviceType = 'mobile' | 'tablet' | 'pc';
 
-interface DeviceFrameProps {
+interface DeviceMockupFrameProps {
   type: DeviceType;
   inView: boolean;
-  renderCarousel: (className: string) => React.ReactElement;
+  renderCarousel: (containerClassName: string) => React.ReactElement;
 }
 
 /**
@@ -13,7 +13,7 @@ interface DeviceFrameProps {
  * casts (device-mockup.tsx, `--grain-color: --foreground`) share zinc's hue, so gray reads as a blue cast on it.
  * Every surface is opaque: the grain sits behind the device, and a translucent one lets its dots through.
  */
-export function DeviceFrame({ type, inView, renderCarousel }: DeviceFrameProps) {
+export function DeviceMockupFrame({ type, inView, renderCarousel }: DeviceMockupFrameProps) {
   switch (type) {
     case 'tablet':
       return (

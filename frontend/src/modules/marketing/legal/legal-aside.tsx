@@ -54,7 +54,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
       {subjects.map(({ id, label, sections }) => {
         const isActive = id === currentSubject;
         const isExpanded = expanded === id;
-        const subjectSections = sections.filter((s) => s.label);
+        const subjectSections = sections.filter((section) => section.label);
         // Collapsing is a re-click at the subject's overview. Further down, the link scrolls back up and the subject stays open.
         const isAtSubject = isActive && currentSection === legalOverviewId;
 
