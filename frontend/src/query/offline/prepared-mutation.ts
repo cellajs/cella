@@ -5,24 +5,27 @@ export type PreparedVars<TVars> = { kind: 'run'; vars: TVars } | { kind: 'coales
 export const coalescedResult = Symbol('coalesced');
 
 /** Method syntax keeps a react-query `UseMutationResult` structurally assignable under strictFunctionTypes without a cast, via method-parameter bivariance. */
-interface Mutatable<TData, TVars> {
-  mutate(vars: TVars, opts?: unknown): void;
-  mutateAsync(vars: TVars, opts?: unknown): Promise<TData>;
+interface MutationHandles<TData, TVars> {
+  mutate(variables: TVars, options?: unknown): void;
+  mutateAsync(variables: TVars, options?: unknown): Promise<TData>;
 }
 
 /**
  * Prepares public input into durable variables once before execution: coalesced and empty async calls resolve immediately, synchronous calls issue nothing.
  * Compose over a plain mutation as `{ ...mutation, ...buildPreparedHandlers(mutation, prepare) }`.
  */
-export function buildPreparedHandlers<TData, TVars, TInput>(mutation: Mutatable<TData, TVars>, prepare: (input: TInput) => PreparedVars<TVars>) {
-  const mutate = (input: TInput, opts?: unknown) => {
+export function buildPreparedHandlers<TData, TVars, TInput>(
+  mutation: MutationHandles<TData, TVars>,
+  prepare: (input: TInput) => PreparedVars<TVars>,
+) {
+  const mutate = (input: TInput, options?: unknown) => {
     const prepared = prepare(input);
-    if (prepared.kind === 'run') mutation.mutate(prepared.vars, opts);
+    if (prepared.kind === 'run') mutation.mutate(prepared.vars, options);
   };
 
-  const mutateAsync = async (input: TInput, opts?: unknown): Promise<TData | typeof coalescedResult> => {
+  const mutateAsync = async (input: TInput, options?: unknown): Promise<TData | typeof coalescedResult> => {
     const prepared = prepare(input);
-    if (prepared.kind === 'run') return mutation.mutateAsync(prepared.vars, opts);
+    if (prepared.kind === 'run') return mutation.mutateAsync(prepared.vars, options);
     return coalescedResult;
   };
 

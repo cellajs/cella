@@ -25,7 +25,7 @@ export interface SeqRange {
  * Fetches one sequence range for catchup, optionally narrowed to a subtree. Public entities omit organization. `query`
  * holds the range and the chunk limit, ready to spread into the product's list request.
  */
-export type RangeFetchFn = (request: {
+export type RangeFetch = (request: {
   organizationId: string | null;
   tenantId: string | null;
   channelId?: string;
@@ -34,7 +34,7 @@ export type RangeFetchFn = (request: {
 
 /** Registry decoupling entity modules from stream handlers: modules register keys at load time, stream/cache code looks them up by entityType. */
 const entityQueryKeysRegistry = new Map<string, EntityQueryKeys>();
-const rangeFetchRegistry = new Map<string, RangeFetchFn>();
+const rangeFetchRegistry = new Map<string, RangeFetch>();
 const equalityFilterKeysRegistry = new Map<string, readonly string[]>();
 
 const sentinelOrg = '__org__';
@@ -63,7 +63,7 @@ function assertKeyContract(entityType: EntityType, keys: EntityQueryKeys): void 
 }
 
 /** Canonical list data must use home keys, because live sync placement and channel observation derive from that shape; hand-written keys fail validation. */
-export function registerEntityQueryKeys(entityType: EntityType, keys: EntityQueryKeys, rangeFetch?: RangeFetchFn): void {
+export function registerEntityQueryKeys(entityType: EntityType, keys: EntityQueryKeys, rangeFetch?: RangeFetch): void {
   assertKeyContract(entityType, keys);
   entityQueryKeysRegistry.set(entityType, keys);
   if (rangeFetch) rangeFetchRegistry.set(entityType, rangeFetch);
@@ -86,11 +86,11 @@ export function getRegisteredEntityTypes(): string[] {
 
 /** Registered entity types that are product entities: client-wired and product-classified. */
 export function getRegisteredProductEntityTypes(): ProductEntityType[] {
-  return getRegisteredEntityTypes().filter((t) => isProduct(t));
+  return getRegisteredEntityTypes().filter(isProduct);
 }
 
 /** Undefined when the entity type does not support range fetching. */
-export function getEntityRangeFetch(entityType: string): RangeFetchFn | undefined {
+export function getEntityRangeFetch(entityType: string): RangeFetch | undefined {
   return rangeFetchRegistry.get(entityType);
 }
 

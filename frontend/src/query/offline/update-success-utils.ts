@@ -4,10 +4,10 @@ import { cacheUpdate } from '~/query/basic/cache-mutations';
 import type { ItemData } from '~/query/basic/types';
 
 /**
- * Merges only this mutation's mutated fields from the server response onto the cached entity, so a concurrent mutation's optimistic values survive; stx, updatedAt, and updatedBy always sync.
+ * Merges only this mutation's mutated fields from the server response onto the cached entity, so a concurrent mutation's optimistic values survive; stx, updatedAt, and updatedBy always come from the response.
  * Returns the server entity when nothing is cached.
  */
-export function mergeServerResponse<T extends { id: string; stx?: unknown; updatedAt?: string | null }>(opts: {
+export function mergeServerResponse<T extends { id: string; stx?: unknown; updatedAt?: string | null }>(options: {
   cached?: T;
   serverEntity: T;
   mutatedKeys: string[];
@@ -15,7 +15,7 @@ export function mergeServerResponse<T extends { id: string; stx?: unknown; updat
   derivedKeys?: Record<string, readonly string[]>;
   skipKeys?: string[];
 }): T {
-  const { cached, serverEntity, mutatedKeys, derivedKeys = {}, skipKeys } = opts;
+  const { cached, serverEntity, mutatedKeys, derivedKeys = {}, skipKeys } = options;
   if (!cached) return serverEntity;
 
   const serverRow = asRecord(serverEntity);
@@ -34,8 +34,8 @@ export function mergeServerResponse<T extends { id: string; stx?: unknown; updat
   };
 }
 
-export function syncEntityToCache<T extends ItemData>(opts: { entity: T; listKey: QueryKey; detailKey: QueryKey; queryClient: QueryClient }) {
-  const { entity, listKey, detailKey, queryClient } = opts;
+export function syncEntityToCache<T extends ItemData>(options: { entity: T; listKey: QueryKey; detailKey: QueryKey; queryClient: QueryClient }) {
+  const { entity, listKey, detailKey, queryClient } = options;
   cacheUpdate(listKey, [entity]);
   queryClient.setQueryData<T>(detailKey, (old) => {
     if (!old) return old;

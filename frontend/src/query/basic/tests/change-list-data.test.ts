@@ -1,7 +1,7 @@
 import '~/query/tests/query-client-env';
 import type { QueryKey } from '@tanstack/react-query';
 import { afterEach, describe, expect, it } from 'vitest';
-import { changeListData } from '~/query/basic/helpers';
+import { changeListData } from '~/query/basic/cache-mutations';
 import type { ItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
 import type { InfiniteQueryData, QueryData } from '~/query/types';

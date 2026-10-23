@@ -12,7 +12,7 @@ function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | nul
   if (!a || !b) return true;
   const aKeys = Object.keys(a) as ChannelEntityType[];
   if (aKeys.length !== Object.keys(b).length) return true;
-  return aKeys.some((k) => a[k] !== b[k]);
+  return aKeys.some((type) => a[type] !== b[type]);
 }
 
 /** Reads a pre-built index, falling back to the ancestor id when a slug is not indexed; rewriteUrlToSlug corrects the URL later. Returns the original reference if unchanged. */

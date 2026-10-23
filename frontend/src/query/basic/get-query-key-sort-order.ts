@@ -2,7 +2,8 @@ import type { QueryKey } from '@tanstack/react-query';
 
 export const getQueryKeySortOrder = (queryKey: QueryKey): 'asc' | 'desc' => {
   const sortData = queryKey.find(
-    (el): el is { sort: string; order?: 'asc' | 'desc' } => typeof el === 'object' && el !== null && 'sort' in el && 'order' in el,
+    (segment): segment is { sort: string; order?: 'asc' | 'desc' } =>
+      typeof segment === 'object' && segment !== null && 'sort' in segment && 'order' in segment,
   );
 
   // Any sort other than createdAt lists newest first.

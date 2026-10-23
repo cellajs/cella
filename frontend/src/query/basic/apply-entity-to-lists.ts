@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { appConfig, hierarchy } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
-import { changeListData } from '~/query/basic/helpers';
+import { changeListData } from '~/query/basic/cache-mutations';
 import { getQueryItems, isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
 import type { ItemData, OrgRoutableItemData, RoutableItemData } from '~/query/basic/types';
 import { getEntityQueryKeys } from './entity-query-registry';
@@ -22,11 +22,11 @@ export function matchesCanonicalHome(queryKey: readonly unknown[], organizationI
 
 /** True when the row moved to a different parent channel (any context id column differs). */
 function hasParentChannelChanged(cached: ItemData, incoming: ItemData): boolean {
-  const c = asRecord(cached);
-  const i = asRecord(incoming);
+  const cachedRow = asRecord(cached);
+  const incomingRow = asRecord(incoming);
   for (const entityType of appConfig.channelEntityTypes) {
     const key = appConfig.entityIdColumnKeys[entityType];
-    if (typeof c[key] === 'string' && typeof i[key] === 'string' && c[key] !== i[key]) return true;
+    if (typeof cachedRow[key] === 'string' && typeof incomingRow[key] === 'string' && cachedRow[key] !== incomingRow[key]) return true;
   }
   return false;
 }
@@ -47,9 +47,9 @@ export interface SpliceResult {
 export function spliceEntityIntoListCaches(
   queryClient: QueryClient,
   entity: RoutableItemData,
-  opts: { removeOnParentChannelChange?: boolean; rowFor?: (cachedItem: ItemData | undefined) => ItemData } = {},
+  options: { removeOnParentChannelChange?: boolean; rowFor?: (cachedItem: ItemData | undefined) => ItemData } = {},
 ): SpliceResult {
-  const { removeOnParentChannelChange = false, rowFor } = opts;
+  const { removeOnParentChannelChange = false, rowFor } = options;
   const { entityType, organizationId = null } = entity;
   const keys = getEntityQueryKeys(entityType);
   const homeChannelId = resolveHomeChannelId(entityType, entity);
@@ -60,7 +60,7 @@ export function spliceEntityIntoListCaches(
   const listPrefix = organizationId ? keys.list.org(organizationId) : keys.list.base;
 
   for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: listPrefix })) {
-    sawFilteredList ||= queryKey.slice(2).some((seg) => typeof seg === 'object' && seg !== null);
+    sawFilteredList ||= queryKey.slice(2).some((segment) => typeof segment === 'object' && segment !== null);
 
     if (!isQueryData<ItemData>(queryData) && !isInfiniteQueryData<ItemData>(queryData)) continue;
     const cachedItem = getQueryItems(queryData).find((item) => item.id === entity.id);

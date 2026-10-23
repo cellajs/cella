@@ -93,10 +93,10 @@ export const mockAppConfig = {
 
 /** Stub computeCan, returns all-false for each entity type (self + descendants). */
 export function mockComputeCan(channelType: string): Record<string, Record<string, boolean>> {
-  const denied = Object.fromEntries(mockAppConfig.entityActions.map((a) => [a, false]));
+  const denied = Object.fromEntries(mockAppConfig.entityActions.map((action) => [action, false]));
   const map: Record<string, Record<string, boolean>> = { [channelType]: { ...denied } };
-  for (const d of mockHierarchy.getOrderedDescendants(channelType)) {
-    map[d] = { ...denied };
+  for (const descendant of mockHierarchy.getOrderedDescendants(channelType)) {
+    map[descendant] = { ...denied };
   }
   return map;
 }

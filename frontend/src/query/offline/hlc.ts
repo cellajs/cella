@@ -19,9 +19,7 @@ function createHLC(): string {
   } else {
     lastCounter++;
   }
-  const ts = String(lastTimestamp);
-  const cnt = String(lastCounter).padStart(4, '0');
-  return `${ts}:${cnt}:${sourceHash}`;
+  return `${lastTimestamp}:${String(lastCounter).padStart(4, '0')}:${sourceHash}`;
 }
 
 /** Every field of one mutation shares a single HLC, making the update atomic. */

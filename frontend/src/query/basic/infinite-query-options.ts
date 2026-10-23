@@ -6,7 +6,7 @@ export const baseInfiniteQueryOptions = {
   initialPageParam: { page: 0, offset: 0 },
   getNextPageParam: ((lastPage, allPages) => {
     const total = lastPage.total;
-    const fetchedCount = allPages.reduce((acc, page) => acc + page.items.length, 0);
+    const fetchedCount = allPages.reduce((count, page) => count + page.items.length, 0);
 
     // An empty page means the server has no more rows regardless of what `total` claims; without
     // this guard a drifted denormalized total re-requests the same offset in an unthrottled loop.

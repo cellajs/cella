@@ -15,11 +15,11 @@ function hasCanChanged(a: EntityCanMap | undefined, b: EntityCanMap | undefined)
   if (aKeys.length !== bKeys.length) return true;
 
   return aKeys.some((key) => {
-    const aPerms = a[key];
-    const bPerms = b[key];
-    if (!aPerms && !bPerms) return false;
-    if (!aPerms || !bPerms) return true;
-    return (Object.keys(aPerms) as EntityActionType[]).some((action) => aPerms[action] !== bPerms[action]);
+    const aActions = a[key];
+    const bActions = b[key];
+    if (!aActions && !bActions) return false;
+    if (!aActions || !bActions) return true;
+    return (Object.keys(aActions) as EntityActionType[]).some((action) => aActions[action] !== bActions[action]);
   });
 }
 

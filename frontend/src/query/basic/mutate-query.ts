@@ -4,8 +4,7 @@ import { queryClient } from '~/query/query-client';
 import type { BaseQueryItem, BaseQueryResponse, InfiniteQueryData, PageParams, QueryData } from '~/query/types';
 
 /** Handles both standard and infinite query data. */
-export const getQueryItems = <TItem>(prevItems: BaseQueryItem<TItem>) =>
-  isQueryData(prevItems) ? prevItems.items : prevItems.pages.flatMap(({ items }) => items);
+export const getQueryItems = <TItem>(data: BaseQueryItem<TItem>) => (isQueryData(data) ? data.items : data.pages.flatMap(({ items }) => items));
 
 export const isQueryData = <TItem>(data: unknown): data is QueryData<TItem> => {
   return typeof data === 'object' && data !== null && 'items' in data && 'total' in data;
@@ -47,7 +46,7 @@ export function mapListItems<TItem>(
   return changed ? { ...data, pages } : data;
 }
 
-/** Matches every query whose key starts with `passedQueryKey`. */
-export const getSimilarQueries = <TItem, TPageParam = PageParams>(passedQueryKey: QueryKey): BaseQueryResponse<TItem, TPageParam>[] => {
-  return queryClient.getQueriesData<BaseQueryItem<TItem, TPageParam>>({ queryKey: passedQueryKey });
+/** Matches every query whose key starts with `queryKey`. */
+export const getSimilarQueries = <TItem, TPageParam = PageParams>(queryKey: QueryKey): BaseQueryResponse<TItem, TPageParam>[] => {
+  return queryClient.getQueriesData<BaseQueryItem<TItem, TPageParam>>({ queryKey });
 };

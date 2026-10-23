@@ -19,20 +19,20 @@ export function getCachedInvitedIds(): ReadonlySet<string> | null {
   return invites ? new Set(invites.items.map(({ entity }) => entity.id)) : null;
 }
 
-function getMembershipEntityId(m: MembershipBase): string | null {
-  return m.channelId;
+function getMembershipEntityId(membership: MembershipBase): string | null {
+  return membership.channelId;
 }
 
 export function findMembership(memberships: MembershipBase[], entityId: string): MembershipBase | null {
-  return memberships.find((m) => getMembershipEntityId(m) === entityId) ?? null;
+  return memberships.find((membership) => getMembershipEntityId(membership) === entityId) ?? null;
 }
 
 /** Channel types hosting this entity as a menu subentity, from menuStructure config, including types that are not hierarchy ancestors. */
 export function getMenuParentTypes(entityType: ChannelEntityType): ChannelEntityType[] {
-  return appConfig.menuStructure.filter((s) => s.subentityType === entityType).map((s) => s.entityType);
+  return appConfig.menuStructure.filter((menuItem) => menuItem.subentityType === entityType).map((menuItem) => menuItem.entityType);
 }
 
 /** A menu parent's cache update propagates ancestor-slug re-enrichment to its children. */
 export function isMenuParentOf(parentType: string, childType: string): boolean {
-  return appConfig.menuStructure.some((s) => s.entityType === parentType && s.subentityType === childType);
+  return appConfig.menuStructure.some((menuItem) => menuItem.entityType === parentType && menuItem.subentityType === childType);
 }

@@ -5,7 +5,7 @@ import { enrichWithAncestorSlugs, type SlugIndex } from '~/query/enrichment/ance
 import { getCachedInvitedIds, getCachedMemberships, getMenuParentTypes, getRegisteredChannelTypes, isMenuParentOf } from '~/query/enrichment/helpers';
 import { enrichWithInvitation, enrichWithMembership } from '~/query/enrichment/membership';
 import { enrichWithPermissions } from '~/query/enrichment/permissions';
-import type { EnrichableChannel, InfiniteData } from '~/query/enrichment/types';
+import type { EnrichableChannel, EnrichableListData } from '~/query/enrichment/types';
 import { queryClient } from '~/query/query-client';
 
 /** Re-entrancy guard: prevents the subscriber from reacting to its own cache writes */
@@ -43,7 +43,7 @@ function enrichItem(
 }
 
 /** Returns the same reference when nothing changed. */
-function enrichListData(data: InfiniteData, viewer: ViewerState, entityType: ChannelEntityType, slugIndex: SlugIndex): InfiniteData {
+function enrichListData(data: EnrichableListData, viewer: ViewerState, entityType: ChannelEntityType, slugIndex: SlugIndex): EnrichableListData {
   const ancestors = getExtendedAncestors(entityType);
   let dataChanged = false;
 
@@ -66,10 +66,10 @@ function enrichListData(data: InfiniteData, viewer: ViewerState, entityType: Cha
   return dataChanged ? { ...data, pages: newPages } : data;
 }
 
-function buildSlugIndex(entityType: ChannelEntityType): Map<string, string> {
+function buildSlugMap(entityType: ChannelEntityType): Map<string, string> {
   const slugMap = new Map<string, string>();
   for (const query of queryClient.getQueryCache().findAll({ queryKey: [entityType, 'list'] })) {
-    const data = query.state.data as InfiniteData | undefined;
+    const data = query.state.data as EnrichableListData | undefined;
     if (!data?.pages) continue;
     for (const page of data.pages) {
       if (!page.items) continue;
@@ -95,7 +95,7 @@ function enrichEntityType(entityType: ChannelEntityType, viewer: ViewerState, sl
   const cache = queryClient.getQueryCache();
 
   for (const query of cache.findAll({ queryKey: [entityType, 'list'] })) {
-    const data = query.state.data as InfiniteData | undefined;
+    const data = query.state.data as EnrichableListData | undefined;
     if (!data?.pages) continue;
     const enriched = enrichListData(data, viewer, entityType, slugIndex);
     if (enriched !== data) setCacheData(query.queryKey, enriched);
@@ -113,7 +113,7 @@ function enrichEntityType(entityType: ChannelEntityType, viewer: ViewerState, sl
 /** Indexes every ancestor of this entity type, so enrichWithAncestorSlugs resolves slugs whichever type triggered enrichment. */
 function ensureAncestorSlugs(entityType: ChannelEntityType, slugIndex: SlugIndex) {
   for (const ancestor of getExtendedAncestors(entityType)) {
-    if (!slugIndex.has(ancestor)) slugIndex.set(ancestor, buildSlugIndex(ancestor));
+    if (!slugIndex.has(ancestor)) slugIndex.set(ancestor, buildSlugMap(ancestor));
   }
 }
 
@@ -132,7 +132,7 @@ function enrichTypes(types: readonly ChannelEntityType[]) {
 }
 
 /** Enrich one entity type, then the child types that read its slugs as ancestors. */
-function runEnrichment(entityType: ChannelEntityType) {
+function enrichTypeAndChildren(entityType: ChannelEntityType) {
   const childTypes = getRegisteredChannelTypes().filter(
     (childType) => childType !== entityType && (hierarchy.hasAncestor(childType, entityType) || isMenuParentOf(entityType, childType)),
   );
@@ -153,7 +153,7 @@ export function initChannelEnrichment(): () => void {
     if (entityType === 'me' && (queryKey[1] === 'memberships' || queryKey[1] === 'invites')) {
       enrichTypes(getRegisteredChannelTypes());
     } else if (typeof entityType === 'string' && isChannel(entityType) && (queryKey[1] === 'list' || queryKey[1] === 'detail')) {
-      runEnrichment(entityType);
+      enrichTypeAndChildren(entityType);
     }
   });
 }

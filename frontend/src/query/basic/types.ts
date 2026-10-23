@@ -9,4 +9,4 @@ export type RoutableItemData = ItemData & { entityType: string; organizationId?:
 /** An org-scoped entity that can be inserted into a canonical home list. */
 export type OrgRoutableItemData = RoutableItemData & { organizationId: string };
 
-export type QueryDataActions = 'create' | 'update' | 'remove';
+export type QueryDataAction = 'create' | 'update' | 'remove';
