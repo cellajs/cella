@@ -13,24 +13,17 @@ import { useCurrentUser } from '~/modules/user/user-store';
 
 const slot = 'home.sections';
 
-/**
- * Home page component displaying a welcome message and pending invitations for the user.
- * Shows an alert for system admins who have not enabled MFA. Below the built-in content it
- * hosts the `home.sections` slot, so apps add home surfaces from their module config
- * without patching this file.
- */
+/** The signed-in home: an MFA alert for a user without MFA, pending invitations, then the `home.sections` slot apps fill from their module config. */
 export function HomePage() {
   const { t } = useTranslation();
   const user = useCurrentUser();
-
-  const showMfaAlert = !user.mfaRequired;
 
   const sections = resolvePlacementList(slot, getTools(slot));
 
   return (
     <div className="container">
       <SimpleHeader heading={t('c:home')} text={t('c:home.text', { appName: appConfig.name })} className="pt-4 md:pt-6" />
-      {showMfaAlert && (
+      {!user.mfaRequired && (
         <AlertBanner id="enable_mfa" variant="plain" icon={ShieldAlertIcon} className="mt-4">
           <p>{t('c:require_mfa.text')}</p>
           <Button variant="plain" size="sm" className="mt-2" render={<Link to="/account" hash="authentication" />}>

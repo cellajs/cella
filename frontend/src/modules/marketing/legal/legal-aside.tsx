@@ -77,7 +77,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
                     params={{ subject: id }}
                     hash={isMobile ? '' : legalOverviewId}
                     hashScrollIntoView={{ behavior: 'instant' }}
-                    resetScroll={true}
+                    resetScroll
                     draggable={false}
                     // A link to the current subject only changes the hash, which doesn't scroll
                     onClick={() => {

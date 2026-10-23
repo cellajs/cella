@@ -77,7 +77,7 @@ function PricingPlanCard({ plan: { id, className, featureCount, popular, discoun
         </Badge>
       )}
       <div className="mt-4">
-        <h3 className="flex w-full justify-center text-center font-bold text-2xl">
+        <h3 className="flex justify-center text-center font-bold text-2xl">
           {t(title)}
           {popular && <SparklesIcon className="ml-1 size-5 text-primary" />}
         </h3>
@@ -104,13 +104,7 @@ function PricingPlanCard({ plan: { id, className, featureCount, popular, discoun
         </ul>
       </div>
 
-      <Button
-        ref={buttonRef}
-        variant={popular ? 'default' : 'plain'}
-        className="mt-6 w-full"
-        aria-label={`Handle the ${t(`c:${action}`)} click`}
-        onClick={handleActionClick}
-      >
+      <Button ref={buttonRef} variant={popular ? 'default' : 'plain'} className="mt-6 w-full" onClick={handleActionClick}>
         {t(`c:${action}`)}
       </Button>
     </div>

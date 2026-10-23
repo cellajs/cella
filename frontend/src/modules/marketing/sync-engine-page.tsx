@@ -9,9 +9,6 @@ import { tw } from '~/utils/tw';
 
 const pillClass = tw('mx-auto max-w-3xl rounded-full bg-accent/50 px-4 py-2 text-center');
 
-/**
- * Dedicated sync engine page explaining Cella's selective-sync approach and how it works.
- */
 export function SyncEnginePage() {
   const { t } = useTranslation();
 

@@ -1,32 +1,34 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { CloseButton } from '~/modules/common/close-button';
 import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
 import { Onboarding, type OnboardingState } from '~/modules/home/onboarding/onboarding';
 import { Dialog, DialogContent, DialogTitle } from '~/modules/ui/dialog';
 import { useCurrentUser } from '~/modules/user/user-store';
 
-function WelcomePage() {
+export function WelcomePage() {
+  const { t } = useTranslation();
   const user = useCurrentUser();
 
   const [onboardingState, setOnboardingState] = useState<OnboardingState>(user.userFlags.finishedOnboarding ? 'completed' : 'start');
 
+  const complete = () => setOnboardingState('completed');
+
   const handleOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
-    if (!nextOpen && eventDetails.reason === 'escape-key') {
-      // Escape inside a form field must not close onboarding
-      if (document.activeElement?.matches('input, textarea, select, [contenteditable="true"]')) return;
-    }
-    if (!nextOpen) setOnboardingState('completed');
+    if (nextOpen) return;
+    // Escape inside a form field must not close onboarding
+    if (eventDetails.reason === 'escape-key' && document.activeElement?.matches('input, textarea, select, [contenteditable="true"]')) return;
+    complete();
   };
 
   return (
     <>
       <Dialog open={onboardingState !== 'completed'} onOpenChange={handleOpenChange}>
         <DialogContent className="flex h-dvh max-h-none min-w-full flex-col rounded-none bg-background/75 p-0">
-          <span className="sr-only">
-            <DialogTitle>Welcome</DialogTitle>
-          </span>
-          <CloseButton onClick={() => setOnboardingState('completed')} className="absolute top-4 right-4 z-10" />
-          <Onboarding state={onboardingState} onStart={() => setOnboardingState('stepper')} onComplete={() => setOnboardingState('completed')} />
+          <DialogTitle className="sr-only">{t('c:onboarding_welcome', { appName: appConfig.name })}</DialogTitle>
+          <CloseButton onClick={complete} className="absolute top-4 right-4 z-10" />
+          <Onboarding state={onboardingState} onStart={() => setOnboardingState('stepper')} onComplete={complete} />
         </DialogContent>
       </Dialog>
 
@@ -34,5 +36,3 @@ function WelcomePage() {
     </>
   );
 }
-
-export { WelcomePage };

@@ -25,7 +25,7 @@ export function LegalPage() {
   usePreloadLazyComponents(lazyComponents);
 
   return (
-    <MarketingLayout title={t('c:legal')}>
+    <MarketingLayout title="c:legal">
       <div className="container my-4 gap-4 md:mt-8 md:flex">
         <div className="mx-auto md:mt-3 md:w-1/4 md:min-w-48">
           <SimpleHeader className="p-3" text={t('c:legal_text', { appName: appConfig.name })} />

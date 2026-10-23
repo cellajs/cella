@@ -7,13 +7,13 @@ import { Badge } from '~/modules/ui/badge';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
-export type InfoGridItem<C extends string = string> = {
+export interface InfoGridItem<C extends string = string> {
   id: string;
   /** Category used for grouping when `categoryIcons` is provided. */
   category?: C;
   /** Stack layers rendered as badges after the title. */
   layers?: readonly string[];
-};
+}
 
 interface InfoTileProps {
   id: string;

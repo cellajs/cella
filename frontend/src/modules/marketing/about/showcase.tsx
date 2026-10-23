@@ -11,14 +11,16 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const DeviceMockup = lazyNamed(() => import('~/modules/marketing/device-mockup'), 'DeviceMockup');
 
-export type ShowcaseItem = {
+export interface ShowcaseItem {
   id: string;
   url: string;
+  /** Lines of code from cella; with `totalLoc` set too, the item shows cella's share. */
   cellaLoc?: number;
+  /** Lines of code of the whole app. */
   totalLoc?: number;
   lightItems: CarouselItemData[];
   darkItems: CarouselItemData[];
-};
+}
 
 interface CellaShareProps {
   cellaLoc: number;

@@ -7,6 +7,7 @@ import { publicCountsQueryOptions } from '~/modules/marketing/query';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
 
+/** Counts from `start` to `end` over `duration` milliseconds, easing out. */
 export function useCountUp(start: number, end: number, duration = 1500) {
   const [value, setValue] = useState(start);
   useEffect(() => {

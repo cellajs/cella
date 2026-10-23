@@ -7,7 +7,7 @@ import { Button } from '~/modules/ui/button';
 export function CallToAction() {
   const { t } = useTranslation();
 
-  const buttonRef = useRef(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <div className="mx-auto grid max-w-4xl text-center">

@@ -1,3 +1,4 @@
+import type { ReactElement, ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { cn } from '~/utils/cn';
@@ -5,15 +6,15 @@ import { cn } from '~/utils/cn';
 interface AboutSectionHeaderProps {
   title?: TKey;
   text?: TKey;
-  /** Optional components to interpolate into `text` (e.g. links) via <Trans>. */
-  textComponents?: readonly React.ReactElement[] | Record<string, React.ReactElement>;
+  /** Elements `<Trans>` interpolates into `text`, such as links. */
+  textComponents?: readonly ReactElement[] | Record<string, ReactElement>;
   className?: string;
 }
 
 interface AboutSectionProps extends Omit<AboutSectionHeaderProps, 'className'> {
-  /** When set, renders a `spy-<sectionId>` anchor for scroll-spy nav (used on the about page). */
+  /** Sets the section's id to `spy-<sectionId>`, which the scroll spy observes. */
   sectionId?: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
   alternate?: boolean;
 }
 
@@ -21,9 +22,7 @@ interface AboutSectionProps extends Omit<AboutSectionHeaderProps, 'className'> {
 export function AboutSectionHeader({ title, text, textComponents, className }: AboutSectionHeaderProps) {
   const { t } = useTranslation();
 
-  if (!title && !text) {
-    return null;
-  }
+  if (!title && !text) return null;
 
   return (
     <div className={cn('mx-auto flex max-w-3xl flex-col gap-4', className)}>

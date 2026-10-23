@@ -15,7 +15,7 @@ export function SkipStepButton({ onComplete }: SkipStepButtonProps) {
   const { nextStep, isOptionalStep, currentStep, hasCompletedAllSteps } = useStepper();
   const { t } = useTranslation();
 
-  const skipButtonRef = useRef(null);
+  const skipButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (hasCompletedAllSteps) onComplete();
@@ -27,7 +27,7 @@ export function SkipStepButton({ onComplete }: SkipStepButtonProps) {
         id: skipOrganizationDialogId,
         triggerRef: skipButtonRef,
         className: 'md:max-w-xl',
-        title: `${t('c:skip')} ${t('c:create_resource', { resource: t('c:organization') }).toLowerCase()}`,
+        title: t('c:skip_org_creation'),
         description: t('c:skip_org_creation.text'),
       });
       return;

@@ -8,7 +8,9 @@ import { cn } from '~/utils/cn';
 
 export interface InfoCard {
   name: string;
+  /** Host without protocol: the link adds `https://`, the card shows it as is. */
   url: string;
+  /** Inverts the logo in dark mode. */
   invert?: boolean;
   id: string;
   country: string;

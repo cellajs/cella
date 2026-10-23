@@ -24,13 +24,10 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import type { InfoCard } from '~/modules/marketing/about/info-cards';
 import type { PricingPlan } from '~/modules/marketing/about/pricing';
 import type { ShowcaseItem } from '~/modules/marketing/about/showcase';
+import type { FooterLinkProps } from '~/modules/marketing/footer';
 import type { InfoGridItem } from '~/modules/marketing/info-grid';
 
-/**
- * The app's own marketing copy: nav and footer links, the feature and sync capability lists, info
- * cards, pricing plans, FAQ, counters, screenshots and showcases. Pinned in `cella/cella.config.ts`,
- * so the app copy always wins a sync; the pages in this module read these exports by name.
- */
+// The app's marketing copy. The module's pages import each export by name: edit the values, keep the names.
 
 // Nav
 
@@ -45,10 +42,10 @@ export const marketingNavConfig = [
 
 /** @public */
 export const socials = [
-  { title: 'Social', href: appConfig.company.socialUrl, icon: CloudIcon },
-  { title: 'Chat', href: appConfig.company.element, icon: ElementIcon },
-  { title: 'GitHub', href: appConfig.company.githubUrl, icon: GithubIcon },
-];
+  { title: 'c:social', href: appConfig.company.socialUrl, icon: CloudIcon },
+  { title: 'c:chat', href: appConfig.company.element, icon: ElementIcon },
+  { title: 'c:github', href: appConfig.company.githubUrl, icon: GithubIcon },
+] satisfies (FooterLinkProps & { icon: IconComponent })[];
 
 export const footerSections = [
   {
@@ -70,14 +67,14 @@ export const footerSections = [
     title: 'c:connect',
     links: [{ title: 'c:contact_us', href: '/contact' }, ...socials],
   },
-];
+] satisfies { title: TKey; hideOnMobile?: boolean; links: FooterLinkProps[] }[];
 
 // Legal
 
 export const legalLinks = [
   { title: 'c:legal', href: '/legal' },
   { title: 'c:accessibility', href: '/accessibility' },
-];
+] satisfies FooterLinkProps[];
 
 // About - Stack (tech-stack tile grid on /about)
 
@@ -92,8 +89,7 @@ export const stackItems = [
   { id: 'pulumi' },
 ];
 
-// Features page with categorised capability list (/features).
-// Each item maps to translation keys `about:features.<id>` and `about:features.<id>.text`.
+// Features page (/features): each item reads `about:features.<id>` and `about:features.<id>.text`.
 
 export type FeatureCategory = 'security' | 'auth' | 'ux' | 'dx' | 'deploy' | 'performance' | 'data';
 
@@ -166,9 +162,7 @@ export const featuresPageItems: InfoGridItem<FeatureCategory>[] = [
   { id: 'load_testing', category: 'performance' },
 ];
 
-// Sync engine capability list (/sync-engine). Kept separate from featuresPageItems so this page can
-// group into sub-categories. Translation keys: item → `about:features.<id>` / `.text`; category →
-// `about:features.category_<category>`. `layers` tags which stack part a capability runs in (badges).
+// Sync engine page (/sync-engine): the features page's keys, its own categories, and `layers` badges for where each capability runs.
 
 export type SyncCategory = 'realtime' | 'offline' | 'consistency' | 'resilience';
 
@@ -181,7 +175,9 @@ export const syncCategoryIcons = {
 
 export type SyncLayer = 'client' | 'api' | 'cdc' | 'yjs';
 
-export type SyncPageItem = InfoGridItem<SyncCategory> & { layers: SyncLayer[] };
+export interface SyncPageItem extends InfoGridItem<SyncCategory> {
+  layers: SyncLayer[];
+}
 
 export const syncPageItems: SyncPageItem[] = [
   // Realtime & collaboration

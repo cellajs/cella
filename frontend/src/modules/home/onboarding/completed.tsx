@@ -32,7 +32,7 @@ export function OnboardingCompleted() {
   const createOrganization = getMenuSection('organization')?.createAction;
 
   useEffect(() => {
-    // Run once, after the org list has either resolved or finished fetching.
+    // Run once, after the organization list has settled.
     if (didRunRef.current) return;
     if (orgQuery.isFetching) return;
 

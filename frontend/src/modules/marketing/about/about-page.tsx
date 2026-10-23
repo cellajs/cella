@@ -39,9 +39,7 @@ export function AboutPage() {
       <MarketingNav />
 
       <main>
-        {/* Hero landing */}
         <Hero
-          key={'welcome'}
           title="about:hero.title"
           // chips={['about:chip.mit_licensed', 'about:chip.batteries_included', 'about:chip.european_infra']}
           text="about:hero.text"
@@ -52,7 +50,6 @@ export function AboutPage() {
               size="lg"
               render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />}
               className="group h-14 rounded-full px-8 transition"
-              aria-label={t('about:github_star')}
             >
               <GithubIcon className="size-4 transition-transform group-hover:scale-110" />
               {t('about:github_star')}
@@ -66,7 +63,7 @@ export function AboutPage() {
               />
               {copied && (
                 <div className="absolute top-2.5 right-2 left-8 rounded-full bg-background py-2 text-left font-mono text-sm">
-                  copied! bon voyage 🚀
+                  {t('about:install_copied')}
                 </div>
               )}
 
@@ -87,49 +84,35 @@ export function AboutPage() {
           </Button>
         </Hero>
 
-        {/* Core features / benefits */}
-        <AboutSection key={'benefits'} sectionId="benefits" title="about:features.title">
+        <AboutSection sectionId="benefits" title="about:features.title">
           <Why />
         </AboutSection>
 
-        {/* Stack */}
-        <AboutSection key={'stack'} sectionId="stack" title="about:stack.title" text="about:stack.text" alternate={true}>
+        <AboutSection sectionId="stack" title="about:stack.title" text="about:stack.text" alternate>
           <InfoGrid namespace="stack" items={stackItems} image expandable tileClassName="bg-background" />
         </AboutSection>
 
-        {/* Integrations */}
-        <AboutSection key={'integrations'} sectionId="integrations" title="about:integrations.title" text="about:integrations.text">
+        <AboutSection sectionId="integrations" title="about:integrations.title" text="about:integrations.text">
           <InfoCards />
         </AboutSection>
 
-        {/* Showcase */}
-        <AboutSection key={'showcase'} sectionId="showcase" title="about:showcase.title" text="about:showcase.text" alternate>
+        <AboutSection sectionId="showcase" title="about:showcase.title" text="about:showcase.text" alternate>
           <Showcase />
         </AboutSection>
 
-        {/* Call to Action */}
-        <AboutSection key={'call-to-action'} sectionId="call-to-action">
+        <AboutSection sectionId="call-to-action">
           <CallToAction />
         </AboutSection>
 
-        {/* Public counters */}
-        {/* <AboutSection
-            key={'counters'}
-            sectionId="counters"
-            title="about:community.title"
-            text="about:community.text"
-            alternate={true}
-          >
+        {/* <AboutSection sectionId="counters" title="about:community.title" text="about:community.text" alternate>
             <Counters />
           </AboutSection> */}
 
-        {/* Pricing */}
-        {/* <AboutSection key={'pricing'} sectionId="pricing" title="about:pricing.title" text="about:pricing.text">
+        {/* <AboutSection sectionId="pricing" title="about:pricing.title" text="about:pricing.text">
             <Pricing />
           </AboutSection> */}
 
-        {/* FAQs */}
-        {/* <AboutSection key={'faqs'} sectionId="faqs" title="about:faq.title" text="about:faq.text" alternate={true}>
+        {/* <AboutSection sectionId="faqs" title="about:faq.title" text="about:faq.text" alternate>
             <FAQ />
           </AboutSection> */}
       </main>

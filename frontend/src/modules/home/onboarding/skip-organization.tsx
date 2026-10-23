@@ -18,9 +18,7 @@ export function SkipOrganization({ onComplete }: SkipOrganizationProps) {
     onComplete();
   };
 
-  const cancel = () => {
-    removeDialog(skipOrganizationDialogId);
-  };
+  const cancel = () => removeDialog(skipOrganizationDialogId);
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row">

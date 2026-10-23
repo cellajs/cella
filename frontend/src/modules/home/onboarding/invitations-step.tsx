@@ -12,10 +12,7 @@ interface InvitationsStepProps {
   children?: ReactNode;
 }
 
-/**
- * Lets an invited user answer each pending invitation, always by an explicit click: an invitation claimed by its
- * address was never opened by this user. Moves on once the last one is answered.
- */
+/** Answers each pending invitation by an explicit click (one claimed by address was never opened by this user); moves on after the last. */
 export function InvitationsStep({ children }: InvitationsStepProps) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();

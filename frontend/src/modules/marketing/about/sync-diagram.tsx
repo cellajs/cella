@@ -7,6 +7,7 @@ import { useInView } from '~/hooks/use-in-view';
 import type { TKey } from '~/lib/i18n-locales';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { cn } from '~/utils/cn';
+import { objectEntries } from '~/utils/object-entries';
 
 type SyncMode = 'rest' | 'cdc' | 'yjs' | 'vm';
 
@@ -83,8 +84,7 @@ const modeConfig: Record<SyncMode, { nodes: NodeKey[]; edges: string[] }> = {
   vm: { nodes: ['database', 'api', 'client'], edges: ['client-api', 'api-database', 'api-client', 'vm-wal', 'vm-socket'] },
 };
 
-// Short explanation shown between the toggle and the diagram, per part.
-// `label` and `text` are i18n keys (about namespace); `text` carries inline <strong> markup.
+// Per part: the toggle label, and the text shown between the toggle and the diagram, with inline <strong> markup.
 const modeText: Record<SyncMode, { label: TKey; text: TKey }> = {
   rest: { label: 'about:sync_diagram.part_1.label', text: 'about:sync_diagram.part_1.text' },
   cdc: { label: 'about:sync_diagram.part_2.label', text: 'about:sync_diagram.part_2.text' },
@@ -92,12 +92,10 @@ const modeText: Record<SyncMode, { label: TKey; text: TKey }> = {
   vm: { label: 'about:sync_diagram.part_4.label', text: 'about:sync_diagram.part_4.text' },
 };
 
-// Animation timeline (seconds): base REST fades in and holds, then the mode-specific node fades
-// in and the stream/branch lines draw in flow order.
+// Durations in seconds: the REST base fades in and holds, then the part's node fades in and its lines draw in flow order.
 const animTimeline = { fade: 0.6, hold: 1, cdcIn: 0.6, draw: 0.9, sqlDraw: 0.6, gap: 0.4 } as const;
 
-// Part 4 folds the workers into the API server with the same two moves, also in reverse: their lines pull back, the workers fade
-// out, the server widens into one VM that holds them, and the two outside connections draw again.
+// Part 4's durations in seconds: the worker lines pull back, the workers fade, the server widens into one VM, the outside lines draw again.
 const foldTimeline = { retract: 0.5, stagger: 0.08, fade: 0.5, morph: 0.6, swap: 0.3 } as const;
 
 // Worker lines in the order they pull back: newest first, the reverse of how Parts 2 and 3 drew them.
@@ -199,8 +197,7 @@ const splitLanes = (line: Line) => {
   ];
 };
 
-// How far from a node's center its lines end. A square box gets the circle through its corners, so diagonal lines clear it too.
-// The API server widened into the VM gets its own edges with the same clearance, eased in while it widens.
+// How far a line ends from a node's center: the circle through a square box's corners, easing to the VM box's edges as the server widens.
 const trimOf = (geometry: Geometry, key: NodeKey, ux: number, uy: number) => {
   const { w, h } = geometry.halves[key];
   const stretch = Math.min(1, (w / h - 1) * 2);
@@ -285,17 +282,15 @@ export function SyncDiagram() {
   const [fold, setFold] = useState<Fold>(noFold);
   const foldAt = fold.edges.length ? (fold.edges.length - 1) * foldTimeline.stagger + foldTimeline.retract : 0;
   const isVm = mode === 'vm';
-  // Edge whose label is revealed on hover (inherited labels are hidden until hovered/near).
+  // The hovered edge shows its label even where its part did not introduce it.
   const [hovered, setHovered] = useState<string | null>(null);
   const [showAllLabels, setShowAllLabels] = useState(false);
-  // Time (s) subtracted from delays so a toggle animates only the new part. The
-  // shared structure from earlier parts stays put while the new flow draws in from t≈0.
+  // Seconds subtracted from delays, so a toggle draws only the new part from t≈0 while the earlier parts stay put.
   const [rebase, setRebase] = useState(0);
   const [showHint, setShowHint] = useState(true);
   const { nodeDelay, edgeTiming, vmAt } = buildTimeline(lead, foldAt);
   const { t } = useTranslation();
-  // Motion here is finite: the dashes march for under five seconds each time they start, the hint arrow nudges five times,
-  // and both rest offscreen, below `sm` (the arrow is hidden there) and for a reader who asked for reduced motion.
+  // Finite motion: dashes march under 5 s per start, the hint nudges five times; both rest offscreen and under reduced motion, the hint below sm too.
   const { ref: inViewRef, inView } = useInView();
   const isMobile = useBreakpointBelow('sm');
   const reducedMotion = useReducedMotion();
@@ -394,7 +389,6 @@ export function SyncDiagram() {
 
   return (
     <div ref={inViewRef} className="mx-auto mb-8 flex w-full max-w-3xl flex-col items-center">
-      {/* Mode toggle switches the diagram's nodes, edges, and timeline. */}
       <div className="relative mb-6">
         {showHint && (
           <div className="absolute top-1/2 right-full mr-3 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap text-muted-foreground max-sm:hidden">
@@ -411,7 +405,8 @@ export function SyncDiagram() {
           type="single"
           value={mode}
           onValueChange={(value) => {
-            if (value) switchMode(value as SyncMode);
+            const target = modeOrder.find((syncMode) => syncMode === value);
+            if (target) switchMode(target);
           }}
           variant="merged"
         >
@@ -449,14 +444,12 @@ export function SyncDiagram() {
         role="button"
         tabIndex={0}
         aria-pressed={showAllLabels}
-        aria-label="Toggle all data-flow labels"
+        aria-label={t('about:sync_diagram.toggle_labels')}
         className="relative aspect-4/3 w-full cursor-pointer sm:aspect-video md:aspect-5/2"
       >
         {/* SVG overlay drawn in real pixel space and re-measured on resize. */}
         {geometry && (
           <svg className="absolute inset-0 size-full" viewBox={`0 0 ${geometry.width} ${geometry.height}`} aria-hidden="true">
-            <title>Cella sync engine data flow</title>
-
             <defs>
               <ArrowMarker id="request-arrow" fill={requestStroke} />
               {streamEdges.map((edge) => (
@@ -586,10 +579,10 @@ export function SyncDiagram() {
           </svg>
         )}
 
-        {Object.entries(nodes).map(([key, { x, y, Icon, label }]) => {
+        {objectEntries(nodes).map(([key, { x, y, Icon, label }]) => {
           // A worker Part 4 folds away stays mounted to fade out where it stands.
-          const folding = fold.nodes.includes(key as NodeKey);
-          if (!activeNodes.includes(key as NodeKey) && !folding) return null;
+          const folding = fold.nodes.includes(key);
+          if (!activeNodes.includes(key) && !folding) return null;
           const isLastNode = (mode === 'cdc' && key === 'cdc') || (mode === 'yjs' && key === 'yjs');
           const becomesVm = key === 'api' && isVm;
           return (
@@ -603,7 +596,7 @@ export function SyncDiagram() {
               transition={
                 folding
                   ? { delay: vmAt.fold, duration: foldTimeline.fade }
-                  : { delay: startDelay(nodeDelay[mode][key as NodeKey] ?? 0), duration: isLastNode ? animTimeline.cdcIn : animTimeline.fade }
+                  : { delay: startDelay(nodeDelay[mode][key] ?? 0), duration: isLastNode ? animTimeline.cdcIn : animTimeline.fade }
               }
             >
               {key === 'api' ? (
@@ -653,7 +646,7 @@ export function SyncDiagram() {
                       transition={isVm ? { delay: vmAt.workers, duration: foldTimeline.swap } : { duration: 0.2 }}
                       className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap font-medium text-xs"
                     >
-                      One VM
+                      {t('about:sync_diagram.one_vm')}
                     </motion.span>
                   </div>
                 </div>

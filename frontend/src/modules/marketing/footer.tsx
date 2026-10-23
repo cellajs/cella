@@ -14,14 +14,13 @@ const currentYear = new Date().getFullYear();
 const headingClass = tw('font-heading font-semibold text-sm text-white/60 tracking-wider');
 const textClass = tw('mt-4 text-sm text-white/90');
 
-// The sign-up link only shows where visitors can sign up by themselves
-const isShown = (link: { title: string }) => link.title !== 'c:sign_up' || appConfig.has.selfRegistration;
-
-interface FooterLinkProps {
-  /** Translation key. */
-  title: string;
+export interface FooterLinkProps {
+  title: TKey;
   href: string;
 }
+
+// The sign-up link only shows where visitors can sign up by themselves
+const isShown = ({ title }: FooterLinkProps) => title !== 'c:sign_up' || appConfig.has.selfRegistration;
 
 /** A footer link; a web page opens in a new tab, an app route in this one. */
 function FooterLink({ title, href }: FooterLinkProps) {
@@ -36,7 +35,7 @@ function FooterLink({ title, href }: FooterLinkProps) {
       draggable={false}
       className="focus-effect link-decoration active:link-decoration-strong rounded-sm p-1 transition hover:underline"
     >
-      {t(title as TKey)}
+      {t(title)}
     </Link>
   );
 }
@@ -49,7 +48,7 @@ function FooterLinks() {
       <ul className="grid grid-cols-2 gap-8 sm:grid-cols-3">
         {footerSections.map((section) => (
           <li key={section.title} className={cn(section.hideOnMobile && 'max-sm:hidden')}>
-            <div className={headingClass}>{t(section.title as TKey)}</div>
+            <div className={headingClass}>{t(section.title)}</div>
 
             <ul className={textClass}>
               {section.links.filter(isShown).map((link) => (
@@ -65,22 +64,10 @@ function FooterLinks() {
   );
 }
 
-function Credits({ className }: { className?: string }) {
-  const { t } = useTranslation();
-
-  return (
-    <div className={cn('pb-12 text-center text-xs', className)}>
-      <p>
-        © {currentYear}. {appConfig.name} {t('c:is_built_by', { companyName: appConfig.company.name })}.
-      </p>
-    </div>
-  );
-}
-
 export function MarketingFooter() {
   const { t } = useTranslation();
   const statusUrl = appConfig.statusUrl?.trim();
-  const legalFooterLinks = statusUrl ? [...legalLinks, { title: 'c:status', href: statusUrl }] : legalLinks;
+  const legalFooterLinks: FooterLinkProps[] = statusUrl ? [...legalLinks, { title: 'c:status', href: statusUrl }] : legalLinks;
 
   return (
     <section className="rich-gradient dark-gradient relative min-h-[30vw] pt-[15vw]">
@@ -100,9 +87,7 @@ export function MarketingFooter() {
           replace={location.pathname === '/about'}
           hash=""
           draggable={false}
-          onClick={() => {
-            scrollTo(0, 0);
-          }}
+          onClick={() => scrollTo(0, 0)}
           className="focus-effect active:press mt-12 rounded-sm p-1 transition-transform sm:hover:scale-105"
           aria-label={t('c:go_to_about')}
         >
@@ -117,7 +102,9 @@ export function MarketingFooter() {
           ))}
         </ul>
 
-        <Credits className="text-white/60" />
+        <p className="pb-12 text-center text-white/60 text-xs">
+          {t('c:credits', { year: currentYear, appName: appConfig.name, companyName: appConfig.company.name })}
+        </p>
       </div>
     </section>
   );

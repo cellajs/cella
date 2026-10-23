@@ -81,7 +81,7 @@ export function MarketingNav() {
               <Logo height={36} title={t('c:go_to_about')} />
 
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="absolute top-0.5 right-0.5 max-md:hidden">
-                <title>We support Ukraine</title>
+                <title>{t('about:support_ukraine')}</title>
                 <g fill="none">
                   <path
                     fill="#FFD500"
@@ -110,7 +110,7 @@ export function MarketingNav() {
             {appConfig.company.githubUrl && (
               <Button
                 variant="ghost"
-                aria-label="Github repository"
+                aria-label={t('c:github')}
                 className="max-sm:hidden"
                 size="icon"
                 render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />}
@@ -128,9 +128,7 @@ export function MarketingNav() {
 
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
         <DrawerContent className="pb-8 sm:hidden">
-          <span className="sr-only">
-            <DrawerTitle>Navigation</DrawerTitle>
-          </span>
+          <DrawerTitle className="sr-only">{t('c:menu')}</DrawerTitle>
           <div className="flex flex-col gap-2 px-4">
             <UserTheme buttonClassName="xs:hidden m-1 self-end" />
             <Button variant="ghost" size="lg" render={<Link to="/about" hash="" replace={isAboutPage} draggable={false} onClick={closeDrawer} />}>
@@ -140,7 +138,7 @@ export function MarketingNav() {
             {appConfig.company.githubUrl && (
               <Button size="lg" render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />} onClick={closeDrawer}>
                 <GithubIcon className="size-6" />
-                Github
+                {t('c:github')}
               </Button>
             )}
           </div>

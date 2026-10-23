@@ -5,8 +5,8 @@ import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 interface DeviceMockupProps {
-  lightItems?: CarouselItemData[];
-  darkItems?: CarouselItemData[];
+  lightItems: CarouselItemData[];
+  darkItems: CarouselItemData[];
   className?: string;
   type: DeviceType;
 }
@@ -20,28 +20,23 @@ export function DeviceMockup({ lightItems, darkItems, type, className }: DeviceM
 
   return (
     <div className={cn('relative transition-opacity duration-700 ease-out', !inView && 'opacity-0', className)} ref={ref}>
-      {/* Grain shadow grounding the device on its surface. First in DOM, so the device paints over the 70% of it that
-          sits behind the device, and the last 30% reaches past the bottom edge. */}
+      {/* The grain shadow comes first in the DOM, so the device paints over the 70% behind it and the rest shows below the bottom edge */}
       <div
         aria-hidden="true"
         className={cn(
           'plus-grain pointer-events-none absolute left-1/2 -translate-x-1/2 opacity-25 dark:opacity-20',
           type === 'mobile' ? '-bottom-6 h-20 w-[230%]' : '-bottom-7 h-24 w-[224%]',
         )}
-        style={
-          {
-            '--grain-color': 'var(--foreground)',
-            '--grain-size': '5px',
-            '--grain-fade': 'radial-gradient(ellipse 50% 50% at 50% 50%, black, rgb(0 0 0 / 0.4) 60%, transparent 78%)',
-          } as React.CSSProperties
-        }
+        style={{
+          '--grain-color': 'var(--foreground)',
+          '--grain-size': '5px',
+          '--grain-fade': 'radial-gradient(ellipse 50% 50% at 50% 50%, black, rgb(0 0 0 / 0.4) 60%, transparent 78%)',
+        }}
       />
       <DeviceMockupFrame
         type={type}
         inView={inView}
-        renderCarousel={(containerClassName) => {
-          return <AttachmentsCarousel items={items || []} isDialog={false} containerClassName={containerClassName} />;
-        }}
+        renderCarousel={(containerClassName) => <AttachmentsCarousel items={items} isDialog={false} containerClassName={containerClassName} />}
       />
     </div>
   );

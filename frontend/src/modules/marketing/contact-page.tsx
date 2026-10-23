@@ -3,10 +3,18 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import { ContactForm } from '~/modules/common/contact-form/contact-form';
+import type { IconComponent } from '~/modules/common/icons/types';
 import { ExternalArrow } from '~/modules/marketing/external-arrow';
 import { MarketingLayout } from '~/modules/marketing/layout';
 
-type ContactMethod = { icon: typeof MapPinIcon; title: TKey; link: string; textKey?: TKey; text?: string };
+interface ContactMethod {
+  icon: IconComponent;
+  title: TKey;
+  link: string;
+  /** Link text as a translation key; wins over `text`. */
+  textKey?: TKey;
+  text?: string;
+}
 
 const methods: ContactMethod[] = [
   { icon: MapPinIcon, title: 'c:visit', link: appConfig.company.directionsUrl, text: appConfig.company.streetAddress },

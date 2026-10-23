@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useInView } from '~/hooks/use-in-view';
 import type { TKey } from '~/lib/i18n-locales';
@@ -11,7 +11,7 @@ const MorphAnimation = lazyNamed(() => import('~/modules/common/morph-animation/
 
 interface HeroProps {
   title: TKey;
-  children: React.ReactNode;
+  children: ReactNode;
   text?: TKey;
   chips?: TKey[];
 }
@@ -21,7 +21,7 @@ export function Hero({ title, text, children, chips }: HeroProps) {
   const theme = useUIStore((state) => state.theme);
   const { ref, inView } = useInView({ once: true, threshold: 0.5 });
 
-  // When a theme color is active, derive gradient from --primary CSS variable so any color in appConfig.theme.colors works automatically
+  // A theme color derives the gradient from --primary, so any color in appConfig.theme.colors works
   const hasTheme = theme !== 'none';
   const gradientClass = hasTheme ? 'text-transparent' : 'from-slate-200 via-neutral-200 to-stone-300 text-primary/90';
   const gradientStyle = hasTheme
@@ -63,7 +63,7 @@ export function Hero({ title, text, children, chips }: HeroProps) {
         )}
         <div>{children}</div>
       </header>
-      {/* Morphing mark inside the hero, nudged left of center; the curve and the headline both paint over it. A phone draws it larger, so the section crops more of it */}
+      {/* The curve and the headline paint over it; a phone draws it larger, so the section crops more of it */}
       <Suspense fallback={null}>
         <div
           className="pointer-events-none absolute top-1/2 left-[12%] aspect-square w-[min(144vmin,1182px)] -translate-x-1/2 -translate-y-1/2 opacity-20 mix-blend-multiply max-sm:w-[174vmin] dark:mix-blend-normal"

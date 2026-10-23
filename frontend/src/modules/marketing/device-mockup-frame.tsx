@@ -1,18 +1,14 @@
+import type { ReactElement } from 'react';
+
 export type DeviceType = 'mobile' | 'tablet' | 'pc';
 
 interface DeviceMockupFrameProps {
   type: DeviceType;
   inView: boolean;
-  renderCarousel: (containerClassName: string) => React.ReactElement;
+  renderCarousel: (containerClassName: string) => ReactElement;
 }
 
-/**
- * Draws the chassis around a carousel: a phone, a tablet or a desktop screen on a stand.
- *
- * Chassis neutrals are zinc, not Tailwind's blue-leaning gray. The theme tokens and the grain shadow the mockup
- * casts (device-mockup.tsx, `--grain-color: --foreground`) share zinc's hue, so gray reads as a blue cast on it.
- * Every surface is opaque: the grain sits behind the device, and a translucent one lets its dots through.
- */
+/** A phone, tablet or desktop chassis around a carousel, in zinc (the theme's and the grain's hue; gray reads blue) and opaque over the grain. */
 export function DeviceMockupFrame({ type, inView, renderCarousel }: DeviceMockupFrameProps) {
   switch (type) {
     case 'tablet':
