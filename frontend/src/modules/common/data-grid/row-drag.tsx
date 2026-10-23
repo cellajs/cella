@@ -10,12 +10,12 @@ import { cn } from './utils/grid-utils';
  * Internal drag type for data-grid row drag-and-drop.
  * @internal
  */
-const ROW_DRAG_TYPE = 'rdg-row';
-type RowDragData = { type: typeof ROW_DRAG_TYPE; rowIdx: number };
+const rowDragType = 'rdg-row';
+type RowDragData = { type: typeof rowDragType; rowIdx: number };
 type DropZone = 'top' | 'bottom' | 'center';
 
 function isRowDragData(data: Record<string, unknown>): data is RowDragData {
-  return data.type === ROW_DRAG_TYPE;
+  return data.type === rowDragType;
 }
 
 /** Resolve the cursor's nearest allowed drop zone, or null when the row blocks all zones. */
@@ -121,7 +121,7 @@ export function RowDropTarget<R, SR>({ rowKey, config, renderRow, ...props }: Ro
         if (!cached) refreshRect();
         const fromIdx = isRowDragData(source.data) ? source.data.rowIdx : -1;
         const zone = resolveDropZone(cached!.top, cached!.height, input.clientY, buildIsZoneAllowed(fromIdx));
-        return { type: ROW_DRAG_TYPE, rowIdx, dropZone: zone } as Record<string, unknown>;
+        return { type: rowDragType, rowIdx, dropZone: zone } as Record<string, unknown>;
       },
       onDragEnter: () => {
         refreshRect();
@@ -177,7 +177,7 @@ export function RowDragCell<R, SR>({ rowIdx, row, column, className, config, ...
 
     return draggable({
       element: handle ?? el,
-      getInitialData: (): RowDragData => ({ type: ROW_DRAG_TYPE, rowIdx }),
+      getInitialData: (): RowDragData => ({ type: rowDragType, rowIdx }),
       onGenerateDragPreview: ({ nativeSetDragImage }) => {
         setCustomNativeDragPreview({ nativeSetDragImage, getOffset: () => ({ x: 16, y: 16 }), render: ({ container }) => setPreview({ container }) });
       },

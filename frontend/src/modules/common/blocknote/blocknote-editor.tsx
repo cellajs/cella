@@ -3,20 +3,19 @@ import '~/modules/common/blocknote/styles.css';
 import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.css';
 
 import { withCollaboration } from '@blocknote/core/yjs';
-import type { FilePanelProps } from '@blocknote/react';
 import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
-import { type MouseEventHandler, type RefObject, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
+import { type CSSProperties, type MouseEventHandler, type RefObject, useEffect, useImperativeHandle, useRef } from 'react';
 import { appConfig } from 'shared';
-import { mediaBlockTypes } from 'shared/blocknote';
 import { type DescriptionBlock, findSummarySource } from 'shared/utils/derive-description-core';
 import type { Awareness } from 'y-protocols/awareness';
 import type { XmlFragment } from 'yjs';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useLatestRef } from '~/hooks/use-latest-ref';
+import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-url';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
-import { Mention } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
+import { MentionMenu } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
 import { pinnedTitleDropPosition, pinnedTitleExtension } from '~/modules/common/blocknote/custom-elements/pinned-title/pinned-title-extension';
 import { FilePanelBridge } from '~/modules/common/blocknote/custom-file-panel/file-panel-bridge';
 import { useUploadHost } from '~/modules/common/blocknote/custom-file-panel/upload-host';
@@ -24,23 +23,21 @@ import { InlineUppyFilePanel } from '~/modules/common/blocknote/custom-file-pane
 import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-formatting-toolbar/formatting-toolbar';
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu/side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu/slash-menu';
-import { findClickedMedia, getParsedContent, walkBlocks } from '~/modules/common/blocknote/helpers/blocknote-helpers';
+import { findClickedMediaBlockId, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
-import { createResolveFileUrl } from '~/modules/common/blocknote/helpers/resolve-file-url';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
 import { useEditorKeyboard } from '~/modules/common/blocknote/hooks/use-editor-keyboard';
 import { useSmartBlur } from '~/modules/common/blocknote/hooks/use-smart-blur';
 import { useUntrustedMediaWarning } from '~/modules/common/blocknote/hooks/use-untrusted-media-warning';
 import { useYjsUndoManagerFix } from '~/modules/common/blocknote/hooks/use-yjs-undo-manager-fix';
 import { syntaxHighlighter } from '~/modules/common/blocknote/syntax-highlighter';
-import type {
-  CommonBlockNoteProps,
-  CustomBlock,
-  CustomBlockFileTypes,
-  CustomBlockNoteEditor,
-  CustomBlockRegularTypes,
-  CustomBlockTypes,
+import {
+  type CommonBlockNoteProps,
+  type CustomBlock,
+  type CustomBlockNoteEditor,
+  type CustomBlockTypes,
+  isMediaBlockType,
 } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { getRouter } from '~/routes/-router-instance';
@@ -79,14 +76,15 @@ type BlockNoteProps = CommonBlockNoteProps & {
   onEditorReady?: () => void;
 };
 
-function BlockNote({
+const blockTypes = Object.keys(customSchema.blockSpecs) as CustomBlockTypes[];
+
+export function BlockNote({
   id,
-  className = '',
-  defaultValue = '', // stringified blocks
+  className,
+  defaultValue = '',
   trailingBlock = true,
   clickOpensPreview = false,
   dense = false,
-  // Editor functional
   headingLevels = [1, 2, 3],
   editable = true,
   autoFocus = false,
@@ -100,18 +98,16 @@ function BlockNote({
   pinTitleBlock = false,
   ariaLabel,
   extensions,
-  members, // for mentions
+  members,
   filePanel,
   baseFilePanelProps,
   commitOnEveryChange = false,
-  // Collaboration
   collaboration,
   contentApiRef,
   onEditorReady,
-  // Functions
   updateData,
   onEscapeClick,
-  onEnterClick, // Trigger on Cmd+Enter
+  onEnterClick,
   onFocus,
   onBeforeLoad,
 }: BlockNoteProps) {
@@ -121,16 +117,13 @@ function BlockNote({
   const uploadHost = useUploadHost();
 
   const collaborative = !!collaboration;
-  const blockNoteRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Without an upload path the menus offer no media blocks: BlockNote's own panel can only embed a URL, which the media
-  // grammar refuses. Stored media blocks still render.
-  const canUpload = !!filePanel || (!!baseFilePanelProps && appConfig.has.uploadEnabled);
-  const defaultAllowedBlockTypes = Object.keys(customSchema.blockSpecs) as CustomBlockTypes[];
-  const allowedBlockTypes = defaultAllowedBlockTypes.filter((type) =>
-    mediaBlockTypes.has(type)
-      ? canUpload && !excludeFileBlockTypes?.includes(type as CustomBlockFileTypes)
-      : !excludeBlockTypes?.includes(type as CustomBlockRegularTypes),
+  const uppyUpload = !!baseFilePanelProps && appConfig.has.uploadEnabled;
+  // Without an upload path the menus offer no media blocks: BlockNote's own panel only embeds a URL, which the media grammar refuses.
+  const canUpload = !!filePanel || uppyUpload;
+  const allowedBlockTypes = blockTypes.filter((type) =>
+    isMediaBlockType(type) ? canUpload && !excludeFileBlockTypes?.includes(type) : !excludeBlockTypes?.includes(type),
   );
 
   // Parse initial content once at creation time so the undo history starts clean
@@ -141,24 +134,18 @@ function BlockNote({
     initialContent,
     // BlockNoteView's autoFocus prop only stamps a data attribute; focusing on mount is this creation option.
     autofocus: autoFocus,
-    heading: { levels: headingLevels },
     trailingBlock,
     dictionary: getDictionary(),
     // Caller extensions come first: BlockNote keeps the first extension per key and drops later duplicates.
     extensions: [...(extensions ?? []), checkedExtension(), syntaxHighlighter, ...(pinTitleBlock ? [pinnedTitleExtension()] : [])],
     ...(pinTitleBlock && { dropCursor: { hooks: { computeDropPosition: pinnedTitleDropPosition } } }),
-    resolveFileUrl: createResolveFileUrl({ baseFilePanelProps }),
+    // The org context is the fallback for a reference whose attachment is not cached.
+    resolveFileUrl: (ref: string) =>
+      resolveBlockNoteFileRef(ref, { tenantId: baseFilePanelProps?.tenantId, organizationId: baseFilePanelProps?.organizationId }),
     ...(ariaLabel && { domAttributes: { editor: { 'aria-label': ariaLabel } } }),
   };
 
-  const editor = useCreateBlockNote(
-    collaboration
-      ? withCollaboration({
-          ...baseOptions,
-          collaboration: { fragment: collaboration.fragment, user: collaboration.user, provider: collaboration.provider },
-        })
-      : baseOptions,
-  );
+  const editor = useCreateBlockNote(collaboration ? withCollaboration({ ...baseOptions, collaboration }) : baseOptions);
 
   useYjsUndoManagerFix(editor, collaborative);
 
@@ -169,15 +156,14 @@ function BlockNote({
 
   const handleUpdateData = (editor: CustomBlockNoteEditor) => {
     const strBlocks = JSON.stringify(editor.document);
-    if (strBlocks === defaultValue || strBlocks === lastCommittedRef.current || !updateData) return;
+    if (strBlocks === defaultValue || strBlocks === lastCommittedRef.current) return;
 
     lastCommittedRef.current = strBlocks;
     checkUntrustedMedia(editor.document);
     updateData(strBlocks);
   };
 
-  // A user change since mount: a standalone editor commits only after one, so an untouched editor never writes back a
-  // document the description has moved past since, or one it only serializes differently.
+  // A user change since mount: an untouched standalone editor never writes back a stale or merely re-serialized document.
   const touchedRef = useRef(false);
   useEffect(
     () =>
@@ -187,8 +173,7 @@ function BlockNote({
     [editor],
   );
 
-  // Collaborative: an empty editor may mean Yjs has not synced yet, so it is never written.
-  // Standalone: an emptied document is a real edit, and an untouched one is none; handleUpdateData skips unchanged content.
+  // An empty collaborative editor may not have synced yet, so it is never written; a touched standalone one writes even when emptied.
   const commitDocument = () => {
     if (collaborative ? editor.isEmpty : !touchedRef.current) return;
     handleUpdateData(editor);
@@ -196,18 +181,14 @@ function BlockNote({
 
   const handleKeyDown = useEditorKeyboard({ editor, onEscapeClick, onEnterClick, commit: commitDocument });
 
-  // A host dismissed by an outside press (a sheet) unmounts the editor while it still has focus, so
-  // no blur fires; the cleanup commits what blur would have, after a user change: a REST write
-  // standalone, a cache patch collaborative, whose write the relay owns. lastCommittedRef keeps a
-  // blur that did fire from committing twice.
-  const commitDocumentRef = useRef(commitDocument);
-  commitDocumentRef.current = commitDocument;
+  // A host dismissed by an outside press (a sheet) unmounts the editor while it has focus, so no blur fires: the cleanup commits.
+  const commitDocumentRef = useLatestRef(commitDocument);
   useEffect(() => {
     if (!editable || commitOnEveryChange) return;
     return () => {
       if (touchedRef.current) commitDocumentRef.current();
     };
-  }, [editable, commitOnEveryChange]);
+  }, [editable, commitOnEveryChange, commitDocumentRef]);
 
   useImperativeHandle(
     contentApiRef,
@@ -215,7 +196,7 @@ function BlockNote({
       getContent: () => JSON.stringify(editor.document),
       focusSummaryEnd: () => {
         editor.focus();
-        // The block the derived summary shows, so the cursor lands where the collapsed view ends.
+        // The block the derived summary shows, so the cursor stops where the collapsed view ends.
         const { source } = findSummarySource(editor.document as DescriptionBlock[]);
         if (source) editor.setTextCursorPosition(source as CustomBlock, 'end');
       },
@@ -225,25 +206,21 @@ function BlockNote({
         if (at && typeof at.pos === 'number') editor._tiptapEditor.commands.setTextSelection(at.pos);
       },
       toggleChecklist: (checkboxId) => {
-        let found: CustomBlock | null = null;
-        walkBlocks(editor.document as CustomBlock[], (block) => {
-          if (block.type === 'checklistItem' && (block.props as { checkboxId?: string }).checkboxId === checkboxId) {
-            found = block;
-            return false;
-          }
+        let toggled = false;
+        editor.forEachBlock((block) => {
+          if (block.type !== 'checklistItem' || block.props.checkboxId !== checkboxId) return true;
+          editor.updateBlock(block, { props: { checked: !block.props.checked } });
+          toggled = true;
+          return false;
         });
-        if (!found) return false;
-        const checked = (found as CustomBlock).props as { checked?: boolean };
-        editor.updateBlock(found, { props: { checked: !checked.checked } });
-        return true;
+        return toggled;
       },
       commit: () => commitDocumentRef.current(),
     }),
-    [editor],
+    [editor, commitDocumentRef],
   );
 
-  // Once per editor instance: a parent passing a new callback has no new editor. It runs after the change
-  // subscription, so an edit the parent makes on ready (a queued checklist toggle) counts as a user change.
+  // It runs after the change subscription, so an edit the parent makes on ready (a queued checklist toggle) counts as a user change.
   const onEditorReadyRef = useLatestRef(onEditorReady);
   useEffect(() => {
     onEditorReadyRef.current?.();
@@ -253,17 +230,9 @@ function BlockNote({
   const onBeforeLoadRef = useLatestRef(onBeforeLoad);
   const hasOnBeforeLoad = !!onBeforeLoad;
 
-  const renderUppyFilePanel = useCallback(
-    (props: FilePanelProps) => {
-      if (!baseFilePanelProps) return null;
-      return <InlineUppyFilePanel base={baseFilePanelProps} blockId={props.blockId} />;
-    },
-    [baseFilePanelProps],
-  );
-
   const handleBlur = useSmartBlur({
     editor,
-    containerRef: blockNoteRef,
+    containerRef,
     onBlur: () => {
       if (!commitOnEveryChange) commitDocument();
     },
@@ -273,11 +242,11 @@ function BlockNote({
     if (!clickOpensPreview) return;
 
     // While editing only a direct hit on the media element opens the carousel; read-only also opens wrapped file blocks.
-    const media = findClickedMedia(event.target as HTMLElement, { includeWrapped: !editable });
-    if (!media) return;
+    const blockId = findClickedMediaBlockId(event.target, { includeWrapped: !editable });
+    if (!blockId) return;
 
     event.preventDefault();
-    openAttachment(editor, blockNoteRef, media.src);
+    openAttachment(editor, blockId, containerRef);
   };
 
   useEffect(() => {
@@ -294,16 +263,15 @@ function BlockNote({
       editor={editor}
       editable={editable}
       autoFocus={autoFocus}
-      ref={blockNoteRef}
+      ref={containerRef}
       className={cn(dense && 'bn-dense', titlePlaceholder && 'bn-title-placeholder', className)}
       // The block-0 title placeholder rides a CSS var: BlockNote's own placeholders are per block type (styles.css)
-      {...(titlePlaceholder && { style: { '--bn-title-placeholder': JSON.stringify(titlePlaceholder) } as React.CSSProperties })}
-      data-color-scheme={mode}
+      {...(titlePlaceholder && { style: { '--bn-title-placeholder': JSON.stringify(titlePlaceholder) } as CSSProperties })}
       shadCNComponents={shadCNComponents}
       sideMenu={false}
-      slashMenu={!slashMenu}
+      slashMenu={false}
       formattingToolbar={false}
-      emojiPicker={!emojis}
+      emojiPicker={false}
       filePanel={false}
       onFocus={onFocus}
       onClick={handleClick}
@@ -313,21 +281,20 @@ function BlockNote({
     >
       {slashMenu && <CustomSlashMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} />}
 
-      {!isMobile && formattingToolbar && <CustomFormattingToolbar headingLevels={headingLevels} />}
+      {!isMobile && formattingToolbar && <CustomFormattingToolbar />}
 
       {sideMenu && <CustomSideMenu editor={editor} allowedTypes={allowedBlockTypes} headingLevels={headingLevels} pinTitleBlock={pinTitleBlock} />}
 
-      {/* To avoid rendering "0" */}
-      {members?.length ? <Mention members={members} editor={editor} /> : null}
+      <MentionMenu members={members} editor={editor} />
 
-      {emojis && <GridSuggestionMenuController triggerCharacter={':'} columns={8} minQueryLength={1} />}
+      {emojis && <GridSuggestionMenuController triggerCharacter=":" columns={8} minQueryLength={1} />}
 
-      {baseFilePanelProps && appConfig.has.uploadEnabled ? (
+      {uppyUpload ? (
         // The host renders the dialog outside this subtree; the bridge only relays panel state to it.
         uploadHost ? (
           <FilePanelBridge host={uploadHost} />
         ) : (
-          <FilePanelController filePanel={renderUppyFilePanel} />
+          <FilePanelController filePanel={({ blockId }) => <InlineUppyFilePanel base={baseFilePanelProps} blockId={blockId} />} />
         )
       ) : filePanel ? (
         <FilePanelController filePanel={filePanel} />
@@ -335,5 +302,3 @@ function BlockNote({
     </BlockNoteView>
   );
 }
-
-export { BlockNote };

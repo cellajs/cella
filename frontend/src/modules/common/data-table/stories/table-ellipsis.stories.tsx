@@ -4,7 +4,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
-import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { openPopConfirm } from '~/modules/common/popconfirm';
 
 const onDelete = fn();
@@ -15,7 +15,7 @@ const options = [
     label: 'Edit',
     icon: PencilIcon,
     onSelect: () => {
-      useDropdowner.getState().remove();
+      dropdowner.getState().remove();
       onEdit();
     },
   },
@@ -23,7 +23,7 @@ const options = [
     label: 'Delete',
     icon: TrashIcon,
     onSelect: () => {
-      const remove = () => useDropdowner.getState().remove();
+      const remove = () => dropdowner.getState().remove();
       openPopConfirm(
         'Delete Acme?',
         <DeleteForm
@@ -57,7 +57,7 @@ const meta = {
   beforeEach: () => {
     onDelete.mockClear();
     onEdit.mockClear();
-    useDropdowner.setState({ dropdown: null, lastRemovedTriggerId: null, lastRemovedAt: 0 });
+    dropdowner.setState({ dropdown: null, lastRemovedTriggerId: null, lastRemovedAt: 0 });
   },
 } satisfies Meta<typeof RowActions>;
 

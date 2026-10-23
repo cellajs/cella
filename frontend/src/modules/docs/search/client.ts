@@ -3,7 +3,7 @@ import { t } from 'i18next';
 import { operationsQueryOptions, schemasQueryOptions } from '~/modules/docs/query';
 import type { EnginePage } from '~/modules/docs/search/engine';
 import type { DocsSearchClient } from '~/modules/docs/search/types';
-import { docPages, getDocPage, pathToSlug } from '~/modules/page/content';
+import { getDocPage, pathToSlug, visibleDocPages } from '~/modules/page/content';
 
 let clientPromise: Promise<DocsSearchClient> | null = null;
 
@@ -36,19 +36,17 @@ async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> 
     queryClient.query(schemasQueryOptions).catch(() => null),
   ]);
 
-  const sectionsBySlug = new Map(Object.entries(docsSectionsIndex).map(([path, s]) => [pathToSlug(path), s]));
-  const pages: EnginePage[] = docPages
-    .filter((page) => !page.draft && !page.hidden)
-    .map((page) => ({
-      slug: page.id,
-      title: page.name,
-      description: page.description,
-      keywords: page.keywords,
-      breadcrumbs: pageBreadcrumbs(page.id),
-      // h1 duplicates the page title; index depth ≥ 2 like the TOC does.
-      headings: page.headings.filter((heading) => heading.depth > 1),
-      sections: sectionsBySlug.get(page.id) ?? [],
-    }));
+  const sectionsBySlug = new Map(Object.entries(docsSectionsIndex).map(([path, sections]) => [pathToSlug(path), sections]));
+  const pages: EnginePage[] = visibleDocPages.map((page) => ({
+    slug: page.id,
+    title: page.name,
+    description: page.description,
+    keywords: page.keywords,
+    breadcrumbs: pageBreadcrumbs(page.id),
+    // h1 duplicates the page title; index depth ≥ 2 like the TOC does.
+    headings: page.headings.filter((heading) => heading.depth > 1),
+    sections: sectionsBySlug.get(page.id) ?? [],
+  }));
 
   // Tier-1 breadcrumb labels match the sidebar's lowercase section rows.
   const engine = createEngine(pages, operations, schemas, {
@@ -60,21 +58,16 @@ async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> 
 
   return {
     async search(term, scope) {
-      if (!hasOperations) {
-        const late = await queryClient.query(operationsQueryOptions).catch(() => null);
-        if (late) {
-          engine.addOperations(late);
-          hasOperations = true;
-        }
-      }
-      if (!hasSchemas) {
-        const late = await queryClient.query(schemasQueryOptions).catch(() => null);
-        if (late) {
-          engine.addSchemas(late);
-          hasSchemas = true;
-        }
-      }
+      hasOperations ||= await addLate(() => queryClient.query(operationsQueryOptions), engine.addOperations);
+      hasSchemas ||= await addLate(() => queryClient.query(schemasQueryOptions), engine.addSchemas);
       return engine.search(term, scope);
     },
   };
+}
+
+/** Adds a corpus that a cold offline cache could not serve when the client was built; true once it is in. */
+async function addLate<T>(load: () => Promise<T>, add: (items: T) => void) {
+  const items = await load().catch(() => null);
+  if (items !== null) add(items);
+  return items !== null;
 }

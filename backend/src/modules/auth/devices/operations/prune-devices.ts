@@ -7,17 +7,17 @@ import { TimeSpan } from '#/utils/time-span';
 const dbCtx = { var: { db: baseDb } };
 
 /** The device id cookie lives 400 days from its last sign-in, so a row unseen for that long can never match again. */
-const DEVICE_TTL = new TimeSpan(400, 'd');
+const deviceTtl = new TimeSpan(400, 'd');
 
 /** Rows kept per user. A browser that drops cookies on exit enrolls a new row at every sign-in; this bounds it. */
-const MAX_DEVICES_PER_USER = 50;
+const maxDevicesPerUser = 50;
 
 /** Removes device rows that can no longer match a browser, then each user's oldest rows beyond the cap. Returns the rows removed. */
 export async function pruneDevices(now: Date = new Date()): Promise<number> {
-  const seenBefore = new Date(now.getTime() - DEVICE_TTL.milliseconds()).toISOString();
+  const seenBefore = new Date(now.getTime() - deviceTtl.milliseconds()).toISOString();
 
   const expired = await deleteStaleDevices(dbCtx, { seenBefore });
-  const excess = await deleteExcessDevices(dbCtx, { maxPerUser: MAX_DEVICES_PER_USER });
+  const excess = await deleteExcessDevices(dbCtx, { maxPerUser: maxDevicesPerUser });
 
   const count = expired.length + excess.length;
   if (count) log.info('Pruned devices', { expired: expired.length, excess: excess.length });

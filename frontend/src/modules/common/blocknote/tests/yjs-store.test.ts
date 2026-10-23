@@ -7,10 +7,10 @@ vi.mock('shared', () => ({ appConfig: { slug: 'test', yjsUrl: 'http://relay.test
 /** What the tab channel was asked to send, in order. */
 const broadcasts: { key: string; generation: string; update: Uint8Array; rowId: number | null }[] = [];
 vi.mock('~/modules/common/blocknote/yjs-tab-channel', () => ({
-  postTabUpdate: (msg: (typeof broadcasts)[number]) => broadcasts.push(msg),
-  toTabKey: (key: { entityType: string; entityId: string }) => `${key.entityType}:${key.entityId}`,
+  postTabMessage: (msg: (typeof broadcasts)[number]) => broadcasts.push(msg),
+  yDocKeyString: (key: { entityType: string; entityId: string }) => `${key.entityType}:${key.entityId}`,
 }));
-vi.mock('~/modules/ui/ui-store', () => ({ useUIStore: { getState: () => ({ offlineAccess: true }) } }));
+vi.mock('~/modules/ui/ui-store', () => ({ uiStore: { getState: () => ({ offlineAccess: true }) } }));
 const warnOnStoragePressure = vi.fn(async (_opts?: { limitsReached?: boolean }) => {});
 vi.mock('~/modules/common/blocknote/storage-warning', () => ({
   warnOnStoragePressure: (opts?: { limitsReached?: boolean }) => warnOnStoragePressure(opts),
@@ -206,7 +206,7 @@ describe('yjs store: proofs', () => {
   const otherTabRow = (text: string) => {
     const doc = new Y.Doc();
     doc.getText('t').insert(0, text);
-    return db.yDocUpdates.add({ ...key, update: Y.encodeStateAsUpdate(doc), local: 1, tabId: 'closed-tab' }) as Promise<number>;
+    return db.yDocUpdates.add({ ...key, update: Y.encodeStateAsUpdate(doc), local: 1, tabId: 'closed-tab' });
   };
 
   it("must not clear a row a clean proof does not cover: another page's, or one committed after the proof was taken", async () => {
@@ -296,7 +296,7 @@ describe('yjs store: eviction', () => {
   const storedIds = async () => (await db.yDocs.toArray()).map((r) => r.entityId).sort();
 
   it('must not evict a document with unsynced edits, one open in this tab, one opened within the hour, or parked edits, past the document limit', async () => {
-    const total = store.MAX_STORED_DOCS + 10;
+    const total = store.maxStoredDocs + 10;
     for (let i = 0; i < total; i++) await seed(`d${String(i).padStart(3, '0')}`, 3 * hour + (total - i) * 1_000);
     await seed('unsynced', 10 * hour, { unsynced: 1 });
     await seed('recent', 10 * 60_000);
@@ -311,7 +311,7 @@ describe('yjs store: eviction', () => {
 
     // Eviction ran: down to the limit, least recently opened first, each with its base and rows.
     const ids = await storedIds();
-    expect(ids).toHaveLength(store.MAX_STORED_DOCS);
+    expect(ids).toHaveLength(store.maxStoredDocs);
     expect(ids).not.toContain('d000');
     expect((await db.yDocStates.toArray()).filter((state) => !ids.includes(state.entityId))).toEqual([]);
     expect((await db.yDocUpdates.toArray()).filter((row) => !ids.includes(row.entityId))).toEqual([]);
@@ -351,7 +351,7 @@ describe('yjs store: quota', () => {
     expect(broadcasts.at(-1)).toMatchObject({ rowId: null });
     spy.mockRestore();
 
-    // Later edits are no longer stored, but still broadcast.
+    // Once storing failed, later edits are not stored, but still broadcast.
     editLocally(doc, writer, ' more');
     await flushYjsStore();
     expect(await storedText()).toBe('fits after all');

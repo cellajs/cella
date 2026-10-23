@@ -1,20 +1,22 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { BellIcon } from 'lucide-react';
+import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GetNotificationsResponse } from 'sdk';
 import { useRelativeDate } from '~/hooks/use-relative-date';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { navigationStore } from '~/modules/navigation/navigation-store';
+import { notificationsQueryOptions, useMarkNotificationsReadMutation } from '~/modules/notification/query';
+import { UnreadCountBadge } from '~/modules/notification/unread-nav-badge';
 import { Button } from '~/modules/ui/button';
 import { getProductRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
-import { notificationsQueryOptions, useMarkNotificationsRead } from './query';
-import { UnreadCountBadge } from './unread-nav-badge';
+import { isModifiedClick } from '~/utils/is-modified-click';
 
 type Notification = GetNotificationsResponse['items'][number];
 
@@ -22,7 +24,7 @@ type Notification = GetNotificationsResponse['items'][number];
 export function NotificationsSheet() {
   const { t } = useTranslation();
   const { data, isLoading } = useQuery(notificationsQueryOptions());
-  const { mutate: markRead } = useMarkNotificationsRead();
+  const { mutate: markRead } = useMarkNotificationsReadMutation();
 
   const items = data?.items ?? [];
   const hasUnread = (data?.unreadCount ?? 0) > 0;
@@ -62,18 +64,17 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
   const relativeDate = useRelativeDate(notification.createdAt);
   const route = getProductRoute(notification);
 
-  const onActivate = () => {
-    // Like the account sheet: a pinned nav sheet stays open beside the content. No id, because this sheet is
-    // `nav-sheet` from the bars but stacks over the menu sheet from the floating-nav menu header.
-    if (!useNavigationStore.getState().keepNavOpen) {
-      useSheeter.getState().remove();
-      useNavigationStore.getState().setNavSheetOpen(null);
+  const openNotification = (event: MouseEvent) => {
+    // No id: the bars open this sheet as `navSheetId`, the floating-nav menu header as `notifications-sheet` over the menu sheet.
+    if (!isModifiedClick(event) && !navigationStore.getState().keepNavOpen) {
+      sheeter.getState().remove();
+      navigationStore.getState().setNavSheetOpen(null);
     }
     if (!notification.readAt) onOpen({ ids: [notification.id] });
   };
 
   const { actor, channelName, subjectTitle } = notification;
-  const body = (
+  const content = (
     <>
       <EntityAvatar
         type="user"
@@ -97,31 +98,23 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
   );
 
   // Unread rows carry the full accent (accent/30 is ~3 sRGB steps off the card in light mode); only read rows tint on hover.
-  const className = cn('flex w-full items-start gap-3 rounded-md px-2 py-2 text-left', notification.readAt ? 'hover:bg-accent/50' : 'bg-accent');
-
-  // An unknown channel type still marks read; it just cannot navigate anywhere sensible.
-  if (!route) {
-    return (
-      <li>
-        <button type="button" onClick={onActivate} className={cn('focus-effect', className)}>
-          {body}
-        </button>
-      </li>
-    );
-  }
+  const className = cn(
+    'focus-effect flex w-full items-start gap-3 rounded-md p-2 text-left',
+    notification.readAt ? 'hover:bg-accent/50' : 'bg-accent',
+  );
 
   return (
     <li>
-      <Link
-        to={route.to}
-        params={route.params}
-        search={route.search}
-        onClick={onActivate}
-        {...pageTopHashNav}
-        className={cn('focus-effect', className)}
-      >
-        {body}
-      </Link>
+      {route ? (
+        <Link to={route.to} params={route.params} search={route.search} onClick={openNotification} {...pageTopHashNav} className={className}>
+          {content}
+        </Link>
+      ) : (
+        // An unknown channel type still marks read; it just cannot navigate anywhere sensible.
+        <button type="button" onClick={openNotification} className={className}>
+          {content}
+        </button>
+      )}
     </li>
   );
 }

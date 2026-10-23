@@ -1,11 +1,10 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Request } from 'sdk';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { dateColumn, emailColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import { Badge } from '~/modules/ui/badge';
 import { cn } from '~/utils/cn';
 
 export const useColumns = () => {
@@ -19,16 +18,21 @@ export const useColumns = () => {
       sortable: true,
       resizable: true,
       width: 160,
-      renderCell: ({ row: { type, wasInvited } }) => (
-        <div className="flex items-center gap-2">
-          {t(`c:${type}`)}
-          {type === 'waitlist' && (
-            <TooltipButton toolTipContent={t(`c:${wasInvited ? 'pending' : 'not_processed'}`)} disabled={type !== 'waitlist'}>
-              <Badge className={cn('size-2 justify-center p-0', wasInvited ? 'bg-warning' : 'bg-muted-foreground/70')} />
-            </TooltipButton>
-          )}
-        </div>
-      ),
+      renderCell: ({ row: { type, wasInvited } }) => {
+        const status = wasInvited ? t('c:pending') : t('c:not_processed');
+        return (
+          <div className="flex items-center gap-2">
+            {t(`c:${type}`)}
+            {type === 'waitlist' && (
+              <TooltipButton toolTipContent={status}>
+                <span className={cn('inline-block size-2 rounded-full', wasInvited ? 'bg-warning' : 'bg-muted-foreground/70')}>
+                  <span className="sr-only">{status}</span>
+                </span>
+              </TooltipButton>
+            )}
+          </div>
+        );
+      },
     },
     emailColumn({ name: t('c:email'), resizable: true }),
     {
@@ -43,5 +47,5 @@ export const useColumns = () => {
     dateColumn('createdAt', { name: t('c:created_at') }),
   ];
 
-  return useState<ColumnOrColumnGroup<Request>[]>(columns);
+  return useColumnVisibility(columns);
 };

@@ -1,7 +1,6 @@
 import { UsersIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { appConfig, isUnconditionalCan } from 'shared';
-import { useOrganizationLayoutContext } from '~/hooks/use-route-context';
+import { isUnconditionalCan } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
@@ -9,6 +8,7 @@ import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
+import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { MembersTableBar } from '~/modules/memberships/members-table/members-bar';
 import { useColumns } from '~/modules/memberships/members-table/members-columns';
@@ -16,42 +16,34 @@ import { membersListQueryOptions } from '~/modules/memberships/query';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 
-const LIMIT = appConfig.requestLimits.members;
-
 function rowKeyGetter(row: Member) {
   return row.id;
 }
 
-export interface MembersTableWrapperProps {
+export interface MembersTableProps {
   channel: EnrichedChannel;
   isSheet?: boolean;
-  children?: React.ReactNode;
 }
 
-function MembersTable({ channel, isSheet = false, children }: MembersTableWrapperProps) {
+export function MembersTable({ channel, isSheet = false }: MembersTableProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  // MembersTable always renders inside OrganizationLayoutRoute
-  const { organizationId, tenantId } = useOrganizationLayoutContext();
+  const { mutate: updateMembership } = useMemberUpdateMutation();
 
-  const updateMemberMembership = useMemberUpdateMutation();
-
-  const entityId = channel.id;
-  const entityType = channel.entityType;
+  const { id: entityId, entityType, tenantId } = channel;
+  const organizationId = channelOrganizationId(channel);
 
   // Members are managed per channel and the channel has no `createdBy` to resolve `'own'`, so require an unconditional grant.
   const canUpdate = isUnconditionalCan(channel.can?.[channel.entityType]?.update);
 
   const { q, role, sort, order } = search;
-  const limit = LIMIT;
 
   const [columns, setColumns] = useColumns(canUpdate, isSheet, entityType);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  // include=counts feeds the per-member insight columns (last post, authored counts, sub-channel memberships);
-  // include=mfa feeds the MFA column, which the API fills for the organization's admins only
-  const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, organizationId, ...search, limit, include: 'counts,mfa' });
+  // `counts` and `mfa` feed the insight and MFA columns
+  const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, organizationId, ...search, include: 'counts,mfa' });
 
   const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
   const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
@@ -60,14 +52,13 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
     if (column.key !== 'role') return;
 
     for (const index of indexes) {
-      const updatedMembership = {
-        path: { id: changedRows[index].membership.id, tenantId, organizationId },
-        body: { role: changedRows[index].membership.role },
+      const { membership } = changedRows[index];
+      updateMembership({
+        path: { id: membership.id, tenantId, organizationId },
+        body: { role: membership.role },
         channelId: entityId,
         channelType: entityType,
-      };
-
-      updateMemberMembership.mutateAsync(updatedMembership);
+      });
     }
   };
 
@@ -76,15 +67,15 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
       <MembersTableBar
         channel={channel}
         selected={selected}
-        searchVars={{ q, role, sort, order, limit }}
+        searchVars={{ q, role, sort, order }}
         setSearch={setSearch}
         queryKey={queryOptions.queryKey}
         columns={columns}
         setColumns={setColumns}
         clearSelection={clearSelection}
         isSheet={isSheet}
+        canUpdate={canUpdate}
       />
-      {children}
       <DataTable<Member>
         {...{
           rows,
@@ -93,7 +84,6 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
           rowKeyGetter,
           columns,
           enableVirtualization: true,
-          limit,
           error,
           isLoading,
           isFetching,
@@ -112,5 +102,3 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
     </>
   );
 }
-
-export { MembersTable };

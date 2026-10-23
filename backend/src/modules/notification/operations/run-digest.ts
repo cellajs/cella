@@ -8,23 +8,23 @@ import { findDueDigestRecipients, stampDigested, stampDigestRun } from '../notif
 import { buildDigestForUser } from './build-digest';
 
 /** Recipients handled per run; a backlog simply continues on the next hourly tick. */
-const MAX_RECIPIENTS_PER_RUN = 500;
+const maxRecipientsPerRun = 500;
 
 /** Local hour at which digests go out. No per-user timezone yet. */
-const SEND_HOUR = 7;
+const sendHour = 7;
 
 /** Weekday for weekly digests (1 = Monday … 5 = Friday), matching the legacy Friday cadence. */
-const WEEKLY_ISO_WEEKDAY = 5;
+const weeklyIsoWeekday = 5;
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const dayMs = 24 * 60 * 60 * 1000;
 
 /** Runs from the digest job, outside any request. */
 const dbCtx = { var: { db: baseDb } };
 
 /** How far back a digest window reaches at most: the cadence plus a day. */
-const MAX_WINDOW_DAYS = { daily: 2, weekly: 8 };
+const maxWindowDays = { daily: 2, weekly: 8 };
 
-const earliestStart = (cadence: keyof typeof MAX_WINDOW_DAYS, now: Date): Date => new Date(now.getTime() - MAX_WINDOW_DAYS[cadence] * DAY_MS);
+const earliestStart = (cadence: keyof typeof maxWindowDays, now: Date): Date => new Date(now.getTime() - maxWindowDays[cadence] * dayMs);
 
 /**
  * Where a recipient's digest window starts: at the stored `lastDigestAt`, so a late or skipped run resumes where the
@@ -45,16 +45,16 @@ export const windowStart = (recipient: { digest: string; lastDigestAt: string | 
  * next tick, and `lastDigestAt` guarantees a user is never mailed twice for the same window.
  */
 export async function runDigest(now: Date = new Date()): Promise<{ sent: number; skipped: number }> {
-  if (now.getHours() < SEND_HOUR) return { sent: 0, skipped: 0 };
+  if (now.getHours() < sendHour) return { sent: 0, skipped: 0 };
 
   const dayStart = new Date(now);
   dayStart.setHours(0, 0, 0, 0);
 
   const due = await findDueDigestRecipients(dbCtx, {
     dayStart: dayStart.toISOString(),
-    includeWeekly: isoWeekday(now) === WEEKLY_ISO_WEEKDAY,
+    includeWeekly: isoWeekday(now) === weeklyIsoWeekday,
     earliest: { daily: earliestStart('daily', now).toISOString(), weekly: earliestStart('weekly', now).toISOString() },
-    limit: MAX_RECIPIENTS_PER_RUN,
+    limit: maxRecipientsPerRun,
   });
   if (due.length === 0) return { sent: 0, skipped: 0 };
 

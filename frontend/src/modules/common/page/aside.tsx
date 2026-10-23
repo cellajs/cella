@@ -9,17 +9,18 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-interface PageTab extends PlacementDescriptor {
+interface PageAsideItem extends PlacementDescriptor {
   icon?: IconComponent;
 }
 
 interface PageAsideProps<T> {
-  tabs: T[] | readonly T[];
+  tabs: readonly T[];
   className?: string;
-  setFocus?: boolean;
+  /** Focuses the first row on mount, from sm up. */
+  autoFocus?: boolean;
 }
 
-export function PageAside<T extends PageTab>({ tabs, className, setFocus }: PageAsideProps<T>) {
+export function PageAside<T extends PageAsideItem>({ tabs, className, autoFocus }: PageAsideProps<T>) {
   const isMobile = useBreakpointBelow('sm', false);
   const { t } = useTranslation();
 
@@ -29,16 +30,13 @@ export function PageAside<T extends PageTab>({ tabs, className, setFocus }: Page
   const firstTabRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
-    if (!isMobile && setFocus) firstTabRef.current?.focus();
+    if (!isMobile && autoFocus) firstTabRef.current?.focus();
   }, []);
 
   return (
     <div className={cn('flex w-full flex-col gap-1', className)}>
-      {tabs.map(({ id, label, icon, resource }, index) => {
+      {tabs.map(({ id, label, icon: Icon, resource }, index) => {
         const destructive = id.includes('delete');
-        // The ghost hover swaps the text color, so a destructive row restates its own
-        const btnClass = cn(destructive && 'text-destructive hover:text-destructive', 'w-full justify-start text-left hover:bg-accent/50');
-        const Icon = icon;
         return (
           <Button
             key={id}
@@ -46,14 +44,14 @@ export function PageAside<T extends PageTab>({ tabs, className, setFocus }: Page
             size="lg"
             data-spy-link={id}
             className={cn(
-              btnClass,
+              'w-full justify-start hover:bg-accent/50',
+              // The ghost hover swaps the text color, so a destructive row restates its own
+              destructive && 'text-destructive hover:text-destructive',
               // Rows at rest sit back like the page tabs; hover, focus and the active row come forward. Dimmed, destructive text drops below 4.5:1
               !destructive && 'opacity-70',
-              'transition-[color,background-color,opacity] hover:opacity-100 focus-visible:opacity-100 data-spy-active:opacity-100',
-              'more-contrast:opacity-100',
+              'more-contrast:opacity-100 transition-[color,background-color,opacity] hover:opacity-100 focus-visible:opacity-100 data-spy-active:opacity-100',
               // Fill and weight carry the active row; the ring is an edge only a reader who asked for contrast needs
-              'data-spy-active:bg-secondary data-spy-active:font-semibold',
-              'more-contrast:data-spy-active:inset-ring more-contrast:data-spy-active:inset-ring-input',
+              'more-contrast:data-spy-active:inset-ring more-contrast:data-spy-active:inset-ring-input data-spy-active:bg-secondary data-spy-active:font-semibold',
             )}
             render={
               <Link
@@ -63,16 +61,17 @@ export function PageAside<T extends PageTab>({ tabs, className, setFocus }: Page
                 // Every link points at this page: without the hash, each would announce itself as the current page.
                 activeOptions={{ includeHash: true }}
                 draggable={false}
-                onClick={(e) => {
-                  if (e.metaKey || e.ctrlKey) return;
-                  e.preventDefault();
+                onClick={(event) => {
+                  if (event.metaKey || event.ctrlKey) return;
+                  event.preventDefault();
                   scrollToSectionById(id);
                 }}
                 replace
               />
             }
           >
-            {Icon && <Icon className="size-5" />} {t(label, { resource: resource ? t(resource).toLowerCase() : '' })}
+            {Icon && <Icon className="size-5" />}
+            {t(label, { resource: resource ? t(resource).toLowerCase() : '' })}
           </Button>
         );
       })}

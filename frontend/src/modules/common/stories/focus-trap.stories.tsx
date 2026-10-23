@@ -9,30 +9,19 @@ function TrapWithButtons({
   label = 'Trap',
   count = 3,
   active,
-  disableInactive,
   containFocus,
   initialFocus,
   returnFocus,
-  mainElementId,
 }: {
   label?: string;
   count?: number;
   active?: boolean;
-  disableInactive?: boolean;
   containFocus?: boolean;
   initialFocus?: boolean;
   returnFocus?: boolean;
-  mainElementId?: string;
 }) {
   return (
-    <FocusTrap
-      active={active}
-      disableInactive={disableInactive}
-      containFocus={containFocus}
-      initialFocus={initialFocus}
-      returnFocus={returnFocus}
-      mainElementId={mainElementId}
-    >
+    <FocusTrap active={active} containFocus={containFocus} initialFocus={initialFocus} returnFocus={returnFocus}>
       <fieldset className="flex flex-col gap-2 rounded border p-4">
         <legend className="font-medium text-sm">{label}</legend>
         {Array.from({ length: count }, (_, i) => (
@@ -92,36 +81,6 @@ function ContainFocusTrap() {
   );
 }
 
-function EscapeTrap() {
-  return (
-    <div className="flex flex-col gap-4">
-      <div id="main-element" tabIndex={-1} className="rounded border p-2 text-sm focus:outline-2 focus:outline-primary" data-testid="main">
-        Main element (Escape target)
-      </div>
-      <FocusTrap active mainElementId="main-element">
-        <fieldset className="flex flex-col gap-2 rounded border p-4">
-          <legend className="font-medium text-sm">Trap with Escape</legend>
-          <button type="button" className="rounded border px-3 py-1.5 text-sm focus:outline-2 focus:outline-primary">
-            Focusable button
-          </button>
-        </fieldset>
-      </FocusTrap>
-    </div>
-  );
-}
-
-function DisableInactiveTrap() {
-  const [active, setActive] = useState(true);
-  return (
-    <div className="flex flex-col gap-4">
-      <button type="button" onClick={() => setActive(!active)} className="rounded border px-3 py-1.5 text-sm" data-testid="toggle">
-        Trap is {active ? 'active' : 'inactive'}
-      </button>
-      <TrapWithButtons active={active} disableInactive label={active ? 'Active' : 'Inactive (children disabled)'} />
-    </div>
-  );
-}
-
 // Meta
 
 const meta = { title: 'common/FocusTrap', tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta;
@@ -140,10 +99,7 @@ export const Default: Story = {
   render: () => <TrapWithButtons active label="Active trap" />,
 };
 
-/**
- * Toggle the trap between active and inactive states.
- * When inactive with `disableInactive`, children are taken out of tab order.
- */
+/** Toggle the trap between active and inactive states. */
 export const Toggleable: Story = {
   render: () => <ToggleTrap />,
 };
@@ -170,21 +126,6 @@ export const ReturnFocus: Story = {
  */
 export const ContainFocus: Story = {
   render: () => <ContainFocusTrap />,
-};
-
-/**
- * Press Escape to move focus to the designated main element.
- */
-export const EscapeToMain: Story = {
-  render: () => <EscapeTrap />,
-};
-
-/**
- * When inactive with `disableInactive=true` (default), all focusable children
- * get `tabindex="-1"`. Re-activating restores them.
- */
-export const DisableInactive: Story = {
-  render: () => <DisableInactiveTrap />,
 };
 
 // Interaction tests (hidden from sidebar)
@@ -310,64 +251,6 @@ export const ShouldContainFocusOnOutsideClick: Story = {
       await waitFor(() => {
         const trapButton = canvas.getAllByRole('button').find((b) => b.textContent === 'Button 1');
         expect(trapButton).toHaveFocus();
-      });
-    });
-  },
-};
-
-export const ShouldFocusMainOnEscape: Story = {
-  name: 'when Escape is pressed, should focus the main element',
-  tags: ['!dev', '!autodocs'],
-  render: () => <EscapeTrap />,
-  play: async ({ canvas, step }) => {
-    const trapButton = canvas.getAllByRole('button').find((b) => b.textContent === 'Focusable button');
-
-    await step('focus a button inside the trap', async () => {
-      trapButton?.focus();
-      await waitFor(() => expect(trapButton).toHaveFocus());
-    });
-
-    await step('press Escape', async () => {
-      // The trap listens for a real keydown on its container; dispatch one that bubbles from the focused button.
-      // userEvent.keyboard's focus side effects don't apply headless, but the handler only reads event.key, so a
-      // dispatched KeyboardEvent exercises it faithfully.
-      trapButton?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    });
-
-    await step('main element should have focus', async () => {
-      await waitFor(() => expect(canvas.getByTestId('main')).toHaveFocus());
-    });
-  },
-};
-
-export const ShouldDisableChildrenWhenInactive: Story = {
-  name: 'when inactive with disableInactive, children should have tabindex -1',
-  tags: ['!dev', '!autodocs'],
-  render: () => <DisableInactiveTrap />,
-  play: async ({ canvas, step }) => {
-    await step('deactivate the trap', async () => {
-      await userEvent.click(canvas.getByTestId('toggle'));
-    });
-
-    await step('all buttons inside trap should have tabindex=-1', async () => {
-      await waitFor(() => {
-        const trapButtons = canvas.getAllByRole('button').filter((b) => b.textContent?.startsWith('Button'));
-        for (const btn of trapButtons) {
-          expect(btn).toHaveAttribute('tabindex', '-1');
-        }
-      });
-    });
-
-    await step('reactivate the trap', async () => {
-      await userEvent.click(canvas.getByTestId('toggle'));
-    });
-
-    await step('buttons should be restored to tabindex=0', async () => {
-      await waitFor(() => {
-        const trapButtons = canvas.getAllByRole('button').filter((b) => b.textContent?.startsWith('Button'));
-        for (const btn of trapButtons) {
-          expect(btn).toHaveAttribute('tabindex', '0');
-        }
       });
     });
   },

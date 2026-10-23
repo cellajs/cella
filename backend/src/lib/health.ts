@@ -24,7 +24,7 @@ import { log } from '#/utils/logger';
 export type { HealthResponse, HealthStatus };
 
 /** Components that reflect the process's own ability to serve; only these can drive an `unhealthy` rollup (503). */
-const CRITICAL_COMPONENTS = new Set(['api', 'database']);
+const criticalComponents = new Set(['api', 'database']);
 
 /** Check database connectivity with a timed `SELECT 1`. */
 async function checkDatabase(): Promise<{ connected: boolean; latencyMs: number | null }> {
@@ -103,7 +103,7 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
     if (appConfig.services.jobs.enabled !== false) components.jobs = await buildJobsComponent();
   }
 
-  const status = rollupStatus(components, CRITICAL_COMPONENTS);
+  const status = rollupStatus(components, criticalComponents);
   const response: HealthResponse = { status, uptime: Math.floor(process.uptime()), components };
   const httpStatus = status === 'unhealthy' ? 503 : 200;
   return { response, httpStatus };

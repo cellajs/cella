@@ -1,27 +1,45 @@
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { BuildingIcon, ChevronUpIcon, HouseIcon, MessageCircleQuestionMarkIcon, RefreshCwIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, type ReactNode, useEffect, useRef, useState } from 'react';
+import type { FallbackProps } from 'react-error-boundary';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '~/lib/api';
 import { AppFooter } from '~/modules/common/app/app-footer';
+import { collapseMotion } from '~/modules/common/collapse-motion';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
-import { handleAskForHelp } from '~/modules/common/error-helpers';
+import { askForHelp } from '~/modules/common/error-helpers';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 import type { BoundaryType } from '~/routes/types';
 import { cn } from '~/utils/cn';
-import { type ErrorNoticeError, getErrorInfo } from '~/utils/get-error-info';
+import { getErrorInfo } from '~/utils/get-error-info';
 
 export type { ErrorNoticeError } from '~/utils/get-error-info';
 
 interface ErrorNoticeProps {
   boundary: BoundaryType;
-  error?: ErrorNoticeError;
-  children?: React.ReactNode;
+  /** Any thrown value, as error boundaries hand it over; one that is no `Error` reads as none. */
+  error?: unknown;
+  children?: ReactNode;
   resetErrorBoundary?: () => void;
   homePath?: string;
+}
+
+function errorDetailRows(error: ApiError) {
+  return [
+    ['c:request_id', error.requestId],
+    // A server error carries the moment it was raised; one made in the browser shows the time it renders.
+    ['c:timestamp', new Date(error.timestamp ?? Date.now()).toUTCString()],
+    ['c:message', error.message],
+    ['c:type', error.type],
+    ['c:resource_type', error.entityType],
+    ['c:http_status', error.status],
+    ['c:severity', error.severity],
+    ['c:user_id', error.userId],
+    ['c:organization_id', error.organizationId],
+  ] as const;
 }
 
 /**
@@ -32,27 +50,23 @@ interface ErrorNoticeProps {
 export function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath = '/' }: ErrorNoticeProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const errorFromQuery = useRouterState({ select: (s) => s.location.search.error });
-  const severityFromQuery = useRouterState({ select: (s) => s.location.search.severity });
+  const errorFromQuery = useRouterState({ select: (state) => state.location.search.error });
+  const severityFromQuery = useRouterState({ select: (state) => state.location.search.severity });
   const contactButtonRef = useRef<HTMLButtonElement>(null);
 
-  const [showError, setShowError] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
+  const knownError = error instanceof Error ? error : undefined;
   // Only an API error carries a severity, request details and a connection to sign in through
-  const apiError = error instanceof ApiError ? error : undefined;
-  const severity = error ? apiError?.severity : severityFromQuery;
-  const { title, message } = getErrorInfo({ error, errorFromQuery });
+  const apiError = knownError instanceof ApiError ? knownError : undefined;
+  const severity = knownError ? apiError?.severity : severityFromQuery;
+  const { title, message } = getErrorInfo({ error: knownError, errorFromQuery });
 
   // A tenant that requires signing in through an institution names the connection; its entry page takes it from here.
   const ssoConnectionId = apiError?.type === 'sso_required' ? apiError.meta?.connectionId : undefined;
 
   // Reset before a route change so the error state is not retained
-  useEffect(() => {
-    const unsub = router.subscribe('onBeforeRouteMount', () => {
-      resetErrorBoundary?.();
-    });
-    return unsub;
-  }, [router, resetErrorBoundary]);
+  useEffect(() => router.subscribe('onBeforeRouteMount', () => resetErrorBoundary?.()), [router, resetErrorBoundary]);
 
   const handleReload = () => {
     resetErrorBoundary?.();
@@ -76,11 +90,11 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
       <div className="error-notice container flex min-h-[calc(100svh-10rem)] flex-col items-center">
         <div className="mx-auto my-auto">
           <Card className="mt-8 w-[80vw] max-w-[80vw] border-none bg-transparent sm:w-160">
-            <CardHeader className="p-0 text-center">
+            <CardHeader className="px-0 text-center">
               <CardTitle level={1} className="mb-2 justify-center font-normal text-2xl">
                 {title}
               </CardTitle>
-              <CardDescription className="flex-col gap-2 p-0 text-base text-foreground">
+              <CardDescription className="text-base text-foreground">
                 <span className="block">{message}</span>
                 <span className="mt-2 block">
                   <span className="block">{severity === 'warn' && t('error:contact_mistake')}</span>
@@ -93,40 +107,21 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                 <Button
                   variant="link"
                   size="sm"
-                  onClick={() => setShowError((prev) => !prev)}
-                  className="flex w-full items-center whitespace-pre-wrap text-destructive"
+                  onClick={() => setShowDetails((prev) => !prev)}
+                  className="flex w-full whitespace-pre-wrap text-destructive"
                 >
-                  <span>{showError ? t('c:hide_details') : t('c:show_details')}</span>
-                  <ChevronUpIcon className={cn('transition-transform', showError ? 'rotate-0' : 'rotate-180')} />
+                  <span>{showDetails ? t('c:hide_details') : t('c:show_details')}</span>
+                  <ChevronUpIcon className={cn('transition-transform', !showDetails && 'rotate-180')} />
                 </Button>
 
                 <AnimatePresence>
-                  {showError && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: 'easeInOut' }}
-                      className="overflow-hidden"
-                    >
+                  {showDetails && (
+                    <motion.div {...collapseMotion} className="overflow-hidden">
                       <div className="grid grid-cols-[auto_1fr] place-items-start gap-1 pb-4 text-sm">
-                        {(
-                          [
-                            ['c:request_id', apiError.requestId],
-                            // A server error carries the moment it was raised; one made in the browser shows the time it renders.
-                            ['c:timestamp', new Date(apiError.timestamp ?? Date.now()).toUTCString()],
-                            ['c:message', apiError.message],
-                            ['c:type', apiError.type],
-                            ['c:resource_type', apiError.entityType],
-                            ['c:http_status', apiError.status],
-                            ['c:severity', apiError.severity],
-                            ['c:user_id', apiError.userId],
-                            ['c:organization_id', apiError.organizationId],
-                          ] as const
-                        ).map(([label, value]) => (
+                        {errorDetailRows(apiError).map(([label, value]) => (
                           <Fragment key={label}>
                             <div className="place-self-end pr-4 font-medium">{t(label)}</div>
-                            <div>{value || 'na'}</div>
+                            <div>{value || '-'}</div>
                           </Fragment>
                         ))}
                       </div>
@@ -135,7 +130,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                 </AnimatePresence>
               </CardContent>
             )}
-            <CardFooter className="mt-8 flex flex-wrap justify-center gap-2 p-0 max-sm:flex-col max-sm:items-stretch">
+            <CardFooter className="mt-8 flex-wrap justify-center gap-2 px-0 max-sm:flex-col max-sm:items-stretch">
               {typeof ssoConnectionId === 'string' && (
                 <Button
                   render={<Link to="/auth/sso/$connectionId" params={{ connectionId: ssoConnectionId }} search={{ redirect: location.pathname }} />}
@@ -161,7 +156,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                 </>
               )}
               {severity && ['warn', 'error'].includes(severity) && (
-                <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)}>
+                <Button ref={contactButtonRef} variant="plain" onClick={() => askForHelp(contactButtonRef)}>
                   <MessageCircleQuestionMarkIcon />
                   {t('c:contact_support')}
                 </Button>
@@ -173,4 +168,9 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
       </div>
     </>
   );
+}
+
+/** The `fallbackRender` of an error boundary inside the `boundary` layout. */
+export function errorNoticeFallback(boundary: BoundaryType) {
+  return ({ error, resetErrorBoundary }: FallbackProps) => <ErrorNotice boundary={boundary} error={error} resetErrorBoundary={resetErrorBoundary} />;
 }

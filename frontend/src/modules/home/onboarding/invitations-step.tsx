@@ -2,17 +2,18 @@ import { useQuery } from '@tanstack/react-query';
 import { type ReactNode, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { useStepper } from '~/modules/common/stepper/stepper';
+import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { meInvitationsQueryOptions, useHandleInvitationMutation } from '~/modules/me/query';
 import { organizationQueryKeys } from '~/modules/organization/query';
 import { Button } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
 
-/**
- * Lets an invited user answer each pending invitation, always by an explicit click: an invitation claimed by its
- * address was never opened by this user. Moves on once the last one is answered.
- */
-export function InvitationsStep({ children }: { children?: ReactNode }) {
+interface InvitationsStepProps {
+  children?: ReactNode;
+}
+
+/** Answers each pending invitation by an explicit click (one claimed by address was never opened by this user); moves on after the last. */
+export function InvitationsStep({ children }: InvitationsStepProps) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
 
@@ -22,10 +23,10 @@ export function InvitationsStep({ children }: { children?: ReactNode }) {
   const { mutate: handleInvitation, isPending } = useHandleInvitationMutation();
 
   // Only an answer given here moves on; revisiting the step with nothing left stays put.
-  const previousCount = useRef(invitations.length);
+  const previousCountRef = useRef(invitations.length);
   useEffect(() => {
-    if (previousCount.current > 0 && invitations.length === 0) nextStep();
-    previousCount.current = invitations.length;
+    if (previousCountRef.current > 0 && invitations.length === 0) nextStep();
+    previousCountRef.current = invitations.length;
   }, [invitations.length]);
 
   const answer = (id: string, acceptOrReject: 'accept' | 'reject') =>
@@ -39,7 +40,7 @@ export function InvitationsStep({ children }: { children?: ReactNode }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {invitations.length === 0 && <p className="font-normal text-muted-foreground text-sm">{t('c:no_invitations_left.text')}</p>}
+      {invitations.length === 0 && <p className="text-muted-foreground text-sm">{t('c:no_invitations_left.text')}</p>}
 
       <ul className="flex flex-col gap-3">
         {invitations.map(({ entity, inactiveMembership }) => (

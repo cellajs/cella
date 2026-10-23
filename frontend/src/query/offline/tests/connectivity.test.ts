@@ -21,7 +21,7 @@ describe('connectivity probe', () => {
   });
 
   async function importModule() {
-    return import('../connectivity');
+    return import('~/query/offline/connectivity');
   }
 
   it('takes the app offline only once every probe attempt fails, so a radio waking after resume is no outage', async () => {
@@ -63,5 +63,36 @@ describe('connectivity probe', () => {
     vi.mocked(fetch).mockResolvedValue({ ok: true } as Response);
     expect(await revalidateConnectivity()).toBe(true);
     expect(mockSetOnline).toHaveBeenLastCalledWith(true);
+  });
+
+  // --- Recovery poll behind the offline alert ---
+
+  it('polls until the backend answers, however long the outage lasts', async () => {
+    let failures = 12;
+    vi.mocked(fetch).mockImplementation(async () => {
+      if (failures-- > 0) throw new TypeError('Failed to fetch');
+      return { ok: true } as Response;
+    });
+    const { awaitRecovery } = await importModule();
+
+    const recovered = awaitRecovery(new AbortController().signal);
+    await vi.runAllTimersAsync();
+
+    expect(await recovered).toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(13);
+  });
+
+  it('stops polling once the alert cancels it', async () => {
+    vi.mocked(fetch).mockRejectedValue(new TypeError('Failed to fetch'));
+    const { awaitRecovery } = await importModule();
+    const controller = new AbortController();
+
+    const recovered = awaitRecovery(controller.signal);
+    await vi.advanceTimersByTimeAsync(12_000);
+    controller.abort();
+    await vi.runAllTimersAsync();
+
+    expect(await recovered).toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(3);
   });
 });

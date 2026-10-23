@@ -2,10 +2,10 @@ import { sql } from 'drizzle-orm';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
 import type { HealthComponent, HealthStatus } from '#/lib/health-helpers';
-import { JOBS_SCHEMA } from '#/lib/pg-boss';
+import { jobsSchema } from '#/lib/pg-boss';
 
 /** The maintainer stamps `cron_on` every half minute; older than this and no process is scheduling. */
-const CRON_STALE_MS = 5 * 60 * 1000;
+const cronStaleMs = 5 * 60 * 1000;
 
 export interface JobsQueueHealth {
   name: string;
@@ -47,14 +47,14 @@ interface QueueRow extends Record<string, unknown> {
  * the schema; an absent schema (before the first migrate) reads as not installed.
  */
 export async function readJobsHealth(): Promise<JobsHealthSnapshot> {
-  const schema = sql.raw(JOBS_SCHEMA);
-  const empty: JobsHealthSnapshot = { installed: false, schema: JOBS_SCHEMA, cronOn: null, cronAgeMs: null, queues: [] };
+  const schema = sql.raw(jobsSchema);
+  const empty: JobsHealthSnapshot = { installed: false, schema: jobsSchema, cronOn: null, cronAgeMs: null, queues: [] };
   if (env.NODB) return empty;
 
   const { rows: versions } = await baseDb.execute<{ cron_on: Date | null }>(sql`
     SELECT v.cron_on FROM pg_namespace n
     LEFT JOIN LATERAL (SELECT cron_on FROM ${schema}.version LIMIT 1) v ON true
-    WHERE n.nspname = ${JOBS_SCHEMA}`);
+    WHERE n.nspname = ${jobsSchema}`);
   const version = versions[0];
   if (!version) return empty;
 
@@ -91,7 +91,7 @@ export async function readJobsHealth(): Promise<JobsHealthSnapshot> {
   const cronOn = version.cron_on ? new Date(version.cron_on) : null;
   return {
     installed: true,
-    schema: JOBS_SCHEMA,
+    schema: jobsSchema,
     cronOn: cronOn?.toISOString() ?? null,
     cronAgeMs: cronOn ? now - cronOn.getTime() : null,
     queues,
@@ -115,7 +115,7 @@ export function mapJobsComponent(snapshot: JobsHealthSnapshot, expectsCron: bool
       details: { schema: snapshot.schema, queues: [] },
     };
   }
-  if (expectsCron && (snapshot.cronAgeMs === null || snapshot.cronAgeMs > CRON_STALE_MS)) {
+  if (expectsCron && (snapshot.cronAgeMs === null || snapshot.cronAgeMs > cronStaleMs)) {
     status = 'degraded';
     reasons.push('cron_stale');
   }

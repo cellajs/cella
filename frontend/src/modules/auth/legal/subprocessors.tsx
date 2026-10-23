@@ -16,7 +16,7 @@ export function Subprocessors() {
         {subprocessors.map((subprocessor) => (
           <TableRow key={subprocessor.slug}>
             <TableCell>
-              <a href={subprocessor.website} target="_blank" rel="noopener">
+              <a href={subprocessor.website} target="_blank" rel="noreferrer">
                 {subprocessor.legalName}
               </a>
             </TableCell>

@@ -3,10 +3,10 @@ import { act, createRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dialoger } from '~/modules/common/dialoger/provider';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Sheeter } from '~/modules/common/sheeter/provider';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { uiStore } from '~/modules/ui/ui-store';
 
 vi.mock('~/routes/-router-instance', () => ({ getRouter: () => ({ subscribe: () => () => {} }) }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
@@ -17,9 +17,9 @@ let root: Root;
 let container: HTMLDivElement;
 
 beforeEach(async () => {
-  useDialoger.setState({ dialogs: [] });
-  useSheeter.setState({ sheets: [] });
-  useUIStore.setState({ uiLocks: [] });
+  dialoger.setState({ dialogs: [] });
+  sheeter.setState({ sheets: [] });
+  uiStore.setState({ uiLocks: [] });
   container = document.createElement('div');
   document.body.append(container);
   root = createRoot(container);
@@ -69,30 +69,28 @@ function holdExits() {
 /** Opens a sheet with a focusable button inside, returning focus to `trigger` on close. */
 async function openSheetWithButton(trigger: HTMLElement) {
   await act(async () => {
-    useSheeter
-      .getState()
-      .create(<button type="button">Inside</button>, { id: 'sheet', side: 'left', triggerRef: { current: trigger }, title: 'Sheet' });
+    sheeter.getState().create(<button type="button">Inside</button>, { id: 'sheet', side: 'left', triggerRef: { current: trigger }, title: 'Sheet' });
   });
   (document.querySelector('[role="dialog"] button') as HTMLElement).focus();
 }
 
 describe('overlay exit', () => {
   it.each([
-    ['a store remove', () => useSheeter.getState().remove('sheet')],
-    ['a route change', () => useSheeter.getState().removeOnRouteChange({ isCleanup: true })],
+    ['a store remove', () => sheeter.getState().remove('sheet')],
+    ['a route change', () => sheeter.getState().removeOnRouteChange({ isCleanup: true })],
   ])('keeps a sheet closed by %s rendered until its exit ends, without holding the UI lock', async (_, close) => {
     const onClose = vi.fn();
     await act(async () => {
-      useSheeter.getState().create(<p>Sheet body</p>, { id: 'sheet', side: 'left', triggerRef: createRef(), title: 'Sheet', onClose });
+      sheeter.getState().create(<p>Sheet body</p>, { id: 'sheet', side: 'left', triggerRef: createRef(), title: 'Sheet', onClose });
     });
     const sheet = document.querySelector('[role="dialog"]') as HTMLElement;
     const endExit = holdExits();
 
     await act(async () => close());
 
-    expect(useSheeter.getState().sheets).toEqual([]);
+    expect(sheeter.getState().sheets).toEqual([]);
     expect(onClose).toHaveBeenCalledTimes(1);
-    expect(useUIStore.getState().uiLocks).not.toContain('sheeter');
+    expect(uiStore.getState().uiLocks).not.toContain('sheeter');
     expect(document.body.classList.contains('sheeter-open')).toBe(false);
     expect(sheet.isConnected).toBe(true);
     expect(sheet.hasAttribute('data-closed')).toBe(true);
@@ -113,7 +111,7 @@ describe('overlay exit', () => {
 
     await openSheetWithButton(trigger);
     const endExit = holdExits();
-    await act(async () => useSheeter.getState().remove('sheet'));
+    await act(async () => sheeter.getState().remove('sheet'));
     target.focus();
     await endExit();
     expect(document.activeElement).toBe(target);
@@ -125,14 +123,14 @@ describe('overlay exit', () => {
   it('removes a dismissed dialog after its exit and then runs onClose once', async () => {
     const onClose = vi.fn();
     await act(async () => {
-      useDialoger.getState().create(<p>Dialog body</p>, { id: 'dialog', triggerRef: createRef(), title: 'Dialog', onClose });
+      dialoger.getState().create(<p>Dialog body</p>, { id: 'dialog', triggerRef: createRef(), title: 'Dialog', onClose });
     });
 
     await pressEscape();
 
-    expect(useDialoger.getState().dialogs).toEqual([]);
+    expect(dialoger.getState().dialogs).toEqual([]);
     expect(onClose).toHaveBeenCalledTimes(1);
-    expect(useUIStore.getState().uiLocks).not.toContain('dialoger');
+    expect(uiStore.getState().uiLocks).not.toContain('dialoger');
   });
 });
 
@@ -141,12 +139,12 @@ describe('keepMounted sheet', () => {
   const popup = () => document.querySelector('[role="dialog"]') as HTMLElement | null;
 
   it('finishes sliding out when unmounted mid-exit, then leaves the DOM', async () => {
-    await act(async () => useSheeter.getState().create(<p>Kept body</p>, kept));
+    await act(async () => sheeter.getState().create(<p>Kept body</p>, kept));
     const node = popup();
     const endExit = holdExits();
 
-    await act(async () => useSheeter.getState().remove('kept'));
-    await act(async () => useSheeter.getState().unmount('kept'));
+    await act(async () => sheeter.getState().remove('kept'));
+    await act(async () => sheeter.getState().unmount('kept'));
     expect(node?.isConnected).toBe(true);
     expect(node?.hasAttribute('data-closed')).toBe(true);
 

@@ -9,7 +9,7 @@ import { ToasterProvider } from '~/modules/common/toaster/toaster-provider';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const Devtools = __DEV_TOOLS__ ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'Devtools') : () => null;
+const Devtools = __DEV_TOOLS__ ? lazyNamed(() => import('~/modules/common/devtools/devtools'), 'Devtools') : () => null;
 
 function NoChatSupport() {
   return null;
@@ -22,7 +22,7 @@ export function Root() {
     () => (appConfig.has.chatSupport && isOnline ? import('~/modules/common/gleap-support') : Promise.resolve({ GleapSupport: NoChatSupport })),
     'GleapSupport',
     5000,
-  ); // 5 seconds delay
+  );
 
   useEffect(() => {
     configure({ trackLocalhostAs: null });

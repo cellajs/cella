@@ -3,16 +3,16 @@ import pg from 'pg';
 import { appConfig } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { decodeLogNotice, type LogNotice, YJS_LOG_CHANNEL } from '#/modules/yjs/helpers/yjs-log';
+import { decodeLogNotice, type LogNotice, yjsLogChannel } from '#/modules/yjs/helpers/yjs-log';
 import type { DocScope } from '../../constants';
 import { mapUpdate, until } from '../helpers';
 import { cleanupSeed, insertDocument, seedOrg } from './seed';
 
 // A delay long enough that a test reads the channel between an append's commit and its batch.
-const { DELAY_MS } = vi.hoisted(() => ({ DELAY_MS: 400 }));
+const { delayMs } = vi.hoisted(() => ({ delayMs: 400 }));
 vi.mock('../../constants', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../constants')>()),
-  YJS_LOG_NOTICE_DELAY_MS: DELAY_MS,
+  yjsLogNoticeDelayMs: delayMs,
 }));
 
 const { appendUpdate, loadDocument } = await import('../../data/storage');
@@ -35,7 +35,7 @@ const heardFor = ({ entityId }: DocScope) =>
 /** Returns once a notification sent now is heard: notifications arrive in commit order, so every earlier one has too. */
 async function barrier(): Promise<void> {
   const token = `barrier-${randomUUID()}`;
-  await admin.query('SELECT pg_notify($1, $2)', [YJS_LOG_CHANNEL, token]);
+  await admin.query('SELECT pg_notify($1, $2)', [yjsLogChannel, token]);
   await until(() => heard.includes(token), 5000);
 }
 
@@ -53,9 +53,9 @@ beforeAll(async () => {
   listener = new pg.Client({ connectionString: testDatabaseUrl });
   await listener.connect();
   listener.on('notification', ({ channel, payload }) => {
-    if (channel === YJS_LOG_CHANNEL && payload) heard.push(payload);
+    if (channel === yjsLogChannel && payload) heard.push(payload);
   });
-  await listener.query(`LISTEN ${YJS_LOG_CHANNEL}`);
+  await listener.query(`LISTEN ${yjsLogChannel}`);
 });
 
 afterAll(async () => {
@@ -79,7 +79,7 @@ describe("a relay's appends announce themselves after commit, batched", () => {
     expect(heardFor(one)).toEqual([]);
     expect(heardFor(two)).toEqual([]);
 
-    await until(() => heardFor(one).length > 0 && heardFor(two).length > 0, DELAY_MS * 5);
+    await until(() => heardFor(one).length > 0 && heardFor(two).length > 0, delayMs * 5);
     await barrier();
     expect(heardFor(one)).toEqual([{ tenantId, entityType: one.entityType, entityId: one.entityId, logIds: [first, third] }]);
     expect(heardFor(two)).toEqual([{ tenantId, entityType: two.entityType, entityId: two.entityId, logIds: [second] }]);
@@ -98,7 +98,7 @@ describe("a relay's appends announce themselves after commit, batched", () => {
     ).rejects.toThrow('the transaction fails after the insert');
 
     expect(logged).toBeDefined();
-    await new Promise((resolve) => setTimeout(resolve, DELAY_MS * 2));
+    await new Promise((resolve) => setTimeout(resolve, delayMs * 2));
     await barrier();
     expect(heardFor(scope)).toEqual([]);
     expect((await loadDocument(scope))!.rows).toEqual([]);

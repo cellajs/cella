@@ -8,7 +8,6 @@ import {
   type GetRequestsData,
   getRequests,
   type Request,
-  type SystemInviteData,
   type SystemInviteResponse,
   systemInvite,
 } from 'sdk';
@@ -16,12 +15,13 @@ import { appConfig } from 'shared';
 import { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { requestsSearchDefaults } from '~/modules/requests/search-params-schemas';
+import { cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 
 type RequestFilters = Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'>;
 type RequestsListParams = RequestFilters & { limit?: number };
 
-export const requestsKeys = {
+const requestsKeys = {
   table: {
     base: ['requests', 'table'] as const,
     entries: (filters: RequestFilters) => [...requestsKeys.table.base, filters] as const,
@@ -37,7 +37,6 @@ const withDefaults = ({
   order = requestsSearchDefaults.order,
 }: RequestFilters) => ({ q, sort, order });
 
-/** One page of requests, search defaults filled in. */
 const fetchRequestsPage = (filters: RequestFilters, limit: number, offset: number, signal?: AbortSignal) =>
   getRequests({ query: { ...withDefaults(filters), ...pageQuery(limit, offset) }, signal });
 
@@ -51,37 +50,43 @@ export const requestsListQueryOptions = ({ limit = appConfig.requestLimits.reque
   });
 };
 
-/** Public forms send one-shot requests: a failure surfaces at once, and the form never waits on offline replay. */
+/** Public forms send one-shot requests: a failure shows at once, and the form never waits on offline replay. */
 export const useCreateRequestMutation = () => {
   return useMutation<CreateRequestResponse, ApiError, CreateRequestData['body']>({
     mutationKey: requestsKeys.create,
     mutationFn: (body) => createRequest({ body }),
     networkMode: 'always',
     retry: false,
-    // The global handler toasts every ApiError and stays silent on the rest (no response, or one that is not an API error).
+    // The global handler toasts only an ApiError; this toasts the rest (no response, or one that is not an API error).
     onError: (error) => {
       if (!(error instanceof ApiError)) toaster.error(t('c:server_unreachable.text'));
     },
   });
 };
 
-/** Approving a request sends the user an invitation email. */
+/** Approves waitlist requests: each address gets an invitation email, and the cached rows read invited. */
 export const useSendApprovalInviteMutation = () => {
-  return useMutation<SystemInviteResponse, ApiError, SystemInviteData['body']>({
+  return useMutation<SystemInviteResponse, ApiError, Request[]>({
     mutationKey: requestsKeys.approve,
-    mutationFn: (body) => systemInvite({ body }),
-    onSuccess: () => toaster.success(t('c:success.users_invited')),
+    mutationFn: (requests) => systemInvite({ body: { emails: requests.map(({ email }) => email) } }),
+    onSuccess: (_, requests) => {
+      cacheUpdate(
+        requestsKeys.table.base,
+        requests.map((request) => ({ ...request, wasInvited: true })),
+      );
+      toaster.success(t('c:success.users_invited'));
+    },
   });
 };
 
 export const useDeleteRequestMutation = () => {
-  return useMutation<boolean, ApiError, Request[]>({
+  return useMutation<void, ApiError, Request[]>({
     mutationKey: requestsKeys.delete,
     mutationFn: async (requests) => {
       const ids = requests.map(({ id }) => id);
       await deleteRequests({ body: { ids } });
-      return true;
     },
+    onSuccess: (_, requests) => cacheRemove(requestsKeys.table.base, requests),
   });
 };
 

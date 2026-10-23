@@ -1,6 +1,6 @@
 import { type ComponentType, type ReactNode, Suspense } from 'react';
 import { pageNotFoundError } from '~/modules/common/error-helpers';
-import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
+import { ErrorNotice } from '~/modules/common/error-notice';
 import { Spinner } from '~/modules/common/spinner';
 import type { BoundaryType } from '~/routes/types';
 
@@ -14,23 +14,21 @@ export const withSuspense = (Component: ComponentType, fallback?: ReactNode) => 
   return Wrapped;
 };
 
-export const withSuspenseSpinner = (Component: ComponentType) => withSuspense(Component, <Spinner size="lg" className="mt-[45vh]" />);
+export const withSuspenseSpinner = (Component: ComponentType) => withSuspense(Component, <SpinnerPage />);
 
 export const createErrorComponent = (boundary: BoundaryType, homePath?: string) => {
-  const ErrorComp = ({ error, reset }: { error: unknown; reset: () => void }) => (
-    <ErrorNotice error={error as ErrorNoticeError} resetErrorBoundary={reset} boundary={boundary} homePath={homePath} />
+  const ErrorComponent = ({ error, reset }: { error: unknown; reset: () => void }) => (
+    <ErrorNotice error={error} resetErrorBoundary={reset} boundary={boundary} homePath={homePath} />
   );
-  ErrorComp.displayName = `ErrorComponent(${boundary})`;
-  return ErrorComp;
+  ErrorComponent.displayName = `ErrorComponent(${boundary})`;
+  return ErrorComponent;
 };
 
 export const createNotFoundComponent = (boundary: BoundaryType, homePath?: string) => {
-  const NotFoundComp = () => <ErrorNotice boundary={boundary} error={pageNotFoundError()} homePath={homePath} />;
-  NotFoundComp.displayName = `NotFoundComponent(${boundary})`;
-  return NotFoundComp;
+  const NotFoundComponent = () => <ErrorNotice boundary={boundary} error={pageNotFoundError()} homePath={homePath} />;
+  NotFoundComponent.displayName = `NotFoundComponent(${boundary})`;
+  return NotFoundComponent;
 };
-
-// === Static route components ===
 
 export function ErrorNoticePageComponent() {
   return <ErrorNotice boundary="public" />;

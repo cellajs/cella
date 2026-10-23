@@ -1,6 +1,6 @@
-import './match-highlight.css';
+import '~/modules/common/match-highlight/match-highlight.css';
 
-export { HighlightText } from './highlight-text';
-export { MatchScope } from './match-scope';
-export { useMatchHighlight } from './use-match-highlight';
-export { useMatchSteps } from './use-match-steps';
+export { HighlightText } from '~/modules/common/match-highlight/highlight-text';
+export { MatchScope } from '~/modules/common/match-highlight/match-scope';
+export { useMatchHighlight } from '~/modules/common/match-highlight/use-match-highlight';
+export { useMatchSteps } from '~/modules/common/match-highlight/use-match-steps';

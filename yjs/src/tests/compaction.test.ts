@@ -4,7 +4,7 @@ import { fakeStorage, mapUpdate, mockScope, readMap, storageKey, undecodableUpda
 const storage = fakeStorage();
 vi.mock('../data/storage', () => storage);
 // A cap of three server rows per request stands for the backend's ten thousand.
-vi.mock('../constants', async (importOriginal) => ({ ...(await importOriginal<typeof import('../constants')>()), YJS_MAX_SERVER_ROW_IDS: 3 }));
+vi.mock('../constants', async (importOriginal) => ({ ...(await importOriginal<typeof import('../constants')>()), yjsMaxServerRowIds: 3 }));
 vi.mock('../sync/materialize', () => ({
   postMaterialize: vi.fn().mockResolvedValue('ok'),
   stateToBlocksJson: vi.fn(() => '[{"type":"paragraph"}]'),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defineLens, LENS_FORMAT_VERSION } from '../define.ts';
+import { defineLens, lensFormatVersion } from '../define.ts';
 import { currentSchemaVersion, migrateCachedEntity, normalizeOps } from '../engine.ts';
 
 // No mock here: exercises the real (empty) lens list shipped in lens-list.ts.
@@ -56,14 +56,14 @@ describe('defineLens validation', () => {
       phase: 'expand',
       delta: { rename: { from: 'a', to: 'b' } },
     });
-    expect(lens.formatVersion).toBe(LENS_FORMAT_VERSION);
+    expect(lens.formatVersion).toBe(lensFormatVersion);
   });
 
   it('rejects an unsupported format version', () => {
     expect(() =>
       defineLens({
         id: '2026-07-01-attachment-rename',
-        formatVersion: LENS_FORMAT_VERSION + 1,
+        formatVersion: lensFormatVersion + 1,
         entityType: 'attachment',
         description: 'rename',
         phase: 'expand',

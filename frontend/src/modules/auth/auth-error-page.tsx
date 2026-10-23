@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { LogInIcon, MailIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { sendSsoRecoveryLink } from 'sdk';
+import { resendInvitationWithToken, sendSsoRecoveryLink } from 'sdk';
 import { isStrategyEnabled } from 'shared';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { ErrorNotice } from '~/modules/common/error-notice';
@@ -17,22 +17,19 @@ export function AuthErrorPage() {
 
   const { error: errorType, tokenId } = useSearch({ from: '/_public/auth/error' });
 
-  const setStep = useAuthStore((state) => state.setStep);
-  const setMagicLinkMode = useAuthStore((state) => state.setMagicLinkMode);
+  const setMagicLinkSent = useAuthStore((state) => state.setMagicLinkSent);
 
   // Resending needs the expired invitation's token id: an address alone would tell anyone who was invited.
   const resendTokenId = errorType === 'invitation_expired' ? tokenId : undefined;
   // Any other refusal of an invitation round trip (a provider account on another address) resumes the invitation.
   const resumeTokenId = resendTokenId ? undefined : tokenId;
 
-  // An institution sign-in found the address on an existing account: this browser may ask once for a sign-in link to
-  // that address, which lands on the account page to connect the institution account.
+  // The address already has an account: this browser may ask once for a sign-in link, which opens the account page to connect the institution.
   const offersRecoveryLink = errorType === 'sso_email_exists' && magicLinkEnabled;
   const { mutate: sendRecoveryLink, isPending: isSendingRecoveryLink } = useMutation({
     mutationFn: () => sendSsoRecoveryLink(),
     onSuccess: ({ email }) => {
-      setMagicLinkMode('signin');
-      setStep('magicLinkSent', email);
+      setMagicLinkSent(email, 'signin');
       navigate({ to: '/auth/authenticate', replace: true });
     },
   });
@@ -41,7 +38,7 @@ export function AuthErrorPage() {
 
   return (
     <ErrorNotice boundary="public">
-      {resendTokenId && <ResendInvitationButton resendData={{ tokenId: resendTokenId }} />}
+      {resendTokenId && <ResendInvitationButton send={() => resendInvitationWithToken({ body: { tokenId: resendTokenId } })} />}
 
       {offersRecoveryLink && (
         <Button loading={isSendingRecoveryLink} onClick={() => sendRecoveryLink()}>

@@ -53,7 +53,6 @@ describe('sync-store adoptGeneration', () => {
     store.setChannelSeq('org-1', 'c1', 'item', 38);
     store.declareSyncView('v1', view);
     store.setViewCursor('v1', 40);
-    store.setKnownSeq('c1', 'item', 41);
   };
 
   it('puts every cursor back at 0 when the server names another generation than the one held, and only then', () => {
@@ -72,7 +71,6 @@ describe('sync-store adoptGeneration', () => {
     expect(store.getOrgSeq('org-1', 'item')).toBe(0);
     expect(store.getChannelSeq('org-1', 'c1', 'item')).toBe(0);
     expect(store.getView('v1')?.cursor).toBe(0);
-    expect(store.getKnownSeq('c1', 'item')).toBe(0);
     // The view itself stays declared: only where it stands is forgotten.
     expect(store.getView('v1')?.prefixes).toEqual(['org-1/c1']);
   });

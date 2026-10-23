@@ -7,11 +7,12 @@ import { whyDarkSlides, whyItems, whyLightSlides } from '~/modules/marketing/mar
 import { lazyNamed } from '~/utils/lazy-named';
 
 const DeviceMockup = lazyNamed(() => import('~/modules/marketing/device-mockup'), 'DeviceMockup');
+
 export function Why() {
   const { t } = useTranslation();
 
   return (
-    <div className="relative mx-auto mt-12 mb-12 flex max-w-7xl flex-wrap items-center lg:mt-16 lg:mb-16">
+    <div className="mx-auto my-12 flex max-w-7xl flex-wrap items-center lg:my-16">
       <div className="w-full lg:w-5/12">
         <div className="flex flex-wrap">
           {whyItems.map((item, index) => {
@@ -20,8 +21,8 @@ export function Why() {
 
             return (
               <div className="w-full" key={item.id}>
-                <div className="group mb-12 flex">
-                  <div className="mr-4 flex h-8 w-full max-w-8 items-center justify-center rounded-full border-2 border-primary font-semibold text-lg group-hover:bg-transparent md:-mt-2 md:h-12 md:max-w-12 md:text-xl">
+                <div className="mb-12 flex">
+                  <div className="mr-4 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-primary font-semibold text-lg md:-mt-2 md:size-12 md:text-xl">
                     {index + 1}
                   </div>
                   <div className="w-full">
@@ -45,7 +46,7 @@ export function Why() {
       </div>
       <div className="w-full lg:w-7/12">
         <Suspense fallback={<Spinner />}>
-          <DeviceMockup className="-top-2 lg:relative lg:ml-8 lg:w-[54vw]" type="pc" lightItems={whyLightSlides} darkItems={whyDarkSlides} />
+          <DeviceMockup className="-top-2 lg:ml-8 lg:w-[54vw]" type="pc" lightItems={whyLightSlides} darkItems={whyDarkSlides} />
         </Suspense>
       </div>
     </div>

@@ -1,6 +1,5 @@
-/** Whether `number` parses to an integer in the range 1 to `arrayLen`. */
-export const inNumbersArray = (arrayLen: number, number: string) => {
-  const array = [...Array(arrayLen).keys()].map((i) => i + 1);
-
-  return array.includes(Number.parseInt(number, 10));
+/** Whether `value` parses to an integer in the range 1 to `length`. */
+export const inNumbersArray = (length: number, value: string) => {
+  const parsed = Number.parseInt(value, 10);
+  return parsed >= 1 && parsed <= length;
 };

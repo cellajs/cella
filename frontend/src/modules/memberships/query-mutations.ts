@@ -3,18 +3,16 @@ import { t } from 'i18next';
 import type { MembershipBase, MembershipInviteResponse, Organization, UpdateMembershipResponse } from 'sdk';
 import { deleteMemberships, membershipInvite, updateMembership } from 'sdk';
 import type { ApiError } from '~/lib/api';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toaster, toastOffline } from '~/modules/common/toaster/toaster';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { meKeys } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import type {
   DeleteMembership,
-  InfiniteMemberQueryData,
   InviteMember,
   Member,
-  MemberChannelProp,
-  MemberQueryData,
-  MembershipChannelProp,
+  MemberListSnapshot,
+  MemberUpdateContext,
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
 import { getCurrentUser } from '~/modules/user/user-store';
@@ -41,7 +39,7 @@ const writeMyMemberships = (write: (items: MembershipBase[]) => MembershipBase[]
 };
 
 const updateMyMembershipCache = (updatedMembership: Partial<MembershipBase> & { id: string }) =>
-  writeMyMemberships((items) => items.map((m) => (m.id === updatedMembership.id ? { ...m, ...updatedMembership } : m)), true);
+  writeMyMemberships((items) => items.map((item) => (item.id === updatedMembership.id ? { ...item, ...updatedMembership } : item)), true);
 
 export const addMyMembershipCache = (newMembership: MembershipBase) => writeMyMemberships((items) => [...items, newMembership]);
 
@@ -50,13 +48,15 @@ export const addMyMembershipCache = (newMembership: MembershipBase) => writeMyMe
  * @public
  */
 export const upsertMyMembershipCache = (membership: MembershipBase) => {
-  const isSameChannel = (m: MembershipBase) => getMembershipChannelKey(m) === getMembershipChannelKey(membership);
-  writeMyMemberships((items) => (items.some(isSameChannel) ? items.map((m) => (isSameChannel(m) ? membership : m)) : [...items, membership]));
+  const isSameChannel = (item: MembershipBase) => getMembershipChannelKey(item) === getMembershipChannelKey(membership);
+  writeMyMemberships((items) =>
+    items.some(isSameChannel) ? items.map((item) => (isSameChannel(item) ? membership : item)) : [...items, membership],
+  );
 };
 
 /** Maps the members of every list under `key` and returns each list's previous data for rollback. */
 const patchMemberLists = (key: QueryKey, mapItems: (members: Member[]) => Member[]) => {
-  const previous: [QueryKey, MemberQueryData | InfiniteMemberQueryData][] = [];
+  const previous: MemberListSnapshot[] = [];
   forEachListQuery<Member>(key, (queryKey, data) => {
     // A list's total moves only by the rows the write drops from that list.
     const items = getQueryItems(data);
@@ -70,10 +70,8 @@ const patchMemberLists = (key: QueryKey, mapItems: (members: Member[]) => Member
   return previous;
 };
 
-const onError = (_: ApiError, __: InviteMember | MutationUpdateMembership | DeleteMembership, context?: MemberChannelProp[]) => {
-  if (context?.length) {
-    for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
-  }
+const restoreMemberLists = (previousLists: MemberListSnapshot[] = []) => {
+  for (const [queryKey, previousData] of previousLists) queryClient.setQueryData(queryKey, previousData);
 };
 
 export const useInviteMemberMutation = () =>
@@ -100,25 +98,18 @@ export const useInviteMemberMutation = () =>
         invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
       }
     },
-    onError,
   });
 
 export const useMemberUpdateMutation = () =>
-  useMutation<UpdateMembershipResponse, ApiError, MutationUpdateMembership, MembershipChannelProp>({
+  useMutation<UpdateMembershipResponse, ApiError, MutationUpdateMembership, MemberUpdateContext>({
     mutationKey: memberQueryKeys.update,
-    mutationFn: async ({ path, body }) => {
-      return await updateMembership({ body, path });
-    },
+    mutationFn: ({ path, body }) => updateMembership({ body, path }),
     onMutate: async (variables) => {
       const { channelId, channelType, path, body } = variables;
       const { tenantId, organizationId, id } = path;
       const membershipInfo = { id, ...body };
 
-      const context = {
-        queryChannel: [] as MemberChannelProp[],
-        toastMessage: t('c:success.update_item', { item: t('c:membership') }),
-        channelType,
-      };
+      const context: MemberUpdateContext = { previousLists: [], toastMessage: t('c:success.update_item', { item: t('c:membership') }) };
 
       if (body?.archived !== undefined) {
         context.toastMessage = t(`c:success.${body.archived ? 'archived' : 'restore'}_resource`, { resource: t(`c:${channelType}`) });
@@ -132,8 +123,7 @@ export const useMemberUpdateMutation = () =>
 
       const similarKey = memberQueryKeys.list.similarMembers({ entityId: channelId, entityType: channelType, tenantId, organizationId });
       await queryClient.cancelQueries({ queryKey: similarKey });
-      const previous = patchMemberLists(similarKey, (members) => updateMembers(members, membershipInfo));
-      for (const [queryKey, previousData] of previous) context.queryChannel.push([queryKey, previousData, id]);
+      context.previousLists = patchMemberLists(similarKey, (members) => updateMembers(members, membershipInfo));
 
       return context;
     },
@@ -147,7 +137,7 @@ export const useMemberUpdateMutation = () =>
       if (updatedMembership.role) {
         queryClient.invalidateQueries({
           queryKey: similarKey,
-          predicate: ({ queryKey }) => queryKey.some((el) => typeof el === 'object' && el && 'role' in el && el.role),
+          predicate: ({ queryKey }) => queryKey.some((part) => typeof part === 'object' && part && 'role' in part && part.role),
           refetchType: 'all',
         });
       }
@@ -157,14 +147,14 @@ export const useMemberUpdateMutation = () =>
       toaster.success(toastMessage);
     },
     onError: (_, __, context) => {
-      // Invalidate memberships to undo the optimistic update; the enrichment subscriber syncs entity lists.
+      // Invalidate memberships to undo the optimistic update; the enrichment subscriber rebuilds the entity lists from them.
       queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
-      onError(_, __, context?.queryChannel);
+      restoreMemberLists(context?.previousLists);
     },
   });
 
 export const useMembershipsDeleteMutation = () =>
-  useMutation<void, ApiError, DeleteMembership, MemberChannelProp[]>({
+  useMutation<void, ApiError, DeleteMembership, MemberListSnapshot[]>({
     mutationKey: memberQueryKeys.delete,
     mutationFn: async ({ path, body, query }) => {
       await deleteMemberships({ path, body, query });
@@ -180,23 +170,19 @@ export const useMembershipsDeleteMutation = () =>
       const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, organizationId });
       await queryClient.cancelQueries({ queryKey: similarKey });
 
-      // Previous list data, restored by onError.
       return patchMemberLists(similarKey, (members) => members.filter(({ id }) => !ids.includes(id)));
     },
     onSuccess: (_, { query: { entityId, entityType }, path: { organizationId } }) => {
       invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
       toaster.success(t('c:success.delete_members'));
     },
-    onError,
+    onError: (_, __, previousLists) => restoreMemberLists(previousLists),
   });
 
-const updateMembers = (members: Member[], variables: { id: string } & Record<string, unknown>) => {
-  return members.map((member) => {
-    if (member.membership.id === variables.id) return { ...member, membership: { ...member.membership, ...variables } };
-
-    return member;
-  });
-};
+const updateMembers = (members: Member[], updatedMembership: { id: string } & Record<string, unknown>) =>
+  members.map((member) =>
+    member.membership.id === updatedMembership.id ? { ...member, membership: { ...member.membership, ...updatedMembership } } : member,
+  );
 
 const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount: number): Organization | undefined => {
   if (!oldEntity?.included.counts) return oldEntity;
@@ -228,12 +214,11 @@ export const useChangeEntityRoleMutation = () =>
   useMutation<ChangeEntityRoleResult, ApiError, ChangeEntityRoleVariables>({
     mutationFn: async ({ entity, role }) => {
       if (!onlineManager.isOnline()) {
-        toaster.warning(t('c:action.offline.text'));
+        toastOffline();
         throw new Error('offline');
       }
 
       const { id: entityId, entityType, tenantId, membership } = entity;
-      // For organization entities, organizationId is the entity itself; for children it comes from the entity data
       const organizationId = entityType === 'organization' ? entityId : entity.organizationId;
       if (!organizationId) throw new Error(`Missing organizationId for ${entityType} entity`);
 
@@ -260,8 +245,5 @@ export const useChangeEntityRoleMutation = () =>
       cacheUpdate(getEntityQueryKeys(entity.entityType).list.base, [updatedEntity]);
 
       toaster.success(t('c:success.role_updated'));
-    },
-    onError: () => {
-      toaster.error(t('error:error'));
     },
   });

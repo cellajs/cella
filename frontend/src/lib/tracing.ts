@@ -1,13 +1,11 @@
 import { type Span, SpanStatusCode } from '@opentelemetry/api';
-import type { IncomingTraceContext, SpanData, SpanStats, TraceContext } from 'shared/tracing';
+import type { IncomingTraceContext, SpanData, TraceContext } from 'shared/tracing';
 import { frontendSpanNames } from 'shared/tracing';
 import { isDebugMode } from '~/env';
-import { spanStore, tracer } from './otel';
+import { spanStore, tracer } from '~/lib/otel';
 
 export type { SpanData };
 export { frontendSpanNames as syncSpanNames };
-
-// Public API for devtools
 
 export function getSpans(): SpanData[] {
   return spanStore.getSpans();
@@ -21,19 +19,13 @@ export function clearSpans(): void {
   spanStore.clear();
 }
 
-export function getSpanStats(): SpanStats {
-  return spanStore.getStats();
-}
-
-// Span attribute helpers
-
-interface SpanAttrs {
+interface SpanAttributes {
   [key: string]: string | number | boolean | null | undefined | IncomingTraceContext;
   _trace?: IncomingTraceContext;
 }
 
-function applyAttrs(span: Span, attrs: SpanAttrs): void {
-  const { _trace, ...rest } = attrs;
+function applyAttributes(span: Span, attributes: SpanAttributes): void {
+  const { _trace, ...rest } = attributes;
   for (const [key, value] of Object.entries(rest)) {
     if (value !== undefined && value !== null && typeof value !== 'object') {
       span.setAttribute(key, value);
@@ -45,21 +37,27 @@ function applyAttrs(span: Span, attrs: SpanAttrs): void {
   }
 }
 
-// withSpan helpers
+function failSpan(span: Span, error: unknown): void {
+  const exception = error instanceof Error ? error : new Error(String(error));
+  span.recordException(exception);
+  span.setStatus({ code: SpanStatusCode.ERROR, message: exception.message });
+}
+
+function traceContext(span: Span): TraceContext {
+  const { traceId, spanId } = span.spanContext();
+  return { traceId, spanId, cdcTimestamp: Date.now() };
+}
 
 /** @public */
-export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => Promise<T>): Promise<T> {
+export async function withSpan<T>(name: string, attributes: SpanAttributes, fn: (context: TraceContext) => Promise<T>): Promise<T> {
   return tracer.startActiveSpan(name, async (span) => {
-    applyAttrs(span, attrs);
+    applyAttributes(span, attributes);
     try {
-      const { traceId, spanId } = span.spanContext();
-      const ctx: TraceContext = { traceId, spanId, cdcTimestamp: Date.now() };
-      const result = await fn(ctx);
+      const result = await fn(traceContext(span));
       span.setStatus({ code: SpanStatusCode.OK });
       return result;
     } catch (error) {
-      span.setStatus({ code: SpanStatusCode.ERROR, message: error instanceof Error ? error.message : String(error) });
-      span.recordException(error instanceof Error ? error : new Error(String(error)));
+      failSpan(span, error);
       throw error;
     } finally {
       span.end();
@@ -67,44 +65,36 @@ export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: Trac
   });
 }
 
-export function withSpanSync<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => T): T {
+export function withSpanSync<T>(name: string, attributes: SpanAttributes, fn: (context: TraceContext) => T): T {
   const span = tracer.startSpan(name);
-  applyAttrs(span, attrs);
+  applyAttributes(span, attributes);
   try {
-    const { traceId, spanId } = span.spanContext();
-    const ctx: TraceContext = { traceId, spanId, cdcTimestamp: Date.now() };
-    const result = fn(ctx);
+    const result = fn(traceContext(span));
     span.setStatus({ code: SpanStatusCode.OK });
     return result;
   } catch (error) {
-    span.setStatus({ code: SpanStatusCode.ERROR, message: error instanceof Error ? error.message : String(error) });
-    span.recordException(error instanceof Error ? error : new Error(String(error)));
+    failSpan(span, error);
     throw error;
   } finally {
     span.end();
   }
 }
 
-/** @public */
-export function startSyncSpan(name: string, attributes?: Record<string, string | number | boolean | null>): Span {
+/**
+ * Starts a sync engine span, named from `syncSpanNames`, that the caller ends.
+ * @public
+ */
+export function startSyncSpan(name: string, attributes: SpanAttributes = {}): Span {
   const span = tracer.startSpan(name);
-  if (attributes) {
-    for (const [key, value] of Object.entries(attributes)) {
-      if (value !== undefined && value !== null) {
-        span.setAttribute(key, value);
-      }
-    }
-  }
+  applyAttributes(span, attributes);
   return span;
 }
 
 /** Record a swallowed critical failure as an immediate error span for Maple alerting. */
-export function reportCriticalError(name: string, err: unknown, attrs: SpanAttrs = {}): void {
+export function reportCriticalError(name: string, error: unknown, attributes: SpanAttributes = {}): void {
   const span = tracer.startSpan(`client.${name}`);
-  applyAttrs(span, attrs);
-  const error = err instanceof Error ? err : new Error(String(err));
-  span.recordException(error);
-  span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+  applyAttributes(span, attributes);
+  failSpan(span, error);
   span.end();
 }
 

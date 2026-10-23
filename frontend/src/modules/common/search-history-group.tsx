@@ -1,10 +1,14 @@
-import { HistoryIcon, XIcon } from 'lucide-react';
+import { HistoryIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '~/modules/ui/button';
+import { CloseButton } from '~/modules/common/close-button';
 import { ComboboxGroup, ComboboxGroupLabel, ComboboxItem } from '~/modules/ui/combobox';
 
 /** A picked history row, which re-runs its query in place. */
 export type HistoryEntry = { kind: 'history'; value: string };
+
+export function isHistoryEntry(selection: object): selection is HistoryEntry {
+  return 'kind' in selection && selection.kind === 'history';
+}
 
 interface SearchHistoryGroupProps {
   searches: string[];
@@ -19,25 +23,21 @@ export function SearchHistoryGroup({ searches, onRemove }: SearchHistoryGroupPro
     <ComboboxGroup className="p-1">
       <ComboboxGroupLabel>{t('c:history')}</ComboboxGroupLabel>
       {searches.map((search, index) => (
-        <ComboboxItem key={search} value={{ kind: 'history', value: search } as HistoryEntry} className="justify-between">
+        <ComboboxItem key={search} value={{ kind: 'history', value: search } satisfies HistoryEntry} className="justify-between">
           <div className="flex items-center gap-2">
             <HistoryIcon className="size-4 shrink-0 text-muted-foreground" />
             <span className="truncate font-medium">{search}</span>
           </div>
           <div className="flex items-center">
             <span className="mx-3 text-muted-foreground text-xs max-sm:hidden">{index}</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('c:remove')}
-              className="size-6 p-0"
+            <CloseButton
+              size="sm"
+              label="c:remove"
               onClick={(event) => {
                 event.stopPropagation();
                 onRemove(search);
               }}
-            >
-              <XIcon className="size-4 opacity-70 hover:opacity-100" />
-            </Button>
+            />
           </div>
         </ComboboxItem>
       ))}

@@ -4,35 +4,33 @@ import '~/modules/common/blocknote/custom-elements/checklist/checklist-styles.cs
 
 import DOMPurify from 'dompurify';
 import { type MouseEventHandler, useEffect, useRef, useState } from 'react';
-import { mediaBlockTypes } from 'shared/blocknote';
 import type { MediaRefContext } from 'shared/utils/media-ref';
 import { childNodes, isDocumentNode, isRefusedMediaBlock } from 'shared/utils/validate-block-media-urls';
+import { useLatestRef } from '~/hooks/use-latest-ref';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
-import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { getBlockPendingUpload, subscribePendingUploads } from '~/modules/attachment/helpers/pending-uploads';
 import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-url';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
-import { findClickedMedia, getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
-import type { CustomBlock } from '~/modules/common/blocknote/types';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { findClickedMediaBlockId, getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
+import { openMediaCarousel } from '~/modules/common/blocknote/helpers/open-attachment';
+import { type CommonBlockNoteProps, type CustomBlock, isMediaBlock } from '~/modules/common/blocknote/types';
 import { cn } from '~/utils/cn';
 
 // DOMPurify's default URI policy strips `blob:`, which this render needs for locally cached images; all other schemes keep the default.
-const ALLOWED_URI_REGEXP = /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i;
+const allowedUriRegexp = /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i;
 
 /**
- * First-pass HTML (unresolved media refs) per organization and document string. Layout-identical to the
- * resolved pass (media boxes are reserved via aspect-ratio), so a cache hit lets the first commit paint the
- * document at full height synchronously; lists that measure rows (virtualizers) see the real height at once.
+ * First-pass HTML (media refs unresolved) per organization and document. It lays out like the resolved pass (aspect-ratio
+ * media boxes), so a cache hit paints the document at full height in the first commit, as row-measuring lists need.
  */
 const firstPassHtmlCache = new Map<string, string>();
-const FIRST_PASS_CACHE_MAX = 300;
+const firstPassCacheMax = 300;
 
 /** Which media a document may show depends on its organization, so the cache keys on both. */
 const firstPassKey = (document: string, organizationId?: string) => `${organizationId ?? ''}:${document}`;
 
 const cacheFirstPass = (key: string, html: string) => {
-  if (firstPassHtmlCache.size >= FIRST_PASS_CACHE_MAX) {
+  if (firstPassHtmlCache.size >= firstPassCacheMax) {
     const oldest = firstPassHtmlCache.keys().next().value;
     if (oldest !== undefined) firstPassHtmlCache.delete(oldest);
   }
@@ -74,9 +72,8 @@ const toFullHtml = (blocks: CustomBlock[]): string | null => {
 };
 
 /**
- * Computes a document's first-pass HTML into the cache ahead of render, so the component's first
- * commit is synchronous; never throws, so one document cannot stop a batch. Calls blocksToFullHTML
- * (flushSync inside): never call during React render or commit; an effect's async continuation is safe.
+ * Computes a document's first-pass HTML into the cache ahead of render, so the component's first commit is synchronous; never
+ * throws, so one document cannot stop a batch. It calls blocksToFullHTML (flushSync): never during React render or commit.
  */
 export function precomputeDocumentHtml(document: string, organizationId?: string): void {
   const key = firstPassKey(document, organizationId);
@@ -86,17 +83,13 @@ export function precomputeDocumentHtml(document: string, organizationId?: string
   cacheFirstPass(key, toFullHtml(renderableBlocks(blocks, { organizationId })) ?? '');
 }
 
-interface BlockNoteFullHtmlProps {
-  id: string;
+interface BlockNoteFullHtmlProps extends Pick<CommonBlockNoteProps, 'id' | 'className' | 'dense' | 'clickOpensPreview'> {
   defaultValue: string;
-  className?: string;
-  dense?: boolean;
   /**
    * Lays the document out as inline text, so what follows it (a badge, a button) stays on its last line: for a one-block summary.
    * The surrounding block then sets the line height.
    */
   inline?: boolean;
-  clickOpensPreview?: boolean;
   /** Needed to resolve private (id-referenced) inline media via presigned URLs. */
   tenantId?: string;
   organizationId?: string;
@@ -104,30 +97,28 @@ interface BlockNoteFullHtmlProps {
   onReady?: () => void;
 }
 
-async function processBlocks(
+async function resolveMediaBlocks(
   blocks: CustomBlock[],
   resolveUrl: (key: string) => Promise<string>,
-): Promise<{ resolved: CustomBlock[]; media: CarouselItemData[] }> {
-  const media: CarouselItemData[] = [];
+): Promise<{ resolved: CustomBlock[]; mediaItems: CarouselItemData[] }> {
+  const mediaItems: CarouselItemData[] = [];
 
   async function walk(blocks: CustomBlock[]): Promise<CustomBlock[]> {
     const walked = await Promise.all(
       blocks.map(async (block): Promise<CustomBlock[]> => {
         let props = block.props;
-        const children = block.children?.length ? await walk(block.children as CustomBlock[]) : block.children;
+        const children = block.children?.length ? await walk(block.children) : block.children;
 
         // renderableBlocks ran first: a media block here holds a props object.
-        if (mediaBlockTypes.has(block.type) && 'url' in props && props.url) {
-          const rawUrl = props.url as string;
-          const resolvedUrl = await resolveUrl(rawUrl);
+        if (isMediaBlock(block) && block.props.url) {
+          const resolvedUrl = await resolveUrl(block.props.url);
 
           if (resolvedUrl) {
             props = { ...props, url: resolvedUrl };
-            const filename = ('name' in props ? (props.name as string) : '') || '';
-            media.push({ id: block.id, url: resolvedUrl, filename, contentType: block.type });
+            mediaItems.push({ id: block.id, url: resolvedUrl, filename: block.props.name, contentType: block.type });
           } else if (!getBlockPendingUpload(props)) {
             // A gone or denied file renders nothing, as a refused ref does; a pending one keeps its ref for the placeholder.
-            return (children as CustomBlock[] | undefined) ?? [];
+            return children;
           }
         }
 
@@ -138,27 +129,25 @@ async function processBlocks(
   }
 
   const resolved = await walk(blocks);
-  return { resolved, media };
+  return { resolved, mediaItems };
 }
 
-function BlockNoteFullHtml({
+export function BlockNoteFullHtml({
   id,
   defaultValue,
-  className = '',
+  className,
   dense = false,
   inline = false,
   clickOpensPreview = false,
-  tenantId: propTenantId,
-  organizationId: propOrganizationId,
+  tenantId,
+  organizationId,
   onReady,
 }: BlockNoteFullHtmlProps) {
-  const mode = useUIStore((state) => state.mode);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // `ready` once a first pass is computed, an empty one included: an empty document has nothing to wait for.
   const [renderState, setRenderState] = useState<{ html: string; mediaItems: CarouselItemData[]; ready: boolean }>(() => {
-    // A precomputed first pass paints the document at full height in the first commit (no pop-in).
-    const cached = firstPassHtmlCache.get(firstPassKey(defaultValue, propOrganizationId));
+    const cached = firstPassHtmlCache.get(firstPassKey(defaultValue, organizationId));
     return { html: cached ?? '', mediaItems: [], ready: cached !== undefined };
   });
 
@@ -166,15 +155,14 @@ function BlockNoteFullHtml({
   const [uploadsArrived, setUploadsArrived] = useState(0);
   useEffect(() => subscribePendingUploads(() => setUploadsArrived((count) => count + 1)), []);
 
-  const onReadyRef = useRef(onReady);
-  onReadyRef.current = onReady;
+  const onReadyRef = useLatestRef(onReady);
   const readyFiredRef = useRef(false);
   useEffect(() => {
     if (renderState.ready && !readyFiredRef.current) {
       readyFiredRef.current = true;
       onReadyRef.current?.();
     }
-  }, [renderState.ready]);
+  }, [renderState.ready, onReadyRef]);
 
   // blocksToFullHTML calls flushSync, which cannot run during render or commit, so useEffect plus queueMicrotask keeps it outside both.
   useEffect(() => {
@@ -183,8 +171,8 @@ function BlockNoteFullHtml({
       setRenderState({ html: '', mediaItems: [], ready: true });
       return;
     }
-    const blocks = renderableBlocks(parsed, { organizationId: propOrganizationId });
-    const cacheKey = firstPassKey(defaultValue, propOrganizationId);
+    const blocks = renderableBlocks(parsed, { organizationId });
+    const cacheKey = firstPassKey(defaultValue, organizationId);
 
     let cancelled = false;
 
@@ -202,34 +190,28 @@ function BlockNoteFullHtml({
     }
 
     async function resolveUrls(blocks: CustomBlock[]) {
-      const resolveUrl = (ref: string): Promise<string> =>
-        resolveBlockNoteFileRef(ref, { tenantId: propTenantId, organizationId: propOrganizationId });
+      const resolveUrl = (ref: string): Promise<string> => resolveBlockNoteFileRef(ref, { tenantId, organizationId });
 
-      const { resolved, media } = await processBlocks(blocks, resolveUrl);
+      const { resolved, mediaItems } = await resolveMediaBlocks(blocks, resolveUrl);
       if (cancelled) return;
 
-      setRenderState({ html: toFullHtml(resolved) ?? '', mediaItems: media, ready: true });
+      setRenderState({ html: toFullHtml(resolved) ?? '', mediaItems, ready: true });
     }
 
     resolveUrls(blocks);
     return () => {
       cancelled = true;
     };
-  }, [defaultValue, propTenantId, propOrganizationId, uploadsArrived]);
+  }, [defaultValue, tenantId, organizationId, uploadsArrived]);
 
   const handleClick: MouseEventHandler = (event) => {
     if (!clickOpensPreview || renderState.mediaItems.length === 0) return;
 
-    const media = findClickedMedia(event.target as HTMLElement);
-    if (!media) return;
+    const blockId = findClickedMediaBlockId(event.target);
+    if (!blockId) return;
 
     event.preventDefault();
-    const attachmentIndex = Math.max(
-      0,
-      renderState.mediaItems.findIndex(({ url }) => url === media.src),
-    );
-
-    openAttachmentDialog({ attachmentIndex, attachments: renderState.mediaItems, triggerRef: containerRef as React.RefObject<null> });
+    openMediaCarousel(renderState.mediaItems, blockId, containerRef);
   };
 
   // Not `.bn-editor`: BlockNote's side-menu plugin scans those nodes and expects editor-only children such as `.bn-block-group`.
@@ -238,18 +220,15 @@ function BlockNoteFullHtml({
       id={id}
       ref={containerRef}
       role="presentation"
-      className={cn('bn-container bn-shadcn', dense && 'bn-dense', inline && 'bn-inline', mode === 'dark' && 'dark', className)}
-      data-color-scheme={mode}
+      className={cn('bn-container bn-shadcn', dense && 'bn-dense', inline && 'bn-inline', className)}
       onClick={handleClick}
     >
       <div
         // select-text opts this content back into text selection inside the focusable, click-to-expand Card.
         className="bn-static-editor bn-default-styles select-text"
         // biome-ignore lint/security/noDangerouslySetInnerHtml: input is sanitized via DOMPurify before render
-        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderState.html, { ALLOWED_URI_REGEXP }) }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderState.html, { ALLOWED_URI_REGEXP: allowedUriRegexp }) }}
       />
     </div>
   );
 }
-
-export { BlockNoteFullHtml };

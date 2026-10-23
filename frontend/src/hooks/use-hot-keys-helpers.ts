@@ -2,7 +2,9 @@ type KeyboardModifiers = { alt: boolean; ctrl: boolean; meta: boolean; mod: bool
 
 type Hotkey = KeyboardModifiers & { key?: string };
 
-type CheckHotkeyMatch = (event: KeyboardEvent) => boolean;
+type HotkeyMatcher = (event: KeyboardEvent) => boolean;
+
+const modifierKeys = ['alt', 'ctrl', 'meta', 'shift', 'mod'];
 
 function parseHotkey(hotkey: string): Hotkey {
   const keys =
@@ -21,9 +23,7 @@ function parseHotkey(hotkey: string): Hotkey {
     shift: keys.includes('shift'),
   };
 
-  const reservedKeys = ['alt', 'ctrl', 'meta', 'shift', 'mod'];
-
-  const freeKey = keys.find((key) => !reservedKeys.includes(key));
+  const freeKey = keys.find((key) => !modifierKeys.includes(key));
 
   return { ...modifiers, key: freeKey };
 }
@@ -37,14 +37,10 @@ function isExactHotkey(hotkey: Hotkey, event: KeyboardEvent): boolean {
   if (alt !== altKey || shift !== shiftKey || !modifierMatch) return false;
 
   const lowerKey = key?.toLowerCase();
-  if (lowerKey && (pressedKey.toLowerCase() === lowerKey || event.code.replace('Key', '').toLowerCase() === lowerKey)) {
-    return true;
-  }
-
-  return false;
+  return !!lowerKey && (pressedKey.toLowerCase() === lowerKey || event.code.replace('Key', '').toLowerCase() === lowerKey);
 }
 
-export function getHotkeyMatcher(hotkey: string): CheckHotkeyMatch {
+export function getHotkeyMatcher(hotkey: string): HotkeyMatcher {
   return (event) => isExactHotkey(parseHotkey(hotkey), event);
 }
 
@@ -52,7 +48,7 @@ interface HotkeyItemOptions {
   preventDefault?: boolean;
 }
 
-type HotkeyItem = [string, (event: KeyboardEvent) => void, HotkeyItemOptions?];
+export type HotkeyItem = [string, (event: KeyboardEvent) => void, HotkeyItemOptions?];
 
 export function shouldFireEvent(event: KeyboardEvent, tagsToIgnore: string[], triggerOnContentEditable = false) {
   if (event.target instanceof HTMLElement) {
@@ -63,4 +59,3 @@ export function shouldFireEvent(event: KeyboardEvent, tagsToIgnore: string[], tr
   }
   return true;
 }
-export type { HotkeyItem };

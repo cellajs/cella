@@ -1,5 +1,4 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary } from 'sdk/docs-types';
 import { useSearchParams } from '~/hooks/use-search-params';
@@ -13,9 +12,10 @@ import { useFilteredOperations } from '~/modules/docs/operations/operations-tabl
 import { useSortedOperations } from '~/modules/docs/operations/operations-table/use-sorted-operations';
 import { isSwitchedOff } from '~/modules/docs/operations/switched-off-badge';
 import { infoQueryOptions, operationsQueryOptions } from '~/modules/docs/query';
+import { collectTagKinds } from '~/modules/docs/tag-table';
 import { useUIStore } from '~/modules/ui/ui-store';
 
-function OperationsTable() {
+export function OperationsTable() {
   const { t } = useTranslation();
   const focusView = useUIStore((state) => state.focusView);
   const { search, setSearch } = useSearchParams<{ q?: string; sort?: string; order?: 'asc' | 'desc'; tag?: string }>({
@@ -32,26 +32,18 @@ function OperationsTable() {
 
   const { data: operations } = useSuspenseQuery(operationsQueryOptions);
 
-  const tagKinds = useMemo(() => {
-    const kinds = new Set<string>();
-    for (const op of operations) {
-      if (op.tagsByKind) for (const kind of Object.keys(op.tagsByKind)) kinds.add(kind);
-    }
-    return Array.from(kinds);
-  }, [operations]);
+  const tagKinds = collectTagKinds(operations);
 
   // kind -> distinct values present; 'module' is driven by the sidebar and 'schema' does not apply here
-  const tagFilters = useMemo(() => {
-    const map: Record<string, Set<string>> = {};
-    for (const op of operations) {
-      for (const [kind, values] of Object.entries(op.tagsByKind ?? {})) {
-        if (kind === 'module' || kind === 'schema') continue;
-        if (!map[kind]) map[kind] = new Set();
-        for (const v of values) map[kind].add(v);
-      }
+  const valuesByKind: Record<string, Set<string>> = {};
+  for (const op of operations) {
+    for (const [kind, values] of Object.entries(op.tagsByKind)) {
+      if (kind === 'module' || kind === 'schema') continue;
+      if (!valuesByKind[kind]) valuesByKind[kind] = new Set();
+      for (const value of values) valuesByKind[kind].add(value);
     }
-    return Object.fromEntries(Object.entries(map).map(([k, v]) => [k, [...v]]));
-  }, [operations]);
+  }
+  const tagFilters = Object.fromEntries(Object.entries(valuesByKind).map(([kind, values]) => [kind, [...values]]));
 
   const [columns, setColumns] = useColumns(extensions, tagKinds);
 
@@ -84,7 +76,6 @@ function OperationsTable() {
           rowClass={(row) => (isSwitchedOff(row) ? 'opacity-60' : undefined)}
           isLoading={false}
           isFetching={false}
-          limit={sortedOperations.length}
           isFiltered={!!q}
           rowHeight={42}
           enableVirtualization
@@ -96,5 +87,3 @@ function OperationsTable() {
     </>
   );
 }
-
-export { OperationsTable };

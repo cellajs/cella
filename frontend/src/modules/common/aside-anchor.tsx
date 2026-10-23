@@ -1,9 +1,10 @@
+import type { ReactNode } from 'react';
 import { cn } from '~/utils/cn';
 
 interface AsideAnchorProps {
   id: string;
   className?: string;
-  children?: React.ReactNode;
+  children?: ReactNode;
   extraOffset?: boolean;
 }
 

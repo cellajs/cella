@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { getSchemaDefaults } from '../create-optimistic';
+import { getSchemaDefaults } from '~/query/basic/create-optimistic';
 
 /**
  * The default walker reads zod's `def` payloads, whose field names are the library's to change.

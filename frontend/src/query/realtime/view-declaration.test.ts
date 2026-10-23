@@ -48,7 +48,7 @@ describe('declareViewsFromMemberships (template equivalence)', () => {
   it('must not put the cursor of a known organization back', () => {
     registerEntityQueryKeys('attachment', createEntityKeys('attachment'));
     queryClient.setQueryData(['me', 'memberships'], { items: [orgMembership('org-1', 'admin')] });
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 7);
 
     declareViewsFromMemberships();

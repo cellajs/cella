@@ -1,6 +1,6 @@
 import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
-import type React from 'react';
+import type * as React from 'react';
 import { Separator } from '~/modules/ui/separator';
 import { cn } from '~/utils/cn';
 
@@ -48,7 +48,7 @@ export function ButtonGroupSeparator({ className, orientation = 'vertical', ...p
     <Separator
       data-slot="button-group-separator"
       orientation={orientation}
-      className={cn('relative m-0! self-stretch bg-input data-[orientation=vertical]:h-auto', className)}
+      className={cn('relative self-stretch bg-input data-vertical:h-auto', className)}
       {...props}
     />
   );

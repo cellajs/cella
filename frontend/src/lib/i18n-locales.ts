@@ -10,19 +10,16 @@ const enCommonExtended = { ...enCommon, ...enApp };
 /** Any valid translation key: bare `c` keys plus `c:`/`about:`/`error:` prefixed ones, per i18next-resources.d.ts. */
 export type TKey = ParseKeys;
 
-const locales = { en: { about: enAbout, appError: enAppError, c: enCommonExtended, error: enError } };
-
-export { locales };
+export const locales = { en: { about: enAbout, appError: enAppError, c: enCommonExtended, error: enError } };
 
 if (import.meta.hot) {
   import.meta.hot.accept(async (newModule) => {
     if (!newModule?.locales) return;
-    const i18next = await import('i18next');
-    const i18n = i18next.default;
+    const { default: i18n } = await import('i18next');
     const updated = newModule.locales as typeof locales;
-    for (const [lang, namespaces] of Object.entries(updated)) {
-      for (const [ns, resources] of Object.entries(namespaces)) {
-        i18n.addResourceBundle(lang, ns, resources, true, true);
+    for (const [language, namespaces] of Object.entries(updated)) {
+      for (const [namespace, resources] of Object.entries(namespaces)) {
+        i18n.addResourceBundle(language, namespace, resources, true, true);
       }
     }
     // Trigger react-i18next re-render

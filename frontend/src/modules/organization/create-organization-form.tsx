@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import type React from 'react';
 import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -6,38 +7,40 @@ import { zCreateOrganizationsBody } from 'sdk/zod.gen';
 import { generateId } from 'shared/utils/entity-id';
 import type { z } from 'zod';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
+import { dialoger, type TriggerRef } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { useStepper } from '~/modules/common/stepper/stepper';
+import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { useOrganizationCreateMutation } from '~/modules/organization/query';
 import { useSelfCreateTenantMutation } from '~/modules/tenants/query';
-import { Button } from '~/modules/ui/button';
-import { Form, type LabelDirectionType } from '~/modules/ui/field';
+import { Form } from '~/modules/ui/field';
 import { formResolver } from '~/utils/form-resolver';
 
-interface Props {
+interface CreateOrganizationFormProps {
+  /** Closes the create dialog once the organization is saved. */
   dialog?: boolean;
-  labelDirection?: LabelDirectionType;
   children?: React.ReactNode;
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-// 1 tenant = 1 organization: creating an org always mints a fresh tenant to hold it.
 const formSchema = zCreateOrganizationsBody.element.omit({ id: true });
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function CreateOrganizationForm({ labelDirection = 'top', children, callback }: Props) {
+const formContainerId = 'create-organization';
+
+export function CreateOrganizationForm({ dialog: isDialog, children, callback }: CreateOrganizationFormProps) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
   const nameLabel = t('c:name').toLowerCase();
 
   const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: { name: '', slug: '' } };
 
-  const formContainerId = 'create-organization';
   const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 
   const name = useWatch({ control: form.control, name: 'name' });
@@ -48,10 +51,12 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
   const onSuccess = (createdOrganization: Organization) => {
     form.reset();
     toaster.success(t('c:success.create_resource', { resource: t('c:organization') }));
+    if (isDialog) dialoger.getState().remove(formContainerId);
     callback?.({ data: createdOrganization, status: 'success' });
-    nextStep?.();
+    nextStep();
   };
 
+  // 1 tenant = 1 organization: the submit mints a fresh tenant, then creates the organization in it.
   const onSubmit = async (values: FormValues) => {
     let tenantId: string;
     try {
@@ -62,14 +67,11 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
       return;
     }
 
-    createMutation.mutate(
-      { path: { tenantId }, body: [{ ...values, id: `temp-${generateId()}` }] },
-      { onSuccess: (createdOrganization) => onSuccess(createdOrganization) },
-    );
+    createMutation.mutate({ path: { tenantId }, body: [{ ...values, id: `temp-${generateId()}` }] }, { onSuccess });
   };
 
   return (
-    <Form {...form} labelDirection={labelDirection}>
+    <Form {...form}>
       <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <InputFormField
           control={form.control}
@@ -89,18 +91,31 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
         />
 
         <div className="flex flex-col gap-2 sm:flex-row">
-          <SubmitButton disabled={!form.isDirty} loading={createMutation.isPending}>
+          <SubmitButton disabled={!form.isDirty} loading={selfCreateTenantMutation.isPending || createMutation.isPending}>
             {t('c:create')}
           </SubmitButton>
           {children}
 
-          {!children && (
-            <Button type="reset" variant="secondary" className={form.isDirty ? '' : 'invisible'} onClick={() => form.reset()}>
-              {t('c:cancel')}
-            </Button>
-          )}
+          {!children && <CancelButton dirty={form.isDirty} onClick={() => form.reset()} />}
         </div>
       </form>
     </Form>
   );
+}
+
+/** Opens the create dialog; `onCreated` receives the saved organization. */
+export function openCreateOrganizationDialog(triggerRef: TriggerRef, onCreated?: (organization: Organization) => void) {
+  const title = i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() });
+  const callback = (args: CallbackArgs<Organization>) => {
+    if (args.status === 'success') onCreated?.(args.data);
+  };
+
+  dialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {
+    id: formContainerId,
+    triggerRef,
+    className: 'md:max-w-2xl',
+    title,
+    titleContent: <UnsavedBadge title={title} />,
+    description: i18n.t('c:create_organization.text'),
+  });
 }

@@ -3,7 +3,7 @@ import type { RefObject } from 'react';
 import { ApiError } from '~/lib/api';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 
-export const handleAskForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
+export const askForHelp = (ref: RefObject<HTMLButtonElement | null>) => {
   if (!window.Gleap) return contactFormHandler(ref);
   window.Gleap.openConversations();
 };

@@ -3,9 +3,7 @@ import { CheckIcon, ChevronDownIcon, XIcon } from 'lucide-react';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
 
-// Styled base-ui Combobox primitives
-
-// The first match is highlighted while typing, so type-then-Enter picks without arrow keys
+/** The first match is highlighted while typing, so type-then-Enter picks without arrow keys. */
 function Combobox<Value, Multiple extends boolean | undefined = false>(props: ComboboxPrimitive.Root.Props<Value, Multiple>) {
   return <ComboboxPrimitive.Root autoHighlight {...props} />;
 }
@@ -21,7 +19,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
 
 function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
   return (
-    <ComboboxPrimitive.Clear data-slot="combobox-clear" render={<InputGroupButton variant="ghost" size="size-3" />} className={className} {...props}>
+    <ComboboxPrimitive.Clear data-slot="combobox-clear" render={<InputGroupButton variant="ghost" size="icon-xs" />} className={className} {...props}>
       <XIcon className="pointer-events-none size-3.5" />
     </ComboboxPrimitive.Clear>
   );
@@ -41,7 +39,7 @@ function ComboboxInput({
       <InputGroupAddon align="inline-end">
         {showTrigger && (
           <InputGroupButton
-            size="size-3"
+            size="icon-xs"
             variant="ghost"
             render={<ComboboxTrigger />}
             data-slot="input-group-button"
@@ -82,11 +80,7 @@ function ComboboxContent({
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
           className={cn(
-            'group/combobox-content relative max-h-(--available-height) w-(--anchor-width) overflow-hidden rounded-md bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100',
-            'origin-(--transform-origin)',
-            'data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2',
-            '*:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none',
-            'data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95 data-closed:animate-out data-open:animate-in',
+            'group/combobox-content data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 data-open:fade-in-0 data-open:zoom-in-95 data-closed:fade-out-0 data-closed:zoom-out-95 relative max-h-(--available-height) w-(--anchor-width) origin-(--transform-origin) overflow-hidden rounded-md bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-closed:animate-out data-open:animate-in *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:border-input/30 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:shadow-none',
             className,
           )}
           {...props}
@@ -114,9 +108,7 @@ function ComboboxItem({ className, children, ...props }: ComboboxPrimitive.Item.
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
       className={cn(
-        'relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-3 py-1.5 text-sm outline-hidden',
-        'data-disabled:pointer-events-none data-highlighted:bg-accent data-selected:font-medium data-highlighted:text-accent-foreground data-disabled:opacity-50',
-        "[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-3 py-1.5 text-sm outline-hidden data-disabled:pointer-events-none data-highlighted:bg-accent data-selected:font-medium data-highlighted:text-accent-foreground data-disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       {...props}
@@ -132,7 +124,7 @@ function ComboboxItemIndicator({ className, ...props }: ComboboxPrimitive.ItemIn
     <ComboboxPrimitive.ItemIndicator
       keepMounted
       data-slot="combobox-item-indicator"
-      className={cn('pointer-events-none flex size-4 items-center justify-center text-success [&:not([data-selected])]:invisible', className)}
+      className={cn('pointer-events-none not-data-selected:invisible flex size-4 items-center justify-center text-success', className)}
       {...props}
     >
       <CheckIcon className="pointer-events-none pointer-coarse:size-5 size-4" />

@@ -1,7 +1,6 @@
 import { BirdIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Request } from 'sdk';
-import { appConfig } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table/data-table';
@@ -13,23 +12,20 @@ import { RequestsTableBar } from '~/modules/requests/table/requests-bar';
 import { useColumns } from '~/modules/requests/table/requests-columns';
 import type { RequestsRouteSearchParams } from '~/modules/requests/types';
 
-const LIMIT = appConfig.requestLimits.requests;
-
 function rowKeyGetter(row: Request) {
   return row.id;
 }
 
-function RequestsTable() {
+export function RequestsTable() {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<RequestsRouteSearchParams>({ from: '/_app/system/requests' });
 
   const { q, sort, order } = search;
-  const limit = LIMIT;
 
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = requestsListQueryOptions({ ...search, limit });
+  const queryOptions = requestsListQueryOptions(search);
   const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
   const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
 
@@ -40,7 +36,7 @@ function RequestsTable() {
         selected={selected}
         columns={columns}
         setColumns={setColumns}
-        searchVars={{ ...search, limit }}
+        searchVars={search}
         setSearch={setSearch}
         clearSelection={clearSelection}
       />
@@ -51,7 +47,6 @@ function RequestsTable() {
           rowKeyGetter,
           columns,
           enableVirtualization: true,
-          limit,
           error,
           isLoading,
           isFetching,
@@ -70,5 +65,3 @@ function RequestsTable() {
     </>
   );
 }
-
-export { RequestsTable };

@@ -13,7 +13,7 @@ import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 import { isSystemAccessAllowed } from '#/utils/system-access';
 import type { AppStreamSubscriber } from './helpers/dispatch-to-stream';
-import { keepAlive, streamSubscriberManager, WORKER_AWAY_PING, writeOffset } from './stream';
+import { keepAlive, streamSubscriberManager, workerAwayPing, writeOffset } from './stream';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -25,16 +25,13 @@ app.openapi(entityRoutes.checkSlug, async (ctx) => {
 
 // Caps bound memory and dispatch CPU for the single-process stream; both reject with 429 so
 // clients use their normal reconnect backoff.
-const MAX_STREAMS_PER_USER = 10;
-const MAX_STREAM_SUBSCRIBERS = 5000;
+const maxStreamsPerUser = 10;
+const maxStreamSubscribers = 5000;
 
 app.openapi(entityRoutes.appStream, async (ctx) => {
   const { user, memberships, isSystemAdmin, sessionId } = ctx.var;
 
-  if (
-    streamSubscriberManager.size >= MAX_STREAM_SUBSCRIBERS ||
-    streamSubscriberManager.getByChannel(`user:${user.id}`).length >= MAX_STREAMS_PER_USER
-  ) {
+  if (streamSubscriberManager.size >= maxStreamSubscribers || streamSubscriberManager.getByChannel(`user:${user.id}`).length >= maxStreamsPerUser) {
     throw new AppError(429, 'too_many_requests', 'warn', { meta: { reason: 'stream_subscriber_cap' } });
   }
 
@@ -70,7 +67,7 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
     });
 
     // Every ping says whether a CDC worker reads: without one, live changes are late and the client falls back to a stale time.
-    await keepAlive(stream, () => (cdcWebSocketServer.isWorkerAway() ? WORKER_AWAY_PING : ''));
+    await keepAlive(stream, () => (cdcWebSocketServer.isWorkerAway() ? workerAwayPing : ''));
     // biome-ignore lint/suspicious/noExplicitAny: streamSSE returns Response, not TypedResponse expected by OpenAPI handler
   }) as any;
 });

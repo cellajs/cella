@@ -1,64 +1,36 @@
-import { onlineManager, useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { UnplugIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { MeAuthData } from 'sdk';
-import { revokeMySessions } from 'sdk';
 import { ExpandableList } from '~/modules/common/expandable-list';
-import { toaster } from '~/modules/common/toaster/toaster';
-import { meAuthQueryOptions } from '~/modules/me/query';
-import { SessionTile } from '~/modules/me/session-tile';
+import { toastOffline } from '~/modules/common/toaster/toaster';
+import { meAuthQueryOptions, useRevokeSessionsMutation } from '~/modules/me/query';
+import { isLiveSession, SessionTile, sessionEndedAt } from '~/modules/me/session-tile';
 import type { Session } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
-import { queryClient } from '~/query/query-client';
-
-/** A session that still authenticates: not revoked and not past its expiry. */
-const isLiveSession = (session: Session) => session.revokedAt === null && new Date(session.expiresAt).getTime() > Date.now();
 
 export function SessionsList() {
   const { t } = useTranslation();
 
-  const queryOptions = meAuthQueryOptions();
   const {
     data: { sessions: allSessions },
-  } = useSuspenseQuery(queryOptions);
+  } = useSuspenseQuery(meAuthQueryOptions());
 
   const liveSessions = allSessions.filter(isLiveSession);
   const revocable = liveSessions.filter((session) => !session.isCurrent);
 
-  // Group the current session first, followed by matching device hashes and ungrouped sessions.
   const currentDeviceHash = liveSessions.find((session) => session.isCurrent)?.deviceIdHash ?? null;
   const isCurrentDevice = (session: Session) => !session.isCurrent && session.deviceIdHash !== null && session.deviceIdHash === currentDeviceHash;
   const rank = (session: Session) => (session.isCurrent ? 0 : isCurrentDevice(session) ? 1 : 2);
-  const sessions = Array.from(liveSessions).sort((a, b) => rank(a) - rank(b));
+  const sessions = liveSessions.sort((a, b) => rank(a) - rank(b));
 
   // Revoked and expired sessions of the last 30 days, the most recently ended first.
-  const endedAt = (session: Session) => new Date(session.revokedAt ?? session.expiresAt).getTime();
+  const endedAt = (session: Session) => new Date(sessionEndedAt(session)).getTime();
   const history = allSessions.filter((session) => !isLiveSession(session)).sort((a, b) => endedAt(b) - endedAt(a));
 
-  const { mutate: revoke, isPending } = useMutation({
-    mutationFn: async (ids: string[]) => {
-      const { data } = await revokeMySessions({ body: { ids } });
-      return data;
-    },
-    onSuccess: (revoked) => {
-      queryClient.setQueryData<MeAuthData>(queryOptions.queryKey, (oldData) => {
-        if (!oldData) return oldData;
-        const revokedById = new Map(revoked.map((session) => [session.id, session]));
-        return {
-          ...oldData,
-          sessions: oldData.sessions.map((session) => {
-            const revokedSession = revokedById.get(session.id);
-            return revokedSession ? { ...session, ...revokedSession } : session;
-          }),
-        };
-      });
-
-      toaster.success(t('c:success.revoke_resource', { resource: t(revoked.length === 1 ? 'c:session' : 'c:sessions') }));
-    },
-  });
+  const { mutate: revoke, isPending, variables } = useRevokeSessionsMutation();
 
   const handleRevoke = (ids: string[]) => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
     revoke(ids);
   };
 
@@ -66,10 +38,10 @@ export function SessionsList() {
     <>
       {revocable.length > 0 && (
         <Button
-          className="max-xs:w-full"
+          className="max-sm:w-full"
           variant="plain"
           size="sm"
-          disabled={isPending}
+          loading={isPending && variables?.length === revocable.length}
           onClick={() => handleRevoke(revocable.map((session) => session.id))}
         >
           <UnplugIcon />
@@ -84,8 +56,8 @@ export function SessionsList() {
               session={session}
               key={session.id}
               isCurrentDevice={isCurrentDevice(session)}
-              handleRevoke={handleRevoke}
-              isPending={isPending}
+              onRevoke={handleRevoke}
+              loading={isPending && variables?.includes(session.id)}
             />
           )}
           initialDisplayCount={3}

@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { YJS_HTTP_CHUNK_BYTES } from '#/modules/yjs/helpers/yjs-log';
+import { yjsHttpChunkBytes } from '#/modules/yjs/helpers/yjs-log';
 import { productEntityTypeSchema, validIdSchema } from '#/schemas';
 
 /** The length of `bytes` bytes as unpadded base64url. */
@@ -28,7 +28,7 @@ export const yjsPullResponseSchema = z.object({
 
 export const yjsPushBodySchema = yjsDocumentSchema.extend({
   generation: z.uuid().describe('The generation the update was made in'),
-  update: yjsBytesSchema.max(base64urlLength(YJS_HTTP_CHUNK_BYTES)).describe('One Yjs update of at most 512 KB'),
+  update: yjsBytesSchema.max(base64urlLength(yjsHttpChunkBytes)).describe('One Yjs update of at most 512 KB'),
 });
 
 export const yjsPushResponseSchema = z.object({

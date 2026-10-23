@@ -6,7 +6,7 @@ const { getMyMemberships } = vi.hoisted(() => ({
   getMyMemberships: vi.fn(async (): Promise<{ items: unknown[] }> => ({ items: [] })),
 }));
 vi.mock('sdk', async (importOriginal) => ({ ...(await importOriginal<typeof import('sdk')>()), getMyMemberships }));
-vi.mock('~/modules/user/user-store', () => ({ useUserStore: { getState: () => ({ isSystemAdmin: false, user: { id: 'user-1' } }) } }));
+vi.mock('~/modules/user/user-store', () => ({ userStore: { getState: () => ({ isSystemAdmin: false, user: { id: 'user-1' } }) } }));
 vi.mock('@tanstack/react-router', () => ({ redirect: (to: unknown) => ({ redirect: to }) }));
 
 const { queryClient } = await import('~/query/query-client');

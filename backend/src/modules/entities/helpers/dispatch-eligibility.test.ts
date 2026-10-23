@@ -9,8 +9,8 @@ import { memberRole } from '../../../../tests/fixtures';
  * `rowReadDecisions` must agree with `canReceiveProductEvent` on every (subscriber, row): veto
  * propagation, per-row any-of composition, and per-subscriber isolation.
  */
-const ORGS = ['org-el-a', 'org-el-b', 'org-el-c'];
-const USERS = ['user-1', 'user-2', 'user-3', 'user-4', 'user-5'];
+const orgs = ['org-el-a', 'org-el-b', 'org-el-c'];
+const users = ['user-1', 'user-2', 'user-3', 'user-4', 'user-5'];
 
 const nullAncestorScopes = Object.fromEntries(
   appConfig.channelEntityTypes
@@ -84,14 +84,14 @@ const singleDecision = (subscriber: SubscriberAccess, event: AppStreamProductEve
 describe('dispatch batch eligibility: deterministic splits', () => {
   it('a malformed membership denies its holder without poisoning others in the SAME batch call', () => {
     // Org members hold read:'own': the row must be authored by the reader to be readable.
-    const event = attachmentEvent(ORGS[0], [attachmentRow('att-1', ORGS[0], { createdBy: 'user-1' })]);
+    const event = attachmentEvent(orgs[0], [attachmentRow('att-1', orgs[0], { createdBy: 'user-1' })]);
 
-    const clean: SubscriberAccess = { userId: 'user-1', isSystemAdmin: false, memberships: [membership(ORGS[0], memberRole, 'user-1')] };
+    const clean: SubscriberAccess = { userId: 'user-1', isSystemAdmin: false, memberships: [membership(orgs[0], memberRole, 'user-1')] };
     // A granting membership plus a malformed one: the engine fail-closes just this access.
     const broken: SubscriberAccess = {
       userId: 'user-2',
       isSystemAdmin: false,
-      memberships: [membership(ORGS[0], memberRole, 'user-2'), membership(ORGS[1], memberRole, 'user-2', true)],
+      memberships: [membership(orgs[0], memberRole, 'user-2'), membership(orgs[1], memberRole, 'user-2', true)],
     };
 
     // broken comes first: were classes shared naively, its deny would leak onto clean.
@@ -101,7 +101,7 @@ describe('dispatch batch eligibility: deterministic splits', () => {
   });
 
   it('system admin and memberless subscriber resolve differently in one batch', () => {
-    const event = attachmentEvent(ORGS[0], [attachmentRow('att-2', ORGS[0])]);
+    const event = attachmentEvent(orgs[0], [attachmentRow('att-2', orgs[0])]);
 
     const admin: SubscriberAccess = { userId: 'user-1', isSystemAdmin: true, memberships: [] };
     const nobody: SubscriberAccess = { userId: 'user-2', isSystemAdmin: false, memberships: [] };
@@ -129,23 +129,23 @@ describe('dispatch batch eligibility: randomized parity sweep', () => {
     const roles: EntityRole[] = ['admin', memberRole];
 
     for (let iteration = 0; iteration < 300; iteration++) {
-      const eventOrg = pick(ORGS);
+      const eventOrg = pick(orgs);
       const rowCount = 1 + Math.floor(random() * 4);
       const rows = Array.from({ length: rowCount }, (_, i) =>
-        attachmentRow(`att-${iteration}-${i}`, random() < 0.7 ? eventOrg : pick(ORGS), {
-          createdBy: random() < 0.2 ? null : pick(USERS),
+        attachmentRow(`att-${iteration}-${i}`, random() < 0.7 ? eventOrg : pick(orgs), {
+          createdBy: random() < 0.2 ? null : pick(users),
           ...(random() < 0.15 ? { publishedAt: null } : random() < 0.3 ? { publishedAt: '2026-07-01T00:00:00Z' } : {}),
         }),
       );
       const event = attachmentEvent(eventOrg, rows);
 
       const subscribers: SubscriberAccess[] = Array.from({ length: 60 }, () => {
-        const userId = pick(USERS);
+        const userId = pick(users);
         const membershipCount = Math.floor(random() * 4);
         return {
           userId,
           isSystemAdmin: random() < 0.05,
-          memberships: Array.from({ length: membershipCount }, () => membership(pick(ORGS), pick(roles), userId, random() < 0.05)),
+          memberships: Array.from({ length: membershipCount }, () => membership(pick(orgs), pick(roles), userId, random() < 0.05)),
         };
       });
 

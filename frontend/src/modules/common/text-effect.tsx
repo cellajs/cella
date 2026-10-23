@@ -1,32 +1,24 @@
-import { motion, useInView } from 'motion/react';
-import { useRef } from 'react';
-import { cn } from '~/utils/cn';
+import { motion } from 'motion/react';
 
-type TextEffectProps = { text: string; className?: string };
+interface TextEffectProps {
+  text: string;
+  className?: string;
+}
 
-export function TextEffect({ text, className = '' }: TextEffectProps) {
+export function TextEffect({ text, className }: TextEffectProps) {
   const variants = {
     hidden: { opacity: 0 },
-    show: (i: number) => ({ y: 0, opacity: 1, transition: { delay: i * 0.02 } }),
+    show: (index: number) => ({ y: 0, opacity: 1, transition: { delay: index * 0.02 } }),
   };
 
   const letters = text.split('');
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
 
   return (
-    <motion.div
-      ref={ref}
-      initial="hidden"
-      animate={isInView ? 'show' : ''}
-      variants={variants}
-      viewport={{ once: true }}
-      className={cn('', className)}
-    >
-      {letters.map((word, i) => (
+    <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={variants} className={className}>
+      {letters.map((letter, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
-        <motion.span key={`${word}-${i}`} variants={variants} custom={i}>
-          {word}
+        <motion.span key={`${letter}-${index}`} variants={variants} custom={index}>
+          {letter}
         </motion.span>
       ))}
     </motion.div>

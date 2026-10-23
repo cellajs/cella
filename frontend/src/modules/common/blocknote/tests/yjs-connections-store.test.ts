@@ -119,11 +119,11 @@ vi.mock('~/query/query-client', () => ({
 vi.mock('~/modules/common/blocknote/query', () => ({
   yjsTokenKeys: { entity: (...key: unknown[]) => key },
   yjsTokenQueryOptions: (params: unknown) => ({ params }),
-  yjsTokenRefusal: (error: { status?: number } | null) => (error?.status === 404 ? 'deleted' : error?.status === 403 ? 'refused' : null),
+  yjsTokenRefusal: (error: { status?: number } | null) => (error?.status === 404 ? 'deleted' : error?.status === 403 ? 'denied' : null),
 }));
 vi.mock('~/modules/common/blocknote/yjs-resync', () => ({ watchPendingStructs: () => () => {} }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
-vi.mock('~/modules/ui/ui-store', () => ({ useUIStore: { getState: () => ({ offlineAccess: true }) } }));
+vi.mock('~/modules/ui/ui-store', () => ({ uiStore: { getState: () => ({ offlineAccess: true }) } }));
 vi.mock('~/query/realtime/tab-coordinator', () => ({ isLeader: () => false, tabCoordinatorStore: { subscribe: () => () => {} } }));
 vi.mock('~/modules/common/blocknote/yjs-store', async (importOriginal) => {
   const actual = await importOriginal<typeof import('~/modules/common/blocknote/yjs-store')>();
@@ -137,7 +137,7 @@ vi.mock('~/modules/common/blocknote/yjs-store', async (importOriginal) => {
   };
 });
 
-const { useUserStore, yjsTokenKey } = await import('~/modules/user/user-store');
+const { userStore, yjsTokenKey } = await import('~/modules/user/user-store');
 const { bindLocalUserDb, closeLocalUserDb } = await import('~/query/local-user-db');
 const { createYDocWriter, flushYjsStore, storeTabId } = await import('~/modules/common/blocknote/yjs-store');
 const { findConnection, resumeConnection, useYjsConnection } = await import('~/modules/common/blocknote/yjs-connections');
@@ -198,10 +198,10 @@ async function seedStored(entityId: string, text: string, opts: { generation?: s
 
 /** Mounts one editor's connection, as the host does once it holds a token. */
 async function mountConnection(entityId = `doc-${++counter}`) {
-  useUserStore.getState().setYjsToken(yjsTokenKey('attachment', entityId), 'token-v1');
+  userStore.getState().setYjsToken(yjsTokenKey('attachment', entityId), 'token-v1');
   let latest: Hook = null;
   const Harness = () => {
-    latest = useYjsConnection(entityId, 'attachment', scope.tenantId, scope.organizationId);
+    latest = useYjsConnection({ entityType: 'attachment', entityId, ...scope, enabled: true });
     return null;
   };
   root = createRoot(document.createElement('div'));
@@ -352,11 +352,11 @@ describe('yjs connection with the store: the unload guard', () => {
 
 describe('yjs connection with the store: sign-out', () => {
   afterEach(() => {
-    useUserStore.setState({ user: null });
+    userStore.setState({ user: null });
   });
 
   it('leaves the stored edits untouched and lets the connection go: the same user’s next session resumes them', async () => {
-    useUserStore.setState({ user: { id: owner } as never });
+    userStore.setState({ user: { id: owner } as never });
     const { entityId, provider } = await mountConnection();
     await handshake(provider);
     await relaySaved(provider);
@@ -365,7 +365,7 @@ describe('yjs connection with the store: sign-out', () => {
     await settled();
 
     // Signed out: the tokens go with the user, and the editor with the page.
-    await act(async () => useUserStore.setState({ user: null, yjsTokens: {} }));
+    await act(async () => userStore.setState({ user: null, yjsTokens: {} }));
     await act(async () => root?.unmount());
     root = undefined;
     await settled();

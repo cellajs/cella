@@ -13,7 +13,7 @@ defineFrontendModule({
       id: 'api-keys',
       label: 'c:api_keys',
       order: 60,
-      // Shown to organization admins: creating machine actors is their act (substrate D9).
+      // Shown to organization admins: creating machine actors is their act.
       requires: 'update',
       slot: 'organization.settings',
       render: (organization) => <ApiKeysCard organization={organization} />,

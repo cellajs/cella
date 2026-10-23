@@ -2,18 +2,18 @@ import i18n from 'i18next';
 import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
 
-/** The device runs low on storage below this much free space, or past `STORAGE_LOW_USED_RATIO` of its quota. */
-const STORAGE_LOW_FREE_BYTES = 100 * 1024 * 1024;
-const STORAGE_LOW_USED_RATIO = 0.9;
+/** The device runs low on storage below this much free space, or past `storageLowUsedRatio` of its quota. */
+const storageLowFreeBytes = 100 * 1024 * 1024;
+const storageLowUsedRatio = 0.9;
 
-const WARNED_KEY = `${appConfig.slug}:storage-low-warned`;
+const warnedKey = `${appConfig.slug}:storage-low-warned`;
 let warnedHere = false;
 
 /** True once this tab session showed the warning; a reload keeps it, so each boot's eviction does not repeat it. */
-function warned(): boolean {
+function hasWarned(): boolean {
   if (warnedHere) return true;
   try {
-    return sessionStorage.getItem(WARNED_KEY) === '1';
+    return sessionStorage.getItem(warnedKey) === '1';
   } catch {
     return false;
   }
@@ -22,16 +22,16 @@ function warned(): boolean {
 function markWarned() {
   warnedHere = true;
   try {
-    sessionStorage.setItem(WARNED_KEY, '1');
+    sessionStorage.setItem(warnedKey, '1');
   } catch {
     // Storage blocked: the module flag holds it for this page.
   }
 }
 
-/** Whether an estimate says the device runs low: under 100 MB free, or over 90% of the quota used. Unknown sizes are not low. */
+/** Whether an estimate says the device runs low on storage; unknown sizes are not low. */
 function isStorageLow({ usage, quota }: StorageEstimate): boolean {
   if (usage === undefined || !quota) return false;
-  return quota - usage < STORAGE_LOW_FREE_BYTES || usage / quota > STORAGE_LOW_USED_RATIO;
+  return quota - usage < storageLowFreeBytes || usage / quota > storageLowUsedRatio;
 }
 
 /**
@@ -40,7 +40,7 @@ function isStorageLow({ usage, quota }: StorageEstimate): boolean {
  * stored here survive a closed tab only while there is room for them.
  */
 export async function warnOnStoragePressure({ limitsReached = false }: { limitsReached?: boolean } = {}): Promise<void> {
-  if (warned()) return;
+  if (hasWarned()) return;
   let low = limitsReached;
   if (!low) {
     try {
@@ -50,7 +50,7 @@ export async function warnOnStoragePressure({ limitsReached = false }: { limitsR
       return;
     }
   }
-  if (!low || warned()) return;
+  if (!low || hasWarned()) return;
   markWarned();
   toaster.warning(i18n.t('c:storage_low.text'), { id: 'storage-low' });
 }

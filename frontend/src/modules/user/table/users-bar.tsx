@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { NamedText } from '~/modules/common/named-text';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -19,24 +19,23 @@ type UsersTableBarProps = BaseTableBarProps<BaseUser, UsersRouteSearchParams>;
 
 export function UsersTableBar({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) {
   const { t } = useTranslation();
-  const createDialog = useDialoger((state) => state.create);
 
   const total = useListQueryTotal(queryKey);
 
-  const inviteButtonRef = useRef(null);
-  const deleteButtonRef = useRef(null);
-  const inviteContainerRef = useRef(null);
+  const inviteButtonRef = useRef<HTMLButtonElement>(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  const inviteContainerRef = useRef<HTMLDivElement>(null);
 
   const { role } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', role: undefined } });
 
-  const onRoleChange = (role?: string) => {
+  const handleRoleChange = (role?: string) => {
     clearSelection();
-    setSearch({ role: role === 'all' ? undefined : (role as UsersRouteSearchParams['role']) });
+    setSearch({ role: role as UsersRouteSearchParams['role'] });
   };
 
   const openInviteDialog = () => {
-    createDialog(<InviteUsers mode={'email'} dialog />, {
+    dialoger.getState().create(<InviteUsers mode="email" dialog />, {
       id: 'invite-users',
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
@@ -44,7 +43,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       container: { ref: inviteContainerRef, overlay: true },
       title: t('c:invite'),
       titleContent: <UnsavedBadge title={t('c:invite')} />,
-      description: `${t('c:invite_users.text')}`,
+      description: t('c:invite_users.text'),
     });
   };
 
@@ -60,7 +59,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       clearSelection();
     };
 
-    createDialog(<DeleteUsers dialog users={selected} callback={callback} />, {
+    dialoger.getState().create(<DeleteUsers dialog users={selected} callback={callback} />, {
       id: 'delete-users',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
@@ -69,8 +68,8 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
         <NamedText
           i18nKey="c:confirm.delete_resource"
           values={{
-            name: selected.map((u) => u.email).join(', '),
-            resource: selected.length > 1 ? t('c:user_other').toLowerCase() : t('c:user').toLowerCase(),
+            name: selected.map((user) => user.email).join(', '),
+            resource: t('c:user', { count: selected.length }).toLowerCase(),
           }}
         />
       ),
@@ -84,13 +83,12 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       label="c:user"
       searchName="userSearch"
       actions={<TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInviteDialog} />}
-      filters={<SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10" />}
+      filters={<SelectRole value={role} onChange={handleRoleChange} className="h-10" />}
       selection={{
         count: selected.length,
         onClear: clearSelection,
         children: <TableBarButton ref={deleteButtonRef} variant="destructive" onClick={openDeleteDialog} icon={TrashIcon} label="c:delete" />,
       }}
-      // Container for the embedded invite dialog
       after={<div ref={inviteContainerRef} className="empty:hidden" />}
     />
   );

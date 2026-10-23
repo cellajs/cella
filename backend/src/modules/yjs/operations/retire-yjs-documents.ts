@@ -11,7 +11,7 @@ interface RetireYjsDocumentsOpts {
 
 /**
  * Deletes the collaborative documents of `entityIds`, base and log, and announces each retired document on
- * YJS_LOG_CHANNEL, so a relay that holds a session on it ends the session at once. For deletions: the yjs module's
+ * yjsLogChannel, so a relay that holds a session on it ends the session at once. For deletions: the yjs module's
  * `<type>.deleted` handler runs it in the transaction of the delete, and an app whose delete path dispatches no event
  * calls it itself. The document row goes first: an append holds it under FOR KEY SHARE, so one in flight commits
  * before the log delete, which takes its row too, and a later one finds no row and is refused.

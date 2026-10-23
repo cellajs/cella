@@ -1,6 +1,5 @@
 import { BirdIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
@@ -14,25 +13,22 @@ import { OrganizationsTableBar } from '~/modules/organization/table/organization
 import { useColumns } from '~/modules/organization/table/organizations-columns';
 import type { EnrichedOrganization, OrganizationsRouteSearchParams } from '~/modules/organization/types';
 
-const LIMIT = appConfig.requestLimits.organizations;
-
 function rowKeyGetter(row: EnrichedOrganization) {
   return row.id;
 }
 
-function OrganizationsTable() {
+export function OrganizationsTable() {
   const { t } = useTranslation();
   const changeRole = useChangeEntityRoleMutation();
 
   const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({ from: '/_app/system/organizations' });
 
   const { q, sort, order } = search;
-  const limit = LIMIT;
 
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = organizationsListQueryOptions({ ...search, limit, include: 'counts' });
+  const queryOptions = organizationsListQueryOptions({ ...search, include: 'counts' });
 
   const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
   const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
@@ -53,7 +49,7 @@ function OrganizationsTable() {
         queryKey={queryOptions.queryKey}
         selected={selected}
         columns={columns}
-        searchVars={{ ...search, limit }}
+        searchVars={search}
         setSearch={setSearch}
         setColumns={setColumns}
         clearSelection={clearSelection}
@@ -66,7 +62,6 @@ function OrganizationsTable() {
           rowKeyGetter,
           columns,
           enableVirtualization: true,
-          limit,
           error,
           isLoading,
           isFetching,
@@ -85,5 +80,3 @@ function OrganizationsTable() {
     </>
   );
 }
-
-export { OrganizationsTable };

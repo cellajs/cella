@@ -1,17 +1,13 @@
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { dateMini } from '~/utils/date-mini';
-
-const minute = 6e4;
-const hour = 36e5;
-const day = 864e5;
+import { dateMini, dayMs, hourMs, minuteMs } from '~/utils/date-mini';
 
 const getDelay = (date: string) => {
   const age = dayjs().diff(dayjs.utc(date));
-  if (age < minute) return 10_000;
-  if (age < hour) return 30_000;
-  if (age < day) return hour;
+  if (age < minuteMs) return 10_000;
+  if (age < hourMs) return 30_000;
+  if (age < dayMs) return hourMs;
   return 0;
 };
 
@@ -22,17 +18,17 @@ export const useRelativeDate = (date: string, addStr?: string) => {
   const [text, setText] = useState(() => dateMini(date, addStr));
 
   useEffect(() => {
-    let id: ReturnType<typeof setTimeout>;
+    let timer: ReturnType<typeof setTimeout>;
 
     const tick = () => {
       setText(dateMini(date, addStr));
-      const ms = getDelay(date);
-      if (ms) id = setTimeout(tick, ms);
+      const delay = getDelay(date);
+      if (delay) timer = setTimeout(tick, delay);
     };
 
     tick();
 
-    return () => clearTimeout(id);
+    return () => clearTimeout(timer);
   }, [date, addStr, language]);
 
   return text;

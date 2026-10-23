@@ -8,10 +8,9 @@ const comparedKeys: (keyof MembershipBase)[] = ['archived', 'muted', 'displayOrd
 function hasMembershipChanged(a: MembershipBase | null, b: MembershipBase | null): boolean {
   if (!a && !b) return false;
   if (!a || !b) return true;
-  return comparedKeys.some((k) => a[k] !== b[k]);
+  return comparedKeys.some((key) => a[key] !== b[key]);
 }
 
-/** Returns the original reference when nothing changed. */
 export function enrichWithMembership(item: EnrichableChannel, memberships: MembershipBase[]): EnrichableChannel {
   const existing = item.membership ?? null;
   const resolved = findMembership(memberships, item.id) ?? existing;

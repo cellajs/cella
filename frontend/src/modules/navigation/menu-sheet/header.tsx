@@ -1,14 +1,14 @@
 import { Link } from '@tanstack/react-router';
-import i18n from 'i18next';
-import { BellIcon } from 'lucide-react';
-import { type RefObject, useRef } from 'react';
+import { BellIcon, UserIcon } from 'lucide-react';
+import { type ReactNode, type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { Logo } from '~/modules/common/logo';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { AccountNavIcon } from '~/modules/navigation/account-nav-icon';
 import { AccountSheet } from '~/modules/navigation/account-sheet';
-import { navSheetClassName } from '~/modules/navigation/nav-sheet-constants';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { navIconStrokeWidth } from '~/modules/navigation/nav-buttons';
+import { navSheetOptions } from '~/modules/navigation/nav-sheet';
+import { navigationStore } from '~/modules/navigation/navigation-store';
 import type { NavItemId } from '~/modules/navigation/types';
 import { NotificationsSheet } from '~/modules/notification/notifications-sheet';
 import { UnreadCountBadge } from '~/modules/notification/unread-nav-badge';
@@ -16,31 +16,19 @@ import { Button } from '~/modules/ui/button';
 import { useUserStore } from '~/modules/user/user-store';
 
 /** Stacks a nav sheet over the menu sheet; floating-nav layouts have no bottom bar to open it from. */
-function openStackedNavSheet(id: NavItemId, content: React.ReactNode, triggerRef: RefObject<HTMLButtonElement | null>) {
-  const setNavSheetOpen = useNavigationStore.getState().setNavSheetOpen;
-  setNavSheetOpen(id);
-  useSheeter.getState().create(content, {
-    id: `${id}-sheet`,
-    triggerRef,
-    title: i18n.t(`c:${id}`),
-    headerClassName: 'hidden',
-    side: 'left',
-    modal: 'trap-focus',
-    disablePointerDismissal: true,
-    className: navSheetClassName,
-    contentKey: id,
-    onClose: () => setNavSheetOpen(null),
-  });
+function openStackedNavSheet(id: NavItemId, content: ReactNode, triggerRef: RefObject<HTMLButtonElement | null>) {
+  navigationStore.getState().setNavSheetOpen(id);
+  sheeter.getState().create(content, { ...navSheetOptions(id, triggerRef), id: `${id}-sheet`, side: 'left', disablePointerDismissal: true });
 }
 
 export function MenuSheetHeader() {
   const { t } = useTranslation();
   const user = useUserStore((state) => state.user);
-  const notificationsButtonRef = useRef<HTMLButtonElement | null>(null);
-  const accountButtonRef = useRef<HTMLButtonElement | null>(null);
+  const notificationsButtonRef = useRef<HTMLButtonElement>(null);
+  const accountButtonRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <div className="relative h-14 p-3 pb-1">
+    <div className="h-14 p-3 pb-1">
       <div className="flex h-10 items-center justify-between">
         <Link
           to="/home"
@@ -53,16 +41,16 @@ export function MenuSheetHeader() {
 
         {/* Only shown inside a floating-nav layout. */}
         {user && (
-          <div className="group/actions in-[.floating-nav]:flex hidden items-center gap-1">
+          <div className="in-[.floating-nav]:flex hidden items-center gap-1">
             <Button
               ref={notificationsButtonRef}
               size="icon"
               variant="ghost"
               aria-label={t('c:notifications')}
               onClick={() => openStackedNavSheet('notifications', <NotificationsSheet />, notificationsButtonRef)}
-              className="relative size-10"
+              className="relative"
             >
-              <BellIcon className="size-5" strokeWidth={1.8} />
+              <BellIcon className="size-5" strokeWidth={navIconStrokeWidth} />
               <UnreadCountBadge className="absolute top-1 right-1" />
             </Button>
             <Button
@@ -71,15 +59,9 @@ export function MenuSheetHeader() {
               variant="ghost"
               aria-label={t('c:account')}
               onClick={() => openStackedNavSheet('account', <AccountSheet />, accountButtonRef)}
-              className="size-10"
+              className="group"
             >
-              <EntityAvatar
-                className="size-7 rounded-full border-[0.1rem] border-current"
-                type="user"
-                id={user.id}
-                name={user.name}
-                url={user.thumbnailUrl}
-              />
+              <AccountNavIcon icon={UserIcon} />
             </Button>
           </div>
         )}

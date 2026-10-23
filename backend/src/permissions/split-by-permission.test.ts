@@ -13,21 +13,21 @@ vi.mock('#/permissions', () => ({ checkAccessBatch: vi.fn() }));
 vi.mock('#/permissions/access', () => ({ accessFrom: vi.fn(() => ({})), actorFrom: vi.fn(() => ({ actorId: 'user-1', scopes: null })) }));
 vi.mock('#/permissions/build-subject', () => ({ buildSubjectFromEntity: vi.fn(() => ({})) }));
 
-const TENANT = 'tenant-a';
-const ORG = 'org-a';
+const tenant = 'tenant-a';
+const org = 'org-a';
 
 /**
  * The batch twin of the single reads: the entity lookup and the permission engine are mocked, so what is under test is
  * which rows reach the engine and what the caller is told about the rest.
  */
 describe('splitByPermission', () => {
-  const ctx = { var: { db: baseDb, tenantId: TENANT, organizationId: ORG, actor: { kind: 'user', id: 'user-1', bindings: [], scopes: null } } };
+  const ctx = { var: { db: baseDb, tenantId: tenant, organizationId: org, actor: { kind: 'user', id: 'user-1', bindings: [], scopes: null } } };
   const caller = ctx as unknown as UserContext;
 
   const row = (id: string, overrides: Record<string, unknown> = {}) => ({
     id,
-    tenantId: TENANT,
-    organizationId: ORG,
+    tenantId: tenant,
+    organizationId: org,
     createdBy: 'user-1',
     ...overrides,
   });
@@ -82,13 +82,13 @@ describe('splitByPermission', () => {
 
   it('must not act on a draft channel the lists hide from the caller', async () => {
     vi.mocked(resolveEntities).mockResolvedValue([
-      { id: ORG, tenantId: TENANT, publishedAt: null },
-      { id: 'org-c', tenantId: TENANT },
+      { id: org, tenantId: tenant, publishedAt: null },
+      { id: 'org-c', tenantId: tenant },
     ] as never);
 
-    const split = await splitByPermission(caller, 'delete', 'organization', [ORG, 'org-c']);
+    const split = await splitByPermission(caller, 'delete', 'organization', [org, 'org-c']);
 
-    expect(split).toEqual({ allowedIds: ['org-c'], rejectedIds: [ORG] });
+    expect(split).toEqual({ allowedIds: ['org-c'], rejectedIds: [org] });
   });
 
   it('refuses a batch that may act on none of its ids, whatever each id names', async () => {

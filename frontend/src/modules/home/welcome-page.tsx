@@ -1,49 +1,38 @@
-import { XIcon } from 'lucide-react';
 import { useState } from 'react';
-import type { Organization } from 'sdk';
+import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
+import { CloseButton } from '~/modules/common/close-button';
 import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
-import type { OnboardingStates } from '~/modules/home/onboarding/steps';
-import { Onboarding } from '~/modules/home/onboarding/steps';
-import { Dialog, DialogClose, DialogContent, DialogTitle } from '~/modules/ui/dialog';
+import { Onboarding, type OnboardingState } from '~/modules/home/onboarding/onboarding';
+import { Dialog, DialogContent, DialogTitle } from '~/modules/ui/dialog';
 import { useCurrentUser } from '~/modules/user/user-store';
 
-function WelcomePage() {
+export function WelcomePage() {
+  const { t } = useTranslation();
   const user = useCurrentUser();
 
-  const [onboarding, setOnboardingState] = useState<OnboardingStates>(user.userFlags.finishedOnboarding ? 'completed' : 'start');
-  const [createdOrganization, setCreatedOrganization] = useState<Organization | null>(null);
+  const [onboardingState, setOnboardingState] = useState<OnboardingState>(user.userFlags.finishedOnboarding ? 'completed' : 'start');
 
-  const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
-    if (!nextOpen && eventDetails.reason === 'escape-key') {
-      // Escape inside a form field must not close onboarding
-      if (document.activeElement?.matches('input, textarea, select, [contenteditable="true"]')) return;
-    }
-    if (!nextOpen) setOnboardingState('completed');
+  const complete = () => setOnboardingState('completed');
+
+  const handleOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
+    if (nextOpen) return;
+    // Escape inside a form field must not close onboarding
+    if (eventDetails.reason === 'escape-key' && document.activeElement?.matches('input, textarea, select, [contenteditable="true"]')) return;
+    complete();
   };
 
   return (
     <>
-      <Dialog open={onboarding !== 'completed'} onOpenChange={onOpenChange} defaultOpen={true}>
-        <DialogContent className="mt-0 flex h-dvh max-h-none min-w-full flex-col overflow-y-auto rounded-none border-0 bg-background/75 p-0">
-          <span className="sr-only">
-            <DialogTitle>Welcome</DialogTitle>
-          </span>
-          <DialogClose className="focus-effect absolute top-4 right-4 z-10 rounded-sm p-1 opacity-70 transition-opacity hover:bg-accent hover:opacity-100">
-            <XIcon className="size-5" strokeWidth={1.5} />
-            <span className="sr-only">Close</span>
-          </DialogClose>
-          <Onboarding
-            onboarding={onboarding}
-            setOnboardingState={setOnboardingState}
-            createdOrganization={createdOrganization}
-            setCreatedOrganization={setCreatedOrganization}
-          />
+      <Dialog open={onboardingState !== 'completed'} onOpenChange={handleOpenChange}>
+        <DialogContent className="flex h-dvh max-h-none min-w-full flex-col rounded-none bg-background/75 p-0">
+          <DialogTitle className="sr-only">{t('c:onboarding_welcome', { appName: appConfig.name })}</DialogTitle>
+          <CloseButton onClick={complete} className="absolute top-4 right-4 z-10" />
+          <Onboarding state={onboardingState} onStart={() => setOnboardingState('stepper')} onComplete={complete} />
         </DialogContent>
       </Dialog>
 
-      {onboarding === 'completed' && <OnboardingCompleted />}
+      {onboardingState === 'completed' && <OnboardingCompleted />}
     </>
   );
 }
-
-export { WelcomePage };

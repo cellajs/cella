@@ -8,14 +8,11 @@ const { deleteAttachments } = vi.hoisted(() => ({
 
 vi.mock('sdk', async (importOriginal) => ({ ...(await importOriginal<typeof import('sdk')>()), deleteAttachments }));
 vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { info: vi.fn(), error: vi.fn() } }));
-// The owner listener lives with the database; the per-user stores behind the storage module are not under test.
-vi.mock('~/query/local-user-storage', () => ({ subscribeOwnerChange: () => () => {} }));
-
 const { bindLocalUserDb } = await import('~/query/local-user-db');
 const { attachmentsDb } = await import('~/modules/attachment/offline/attachments-db');
 const { downloadService } = await import('~/modules/attachment/offline/download-service');
 const { useAttachmentDeleteMutation } = await import('~/modules/attachment/query');
-const { makeAttachment, makeQueueEntry } = await import('./test-setup');
+const { makeAttachment, makeQueueEntry } = await import('~/modules/attachment/tests/test-setup');
 
 const ctx = { tenantId: 'ten-1', organizationId: 'org-1' };
 

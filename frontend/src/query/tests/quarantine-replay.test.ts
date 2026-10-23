@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('shared', () => ({
   appConfig: { productEntityTypes: ['attachment'], clientCacheVersion: 'v1' },
+  isProduct: (type: string) => type === 'attachment',
 }));
 
 const quarantineFailedSync = vi.fn(async (_record: unknown) => {});

@@ -1,55 +1,37 @@
-import { t } from 'i18next';
 import { LoaderCircleIcon, TriangleAlertIcon } from 'lucide-react';
-import type * as React from 'react';
+import type { MouseEventHandler, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 
-type SubmitButtonProps = Omit<ButtonProps, 'type'> & { allowOfflineDelete?: boolean; icon?: React.ReactNode };
+interface SubmitButtonProps extends Omit<ButtonProps, 'type'> {
+  allowOfflineDelete?: boolean;
+  icon?: ReactNode;
+}
 
 /** Form submit button that warns when offline; `icon` swaps to a spinner on loading, otherwise the spinner overlays the button. */
-export function SubmitButton({ onClick, children, allowOfflineDelete = false, loading, disabled, icon, className, ...props }: SubmitButtonProps) {
+export function SubmitButton({ onClick, children, allowOfflineDelete = false, loading, disabled, icon, ...props }: SubmitButtonProps) {
+  const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
-  const isDisabled = disabled || loading;
   const showOfflineWarning = !allowOfflineDelete && !isOnline;
 
-  const handleClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-    if (isDisabled) {
-      e.preventDefault();
-      return;
-    }
+  const handleClick: MouseEventHandler<HTMLButtonElement> = (event) => {
     if (showOfflineWarning) {
-      e.preventDefault();
-      return toaster.warning(t('c:action.offline.text'));
+      event.preventDefault();
+      return toastOffline();
     }
-    onClick?.(e);
+    onClick?.(event);
   };
 
-  const resolvedIcon = loading ? <LoaderCircleIcon className="animate-spin" /> : showOfflineWarning ? <TriangleAlertIcon /> : icon;
+  const leadingIcon = icon && loading ? <LoaderCircleIcon className="animate-spin" /> : showOfflineWarning ? <TriangleAlertIcon /> : icon;
 
   const buttonContent = (
-    <Button
-      type="submit"
-      onClick={handleClick}
-      disabled={isDisabled}
-      aria-busy={loading || undefined}
-      loading={!icon && loading}
-      className={className}
-      {...props}
-    >
-      {icon ? (
-        <>
-          {resolvedIcon}
-          {children}
-        </>
-      ) : (
-        <>
-          {showOfflineWarning && <TriangleAlertIcon />}
-          {children}
-        </>
-      )}
+    <Button type="submit" onClick={handleClick} disabled={disabled || loading} aria-busy={loading || undefined} loading={!icon && loading} {...props}>
+      {leadingIcon}
+      {children}
     </Button>
   );
 

@@ -21,9 +21,8 @@ import { queryClient } from '~/query/query-client';
 import type { MutationData, QueryOrgContext } from '~/query/types';
 
 const serviceAccountKeys = {
-  all: ['service-accounts'] as const,
   list: (path: QueryOrgContext) => ['service-accounts', 'list', path.tenantId, path.organizationId] as const,
-  apiKeys: (path: QueryOrgContext, id: string) => ['service-accounts', 'apiKeys', path.tenantId, path.organizationId, id] as const,
+  apiKeys: (path: QueryOrgContext, accountId: string) => ['service-accounts', 'apiKeys', path.tenantId, path.organizationId, accountId] as const,
   create: ['service-accounts', 'create'] as const,
   revoke: ['service-accounts', 'revoke'] as const,
 };
@@ -37,17 +36,16 @@ export const serviceAccountsQueryOptions = (path: QueryOrgContext) =>
     queryFn: () => getServiceAccounts({ path, query: { limit: appConfig.requestLimits.default } }),
   });
 
-export const apiKeysQueryOptions = (path: QueryOrgContext, id: string) =>
+export const apiKeysQueryOptions = (path: QueryOrgContext, accountId: string) =>
   queryOptions({
-    queryKey: serviceAccountKeys.apiKeys(path, id),
-    queryFn: () => getApiKeys({ path: { ...path, id } }),
+    queryKey: serviceAccountKeys.apiKeys(path, accountId),
+    queryFn: () => getApiKeys({ path: { ...path, id: accountId } }),
   });
 
 /** One-step "create API key": the account and its first key come back together; the secret is in the response once. */
 export const useCreateServiceAccountMutation = () => {
   return useMutation<CreateServiceAccountResponse, ApiError, MutationData<CreateServiceAccountData>>({
     mutationKey: serviceAccountKeys.create,
-    // Minting a key is an account-security action: the server may ask the user to prove it's them first.
     mutationFn: ({ path, body }) => withStepUp(() => createServiceAccount({ path, body }), apiKeysSection),
     onSuccess: ({ serviceAccount, apiKey }, { path }) => {
       queryClient.setQueryData<GetServiceAccountsResponse>(serviceAccountKeys.list(path), (oldData) => {
@@ -73,8 +71,7 @@ export const useRevokeApiKeyMutation = () => {
     mutationKey: serviceAccountKeys.revoke,
     mutationFn: ({ path }) => revokeApiKey({ path }),
     onSuccess: (revoked, { path }) => {
-      const { tenantId, organizationId, id } = path;
-      queryClient.setQueryData<GetApiKeysResponse>(serviceAccountKeys.apiKeys({ tenantId, organizationId }, id), (oldData) => {
+      queryClient.setQueryData<GetApiKeysResponse>(serviceAccountKeys.apiKeys(path, path.id), (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, items: oldData.items.map((item) => (item.id === revoked.id ? revoked : item)) };
       });

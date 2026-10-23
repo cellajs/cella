@@ -13,14 +13,14 @@ export const buttonVariants = cva(
         brand: 'intent-brand',
         destructive: 'intent-destructive',
         success: 'intent-success',
-        secondary: 'intent-secondary border border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        secondary: 'border border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
         outline: 'border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50',
         // Ghost has no surface of its own, so its hover is a share of the text color: it shows on any backdrop, in both modes
         ghost: 'shadow-none hover:bg-foreground/8 hover:text-accent-foreground',
         outlineGhost:
           'border border-foreground/20 bg-background/20 shadow-none hover:border-foreground/30 hover:bg-background/40 hover:text-accent-foreground',
         link: 'link-inline text-primary shadow-none',
-        cell: 'group/cell-button flex w-full justify-start gap-2 font-normal opacity-75 shadow-none hover:opacity-100 focus-visible:ring-transparent focus-visible:ring-offset-transparent',
+        cell: 'group/cell-button flex w-full justify-start font-normal opacity-75 shadow-none hover:opacity-100 focus-visible:ring-transparent focus-visible:ring-offset-transparent',
         plain: 'intent-primary soft-bg soft-border hover:soft-bg-strong hover:soft-border-medium border text-primary',
         input:
           'border border-input bg-background aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40',
@@ -32,13 +32,13 @@ export const buttonVariants = cva(
       press: { true: 'active:press', false: '' },
       size: {
         default: 'h-10 px-3 py-2',
-        micro: 'h-6 gap-1 rounded-md p-1 text-xs',
-        xs: 'h-8 gap-1.5 rounded-md px-2',
-        sm: 'h-9 gap-1.5 rounded-md px-3',
-        lg: 'h-11 rounded-md px-4',
+        micro: 'h-6 gap-1 p-1 text-xs',
+        xs: 'h-8 gap-1.5 px-2',
+        sm: 'h-9 gap-1.5 px-3',
+        lg: 'h-11 px-4',
+        xl: 'h-14 rounded-lg px-6 text-lg',
         icon: 'size-10',
         cell: 'h-full px-0 py-0',
-        xl: 'h-14 rounded-lg px-6 text-lg',
         auto: 'h-auto',
       },
     },
@@ -49,8 +49,7 @@ export const buttonVariants = cva(
       {
         variant: ['default', 'brand', 'destructive', 'success', 'warning'],
         soft: true,
-        // The strong steps (not plain soft-bg) so the button stays legible on a soft-tinted surface;
-        // hover deepens all three: fill, text and frame.
+        // The strong steps keep the button legible on a soft-tinted surface.
         className:
           'soft-bg-strong soft-border-medium hover:soft-bg-stronger hover:soft-border-strong soft-text-strong hover:soft-text-stronger border shadow-none',
       },
@@ -64,27 +63,13 @@ export const buttonVariants = cva(
   },
 );
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
+export interface ButtonProps extends React.ComponentProps<'button'>, VariantProps<typeof buttonVariants> {
   loading?: boolean;
   render?: useRender.RenderProp;
 }
 
-/**
- * `loading` disables the button and overlays a spinner on its transparent content, so the width stays put and the
- * content still names the button. Native buttons default to `type="button"`.
- */
-export function Button({
-  className,
-  variant,
-  soft,
-  size,
-  press,
-  render,
-  loading,
-  disabled,
-  children,
-  ...props
-}: React.ComponentProps<'button'> & ButtonProps) {
+/** `loading` disables the button and overlays a spinner, keeping its width and its name; native buttons default to `type="button"`. */
+export function Button({ className, variant, soft, size, press, render, loading, disabled, children, ...props }: ButtonProps) {
   const content = loading ? (
     <span className="relative inline-flex items-center justify-center gap-[inherit]">
       <span className="inline-flex items-center gap-[inherit] opacity-0">{children}</span>

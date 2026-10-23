@@ -3,17 +3,16 @@ import { useTranslation } from 'react-i18next';
 import type { GetUserResponse } from 'sdk';
 import { appConfig } from 'shared';
 
-/**
- * The line below a user's name in the profile header: the email address and the MFA setting. The API returns
- * `mfaRequired` only to the user themselves, system admins and admins of an organization the user is in, so the
- * setting shows for them alone.
- */
-export function UserProfileSubline({ user }: { user: GetUserResponse }) {
+interface UserProfileSublineProps {
+  user: GetUserResponse;
+}
+
+/** The line below a user's name in the profile header: the email address and, where the API returns it, the MFA setting. */
+export function UserProfileSubline({ user }: UserProfileSublineProps) {
   const { t } = useTranslation();
 
   return (
-    // The header's text column clips, so the link draws its ring inside a padding that a negative margin takes back
-    // out of the row. The row's own end padding holds that overhang, or the column would scroll when the link takes focus.
+    // The text column clips: the link's ring sits in a padding its negative margin takes back, and pr-1 keeps the column from scrolling on focus.
     <div className="flex min-w-0 items-center gap-2 pr-1 text-muted-foreground">
       <a href={`mailto:${user.email}`} className="focus-inset -m-1 truncate rounded-sm p-1 transition-colors hover:text-foreground">
         {user.email}

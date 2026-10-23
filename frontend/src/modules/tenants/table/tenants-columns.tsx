@@ -1,23 +1,35 @@
 import { Link } from '@tanstack/react-router';
 import { Link2OffIcon } from 'lucide-react';
-import { useState } from 'react';
+import type { ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Tenant } from 'sdk';
 import { isStrategyEnabled } from 'shared';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
-import { dateColumn } from '~/modules/common/data-table/columns';
+import { cellLinkTextClass, dateColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { ConnectionsCard } from '~/modules/tenants/connections/connections-card';
-import { UpdateTenantForm } from '~/modules/tenants/update-tenant-form';
+import { statusOptions, UpdateTenantForm } from '~/modules/tenants/update-tenant-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
-const statusOptions = ['active', 'suspended', 'archived'] as const;
+type BadgeVariant = ComponentProps<typeof Badge>['variant'];
 
-export const openUpdateSheet = (tenant: Tenant, triggerRef: TriggerRef) =>
+const statusVariants: Record<Tenant['status'], BadgeVariant> = { active: 'success', suspended: 'warning', archived: 'plain' };
+
+const subscriptionVariants: Record<Exclude<Tenant['subscriptionStatus'], 'none'>, BadgeVariant> = {
+  trialing: 'default',
+  active: 'success',
+  past_due: 'destructive',
+  paused: 'secondary',
+  canceled: 'secondary',
+};
+
+export const openUpdateTenantSheet = (tenant: Tenant, triggerRef: TriggerRef) =>
   openEditSheet({
     id: 'update-tenant',
     resource: 'c:tenant',
@@ -37,7 +49,7 @@ export const useColumns = () => {
       minBreakpoint: 'md',
       resizable: true,
       width: 100,
-      renderCell: ({ row }) => <code className="font-mono text-xs">{row.id}</code>,
+      renderCell: ({ row }) => <code className="text-xs">{row.id}</code>,
     },
     {
       // The name opens the edit sheet, where the tenant and its connections are managed.
@@ -49,16 +61,13 @@ export const useColumns = () => {
       // Narrow enough on mobile for the three columns to fit a phone without sideways scroll.
       modes: { mobile: { minWidth: 120 } },
       renderCell: ({ row, tabIndex }) => (
-        <Button variant="cell" size="cell" tabIndex={tabIndex} onClick={(event) => openUpdateSheet(row, { current: event.currentTarget })}>
-          <span className="group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong truncate font-medium group-hover/cell-button:underline">
-            {row.name || '-'}
-          </span>
+        <Button variant="cell" size="cell" tabIndex={tabIndex} onClick={(event) => openUpdateTenantSheet(row, { current: event.currentTarget })}>
+          <span className={cn(cellLinkTextClass, 'font-medium')}>{row.name || '-'}</span>
         </Button>
       ),
     },
     {
-      // 1 tenant = 1 organization: link to the org it holds (avatar + name), or flag it as unlinked.
-      // On mobile the column narrows to the avatar; header and names stay readable to a screen reader.
+      // One organization per tenant; on mobile the column narrows to the avatar, and header and names stay readable to a screen reader.
       key: 'organization',
       name: t('c:organization'),
       resizable: true,
@@ -89,9 +98,7 @@ export const useColumns = () => {
             }
           >
             <EntityAvatar type="organization" className="group-active/cell-button:press size-8" id={org.id} name={org.name} url={org.thumbnailUrl} />
-            <span className="group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong truncate group-hover/cell-button:underline max-sm:sr-only">
-              {org.name || '-'}
-            </span>
+            <span className={cn(cellLinkTextClass, 'max-sm:sr-only')}>{org.name || '-'}</span>
           </Button>
         );
       },
@@ -103,10 +110,7 @@ export const useColumns = () => {
       width: 100,
       editable: true,
       editorOptions: enumSelectEditorOptions,
-      renderCell: ({ row }) => {
-        const variant = row.status === 'active' ? 'success' : row.status === 'suspended' ? 'warning' : 'plain';
-        return <Badge variant={variant}>{t(`c:${row.status}`)}</Badge>;
-      },
+      renderCell: ({ row }) => <Badge variant={statusVariants[row.status]}>{t(`c:${row.status}`)}</Badge>,
       renderEditCell: (props) => <RenderEnumSelect {...props} field="status" options={statusOptions} renderOption={(status) => t(`c:${status}`)} />,
     },
     {
@@ -115,22 +119,15 @@ export const useColumns = () => {
       minBreakpoint: 'md',
       width: 140,
       placeholderValue: '-',
-      renderCell: ({ row }) => {
-        if (row.subscriptionStatus === 'none') return null;
-        const variantMap: Record<string, 'success' | 'default' | 'destructive' | 'secondary'> = {
-          active: 'success',
-          trialing: 'default',
-          past_due: 'destructive',
-        };
-        return (
-          <Badge variant={variantMap[row.subscriptionStatus] ?? 'secondary'} soft>
+      renderCell: ({ row }) =>
+        row.subscriptionStatus === 'none' ? null : (
+          <Badge variant={subscriptionVariants[row.subscriptionStatus]} soft>
             {t(`c:${row.subscriptionStatus}`)}
           </Badge>
-        );
-      },
+        ),
     },
     dateColumn('createdAt', { name: t('c:created_at') }),
   ];
 
-  return useState<ColumnOrColumnGroup<Tenant>[]>(columns);
+  return useColumnVisibility(columns);
 };

@@ -1,56 +1,16 @@
-import { SendIcon } from 'lucide-react';
 import { useWatch } from 'react-hook-form';
-import { useTranslation } from 'react-i18next';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
-import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { toaster } from '~/modules/common/toaster/toaster';
-import type { EnrichedChannel } from '~/modules/entities/types';
-import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
-import { Badge } from '~/modules/ui/badge';
-import { Button } from '~/modules/ui/button';
 import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
-import { type InviteFormValues, useInviteFormDraft } from '~/modules/user/invite-users';
+import { InviteFormFooter, type InviteFormProps, useInviteFormDraft, useInviteSubmit } from '~/modules/user/invite-submit';
 import { UserCombobox } from '~/modules/user/user-combobox';
 
-interface Props {
-  channel?: EnrichedChannel;
-  dialog?: boolean;
-}
-
-export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
-  const { t } = useTranslation();
-
+export function InviteSearchForm({ channel, dialog: isDialog, children }: InviteFormProps) {
   const form = useInviteFormDraft(channel?.id, channel?.entityType);
-  const { mutate: invite, isPending } = useInviteMemberMutation();
   const count = useWatch({ control: form.control, name: 'emails' })?.length ?? 0;
 
-  if (!channel) return null;
+  const { onSubmit, isPending } = useInviteSubmit(channel, isDialog, () => form.reset(undefined, { keepDirtyValues: true }));
 
-  const onSubmit = (values: InviteFormValues) => {
-    invite(
-      {
-        body: values,
-        path: { tenantId: channel.tenantId, organizationId: channel.organizationId || channel.id },
-        query: { entityId: channel.id, entityType: channel.entityType },
-        channel,
-      },
-      {
-        onSuccess: ({ invitesSentCount, rejectedIds }, { body: { emails } }) => {
-          form.reset(undefined, { keepDirtyValues: true });
-          if (invitesSentCount > 0) {
-            const resource = t('c:user', { count: invitesSentCount }).toLowerCase();
-            toaster.success(t('c:success.resource_count_invited', { count: invitesSentCount, resource }));
-          }
-          if (rejectedIds.length) toaster.info(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }));
+  if (!channel || form.loading) return null;
 
-          if (isDialog) useDialoger.getState().remove();
-        },
-      },
-    );
-  };
-
-  if (form.loading) return null;
   return (
     <Form {...form}>
       <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
@@ -59,37 +19,14 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
           name="emails"
           render={({ field: { onChange, value } }) => (
             <FormItem>
-              <UserCombobox value={value} onValueChange={onChange} channel={channel} />
+              <UserCombobox value={value} onChange={onChange} channel={channel} />
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field: { value, onChange } }) => (
-            <FormItem className="flex-row items-center gap-4">
-              <SelectRoleRadio value={value} onValueChange={onChange} entityType={channel.entityType} label={`${t('c:role')}:`} />
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <SubmitButton disabled={!count} loading={isPending} className="relative">
-            {!!count && (
-              <Badge variant="secondary" context="button">
-                {count}
-              </Badge>
-            )}
-            <SendIcon />
-            {t('c:invite')}
-          </SubmitButton>
-          {form.isDirty && (
-            <Button type="reset" variant="secondary" onClick={() => form.reset()}>
-              {t('c:cancel')}
-            </Button>
-          )}
-        </div>
+        <InviteFormFooter form={form} channel={channel} count={count} loading={isPending} onCancel={() => form.reset()}>
+          {children}
+        </InviteFormFooter>
       </form>
     </Form>
   );

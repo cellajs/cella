@@ -5,8 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import type { ConsentDetails } from '~/lib/oauth-interaction';
-import { consentDetailsQueryOptions, useDecideConsentMutation } from '~/modules/auth/oauth-consent-query';
-import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
+import { AuthHeader } from '~/modules/auth/auth-header';
+import { consentDetailsQueryOptions, useDecideConsentMutation } from '~/modules/auth/query';
+import { ErrorNotice } from '~/modules/common/error-notice';
 import { ScopeBadges } from '~/modules/common/scope-badges';
 import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
@@ -38,16 +39,17 @@ export function OAuthConsentPage() {
   }, [unauthenticated, navigate, uid]);
 
   // An expired or unknown interaction is an answer, not a wait.
-  if (error && !unauthenticated) return <ErrorNotice error={error as ErrorNoticeError} boundary="public" />;
+  if (error && !unauthenticated) return <ErrorNotice error={error} boundary="public" />;
   if (isPending || !data) return <Spinner size="lg" />;
 
   const { client, scopes, refusal, target } = data;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col items-center gap-3 text-center">
-        {client.logoUri && <img src={client.logoUri} alt="" className="size-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
-        <h1 className="text-2xl">{t('c:oauth_consent_header', { name: client.name })}</h1>
+    <>
+      <AuthHeader
+        image={client.logoUri && <img src={client.logoUri} alt="" className="size-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
+        title={t('c:oauth_consent_header', { name: client.name })}
+      >
         <p className="text-muted-foreground text-sm">{t('c:oauth_consent.text', { name: client.name, appName: appConfig.name })}</p>
         {target.tenant && (
           <p className="text-sm">
@@ -56,7 +58,7 @@ export function OAuthConsentPage() {
               : t('c:oauth_consent_target.tenant', { tenant: target.tenant })}
           </p>
         )}
-      </div>
+      </AuthHeader>
 
       <div className="rounded-md border p-3">
         <ScopeBadges scopes={scopes} withLabels />
@@ -76,6 +78,6 @@ export function OAuthConsentPage() {
           {t('c:accept')}
         </Button>
       </div>
-    </div>
+    </>
   );
 }

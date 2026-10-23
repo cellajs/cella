@@ -5,15 +5,15 @@ interface UseFetchMoreOnDemandOptions {
   demand: boolean;
   hasNextPage: boolean;
   isFetching: boolean;
-  /** Blocks fetching while truthy so a failing page doesn't retry in a loop. */
-  error: boolean;
+  /** Blocks fetching while true, so a failing page does not retry in a loop. */
+  hasError: boolean;
   fetchMore?: () => Promise<unknown>;
 }
 
 /** Fulfills level-triggered load demand whenever the query can accept it, re-evaluating after background fetches. */
-export function useFetchMoreOnDemand({ demand, hasNextPage, isFetching, error, fetchMore }: UseFetchMoreOnDemandOptions): void {
+export function useFetchMoreOnDemand({ demand, hasNextPage, isFetching, hasError, fetchMore }: UseFetchMoreOnDemandOptions): void {
   useEffect(() => {
-    if (!demand || !fetchMore || isFetching || !hasNextPage || error) return;
+    if (!demand || !fetchMore || isFetching || !hasNextPage || hasError) return;
     fetchMore();
-  }, [demand, fetchMore, isFetching, hasNextPage, error]);
+  }, [demand, fetchMore, isFetching, hasNextPage, hasError]);
 }

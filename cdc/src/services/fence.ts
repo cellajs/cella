@@ -10,7 +10,7 @@ export interface Snapshot {
 /** Counter deltas per channel key. */
 export type CounterDeltas = Map<string, Record<string, number>>;
 
-const XID_RANGE = 1n << 32n;
+const xidRange = 1n << 32n;
 
 /** Parses the text form of `pg_current_snapshot()`: `xmin:xmax:xip,xip,...`. */
 export function parseSnapshot(text: string): Snapshot {
@@ -27,9 +27,9 @@ export function parseSnapshot(text: string): Snapshot {
  * @returns True when the count saw the transaction's changes.
  */
 export function isVisibleIn(xid: number, snapshot: Snapshot): boolean {
-  let full = (snapshot.xmax & ~(XID_RANGE - 1n)) | BigInt(xid >>> 0);
-  if (full - snapshot.xmax > XID_RANGE / 2n) full -= XID_RANGE;
-  else if (snapshot.xmax - full > XID_RANGE / 2n) full += XID_RANGE;
+  let full = (snapshot.xmax & ~(xidRange - 1n)) | BigInt(xid >>> 0);
+  if (full - snapshot.xmax > xidRange / 2n) full -= xidRange;
+  else if (snapshot.xmax - full > xidRange / 2n) full += xidRange;
 
   if (full < snapshot.xmin) return true;
   if (full >= snapshot.xmax) return false;

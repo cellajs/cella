@@ -8,12 +8,12 @@ import { typedEntries } from 'shared';
 import { cn } from '~/utils/cn';
 
 // Format: { THEME_NAME: CSS_SELECTOR }
-const THEMES = { light: '', dark: '.dark' } as const;
+const themes = { light: '', dark: '.dark' } as const;
 
 export type ChartConfig = {
   [k in string]: { label?: React.ReactNode; icon?: React.ComponentType } & (
     | { color?: string; theme?: never }
-    | { color?: never; theme: Record<keyof typeof THEMES, string> }
+    | { color?: never; theme: Record<keyof typeof themes, string> }
   );
 };
 
@@ -101,7 +101,7 @@ function ChartStyle({ id, config }: { id: string; config: ChartConfig }) {
     <style
       // biome-ignore lint/security/noDangerouslySetInnerHtml: safe since we control content
       dangerouslySetInnerHTML={{
-        __html: typedEntries(THEMES)
+        __html: typedEntries(themes)
           .map(
             ([theme, prefix]) => `
             ${prefix} [data-chart=${id}] {

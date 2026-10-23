@@ -1,7 +1,7 @@
 import type { InfiniteData, QueryKey } from '@tanstack/react-query';
 import type { ChannelEntityType, EntityType } from 'shared';
 
-/** Extract usable mutation variables from a generated *Data type (strips `url` and `path`). */
+/** Mutation variables of a generated `*Data` type: the request without its `url`. */
 export type MutationData<T> = Omit<T, 'url'>;
 
 export type QueryData<TItem> = { items: TItem[]; total: number };

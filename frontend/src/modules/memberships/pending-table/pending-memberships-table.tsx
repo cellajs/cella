@@ -1,28 +1,23 @@
 import { BirdIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { zGetPendingMembershipsQuery } from 'sdk/zod.gen';
-import { appConfig, isUnconditionalCan } from 'shared';
-import type { z } from 'zod';
+import type { GetPendingMembershipsData } from 'sdk';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
+import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { PendingMembershipsTableBar } from '~/modules/memberships/pending-table/pending-bar';
 import { useColumns } from '~/modules/memberships/pending-table/pending-columns';
 import { pendingMembershipsQueryOptions } from '~/modules/memberships/query';
 import type { PendingMembership } from '~/modules/memberships/types';
 
-const LIMIT = appConfig.requestLimits.pendingMemberships;
-
 function rowKeyGetter(row: PendingMembership) {
   return row.id;
 }
 
-const pendingMembershipsSearchSchema = zGetPendingMembershipsQuery.pick({ sort: true, order: true });
-
-type PendingMembershipsSearch = z.infer<typeof pendingMembershipsSearchSchema>;
+type PendingMembershipsSearch = Pick<GetPendingMembershipsData['query'], 'sort' | 'order'>;
 
 export interface PendingMembershipsTableProps {
   channel: EnrichedChannel;
@@ -33,22 +28,13 @@ export function PendingMembershipsTable({ channel }: PendingMembershipsTableProp
   const { search, setSearch } = useSearchParams<PendingMembershipsSearch>({ saveDataInSearch: false });
 
   const { sort, order } = search;
-  const limit = LIMIT;
+  const { tenantId } = channel;
+  const organizationId = channelOrganizationId(channel);
 
-  const [columns] = useColumns(
-    { tenantId: channel.tenantId, organizationId: channel.organizationId || channel.id },
-    isUnconditionalCan(channel.can?.[channel.entityType]?.update),
-  );
+  const columns = useColumns({ tenantId, organizationId });
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  const queryOptions = pendingMembershipsQueryOptions({
-    entityId: channel.id,
-    entityType: channel.entityType,
-    tenantId: channel.tenantId,
-    organizationId: channel.organizationId || channel.id,
-    ...search,
-    limit,
-  });
+  const queryOptions = pendingMembershipsQueryOptions({ entityId: channel.id, entityType: channel.entityType, tenantId, organizationId, ...search });
 
   const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
 
@@ -62,7 +48,6 @@ export function PendingMembershipsTable({ channel }: PendingMembershipsTableProp
           rowKeyGetter,
           columns,
           enableVirtualization: true,
-          limit,
           error,
           isLoading,
           isFetching,

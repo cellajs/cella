@@ -2,7 +2,10 @@
  * DOM id prefix (e.g. id="spy-intro") prevents auto-scroll on hash change. No element may carry the bare section id:
  * TanStack history patches replaceState, so each hash write runs the router's hash scroll, which jumps to that element.
  */
-const SPY_PREFIX = 'spy-';
+export const spyPrefix = 'spy-';
+/** Within this many px of the top the page counts as unscrolled: the topmost section is current and the hash is dropped. */
+const topThreshold = 64;
+const maxPendingFrames = 60; // ~1s at 60fps
 
 const sections = new Map<string, number>(); // sectionId → intersection ratio
 let observer: IntersectionObserver | null = null;
@@ -14,21 +17,25 @@ let scrollSettleTimer = 0;
 let savedSection = ''; // Preserved across quick re-registrations (effect re-runs)
 // Section a scroll was sent to: stays current until the user scrolls, even where the page can't bring it up to the trigger line
 let pinnedSection = '';
+let topWatchTarget: HTMLElement | Window | null = null;
+let topWatchFrame = 0;
+let reevaluateTimer = 0;
+let pendingFrameAttempts = 0;
 
 // Subscribers for useSyncExternalStore
 const listeners = new Set<() => void>();
 const notify = () => {
-  for (const fn of listeners) fn();
+  for (const listener of listeners) listener();
 };
 
 /** Toggles data-spy-active on matching data-spy-link elements, bypassing React to keep scrolling smooth. */
-const syncActiveDOM = () => {
-  for (const el of document.querySelectorAll('[data-spy-active]')) {
-    delete (el as HTMLElement).dataset.spyActive;
+const markActiveLinks = () => {
+  for (const element of document.querySelectorAll<HTMLElement>('[data-spy-active]')) {
+    delete element.dataset.spyActive;
   }
   if (currentSection) {
-    for (const el of document.querySelectorAll(`[data-spy-link="${CSS.escape(currentSection)}"]`)) {
-      (el as HTMLElement).dataset.spyActive = '';
+    for (const element of document.querySelectorAll<HTMLElement>(`[data-spy-link="${CSS.escape(currentSection)}"]`)) {
+      element.dataset.spyActive = '';
     }
   }
 };
@@ -46,31 +53,24 @@ const canWriteHash = () => Date.now() > hashWriteBlockedUntil && initTime && Dat
 
 export const isProgrammaticScroll = () => Date.now() < hashWriteBlockedUntil;
 
-/** Within this many px of the top the page counts as unscrolled: the topmost section is current and the hash is dropped. */
-const TOP_THRESHOLD = 64;
+const scrollTopOf = (target: HTMLElement | Window) => (target instanceof Window ? target.scrollY : target.scrollTop);
 
-let topWatchTarget: HTMLElement | Window | null = null;
-let topWatchFrame = 0;
+const isAtTop = () => scrollTopOf(topWatchTarget ?? window) <= topThreshold;
 
-const scrollTopOf = (target: HTMLElement | Window) => (target === window ? window.scrollY : (target as HTMLElement).scrollTop);
-
-const isAtTop = () => scrollTopOf(topWatchTarget ?? window) <= TOP_THRESHOLD;
-
-/** Drop the hash, keeping path and search intact. */
 const clearHash = () => {
   if (!location.hash) return;
   history.replaceState(null, '', location.pathname + location.search);
 };
 
 /** Near the top the hash is dropped so a reload returns to the top; `currentSection` stays set for the TOC. */
-const syncHash = (id: string) => {
+const writeHash = (id: string) => {
   if (!canWriteHash()) return;
   if (isAtTop()) clearHash();
   else if (location.hash !== `#${id}`) history.replaceState(null, '', `#${id}`);
 };
 
 /** A user scroll releases the pin. The observer misses the final stretch back to the top, so this also clears the hash there. */
-const onScroll = () => {
+const handleScroll = () => {
   if (!isProgrammaticScroll()) pinnedSection = '';
   if (topWatchFrame) return;
   topWatchFrame = requestAnimationFrame(() => {
@@ -82,35 +82,33 @@ const onScroll = () => {
 
 /** Point the top watcher at the sections' scroller (window when that is the document scroller). */
 const watchScroller = () => {
-  const anchor = [...sections.keys()].map((id) => document.getElementById(`${SPY_PREFIX}${id}`)).find((el): el is HTMLElement => el !== null);
+  const anchor = [...sections.keys()].map((id) => document.getElementById(`${spyPrefix}${id}`)).find((element) => element !== null);
   const scroller = anchor ? findScrollParent(anchor) : null;
   const next: HTMLElement | Window = !scroller || isRootScroller(scroller) ? window : scroller;
   if (next === topWatchTarget) return;
 
-  topWatchTarget?.removeEventListener('scroll', onScroll);
+  topWatchTarget?.removeEventListener('scroll', handleScroll);
   topWatchTarget = next;
-  topWatchTarget.addEventListener('scroll', onScroll, { passive: true });
+  topWatchTarget.addEventListener('scroll', handleScroll, { passive: true });
 };
 
 const unwatchScroller = () => {
-  topWatchTarget?.removeEventListener('scroll', onScroll);
+  topWatchTarget?.removeEventListener('scroll', handleScroll);
   topWatchTarget = null;
   cancelAnimationFrame(topWatchFrame);
   topWatchFrame = 0;
 };
 
-let blockReEvalTimer = 0;
-
 const blockHashWrites = (ms: number) => {
   hashWriteBlockedUntil = Date.now() + ms;
 
   // Re-evaluate once the block expires so the spy isn't stuck if no new IO fires
-  clearTimeout(blockReEvalTimer);
-  blockReEvalTimer = window.setTimeout(() => {
+  clearTimeout(reevaluateTimer);
+  reevaluateTimer = window.setTimeout(() => {
     const best = getBestSection();
     if (best && best !== currentSection) {
       currentSection = best;
-      syncActiveDOM();
+      markActiveLinks();
       notify();
     }
   }, ms + 50);
@@ -118,7 +116,7 @@ const blockHashWrites = (ms: number) => {
 
 /** Picks the pinned section while in view, else the topmost one at the top, else the last anchor past a trigger line near the top. Null while none is in view. */
 const getBestSection = (): string | null => {
-  const visible = [...sections.entries()].filter(([, r]) => r > 0);
+  const visible = [...sections.entries()].filter(([, ratio]) => ratio > 0);
   if (!visible.length) return null;
   if (pinnedSection && visible.some(([id]) => id === pinnedSection)) return pinnedSection;
 
@@ -127,8 +125,8 @@ const getBestSection = (): string | null => {
   // Every rendered anchor counts, not only those in view: after a long scroll the current section's anchor sits above the viewport
   const withPositions = [...sections.keys()]
     .flatMap((id) => {
-      const el = document.getElementById(`${SPY_PREFIX}${id}`);
-      return el?.getClientRects().length ? [{ id, top: el.getBoundingClientRect().top }] : [];
+      const element = document.getElementById(`${spyPrefix}${id}`);
+      return element?.getClientRects().length ? [{ id, top: element.getBoundingClientRect().top }] : [];
     })
     .sort((a, b) => a.top - b.top);
 
@@ -151,8 +149,8 @@ const rebuild = () => {
 
   observer = new IntersectionObserver(
     (entries) => {
-      for (const e of entries) {
-        sections.set(e.target.id.replace(SPY_PREFIX, ''), e.intersectionRatio);
+      for (const entry of entries) {
+        sections.set(entry.target.id.replace(spyPrefix, ''), entry.intersectionRatio);
       }
 
       // Skip section updates during programmatic scroll to prevent indicator jank
@@ -161,11 +159,10 @@ const rebuild = () => {
       const best = getBestSection();
       if (best && best !== currentSection) {
         currentSection = best;
-        syncActiveDOM();
+        markActiveLinks();
 
-        syncHash(best);
+        writeHash(best);
 
-        // Notify subscribers only after scrolling settles.
         clearTimeout(scrollSettleTimer);
         scrollSettleTimer = window.setTimeout(notify, 150);
       }
@@ -174,14 +171,14 @@ const rebuild = () => {
   );
 
   for (const id of sections.keys()) {
-    const el = document.getElementById(`${SPY_PREFIX}${id}`);
-    if (el) observer.observe(el);
+    const element = document.getElementById(`${spyPrefix}${id}`);
+    if (element) observer.observe(element);
   }
 
   watchScroller();
 };
 
-export const registerSections = (ids: string[]) => {
+export const registerSections = (ids: readonly string[]) => {
   if (!initTime) initTime = Date.now();
 
   for (const id of ids) {
@@ -200,7 +197,7 @@ export const registerSections = (ids: string[]) => {
   if (savedSection && sections.has(savedSection)) {
     currentSection = savedSection;
     savedSection = '';
-    syncActiveDOM();
+    markActiveLinks();
     notify();
     return;
   }
@@ -212,23 +209,23 @@ export const registerSections = (ids: string[]) => {
   if (hash && sections.has(hash) && currentSection !== hash && (inInitWindow || !currentSection)) {
     currentSection = hash;
     pinnedSection = hash;
-    syncActiveDOM();
+    markActiveLinks();
     notify();
     blockHashWrites(1000);
     requestAnimationFrame(() => {
-      document.getElementById(`${SPY_PREFIX}${hash}`)?.scrollIntoView({ behavior: 'instant' });
+      document.getElementById(`${spyPrefix}${hash}`)?.scrollIntoView({ behavior: 'instant' });
     });
     return;
   }
 
   if (!currentSection && ids.length) {
     currentSection = ids[0];
-    syncActiveDOM();
+    markActiveLinks();
     notify();
   }
 };
 
-export const unregisterSections = (ids: string[]) => {
+export const unregisterSections = (ids: readonly string[]) => {
   for (const id of ids) sections.delete(id);
 
   if (!sections.size) {
@@ -239,7 +236,7 @@ export const unregisterSections = (ids: string[]) => {
     savedSection = currentSection;
     if (currentSection !== '') {
       currentSection = '';
-      syncActiveDOM();
+      markActiveLinks();
       notify();
     }
     initTime = 0;
@@ -248,25 +245,26 @@ export const unregisterSections = (ids: string[]) => {
   }
 };
 
-/** The document owns the scroller, so scroll events land on window. */
-const isRootScroller = (el: HTMLElement) => el === document.scrollingElement || el === document.documentElement || el === document.body;
+/** The document owns the scroller, so scroll events fire on window. */
+const isRootScroller = (element: HTMLElement) =>
+  element === document.scrollingElement || element === document.documentElement || element === document.body;
 
 /** Find the nearest scrollable ancestor (overflow-y auto/scroll with actual overflow), else the document scroller. */
-const findScrollParent = (el: HTMLElement): HTMLElement => {
-  let node = el.parentElement;
+const findScrollParent = (element: HTMLElement): HTMLElement => {
+  let node = element.parentElement;
   while (node) {
-    const cs = getComputedStyle(node);
-    if (/(auto|scroll)/.test(cs.overflowY) && node.scrollHeight > node.clientHeight + 1) return node;
+    const style = getComputedStyle(node);
+    if (/(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight + 1) return node;
     node = node.parentElement;
   }
   return (document.scrollingElement as HTMLElement) ?? document.documentElement;
 };
 
-const performScroll = (el: HTMLElement, id: string) => {
+const performScroll = (element: HTMLElement, id: string) => {
   // Drive the overflow container directly; for the root scroller use 0 as reference (not rect.top).
-  const scroller = findScrollParent(el);
+  const scroller = findScrollParent(element);
   const scrollerTop = isRootScroller(scroller) ? 0 : scroller.getBoundingClientRect().top;
-  const delta = el.getBoundingClientRect().top - scrollerTop;
+  const delta = element.getBoundingClientRect().top - scrollerTop;
   const targetTop = scroller.scrollTop + delta - 16;
   const smooth = Math.abs(delta) < window.innerHeight * 2;
 
@@ -287,37 +285,34 @@ const performScroll = (el: HTMLElement, id: string) => {
 
   if (currentSection !== id) {
     currentSection = id;
-    syncActiveDOM();
+    markActiveLinks();
     notify();
   }
 };
 
-/** True when the element has real layout, so a queued scroll can't land on a collapsed container. */
-const isLaidOut = (el: HTMLElement): boolean => {
-  if (typeof el.checkVisibility === 'function') {
-    return el.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true });
+/** True when the element has real layout, so a queued scroll can't target a collapsed container. */
+const isLaidOut = (element: HTMLElement): boolean => {
+  if (typeof element.checkVisibility === 'function') {
+    return element.checkVisibility({ contentVisibilityAuto: true, visibilityProperty: true });
   }
-  if (el.offsetParent === null) return false;
-  return el.getBoundingClientRect().height > 0;
+  if (element.offsetParent === null) return false;
+  return element.getBoundingClientRect().height > 0;
 };
-
-const MAX_PENDING_FRAMES = 60; // ~1s at 60fps
-let pendingFrameAttempts = 0;
 
 /** Polls once per frame until the queued target is laid out, then scrolls. */
 const tryFlushPendingScroll = () => {
   if (!pendingScrollTarget) return;
 
-  const el = document.getElementById(`${SPY_PREFIX}${pendingScrollTarget}`);
-  if (el && isLaidOut(el)) {
+  const element = document.getElementById(`${spyPrefix}${pendingScrollTarget}`);
+  if (element && isLaidOut(element)) {
     const id = pendingScrollTarget;
     pendingScrollTarget = null;
     pendingFrameAttempts = 0;
-    performScroll(el, id);
+    performScroll(element, id);
     return;
   }
 
-  if (pendingFrameAttempts++ < MAX_PENDING_FRAMES) {
+  if (pendingFrameAttempts++ < maxPendingFrames) {
     requestAnimationFrame(tryFlushPendingScroll);
   } else {
     pendingScrollTarget = null;

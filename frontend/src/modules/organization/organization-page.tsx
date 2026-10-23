@@ -15,17 +15,16 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const JoinedButton = lazyNamed(() => import('~/modules/memberships/joined-button'), 'JoinedButton');
 
-interface Props {
+interface OrganizationPageProps {
   organizationId: string;
   tenantId: string;
 }
 
-function OrganizationPage({ organizationId, tenantId }: Props) {
+export function OrganizationPage({ organizationId, tenantId }: OrganizationPageProps) {
   const { t } = useTranslation();
 
-  const orgQueryOptions = organizationQueryOptions(organizationId, tenantId);
   // Organization is enriched with membership via cache subscription
-  const { data: organization } = useSuspenseQuery(orgQueryOptions);
+  const { data: organization } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));
 
   const resolveCan = useResolveCan();
   const canUpdate = resolveCan(organization.can?.organization?.update, organization.createdBy);
@@ -58,7 +57,7 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
           organization.membership && (
             <Suspense>
               <div className="flex items-center p-2">
-                <JoinedButton channel={organization} role={organization.membership?.role} />
+                <JoinedButton channel={organization} role={organization.membership.role} />
               </div>
             </Suspense>
           )
@@ -80,5 +79,3 @@ function OrganizationPage({ organizationId, tenantId }: Props) {
     </>
   );
 }
-
-export { OrganizationPage };

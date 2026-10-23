@@ -35,8 +35,8 @@ const { patchCollaborativeDescription } = await import('~/modules/common/blockno
 const { fetchEntityAndUpdateList, fetchRangeAndPatch } = await import('./cache-ops');
 
 // The synthetic 'task' type exists only in this file's shared mock, hence the casts.
-const TASK = 'task' as EntityType;
-const TASK_PRODUCT = 'task' as ProductEntityType;
+const task = 'task' as EntityType;
+const taskProduct = 'task' as ProductEntityType;
 
 type TaskRow = {
   id: string;
@@ -48,7 +48,7 @@ type TaskRow = {
   stx: { mutationId: string; sourceId: string; fieldTimestamps: Record<string, string> };
 };
 
-const keys = createEntityKeys<{ q?: string }>(TASK);
+const keys = createEntityKeys<{ q?: string }>(task);
 const detailKey = keys.detail.byId('task-1');
 const homeKey = keys.list.home('org-1', 'project-1');
 const filteredKey = [...keys.list.org('org-1'), { q: '' }];
@@ -73,7 +73,7 @@ const filteredRow = () => queryClient.getQueryData<{ items: TaskRow[] }>(filtere
 
 /** The range fetch answers with these rows: the seq path of a stream notification or a catchup gap. */
 function serverReturns(...items: TaskRow[]) {
-  registerEntityQueryKeys(TASK, keys, async () => ({ items, total: items.length }));
+  registerEntityQueryKeys(task, keys, async () => ({ items, total: items.length }));
 }
 
 function seedCaches(item: TaskRow, { withDetail = true } = {}) {
@@ -86,7 +86,7 @@ function seedCaches(item: TaskRow, { withDetail = true } = {}) {
 function buildPendingUpdate(id: string) {
   queryClient.getMutationCache().build(
     queryClient,
-    { mutationKey: [TASK, 'update'], mutationFn: async () => null },
+    { mutationKey: [task, 'update'], mutationFn: async () => null },
     {
       context: undefined,
       data: undefined,
@@ -102,7 +102,7 @@ function buildPendingUpdate(id: string) {
 }
 
 afterEach(() => {
-  registerYjsOwnedFields(TASK_PRODUCT, ['description']);
+  registerYjsOwnedFields(taskProduct, ['description']);
   queryClient.clear();
 });
 
@@ -115,8 +115,8 @@ describe('a remote change of a row with a pending mutation', () => {
     // The single-row read writes the detail itself, so it must not run at all.
     queryClient.setQueryDefaults(keys.detail.base, { queryFn: async () => server });
 
-    const { status } = await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
-    await fetchEntityAndUpdateList('task-1', keys, 'update', 'org-1', 'tenant-1', TASK_PRODUCT);
+    const { status } = await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
+    await fetchEntityAndUpdateList(taskProduct, 'task-1', keys, 'update', 'org-1', 'tenant-1');
 
     expect(status).toBe('ok');
     for (const cached of [detail(), homeRow(), filteredRow()]) expect(cached?.description).toBe('optimistic');
@@ -126,7 +126,7 @@ describe('a remote change of a row with a pending mutation', () => {
 describe('Yjs-owned fields on a server row', () => {
   // The relay has not saved yet: the server row holds the older body under the seeded row's stamp.
   const staleRead = () => row('older');
-  const patch = () => patchCollaborativeDescription(TASK_PRODUCT, row('older'), 'newer');
+  const patch = () => patchCollaborativeDescription(taskProduct, row('older'), 'newer');
 
   it.each([
     { read: 'range', cached: 'detail and lists', patched: 'before' },
@@ -145,7 +145,7 @@ describe('Yjs-owned fields on a server row', () => {
 
       if (read === 'range') {
         serverReturns(staleRead());
-        await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
+        await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
       } else {
         queryClient.setQueryDefaults(keys.detail.base, {
           queryFn: async () => {
@@ -153,7 +153,7 @@ describe('Yjs-owned fields on a server row', () => {
             return staleRead();
           },
         });
-        await fetchEntityAndUpdateList('task-1', keys, 'update', 'org-1', 'tenant-1', TASK_PRODUCT);
+        await fetchEntityAndUpdateList(taskProduct, 'task-1', keys, 'update', 'org-1', 'tenant-1');
       }
 
       const copies = [detail(), homeRow(), filteredRow()].filter((copy) => copy !== undefined);
@@ -164,10 +164,10 @@ describe('Yjs-owned fields on a server row', () => {
 
   it('takes the description from a server write of it, which carries a new stamp', async () => {
     seedCaches(row('older'));
-    patchCollaborativeDescription(TASK_PRODUCT, row('older'), 'newer');
+    patchCollaborativeDescription(taskProduct, row('older'), 'newer');
     serverReturns(row('saved', { stx: written({ description: 'T2' }) }));
 
-    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
+    await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
 
     for (const cached of [detail(), homeRow(), filteredRow()]) {
       expect(cached).toMatchObject({ description: 'saved', stx: { fieldTimestamps: { description: 'T2' } } });
@@ -176,11 +176,11 @@ describe('Yjs-owned fields on a server row', () => {
 
   it('keeps a patch on a row never edited since its create when another field is written meanwhile', async () => {
     seedCaches(row('created', { stx: written({}) }));
-    patchCollaborativeDescription(TASK_PRODUCT, row('created', { stx: written({}) }), 'edited');
+    patchCollaborativeDescription(taskProduct, row('created', { stx: written({}) }), 'edited');
     // Another user's write of a different field: the stale row stamps that field alone.
     serverReturns(row('created', { name: 'Reordered', stx: written({ name: 'T5' }) }));
 
-    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
+    await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
 
     expect(detail()).toMatchObject({ description: 'edited', name: 'Reordered' });
     expect(homeRow()).toMatchObject({ description: 'edited', name: 'Reordered' });
@@ -191,22 +191,22 @@ describe('Yjs-owned fields on a server row', () => {
     const { stx: _stx, ...withoutStx } = row('server');
     serverReturns(withoutStx as TaskRow);
 
-    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
+    await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
 
     expect(detail()?.description).toBe('server');
     expect(homeRow()?.description).toBe('server');
   });
 
   it('guards a derived field by the description stamp', async () => {
-    registerYjsOwnedFields(TASK_PRODUCT, ['description', 'keywords']);
+    registerYjsOwnedFields(taskProduct, ['description', 'keywords']);
     seedCaches(row('patched', { keywords: 'patched words' }));
     serverReturns(row('older', { keywords: 'older words' }));
 
-    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
+    await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 4, untilSeq: 5 }, keys);
     expect(homeRow()).toMatchObject({ description: 'patched', keywords: 'patched words' });
 
     serverReturns(row('saved', { keywords: 'saved words', stx: written({ description: 'T2' }) }));
-    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', { afterSeq: 5, untilSeq: 6 }, keys);
+    await fetchRangeAndPatch(task, 'org-1', 'tenant-1', { afterSeq: 5, untilSeq: 6 }, keys);
     expect(homeRow()).toMatchObject({ description: 'saved', keywords: 'saved words' });
     expect(detail()).toMatchObject({ description: 'saved', keywords: 'saved words' });
   });

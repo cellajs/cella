@@ -82,7 +82,7 @@ Every check takes an `Access` from `accessFrom(ctx)`. Never assemble one by hand
 - **Mutation registry**: in each entity's `query.ts`, `addMutationRegistrar((qc) => { qc.setMutationDefaults(keys.create, { mutationFn: ... }) })` so paused offline mutations resume after reload. The module has to load with the entry, so its `<name>-module.ts` imports `query.ts` (`modules.ts` loads every module file before first render): a mutation restored before its defaults exist replays without a `mutationFn`, and the restore names it in a console warning.
 - **Mutation variables**: a product's create, update and delete carry `CreateVariables` (`data: Row[]`), `UpdateVariables` (`id`, `ops`) and `DeleteVariables` (`rows: Row[]`) from `frontend/src/query/offline/mutation-variables.ts`. The queue helpers read a queued mutation through those shapes, never through a cast. A change of shape registers `registerVariablesVersion(key, version, upgrade)` next to the mutation defaults: the persister stores each queued mutation with the version of its shape (`meta.variablesVersion`) and upgrades or quarantines an older one on restore.
 - **Enrichment** (`frontend/src/query/enrichment/`): [Client](./CLIENT.md#subscribers).
-- **Slug resolution**: `fetchSlugCacheId(fetcher, cacheKey)` resolves slug routes to IDs, cached under the entity's detail key.
+- **Slug resolution**: `resolveChannelBySlug` (`frontend/src/query/basic/resolve-channel-by-slug.ts`) resolves an id or slug route param from the list cache, the detail cache or a slug fetch, and caches a fetched row under the detail query key.
 
 ## OpenAPI & mocks
 

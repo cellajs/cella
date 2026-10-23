@@ -35,23 +35,23 @@ const { queryClient } = await import('~/query/query-client');
 const { propagateEmbeddedProduct } = await import('./propagation');
 
 // The synthetic 'label' and 'task' types exist only in this file's shared mock, hence the casts.
-const LABEL = 'label' as ProductEntityType;
-const ORG = 'org-1';
-const PROJECT = 'project-1';
+const labelType = 'label' as ProductEntityType;
+const org = 'org-1';
+const project = 'project-1';
 
-const labelKeys = createEntityKeys<Record<string, never>>(LABEL);
+const labelKeys = createEntityKeys<Record<string, never>>(labelType);
 
 describe('propagateEmbeddedProduct', () => {
-  const TASK = 'task' as ProductEntityType;
-  const taskKeys = createEntityKeys<Record<string, never>>(TASK);
-  const infiniteKey = [...taskKeys.list.org(ORG), { q: '' }];
-  const flatKey = taskKeys.list.home(ORG, PROJECT);
+  const taskType = 'task' as ProductEntityType;
+  const taskKeys = createEntityKeys<Record<string, never>>(taskType);
+  const infiniteKey = [...taskKeys.list.org(org), { q: '' }];
+  const flatKey = taskKeys.list.home(org, project);
 
   const label = (id: string, name: string, updatedAt: string) => ({ id, name, updatedAt });
 
   beforeEach(() => {
-    registerEntityQueryKeys(TASK, taskKeys, async () => ({ items: [], total: 0 }));
-    registerEntityQueryKeys(LABEL, labelKeys, async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys(taskType, taskKeys, async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys(labelType, labelKeys, async () => ({ items: [], total: 0 }));
   });
   afterEach(() => queryClient.clear());
 
@@ -63,7 +63,7 @@ describe('propagateEmbeddedProduct', () => {
       pageParams: [{ page: 0, offset: 0 }],
     });
 
-    propagateEmbeddedProduct(LABEL, ['l1', 'l2'], 'update');
+    propagateEmbeddedProduct(labelType, ['l1', 'l2'], 'update');
 
     // A copy as new as the fresh row may carry a concurrent edit, so it stays.
     const after = queryClient.getQueryData<{ pages: { items: ItemData[] }[] }>(infiniteKey);
@@ -83,7 +83,7 @@ describe('propagateEmbeddedProduct', () => {
     queryClient.setQueryData(taskKeys.detail.byId('t1'), { id: 't1', labels: ['l1'] });
     const untouched = queryClient.getQueryData<{ items: ItemData[] }>(flatKey)?.items[3];
 
-    propagateEmbeddedProduct(LABEL, ['l1'], 'remove');
+    propagateEmbeddedProduct(labelType, ['l1'], 'remove');
 
     const after = queryClient.getQueryData<{ items: ItemData[]; total: number }>(flatKey);
     expect(after).toEqual({

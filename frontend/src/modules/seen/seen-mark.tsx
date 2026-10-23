@@ -1,8 +1,6 @@
-import { useCallback, useEffect, useRef } from 'react';
 import type { ProductEntityType } from 'shared';
-import { seenStore } from '~/modules/seen/seen-store';
-
-type SeenMeta = { tenantId: string; organizationId: string; channelId: string; productType: ProductEntityType; productId: string };
+import { isDebugMode } from '~/env';
+import { type SeenMeta, seenStore } from '~/modules/seen/seen-store';
 
 const elementMeta = new WeakMap<Element, SeenMeta>();
 const markedIds = new Set<string>();
@@ -12,43 +10,37 @@ for (const id of seenStore.getState().flushedIds) markedIds.add(id);
 let sharedObserver: IntersectionObserver | null = null;
 let observerRefCount = 0;
 
-function getSharedObserver(): IntersectionObserver {
-  if (!sharedObserver) {
-    sharedObserver = new IntersectionObserver(
-      (entries) => {
-        const markProductSeen = seenStore.getState().markProductSeen;
-
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-
-          const meta = elementMeta.get(entry.target);
-          if (!meta) continue;
-
-          if (markedIds.has(meta.productId)) {
-            sharedObserver?.unobserve(entry.target);
-            continue;
-          }
-
-          console.debug('[SeenMark] intersected:', meta.productType, meta.productId.slice(0, 8));
-
-          try {
-            markProductSeen(meta.tenantId, meta.organizationId, meta.channelId, meta.productType, meta.productId);
-          } catch (err) {
-            console.error('[SeenMark] markProductSeen threw:', err);
-          }
-          markedIds.add(meta.productId);
-          sharedObserver?.unobserve(entry.target);
-        }
-      },
-      { root: null, threshold: 0 },
-    );
-  }
-  return sharedObserver;
-}
-
 function retainObserver() {
   observerRefCount++;
-  return getSharedObserver();
+  sharedObserver ??= new IntersectionObserver(
+    (entries) => {
+      const markProductSeen = seenStore.getState().markProductSeen;
+
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+
+        const meta = elementMeta.get(entry.target);
+        if (!meta) continue;
+
+        if (markedIds.has(meta.productId)) {
+          sharedObserver?.unobserve(entry.target);
+          continue;
+        }
+
+        if (isDebugMode) console.debug('[SeenMark] intersected:', meta.productType, meta.productId.slice(0, 8));
+
+        try {
+          markProductSeen(meta);
+        } catch (error) {
+          console.error('[SeenMark] markProductSeen threw:', error);
+        }
+        markedIds.add(meta.productId);
+        sharedObserver?.unobserve(entry.target);
+      }
+    },
+    { root: null, threshold: 0 },
+  );
+  return sharedObserver;
 }
 
 function releaseObserver() {
@@ -71,33 +63,18 @@ interface SeenMarkProps {
 }
 
 /** Invisible viewport marker that records an entity as seen. All instances share one IntersectionObserver. */
-export function SeenMark({ productId, tenantId, organizationId, channelId, productType }: SeenMarkProps) {
-  const resolvedChannelId = channelId ?? organizationId;
-  const elementRef = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    retainObserver();
-    return () => releaseObserver();
-  }, []);
-
-  const refCallback = useCallback(
-    (node: HTMLSpanElement | null) => {
-      if (elementRef.current) {
-        elementMeta.delete(elementRef.current);
-        sharedObserver?.unobserve(elementRef.current);
-      }
-
-      elementRef.current = node;
-
-      if (node && !markedIds.has(productId)) {
-        elementMeta.set(node, { tenantId, organizationId, channelId: resolvedChannelId, productType, productId });
-        getSharedObserver().observe(node);
-      }
-    },
-    [productId, tenantId, organizationId, resolvedChannelId, productType],
-  );
-
+export function SeenMark({ productId, tenantId, organizationId, channelId = organizationId, productType }: SeenMarkProps) {
   if (markedIds.has(productId)) return null;
 
-  return <span ref={refCallback} data-entity-id={productId} aria-hidden className="pointer-events-none absolute inset-0" />;
+  const observe = (node: HTMLSpanElement) => {
+    elementMeta.set(node, { tenantId, organizationId, channelId, productType, productId });
+    retainObserver().observe(node);
+    return () => {
+      elementMeta.delete(node);
+      sharedObserver?.unobserve(node);
+      releaseObserver();
+    };
+  };
+
+  return <span ref={observe} data-entity-id={productId} aria-hidden className="pointer-events-none absolute inset-0" />;
 }

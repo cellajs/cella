@@ -222,7 +222,6 @@ describe('CollaborativeBlockNote with Yjs on', () => {
       fragment: seededFragment(),
       ready: true,
       transport: 'ws',
-      synced: true,
       stopped: false,
       rebuilds: 0,
       unsynced: false,

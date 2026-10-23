@@ -1,30 +1,30 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect } from 'react';
-import { useSpotlighter } from '~/modules/common/spotlighter/use-spotlighter';
+import { spotlighter, useSpotlighter } from '~/modules/common/spotlighter/use-spotlighter';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
 
 const closeTop = () => {
-  const { stack } = useSpotlighter.getState();
+  const { stack } = spotlighter.getState();
   stack[stack.length - 1]?.onClose();
 };
 
 /** The one page-dim layer, mounted in AppLayout beside the other global layers (see use-spotlighter.ts). */
 export function Spotlighter() {
-  const hasActive = useSpotlighter((state) => state.stack.length > 0);
+  const hasSpotlight = useSpotlighter((state) => state.stack.length > 0);
 
   useEffect(() => {
-    if (!hasActive) return;
-    const onKeyDown = (event: KeyboardEvent) => {
+    if (!hasSpotlight) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
       // Leave Esc to whatever is layered on top (dropdowns, dialogs, the editor's own handling, an open tooltip or hover card)
       if (event.key === 'Escape' && !event.defaultPrevented && !isHoverContentOpen()) closeTop();
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [hasActive]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasSpotlight]);
 
   return (
     <AnimatePresence>
-      {hasActive && (
+      {hasSpotlight && (
         <motion.div
           className="fixed inset-0 z-110 bg-overlay"
           initial={{ opacity: 0 }}

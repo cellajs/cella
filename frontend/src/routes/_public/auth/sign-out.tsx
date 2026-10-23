@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
+import i18n from 'i18next';
 import { z } from 'zod';
-import { SignOut } from '~/modules/auth/sign-out';
-import { appTitle } from '~/utils/app-title';
+import { SignOutPage } from '~/modules/auth/sign-out-page';
+import { pageHead } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_public/auth/sign-out')({
   validateSearch: z.object({ force: z.boolean().optional() }),
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: appTitle('Sign out') }] }),
-  component: SignOut,
+  head: () => pageHead(i18n.t('c:sign_out')),
+  component: SignOutPage,
 });

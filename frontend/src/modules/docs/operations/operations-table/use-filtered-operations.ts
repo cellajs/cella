@@ -7,10 +7,7 @@ export const mcpToolFilter = 'mcp';
 interface FilterOptions {
   /** Free-text query; space-separated terms are AND-combined. */
   q: string;
-  /**
-   * Tag filter encoded as `${kind}:${value}` (e.g. `'owner:cella'`); restricts to operations whose
-   * `tagsByKind[kind]` includes `value`. `mcpToolFilter` restricts to MCP tools.
-   */
+  /** `${kind}:${value}` (e.g. `'owner:cella'`) keeps the operations whose `tagsByKind[kind]` holds `value`; `mcpToolFilter` keeps MCP tools. */
   tag?: string;
 }
 
@@ -20,10 +17,10 @@ const matchesTerm = (op: GenOperationSummary, term: string): boolean =>
   op.id.toLowerCase().includes(term) ||
   op.method.toLowerCase().includes(term) ||
   op.path.toLowerCase().includes(term) ||
-  !!op.description?.toLowerCase().includes(term) ||
-  !!op.tags?.some((tag) => tag.toLowerCase().includes(term)) ||
-  Object.values(op.tagsByKind ?? {}).some((values) => values.some((v) => v.toLowerCase().includes(term))) ||
-  Object.values(op.extensions).some((values) => values.some((v) => v.toLowerCase().includes(term)));
+  op.description.toLowerCase().includes(term) ||
+  op.tags.some((tag) => tag.toLowerCase().includes(term)) ||
+  Object.values(op.tagsByKind).some((values) => values.some((value) => value.toLowerCase().includes(term))) ||
+  Object.values(op.extensions).some((values) => values.some((value) => value.toLowerCase().includes(term)));
 
 export function useFilteredOperations(operations: GenOperationSummary[], { q, tag }: FilterOptions) {
   return useMemo(() => {
@@ -31,11 +28,11 @@ export function useFilteredOperations(operations: GenOperationSummary[], { q, ta
     if (tag === mcpToolFilter) {
       ops = ops.filter((op) => op.tool);
     } else if (tag) {
-      const sep = tag.indexOf(':');
-      if (sep > 0) {
-        const kind = tag.slice(0, sep);
-        const value = tag.slice(sep + 1);
-        ops = ops.filter((op) => op.tagsByKind?.[kind]?.includes(value));
+      const colonIndex = tag.indexOf(':');
+      if (colonIndex > 0) {
+        const kind = tag.slice(0, colonIndex);
+        const value = tag.slice(colonIndex + 1);
+        ops = ops.filter((op) => op.tagsByKind[kind]?.includes(value));
       }
     }
 

@@ -1,6 +1,7 @@
 import { create, insertMultiple, search } from '@orama/orama';
 import type { GenComponentSchema, GenOperationSummary } from 'sdk/docs-types';
 import { parseTerms, trimAroundMatch } from 'shared/utils/text-match';
+import { schemaAnchor } from '~/modules/docs/helpers/schema-anchor';
 import type { DocsSearchResult, DocsSearchResultType, DocsSearchScope } from '~/modules/docs/search/types';
 
 /** Everything the engine indexes for one docs page. */
@@ -41,15 +42,15 @@ type SearchDoc = {
   deprecated?: boolean;
 };
 
-const MAX_HITS = 60;
-const MAX_CHILD_ROWS = 5;
+const maxHits = 60;
+const maxChildRows = 5;
 
 function pageDocs(page: EnginePage): SearchDoc[] {
   const base = {
     pageId: page.slug,
     path: '',
     tags: [],
-    breadcrumbs: [] as string[],
+    breadcrumbs: [],
     to: '/docs/page/$',
     params: { _splat: page.slug },
   };
@@ -95,7 +96,7 @@ function operationDoc(op: GenOperationSummary, labels: EngineLabels): SearchDoc 
     kind: 'operation',
     pageId: `operation:${op.hash}`,
     title: op.summary || op.id,
-    content: op.description ?? '',
+    content: op.description,
     path: `${op.method} ${op.path}`,
     tags: op.tags,
     breadcrumbs: [labels.operations, ...op.tags],
@@ -117,13 +118,12 @@ function schemaDoc(schema: GenComponentSchema, labels: EngineLabels): SearchDoc 
     tags: [schema.schemaTag],
     breadcrumbs: [labels.schemas, schema.schemaTag],
     to: '/docs/schemas',
-    // Anchor convention of the schemas page: the $ref path minus its leading '#'.
-    hash: schema.ref.replace(/^#/, ''),
+    hash: schemaAnchor(schema),
   };
 }
 
 /** Scope chip → the document kinds it allows. */
-const SCOPE_KINDS: Record<Exclude<DocsSearchScope, 'all'>, DocsSearchResultType[]> = {
+const scopeKinds: Record<Exclude<DocsSearchScope, 'all'>, DocsSearchResultType[]> = {
   pages: ['page', 'heading', 'text'],
   api: ['operation', 'schema'],
 };
@@ -181,8 +181,8 @@ export function createEngine(
         // 0 = documents must match every term; typo tolerance still applies per term.
         threshold: 0,
         boost: { title: 2, path: 1.5 },
-        limit: MAX_HITS,
-        ...(scope !== 'all' && { where: { kind: { in: SCOPE_KINDS[scope] } } }),
+        limit: maxHits,
+        ...(scope !== 'all' && { where: { kind: { in: scopeKinds[scope] } } }),
       });
 
       // Group hits by page, preserving global score order; a group ranks by its best hit
@@ -212,7 +212,7 @@ export function createEngine(
         rows.push(
           ...docs
             .filter((doc) => doc.kind !== 'page')
-            .slice(0, MAX_CHILD_ROWS)
+            .slice(0, maxChildRows)
             .map((doc) => toRow(doc, terms)),
         );
       }

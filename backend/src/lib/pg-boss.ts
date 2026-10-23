@@ -14,10 +14,10 @@ export type JobsRole = 'producer' | 'consumer' | 'maintainer';
 const roleRank: Record<JobsRole, number> = { producer: 0, consumer: 1, maintainer: 2 };
 
 /** pg-boss schema; tests use their own so the shared test database never touches a development store. */
-export const JOBS_SCHEMA = appConfig.mode === 'test' ? 'pgboss_test' : 'pgboss';
+export const jobsSchema = appConfig.mode === 'test' ? 'pgboss_test' : 'pgboss';
 
 /** Per-process listener connection on top of this pool: the budget in DB-DEV-S terms is 5 + 1 per worker. */
-const POOL_MAX: Record<JobsRole, number> = { producer: 2, consumer: 5, maintainer: 5 };
+const poolMax: Record<JobsRole, number> = { producer: 2, consumer: 5, maintainer: 5 };
 
 const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production' && !env.NODB);
 
@@ -33,8 +33,8 @@ export function jobsOptions(role: JobsRole, overrides: Partial<ConstructorOption
     connectionString: stripPostgresSslParams(url),
     ssl: verifiedPostgresSsl(url, sslCa),
     application_name: `${appConfig.slug}-jobs-${role}`,
-    schema: JOBS_SCHEMA,
-    max: POOL_MAX[role],
+    schema: jobsSchema,
+    max: poolMax[role],
     migrate: false,
     createSchema: false,
     supervise: role === 'maintainer',

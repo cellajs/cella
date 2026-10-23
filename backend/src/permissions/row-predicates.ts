@@ -13,7 +13,7 @@ import {
 import type { CollectionReadFilter } from './collection-scope';
 
 /** A never-matching predicate: the SQL analogue of a check-form returning `false`. */
-const NEVER: SQL = sql`false`;
+const neverPredicate: SQL = sql`false`;
 
 const resolveColumn = (table: AnyPgTable, columnName: string, conditionName: string): PgColumn => {
   const column = (table as unknown as Record<string, PgColumn | undefined>)[columnName];
@@ -28,7 +28,7 @@ const compileRowConditionSql = (name: RowConditionName, table: AnyPgTable, actor
   switch (name) {
     case 'own': {
       const actorId = 'anonymous' in actor ? undefined : actor.actorId;
-      if (!actorId) return NEVER;
+      if (!actorId) return neverPredicate;
       return eq(resolveColumn(table, 'createdBy', name), actorId);
     }
     // Actor-independent (public read): matches for anonymous actors too.

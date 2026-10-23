@@ -9,10 +9,19 @@ import {
 } from '@simplewebauthn/browser';
 import { generatePasskeyChallenge, getStepUpPasskeyChallenge } from 'sdk';
 import { appConfig } from 'shared';
-import type { PasskeyCredentialProps } from '~/modules/auth/types';
+import type { PasskeyChallengeBody, PasskeyVerifyType } from '~/modules/auth/types';
 import { getCurrentUser } from '~/modules/user/user-store';
 
-const relyingPartyId = appConfig.mode === 'development' ? 'localhost' : appConfig.domain;
+const isDevelopment = appConfig.mode === 'development';
+const relyingPartyId = isDevelopment ? 'localhost' : appConfig.domain;
+
+/** WebAuthn request options for a challenge, limited to the listed passkeys when there are any. */
+const requestOptions = (challenge: string, credentialIds: string[] = []): PublicKeyCredentialRequestOptionsJSON => ({
+  challenge,
+  rpId: relyingPartyId,
+  userVerification: 'required',
+  allowCredentials: credentialIds.map((id) => ({ id, type: 'public-key', transports: ['internal'] })),
+});
 
 /** True when the browser can show passkey suggestions in its autofill UI (conditional mediation). */
 export const isConditionalMediationAvailable = (): Promise<boolean> => browserSupportsWebAuthnAutofill();
@@ -21,12 +30,14 @@ export const isConditionalMediationAvailable = (): Promise<boolean> => browserSu
 export const startConditionalMediation = async (onCredential: (data: ConditionalMediationResult) => void, signal: AbortSignal) => {
   const { challenge } = await getChallenge({ type: 'authentication' });
 
-  const optionsJSON: PublicKeyCredentialRequestOptionsJSON = { challenge, rpId: relyingPartyId, userVerification: 'required', allowCredentials: [] };
-
   // The ceremony is managed by @simplewebauthn's singleton abort service; forward external aborts
   signal.addEventListener('abort', () => WebAuthnAbortService.cancelCeremony(), { once: true });
 
-  const assertion = await startAuthentication({ optionsJSON, useBrowserAutofill: true, verifyBrowserAutofillInput: false });
+  const assertion = await startAuthentication({
+    optionsJSON: requestOptions(challenge),
+    useBrowserAutofill: true,
+    verifyBrowserAutofillInput: false,
+  });
 
   onCredential({ assertion, type: 'authentication' });
 };
@@ -38,8 +49,6 @@ export const getPasskeyRegistrationCredential = async () => {
   const { challenge } = await getChallenge({ type: 'registration' });
 
   const userHandle = bufferToBase64URLString(crypto.getRandomValues(new Uint8Array(20)).buffer);
-
-  const isDevelopment = appConfig.mode === 'development';
 
   const email = getCurrentUser().email;
   const generatedName = generatePasskeyName();
@@ -66,36 +75,23 @@ export const getPasskeyRegistrationCredential = async () => {
  * Returns the passkey verify credential (assertion plus the challenge type). Only an MFA challenge lists the account's
  * passkeys; otherwise the browser offers its discoverable ones.
  */
-export const getPasskeyVerifyCredential = async (query: { type: Exclude<PasskeyCredentialProps['type'], 'registration'> }) => {
-  const { challenge, credentialIds } = await getChallenge(query);
+export const getPasskeyVerifyCredential = async ({ type }: { type: PasskeyVerifyType }) => {
+  const { challenge, credentialIds } = await getChallenge({ type });
 
-  const allowCredentials = credentialIds.map(toAllowCredential);
-  const assertion = await startAuthentication({
-    optionsJSON: { challenge, rpId: relyingPartyId, userVerification: 'required', allowCredentials },
-  });
+  const assertion = await startAuthentication({ optionsJSON: requestOptions(challenge, credentialIds) });
 
-  return { assertion, ...query };
+  return { assertion, type };
 };
 
 /** A passkey assertion for a step-up of the signed-in session: its challenge is bound to the account. */
 export const getPasskeyStepUpCredential = async () => {
   const { challenge, credentialIds } = await getStepUpPasskeyChallenge();
 
-  const allowCredentials = credentialIds.map(toAllowCredential);
-
-  return startAuthentication({
-    optionsJSON: { challenge, rpId: relyingPartyId, userVerification: 'required', allowCredentials },
-  });
+  return startAuthentication({ optionsJSON: requestOptions(challenge, credentialIds) });
 };
 
-const toAllowCredential = (id: string) => ({ id, type: 'public-key' as const, transports: ['internal' as const] });
-
-const getChallenge = async (body: PasskeyCredentialProps) => {
-  // Fetch a base64url challenge from BE; it doubles as the WebAuthn JSON options value
-  const { challenge, credentialIds } = await generatePasskeyChallenge({ body });
-
-  return { challenge, credentialIds };
-};
+/** A base64url challenge from the backend, which the WebAuthn options JSON takes as is. */
+const getChallenge = (body: PasskeyChallengeBody) => generatePasskeyChallenge({ body });
 
 const generatePasskeyName = () => {
   const nouns = [

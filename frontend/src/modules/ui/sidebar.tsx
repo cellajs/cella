@@ -2,23 +2,17 @@ import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { PanelLeftIcon } from 'lucide-react';
 import type * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/modules/ui/tooltip';
 import { cn } from '~/utils/cn';
 
-/**
- * Collapsible sidebar backed by the navigation store.
- * @link https://ui.shadcn.com/docs/components/sidebar
- */
-
 type SidebarState = 'expanded' | 'collapsed';
 
 type UseSidebarReturn = {
   state: SidebarState;
-  open: boolean;
-  setOpen: (open: boolean) => void;
   isMobile: boolean;
   toggleSidebar: () => void;
 };
@@ -37,7 +31,7 @@ function useSidebar(): UseSidebarReturn {
   // Nested sidebars pin the outer bar to 'collapsed' (icons only); the content panel tracks its own visibility.
   const state: SidebarState = 'collapsed';
 
-  return { state, open: keepNavOpen, setOpen: setKeepNavOpen, isMobile, toggleSidebar };
+  return { state, isMobile, toggleSidebar };
 }
 
 function SidebarWrapper({ className, style, children, ...props }: React.ComponentProps<'div'>) {
@@ -53,11 +47,7 @@ function SidebarWrapper({ className, style, children, ...props }: React.Componen
   );
 }
 
-/**
- * Mounts no `TooltipProvider`, unlike the shadcn source: upstream's `delayDuration={0}` for an icon rail shadowed the
- * app-wide delay from `root.tsx`, firing every nav tooltip on the briefest pass of the cursor. Inheriting that provider
- * keeps the nav in one delay group, so the first tooltip waits and the buttons next to it still answer instantly.
- */
+/** Mounts no `TooltipProvider`, so the nav tooltips share the app-wide delay group of `root.tsx`: the first waits, its neighbors open at once. */
 function Sidebar({
   side = 'left',
   variant = 'sidebar',
@@ -128,6 +118,7 @@ function Sidebar({
 }
 
 function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<typeof Button>) {
+  const { t } = useTranslation();
   const { toggleSidebar } = useSidebar();
 
   return (
@@ -144,7 +135,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       {...props}
     >
       <PanelLeftIcon />
-      <span className="sr-only">Toggle Sidebar</span>
+      <span className="sr-only">{t('c:toggle_menu')}</span>
     </Button>
   );
 }
@@ -180,8 +171,7 @@ function SidebarGroupLabel({ className, render, ...props }: useRender.ComponentP
       'data-slot': 'sidebar-group-label',
       'data-sidebar': 'group-label',
       className: cn(
-        'flex h-8 shrink-0 items-center rounded-md px-2 font-medium text-sidebar-foreground/70 text-xs outline-hidden ring-sidebar-ring transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
-        'group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0',
+        'flex h-8 shrink-0 items-center rounded-md px-2 font-medium text-sidebar-foreground/70 text-xs outline-hidden ring-sidebar-ring transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0 [&>svg]:size-4 [&>svg]:shrink-0',
         className,
       ),
       ...props,

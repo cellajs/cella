@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProductEntityType } from '../../../types.ts';
 import { defineLens } from '../define.ts';
 
-const DOC = 'doc' as ProductEntityType;
+const doc = 'doc' as ProductEntityType;
 
 // Inject synthetic lenses so the engine can be exercised without shipping a real
 // (schema-breaking) lens. Ordinal = index + 1.
@@ -54,9 +54,9 @@ describe('currentSchemaVersion + versionNodeFor', () => {
     expect(versionNodeFor('attachment', 0)).toBe('v0');
     expect(versionNodeFor('attachment', 1)).toBe('v1');
     expect(versionNodeFor('attachment', 3)).toBe('v1'); // doc lenses at ordinals 2/3 add no attachment node
-    expect(versionNodeFor(DOC, 1)).toBe('v0');
-    expect(versionNodeFor(DOC, 2)).toBe('v2');
-    expect(versionNodeFor(DOC, 3)).toBe('v3');
+    expect(versionNodeFor(doc, 1)).toBe('v0');
+    expect(versionNodeFor(doc, 2)).toBe('v2');
+    expect(versionNodeFor(doc, 3)).toBe('v3');
   });
 });
 
@@ -76,7 +76,7 @@ describe('normalizeOps (server seam)', () => {
   });
 
   it('leaves entities with no rename lens untouched (add)', () => {
-    const { ops } = normalizeOps(DOC, { title: 'x' }, { fieldTimestamps: {} });
+    const { ops } = normalizeOps(doc, { title: 'x' }, { fieldTimestamps: {} });
     expect(ops).toEqual({ title: 'x' });
   });
 });
@@ -94,7 +94,7 @@ describe('migrateCachedEntity (client boot)', () => {
   });
 
   it('fills added fields with their default (static and computed)', async () => {
-    const migrated = await migrateCachedEntity(DOC, { id: '1', title: 'doc' }, 0);
+    const migrated = await migrateCachedEntity(doc, { id: '1', title: 'doc' }, 0);
     expect(migrated).toEqual({ id: '1', title: 'doc', archived: false, label: 'doc-1' });
   });
 });
@@ -154,7 +154,7 @@ describe('migrateQueuedMutation (client replay)', () => {
 describe('widenedOpsKeyMap', () => {
   it('exposes old→new aliases for expand lenses', () => {
     expect(widenedOpsKeyMap('attachment')).toEqual({ name: 'title' });
-    expect(widenedOpsKeyMap(DOC)).toEqual({});
+    expect(widenedOpsKeyMap(doc)).toEqual({});
   });
 });
 

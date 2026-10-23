@@ -7,7 +7,7 @@ import { Button } from '~/modules/ui/button';
 export function CallToAction() {
   const { t } = useTranslation();
 
-  const ref = useRef(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   return (
     <div className="mx-auto grid max-w-4xl text-center">
@@ -17,13 +17,13 @@ export function CallToAction() {
         <Button
           variant="ghost"
           size="xl"
-          onClick={() => window.open(appConfig.company.githubUrl, '_blank', 'noopener')}
-          className="glow-button relative rounded-full bg-background/95 px-10 hover:bg-background! active:bg-background"
+          render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />}
+          className="glow-button relative rounded-full bg-background/95 px-10 hover:bg-background active:bg-background"
           press={false}
         >
           {t('c:start_building')}
         </Button>
-        <Button ref={ref} variant="plain" size="xl" onClick={() => contactFormHandler(ref)} className="flex gap-1 rounded-full px-10">
+        <Button ref={buttonRef} variant="plain" size="xl" onClick={() => contactFormHandler(buttonRef)} className="rounded-full px-10">
           {t('c:talk_to_us')}
         </Button>
       </div>

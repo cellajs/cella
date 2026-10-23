@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCount } from './format-count';
+import { formatCount } from '~/utils/format-count';
 
 describe('formatCount', () => {
   it.each([

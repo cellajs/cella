@@ -2,7 +2,7 @@ import { createLogger } from 'shared/pino';
 import { describe, expect, it } from 'vitest';
 import { backendRedactPaths } from '#/lib/pino';
 
-const CENSOR = '[REDACTED]';
+const censor = '[REDACTED]';
 
 /**
  * A logger built through the shared `createLogger` with the backend's own redact paths, writing to memory. The app's
@@ -35,9 +35,9 @@ describe('backend log redaction paths', () => {
       userId: 'u1',
     });
 
-    expect(logged.token).toBe(CENSOR);
-    expect(logged.meta).toEqual({ secret: CENSOR, credentialId: CENSOR });
-    expect(logged.key).toEqual({ id: 'k1', hash: CENSOR, privateJwk: CENSOR });
+    expect(logged.token).toBe(censor);
+    expect(logged.meta).toEqual({ secret: censor, credentialId: censor });
+    expect(logged.key).toEqual({ id: 'k1', hash: censor, privateJwk: censor });
     expect(logged).toMatchObject({ code: 1006, provider: 'github', userId: 'u1' });
   });
 
@@ -48,8 +48,8 @@ describe('backend log redaction paths', () => {
     });
     const headers = (logged.req as { headers: Record<string, unknown> }).headers;
 
-    expect(headers.authorization).toBe(CENSOR);
-    expect(headers.cookie).toBe(CENSOR);
+    expect(headers.authorization).toBe(censor);
+    expect(headers.cookie).toBe(censor);
     expect(headers['user-agent']).toBe('ua');
   });
 });

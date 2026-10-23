@@ -9,17 +9,18 @@ vi.mock('~/query/basic/sync-stale-state', () => ({ setSyncStreamHealthy: vi.fn()
 const syncControl = vi.hoisted(() => ({ cursor: null as string | null, setCursor: vi.fn() }));
 vi.mock('~/query/realtime/sync-store', () => ({
   syncStore: {
-    getState: () => ({ cursor: syncControl.cursor, setCursor: syncControl.setCursor, setLastSyncAt: vi.fn(), getCatchupViews: () => [] }),
+    getState: () => ({ cursor: syncControl.cursor, setCursor: syncControl.setCursor, getCatchupViews: () => [] }),
   },
 }));
 vi.mock('./app-stream-handler', () => ({ handleAppStreamNotification: vi.fn() }));
 vi.mock('./view-declaration', () => ({ declareViewsFromMemberships: vi.fn() }));
-vi.mock('./catchup-processor', () => ({ catchupEntityTypes: () => [], processAppCatchup: vi.fn(() => Promise.resolve()) }));
+vi.mock('./catchup-processor', () => ({ processAppCatchup: vi.fn(() => Promise.resolve()) }));
+vi.mock('~/query/basic/entity-query-registry', () => ({ getRegisteredProductEntityTypes: () => [] }));
 // Controllable leader state so tests can drive the follower -> leader promotion transition, and hand a tab what the leader posted.
 const leaderControl = vi.hoisted(() => {
   const state = { isLeader: true };
-  const subscribers = new Set<(s: { isLeader: boolean }, p: { isLeader: boolean }) => void>();
-  const catchupHandlers = new Set<(response: PostAppCatchupResponse, baselineOnly: boolean) => void>();
+  const subscribers = new Set<(state: { isLeader: boolean }, previous: { isLeader: boolean }) => void>();
+  const catchupHandlers = new Set<(catchup: { response: PostAppCatchupResponse; baselineOnly: boolean }) => void>();
   const healthHandlers = new Set<(health: { streamHealthy: boolean; workerAway: boolean }) => void>();
   return {
     onSyncHealth: (fn: (health: { streamHealthy: boolean; workerAway: boolean }) => void) => {
@@ -32,22 +33,22 @@ const leaderControl = vi.hoisted(() => {
     },
     isLeader: () => state.isLeader,
     getState: () => ({ isLeader: state.isLeader }),
-    subscribe: (fn: (s: { isLeader: boolean }, p: { isLeader: boolean }) => void) => {
+    subscribe: (fn: (state: { isLeader: boolean }, previous: { isLeader: boolean }) => void) => {
       subscribers.add(fn);
       return () => subscribers.delete(fn);
     },
     setLeader: (next: boolean) => {
-      const prev = state.isLeader;
+      const previous = state.isLeader;
       state.isLeader = next;
-      for (const fn of subscribers) fn({ isLeader: next }, { isLeader: prev });
+      for (const fn of subscribers) fn({ isLeader: next }, { isLeader: previous });
     },
-    onCatchup: (fn: (response: PostAppCatchupResponse, baselineOnly: boolean) => void) => {
+    onCatchup: (fn: (catchup: { response: PostAppCatchupResponse; baselineOnly: boolean }) => void) => {
       catchupHandlers.add(fn);
       return () => catchupHandlers.delete(fn);
     },
     /** A catchup answer the leader tab posted, as the coordinator hands it to this tab. */
     receiveCatchup: (response: PostAppCatchupResponse, baselineOnly: boolean) => {
-      for (const fn of catchupHandlers) fn(response, baselineOnly);
+      for (const fn of catchupHandlers) fn({ response, baselineOnly });
     },
     reset: () => {
       state.isLeader = true;
@@ -143,7 +144,7 @@ function createHarness(overrides?: { fetchAndProcessCatchup?: (cursor: string | 
           };
         })),
     processLeaderCatchup: () => Promise.resolve(),
-    processNotification: (n) => {
+    processNotification: (n: unknown) => {
       order.push(`process:${(n as { id: string }).id}`);
       processed.push(n);
     },
@@ -187,9 +188,9 @@ describe('StreamManager subscribe-then-snapshot', () => {
     await tick();
 
     expect(h.order).toEqual(['catchup-start', 'catchup-done', 'process:a1']);
-    expect(h.manager.useStore.getState().state).toBe('live');
+    expect(h.manager.store.getState().state).toBe('live');
     // Cursor advanced by the drained notification (its eventId is newer than the catchup cursor).
-    expect(h.manager.useStore.getState().cursor).toBe('101');
+    expect(h.manager.store.getState().cursor).toBe('101');
   });
 
   it('covers a burst that overflows the buffer with one more catchup read, and ends the cycle when that read overflows as well', async () => {
@@ -213,12 +214,12 @@ describe('StreamManager subscribe-then-snapshot', () => {
     const once = await connectThroughBursts(1);
     expect(once.reads).toBe(2);
     expect(once.h.processed).toHaveLength(0);
-    expect(once.h.manager.useStore.getState().state).toBe('live');
+    expect(once.h.manager.store.getState().state).toBe('live');
 
     // A burst that outlasts the second read ends the cycle, and no third read follows.
     const twice = await connectThroughBursts(2);
     expect(twice.reads).toBe(2);
-    expect(twice.h.manager.useStore.getState().state).toBe('error');
+    expect(twice.h.manager.store.getState().state).toBe('error');
     expect(twice.h.es.readyState).toBe(FakeEventSource.CLOSED);
   });
 });
@@ -232,7 +233,7 @@ describe('StreamManager leader promotion', () => {
 
     // Follower parks in broadcast-only 'live' with no SSE.
     expect(FakeEventSource.instances).toHaveLength(0);
-    expect(h.manager.useStore.getState().state).toBe('live');
+    expect(h.manager.store.getState().state).toBe('live');
 
     // Leader tab closes: the Web Lock transfers and this tab is promoted.
     leaderControl.setLeader(true);
@@ -247,11 +248,16 @@ describe('StreamManager leader promotion', () => {
     h.resolveCatchup('c1');
     await tick();
 
-    expect(h.manager.useStore.getState().state).toBe('live');
+    expect(h.manager.store.getState().state).toBe('live');
   });
 });
 
+/** Longest first reconnect delay: the initial backoff plus the full jitter. */
+const firstReconnectMs = 7_000;
+
 describe('the gate that paused writes wait on', () => {
+  afterEach(() => vi.useRealTimers());
+
   it('must not stay closed in a follower tab, which runs no catchup of its own', async () => {
     // The gate lives for the page: a fresh module is a fresh page.
     vi.resetModules();
@@ -276,10 +282,41 @@ describe('the gate that paused writes wait on', () => {
     expect(await released()).toBe(true);
     manager.disconnect();
   });
-});
 
-/** Longest first reconnect delay: the initial backoff plus the full jitter. */
-const FIRST_RECONNECT_MS = 7_000;
+  it('opens once a stream that fails in transport gives up, and stays closed while it reconnects', async () => {
+    vi.useFakeTimers();
+    vi.resetModules();
+    const fresh = await import('./stream-store');
+    const manager = new fresh.StreamManager(`TestStream-${managerCount++}`, {
+      endpoint: 'http://api.test/stream',
+      withCredentials: false,
+      useTabCoordination: false,
+      fetchAndProcessCatchup: () => Promise.resolve('c1'),
+      processLeaderCatchup: () => Promise.resolve(),
+      processNotification: () => {},
+    });
+    let released = false;
+    void fresh.waitForActiveCatchup().then(() => {
+      released = true;
+    });
+    // The stream opens and fails before its offset event, so no catchup runs.
+    const failStream = () => FakeEventSource.instances.at(-1)?.onerror?.();
+
+    await manager.connect();
+    failStream();
+    await vi.advanceTimersByTimeAsync(firstReconnectMs);
+    failStream();
+    await vi.advanceTimersByTimeAsync(2 * firstReconnectMs);
+    expect(FakeEventSource.instances).toHaveLength(3);
+    expect(released).toBe(false);
+
+    // The third failure in a row opens the circuit: queued writes replay through the API.
+    failStream();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(released).toBe(true);
+    manager.disconnect();
+  });
+});
 
 describe('StreamManager server-sent errors', () => {
   afterEach(() => vi.useRealTimers());
@@ -297,7 +334,7 @@ describe('StreamManager server-sent errors', () => {
   it.each(['session_replaced', 'access_changed'])('reconnects after %s: the browser still holds a session', async (code) => {
     const h = await closedByServer(code);
 
-    await vi.advanceTimersByTimeAsync(FIRST_RECONNECT_MS);
+    await vi.advanceTimersByTimeAsync(firstReconnectMs);
 
     expect(FakeEventSource.instances).toHaveLength(2);
     expect(h.es.readyState).toBe(FakeEventSource.OPEN);
@@ -310,7 +347,7 @@ describe('StreamManager server-sent errors', () => {
     await vi.advanceTimersByTimeAsync(5 * 60_000);
 
     expect(FakeEventSource.instances).toHaveLength(1);
-    expect(h.manager.useStore.getState().state).toBe('error');
+    expect(h.manager.store.getState().state).toBe('error');
   });
 });
 
@@ -319,16 +356,16 @@ describe('StreamManager silence watchdog', () => {
   afterEach(() => vi.useRealTimers());
 
   /** The server writes a `ping` event this often. */
-  const KEEPALIVE_MS = 30_000;
+  const keepaliveMs = 30_000;
   /** The watchdog's limit: 2.5 keepalive intervals. */
-  const SILENCE_MS = 75_000;
+  const silenceMs = 75_000;
 
   const liveStream = async () => {
     const h = createHarness({ fetchAndProcessCatchup: () => Promise.resolve('c1') });
     await h.manager.connect();
     h.es.emit('offset', '100');
     await vi.advanceTimersByTimeAsync(0);
-    expect(h.manager.useStore.getState().state).toBe('live');
+    expect(h.manager.store.getState().state).toBe('live');
     return h;
   };
 
@@ -338,22 +375,22 @@ describe('StreamManager silence watchdog', () => {
 
     // The server's keepalive holds it open for minutes.
     for (let i = 0; i < 10; i++) {
-      await vi.advanceTimersByTimeAsync(KEEPALIVE_MS);
+      await vi.advanceTimersByTimeAsync(keepaliveMs);
       stream.emit('ping', '');
     }
     // A change counts as well: the 75 seconds run from it, not from the last ping.
     await vi.advanceTimersByTimeAsync(60_000);
     stream.emit('change', JSON.stringify({ id: 'a1' }), '101');
 
-    await vi.advanceTimersByTimeAsync(SILENCE_MS - 1);
+    await vi.advanceTimersByTimeAsync(silenceMs - 1);
     expect(stream.readyState).toBe(FakeEventSource.OPEN);
-    expect(h.manager.useStore.getState().state).toBe('live');
+    expect(h.manager.store.getState().state).toBe('live');
 
     await vi.advanceTimersByTimeAsync(1);
     expect(stream.readyState).toBe(FakeEventSource.CLOSED);
-    expect(h.manager.useStore.getState().state).toBe('error');
+    expect(h.manager.store.getState().state).toBe('error');
 
-    await vi.advanceTimersByTimeAsync(FIRST_RECONNECT_MS);
+    await vi.advanceTimersByTimeAsync(firstReconnectMs);
     expect(FakeEventSource.instances).toHaveLength(2);
     expect(h.es.readyState).toBe(FakeEventSource.OPEN);
     h.manager.disconnect();
@@ -376,7 +413,7 @@ describe('a catchup answer, from the leader to its follower tabs', () => {
     expect(broadcastCatchup).toHaveBeenCalledExactlyOnceWith(answer, false);
     expect(processAppCatchup).toHaveBeenCalledExactlyOnceWith(answer, false);
     expect(vi.mocked(broadcastCatchup).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(processAppCatchup).mock.invocationCallOrder[0]);
-    expect(appStreamManager.useStore.getState().state).toBe('live');
+    expect(appStreamManager.store.getState().state).toBe('live');
   });
 
   it('is processed by a follower, which stores its cursor and sends no request of its own', async () => {
@@ -429,10 +466,10 @@ describe('StreamManager notifications to follower tabs', () => {
 
     h.resolveCatchup('c1');
     await tick();
-    expect(broadcastNotification).toHaveBeenCalledExactlyOnceWith({ id: 'a1' }, 'user');
+    expect(broadcastNotification).toHaveBeenCalledExactlyOnceWith({ id: 'a1' });
 
     h.es.emit('change', JSON.stringify({ id: 'b1' }), '102');
-    expect(broadcastNotification).toHaveBeenLastCalledWith({ id: 'b1' }, 'user');
+    expect(broadcastNotification).toHaveBeenLastCalledWith({ id: 'b1' });
     expect(h.order).toEqual(['catchup-start', 'catchup-done', 'process:a1', 'process:b1']);
     h.manager.disconnect();
   });
@@ -475,7 +512,7 @@ describe('the health of live delivery', () => {
   it("must not take a follower's own store for the health of a stream: it has none, and takes the leader's word", async () => {
     leaderControl.setLeader(false);
     await appStreamManager.connect();
-    expect(appStreamManager.useStore.getState().state).toBe('live');
+    expect(appStreamManager.store.getState().state).toBe('live');
     expect(setSyncStreamHealthy).not.toHaveBeenCalled();
 
     leaderControl.receiveSyncHealth({ streamHealthy: false, workerAway: true });

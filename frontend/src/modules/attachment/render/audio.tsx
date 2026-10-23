@@ -1,12 +1,11 @@
 import MediaThemeSutroAudio from 'player.style/sutro-audio/react';
+import type { MediaPlayerProps } from '~/modules/attachment/render/attachment-render';
 
-function RenderAudio({ src, className }: { src: string; className?: string }) {
+export function RenderAudio({ src, className }: MediaPlayerProps) {
   return (
     <MediaThemeSutroAudio className={className}>
-      {/* biome-ignore lint/a11y/useMediaCaption: by author */}
+      {/* biome-ignore lint/a11y/useMediaCaption: an uploaded audio file comes without a caption track */}
       <audio slot="media" src={src} crossOrigin="anonymous" />
     </MediaThemeSutroAudio>
   );
 }
-
-export { RenderAudio };

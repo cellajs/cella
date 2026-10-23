@@ -2,7 +2,7 @@ import { RateLimiterRes } from 'rate-limiter-flexible';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { extractIdentifiers, getRateLimiterInstance, openBucket, rateLimitError, subjectSegment } from '#/middlewares/rate-limiter/helpers';
-import { MAX_WINDOW_MS, restoreDebt, syncFromDb, takeDebt, tryFastConsume, windowSecondsLeft } from '#/middlewares/rate-limiter/points-cache';
+import { maxWindowMs, restoreDebt, syncFromDb, takeDebt, tryFastConsume, windowSecondsLeft } from '#/middlewares/rate-limiter/points-cache';
 import { reserveTiers, settleTiers, slowTier } from '#/middlewares/rate-limiter/tiers';
 import type { Outcome, RateLimiterHandler, RateLimiterOpts, RateLimitKeyPart, RateLimitMode, Tier } from '#/middlewares/rate-limiter/types';
 import { log } from '#/utils/logger';
@@ -47,7 +47,7 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
   const fastPath = mode === 'limit' && (countsInProcess || getPointsBudget !== undefined);
   /** The window the in-process counter keeps for a key: the limiter's own, up to the hour the counter keeps an idle key. */
   const windowMs = config.duration * 1000;
-  if (fastPath && windowMs > MAX_WINDOW_MS) throw new Error(`${keyPrefix}: counting in process needs a window of at most an hour`);
+  if (fastPath && windowMs > maxWindowMs) throw new Error(`${keyPrefix}: counting in process needs a window of at most an hour`);
   const isFailMode = mode === 'fail' || mode === 'failseries';
   const store = getRateLimiterInstance({ ...config, keyPrefix, inMemoryBlock: mode === 'limit' });
   /** The buckets a reserved attempt counts in: the route's own and, behind a failure budget, the 24-hour one. */

@@ -1,8 +1,7 @@
 import { liveQuery, type Subscription } from 'dexie';
 import { useSyncExternalStore } from 'react';
 import { type AttachmentBlob, attachmentsDb, type UploadStatus } from '~/modules/attachment/offline/attachments-db';
-import { getLocalUserDb } from '~/query/local-user-db';
-import { subscribeOwnerChange } from '~/query/local-user-storage';
+import { getLocalUserDb, subscribeOwnerChange } from '~/query/local-user-db';
 
 interface BlobUploadInfo {
   /** False when no local blob exists for this attachment, meaning it lives only in the cloud. */
@@ -12,7 +11,6 @@ interface BlobUploadInfo {
   isFailed: boolean;
   isPending: boolean;
   isLocalOnly: boolean;
-  lastError: string | null;
 }
 
 /** No local blob means the attachment is cloud-only, which is the "done" state for the UI. */
@@ -23,10 +21,9 @@ const defaultUploadInfo: BlobUploadInfo = {
   isFailed: false,
   isPending: false,
   isLocalOnly: false,
-  lastError: null,
 };
 
-function toUploadInfo(uploadStatus: UploadStatus, lastError: string | null | undefined): BlobUploadInfo {
+function toUploadInfo(uploadStatus: UploadStatus): BlobUploadInfo {
   return {
     hasLocalBlob: true,
     isUploaded: uploadStatus === 'uploaded',
@@ -34,12 +31,10 @@ function toUploadInfo(uploadStatus: UploadStatus, lastError: string | null | und
     isFailed: uploadStatus === 'failed',
     isPending: uploadStatus === 'pending',
     isLocalOnly: uploadStatus === 'local-only',
-    lastError: lastError ?? null,
   };
 }
 
-/** Marking a blob uploaded clears its lastError, and downloaded blobs never carry one. */
-const uploadedInfo = toUploadInfo('uploaded', null);
+const uploadedInfo = toUploadInfo('uploaded');
 
 const sameInfo = (a: BlobUploadInfo, b: BlobUploadInfo) => (Object.keys(a) as (keyof BlobUploadInfo)[]).every((key) => a[key] === b[key]);
 
@@ -51,20 +46,20 @@ async function readUploadInfos(): Promise<Map<string, BlobUploadInfo>> {
   const infos = new Map<string, BlobUploadInfo>();
   if (!getLocalUserDb()) return infos;
 
-  const ids = await attachmentsDb.blobs.toCollection().primaryKeys();
-  const syncing: AttachmentBlob[] = await attachmentsDb.blobs.where('uploadStatus').notEqual('uploaded').toArray();
-  const syncingById = new Map(syncing.map((blob) => [blob.id, blob]));
+  const blobKeys = await attachmentsDb.blobs.toCollection().primaryKeys();
+  const notUploaded: AttachmentBlob[] = await attachmentsDb.blobs.where('uploadStatus').notEqual('uploaded').toArray();
+  const notUploadedById = new Map(notUploaded.map((blob) => [blob.id, blob]));
 
   // The raw blob carries the upload state; without one, the attachment's first blob in key order (`${attachmentId}:${variant}`).
-  const primaryIds = new Map<string, string>();
-  for (const id of ids) {
-    const attachmentId = id.slice(0, id.lastIndexOf(':'));
-    if (!primaryIds.has(attachmentId) || id.endsWith(':raw')) primaryIds.set(attachmentId, id);
+  const primaryBlobKeys = new Map<string, string>();
+  for (const blobKey of blobKeys) {
+    const attachmentId = blobKey.slice(0, blobKey.lastIndexOf(':'));
+    if (!primaryBlobKeys.has(attachmentId) || blobKey.endsWith(':raw')) primaryBlobKeys.set(attachmentId, blobKey);
   }
 
-  for (const [attachmentId, id] of primaryIds) {
-    const blob = syncingById.get(id);
-    infos.set(attachmentId, blob ? toUploadInfo(blob.uploadStatus, blob.lastError) : uploadedInfo);
+  for (const [attachmentId, blobKey] of primaryBlobKeys) {
+    const blob = notUploadedById.get(blobKey);
+    infos.set(attachmentId, blob ? toUploadInfo(blob.uploadStatus) : uploadedInfo);
   }
   return infos;
 }
@@ -88,7 +83,7 @@ function subscribeQuery() {
   subscription?.unsubscribe();
   subscription = liveQuery(readUploadInfos).subscribe({
     next: publish,
-    error: (err) => console.error('[useBlobUploadStatus] Blob liveQuery error:', err),
+    error: (error) => console.error('[useBlobUploadStatus] Blob liveQuery error:', error),
   });
 }
 
@@ -96,7 +91,7 @@ function subscribe(listener: () => void) {
   listeners.add(listener);
   if (listeners.size === 1) {
     subscribeQuery();
-    // liveQuery tracks only the DB it first resolved, so re-subscribe when the per-user localUserDb rebinds.
+    // A rebound per-user DB starts empty and gets its own live query.
     stopOwnerChange = subscribeOwnerChange(() => {
       publish(new Map());
       subscribeQuery();

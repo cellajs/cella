@@ -1,13 +1,18 @@
 import { SquarePenIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '~/modules/ui/badge';
 
-export function UnsavedBadge({ title }: { title?: string | React.ReactNode }) {
+interface UnsavedBadgeProps {
+  title?: ReactNode;
+}
+
+export function UnsavedBadge({ title }: UnsavedBadgeProps) {
   const { t } = useTranslation();
   return (
     <>
       {typeof title === 'string' ? <span>{title}</span> : title}
-      <Badge size="sm" variant="plain" className="ml-2 in-[.unsaved-changes]:inline-flex hidden w-fit gap-2">
+      <Badge size="sm" variant="plain" className="ml-2 in-[.unsaved-changes]:inline-flex hidden gap-2">
         <SquarePenIcon className="size-3" />
         <span className="max-sm:hidden">{t('c:unsaved_changes')}</span>
       </Badge>

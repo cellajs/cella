@@ -1,7 +1,6 @@
 import { BuildingIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Tenant } from 'sdk';
-import { appConfig } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
@@ -9,28 +8,25 @@ import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { tenantsListQueryOptions, useTenantUpdateMutation } from '~/modules/tenants/query';
-import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-schemas';
 import { TenantsTableBar } from '~/modules/tenants/table/tenants-bar';
 import { useColumns } from '~/modules/tenants/table/tenants-columns';
-
-const LIMIT = appConfig.requestLimits.users; // Use users limit as fallback
+import type { TenantsRouteSearchParams } from '~/modules/tenants/types';
 
 function rowKeyGetter(row: Tenant) {
   return row.id;
 }
 
-function TenantsTable() {
+export function TenantsTable() {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<TenantsRouteSearchParams>({ from: '/_app/system/tenants' });
 
   const { q, sort, order } = search;
-  const limit = LIMIT;
 
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
   const updateTenant = useTenantUpdateMutation();
 
-  const queryOptions = tenantsListQueryOptions({ ...search, limit });
+  const queryOptions = tenantsListQueryOptions(search);
   const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
 
   const onRowsChange = (changedRows: Tenant[], { indexes, column }: RowsChangeData<Tenant>) => {
@@ -43,13 +39,7 @@ function TenantsTable() {
 
   return (
     <>
-      <TenantsTableBar
-        queryKey={queryOptions.queryKey}
-        columns={columns}
-        setColumns={setColumns}
-        searchVars={{ ...search, limit }}
-        setSearch={setSearch}
-      />
+      <TenantsTableBar queryKey={queryOptions.queryKey} columns={columns} setColumns={setColumns} searchVars={search} setSearch={setSearch} />
       <DataTable<Tenant>
         {...{
           rows,
@@ -58,7 +48,6 @@ function TenantsTable() {
           onRowsChange,
           columns,
           enableVirtualization: true,
-          limit,
           error,
           isLoading,
           isFetching,
@@ -75,5 +64,3 @@ function TenantsTable() {
     </>
   );
 }
-
-export { TenantsTable };

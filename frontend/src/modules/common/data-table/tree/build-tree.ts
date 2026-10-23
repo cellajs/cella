@@ -1,4 +1,4 @@
-/** Minimal row contract for tree building; other field names go through the {@link BuildTreeOptions} accessors. */
+/** Minimal row contract for tree building. */
 export interface TreeItem {
   id: string;
   parentId: string | null;
@@ -19,49 +19,23 @@ export type TreeRow<T> = T & {
   _subtreeHeight: number;
 };
 
-export interface TreeAccessors<T> {
-  getId: (item: T) => string;
-  getParentId: (item: T) => string | null;
-  getDisplayOrder: (item: T) => number;
-}
-
-export interface BuildTreeOptions<T> {
+interface BuildTreeOptions {
   toggledIds: ReadonlySet<string>;
   /** Baseline expansion state. `true` = all expanded by default. */
   defaultExpanded?: boolean;
-  /** Override field accessors if your entity doesn't use the default names. */
-  getId?: (item: T) => string;
-  getParentId?: (item: T) => string | null;
-  getDisplayOrder?: (item: T) => number;
 }
 
-/** Field reads used when a row satisfies {@link TreeItem} and supplies no overrides. */
-export const treeItemAccessors: TreeAccessors<TreeItem> = {
-  getId: (item) => item.id,
-  getParentId: (item) => item.parentId,
-  getDisplayOrder: (item) => item.displayOrder,
-};
-
 /** Builds the visible depth-first rows; expansion is `defaultExpanded XOR toggledIds.has(id)`. */
-export function buildTree<T extends TreeItem>(items: T[], opts: BuildTreeOptions<T>): TreeRow<T>[];
-export function buildTree<T>(items: T[], opts: BuildTreeOptions<T> & TreeAccessors<T>): TreeRow<T>[];
-export function buildTree<T extends TreeItem>(items: T[], opts: BuildTreeOptions<T>): TreeRow<T>[] {
-  const getId = opts.getId ?? treeItemAccessors.getId;
-  const getParentId = opts.getParentId ?? treeItemAccessors.getParentId;
-  const getDisplayOrder = opts.getDisplayOrder ?? treeItemAccessors.getDisplayOrder;
-  const defaultExpanded = opts.defaultExpanded ?? false;
-  const { toggledIds } = opts;
-
+export function buildTree<T extends TreeItem>(items: T[], { toggledIds, defaultExpanded = false }: BuildTreeOptions): TreeRow<T>[] {
   const childrenMap = new Map<string | null, T[]>();
   for (const item of items) {
-    const key = getParentId(item) ?? null;
-    const list = childrenMap.get(key);
-    if (list) list.push(item);
-    else childrenMap.set(key, [item]);
+    const siblings = childrenMap.get(item.parentId);
+    if (siblings) siblings.push(item);
+    else childrenMap.set(item.parentId, [item]);
   }
 
   for (const siblings of childrenMap.values()) {
-    siblings.sort((a, b) => getDisplayOrder(a) - getDisplayOrder(b));
+    siblings.sort((a, b) => a.displayOrder - b.displayOrder);
   }
 
   // Walks the full tree, so heights stay valid while descendants are collapsed.
@@ -76,8 +50,8 @@ export function buildTree<T extends TreeItem>(items: T[], opts: BuildTreeOptions
     }
     let max = 0;
     for (const child of children) {
-      const h = computeSubtreeHeight(getId(child));
-      if (h > max) max = h;
+      const childHeight = computeSubtreeHeight(child.id);
+      if (childHeight > max) max = childHeight;
     }
     const height = max + 1;
     subtreeHeightCache.set(itemId, height);
@@ -91,14 +65,14 @@ export function buildTree<T extends TreeItem>(items: T[], opts: BuildTreeOptions
     if (!children) return;
     for (let i = 0; i < children.length; i++) {
       const item = children[i];
-      const id = getId(item);
+      const { id } = item;
       const directChildren = childrenMap.get(id);
       const hasChildren = directChildren !== undefined;
       const isToggled = toggledIds.has(id);
       const isExpanded = hasChildren && (defaultExpanded ? !isToggled : isToggled);
       const isLastChild = i === children.length - 1;
       result.push({
-        ...(item as object),
+        ...item,
         _depth: depth,
         _hasChildren: hasChildren,
         _childCount: directChildren?.length ?? 0,
@@ -106,7 +80,7 @@ export function buildTree<T extends TreeItem>(items: T[], opts: BuildTreeOptions
         _isLastChild: isLastChild,
         _parentIsLastChild: parentIsLastChild,
         _subtreeHeight: computeSubtreeHeight(id),
-      } as TreeRow<T>);
+      });
       if (isExpanded) {
         walk(id, depth + 1, isLastChild);
       }

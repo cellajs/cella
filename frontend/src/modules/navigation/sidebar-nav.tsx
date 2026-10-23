@@ -1,12 +1,11 @@
-import type { CSSProperties } from 'react';
-import { Suspense } from 'react';
+import { type CSSProperties, Suspense } from 'react';
 import { appConfig } from 'shared';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { navSheetId, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { FocusBridge, FocusTarget } from '~/modules/navigation/focus-bridge';
-import { NavButton } from '~/modules/navigation/nav-buttons';
+import { SidebarNavItemButton } from '~/modules/navigation/nav-buttons';
 import { navItems } from '~/modules/navigation/nav-items';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { StopImpersonation } from '~/modules/navigation/stop-impersonation';
@@ -18,51 +17,39 @@ const DebugDropdown = __DEV_TOOLS__ ? lazyNamed(() => import('~/modules/common/d
 
 const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } = appConfig.theme.navigation;
 
-let baseNavItems: NavItem[] | null = null;
-function getBaseNavItems() {
-  if (!baseNavItems) baseNavItems = navItems.filter(({ type }) => type === 'base');
-  return baseNavItems;
-}
-
-let footerNavItems: NavItem[] | null = null;
-function getFooterNavItems() {
-  if (!footerNavItems) footerNavItems = navItems.filter(({ type }) => (type as string) === 'footer');
-  return footerNavItems;
-}
+const baseNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'base');
+const footerNavItems: NavItem[] = navItems.filter((item: NavItem) => item.type === 'footer');
 
 interface SidebarNavProps {
-  triggerNavItem: TriggerNavItemFn;
+  onNavItemClick: TriggerNavItemFn;
 }
 
-/** Widths are set as CSS custom properties; data attributes drive opacity, position and pointer-events. */
-export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
+export function SidebarNav({ onNavItemClick }: SidebarNavProps) {
   const { hasStarted } = useMountedState();
   const isDesktop = useBreakpointAbove('2xl');
 
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const keepNavOpen = useNavigationStore((state) => state.keepNavOpen);
 
-  const navSheetExists = useSheeter((state) => state.sheets.some((s) => s.id === 'nav-sheet' && s.open));
+  const navSheetExists = useSheeter((state) => state.sheets.some((sheet) => sheet.id === navSheetId && sheet.open));
 
   useBodyClass({ 'keep-nav-open': keepNavOpen });
   useBodyClass({ 'nav-sheet-open': navSheetExists });
 
-  const isCollapsed = !!navSheetOpen;
-  const isExpanded = hasSidebarTextLabels && isDesktop && !isCollapsed;
+  const isExpanded = hasSidebarTextLabels && isDesktop && !navSheetOpen;
   const isOverlay = !isDesktop || !keepNavOpen;
 
   // The spacer includes the sheet width when the sheet is open and not overlaying.
-  const iconBarWidth = isExpanded ? sidebarWidthExpanded : sidebarWidthCollapsed;
-  const sidebarWidth = iconBarWidth;
+  const sidebarWidth = isExpanded ? sidebarWidthExpanded : sidebarWidthCollapsed;
   const spacerWidth = isOverlay
     ? hasSidebarTextLabels && isDesktop
       ? sidebarWidthExpanded
       : sidebarWidthCollapsed
     : navSheetExists
-      ? `calc(${iconBarWidth} + ${sheetPanelWidth})`
-      : iconBarWidth;
+      ? `calc(${sidebarWidth} + ${sheetPanelWidth})`
+      : sidebarWidth;
 
-  const cssVars = { '--icon-bar-w': iconBarWidth, '--sidebar-w': sidebarWidth, '--spacer-w': spacerWidth } as CSSProperties;
+  const cssVars = { '--sidebar-w': sidebarWidth, '--spacer-w': spacerWidth } as CSSProperties;
 
   return (
     <div className="contents" style={cssVars}>
@@ -70,53 +57,51 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
       <div
         data-slot="sidebar-spacer"
         data-started={hasStarted}
-        className="relative w-(--spacer-w) bg-transparent focus-view:hidden data-[started=true]:transition-[width] data-[started=true]:duration-300 data-[started=true]:ease-out"
+        className="w-(--spacer-w) transition-[width] duration-300 ease-out focus-view:hidden data-[started=false]:transition-none"
       />
       <Sidebar
         id="sidebar-nav"
         collapsible="none"
         data-started={hasStarted}
-        data-collapsed={isCollapsed}
-        data-overlay={isOverlay}
-        className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) border-r-0 transition-[width] duration-200 ease-linear focus-view:hidden focus:outline-hidden data-[started=false]:-translate-x-full"
+        className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) transition-[width] duration-200 ease-linear focus-view:hidden data-[started=false]:-translate-x-full"
       >
         <FocusTarget target="sidebar" />
-        <div className="relative flex h-full flex-row">
-          <div className="flex h-full w-(--icon-bar-w) flex-col overflow-hidden transition-[width] duration-200 ease-linear">
+        <div className="relative flex h-full">
+          <div className="flex h-full w-(--sidebar-w) flex-col overflow-hidden transition-[width] duration-200 ease-linear">
             <SidebarContent className="gap-1">
               <SidebarGroup className="p-0">
                 <SidebarGroupContent>
                   <SidebarMenu className="gap-1">
-                    {getBaseNavItems().map((navItem: NavItem) => (
-                      <NavButton
+                    {baseNavItems.map((navItem) => (
+                      <SidebarNavItemButton
                         key={navItem.id}
                         navItem={navItem}
                         isActive={navSheetOpen === navItem.id}
                         isCollapsed={!isExpanded}
-                        onClick={triggerNavItem}
+                        onClick={onNavItemClick}
                       />
                     ))}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="gap-2 p-0">
+            <SidebarFooter className="p-0">
               <Suspense>
                 <DebugDropdown className="mx-2" />
               </Suspense>
               <SidebarMenu className="gap-1">
                 <StopImpersonation isCollapsed={!isExpanded} />
-                {getFooterNavItems().map((navItem: NavItem) => (
-                  <NavButton
+                {footerNavItems.map((navItem) => (
+                  <SidebarNavItemButton
                     key={navItem.id}
                     navItem={navItem}
                     isActive={navSheetOpen === navItem.id}
                     isCollapsed={!isExpanded}
-                    onClick={triggerNavItem}
+                    onClick={onNavItemClick}
                   />
                 ))}
               </SidebarMenu>
-              <FocusBridge direction="to-sheet" className="focus:relative focus:m-2" />
+              <FocusBridge direction="to-sheet" className="focus:m-2" />
             </SidebarFooter>
           </div>
         </div>

@@ -12,12 +12,12 @@ export function isNetworkError(error: unknown): boolean {
 }
 
 /** Sized to outlast connectivity probing and reach a TanStack offline boundary, which pauses and persists the mutation before the budget settles. */
-const MAX_NETWORK_RETRIES = 3;
+const maxNetworkRetries = 3;
 
 /**
  * Retries only connectivity failures, so offline-first mutations enter the persisted queue. TanStack starts `failureCount` at zero.
  * @see query-client.ts
  */
 export function mutationRetry(failureCount: number, error: unknown): boolean {
-  return isNetworkError(error) && failureCount < MAX_NETWORK_RETRIES;
+  return isNetworkError(error) && failureCount < maxNetworkRetries;
 }

@@ -1,10 +1,9 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { PaperclipIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
-import { appConfig } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
+import { canUploadAttachments } from '~/modules/attachment/helpers/can-upload-attachments';
 import { attachmentsCanonicalOptions, attachmentsListQueryOptions, useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
 import { AttachmentsTableBar } from '~/modules/attachment/table/attachments-bar';
@@ -14,12 +13,12 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
+import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
+import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { isDefaultListView } from '~/query/basic/create-query-keys';
-
-const LIMIT = appConfig.requestLimits.attachments;
 
 /** Defined outside the component so the getter identity stays stable. */
 function rowKeyGetter(row: Attachment) {
@@ -38,55 +37,31 @@ export interface AttachmentsTableProps {
   canUpload?: boolean;
 }
 
-function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTableProps) {
-  // Create has no row to resolve 'own' against, so only an unconditional grant shows upload, and
-  // only on channels the app declares as upload targets (`attachmentUploadTargets`).
-  const isUploadTarget = (appConfig.attachmentUploadTargets as readonly string[]).includes(channel.entityType);
-  const allowUpload = canUpload ?? (isUploadTarget && channel.can?.attachment?.create === true);
+export function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTableProps) {
+  const allowUpload = canUpload ?? canUploadAttachments(channel);
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<AttachmentsRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  const updateAttachment = useAttachmentUpdateMutation(channel.tenantId, channel.id);
+  const organizationId = channelOrganizationId(channel);
+  const updateAttachment = useAttachmentUpdateMutation(channel.tenantId, organizationId);
 
-  // Table state
   const { q, sort, order } = search;
-  const limit = LIMIT;
 
-  const columnsFromHook = useColumns(channel, isSheet);
-  const [hiddenOverrides, setHiddenOverrides] = useState<Record<string, boolean>>({});
-  const columns = useMemo(
-    () => columnsFromHook.map((col) => ({ ...col, hidden: hiddenOverrides[col.key] ?? col.hidden })),
-    [columnsFromHook, hiddenOverrides],
-  );
-  const setColumns: React.Dispatch<React.SetStateAction<ColumnOrColumnGroup<Attachment>[]>> = (updater) => {
-    const newCols = typeof updater === 'function' ? updater(columns) : updater;
-    setHiddenOverrides((prev) => {
-      const next = { ...prev };
-      for (const col of newCols) {
-        if (col.hidden !== undefined) next[col.key] = col.hidden;
-      }
-      return next;
-    });
-  };
+  const [columns, setColumns] = useColumnVisibility(useColumns(channel, isSheet));
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   // Default view (no search, default sort) reads the canonical org query that SyncService prefetches; any other filter uses the infinite query.
   const isDefaultView = isDefaultListView({ q, sort, order }, attachmentsSearchDefaults);
 
-  const canonicalOptions = attachmentsCanonicalOptions({ tenantId: channel.tenantId, organizationId: channel.id });
+  const canonicalOptions = attachmentsCanonicalOptions({ tenantId: channel.tenantId, organizationId });
   const canonical = useQuery({ ...canonicalOptions, enabled: isDefaultView, refetchOnMount: true, select: selectDefaultViewRows });
 
-  const queryOptions = attachmentsListQueryOptions({ tenantId: channel.tenantId, organizationId: channel.id, q, sort, order, limit });
-  const filtered = useInfiniteQuery({
-    ...queryOptions,
-    enabled: !isDefaultView,
-    refetchOnMount: true,
-    select: ({ pages }) => pages.flatMap(({ items }) => items),
-  });
+  const queryOptions = attachmentsListQueryOptions({ tenantId: channel.tenantId, organizationId, q, sort, order });
+  const filtered = useInfiniteRows({ ...queryOptions, enabled: !isDefaultView, refetchOnMount: true });
 
-  const { data: rows, isLoading, isFetching, error } = isDefaultView ? canonical : filtered;
+  const { isLoading, isFetching, error } = isDefaultView ? canonical : filtered;
+  const rows = isDefaultView ? canonical.data : filtered.rows;
   const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
-  const hasNextPage = isDefaultView ? false : filtered.hasNextPage;
 
   const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
     if (column.key !== 'name') return;
@@ -95,11 +70,6 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
       const attachment = changedRows[index];
       updateAttachment.mutate({ id: attachment.id, ops: { name: attachment.name } });
     }
-  };
-
-  const fetchMore = async () => {
-    if (!hasNextPage || isLoading || isFetching) return;
-    await filtered.fetchNextPage();
   };
 
   const NoRowsComponent = (
@@ -111,7 +81,7 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
       <AttachmentsTableBar
         channel={channel}
         selected={selected}
-        searchVars={{ ...search, limit }}
+        searchVars={search}
         setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
@@ -128,13 +98,12 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
           rowKeyGetter,
           columns,
           enableVirtualization: true,
-          limit,
           error,
           isLoading,
           isFetching,
           isFiltered: !!q,
-          hasNextPage,
-          fetchMore,
+          hasNextPage: !isDefaultView && filtered.hasNextPage,
+          fetchMore: filtered.fetchMore,
           selectedRows: selectedRowIds,
           onSelectedRowsChange,
           sortColumns,
@@ -145,5 +114,3 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
     </>
   );
 }
-
-export { AttachmentsTable };

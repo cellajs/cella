@@ -5,9 +5,9 @@ import { useMatchScope } from '~/modules/common/match-highlight/match-scope';
 /** Name of the one `CSS.highlights` entry, styled by `::highlight(match)` in match-highlight.css. */
 const highlightName = 'match';
 
-const supported = typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight === 'function';
+const isHighlightApiSupported = typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight === 'function';
 
-const registered = () => {
+const getSharedHighlight = () => {
   const existing = CSS.highlights.get(highlightName);
   if (existing) return existing;
   const highlight = new Highlight();
@@ -20,7 +20,7 @@ const rangesIn = (container: HTMLElement, terms: string[]): StaticRange[] => {
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   const nodes: { node: Text; start: number }[] = [];
   let text = '';
-  for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text | null) {
+  for (let node = walker.nextNode(); node instanceof Text; node = walker.nextNode()) {
     nodes.push({ node, start: text.length });
     text += node.data;
   }
@@ -43,27 +43,26 @@ const rangesIn = (container: HTMLElement, terms: string[]): StaticRange[] => {
 };
 
 /**
- * Paints the scope's terms over the element's text with the CSS Custom Highlight API, which adds
- * no DOM nodes: for HTML the app sets itself (sanitized documents, code). Text React renders takes
- * `HighlightText`. Repaints once per frame after the element's content changes, since the ranges
- * are static and a replaced text node drops them. A browser without the API gets no highlight.
+ * Paints the scope's terms over HTML the app sets itself (sanitized documents, code) with the CSS Custom Highlight API,
+ * which adds no DOM nodes. Text React renders takes `HighlightText`.
  */
-export function useMatchHighlight(ref: RefObject<HTMLElement | null>): void {
+export function useMatchHighlight(elementRef: RefObject<HTMLElement | null>): void {
   const terms = useMatchScope();
 
   useLayoutEffect(() => {
-    const element = ref.current;
-    if (!element || !supported || !terms.length) return;
+    const element = elementRef.current;
+    if (!element || !isHighlightApiSupported || !terms.length) return;
 
-    const highlight = registered();
-    let own: StaticRange[] = [];
+    const highlight = getSharedHighlight();
+    let paintedRanges: StaticRange[] = [];
     const paint = () => {
-      for (const range of own) highlight.delete(range);
-      own = rangesIn(element, terms);
-      for (const range of own) highlight.add(range);
+      for (const range of paintedRanges) highlight.delete(range);
+      paintedRanges = rangesIn(element, terms);
+      for (const range of paintedRanges) highlight.add(range);
     };
 
     let frame = 0;
+    // A replaced text node drops its static ranges, so content changes repaint, once per frame
     const observer = new MutationObserver(() => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(paint);
@@ -74,7 +73,7 @@ export function useMatchHighlight(ref: RefObject<HTMLElement | null>): void {
     return () => {
       observer.disconnect();
       cancelAnimationFrame(frame);
-      for (const range of own) highlight.delete(range);
+      for (const range of paintedRanges) highlight.delete(range);
     };
-  }, [ref, terms]);
+  }, [elementRef, terms]);
 }

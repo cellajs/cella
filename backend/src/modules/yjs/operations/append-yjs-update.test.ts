@@ -8,7 +8,7 @@ import type { DbContext } from '#/core/context';
 import { baseDb, type Tx } from '#/db/db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
-import { decodeLogNotice, YJS_LOG_CHANNEL, YJS_MAX_UPDATE_BYTES, type YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
+import { decodeLogNotice, type YjsDocScope, yjsLogChannel, yjsMaxUpdateBytes } from '#/modules/yjs/helpers/yjs-log';
 import { appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { retireYjsDocuments } from '#/modules/yjs/operations/retire-yjs-documents';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
@@ -34,9 +34,9 @@ describe('the Yjs log', () => {
     listener = new pg.Client({ connectionString: testDatabaseUrl });
     await listener.connect();
     listener.on('notification', ({ channel, payload }) => {
-      if (channel === YJS_LOG_CHANNEL) heard.push(payload ?? '');
+      if (channel === yjsLogChannel) heard.push(payload ?? '');
     });
-    await listener.query(`LISTEN ${YJS_LOG_CHANNEL}`);
+    await listener.query(`LISTEN ${yjsLogChannel}`);
   });
 
   afterAll(async () => {
@@ -120,7 +120,7 @@ describe('the Yjs log', () => {
   /** Returns once a notification sent now is heard: notifications arrive in commit order, so every earlier one has too. */
   const barrier = async () => {
     const token = `barrier-${randomUUID()}`;
-    await adminDb.execute(sql`SELECT pg_notify(${YJS_LOG_CHANNEL}, ${token})`);
+    await adminDb.execute(sql`SELECT pg_notify(${yjsLogChannel}, ${token})`);
     await vi.waitUntil(() => heard.includes(token), { timeout: 5000, interval: 10 });
   };
 
@@ -159,7 +159,7 @@ describe('the Yjs log', () => {
       }),
     );
     const opts = { doc: scopeOf(), userId: null, generation: randomUUID() };
-    expect(await appendYjsUpdate(untouchable, { ...opts, update: new Uint8Array(YJS_MAX_UPDATE_BYTES + 1) })).toEqual({ status: 'too-large' });
+    expect(await appendYjsUpdate(untouchable, { ...opts, update: new Uint8Array(yjsMaxUpdateBytes + 1) })).toEqual({ status: 'too-large' });
     expect(await appendYjsUpdate(untouchable, { ...opts, update: new Uint8Array([1, 2, 3]) })).toEqual({ status: 'malformed' });
     expect(await appendYjsUpdate(untouchable, { ...opts, update: Y.encodeStateAsUpdate(new Y.Doc()) })).toEqual({ status: 'empty' });
   });

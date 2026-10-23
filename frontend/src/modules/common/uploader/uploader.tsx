@@ -1,45 +1,30 @@
-import Dashboard from '@uppy/react/dashboard';
 import { useTranslation } from 'react-i18next';
-import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restrictions-note';
-import { useUploader } from '~/modules/common/uploader/use-uploader';
-import { useUploadUppy } from '~/modules/common/uploader/use-uppy-upload';
+import { isImageTemplate } from '~/modules/common/uploader/helpers/image-editor-options';
+import { UploadDashboard } from '~/modules/common/uploader/upload-dashboard';
+import { uploader } from '~/modules/common/uploader/use-uploader';
+import { useUppyUpload } from '~/modules/common/uploader/use-uppy-upload';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
-import { useUIStore } from '~/modules/ui/ui-store';
-
-import '~/modules/common/uploader/uppy-styles';
 
 export function Uploader() {
   const { t } = useTranslation();
-  const mode = useUIStore((state) => state.mode);
-  const remove = useUploader((state) => state.remove);
 
-  const { uppy, error, uploaderData } = useUploadUppy();
+  const { uppy, uploadData } = useUppyUpload();
 
-  if (!uppy || !uploaderData) return null;
-
-  if (error) return <div className="py-3 text-destructive">{error}</div>;
+  if (!uppy || !uploadData) return null;
 
   return (
     <Dialog
-      defaultOpen={true}
+      defaultOpen
       onOpenChange={(open) => {
-        if (!open) remove();
+        if (!open) uploader.getState().remove();
       }}
     >
       <DialogContent className="h-[40vh] min-h-fit w-[90vw] xs:w-[80vw] max-w-xl md:max-w-2xl">
         <DialogHeader className="with-close-btn">
-          <DialogTitle className={uploaderData.title ? 'h-6 leading-6' : 'sr-only'}>{uploaderData.title || t('c:upload')}</DialogTitle>
-          {uploaderData.description && <DialogDescription>{uploaderData.description}</DialogDescription>}
+          <DialogTitle className={uploadData.title ? 'h-6 leading-6' : 'sr-only'}>{uploadData.title || t('c:upload')}</DialogTitle>
+          {uploadData.description && <DialogDescription>{uploadData.description}</DialogDescription>}
         </DialogHeader>
-        <Dashboard
-          uppy={uppy}
-          autoOpen={['cover', 'avatar'].includes(uploaderData.templateId) ? 'imageEditor' : null}
-          width="100%"
-          height="400px"
-          theme={mode}
-          note={generateRestrictionNote(uploaderData.restrictions)}
-          proudlyDisplayPoweredByUppy={false}
-        />
+        <UploadDashboard uppy={uppy} autoOpen={isImageTemplate(uploadData.templateId) ? 'imageEditor' : null} />
       </DialogContent>
     </Dialog>
   );

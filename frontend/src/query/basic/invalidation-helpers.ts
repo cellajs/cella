@@ -1,34 +1,26 @@
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import type { ChannelEntityType } from 'shared';
+import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { isQueued } from '~/query/offline/mutation-queue';
 import { queuedUpdateOf } from '~/query/offline/mutation-variables';
-import { getEntityQueryKeys } from './entity-query-registry';
 
 /** Removes parked updates before deletion so they cannot replay afterward; active updates stay queued so the delete remains serialized behind them. */
 export function removePendingMutations(queryClient: QueryClient, updateKey: QueryKey, ids: string[]): void {
   const idSet = new Set(ids);
   const mutationCache = queryClient.getMutationCache();
-  for (const mutation of mutationCache.findAll({ mutationKey: updateKey })) {
-    if (!isQueued(mutation)) continue;
+  for (const mutation of mutationCache.findAll({ mutationKey: updateKey, predicate: isQueued })) {
     const id = queuedUpdateOf(mutation.state.variables)?.id;
     if (id && idSet.has(id)) mutationCache.remove(mutation);
   }
 }
 
 /**
- * Whether sibling mutations should defer invalidation until the last settlement.
+ * Invalidate only after the final mutation in a grouped scope settles.
  * @see https://tkdodo.eu/blog/concurrent-optimistic-updates-in-react-query
  */
-function shouldSkipInvalidation(queryClient: QueryClient, mutationKey: QueryKey): boolean {
-  // onSettled still counts the current mutation as mutating, so >1 means siblings are pending and will invalidate.
-  return queryClient.isMutating({ mutationKey }) > 1;
-}
-
-/** Invalidate only after the final mutation in a grouped scope settles. */
 export function invalidateIfLastMutation(queryClient: QueryClient, mutationKey: QueryKey, queryKey: QueryKey): void {
-  if (!shouldSkipInvalidation(queryClient, mutationKey)) {
-    queryClient.invalidateQueries({ queryKey });
-  }
+  // onSettled still counts the settling mutation, so above one a sibling is pending and invalidates when it settles.
+  if (queryClient.isMutating({ mutationKey }) <= 1) queryClient.invalidateQueries({ queryKey });
 }
 
 /** Invalidate an entity's detail + list (and parent-org detail if nested) after a membership change, to resync counts. */
@@ -39,11 +31,11 @@ export function invalidateOnMembershipChange(
   organizationId?: string,
 ): void {
   const keys = getEntityQueryKeys(entityType);
-  queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId), refetchType: 'active' });
-  queryClient.invalidateQueries({ queryKey: keys.list.base, refetchType: 'active' });
+  queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId) });
+  queryClient.invalidateQueries({ queryKey: keys.list.base });
 
   if (organizationId && organizationId !== entityId) {
     const orgKeys = getEntityQueryKeys('organization');
-    queryClient.invalidateQueries({ queryKey: orgKeys.detail.byId(organizationId), refetchType: 'active' });
+    queryClient.invalidateQueries({ queryKey: orgKeys.detail.byId(organizationId) });
   }
 }

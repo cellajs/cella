@@ -4,8 +4,13 @@ import { TooltipButton } from '~/modules/common/tooltip-button';
 import { useOpenUserSheet } from '~/modules/user/use-open-user-sheet';
 import { cn } from '~/utils/cn';
 
+interface MemberAvatarProps {
+  member: Pick<UserMinimalBase, 'id' | 'name' | 'thumbnailUrl'>;
+  className?: string;
+}
+
 /** A user's avatar as a button that opens their user sheet, with the name as tooltip. */
-export function MemberAvatar({ member, className }: { member: Pick<UserMinimalBase, 'id' | 'name' | 'thumbnailUrl'>; className?: string }) {
+export function MemberAvatar({ member, className }: MemberAvatarProps) {
   const openUserSheet = useOpenUserSheet();
 
   return (

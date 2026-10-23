@@ -1,6 +1,7 @@
 import { Toast, type ToastManager, type ToastManagerAddOptions } from '@base-ui/react/toast';
+import i18n from 'i18next';
 import type { ReactNode } from 'react';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { uiStore } from '~/modules/ui/ui-store';
 
 /** Toast variants with their own icon. */
 export type ToastSeverity = 'success' | 'error' | 'info' | 'warning';
@@ -9,8 +10,8 @@ export type ToastSeverity = 'success' | 'error' | 'info' | 'warning';
 export type ToastOptions = Omit<ToastManagerAddOptions<object>, 'title' | 'type'>;
 
 // Errors and toasts with a description carry more to read, so they stay longer
-const TIMEOUT = 4_000;
-const LONG_TIMEOUT = 10_000;
+const timeout = 4_000;
+const longTimeout = 10_000;
 
 const manager = Toast.createToastManager();
 let held: ToastManagerAddOptions<object>[] = [];
@@ -49,7 +50,7 @@ function close(id?: string) {
  * Increased contrast, set on the user or asked for by the device, also keeps toasts open: a reader who needs stronger
  * edges likely needs more than a few seconds as well. The device setting covers signed-out pages, which have no switch.
  */
-const keepsMessages = () => useUIStore.getState().contrast === 'more' || !!globalThis.matchMedia?.('(prefers-contrast: more)').matches;
+const keepsMessages = () => uiStore.getState().contrast === 'more' || !!globalThis.matchMedia?.('(prefers-contrast: more)').matches;
 
 /**
  * How long a toast stays, in ms; 0 keeps it until dismissed. Increased contrast overrules every timeout. A toast that
@@ -57,7 +58,7 @@ const keepsMessages = () => useUIStore.getState().contrast === 'more' || !!globa
  */
 function timeoutFor(type: ToastSeverity | undefined, options: ToastOptions) {
   if (keepsMessages()) return 0;
-  return options.timeout ?? (type === 'error' || options.description ? LONG_TIMEOUT : TIMEOUT);
+  return options.timeout ?? (type === 'error' || options.description ? longTimeout : timeout);
 }
 
 /** A string message gets a stable id, so repeating it refreshes the visible toast. Errors are announced urgently. */
@@ -70,3 +71,6 @@ function show(type?: ToastSeverity) {
 
 /** Shows a toast and returns its id: `toaster(message)` plain, `toaster.<severity>(message)` with an icon. */
 export const toaster = Object.assign(show(), { success: show('success'), info: show('info'), warning: show('warning'), error: show('error'), close });
+
+/** Warns that the action needs a connection. */
+export const toastOffline = () => toaster.warning(i18n.t('c:action.offline.text'));

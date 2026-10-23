@@ -44,7 +44,7 @@ function touchWarmSlot(slot: object) {
   warmSlots.set(slot, cool);
 }
 
-interface DescriptionSlotOptions {
+interface UseDescriptionSlotOptions {
   /** Whether the editor is live; the app owns when editing starts and ends. */
   editing: boolean;
   /** Edit rights: without them nothing warms and the static takes no toggles. */
@@ -95,7 +95,7 @@ export function useDescriptionSlot({
   description,
   holdOnExit = true,
   cursorAtPoint = false,
-}: DescriptionSlotOptions): DescriptionSlot {
+}: UseDescriptionSlotOptions): DescriptionSlot {
   const [wasEditing, setWasEditing] = useState(editing);
   const [holding, setHolding] = useState(false);
   const [handoff, setHandoff] = useState<Handoff | null>(null);
@@ -103,22 +103,22 @@ export function useDescriptionSlot({
   const [slotKey] = useState(() => ({}));
 
   const apiRef = useRef<BlockNoteContentApi | null>(null);
-  const pendingCursor = useRef<Cursor | null>(editing ? 'end' : null);
+  const pendingCursorRef = useRef<Cursor | null>(editing ? 'end' : null);
   // A text click's point, kept for an editing start in the same task.
-  const clickPoint = useRef<Point | null>(null);
-  const pendingToggles = useRef<string[]>([]);
-  const idleTimers = useRef(new Map<string, number>());
-  const latest = useLatestRef({ editing, canEdit, description, cursorAtPoint });
+  const clickPointRef = useRef<Point | null>(null);
+  const pendingTogglesRef = useRef<string[]>([]);
+  const idleTimersRef = useRef(new Map<string, number>());
+  const optionsRef = useLatestRef({ editing, canEdit, description, cursorAtPoint });
 
   // During render, so the editor never unmounts for a frame between the two views.
   if (wasEditing !== editing) {
     setWasEditing(editing);
     if (editing) {
-      pendingCursor.current = clickPoint.current ?? 'end';
+      pendingCursorRef.current = clickPointRef.current ?? 'end';
       setHandoff(null);
       setHolding(false);
     } else {
-      pendingCursor.current = null;
+      pendingCursorRef.current = null;
       // The static shows the editor's content until the cache has it; a transition without a hold shows the cache.
       const content = holdOnExit ? apiRef.current?.getContent() : undefined;
       setHandoff(content !== undefined && content !== description ? { content, base: description } : null);
@@ -137,12 +137,12 @@ export function useDescriptionSlot({
   }, [holding]);
 
   const coolReasons = useCallback((drop: (reason: string) => boolean) => {
-    for (const [reason, timer] of idleTimers.current) {
+    for (const [reason, timer] of idleTimersRef.current) {
       if (!drop(reason)) continue;
       clearTimeout(timer);
-      idleTimers.current.delete(reason);
+      idleTimersRef.current.delete(reason);
     }
-    if (drop(toggleReason)) pendingToggles.current = [];
+    if (drop(toggleReason)) pendingTogglesRef.current = [];
     setReasons((current) => {
       const next = new Set([...current].filter((reason) => !drop(reason)));
       return next.size === current.size ? current : next;
@@ -153,21 +153,21 @@ export function useDescriptionSlot({
 
   const warm = useCallback(
     (reason: string) => {
-      if (!latest.current.canEdit) return;
-      clearTimeout(idleTimers.current.get(reason));
+      if (!optionsRef.current.canEdit) return;
+      clearTimeout(idleTimersRef.current.get(reason));
       const idleTimer = window.setTimeout(() => cool(reason), warmIdleMs);
-      idleTimers.current.set(reason, idleTimer);
+      idleTimersRef.current.set(reason, idleTimer);
       setReasons((current) => (current.has(reason) ? current : new Set(current).add(reason)));
       touchWarmSlot(slotKey);
     },
-    [cool, latest, slotKey],
+    [cool, optionsRef, slotKey],
   );
 
   const flushCursor = useCallback(() => {
-    const cursor = pendingCursor.current;
+    const cursor = pendingCursorRef.current;
     const api = apiRef.current;
     if (!cursor || !api) return;
-    pendingCursor.current = null;
+    pendingCursorRef.current = null;
     if (cursor === 'end') api.focusSummaryEnd();
     else api.placeCursorAtPoint(cursor.x, cursor.y);
   }, []);
@@ -175,16 +175,16 @@ export function useDescriptionSlot({
   // A toggle is an edit: it commits as blur does, and the static shows it until the cache has it.
   const flushToggles = useCallback(() => {
     const api = apiRef.current;
-    if (!api || pendingToggles.current.length === 0) return;
-    const toggled = pendingToggles.current.splice(0).filter((checkboxId) => api.toggleChecklist(checkboxId));
+    if (!api || pendingTogglesRef.current.length === 0) return;
+    const toggled = pendingTogglesRef.current.splice(0).filter((checkboxId) => api.toggleChecklist(checkboxId));
     if (toggled.length > 0) {
       api.commit();
       const content = api.getContent();
-      const base = latest.current.description;
+      const base = optionsRef.current.description;
       if (content !== base) setHandoff({ content, base });
     }
     cool(toggleReason);
-  }, [cool, latest]);
+  }, [cool, optionsRef]);
 
   // An editor warm before editing started is ready already: the cursor goes once it is in the layout.
   useEffect(() => {
@@ -193,32 +193,32 @@ export function useDescriptionSlot({
     return () => cancelAnimationFrame(frame);
   }, [editing, flushCursor]);
 
-  // A frame after ready: the editor's first effect pass is over, so a remount of its view in dev StrictMode no longer drops
+  // A frame after ready, once the editor's first effect pass is over: a remount of its view in dev StrictMode would drop
   // the focus and selection the cursor flush places.
-  const readyFrame = useRef(0);
+  const readyFrameRef = useRef(0);
   const onEditorReady = useCallback(() => {
-    cancelAnimationFrame(readyFrame.current);
-    readyFrame.current = requestAnimationFrame(() => {
+    cancelAnimationFrame(readyFrameRef.current);
+    readyFrameRef.current = requestAnimationFrame(() => {
       flushToggles();
       flushCursor();
     });
   }, [flushToggles, flushCursor]);
-  useEffect(() => () => cancelAnimationFrame(readyFrame.current), []);
+  useEffect(() => () => cancelAnimationFrame(readyFrameRef.current), []);
 
   const onStaticReady = useCallback(() => setHolding(false), []);
 
   const onClickCapture = useCallback(
     (event: MouseEvent<HTMLElement>) => {
-      const { editing, canEdit, cursorAtPoint } = latest.current;
+      const { editing, canEdit, cursorAtPoint } = optionsRef.current;
       if (editing || !canEdit) return;
 
-      const checkboxWrapper = (event.target as Element).closest('.checklist-checkbox-wrapper');
+      const checkboxWrapper = event.target instanceof Element ? event.target.closest('.checklist-checkbox-wrapper') : null;
       const checkboxId = checkboxWrapper?.querySelector<HTMLInputElement>('input.checklist-checkbox')?.dataset.checkboxId;
       if (checkboxId) {
         // The editor toggles it, so the static's input stays as rendered and the click starts no editing.
         event.preventDefault();
         event.stopPropagation();
-        pendingToggles.current.push(checkboxId);
+        pendingTogglesRef.current.push(checkboxId);
         if (apiRef.current) flushToggles();
         else warm(toggleReason);
         return;
@@ -227,12 +227,12 @@ export function useDescriptionSlot({
       if (!cursorAtPoint) return;
       // The app's own click handler may start editing; a point no editing took within this task expires.
       const point: Point = { x: event.clientX, y: event.clientY };
-      clickPoint.current = point;
+      clickPointRef.current = point;
       window.setTimeout(() => {
-        if (clickPoint.current === point) clickPoint.current = null;
+        if (clickPointRef.current === point) clickPointRef.current = null;
       });
     },
-    [flushToggles, latest, warm],
+    [flushToggles, optionsRef, warm],
   );
 
   const hasReasons = reasons.size > 0;
@@ -246,11 +246,11 @@ export function useDescriptionSlot({
   // A hidden tab keeps no editor warm for the app; a queued toggle still waits for its editor.
   useEffect(() => {
     if (!hasReasons) return;
-    const onVisibilityChange = () => {
+    const handleVisibilityChange = () => {
       if (document.hidden) coolReasons((reason) => reason !== toggleReason);
     };
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [hasReasons, coolReasons]);
 
   // The cap counts warm editors only: never one editing, held, or waiting to apply a queued toggle.
@@ -261,7 +261,7 @@ export function useDescriptionSlot({
   }, [capped, slotKey, coolReasons]);
 
   useEffect(() => {
-    const timers = idleTimers.current;
+    const timers = idleTimersRef.current;
     return () => {
       for (const timer of timers.values()) clearTimeout(timer);
       timers.clear();

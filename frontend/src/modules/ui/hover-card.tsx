@@ -1,30 +1,13 @@
 import { PreviewCard as PreviewCardPrimitive } from '@base-ui/react/preview-card';
-import { useState } from 'react';
 import { useCloseOnEscape } from '~/hooks/use-close-on-escape';
+import type { PositionedContentProps } from '~/modules/ui/popover';
 import { cn } from '~/utils/cn';
 
-/**
- * Preview of the content behind a link, shown on hover or keyboard focus of the trigger (Base UI Preview Card).
- * Escape closes it from anywhere, also when the pointer opened it and focus is elsewhere. A caller that controls
- * `open` handles Escape itself.
- */
-export function HoverCard({ open, defaultOpen = false, onOpenChange, ...props }: PreviewCardPrimitive.Root.Props) {
-  const [ownOpen, setOwnOpen] = useState(defaultOpen);
-  const controlled = open !== undefined;
-  const isOpen = controlled ? open : ownOpen;
-  useCloseOnEscape(!controlled && isOpen, () => setOwnOpen(false));
+/** Previews the content behind a link on hover or keyboard focus of its trigger; Escape closes it from anywhere. */
+export function HoverCard({ open, defaultOpen, onOpenChange, ...props }: PreviewCardPrimitive.Root.Props) {
+  const openState = useCloseOnEscape({ open, defaultOpen, onOpenChange });
 
-  return (
-    <PreviewCardPrimitive.Root
-      data-slot="hover-card"
-      open={isOpen}
-      onOpenChange={(nextOpen, eventDetails) => {
-        setOwnOpen(nextOpen);
-        onOpenChange?.(nextOpen, eventDetails);
-      }}
-      {...props}
-    />
-  );
+  return <PreviewCardPrimitive.Root data-slot="hover-card" {...openState} {...props} />;
 }
 
 /** Renders a link by default; `delay` and `closeDelay` set the open and close timing. */
@@ -42,11 +25,8 @@ export function HoverCardContent({
   positionerClassName,
   ...props
 }: PreviewCardPrimitive.Popup.Props &
-  Pick<PreviewCardPrimitive.Positioner.Props, 'align' | 'alignOffset' | 'side' | 'sideOffset'> & {
-    container?: PreviewCardPrimitive.Portal.Props['container'];
-    /** Classes for the positioner, which owns the stacking layer: put z-index overrides here. */
-    positionerClassName?: string;
-  }) {
+  Pick<PreviewCardPrimitive.Positioner.Props, 'align' | 'alignOffset' | 'side' | 'sideOffset'> &
+  PositionedContentProps) {
   return (
     <PreviewCardPrimitive.Portal data-slot="hover-card-portal" container={container}>
       <PreviewCardPrimitive.Positioner

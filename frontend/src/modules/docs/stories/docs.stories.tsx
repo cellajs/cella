@@ -4,16 +4,17 @@ import type { GenComponentSchema, GenOperationDetail, GenOperationSummary, GenRe
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { getSection, isProgrammaticScroll } from '~/hooks/use-scroll-spy-store';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { OperationExamples } from '~/modules/docs/operations/operation-examples';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
 import { TagSchemasTable } from '~/modules/docs/schemas/tag-schemas-table';
 import { CollapsibleTagItem } from '~/modules/docs/sidebar/collapsible-tag-item';
+import { docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { OperationItem } from '~/modules/docs/sidebar/operation-item';
-import { PageBranch, type PageNode } from '~/modules/docs/sidebar/page-tree-item';
+import { PageBranch, type PageNode } from '~/modules/docs/sidebar/page-branch';
 import { SchemaItem } from '~/modules/docs/sidebar/schema-item';
 import { TagOperationsTable } from '~/modules/docs/tag-operations-table';
-import { type DocPage, PAGE_SECTION_ID } from '~/modules/page/content';
+import { type DocPage, pageSectionId } from '~/modules/page/content';
 import { SidebarMenu } from '~/modules/ui/sidebar';
 import { getRouter } from '~/routes/-router-instance';
 import { withApp } from '~/stories/with-app';
@@ -125,7 +126,7 @@ export const SchemasTagTable: Story = {
 
     const link = await canvas.findByRole('link', { name: 'SessionBase' });
     await expect(link).toHaveAttribute('href', '/?q=keep&schemaTag=data#/components/schemas/SessionBase');
-    await expect(canvas.getByRole('columnheader', { name: 'Name' })).toBeVisible();
+    await expect(canvas.getByRole('columnheader', { name: 'name' })).toBeVisible();
     await expect(canvas.getByRole('columnheader', { name: 'Module' })).toBeVisible();
     await expect(canvas.getByText('users')).toBeVisible();
 
@@ -147,8 +148,8 @@ const sidebarOnClose = fn();
 export const SidebarItems: Story = {
   beforeEach: () => {
     sidebarOnClose.mockClear();
-    useSheeter.setState({ sheets: [] });
-    return () => useSheeter.setState({ sheets: [] });
+    sheeter.setState({ sheets: [] });
+    return () => sheeter.setState({ sheets: [] });
   },
   render: () => (
     <WithAnchor id="tag/me/get/me">
@@ -162,7 +163,7 @@ export const SidebarItems: Story = {
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     const openSidebarSheet = () =>
-      useSheeter.getState().create(null, { id: 'docs-sidebar', side: 'left', triggerRef: { current: null }, onClose: sidebarOnClose });
+      sheeter.getState().create(null, { id: docsSidebarSheetId, side: 'left', triggerRef: { current: null }, onClose: sidebarOnClose });
 
     const getMe = await canvas.findByRole('link', { name: /^Get me\s*get$/ });
     const sessions = canvas.getByRole('link', { name: /^Get my sessions\s*get$/ });
@@ -179,7 +180,7 @@ export const SidebarItems: Story = {
       await userEvent.click(getMe);
 
       await waitFor(() => expect(getSection()).toBe('tag/me/get/me'));
-      await expect(useSheeter.getState().get('docs-sidebar')).toBeUndefined();
+      await expect(sheeter.getState().get(docsSidebarSheetId)).toBeUndefined();
       await expect(sidebarOnClose).toHaveBeenCalledTimes(1);
       // The click scrolls in place; the router stays where it was
       await expect(getRouter().state.location.pathname).toBe('/');
@@ -190,14 +191,14 @@ export const SidebarItems: Story = {
       openSidebarSheet();
       await userEvent.click(userBase);
 
-      await expect(useSheeter.getState().get('docs-sidebar')).toBeUndefined();
+      await expect(sheeter.getState().get(docsSidebarSheetId)).toBeUndefined();
       await expect(sidebarOnClose).toHaveBeenCalledTimes(2);
       await expect(getRouter().state.location.hash).toBe('');
     });
   },
 };
 
-const renderOperation = (op: GenOperationSummary, _index: number, isActive: boolean) => <OperationItem operation={op} isActive={isActive} />;
+const renderOperation = (op: GenOperationSummary, isActive: boolean) => <OperationItem operation={op} isActive={isActive} />;
 
 /** An expanded tag's link collapses it (drops operationTag) only at the tag itself, not while one of its operations is current. */
 export const TagItemReclick: Story = {
@@ -242,7 +243,7 @@ const docPage = (id: string, name: string, parentId: string | null = null): DocP
 
 const guideNode: PageNode = { page: docPage('guide', 'Guide'), children: [{ page: docPage('guide/setup', 'Setup', 'guide'), children: [] }] };
 const guideExpanded = new Set(['guide']);
-const pageSpyIds = [PAGE_SECTION_ID, 'later'];
+const pageSpyIds = [pageSectionId, 'later'];
 const pageOnToggle = fn();
 
 /** The page section wraps the content, as on a docs page, with a heading section far below the fold. */
@@ -253,7 +254,7 @@ function PageTreeSpyPage() {
       <SidebarMenu className="sticky top-0 h-screen w-64 shrink-0">
         <PageBranch node={guideNode} variant="parent" activePageId="guide" expandedIds={guideExpanded} onToggle={pageOnToggle} />
       </SidebarMenu>
-      <div id={`spy-${PAGE_SECTION_ID}`} className="flex-1">
+      <div id={`spy-${pageSectionId}`} className="flex-1">
         <div className="h-[150vh]" />
         <div id="spy-later" className="h-10">
           later
@@ -279,7 +280,7 @@ export const PageBranchReclick: Story = {
     await waitFor(() => expect(getSection()).toBe('later'));
 
     await userEvent.click(guide);
-    await waitFor(() => expect(getSection()).toBe(PAGE_SECTION_ID));
+    await waitFor(() => expect(getSection()).toBe(pageSectionId));
     await expect(pageOnToggle).not.toHaveBeenCalled();
 
     await userEvent.click(guide);

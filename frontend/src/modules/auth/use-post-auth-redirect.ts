@@ -1,5 +1,6 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { appConfig } from 'shared';
+import { authStore } from '~/modules/auth/auth-store';
 import { safeRedirectPath } from '~/modules/auth/redirect-path';
 
 /** Where an invitation flow resumes after signing in: the authenticate page, now on its confirm step. */
@@ -14,9 +15,12 @@ export function resolvePostAuthRedirect(redirect: string | undefined, tokenId?: 
   return safeRedirectPath(redirect) ?? appConfig.defaultRedirectPath;
 }
 
-/** Leaves the auth steps after an in-page sign-in. */
+/** Leaves the auth steps after an in-page sign-in, marked first so no step shows while the route changes. */
 export function useNavigateAfterAuth() {
   const navigate = useNavigate();
   const { redirect, tokenId } = useSearch({ strict: false });
-  return () => navigate({ to: resolvePostAuthRedirect(redirect, tokenId), replace: true });
+  return () => {
+    authStore.getState().setSignedIn(true);
+    navigate({ to: resolvePostAuthRedirect(redirect, tokenId), replace: true });
+  };
 }

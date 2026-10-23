@@ -1,7 +1,4 @@
 import type { LocalUserStore } from '~/query/local-user-storage';
 
-/**
- * Extra per-user zustand stores this app adds, appended to the list in `local-user-storage`.
- * Add stores persisted in `localUserDb.kv` so `localUserStorageReady` rehydrates them and sign-out resets them; each must expose `persist.rehydrate()` and `getState().reset()`.
- */
+/** Per-user zustand stores this app adds to `local-user-storage`'s list: kept in `localUserDb.kv`, rehydrated by `localUserStorageReady`, reset on sign-out. */
 export const extraLocalUserStores: LocalUserStore[] = [];

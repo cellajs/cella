@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { NamedText } from '~/modules/common/named-text';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -15,16 +15,18 @@ const PendingMembershipsTable = lazyNamed(() => import('~/modules/memberships/pe
 type EntityWithIncluded = EnrichedChannel & Pick<Organization, 'included'>;
 const hasIncluded = (channel: EnrichedChannel): channel is EntityWithIncluded => 'included' in channel;
 
-export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel }) {
-  const { t } = useTranslation();
-  const buttonRef = useRef(null);
+interface PendingMembershipsCountProps {
+  channel: EnrichedChannel;
+}
 
-  const createSheet = sheeter.getState().create;
+export function PendingMembershipsCount({ channel }: PendingMembershipsCountProps) {
+  const { t, i18n } = useTranslation();
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const openSheet = () => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+    if (!onlineManager.isOnline()) return toastOffline();
 
-    createSheet(
+    sheeter.getState().create(
       <div className="container">
         <Suspense>
           <PendingMembershipsTable channel={channel} />
@@ -42,10 +44,11 @@ export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel 
   };
 
   if (!hasIncluded(channel) || !channel.included.counts) return null;
+  const { pending } = channel.included.counts.membership;
 
   return (
-    <Button ref={buttonRef} disabled={channel.included.counts.membership.pending < 1} variant="ghost" size="xs" onClick={openSheet}>
-      {new Intl.NumberFormat('de-DE').format(channel.included.counts.membership.pending)} {t('c:pending').toLowerCase()}
+    <Button ref={buttonRef} disabled={pending < 1} variant="ghost" size="xs" onClick={openSheet}>
+      {new Intl.NumberFormat(i18n.language).format(pending)} {t('c:pending').toLowerCase()}
     </Button>
   );
 }

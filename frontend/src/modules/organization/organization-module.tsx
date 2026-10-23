@@ -1,12 +1,7 @@
-import i18n from 'i18next';
 import type { RefObject } from 'react';
-import type { Organization } from 'sdk';
 import { defineFrontendModule } from '~/lib/module';
-import type { CallbackArgs } from '~/modules/common/data-table/types';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { dangerToolBase, detailsToolBase, generalToolBase, tabsToolBase } from '~/modules/entities/channel-settings-tools';
-import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
+import { openCreateOrganizationDialog } from '~/modules/organization/create-organization-form';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { getRouter } from '~/routes/-router-instance';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -17,28 +12,14 @@ const OrganizationTabsCard = lazyNamed(() => import('~/modules/organization/sett
 const OrganizationDeleteCard = lazyNamed(() => import('~/modules/organization/settings-tools'), 'OrganizationDeleteCard');
 const OrganizationsGrid = lazyNamed(() => import('~/modules/organization/organizations-grid'), 'OrganizationsGrid');
 
-/** Opens the create dialog from the menu section's plus button and lands on the new organization. */
+/** Opens the create dialog from the menu section's plus button, then navigates to the new organization. */
 function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null>) {
-  const callback = (args: CallbackArgs<Organization>) => {
-    if (args.status === 'success') {
-      useDialoger.getState().remove('create-organization');
-      getRouter().navigate({
-        to: '/$tenantId/$organizationSlug/organization/members',
-        params: { tenantId: args.data.tenantId, organizationSlug: args.data.slug },
-      });
-    }
-  };
-
-  const title = i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() });
-
-  return useDialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {
-    className: 'md:max-w-2xl',
-    id: 'create-organization',
-    description: i18n.t('c:create_organization.text'),
-    triggerRef,
-    title,
-    titleContent: <UnsavedBadge title={title} />,
-  });
+  openCreateOrganizationDialog(triggerRef, (organization) =>
+    getRouter().navigate({
+      to: '/$tenantId/$organizationSlug/organization/members',
+      params: { tenantId: organization.tenantId, organizationSlug: organization.slug },
+    }),
+  );
 }
 
 defineFrontendModule({

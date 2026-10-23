@@ -29,13 +29,13 @@ vi.mock('shared', async (importOriginal) => {
 });
 
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
-const { registerEntityQueryKeys, registerEqualityFilterKeys, SYNC_CHUNK_SIZE } = await import('~/query/basic/entity-query-registry');
+const { registerEntityQueryKeys, registerEqualityFilterKeys, syncChunkSize } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
 const { fetchEntityAndUpdateList, fetchRangeAndPatch } = await import('./cache-ops');
 
 // The synthetic 'task' and 'comment' types exist only in this file's shared mock, hence the casts.
 const TASK = 'task' as EntityType;
-const COMMENT = 'comment' as ProductEntityType;
+const comment = 'comment' as ProductEntityType;
 
 describe('realtime cache ops', () => {
   afterEach(() => {
@@ -117,7 +117,7 @@ describe('realtime cache ops', () => {
       'a full chunk, which may stop short of the range',
       { afterSeq: 0, untilSeq: 1500 },
       async () => ({
-        items: Array.from({ length: SYNC_CHUNK_SIZE }, (_, i) => renamed(`attachment-${i + 1}`, i + 1)),
+        items: Array.from({ length: syncChunkSize }, (_, i) => renamed(`attachment-${i + 1}`, i + 1)),
         total: 1500,
       }),
     ],
@@ -152,14 +152,14 @@ describe('filtered list refetch for a new row', () => {
     vi.restoreAllMocks();
   });
 
-  const commentKeys = createEntityKeys<{ itemId?: string }>(COMMENT);
+  const commentKeys = createEntityKeys<{ itemId?: string }>(comment);
   const newComment = { id: 'comment-2', organizationId: 'org-1', itemId: 'item-1' };
   const listKey = (filters: Record<string, unknown>) => [...commentKeys.list.org('org-1'), filters];
 
   // Comment lists are declared to hold only rows whose itemId equals the filter's.
   function registerComments(items: { id: string; organizationId: string; itemId?: string }[] = [newComment]) {
-    registerEntityQueryKeys(COMMENT, commentKeys, async () => ({ items, total: items.length }));
-    registerEqualityFilterKeys(COMMENT, ['itemId']);
+    registerEntityQueryKeys(comment, commentKeys, async () => ({ items, total: items.length }));
+    registerEqualityFilterKeys(comment, ['itemId']);
     queryClient.setQueryDefaults(commentKeys.detail.base, { queryFn: async () => newComment });
   }
 
@@ -186,7 +186,7 @@ describe('filtered list refetch for a new row', () => {
     registerComments();
     seedLists(lists);
 
-    await fetchEntityAndUpdateList('comment-2', commentKeys, 'create', 'org-1', 'tenant-1', COMMENT);
+    await fetchEntityAndUpdateList(comment, 'comment-2', commentKeys, 'create', 'org-1', 'tenant-1');
 
     expect(isInvalidated(lists.otherItem)).toBe(false);
     expect(isInvalidated(lists.otherItemSorted)).toBe(false);
@@ -203,7 +203,7 @@ describe('filtered list refetch for a new row', () => {
     registerComments([newComment, { id: 'comment-3', organizationId: 'org-1', itemId: 'item-3' }]);
     seedLists({ ...lists, thirdItem: { itemId: 'item-3' } });
 
-    await fetchRangeAndPatch(COMMENT, 'org-1', 'tenant-1', { afterSeq: 8, untilSeq: 10 }, commentKeys);
+    await fetchRangeAndPatch(comment, 'org-1', 'tenant-1', { afterSeq: 8, untilSeq: 10 }, commentKeys);
 
     expect(isInvalidated(lists.otherItem)).toBe(false);
     expect(isInvalidated(lists.sameItem)).toBe(true);
@@ -215,7 +215,7 @@ describe('filtered list refetch for a new row', () => {
   it('refetches a filtered list it cannot rule a new row out of: the row lacks the declared field, or the type declares none', async () => {
     registerComments([{ id: 'comment-4', organizationId: 'org-1' }]);
     seedLists({ otherItem: lists.otherItem });
-    await fetchRangeAndPatch(COMMENT, 'org-1', 'tenant-1', { afterSeq: 10, untilSeq: 11 }, commentKeys);
+    await fetchRangeAndPatch(comment, 'org-1', 'tenant-1', { afterSeq: 10, untilSeq: 11 }, commentKeys);
     expect(isInvalidated(lists.otherItem)).toBe(true);
 
     const taskKeys = createEntityKeys<Record<string, never>>(TASK);

@@ -1,7 +1,7 @@
 import { createRouter } from '@tanstack/react-router';
-import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
-import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { sheeter } from '~/modules/common/sheeter/use-sheeter';
+import { navigationStore } from '~/modules/navigation/navigation-store';
+import { uiStore } from '~/modules/ui/ui-store';
 import { appStreamManager } from '~/query/realtime/stream-store';
 import { releaseTabLeadership } from '~/query/realtime/tab-coordinator';
 import { createNotFoundComponent } from '~/routes/-route-utils';
@@ -10,12 +10,8 @@ import { routeTree } from '~/routes/routeTree.gen';
 import type { BoundaryType } from '~/routes/types';
 import { setSkipPageEnter } from '~/utils/nav-transition';
 
-/**
- * The router instance
- *
- * @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction
- */
-const router = createRouter({
+/** @link https://tanstack.com/router/latest/docs/framework/react/api/router/createRouterFunction */
+export const router = createRouter({
   scrollRestoration: true,
   scrollRestorationBehavior: 'instant',
   defaultHashScrollIntoView: { block: 'start', behavior: 'instant' },
@@ -29,12 +25,13 @@ const router = createRouter({
 
 setRouter(router);
 
-const getBoundary = (matches?: { staticData: { boundary?: BoundaryType } }[]) => matches?.findLast((m) => m.staticData.boundary)?.staticData.boundary;
+const getBoundary = (matches?: { staticData: { boundary?: BoundaryType } }[]) =>
+  matches?.findLast((match) => match.staticData.boundary)?.staticData.boundary;
 
 const cleanupOnBoundaryChange = (current?: BoundaryType, pending?: BoundaryType) => {
   if (!current || !pending || current === pending) return;
-  useSheeter.getState().remove(undefined, { isCleanup: true });
-  useNavigationStore.getState().setNavSheetOpen(null);
+  sheeter.getState().remove(undefined, { isCleanup: true });
+  navigationStore.getState().setNavSheetOpen(null);
   if (pending === 'public') {
     // Release leadership so a follower tab is promoted and keeps the SSE alive.
     appStreamManager.disconnect();
@@ -42,17 +39,16 @@ const cleanupOnBoundaryChange = (current?: BoundaryType, pending?: BoundaryType)
   }
 };
 
-// Router lifecycle subscriptions
-// Track the latest history action: PUSH/REPLACE = forward/new, BACK/FORWARD/GO = history traversal.
-let lastHistoryAction = 'PUSH';
+// Whether the latest history action navigated forward (PUSH, REPLACE); BACK, FORWARD and GO traverse the history.
+let isForward = true;
 router.history.subscribe(({ action }) => {
-  lastHistoryAction = action.type;
+  isForward = action.type === 'PUSH' || action.type === 'REPLACE';
 });
 
 router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
   if (!pathChanged) return;
 
-  if (useUIStore.getState().focusView) useUIStore.getState().setFocusView(false);
+  if (uiStore.getState().focusView) uiStore.getState().setFocusView(false);
 
   const pendingMatches = router.matchRoutes(toLocation.pathname, toLocation.search);
   cleanupOnBoundaryChange(getBoundary(router.state.matches), getBoundary(pendingMatches));
@@ -60,14 +56,12 @@ router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
   // A forward navigation staying on the same leaf route has no scroll delta to mask.
   const fromLeafId = router.state.matches.at(-1)?.routeId;
   const toLeafId = pendingMatches.at(-1)?.routeId;
-  const isForward = lastHistoryAction === 'PUSH' || lastHistoryAction === 'REPLACE';
   setSkipPageEnter(!!fromLeafId && fromLeafId === toLeafId && isForward);
 });
 
 // The router scrolls a hash link only to a target the page renders and skips its scroll to top whenever a hash is set,
 // so a forward link to a page without that target would keep the previous page's scroll.
 router.subscribe('onRendered', ({ pathChanged, toLocation }) => {
-  const isForward = lastHistoryAction === 'PUSH' || lastHistoryAction === 'REPLACE';
   if (!pathChanged || !isForward || !toLocation.hash || document.getElementById(toLocation.hash)) return;
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 });
@@ -78,5 +72,3 @@ declare module '@tanstack/react-router' {
     router: typeof router;
   }
 }
-
-export { router };

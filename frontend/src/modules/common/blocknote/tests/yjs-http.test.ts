@@ -137,7 +137,7 @@ vi.mock('~/env', () => ({ isDebugMode: false }));
 const linked: YjsConnection[] = [];
 let http: typeof import('~/modules/common/blocknote/yjs-http') | undefined;
 vi.mock('~/modules/common/blocknote/yjs-http', () => ({
-  WS_SYNC_DEADLINE_MS: 5_000,
+  wsSyncDeadlineMs: 5_000,
   createHttpLink: (...args: Parameters<typeof import('~/modules/common/blocknote/yjs-http').createHttpLink>) => {
     linked.push(args[0]);
     if (!http) throw new Error('the HTTP link module is not loaded');
@@ -145,9 +145,9 @@ vi.mock('~/modules/common/blocknote/yjs-http', () => ({
   },
 }));
 http = await vi.importActual<typeof import('~/modules/common/blocknote/yjs-http')>('~/modules/common/blocknote/yjs-http');
-const { HTTP_CHUNK_BYTES } = http;
+const { httpChunkBytes } = http;
 const { ApiError } = await import('~/lib/api');
-const { useUserStore, yjsTokenKey } = await import('~/modules/user/user-store');
+const { userStore, yjsTokenKey } = await import('~/modules/user/user-store');
 const { useYjsConnection } = await import('~/modules/common/blocknote/yjs-connections');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -171,10 +171,10 @@ Object.defineProperty(document, 'visibilityState', { configurable: true, get: ()
 /** Mounts one editor's connection, stored with the mock writer; returns its provider, document and latest hook state. */
 async function mountConnection() {
   const entityId = `doc-${++counter}`;
-  useUserStore.getState().setYjsToken(yjsTokenKey('attachment', entityId), 'token-v1');
+  userStore.getState().setYjsToken(yjsTokenKey('attachment', entityId), 'token-v1');
   let latest: ReturnType<typeof useYjsConnection> = null;
   const Harness = () => {
-    latest = useYjsConnection(entityId, 'attachment', 'tenant-1', 'org-1');
+    latest = useYjsConnection({ entityType: 'attachment', entityId, tenantId: 'tenant-1', organizationId: 'org-1', enabled: true });
     return null;
   };
   root = createRoot(document.createElement('div'));
@@ -376,7 +376,7 @@ describe('yjs over HTTP: chunks', () => {
     expect(state()?.unsynced).toBe(false);
 
     // One edit over the cap cannot go over HTTP at all: the socket saves it.
-    await edit(doc, 'x'.repeat(HTTP_CHUNK_BYTES + 1));
+    await edit(doc, 'x'.repeat(httpChunkBytes + 1));
     await advance(2_000);
     expect(server.pushes).toHaveLength(3);
     expect(state()?.unsynced).toBe(true);
@@ -384,7 +384,7 @@ describe('yjs over HTTP: chunks', () => {
     await socketHandshake(provider);
     expect(state()?.transport).toBe('ws');
     expect(state()?.unsynced).toBe(false);
-    expect(server.pushes.every((update) => update.length <= HTTP_CHUNK_BYTES)).toBe(true);
+    expect(server.pushes.every((update) => update.length <= httpChunkBytes)).toBe(true);
   });
 });
 

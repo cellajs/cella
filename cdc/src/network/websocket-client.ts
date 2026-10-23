@@ -3,12 +3,12 @@ import { env } from '../env';
 import { log } from '../lib/pino';
 import { ApiUnreachableError } from '../services/failure';
 
-const WS_OPEN = 1;
+const wsOpen = 1;
 
 /** A flush waits for this socket, so the wait for the next attempt stays short. */
-const MAX_RECONNECT_DELAY_MS = 5_000;
+const maxReconnectDelayMs = 5_000;
 
-const BASE_RECONNECT_DELAY_MS = 1_000;
+const baseReconnectDelayMs = 1_000;
 
 type WebSocketState = 'connecting' | 'open' | 'closed' | 'reconnecting';
 
@@ -91,7 +91,7 @@ class WebSocketClient {
   }
 
   isConnected(): boolean {
-    return this.ws?.readyState === WS_OPEN;
+    return this.ws?.readyState === wsOpen;
   }
 
   /**
@@ -153,7 +153,7 @@ class WebSocketClient {
     if (this.reconnectTimeout) return;
 
     // min(5s, 1s * 2^attempt)
-    const exponentialDelay = Math.min(MAX_RECONNECT_DELAY_MS, BASE_RECONNECT_DELAY_MS * 2 ** this.reconnectAttempt);
+    const exponentialDelay = Math.min(maxReconnectDelayMs, baseReconnectDelayMs * 2 ** this.reconnectAttempt);
 
     // Jitter: ±20%
     const jitter = exponentialDelay * 0.2 * (Math.random() * 2 - 1);

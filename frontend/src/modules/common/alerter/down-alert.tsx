@@ -1,68 +1,30 @@
-import { t } from 'i18next';
 import { ClockAlertIcon, CloudOffIcon, ConstructionIcon, TriangleAlertIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Trans } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { type AlertKeys, useAlertStore } from '~/modules/common/alerter/alert-store';
-import { useUiOffline } from '~/modules/common/alerter/use-ui-offline';
+import { type AlertKey, useAlertStore } from '~/modules/common/alerter/alert-store';
+import { useUIOffline } from '~/modules/common/alerter/use-ui-offline';
 import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { forceOnline } from '~/query/offline/connectivity';
 
+/** Each alert's text is its title key plus `.text`, apart from the offline text under offline access. */
 const downAlertConfig = {
-  offline: {
-    icon: CloudOffIcon,
-    getTitle: () => <Trans t={t} className="font-bold" i18nKey="c:offline" />,
-    getContent: (dismissAlert: () => void) => {
-      const offlineAccess = useUIStore.getState().offlineAccess;
-      const i18nKey = offlineAccess ? 'c:offline_access.offline' : 'c:offline.text';
-      const retry = () => {
-        forceOnline();
-        dismissAlert();
-      };
-      return (
-        <Trans
-          t={t}
-          className="max-sm:hidden"
-          i18nKey={i18nKey}
-          components={{
-            site_anchor: <button type="button" className="link-inline font-semibold" onClick={dismissAlert} />,
-            retry_anchor: <button type="button" className="link-inline font-semibold" onClick={retry} />,
-          }}
-        />
-      );
-    },
-    textKey: 'c:offline.text',
-    variant: 'warning',
-  },
-  backend_not_ready: {
-    icon: ClockAlertIcon,
-    getTitle: () => <Trans t={t} className="font-bold" i18nKey="c:backend_not_ready" />,
-    getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="c:backend_not_ready.text" />,
-    variant: 'warning',
-  },
-  maintenance: {
-    icon: ConstructionIcon,
-    getTitle: () => <Trans t={t} className="font-bold" i18nKey="c:maintenance_mode" />,
-    getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="c:maintenance_mode.text" />,
-    variant: 'destructive',
-  },
-  auth_unavailable: {
-    icon: TriangleAlertIcon,
-    getTitle: () => <Trans t={t} className="font-bold" i18nKey="c:auth_unavailable" />,
-    getContent: () => <Trans t={t} className="max-sm:hidden" i18nKey="c:auth_unavailable.text" />,
-    variant: 'plain',
-  },
+  offline: { icon: CloudOffIcon, titleKey: 'c:offline', variant: 'warning' },
+  backend_not_ready: { icon: ClockAlertIcon, titleKey: 'c:backend_not_ready', variant: 'warning' },
+  maintenance: { icon: ConstructionIcon, titleKey: 'c:maintenance_mode', variant: 'destructive' },
+  auth_unavailable: { icon: TriangleAlertIcon, titleKey: 'c:auth_unavailable', variant: 'plain' },
 } as const;
 
 export function DownAlert() {
+  const { t } = useTranslation();
   const isOnline = useOnlineManager();
+  const offlineAccess = useUIStore((state) => state.offlineAccess);
   const downAlert = useAlertStore((state) => state.downAlert);
   const setDownAlert = useAlertStore((state) => state.setDownAlert);
-  const [dismissedAlerts, setDismissedAlerts] = useState<Partial<Record<AlertKeys, boolean>>>({});
+  const [dismissedAlerts, setDismissedAlerts] = useState<Partial<Record<AlertKey, boolean>>>({});
 
-  // Derives the debounced UI offline state from onlineManager
-  useUiOffline();
+  useUIOffline();
 
   const dismissAlert = () => {
     if (!downAlert) return;
@@ -70,22 +32,35 @@ export function DownAlert() {
     setDownAlert(null);
   };
 
+  const retry = () => {
+    forceOnline();
+    dismissAlert();
+  };
+
   // Returning connectivity re-arms the offline alert
   useEffect(() => {
     if (isOnline) setDismissedAlerts((prev) => ({ ...prev, offline: false }));
   }, [isOnline]);
 
-  if (!downAlert || dismissedAlerts[downAlert] || !(downAlert in downAlertConfig)) return null; // Nothing to show
-  const { getTitle, getContent, icon: Icon, variant } = downAlertConfig[downAlert];
+  if (!downAlert || dismissedAlerts[downAlert] || !(downAlert in downAlertConfig)) return null;
+  const { icon: Icon, titleKey, variant } = downAlertConfig[downAlert];
+  const textKey = downAlert === 'offline' && offlineAccess ? 'c:offline_access.offline' : (`${titleKey}.text` as const);
 
   return (
-    <div className="pointer-events-auto fixed right-4 left-4 z-2000 justify-center max-sm:top-4 sm:bottom-4">
-      <Alert variant={variant} onClose={dismissAlert} className="w-auto">
+    <div className="pointer-events-auto fixed right-4 left-4 z-2000 max-sm:top-4 sm:bottom-4">
+      <Alert variant={variant} onClose={dismissAlert}>
         <Icon />
-        <AlertDescription className="pr-8">
-          {getTitle()}
+        <AlertDescription>
+          <span className="font-bold">{t(titleKey)}</span>
           <span className="mx-2">&#183;</span>
-          {getContent(dismissAlert)}
+          <Trans
+            t={t}
+            i18nKey={textKey}
+            components={{
+              site_anchor: <button type="button" className="link-inline font-semibold" onClick={dismissAlert} />,
+              retry_anchor: <button type="button" className="link-inline font-semibold" onClick={retry} />,
+            }}
+          />
         </AlertDescription>
       </Alert>
     </div>

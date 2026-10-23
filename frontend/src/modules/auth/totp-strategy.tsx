@@ -1,42 +1,32 @@
 import { useMutation } from '@tanstack/react-query';
 import { SmartphoneIcon } from 'lucide-react';
-import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type ApiError, type SignInWithTotpData, type SignInWithTotpResponse, signInWithTotp } from 'sdk';
-import { useAuthStore } from '~/modules/auth/auth-store';
-import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
+import { type SignInWithTotpData, signInWithTotp } from 'sdk';
+import { TotpConfirmationForm } from '~/modules/auth/totp-confirmation-form';
 import { useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
 import { Button } from '~/modules/ui/button';
-import { useUIStore } from '~/modules/ui/ui-store';
 
-export function TotpStrategy({ isActive, setIsActive }: { isActive: boolean; setIsActive: (active: boolean) => void }) {
+interface TotpStrategyProps {
+  /** The code form shows in place of the button. */
+  active: boolean;
+  onActiveChange: (active: boolean) => void;
+}
+
+export function TotpStrategy({ active, onActiveChange }: TotpStrategyProps) {
   const { t } = useTranslation();
   const navigateAfterAuth = useNavigateAfterAuth();
 
-  const mode = useUIStore((state) => state.mode);
-
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
-
-  const { mutate: totpSignIn } = useMutation<SignInWithTotpResponse, ApiError | Error, NonNullable<SignInWithTotpData['body']>>({
-    mutationFn: async (body) => await signInWithTotp({ body }),
-    onSuccess: () => {
-      useAuthStore.getState().setSignedIn(true);
-      navigateAfterAuth();
-    },
+  const { mutate: totpSignIn, isPending } = useMutation({
+    mutationFn: (body: SignInWithTotpData['body']) => signInWithTotp({ body }),
+    onSuccess: navigateAfterAuth,
   });
 
-  return (
-    <div data-mode={mode} className="group flex flex-col gap-2">
-      {!isActive && (
-        <Button ref={triggerRef} type="button" onClick={() => setIsActive(true)} variant="plain" className="w-full gap-1.5 truncate">
-          <SmartphoneIcon />
-          <span className="truncate">
-            {t('c:sign_in')} {t('c:with').toLowerCase()} {t('c:authenticator_app').toLowerCase()}
-          </span>
-        </Button>
-      )}
+  if (active) return <TotpConfirmationForm onSubmit={totpSignIn} onCancel={() => onActiveChange(false)} loading={isPending} />;
 
-      {isActive && <TotpConfirmationForm onSubmit={totpSignIn} onCancel={() => setIsActive(false)} label={t('c:totp_verify')} />}
-    </div>
+  return (
+    <Button onClick={() => onActiveChange(true)} variant="plain" className="w-full">
+      <SmartphoneIcon />
+      <span className="truncate">{t('c:authenticator_app.sign_in')}</span>
+    </Button>
   );
 }

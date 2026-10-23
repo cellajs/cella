@@ -1,5 +1,5 @@
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { appConfig } from 'shared';
 import { downloadService } from '~/modules/attachment/offline/download-service';
 import { startYjsStore } from '~/modules/common/blocknote/yjs-store';
@@ -8,17 +8,13 @@ import { initChannelEnrichment } from '~/query/enrichment/init-enrichment';
 // Side-effect import: starts the auth-driven localUserDb lifecycle and eager kv hydration before any route beforeLoad runs.
 import '~/query/local-user-storage';
 import { initMutationDefaults, warnMutationsWithoutDefaults } from '~/query/mutation-registry';
-import { cleanupOrphanedSessions, persister, sessionPersister, shouldPersistQuery } from '~/query/persister';
-import { markCacheRestored, markReplayingMutations, queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
+import { cleanupOrphanedSessions, persistOptions } from '~/query/persister';
+import { markCacheRestored, markReplayingMutations, queryClient, setOfflineStaleTime, silentRevalidateOnReconnect } from '~/query/query-client';
 import { waitForActiveCatchup } from '~/query/realtime/stream-store';
+import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
 
 /** Idle scheduling with a ceiling, so a browser that never goes idle still starts the service. */
-const IDLE_TIMEOUT_MS = 5000;
-const scheduleIdle =
-  typeof requestIdleCallback === 'function'
-    ? (cb: () => void) => requestIdleCallback(cb, { timeout: IDLE_TIMEOUT_MS })
-    : (cb: () => void) => setTimeout(cb, IDLE_TIMEOUT_MS) as unknown as number;
-const cancelIdle = typeof cancelIdleCallback === 'function' ? cancelIdleCallback : clearTimeout;
+const idleTimeoutMs = 5000;
 
 // Runs before cache restoration: stores the queryClient so entity modules self-register their mutationFn via addMutationRegistrar() on load.
 initMutationDefaults(queryClient);
@@ -32,11 +28,14 @@ if (import.meta.hot) {
   });
 }
 
-/** Adds cache persistence and offline support: the persister is session or IndexedDB per offlineAccess. */
-export function QueryClientProvider({ children }: { children: React.ReactNode }) {
+interface QueryClientProviderProps {
+  children: ReactNode;
+}
+
+/** Provides the query client with its persisted cache, and starts the services that work from it. */
+export function QueryClientProvider({ children }: QueryClientProviderProps) {
   const offlineAccess = useUIStore((state) => state.offlineAccess);
   const toggleOfflineAccess = useUIStore((state) => state.toggleOfflineAccess);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
     if (!appConfig.has.pwa && offlineAccess) toggleOfflineAccess();
@@ -46,10 +45,8 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
     cleanupOrphanedSessions();
   }, []);
 
-  // Stored collaborative documents: evicted past their limits, and unsynced ones uploaded by the leader tab.
   useEffect(() => startYjsStore(), []);
 
-  // Started at mount, not module eval, to avoid a circular-import TDZ during HMR: provider -> download-service -> attachment/query -> realtime -> query/index -> provider.
   useEffect(() => {
     downloadService.start();
 
@@ -58,12 +55,12 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
     let service: { stop: () => void } | undefined;
     let cancelled = false;
     const idle = scheduleIdle(() => {
-      import('~/modules/attachment/offline/upload-service').then((m) => {
+      import('~/modules/attachment/offline/upload-service').then(({ uploadService }) => {
         if (cancelled) return;
-        service = m.uploadService;
-        m.uploadService.start();
+        service = uploadService;
+        uploadService.start();
       });
-    });
+    }, idleTimeoutMs);
 
     return () => {
       cancelled = true;
@@ -73,23 +70,20 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
     };
   }, []);
 
-  // offlineAccess persists to IndexedDB and survives restart; the session persister survives refresh and is reclaimed after the tab closes.
-  const activePersister = offlineAccess ? persister : sessionPersister;
-
   useEffect(() => {
     if (!offlineAccess) return;
 
+    const applyNetwork = (online: boolean) => {
+      console.info(`[Offline] Network: ${online ? 'online' : 'offline'}`);
+      setOfflineStaleTime(!online);
+    };
     const handleOnline = () => {
-      setIsOnline(true);
-      updateStaleTime(true, true);
+      applyNetwork(true);
       silentRevalidateOnReconnect();
     };
-    const handleOffline = () => {
-      setIsOnline(false);
-      updateStaleTime(true, false);
-    };
+    const handleOffline = () => applyNetwork(false);
 
-    updateStaleTime(true, navigator.onLine);
+    applyNetwork(navigator.onLine);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -97,26 +91,14 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      updateStaleTime(false, true);
+      setOfflineStaleTime(false);
     };
   }, [offlineAccess]);
-
-  useEffect(() => {
-    if (!offlineAccess) return;
-    console.info(`[Offline] Network: ${isOnline ? 'online' : 'offline'}`);
-  }, [offlineAccess, isOnline]);
 
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{
-        persister: activePersister,
-        dehydrateOptions: {
-          // Only paused mutations persist: active ones may hold non-cloneable streaming data.
-          shouldDehydrateMutation: (mutation) => mutation.state.isPaused,
-          shouldDehydrateQuery: shouldPersistQuery,
-        },
-      }}
+      persistOptions={persistOptions}
       onSuccess={() => {
         markCacheRestored();
         warnMutationsWithoutDefaults(queryClient);

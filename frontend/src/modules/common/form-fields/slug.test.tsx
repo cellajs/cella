@@ -24,7 +24,7 @@ function SlugForm() {
   );
 }
 
-/** Types into the field as a browser does: the value lands on the element, then the input event fires. */
+/** Types into the field as a browser does: the element takes the value, then the input event fires. */
 const type = async (input: HTMLInputElement, value: string) => {
   const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
   await act(async () => {

@@ -1,0 +1,128 @@
+import { ChevronDownIcon } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { type KeyboardEvent, type ReactNode, useEffect, useLayoutEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TKey } from '~/lib/i18n-locales';
+import { collapseMotion } from '~/modules/common/collapse-motion';
+import { FocusTrap } from '~/modules/common/focus-trap';
+import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
+import { InfoContent } from '~/modules/navigation/panels/info-content';
+import { PreferencesContent } from '~/modules/navigation/panels/preferences-content';
+import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
+import { isHoverContentOpen } from '~/utils/is-hover-content-open';
+
+interface NavSheetPanelProps {
+  id: string;
+  label: TKey;
+  children: ReactNode;
+}
+
+function NavSheetPanel({ id, label, children }: NavSheetPanelProps) {
+  const { t } = useTranslation();
+  const navSheetPanel = useNavigationStore((state) => state.navSheetPanel);
+  const toggleNavSheetPanel = useNavigationStore((state) => state.toggleNavSheetPanel);
+
+  const isOpen = navSheetPanel === id;
+
+  return (
+    <div>
+      {/* Borderless in both states: the open variant's border would shift the label by a pixel on toggle. */}
+      <Button
+        onClick={() => toggleNavSheetPanel(id)}
+        className="w-full justify-between border-0 shadow-none"
+        variant={isOpen ? 'secondary' : 'ghost'}
+      >
+        <span>{t(label)}</span>
+        <ChevronDownIcon className={cn('opacity-50 transition-transform duration-200', isOpen && 'rotate-180')} />
+      </Button>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div key={`panel-${id}`} {...collapseMotion} className="overflow-hidden">
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/** Same length as the panel collapse, so the bar and the panel under it arrive together. */
+const pinGlideTiming: KeyframeAnimationOptions = { duration: 200, easing: 'ease-in-out' };
+
+/** Sticks to the bottom of its nav sheet and overlays the sheet's content while a panel is expanded. */
+export function NavSheetPanels() {
+  const navSheetPanel = useNavigationStore((state) => state.navSheetPanel);
+  const toggleNavSheetPanel = useNavigationStore((state) => state.toggleNavSheetPanel);
+
+  const hasOpenPanel = !!navSheetPanel;
+
+  const barRef = useRef<HTMLDivElement>(null);
+  const glideRef = useRef<Animation | null>(null);
+  const paintedTopRef = useRef<number | null>(null);
+
+  // In a menu longer than the screen, the bar's place at its end lies lower than the sheet's bottom edge, where it pins.
+  // Pinning and unpinning glide over that distance with a transform, on the compositor. The store
+  // write comes before React's commit, so the listener reads where the bar is painted, a running glide included.
+  useEffect(
+    () =>
+      navigationStore.subscribe((state, prev) => {
+        if (!state.navSheetPanel !== !prev.navSheetPanel) paintedTopRef.current = barRef.current?.getBoundingClientRect().top ?? null;
+      }),
+    [],
+  );
+
+  useLayoutEffect(() => {
+    const bar = barRef.current;
+    const from = paintedTopRef.current;
+    paintedTopRef.current = null;
+    if (!bar || from === null) return;
+
+    glideRef.current?.cancel();
+    const offset = from - bar.getBoundingClientRect().top;
+    glideRef.current = Math.abs(offset) >= 1 ? bar.animate([{ transform: `translateY(${offset}px)` }, { transform: 'none' }], pinGlideTiming) : null;
+  }, [hasOpenPanel]);
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    // An open hover card takes the Escape first; the next one closes the panel
+    if (event.key === 'Escape' && hasOpenPanel && !isHoverContentOpen()) {
+      event.stopPropagation();
+      toggleNavSheetPanel(navSheetPanel);
+    }
+  };
+
+  return (
+    <div ref={barRef} className={cn('relative z-20 mt-auto', hasOpenPanel && 'sticky bottom-0')} onKeyDown={handleKeyDown}>
+      <AnimatePresence>
+        {hasOpenPanel && (
+          <motion.div
+            key="panel-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute right-0 bottom-full left-0 z-10 h-[200vh] bg-card/60"
+            onClick={() => toggleNavSheetPanel(navSheetPanel)}
+          />
+        )}
+      </AnimatePresence>
+
+      <FocusTrap active={hasOpenPanel}>
+        <div
+          className={cn(
+            'flex flex-col gap-1 border-t border-dashed bg-card px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]',
+            hasOpenPanel && 'max-h-dvh overflow-y-auto rounded-t-md shadow-lg',
+          )}
+        >
+          <NavSheetPanel id="preferences" label="c:preferences">
+            <PreferencesContent />
+          </NavSheetPanel>
+          <NavSheetPanel id="info" label="c:info">
+            <InfoContent />
+          </NavSheetPanel>
+        </div>
+      </FocusTrap>
+    </div>
+  );
+}

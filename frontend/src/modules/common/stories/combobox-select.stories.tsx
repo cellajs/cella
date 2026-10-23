@@ -11,8 +11,8 @@ const meta = {
   component: ComboboxSelect,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },
-  argTypes: { options: { control: 'object' }, value: { control: 'text' }, disabled: { control: 'boolean' }, renderAvatar: { control: 'boolean' } },
-  args: { disabled: false, renderAvatar: false },
+  argTypes: { options: { control: 'object' }, value: { control: 'text' }, disabled: { control: 'boolean' }, showAvatar: { control: 'boolean' } },
+  args: { disabled: false, showAvatar: false },
 } satisfies Meta<typeof ComboboxSelect>;
 
 export default meta;
@@ -61,13 +61,13 @@ export const WithAvatars: Story = {
     options: mockOptions,
     value: '',
     onChange: () => {},
-    renderAvatar: true,
+    showAvatar: true,
   },
   render: function Render(args) {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
-        <ComboboxSelect {...args} options={args.options} value={value} onChange={setValue} renderAvatar={args.renderAvatar} />
+        <ComboboxSelect {...args} options={args.options} value={value} onChange={setValue} showAvatar={args.showAvatar} />
       </div>
     );
   },
@@ -208,7 +208,7 @@ export const Multiple: Story = {
     return (
       <div className="w-80 space-y-4">
         <ComboboxSelect {...args} options={args.options} value={value1} onChange={setValue1} />
-        <ComboboxSelect {...args} options={args.options} value={value2} onChange={setValue2} renderAvatar={true} />
+        <ComboboxSelect {...args} options={args.options} value={value2} onChange={setValue2} showAvatar={true} />
       </div>
     );
   },

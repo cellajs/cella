@@ -63,7 +63,7 @@ vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { match
 stubLocalStorage();
 
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
-const { registerEntityQueryKeys, SYNC_CHUNK_SIZE } = await import('~/query/basic/entity-query-registry');
+const { registerEntityQueryKeys, syncChunkSize } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
 const { syncStore } = await import('~/query/realtime/sync-store');
 const { flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');
@@ -77,7 +77,7 @@ const rangeRequest = (afterSeq: number, untilSeq: number) => ({
   organizationId: 'org-1',
   tenantId: 'tenant-1',
   channelId: undefined,
-  query: { afterSeq, untilSeq, limit: SYNC_CHUNK_SIZE },
+  query: { afterSeq, untilSeq, limit: syncChunkSize },
 });
 
 /** Views-contract response with one org view answer for attachment. */
@@ -106,7 +106,7 @@ describe('catchup processor (view-driven)', () => {
     const answer = okViewResponse(6);
 
     // The leader was at 5 when it sent the request this answers.
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 5);
     queryClient.setQueryData(keys.list.org('org-1'), staleList);
     await processAppCatchup(answer);
@@ -177,7 +177,7 @@ describe('catchup after the server rebuilt its sync books', () => {
     const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
     syncStore.getState().adoptGeneration(1);
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
     // Sequence values were handed out again after the rebuild: 40 says nothing about the books the frontier 12 belongs to.
     syncStore.getState().setOrgSeq('org-1', 'attachment', 40);
     cached(keys);
@@ -251,7 +251,7 @@ describe('catchup → fetch prioritizer fold', () => {
     const rangeFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
 
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
@@ -278,7 +278,7 @@ describe('catchup → fetch prioritizer fold', () => {
     const rangeFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
 
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 

@@ -1,7 +1,7 @@
 import type { ToastManagerEvent } from '@base-ui/react/toast';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { toaster, toastManager } from '~/modules/common/toaster/toaster';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { uiStore } from '~/modules/ui/ui-store';
 
 // Stands in for the Toaster: the Base UI provider subscribes the same way.
 let events: ToastManagerEvent[] = [];
@@ -20,7 +20,7 @@ describe('toaster', () => {
     unsubscribe?.();
     unsubscribe = undefined;
     toaster.close();
-    useUIStore.setState({ contrast: 'system' });
+    uiStore.setState({ contrast: 'system' });
     vi.unstubAllGlobals();
   });
 
@@ -30,9 +30,9 @@ describe('toaster', () => {
 
     toaster.success('Saved');
     toaster('New version', { timeout: 0 });
-    useUIStore.setState({ contrast: 'more' });
+    uiStore.setState({ contrast: 'more' });
     toaster.error('Upload failed', { timeout: 8_000 });
-    useUIStore.setState({ contrast: 'system' });
+    uiStore.setState({ contrast: 'system' });
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(prefers-contrast: more)' }));
     toaster.success('Copied');
 

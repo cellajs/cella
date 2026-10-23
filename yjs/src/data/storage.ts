@@ -165,7 +165,7 @@ export async function touchDoc(doc: DocKey): Promise<LiveStamp> {
 }
 
 /** Tenants swept concurrently by the sweep; bounds its query fan-out on large installs. */
-const SWEEP_TENANT_CONCURRENCY = 4;
+const sweepTenantConcurrency = 4;
 
 async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Promise<DocScope[]> {
   const cutoff = sql`now() - (${olderThanMs}::bigint * interval '1 millisecond')`;
@@ -203,7 +203,7 @@ async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Pr
 
 /**
  * Documents with an uncompacted log that no session stamped for longer than the cleanup grace (a session stamps its
- * row every YJS_LIVE_TOUCH_MS), with no younger log row: the log a relay crash left unwritten, or rows posted over HTTP. An idle document with
+ * row every yjsLiveTouchMs), with no younger log row: the log a relay crash left unwritten, or rows posted over HTTP. An idle document with
  * nothing logged is not listed, its row is at rest. Cross-tenant by design, so the sweep visits every tenant through
  * its own tenant-scoped transaction, a bounded number at a time; a contextless query on the fail-closed policy returns
  * nothing.
@@ -212,8 +212,8 @@ export async function listStaleDocs(olderThanMs: number): Promise<DocScope[]> {
   // `tenants` sits outside RLS, so the runtime role lists it without context.
   const tenantIds = (await db.select({ id: tenantsTable.id }).from(tenantsTable)).map((row) => row.id);
   const stale: DocScope[] = [];
-  for (let i = 0; i < tenantIds.length; i += SWEEP_TENANT_CONCURRENCY) {
-    const batch = tenantIds.slice(i, i + SWEEP_TENANT_CONCURRENCY);
+  for (let i = 0; i < tenantIds.length; i += sweepTenantConcurrency) {
+    const batch = tenantIds.slice(i, i + sweepTenantConcurrency);
     const perTenant = await Promise.all(batch.map((tenantId) => listStaleDocsForTenant(tenantId, olderThanMs)));
     for (const rows of perTenant) stale.push(...rows);
   }

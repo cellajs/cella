@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { LogicalReplicationService, type Pgoutput, type PgoutputPlugin } from 'pg-logical-replication';
 import { appConfig } from 'shared';
 import { findBooksRequest, requestBooks } from '#/modules/entities/sync-requests';
-import { CDC_SLOT_NAME, RESOURCE_LIMITS } from '../constants';
+import { cdcSlotName, resourceLimits } from '../constants';
 import { env } from '../env';
 import { buildVerifiedSsl, cdcDb, stripSslParams } from '../lib/db';
 import { log } from '../lib/pino';
@@ -15,7 +15,7 @@ import { flushHasFailed, handleDataMessage, resetBuffers, scheduleIdleCheck } fr
 import { isStalePublicationError } from './replication-errors';
 import { ensureBooksStateRestored, readLostCaseFacts, rebuildAllowed, rebuildBooks, rebuildWasInterrupted } from './verify';
 
-const { reconnection, runtime, slotTakeover } = RESOURCE_LIMITS;
+const { reconnection, runtime, slotTakeover } = resourceLimits;
 
 /**
  * Strips the `sslmode=require&uselibpqcompat=true` params so the explicit, CA-verified `ssl` config
@@ -100,22 +100,22 @@ export async function ensureReplicationSlot(): Promise<'present' | 'held' | 'cre
   try {
     const slot = (
       await cdcDb.execute<{ wal_status: string | null; active: boolean }>(
-        sql`SELECT wal_status, active FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
+        sql`SELECT wal_status, active FROM pg_replication_slots WHERE slot_name = ${cdcSlotName}`,
       )
     ).rows[0];
     if (slot?.active) return 'held';
     if (slot && slot.wal_status !== 'lost') return 'present';
     if (slot) {
-      log.error(`Replication slot '${CDC_SLOT_NAME}' was invalidated: Postgres removed WAL it still needed`);
-      await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})`);
+      log.error(`Replication slot '${cdcSlotName}' was invalidated: Postgres removed WAL it still needed`);
+      await cdcDb.execute(sql`SELECT pg_drop_replication_slot(${cdcSlotName})`);
     } else {
-      log.info(`Replication slot '${CDC_SLOT_NAME}' not found, creating...`);
+      log.info(`Replication slot '${cdcSlotName}' not found, creating...`);
     }
-    await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${CDC_SLOT_NAME}, 'pgoutput')`);
-    log.info(`Replication slot '${CDC_SLOT_NAME}' created`);
+    await cdcDb.execute(sql`SELECT pg_create_logical_replication_slot(${cdcSlotName}, 'pgoutput')`);
+    log.info(`Replication slot '${cdcSlotName}' created`);
     return 'created';
   } catch (error) {
-    log.warn('Could not verify/create replication slot', { err: error, slotName: CDC_SLOT_NAME });
+    log.warn('Could not verify/create replication slot', { err: error, slotName: cdcSlotName });
     return 'unknown';
   }
 }
@@ -128,21 +128,21 @@ export async function ensureReplicationSlot(): Promise<'present' | 'held' | 'cre
  */
 async function dropStaleReplicationSlot(): Promise<void> {
   if (!rebuildAllowed()) {
-    log.warn(`Not dropping slot '${CDC_SLOT_NAME}' yet: the books were rebuilt a moment ago`);
+    log.warn(`Not dropping slot '${cdcSlotName}' yet: the books were rebuilt a moment ago`);
     return;
   }
   try {
-    log.error(`Dropping replication slot '${CDC_SLOT_NAME}': it predates its publication and cannot be read`);
+    log.error(`Dropping replication slot '${cdcSlotName}': it predates its publication and cannot be read`);
     await cdcDb.execute(sql`
       SELECT pg_terminate_backend(active_pid) FROM pg_replication_slots
-      WHERE slot_name = ${CDC_SLOT_NAME} AND active_pid IS NOT NULL
+      WHERE slot_name = ${cdcSlotName} AND active_pid IS NOT NULL
     `);
     await cdcDb.execute(sql`
-      SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})
-      WHERE EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME})
+      SELECT pg_drop_replication_slot(${cdcSlotName})
+      WHERE EXISTS (SELECT 1 FROM pg_replication_slots WHERE slot_name = ${cdcSlotName})
     `);
   } catch (error) {
-    log.warn('Could not drop the stale replication slot', { err: error, slotName: CDC_SLOT_NAME });
+    log.warn('Could not drop the stale replication slot', { err: error, slotName: cdcSlotName });
   }
 }
 
@@ -162,7 +162,7 @@ interface SubscriptionSteps {
 async function giveUpBacklog(): Promise<string | null> {
   await requestBooks(cdcDb, 'rebuild');
   const advanced = await cdcDb.execute<{ position: string }>(
-    sql`SELECT (pg_replication_slot_advance(${CDC_SLOT_NAME}, pg_current_wal_lsn())).end_lsn::text AS position`,
+    sql`SELECT (pg_replication_slot_advance(${cdcSlotName}, pg_current_wal_lsn())).end_lsn::text AS position`,
   );
   const position = advanced.rows[0]?.position ?? null;
   // The status timer of the next subscription repeats what was acknowledged last: that is the slot's new position now,
@@ -236,7 +236,7 @@ export async function subscribeWithReconnect(
       log.info('Subscribing to replication slot...');
       replicationState.subscribed = true;
       try {
-        await service.subscribe(plugin, CDC_SLOT_NAME);
+        await service.subscribe(plugin, cdcSlotName);
       } finally {
         replicationState.subscribed = false;
       }

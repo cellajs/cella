@@ -1,4 +1,3 @@
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { useEffect } from 'react';
@@ -7,23 +6,25 @@ import { getMenuSection } from '~/lib/entity-modules';
 import { Spinner } from '~/modules/common/spinner';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import { MenuSheetHeader } from '~/modules/navigation/menu-sheet/header';
-import { getRelativeItemOrder, isPageData } from '~/modules/navigation/menu-sheet/helpers';
+import { buildMembershipUpdate } from '~/modules/navigation/menu-sheet/helpers/build-membership-update';
+import { getRelativeItemOrder } from '~/modules/navigation/menu-sheet/helpers/get-relative-item-order';
+import { isMenuItemDragData } from '~/modules/navigation/menu-sheet/helpers/is-menu-item-drag-data';
+import { useMenu } from '~/modules/navigation/menu-sheet/helpers/use-menu';
 import { MenuSheetSection } from '~/modules/navigation/menu-sheet/section';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { useUserStore } from '~/modules/user/user-store';
-import { useMenu } from './helpers/use-menu';
 
 export function MenuSheet() {
   const user = useUserStore((state) => state.user);
-  const { mutateAsync } = useMemberUpdateMutation();
+  const { mutateAsync: updateMembership } = useMemberUpdateMutation();
 
   const { menu, isLoading } = useMenu(user?.id);
 
-  useEffect(() => {
-    const cleanups = [
+  useEffect(
+    () =>
       monitorForElements({
         canMonitor({ source }) {
-          return isPageData(source.data) && !source.data.item.membership.archived;
+          return isMenuItemDragData(source.data) && !source.data.item.membership.archived;
         },
         async onDrop({ source, location }) {
           const target = location.current.dropTargets[0];
@@ -31,7 +32,7 @@ export function MenuSheet() {
 
           const sourceData = source.data;
           const targetData = target.data;
-          if (!isPageData(targetData) || !isPageData(sourceData)) return;
+          if (!isMenuItemDragData(targetData) || !isMenuItemDragData(sourceData)) return;
 
           const { item: sourceItem } = sourceData;
           const edge: Edge | null = extractClosestEdge(targetData);
@@ -46,34 +47,23 @@ export function MenuSheet() {
 
           if (newOrder === sourceItem.membership.displayOrder) return;
 
-          await mutateAsync({
-            path: {
-              id: sourceItem.membership.id,
-              tenantId: sourceItem.tenantId,
-              organizationId: sourceItem.membership.organizationId || sourceItem.id,
-            },
-            body: { displayOrder: newOrder },
-            channelId: sourceItem.id,
-            channelType: sourceItem.entityType,
-          });
+          await updateMembership(buildMembershipUpdate(sourceItem, { displayOrder: newOrder }));
         },
       }),
-    ];
-
-    return combine(...cleanups);
-  }, [menu]);
+    [menu],
+  );
 
   if (isLoading || !user) return <Spinner />;
 
   const renderedSections = appConfig.menuStructure
     .map(({ entityType }) => {
-      const menuData = menu[entityType];
+      const items = menu[entityType];
       const menuSection = getMenuSection(entityType);
       if (!menuSection) return null;
 
-      return <MenuSheetSection key={entityType} options={menuSection} data={menuData} />;
+      return <MenuSheetSection key={entityType} options={menuSection} items={items} />;
     })
-    .filter((el) => el !== null);
+    .filter((section) => section !== null);
 
   return (
     <NavSheetFrame panels>

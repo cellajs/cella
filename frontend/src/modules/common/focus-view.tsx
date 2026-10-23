@@ -1,5 +1,5 @@
 import { ExpandIcon, ShrinkIcon } from 'lucide-react';
-import type React from 'react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -16,7 +16,7 @@ interface FocusViewProps {
 }
 
 interface FocusViewContainerProps {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
   disabled?: boolean;
 }
@@ -27,19 +27,18 @@ export function FocusView({ className = '', iconOnly }: FocusViewProps) {
   const focusView = useUIStore((state) => state.focusView);
   const setFocusView = useUIStore((state) => state.setFocusView);
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
-  const removeSheet = sheeter.getState().remove;
 
-  const toggleFocus = () => {
+  const toggleFocusView = () => {
     toaster.success(focusView ? t('c:left_focus.text') : t('c:entered_focus.text'));
     setFocusView(!focusView);
-    removeSheet();
+    sheeter.getState().remove();
     setNavSheetOpen(null);
     window.scrollTo(0, 0);
   };
 
   return (
     <TooltipButton toolTipContent={t('c:focus_view')} disabled={!iconOnly} className="max-lg:hidden">
-      <Button variant={'outline'} className={cn('flex max-lg:hidden', className)} onClick={toggleFocus}>
+      <Button variant="outline" className={cn('flex', className)} onClick={toggleFocusView}>
         {focusView ? <ShrinkIcon /> : <ExpandIcon />}
         {!iconOnly && <span>{focusView ? t('c:leave_focus_view') : t('c:focus_view')}</span>}
       </Button>

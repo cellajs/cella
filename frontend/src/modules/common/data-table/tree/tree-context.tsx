@@ -10,13 +10,18 @@ export interface TreeContextValue {
 
 const TreeContext = createContext<TreeContextValue | null>(null);
 
+interface TreeProviderProps {
+  value: TreeContextValue;
+  children: ReactNode;
+}
+
 /** Wrap a tree-style `<DataTable>` so its `ExpandToggleColumn` cells can read the values from `useTreeRows`. */
-export function TreeProvider({ value, children }: { value: TreeContextValue; children: ReactNode }) {
+export function TreeProvider({ value, children }: TreeProviderProps) {
   return <TreeContext.Provider value={value}>{children}</TreeContext.Provider>;
 }
 
 export function useTreeContext(): TreeContextValue {
-  const v = useContext(TreeContext);
-  if (!v) throw new Error('useTreeContext: missing <TreeProvider>. Wrap your tree-style DataTable in <TreeProvider>.');
-  return v;
+  const context = useContext(TreeContext);
+  if (!context) throw new Error('useTreeContext: missing <TreeProvider>. Wrap your tree-style DataTable in <TreeProvider>.');
+  return context;
 }

@@ -17,7 +17,6 @@ type InputStoryProps = {
   icon?: ReactNode;
   inputClassName?: string;
   defaultValue?: string;
-  value?: string;
 };
 
 function InputFormFieldStory({
@@ -31,7 +30,6 @@ function InputFormFieldStory({
   icon,
   inputClassName,
   defaultValue = '',
-  value,
 }: InputStoryProps) {
   const form = useForm<StoryFormValues>({ defaultValues: { title: defaultValue } });
 
@@ -50,7 +48,6 @@ function InputFormFieldStory({
           readOnly={readOnly}
           icon={icon}
           inputClassName={inputClassName}
-          value={value}
         />
       </div>
     </FormProvider>
@@ -103,15 +100,15 @@ export const Textarea: Story = {
 };
 
 export const Disabled: Story = {
-  args: { control: undefined as never, name: 'title', label: 'Project name', disabled: true, value: 'Raak' },
+  args: { control: undefined as never, name: 'title', label: 'Project name', disabled: true },
   render: function Render() {
-    return <InputFormFieldStory label="Project name" disabled value="Raak" icon={<MailIcon className="size-3.5" />} />;
+    return <InputFormFieldStory label="Project name" disabled defaultValue="Raak" icon={<MailIcon className="size-3.5" />} />;
   },
 };
 
 export const ReadOnly: Story = {
-  args: { control: undefined as never, name: 'title', label: 'Slug', readOnly: true, value: 'story-input-field' },
+  args: { control: undefined as never, name: 'title', label: 'Slug', readOnly: true },
   render: function Render() {
-    return <InputFormFieldStory label="Slug" readOnly value="story-input-field" inputClassName="font-mono" />;
+    return <InputFormFieldStory label="Slug" readOnly defaultValue="story-input-field" inputClassName="font-mono" />;
   },
 };

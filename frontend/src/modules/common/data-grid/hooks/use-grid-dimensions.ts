@@ -3,7 +3,7 @@ import { useCallback, useLayoutEffect, useRef, useSyncExternalStore } from 'reac
 
 interface GridDimensions {
   viewportHeight: number;
-  /** Scroll offset into the grid, clamped to its height and rounded to SCROLL_STEP. */
+  /** Scroll offset into the grid, clamped to its height and rounded to scrollStep. */
   scrollTop: number;
   /** False until the first layout measurement commits; the placeholder numbers below are not viewport geometry. */
   measured: boolean;
@@ -19,7 +19,7 @@ const initialDimensions: GridDimensions = { viewportHeight: 1, scrollTop: 0, mea
  * scrollTop is rounded to this step, so scrolling commits a snapshot at most once per step. The row window shifts by at
  * most half a step (16px), well inside the four-row overscan of useViewportRows (140px at the 35px default row height).
  */
-const SCROLL_STEP = 32;
+const scrollStep = 32;
 
 /** Nearest scrollable ancestor, or null when the window or document is the scroll container. */
 function getScrollParent(node: HTMLElement): HTMLElement | null {
@@ -59,7 +59,6 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
     const grid = gridRef.current;
 
     // Don't break in Node.js (SSR), jsdom, and browsers that don't support ResizeObserver
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (ResizeObserver == null || grid == null) return;
 
     const scrollContainer = scrollContainerRef?.current ?? getScrollParent(grid);
@@ -87,7 +86,7 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
 
       // Clamped to the grid's own range, so scrolling while the grid is out of view leaves the snapshot unchanged.
       const offset = Math.min(Math.max(0, viewportTop - rect.top), rect.height);
-      const scrollTop = Math.round(offset / SCROLL_STEP) * SCROLL_STEP;
+      const scrollTop = Math.round(offset / scrollStep) * scrollStep;
 
       // Skip rerenders when nothing changed, but never while unmeasured: the first measurement must commit even if it matches the placeholders.
       if (prev.measured && prev.viewportHeight === viewportHeight && prev.scrollTop === scrollTop) return prev;

@@ -24,7 +24,7 @@ vi.mock('~/utils/teardown-user-state', () => ({
   teardownUserState: vi.fn(async (wipe: boolean) => seen.calls.push(`client state cleared (wipe: ${wipe})`)),
 }));
 vi.mock('~/modules/common/dialoger/use-dialoger', () => ({
-  useDialoger: {
+  dialoger: {
     getState: () => ({
       create: (dialog: ReactElement) => {
         seen.dialog = dialog;
@@ -42,7 +42,7 @@ vi.mock('~/modules/ui/button', () => ({
 }));
 vi.mock('~/modules/common/spinner', () => ({ Spinner: () => null }));
 vi.mock('~/modules/auth/passkey-credentials', () => ({ getPasskeyStepUpCredential: vi.fn() }));
-vi.mock('~/modules/auth/totp-verify-code-form', () => ({ TotpConfirmationForm: () => null }));
+vi.mock('~/modules/auth/totp-confirmation-form', () => ({ TotpConfirmationForm: () => null }));
 vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { error: vi.fn() } }));
 vi.mock('i18next', () => ({ default: { t: (key: string) => key } }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));

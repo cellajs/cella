@@ -13,16 +13,13 @@ type LastUser = Pick<MeUser, 'id' | 'email'>;
 export const yjsTokenKey = (entityType: ProductEntityType, entityId: string) => `${entityType}:${entityId}`;
 
 /** i18next emits languageChanged even for the current language, which re-renders every useTranslation consumer. */
-const syncLanguage = (language?: User['language']) => {
-  const lng = language || 'en';
+const mirrorLanguage = (language?: User['language']) => {
+  const lng = language || appConfig.defaultLanguage;
   if (i18n.language !== lng) i18n.changeLanguage(lng);
 };
 
-/**
- * Mirrors the stored contrast preference into the UI store, which Themer watches. The UI store is what applies it,
- * so the choice survives sign-out and reaches the public pages, where no user exists to read it from.
- */
-const syncContrast = (contrast?: User['contrast']) => {
+/** Mirrors the stored contrast into the UI store, which applies it, so the choice survives sign-out and reaches the public pages. */
+const mirrorContrast = (contrast?: User['contrast']) => {
   uiStore.getState().setContrast(contrast ?? 'system');
 };
 
@@ -32,12 +29,15 @@ interface UserStoreState {
   isSystemAdmin: boolean;
   /** The system admin acting as `user` through an impersonation, as `/me` names them; `null` on the user's own session. */
   impersonator: UserMinimalBase | null;
-  lastUser: LastUser | null; // Identity of the last signed-out user
-  yjsTokens: Record<string, string>; // Map of "entityType:entityId" → signed Yjs token (not persisted)
-  setMe: (me: Me) => void; // What `/me` answered, in one write; also updates lastUser, unless impersonated
-  setLastUser: (lastUser: LastUser) => void;
+  /** The last user signed in on this browser, kept after sign-out. */
+  lastUser: LastUser | null;
+  /** Signed Yjs tokens by `yjsTokenKey`; not persisted. */
+  yjsTokens: Record<string, string>;
+  /** Stores what `/me` answered in one write; also sets lastUser, unless impersonated. */
+  setMe: (me: Me) => void;
   setYjsToken: (key: string, token: string | null) => void;
-  updateUser: (user: User) => void; // Also adjusts lastUser, unless impersonated
+  /** Merges into the user; also sets lastUser, unless impersonated. */
+  updateUser: (user: User) => void;
   reset: () => void;
 }
 
@@ -60,8 +60,8 @@ export const useUserStore = create<UserStoreState>()(
             lastUser: state.impersonator ? state.lastUser : { id: user.id, email: user.email },
           }));
 
-          syncLanguage(user.language);
-          syncContrast(user.contrast);
+          mirrorLanguage(user.language);
+          mirrorContrast(user.contrast);
         },
         setMe: ({ user, isSystemAdmin, impersonator }) => {
           set((state) => {
@@ -72,13 +72,8 @@ export const useUserStore = create<UserStoreState>()(
             if (!impersonator) state.lastUser = { id: user.id, email: user.email };
           });
 
-          syncLanguage(user.language);
-          syncContrast(user.contrast);
-        },
-        setLastUser: (lastUser) => {
-          set((state) => {
-            state.lastUser = { id: lastUser.id, email: lastUser.email };
-          });
+          mirrorLanguage(user.language);
+          mirrorContrast(user.contrast);
         },
         setYjsToken: (key, token) => {
           set((state) => {
@@ -107,7 +102,6 @@ export const useUserStore = create<UserStoreState>()(
   ),
 );
 
-// Non-hook alias for reading the store outside React components
 export { useUserStore as userStore };
 
 const signedOutMessage =

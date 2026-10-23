@@ -1,8 +1,8 @@
 import type { ChannelEnrichment } from '~/modules/entities/types';
 
-/** Entity shape in infinite query pages, derived from ChannelEnrichment fields. */
+/** A cached channel row, in a list page or a detail, as the enrichers read and write it. */
 export type EnrichableChannel = { id: string; slug?: string } & ChannelEnrichment;
 
-export interface InfiniteData {
+export interface EnrichableListData {
   pages: { items: EnrichableChannel[] }[];
 }

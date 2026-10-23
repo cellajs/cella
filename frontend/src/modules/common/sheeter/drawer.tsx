@@ -1,40 +1,37 @@
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { ContentKeyTransition } from '~/modules/common/sheeter/sheet';
+import { ContentKeyTransition } from '~/modules/common/sheeter/content-key-transition';
 import { type InternalSheet, sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
-import { cn } from '~/utils/cn';
 
 const sideToSwipeDirection = { top: 'up', bottom: 'down', left: 'left', right: 'right' } as const;
 
-export function SheeterDrawer({ sheet, onExited }: { sheet: InternalSheet; onExited?: () => void }) {
-  // Drawers on mobile are always modal (overlay + outside click to close)
-  const { id, side, description, title, titleContent = title, headerClassName, className, content, contentKey, keepMounted, open = true } = sheet;
+interface SheeterDrawerProps {
+  sheet: InternalSheet;
+  onExited?: () => void;
+}
 
-  const updateSheet = sheeter.getState().update;
+export function SheeterDrawer({ sheet, onExited }: SheeterDrawerProps) {
+  const { id, side, description, title, titleContent = title, headerClassName, className, content, contentKey, keepMounted, open = true } = sheet;
 
   const isDropdownOpen = useDropdowner((state) => !!state.dropdown);
 
-  // The provider keeps the removed drawer rendered until it has slid out
-  const onOpenChange = (open: boolean) => {
-    if (open) updateSheet(sheet.id, { open });
-    else sheeter.getState().remove(sheet.id);
-  };
-
   return (
     <Drawer
-      key={id}
+      // Always modal on mobile: an overlay, and an outside press closes it
       modal
       open={open}
       disablePointerDismissal={isDropdownOpen}
       swipeDirection={sideToSwipeDirection[side]}
-      onOpenChange={onOpenChange}
+      onOpenChange={() => sheeter.getState().remove(sheet.id)}
       onOpenChangeComplete={(isOpen) => !isOpen && onExited?.()}
     >
       <DrawerContent id={String(id)} className={className} keepMounted={keepMounted}>
-        <DrawerHeader sticky className={cn(headerClassName, !(description || title) && 'hidden')}>
-          {title && <DrawerTitle>{titleContent}</DrawerTitle>}
-          {description && <DrawerDescription className="text-muted-foreground">{description}</DrawerDescription>}
-        </DrawerHeader>
+        {(title || description) && (
+          <DrawerHeader sticky className={headerClassName}>
+            {title && <DrawerTitle>{titleContent}</DrawerTitle>}
+            {description && <DrawerDescription>{description}</DrawerDescription>}
+          </DrawerHeader>
+        )}
         <ContentKeyTransition contentKey={contentKey}>{content}</ContentKeyTransition>
       </DrawerContent>
     </Drawer>

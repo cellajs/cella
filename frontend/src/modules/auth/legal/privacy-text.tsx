@@ -1,30 +1,17 @@
 import { appConfig } from 'shared';
-import { legalConfig } from '~/modules/auth/legal/legal-config';
-import { LegalContact } from '~/modules/auth/legal/legal-contact';
+import { LegalContact, SupportEmailLink } from '~/modules/auth/legal/legal-contact';
 import { LegalSection } from '~/modules/auth/legal/legal-section';
 import { ProcessedDataTypes } from '~/modules/auth/legal/processed-data-types';
 import { Subprocessors } from '~/modules/auth/legal/subprocessors';
 
-const sections = legalConfig.privacy.sections;
-const s = (id: string) => sections.find((sec) => sec.id === id)!;
-
-function PrivacyText() {
-  const lastUpdated = 'October 19, 2026';
-
+export function PrivacyText() {
   const appName = appConfig.name;
   const company = appConfig.company.name;
-  const supportEmail = appConfig.company.supportEmail;
   const mapHost = appConfig.mapStyleUrls.light && new URL(appConfig.mapStyleUrls.light).hostname;
-  const email = (
-    <a href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
-      {supportEmail}
-    </a>
-  );
 
   return (
     <div id="privacy-content">
-      <LegalSection id={s('overview').id} label={s('overview').label}>
-        <p className="text-muted-foreground text-sm">Last updated: {lastUpdated}</p>
+      <LegalSection subject="privacy" id="overview" lastUpdated="October 19, 2026">
         <p>
           {company} ("we") runs {appName} (the "Service") for organizations. This policy explains how we handle personal data under the EU General
           Data Protection Regulation (GDPR). We are the controller of your account data. Content your organization puts in the Service is usually its
@@ -34,7 +21,7 @@ function PrivacyText() {
         <LegalContact className="mt-8" />
       </LegalSection>
 
-      <LegalSection id={s('how-we-use-data').id} label={s('how-we-use-data').label}>
+      <LegalSection subject="privacy" id="how-we-use-data">
         <p>
           We get personal data from you, from GitHub or your institution when you sign in through them, and from your use of the Service. Each use
           rests on a legal basis. Contract: we need the data to provide the Service to you and your organization (Art. 6(1)(b) GDPR). Legitimate
@@ -44,7 +31,7 @@ function PrivacyText() {
         <ProcessedDataTypes />
       </LegalSection>
 
-      <LegalSection id={s('data-processing').id} label={s('data-processing').label}>
+      <LegalSection subject="privacy" id="data-processing">
         <p>We share personal data only:</p>
         <ul>
           <li>
@@ -63,11 +50,11 @@ function PrivacyText() {
         </ul>
       </LegalSection>
 
-      <LegalSection id={s('subprocessors').id} label={s('subprocessors').label}>
+      <LegalSection subject="privacy" id="subprocessors">
         <Subprocessors />
       </LegalSection>
 
-      <LegalSection id={s('cookies').id} label={s('cookies').label}>
+      <LegalSection subject="privacy" id="cookies">
         <p>
           Our sign-in cookies keep you signed in and protect your account. One recognizes your browser for up to 400 days, so we can warn you about
           sign-ins from a new device. Your preferences and offline copies of your data stay in your browser's storage. We use no advertising cookies.
@@ -80,27 +67,25 @@ function PrivacyText() {
         </ul>
       </LegalSection>
 
-      <LegalSection id={s('security').id} label={s('security').label}>
+      <LegalSection subject="privacy" id="security">
         <p>
           The Service runs on servers in the EU and encrypts data in transit (TLS). Our database holds session tokens and IP addresses only as hashes,
           and roles limit who can access what. No system is perfectly secure: if a breach puts your data at risk, we inform those affected as the GDPR
-          requires. Report security issues to {email}.
+          requires. Report security issues to <SupportEmailLink />.
         </p>
       </LegalSection>
 
-      <LegalSection id={s('your-rights').id} label={s('your-rights').label}>
+      <LegalSection subject="privacy" id="your-rights">
         <p>
           You can ask us to access, correct, delete or export your data, to restrict its use, or object to it, and you can stop non-essential emails.
-          Email {email} and we reply within one month. For content your organization controls, we pass your request on to it.
+          Email <SupportEmailLink /> and we reply within one month. For content your organization controls, we pass your request on to it.
         </p>
         <p>You can also complain to a data protection authority, for example in the EU country where you live or work.</p>
       </LegalSection>
 
-      <LegalSection id={s('changes').id} label={s('changes').label}>
+      <LegalSection subject="privacy" id="changes">
         <p>We announce material changes to this policy at least two weeks in advance, by email or in the Service.</p>
       </LegalSection>
     </div>
   );
 }
-
-export { PrivacyText };

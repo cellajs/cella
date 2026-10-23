@@ -1,16 +1,16 @@
-import { onlineManager } from '@tanstack/react-query';
+import { matchMutation, matchQuery, onlineManager } from '@tanstack/react-query';
 import { liveQuery, type Subscription } from 'dexie';
 import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
 import { type CloudFileVariant, getCloudUrl, getVariantKey } from '~/modules/attachment/file-url';
 import { attachmentsDb } from '~/modules/attachment/offline/attachments-db';
-import { downloadQueue, SKIP_REASON_NO_ORIGINAL_KEY } from '~/modules/attachment/offline/download-queue';
+import { downloadQueue, skipReasonNoOriginalKey } from '~/modules/attachment/offline/download-queue';
+import { groupBy } from '~/modules/attachment/offline/group-by';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { attachmentQueryKeys, findAttachmentInCache } from '~/modules/attachment/query';
 import { isPersisted } from '~/modules/attachment/types';
 import { flattenInfiniteData } from '~/query/basic/flatten';
-import { getLocalUserDb } from '~/query/local-user-db';
-import { subscribeOwnerChange } from '~/query/local-user-storage';
+import { getLocalUserDb, subscribeOwnerChange } from '~/query/local-user-db';
 import { entityIdsOf } from '~/query/offline/mutation-variables';
 import { queryClient } from '~/query/query-client';
 
@@ -19,14 +19,7 @@ const variantPriority: CloudFileVariant[] = ['thumbnail', 'preview', 'converted'
 
 const variantFetchTimeoutMs = 30_000;
 
-/** Result of attempting to download a single variant. */
 type VariantResult = 'stored' | 'skipped' | 'failed-auth' | 'failed-other';
-
-/** True when `key` starts with every segment of `prefix` (react-query's own key-matching rule). */
-function matchesKeyPrefix(key: unknown, prefix: readonly unknown[]): boolean {
-  if (!Array.isArray(key)) return false;
-  return prefix.every((segment, i) => key[i] === segment);
-}
 
 class AttachmentDownloadService {
   private processing = false;
@@ -37,12 +30,8 @@ class AttachmentDownloadService {
   private mutationUnsubscribe: (() => void) | null = null;
   private ownerUnsubscribe: (() => void) | null = null;
 
-  private get config() {
-    return appConfig.localBlobStorage;
-  }
-
   start(): void {
-    if (!this.config?.enabled) {
+    if (!appConfig.localBlobStorage.enabled) {
       console.debug('[DownloadService] Local blob storage disabled');
       return;
     }
@@ -60,10 +49,8 @@ class AttachmentDownloadService {
     });
 
     this.cacheUnsubscribe = queryClient.getQueryCache().subscribe((event) => {
-      if (event.type !== 'updated') return;
-      if (event.action.type !== 'success') return;
-
-      if (!matchesKeyPrefix(event.query.queryKey, attachmentQueryKeys.list.base)) return;
+      if (event.type !== 'updated' || event.action.type !== 'success') return;
+      if (!matchQuery({ queryKey: attachmentQueryKeys.list.base }, event.query)) return;
 
       const attachments = flattenInfiniteData<Attachment>(event.query.state.data);
       if (attachments.length > 0) {
@@ -72,20 +59,17 @@ class AttachmentDownloadService {
     });
 
     this.mutationUnsubscribe = queryClient.getMutationCache().subscribe((event) => {
-      if (event.type !== 'updated') return;
-      if (event.mutation.state.status !== 'success') return;
-
-      if (!matchesKeyPrefix(event.mutation.options.mutationKey, attachmentQueryKeys.delete)) return;
+      if (event.type !== 'updated' || !matchMutation({ mutationKey: attachmentQueryKeys.delete, status: 'success' }, event.mutation)) return;
 
       // Drop blobs and queue rows: a deleted attachment is never re-downloaded and its row would grow the dedupe registry.
       const ids = entityIdsOf(event.mutation.state.variables);
       if (!ids.length) return;
 
-      attachmentStorage.deleteBlobs(ids).catch((err) => {
-        console.error('[DownloadService] Failed to delete local blobs:', err);
+      attachmentStorage.deleteBlobs(ids).catch((error) => {
+        console.error('[DownloadService] Failed to delete local blobs:', error);
       });
-      downloadQueue.remove(ids).catch((err) => {
-        console.error('[DownloadService] Failed to remove queue entries:', err);
+      downloadQueue.remove(ids).catch((error) => {
+        console.error('[DownloadService] Failed to remove queue entries:', error);
       });
     });
 
@@ -96,36 +80,26 @@ class AttachmentDownloadService {
   private subscribeQueue(): void {
     this.queueSubscription?.unsubscribe();
     this.queueSubscription = liveQuery(() =>
-      getLocalUserDb() ? attachmentsDb.downloadQueue.filter((e) => e.status === 'pending').count() : 0,
+      getLocalUserDb() ? attachmentsDb.downloadQueue.filter((entry) => entry.status === 'pending').count() : 0,
     ).subscribe({
       next: (count) => {
         if (count > 0) this.processQueueSoon();
       },
-      error: (err) => console.error('[DownloadService] Queue liveQuery error:', err),
+      error: (error) => console.error('[DownloadService] Queue liveQuery error:', error),
     });
   }
 
   stop(): void {
-    if (this.queueSubscription) {
-      this.queueSubscription.unsubscribe();
-      this.queueSubscription = null;
-    }
-    if (this.onlineUnsubscribe) {
-      this.onlineUnsubscribe();
-      this.onlineUnsubscribe = null;
-    }
-    if (this.cacheUnsubscribe) {
-      this.cacheUnsubscribe();
-      this.cacheUnsubscribe = null;
-    }
-    if (this.mutationUnsubscribe) {
-      this.mutationUnsubscribe();
-      this.mutationUnsubscribe = null;
-    }
-    if (this.ownerUnsubscribe) {
-      this.ownerUnsubscribe();
-      this.ownerUnsubscribe = null;
-    }
+    this.queueSubscription?.unsubscribe();
+    this.queueSubscription = null;
+    this.onlineUnsubscribe?.();
+    this.onlineUnsubscribe = null;
+    this.cacheUnsubscribe?.();
+    this.cacheUnsubscribe = null;
+    this.mutationUnsubscribe?.();
+    this.mutationUnsubscribe = null;
+    this.ownerUnsubscribe?.();
+    this.ownerUnsubscribe = null;
     console.debug('[DownloadService] Stopped');
   }
 
@@ -140,17 +114,13 @@ class AttachmentDownloadService {
   }
 
   async queueForDownload(attachments: Attachment[]): Promise<void> {
-    if (!this.config?.enabled) return;
-    if (!attachments.length) return;
+    if (!appConfig.localBlobStorage.enabled) return;
 
-    // Skip transient optimistic rows; queue only persisted attachments.
+    // Optimistic rows are not on the server yet.
     const queueable = attachments.filter(isPersisted);
     if (!queueable.length) return;
 
-    const organizationId = queueable[0]?.organizationId;
-    if (!organizationId) return;
-
-    await downloadQueue.enqueue(queueable, organizationId);
+    await downloadQueue.enqueue(queueable, queueable[0].organizationId);
 
     // Call directly as well: enqueue may add no pending rows for the liveQuery to observe.
     if (onlineManager.isOnline()) {
@@ -159,7 +129,7 @@ class AttachmentDownloadService {
   }
 
   async processQueue(): Promise<void> {
-    if (!this.config?.enabled) return;
+    if (!appConfig.localBlobStorage.enabled) return;
     if (this.processing) return;
     if (!onlineManager.isOnline()) return;
     if (!getLocalUserDb()) return; // Signed out, no per-user queue to process.
@@ -167,30 +137,18 @@ class AttachmentDownloadService {
     this.processing = true;
 
     try {
-      const concurrency = this.config.downloadConcurrency ?? 2;
+      const pendingEntries = await attachmentsDb.downloadQueue.filter((entry) => entry.status === 'pending').toArray();
 
-      // Table scan is fine for this small table.
-      const pendingAll = await attachmentsDb.downloadQueue.filter((e) => e.status === 'pending').toArray();
+      if (pendingEntries.length === 0) return;
 
-      if (pendingAll.length === 0) return;
-
-      const byOrg = new Map<string, typeof pendingAll>();
-      for (const entry of pendingAll) {
-        const existing = byOrg.get(entry.organizationId) || [];
-        existing.push(entry);
-        byOrg.set(entry.organizationId, existing);
-      }
-
-      for (const [organizationId, entries] of byOrg) {
+      for (const [organizationId, entries] of groupBy(pendingEntries, (entry) => entry.organizationId)) {
         const used = await attachmentStorage.getStorageUsed(organizationId);
-        const maxTotal = this.config.maxTotalSize ?? 100 * 1024 * 1024;
-
-        if (used >= maxTotal) {
+        if (used >= appConfig.localBlobStorage.maxTotalSize) {
           console.debug(`[DownloadService] Storage limit reached for org ${organizationId}`);
           continue;
         }
 
-        const sorted = entries.sort((a, b) => a.priority - b.priority).slice(0, concurrency);
+        const sorted = entries.sort((a, b) => a.priority - b.priority).slice(0, appConfig.localBlobStorage.downloadConcurrency);
 
         await Promise.all(sorted.map((entry) => this.downloadAttachment(entry.id, organizationId)));
       }
@@ -201,7 +159,7 @@ class AttachmentDownloadService {
     }
   }
 
-  /** Downloads variants in priority order (thumbnail, preview, converted, original), then evicts raw. */
+  /** Downloads the variants in `variantPriority` order, then evicts the raw blob once the original is stored. */
   private async downloadAttachment(attachmentId: string, organizationId: string): Promise<void> {
     // Read the cache before claiming the row, so a row whose metadata has not synced does not burn an attempt.
     const attachment = findAttachmentInCache(attachmentId);
@@ -210,13 +168,8 @@ class AttachmentDownloadService {
       return;
     }
 
-    if (!attachment.keys?.original) {
-      await downloadQueue.transition(attachmentId, 'skipped', SKIP_REASON_NO_ORIGINAL_KEY);
-      return;
-    }
-
-    if (!attachment.tenantId || !attachment.organizationId) {
-      await downloadQueue.transition(attachmentId, 'skipped', 'Missing tenantId or organizationId');
+    if (!attachment.keys.original) {
+      await downloadQueue.transition(attachmentId, 'skipped', skipReasonNoOriginalKey);
       return;
     }
 
@@ -260,14 +213,9 @@ class AttachmentDownloadService {
   }
 
   private async downloadVariant(attachment: Attachment, variant: CloudFileVariant, organizationId: string): Promise<VariantResult> {
-    // This attachment has no object for this variant.
     if (!getVariantKey(attachment, variant)) return 'skipped';
 
-    // Already have it locally.
     if (await attachmentStorage.hasVariant(attachment.id, variant)) return 'skipped';
-
-    // Guarded above in downloadAttachment, but keep narrow types happy.
-    if (!attachment.tenantId || !attachment.organizationId) return 'failed-other';
 
     try {
       const url = await getCloudUrl(attachment, variant);
@@ -297,8 +245,8 @@ class AttachmentDownloadService {
 
       console.debug(`[DownloadService] Downloaded ${variant} for ${attachment.id}`);
       return 'stored';
-    } catch (err) {
-      console.debug(`[DownloadService] Error downloading ${variant} for ${attachment.id}:`, err);
+    } catch (error) {
+      console.debug(`[DownloadService] Error downloading ${variant} for ${attachment.id}:`, error);
       return 'failed-other';
     }
   }

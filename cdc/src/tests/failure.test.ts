@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { RESOURCE_LIMITS } from '../constants';
+import { resourceLimits } from '../constants';
 import { ApiUnreachableError, isPassingError, TransactionTooLargeError } from '../services/failure';
 import { replicationState } from '../services/replication-state';
 
-const { delaysMs, stuckAfter } = RESOURCE_LIMITS.reread;
+const { delaysMs, stuckAfter } = resourceLimits.reread;
 
 /** A database error as the driver throws it, and as Drizzle wraps it. */
 const pgError = (code: string, message = 'refused') => Object.assign(new Error(message), { code });

@@ -1,12 +1,19 @@
 import { BoxIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { exportDate } from '~/lib/export';
+import type { TKey } from '~/lib/i18n-locales';
 import type { BreakpointKey } from '~/modules/common/data-grid/types';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { dateShort } from '~/utils/date-short';
 import { formatCount } from '~/utils/format-count';
+import { tw } from '~/utils/tw';
+
+/** The label inside a `cell` Button: a link underline on hover, darker and nudged while the button is held. */
+export const cellLinkTextClass = tw(
+  'group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong truncate group-hover/cell-button:underline',
+);
 
 type DateValue = string | Date | null | undefined;
 
@@ -62,6 +69,7 @@ export const countColumn = <T,>(key: string, { name, icon: Icon = BoxIcon, hidde
   minBreakpoint: 'md',
   minWidth: 60,
   maxWidth: 120,
+  cellClass: 'gap-2',
   renderCell: ({ row }) => {
     const count = get(row);
     const text = typeof count === 'number' ? formatCount(count) : '-';
@@ -69,7 +77,7 @@ export const countColumn = <T,>(key: string, { name, icon: Icon = BoxIcon, hidde
 
     return (
       <>
-        <Icon className="mr-2 opacity-50" />
+        <Icon className="opacity-50" />
         <span {...(isAbbreviated && { 'data-tooltip': 'true', 'data-tooltip-content': count })}>{text}</span>
       </>
     );
@@ -94,17 +102,21 @@ export const emailColumn = <T extends { email?: string | null }>(options: EmailC
       <a
         href={`mailto:${row.email}`}
         tabIndex={tabIndex}
-        className="active:press link-decoration active:link-decoration-strong truncate opacity-80 outline-0 ring-0 hover:underline hover:opacity-100"
+        className="active:press link-decoration active:link-decoration-strong truncate opacity-80 outline-0 hover:underline hover:opacity-100"
       >
         {row.email}
       </a>
     ) : null,
 });
 
-/** The header of the row actions column: a name for assistive technology, nothing to see. */
-function EllipsisColumnHeader() {
+interface SrOnlyHeaderProps {
+  label: TKey;
+}
+
+/** A column header for assistive technology only, over a column of controls that need no visible title. */
+export function SrOnlyHeader({ label }: SrOnlyHeaderProps) {
   const { t } = useTranslation();
-  return <span className="sr-only">{t('c:actions')}</span>;
+  return <span className="sr-only">{t(label)}</span>;
 }
 
 /** Row actions behind an ellipsis button; a row without options gets an empty cell. */
@@ -116,7 +128,7 @@ export const ellipsisColumn = <T extends { id: string }>(
   name: '',
   ...(maxBreakpoint && { maxBreakpoint }),
   width: 32,
-  renderHeaderCell: () => <EllipsisColumnHeader />,
+  renderHeaderCell: () => <SrOnlyHeader label="c:actions" />,
   renderCell: ({ row, tabIndex }) => {
     const options = getOptions(row);
     return options.length ? <TableEllipsis row={row} tabIndex={tabIndex} options={options} /> : null;

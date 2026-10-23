@@ -2,18 +2,10 @@ import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
-import type { EnrichedChannel } from '~/modules/entities/types';
 import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
-import { InviteFormFooter, useInviteSubmit } from '~/modules/user/invite-submit';
-import { useInviteFormDraft } from '~/modules/user/invite-users';
+import { InviteFormFooter, type InviteFormProps, useInviteFormDraft, useInviteSubmit } from '~/modules/user/invite-submit';
 
-interface Props {
-  channel?: EnrichedChannel;
-  dialog?: boolean;
-  children?: React.ReactNode;
-}
-
-export function InviteEmailForm({ channel, dialog: isDialog, children }: Props) {
+export function InviteEmailForm({ channel, dialog: isDialog, children }: InviteFormProps) {
   const { t } = useTranslation();
 
   const { nextStep } = useStepper();
@@ -23,7 +15,7 @@ export function InviteEmailForm({ channel, dialog: isDialog, children }: Props) 
 
   const { onSubmit, isPending } = useInviteSubmit(channel, isDialog, () => {
     form.reset(undefined, { keepDirtyValues: true });
-    nextStep?.();
+    nextStep();
   });
 
   return (
@@ -34,13 +26,13 @@ export function InviteEmailForm({ channel, dialog: isDialog, children }: Props) 
           name="emails"
           render={({ field: { onChange, value } }) => (
             <FormItem>
-              <SelectEmails placeholder={t('c:add_email')} emails={value} onValueChange={onChange} inputProps={{ autoComplete: 'off' }} />
+              <SelectEmails placeholder={t('c:add_email')} value={value} onChange={onChange} inputProps={{ autoComplete: 'off' }} />
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <InviteFormFooter form={form} channel={channel} count={emails?.length ?? 0} isPending={isPending} onCancel={() => form.reset()}>
+        <InviteFormFooter form={form} channel={channel} count={emails?.length ?? 0} loading={isPending} onCancel={() => form.reset()}>
           {children}
         </InviteFormFooter>
       </form>

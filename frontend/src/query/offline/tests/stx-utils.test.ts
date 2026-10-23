@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createStxForCreate, createStxForDelete, createStxForUpdate, sourceId } from '../stx-utils';
+import { sourceId } from '~/query/offline/hlc';
+import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
 
 // The stamp shape the backend's stx schema validates (backend/src/schemas/sync-transaction-schemas.ts).
 describe('stx stamps', () => {

@@ -1,20 +1,15 @@
 import { TrashIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
-import { Suspense, useRef } from 'react';
+import { type ReactNode, Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import type { PlacementDescriptor } from '~/lib/placements';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { NamedText } from '~/modules/common/named-text';
 import { ToolCard } from '~/modules/common/tool-card';
 import { Button } from '~/modules/ui/button';
 
-/**
- * A module spreads a tool base into its `tools` array and adds the `slot`, app conditions, and a
- * `render`. Order convention: general 10, details 20, tabs 80, danger zone 90; module tools default
- * to 50. Bases without `locked` are hideable and reorderable per channel.
- */
+/** Bases a module spreads into its `tools` with a `slot` and a `render`. Orders: general 10, details 20, tabs 80, danger 90; module tools default to 50. */
 export const generalToolBase = {
   id: 'general',
   label: 'c:general',
@@ -56,13 +51,13 @@ interface DeleteToolCardProps {
 
 export function DeleteToolCard({ name, resource, dialogId, renderDialog }: DeleteToolCardProps) {
   const { t } = useTranslation();
-  const deleteButtonRef = useRef(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
   const resourceName = t(resource).toLowerCase();
 
   const openDeleteDialog = () => {
     // Suspense: dialog content is typically a lazy-loaded per-entity component
-    useDialoger.getState().create(<Suspense fallback={null}>{renderDialog()}</Suspense>, {
+    dialoger.getState().create(<Suspense fallback={null}>{renderDialog()}</Suspense>, {
       id: dialogId,
       triggerRef: deleteButtonRef,
       className: 'md:max-w-xl',
@@ -78,7 +73,7 @@ export function DeleteToolCard({ name, resource, dialogId, renderDialog }: Delet
       description={<NamedText i18nKey="c:delete_resource_notice.text" name={name} values={{ resource: resourceName }} />}
     >
       <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-        <TrashIcon className="size-4" />
+        <TrashIcon />
         <span>{t('c:delete_resource', { resource: resourceName })}</span>
       </Button>
     </ToolCard>

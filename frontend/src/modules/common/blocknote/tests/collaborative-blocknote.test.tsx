@@ -27,7 +27,6 @@ vi.mock('~/modules/common/blocknote/lazy-full-html', () => ({
 const connectionDefaults = {
   ready: true,
   transport: 'ws' as 'none' | 'ws' | 'http',
-  synced: true,
   stopped: false,
   stopReason: null as 'denied' | 'refused' | 'expired' | null,
   rebuilds: 0,
@@ -40,14 +39,13 @@ vi.mock('~/modules/common/blocknote/yjs-connections', () => ({
 }));
 vi.mock('~/modules/common/blocknote/hooks/use-yjs-token', () => ({ useYjsToken: () => ({ token: 'token', refused: false, deleted: false }) }));
 vi.mock('~/hooks/use-online-manager', () => ({ useOnlineManager: () => true }));
-vi.mock('~/modules/common/blocknote/yjs-store', () => ({ useStoredYDoc: () => ({ stored: false, unsynced: false }) }));
+vi.mock('~/modules/common/blocknote/yjs-store', () => ({ isYjsEnabled: () => true, useStoredYDoc: () => ({ stored: false, unsynced: false }) }));
 vi.mock('~/modules/user/user-store', () => ({ useCurrentUser: () => ({ name: 'Editor' }) }));
 vi.mock('~/modules/common/blocknote/custom-file-panel/upload-host', () => ({
   UploadHostProvider: ({ children }: { children: unknown }) => children,
 }));
 vi.mock('~/utils/random-color', () => ({ getRandomColor: () => '#000000' }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }));
-vi.mock('shared', () => ({ appConfig: { services: { yjs: { enabled: true } }, yjsUrl: 'http://localhost:1234' } }));
 
 const { CollaborativeBlockNote } = await import('~/modules/common/blocknote/collaborative-blocknote');
 
@@ -96,13 +94,13 @@ describe('CollaborativeBlockNote after the relay reseeded the document', () => {
     expect(dropped).toBe(connection.fragment);
 
     // The connection replaced its document; the new one is not ready yet.
-    Object.assign(connection, { fragment: {}, ready: false, transport: 'none', synced: false, rebuilds: 1 });
+    Object.assign(connection, { fragment: {}, ready: false, transport: 'none', rebuilds: 1 });
     const rendered = editors.length;
     await render();
     expect(editors).toHaveLength(rendered);
     expect(showsStatic()).toBe(true);
 
-    Object.assign(connection, { ready: true, transport: 'ws', synced: true });
+    Object.assign(connection, { ready: true, transport: 'ws' });
     await render();
     expect(editorMounts).toBe(2);
     expect(showsStatic()).toBe(false);

@@ -19,7 +19,7 @@ describe('CodeViewer', () => {
 
   it('must not render markup from the code via the unhighlighted fallback', async () => {
     const code = 'const note = "<img src=x onerror=alert(1)>";';
-    await act(async () => root.render(<CodeViewer code={code} language="typescript" />));
+    await act(async () => root.render(<CodeViewer code={code} />));
     await vi.waitFor(() => expect(container.querySelector('code')).not.toBeNull());
 
     expect(container.querySelector('img')).toBeNull();

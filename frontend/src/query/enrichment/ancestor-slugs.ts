@@ -12,10 +12,10 @@ function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | nul
   if (!a || !b) return true;
   const aKeys = Object.keys(a) as ChannelEntityType[];
   if (aKeys.length !== Object.keys(b).length) return true;
-  return aKeys.some((k) => a[k] !== b[k]);
+  return aKeys.some((type) => a[type] !== b[type]);
 }
 
-/** Reads a pre-built index, falling back to the ancestor id when a slug is not indexed; rewriteUrlToSlug corrects the URL later. Returns the original reference if unchanged. */
+/** Reads a pre-built index, falling back to the ancestor id when a slug is not indexed; rewriteUrlToSlug corrects the URL later. */
 export function enrichWithAncestorSlugs(item: EnrichableChannel, ancestors: readonly ChannelEntityType[], slugIndex: SlugIndex): EnrichableChannel {
   if (ancestors.length === 0) return item;
 
@@ -25,7 +25,6 @@ export function enrichWithAncestorSlugs(item: EnrichableChannel, ancestors: read
 
   for (const ancestorType of ancestors) {
     const idKey = appConfig.entityIdColumnKeys[ancestorType];
-    if (!idKey) continue;
     const ancestorId = getField(membership, idKey) ?? getField(item, idKey);
     if (typeof ancestorId !== 'string') continue;
     slugs[ancestorType] = slugIndex.get(ancestorType)?.get(ancestorId) ?? ancestorId;

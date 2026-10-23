@@ -1,4 +1,5 @@
-.glow-button:before {
+.glow-button:before,
+.glow-button:after {
   content: "";
   display: block;
   position: absolute;
@@ -12,30 +13,18 @@
 }
 
 .glow-button:after {
-  content: "";
-  display: block;
-  position: absolute;
-  top: -0.05rem;
-  left: -0.05rem;
   filter: blur(8px);
-  width: calc(100% + 2px);
-  height: calc(100% + 2px);
-  z-index: -2;
-  border-radius: 100px;
-  background: linear-gradient(45deg, rgba(151, 53, 255, 1) -10%, rgba(251, 204, 38, 1) 60%, rgba(210, 35, 82, 1) 100%);
 }
 
-button.glow-button:after {
+.glow-button:is(a, button):after {
   filter: blur(4px) opacity(0.5);
 }
 
-button.glow-button:active::after {
-  position: absolute;
-  top: 0px;
-  left: 0px;
+.glow-button:is(a, button):active::after {
+  top: 0;
+  left: 0;
   filter: none;
   width: 100%;
   height: 100%;
-  border-radius: 100px;
   background: var(--background);
 }

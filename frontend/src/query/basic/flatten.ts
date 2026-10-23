@@ -4,7 +4,7 @@ export function flattenInfiniteData<T>(data: any): T[] {
   if (!data) return [];
 
   if ('pages' in data) {
-    return (data.pages as Array<{ items?: T[] }>).flatMap((p) => p.items ?? []);
+    return (data.pages as Array<{ items?: T[] }>).flatMap((page) => page.items ?? []);
   }
 
   return data.items ?? [];

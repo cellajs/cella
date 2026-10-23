@@ -3,16 +3,22 @@ import { getRouter } from '~/routes/-router-instance';
 import { tw } from '~/utils/tw';
 
 /** Search param holding the open attachment's id. Its presence is the dialog's open state. */
-export const ATTACHMENT_DIALOG_PARAM = 'attachmentDialogId';
+export const attachmentDialogParam = 'attachmentDialogId';
 
-/** Params cleared alongside the dialog id when it closes. */
-const ATTACHMENT_DIALOG_EXTRA_PARAMS = ['groupId'] as const;
+/** Search param holding the upload group the dialog pages through, cleared with the dialog id. */
+export const attachmentGroupParam = 'groupId';
+
+/** Dialog id of the URL-driven viewer; a stable id keeps carousel navigation from recreating the dialog. */
+export const attachmentUrlDialogId = 'attachment-url-dialog';
+
+/** Dialog id of the viewer `openAttachmentDialog` opens, apart from the URL-driven one. */
+export const attachmentDialogId = 'attachment-dialog';
 
 /** Chrome shared by both ways of opening the carousel (URL-driven and imperative). */
-const attachmentDialogClassName = tw('mt-0 flex h-dvh max-h-dvh min-w-full flex-col rounded-none border-0 p-0');
+const attachmentDialogClassName = tw('flex h-dvh max-h-dvh min-w-full flex-col rounded-none p-0');
 
 /** Wrapper the carousel is mounted in, identical for both dialog entry points. */
-export const attachmentDialogContentClassName = tw('relative -z-1 flex h-dvh grow flex-wrap justify-center p-2');
+export const attachmentDialogContentClassName = tw('relative -z-1 h-dvh p-2');
 
 /**
  * Per-slide stage insets: a fitted image stays clear of the fixed header (3rem) and, from `sm` up where the pan/zoom
@@ -22,19 +28,17 @@ export const attachmentDialogContentClassName = tw('relative -z-1 flex h-dvh gro
 export const attachmentDialogStageClassName = tw('pt-12 sm:pb-14');
 
 export function openAttachmentDialogSearch(attachmentId: string, groupId?: string | null) {
-  return (prev: Record<string, unknown>) => ({ ...prev, [ATTACHMENT_DIALOG_PARAM]: attachmentId, groupId: groupId || undefined });
+  return (prev: Record<string, unknown>) => ({ ...prev, [attachmentDialogParam]: attachmentId, [attachmentGroupParam]: groupId || undefined });
 }
 
 export function clearAttachmentDialogSearch(prev: Record<string, unknown>) {
-  const next: Record<string, unknown> = { ...prev };
-  for (const key of [ATTACHMENT_DIALOG_PARAM, ...ATTACHMENT_DIALOG_EXTRA_PARAMS]) next[key] = undefined;
-  return next;
+  return { ...prev, [attachmentDialogParam]: undefined, [attachmentGroupParam]: undefined };
 }
 
 /** Clears the dialog search params through the router instance, where `to: '.'` resolves against the current location. */
-export const clearAttachmentDialogSearchParams = () => {
+export function clearAttachmentDialogFromUrl() {
   getRouter().navigate({ to: '.', replace: true, resetScroll: false, search: clearAttachmentDialogSearch });
-};
+}
 
 /** Dialoger options shared by both entry points. */
 export function attachmentDialogOptions(overrides: DialogData): DialogData {

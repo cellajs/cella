@@ -1,14 +1,16 @@
-import { ArrowUpRightIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { CountryFlag } from '~/modules/common/country-flag';
+import { ExternalArrow } from '~/modules/marketing/external-arrow';
 import { cards } from '~/modules/marketing/marketing-config';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
 export interface InfoCard {
   name: string;
+  /** Host without protocol: the link adds `https://`, the card shows it as is. */
   url: string;
+  /** Inverts the logo in dark mode. */
   invert?: boolean;
   id: string;
   country: string;
@@ -31,7 +33,7 @@ export function InfoCards() {
               rel="noreferrer"
               draggable={false}
               key={id}
-              className="group focus-effect active:press relative flex h-96 w-64 shrink-0 flex-col justify-between rounded-lg border p-5 hover:cursor-pointer hover:border-primary hover:ring-4 hover:ring-primary/10 sm:w-80"
+              className="group/external-link focus-effect active:press flex h-96 w-64 shrink-0 flex-col rounded-lg border p-5 hover:border-primary hover:ring-4 hover:ring-primary/10 sm:w-80"
             >
               <div className="flex items-center gap-2">
                 <img
@@ -45,10 +47,10 @@ export function InfoCards() {
               <div className="grow overflow-hidden pt-4">{t(text)}</div>
               <div className="pt-2 text-sm">
                 <div className="mb-2 text-muted-foreground">{t(purpose)}</div>
-                <div className="link-decoration group-active:link-decoration-strong font-semibold group-hover:underline">
+                <div className="link-decoration group-active/external-link:link-decoration-strong font-semibold group-hover/external-link:underline">
                   <CountryFlag countryCode={country} className="mr-2" />
                   {url}
-                  <ArrowUpRightIcon className="-mt-2 ml-1 inline-block size-3 text-primary opacity-50 group-hover:opacity-100" />
+                  <ExternalArrow className="size-3" />
                 </div>
               </div>
             </a>

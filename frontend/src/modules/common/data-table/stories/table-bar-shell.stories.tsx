@@ -23,7 +23,7 @@ const channel = {
   entityType: 'organization',
   tenantId: 'tenant-1',
   organizationId: 'org-1',
-  can: { organization: { update: true }, attachment: { delete: true } },
+  can: { attachment: { delete: true } },
 } as unknown as EnrichedChannel;
 
 type BarArgs = {
@@ -48,13 +48,12 @@ function Bar({ bar, q, role, selected = [], isSheet, canUpdate = true, setSearch
     selected: selected as never[],
   };
   const searchVars = { q, role, limit: 20 } as never;
-  const membersChannel = canUpdate ? channel : ({ ...channel, can: {} } as EnrichedChannel);
 
   if (bar === 'users') return <UsersTableBar {...common} searchVars={searchVars} />;
   if (bar === 'organizations') return <OrganizationsTableBar {...common} searchVars={searchVars} />;
   if (bar === 'tenants') return <TenantsTableBar {...common} searchVars={searchVars} />;
   if (bar === 'requests') return <RequestsTableBar {...common} searchVars={searchVars} />;
-  if (bar === 'members') return <MembersTableBar {...common} searchVars={searchVars} channel={membersChannel} isSheet={isSheet} />;
+  if (bar === 'members') return <MembersTableBar {...common} searchVars={searchVars} channel={channel} isSheet={isSheet} canUpdate={canUpdate} />;
   if (bar === 'attachments') return <AttachmentsTableBar {...common} searchVars={searchVars} channel={channel} isSheet={isSheet} canUpload />;
   return <PagesTableBar total={2} searchVars={{ q }} setSearch={setSearch} columns={[]} setColumns={() => {}} />;
 }
@@ -150,7 +149,7 @@ export const RequestsExport: Story = {
     await expect(searchInput(canvasElement, 'requestSearch')).not.toBeNull();
     // Only the first row still waits for an invite, so the invite action shows a badge of one.
     await expect(await body().findByRole('button', { name: /invite/ })).toBeInTheDocument();
-    await expect(body().getByRole('button', { name: 'remove' })).toBeInTheDocument();
+    await expect(body().getByRole('button', { name: 'delete' })).toBeInTheDocument();
 
     await userEvent.click(canvasElement.querySelector('.lucide-download')?.closest('button') as HTMLElement);
     const menu = await body().findByRole('menu');
@@ -216,7 +215,7 @@ export const AttachmentsFiltered: Story = {
 export const Tenants: Story = {
   args: { bar: 'tenants', q: 'x' },
   play: async ({ canvasElement, args }) => {
-    await expect(searchInput(canvasElement, 'tenant-search')).not.toBeNull();
+    await expect(searchInput(canvasElement, 'tenantSearch')).not.toBeNull();
     await expectReset(canvasElement, args, { q: '' });
     await expect(args.clearSelection).not.toHaveBeenCalled();
   },

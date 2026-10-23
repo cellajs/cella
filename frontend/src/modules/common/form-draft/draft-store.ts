@@ -4,20 +4,24 @@ import { immer } from 'zustand/middleware/immer';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
 interface DraftStoreState {
-  forms: Record<string, unknown>; // Draft forms
-  dirtyForms: Record<string, boolean>; // Tracks which forms have unsaved changes
+  /** Draft values by form id. */
+  forms: Record<string, unknown>;
+  /** The ids of forms with unsaved changes; a clean form has no entry. */
+  dirtyForms: Record<string, boolean>;
 
-  setForm<T>(key: string, value: T): void; // Saves or updates a form draft
-  resetForm(key: string): void; // Removes a specific form draft
-  getForm<T>(key: string): T | undefined; // Retrieves a specific form draft
-  reset(): void; // Resets in-memory state to initial (call on sign-out)
-  setFormDirty(key: string, dirty: boolean): void; // Marks a form as dirty or clean
-  isFormDirty(key: string): boolean; // Checks if a form has unsaved changes
+  setForm<T>(key: string, value: T): void;
+  /** Removes the form's draft and its dirty flag. */
+  resetForm(key: string): void;
+  getForm<T>(key: string): T | undefined;
+  /** Clears the drafts in memory, on sign-out. */
+  reset(): void;
+  setFormDirty(key: string, dirty: boolean): void;
+  isFormDirty(key: string): boolean;
 }
 
-/** Backs the auto-draft behavior of useFormWithDraft. */
 const initStore: Pick<DraftStoreState, 'forms' | 'dirtyForms'> = { forms: {}, dirtyForms: {} };
 
+/** Backs the auto-draft behavior of useFormWithDraft. */
 export const useDraftStore = create<DraftStoreState>()(
   immer(
     persist(
@@ -48,3 +52,5 @@ export const useDraftStore = create<DraftStoreState>()(
     ),
   ),
 );
+
+export { useDraftStore as draftStore };
