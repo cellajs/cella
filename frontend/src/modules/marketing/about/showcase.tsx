@@ -47,30 +47,24 @@ export function Showcase() {
 
   return (
     <div className="mx-auto mt-20 mb-12 flex max-w-3xl items-start gap-8 max-sm:flex-col lg:mb-16">
-      <div className="w-full">
-        <div className="flex flex-wrap">
-          {showcaseItems.map((item, index) => {
-            const title = `about:showcase.title_${index + 1}` as TKey;
-            const text = `about:showcase.text_${index + 1}` as TKey;
+      <div className="flex w-full flex-col">
+        {showcaseItems.map((item, index) => {
+          const title = `about:showcase.title_${index + 1}` as TKey;
+          const text = `about:showcase.text_${index + 1}` as TKey;
 
-            return (
-              <div className="w-full" key={item.id}>
-                <div className="flex">
-                  <div className="w-full">
-                    <a href={item.url} target="_blank" rel="noreferrer" className="group/external-link focus-effect mt-4 block rounded-md">
-                      <h3 className="mb-2 font-medium text-xl 2xl:text-[1.38rem]">
-                        {t(title)}
-                        <ExternalArrow />
-                      </h3>
-                    </a>
-                    <p className="mb-6 leading-relaxed sm:mb-12">{t(text)}</p>
-                    {item.cellaLoc && item.totalLoc && <CellaShare cellaLoc={item.cellaLoc} totalLoc={item.totalLoc} />}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+          return (
+            <div key={item.id}>
+              <a href={item.url} target="_blank" rel="noreferrer" className="group/external-link focus-effect mt-4 block rounded-md">
+                <h3 className="mb-2 font-medium text-xl 2xl:text-[1.38rem]">
+                  {t(title)}
+                  <ExternalArrow />
+                </h3>
+              </a>
+              <p className="mb-6 leading-relaxed sm:mb-12">{t(text)}</p>
+              {item.cellaLoc && item.totalLoc && <CellaShare cellaLoc={item.cellaLoc} totalLoc={item.totalLoc} />}
+            </div>
+          );
+        })}
       </div>
       <div>
         <Suspense fallback={<Spinner />}>

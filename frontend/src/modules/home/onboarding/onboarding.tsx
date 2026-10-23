@@ -48,7 +48,7 @@ export function Onboarding({ state, onStart, onComplete }: OnboardingProps) {
       <div className="my-auto w-full">
         {state === 'start' && <WelcomeText invitations={invitations} onStart={onStart} />}
         {state === 'stepper' && (
-          <div className="mx-auto flex max-w-3xl starting:translate-y-4 starting:scale-95 flex-col gap-4 px-4 py-8 starting:opacity-0 transition-all duration-500 ease-out will-change-transform sm:w-10/12">
+          <div className="mx-auto flex max-w-3xl starting:translate-y-4 starting:scale-95 flex-col gap-4 px-4 py-8 starting:opacity-0 transition-[opacity,translate,scale] duration-500 ease-out sm:w-10/12">
             {steps.length === 1 && <h2 className="flex justify-center font-semibold text-lg">{steps[0].label}</h2>}
             <Stepper
               steps={steps}

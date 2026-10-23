@@ -16,7 +16,7 @@ export function MarketingLayout({ title, children }: MarketingLayoutProps) {
   const { t } = useTranslation();
 
   return (
-    <div>
+    <>
       <MarketingNav />
       <Suspense fallback={<Spinner size="lg" className="mt-[45vh]" />}>
         <main>
@@ -30,6 +30,6 @@ export function MarketingLayout({ title, children }: MarketingLayoutProps) {
         </main>
         <MarketingFooter />
       </Suspense>
-    </div>
+    </>
   );
 }

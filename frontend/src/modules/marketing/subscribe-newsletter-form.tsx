@@ -46,7 +46,7 @@ export function SubscribeNewsletterForm() {
         />
         <InputGroupAddon align="inline-end">
           <InputGroupButton type="submit" aria-label="Submit email for newsletter" className="mr-0.5 size-10 rounded-lg text-white">
-            {isPending ? <Spinner size="sm" noDelay /> : <SendIcon />}
+            {isPending ? <Spinner size="sm" noDelay /> : <SendIcon className="size-4" />}
           </InputGroupButton>
         </InputGroupAddon>
       </InputGroup>

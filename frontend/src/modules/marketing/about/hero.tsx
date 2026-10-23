@@ -38,7 +38,7 @@ export function Hero({ title, text, children, chips }: HeroProps) {
       <header
         ref={ref}
         className={cn(
-          'container relative z-2 flex max-w-4xl flex-col items-center gap-4 text-center transition-all duration-500 ease-out will-change-transform',
+          'container relative z-2 flex max-w-4xl flex-col items-center gap-4 text-center transition-[opacity,translate,scale] duration-500 ease-out',
           // Soft halo behind the text so it keeps contrast over the animation
           'before:absolute before:-inset-x-12 before:-inset-y-16 before:z-[-1] before:rounded-full before:bg-background/40 before:blur-3xl',
           !inView && 'translate-y-4 scale-95 opacity-0',
