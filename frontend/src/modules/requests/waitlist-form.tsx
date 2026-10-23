@@ -18,6 +18,12 @@ import { defaultOnInvalid } from '~/utils/form-on-invalid';
 import { formResolver } from '~/utils/form-resolver';
 import { isTouchInteraction } from '~/utils/input-modality';
 
+/**
+ * The pricing page's waitlist dialog, which a `dialog` form closes on success; that page writes the id as a literal.
+ * @public
+ */
+export const waitlistDialogId = 'waitlist-form';
+
 const formSchema = zCreateRequestBody;
 
 type FormValues = z.infer<typeof formSchema>;
@@ -51,7 +57,7 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
         navigate({ to: '/about', replace: true });
         toaster.success(t('c:success.waitlist_request', { appName: appConfig.name }));
 
-        if (isDialog) dialoger.getState().remove();
+        if (isDialog) dialoger.getState().remove(waitlistDialogId);
         callback?.({ status: 'success' });
       },
     });
@@ -70,15 +76,7 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
           render={({ field }) => (
             <FormItem className={cn('w-full grow gap-0', prefilled && 'hidden')}>
               <FormControl>
-                <Input
-                  {...field}
-                  className={cn('block', inputClassName)}
-                  type="email"
-                  autoFocus={!isTouchInteraction()}
-                  disabled={prefilled}
-                  readOnly={prefilled}
-                  placeholder={t('c:email')}
-                />
+                <Input {...field} className={cn('block', inputClassName)} type="email" autoFocus={!isTouchInteraction()} placeholder={t('c:email')} />
               </FormControl>
               <FormMessage className="mt-2" />
             </FormItem>

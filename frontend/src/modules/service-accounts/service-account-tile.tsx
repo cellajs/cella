@@ -1,16 +1,17 @@
-import { onlineManager, useQuery } from '@tanstack/react-query';
-import { CopyCheckIcon, CopyIcon, KeyRoundIcon, UnplugIcon } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { CopyIcon, KeyRoundIcon, UnplugIcon } from 'lucide-react';
 import type { MouseEvent, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiKey, ServiceAccount } from 'sdk';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useRelativeDate } from '~/hooks/use-relative-date';
 import { ConfirmText } from '~/modules/common/confirm-text';
+import { CopiedIcon } from '~/modules/common/copied-icon';
 import { DateTooltip } from '~/modules/common/date-tooltip';
+import { DeleteForm } from '~/modules/common/delete-form';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { PopConfirm } from '~/modules/common/popconfirm';
-import { toastOffline } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { apiKeysQueryOptions, useRevokeApiKeyMutation } from '~/modules/service-accounts/query';
 import { Badge } from '~/modules/ui/badge';
@@ -31,35 +32,25 @@ interface ServiceAccountTileProps {
 export function ServiceAccountTile({ account, path, secrets }: ServiceAccountTileProps) {
   const { t } = useTranslation();
   const { data } = useQuery(apiKeysQueryOptions(path, account.id));
-  const { mutate: revoke, isPending } = useRevokeApiKeyMutation();
+  const { mutate: revoke, isPending, variables } = useRevokeApiKeyMutation();
   const live = (data?.items ?? []).filter((apiKey) => !apiKey.revokedAt);
   const role = account.bindings[0]?.role;
-
-  const handleRevoke = (apiKey: ApiKey) => {
-    if (!onlineManager.isOnline()) return toastOffline();
-    revoke({ path: { ...path, id: account.id, keyId: apiKey.id } });
-  };
 
   // A revoked key cannot be restored and whatever uses it stops working, so the click asks first.
   const openRevokeConfirm = (apiKey: ApiKey, event: MouseEvent<HTMLButtonElement>) => {
     const { create, remove } = dropdowner.getState();
     create(
       <PopConfirm title={<ConfirmText i18nKey="c:confirm.revoke_api_key" values={{ name: apiKey.name }} />}>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
-            variant="destructive"
-            className="justify-center sm:w-auto"
-            onClick={() => {
-              remove();
-              handleRevoke(apiKey);
-            }}
-          >
-            {t('c:revoke')}
-          </Button>
-          <Button type="reset" variant="secondary" data-autofocus onClick={() => remove()}>
-            {t('c:cancel')}
-          </Button>
-        </div>
+        <DeleteForm
+          label="c:revoke"
+          icon={UnplugIcon}
+          onDelete={() => {
+            remove();
+            revoke({ path: { ...path, id: account.id, keyId: apiKey.id } });
+          }}
+          onCancel={() => remove()}
+          pending={false}
+        />
       </PopConfirm>,
       { id: 'revoke-api-key', triggerId: `revoke-api-key-${apiKey.id}`, triggerRef: { current: event.currentTarget }, align: 'end' },
     );
@@ -104,11 +95,11 @@ export function ServiceAccountTile({ account, path, secrets }: ServiceAccountTil
                     variant="plain"
                     size="sm"
                     className="ml-auto text-sm"
-                    loading={isPending}
+                    loading={isPending && variables?.path.keyId === apiKey.id}
                     onClick={(event) => openRevokeConfirm(apiKey, event)}
                   >
                     <UnplugIcon />
-                    <span className="max-md:hidden">{t('c:revoke')}</span>
+                    <span className="max-md:sr-only">{t('c:revoke')}</span>
                   </Button>
                 }
               >
@@ -168,7 +159,7 @@ function NewKeySecret({ secret }: { secret: string }) {
       <div className="flex items-center gap-2 rounded-lg bg-background px-3 py-2 font-mono sm:text-lg">
         <div className="min-w-0 grow select-all break-all">{secret}</div>
         <Button
-          variant="cell"
+          variant="ghost"
           size="icon"
           className="shrink-0"
           aria-label={t('c:copy')}
@@ -176,7 +167,7 @@ function NewKeySecret({ secret }: { secret: string }) {
           data-tooltip-content={copied ? t('c:copied') : t('c:copy')}
           onClick={() => copyToClipboard(secret)}
         >
-          {copied ? <CopyCheckIcon /> : <CopyIcon />}
+          <CopiedIcon copied={copied} icon={CopyIcon} />
         </Button>
       </div>
       <p className="text-muted-foreground text-sm">{t('c:api_key.text')}</p>

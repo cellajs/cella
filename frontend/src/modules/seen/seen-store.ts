@@ -9,6 +9,8 @@ import { isSeenTracked } from '~/modules/seen/helpers';
 import { applyUnseenDelta } from '~/modules/seen/unseen-delta';
 import { idbKvStorage } from '~/query/idb-kv-storage';
 
+export type SeenMeta = { tenantId: string; organizationId: string; channelId: string; productType: ProductEntityType; productId: string };
+
 interface SeenBatch {
   tenantId: string;
   organizationId: string;
@@ -29,7 +31,7 @@ let flushIntervalId: ReturnType<typeof setInterval> | null = null;
 interface SeenStoreState {
   flushedIds: Set<string>;
 
-  markProductSeen: (tenantId: string, organizationId: string, channelId: string, productType: ProductEntityType, productId: string) => void;
+  markProductSeen: (meta: SeenMeta) => void;
   startFlushInterval: () => void;
   stopFlushInterval: () => void;
   flush: () => Promise<void>;
@@ -44,7 +46,7 @@ export const seenStore = createStore<SeenStoreState>()(
       (set, get) => ({
         flushedIds: new Set(),
 
-        markProductSeen: (tenantId, organizationId, channelId, productType, productId) => {
+        markProductSeen: ({ tenantId, organizationId, channelId, productType, productId }) => {
           if (!isSeenTracked(productType)) return;
           if (get().flushedIds.has(productId)) return;
 

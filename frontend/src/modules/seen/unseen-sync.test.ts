@@ -68,7 +68,9 @@ describe('unseen count deltas from synced rows', () => {
 
   it('does not count rows outside the seen window or rows this client already saw', async () => {
     vi.advanceTimersByTime(10);
-    seenStore.getState().markProductSeen('tenant-1', org, channel, tracked, 'seen-1');
+    seenStore
+      .getState()
+      .markProductSeen({ tenantId: 'tenant-1', organizationId: org, channelId: channel, productType: tracked, productId: 'seen-1' });
     await settle(); // markProductSeen itself queued a -1 (5 → 4)
 
     ingestSyncedRows(tracked, channel, [
@@ -111,7 +113,9 @@ describe('unseen count deltas from synced rows', () => {
     await settle();
     expect(counts()[channel][tracked]).toBe(4);
 
-    seenStore.getState().markProductSeen('tenant-1', org, channel, tracked, 'gone-2');
+    seenStore
+      .getState()
+      .markProductSeen({ tenantId: 'tenant-1', organizationId: org, channelId: channel, productType: tracked, productId: 'gone-2' });
     await settle(); // view-mark −1 (4 → 3)
     applyUnfetchableRemovalUnseen(tracked, 'gone-2', channel); // seen → net 0
     await settle();

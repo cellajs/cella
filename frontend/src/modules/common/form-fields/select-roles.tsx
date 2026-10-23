@@ -3,6 +3,7 @@ import { type ReactNode, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { type EntityRole, roles } from 'shared';
 import { Checkbox } from '~/modules/ui/checkbox';
+import { RequiredMark } from '~/modules/ui/field';
 import { cn } from '~/utils/cn';
 
 export interface RoleGroupProps {
@@ -14,6 +15,8 @@ export interface RoleGroupProps {
 interface SelectRolesProps extends RoleGroupProps {
   onChange: (value: EntityRole[]) => void;
   value?: EntityRole[];
+  /** Puts a star after the legend. */
+  required?: boolean;
 }
 
 interface RoleOptionProps {
@@ -40,12 +43,17 @@ export function RoleOption({ role, renderControl }: RoleOptionProps) {
 
 const emptyRoles: EntityRole[] = [];
 
-export function SelectRoles({ onChange, value = emptyRoles, label, className }: SelectRolesProps) {
+export function SelectRoles({ onChange, value = emptyRoles, label, required, className }: SelectRolesProps) {
   const toggleRole = (role: EntityRole) => onChange(value.includes(role) ? value.filter((selectedRole) => selectedRole !== role) : [...value, role]);
 
   return (
     <Fieldset.Root className="flex flex-col gap-2">
-      {label && <Fieldset.Legend className="font-medium text-sm">{label}</Fieldset.Legend>}
+      {label && (
+        <Fieldset.Legend className="font-medium text-sm">
+          {label}
+          {required && <RequiredMark />}
+        </Fieldset.Legend>
+      )}
       <div className={cn('inline-flex items-center gap-2', className)}>
         {roles.all.map((role) => (
           <RoleOption

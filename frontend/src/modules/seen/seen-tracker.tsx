@@ -51,10 +51,8 @@ function useAppBadge() {
   useEffect(() => {
     if (!('setAppBadge' in navigator)) return;
 
-    if (total > 0) {
-      navigator.setAppBadge(total);
-    } else {
-      navigator.clearAppBadge();
-    }
+    // Rejects where the badge permission is missing (the notification permission on iOS).
+    if (total > 0) void navigator.setAppBadge(total).catch(() => {});
+    else void navigator.clearAppBadge().catch(() => {});
   }, [total]);
 }

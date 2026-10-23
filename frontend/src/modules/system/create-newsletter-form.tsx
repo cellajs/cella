@@ -12,7 +12,6 @@ import type { z } from 'zod';
 import type { ApiError } from '~/lib/api';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 import { blocknoteFieldIsDirty } from '~/modules/common/blocknote/helpers/blocknote-field-is-dirty';
-import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
@@ -26,16 +25,18 @@ import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import type { MutationData } from '~/query/types';
 import { formResolver } from '~/utils/form-resolver';
 
+/** The id of the form's draft and of the sheet it renders in, which shows the unsaved badge. */
+export const newsletterFormId = 'create-newsletter';
+
 // A newsletter goes out to every member it picks, so it never leaves without a subject
 const formSchema = zSendNewsletterBody.extend({ subject: zSendNewsletterBody.shape.subject.trim().min(1) });
 
 type FormValues = z.infer<typeof formSchema>;
 interface CreateNewsletterFormProps {
   organizationIds: string[];
-  callback?: (args: CallbackArgs) => void;
 }
 
-export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsletterFormProps) {
+export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormProps) {
   const { t } = useTranslation();
   const subjectLabel = t('c:subject').toLowerCase();
 
@@ -46,8 +47,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
     defaultValues: { organizationIds, subject: '', roles: [], content: '' },
   };
 
-  const formContainerId = 'create-newsletter';
-  const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
+  const form = useFormWithDraft<FormValues>(newsletterFormId, { formOptions });
 
   // SendIcon newsletter
   const { mutate: _sendNewsletter, isPending } = useMutation<SendNewsletterResponse, ApiError, MutationData<SendNewsletterData>>({
@@ -58,8 +58,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
       if (testOnly) return toaster.success(t('c:success.test_email'));
       form.reset();
       toaster.success(t('c:success.create_newsletter'));
-      sheeter.getState().remove(formContainerId);
-      callback?.({ status: 'success' });
+      sheeter.getState().remove(newsletterFormId);
     },
   });
 
@@ -120,16 +119,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
           name="roles"
           render={({ field: { value, onChange } }) => (
             <FormItem>
-              <SelectRoles
-                value={value}
-                onChange={onChange}
-                label={
-                  <>
-                    {t('c:roles')}
-                    <span className="ml-1 text-muted-foreground/70">*</span>
-                  </>
-                }
-              />
+              <SelectRoles value={value} onChange={onChange} label={t('c:roles')} required />
               <FormMessage />
             </FormItem>
           )}

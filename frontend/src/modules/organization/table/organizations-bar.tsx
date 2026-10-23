@@ -11,7 +11,7 @@ import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { openCreateOrganizationDialog } from '~/modules/organization/create-organization-form';
 import { fetchOrganizationsForExport } from '~/modules/organization/query';
 import type { EnrichedOrganization, OrganizationsRouteSearchParams } from '~/modules/organization/types';
-import { CreateNewsletterForm } from '~/modules/system/create-newsletter-form';
+import { CreateNewsletterForm, newsletterFormId } from '~/modules/system/create-newsletter-form';
 import { NewsletterPreview } from '~/modules/system/newsletter-preview';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 import { tw } from '~/utils/tw';
@@ -43,13 +43,13 @@ export function OrganizationsTableBar({
       {
         id: 'write',
         label: 'c:write',
-        element: <CreateNewsletterForm organizationIds={ids} callback={clearSelection} />,
+        element: <CreateNewsletterForm organizationIds={ids} />,
       },
       { id: 'preview', label: 'c:preview', element: <NewsletterPreview /> },
     ];
 
     sheeter.getState().create(<SheetTabs tabs={newsletterTabs} />, {
-      id: 'create-newsletter',
+      id: newsletterFormId,
       side: 'right',
       triggerRef: newsletterButtonRef,
       className: tw('max-w-full lg:max-w-4xl'),

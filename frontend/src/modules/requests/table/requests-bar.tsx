@@ -10,9 +10,8 @@ import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-tabl
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { DeleteRequests } from '~/modules/requests/delete-requests';
-import { fetchRequestsForExport, requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
+import { fetchRequestsForExport, useSendApprovalInviteMutation } from '~/modules/requests/query';
 import type { RequestsRouteSearchParams } from '~/modules/requests/types';
-import { cacheRemove, cacheUpdate } from '~/query/basic/cache-mutations';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type RequestsTableBarProps = BaseTableBarProps<Request, RequestsRouteSearchParams>;
@@ -30,13 +29,10 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
   const { q, order, sort } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '' } });
 
-  const requestsListKey = requestsKeys.table.base;
-
-  const { mutateAsync: approveRequests } = useSendApprovalInviteMutation();
+  const { mutate: approveRequests } = useSendApprovalInviteMutation();
 
   const openDeleteDialog = () => {
     const callback = (args: CallbackArgs<Request[]>) => {
-      cacheRemove(requestsListKey, selected);
       if (args.status === 'success') {
         const message =
           args.data.length === 1
@@ -67,22 +63,7 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
     });
   };
 
-  const approveSelectedRequests = () => {
-    const waitlistRequests = selected.filter(({ type }) => type === 'waitlist');
-    const emails = waitlistRequests.map(({ email }) => email);
-
-    const updatedWaitLists = waitlistRequests.map((reqInfo) => ({ ...reqInfo, wasInvited: true }));
-
-    approveRequests(
-      { emails },
-      {
-        onSuccess: () => {
-          cacheUpdate(requestsListKey, updatedWaitLists);
-          clearSelection();
-        },
-      },
-    );
-  };
+  const approveSelectedRequests = () => approveRequests(selectedToWaitlist, { onSuccess: clearSelection });
 
   const fetchExport = async (limit: number, offset: number) => {
     return fetchRequestsForExport({ limit, offset, q, sort, order });

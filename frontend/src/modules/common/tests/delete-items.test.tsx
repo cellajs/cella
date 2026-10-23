@@ -165,10 +165,10 @@ describe('DeleteRequests', () => {
     expect(seen.events).toEqual(['callback success']);
   });
 
-  it('cancel always closes the dialog and reports nothing', async () => {
-    const inline = await render(<DeleteRequests requests={requests} callback={callback} />);
-    await act(async () => inline.onCancel());
+  it('cancel closes the dialog, then settles so the bar clears its selection', async () => {
+    const form = await render(<DeleteRequests dialog requests={requests} callback={callback} />);
+    await act(async () => form.onCancel());
 
-    expect(seen.events).toEqual(['close']);
+    expect(seen.events).toEqual(['close', 'callback settle']);
   });
 });

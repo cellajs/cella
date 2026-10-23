@@ -1,11 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import type { MembershipBase } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
+import { hierarchy } from 'shared';
 import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { seenGroupingChannelTypes } from '~/modules/seen/helpers';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
-
-const getMembershipChannelId = (m: MembershipBase) => m.channelId;
 
 /**
  * True when a sub-organization ancestor channel of this membership (e.g. the channel above a sub-channel) is in
@@ -13,15 +11,8 @@ const getMembershipChannelId = (m: MembershipBase) => m.channelId;
  * only tucks the org row into its own section's archived toggle; it must not hide subtree badges,
  * or the total would diverge from the sum of the section toggles.
  */
-const hasArchivedAncestor = (m: MembershipBase, archivedChannelIds: Set<string>) => {
-  for (const ancestor of hierarchy.getOrderedAncestors(m.channelType)) {
-    if ((ancestor as string) === 'organization') continue;
-    const idKey = appConfig.entityIdColumnKeys[ancestor as keyof typeof appConfig.entityIdColumnKeys];
-    const ancestorId = (m as unknown as Record<string, string | null | undefined>)[idKey];
-    if (ancestorId && archivedChannelIds.has(ancestorId)) return true;
-  }
-  return false;
-};
+const hasArchivedAncestor = (m: MembershipBase, archivedChannelIds: Set<string>) =>
+  hierarchy.resolveNonNullAncestors(m.channelType, m).some(({ type, id }) => type !== 'organization' && archivedChannelIds.has(id));
 
 const sumCounts = (counts: Record<string, number> | undefined) => {
   if (!counts) return 0;
@@ -31,15 +22,12 @@ const sumCounts = (counts: Record<string, number> | undefined) => {
 };
 
 /** Unseen count across one or more channel entity IDs; `select` limits re-renders to changes in that derived count. */
-export function useUnseenCount(channelIds: string | string[] | undefined) {
-  const ids = !channelIds ? [] : Array.isArray(channelIds) ? channelIds : [channelIds];
-
+export function useUnseenCount(channelIds: string[]) {
   const { data } = useQuery({
     ...unseenCountsQueryOptions(),
     select: (raw) => {
-      if (ids.length === 0) return 0;
       let total = 0;
-      for (const id of ids) total += sumCounts(raw[id]);
+      for (const id of channelIds) total += sumCounts(raw[id]);
       return total;
     },
   });
@@ -65,8 +53,7 @@ export function useTotalUnseenCount() {
   for (const m of membershipsData.items) {
     if (!seenGroupingChannelTypes.has(m.channelType) || m.muted || m.archived) continue;
     if (hasArchivedAncestor(m, archivedChannelIds)) continue;
-    const id = getMembershipChannelId(m);
-    if (id) activeIds.add(id);
+    activeIds.add(m.channelId);
   }
 
   let total = 0;

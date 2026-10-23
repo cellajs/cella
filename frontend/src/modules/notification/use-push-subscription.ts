@@ -1,5 +1,7 @@
+import { onlineManager } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { appConfig } from 'shared';
+import { toastOffline } from '~/modules/common/toaster/toaster';
 import { fetchPushVapid, registerPushSubscription, removePushSubscription } from '~/modules/notification/query';
 
 /** `applicationServerKey` wants raw bytes; VAPID keys travel base64url-encoded. */
@@ -52,13 +54,14 @@ export function usePushSubscription() {
   }, []);
 
   const enable = useCallback(async () => {
+    if (!onlineManager.isOnline()) return toastOffline();
     setBusy(true);
     try {
       const permission = await Notification.requestPermission();
-      if (permission !== 'granted') return false;
+      if (permission !== 'granted') return;
 
       const [{ publicKey }, registration] = await Promise.all([fetchPushVapid(), navigator.serviceWorker.ready]);
-      if (!publicKey) return false;
+      if (!publicKey) return;
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -67,19 +70,21 @@ export function usePushSubscription() {
       const body = subscription.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
       await registerPushSubscription(body);
       setEnabled(true);
-      return true;
     } catch {
-      return false;
+      // A refused subscribe or a failed request leaves the switch off.
     } finally {
       setBusy(false);
     }
   }, []);
 
   const disable = useCallback(async () => {
+    if (!onlineManager.isOnline()) return toastOffline();
     setBusy(true);
     try {
       await disablePushSubscription();
       setEnabled(false);
+    } catch {
+      // A failed request leaves the switch on.
     } finally {
       setBusy(false);
     }
