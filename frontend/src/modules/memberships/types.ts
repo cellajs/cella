@@ -10,9 +10,9 @@ export type MembersRouteSearchParams = z.infer<typeof membersRouteSearchParamsSc
 export type Member = GetMembersResponse['items'][number];
 export type PendingMembership = GetPendingMembershipsResponse['items'][number];
 
-export type MemberChannelProp = ChannelQueryProp<Member>;
+export type MemberListSnapshot = ChannelQueryProp<Member>;
 
-export type MembershipChannelProp = { queryChannel: MemberChannelProp[]; toastMessage: string };
+export type MemberUpdateContext = { previousLists: MemberListSnapshot[]; toastMessage: string };
 
 export type InviteMember = MutationData<MembershipInviteData> & { channel: EnrichedChannel };
 

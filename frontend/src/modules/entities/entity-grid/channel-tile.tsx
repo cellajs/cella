@@ -130,7 +130,7 @@ export function ChannelTileStats({ countRole }: { countRole?: EntityRole }) {
   const counts = entity.included?.counts;
   const memberCount = counts && (countRole ? (counts.membership[countRole] ?? 0) : counts.membership.total);
   const postTypes = appConfig.memberStatProductTypes.filter((type) => counts?.entities?.[type] !== undefined);
-  const lastPost = counts?.activity?.[appConfig.memberStatProductTypes[0]]?.created ?? null;
+  const lastPostedAt = counts?.activity?.[appConfig.memberStatProductTypes[0]]?.created ?? null;
 
   return (
     <div className="inline-flex items-center gap-2 truncate text-muted-foreground text-sm">
@@ -162,7 +162,7 @@ export function ChannelTileStats({ countRole }: { countRole?: EntityRole }) {
       )}
       <span>
         {memberCount !== undefined && '· '}
-        {dateShort(lastPost ? new Date(lastPost) : entity.createdAt)}
+        {dateShort(lastPostedAt ? new Date(lastPostedAt) : entity.createdAt)}
       </span>
     </div>
   );

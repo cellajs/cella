@@ -20,16 +20,16 @@ function rowKeyGetter(row: Member) {
   return row.id;
 }
 
-export interface MembersTableWrapperProps {
+export interface MembersTableProps {
   channel: EnrichedChannel;
   isSheet?: boolean;
 }
 
-function MembersTable({ channel, isSheet = false }: MembersTableWrapperProps) {
+function MembersTable({ channel, isSheet = false }: MembersTableProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet });
 
-  const updateMemberMembership = useMemberUpdateMutation();
+  const { mutate: updateMembership } = useMemberUpdateMutation();
 
   const { id: entityId, entityType, tenantId } = channel;
   const organizationId = channelOrganizationId(channel);
@@ -53,14 +53,13 @@ function MembersTable({ channel, isSheet = false }: MembersTableWrapperProps) {
     if (column.key !== 'role') return;
 
     for (const index of indexes) {
-      const updatedMembership = {
-        path: { id: changedRows[index].membership.id, tenantId, organizationId },
-        body: { role: changedRows[index].membership.role },
+      const { membership } = changedRows[index];
+      updateMembership({
+        path: { id: membership.id, tenantId, organizationId },
+        body: { role: membership.role },
         channelId: entityId,
         channelType: entityType,
-      };
-
-      updateMemberMembership.mutate(updatedMembership);
+      });
     }
   };
 

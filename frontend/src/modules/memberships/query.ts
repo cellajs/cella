@@ -42,11 +42,11 @@ export const membersListQueryOptions = (params: MembersListParams) => {
   // `include` stays out of the cache key so queries with/without counts share the same cache
   const filters = { q, sort, order, role, userIds };
   const keyFilters = { entityId, entityType, tenantId, organizationId, ...filters };
-  const requestQuery = { ...filters, include, entityId, entityType };
+  const query = { ...filters, include, entityId, entityType };
 
   return infiniteQueryOptions({
     queryKey: keys.list.members(keyFilters),
-    ...offsetPaging(limit, (offset, signal) => fetchMembersPage(requestQuery, { tenantId, organizationId }, limit, offset, signal)),
+    ...offsetPaging(limit, (offset, signal) => fetchMembersPage(query, { tenantId, organizationId }, limit, offset, signal)),
     refetchOnMount: true,
   });
 };

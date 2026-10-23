@@ -16,11 +16,11 @@ import { dateShort } from '~/utils/date-short';
 // Their icons and the count columns hidden by default come from the module that owns each entity.
 const memberStatProductTypes = appConfig.memberStatProductTypes;
 
-export const useColumns = (isAdmin: boolean, isSheet: boolean, entityType: ChannelEntityType) => {
+export const useColumns = (canUpdate: boolean, isSheet: boolean, entityType: ChannelEntityType) => {
   const { t } = useTranslation();
 
   const columns: ColumnOrColumnGroup<Member>[] = [
-    ...(isAdmin ? [CheckboxColumn] : []),
+    ...(canUpdate ? [CheckboxColumn] : []),
     {
       key: 'name',
       name: t('c:name'),
@@ -40,7 +40,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, entityType: Chann
         row.membership ? <div className="group relative inline-flex size-full items-center gap-1">{t(row.membership.role)}</div> : null,
       exportValue: (row) => row.membership && t(row.membership.role),
       width: 100,
-      ...(isAdmin && {
+      ...(canUpdate && {
         editable: true,
         editorOptions: enumSelectEditorOptions,
         renderEditCell: (props) => (
@@ -55,7 +55,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, entityType: Chann
       }),
     },
     // From include=mfa, which the API answers for the organization's admins only: empty for anyone else
-    ...(isAdmin
+    ...(canUpdate
       ? [
           {
             key: 'mfaRequired',

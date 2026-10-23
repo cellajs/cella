@@ -11,8 +11,8 @@ import type {
   DeleteMembership,
   InviteMember,
   Member,
-  MemberChannelProp,
-  MembershipChannelProp,
+  MemberListSnapshot,
+  MemberUpdateContext,
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
 import { getCurrentUser } from '~/modules/user/user-store';
@@ -39,7 +39,7 @@ const writeMyMemberships = (write: (items: MembershipBase[]) => MembershipBase[]
 };
 
 const updateMyMembershipCache = (updatedMembership: Partial<MembershipBase> & { id: string }) =>
-  writeMyMemberships((items) => items.map((m) => (m.id === updatedMembership.id ? { ...m, ...updatedMembership } : m)), true);
+  writeMyMemberships((items) => items.map((item) => (item.id === updatedMembership.id ? { ...item, ...updatedMembership } : item)), true);
 
 export const addMyMembershipCache = (newMembership: MembershipBase) => writeMyMemberships((items) => [...items, newMembership]);
 
@@ -48,13 +48,15 @@ export const addMyMembershipCache = (newMembership: MembershipBase) => writeMyMe
  * @public
  */
 export const upsertMyMembershipCache = (membership: MembershipBase) => {
-  const isSameChannel = (m: MembershipBase) => getMembershipChannelKey(m) === getMembershipChannelKey(membership);
-  writeMyMemberships((items) => (items.some(isSameChannel) ? items.map((m) => (isSameChannel(m) ? membership : m)) : [...items, membership]));
+  const isSameChannel = (item: MembershipBase) => getMembershipChannelKey(item) === getMembershipChannelKey(membership);
+  writeMyMemberships((items) =>
+    items.some(isSameChannel) ? items.map((item) => (isSameChannel(item) ? membership : item)) : [...items, membership],
+  );
 };
 
 /** Maps the members of every list under `key` and returns each list's previous data for rollback. */
 const patchMemberLists = (key: QueryKey, mapItems: (members: Member[]) => Member[]) => {
-  const previous: MemberChannelProp[] = [];
+  const previous: MemberListSnapshot[] = [];
   forEachListQuery<Member>(key, (queryKey, data) => {
     // A list's total moves only by the rows the write drops from that list.
     const items = getQueryItems(data);
@@ -68,10 +70,8 @@ const patchMemberLists = (key: QueryKey, mapItems: (members: Member[]) => Member
   return previous;
 };
 
-const onError = (_: ApiError, __: MutationUpdateMembership | DeleteMembership, context?: MemberChannelProp[]) => {
-  if (context?.length) {
-    for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
-  }
+const restoreMemberLists = (previousLists: MemberListSnapshot[] = []) => {
+  for (const [queryKey, previousData] of previousLists) queryClient.setQueryData(queryKey, previousData);
 };
 
 export const useInviteMemberMutation = () =>
@@ -101,7 +101,7 @@ export const useInviteMemberMutation = () =>
   });
 
 export const useMemberUpdateMutation = () =>
-  useMutation<UpdateMembershipResponse, ApiError, MutationUpdateMembership, MembershipChannelProp>({
+  useMutation<UpdateMembershipResponse, ApiError, MutationUpdateMembership, MemberUpdateContext>({
     mutationKey: memberQueryKeys.update,
     mutationFn: async ({ path, body }) => {
       return await updateMembership({ body, path });
@@ -111,7 +111,7 @@ export const useMemberUpdateMutation = () =>
       const { tenantId, organizationId, id } = path;
       const membershipInfo = { id, ...body };
 
-      const context: MembershipChannelProp = { queryChannel: [], toastMessage: t('c:success.update_item', { item: t('c:membership') }) };
+      const context: MemberUpdateContext = { previousLists: [], toastMessage: t('c:success.update_item', { item: t('c:membership') }) };
 
       if (body?.archived !== undefined) {
         context.toastMessage = t(`c:success.${body.archived ? 'archived' : 'restore'}_resource`, { resource: t(`c:${channelType}`) });
@@ -125,7 +125,7 @@ export const useMemberUpdateMutation = () =>
 
       const similarKey = memberQueryKeys.list.similarMembers({ entityId: channelId, entityType: channelType, tenantId, organizationId });
       await queryClient.cancelQueries({ queryKey: similarKey });
-      context.queryChannel = patchMemberLists(similarKey, (members) => updateMembers(members, membershipInfo));
+      context.previousLists = patchMemberLists(similarKey, (members) => updateMembers(members, membershipInfo));
 
       return context;
     },
@@ -139,7 +139,7 @@ export const useMemberUpdateMutation = () =>
       if (updatedMembership.role) {
         queryClient.invalidateQueries({
           queryKey: similarKey,
-          predicate: ({ queryKey }) => queryKey.some((el) => typeof el === 'object' && el && 'role' in el && el.role),
+          predicate: ({ queryKey }) => queryKey.some((part) => typeof part === 'object' && part && 'role' in part && part.role),
           refetchType: 'all',
         });
       }
@@ -151,12 +151,12 @@ export const useMemberUpdateMutation = () =>
     onError: (_, __, context) => {
       // Invalidate memberships to undo the optimistic update; the enrichment subscriber syncs entity lists.
       queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
-      onError(_, __, context?.queryChannel);
+      restoreMemberLists(context?.previousLists);
     },
   });
 
 export const useMembershipsDeleteMutation = () =>
-  useMutation<void, ApiError, DeleteMembership, MemberChannelProp[]>({
+  useMutation<void, ApiError, DeleteMembership, MemberListSnapshot[]>({
     mutationKey: memberQueryKeys.delete,
     mutationFn: async ({ path, body, query }) => {
       await deleteMemberships({ path, body, query });
@@ -179,12 +179,12 @@ export const useMembershipsDeleteMutation = () =>
       invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
       toaster.success(t('c:success.delete_members'));
     },
-    onError,
+    onError: (_, __, previousLists) => restoreMemberLists(previousLists),
   });
 
-const updateMembers = (members: Member[], variables: { id: string } & Record<string, unknown>) => {
+const updateMembers = (members: Member[], updatedMembership: { id: string } & Record<string, unknown>) => {
   return members.map((member) => {
-    if (member.membership.id === variables.id) return { ...member, membership: { ...member.membership, ...variables } };
+    if (member.membership.id === updatedMembership.id) return { ...member, membership: { ...member.membership, ...updatedMembership } };
 
     return member;
   });

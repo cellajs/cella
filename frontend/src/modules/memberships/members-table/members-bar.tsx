@@ -2,6 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { MailIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { ConfirmText } from '~/modules/common/confirm-text';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
@@ -12,7 +13,7 @@ import { toastOffline } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import { DeleteMemberships } from '~/modules/memberships/delete-memberships';
-import type { MembersTableWrapperProps } from '~/modules/memberships/members-table/members-table';
+import type { MembersTableProps } from '~/modules/memberships/members-table/members-table';
 import { PendingMembershipsCount } from '~/modules/memberships/pending-memberships-count';
 import { fetchMembersForExport } from '~/modules/memberships/query';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
@@ -20,7 +21,9 @@ import { InviteUsers } from '~/modules/user/invite-users';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 import { tw } from '~/utils/tw';
 
-type MembersTableBarProps = MembersTableWrapperProps & BaseTableBarProps<Member, MembersRouteSearchParams> & { canUpdate: boolean };
+interface MembersTableBarProps extends MembersTableProps, BaseTableBarProps<Member, MembersRouteSearchParams> {
+  canUpdate: boolean;
+}
 
 export function MembersTableBar({
   channel,
@@ -47,7 +50,6 @@ export function MembersTableBar({
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', role: undefined } });
 
   const organizationId = channelOrganizationId(channel);
-  const entityType = channel.entityType;
 
   const onRoleChange = (role?: string) => {
     clearSelection();
@@ -120,7 +122,9 @@ export function MembersTableBar({
       countExtra={canUpdate && !barFilters.isFiltered && <PendingMembershipsCount channel={channel} />}
       filters={<SelectRole entityType={channel.entityType} value={role} onChange={onRoleChange} className="h-10" />}
       // Export is gated like the other admin actions in this bar; row selection needs the same grant
-      export={!isSheet && canUpdate ? { filename: `${entityType} members`, selectedRows: selected, fetchRows: fetchExport } : undefined}
+      export={
+        !isSheet && canUpdate ? { filename: `${appConfig.slug}-${channel.slug}-members`, selectedRows: selected, fetchRows: fetchExport } : undefined
+      }
       focusView={!isSheet}
       selection={{
         count: selected.length,

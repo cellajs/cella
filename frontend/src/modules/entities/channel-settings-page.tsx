@@ -20,9 +20,9 @@ export function ChannelSettingsPage<C extends ChannelEntityType>({ entity }: Cha
       </div>
 
       <div className="flex flex-col gap-8 md:w-7/10">
-        {sections.map((tool) => (
-          <AsideAnchor key={tool.id} id={tool.id} extraOffset>
-            <Suspense fallback={null}>{tool.render(entity)}</Suspense>
+        {sections.map((section) => (
+          <AsideAnchor key={section.id} id={section.id} extraOffset>
+            <Suspense fallback={null}>{section.render(entity)}</Suspense>
           </AsideAnchor>
         ))}
       </div>

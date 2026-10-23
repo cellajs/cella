@@ -7,7 +7,7 @@ import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/t
 import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { SelectSort } from '~/modules/common/form-fields/select-sort';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { gridPreviewLimit } from '~/modules/entities/entity-grid/grid';
+import { gridPreviewLimit } from '~/modules/entities/entity-grid/base-entity-grid';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type EntityGridBarSearch = { q?: string; sort?: string; role?: string };
@@ -17,7 +17,7 @@ const sortOptions = [
   { name: 'c:created_at', icon: CalendarIcon, value: 'createdAt' },
 ] satisfies { name: TKey; icon: IconComponent; value: string }[];
 
-type Props = {
+interface EntityGridBarProps {
   queryKey: QueryKey;
   label: TKey;
   /** Channel entity the grid lists; scopes the role filter to that entity's role vocabulary. */
@@ -36,7 +36,7 @@ type Props = {
   roleFilter?: boolean;
   /** Render the bar even at or below gridPreviewLimit while unfiltered (default false). */
   alwaysShow?: boolean;
-};
+}
 
 export function EntityGridBar({
   queryKey,
@@ -49,7 +49,7 @@ export function EntityGridBar({
   viewToggle,
   roleFilter = true,
   alwaysShow = false,
-}: Props) {
+}: EntityGridBarProps) {
   const { sort, role } = searchVars;
 
   const total = useListQueryTotal(queryKey);
