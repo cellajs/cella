@@ -90,7 +90,7 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
                 onClick={inviteSelected}
               />
             )}
-            <TableBarButton ref={deleteButtonRef} variant="destructive" icon={TrashIcon} label="c:remove" onClick={openDeleteDialog} />
+            <TableBarButton ref={deleteButtonRef} variant="destructive" icon={TrashIcon} label="c:delete" onClick={openDeleteDialog} />
           </>
         ),
       }}

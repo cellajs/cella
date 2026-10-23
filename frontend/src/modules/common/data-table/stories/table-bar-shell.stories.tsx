@@ -149,7 +149,7 @@ export const RequestsExport: Story = {
     await expect(searchInput(canvasElement, 'requestSearch')).not.toBeNull();
     // Only the first row still waits for an invite, so the invite action shows a badge of one.
     await expect(await body().findByRole('button', { name: /invite/ })).toBeInTheDocument();
-    await expect(body().getByRole('button', { name: 'remove' })).toBeInTheDocument();
+    await expect(body().getByRole('button', { name: 'delete' })).toBeInTheDocument();
 
     await userEvent.click(canvasElement.querySelector('.lucide-download')?.closest('button') as HTMLElement);
     const menu = await body().findByRole('menu');

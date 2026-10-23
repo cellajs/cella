@@ -22,6 +22,7 @@ import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
+import { Label } from '~/modules/ui/label';
 import type { MutationData } from '~/query/types';
 import { cn } from '~/utils/cn';
 import { formResolver } from '~/utils/form-resolver';
@@ -138,9 +139,7 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
           <CancelButton dirty={hasInput()} onClick={() => form.reset()} />
           <div className="flex items-center gap-2 max-sm:mt-2">
             <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="ml-4 size-4" />
-            <label htmlFor="testOnly" className="text-sm">
-              {t('c:test_email')}
-            </label>
+            <Label htmlFor="testOnly">{t('c:test_email')}</Label>
           </div>
         </div>
       </form>
