@@ -2000,10 +2000,10 @@
           "subscriptionId": null,
           "subscriptionStatus": "none",
           "subscriptionPlan": null,
-          "createdAt": "2024-08-28T03:48:14.133Z",
-          "updatedAt": "2024-09-06T15:18:56.716Z",
+          "createdAt": "2024-06-24T12:34:02.933Z",
+          "updatedAt": "2024-10-14T07:51:08.139Z",
           "organization": {
-            "id": "6368460b-12e3-4ecb-9d45-0400fa84460e",
+            "id": "eba65105-308b-466e-9bec-73dbac7c025f",
             "name": "Lubowitz, Waters and Haley",
             "slug": "lubowitz-waters-and-haley",
             "thumbnailUrl": null,
@@ -2131,8 +2131,8 @@
             "thumbnailUrl": null
           },
           "updatedBy": null,
-          "createdAt": "2024-03-17T20:40:57.755Z",
-          "updatedAt": "2024-07-18T19:45:29.960Z"
+          "createdAt": "2024-11-27T03:41:04.670Z",
+          "updatedAt": "2024-12-24T20:07:53.341Z"
         },
         "x-tags": ["data", "connections", "cella"]
       },
@@ -2715,6 +2715,32 @@
           "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
         },
         "x-tags": ["data", "attachments", "cella"]
+      },
+      "InviteOutcome": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "The primary email address, shown to every user who shares an organization with this one."
+          },
+          "outcome": {
+            "type": "string",
+            "enum": ["invite", "remind", "add", "member"],
+            "description": "`invite`: a new invitation. `remind`: the channel invited it before, and the invitation goes out again. `add`: a member of the organization, added to the channel at once. `member`: already a member, left out."
+          },
+          "invitedAt": {
+            "type": "string"
+          },
+          "declinedAt": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["admin", "member"]
+          }
+        },
+        "required": ["email", "outcome"]
       },
       "ServiceAccount": {
         "type": "object",
@@ -8403,10 +8429,10 @@
                       "subscriptionId": null,
                       "subscriptionStatus": "none",
                       "subscriptionPlan": null,
-                      "createdAt": "2024-04-22T01:41:22.859Z",
-                      "updatedAt": "2024-10-06T12:23:00.668Z",
+                      "createdAt": "2024-10-11T06:20:11.183Z",
+                      "updatedAt": "2024-11-23T09:17:34.060Z",
                       "organization": {
-                        "id": "6124da3a-8d5c-4d2d-b512-87940f2ce1f6",
+                        "id": "8e7b5b6f-9e58-4c12-bfd0-7218a5cf3b71",
                         "name": "Predovic, Bahringer and Morar",
                         "slug": "predovic-bahringer-and-morar",
                         "thumbnailUrl": null,
@@ -8442,10 +8468,10 @@
                       "subscriptionId": null,
                       "subscriptionStatus": "none",
                       "subscriptionPlan": null,
-                      "createdAt": "2024-09-02T00:08:53.116Z",
-                      "updatedAt": "2024-10-30T00:10:58.044Z",
+                      "createdAt": "2024-11-15T16:51:37.520Z",
+                      "updatedAt": "2024-11-21T18:21:46.826Z",
                       "organization": {
-                        "id": "4c5fab3a-28de-47d0-9e1f-39a8e4d9f8ba",
+                        "id": "abada2a0-9b26-4810-a126-dea3fdcd709b",
                         "name": "Crooks, Kuphal and Roob-Blick",
                         "slug": "crooks-kuphal-and-roob-blick",
                         "thumbnailUrl": null,
@@ -8561,10 +8587,10 @@
                   "subscriptionId": null,
                   "subscriptionStatus": "none",
                   "subscriptionPlan": null,
-                  "createdAt": "2024-12-09T17:40:09.637Z",
-                  "updatedAt": "2024-12-31T03:23:08.766Z",
+                  "createdAt": "2024-02-29T15:19:15.175Z",
+                  "updatedAt": "2024-05-17T13:24:14.464Z",
                   "organization": {
-                    "id": "1a2fce3a-e05d-430a-9598-ad7fd22b6d2b",
+                    "id": "a8292b89-9cd5-4d40-94be-df2cc056f826",
                     "name": "Lubowitz, Waters and Haley",
                     "slug": "lubowitz-waters-and-haley",
                     "thumbnailUrl": null,
@@ -8724,10 +8750,10 @@
                   "subscriptionId": null,
                   "subscriptionStatus": "none",
                   "subscriptionPlan": null,
-                  "createdAt": "2024-11-21T23:09:30.104Z",
-                  "updatedAt": "2024-12-12T21:32:54.232Z",
+                  "createdAt": "2024-02-07T05:11:01.197Z",
+                  "updatedAt": "2024-09-16T14:41:57.486Z",
                   "organization": {
-                    "id": "1d33da9c-5945-46be-9665-6b4fdf07395c",
+                    "id": "a2bd65f6-8449-4c9c-a452-5347d16344ee",
                     "name": "Lubowitz, Waters and Haley",
                     "slug": "lubowitz-waters-and-haley",
                     "thumbnailUrl": null,
@@ -8815,8 +8841,8 @@
                       "thumbnailUrl": null
                     },
                     "updatedBy": null,
-                    "createdAt": "2024-10-21T04:10:53.514Z",
-                    "updatedAt": "2024-11-08T21:35:18.269Z"
+                    "createdAt": "2024-09-24T01:17:55.780Z",
+                    "updatedAt": "2024-12-25T07:34:20.137Z"
                   }
                 ],
                 "schema": {
@@ -8961,8 +8987,8 @@
                     "thumbnailUrl": null
                   },
                   "updatedBy": null,
-                  "createdAt": "2024-12-28T15:30:13.194Z",
-                  "updatedAt": "2024-12-29T16:24:17.864Z"
+                  "createdAt": "2024-01-12T14:13:07.872Z",
+                  "updatedAt": "2024-09-01T18:30:11.105Z"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Connection"
@@ -9108,8 +9134,8 @@
                     "thumbnailUrl": null
                   },
                   "updatedBy": null,
-                  "createdAt": "2024-03-16T00:45:54.815Z",
-                  "updatedAt": "2024-09-10T09:11:15.318Z"
+                  "createdAt": "2024-03-09T12:52:12.193Z",
+                  "updatedAt": "2024-11-08T19:31:00.199Z"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Connection"
@@ -9198,8 +9224,8 @@
                     "thumbnailUrl": null
                   },
                   "updatedBy": null,
-                  "createdAt": "2024-07-25T12:15:48.951Z",
-                  "updatedAt": "2024-09-14T12:46:20.724Z"
+                  "createdAt": "2024-05-25T02:24:11.126Z",
+                  "updatedAt": "2024-07-27T20:35:44.094Z"
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Connection"
@@ -12576,7 +12602,7 @@
         "operationId": "membershipInvite",
         "tags": ["memberships", "cella"],
         "summary": "Create memberships",
-        "description": "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization. A created membership carries muted, archived and display order only when it is the caller's own.",
+        "description": "Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a declined one opens again, a higher role replaces a lower one), an organization member added at once, or a member left out. Re-adding an address always sends its invitation again. A created membership carries muted, archived and display order only when it is the caller's own.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
@@ -12648,26 +12674,28 @@
         },
         "responses": {
           "200": {
-            "description": "Created memberships and invite count",
+            "description": "What happened to each address",
             "content": {
               "application/json": {
                 "example": {
-                  "data": [
+                  "data": [],
+                  "outcomes": [
                     {
-                      "id": "09ca1a84-3edb-4069-b434-4af619287b19",
-                      "tenantId": "x38fpc",
-                      "channelType": "organization",
-                      "channelId": "dbf3564f-37da-4f50-aea9-4469003a047f",
-                      "userId": "cf39cd03-3802-43e4-83b7-1b24808a153d",
-                      "organizationId": "dbf3564f-37da-4f50-aea9-4469003a047f",
-                      "role": "member",
-                      "displayOrder": 30,
-                      "muted": false,
-                      "archived": false
+                      "email": "sara.devries@example.com",
+                      "outcome": "invite"
+                    },
+                    {
+                      "email": "p.okafor@example.net",
+                      "outcome": "remind",
+                      "invitedAt": "2026-10-20T09:12:00.000Z"
+                    },
+                    {
+                      "email": "lena@example.com",
+                      "outcome": "member",
+                      "role": "member"
                     }
                   ],
-                  "rejectedIds": [],
-                  "invitesSentCount": 1
+                  "held": false
                 },
                 "schema": {
                   "type": "object",
@@ -12720,28 +12748,17 @@
                         "required": ["id", "tenantId", "channelType", "channelId", "userId", "role", "organizationId"]
                       }
                     },
-                    "rejectedIds": {
+                    "outcomes": {
                       "type": "array",
                       "items": {
-                        "type": "string"
-                      },
-                      "description": "Identifiers of items that could not be processed"
+                        "$ref": "#/components/schemas/InviteOutcome"
+                      }
                     },
-                    "rejectionReasons": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "description": "Map of reason code to rejected item IDs"
-                    },
-                    "invitesSentCount": {
-                      "type": "number"
+                    "held": {
+                      "type": "boolean"
                     }
                   },
-                  "required": ["data", "rejectedIds", "invitesSentCount"]
+                  "required": ["data", "outcomes", "held"]
                 }
               }
             }
@@ -12869,6 +12886,141 @@
                     }
                   },
                   "required": ["data", "rejectedIds"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/{organizationId}/memberships/check": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "checkMembershipInvite",
+        "tags": ["memberships", "cella"],
+        "summary": "Check addresses before inviting",
+        "description": "Says per address what an invite would do, from what the caller already sees: members by their listed address and the channel's own invitations. Writes and sends nothing. Requires update permission on the channel.",
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "entityId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["organization"]
+            },
+            "required": true,
+            "name": "entityType",
+            "in": "query"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "emails": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "email",
+                      "minLength": 4,
+                      "maxLength": 255
+                    },
+                    "minItems": 1,
+                    "maxItems": 50
+                  }
+                },
+                "required": ["emails"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What an invite would do with each address",
+            "content": {
+              "application/json": {
+                "example": {
+                  "outcomes": [
+                    {
+                      "email": "sara.devries@example.com",
+                      "outcome": "invite"
+                    },
+                    {
+                      "email": "p.okafor@example.net",
+                      "outcome": "remind",
+                      "invitedAt": "2026-10-20T09:12:00.000Z"
+                    },
+                    {
+                      "email": "lena@example.com",
+                      "outcome": "member",
+                      "role": "member"
+                    }
+                  ]
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "outcomes": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/InviteOutcome"
+                      }
+                    }
+                  },
+                  "required": ["outcomes"]
                 }
               }
             }
@@ -13618,6 +13770,7 @@
                       "email": "doug_larkin@hotmail.com",
                       "role": "member",
                       "createdAt": "2024-11-21T01:19:53.533Z",
+                      "remindedAt": "2024-11-21T01:19:53.533Z",
                       "createdBy": {
                         "id": "617f1449-7605-4cc9-8f52-1e3f100f6db2",
                         "kind": "user",
@@ -13631,6 +13784,7 @@
                       "email": "santos.jacobi12@gmail.com",
                       "role": "member",
                       "createdAt": "2024-10-29T04:35:17.725Z",
+                      "remindedAt": "2024-10-29T04:35:17.725Z",
                       "createdBy": {
                         "id": "ba7cf4de-5ede-48cc-9fef-453bf074c2ef",
                         "kind": "user",
@@ -13665,6 +13819,9 @@
                           "createdAt": {
                             "type": "string"
                           },
+                          "remindedAt": {
+                            "type": ["string", "null"]
+                          },
                           "createdBy": {
                             "anyOf": [
                               {
@@ -13676,7 +13833,7 @@
                             ]
                           }
                         },
-                        "required": ["id", "email", "role", "createdAt", "createdBy"]
+                        "required": ["id", "email", "role", "createdAt", "remindedAt", "createdBy"]
                       }
                     },
                     "total": {
@@ -13755,6 +13912,74 @@
         "responses": {
           "204": {
             "description": "Invitation resent"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/{organizationId}/memberships/pending/{id}": {
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "withdrawPendingInvitation",
+        "tags": ["memberships", "cella"],
+        "summary": "Withdraw pending invitation",
+        "description": "Withdraws an invitation, named by its own id, with its links, so its seat frees. Requires update permission on the invited channel.",
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Invitation withdrawn"
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"

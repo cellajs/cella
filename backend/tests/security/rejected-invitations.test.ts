@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { acceptInvitationToken, handleMembershipInvitation, membershipInvite } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
@@ -111,7 +112,7 @@ describe('Rejected invitations', async () => {
     expect(await boundUserOf(pending.inactiveMembership.id)).toBe(owner.id);
   });
 
-  it('tells the inviter that an address which declined was not invited again, and mails it nothing', async () => {
+  it('opens a declined invitation again only when its address is invited again, with one fresh link in one email', async () => {
     const organization = await createTestOrganization();
     const admin = await createOrgUser(call, organization.tenantId, organization.id, 'reinvite-admin', adminRole);
     const email = 'declined-address@security-test.com';
@@ -126,9 +127,18 @@ describe('Rejected invitations', async () => {
       headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
     });
     expect(invited.response.status).toBe(200);
-    expect(invited.data).toMatchObject({ rejectedIds: [email], invitesSentCount: 0 });
-    expect(mailsTo(email)).toHaveLength(mailsBefore);
-    expect(await rejectedAtOf(declined.inactiveMembership.id)).not.toBeNull();
+    // The inviter is told the address had declined; the invitee gets one email.
+    expect(invited.data).toMatchObject({ outcomes: [{ email, outcome: 'remind', declinedAt: expect.any(String) }] });
+    expect(mailsTo(email)).toHaveLength(mailsBefore + 1);
+    expect(await rejectedAtOf(declined.inactiveMembership.id)).toBeNull();
+
+    // The link from before the decline stays dead; the fresh one is the invitation's only link.
+    const links = await db
+      .select({ id: tokensTable.id })
+      .from(tokensTable)
+      .where(eq(tokensTable.inactiveMembershipId, declined.inactiveMembership.id));
+    expect(links).toHaveLength(1);
+    expect(links[0].id).not.toBe(declined.token.id);
   });
 
   it('must not list or count a rejected invitation as pending', async () => {
@@ -160,7 +170,7 @@ describe('Rejected invitations', async () => {
       headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
     });
     expect(invited.response.status).toBe(200);
-    expect((invited.data as { invitesSentCount: number }).invitesSentCount).toBe(1);
+    expect(invited.data).toMatchObject({ outcomes: [{ outcome: 'invite' }] });
 
     const overQuota = await call(membershipInvite, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
@@ -169,5 +179,14 @@ describe('Rejected invitations', async () => {
       headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
     });
     await expectRefusal(overQuota, 403, 'restrict_by_org');
+
+    // A reminder takes no seat: the pending address is invited again with the quota full.
+    const reminded = await call(membershipInvite, {
+      path: { tenantId: organization.tenantId, organizationId: organization.id },
+      query: { entityId: organization.id, entityType: 'organization' },
+      body: { emails: ['pending-address@security-test.com'], role: memberRole },
+      headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
+    });
+    expect(reminded.data).toMatchObject({ outcomes: [{ outcome: 'remind' }] });
   });
 });

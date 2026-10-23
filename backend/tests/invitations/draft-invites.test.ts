@@ -213,35 +213,26 @@ describe('Draft context invite deferral', async () => {
     expect(listed.filter((item) => item.id === held.id)).toEqual([expect.objectContaining({ email: 'deferred@example.com' })]);
   });
 
-  it('throttles reminder emails to once per 7 days on published contexts', async () => {
+  it('sends a pending invitation again whenever its address is added again', async () => {
     const organization = await createTestOrganization();
     const admin = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
     const sessionCookie = await createTestSession(admin);
     const invitee = await createTestUser('pending@example.com');
 
     await invite(organization, [invitee.email], memberRole, sessionCookie);
+    const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const [initial] = await getInactiveRows(organization.id);
-    expect(initial.remindedAt).not.toBeNull(); // the first mail stamps as a reminder does
+    await db.update(inactiveMembershipsTable).set({ remindedAt: hourAgo }).where(eq(inactiveMembershipsTable.id, initial.id));
 
-    // The pending invite was mailed at creation, so an immediate re-invite sends no reminder.
-    await invite(organization, [invitee.email], memberRole, sessionCookie);
-    const [afterEarlyReinvite] = await getInactiveRows(organization.id);
-    expect(afterEarlyReinvite.remindedAt).toBe(initial.remindedAt);
-    expect(mailsTo(invitee.email)).toHaveLength(1);
-
-    // The throttle check reads remindedAt, not the immutable createdAt.
-    const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
-    await db.update(inactiveMembershipsTable).set({ remindedAt: eightDaysAgo }).where(eq(inactiveMembershipsTable.id, initial.id));
-    const [aged] = await getInactiveRows(organization.id);
-
-    await invite(organization, [invitee.email], memberRole, sessionCookie);
-    const [afterDueReinvite] = await getInactiveRows(organization.id);
-    expect(afterDueReinvite.remindedAt).not.toBeNull();
-    expect(afterDueReinvite.remindedAt).not.toBe(aged.remindedAt);
-    expect(new Date(afterDueReinvite.remindedAt!).getTime()).toBeGreaterThan(Date.now() - 24 * 60 * 60 * 1000);
+    // Re-adding the address is as deliberate as the resend button, so the email goes out again at once.
+    const { data } = await invite(organization, [invitee.email], memberRole, sessionCookie);
+    expect(data).toMatchObject({ outcomes: [{ email: invitee.email, outcome: 'remind', invitedAt: initial.createdAt }] });
+    expect(mailsTo(invitee.email)).toHaveLength(2);
+    const [reminded] = await getInactiveRows(organization.id);
+    expect(reminded.remindedAt).not.toBe(hourAgo);
   });
 
-  it('reminds a pending invitation to a new address as one to an account, minting no further link', async () => {
+  it('reminds a pending invitation to a new address with a fresh link that retires the one mailed before', async () => {
     const organization = await createTestOrganization();
     const admin = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
     const sessionCookie = await createTestSession(admin);
@@ -250,16 +241,12 @@ describe('Draft context invite deferral', async () => {
     await invite(organization, [newcomer], memberRole, sessionCookie);
     const [initial] = await getInactiveRows(organization.id);
     const [initialLink] = await linksOf(initial.id);
-    const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
-    await db.update(inactiveMembershipsTable).set({ remindedAt: eightDaysAgo }).where(eq(inactiveMembershipsTable.id, initial.id));
 
-    const { data } = await invite(organization, [newcomer], memberRole, sessionCookie);
-    expect(data).toMatchObject({ rejectedIds: [], invitesSentCount: 0 });
-    const [reminded] = await getInactiveRows(organization.id);
-    expect(new Date(reminded.remindedAt!).getTime()).toBeGreaterThan(Date.now() - 24 * 60 * 60 * 1000);
-    // The emailed link stays the one link: a reminder mints no token.
-    const links = await db.select().from(tokensTable).where(eq(tokensTable.email, newcomer));
-    expect(links.map((link) => link.id)).toEqual([initialLink.id]);
+    await invite(organization, [newcomer], memberRole, sessionCookie);
+    const links = await linksOf(initial.id);
+    expect(links).toHaveLength(1);
+    expect(links[0].id).not.toBe(initialLink.id);
+    expect(links[0].secret).toBe(hashToken(mailedLink('inviteLink').token));
   });
 
   it('dispatches a held invite to an invitee who signed up meanwhile as one to an account, minting no link', async () => {

@@ -10,6 +10,9 @@ import type {
   CheckEmailData,
   CheckEmailErrors,
   CheckEmailResponses,
+  CheckMembershipInviteData,
+  CheckMembershipInviteErrors,
+  CheckMembershipInviteResponses,
   CheckSlugData,
   CheckSlugErrors,
   CheckSlugResponses,
@@ -322,11 +325,18 @@ import type {
   UpdateUserData,
   UpdateUserErrors,
   UpdateUserResponses,
+  WithdrawPendingInvitationData,
+  WithdrawPendingInvitationErrors,
+  WithdrawPendingInvitationResponses,
 } from './types.gen';
 import {
   zAcceptInvitationTokenResponse,
   zCheckEmailBody,
   zCheckEmailResponse,
+  zCheckMembershipInviteBody,
+  zCheckMembershipInvitePath,
+  zCheckMembershipInviteQuery,
+  zCheckMembershipInviteResponse,
   zCheckSlugBody,
   zCheckSlugPath,
   zCheckSlugResponse,
@@ -542,6 +552,8 @@ import {
   zUpdateUserBody,
   zUpdateUserPath,
   zUpdateUserResponse,
+  zWithdrawPendingInvitationPath,
+  zWithdrawPendingInvitationResponse,
 } from './zod.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<
@@ -4132,7 +4144,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Create memberships
  *
- * Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization. A created membership carries muted, archived and display order only when it is the caller's own.
+ * Invites addresses to a channel entity such as an organization and says per address what happened: a new invitation, the earlier one sent again (a declined one opens again, a higher role replaces a lower one), an organization member added at once, or a member left out. Re-adding an address always sends its invitation again. A created membership carries muted, archived and display order only when it is the caller's own.
  *
  * **POST /{tenantId}/{organizationId}/memberships** ·· [membershipInvite](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships) ·· [membershipInvite](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/memberships) ·· _memberships_cella_
  *
@@ -4167,6 +4179,50 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/{tenantId}/{organizationId}/memberships',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Check addresses before inviting
+ *
+ * Says per address what an invite would do, from what the caller already sees: members by their listed address and the channel's own invitations. Writes and sends nothing. Requires update permission on the channel.
+ *
+ * **POST /{tenantId}/{organizationId}/memberships/check** ·· [checkMembershipInvite](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships/check) ·· [checkMembershipInvite](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/memberships/check) ·· _memberships_cella_
+ *
+ * @param {checkMembershipInviteData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {string} options.query.entityid - `string`
+ * @param {enum} options.query.entitytype - `enum`
+ * @param {any[]=} options.body.emails - `any[]` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const checkMembershipInvite = <ThrowOnError extends boolean = true>(
+  options: Options<CheckMembershipInviteData, ThrowOnError>,
+): RequestResult<CheckMembershipInviteResponses, CheckMembershipInviteErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CheckMembershipInviteResponses, CheckMembershipInviteErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zCheckMembershipInviteBody,
+          path: zCheckMembershipInvitePath,
+          query: zCheckMembershipInviteQuery,
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zCheckMembershipInviteResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/memberships/check',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -4383,6 +4439,44 @@ export const resendPendingInvitation = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/{tenantId}/{organizationId}/memberships/pending/{id}/resend',
+    ...options,
+  });
+
+/**
+ * Withdraw pending invitation
+ *
+ * Withdraws an invitation, named by its own id, with its links, so its seat frees. Requires update permission on the invited channel.
+ *
+ * **DELETE /{tenantId}/{organizationId}/memberships/pending/{id}** ·· [withdrawPendingInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/DELETE/{tenantId}/{organizationId}/memberships/pending/{id}) ·· [withdrawPendingInvitation](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/{tenantId}/{organizationId}/memberships/pending/{id}) ·· _memberships_cella_
+ *
+ * @param {withdrawPendingInvitationData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const withdrawPendingInvitation = <ThrowOnError extends boolean = true>(
+  options: Options<WithdrawPendingInvitationData, ThrowOnError>,
+): RequestResult<WithdrawPendingInvitationResponses, WithdrawPendingInvitationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<WithdrawPendingInvitationResponses, WithdrawPendingInvitationErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zWithdrawPendingInvitationPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zWithdrawPendingInvitationResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/memberships/pending/{id}',
     ...options,
   });
 

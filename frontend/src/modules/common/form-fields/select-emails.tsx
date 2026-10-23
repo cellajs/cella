@@ -1,27 +1,39 @@
+import { ClockIcon, LoaderCircleIcon, UserCheckIcon } from 'lucide-react';
 import { type InputHTMLAttributes, type KeyboardEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { zMembershipInviteBody } from 'sdk/zod.gen';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Chip } from '~/modules/ui/chip';
 import { Input } from '~/modules/ui/input';
+import { cn } from '~/utils/cn';
 
 const delimiter = /[,;\s]+/;
 
 /** True for exactly the addresses an invite submit accepts, so every chip passes the form. */
 export const isInviteEmail = (value: string) => zMembershipInviteBody.shape.emails.element.safeParse(value).success;
 
+/** What a chip says about its address: still being checked, invited before or already a member, with a short note. */
+export interface EmailChipState {
+  state: 'checking' | 'invited' | 'member' | 'new';
+  note?: string;
+}
+
 interface SelectEmailsProps {
   value?: string[];
   onChange?: (value: string[]) => void;
   placeholder?: string;
   inputProps?: InputHTMLAttributes<HTMLInputElement>;
+  /** Marks each chip; a member's chip is dashed, since an invite leaves it out. */
+  chipState?: (email: string) => EmailChipState;
 }
+
+const stateIcons = { checking: LoaderCircleIcon, invited: ClockIcon, member: UserCheckIcon };
 
 /**
  * Email chip input. Enter, comma, semicolon, space, paste and blur turn the typed text into chips. An address that
  * already is a chip in any letter case is skipped; text that is not an address stays in the input with a warning.
  */
-export function SelectEmails({ value: emails = [], onChange, placeholder, inputProps }: SelectEmailsProps) {
+export function SelectEmails({ value: emails = [], onChange, placeholder, inputProps, chipState }: SelectEmailsProps) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [text, setText] = useState('');
@@ -58,11 +70,22 @@ export function SelectEmails({ value: emails = [], onChange, placeholder, inputP
       onClick={(event) => event.target === event.currentTarget && inputRef.current?.focus()}
       className="flex flex-wrap items-center gap-1 rounded-md border border-input bg-background px-3 py-1 shadow-xs ring-offset-background focus-ring:focus-within:ring-2 focus-ring:focus-within:ring-ring focus-ring:focus-within:ring-offset-2"
     >
-      {emails.map((email) => (
-        <Chip key={email} onRemove={() => remove(email)} removeLabel={t('c:remove_resource', { resource: email })}>
-          {email}
-        </Chip>
-      ))}
+      {emails.map((email) => {
+        const { state, note } = chipState?.(email) ?? { state: 'new' };
+        const Icon = state === 'new' ? null : stateIcons[state];
+        return (
+          <Chip
+            key={email}
+            onRemove={() => remove(email)}
+            removeLabel={t('c:remove_resource', { resource: email })}
+            end={note && <span className="text-muted-foreground">· {note}</span>}
+            className={cn(state === 'member' && 'border-dashed bg-transparent text-muted-foreground', Icon && 'pl-2')}
+          >
+            {Icon && <Icon className={cn('mr-1 inline size-3.5 align-[-2px] opacity-70', state === 'checking' && 'animate-spin')} />}
+            {email}
+          </Chip>
+        );
+      })}
       <Input
         ref={inputRef}
         type="text"
