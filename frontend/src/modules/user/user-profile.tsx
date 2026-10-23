@@ -32,7 +32,7 @@ export function UserProfile({ user, organizationId, isSheet }: UserProfileProps)
       <PageHeader
         entity={user}
         canUpdate={isSelf}
-        coverUpdateCallback={updateCover}
+        onCoverUpdate={updateCover}
         subline={<UserProfileSubline user={user} />}
         panel={
           isSelf && (

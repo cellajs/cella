@@ -3,7 +3,7 @@ import { foldText } from 'shared/utils/text-match';
 import { JsonViewerContext, type JsonViewerContextValue } from '~/modules/common/json-viewer/context';
 import { JsonNode } from '~/modules/common/json-viewer/json-node';
 import type { DataType, JsonViewerProps } from '~/modules/common/json-viewer/types';
-import { MatchScope } from '~/modules/common/match-highlight';
+import { MatchScope } from '~/modules/common/match-highlight/match-scope';
 
 const emptyValueTypes: DataType[] = [];
 

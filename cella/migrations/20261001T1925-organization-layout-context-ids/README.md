@@ -27,7 +27,7 @@ No script: manual.
 
 1. `const { organization } = useOrganizationLayoutContext()` becomes `const { organizationId, tenantId } = useOrganizationLayoutContext()`.
 2. Where the component needs more than the ids: `const { data: organization } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId))`.
-3. Mocks of `~/hooks/use-route-context` return `{ organizationId, tenantId }`.
+3. Mocks of `~/hooks/use-organization-layout-context` return `{ organizationId, tenantId }`.
 
 ## Verify
 

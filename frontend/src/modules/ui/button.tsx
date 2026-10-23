@@ -17,7 +17,7 @@ export const buttonVariants = cva(
         outline: 'border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50',
         // Ghost has no surface of its own, so its hover is a share of the text color: it shows on any backdrop, in both modes
         ghost: 'shadow-none hover:bg-foreground/8 hover:text-accent-foreground',
-        outlineGhost:
+        'outline-ghost':
           'border border-foreground/20 bg-background/20 shadow-none hover:border-foreground/30 hover:bg-background/40 hover:text-accent-foreground',
         link: 'link-inline text-primary shadow-none',
         cell: 'group/cell-button flex w-full justify-start font-normal opacity-75 shadow-none hover:opacity-100 focus-visible:ring-transparent focus-visible:ring-offset-transparent',

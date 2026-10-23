@@ -2,7 +2,7 @@ import { Outlet, useNavigate } from '@tanstack/react-router';
 import { type KeyboardEvent, type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
-import { useHotkeys } from '~/hooks/use-hot-keys';
+import { useHotkeys } from '~/hooks/use-hotkeys';
 import { type SheetData, sheeter, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toggleDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';

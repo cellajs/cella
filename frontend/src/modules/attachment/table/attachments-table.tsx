@@ -73,7 +73,7 @@ export function AttachmentsTable({ channel, canUpload, isSheet = false }: Attach
   };
 
   const NoRowsComponent = (
-    <ContentPlaceholder icon={PaperclipIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:attachment_other').toLowerCase() }} />
+    <ContentPlaceholder icon={PaperclipIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:attachment_other').toLowerCase() }} />
   );
 
   return (

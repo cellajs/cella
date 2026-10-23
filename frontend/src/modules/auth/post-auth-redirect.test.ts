@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.stubGlobal('window', { location: { origin: 'https://app.example.test' } });
 
-const { resolvePostAuthRedirect } = await import('~/modules/auth/use-post-auth-redirect');
+const { resolvePostAuthRedirect } = await import('~/modules/auth/post-auth-redirect');
 const { authenticateRouteSearchParamsSchema } = await import('~/modules/auth/search-params-schemas');
 
 describe('resolvePostAuthRedirect', () => {

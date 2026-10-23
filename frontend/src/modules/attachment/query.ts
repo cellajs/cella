@@ -21,7 +21,7 @@ import {
 } from '~/modules/attachment/query-mutations';
 import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
 import { registerDescriptionDerivation } from '~/modules/common/blocknote/description-derivation';
-import { registerYjsOwnedFields } from '~/modules/common/blocknote/yjs-editor';
+import { registerYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
@@ -40,7 +40,7 @@ import { prepareProductDelete } from '~/query/offline/prepare-delete';
 import { buildPreparedHandlers, type PreparedVars } from '~/query/offline/prepared-mutation';
 import { squashIntoPendingCreate, squashPendingMutation } from '~/query/offline/squash-utils';
 import { createStxForCreate, createStxForDelete, createStxForUpdate } from '~/query/offline/stx-utils';
-import { mergeServerResponse, syncEntityToCache } from '~/query/offline/update-success-utils';
+import { mergeServerResponse, writeEntityToCache } from '~/query/offline/update-success-utils';
 import { queryClient } from '~/query/query-client';
 import { resolveQueryOrgTenantIds } from '~/query/realtime/sync-priority';
 import { createResourceError } from '~/utils/resource-error';
@@ -223,7 +223,7 @@ const attachmentUpdateOptions = (
       mutatedKeys,
       derivedKeys: { description: descriptionDerivedKeys },
     });
-    syncEntityToCache({ entity: merged, listKey: orgKey, detailKey, queryClient });
+    writeEntityToCache({ entity: merged, listKey: orgKey, detailKey, queryClient });
   },
   onSettled: (_data, error, variables) => {
     if (error) invalidateOrgLists(queryClient, variables.organizationId);

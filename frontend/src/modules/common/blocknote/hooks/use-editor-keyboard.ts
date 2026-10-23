@@ -5,14 +5,14 @@ const wrappingChars: Record<string, string> = { '[': ']', '{': '}', '(': ')', '`
 
 interface UseEditorKeyboardOptions {
   editor: CustomBlockNoteEditor;
-  onEscapeClick?: () => void;
-  onEnterClick?: () => void;
+  onEscape?: () => void;
+  onCmdEnter?: () => void;
   /** Commits the current document; the caller decides what that writes, and whether an empty document counts. */
   commit: () => void;
 }
 
 /** Wraps a selection in brackets or quotes; Escape and Cmd/Ctrl+Enter commit, then call their callback; Cmd+Enter does not bubble to a form. */
-export function useEditorKeyboard({ editor, onEscapeClick, onEnterClick, commit }: UseEditorKeyboardOptions): KeyboardEventHandler {
+export function useEditorKeyboard({ editor, onEscape, onCmdEnter, commit }: UseEditorKeyboardOptions): KeyboardEventHandler {
   return (event) => {
     const { metaKey, ctrlKey, key } = event;
     const isEscape = key === 'Escape';
@@ -41,7 +41,7 @@ export function useEditorKeyboard({ editor, onEscapeClick, onEnterClick, commit 
     if (isCmdEnter) event.stopPropagation();
 
     commit();
-    if (isEscape) onEscapeClick?.();
-    else onEnterClick?.();
+    if (isEscape) onEscape?.();
+    else onCmdEnter?.();
   };
 }

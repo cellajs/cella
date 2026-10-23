@@ -63,7 +63,7 @@ export function AttachmentRender({
     const { key, params } = pendingUploadMessage(pendingUpload);
     return (
       <div className={containerClassName}>
-        <ContentPlaceholder icon={CloudOffIcon} title={key} titleProps={params} />
+        <ContentPlaceholder icon={CloudOffIcon} title={key} titleOptions={params} />
       </div>
     );
   }

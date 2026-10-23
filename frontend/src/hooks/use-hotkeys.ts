@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { getHotkeyMatcher, type HotkeyItem, shouldFireEvent } from '~/hooks/use-hot-keys-helpers';
+import { getHotkeyMatcher, type HotkeyItem, shouldFireEvent } from '~/hooks/use-hotkeys-helpers';
 
 const defaultIgnoredTags = ['INPUT', 'TEXTAREA', 'SELECT'];
 

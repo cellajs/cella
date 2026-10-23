@@ -4,9 +4,9 @@ import { BuildingIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GetAuthHealthResponse } from 'sdk';
 import { appConfig, type FederationConfig } from 'shared';
+import { invitationResumePath } from '~/modules/auth/post-auth-redirect';
 import { ssoEntryQueryOptions } from '~/modules/auth/query';
 import { safeRedirectPath } from '~/modules/auth/redirect-path';
-import { invitationResumePath } from '~/modules/auth/use-post-auth-redirect';
 import { Button } from '~/modules/ui/button';
 
 type SsoTarget = { connectionId: string } | { federation: string };

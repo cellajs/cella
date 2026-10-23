@@ -6,8 +6,8 @@ import { getLocalUserDb, subscribeOwnerChange, type YDocKey } from '~/query/loca
  * null when that write failed; `hello` follows a load, and peers answer it with an `update` holding what `vector` lacks.
  */
 export type TabMessage =
-  | { t: 'update'; key: string; generation: string; update: Uint8Array; rowId: number | null }
-  | { t: 'hello'; key: string; generation: string; vector: Uint8Array };
+  | { kind: 'update'; key: string; generation: string; update: Uint8Array; rowId: number | null }
+  | { kind: 'hello'; key: string; generation: string; vector: Uint8Array };
 
 /** A document's key as one string, `entityType:entityId`: the tab channel's message key, and the store's lookup key. */
 export const yDocKeyString = (key: YDocKey) => `${key.entityType}:${key.entityId}`;
@@ -22,7 +22,8 @@ function currentChannel(): BroadcastChannel | null {
     closeChannel();
     return null;
   }
-  const channelName = `${name}:ydocs`;
+  // A new name whenever the message shape changes, so a tab still running an older build never reads one it cannot parse
+  const channelName = `${name}:ydoc-tabs`;
   if (channel?.name === channelName) return channel;
   closeChannel();
   channel = new BroadcastChannel(channelName);

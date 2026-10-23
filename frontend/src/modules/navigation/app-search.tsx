@@ -154,7 +154,7 @@ export function AppSearch() {
               <ContentPlaceholder
                 icon={SearchIcon}
                 title={hasQuery ? 'c:no_resource_found' : 'c:global_search.text'}
-                titleProps={{ resource: t('c:results').toLowerCase(), appName: appConfig.name }}
+                titleOptions={{ resource: t('c:results').toLowerCase(), appName: appConfig.name }}
               />
             </ComboboxEmpty>
           )}

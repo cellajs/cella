@@ -4,10 +4,10 @@ import { ApiError } from '~/lib/api';
 export type StepUpMethod = GetStepUpResponse['methods'][number];
 
 /** The user closed the re-auth dialog without proving it's them. */
-export class StepUpDismissed extends Error {
+export class StepUpDismissedError extends Error {
   constructor() {
     super('Step-up dismissed');
-    this.name = 'StepUpDismissed';
+    this.name = 'StepUpDismissedError';
   }
 }
 

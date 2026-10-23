@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ReactNode } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
+import { getSection } from '~/hooks/scroll-spy-store';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import { getSection } from '~/hooks/use-scroll-spy-store';
 import type { LegalSubject } from '~/modules/auth/legal/legal-config';
 import { LegalAside } from '~/modules/marketing/legal/legal-aside';
 import { TocAside } from '~/modules/page/toc-aside';

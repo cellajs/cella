@@ -4,13 +4,13 @@ import { SearchIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { parseTerms } from 'shared/utils/text-match';
+import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useDebounce } from '~/hooks/use-debounce';
 import { useFocusByRef } from '~/hooks/use-focus-by-ref';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
-import { MatchScope } from '~/modules/common/match-highlight';
+import { MatchScope } from '~/modules/common/match-highlight/match-scope';
 import { type HistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { getDocsSearchClient } from '~/modules/docs/search/client';
@@ -132,7 +132,7 @@ export function DocsSearch() {
             <ContentPlaceholder
               icon={SearchIcon}
               title="c:no_resource_found"
-              titleProps={{ resource: t('c:results').toLowerCase() }}
+              titleOptions={{ resource: t('c:results').toLowerCase() }}
               className="sm:h-[41vh]"
             />
           )}

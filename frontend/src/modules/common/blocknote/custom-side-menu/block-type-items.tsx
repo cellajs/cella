@@ -1,7 +1,7 @@
 import { SideMenuExtension } from '@blocknote/core/extensions';
 import { type BlockTypeSelectItem, useComponentsContext, useExtension } from '@blocknote/react';
 import { getBlockTypeItems, isCurrentBlockType } from '~/modules/common/blocknote/blocknote-schema';
-import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
+import { focusEditor } from '~/modules/common/blocknote/helpers/focus-editor';
 import type { CustomBlock, CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
 interface BlockTypeItemsProps extends CustomBlockNoteMenuProps {

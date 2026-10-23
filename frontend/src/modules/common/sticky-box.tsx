@@ -1,5 +1,5 @@
 import { type ComponentProps, type CSSProperties, useEffect, useRef, useState } from 'react';
-import { isProgrammaticScroll } from '~/hooks/use-scroll-spy-store';
+import { isProgrammaticScroll } from '~/hooks/scroll-spy-store';
 
 /** Nearest scrolling ancestor of `node`, or `window` when none is found before `document.body`. */
 export function getScrollParent(node: HTMLElement): HTMLElement | Window {

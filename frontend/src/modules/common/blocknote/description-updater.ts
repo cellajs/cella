@@ -46,7 +46,7 @@ export async function persistStandaloneDescription(
 }
 
 /** `updateData` for `CollaborativeBlockNote` composed from the two halves; editors with derived fields or debounce compose them directly. */
-export function useDescriptionUpdate(entityType: ProductEntityType, entity: DescribedEntity, update: DescriptionMutation) {
+export function createDescriptionUpdater(entityType: ProductEntityType, entity: DescribedEntity, update: DescriptionMutation) {
   return (description: string, collaborative: boolean) =>
     collaborative
       ? patchCollaborativeDescription(entityType, entity, description)

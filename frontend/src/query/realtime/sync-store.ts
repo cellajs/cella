@@ -10,7 +10,7 @@ interface OrgSyncState {
   /** Org-slot cursors by entity type, and the membership signal under `membership`. */
   seqs: Record<string, number>;
   /** Cursors of the channels below the organization, by channel id and then entity type. */
-  contexts: Record<string, Record<string, number>>;
+  channels: Record<string, Record<string, number>>;
 }
 
 /** One catchup view request: org-sequence cursor over a prefix set (see streamCatchupBodySchema). */
@@ -82,7 +82,7 @@ function viewIdentity(view: Omit<RegisteredSyncView, 'cursor'>): string {
 function ensureOrg(orgs: Record<string, OrgSyncState>, organizationId: string, tenantId?: string): OrgSyncState {
   const existing = orgs[organizationId];
   if (!existing) {
-    const created: OrgSyncState = { tenantId: tenantId ?? '', seqs: {}, contexts: {} };
+    const created: OrgSyncState = { tenantId: tenantId ?? '', seqs: {}, channels: {} };
     orgs[organizationId] = created;
     return created;
   }
@@ -109,7 +109,7 @@ export const syncStore = createStore<SyncStoreState>()(
             if (held === null) return;
             for (const org of Object.values(state.orgs)) {
               for (const entityType of Object.keys(org.seqs)) org.seqs[entityType] = 0;
-              org.contexts = {};
+              org.channels = {};
             }
             for (const view of Object.values(state.views)) view.cursor = 0;
           });
@@ -144,13 +144,13 @@ export const syncStore = createStore<SyncStoreState>()(
               org.seqs[entityType] = seq;
               return;
             }
-            org.contexts[channelId] ??= {};
-            org.contexts[channelId][entityType] = seq;
+            org.channels[channelId] ??= {};
+            org.channels[channelId][entityType] = seq;
           }),
         getChannelSeq: (organizationId, channelId, entityType) =>
           channelId === organizationId
             ? (get().orgs[organizationId]?.seqs[entityType] ?? 0)
-            : (get().orgs[organizationId]?.contexts[channelId]?.[entityType] ?? 0),
+            : (get().orgs[organizationId]?.channels[channelId]?.[entityType] ?? 0),
 
         declareSyncView: (key, view) =>
           set((state) => {
@@ -199,6 +199,9 @@ export const syncStore = createStore<SyncStoreState>()(
       })),
       {
         name: 'sync',
+        // Version 1 renamed `contexts` to `channels`: older cursors are dropped, so the next catchup re-baselines
+        version: 1,
+        migrate: () => ({}),
         skipHydration: true,
         storage: createJSONStorage(() => idbKvStorage('sync')),
         partialize: (state) => ({

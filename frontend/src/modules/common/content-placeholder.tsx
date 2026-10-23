@@ -12,13 +12,13 @@ interface ContentPlaceholderProps {
   size?: 'default' | 'sm';
   className?: string;
   children?: ReactNode;
-  titleProps?: TOptions & { returnObjects?: false };
+  titleOptions?: TOptions & { returnObjects?: false };
 }
 
-export function ContentPlaceholder({ title, icon: Icon, size = 'default', className = '', children, titleProps }: ContentPlaceholderProps) {
+export function ContentPlaceholder({ title, icon: Icon, size = 'default', className = '', children, titleOptions }: ContentPlaceholderProps) {
   const { t } = useTranslation();
 
-  const titleText = t(title, titleProps);
+  const titleText = t(title, titleOptions);
 
   return (
     <div

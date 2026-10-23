@@ -1,4 +1,3 @@
-import { appConfig } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
@@ -30,7 +29,7 @@ export function UsersTable() {
       <UsersTableBar
         queryKey={queryOptions.queryKey}
         selected={selected}
-        searchVars={{ q, role, sort, order, limit: appConfig.requestLimits.users }}
+        searchVars={{ q, role, sort, order }}
         setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}

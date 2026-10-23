@@ -1,5 +1,5 @@
 import { getOrganization } from 'sdk';
-import { findOrganizationByIdOrSlug, organizationQueryKeys, organizationQueryOptions } from '~/modules/organization/query';
+import { findOrganizationByIdOrSlug, organizationQueryOptions } from '~/modules/organization/query';
 import { resolveChannelBySlug } from '~/query/basic/resolve-channel-by-slug';
 
 type OrganizationLayoutBeforeLoadArgs = { params: { tenantId: string; organizationSlug: string }; cause: 'preload' | 'enter' | 'stay' };
@@ -17,7 +17,6 @@ export const organizationLayoutBeforeLoad = async ({ params, cause }: Organizati
     findInCache: findOrganizationByIdOrSlug,
     detailQueryOptions: (id) => organizationQueryOptions(id, tenantId),
     fetchBySlug: () => getOrganization({ path: { tenantId, id: organizationSlug }, query: { slug: true, include: 'counts' } }),
-    slugFetchCacheKey: organizationQueryKeys.detail.byId,
     readRequiresOnline: false,
     revalidateIfStale: shouldRevalidate,
     params,

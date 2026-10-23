@@ -11,7 +11,7 @@ import { systemUploadPrefix } from 'shared/utils/upload-visibility';
 import type { z } from 'zod';
 import type { ApiError } from '~/lib/api';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
-import { blocknoteFieldIsDirty } from '~/modules/common/blocknote/helpers/blocknote-field-is-dirty';
+import { blocknoteHasContent } from '~/modules/common/blocknote/helpers/blocknote-has-content';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
@@ -71,13 +71,13 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
   const canSend = () => {
     if (!form.isDirty) return false;
     const { content, roles } = form.getValues();
-    return blocknoteFieldIsDirty(content) && roles.length > 0;
+    return blocknoteHasContent(content) && roles.length > 0;
   };
 
   const hasInput = () => {
     if (!form.isDirty) return false;
     const { content, roles, subject } = form.getValues();
-    return roles.length > 0 || subject.length > 0 || blocknoteFieldIsDirty(content);
+    return roles.length > 0 || subject.length > 0 || blocknoteHasContent(content);
   };
 
   if (form.loading) return null;
@@ -106,7 +106,7 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
             className: cn(blockNoteFieldClass, 'pl-10'),
             // Newsletter images go to the public bucket under the system prefix, where email clients load them.
             baseFilePanelProps: { mediaMode: 'public-no-attachment', templateId: 'newsletter', organizationId: systemUploadPrefix },
-            excludeFileBlockTypes: ['video', 'audio', 'file'],
+            excludeMediaBlockTypes: ['video', 'audio', 'file'],
           }}
         />
 

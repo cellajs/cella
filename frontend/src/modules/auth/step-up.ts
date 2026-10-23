@@ -17,7 +17,7 @@ const openStepUpDialog = (methods: StepUpMethod[], section?: string) => {
 };
 
 /**
- * `retryAfterStepUp` through the re-auth dialog; dismissing it fails the action with `StepUpDismissed`. `section` is the
+ * `retryAfterStepUp` through the re-auth dialog; dismissing it fails the action with `StepUpDismissedError`. `section` is the
  * id of the page section that asks: an emailed link or a new sign-in returns to it, or without one to the section in view.
  */
 export const withStepUp = <T>(action: () => Promise<T>, section?: string) =>

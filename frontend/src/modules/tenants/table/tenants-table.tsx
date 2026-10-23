@@ -57,7 +57,7 @@ export function TenantsTable() {
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder icon={BuildingIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:tenant_other').toLowerCase() }} />
+            <ContentPlaceholder icon={BuildingIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:tenant_other').toLowerCase() }} />
           ),
         }}
       />

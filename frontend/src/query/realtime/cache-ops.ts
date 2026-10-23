@@ -1,6 +1,6 @@
 import type { ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
-import { getYjsOwnedFields } from '~/modules/common/blocknote/yjs-editor';
+import { getYjsOwnedFields } from '~/modules/common/blocknote/yjs-owned-fields';
 import { resolveHomeChannelId, spliceEntityIntoListCaches } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove } from '~/query/basic/cache-mutations';
 import {

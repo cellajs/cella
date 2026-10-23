@@ -12,10 +12,10 @@ export interface PageCoverProps {
   canUpdate: boolean;
   url?: string | null;
   organizationId?: string;
-  coverUpdateCallback: (bannerKey: string) => void;
+  onCoverUpdate?: (bannerKey: string) => void;
 }
 
-function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback }: PageCoverProps) {
+function PageCoverBase({ id, canUpdate, organizationId, url, onCoverUpdate }: PageCoverProps) {
   const { t } = useTranslation();
   const [coverUrl, setCoverUrl] = useState(url);
 
@@ -28,7 +28,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
       title: uploadLabel,
       onUploaded: (bannerUrl) => {
         setCoverUrl(bannerUrl);
-        coverUpdateCallback(bannerUrl);
+        onCoverUpdate?.(bannerUrl);
       },
     });
   };

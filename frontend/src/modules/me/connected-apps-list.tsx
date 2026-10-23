@@ -24,7 +24,7 @@ export function ConnectedAppsList() {
 
   if (!items.length)
     return (
-      <ContentPlaceholder size="sm" icon={PlugZapIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:connected_apps').toLowerCase() }} />
+      <ContentPlaceholder size="sm" icon={PlugZapIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:connected_apps').toLowerCase() }} />
     );
 
   return (

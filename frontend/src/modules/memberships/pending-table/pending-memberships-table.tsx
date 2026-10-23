@@ -55,7 +55,7 @@ export function PendingMembershipsTable({ channel }: PendingMembershipsTableProp
           fetchMore,
           sortColumns,
           onSortColumnsChange,
-          NoRowsComponent: <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:invites').toLowerCase() }} />,
+          NoRowsComponent: <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:invites').toLowerCase() }} />,
         }}
       />
     </div>

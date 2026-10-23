@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import type { ComponentProps } from 'react';
-import { scrollToSectionById, spyPrefix } from '~/hooks/use-scroll-spy-store';
+import { scrollToSectionById, spyPrefix } from '~/hooks/scroll-spy-store';
 import { HashUrlButton } from '~/modules/common/hash-url-button';
 import { CodeBlock } from '~/modules/page/code-block';
 import { cn } from '~/utils/cn';

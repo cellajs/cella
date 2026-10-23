@@ -380,8 +380,8 @@ describe('yjs connection with the store: sign-out', () => {
 describe('yjs connection with the store: other tabs', () => {
   /** Another tab of this user, on the app's channel. */
   function otherTab() {
-    const received: { t: string; key: string; generation: string; update?: Uint8Array; vector?: Uint8Array; rowId?: number | null }[] = [];
-    const channel = new BroadcastChannel(`test:${owner}:ydocs`);
+    const received: { kind: string; key: string; generation: string; update?: Uint8Array; vector?: Uint8Array; rowId?: number | null }[] = [];
+    const channel = new BroadcastChannel(`test:${owner}:ydoc-tabs`);
     channel.onmessage = (event) => received.push(event.data);
     return { channel, received };
   }
@@ -400,8 +400,8 @@ describe('yjs connection with the store: other tabs', () => {
     const { provider } = await mountConnection('tabs-1');
     await vi.waitFor(() => expect(provider.doc.getText('t').toString()).toBe('base '));
 
-    tab.channel.postMessage({ t: 'update', key: 'attachment:tabs-1', generation: 'gen-2', update: peerEdit(provider.doc, 'stale'), rowId: 1 });
-    tab.channel.postMessage({ t: 'update', key: 'attachment:tabs-1', generation: 'gen-1', update: peerEdit(provider.doc, 'peer'), rowId: 2 });
+    tab.channel.postMessage({ kind: 'update', key: 'attachment:tabs-1', generation: 'gen-2', update: peerEdit(provider.doc, 'stale'), rowId: 1 });
+    tab.channel.postMessage({ kind: 'update', key: 'attachment:tabs-1', generation: 'gen-1', update: peerEdit(provider.doc, 'peer'), rowId: 2 });
 
     await vi.waitFor(() => expect(provider.doc.getText('t').toString()).toBe('base peer'));
     tab.channel.close();
@@ -416,13 +416,13 @@ describe('yjs connection with the store: other tabs', () => {
     provider.doc.on('update', (_update: Uint8Array, origin: unknown) => origins.push(origin));
     const before = (await rows('tabs-2')).length;
 
-    tab.channel.postMessage({ t: 'update', key: 'attachment:tabs-2', generation: 'gen-1', update: peerEdit(provider.doc, 'stored'), rowId: 99 });
+    tab.channel.postMessage({ kind: 'update', key: 'attachment:tabs-2', generation: 'gen-1', update: peerEdit(provider.doc, 'stored'), rowId: 99 });
     await vi.waitFor(() => expect(provider.doc.getText('t').toString()).toBe('base stored'));
     await settled();
     expect(await rows('tabs-2')).toHaveLength(before);
     expect(conn().applied.ids.has(99)).toBe(true);
 
-    tab.channel.postMessage({ t: 'update', key: 'attachment:tabs-2', generation: 'gen-1', update: peerEdit(provider.doc, '!'), rowId: null });
+    tab.channel.postMessage({ kind: 'update', key: 'attachment:tabs-2', generation: 'gen-1', update: peerEdit(provider.doc, '!'), rowId: null });
     await vi.waitFor(() => expect(provider.doc.getText('t').toString()).toBe('base stored!'));
     await settled();
     expect((await rows('tabs-2')).slice(before).map((row) => row.local)).toEqual([0]);

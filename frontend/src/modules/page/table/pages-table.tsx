@@ -99,7 +99,7 @@ export function PagesTable() {
             renderRowDragPreview,
           })}
           NoRowsComponent={
-            <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:page_other').toLowerCase() }} />
+            <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:page_other').toLowerCase() }} />
           }
         />
       </TreeProvider>

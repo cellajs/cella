@@ -16,8 +16,6 @@ import type { BoundaryType } from '~/routes/types';
 import { cn } from '~/utils/cn';
 import { getErrorInfo } from '~/utils/get-error-info';
 
-export type { ErrorNoticeError } from '~/utils/get-error-info';
-
 interface ErrorNoticeProps {
   boundary: BoundaryType;
   /** Any thrown value, as error boundaries hand it over; one that is no `Error` reads as none. */

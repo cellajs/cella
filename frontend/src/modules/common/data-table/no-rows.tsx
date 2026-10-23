@@ -15,6 +15,6 @@ export function NoRows({ isFiltered, isFetching, emptyContent }: NoRowsProps) {
   if (isFetching) return null;
 
   const resource = t('c:results').toLowerCase();
-  if (isFiltered) return <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleProps={{ resource }} />;
+  if (isFiltered) return <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleOptions={{ resource }} />;
   return emptyContent ?? <p className="p-8 text-center">{t('c:no_resource_yet', { resource })}</p>;
 }

@@ -51,11 +51,11 @@ interface TabsArrangementCardProps {
   /** Layout route whose tabs it arranges: its `navTab` child routes plus the tools of its `tabsSlot`. */
   parentRouteId: string;
   /** Persists the next toolsConfig through the channel's update mutation. */
-  persist: (toolsConfig: ToolsConfig) => void;
+  onPersist: (toolsConfig: ToolsConfig) => void;
 }
 
 /** Orders and hides a channel's tabs in `toolsConfig['<channelType>.tabs']`, listed ungated so the viewer's grants hide none; UI only, never authorization. */
-export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArrangementCardProps) {
+export function TabsArrangementCard({ entity, parentRouteId, onPersist }: TabsArrangementCardProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
 
@@ -78,7 +78,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
     };
   });
 
-  const persistSlot = (nextConfig: SlotToolsConfig) => persist({ [slot]: nextConfig });
+  const persistSlot = (nextConfig: SlotToolsConfig) => onPersist({ [slot]: nextConfig });
 
   const toggleHidden = (id: string, visible: boolean) => {
     const nextHidden = rows.filter((row) => (row.id === id ? !visible : !row.visible)).map((row) => row.id);

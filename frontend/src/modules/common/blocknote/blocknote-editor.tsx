@@ -93,7 +93,7 @@ export function BlockNote({
   formattingToolbar = true,
   emojis = true,
   excludeBlockTypes,
-  excludeFileBlockTypes,
+  excludeMediaBlockTypes,
   titlePlaceholder,
   pinTitleBlock = false,
   ariaLabel,
@@ -106,8 +106,8 @@ export function BlockNote({
   contentApiRef,
   onEditorReady,
   updateData,
-  onEscapeClick,
-  onEnterClick,
+  onEscape,
+  onCmdEnter,
   onFocus,
   onBeforeLoad,
 }: BlockNoteProps) {
@@ -123,7 +123,7 @@ export function BlockNote({
   // Without an upload path the menus offer no media blocks: BlockNote's own panel only embeds a URL, which the media grammar refuses.
   const canUpload = !!filePanel || uppyUpload;
   const allowedBlockTypes = blockTypes.filter((type) =>
-    isMediaBlockType(type) ? canUpload && !excludeFileBlockTypes?.includes(type) : !excludeBlockTypes?.includes(type),
+    isMediaBlockType(type) ? canUpload && !excludeMediaBlockTypes?.includes(type) : !excludeBlockTypes?.includes(type),
   );
 
   // Parse initial content once at creation time so the undo history starts clean
@@ -179,7 +179,7 @@ export function BlockNote({
     handleUpdateData(editor);
   };
 
-  const handleKeyDown = useEditorKeyboard({ editor, onEscapeClick, onEnterClick, commit: commitDocument });
+  const handleKeyDown = useEditorKeyboard({ editor, onEscape, onCmdEnter, commit: commitDocument });
 
   // A host dismissed by an outside press (a sheet) unmounts the editor while it has focus, so no blur fires: the cleanup commits.
   const commitDocumentRef = useLatestRef(commitDocument);

@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { useId } from 'react';
+import { getSection, scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { getSection, scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { ActiveIndicator } from '~/modules/docs/sidebar/active-indicator';
 import { sidebarStickyRowClass } from '~/modules/docs/sidebar/docs-sidebar-section';

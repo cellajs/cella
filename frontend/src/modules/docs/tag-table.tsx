@@ -1,6 +1,6 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import type { ComponentProps } from 'react';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { Badge } from '~/modules/ui/badge';

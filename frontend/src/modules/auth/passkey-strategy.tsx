@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { type SignInWithPasskeyResponse, signInWithPasskey } from 'sdk';
 import { ApiError } from '~/lib/api';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
+import { useNavigateAfterAuth } from '~/modules/auth/post-auth-redirect';
 import type { PasskeyVerifyType } from '~/modules/auth/types';
-import { useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 

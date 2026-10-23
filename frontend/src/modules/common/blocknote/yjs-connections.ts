@@ -469,7 +469,7 @@ function applyStored(conn: YjsConnection, stored: LoadedYDoc) {
   if (record.unsynced) setUnsynced(conn, true);
   // Loaded after the HTTP link's handshake, which posted what the document held then: the stored edits go as an edit.
   if (record.unsynced && conn.transport === 'http') conn.http?.queue(Y.mergeUpdates(stored.updates));
-  postTabMessage({ t: 'hello', key: yDocKeyString(conn.scope), generation: record.generation, vector: Y.encodeStateVector(conn.yDoc) });
+  postTabMessage({ kind: 'hello', key: yDocKeyString(conn.scope), generation: record.generation, vector: Y.encodeStateVector(conn.yDoc) });
 }
 
 /** Keeps the document in the per-user database from now on: opened for editing, by a focus or a local edit. */
@@ -521,9 +521,9 @@ const holdsChanges = (update: Uint8Array) => update.byteLength > 2;
 function receiveTabMessage(message: TabMessage) {
   const conn = findConnection(message.key);
   if (!conn || conn.stopped || conn.generation !== message.generation) return;
-  if (message.t === 'hello') {
+  if (message.kind === 'hello') {
     const missing = Y.encodeStateAsUpdate(conn.yDoc, message.vector);
-    if (holdsChanges(missing)) postTabMessage({ t: 'update', key: message.key, generation: message.generation, update: missing, rowId: null });
+    if (holdsChanges(missing)) postTabMessage({ kind: 'update', key: message.key, generation: message.generation, update: missing, rowId: null });
     return;
   }
   if (message.rowId !== null) conn.applied.ids.add(message.rowId);

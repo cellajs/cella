@@ -2,8 +2,8 @@ import { useMutation } from '@tanstack/react-query';
 import { SmartphoneIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type SignInWithTotpData, signInWithTotp } from 'sdk';
+import { useNavigateAfterAuth } from '~/modules/auth/post-auth-redirect';
 import { TotpConfirmationForm } from '~/modules/auth/totp-confirmation-form';
-import { useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
 import { Button } from '~/modules/ui/button';
 
 interface TotpStrategyProps {

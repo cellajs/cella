@@ -39,7 +39,7 @@ export function OrganizationPage({ organizationId, tenantId }: OrganizationPageP
 
   const { mutate } = useOrganizationUpdateMutation();
 
-  const coverUpdateCallback = (bannerUrl: string) => {
+  const updateCover = (bannerUrl: string) => {
     mutate(
       { path: { tenantId: organization.tenantId, id: organization.id }, body: { bannerUrl } },
       { onSuccess: () => toaster.success(t('c:success.upload_cover')) },
@@ -52,7 +52,7 @@ export function OrganizationPage({ organizationId, tenantId }: OrganizationPageP
         entity={organization}
         organizationId={organization.id}
         canUpdate={canUpdate}
-        coverUpdateCallback={coverUpdateCallback}
+        onCoverUpdate={updateCover}
         panel={
           organization.membership && (
             <Suspense>

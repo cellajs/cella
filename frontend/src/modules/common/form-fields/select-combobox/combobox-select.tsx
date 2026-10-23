@@ -101,7 +101,7 @@ export function ComboboxSelect({
           )}
         </ComboboxList>
         <ComboboxEmpty>
-          <ContentPlaceholder icon={SearchIcon} title={placeholders.notFound} titleProps={{ resource }} />
+          <ContentPlaceholder icon={SearchIcon} title={placeholders.notFound} titleOptions={{ resource }} />
         </ComboboxEmpty>
       </ComboboxContent>
     </Combobox>

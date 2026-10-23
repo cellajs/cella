@@ -35,7 +35,7 @@ export function mergeServerResponse<T extends { id: string; stx?: unknown; updat
   };
 }
 
-export function syncEntityToCache<T extends ItemData>(options: { entity: T; listKey: QueryKey; detailKey: QueryKey; queryClient: QueryClient }) {
+export function writeEntityToCache<T extends ItemData>(options: { entity: T; listKey: QueryKey; detailKey: QueryKey; queryClient: QueryClient }) {
   const { entity, listKey, detailKey, queryClient } = options;
   cacheUpdate(listKey, [entity]);
   queryClient.setQueryData<T>(detailKey, (old) => old && { ...old, ...entity });

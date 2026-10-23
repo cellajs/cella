@@ -1,3 +1,4 @@
+import '~/modules/common/match-highlight/match-highlight.css';
 import { type RefObject, useLayoutEffect } from 'react';
 import { findMatchRanges } from 'shared/utils/text-match';
 import { useMatchScope } from '~/modules/common/match-highlight/match-scope';

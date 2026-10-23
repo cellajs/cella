@@ -7,7 +7,7 @@ import { getStepUp, type StepUpData, sendStepUpLink, stepUp } from 'sdk';
 import { endSession } from '~/modules/auth/end-session';
 import { getPasskeyStepUpCredential } from '~/modules/auth/passkey-credentials';
 import { authKeys } from '~/modules/auth/query';
-import { StepUpDismissed, type StepUpMethod } from '~/modules/auth/step-up-retry';
+import { StepUpDismissedError, type StepUpMethod } from '~/modules/auth/step-up-retry';
 import { TotpConfirmationForm } from '~/modules/auth/totp-confirmation-form';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { InlineLinkButton } from '~/modules/common/inline-link-button';
@@ -133,7 +133,7 @@ function StepUpDialog({ methods, section, onStepUp }: StepUpDialogProps) {
   );
 }
 
-/** Opens the re-auth dialog; resolves once this session is stepped up, rejects with `StepUpDismissed` when closed. */
+/** Opens the re-auth dialog; resolves once this session is stepped up, rejects with `StepUpDismissedError` when closed. */
 export const openStepUpDialog = (methods: StepUpMethod[], section?: string) =>
   new Promise<void>((resolve, reject) => {
     let steppedUp = false;
@@ -154,7 +154,7 @@ export const openStepUpDialog = (methods: StepUpMethod[], section?: string) =>
         title: i18n.t('c:step_up'),
         description: i18n.t('c:step_up.text'),
         onClose: () => {
-          if (!steppedUp) reject(new StepUpDismissed());
+          if (!steppedUp) reject(new StepUpDismissedError());
         },
       },
     );
