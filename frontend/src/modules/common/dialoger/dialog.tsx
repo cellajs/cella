@@ -5,6 +5,14 @@ import { finalFocusFor, type OverlayCloseDetails, touchInitialFocus, useRemoveAf
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '~/modules/ui/dialog';
 import { cn } from '~/utils/cn';
 import { isHoverContentOpen } from '~/utils/is-hover-content-open';
+import { tw } from '~/utils/tw';
+
+// A phone's search dialog: at the top below the safe area, inset 0.5rem on every side, its height capped at the space
+// above the keyboard (--visual-viewport-height, which SearchDialogBar writes). A flex column, so the results shrink and
+// scroll while the field stays.
+const searchLayoutClass = tw(
+  'max-sm:data-closed:slide-out-to-top-2 max-sm:data-open:slide-in-from-top-2 max-sm:mt-[max(0.5rem,env(safe-area-inset-top))] max-sm:mb-0 max-sm:flex max-sm:max-h-[calc(var(--visual-viewport-height,100dvh)-max(0.5rem,env(safe-area-inset-top))-0.5rem)] max-sm:w-[calc(100%-1rem)] max-sm:flex-col max-sm:self-start max-sm:overflow-hidden max-sm:rounded-xl max-sm:ring-0',
+);
 
 interface DialogerDialogProps {
   dialog: InternalDialog;
@@ -23,6 +31,7 @@ export function DialogerDialog({ dialog }: DialogerDialogProps) {
     className,
     headerClassName,
     container,
+    searchLayout,
   } = dialog;
 
   // A container renders the dialog inline: the page keeps scrolling and taking pointer input, focus stays in the dialog
@@ -55,7 +64,9 @@ export function DialogerDialog({ dialog }: DialogerDialogProps) {
         id={String(id)}
         container={containerElement}
         outsideScroll={outsideScroll}
-        className={cn(className, containerElement && 'in-[.sheeter-open]:z-40 z-40')}
+        // A drag on the inset around a search dialog would scroll the page under it: iOS scroll lock fails once its toolbar has collapsed.
+        viewportClassName={searchLayout ? 'max-sm:touch-none' : undefined}
+        className={cn(className, searchLayout && searchLayoutClass, containerElement && 'in-[.sheeter-open]:z-40 z-40')}
         initialFocus={touchInitialFocus(popupRef)}
         finalFocus={finalFocusFor(triggerRef, String(id))}
       >

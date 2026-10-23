@@ -6,6 +6,7 @@ import { Logo } from '~/modules/common/logo';
 import { BackgroundCurve } from '~/modules/marketing/background-curve';
 import { footerSections, legalLinks } from '~/modules/marketing/marketing-config';
 import { SubscribeNewsletterForm } from '~/modules/marketing/subscribe-newsletter-form';
+import { useIsAboutPage } from '~/modules/marketing/use-is-about-page';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
@@ -66,6 +67,7 @@ function FooterLinks() {
 
 export function MarketingFooter() {
   const { t } = useTranslation();
+  const isAboutPage = useIsAboutPage();
   const statusUrl = appConfig.statusUrl?.trim();
   const legalFooterLinks: FooterLinkProps[] = statusUrl ? [...legalLinks, { title: 'c:status', href: statusUrl }] : legalLinks;
 
@@ -84,7 +86,7 @@ export function MarketingFooter() {
 
         <Link
           to="/about"
-          replace={location.pathname === '/about'}
+          replace={isAboutPage}
           hash=""
           draggable={false}
           onClick={() => scrollTo(0, 0)}

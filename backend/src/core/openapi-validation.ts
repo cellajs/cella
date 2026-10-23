@@ -1,7 +1,12 @@
+import { appConfig } from 'shared';
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
+
+/** Rules for whoever writes routes are checked where routes are written and tested; a deployed backend never fails on one. */
+const checksAuthoringRules = appConfig.mode === 'development' || appConfig.mode === 'test';
 
 const validateOpenApiDocument = (doc: Record<string, unknown>) => {
   validateSchemaTags(doc);
+  if (checksAuthoringRules) validateRouteExamples(doc);
 };
 
 /** Normalize generated OpenAPI fields that need source-library compatibility fixes. */
@@ -27,6 +32,36 @@ const validateSchemaTags = (doc: Record<string, unknown>) => {
   }
 };
 
+type MediaType = { schema?: { $ref?: string }; example?: unknown };
+type Operation = { responses?: Record<string, { content?: Record<string, MediaType> }> };
+
+/**
+ * A route gives its own response example only where it differs from its schema's example, so the one that does stands
+ * out (and wins in the docs). A copy of the schema's example throws on the first violation, in development and tests.
+ */
+const validateRouteExamples = (doc: Record<string, unknown>) => {
+  const components = (doc.components as Record<string, unknown> | undefined) ?? {};
+  const schemas = (components.schemas as Record<string, { example?: unknown }> | undefined) ?? {};
+  const paths = (doc.paths as Record<string, Record<string, Operation>> | undefined) ?? {};
+
+  for (const [path, pathItem] of Object.entries(paths)) {
+    for (const [method, operation] of Object.entries(pathItem)) {
+      for (const [status, response] of Object.entries(operation.responses ?? {})) {
+        for (const media of Object.values(response.content ?? {})) {
+          const name = media.schema?.$ref?.split('/').pop();
+          const schemaExample = name ? schemas[name]?.example : undefined;
+          if (media.example === undefined || schemaExample === undefined) continue;
+          if (JSON.stringify(media.example) === JSON.stringify(schemaExample)) {
+            throw new Error(
+              `${method.toUpperCase()} ${path} ${status} repeats the example of schema "${name}": drop the example argument of its json() response.`,
+            );
+          }
+        }
+      }
+    }
+  }
+};
+
 /** zod-openapi serializes RegExp via `String(re)`, yielding `^foo$/u`; JSON Schema patterns are source-only. */
 const flagSuffix = /\/[gimsuy]+$/;
 const stripRegexFlagsFromPatterns = (node: unknown): void => {
@@ -42,4 +77,4 @@ const stripRegexFlagsFromPatterns = (node: unknown): void => {
   for (const v of Object.values(obj)) stripRegexFlagsFromPatterns(v);
 };
 
-export { normalizeOpenApiDocument, validateOpenApiDocument };
+export { checksAuthoringRules, normalizeOpenApiDocument, validateOpenApiDocument };

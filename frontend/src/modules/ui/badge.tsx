@@ -3,7 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '~/utils/cn';
 
 export const badgeVariants = cva(
-  'focus-effect flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full border px-2 py-0.5 font-medium text-xs shadow-xs transition-[color,box-shadow] aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3',
+  'focus-effect flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full border px-2 py-0.5 font-medium text-xs transition-[color,box-shadow] aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3',
   {
     variants: {
       variant: {
@@ -31,7 +31,7 @@ export const badgeVariants = cva(
       },
     },
     compoundVariants: [
-      { variant: ['default', 'brand', 'success', 'destructive', 'warning'], soft: true, className: 'soft-bg soft-border soft-text shadow-none' },
+      { variant: ['default', 'brand', 'success', 'destructive', 'warning'], soft: true, className: 'soft-bg soft-border soft-text' },
       { variant: 'default', soft: false, className: 'bg-primary text-primary-foreground [a&]:hover:bg-primary/90' },
       { variant: 'brand', soft: false, className: 'bg-brand text-brand-foreground [a&]:hover:bg-brand/90' },
       { variant: 'success', soft: false, className: 'bg-success text-success-foreground' },

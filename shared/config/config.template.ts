@@ -326,8 +326,6 @@ export const config = {
 
   // Theming & UI
 
-  /** Primary theme color for PWA manifest and browser chrome */
-  themeColor: '#26262b',
   /** Theme configuration for UI components */
   theme: {
     navigation: { hasSidebarTextLabels: false, sidebarWidthExpanded: '16rem', sidebarWidthCollapsed: '4rem', sheetPanelWidth: '20rem' },

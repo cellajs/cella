@@ -11,7 +11,7 @@ export function InputGroup({ className, ...props }: React.ComponentProps<'div'>)
       data-slot="input-group"
       role="group"
       className={cn(
-        'group/input-group relative flex h-10 w-full min-w-0 items-center rounded-md border border-input bg-background shadow-xs outline-hidden transition-[color,box-shadow] has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-start]]:h-auto has-[>textarea]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:flex-col has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-destructive/20 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-2 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-ring focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-2 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-background dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40 has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=inline-end]]:[&>input]:pr-2 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-start]]:[&>input]:pl-2',
+        'group/input-group relative flex h-10 w-full min-w-0 items-center rounded-md border border-input bg-background outline-hidden transition-[color,box-shadow] has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-start]]:h-auto has-[>textarea]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:flex-col has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-destructive/20 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-2 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-ring focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-2 focus-ring:has-[[data-slot=input-group-control]:focus-visible]:ring-offset-background dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40 has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=inline-end]]:[&>input]:pr-2 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-start]]:[&>input]:pl-2',
         className,
       )}
       {...props}
@@ -57,7 +57,7 @@ export function InputGroupAddon({
   );
 }
 
-const inputGroupButtonVariants = cva('flex items-center gap-2 text-sm shadow-none', {
+const inputGroupButtonVariants = cva('flex items-center gap-2 text-sm', {
   variants: {
     size: {
       xs: "h-6 gap-1 rounded-[calc(var(--radius)-5px)] px-2 has-[>svg]:px-2 [&>svg:not([class*='size-'])]:size-3.5",
@@ -95,7 +95,7 @@ export function InputGroupInput({ className, ...props }: React.ComponentProps<'i
   return (
     <Input
       data-slot="input-group-control"
-      className={cn('flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0', className)}
+      className={cn('flex-1 rounded-none border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0', className)}
       {...props}
     />
   );
@@ -105,10 +105,7 @@ export function InputGroupTextarea({ className, ...props }: React.ComponentProps
   return (
     <Textarea
       data-slot="input-group-control"
-      className={cn(
-        'flex-1 resize-none rounded-none border-0 bg-transparent py-3 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
-        className,
-      )}
+      className={cn('flex-1 resize-none rounded-none border-0 bg-transparent py-3 focus-visible:ring-0 focus-visible:ring-offset-0', className)}
       {...props}
     />
   );

@@ -11,11 +11,11 @@ export function PrivacyText() {
 
   return (
     <div id="privacy-content">
-      <LegalSection subject="privacy" id="overview" lastUpdated="October 19, 2026">
+      <LegalSection subject="privacy" id="overview" lastUpdated="October 23, 2026">
         <p>
           {company} ("we") runs {appName} (the "Service") for organizations. This policy explains how we handle personal data under the EU General
-          Data Protection Regulation (GDPR). We are the controller of your account data. Content your organization puts in the Service is usually its
-          responsibility: we process it on its behalf, under a data processing agreement.
+          Data Protection Regulation (GDPR). We are the controller of your account data. Content your organization puts in the Service, such as files,
+          is usually its responsibility: we process it on its behalf, under a data processing agreement.
         </p>
         <p>Questions about this policy? Contact us.</p>
         <LegalContact className="mt-8" />
@@ -23,9 +23,9 @@ export function PrivacyText() {
 
       <LegalSection subject="privacy" id="how-we-use-data">
         <p>
-          We get personal data from you, from GitHub or your institution when you sign in through them, and from your use of the Service. Each use
-          rests on a legal basis. Contract: we need the data to provide the Service to you and your organization (Art. 6(1)(b) GDPR). Legitimate
-          interest: we need it to keep the Service secure and reliable (Art. 6(1)(f)). We do not sell your data, use it for advertising or make
+          We get personal data from you, from GitHub or your institution when you sign in through them, and from your use of the Service. To use the
+          Service you need an email address. We process data to provide the Service to you and your organization (contract, Art. 6(1)(b) GDPR), or to
+          keep it secure and reliable and count its use (legitimate interest, Art. 6(1)(f)). We do not sell your data, use it for advertising or make
           automated decisions about you.
         </p>
         <ProcessedDataTypes />

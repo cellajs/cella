@@ -131,6 +131,11 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
   get: () => get().dropdown,
 }));
 
+/** Closes the dropdown unless it was already swapped for another (e.g. a menu item opening a confirmation panel). */
+export function removeIfCurrent(key: number) {
+  if (useDropdowner.getState().dropdown?.key === key) useDropdowner.getState().remove();
+}
+
 /** Whether a dropdown is open: an overlay under it then ignores outside presses, which belong to the dropdown. */
 export const isDropdownOpen = () => !!useDropdowner.getState().dropdown;
 

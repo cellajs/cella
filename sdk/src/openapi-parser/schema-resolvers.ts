@@ -1,5 +1,5 @@
-import type { GenSchema } from '../../docs-types';
-import type { OpenApiSchema, OpenApiSpec } from './types';
+import type { GenSchema } from '../docs-types.ts';
+import type { OpenApiSchema, OpenApiSpec } from './types.ts';
 
 function resolveRef(ref: string, spec: OpenApiSpec): { schema: OpenApiSchema | undefined; name: string } {
   // Refs take the form "#/components/schemas/User" or "#/components/responses/BadRequestError".

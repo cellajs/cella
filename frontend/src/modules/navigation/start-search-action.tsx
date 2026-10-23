@@ -16,5 +16,6 @@ export function startSearchAction(triggerRef: RefObject<HTMLButtonElement | null
     className: tw('mb-4 border-0 p-0 ring-6 ring-foreground/8 sm:max-w-2xl dark:ring-foreground/12'),
     headerClassName: 'hidden',
     drawerOnMobile: false,
+    searchLayout: true,
   });
 }

@@ -89,7 +89,14 @@ export function AboutPage() {
         </AboutSection>
 
         <AboutSection sectionId="stack" title="about:stack.title" text="about:stack.text" alternate>
-          <InfoGrid namespace="stack" items={stackItems} image expandable tileClassName="bg-background" />
+          <InfoGrid
+            namespace="stack"
+            items={stackItems}
+            image
+            expandable
+            tileClassName="bg-background"
+            className="sm:grid-cols-2 md:auto-rows-fr md:grid-cols-3"
+          />
         </AboutSection>
 
         <AboutSection sectionId="integrations" title="about:integrations.title" text="about:integrations.text">

@@ -36,7 +36,7 @@ describe('filterExistingProductIds', async () => {
   const seed = async (owner: TestTenant, id: string, createdBy: string = owner.user.id) => {
     const plan = await seedAttachmentHome({ id: owner.organization.id, tenantId: owner.tenantId }, owner.user.id);
     plans.push(plan);
-    const columns = { id, tenantId: owner.tenantId, ...plan.channelIdColumns, createdBy, updatedBy: null, deletedBy: null, publicAt: null };
+    const columns = { id, tenantId: owner.tenantId, ...plan.channelIdColumns, createdBy, updatedBy: null, deletedBy: null };
     await insertAttachmentRow(buildInsertableProduct('attachment', columns, id));
   };
 

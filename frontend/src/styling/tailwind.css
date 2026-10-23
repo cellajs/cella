@@ -14,7 +14,9 @@
 @source not "../../../shared/scripts";
 
 @theme {
-  --font-sans: "Open Sans", ui-sans-serif, sans-serif;
+  --font-sans:
+    "Inter Variable", "Inter Fallback", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Noto Color Emoji";
   /* Headings share the sans stack; an app with a heading font sets it here. */
   --font-heading: var(--font-sans);
   /* At least 16px at the 19px mobile root: iOS zooms into a focused field below 16px. */
@@ -122,66 +124,39 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Inter, one variable file per script set (self-hosted, OFL: public/static/ui/OFL.txt). Only Latin is preloaded and
+   precached; Latin Extended loads when a page uses its glyphs. Other scripts render in the fallback stack. */
 @layer base {
   @font-face {
-    font-family: "Open Sans";
-    src:
-      local("Open Sans Light"),
-      local("OpenSans-Light"),
-      url(/static/ui/OpenSans-Light.woff2) format("woff2"),
-      url(/static/ui/OpenSans-Light.woff) format("woff");
-    font-weight: 300;
+    font-family: "Inter Variable";
+    src: url(/static/ui/inter-latin-wght-5.3.0.woff2) format("woff2");
+    font-weight: 100 900;
     font-style: normal;
     font-display: swap;
+    unicode-range:
+      U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+      U+2212, U+2215, U+FEFF, U+FFFD;
   }
 
   @font-face {
-    font-family: "Open Sans";
-    src:
-      local("Open Sans Regular"),
-      local("OpenSans-Regular"),
-      url(/static/ui/OpenSans-Regular.woff2) format("woff2"),
-      url(/static/ui/OpenSans-Regular.woff) format("woff");
-    font-weight: 400;
+    font-family: "Inter Variable";
+    src: url(/static/ui/inter-latin-ext-wght-5.3.0.woff2) format("woff2");
+    font-weight: 100 900;
     font-style: normal;
     font-display: swap;
+    unicode-range:
+      U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
   }
 
-  /* REMARK: 500 weight somehow causes a flicker in resize  */
+  /* Until Inter arrives, a local sans scaled to its metrics, so the swap barely moves text. Arial and its metric twins
+     (Liberation Sans, Arimo) carry these values; Roboto on Android is within 0.6%. Safari applies size-adjust only. */
   @font-face {
-    font-family: "Open Sans";
-    src:
-      local("Open Sans Medium"),
-      local("OpenSans-Medium"),
-      url(/static/ui/OpenSans-Medium.woff2) format("woff2"),
-      url(/static/ui/OpenSans-Medium.woff) format("woff");
-    font-weight: 500;
-    font-style: normal;
-    font-display: block;
-  }
-
-  @font-face {
-    font-family: "Open Sans";
-    src:
-      local("Open Sans Semibold"),
-      local("OpenSans-Semibold"),
-      url(/static/ui/OpenSans-SemiBold.woff2) format("woff2"),
-      url(/static/ui/OpenSans-SemiBold.woff) format("woff");
-    font-weight: 600;
-    font-style: normal;
-    font-display: swap;
-  }
-
-  @font-face {
-    font-family: "Open Sans";
-    src:
-      local("Open Sans Bold"),
-      local("OpenSans-Bold"),
-      url(/static/ui/OpenSans-Bold.woff2) format("woff2"),
-      url(/static/ui/OpenSans-Bold.woff) format("woff");
-    font-weight: 700;
-    font-style: normal;
-    font-display: swap;
+    font-family: "Inter Fallback";
+    src: local("Arial"), local("ArialMT"), local("Liberation Sans"), local("Arimo"), local("Roboto"), local("Roboto-Regular");
+    size-adjust: 107.48%;
+    ascent-override: 90.14%;
+    descent-override: 22.44%;
+    line-gap-override: 0%;
   }
 }
 
@@ -290,11 +265,21 @@
 /* Fixed bottom chrome steps aside: the body carries these classes while the selection action bar or the on-screen keyboard is up. */
 @custom-variant chrome-hidden (&:is(.selection-active *, .keyboard-open *));
 
-/* Press feedback through a state variant (`active:press`, `group-active/name:press`). `transform` stacks on the
-   `translate` of translate utilities, so a centered `-translate-y-1/2` stays centered; an inline transform wins. */
+/* Press feedback through a state variant (`active:press`, `group-active/name:press`). A mouse nudges the element down:
+   `transform` stacks on the `translate` of translate utilities, so a centered `-translate-y-1/2` stays centered; an
+   inline transform wins. Under a touch it dims, as native controls do. */
 @utility press {
   transform: translateY(0.05rem);
+
+  @media (pointer: coarse) {
+    transform: none;
+    opacity: 0.7;
+  }
 }
+
+/* An installed app (home screen, PWA window). Its chrome links skip the long-press preview, which a browser tab keeps
+   for "Open in New Tab". */
+@custom-variant standalone (@media (display-mode: standalone));
 
 /* A link whose place says "link" (table cell, tile, nav list) reveals its underline: `link-decoration` sets offset and
    faded color at rest, so a color transition has nothing to fade from when `hover:underline` (or `group-hover/name:`)
@@ -365,9 +350,11 @@
   @apply max-sm:text-md;
 }
 
-/* Open Sans descenders reach 0.24em, past the bottom of typography's 1.11 h1 line box; 1.3 contains them. */
+/* Inter descenders reach 0.22em, past the bottom of typography's 1.11 h1 line box; 1.3 contains them. Typography asks
+   for 800, which the variable font renders for real: 700 keeps docs headings at their weight. */
 .prose h1:not(:where(.not-prose, .not-prose *)) {
   line-height: 1.3;
+  font-weight: 700;
 }
 
 /* Prose links are links in running text. Unlayered, so it outranks the typography theme. */
@@ -546,6 +533,8 @@
     /* Native scrollbars and form controls follow the theme. A macOS overlay scrollbar takes its thumb color from the
        scroller's color-scheme, so a transparent scroller such as the PDF viewer needs it to show a light thumb in dark mode. */
     color-scheme: light;
+    /* No grey tap flash: controls and rows draw their own pressed state (the press utility, active fills). */
+    -webkit-tap-highlight-color: transparent;
 
     &.dark {
       color-scheme: dark;

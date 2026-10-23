@@ -4,7 +4,6 @@ import type { TKey } from '~/lib/i18n-locales';
 import { sheeter, type TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { ToolCard } from '~/modules/common/tool-card';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
-import { Card, CardContent } from '~/modules/ui/card';
 import { tw } from '~/utils/tw';
 
 interface OpenEditSheetOptions {
@@ -31,15 +30,9 @@ export function openEditSheet({ id, resource, triggerRef, children, section, aft
 
   sheeter.getState().create(
     <div className={className}>
-      {section ? (
-        <ToolCard label={section.label} unsaved id={section.id} className={cardClass}>
-          {children}
-        </ToolCard>
-      ) : (
-        <Card className={cardClass}>
-          <CardContent>{children}</CardContent>
-        </Card>
-      )}
+      <ToolCard label={section?.label} unsaved={!!section} id={section?.id} className={cardClass}>
+        {children}
+      </ToolCard>
       {after}
     </div>,
     {

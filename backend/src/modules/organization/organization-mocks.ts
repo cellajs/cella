@@ -70,6 +70,12 @@ export const mockOrganizationResponse = (
   });
 export const mockOrganizationPublishResponse = () => ({ organization: mockOrganizationResponse(), invitationsSent: 12 });
 
+/** The update body a caller with a key or token sends: only the fields it changes. */
+export const mockUpdateOrganizationBody = () => {
+  const { name, timezone } = mockOrganizationResponse();
+  return { name: `${name} Group`, timezone };
+};
+
 export const mockPaginatedOrganizationsResponse = (count = 2) => mockPaginated(mockOrganizationResponse, count);
 
 export const mockBatchOrganizationsResponse = (count = 2) => mockBatchResponse(mockOrganizationResponse, count);

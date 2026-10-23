@@ -11,6 +11,11 @@ export type DialogData = {
   triggerRef: TriggerRef;
   description?: ReactNode;
   drawerOnMobile?: boolean;
+  /**
+   * A search dialog: below `sm` it sits at the top, inset on every side so the page shows around it, and grows down
+   * from its field to the keyboard's edge. Its content renders a `SearchDialogBar`, whose Cancel closes it.
+   */
+  searchLayout?: boolean;
   outsideScroll?: boolean;
   /** Remove immediately on dismissal so externally owned open state cannot flash the dialog back. */
   instantClose?: boolean;

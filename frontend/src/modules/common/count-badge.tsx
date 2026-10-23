@@ -1,4 +1,5 @@
 import { cn } from '~/utils/cn';
+import { formatCount } from '~/utils/format-count';
 
 interface CountBadgeProps {
   count: number;
@@ -6,7 +7,7 @@ interface CountBadgeProps {
   className?: string;
 }
 
-/** A 16px counter pill that caps at 99+; the caller decides when it shows and where it sits. */
+/** A 16px counter pill, compact from a thousand up (1.2k); the caller decides when it shows and where it sits. */
 export function CountBadge({ count, variant = 'primary', className }: CountBadgeProps) {
   return (
     <span
@@ -16,7 +17,7 @@ export function CountBadge({ count, variant = 'primary', className }: CountBadge
         className,
       )}
     >
-      {count > 99 ? '99+' : count}
+      {formatCount(count)}
     </span>
   );
 }

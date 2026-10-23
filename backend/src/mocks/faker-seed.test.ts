@@ -5,8 +5,10 @@ import { withFakerSeed } from './faker-seed';
 describe('withFakerSeed', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('gives the same data for the same key', () => {
-    expect(withFakerSeed('user:1', () => faker.person.fullName())).toBe(withFakerSeed('user:1', () => faker.person.fullName()));
+  it('gives the same data for the same key, also for what the generator draws after a nested call', () => {
+    const generate = () =>
+      withFakerSeed('user:1', () => ({ creator: withFakerSeed('user:1:creator', () => faker.person.fullName()), id: faker.string.uuid() }));
+    expect(generate()).toEqual(generate());
   });
 
   it('leaves the generator on a seed wider than the 32 bits a bare reseed draws, so an id drawn next does not repeat at seed volume', () => {

@@ -1,5 +1,5 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { ChevronsUpDownIcon, ClockIcon, SearchIcon, UserIcon, UsersRoundIcon, XIcon } from 'lucide-react';
+import { ClockIcon, SearchIcon, UserIcon, UsersRoundIcon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import { useDebounce } from '~/hooks/use-debounce';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { InputTriggerChevron } from '~/modules/common/form-fields/input-trigger-button';
 import { inviteCheckQueryOptions } from '~/modules/memberships/query';
 import { Badge } from '~/modules/ui/badge';
 import {
@@ -105,7 +106,7 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
         ) : (
           <span className="ml-1 text-sm">{t('c:search_users')}</span>
         )}
-        <ChevronsUpDownIcon className="absolute right-0 mx-2 opacity-50" />
+        <InputTriggerChevron className="absolute right-0 mx-2" />
       </ComboboxPrimitive.Trigger>
 
       <ComboboxContent>

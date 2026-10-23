@@ -1,0 +1,5 @@
+# GitHub collapses generated files in pull request diffs. The spec stays expanded: of the generated files, it is the one to review.
+sdk/gen/** linguist-generated=true
+sdk/gen/openapi.json linguist-generated=false
+backend/drizzle/**/snapshot.json linguist-generated=true
+frontend/src/routes/routeTree.gen.ts linguist-generated=true

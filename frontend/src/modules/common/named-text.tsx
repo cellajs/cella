@@ -16,7 +16,8 @@ interface NamedTextProps {
 /**
  * A sentence that names what it is about: what a confirmation hits, or the entity a sheet or dialog acts on. The
  * translation marks the name (or an email address, a count of items) with `<strong>`, so it shows in semibold, and a
- * `name` longer than 40 characters is cut in the middle.
+ * `name` longer than 40 characters is cut in the middle. What it marks keeps to one line while it fits one, so an
+ * address never splits at its hyphen.
  */
 export function NamedText({ i18nKey, name, values }: NamedTextProps) {
   const { t } = useTranslation();
@@ -27,7 +28,7 @@ export function NamedText({ i18nKey, name, values }: NamedTextProps) {
       t={t}
       i18nKey={i18nKey as never}
       values={name === undefined ? values : { ...values, name: truncateMiddle(name, maxNameLength) }}
-      components={{ strong: <strong className="font-semibold text-foreground" /> }}
+      components={{ strong: <strong className="wrap-break-word inline-block max-w-full font-semibold text-foreground" /> }}
     />
   );
 }

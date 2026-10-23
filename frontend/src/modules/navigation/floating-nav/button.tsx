@@ -67,12 +67,13 @@ export function FloatingNavButton({
       size="icon"
       data-direction={direction}
       variant="secondary"
+      press={false}
       onClick={onClick}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchCancel}
       className={cn(
-        'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 rounded-full shadow-xl transition-[translate,scale,opacity] duration-300 ease-in-out hover:bg-secondary active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
+        'fixed bottom-[calc(1rem+var(--bottom-inset,0px))] z-105 select-none rounded-full shadow-xl transition-[translate,scale,opacity] duration-300 ease-in-out [-webkit-touch-callout:none] hover:bg-secondary active:scale-95 data-[direction=right]:right-4 data-[direction=left]:left-4',
         // A translucent ring sets the button off from whatever scrolls under it, a grey card of its own fill included
         'more-contrast:ring-foreground/30 ring-4 ring-foreground/12',
         // With a label the width is content-driven: the icon keeps its centered-in-circle offset via pl-4, the pill grows to the right

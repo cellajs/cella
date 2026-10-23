@@ -24,7 +24,6 @@ import {
   validIdSchema,
 } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
-import { mockChannelBase } from '#/schemas/entity-base-mocks';
 import {
   mockMembershipCheckResponse,
   mockMembershipInviteResponse,
@@ -86,7 +85,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     summary: 'Respond to membership invitation',
     description: 'Accepting activates the associated membership. Rejecting simply removes the invitation token.',
     request: { params: z.object({ id: validIdSchema, acceptOrReject: z.enum(['accept', 'reject']) }) },
-    responses: { 200: json('Invitation was accepted', channelBaseSchema, mockChannelBase()) },
+    responses: { 200: json('Invitation was accepted', channelBaseSchema) },
   }),
   getMembers: xRoute({
     method: 'get',

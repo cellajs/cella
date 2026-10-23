@@ -9,6 +9,7 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { canUploadAttachments } from '~/modules/attachment/helpers/can-upload-attachments';
 import { persistAttachments } from '~/modules/attachment/helpers/persist-attachments';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
+import { DeleteForm } from '~/modules/common/delete-form';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
@@ -19,7 +20,6 @@ import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
-import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
 import { formResolver } from '~/utils/form-resolver';
 import { tw } from '~/utils/tw';
@@ -73,20 +73,17 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
     const { create, remove } = dropdowner.getState();
     create(
       <PopConfirm title={t('c:confirm.discard_changes')}>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button
-            variant="destructive"
-            onClick={() => {
-              remove();
-              discardChanges();
-            }}
-          >
-            {t('c:discard')}
-          </Button>
-          <Button variant="secondary" data-autofocus onClick={() => remove()}>
-            {t('c:keep_editing')}
-          </Button>
-        </div>
+        <DeleteForm
+          label="c:discard"
+          cancelLabel="c:keep_editing"
+          allowOfflineDelete
+          pending={false}
+          onDelete={() => {
+            remove();
+            discardChanges();
+          }}
+          onCancel={remove}
+        />
       </PopConfirm>,
       {
         id: 'discard-organization-details',

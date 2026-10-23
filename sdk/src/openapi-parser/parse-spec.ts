@@ -12,10 +12,10 @@ import type {
   GenSchema,
   GenSchemaTagSummary,
   GenTagSummary,
-} from '../../docs-types';
-import { generateOperationHash } from './operation-hash';
-import { resolveSchema, resolveSchemaProperty } from './schema-resolvers';
-import type { OpenApiOperation, OpenApiReferenceObject, OpenApiResponseObject, OpenApiSpec, OpenApiTag } from './types';
+} from '../docs-types.ts';
+import { generateOperationHash } from './operation-hash.ts';
+import { resolveSchema, resolveSchemaProperty } from './schema-resolvers.ts';
+import type { OpenApiOperation, OpenApiReferenceObject, OpenApiResponseObject, OpenApiSpec, OpenApiTag } from './types.ts';
 
 /** Map from pluralized tag names to singular entity types (e.g., 'users' -> 'user') */
 const tagToEntityType = new Map<string, string>(config.entityTypes.map((entityType) => [`${entityType}s`, entityType]));
@@ -77,6 +77,8 @@ function summarizeResponse(
     description = response.description ?? '';
     const selected = response.content ? pickContentType(response.content) : undefined;
     const mediaType = selected ? response.content?.[selected] : undefined;
+    // The route's own example comes first: a route gives one only where its response differs from the schema's example.
+    example = mediaType?.example;
     if (selected && mediaType?.schema) {
       contentType = selected;
       schema = resolveSchema(mediaType.schema, spec);
@@ -85,12 +87,10 @@ function summarizeResponse(
         ref = mediaType.schema.$ref;
         name = ref.split('/').pop();
         const componentExample = name ? spec.components?.schemas?.[name]?.example : undefined;
-        if (componentExample !== undefined) example = componentExample;
+        if (example === undefined && componentExample !== undefined) example = componentExample;
       }
       if (example === undefined && mediaType.schema.example !== undefined) example = mediaType.schema.example;
     }
-    // OpenAPI 3.1 prefers the example at the media type level.
-    if (example === undefined && mediaType?.example !== undefined) example = mediaType.example;
   }
 
   const summary: GenResponseSummary = { status: Number.parseInt(statusCode, 10), description };
@@ -139,10 +139,11 @@ function buildRequest(op: OpenApiOperation, spec: OpenApiSpec): GenRequest | und
   if (op.requestBody && !('$ref' in op.requestBody)) {
     const content = op.requestBody.content;
     const contentType = content ? pickContentType(content) : undefined;
-    const bodySchema = contentType ? content?.[contentType]?.schema : undefined;
-    if (contentType && bodySchema) {
-      request.body = { ...resolveSchema(bodySchema, spec), required: op.requestBody.required ?? false, contentType };
+    const media = contentType ? content?.[contentType] : undefined;
+    if (contentType && media?.schema) {
+      request.body = { ...resolveSchema(media.schema, spec), required: op.requestBody.required ?? false, contentType };
     }
+    if (media?.example !== undefined) request.example = media.example;
   }
 
   return Object.keys(request).length > 0 ? request : undefined;
@@ -164,16 +165,17 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
   const hiddenTags = new Set<string>();
   const schemaKindTags: { name: string; description: string; isDefault: boolean }[] = [];
   for (const tag of (spec.tags ?? []) as readonly OpenApiTag[]) {
-    if (tag.kind) tagKindMap.set(tag.name, tag.kind);
-    if (tag.kind && tag.kind !== 'module') {
+    const kind = tag['x-kind'];
+    if (kind) tagKindMap.set(tag.name, kind);
+    if (kind && kind !== 'module') {
       excludedTags.add(tag.name);
-      if (tag.kind === 'hidden') hiddenTags.add(tag.name);
-      if (tag.kind === 'schema') {
+      if (kind === 'hidden') hiddenTags.add(tag.name);
+      if (kind === 'schema') {
         schemaKindTags.push({ name: tag.name, description: tag.description ?? '', isDefault: tag['x-default'] === true });
       }
       continue;
     }
-    tagMap.set(tag.name, { description: tag.description, count: 0, kind: tag.kind });
+    tagMap.set(tag.name, { description: tag.description, count: 0, kind });
   }
 
   const schemaTagNameSet = new Set(schemaKindTags.map((t) => t.name));

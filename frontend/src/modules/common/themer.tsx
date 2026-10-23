@@ -7,6 +7,21 @@ const root = window.document.documentElement;
 function setModeClass(mode: Mode) {
   root.classList.remove('light', 'dark');
   root.classList.add(mode);
+  setThemeColor();
+}
+
+/**
+ * The browser chrome (Android's status bar, a PWA's title bar) takes the page background. The oklch token is painted
+ * as one canvas pixel and read back as hex, which every browser parses: a canvas keeps oklch in its fillStyle.
+ */
+function setThemeColor() {
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  const canvas = meta && document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  if (!meta || !canvas) return;
+  canvas.fillStyle = getComputedStyle(document.body).backgroundColor;
+  canvas.fillRect(0, 0, 1, 1);
+  const [r, g, b] = canvas.getImageData(0, 0, 1, 1).data;
+  meta.content = `#${[r, g, b].map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
 }
 
 /**

@@ -11,6 +11,7 @@ import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { MatchScope } from '~/modules/common/match-highlight/match-scope';
+import { SearchDialogBar } from '~/modules/common/search-dialog-bar';
 import { type HistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { getDocsSearchClient } from '~/modules/docs/search/client';
@@ -21,6 +22,7 @@ import { docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { docsConfig } from '~/modules/page/content';
 import { Combobox, ComboboxItem, ComboboxList } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { isTouchInteraction } from '~/utils/input-modality';
 import { resolveSearchInput } from '~/utils/recent-searches';
 
 type SearchSelection = DocsSearchResult | HistoryEntry;
@@ -112,19 +114,28 @@ export function DocsSearch() {
       inputValue={searchValue}
       onInputValueChange={(value) => setSearchValue(resolveSearchInput(searchValue, value, recentSearches))}
       filter={() => true}
+      // On touch the keyboard's Search key would open a highlighted first result the user never chose.
+      autoHighlight={!isTouchInteraction()}
     >
-      <div className="rounded-lg shadow-2xl">
-        <ComboboxSearchInput
-          ref={focusRef}
-          value={searchValue}
-          isSearching={isSearching}
-          spinnerDelay={0}
-          className="h-12 text-lg"
-          wrapClassName="h-12 text-lg"
-          placeholder={placeholder}
-        />
-        {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h/overflow are neutralized */}
-        <ScrollArea className="sm:h-[45vh]">
+      <div className="flex min-h-0 flex-col rounded-lg shadow-2xl">
+        <SearchDialogBar>
+          <ComboboxSearchInput
+            ref={focusRef}
+            value={searchValue}
+            isSearching={isSearching}
+            spinnerDelay={0}
+            enterKeyHint="search"
+            className="h-12 text-lg"
+            wrapClassName="h-12 flex-1 border-b-0 text-lg"
+            placeholder={placeholder}
+          />
+        </SearchDialogBar>
+        {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h/overflow are neutralized. On a phone
+            the results take what the dialog has left above the keyboard, below the scope chips. */}
+        <ScrollArea
+          className="max-sm:order-1 max-sm:flex max-sm:min-h-0 max-sm:flex-col sm:h-[45vh]"
+          viewportClassName="max-sm:min-h-0 overscroll-contain"
+        >
           {results === null && recentSearches.length === 0 && (
             <ContentPlaceholder icon={SearchIcon} title="c:docs.search.text" className="sm:h-[41vh]" />
           )}
@@ -151,8 +162,8 @@ export function DocsSearch() {
             )}
           </ComboboxList>
         </ScrollArea>
-        {/* Scope chips: outside the tab order (fumadocs pattern), arrow keys stay on the list. */}
-        <div className="flex items-center gap-1 border-t p-2">
+        {/* Scope chips: outside the tab order (fumadocs pattern), arrow keys stay on the list. On a phone under the field, clear of the keyboard. */}
+        <div className="flex shrink-0 items-center gap-1 border-t p-2 max-sm:border-t-0 max-sm:border-b">
           {[{ value: 'all' as const, label: t('c:all') }, ...scopeChips].map((chip) => (
             <button
               type="button"
