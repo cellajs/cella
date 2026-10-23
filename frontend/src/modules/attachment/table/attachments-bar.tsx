@@ -9,11 +9,11 @@ import type { AttachmentsTableProps } from '~/modules/attachment/table/attachmen
 import { useAttachmentsUploadDialog } from '~/modules/attachment/table/use-attachments-upload-dialog';
 import type { AttachmentsRouteSearchParams } from '~/modules/attachment/types';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
-import { ConfirmText } from '~/modules/common/confirm-text';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { NamedText } from '~/modules/common/named-text';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
@@ -58,7 +58,7 @@ export function AttachmentsTableBar({
       className: 'max-w-xl',
       title: t('c:remove_resource', { resource: t('c:attachment_other').toLowerCase() }),
       description: (
-        <ConfirmText
+        <NamedText
           i18nKey="c:confirm.delete_counted_resource"
           values={{
             count: deletable.length,

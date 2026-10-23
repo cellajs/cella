@@ -7,7 +7,6 @@ import type { Connection, Tenant } from 'sdk';
 import { appConfig } from 'shared';
 import { z } from 'zod';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
-import { ConfirmText } from '~/modules/common/confirm-text';
 import { CopiedIcon } from '~/modules/common/copied-icon';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
@@ -15,6 +14,7 @@ import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { HelpText } from '~/modules/common/help-text';
+import { NamedText } from '~/modules/common/named-text';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -102,7 +102,7 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
   const openDeleteConfirm = (connection: Connection, event: MouseEvent<HTMLButtonElement>) => {
     const closeConfirm = () => dropdowner.getState().remove();
     dropdowner.getState().create(
-      <PopConfirm title={<ConfirmText i18nKey="c:delete_confirm.text" values={{ name: connection.displayName }} />}>
+      <PopConfirm title={<NamedText i18nKey="c:delete_confirm.text" name={connection.displayName} />}>
         <DeleteForm
           pending={false}
           onCancel={closeConfirm}

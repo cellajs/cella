@@ -5,12 +5,12 @@ import { hierarchy, seenWindowMs } from 'shared';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
 import { DownloadCell, ThumbnailCell } from '~/modules/attachment/table/attachment-cells';
 import { DescriptionCell, openDescriptionSheetFromCell } from '~/modules/attachment/table/description-cell';
-import { ConfirmText } from '~/modules/common/confirm-text';
 import { EditCellInput, externalEditorOptions, RenderExternalEditor } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { NamedText } from '~/modules/common/named-text';
 import { openPopConfirm } from '~/modules/common/popconfirm';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
@@ -104,7 +104,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
           onSelect: (row) => {
             const { remove } = dropdowner.getState();
             openPopConfirm(
-              <ConfirmText i18nKey="c:delete_confirm.text" values={{ name: row.name }} />,
+              <NamedText i18nKey="c:delete_confirm.text" name={row.name} />,
               <DeleteAttachments attachments={[row]} callback={remove} onCancel={remove} />,
             );
           },

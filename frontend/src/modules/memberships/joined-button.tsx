@@ -2,8 +2,8 @@ import { CheckIcon, XIcon } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MembershipBase } from 'sdk';
-import { ConfirmText } from '~/modules/common/confirm-text';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { NamedText } from '~/modules/common/named-text';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import type { LeaveChannelProps } from '~/modules/memberships/leave-channel-button';
 import { LeaveChannelForm } from '~/modules/memberships/leave-channel-form';
@@ -25,7 +25,7 @@ export function JoinedButton({ role, size = 'sm', className, ...props }: JoinedB
   const openLeaveConfirm = (event: MouseEvent<HTMLButtonElement>) => {
     const { create, remove } = dropdowner.getState();
     create(
-      <PopConfirm title={<ConfirmText i18nKey="c:confirm.leave_channel" values={{ name: channel.name }} />}>
+      <PopConfirm title={<NamedText i18nKey="c:confirm.leave_channel" name={channel.name} />}>
         <LeaveChannelForm
           {...props}
           callback={(args) => {

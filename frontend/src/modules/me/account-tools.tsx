@@ -9,9 +9,9 @@ import { enabledOAuthProviders, OAuthProviderIcon } from '~/modules/auth/oauth-p
 import { ssoEntryQueryOptions } from '~/modules/auth/query';
 import { ssoStartUrl } from '~/modules/auth/sso-providers';
 import { withStepUp } from '~/modules/auth/step-up';
-import { ConfirmText } from '~/modules/common/confirm-text';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { HelpText } from '~/modules/common/help-text';
+import { NamedText } from '~/modules/common/named-text';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
 import { ConnectedAppsList } from '~/modules/me/connected-apps-list';
@@ -204,7 +204,7 @@ export function AccountDeleteCard() {
       triggerRef: deleteButtonRef,
       className: 'md:max-w-xl',
       title: t('c:delete_account'),
-      description: <ConfirmText i18nKey="c:confirm.delete_account" values={{ email: user.email, appName: appConfig.name }} />,
+      description: <NamedText i18nKey="c:confirm.delete_account" values={{ email: user.email, appName: appConfig.name }} />,
     });
   };
 

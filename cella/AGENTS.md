@@ -29,17 +29,12 @@ Tech stack, file structure, data modeling, security and sync/offline design: [Ar
 
 Global chain in `backend/src/middlewares/app.ts`: log context → referrer override → secureHeaders → OpenTelemetry → pino logger → CSRF (skipped for requests carrying an API key; the service guard refuses browser origins itself) → client version → dynamic body-limit → gzip (GET only). No CORS middleware: the API is same-origin.
 
-Route-level guards in `backend/src/middlewares/guard/`:
+Route-level guards live in `backend/src/middlewares/guard/`; what each admits and the usual chains: [Permissions, Guards](./PERMISSIONS.md#guards). When wiring a route:
 
-- `userGuard`: validates the session and sets `ctx.var.user`, `ctx.var.memberships`, `ctx.var.actor`, `ctx.var.db` (baseDb). A route without `tenantGuard` reads across tenants: its handlers use `tenantRead()` for product entity queries.
-- `serviceGuard`: a secret API key (`Authorization: Bearer <slug>_sk_…` or `x-api-key`) or an access token from the app's authorization server; sets `ctx.var.actor` (a service account, or the consenting user masked by the token scopes). Never system admin.
-- `actorGuard`: a session, an API key or an access token, for routes whose operation takes `ActorContext`. `tokenGuard`: access tokens only (the MCP face), answering 401 with the RFC 9728 challenge.
 - Contexts, narrowest first: `DbContext` (a connection), `ActorContext` (actor + tenant, no user row), `OrgContext` (plus the organization), `UserContext` (a signed-in user, session fields only behind `userGuard`). Type an operation on the narrowest it needs. Every guard declares the OpenAPI `security` it accepts; `createXRoute` emits it per operation.
-- `tenantGuard`: verifies tenant membership, loads the tenant row, and sets `ctx.var.db = baseDb` and `ctx.var.tenantId`.
-- `orgGuard`: resolves the organization and verifies membership.
-- `publicGuard`: unauthenticated routes. Sets `ctx.var.db` to baseDb.
-- `stepUpGuard`: after `userGuard` on account-security routes: the session must have proven its user's presence again recently, never an impersonation; else 403 `step_up_required` naming the methods. The routes, the proofs and the window: [Authentication](./AUTHENTICATION.md#step-up).
-- Also: `sysAdminGuard` (never an impersonation: 403 `impersonation_forbidden` before the role check), `relatableGuard`.
+- Mount `actorGuard` only on routes whose operations take `ActorContext`: a key or token sets no `ctx.var.user`.
+- `orgGuard` runs after `tenantGuard`, and both after the guard that sets the actor.
+- A route without `tenantGuard` reads across tenants: its handlers use `tenantRead()` for product entity queries.
 
 ### Database access patterns
 

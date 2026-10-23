@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next';
 import type { ApiKey, ServiceAccount } from 'sdk';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useRelativeDate } from '~/hooks/use-relative-date';
-import { ConfirmText } from '~/modules/common/confirm-text';
 import { CopiedIcon } from '~/modules/common/copied-icon';
 import { DateTooltip } from '~/modules/common/date-tooltip';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { NamedText } from '~/modules/common/named-text';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { apiKeysQueryOptions, useRevokeApiKeyMutation } from '~/modules/service-accounts/query';
@@ -40,7 +40,7 @@ export function ServiceAccountTile({ account, path, secrets }: ServiceAccountTil
   const openRevokeConfirm = (apiKey: ApiKey, event: MouseEvent<HTMLButtonElement>) => {
     const { create, remove } = dropdowner.getState();
     create(
-      <PopConfirm title={<ConfirmText i18nKey="c:confirm.revoke_api_key" values={{ name: apiKey.name }} />}>
+      <PopConfirm title={<NamedText i18nKey="c:confirm.revoke_api_key" name={apiKey.name} />}>
         <DeleteForm
           label="c:revoke"
           icon={UnplugIcon}

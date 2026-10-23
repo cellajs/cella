@@ -3,12 +3,12 @@ import { MailIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { ConfirmText } from '~/modules/common/confirm-text';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
+import { NamedText } from '~/modules/common/named-text';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { channelOrganizationId } from '~/modules/entities/channel-organization-id';
@@ -73,10 +73,7 @@ export function MembersTableBar({
         className: 'max-w-xl',
         title: t('c:remove_resource', { resource: t('c:member_other').toLowerCase() }),
         description: (
-          <ConfirmText
-            i18nKey="c:confirm.remove_members"
-            values={{ entityType: channel.entityType, emails: selected.map((member) => member.email).join(', ') }}
-          />
+          <NamedText i18nKey="c:confirm.remove_members" name={channel.name} values={{ emails: selected.map((member) => member.email).join(', ') }} />
         ),
       },
     );
@@ -93,7 +90,7 @@ export function MembersTableBar({
       container: { ref: inviteContainerRef, overlay: !isSheet },
       title: t('c:invite'),
       titleContent: <UnsavedBadge title={t('c:invite')} />,
-      description: t('c:invite_members.text'),
+      description: <NamedText i18nKey="c:invite_members.text" name={channel.name} />,
     });
   };
 
