@@ -39,7 +39,7 @@ export function SessionsList() {
     <>
       {revocable.length > 0 && (
         <Button
-          className="max-xs:w-full"
+          className="max-sm:w-full"
           variant="plain"
           size="sm"
           loading={isPending && variables?.length === revocable.length}

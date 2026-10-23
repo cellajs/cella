@@ -21,7 +21,6 @@ import {
   ComboboxList,
   ComboboxPrimitive,
 } from '~/modules/ui/combobox';
-import { ScrollArea } from '~/modules/ui/scroll-area';
 import { usersListQueryOptions } from '~/modules/user/query';
 
 interface UserComboboxProps {
@@ -121,12 +120,12 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
         <ChevronsUpDownIcon className="absolute right-0 mx-2 opacity-50" />
       </ComboboxPrimitive.Trigger>
 
-      <ComboboxContent className="p-0">
+      <ComboboxContent>
         <ComboboxSearchInput value={searchQuery} isSearching={isFetching} placeholder={t('c:placeholder.type_input', { inputLabel: nameLabel })} />
-        <ComboboxList className="h-full">
+        <ComboboxList>
           <AnimatePresence mode="wait">
             {!isFetching && !items.length ? (
-              <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={variants} className="h-full">
+              <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={variants}>
                 {debouncedSearchQuery.length ? (
                   <ComboboxEmpty>
                     <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleProps={{ resource: t('c:user_other').toLowerCase() }} />
@@ -139,31 +138,29 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
               </motion.div>
             ) : (
               items.length > 0 && (
-                <motion.div key="results" initial="hidden" animate="visible" exit="exit" variants={variants} className="max-h-[30vh] overflow-y-auto">
-                  <ScrollArea>
-                    {items.map(({ id, name, email, entityType, thumbnailUrl }) => {
-                      const alreadyMember = existingMemberIds.has(id);
-                      return (
-                        <ComboboxItem key={id} value={email} disabled={alreadyMember} className="group/user-item justify-between">
-                          <div className="flex items-center gap-2">
-                            <EntityAvatar type={entityType} className="size-8" id={id} name={name} url={thumbnailUrl} />
-                            <span className="link-decoration group-active/user-item:link-decoration-strong truncate font-medium group-hover/user-item:underline">
-                              {isMobile ? email : name}
-                            </span>
-                          </div>
+                <motion.div key="results" initial="hidden" animate="visible" exit="exit" variants={variants}>
+                  {items.map(({ id, name, email, entityType, thumbnailUrl }) => {
+                    const alreadyMember = existingMemberIds.has(id);
+                    return (
+                      <ComboboxItem key={id} value={email} disabled={alreadyMember} className="group/user-item justify-between">
+                        <div className="flex items-center gap-2">
+                          <EntityAvatar type={entityType} className="size-8" id={id} name={name} url={thumbnailUrl} />
+                          <span className="link-decoration group-active/user-item:link-decoration-strong truncate font-medium group-hover/user-item:underline">
+                            {isMobile ? email : name}
+                          </span>
+                        </div>
 
-                          <div className="flex min-w-0 items-center gap-2">
-                            <Badge size="sm" variant="plain" className="hidden group-data-disabled/user-item:flex">
-                              <UserIcon />
-                              <span className="max-sm:hidden">{t('c:already_member')}</span>
-                            </Badge>
-                            <span className="group-data-disabled/user-item:hidden group-data-selected/user-item:hidden max-sm:hidden">{email}</span>
-                            <ComboboxItemIndicator />
-                          </div>
-                        </ComboboxItem>
-                      );
-                    })}
-                  </ScrollArea>
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Badge size="sm" variant="plain" className="hidden group-data-disabled/user-item:flex">
+                            <UserIcon />
+                            <span className="max-sm:hidden">{t('c:already_member')}</span>
+                          </Badge>
+                          <span className="group-data-disabled/user-item:hidden group-data-selected/user-item:hidden max-sm:hidden">{email}</span>
+                          <ComboboxItemIndicator />
+                        </div>
+                      </ComboboxItem>
+                    );
+                  })}
                 </motion.div>
               )
             )}

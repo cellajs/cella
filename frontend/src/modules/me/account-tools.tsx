@@ -114,7 +114,7 @@ export function AccountAuthenticationCard() {
           <>
             <AuthSectionTitle title={t('c:mfa')} help={t('c:mfa.text')}>
               {!user.mfaRequired && (
-                <Badge size="xs" variant="outline" className="border-success text-success max-sm:hidden">
+                <Badge size="xs" variant="success" soft className="max-sm:hidden">
                   {t('c:recommended')}
                 </Badge>
               )}

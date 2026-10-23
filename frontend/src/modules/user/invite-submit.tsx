@@ -9,13 +9,13 @@ import { type ChannelEntityType, hierarchy } from 'shared';
 import type z from 'zod';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
+import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
-import { Button } from '~/modules/ui/button';
 import { FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { formResolver } from '~/utils/form-resolver';
 
@@ -118,13 +118,8 @@ export function InviteFormFooter({ form, channel, count, loading, onCancel, chil
           <SendIcon />
           {t('c:invite')}
         </SubmitButton>
+        {!children && <CancelButton dirty={form.isDirty} onClick={onCancel} />}
         {children}
-
-        {!children && form.isDirty && (
-          <Button type="reset" variant="secondary" onClick={onCancel}>
-            {t('c:cancel')}
-          </Button>
-        )}
       </div>
     </>
   );
