@@ -8,9 +8,9 @@ import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { tenantsListQueryOptions, useTenantUpdateMutation } from '~/modules/tenants/query';
-import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-schemas';
 import { TenantsTableBar } from '~/modules/tenants/table/tenants-bar';
 import { useColumns } from '~/modules/tenants/table/tenants-columns';
+import type { TenantsRouteSearchParams } from '~/modules/tenants/types';
 
 function rowKeyGetter(row: Tenant) {
   return row.id;

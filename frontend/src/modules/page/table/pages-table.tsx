@@ -12,7 +12,7 @@ import { type DocPage, docPages } from '~/modules/page/content';
 import { PageRowPreview } from '~/modules/page/table/page-row-preview';
 import { maxPageDepth, type PageTreeRow, pagesRowHeight } from '~/modules/page/table/page-tree';
 import { PagesTableBar } from '~/modules/page/table/pages-bar';
-import { usePagesTableColumns } from '~/modules/page/table/pages-columns';
+import { useColumns } from '~/modules/page/table/pages-columns';
 import type { PagesRouteSearchParams } from '~/modules/page/types';
 import { canEditDocs, type DocEditOps, editDocPage } from '~/modules/page/utils/edit-doc-page';
 
@@ -34,7 +34,7 @@ function PagesTable() {
 
   const { q } = search;
 
-  const [columns, setColumns] = usePagesTableColumns();
+  const [columns, setColumns] = useColumns();
 
   const [pages, setPages] = useState<DocPage[]>(docPages);
   const pagesRef = useRef(pages);

@@ -216,7 +216,7 @@ export const AttachmentsFiltered: Story = {
 export const Tenants: Story = {
   args: { bar: 'tenants', q: 'x' },
   play: async ({ canvasElement, args }) => {
-    await expect(searchInput(canvasElement, 'tenant-search')).not.toBeNull();
+    await expect(searchInput(canvasElement, 'tenantSearch')).not.toBeNull();
     await expectReset(canvasElement, args, { q: '' });
     await expect(args.clearSelection).not.toHaveBeenCalled();
   },

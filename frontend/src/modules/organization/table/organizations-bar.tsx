@@ -38,7 +38,7 @@ export function OrganizationsTableBar({
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '' } });
 
   const openNewsletterSheet = () => {
-    const ids = selected.map((o) => o.id);
+    const ids = selected.map(({ id }) => id);
     const newsletterTabs: SheetTab[] = [
       {
         id: 'write',

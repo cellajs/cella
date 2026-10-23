@@ -15,12 +15,12 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const JoinedButton = lazyNamed(() => import('~/modules/memberships/joined-button'), 'JoinedButton');
 
-interface Props {
+interface OrganizationPageProps {
   organizationId: string;
   tenantId: string;
 }
 
-function OrganizationPage({ organizationId, tenantId }: Props) {
+function OrganizationPage({ organizationId, tenantId }: OrganizationPageProps) {
   const { t } = useTranslation();
 
   const orgQueryOptions = organizationQueryOptions(organizationId, tenantId);

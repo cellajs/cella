@@ -21,7 +21,7 @@ import { useSelfCreateTenantMutation } from '~/modules/tenants/query';
 import { Form } from '~/modules/ui/field';
 import { formResolver } from '~/utils/form-resolver';
 
-interface Props {
+interface CreateOrganizationFormProps {
   /** Closes the create dialog once the organization is saved. */
   dialog?: boolean;
   children?: React.ReactNode;
@@ -35,7 +35,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const formContainerId = 'create-organization';
 
-export function CreateOrganizationForm({ dialog: isDialog, children, callback }: Props) {
+export function CreateOrganizationForm({ dialog: isDialog, children, callback }: CreateOrganizationFormProps) {
   const { t } = useTranslation();
   const { nextStep } = useStepper();
   const nameLabel = t('c:name').toLowerCase();

@@ -3,7 +3,7 @@ import { attachmentsRouteSearchParamsSchema, attachmentsSearchDefaults } from '~
 import { membersRouteSearchParamsSchema, membersSearchDefaults } from '~/modules/memberships/search-params-schemas';
 import { organizationsRouteSearchParamsSchema, organizationsSearchDefaults } from '~/modules/organization/search-params-schemas';
 import { requestsRouteSearchParamsSchema, requestsSearchDefaults } from '~/modules/requests/search-params-schemas';
-import { tenantsRouteSearchParamsSchemas, tenantsSearchDefaults } from '~/modules/tenants/search-params-schemas';
+import { tenantsRouteSearchParamsSchema, tenantsSearchDefaults } from '~/modules/tenants/search-params-schemas';
 import { usersRouteSearchParamsSchema, usersSearchDefaults } from '~/modules/user/search-params-schemas';
 
 /** Ensure URL-stripping defaults stay aligned with regenerated schemas that restore them on read. */
@@ -12,7 +12,7 @@ const cases: Array<{ name: string; parse: () => Record<string, unknown>; default
   { name: 'members', parse: () => membersRouteSearchParamsSchema.parse({}), defaults: membersSearchDefaults },
   { name: 'organizations', parse: () => organizationsRouteSearchParamsSchema.parse({}), defaults: organizationsSearchDefaults },
   { name: 'requests', parse: () => requestsRouteSearchParamsSchema.parse({}), defaults: requestsSearchDefaults },
-  { name: 'tenants', parse: () => tenantsRouteSearchParamsSchemas.parse({}), defaults: tenantsSearchDefaults },
+  { name: 'tenants', parse: () => tenantsRouteSearchParamsSchema.parse({}), defaults: tenantsSearchDefaults },
   { name: 'users', parse: () => usersRouteSearchParamsSchema.parse({}), defaults: usersSearchDefaults },
 ];
 

@@ -115,7 +115,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
     );
   };
 
-  const sso = (connections ?? []).filter((connection) => connection.kind === 'sso');
+  const ssoConnections = (connections ?? []).filter((connection) => connection.kind === 'sso');
 
   return (
     <ToolCard label="c:connection_other" description={t('c:connections.text')} unsaved id={formContainerId} className={className}>
@@ -123,7 +123,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
         <Spinner />
       ) : (
         <div className="flex flex-col gap-6 text-sm">
-          {sso.map((connection) => (
+          {ssoConnections.map((connection) => (
             <div key={connection.id} className="flex flex-col gap-3 rounded-md border p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold">{connection.displayName}</span>
@@ -186,7 +186,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
             </div>
           ))}
 
-          {sso.length === 0 && federationItems.length > 0 && (
+          {ssoConnections.length === 0 && federationItems.length > 0 && (
             <Form {...form}>
               <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
                 <FormField

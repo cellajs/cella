@@ -21,9 +21,9 @@ function ViewPage({ slug }: ViewPageProps) {
   const Content = getDocPageComponent(slug);
 
   // The aside lists h2 only; deeper levels stay reachable through anchors.
-  const tocHeadings = useMemo(() => (page?.headings ?? []).filter((h) => h.depth === 2), [page]);
+  const tocHeadings = useMemo(() => (page?.headings ?? []).filter((heading) => heading.depth === 2), [page]);
   // The page section comes first, so the intro above the first heading counts as the page itself
-  const spyIds = useMemo(() => [pageSectionId, ...tocHeadings.map((h) => h.id)], [tocHeadings]);
+  const spyIds = useMemo(() => [pageSectionId, ...tocHeadings.map((heading) => heading.id)], [tocHeadings]);
 
   if (!page || !Content) throw notFound();
 
@@ -73,16 +73,16 @@ function PageUpdatedAt({ updatedAt }: { updatedAt: string }) {
 
 function ChildPagesList({ parentSlug }: { parentSlug: string }) {
   const { t } = useTranslation();
-  const children = getChildDocPages(parentSlug);
+  const childPages = getChildDocPages(parentSlug);
 
-  if (children.length === 0) {
+  if (childPages.length === 0) {
     return <p className="text-muted-foreground text-sm">{t('c:no_child_pages')}</p>;
   }
 
   return (
     <div className="not-prose mt-6 grid gap-3">
-      {children.map((child) => (
-        <DocsTileCard key={child.id} tile={{ label: child.name, description: child.description, to: `/docs/page/${child.id}` }} />
+      {childPages.map((page) => (
+        <DocsTileCard key={page.id} tile={{ label: page.name, description: page.description, to: `/docs/page/${page.id}` }} />
       ))}
     </div>
   );

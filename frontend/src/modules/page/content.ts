@@ -40,7 +40,7 @@ const docsConfigSchema = z.object({
   sections: z
     .array(docsSectionSchema)
     .default([])
-    .refine((sections) => new Set(sections.map((s) => s.id)).size === sections.length, 'section ids must be unique'),
+    .refine((sections) => new Set(sections.map((section) => section.id)).size === sections.length, 'section ids must be unique'),
 });
 
 export type DocsConfig = z.infer<typeof docsConfigSchema>;
@@ -117,7 +117,7 @@ function buildIndex(): { pages: DocPage[]; loaders: Map<string, () => Promise<Co
     const result = frontmatterSchema.safeParse(entry.frontmatter);
     if (!result.success) throw new Error(`Docs content: invalid frontmatter in ${path}: ${result.error.message}`);
     slugs.add(slug);
-    const headings = entry.headings.map((h) => ({ ...h, id: h.id.replace(spyPrefix, '') }));
+    const headings = entry.headings.map((heading) => ({ ...heading, id: heading.id.replace(spyPrefix, '') }));
     parsed.push({ slug, path, meta: result.data, headings });
   }
 

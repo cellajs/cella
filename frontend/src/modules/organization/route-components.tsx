@@ -16,8 +16,8 @@ const orgToolApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/$
 
 function useRouteOrganization() {
   // Route context is rebuilt on every navigation, search-only ones included: select primitives so URL writes don't re-render the page.
-  const organizationId = orgRouteApi.useRouteContext({ select: (c) => c.organization.id });
-  const tenantId = orgRouteApi.useRouteContext({ select: (c) => c.tenantId });
+  const organizationId = orgRouteApi.useRouteContext({ select: (context) => context.organization.id });
+  const tenantId = orgRouteApi.useRouteContext({ select: (context) => context.tenantId });
   return useSuspenseQuery(organizationQueryOptions(organizationId, tenantId)).data;
 }
 

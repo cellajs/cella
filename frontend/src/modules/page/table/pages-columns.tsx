@@ -8,7 +8,7 @@ import { useColumnVisibility } from '~/modules/common/data-table/use-column-visi
 import { docRenderModes } from '~/modules/page/content';
 import type { PageTreeRow } from '~/modules/page/table/page-tree';
 import { canEditDocs } from '~/modules/page/utils/edit-doc-page';
-import { RenderModeLabel } from '~/modules/page/utils/render-mode';
+import { RenderModeLabel } from '~/modules/page/utils/render-mode-label';
 import { Badge } from '~/modules/ui/badge';
 import { dateShort } from '~/utils/date-short';
 import { tw } from '~/utils/tw';
@@ -20,10 +20,10 @@ const publishStatuses = ['published', 'draft'] as const;
 type PublishStatus = (typeof publishStatuses)[number];
 
 /** Pages-table columns; editing is development-only and the dev server persists it to MDX frontmatter. */
-export function usePagesTableColumns() {
+export function useColumns() {
   const { t } = useTranslation();
 
-  const configs: ColumnOrColumnGroup<PageTreeRow>[] = [
+  const columns: ColumnOrColumnGroup<PageTreeRow>[] = [
     ...(canEditDocs
       ? [
           {
@@ -71,7 +71,7 @@ export function usePagesTableColumns() {
       ...(canEditDocs && {
         editable: true,
         renderEditCell: ({ row, onRowChange }) => (
-          <EditCellInput value={row.name} onChange={(e) => onRowChange({ ...row, name: e.target.value })} autoFocus />
+          <EditCellInput value={row.name} onChange={(event) => onRowChange({ ...row, name: event.target.value })} autoFocus />
         ),
       }),
     },
@@ -131,5 +131,5 @@ export function usePagesTableColumns() {
   ];
 
   // Stable array identity: DataGrid passes it to memoized Row/Cell, and a fresh array re-renders every visible row.
-  return useColumnVisibility(configs);
+  return useColumnVisibility(columns);
 }

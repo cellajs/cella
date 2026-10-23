@@ -25,7 +25,7 @@ const formSchema = zUpdateTenantBody.pick({ name: true, status: true, authStrate
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface Props {
+interface UpdateTenantFormProps {
   tenant: Tenant;
   sheet?: boolean;
   callback?: (args: CallbackArgs<Tenant>) => void;
@@ -47,7 +47,7 @@ const signInMethods: { value: SignInMethod; labelKey?: TKey; label?: string }[] 
     : []),
 ];
 
-export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
+export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: UpdateTenantFormProps) {
   const { t } = useTranslation();
   const { mutate, isPending } = useTenantUpdateMutation();
 

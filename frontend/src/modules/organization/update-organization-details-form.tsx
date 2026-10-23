@@ -26,12 +26,12 @@ import { formResolver } from '~/utils/form-resolver';
 const formSchema = zUpdateOrganizationBody;
 
 type FormValues = z.infer<typeof formSchema>;
-interface Props {
+interface UpdateOrganizationDetailsFormProps {
   organization: EnrichedOrganization;
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-export function UpdateOrganizationDetailsForm({ organization, callback }: Props) {
+export function UpdateOrganizationDetailsForm({ organization, callback }: UpdateOrganizationDetailsFormProps) {
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
 

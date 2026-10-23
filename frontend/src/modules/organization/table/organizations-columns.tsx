@@ -25,7 +25,7 @@ const descendants = hierarchy.getOrderedDescendants('organization');
 const lastChannel = descendants.filter(isChannel).at(-1);
 const firstProduct = descendants.find(isProduct);
 
-export const openUpdateSheet = (organization: Organization, triggerRef: TriggerRef) =>
+export const openUpdateOrganizationSheet = (organization: Organization, triggerRef: TriggerRef) =>
   openEditSheet({
     id: 'update-organization',
     resource: 'c:organization',
@@ -70,7 +70,7 @@ export const useColumns = () => {
         icon: PencilIcon,
         onSelect: (row, triggerRef) => {
           dropdowner.getState().remove();
-          openUpdateSheet(row, triggerRef);
+          openUpdateOrganizationSheet(row, triggerRef);
         },
       },
       {

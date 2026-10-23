@@ -17,17 +17,17 @@ export interface DocEditOps {
 export async function editDocPage(slug: string, ops: DocEditOps): Promise<void> {
   if (!canEditDocs) return;
   try {
-    const res = await fetch('/__docs-edit', {
+    const response = await fetch('/__docs-edit', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ slug, ops }),
     });
-    if (!res.ok) {
-      const detail = await res.json().catch(() => null);
-      throw new Error(detail?.error ?? `Request failed (${res.status})`);
+    if (!response.ok) {
+      const detail = await response.json().catch(() => null);
+      throw new Error(detail?.error ?? `Request failed (${response.status})`);
     }
-  } catch (err) {
-    toaster.error(err instanceof Error ? err.message : 'Failed to save page');
-    throw err;
+  } catch (error) {
+    toaster.error(error instanceof Error ? error.message : 'Failed to save page');
+    throw error;
   }
 }

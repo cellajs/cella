@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { BaseEntityGrid, ChannelTile, EntityGridBar } from '~/modules/entities/entity-grid';
+import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { useUserStore } from '~/modules/user/user-store';
-import { organizationsListQueryOptions } from './query';
 
 type OrgSearch = Parameters<typeof organizationsListQueryOptions>[0];
 
-interface Props {
+interface OrganizationsGridProps {
   fixedQuery?: Partial<OrgSearch>;
   focusView?: boolean;
   saveDataInSearch?: boolean;
@@ -15,7 +15,7 @@ interface Props {
   limitedView?: boolean;
 }
 
-export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, limitedView: initialLimitedView }: Props) {
+export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, limitedView: initialLimitedView }: OrganizationsGridProps) {
   const [expanded, setExpanded] = useState(false);
   const limitedView = initialLimitedView && !expanded;
 

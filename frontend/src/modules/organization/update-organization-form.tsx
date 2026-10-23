@@ -31,13 +31,13 @@ const formSchema = zUpdateOrganizationBody.omit({ welcomeText: true }).extend({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-interface Props {
+interface UpdateOrganizationFormProps {
   organization: Organization;
   sheet?: boolean;
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-export function UpdateOrganizationForm({ organization, callback, sheet: isSheet }: Props) {
+export function UpdateOrganizationForm({ organization, callback, sheet: isSheet }: UpdateOrganizationFormProps) {
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
   const nameLabel = t('c:name').toLowerCase();

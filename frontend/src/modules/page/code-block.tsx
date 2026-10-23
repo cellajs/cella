@@ -6,12 +6,12 @@ import { Button } from '~/modules/ui/button';
 
 /** Build-time Shiki-highlighted `<pre>` (vite.config.ts) with a hover copy button that reads the rendered text. */
 export function CodeBlock({ children, ...props }: ComponentProps<'pre'>) {
-  const ref = useRef<HTMLPreElement>(null);
+  const preRef = useRef<HTMLPreElement>(null);
   const { copyToClipboard, copied } = useCopyToClipboard();
 
   return (
     <div className="group relative my-5">
-      <pre ref={ref} {...props}>
+      <pre ref={preRef} {...props}>
         {children}
       </pre>
       <Button
@@ -19,7 +19,7 @@ export function CodeBlock({ children, ...props }: ComponentProps<'pre'>) {
         size="micro"
         tabIndex={-1}
         aria-label="Copy code"
-        onClick={() => copyToClipboard(ref.current?.textContent ?? '')}
+        onClick={() => copyToClipboard(preRef.current?.textContent ?? '')}
         className="absolute top-2 right-2 size-7 border border-border bg-background/80 p-0 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
       >
         <CopiedIcon copied={copied} icon={CopyIcon} />

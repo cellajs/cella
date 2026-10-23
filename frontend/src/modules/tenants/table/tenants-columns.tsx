@@ -15,7 +15,7 @@ import { statusOptions, UpdateTenantForm } from '~/modules/tenants/update-tenant
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 
-export const openUpdateSheet = (tenant: Tenant, triggerRef: TriggerRef) =>
+export const openUpdateTenantSheet = (tenant: Tenant, triggerRef: TriggerRef) =>
   openEditSheet({
     id: 'update-tenant',
     resource: 'c:tenant',
@@ -47,7 +47,7 @@ export const useColumns = () => {
       // Narrow enough on mobile for the three columns to fit a phone without sideways scroll.
       modes: { mobile: { minWidth: 120 } },
       renderCell: ({ row, tabIndex }) => (
-        <Button variant="cell" size="cell" tabIndex={tabIndex} onClick={(event) => openUpdateSheet(row, { current: event.currentTarget })}>
+        <Button variant="cell" size="cell" tabIndex={tabIndex} onClick={(event) => openUpdateTenantSheet(row, { current: event.currentTarget })}>
           <span className="group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong truncate font-medium group-hover/cell-button:underline">
             {row.name || '-'}
           </span>
