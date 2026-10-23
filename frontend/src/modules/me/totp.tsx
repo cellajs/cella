@@ -55,12 +55,12 @@ export function Totp() {
       {hasTotp && <ConnectedStatus icon={<RotateCcwKeyIcon />}>{t('c:totp_activated')}</ConnectedStatus>}
       {hasTotp ? (
         <Button key="deleteTotp" type="button" variant="plain" loading={isPending} disabled={user.mfaRequired} onClick={handleDeleteTotp}>
-          <TrashIcon className="size-4" />
+          <TrashIcon />
           <span>{t('c:delete')}</span>
         </Button>
       ) : (
         <Button key="createTotp" type="button" variant="plain" onClick={openTotpSetup}>
-          <RotateCcwKeyIcon className="size-4" />
+          <RotateCcwKeyIcon />
           <span>{t('c:totp_setup')}</span>
         </Button>
       )}

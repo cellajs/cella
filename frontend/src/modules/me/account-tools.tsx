@@ -27,15 +27,12 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { useCurrentUser } from '~/modules/user/user-store';
-import { tw } from '~/utils/tw';
-
-const cardClass = tw('mx-auto sm:w-full');
 
 export function AccountGeneralCard() {
   const user = useCurrentUser();
 
   return (
-    <ToolCard label="c:general" unsaved id="update-user" className={cardClass}>
+    <ToolCard label="c:general" unsaved id="update-user">
       <UpdateUserForm user={user} />
     </ToolCard>
   );
@@ -45,7 +42,7 @@ export function AccountSessionsCard() {
   const { t } = useTranslation();
 
   return (
-    <ToolCard label="c:sessions" description={t('c:sessions.text')} className={cardClass}>
+    <ToolCard label="c:sessions" description={t('c:sessions.text')}>
       <SessionsList />
     </ToolCard>
   );
@@ -55,7 +52,7 @@ export function AccountConnectedAppsCard() {
   const { t } = useTranslation();
 
   return (
-    <ToolCard label="c:connected_apps" description={t('c:connected_apps.text')} className={cardClass}>
+    <ToolCard label="c:connected_apps" description={t('c:connected_apps.text')}>
       <ConnectedAppsList />
     </ToolCard>
   );
@@ -111,7 +108,7 @@ export function AccountAuthenticationCard() {
   };
 
   return (
-    <ToolCard label="c:authentication" description={t('c:authentication.text')} className={cardClass}>
+    <ToolCard label="c:authentication" description={t('c:authentication.text')}>
       <div className="text-sm">
         {isStrategyEnabled('passkey') && isStrategyEnabled('totp') && (
           <>
@@ -215,7 +212,7 @@ export function AccountDeleteCard() {
   };
 
   return (
-    <ToolCard label="c:delete_account" description={t('c:delete_account.text', { appName: appConfig.name })} className={cardClass}>
+    <ToolCard label="c:delete_account" description={t('c:delete_account.text', { appName: appConfig.name })}>
       <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
         <TrashIcon />
         {t('c:delete_account')}

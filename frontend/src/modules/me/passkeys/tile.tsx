@@ -27,8 +27,8 @@ export function PasskeyTile({ passkey, onDelete, loading, onlyPasskeyLeft }: Pas
         <div className="flex items-start gap-1 max-md:flex-col md:gap-2">
           <span className="text-sm max-sm:hidden">{passkey.deviceName || t('c:unknown_device')}</span>
           <TooltipButton toolTipContent={passkey.nameOnDevice} side="top">
-            <Badge size="xs" variant="outline" className="max-w-48 truncate">
-              <KeyRoundIcon className="size-3 shrink-0" />
+            <Badge size="xs" variant="outline" className="max-w-48">
+              <KeyRoundIcon className="shrink-0" />
               <span className="truncate">{passkey.nameOnDevice}</span>
             </Badge>
           </TooltipButton>
@@ -46,14 +46,7 @@ export function PasskeyTile({ passkey, onDelete, loading, onlyPasskeyLeft }: Pas
         </>
       }
       action={
-        <Button
-          variant="plain"
-          size="sm"
-          className="ml-auto text-sm"
-          loading={loading}
-          disabled={user.mfaRequired && onlyPasskeyLeft}
-          onClick={() => onDelete(passkey.id)}
-        >
+        <Button variant="plain" size="sm" loading={loading} disabled={user.mfaRequired && onlyPasskeyLeft} onClick={() => onDelete(passkey.id)}>
           <TrashIcon />
           <span className="max-md:hidden">{t('c:delete')}</span>
         </Button>

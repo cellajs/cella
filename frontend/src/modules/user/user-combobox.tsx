@@ -91,12 +91,7 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
       >
         {value?.length ? (
           value.map((email) => (
-            <Badge
-              size="sm"
-              variant="secondary"
-              key={email}
-              className="max-w-60 data-disabled:bg-muted-foreground data-fixed:bg-muted-foreground data-disabled:text-muted-foreground/50 data-fixed:text-muted data-disabled:hover:bg-muted-foreground data-fixed:hover:bg-muted-foreground"
-            >
+            <Badge size="sm" variant="secondary" key={email} className="max-w-60">
               <span className="truncate">{email}</span>
               {/* biome-ignore lint/a11y/useSemanticElements: a native <button> cannot be nested inside the trigger <button>; this is an intentional removable-chip control. */}
               <span
@@ -116,19 +111,19 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
                   handleUnselect(email);
                 }}
               >
-                <XIcon className="size-4 opacity-50 hover:opacity-100" />
+                <XIcon className="opacity-50 hover:opacity-100" />
               </span>
             </Badge>
           ))
         ) : (
           <span className="ml-1 text-sm">{t('c:search_users')}</span>
         )}
-        <ChevronsUpDownIcon className="absolute right-0 mx-2 size-4 shrink-0 opacity-50" />
+        <ChevronsUpDownIcon className="absolute right-0 mx-2 opacity-50" />
       </ComboboxPrimitive.Trigger>
 
       <ComboboxContent className="p-0">
         <ComboboxSearchInput value={searchQuery} isSearching={isFetching} placeholder={t('c:placeholder.type_input', { inputLabel: nameLabel })} />
-        <ComboboxList className="h-full px-1">
+        <ComboboxList className="h-full">
           <AnimatePresence mode="wait">
             {!isFetching && !items.length ? (
               <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={variants} className="h-full">
@@ -149,29 +144,20 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
                     {items.map(({ id, name, email, entityType, thumbnailUrl }) => {
                       const alreadyMember = existingMemberIds.has(id);
                       return (
-                        <ComboboxItem
-                          key={id}
-                          value={email}
-                          disabled={alreadyMember}
-                          data-was-selected={value.some((u) => u === email)}
-                          data-already-member={alreadyMember}
-                          className="group w-full justify-between"
-                        >
-                          <div className="flex items-center gap-2 outline-0 ring-0">
+                        <ComboboxItem key={id} value={email} disabled={alreadyMember} className="group/user-item justify-between">
+                          <div className="flex items-center gap-2">
                             <EntityAvatar type={entityType} className="size-8" id={id} name={name} url={thumbnailUrl} />
-                            <span className="link-decoration group-active:link-decoration-strong truncate font-medium group-hover:underline group-data-[already-member=true]:no-underline">
+                            <span className="link-decoration group-active/user-item:link-decoration-strong truncate font-medium group-hover/user-item:underline">
                               {isMobile ? email : name}
                             </span>
                           </div>
 
                           <div className="flex min-w-0 items-center gap-2">
-                            <Badge size="sm" variant="plain" className="hidden gap-1 group-data-[already-member=true]:flex">
+                            <Badge size="sm" variant="plain" className="hidden group-data-disabled/user-item:flex">
                               <UserIcon />
                               <span className="max-sm:hidden">{t('c:already_member')}</span>
                             </Badge>
-                            <span className="group-data-[already-member=true]:hidden group-data-[was-selected=true]:hidden max-sm:hidden">
-                              {email}
-                            </span>
+                            <span className="group-data-disabled/user-item:hidden group-data-selected/user-item:hidden max-sm:hidden">{email}</span>
                             <ComboboxItemIndicator />
                           </div>
                         </ComboboxItem>

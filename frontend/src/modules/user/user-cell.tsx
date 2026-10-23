@@ -3,6 +3,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { Button } from '~/modules/ui/button';
 import { useOpenUserSheet } from '~/modules/user/use-open-user-sheet';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 interface UserCellProps {
   user: UserMinimalBase;
@@ -14,7 +15,7 @@ interface UserCellProps {
 }
 
 // DataGrid sets data-is-compact on its root/merged slots; keep the name accessible while hiding it visually.
-const compactUserNameClass = 'in-data-[is-compact=true]:sr-only';
+const compactUserNameClass = tw('in-data-[is-compact=true]:sr-only');
 
 export function UserCell({ user, tabIndex, compactable, className, readOnly }: UserCellProps) {
   const openUserSheet = useOpenUserSheet();
@@ -26,7 +27,7 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: U
     return (
       <div className={cn('flex items-center gap-2', className)} {...compactTooltip}>
         <EntityAvatar type="user" className="size-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
-        <span className={cn('truncate', { [compactUserNameClass]: compactable })}>{user.name || '-'}</span>
+        <span className={cn('truncate', compactable && compactUserNameClass)}>{user.name || '-'}</span>
       </div>
     );
   }
@@ -45,7 +46,7 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: U
       <span
         className={cn(
           'group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong truncate group-hover/cell-button:underline',
-          { [compactUserNameClass]: compactable },
+          compactable && compactUserNameClass,
         )}
       >
         {user.name || '-'}

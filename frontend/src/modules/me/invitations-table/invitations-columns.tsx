@@ -33,7 +33,7 @@ export const useColumns = () => {
       key: 'entityType',
       name: t('c:type'),
 
-      renderCell: ({ row }) => <span>{t(`c:${row.entity.entityType}`)}</span>,
+      renderCell: ({ row }) => t(`c:${row.entity.entityType}`),
     },
     {
       key: 'role',
@@ -41,10 +41,7 @@ export const useColumns = () => {
 
       width: 100,
       placeholderValue: '-',
-      renderCell: ({ row }) =>
-        row.inactiveMembership.role ? (
-          <div className="group relative inline-flex size-full items-center gap-1">{t(`c:${row.inactiveMembership.role}`)}</div>
-        ) : null,
+      renderCell: ({ row }) => (row.inactiveMembership.role ? t(`c:${row.inactiveMembership.role}`) : null),
     },
     dateColumn<Invitation>('createdAt', { name: t('c:invited_at'), sortable: false, get: (row) => row.inactiveMembership.createdAt }),
     {

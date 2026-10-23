@@ -56,7 +56,7 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
           <div className="flex items-center gap-2 empty:hidden">
             {session.type === 'mfa' && (
               <Badge size="xs" variant="outline" className="border-success text-success">
-                <ShieldCheckIcon className="size-3" />
+                <ShieldCheckIcon />
                 {t('c:mfa_short')}
               </Badge>
             )}
@@ -121,7 +121,7 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
       action={
         !session.isCurrent &&
         onRevoke && (
-          <Button variant="plain" size="sm" className="ml-auto text-sm" loading={loading} onClick={() => onRevoke([session.id])}>
+          <Button variant="plain" size="sm" loading={loading} onClick={() => onRevoke([session.id])}>
             <UnplugIcon />
             <span className="max-md:hidden">{t('c:revoke')}</span>
           </Button>

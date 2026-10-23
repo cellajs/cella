@@ -48,12 +48,12 @@ export function TotpSetup() {
   };
 
   return (
-    <div className="group flex flex-col gap-2">
+    <div className="flex flex-col gap-2">
       <WarningNote className="justify-center">
         <Trans t={t} i18nKey="c:totp_manual_link" components={{ key_anchor: <InlineLinkButton ref={triggerRef} onClick={openManualKey} /> }} />
       </WarningNote>
 
-      <QRCodeSVG className="mx-auto my-3 mb-6 border-8 border-white" value={data.totpUri} size={275} />
+      <QRCodeSVG className="mx-auto mt-3 mb-6 border-8 border-white" value={data.totpUri} size={275} />
       {expiredUri === data.totpUri ? (
         <div className="flex flex-col items-center gap-3 py-2">
           <p className="text-muted-foreground text-sm">{t('c:totp_qr.expired')}</p>
@@ -74,8 +74,8 @@ function TotpManualKey({ manualKey }: { manualKey: string }) {
   const { copyToClipboard, copied } = useCopyToClipboard();
 
   return (
-    <div className="flex gap-2 truncate rounded-lg bg-card px-3 py-2 font-mono text-card-foreground sm:text-lg">
-      <div className="w-full grow truncate">{manualKey}</div>
+    <div className="flex gap-2 rounded-lg bg-card px-3 py-2 font-mono text-card-foreground sm:text-lg">
+      <div className="w-full truncate">{manualKey}</div>
       <Button
         variant="cell"
         size="icon"

@@ -113,7 +113,7 @@ export function InviteUsers({ channel, dialog: isDialog, mode: initialMode, chil
                   <Icon className="size-12" strokeWidth={1} />
                   <div className="flex flex-col truncate pl-3">
                     <p>{t(label)}</p>
-                    <div className="mt-1 flex flex-row items-center truncate opacity-50 transition-opacity group-hover/toggle:opacity-100">
+                    <div className="mt-1 flex items-center truncate opacity-50 transition-opacity group-hover/toggle:opacity-100">
                       <strong>{t('c:continue')}</strong>
                       <AnimatedArrow />
                     </div>

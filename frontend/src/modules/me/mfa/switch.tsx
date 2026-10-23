@@ -31,19 +31,17 @@ export function MfaSwitch() {
   };
 
   return (
-    <div className="mb-6">
-      <div className="flex items-center gap-4 max-sm:flex-col max-sm:items-start">
-        <Switch
-          id="mfaRequired"
-          ref={triggerRef}
-          aria-label={t('c:mfa')}
-          disabled={!canEnable}
-          checked={user.mfaRequired}
-          onCheckedChange={handleToggleMfa}
-        />
-        {user.mfaRequired && <WarningNote>{t('c:mfa_enabled.text')}</WarningNote>}
-        {!canEnable && <WarningNote>{t('c:mfa_disabled.text')}</WarningNote>}
-      </div>
+    <div className="mb-6 flex items-center gap-4 max-sm:flex-col max-sm:items-start">
+      <Switch
+        id="mfaRequired"
+        ref={triggerRef}
+        aria-label={t('c:mfa')}
+        disabled={!canEnable}
+        checked={user.mfaRequired}
+        onCheckedChange={handleToggleMfa}
+      />
+      {user.mfaRequired && <WarningNote>{t('c:mfa_enabled.text')}</WarningNote>}
+      {!canEnable && <WarningNote>{t('c:mfa_disabled.text')}</WarningNote>}
     </div>
   );
 }

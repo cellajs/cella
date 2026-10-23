@@ -24,9 +24,9 @@ export function PasskeysList() {
   };
   return (
     <div className="mb-6">
-      <div className="flex flex-row max-sm:flex-col">
+      <div className="flex max-sm:flex-col">
         <Button key="createPasskey" type="button" variant="plain" onClick={() => createPasskey()}>
-          {hasPasskey ? <PlusIcon className="size-4" /> : <FingerprintPatternIcon className="size-4" />}
+          {hasPasskey ? <PlusIcon /> : <FingerprintPatternIcon />}
           {hasPasskey
             ? t('c:add_resource', { resource: t('c:passkey').toLowerCase() })
             : t('c:create_resource', { resource: t('c:passkey').toLowerCase() })}

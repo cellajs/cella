@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { GetUserResponse } from 'sdk';
 import { PageHeader } from '~/modules/common/page/header';
 import { toaster } from '~/modules/common/toaster/toaster';
+import { Button } from '~/modules/ui/button';
 import { useUpdateUser } from '~/modules/user/query';
 import { UserProfileSubline } from '~/modules/user/user-profile-subline';
 import { useUserStore } from '~/modules/user/user-store';
@@ -38,15 +39,10 @@ export function UserProfile({ user, organizationId, isSheet }: UserProfileProps)
         panel={
           isSelf && (
             <div className="flex items-center p-2 max-xs:hidden">
-              <Link
-                to="/account"
-                draggable={false}
-                tabIndex={0}
-                className="focus-effect inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md bg-primary px-3 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/80"
-              >
+              <Button size="sm" render={<Link to="/account" draggable={false} />}>
                 <UserRoundCogIcon />
-                <span className="ml-1 max-sm:hidden">{t('c:settings')}</span>
-              </Link>
+                <span className="max-sm:sr-only">{t('c:settings')}</span>
+              </Button>
             </div>
           )
         }

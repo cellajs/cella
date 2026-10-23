@@ -30,8 +30,8 @@ export function ConnectedAppsList() {
   return (
     <div className="flex flex-col gap-2">
       {items.map((app) => (
-        <Card key={app.id} className="w-full py-0 sm:py-0">
-          <CardContent className="flex items-center gap-3 p-3!">
+        <Card key={app.id} className="py-0 sm:py-0">
+          <CardContent className="flex items-center gap-3 p-3 sm:px-3">
             <PlugZapIcon className="size-5 shrink-0 opacity-70" />
             <div className="flex min-w-0 grow flex-col gap-1">
               <span className="truncate font-medium">{app.clientName}</span>
@@ -40,13 +40,7 @@ export function ConnectedAppsList() {
                 <span className="text-muted-foreground text-xs">{t('c:connected_on', { date: dateShort(app.createdAt) })}</span>
               </div>
             </div>
-            <Button
-              variant="plain"
-              size="sm"
-              className="ml-auto"
-              loading={isPending && variables?.path.id === app.id}
-              onClick={() => handleRevoke(app.id)}
-            >
+            <Button variant="plain" size="sm" loading={isPending && variables?.path.id === app.id} onClick={() => handleRevoke(app.id)}>
               <UnplugIcon />
               <span className="max-md:hidden">{t('c:revoke')}</span>
             </Button>

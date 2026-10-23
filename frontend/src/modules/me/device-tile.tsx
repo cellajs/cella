@@ -22,7 +22,7 @@ export function DeviceTile({ deviceType, title, details, action }: DeviceTilePro
   const DeviceIcon = deviceType === 'desktop' ? MonitorIcon : SmartphoneIcon;
 
   return (
-    <Card className="group/tile py-0 transition-all focus-ring:has-[button:focus]:ring-2 sm:py-0" data-expanded={expanded}>
+    <Card className="group/tile py-0 transition-shadow focus-ring:has-[button:focus]:ring-2 sm:py-0" data-expanded={expanded}>
       <CardContent className="flex gap-2 p-2 sm:gap-3 sm:p-3 lg:items-center">
         <DeviceIcon
           className="size-4 shrink-0 max-sm:mt-0.5 sm:size-8"

@@ -74,7 +74,7 @@ export const useColumns = () => {
       minBreakpoint: 'md',
       resizable: true,
       width: 100,
-      renderCell: ({ row }) => <div>{row.role ? t(row.role) : t('c:user')}</div>,
+      renderCell: ({ row }) => (row.role ? t(row.role) : t('c:user')),
     },
     dateColumn('createdAt', { name: t('c:created_at') }),
     {
