@@ -11,20 +11,18 @@ export function NewsletterPreview() {
   const draft = useDraftStore((state) => state.getForm<{ subject?: string; content?: string }>(newsletterFormId));
 
   return (
-    <div className="mt-5 flex max-w-full flex-col items-center leading-normal">
-      <section className="w-full rounded-lg border p-6">
-        <h2 className="mb-4 font-semibold text-lg text-muted-foreground">{draft?.subject}</h2>
+    <section className="mt-5 rounded-lg border p-6 leading-normal">
+      <h2 className="mb-4 font-semibold text-lg text-muted-foreground">{draft?.subject}</h2>
 
-        <Suspense fallback={<Spinner className="my-16" noDelay />}>
-          <BlockNoteFullHtml
-            id={`${appConfig.name}-newsletter-preview-content`}
-            defaultValue={draft?.content ?? ''}
-            className="text-muted-foreground"
-            clickOpensPreview
-            organizationId={systemUploadPrefix}
-          />
-        </Suspense>
-      </section>
-    </div>
+      <Suspense fallback={<Spinner className="my-16" noDelay />}>
+        <BlockNoteFullHtml
+          id={`${appConfig.name}-newsletter-preview-content`}
+          defaultValue={draft?.content ?? ''}
+          className="text-muted-foreground"
+          clickOpensPreview
+          organizationId={systemUploadPrefix}
+        />
+      </Suspense>
+    </section>
   );
 }

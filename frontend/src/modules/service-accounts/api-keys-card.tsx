@@ -51,9 +51,9 @@ export function ApiKeysCard({ organization }: { organization: EnrichedOrganizati
 
   return (
     <ToolCard label="c:api_keys" description={t('c:api_keys.text')}>
-      <div className="flex flex-row max-sm:flex-col">
+      <div className="flex max-sm:flex-col">
         <Button ref={addButtonRef} type="button" variant="plain" onClick={openCreateDialog}>
-          <PlusIcon className="size-4" />
+          <PlusIcon />
           {t('c:add_resource', { resource: t('c:api_key') })}
         </Button>
       </div>

@@ -100,7 +100,7 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
 
   // Unread rows carry the full accent (accent/30 is ~3 sRGB steps off the card in light mode); only read rows tint on hover.
   const className = cn(
-    'focus-effect flex w-full items-start gap-3 rounded-md px-2 py-2 text-left',
+    'focus-effect flex w-full items-start gap-3 rounded-md p-2 text-left',
     notification.readAt ? 'hover:bg-accent/50' : 'bg-accent',
   );
 

@@ -74,11 +74,11 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className={cn('w-full grow gap-0', prefilled && 'hidden')}>
+            <FormItem className={cn('w-full grow', prefilled && 'hidden')}>
               <FormControl>
-                <Input {...field} className={cn('block', inputClassName)} type="email" autoFocus={!isTouchInteraction()} placeholder={t('c:email')} />
+                <Input {...field} className={inputClassName} type="email" autoFocus={!isTouchInteraction()} placeholder={t('c:email')} />
               </FormControl>
-              <FormMessage className="mt-2" />
+              <FormMessage />
             </FormItem>
           )}
         />

@@ -72,7 +72,7 @@ export function ServiceAccountTile({ account, path, secrets }: ServiceAccountTil
   );
 
   return (
-    <Card className="w-full py-0 sm:py-0">
+    <Card className="py-0 sm:py-0">
       <CardContent className="flex flex-col gap-3 p-2 sm:p-3">
         {liveKeys.length === 0 && (
           <TileRow name={account.name} badges={badges}>
@@ -94,7 +94,7 @@ export function ServiceAccountTile({ account, path, secrets }: ServiceAccountTil
                   <Button
                     variant="plain"
                     size="sm"
-                    className="ml-auto text-sm"
+                    className="ml-auto"
                     loading={isPending && variables?.path.keyId === apiKey.id}
                     onClick={(event) => openRevokeConfirm(apiKey, event)}
                   >
@@ -135,7 +135,7 @@ interface TileRowProps {
 function TileRow({ name, accountName, badges, action, children }: TileRowProps) {
   return (
     <div className="flex gap-2 sm:gap-3 lg:items-center">
-      <KeyRoundIcon className="size-4 shrink-0 max-sm:mt-0.5 sm:size-8" strokeWidth={1.5} />
+      <KeyRoundIcon className="shrink-0 max-sm:mt-0.5 sm:size-8" />
       <div className="flex w-full flex-col gap-1 overflow-hidden">
         <div className="flex gap-1 xs:gap-2 max-xs:flex-col">
           <span className="truncate text-sm">{name}</span>
@@ -196,7 +196,7 @@ function KeyDetails({ apiKey, lastSeenAt }: KeyDetailsProps) {
             <Button
               variant="none"
               size="auto"
-              className="rounded-full p-0 transition-opacity hover:opacity-80"
+              className="rounded-full transition-opacity hover:opacity-80"
               aria-label={createdBy.name}
               onClick={() => openProfile(createdBy.id)}
             >

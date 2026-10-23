@@ -9,7 +9,6 @@ import { FieldContent, FieldLabel, FieldLayout, FieldTitle } from '~/modules/ui/
 import { Label } from '~/modules/ui/label';
 import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { Switch } from '~/modules/ui/switch';
-import { tw } from '~/utils/tw';
 
 type DigestFrequency = 'off' | 'daily' | 'weekly';
 
@@ -20,8 +19,6 @@ const digestOptions = [
   { value: 'weekly', label: 'c:notifications.digest_weekly' },
 ] as const satisfies { value: DigestFrequency; label: string }[];
 
-const cardClass = tw('mx-auto sm:w-full');
-
 /** Only email is opt-out: the inbox always fills, so every switch off still delivers the mention. */
 export function AccountNotificationsCard() {
   const { t } = useTranslation();
@@ -30,7 +27,7 @@ export function AccountNotificationsCard() {
   const push = usePushSubscription();
 
   return (
-    <ToolCard label="c:notifications" description={t('c:notifications.text')} className={cardClass}>
+    <ToolCard label="c:notifications" description={t('c:notifications.text')}>
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
           <Switch id="mentionEmail" checked={data.mentionEmail} onCheckedChange={(mentionEmail) => updatePreferences({ mentionEmail })} />
@@ -56,8 +53,8 @@ export function AccountNotificationsCard() {
           </div>
         )}
 
-        <div className="mt-3 flex flex-col gap-4">
-          <HelpText content={t('c:notifications.digest.text')} className="mb-0">
+        <div className="mt-3">
+          <HelpText content={t('c:notifications.digest.text')}>
             <Label id="digest-label">{t('c:notifications.digest')}</Label>
           </HelpText>
           {/* One tile per cadence: a bare `grid` is already the stacked column, so only the desktop row needs a class */}

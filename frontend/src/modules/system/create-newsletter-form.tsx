@@ -15,7 +15,7 @@ import { blocknoteFieldIsDirty } from '~/modules/common/blocknote/helpers/blockn
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
-import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
+import { blockNoteFieldClass, LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SelectRoles } from '~/modules/common/form-fields/select-roles';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -23,6 +23,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { Checkbox } from '~/modules/ui/checkbox';
 import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import type { MutationData } from '~/query/types';
+import { cn } from '~/utils/cn';
 import { formResolver } from '~/utils/form-resolver';
 
 /** The id of the form's draft and of the sheet it renders in, which shows the unsaved badge. */
@@ -87,7 +88,7 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
 
   return (
     <Form {...form}>
-      <form noValidate onSubmit={form.handleSubmit(onSubmit)} id="newsletter-form" className="flex h-max flex-col gap-6 pb-8">
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} id="newsletter-form" className="flex flex-col gap-6 pb-8">
         <InputFormField
           control={form.control}
           inputClassName="font-bold"
@@ -106,8 +107,7 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
           baseBlockNoteProps={{
             id: `${appConfig.name}-blocknote-newsletter`,
             trailingBlock: false,
-            className:
-              'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-effect disabled:cursor-not-allowed disabled:opacity-50',
+            className: cn(blockNoteFieldClass, 'pl-10'),
             // Newsletter images go to the public bucket under the system prefix, where email clients load them.
             baseFilePanelProps: { mediaMode: 'public-no-attachment', templateId: 'newsletter', organizationId: systemUploadPrefix },
             excludeFileBlockTypes: ['video', 'audio', 'file'],
@@ -138,7 +138,7 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
           <CancelButton dirty={hasInput()} onClick={() => form.reset()} />
           <div className="flex items-center gap-2 max-sm:mt-2">
             <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="ml-4 size-4" />
-            <label htmlFor="testOnly" className="items-center text-sm">
+            <label htmlFor="testOnly" className="text-sm">
               {t('c:test_email')}
             </label>
           </div>
