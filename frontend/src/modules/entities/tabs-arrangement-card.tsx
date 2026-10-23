@@ -152,7 +152,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       name: t('c:visible'),
       width: 64,
       cellClass: firstLineCellClass,
-      headerCellClass: 'text-center',
+      headerCellClass: 'justify-center',
       renderCell: ({ row }) =>
         row.locked ? (
           <LockIcon className="size-3.5 opacity-50" aria-label={t('c:locked')} />

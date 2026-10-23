@@ -48,7 +48,7 @@ export function ChannelTileCard({ entity, className, children }: { entity: Chann
     <ChannelTileContext.Provider value={entity}>
       <Card
         className={cn(
-          'has-[.tile-link:active]:press gap-0 overflow-hidden py-0 shadow-xs transition has-[.tile-link:hover]:shadow-sm has-[.tile-link:focus-visible]:ring-2 has-[.tile-link:focus-visible]:ring-ring has-[.tile-link:focus-visible]:ring-offset-2 has-[.tile-link:focus-visible]:ring-offset-background sm:gap-0 sm:py-0',
+          'has-[.tile-link:active]:press gap-0 overflow-hidden py-0 shadow-xs transition has-[.tile-link:hover]:shadow-sm focus-ring:has-[.tile-link:focus-visible]:ring-2 focus-ring:has-[.tile-link:focus-visible]:ring-ring focus-ring:has-[.tile-link:focus-visible]:ring-offset-2 focus-ring:has-[.tile-link:focus-visible]:ring-offset-background sm:gap-0 sm:py-0',
           className,
         )}
       >
