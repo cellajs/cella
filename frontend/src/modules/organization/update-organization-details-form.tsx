@@ -22,6 +22,7 @@ import type { EnrichedOrganization } from '~/modules/organization/types';
 import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
 import { formResolver } from '~/utils/form-resolver';
+import { tw } from '~/utils/tw';
 
 const formSchema = zUpdateOrganizationBody;
 
@@ -74,7 +75,6 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button
             variant="destructive"
-            className="justify-center sm:w-auto"
             onClick={() => {
               remove();
               discardChanges();
@@ -109,8 +109,10 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
             baseBlockNoteProps={{
               id: `${appConfig.name}-blocknote-welcome`,
               trailingBlock: false,
-              className:
-                'min-h-20 max-h-[50vh] overflow-auto bg-background p-3 pr-6 pl-8 border-input ring-offset-background focus-visible:ring-ring w-full rounded-md border text-sm focus-visible:outline-hidden focus-ring:focus-visible:ring-2 focus-visible:ring-offset-2',
+              // The ring goes on the editor's root: the contenteditable inside it takes the focus.
+              className: tw(
+                'max-h-[50vh] min-h-20 overflow-auto rounded-md border border-input bg-background p-3 pr-6 pl-8 text-sm focus-ring:has-focus-visible:ring-2 focus-ring:has-focus-visible:ring-ring focus-ring:has-focus-visible:ring-offset-2 focus-ring:has-focus-visible:ring-offset-background',
+              ),
               baseFilePanelProps: canUploadAttachments(organization)
                 ? {
                     mediaMode: 'private-attachment',

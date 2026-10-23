@@ -31,7 +31,7 @@ export function useColumns() {
             name: '',
             width: 32,
             maxWidth: 32,
-            cellClass: tw('flex cursor-grab items-center justify-center'),
+            cellClass: tw('cursor-grab justify-center'),
             rowDragHandle: true,
             renderCell: () => <GripVerticalIcon className="size-3.5 text-muted-foreground" />,
           } satisfies ColumnOrColumnGroup<PageTreeRow>,
@@ -44,13 +44,13 @@ export function useColumns() {
       minWidth: 180,
       resizable: true,
       renderCell: ({ row, tabIndex }) => (
-        <div className="flex items-center gap-2 truncate outline-0 ring-0">
+        <div className="flex items-center gap-2 truncate">
           <Link
             to="/docs/page/$"
             tabIndex={tabIndex}
             draggable={false}
             params={{ _splat: row.id }}
-            className="group/link flex min-w-0 items-center outline-0 ring-0"
+            className="group/link flex min-w-0 items-center outline-0"
           >
             <span className="group-active/link:press link-decoration group-active/link:link-decoration-strong truncate font-medium group-hover/link:underline">
               {row.name}

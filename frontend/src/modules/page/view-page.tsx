@@ -52,7 +52,7 @@ function ViewPage({ slug }: ViewPageProps) {
 
         <aside className="w-52 shrink-0 max-lg:hidden">
           {showToc && (
-            <div className="group sticky top-3 z-10 max-h-[calc(100dvh-1.5rem)] overflow-y-auto pt-8">
+            <div className="sticky top-3 z-10 max-h-[calc(100dvh-1.5rem)] overflow-y-auto pt-8">
               <TocAside headings={tocHeadings} />
             </div>
           )}

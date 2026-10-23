@@ -10,7 +10,7 @@ export function CodeBlock({ children, ...props }: ComponentProps<'pre'>) {
   const { copyToClipboard, copied } = useCopyToClipboard();
 
   return (
-    <div className="group relative my-5">
+    <div className="group/code-block relative my-5">
       <pre ref={preRef} {...props}>
         {children}
       </pre>
@@ -20,7 +20,7 @@ export function CodeBlock({ children, ...props }: ComponentProps<'pre'>) {
         tabIndex={-1}
         aria-label="Copy code"
         onClick={() => copyToClipboard(preRef.current?.textContent ?? '')}
-        className="absolute top-2 right-2 size-7 border border-border bg-background/80 p-0 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
+        className="absolute top-2 right-2 size-7 border bg-background/80 p-0 opacity-0 backdrop-blur-sm transition-opacity group-hover/code-block:opacity-100"
       >
         <CopiedIcon copied={copied} icon={CopyIcon} />
       </Button>
