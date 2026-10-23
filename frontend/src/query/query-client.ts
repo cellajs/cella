@@ -8,16 +8,18 @@ import { mutationRetry } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
 
 // Lazy import breaks the cycle query-client -> on-error -> teardown-user-state -> query-client; a static import makes HMR re-evaluation hit a TDZ error on `onError`.
-const handleError = (error: ApiError, meta: QueryMeta | undefined) => import('~/query/on-error').then((m) => m.onError(error, meta));
-const handleSuccess = () => import('~/query/on-success').then((m) => m.onSuccess());
+const handleError = (error: ApiError, meta: QueryMeta | undefined) => import('~/query/on-error').then(({ onError }) => onError(error, meta));
+const handleSuccess = () => import('~/query/on-success').then(({ onSuccess }) => onSuccess());
 
 /** What an stx mutation's variables carry, alone or once per item of a batch. */
-type StxVariables = { stx?: { mutationId?: string; replayed?: boolean } };
+interface StxVariables {
+  stx?: { mutationId?: string; replayed?: boolean };
+}
 
 /** stx mutations carry stx.mutationId on the variables (single or batch shape). */
-function mutationIdOf(vars: unknown): string | undefined {
-  const variables = vars as StxVariables | StxVariables[] | undefined;
-  return Array.isArray(variables) ? variables[0]?.stx?.mutationId : variables?.stx?.mutationId;
+function mutationIdOf(variables: unknown): string | undefined {
+  const stxVariables = variables as StxVariables | StxVariables[] | undefined;
+  return Array.isArray(stxVariables) ? stxVariables[0]?.stx?.mutationId : stxVariables?.stx?.mutationId;
 }
 
 /** Mutation ids restored from the persisted cache and replaying now. Only these quarantine on a 4xx: a live edit's failure reaches the user through the toast and needs no salvage. */
@@ -33,24 +35,24 @@ export function markReplayingMutations(): void {
 }
 
 /** Quarantines a replayed mutation that fails with a 4xx so no offline edit is lost after a cache bust. Best-effort. */
-function quarantineOnClientError(error: ApiError, vars: unknown, mutationKey: unknown): void {
-  const mutationId = mutationIdOf(vars);
+function quarantineOnClientError(error: ApiError, variables: unknown, mutationKey: unknown): void {
+  const mutationId = mutationIdOf(variables);
   if (!mutationId || !replayingMutationIds.delete(mutationId)) return;
 
   const status = error?.status;
   if (typeof status !== 'number' || status < 400 || status >= 500) return;
 
   const entityType = productTypeOf(mutationKey);
-  quarantineFailedSync({ mutationId, entityType, clientCacheVersion: appConfig.clientCacheVersion, status, variables: vars, error }).catch(() => {});
+  quarantineFailedSync({ mutationId, entityType, clientCacheVersion: appConfig.clientCacheVersion, status, variables, error }).catch(() => {});
 }
 
 const mutationCacheConfig = {
-  onError: (error: ApiError, vars: unknown, _ctx: unknown, mutation: { meta?: QueryMeta; options?: { mutationKey?: unknown } }) => {
-    quarantineOnClientError(error, vars, mutation.options?.mutationKey);
+  onError: (error: ApiError, variables: unknown, _onMutateResult: unknown, mutation: { meta?: QueryMeta; options?: { mutationKey?: unknown } }) => {
+    quarantineOnClientError(error, variables, mutation.options?.mutationKey);
     return handleError(error, mutation.meta);
   },
-  onSuccess: (_data: unknown, vars: unknown) => {
-    const mutationId = mutationIdOf(vars);
+  onSuccess: (_data: unknown, variables: unknown) => {
+    const mutationId = mutationIdOf(variables);
     if (mutationId) replayingMutationIds.delete(mutationId);
     return handleSuccess();
   },
@@ -129,7 +131,7 @@ let resolveCacheRestored: () => void;
  * @public
  */
 export const cacheRestored: Promise<void> =
-  (import.meta.hot?.data?.cacheRestored as Promise<void>) ?? new Promise<void>((r) => (resolveCacheRestored = r));
+  (import.meta.hot?.data?.cacheRestored as Promise<void>) ?? new Promise<void>((resolve) => (resolveCacheRestored = resolve));
 export function markCacheRestored() {
   resolveCacheRestored();
 }
@@ -141,14 +143,11 @@ if (import.meta.hot) {
   import.meta.hot.data.listenersAttached = true;
 }
 
-/** Set staleTime: infinite when offlineAccess is on AND offline (stop refetching), else the normal default. */
-export function updateStaleTime(offlineAccess: boolean, isOnline: boolean): void {
-  const shouldUseInfiniteStale = offlineAccess && !isOnline;
-  const newStaleTime = shouldUseInfiniteStale ? offlineStaleTime : defaultStaleTime;
-
-  queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, staleTime: newStaleTime } });
-
-  console.debug(`[Query] StaleTime: ${shouldUseInfiniteStale ? 'infinite (offline)' : '30s (online)'}`);
+/** `true` while offline with offline access on: nothing goes stale, so nothing refetches. `false` restores the default. */
+export function setOfflineStaleTime(offline: boolean): void {
+  const staleTime = offline ? offlineStaleTime : defaultStaleTime;
+  queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, staleTime } });
+  console.debug(`[Query] StaleTime: ${offline ? 'infinite (offline)' : `${defaultStaleTime / 1000}s`}`);
 }
 
 /** Called when going from offline to online. */

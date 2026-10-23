@@ -1,5 +1,5 @@
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { appConfig } from 'shared';
 import { downloadService } from '~/modules/attachment/offline/download-service';
 import { startYjsStore } from '~/modules/common/blocknote/yjs-store';
@@ -9,7 +9,7 @@ import { initChannelEnrichment } from '~/query/enrichment/init-enrichment';
 import '~/query/local-user-storage';
 import { initMutationDefaults, warnMutationsWithoutDefaults } from '~/query/mutation-registry';
 import { cleanupOrphanedSessions, persistOptions } from '~/query/persister';
-import { markCacheRestored, markReplayingMutations, queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
+import { markCacheRestored, markReplayingMutations, queryClient, setOfflineStaleTime, silentRevalidateOnReconnect } from '~/query/query-client';
 import { waitForActiveCatchup } from '~/query/realtime/stream-store';
 import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
 
@@ -28,8 +28,12 @@ if (import.meta.hot) {
   });
 }
 
+interface QueryClientProviderProps {
+  children: ReactNode;
+}
+
 /** Adds cache persistence and offline support: the persister is session or IndexedDB per offlineAccess. */
-export function QueryClientProvider({ children }: { children: React.ReactNode }) {
+export function QueryClientProvider({ children }: QueryClientProviderProps) {
   const offlineAccess = useUIStore((state) => state.offlineAccess);
   const toggleOfflineAccess = useUIStore((state) => state.toggleOfflineAccess);
 
@@ -53,10 +57,10 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
     let service: { stop: () => void } | undefined;
     let cancelled = false;
     const idle = scheduleIdle(() => {
-      import('~/modules/attachment/offline/upload-service').then((m) => {
+      import('~/modules/attachment/offline/upload-service').then(({ uploadService }) => {
         if (cancelled) return;
-        service = m.uploadService;
-        m.uploadService.start();
+        service = uploadService;
+        uploadService.start();
       });
     }, idleTimeoutMs);
 
@@ -73,7 +77,7 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
 
     const applyNetwork = (online: boolean) => {
       console.info(`[Offline] Network: ${online ? 'online' : 'offline'}`);
-      updateStaleTime(true, online);
+      setOfflineStaleTime(!online);
     };
     const handleOnline = () => {
       applyNetwork(true);
@@ -89,7 +93,7 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      updateStaleTime(false, true);
+      setOfflineStaleTime(false);
     };
   }, [offlineAccess]);
 

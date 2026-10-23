@@ -8,9 +8,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // detection falls back to the record-age threshold.
 const sessionValues = new Map<string, string>();
 vi.stubGlobal('sessionStorage', {
-  getItem: (k: string) => sessionValues.get(k) ?? null,
-  setItem: (k: string, v: string) => sessionValues.set(k, v),
-  removeItem: (k: string) => sessionValues.delete(k),
+  getItem: (key: string) => sessionValues.get(key) ?? null,
+  setItem: (key: string, value: string) => sessionValues.set(key, value),
+  removeItem: (key: string) => sessionValues.delete(key),
 });
 
 const { bindLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');

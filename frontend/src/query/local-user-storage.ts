@@ -53,7 +53,7 @@ function unbind(): void {
 }
 
 /** Reconcile the bound DB with the current auth state. Cheap; no-ops when unchanged. */
-function syncOwner(): void {
+function reconcileOwner(): void {
   const owner = resolveOwner();
   if (owner === boundOwner) return;
   if (owner) bindOwner(owner);
@@ -66,8 +66,8 @@ export function localUserStorageReady(): Promise<void> {
   return readyPromise;
 }
 
-userStore.subscribe(syncOwner);
-syncOwner();
+userStore.subscribe(reconcileOwner);
+reconcileOwner();
 
 // Another tab's hard sign-out deleted this user's database: mirror it here, then leave the app. Lazy imports keep the
 // router and teardown out of this module's importer graph.

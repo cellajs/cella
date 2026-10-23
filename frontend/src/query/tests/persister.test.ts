@@ -97,7 +97,7 @@ const queuedMutation = (mutationKey: string[], variables: unknown) => ({
   },
 });
 
-/** Holds the mutation-ownership lock another open tab holds, until the returned release runs. */
+/** Holds the tab lock another open tab holds, until the returned release runs. */
 async function holdTabLock(tabId: string): Promise<() => void> {
   let release = () => {};
   const held = new Promise<void>((resolve) => {
@@ -231,7 +231,7 @@ describe('per-query IDB persister', () => {
     });
   });
 
-  describe('product vs context storage', () => {
+  describe('product vs bundled storage', () => {
     it('stores product queries as individual IDB records', async () => {
       const queries = [
         makeQuery('["task","list"]', 'task', 1000),
@@ -246,7 +246,7 @@ describe('per-query IDB persister', () => {
       expect(productRecords).toHaveLength(3);
     });
 
-    it('bundles context queries into the meta record', async () => {
+    it('bundles every other query into the meta record', async () => {
       const queries = [
         makeQuery('["me"]', 'me', 1000),
         makeQuery('["organization","list"]', 'organization', 1000),
@@ -265,7 +265,7 @@ describe('per-query IDB persister', () => {
       expect(hashes).toEqual(['["me"]', '["member","list"]', '["organization","list"]']);
     });
 
-    it('restores both product and context queries together', async () => {
+    it('restores product and bundled queries together', async () => {
       const queries = [makeQuery('["task","list"]', 'task', 1000, [{ id: 't1' }]), makeQuery('["me"]', 'me', 2000, { name: 'user' })];
 
       await persister.persistClient(makePersistedClient(queries));

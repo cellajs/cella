@@ -25,7 +25,7 @@ export interface PersistedQueryRecord {
   dataUpdatedAt: number;
 }
 
-/** React Query meta row, one per scope, bundling context queries, mutations, and cache-bust version. */
+/** React Query meta row, one per scope: the bundled queries (every query that is not a product query), mutations, and cache-bust version. */
 export interface PersistedMetaRecord {
   /** Scope key: `rq` (offline) or `s-<uuid>` (session). */
   key: string;
@@ -36,7 +36,7 @@ export interface PersistedMetaRecord {
   /** Persisted global lens schema ordinal. Values behind the bundle trigger boot migration. */
   schemaVersion?: number;
   mutations: DehydratedState['mutations'];
-  /** Context queries bundled directly in meta. */
+  /** The bundled queries. The stored name stays: renaming it orphans every stored bundle. */
   channelQueries: DehydratedQuery[];
 }
 

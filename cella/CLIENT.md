@@ -82,7 +82,7 @@ The attachment row is an ordinary product entity in the query cache. The bytes l
 
 ## The persister
 
-The persister snapshots the cache into the per-user database and restores it on boot. Each product query is its own record, so unchanged lists are not rewritten. Channel queries and version stamps share one meta record per scope. Paused mutations are stored per tab. Opt out with `meta: { persist: false }`.
+The persister snapshots the cache into the per-user database and restores it on boot. Each product query is its own record, so unchanged lists are not rewritten. Every other query is bundled with the version stamps in one meta record per scope. Paused mutations are stored per tab. Opt out with `meta: { persist: false }`.
 
 | Mode | Scope | Lifetime | Background coverage |
 | --- | --- | --- | --- |

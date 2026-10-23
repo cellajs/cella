@@ -17,7 +17,7 @@ export function productTypeOf(key: unknown): ProductEntityType | undefined {
   return isProduct(head) ? head : undefined;
 }
 
-/** Returns the lens-capable entity type (product or context) encoded in a query/mutation key, or null. */
+/** Returns the lens-capable entity type (product or channel) encoded in a query/mutation key, or null. */
 export function entityTypeOf(key: unknown): LensEntityType | null {
   const head = keyHead(key);
   return isProduct(head) || isChannel(head) ? head : null;
