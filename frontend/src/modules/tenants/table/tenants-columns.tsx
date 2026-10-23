@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { Link2OffIcon } from 'lucide-react';
+import type { ComponentProps } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Tenant } from 'sdk';
 import { isStrategyEnabled } from 'shared';
@@ -15,6 +16,18 @@ import { statusOptions, UpdateTenantForm } from '~/modules/tenants/update-tenant
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
+
+type BadgeVariant = ComponentProps<typeof Badge>['variant'];
+
+const statusVariants: Record<Tenant['status'], BadgeVariant> = { active: 'success', suspended: 'warning', archived: 'plain' };
+
+const subscriptionVariants: Record<Exclude<Tenant['subscriptionStatus'], 'none'>, BadgeVariant> = {
+  trialing: 'default',
+  active: 'success',
+  past_due: 'destructive',
+  paused: 'secondary',
+  canceled: 'secondary',
+};
 
 export const openUpdateTenantSheet = (tenant: Tenant, triggerRef: TriggerRef) =>
   openEditSheet({
@@ -54,8 +67,7 @@ export const useColumns = () => {
       ),
     },
     {
-      // 1 tenant = 1 organization: link to the org it holds (avatar + name), or flag it as unlinked.
-      // On mobile the column narrows to the avatar; header and names stay readable to a screen reader.
+      // One organization per tenant; on mobile the column narrows to the avatar, and header and names stay readable to a screen reader.
       key: 'organization',
       name: t('c:organization'),
       resizable: true,
@@ -98,10 +110,7 @@ export const useColumns = () => {
       width: 100,
       editable: true,
       editorOptions: enumSelectEditorOptions,
-      renderCell: ({ row }) => {
-        const variant = row.status === 'active' ? 'success' : row.status === 'suspended' ? 'warning' : 'plain';
-        return <Badge variant={variant}>{t(`c:${row.status}`)}</Badge>;
-      },
+      renderCell: ({ row }) => <Badge variant={statusVariants[row.status]}>{t(`c:${row.status}`)}</Badge>,
       renderEditCell: (props) => <RenderEnumSelect {...props} field="status" options={statusOptions} renderOption={(status) => t(`c:${status}`)} />,
     },
     {
@@ -110,19 +119,12 @@ export const useColumns = () => {
       minBreakpoint: 'md',
       width: 140,
       placeholderValue: '-',
-      renderCell: ({ row }) => {
-        if (row.subscriptionStatus === 'none') return null;
-        const variantMap: Record<string, 'success' | 'default' | 'destructive' | 'secondary'> = {
-          active: 'success',
-          trialing: 'default',
-          past_due: 'destructive',
-        };
-        return (
-          <Badge variant={variantMap[row.subscriptionStatus] ?? 'secondary'} soft>
+      renderCell: ({ row }) =>
+        row.subscriptionStatus === 'none' ? null : (
+          <Badge variant={subscriptionVariants[row.subscriptionStatus]} soft>
             {t(`c:${row.subscriptionStatus}`)}
           </Badge>
-        );
-      },
+        ),
     },
     dateColumn('createdAt', { name: t('c:created_at') }),
   ];

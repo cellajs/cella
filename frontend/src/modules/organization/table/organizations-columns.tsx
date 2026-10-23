@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router';
-import i18n from 'i18next';
 import { PencilIcon, ShieldIcon, TrashIcon, UserRoundIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
@@ -65,7 +64,7 @@ export const useColumns = () => {
     },
     ellipsisColumn<EnrichedOrganization>(() => [
       {
-        label: i18n.t('c:edit'),
+        label: t('c:edit'),
         icon: PencilIcon,
         onSelect: (row, triggerRef) => {
           dropdowner.getState().remove();
@@ -73,7 +72,7 @@ export const useColumns = () => {
         },
       },
       {
-        label: i18n.t('c:delete'),
+        label: t('c:delete'),
         icon: TrashIcon,
         onSelect: (row) => {
           const callback = () => dropdowner.getState().remove();
@@ -87,14 +86,13 @@ export const useColumns = () => {
     {
       key: 'role',
       name: t('c:your_role'),
-
       minBreakpoint: 'md',
       resizable: true,
       width: 100,
       placeholderValue: '-',
       editable: true,
       editorOptions: enumSelectEditorOptions,
-      renderCell: ({ row }) => (row.membership?.role ? t(`${row.membership.role}`) : null),
+      renderCell: ({ row }) => (row.membership?.role ? t(row.membership.role) : null),
       // Table rows carry the role from the cache; export rows fetched from the API carry it under `included`.
       exportValue: (row) => {
         const role = row.membership?.role ?? row.included?.membership?.role;
@@ -109,11 +107,10 @@ export const useColumns = () => {
             ...row,
             membership: { ...(row.membership ?? {}), role } as EnrichedOrganization['membership'],
           })}
-          renderOption={(role) => i18n.t(role)}
+          renderOption={(role) => t(role)}
         />
       ),
     },
-
     dateColumn('createdAt', { name: t('c:created_at') }),
     {
       key: 'createdBy',
@@ -124,7 +121,6 @@ export const useColumns = () => {
       renderCell: ({ row, tabIndex }) => row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
       exportValue: (row) => row.createdBy?.name,
     },
-    // Dynamic membership count columns from role config
     ...hierarchy.getRoles('organization').map((role) => ({
       ...countColumn<EnrichedOrganization>(`${role}Count`, {
         name: t(`c:${role}`, { count: 2 }),
@@ -133,7 +129,6 @@ export const useColumns = () => {
       }),
       maxWidth: 140,
     })),
-    // Dynamic entity count columns for org-scoped descendant entities
     ...descendants.map((type) =>
       countColumn<EnrichedOrganization>(`${type}Count`, {
         name: t(`c:${type}`, { count: 2 }),

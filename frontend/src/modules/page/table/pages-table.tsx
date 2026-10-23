@@ -1,5 +1,5 @@
 import { BirdIcon } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
@@ -25,10 +25,8 @@ function renderRowDragPreview(row: PageTreeRow) {
   return <PageRowPreview page={row} />;
 }
 
-const defaultExpanded = true;
-
 /** Renders the build-time MDX index; development edits persist to frontmatter, and bundled production content is read-only. */
-function PagesTable() {
+export function PagesTable() {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<PagesRouteSearchParams>();
 
@@ -37,48 +35,35 @@ function PagesTable() {
   const [columns, setColumns] = useColumns();
 
   const [pages, setPages] = useState<DocPage[]>(docPages);
-  const pagesRef = useRef(pages);
-  pagesRef.current = pages;
 
   // Optimistic update; a failed write reverts to the on-disk snapshot (`docPages`) and `editDocPage` raises the toast.
-  const applyEdit = useCallback((id: string, patch: Partial<DocPage>, ops: DocEditOps) => {
+  const applyEdit = (id: string, patch: Partial<DocPage>, ops: DocEditOps) => {
     setPages((prev) => prev.map((page) => (page.id === id ? { ...page, ...patch } : page)));
     editDocPage(id, ops).catch(() => setPages(docPages));
-  }, []);
+  };
 
   // A `parentId` change moves files on disk (vite/docs-editor.ts); `displayOrder` rewrites the `order` frontmatter field.
-  const treeMutate = useCallback(
-    (id: string, ops: { displayOrder?: number; parentId?: string | null }) => {
-      const patch: Partial<DocPage> = {};
-      if (ops.displayOrder !== undefined) patch.displayOrder = ops.displayOrder;
-      if (ops.parentId !== undefined) patch.parentId = ops.parentId;
-      applyEdit(id, patch, ops);
-    },
-    [applyEdit],
-  );
+  const treeMutate = (id: string, ops: { displayOrder?: number; parentId?: string | null }) => {
+    const patch: Partial<DocPage> = {};
+    if (ops.displayOrder !== undefined) patch.displayOrder = ops.displayOrder;
+    if (ops.parentId !== undefined) patch.parentId = ops.parentId;
+    applyEdit(id, patch, ops);
+  };
 
-  const tree = useTreeRows<DocPage>({
-    defaultExpanded: defaultExpanded,
-    rowHeight: pagesRowHeight,
-    maxDepth: maxPageDepth,
-    mutate: treeMutate,
-  });
+  const tree = useTreeRows<DocPage>({ defaultExpanded: true, rowHeight: pagesRowHeight, maxDepth: maxPageDepth, mutate: treeMutate });
 
-  const buildRows = tree.buildRows;
+  const query = q?.trim().toLowerCase();
+  const filtered = query
+    ? pages.filter((page) => [page.name, page.description, page.keywords, page.id].some((value) => value?.toLowerCase().includes(query)))
+    : pages;
   // `rows` omits collapsed descendants, so the header count uses `filtered.length` to stay the true total.
-  const { filtered, rows } = useMemo(() => {
-    const query = q?.trim().toLowerCase();
-    const filtered = query
-      ? pages.filter((page) => [page.name, page.description, page.keywords, page.id].some((value) => value?.toLowerCase().includes(query)))
-      : pages;
-    return { filtered, rows: buildRows(filtered) };
-  }, [q, pages, buildRows]);
+  const rows = tree.buildRows(filtered);
 
   const onRowsChange = (changedRows: PageTreeRow[], { indexes, column }: RowsChangeData<PageTreeRow>) => {
     if (column.key !== 'name' && column.key !== 'renderMode' && column.key !== 'status') return;
     for (const index of indexes) {
       const row = changedRows[index];
-      const original = pagesRef.current.find((page) => page.id === row.id);
+      const original = pages.find((page) => page.id === row.id);
       if (!original) continue;
 
       if (column.key === 'name' && row.name !== original.name) {
@@ -102,7 +87,7 @@ function PagesTable() {
           rowHeight={tree.rowHeight}
           rowKeyGetter={rowKeyGetter}
           columns={columns}
-          enableVirtualization={true}
+          enableVirtualization
           isFiltered={!!q}
           hasNextPage={false}
           {...(canEditDocs && {
@@ -121,5 +106,3 @@ function PagesTable() {
     </FocusViewContainer>
   );
 }
-
-export { PagesTable };

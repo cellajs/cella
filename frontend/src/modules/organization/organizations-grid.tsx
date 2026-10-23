@@ -11,7 +11,7 @@ interface OrganizationsGridProps {
   fixedQuery?: Partial<OrgSearch>;
   focusView?: boolean;
   saveDataInSearch?: boolean;
-  /** When true, show only 3 items with a "Show all" button */
+  /** Opens as the grid's preview, without the search bar, until its "Show all" button expands it. */
   limitedView?: boolean;
 }
 
@@ -21,14 +21,13 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
 
   const { search: baseSearch, setSearch } = useSearchParams({ saveDataInSearch });
 
-  const search: OrgSearch = { ...baseSearch, ...(fixedQuery ?? {}) };
+  const search: OrgSearch = { ...baseSearch, ...fixedQuery };
 
   const ofAnotherUser = useUserStore((state) => !!search.relatableUserId && search.relatableUserId !== state.user?.id);
 
   const queryOptions = organizationsListQueryOptions({ ...search, include: 'counts,members' });
 
-  const q = search.q ?? '';
-  const isFiltered = !!q;
+  const isFiltered = !!search.q;
 
   const { rows: entities, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
 
@@ -38,9 +37,8 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
         <EntityGridBar
           queryKey={queryOptions.queryKey}
           searchVars={baseSearch}
-          label={'c:organization'}
+          label="c:organization"
           entityType="organization"
-          // Discovery grid: a role filter collapses the scope to membership-only; bar stays for short lists
           roleFilter={false}
           alwaysShow
           setSearch={setSearch}

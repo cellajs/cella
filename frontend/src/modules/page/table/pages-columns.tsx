@@ -21,8 +21,7 @@ const dragHandleColumnKey = 'drag-handle';
 const publishStatuses = ['published', 'draft'] as const;
 type PublishStatus = (typeof publishStatuses)[number];
 
-/** Pages-table columns; editing is development-only and the dev server persists it to MDX frontmatter. */
-export function useColumns() {
+export const useColumns = () => {
   const { t } = useTranslation();
 
   const columns: ColumnOrColumnGroup<PageTreeRow>[] = [
@@ -121,6 +120,5 @@ export function useColumns() {
     { ...dateColumn('updatedAt', { name: t('c:updated_at'), sortable: false, minBreakpoint: 'lg' }), resizable: true },
   ];
 
-  // Stable array identity: DataGrid passes it to memoized Row/Cell, and a fresh array re-renders every visible row.
   return useColumnVisibility(columns);
-}
+};

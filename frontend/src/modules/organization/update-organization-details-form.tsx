@@ -27,6 +27,7 @@ import { tw } from '~/utils/tw';
 const formSchema = zUpdateOrganizationBody;
 
 type FormValues = z.infer<typeof formSchema>;
+
 interface UpdateOrganizationDetailsFormProps {
   organization: EnrichedOrganization;
   callback?: (args: CallbackArgs<Organization>) => void;

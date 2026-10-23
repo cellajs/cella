@@ -1,5 +1,4 @@
-import type { UseFormProps } from 'react-hook-form';
-import { useWatch } from 'react-hook-form';
+import { type UseFormProps, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { zUpdateOrganizationBody } from 'sdk/zod.gen';
@@ -31,6 +30,7 @@ const formSchema = zUpdateOrganizationBody.omit({ welcomeText: true }).extend({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+
 interface UpdateOrganizationFormProps {
   organization: Organization;
   sheet?: boolean;
@@ -125,21 +125,6 @@ export function UpdateOrganizationForm({ organization, callback, sheet: isSheet 
         <CountryFormField control={form.control} name="country" label={t('c:country')} />
         <TimezoneFormField control={form.control} name="timezone" label={t('c:timezone')} />
 
-        {/* NOT IN USE ATM <Collapsible>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="group w-full font-normal opacity-70 hover:opacity-100" size="sm">
-              <UnfoldVertical size={16} className="group-data-[state=open]:hidden" />
-              <FoldVertical size={16} className="hidden group-data-[state=open]:block" />
-              <span className="ml-2">
-                <span className="block group-data-[state=open]:hidden">{t('c:show_advanced_settings')}</span>
-                <span className="hidden group-data-[state=open]:block">{t('c:hide_advanced_settings')}</span>
-              </span>
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className='mt-3 flex flex-col gap-4'>
-          </CollapsibleContent>
-        </Collapsible> */}
-
         <div className="flex flex-col gap-2 sm:flex-row">
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
             {t('c:save_changes')}
@@ -169,7 +154,7 @@ function DefaultLanguageField({ form }: { form: ReturnType<typeof useFormWithDra
             <FormLabel help={t('c:default_language.text')} required>
               {t('c:default_language')}
             </FormLabel>
-            <SelectLanguage options={languages} value={correctValue} onChange={(val) => field.onChange(val)} />
+            <SelectLanguage options={languages} value={correctValue} onChange={field.onChange} />
             <FormMessage />
           </FormItem>
         );

@@ -41,10 +41,7 @@ const findOrganizationInCache = createCacheFinder<Organization>('organization');
 export const findOrganizationByIdOrSlug = (idOrSlug: string, tenantId: string) =>
   findOrganizationInCache((org) => org.id === idOrSlug || (org.slug === idOrSlug && org.tenantId === tenantId));
 
-/**
- * Query options for a single organization by ID.
- * NOTE: Slug is only used on page load. All subsequent queries must use ID.
- */
+/** Detail query by id: the route resolves a slug only on page load (route-logic.ts), so every later query passes the id. */
 export const organizationQueryOptions = (id: string, tenantId: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
@@ -55,7 +52,7 @@ export const organizationQueryOptions = (id: string, tenantId: string) =>
 
 type OrganizationsListParams = OrganizationFilters & { limit?: number };
 
-/** Search filters with the table defaults filled in; `include` is left out, so it never reaches a list key. */
+/** Search filters with the table defaults filled in; `include` is left out, so queries with and without counts share one list key. */
 const withDefaults = ({
   q = organizationsSearchDefaults.q,
   sort = organizationsSearchDefaults.sort,
@@ -72,7 +69,6 @@ const fetchOrganizationsPage = async (query: OrganizationFilters, limit: number,
 };
 
 export const organizationsListQueryOptions = ({ include, limit = appConfig.requestLimits.organizations, ...params }: OrganizationsListParams) => {
-  // Queries with and without counts share one cache entry.
   const filters = withDefaults(params);
 
   return infiniteQueryOptions({

@@ -17,7 +17,7 @@ function rowKeyGetter(row: EnrichedOrganization) {
   return row.id;
 }
 
-function OrganizationsTable() {
+export function OrganizationsTable() {
   const { t } = useTranslation();
   const changeRole = useChangeEntityRoleMutation();
 
@@ -80,5 +80,3 @@ function OrganizationsTable() {
     </>
   );
 }
-
-export { OrganizationsTable };

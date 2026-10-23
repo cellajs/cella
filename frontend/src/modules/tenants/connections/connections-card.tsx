@@ -56,12 +56,13 @@ const splitList = (value: string, separator: RegExp) =>
 /** The link an institution shares with its members: the entry page of its connection. */
 const entryLink = (connection: Connection) => `${appConfig.frontendUrl}/auth/sso/${connection.id}`;
 
-/**
- * A tenant's connections, for system admins: the institution connected through a federation, with its status, its
- * domains and IdP entity ids, the admission switch and the entry link; plus the form that connects one. One SSO
- * connection per tenant, so the form shows while the tenant has none.
- */
-export function ConnectionsCard({ tenant, className }: { tenant: Tenant; className?: string }) {
+interface ConnectionsCardProps {
+  tenant: Tenant;
+  className?: string;
+}
+
+/** A tenant's SSO connection for system admins, and the form that adds one while the tenant has none. */
+export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
   const { t } = useTranslation();
   const { data: connections, isPending } = useQuery(connectionsQueryOptions(tenant.id));
   const { mutate: create, isPending: creating } = useConnectionCreateMutation();
@@ -167,12 +168,12 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
               </div>
               <div className="flex flex-wrap items-start gap-2">
                 <HelpText content={t('c:sso_entry_link.text')} className="mb-0">
-                  <Button type="button" variant="plain" size="sm" onClick={() => copyToClipboard(entryLink(connection))}>
+                  <Button variant="plain" size="sm" onClick={() => copyToClipboard(entryLink(connection))}>
                     <CopiedIcon copied={copied} icon={CopyIcon} />
                     {t('c:sso_entry_link')}
                   </Button>
                 </HelpText>
-                <Button type="button" variant="destructive" size="sm" className="ml-auto" onClick={(event) => openDeleteConfirm(connection, event)}>
+                <Button variant="destructive" size="sm" className="ml-auto" onClick={(event) => openDeleteConfirm(connection, event)}>
                   <TrashIcon />
                   {t('c:delete')}
                 </Button>
@@ -225,7 +226,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
                     <FormItem name="claimValues">
                       <FormLabel help={t('c:claim_values.text')}>{t('c:claim_values')}</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="schooldomeinnaam.nl, students.schooldomeinnaam.nl" />
+                        <Input {...field} placeholder="example.edu, students.example.edu" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -238,7 +239,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
                     <FormItem name="idpEntityIds">
                       <FormLabel help={t('c:idp_entity_ids.text')}>{t('c:idp_entity_ids')}</FormLabel>
                       <FormControl>
-                        <Textarea {...field} rows={2} placeholder="https://login.schooldomeinnaam.nl/nidp/saml2/metadata" />
+                        <Textarea {...field} rows={2} placeholder="https://login.example.edu/saml2/metadata" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

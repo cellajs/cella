@@ -13,6 +13,10 @@ import type { EnrichedOrganization } from '~/modules/organization/types';
 import { UpdateOrganizationDetailsForm } from '~/modules/organization/update-organization-details-form';
 import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
 
+interface OrganizationCardProps {
+  organization: EnrichedOrganization;
+}
+
 function useSlugChangeCallback(organization: EnrichedOrganization) {
   const navigate = useNavigate();
 
@@ -28,7 +32,7 @@ function useSlugChangeCallback(organization: EnrichedOrganization) {
   };
 }
 
-export function OrganizationGeneralCard({ organization }: { organization: EnrichedOrganization }) {
+export function OrganizationGeneralCard({ organization }: OrganizationCardProps) {
   const callback = useSlugChangeCallback(organization);
   return (
     <ToolCard label="c:general" unsaved id="update-organization">
@@ -37,7 +41,7 @@ export function OrganizationGeneralCard({ organization }: { organization: Enrich
   );
 }
 
-export function OrganizationDetailsCard({ organization }: { organization: EnrichedOrganization }) {
+export function OrganizationDetailsCard({ organization }: OrganizationCardProps) {
   const callback = useSlugChangeCallback(organization);
   return (
     <ToolCard label="c:details" unsaved id="update-organization-details">
@@ -46,7 +50,7 @@ export function OrganizationDetailsCard({ organization }: { organization: Enrich
   );
 }
 
-export function OrganizationTabsCard({ organization }: { organization: EnrichedOrganization }) {
+export function OrganizationTabsCard({ organization }: OrganizationCardProps) {
   const { mutate } = useOrganizationUpdateMutation();
   return (
     <TabsArrangementCard
@@ -57,7 +61,7 @@ export function OrganizationTabsCard({ organization }: { organization: EnrichedO
   );
 }
 
-export function OrganizationDeleteCard({ organization }: { organization: EnrichedOrganization }) {
+export function OrganizationDeleteCard({ organization }: OrganizationCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -71,7 +75,7 @@ export function OrganizationDeleteCard({ organization }: { organization: Enriche
           dialog
           tenantId={organization.tenantId}
           organizations={[organization]}
-          callback={({ status }: CallbackArgs<Organization[]>) => {
+          callback={({ status }) => {
             if (status === 'success') {
               toaster.success(t('c:success.delete_resource', { resource: t('c:organization') }));
               navigate({ to: appConfig.defaultRedirectPath, replace: true });

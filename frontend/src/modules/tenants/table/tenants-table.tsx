@@ -16,7 +16,7 @@ function rowKeyGetter(row: Tenant) {
   return row.id;
 }
 
-function TenantsTable() {
+export function TenantsTable() {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<TenantsRouteSearchParams>({ from: '/_app/system/tenants' });
 
@@ -64,5 +64,3 @@ function TenantsTable() {
     </>
   );
 }
-
-export { TenantsTable };

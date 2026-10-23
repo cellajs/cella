@@ -31,8 +31,8 @@ export function OrganizationsTableBar({
 
   const total = useListQueryTotal(queryKey);
 
-  const createButtonRef = useRef(null);
-  const newsletterButtonRef = useRef(null);
+  const createButtonRef = useRef<HTMLButtonElement>(null);
+  const newsletterButtonRef = useRef<HTMLButtonElement>(null);
 
   const { q, order, sort } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '' } });
@@ -60,9 +60,7 @@ export function OrganizationsTableBar({
     });
   };
 
-  const fetchExport = async (limit: number, offset: number) => {
-    return fetchOrganizationsForExport({ limit, offset, q, sort, order });
-  };
+  const fetchExport = (limit: number, offset: number) => fetchOrganizationsForExport({ limit, offset, q, sort, order });
 
   return (
     <TableBarShell

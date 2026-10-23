@@ -12,7 +12,7 @@ const OrganizationTabsCard = lazyNamed(() => import('~/modules/organization/sett
 const OrganizationDeleteCard = lazyNamed(() => import('~/modules/organization/settings-tools'), 'OrganizationDeleteCard');
 const OrganizationsGrid = lazyNamed(() => import('~/modules/organization/organizations-grid'), 'OrganizationsGrid');
 
-/** Opens the create dialog from the menu section's plus button and lands on the new organization. */
+/** Opens the create dialog from the menu section's plus button, then navigates to the new organization. */
 function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null>) {
   openCreateOrganizationDialog(triggerRef, (organization) =>
     getRouter().navigate({

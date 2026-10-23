@@ -28,7 +28,6 @@ interface CreateOrganizationFormProps {
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-// 1 tenant = 1 organization: creating an org always mints a fresh tenant to hold it.
 const formSchema = zCreateOrganizationsBody.element.omit({ id: true });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -57,6 +56,7 @@ export function CreateOrganizationForm({ dialog: isDialog, children, callback }:
     nextStep();
   };
 
+  // 1 tenant = 1 organization: the submit mints a fresh tenant, then creates the organization in it.
   const onSubmit = async (values: FormValues) => {
     let tenantId: string;
     try {
@@ -67,10 +67,7 @@ export function CreateOrganizationForm({ dialog: isDialog, children, callback }:
       return;
     }
 
-    createMutation.mutate(
-      { path: { tenantId }, body: [{ ...values, id: `temp-${generateId()}` }] },
-      { onSuccess: (createdOrganization) => onSuccess(createdOrganization) },
-    );
+    createMutation.mutate({ path: { tenantId }, body: [{ ...values, id: `temp-${generateId()}` }] }, { onSuccess });
   };
 
   return (

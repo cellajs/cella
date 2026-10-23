@@ -1,6 +1,6 @@
 import { MDXProvider } from '@mdx-js/react';
 import { notFound } from '@tanstack/react-router';
-import { Suspense, useMemo } from 'react';
+import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RegisterSpySections } from '~/hooks/use-scroll-spy';
 import { spyPrefix } from '~/hooks/use-scroll-spy-store';
@@ -16,17 +16,16 @@ interface ViewPageProps {
 }
 
 /** Render modes: `default` full content, `overview` intro plus child page list, `nodeOnly` child navigation only. */
-function ViewPage({ slug }: ViewPageProps) {
+export function ViewPage({ slug }: ViewPageProps) {
   const page = getDocPage(slug);
   const Content = getDocPageComponent(slug);
 
-  // The aside lists h2 only; deeper levels stay reachable through anchors.
-  const tocHeadings = useMemo(() => (page?.headings ?? []).filter((heading) => heading.depth === 2), [page]);
-  // The page section comes first, so the intro above the first heading counts as the page itself
-  const spyIds = useMemo(() => [pageSectionId, ...tocHeadings.map((heading) => heading.id)], [tocHeadings]);
-
   if (!page || !Content) throw notFound();
 
+  // The aside lists h2 only; deeper levels stay reachable through anchors.
+  const tocHeadings = page.headings.filter((heading) => heading.depth === 2);
+  // The page section comes first, so the intro above the first heading counts as the page itself
+  const spyIds = [pageSectionId, ...tocHeadings.map((heading) => heading.id)];
   const renderMode = page.renderMode;
   const showToc = renderMode !== 'nodeOnly' && tocHeadings.length >= 2;
 
@@ -43,7 +42,7 @@ function ViewPage({ slug }: ViewPageProps) {
                 <MDXProvider components={mdxComponents}>
                   <Content />
                 </MDXProvider>
-                <RegisterSpySections key={slug} ids={spyIds} />
+                <RegisterSpySections ids={spyIds} />
               </Suspense>
             )}
             {renderMode !== 'default' && <ChildPagesList parentSlug={slug} />}
@@ -87,5 +86,3 @@ function ChildPagesList({ parentSlug }: { parentSlug: string }) {
     </div>
   );
 }
-
-export { ViewPage };

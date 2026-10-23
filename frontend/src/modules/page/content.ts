@@ -1,4 +1,4 @@
-import { docsIndex as docsFrontmatter } from 'virtual:docs-frontmatter';
+import { docsIndex } from 'virtual:docs-frontmatter';
 import { type ComponentType, lazy } from 'react';
 import { z } from 'zod';
 import { spyPrefix } from '~/hooks/use-scroll-spy-store';
@@ -80,14 +80,9 @@ export type DocPage = {
   headings: DocHeading[];
 };
 
-/**
- * Spy section of the page itself: the article wraps every heading, so it is current until the first heading takes over.
- * Heading slugs never contain a slash, so it can't clash with one (pages do have an `## Overview` heading).
- */
+/** The page's own spy section, current until the first heading; heading slugs hold no slash, so this id never clashes with one. */
 export const pageSectionId = 'page/intro';
 
-// Frontmatter and headings come from a build-time index (vite/docs-frontmatter.ts); importing page modules for it would pull every page body into this chunk.
-const metaModules = docsFrontmatter;
 const componentModules = import.meta.glob<ComponentType>('/src/content/docs/**/*.{md,mdx}', { import: 'default' });
 
 /** File path to slug: `architecture/index.md` becomes `architecture`. */
@@ -104,7 +99,8 @@ function buildIndex(): { pages: DocPage[]; loaders: Map<string, () => Promise<Co
   const parsed: { slug: string; path: string; meta: z.infer<typeof frontmatterSchema>; headings: DocHeading[] }[] = [];
   let config: DocsConfig | null = null;
 
-  for (const [path, entry] of Object.entries(metaModules)) {
+  // Frontmatter and headings come from a build-time index (vite/docs-frontmatter.ts); importing page modules for it would pull every page body into this chunk.
+  for (const [path, entry] of Object.entries(docsIndex)) {
     const slug = pathToSlug(path);
     if (!slug) {
       // Root index holds the global docs config and the /docs landing body.

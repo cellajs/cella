@@ -20,12 +20,11 @@ interface OrganizationPageProps {
   tenantId: string;
 }
 
-function OrganizationPage({ organizationId, tenantId }: OrganizationPageProps) {
+export function OrganizationPage({ organizationId, tenantId }: OrganizationPageProps) {
   const { t } = useTranslation();
 
-  const orgQueryOptions = organizationQueryOptions(organizationId, tenantId);
   // Organization is enriched with membership via cache subscription
-  const { data: organization } = useSuspenseQuery(orgQueryOptions);
+  const { data: organization } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));
 
   const resolveCan = useResolveCan();
   const canUpdate = resolveCan(organization.can?.organization?.update, organization.createdBy);
@@ -80,5 +79,3 @@ function OrganizationPage({ organizationId, tenantId }: OrganizationPageProps) {
     </>
   );
 }
-
-export { OrganizationPage };
