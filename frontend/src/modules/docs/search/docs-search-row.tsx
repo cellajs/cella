@@ -1,6 +1,6 @@
 import { BracesIcon, ChevronRightIcon, FileTextIcon, HashIcon } from 'lucide-react';
 import { Fragment } from 'react';
-import { HighlightText } from '~/modules/common/match-highlight';
+import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { MethodLabel } from '~/modules/docs/operations/method-label';
 import type { DocsSearchResult } from '~/modules/docs/search/types';
 import { cn } from '~/utils/cn';

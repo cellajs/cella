@@ -124,9 +124,9 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
               <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={contentVariants}>
                 <ComboboxEmpty>
                   {debouncedSearchQuery.length ? (
-                    <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleProps={{ resource: t('c:user_other').toLowerCase() }} />
+                    <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleOptions={{ resource: t('c:user_other').toLowerCase() }} />
                   ) : (
-                    <ContentPlaceholder icon={UsersRoundIcon} title="c:invite_members_search.text" titleProps={{ appName: appConfig.name }} />
+                    <ContentPlaceholder icon={UsersRoundIcon} title="c:invite_members_search.text" titleOptions={{ appName: appConfig.name }} />
                   )}
                 </ComboboxEmpty>
               </motion.div>

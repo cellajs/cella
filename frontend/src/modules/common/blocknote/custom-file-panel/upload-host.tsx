@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useContext, useState } from 'react';
 import { UppyFilePanel } from '~/modules/common/blocknote/custom-file-panel/uppy-upload-panel';
-import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
+import { focusEditor } from '~/modules/common/blocknote/helpers/focus-editor';
 import type { BaseUppyFilePanelProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 
 /** Live editor handle the bridge keeps current, so the host targets the latest editor after a remount. */

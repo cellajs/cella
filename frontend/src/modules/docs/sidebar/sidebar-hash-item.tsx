@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { docsSidebarSheetId } from '~/modules/docs/sidebar/docs-sidebar-sheet';
 import { Button } from '~/modules/ui/button';

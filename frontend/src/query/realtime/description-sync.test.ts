@@ -30,8 +30,8 @@ stubLocalStorage();
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
-const { registerYjsOwnedFields } = await import('~/modules/common/blocknote/yjs-editor');
-const { patchCollaborativeDescription } = await import('~/modules/common/blocknote/use-description-update');
+const { registerYjsOwnedFields } = await import('~/modules/common/blocknote/yjs-owned-fields');
+const { patchCollaborativeDescription } = await import('~/modules/common/blocknote/description-updater');
 const { fetchEntityAndUpdateList, fetchRangeAndPatch } = await import('./cache-ops');
 
 // The synthetic 'task' type exists only in this file's shared mock, hence the casts.

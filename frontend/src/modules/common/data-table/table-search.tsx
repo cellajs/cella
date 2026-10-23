@@ -14,10 +14,10 @@ interface TableSearchProps {
   name: string;
   value?: string;
   allowOfflineSearch?: boolean;
-  setQuery: (value: string) => void;
+  onSearch: (value: string) => void;
 }
 
-export function TableSearch({ name, value = '', allowOfflineSearch = false, setQuery }: TableSearchProps) {
+export function TableSearch({ name, value = '', allowOfflineSearch = false, onSearch }: TableSearchProps) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
   const { isFilterActive } = useContext(TableFilterBarContext);
@@ -30,7 +30,7 @@ export function TableSearch({ name, value = '', allowOfflineSearch = false, setQ
   const debouncedQuery = useDebounce(inputValue, 250);
 
   useEffect(() => {
-    if (debouncedQuery !== value) setQuery(debouncedQuery);
+    if (debouncedQuery !== value) onSearch(debouncedQuery);
   }, [debouncedQuery]);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export function TableSearch({ name, value = '', allowOfflineSearch = false, setQ
           className={cn(!inputValue.length && 'invisible')}
           onClick={() => {
             setInputValue('');
-            setQuery('');
+            onSearch('');
             setFocus();
           }}
         />

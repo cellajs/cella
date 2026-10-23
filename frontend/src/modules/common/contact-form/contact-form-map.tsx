@@ -91,7 +91,7 @@ function CompanyMap({ styleUrl }: CompanyMapProps) {
         <Button
           onClick={() => map?.zoomTo(map.getZoom() + 0.5)}
           size="micro"
-          variant="outlineGhost"
+          variant="outline-ghost"
           className="rounded-b-none border-b-0"
           aria-label={t('c:zoom_in')}
         >
@@ -100,7 +100,7 @@ function CompanyMap({ styleUrl }: CompanyMapProps) {
         <Button
           onClick={() => map?.zoomTo(map.getZoom() - 0.5)}
           size="micro"
-          variant="outlineGhost"
+          variant="outline-ghost"
           className="rounded-t-none"
           aria-label={t('c:zoom_out')}
         >

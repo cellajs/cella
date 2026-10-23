@@ -17,14 +17,14 @@ function signIn(owner: string | null) {
 /** Another tab of `owner`: a channel of its own on that user's name. */
 function otherTab(owner: string) {
   const received: TabMessage[] = [];
-  const channel = new BroadcastChannel(`test:${owner}:ydocs`);
+  const channel = new BroadcastChannel(`test:${owner}:ydoc-tabs`);
   channel.onmessage = (event: MessageEvent<TabMessage>) => received.push(event.data);
   return { channel, received };
 }
 
 const update = (rowId: number | null) =>
   ({
-    t: 'update',
+    kind: 'update',
     key: yDocKeyString({ entityType: 'attachment', entityId: 'doc-1' }),
     generation: 'gen-1',
     update: new Uint8Array([1, 2]),

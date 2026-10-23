@@ -3,8 +3,8 @@ import { createRootRoute, createRoute, createRouter, Link, Outlet, RouterProvide
 import { BookmarkIcon, InfoIcon, SettingsIcon, ShieldIcon, Trash2Icon } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { expect, waitFor } from 'storybook/test';
+import { getSection, scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import { getSection, scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 

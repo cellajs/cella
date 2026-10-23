@@ -1,6 +1,6 @@
 import { UserRoundXIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { type LeaveChannelProps, useLeaveChannel } from '~/modules/memberships/leave-channel-button';
+import { type LeaveChannelProps, useLeaveChannel } from '~/modules/memberships/use-leave-channel';
 import { Button } from '~/modules/ui/button';
 
 interface LeaveChannelFormProps extends LeaveChannelProps {

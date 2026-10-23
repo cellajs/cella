@@ -29,7 +29,7 @@ interface BaseEntityGridProps<TEntity extends { id: string }> {
   /** The list query's error: it holds back the empty state, and the loader reports the failed page and stops paging. */
   error: unknown;
   hasNextPage?: boolean;
-  fetchNextPage: () => Promise<unknown>;
+  fetchMore: () => Promise<unknown>;
   /** A search or filter is active: an empty list shows "No … found" (else "No … yet"). */
   isFiltered: boolean;
   /** Shows at most {@link gridPreviewLimit} tiles and a "Show all" button. */
@@ -64,7 +64,7 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
   isFetching,
   error,
   hasNextPage,
-  fetchNextPage,
+  fetchMore,
   isFiltered,
   limitedView,
   onExpand,
@@ -78,9 +78,9 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
   if (!isFetching && !error && entities.length === 0) {
     const resource = t(label, { count: 0 }).toLowerCase();
     return isFiltered ? (
-      <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleProps={{ resource }} />
+      <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleOptions={{ resource }} />
     ) : (
-      <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleProps={{ resource }} />
+      <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleOptions={{ resource }} />
     );
   }
 
@@ -103,7 +103,7 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
           </Button>
         </div>
       ) : (
-        <InfiniteLoader hasNextPage={!!hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} fetchMore={fetchNextPage} />
+        <InfiniteLoader hasNextPage={!!hasNextPage} isFetching={isFetching} isFetchMoreError={!!error} fetchMore={fetchMore} />
       )}
     </div>
   );

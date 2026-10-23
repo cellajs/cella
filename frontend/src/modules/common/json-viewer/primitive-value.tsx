@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import { useState } from 'react';
 import { getTypeColorClass, jsonViewerTheme } from '~/modules/common/json-viewer/theme';
 import { jsonSchemaTypes } from '~/modules/common/json-viewer/utils';
-import { HighlightText } from '~/modules/common/match-highlight';
+import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 

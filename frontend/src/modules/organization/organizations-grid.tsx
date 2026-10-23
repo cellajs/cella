@@ -54,7 +54,7 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
         isFetching={isFetching}
         error={error}
         hasNextPage={hasNextPage}
-        fetchNextPage={fetchMore}
+        fetchMore={fetchMore}
         isFiltered={isFiltered}
         limitedView={limitedView}
         onExpand={() => setExpanded(true)}

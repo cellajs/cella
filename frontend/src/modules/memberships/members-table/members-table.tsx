@@ -95,7 +95,7 @@ export function MembersTable({ channel, isSheet = false }: MembersTableProps) {
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder icon={UsersIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:member_other').toLowerCase() }} />
+            <ContentPlaceholder icon={UsersIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:member_other').toLowerCase() }} />
           ),
         }}
       />

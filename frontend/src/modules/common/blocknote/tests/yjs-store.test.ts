@@ -128,7 +128,7 @@ describe('yjs store: writing and loading', () => {
     expect(broadcasts).toHaveLength(0);
     await flushYjsStore();
     const [row] = await rows();
-    expect(broadcasts).toEqual([{ t: 'update', key: 'attachment:doc-1', generation: 'gen-1', update: row.update, rowId: row.id }]);
+    expect(broadcasts).toEqual([{ kind: 'update', key: 'attachment:doc-1', generation: 'gen-1', update: row.update, rowId: row.id }]);
 
     // The receiving side: an update stored under another tab's row is not stored again; one whose write failed is kept, not local.
     writer.append(Y.encodeStateAsUpdate(doc), false, { rowId: 42 });

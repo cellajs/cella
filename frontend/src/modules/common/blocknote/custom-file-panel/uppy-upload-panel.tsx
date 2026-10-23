@@ -8,7 +8,7 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
 import { customSchema } from '~/modules/common/blocknote/blocknote-schema';
 import { attachmentBlockProps, storedFileBlockProps } from '~/modules/common/blocknote/custom-file-panel/file-block-props';
-import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
+import { focusEditor } from '~/modules/common/blocknote/helpers/focus-editor';
 import type { BaseUppyFilePanelProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { Spinner } from '~/modules/common/spinner';
 import { createUppy, registerUppyPlugins } from '~/modules/common/uploader/helpers/uppy-helpers';

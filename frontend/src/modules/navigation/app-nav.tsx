@@ -2,7 +2,7 @@ import { type StaticDataRouteOption, useNavigate, useRouterState } from '@tansta
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointAbove, useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { useHotkeys } from '~/hooks/use-hot-keys';
+import { useHotkeys } from '~/hooks/use-hotkeys';
 import { navSheetId, sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { BottomBarNav } from '~/modules/navigation/bottom-bar-nav';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';

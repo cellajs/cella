@@ -41,7 +41,7 @@ import {
 import { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
 import { ensureStepUp, withStepUp } from '~/modules/auth/step-up';
-import { StepUpDismissed } from '~/modules/auth/step-up-retry';
+import { StepUpDismissedError } from '~/modules/auth/step-up-retry';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { getAndSetMe } from '~/modules/me/helpers';
 import type { Passkey } from '~/modules/me/types';
@@ -144,7 +144,7 @@ export const useCreatePasskeyMutation = () =>
     },
     onError(error) {
       // The global handler toasts the server's refusals; a failure in the browser, a cancelled prompt included, gets this toast.
-      if (error instanceof StepUpDismissed || error instanceof ApiError) return;
+      if (error instanceof StepUpDismissedError || error instanceof ApiError) return;
       console.error('Error during passkey registration:', error);
       toaster.error(t('error:passkey_registration_failed'));
     },

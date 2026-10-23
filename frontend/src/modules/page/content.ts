@@ -1,7 +1,7 @@
 import { docsIndex } from 'virtual:docs-frontmatter';
 import { type ComponentType, lazy } from 'react';
 import { z } from 'zod';
-import { spyPrefix } from '~/hooks/use-scroll-spy-store';
+import { spyPrefix } from '~/hooks/scroll-spy-store';
 
 const contentRoot = '/src/content/docs/';
 

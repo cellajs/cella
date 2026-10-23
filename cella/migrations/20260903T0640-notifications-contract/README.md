@@ -9,7 +9,7 @@ Notification sources derive from the product table (notifications: true; live ro
 via mentionableColumns, previews and digest names, deriveFrom both with a yjsMaterializer), apps
 declare only resolveRecipients/resolveContextId. Email and push links are self-describing /n links
 resolved by the frontend, resolveEmailLink is gone. Attachments are the template consumer (mentions
-column, description update op, materializer, collaborative editor in a sheet; useDescriptionUpdate
+column, description update op, materializer, collaborative editor in a sheet; createDescriptionUpdater
 is the shared persistence policy). appNotificationTypes extends the type enum and labels. Shared
 server BlockNote schema; pnpm style app allowlist. Inbox items carry actor, channelName and
 subjectTitle for sentence-style cards; channelRouteConfig.notificationSearch opens the subject; a
@@ -25,7 +25,7 @@ the table has `mentionableColumns`, previews and digest names from `name` and `d
 `buildNotificationLink`, frontend `notification-link.ts`), so `resolveEmailLink` is gone.
 Attachments are the template consumer: `attachments.mentions`, `description` on the update
 contract, `updateAttachmentOp` as materializer, a collaborative description editor in a sheet
-(`useDescriptionUpdate` is the shared persistence policy). `appNotificationTypes` in the pinned
+(`createDescriptionUpdater` is the shared persistence policy). `appNotificationTypes` in the pinned
 `app-schemas.ts` extends the type enum and labels; `shared/utils/blocknote-server-schema.ts` is
 the one server schema; `pnpm style` reads `shared/config/vocabulary-allowlist.ts`.
 
@@ -55,7 +55,7 @@ No script: manual.
 2. Append the template's `appNotificationTypes` export to your pinned `app-schemas.ts`; list your
    types (e.g. `['assigned']`) and add `notification.<type>` plus `email.digest_line.<type>` to
    `app.json`.
-3. Replace `use-<product>-description-update.ts` hooks with `useDescriptionUpdate` from
+3. Replace `use-<product>-description-update.ts` hooks with `createDescriptionUpdater` from
    `modules/common/blocknote`, or compose its halves (`patchCollaborativeDescription` with your
    derived fields, `persistStandaloneDescription` behind a debounce) when the editor needs more.
 4. Take upstream for the attachment module (backend and frontend), `pnpm generate` for

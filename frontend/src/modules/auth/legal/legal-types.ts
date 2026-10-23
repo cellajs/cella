@@ -6,7 +6,7 @@ import type { ComponentType, LazyExoticComponent } from 'react';
  */
 export const legalOverviewId = 'overview';
 
-export interface LegalSection {
+export interface LegalSectionConfig {
   id: string;
   label: string | null;
 }
@@ -14,7 +14,7 @@ export interface LegalSection {
 export interface LegalTextConfig {
   component: LazyExoticComponent<ComponentType>;
   label: string;
-  sections: LegalSection[];
+  sections: LegalSectionConfig[];
 }
 
 export type LegalTexts = Record<string, LegalTextConfig>;

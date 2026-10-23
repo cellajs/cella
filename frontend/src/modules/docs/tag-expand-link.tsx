@@ -29,7 +29,7 @@ export function TagExpandLink({ isOpen, tagName, loading, to, search, hash, onMo
         replace
         draggable={false}
         resetScroll={false}
-        className={cn(buttonVariants({ variant: isOpen ? 'outlineGhost' : 'plain', size: 'lg' }), 'rounded-full')}
+        className={cn(buttonVariants({ variant: isOpen ? 'outline-ghost' : 'plain', size: 'lg' }), 'rounded-full')}
         aria-label={`${text}: ${tagName}`}
         onMouseEnter={onMouseEnter}
         onClick={onClick}

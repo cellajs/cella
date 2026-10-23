@@ -6,7 +6,7 @@ import type { z } from 'zod';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { Button } from '~/modules/ui/button';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '~/modules/ui/totp';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '~/modules/ui/input-otp';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 import { formResolver } from '~/utils/form-resolver';
 

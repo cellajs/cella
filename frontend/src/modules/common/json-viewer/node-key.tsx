@@ -1,6 +1,6 @@
 import type { Ref } from 'react';
 import { jsonViewerTheme } from '~/modules/common/json-viewer/theme';
-import { HighlightText } from '~/modules/common/match-highlight';
+import { HighlightText } from '~/modules/common/match-highlight/highlight-text';
 import { cn } from '~/utils/cn';
 
 interface NodeKeyProps {

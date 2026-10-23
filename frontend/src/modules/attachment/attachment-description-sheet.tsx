@@ -4,9 +4,9 @@ import { Suspense } from 'react';
 import type { Attachment } from 'sdk';
 import { hierarchy, isChannel } from 'shared';
 import { attachmentsCanonicalOptions, useAttachmentUpdateMutation } from '~/modules/attachment/query';
+import { createDescriptionUpdater } from '~/modules/common/blocknote/description-updater';
 import { LazyCollaborativeBlockNote } from '~/modules/common/blocknote/lazy-collaborative-blocknote';
 import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
-import { useDescriptionUpdate } from '~/modules/common/blocknote/use-description-update';
 import { sheeter, type TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
@@ -51,7 +51,7 @@ function AttachmentDescriptionForm({ attachment: openedRow }: AttachmentDescript
   const members = flattenInfiniteData<Member>(membersQuery.data);
 
   const { mutateAsync } = useAttachmentUpdateMutation(tenantId, organizationId);
-  const updateData = useDescriptionUpdate('attachment', attachment, (ops) => mutateAsync({ id: attachment.id, ops }));
+  const updateData = createDescriptionUpdater('attachment', attachment, (ops) => mutateAsync({ id: attachment.id, ops }));
 
   // The stored text wherever no live editor is: faded and inert while the relay syncs, at the editor's height so the swap does not reflow.
   const waitingFallback = (

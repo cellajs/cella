@@ -1,7 +1,7 @@
 import { type CustomBlock, isMediaBlock } from '~/modules/common/blocknote/types';
 
 /** Whether the stored blocks hold any content: text, a filled table cell, a media block, or a child block's text. */
-export const blocknoteFieldIsDirty = (strBlocks: string): boolean => {
+export const blocknoteHasContent = (strBlocks: string): boolean => {
   try {
     const blocks = JSON.parse(strBlocks) as CustomBlock[];
 

@@ -380,7 +380,7 @@ class StoreWriter implements YDocWriter {
 
   private broadcast(update: Uint8Array, rowId: number | null) {
     if (!this.scope) return;
-    postTabMessage({ t: 'update', key: yDocKeyString(this.key), generation: this.scope.generation, update, rowId });
+    postTabMessage({ kind: 'update', key: yDocKeyString(this.key), generation: this.scope.generation, update, rowId });
   }
 
   private async write(batch: Batch) {

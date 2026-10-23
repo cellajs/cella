@@ -5,8 +5,8 @@ import type { MembershipBase } from 'sdk';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { NamedText } from '~/modules/common/named-text';
 import { PopConfirm } from '~/modules/common/popconfirm';
-import type { LeaveChannelProps } from '~/modules/memberships/leave-channel-button';
 import { LeaveChannelForm } from '~/modules/memberships/leave-channel-form';
+import type { LeaveChannelProps } from '~/modules/memberships/use-leave-channel';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 

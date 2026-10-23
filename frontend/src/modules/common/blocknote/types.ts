@@ -16,12 +16,12 @@ export type CustomBlock = typeof customSchema.Block;
 export type AnyBlockNoteEditor = BlockNoteEditor<any, any, any>;
 
 export type CustomBlockTypes = CustomBlock['type'] | 'emoji';
-export type CustomBlockFileTypes = Extract<CustomBlockTypes, 'file' | 'image' | 'audio' | 'video'>;
-export type CustomBlockRegularTypes = Exclude<CustomBlockTypes, CustomBlockFileTypes>;
+export type CustomBlockMediaTypes = Extract<CustomBlockTypes, 'file' | 'image' | 'audio' | 'video'>;
+export type CustomBlockRegularTypes = Exclude<CustomBlockTypes, CustomBlockMediaTypes>;
 
-export const isMediaBlockType = (type: CustomBlockTypes): type is CustomBlockFileTypes => mediaBlockTypes.has(type);
+export const isMediaBlockType = (type: CustomBlockTypes): type is CustomBlockMediaTypes => mediaBlockTypes.has(type);
 
-export const isMediaBlock = (block: CustomBlock): block is Extract<CustomBlock, { type: CustomBlockFileTypes }> => mediaBlockTypes.has(block.type);
+export const isMediaBlock = (block: CustomBlock): block is Extract<CustomBlock, { type: CustomBlockMediaTypes }> => mediaBlockTypes.has(block.type);
 
 export type SlashItemKeys = DefaultSuggestionItem['key'] | 'notify' | 'checklistItem';
 
@@ -78,7 +78,7 @@ export type CommonBlockNoteProps = {
   /** The `:` emoji picker, default true. */
   emojis?: boolean;
   excludeBlockTypes?: CustomBlockRegularTypes[];
-  excludeFileBlockTypes?: CustomBlockFileTypes[];
+  excludeMediaBlockTypes?: CustomBlockMediaTypes[];
   /** Labels an empty heading in block 0, the title of a title document (helpers/title-document). */
   titlePlaceholder?: string;
   /** Keeps block 0 first: no drag handle on it, no drop above it, and no move or drop that would displace it. */
@@ -90,9 +90,9 @@ export type CommonBlockNoteProps = {
   members?: Member[];
   onFocus?: () => void;
   /** Called on Escape, after the commit. */
-  onEscapeClick?: () => void;
+  onEscape?: () => void;
   /** Called on Cmd/Ctrl+Enter, after the commit. */
-  onEnterClick?: () => void;
+  onCmdEnter?: () => void;
   /** Runs before a route loads, once the user changed the document since the editor mounted. */
   onBeforeLoad?: (editor: CustomBlockNoteEditor) => void;
 } & (

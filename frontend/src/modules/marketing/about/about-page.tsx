@@ -1,9 +1,9 @@
 import { ArrowDownIcon, CopyIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
+import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { CopiedIcon } from '~/modules/common/copied-icon';
 import { GithubIcon } from '~/modules/common/icons/github';
 import { CallToAction } from '~/modules/marketing/about/call-to-action';

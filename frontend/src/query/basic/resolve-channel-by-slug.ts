@@ -14,8 +14,6 @@ type ResolveChannelBySlugConfig<T extends { id: string; slug: string }, TParams 
   detailQueryOptions: (id: string) => FetchQueryOptions<T, DefaultError, T, TQueryKey>;
   /** Fetches the entity by slug when it isn't resolvable from cache. */
   fetchBySlug: () => Promise<T>;
-  /** @deprecated Unread: a row `fetchBySlug` resolves is cached under `detailQueryOptions(id).queryKey`. */
-  slugFetchCacheKey?: (id: string) => readonly unknown[];
   /** Default true: skip the id-based read while offline, resolving to undefined. False always reads and waits for reconnection. */
   readRequiresOnline?: boolean;
   /** Revalidate a stale cached entry in the background, for fresh navigations. An entry this call seeds revalidates always. */

@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
 import { useAuthStore } from '~/modules/auth/auth-store';
+import { invitationResumePath } from '~/modules/auth/post-auth-redirect';
 import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import type { AuthStep } from '~/modules/auth/types';
-import { invitationResumePath } from '~/modules/auth/use-post-auth-redirect';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 

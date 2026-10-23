@@ -158,8 +158,8 @@ export function FieldError({
 
 // RHF + base-ui Field integration
 
-export type LabelDirectionType = 'top' | 'left';
-const LabelDirectionContext = React.createContext<LabelDirectionType>('top');
+export type LabelDirection = 'top' | 'left';
+const LabelDirectionContext = React.createContext<LabelDirection>('top');
 
 interface FieldStateContextValue {
   invalid: boolean;
@@ -179,7 +179,7 @@ type FormProps<TFieldValues extends FieldValues, TContext = unknown, TTransforme
   TFieldValues,
   TContext,
   TTransformedValues
-> & { labelDirection?: LabelDirectionType };
+> & { labelDirection?: LabelDirection };
 
 export function Form<TFieldValues extends FieldValues, TContext = unknown, TTransformedValues extends FieldValues = TFieldValues>({
   children,

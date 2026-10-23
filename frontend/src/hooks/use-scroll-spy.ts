@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import { getSection, registerSections, subscribeSection, unregisterSections } from '~/hooks/use-scroll-spy-store';
+import { getSection, registerSections, subscribeSection, unregisterSections } from '~/hooks/scroll-spy-store';
 
 /** Register sections whose active ID the scroll-spy store writes to the URL hash. */
 export const useScrollSpy = (sectionIds?: readonly string[]) => {

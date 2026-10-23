@@ -56,7 +56,7 @@ export function OrganizationTabsCard({ organization }: OrganizationCardProps) {
     <TabsArrangementCard
       entity={organization}
       parentRouteId="/_app/$tenantId/$organizationSlug/organization"
-      persist={(toolsConfig) => mutate({ path: { tenantId: organization.tenantId, id: organization.id }, body: { toolsConfig } })}
+      onPersist={(toolsConfig) => mutate({ path: { tenantId: organization.tenantId, id: organization.id }, body: { toolsConfig } })}
     />
   );
 }

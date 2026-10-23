@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { JsonViewer } from '~/modules/common/json-viewer/json-viewer';
 import { type JsonPath, matchRowPaths } from '~/modules/common/json-viewer/utils';
-import { useMatchSteps } from '~/modules/common/match-highlight';
+import { useMatchSteps } from '~/modules/common/match-highlight/use-match-steps';
 import { SearchClearButton } from '~/modules/common/search-clear-button';
 import { SearchSpinner } from '~/modules/common/search-spinner';
 import { JsonActions } from '~/modules/docs/json-actions';

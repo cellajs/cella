@@ -126,8 +126,8 @@ describe('standalone BlockNote commits', () => {
 
   it('commits once for Escape followed by blur and unmount', async () => {
     const updateData = vi.fn();
-    const onEscapeClick = vi.fn();
-    await renderEditor({ defaultValue: stored, updateData, onEscapeClick });
+    const onEscape = vi.fn();
+    await renderEditor({ defaultValue: stored, updateData, onEscape });
 
     await edit();
     const edited = contentApi.current?.getContent();
@@ -135,7 +135,7 @@ describe('standalone BlockNote commits', () => {
     await blur();
     await unmount();
 
-    expect(onEscapeClick).toHaveBeenCalledOnce();
+    expect(onEscape).toHaveBeenCalledOnce();
     expect(updateData).toHaveBeenCalledExactlyOnceWith(edited);
   });
 

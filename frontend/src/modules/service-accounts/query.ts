@@ -15,7 +15,7 @@ import {
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { withStepUp } from '~/modules/auth/step-up';
-import { StepUpDismissed } from '~/modules/auth/step-up-retry';
+import { StepUpDismissedError } from '~/modules/auth/step-up-retry';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { queryClient } from '~/query/query-client';
 import type { MutationData, QueryOrgContext } from '~/query/types';
@@ -60,7 +60,7 @@ export const useCreateServiceAccountMutation = () => {
       toaster.success(t('c:success.create_resource', { resource: t('c:api_key') }));
     },
     onError(error) {
-      if (error instanceof StepUpDismissed) return;
+      if (error instanceof StepUpDismissedError) return;
       console.error('Error creating API key:', error);
     },
   });

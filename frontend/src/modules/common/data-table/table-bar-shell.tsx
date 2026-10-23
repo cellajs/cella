@@ -101,7 +101,7 @@ export function TableBarShell<TRow extends object>({
           <div className="sm:grow" />
 
           <FilterBarSearch>
-            <TableSearch name={searchName} value={searchVars.q} setQuery={onSearch} allowOfflineSearch={allowOfflineSearch} />
+            <TableSearch name={searchName} value={searchVars.q} onSearch={onSearch} allowOfflineSearch={allowOfflineSearch} />
           </FilterBarSearch>
           {filters && <FilterBarFilters>{filters}</FilterBarFilters>}
         </TableFilterBar>

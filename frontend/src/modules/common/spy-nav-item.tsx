@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { motion } from 'motion/react';
 import type { CSSProperties, ReactNode } from 'react';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 

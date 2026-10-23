@@ -60,7 +60,7 @@ export function ApiKeysCard({ organization }: ApiKeysCardProps) {
       </div>
 
       {accounts.length === 0 ? (
-        <ContentPlaceholder size="sm" icon={KeyRoundIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:api_key_other') }} />
+        <ContentPlaceholder size="sm" icon={KeyRoundIcon} title="c:no_resource_yet" titleOptions={{ resource: t('c:api_key_other') }} />
       ) : (
         <div className="mt-4 flex flex-col gap-2">
           <ExpandableList

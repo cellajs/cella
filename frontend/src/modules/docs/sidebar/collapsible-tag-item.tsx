@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { memo, type ReactNode } from 'react';
+import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { ActiveIndicator } from '~/modules/docs/sidebar/active-indicator';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger, collapsiblePanelClass } from '~/modules/ui/collapsible';

@@ -3,12 +3,12 @@ import { ChevronDownIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from 'shared/utils/nanoid';
+import { scrollToSectionById } from '~/hooks/scroll-spy-store';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import type { TKey } from '~/lib/i18n-locales';
 import type { LegalSubject } from '~/modules/auth/legal/legal-config';
-import { type LegalSection, legalOverviewId } from '~/modules/auth/legal/legal-types';
+import { type LegalSectionConfig, legalOverviewId } from '~/modules/auth/legal/legal-types';
 import { SpyNavItem } from '~/modules/common/spy-nav-item';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger, collapsiblePanelClass } from '~/modules/ui/collapsible';
@@ -17,7 +17,7 @@ import { cn } from '~/utils/cn';
 interface LegalSubjectConfig {
   id: LegalSubject;
   label: TKey;
-  sections: readonly LegalSection[];
+  sections: readonly LegalSectionConfig[];
 }
 
 interface LegalAsideProps {
