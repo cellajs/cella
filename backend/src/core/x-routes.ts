@@ -1,5 +1,6 @@
 import { createRoute, type z } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
+import { type AccessScope, accessScopes } from 'shared';
 import type { Env } from '#/core/context';
 import {
   collectExtensionMiddleware,
@@ -7,9 +8,12 @@ import {
   createSpecificationExtensions,
   type ExtensionPropId,
   getExtensionPropIds,
+  type SecurityRequirement,
+  toolAction,
   type XMiddlewareHandler,
   type XMiddlewareOptions,
 } from '#/core/openapi-extensions';
+import { checksAuthoringRules } from '#/core/openapi-validation';
 import { configSwitchGate } from '#/middlewares/config-switch';
 import { errorResponseRefs } from '#/schemas/error-response-schemas';
 
@@ -24,6 +28,11 @@ const errorPageMiddleware: MiddlewareHandler<Env> = async (ctx, next) => {
 };
 
 type RouteOptions = Parameters<typeof createRoute>[0] & XMiddlewareOptions & { operationId: string };
+
+/** A session is never narrowed, so of a route's security schemes only the key and the token carry its scope. */
+const scopedSchemes = new Set(['apiKey', 'oauth2']);
+const withScope = (requirement: SecurityRequirement, scope: AccessScope): SecurityRequirement =>
+  Object.fromEntries(Object.entries(requirement).map(([scheme, scopes]) => [scheme, scopedSchemes.has(scheme) ? [scope] : scopes]));
 
 /** The route `createXRoute` returns: its own responses plus the error `$ref`s every route answers with. */
 type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }> = ReturnType<
@@ -55,7 +64,9 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   );
 
   // Security follows the guard: the first guard that declares schemes decides; a route with none is cookie-only.
-  const security = xMiddlewares.find((mw) => mw.__security !== undefined)?.__security ?? [{ cookieAuth: [] }];
+  const guardSecurity = xMiddlewares.find((mw) => mw.__security !== undefined)?.__security ?? [{ cookieAuth: [] }];
+  const scope = config.xScope ?? (config.xTool && accessScopes.required(config.xTool.entity, toolAction(config.method)));
+  const security = scope ? guardSecurity.map((requirement) => withScope(requirement, scope)) : guardSecurity;
 
   // An MCP call carries the caller's access token and nothing else, so a tool route whose guards take none can never run.
   const accepted = config.security ?? security;
@@ -67,8 +78,8 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
     );
   }
 
-  // Extension props leave the route config: middleware runs, metadata returns under its `x-*` key.
-  const extensionPropIds = getExtensionPropIds();
+  // Extension props leave the route config: middleware runs, metadata returns under its `x-*` key, `xScope` went into security.
+  const extensionPropIds = [...getExtensionPropIds(), 'xScope'];
   const cleanConfig = {
     ...Object.fromEntries(Object.entries(config).filter(([key]) => !extensionPropIds.includes(key))),
     ...createMetadataExtensions(config),
@@ -77,7 +88,10 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   return createRoute({ security, ...cleanConfig, responses: { ...config.responses, ...errorResponseRefs }, middleware, ...specificationExtensions });
 };
 
-/** A JSON response: `ctx.json(data, status)` is typed from `schema`. */
+/**
+ * A JSON response: `ctx.json(data, status)` is typed from `schema`. Give `example` only where this response differs
+ * from the schema's own example (development and tests refuse a copy of it) or where the schema is inline and has none.
+ */
 export type JsonResponse<S extends z.ZodType> = {
   description: string;
   content: { 'application/json': { schema: S; example?: unknown } };
@@ -89,12 +103,15 @@ export const json = <S extends z.ZodType>(description: string, schema: S, exampl
 });
 
 /** A required JSON request body: `ctx.req.valid('json')` is typed from `schema`. */
-export type JsonBody<S extends z.ZodType> = { required: true; content: { 'application/json': { schema: S } } };
+export type JsonBody<S extends z.ZodType> = { required: true; content: { 'application/json': { schema: S; example?: unknown } } };
 
-export const jsonBody = <S extends z.ZodType>(schema: S): JsonBody<S> => ({
-  required: true,
-  content: { 'application/json': { schema } },
-});
+/** An `example` shows a caller a valid body; in development and tests it must parse with `schema` when the route module loads. */
+export const jsonBody = <S extends z.ZodType>(schema: S, example?: z.input<S>): JsonBody<S> => {
+  if (example === undefined) return { required: true, content: { 'application/json': { schema } } };
+  const parsed = checksAuthoringRules ? schema.safeParse(example) : undefined;
+  if (parsed && !parsed.success) throw new Error(`A request body example does not match its schema: ${parsed.error.message}`);
+  return { required: true, content: { 'application/json': { schema, example } } };
+};
 
 /** Route options before `createXRoutes` fills in `operationId` (the key) and `tags` (the module's). */
 type DraftOptions = Omit<RouteOptions, 'path' | 'operationId' | 'tags'> & { operationId?: string; tags?: string[] };

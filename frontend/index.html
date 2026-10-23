@@ -31,14 +31,11 @@
 
   <link rel="preconnect" href="<%= apiUrl %>" crossorigin>
   
-  <!-- <meta name="msapplication-TileColor" content="<%= color %>" />
-  <meta name="theme-color" content="<%= color %>" /> -->
+  <!-- The page background for the browser chrome: light until Themer sets the stored mode's. -->
+  <meta name="theme-color" content="#ffffff" />
 
-  <link rel="preload" href="/static/ui/OpenSans-Regular.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high">
-  <link rel="preload" href="/static/ui/OpenSans-Medium.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high">
-  <link rel="preload" href="/static/ui/OpenSans-Bold.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high">
-  <link rel="preload" href="/static/ui/OpenSans-SemiBold.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high">
-  <link rel="preload" href="/static/ui/OpenSans-Light.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high">
+  <!-- The one font file every page needs, at the URL tailwind.css names: every weight, Latin script. -->
+  <link rel="preload" href="/static/ui/inter-latin-wght-5.3.0.woff2" as="font" type="font/woff2" crossorigin>
 
 
 </head>

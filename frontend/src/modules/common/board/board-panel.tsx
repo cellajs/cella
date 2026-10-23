@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { hintFadeIn, hintFadeOut } from '~/modules/common/resizable-panels/resizable-panels';
 import { cn } from '~/utils/cn';
+import { formatCount } from '~/utils/format-count';
 import { tw } from '~/utils/tw';
 
 interface BoardPanelHeaderProps {
@@ -56,7 +57,7 @@ export function BoardPanelBody({
       {children}
       {collapsedCount !== undefined && (
         <div aria-hidden className={cn(collapsedCountClass, 'pointer-events-none', hintFadeIn)}>
-          {collapsedCount}
+          {formatCount(collapsedCount)}
         </div>
       )}
     </div>
@@ -95,7 +96,7 @@ function CollapsedSections({ sections, position }: CollapsedSectionsProps) {
         key={i}
         className={cn('flex h-9 items-center justify-center p-2 text-xs', section.colorClass, section.borderClass)}
       >
-        {section.count}
+        {formatCount(section.count)}
       </div>
     ));
 }
@@ -105,7 +106,7 @@ export function CollapsedPanelView({ mainCount, sections = emptySections }: Coll
     <div className="relative flex flex-1 snap-center flex-col group-data-[highlighted=true]/paneldrop:border-primary sm:border">
       <CollapsedSections sections={sections} position="top" />
       <div className="grow" />
-      <div className={cn(collapsedCountClass, hintFadeOut)}>{mainCount}</div>
+      <div className={cn(collapsedCountClass, hintFadeOut)}>{formatCount(mainCount)}</div>
       <CollapsedSections sections={sections} position="bottom" />
     </div>
   );

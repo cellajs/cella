@@ -59,6 +59,7 @@
         "src/modules/ui/chart.tsx",
         "src/modules/common/board/board-layout.tsx",
         "src/modules/common/board/board-panel.tsx",
+        "src/modules/common/board/panel-drag-handle-button.tsx",
         "src/modules/common/date-tooltip.tsx",
         "src/modules/common/dropdowner/dropdown-select-item.tsx",
         "src/modules/common/form-fields/select-combobox/parent.tsx",

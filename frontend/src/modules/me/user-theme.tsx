@@ -27,7 +27,7 @@ function ThemeDropdownContent({ items }: { items: ThemeItem[] }) {
     <div className="flex flex-col">
       {items.map((item) => (
         <div key={item.key}>
-          {item.separator && <div className="my-1 border-t" />}
+          {item.separator && <div className="my-1 in-data-[slot=drawer-row-group]:hidden border-t" />}
           <DropdownSelectItem selected={item.selected} onSelect={item.onSelect}>
             <span className="flex items-center gap-2">
               <span className={item.iconClassName} style={item.iconStyle}>

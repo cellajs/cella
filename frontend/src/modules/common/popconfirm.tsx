@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
+import { useInDropdownerDrawer } from '~/modules/common/dropdowner/drawer';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { DrawerRowGroup } from '~/modules/ui/drawer';
 
 interface PopConfirmProps {
   children: ReactNode;
@@ -8,10 +10,12 @@ interface PopConfirmProps {
 }
 
 export function PopConfirm({ children, title }: PopConfirmProps) {
+  const inDrawer = useInDropdownerDrawer();
+
   return (
     <div className="flex flex-col gap-3 sm:w-max sm:max-w-72 sm:p-3">
       <p className="text-sm max-sm:py-3 max-sm:text-center">{title}</p>
-      {children}
+      {inDrawer ? <DrawerRowGroup>{children}</DrawerRowGroup> : children}
     </div>
   );
 }

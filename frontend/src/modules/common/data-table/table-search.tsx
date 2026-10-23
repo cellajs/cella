@@ -39,7 +39,7 @@ export function TableSearch({ name, value = '', allowOfflineSearch = false, onSe
 
   return (
     // The bar's own edge frames this field, so it draws none of its own; under increased contrast it needs one.
-    <InputGroup className="border-transparent more-contrast:border-input shadow-none">
+    <InputGroup className="border-transparent more-contrast:border-input">
       <InputGroupInput
         className="pl-0!"
         disabled={!isOnline && !allowOfflineSearch}

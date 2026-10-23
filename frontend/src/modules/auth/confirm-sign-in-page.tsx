@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { pendingMagicLinkQueryOptions } from '~/modules/auth/query';
+import { NamedText } from '~/modules/common/named-text';
 import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 
@@ -37,7 +38,9 @@ export function ConfirmSignInPage() {
   return (
     <>
       <AuthHeader title={t('c:confirm_sign_in')}>
-        <p>{t('c:confirm_sign_in.text', { email: data.email })}</p>
+        <p>
+          <NamedText i18nKey="c:confirm_sign_in.text" values={{ email: data.email }} />
+        </p>
       </AuthHeader>
       <form method="post" action={`${appConfig.backendAuthUrl}/magic/confirm`}>
         <Button type="submit" className="w-full">

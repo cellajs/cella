@@ -3,7 +3,6 @@ import { createXRoutes, json, xRoute } from '#/core/x-routes';
 import { publicGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
-import { mockSsoEntryResponse } from '#/modules/auth/auth-mocks';
 import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
 import { ssoConnectionParamSchema, ssoEntrySchema, ssoFederationParamSchema } from '#/modules/auth/sso/sso-schema';
 import { locationSchema } from '#/schemas';
@@ -18,7 +17,7 @@ export const authSsoRoutes = createXRoutes(['auth', 'cella'], {
     description:
       "What the entry page of an institution's sign-in shows: the organization, the institution and whether sign-in is active. Public by the connection id, the link an institution shares with its members.",
     request: { params: ssoConnectionParamSchema },
-    responses: { 200: json('SSO entry', ssoEntrySchema, mockSsoEntryResponse()) },
+    responses: { 200: json('SSO entry', ssoEntrySchema) },
   }),
   startSso: xRoute({
     method: 'get',

@@ -12,6 +12,7 @@ import { getChannelListQueries } from '~/lib/entity-modules';
 import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
+import { SearchDialogBar } from '~/modules/common/search-dialog-bar';
 import { type HistoryEntry, isHistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { navigationStore, useNavigationStore } from '~/modules/navigation/navigation-store';
@@ -21,6 +22,7 @@ import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { usersListQueryOptions } from '~/modules/user/query';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
+import { isTouchInteraction } from '~/utils/input-modality';
 import { addRecentSearch, resolveSearchInput, withoutRecentSearch } from '~/utils/recent-searches';
 
 const searchableEntityTypes = ['user', ...appConfig.channelEntityTypes] as const;
@@ -117,7 +119,7 @@ export function AppSearch() {
       navigate({ to, params, search, ...pageTopHashNav, resetScroll: false });
     }
 
-    dialoger.getState().remove();
+    dialoger.getState().remove('search');
   };
 
   return (
@@ -136,19 +138,30 @@ export function AppSearch() {
       inputValue={searchValue}
       onInputValueChange={(value) => setSearchValue(resolveSearchInput(searchValue, value, recentSearches))}
       filter={() => true}
+      // On touch the keyboard's Search key would open a highlighted first result the user never chose.
+      autoHighlight={!isTouchInteraction()}
     >
-      <div className="rounded-lg shadow-2xl">
-        <ComboboxSearchInput
-          ref={focusRef}
-          value={searchValue}
-          isSearching={isFetching}
-          spinnerDelay={0}
-          className="h-12 text-lg"
-          wrapClassName="h-12 text-lg"
-          placeholder={t('c:placeholder.search')}
-        />
-        {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h and overflow are cleared. */}
-        <ScrollArea id="item-search" ref={scrollAreaRef} className="sm:h-[40vh]">
+      <div className="flex min-h-0 flex-col rounded-lg shadow-2xl">
+        <SearchDialogBar>
+          <ComboboxSearchInput
+            ref={focusRef}
+            value={searchValue}
+            isSearching={isFetching}
+            spinnerDelay={0}
+            enterKeyHint="search"
+            className="h-12 text-lg"
+            wrapClassName="h-12 flex-1 border-b-0 text-lg"
+            placeholder={t('c:placeholder.search')}
+          />
+        </SearchDialogBar>
+        {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h and overflow are cleared. On a phone
+            the results take what the dialog has left above the keyboard. */}
+        <ScrollArea
+          id="item-search"
+          ref={scrollAreaRef}
+          className="max-sm:flex max-sm:min-h-0 max-sm:flex-col sm:h-[40vh]"
+          viewportClassName="max-sm:min-h-0 overscroll-contain"
+        >
           {!isLoading && notFound && !hasHistoryToShow && (
             <ComboboxEmpty className="h-full sm:h-[36vh]">
               <ContentPlaceholder

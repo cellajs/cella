@@ -38,11 +38,13 @@ function DialogContent({
   children,
   container,
   outsideScroll = false,
+  viewportClassName,
   ...props
 }: DialogPrimitive.Popup.Props & {
   container?: HTMLElement | null;
   /** Scroll tall content inside the popup by default, or outside through the viewport. */
   outsideScroll?: boolean;
+  viewportClassName?: string;
 }) {
   return (
     <DialogPortal container={container || undefined}>
@@ -58,6 +60,7 @@ function DialogContent({
               : // Inside scroll: the viewport only centers; the popup is capped and scrolls internally.
                 'grid place-items-center overflow-hidden',
           ],
+          viewportClassName,
         )}
       >
         <DialogPrimitive.Popup
@@ -83,7 +86,8 @@ function DialogHeader({ className, sticky, children, ...props }: React.Component
       data-slot="dialog-header"
       className={cn(
         'group/header relative flex flex-col gap-2 text-left',
-        sticky && 'z-10 sm:sticky sm:top-0 sm:bg-background/70 sm:backdrop-blur-xs',
+        // Shadows in the background colour, 1rem up and down, cover the scroller's padding above and the gap below while it sticks.
+        sticky && 'z-10 sm:sticky sm:top-0 sm:bg-background sm:shadow-[0_-1rem_var(--color-background),0_1rem_var(--color-background)]',
         className,
       )}
       {...props}

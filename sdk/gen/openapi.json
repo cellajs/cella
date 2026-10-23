@@ -165,169 +165,169 @@
     {
       "name": "cella",
       "description": "Core modules provided by cella.",
-      "kind": "owner"
+      "x-kind": "owner"
     },
     {
       "name": "app",
       "description": "Application-specific modules.",
-      "kind": "owner"
+      "x-kind": "owner"
     },
     {
       "name": "data",
       "description": "Complete data schemas",
-      "kind": "schema",
+      "x-kind": "schema",
       "x-default": true
     },
     {
       "name": "base",
       "description": "Schemas with base fields only",
-      "kind": "schema"
+      "x-kind": "schema"
     },
     {
       "name": "errors",
       "description": "Error schemas",
-      "kind": "schema"
+      "x-kind": "schema"
     },
     {
       "name": "channel",
       "description": "Operations on channel entities (entities that have memberships, e.g. organizations, projects).",
-      "kind": "entity"
+      "x-kind": "entity"
     },
     {
       "name": "product",
       "description": "Operations on product entities (content entities without membership, e.g. tasks, pages, attachments).",
-      "kind": "entity"
+      "x-kind": "entity"
     },
     {
       "name": "actors",
       "description": "Who writes rows: users and service accounts.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "internal",
       "description": "Operations hidden from the public API reference.",
-      "kind": "hidden"
+      "x-kind": "hidden"
     },
     {
       "name": "activities",
       "description": "Audit log entries tracking create, update, and delete operations across all resources, written\n    by the CDC worker. Activities provide an audit trail and can be extended for webhook delivery.",
-      "parent": "cella",
-      "kind": "hidden"
+      "x-parent": "cella",
+      "x-kind": "hidden"
     },
     {
       "name": "attachments",
       "description": "Endpoints for managing file based attachments (such as images, PDFs, and documents) linked to\n    entities such as organizations or users. Files are uploaded directly by the client, while the API handles\n    metadata registration, linking, access, and preview utilities. The description is edited collaboratively\n    and is a notification source for mentions.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "auth",
       "description": "Endpoints for authentication, supporting multiple sign-in methods including OAuth\n    (Google, Microsoft, GitHub), institutional SSO through a federation (SURFconext) and passkeys (WebAuthn). They\n    cover sign-up, sign-in, email verification, account linking, and impersonation for system admins.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "entities",
       "description": "Endpoints that operate across multiple entity types, such as users and organizations.\n    Entities are identifiable domain objects that may be contextual, hierarchical (with parent/child\n    relations), or actor-like. These routes provide shared logic across modules, including slug validation\n    and entity visibility.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "mcp",
       "description": "Endpoints exposing the AI capability layer, which is a server-side MCP tool registry surfaced to\n    external clients through a Model Context Protocol (MCP) endpoint. It ships no LLM transport or agent of its\n    own; apps build AI features and agent products (such as chat) on top, reusing the same MCP tool registry.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "me",
       "description": "Endpoints scoped to the current user, meaning the user associated with the active session making\n    the request. Unlike the users endpoints, which may operate on any user in the system, me endpoints act\n    exclusively on the current user and follow a different authorization flow.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "oauth-server",
       "description": "The authorization server: node-oidc-provider on the app origin under /oauth, issuing the access\n    tokens the API and the MCP endpoint accept. Runs as its own process (MODE=oauth) or folded into the API under\n    singleVM; the store it writes is swept hourly by the jobs worker.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "memberships",
       "description": "Endpoints for managing memberships, which represent one-to-one relationships between a\n    user and a contextual entity such as an organization. Each membership includes role information and\n    status flags such as archived or muted. Memberships can also reference parent entities to easily have a\n    hierarchical context available.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "metrics",
       "description": "Endpoints for retrieving high-level counts for entities such as users and organizations.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "notifications",
       "description": "Per-recipient inbox for mentions and addressed activity, plus the daily/weekly\n    email digest. Product modules opt in by declaring a notifications source on their own\n    defineBackendModule call (who counts as a recipient is the only app-specific part); with no\n    source declared the whole module is dormant. Rows are partitioned by createdAt so retention is\n    automatic, and excluded from CDC because they are per-user state rather than synced content.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "organizations",
       "description": "Endpoints for managing organizations, which are core channel entities and the highest ancestor\n    in the entity hierarchy. Organizations define access boundaries and are typically the primary scope for\n    permissions and resource management.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "push",
       "description": "Web Push delivery for the notification inbox: per-device subscriptions, VAPID key\n    exposure and the sender that turns fresh notification rows into pushes for offline\n    subscribers. Dormant unless has.push is on AND the deployment carries VAPID keys.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "requests",
       "description": "Endpoints for handling incoming requests such as contact form submissions, newsletter signups,\n    and waitlist entries.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "seen",
       "description": "Endpoints for tracking entity view counts and marking entities as seen by the current user.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "service-accounts",
       "description": "Machine actors and their API keys. A service account is the actor an API key runs as: bound to\n    the organization at a role, disabled rather than deleted, named in provenance like a user. Keys are opaque secrets\n    shown once; a key may narrow what its account can do through scopes, never widen it.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "system",
       "description": "System level endpoints for administrative actions and platform wide functionality, such as user\n    invitations, file uploads, and webhook handling.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "tenants",
       "description": "Endpoints for managing tenants, which are top-level isolation boundaries used by Row-Level\n    Security (RLS) to partition data. Only system administrators can manage tenants.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "connections",
       "description": "Connections: the institutions a tenant trusts to assert its members' identities through an SSO\n    federation (SURFconext first). System admins create them per tenant; a connection's id is the public entry key of\n    the tenant's SSO sign-in, and its domains decide which asserted institution the sign-in accepts.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "users",
       "description": "Endpoints for managing users at the system level. Unlike channel entities such as\n    organizations, a user is a global entity that is not scoped to a specific context. These endpoints are\n    intended for administrative operations on any user in the system.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "yjs",
       "description": "Endpoints for Yjs collaborative editing support: a short-lived token per entity for the Yjs relay\n    worker, and pull and push routes that sync a document through the API while the relay is out of reach. The relay's\n    materialize route, which writes a compacted collaborative document to its entity, is served on the internal\n    listener only.",
-      "parent": "cella",
-      "kind": "module"
+      "x-parent": "cella",
+      "x-kind": "module"
     }
   ],
   "components": {
@@ -341,12 +341,11 @@
       "apiKey": {
         "type": "http",
         "scheme": "bearer",
-        "description": "Secret API key of a service account (`<app>_sk_live_…`), as `Authorization: Bearer` or `x-api-key`. Only routes that also accept it list it here.",
-        "key": "apiKey"
+        "description": "Secret API key of a service account (`<app>_sk_live_…`), as `Authorization: Bearer` or `x-api-key`. Only routes that also accept it list it here, with the scope a narrowed key needs (a `write` scope covers `read`)."
       },
       "oauth2": {
         "type": "oauth2",
-        "description": "Access token from the authorization server, as `Authorization: Bearer`. Users consent through the authorization code flow (PKCE); service accounts use client credentials with a secret key as the client secret.",
+        "description": "Access token from the authorization server, as `Authorization: Bearer`. Users consent through the authorization code flow (PKCE); service accounts use client credentials with a secret key as the client secret. Each route lists the scope it needs; a `write` scope covers `read`.",
         "flows": {
           "authorizationCode": {
             "authorizationUrl": "http://localhost:3000/oauth/auth",
@@ -368,8 +367,7 @@
               "attachment:write": "Create, update and delete attachments"
             }
           }
-        },
-        "key": "oauth2"
+        }
       }
     },
     "responses": {
@@ -2000,10 +1998,10 @@
           "subscriptionId": null,
           "subscriptionStatus": "none",
           "subscriptionPlan": null,
-          "createdAt": "2024-09-26T08:31:26.056Z",
-          "updatedAt": "2024-12-03T17:12:34.920Z",
+          "createdAt": "2024-07-03T19:59:03.397Z",
+          "updatedAt": "2024-12-23T11:29:26.053Z",
           "organization": {
-            "id": "dfe70cd9-94e1-4e3f-9d61-0d949a9a8d4e",
+            "id": "d0d46951-4963-4135-84f8-adf6f9f37990",
             "name": "Lubowitz, Waters and Haley",
             "slug": "lubowitz-waters-and-haley",
             "thumbnailUrl": null,
@@ -2131,8 +2129,8 @@
             "thumbnailUrl": null
           },
           "updatedBy": null,
-          "createdAt": "2024-10-08T19:46:48.465Z",
-          "updatedAt": "2024-11-09T20:10:49.061Z"
+          "createdAt": "2024-07-21T08:06:37.235Z",
+          "updatedAt": "2024-07-22T16:57:00.257Z"
         },
         "x-tags": ["data", "connections", "cella"]
       },
@@ -3272,17 +3270,6 @@
             "description": "Invitation was accepted",
             "content": {
               "application/json": {
-                "example": {
-                  "id": "288d15c3-2a96-4d92-903e-dcbb54ecd23d",
-                  "createdAt": "2024-11-30T08:11:29.841Z",
-                  "updatedAt": "2024-12-25T20:49:14.328Z",
-                  "tenantId": "fux7yivt59ywq1bpokswyyxl",
-                  "name": "Hamill - Price",
-                  "entityType": "organization",
-                  "slug": "hamill---price",
-                  "thumbnailUrl": null,
-                  "bannerUrl": null
-                },
                 "schema": {
                   "$ref": "#/components/schemas/ChannelBase"
                 }
@@ -4817,24 +4804,6 @@
             "description": "SSO entry",
             "content": {
               "application/json": {
-                "example": {
-                  "id": "a21c1e15-fff0-4c1c-8eda-a33ceec95d7a",
-                  "status": "active",
-                  "federation": {
-                    "key": "surfconext",
-                    "label": "SURFconext"
-                  },
-                  "institution": {
-                    "displayName": "Utrecht University",
-                    "logoUrl": null
-                  },
-                  "organization": {
-                    "id": "2bfc5bce-ced7-4d32-8cd1-d7e121a2a0af",
-                    "name": "Wuckert - Emmerich",
-                    "slug": "wuckert---emmerich",
-                    "thumbnailUrl": null
-                  }
-                },
                 "schema": {
                   "$ref": "#/components/schemas/SsoEntry"
                 }
@@ -5770,34 +5739,6 @@
             "description": "User",
             "content": {
               "application/json": {
-                "example": {
-                  "user": {
-                    "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
-                    "entityType": "user",
-                    "name": "Agnes Fritsch DVM",
-                    "firstName": "Agnes",
-                    "lastName": "Fritsch",
-                    "email": "agnes_fritsch@hotmail.com",
-                    "slug": "agnesfritsch34",
-                    "description": null,
-                    "thumbnailUrl": null,
-                    "bannerUrl": null,
-                    "language": "en",
-                    "newsletter": true,
-                    "contrast": "system",
-                    "mfaRequired": false,
-                    "userFlags": {
-                      "finishedOnboarding": false
-                    },
-                    "createdAt": "2024-05-02T20:53:18.498Z",
-                    "updatedAt": "2024-05-02T20:53:18.498Z",
-                    "updatedBy": null,
-                    "lastSignInAt": "2024-05-02T20:53:18.498Z",
-                    "lastSeenAt": "2024-05-02T20:53:18.498Z"
-                  },
-                  "isSystemAdmin": false,
-                  "impersonator": null
-                },
                 "schema": {
                   "$ref": "#/components/schemas/Me"
                 }
@@ -5903,30 +5844,6 @@
             "description": "User",
             "content": {
               "application/json": {
-                "example": {
-                  "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
-                  "entityType": "user",
-                  "name": "Isai Senger",
-                  "firstName": "Isai",
-                  "lastName": "Senger",
-                  "email": "isai_senger@hotmail.com",
-                  "slug": "isaisenger90",
-                  "description": null,
-                  "thumbnailUrl": null,
-                  "bannerUrl": null,
-                  "language": "en",
-                  "newsletter": false,
-                  "contrast": "system",
-                  "mfaRequired": false,
-                  "userFlags": {
-                    "finishedOnboarding": false
-                  },
-                  "createdAt": "2024-06-15T02:53:22.776Z",
-                  "updatedAt": "2024-06-15T02:53:22.776Z",
-                  "updatedBy": null,
-                  "lastSignInAt": "2024-06-15T02:53:22.776Z",
-                  "lastSeenAt": "2024-06-15T02:53:22.776Z"
-                },
                 "schema": {
                   "$ref": "#/components/schemas/User"
                 }
@@ -6026,30 +5943,6 @@
             "description": "User",
             "content": {
               "application/json": {
-                "example": {
-                  "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
-                  "entityType": "user",
-                  "name": "Isai Senger",
-                  "firstName": "Isai",
-                  "lastName": "Senger",
-                  "email": "isai_senger@hotmail.com",
-                  "slug": "isaisenger90",
-                  "description": null,
-                  "thumbnailUrl": null,
-                  "bannerUrl": null,
-                  "language": "en",
-                  "newsletter": false,
-                  "contrast": "system",
-                  "mfaRequired": false,
-                  "userFlags": {
-                    "finishedOnboarding": false
-                  },
-                  "createdAt": "2024-06-15T02:53:22.776Z",
-                  "updatedAt": "2024-06-15T02:53:22.776Z",
-                  "updatedBy": null,
-                  "lastSignInAt": "2024-06-15T02:53:22.776Z",
-                  "lastSeenAt": "2024-06-15T02:53:22.776Z"
-                },
                 "schema": {
                   "$ref": "#/components/schemas/User"
                 }
@@ -6096,40 +5989,6 @@
             "description": "User sign-up info",
             "content": {
               "application/json": {
-                "example": {
-                  "enabledOAuth": ["github"],
-                  "institutions": [],
-                  "hasTotp": false,
-                  "sessions": [
-                    {
-                      "id": "0ff9d780-10bf-4531-b073-c93c225553bc",
-                      "userId": "3fdbee2a-ceb3-401e-b7af-e58710cdd4a5",
-                      "type": "regular",
-                      "createdAt": "2024-05-28T17:45:48.607Z",
-                      "expiresAt": "2024-06-27T17:45:48.607Z",
-                      "deviceName": "Firefox on Windows",
-                      "deviceType": "desktop",
-                      "deviceOs": "iOS",
-                      "browser": "Edge",
-                      "authStrategy": "passkey",
-                      "connectionId": null,
-                      "ipHash": null,
-                      "ipSubnetHash": null,
-                      "ipCountry": null,
-                      "ipAsn": null,
-                      "deviceIdHash": "9ad4a3a84be73e1e9b96a7acab442bcb",
-                      "revokedAt": null,
-                      "revokedBy": null,
-                      "revocationReason": null,
-                      "impersonatorSessionId": null,
-                      "steppedUpAt": null,
-                      "steppedUpVia": null,
-                      "isCurrent": true,
-                      "isNewDevice": false
-                    }
-                  ],
-                  "passkeys": []
-                },
                 "schema": {
                   "$ref": "#/components/schemas/MeAuthData"
                 }
@@ -6597,18 +6456,6 @@
             "description": "Upload token with a scope for a user or organization",
             "content": {
               "application/json": {
-                "example": {
-                  "publicBucket": false,
-                  "sub": "x1lsgegsw6imziogthaolhvy",
-                  "s3": true,
-                  "signature": "gVDbK1LX8P8h331cTbWcxbI0jNE5VeefPu4tppgCIGv475Bji47m4QdeTtGv8cYg",
-                  "params": {
-                    "auth": {
-                      "key": "uploads/kx5n7c1cush46z5cnizlmyd8",
-                      "expires": "2025-01-01T04:15:50.483Z"
-                    }
-                  }
-                },
                 "schema": {
                   "$ref": "#/components/schemas/UploadToken"
                 }
@@ -8169,30 +8016,6 @@
             "description": "User",
             "content": {
               "application/json": {
-                "example": {
-                  "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
-                  "entityType": "user",
-                  "name": "Isai Senger",
-                  "firstName": "Isai",
-                  "lastName": "Senger",
-                  "email": "isai_senger@hotmail.com",
-                  "slug": "isaisenger90",
-                  "description": null,
-                  "thumbnailUrl": null,
-                  "bannerUrl": null,
-                  "language": "en",
-                  "newsletter": false,
-                  "contrast": "system",
-                  "mfaRequired": false,
-                  "userFlags": {
-                    "finishedOnboarding": false
-                  },
-                  "createdAt": "2024-06-15T02:53:22.776Z",
-                  "updatedAt": "2024-06-15T02:53:22.776Z",
-                  "updatedBy": null,
-                  "lastSignInAt": "2024-06-15T02:53:22.776Z",
-                  "lastSeenAt": "2024-06-15T02:53:22.776Z"
-                },
                 "schema": {
                   "$ref": "#/components/schemas/User"
                 }
@@ -8429,10 +8252,10 @@
                       "subscriptionId": null,
                       "subscriptionStatus": "none",
                       "subscriptionPlan": null,
-                      "createdAt": "2024-04-28T03:48:41.628Z",
-                      "updatedAt": "2024-09-16T11:33:16.282Z",
+                      "createdAt": "2024-01-02T04:11:19.941Z",
+                      "updatedAt": "2024-10-23T14:05:26.336Z",
                       "organization": {
-                        "id": "005e7037-0078-4a58-a6dd-31dc226c1268",
+                        "id": "f4ea76c7-bca4-4245-8890-5cb92a293ce2",
                         "name": "Predovic, Bahringer and Morar",
                         "slug": "predovic-bahringer-and-morar",
                         "thumbnailUrl": null,
@@ -8468,10 +8291,10 @@
                       "subscriptionId": null,
                       "subscriptionStatus": "none",
                       "subscriptionPlan": null,
-                      "createdAt": "2024-04-15T06:06:59.098Z",
-                      "updatedAt": "2024-06-06T16:33:09.654Z",
+                      "createdAt": "2024-07-14T22:41:52.358Z",
+                      "updatedAt": "2024-09-24T07:05:03.480Z",
                       "organization": {
-                        "id": "e6e8e51c-c477-4af3-ae7a-5a0d0b8570a5",
+                        "id": "63960525-a558-42dd-a277-6db10db417ae",
                         "name": "Crooks, Kuphal and Roob-Blick",
                         "slug": "crooks-kuphal-and-roob-blick",
                         "thumbnailUrl": null,
@@ -8558,45 +8381,6 @@
             "description": "Created tenant",
             "content": {
               "application/json": {
-                "example": {
-                  "id": "l6ddop",
-                  "name": "Lubowitz, Waters and Haley",
-                  "status": "active",
-                  "restrictions": {
-                    "quotas": {
-                      "user": 1000,
-                      "organization": 1,
-                      "attachment": 100,
-                      "serviceAccount": 20,
-                      "apiKey": 100
-                    },
-                    "rateLimits": {
-                      "apiPointsPerHour": 1000
-                    },
-                    "allowUnregisteredClients": true
-                  },
-                  "authStrategies": [],
-                  "createdBy": {
-                    "id": "75b8af80-b170-4f44-867f-4d401a4d1e6a",
-                    "kind": "user",
-                    "name": "Antonina Trantow",
-                    "slug": "antonina_trantow60",
-                    "thumbnailUrl": null
-                  },
-                  "updatedBy": null,
-                  "subscriptionId": null,
-                  "subscriptionStatus": "none",
-                  "subscriptionPlan": null,
-                  "createdAt": "2024-03-24T23:42:41.362Z",
-                  "updatedAt": "2024-09-06T05:38:49.014Z",
-                  "organization": {
-                    "id": "7b6ddd9e-0037-4362-9807-dd9523aafe7b",
-                    "name": "Lubowitz, Waters and Haley",
-                    "slug": "lubowitz-waters-and-haley",
-                    "thumbnailUrl": null,
-                    "entityType": "organization"
-                  }
-                },
                 "schema": {
                   "$ref": "#/components/schemas/Tenant"
                 }
@@ -8721,45 +8505,6 @@
             "description": "Updated tenant",
             "content": {
               "application/json": {
-                "example": {
-                  "id": "l6ddop",
-                  "name": "Lubowitz, Waters and Haley",
-                  "status": "active",
-                  "restrictions": {
-                    "quotas": {
-                      "user": 1000,
-                      "organization": 1,
-                      "attachment": 100,
-                      "serviceAccount": 20,
-                      "apiKey": 100
-                    },
-                    "rateLimits": {
-                      "apiPointsPerHour": 1000
-                    },
-                    "allowUnregisteredClients": true
-                  },
-                  "authStrategies": [],
-                  "createdBy": {
-                    "id": "75b8af80-b170-4f44-867f-4d401a4d1e6a",
-                    "kind": "user",
-                    "name": "Antonina Trantow",
-                    "slug": "antonina_trantow60",
-                    "thumbnailUrl": null
-                  },
-                  "updatedBy": null,
-                  "subscriptionId": null,
-                  "subscriptionStatus": "none",
-                  "subscriptionPlan": null,
-                  "createdAt": "2024-10-14T20:17:20.419Z",
-                  "updatedAt": "2024-12-14T19:45:00.929Z",
-                  "organization": {
-                    "id": "f9d2a827-c2e0-4959-89f0-aa8eba2878e2",
-                    "name": "Lubowitz, Waters and Haley",
-                    "slug": "lubowitz-waters-and-haley",
-                    "thumbnailUrl": null,
-                    "entityType": "organization"
-                  }
-                },
                 "schema": {
                   "$ref": "#/components/schemas/Tenant"
                 }
@@ -8841,8 +8586,8 @@
                       "thumbnailUrl": null
                     },
                     "updatedBy": null,
-                    "createdAt": "2024-12-13T23:58:49.560Z",
-                    "updatedAt": "2024-12-26T22:14:04.117Z"
+                    "createdAt": "2024-07-21T08:06:37.235Z",
+                    "updatedAt": "2024-07-22T16:57:00.257Z"
                   }
                 ],
                 "schema": {
@@ -8967,29 +8712,6 @@
             "description": "Created connection",
             "content": {
               "application/json": {
-                "example": {
-                  "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
-                  "tenantId": "gc9llm",
-                  "kind": "sso",
-                  "issuer": "surfconext",
-                  "claimValues": ["uu.nl"],
-                  "displayName": "Utrecht University",
-                  "status": "active",
-                  "jitProvisioning": true,
-                  "config": {
-                    "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
-                  },
-                  "createdBy": {
-                    "id": "67b5bbbb-1dbd-49a5-af29-8ff28c16ce92",
-                    "kind": "user",
-                    "name": "Celestino Cummings",
-                    "slug": "celestino.cummings",
-                    "thumbnailUrl": null
-                  },
-                  "updatedBy": null,
-                  "createdAt": "2024-05-14T17:13:49.797Z",
-                  "updatedAt": "2024-10-03T13:05:11.695Z"
-                },
                 "schema": {
                   "$ref": "#/components/schemas/Connection"
                 }
@@ -9114,29 +8836,6 @@
             "description": "Updated connection",
             "content": {
               "application/json": {
-                "example": {
-                  "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
-                  "tenantId": "gc9llm",
-                  "kind": "sso",
-                  "issuer": "surfconext",
-                  "claimValues": ["uu.nl"],
-                  "displayName": "Utrecht University",
-                  "status": "active",
-                  "jitProvisioning": true,
-                  "config": {
-                    "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
-                  },
-                  "createdBy": {
-                    "id": "67b5bbbb-1dbd-49a5-af29-8ff28c16ce92",
-                    "kind": "user",
-                    "name": "Celestino Cummings",
-                    "slug": "celestino.cummings",
-                    "thumbnailUrl": null
-                  },
-                  "updatedBy": null,
-                  "createdAt": "2024-08-20T21:18:09.838Z",
-                  "updatedAt": "2024-11-12T14:39:19.468Z"
-                },
                 "schema": {
                   "$ref": "#/components/schemas/Connection"
                 }
@@ -9204,29 +8903,6 @@
             "description": "Removed connection",
             "content": {
               "application/json": {
-                "example": {
-                  "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
-                  "tenantId": "gc9llm",
-                  "kind": "sso",
-                  "issuer": "surfconext",
-                  "claimValues": ["uu.nl"],
-                  "displayName": "Utrecht University",
-                  "status": "active",
-                  "jitProvisioning": true,
-                  "config": {
-                    "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
-                  },
-                  "createdBy": {
-                    "id": "67b5bbbb-1dbd-49a5-af29-8ff28c16ce92",
-                    "kind": "user",
-                    "name": "Celestino Cummings",
-                    "slug": "celestino.cummings",
-                    "thumbnailUrl": null
-                  },
-                  "updatedBy": null,
-                  "createdAt": "2024-07-07T15:04:47.218Z",
-                  "updatedAt": "2024-11-12T16:14:53.586Z"
-                },
                 "schema": {
                   "$ref": "#/components/schemas/Connection"
                 }
@@ -9650,13 +9326,6 @@
             "description": "Protected resource metadata",
             "content": {
               "application/json": {
-                "example": {
-                  "resource": "http://localhost:3000/api/t/m5jfjs",
-                  "authorization_servers": ["http://localhost:3000/oauth"],
-                  "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
-                  "bearer_methods_supported": ["header"],
-                  "resource_documentation": "http://localhost:3000/docs"
-                },
                 "schema": {
                   "$ref": "#/components/schemas/ProtectedResourceMetadata"
                 }
@@ -10474,10 +10143,10 @@
             "cookieAuth": []
           },
           {
-            "apiKey": []
+            "apiKey": ["organization:read"]
           },
           {
-            "oauth2": []
+            "oauth2": ["organization:read"]
           }
         ],
         "operationId": "getOrganization",
@@ -10537,70 +10206,6 @@
             "description": "Organization",
             "content": {
               "application/json": {
-                "example": {
-                  "createdAt": "2024-12-25T15:04:42.969Z",
-                  "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-                  "entityType": "organization",
-                  "tenantId": "d1lgzb",
-                  "name": "Spencer, Pouros and Bergnaum",
-                  "updatedAt": "2024-12-25T15:04:42.969Z",
-                  "slug": "spencer-pouros-and-bergnaum",
-                  "thumbnailUrl": null,
-                  "bannerUrl": null,
-                  "createdBy": null,
-                  "updatedBy": null,
-                  "publishedAt": "2024-12-25T15:04:42.969Z",
-                  "public": false,
-                  "toolsConfig": {},
-                  "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-                  "shortName": "Spencer,",
-                  "country": "Sweden",
-                  "timezone": "Europe/Vaduz",
-                  "defaultLanguage": "en",
-                  "languages": ["en"],
-                  "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
-                  "color": "#cda6af",
-                  "logoUrl": null,
-                  "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
-                  "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-                  "chatSupport": true,
-                  "organizationFlags": {},
-                  "setupConfig": {},
-                  "included": {
-                    "membership": {
-                      "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
-                      "tenantId": "d1lgzb",
-                      "channelType": "organization",
-                      "channelId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-                      "userId": "2effb0cf-d2bd-45e6-abcd-21de08509c32",
-                      "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-                      "role": "member",
-                      "displayOrder": 18,
-                      "muted": false,
-                      "archived": false
-                    },
-                    "counts": {
-                      "membership": {
-                        "admin": 30,
-                        "member": 63,
-                        "pending": 13,
-                        "total": 93
-                      },
-                      "entities": {
-                        "attachment": 178
-                      },
-                      "entitiesSelf": {
-                        "attachment": 119
-                      },
-                      "activity": {
-                        "attachment": {
-                          "created": 1734107615547,
-                          "updated": 1734969019663
-                        }
-                      }
-                    }
-                  }
-                },
                 "schema": {
                   "$ref": "#/components/schemas/Organization"
                 }
@@ -10633,10 +10238,10 @@
             "cookieAuth": []
           },
           {
-            "apiKey": []
+            "apiKey": ["organization:write"]
           },
           {
-            "oauth2": []
+            "oauth2": ["organization:write"]
           }
         ],
         "operationId": "updateOrganization",
@@ -10670,6 +10275,10 @@
           "required": true,
           "content": {
             "application/json": {
+              "example": {
+                "name": "Spencer, Pouros and Bergnaum Group",
+                "timezone": "Europe/Vaduz"
+              },
               "schema": {
                 "type": "object",
                 "properties": {
@@ -10799,70 +10408,6 @@
             "description": "Organization was updated",
             "content": {
               "application/json": {
-                "example": {
-                  "createdAt": "2024-12-25T15:04:42.969Z",
-                  "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-                  "entityType": "organization",
-                  "tenantId": "d1lgzb",
-                  "name": "Spencer, Pouros and Bergnaum",
-                  "updatedAt": "2024-12-25T15:04:42.969Z",
-                  "slug": "spencer-pouros-and-bergnaum",
-                  "thumbnailUrl": null,
-                  "bannerUrl": null,
-                  "createdBy": null,
-                  "updatedBy": null,
-                  "publishedAt": "2024-12-25T15:04:42.969Z",
-                  "public": false,
-                  "toolsConfig": {},
-                  "path": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-                  "shortName": "Spencer,",
-                  "country": "Sweden",
-                  "timezone": "Europe/Vaduz",
-                  "defaultLanguage": "en",
-                  "languages": ["en"],
-                  "notificationEmail": "notifications@spencer-pouros-and-bergnaum.example",
-                  "color": "#cda6af",
-                  "logoUrl": null,
-                  "websiteUrl": "https://spencer-pouros-and-bergnaum.example",
-                  "welcomeText": "Welcome to Spencer, Pouros and Bergnaum!",
-                  "chatSupport": true,
-                  "organizationFlags": {},
-                  "setupConfig": {},
-                  "included": {
-                    "membership": {
-                      "id": "944446b5-40a7-4cf9-8c88-be1e3ce27710",
-                      "tenantId": "d1lgzb",
-                      "channelType": "organization",
-                      "channelId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-                      "userId": "2effb0cf-d2bd-45e6-abcd-21de08509c32",
-                      "organizationId": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
-                      "role": "member",
-                      "displayOrder": 18,
-                      "muted": false,
-                      "archived": false
-                    },
-                    "counts": {
-                      "membership": {
-                        "admin": 30,
-                        "member": 63,
-                        "pending": 13,
-                        "total": 93
-                      },
-                      "entities": {
-                        "attachment": 178
-                      },
-                      "entitiesSelf": {
-                        "attachment": 119
-                      },
-                      "activity": {
-                        "attachment": {
-                          "created": 1734107615547,
-                          "updated": 1734969019663
-                        }
-                      }
-                    }
-                  }
-                },
                 "schema": {
                   "$ref": "#/components/schemas/Organization"
                 }
@@ -11041,10 +10586,10 @@
             "cookieAuth": []
           },
           {
-            "apiKey": []
+            "apiKey": ["attachment:read"]
           },
           {
-            "oauth2": []
+            "oauth2": ["attachment:read"]
           }
         ],
         "operationId": "getAttachments",
@@ -11302,10 +10847,10 @@
             "cookieAuth": []
           },
           {
-            "apiKey": []
+            "apiKey": ["attachment:write"]
           },
           {
-            "oauth2": []
+            "oauth2": ["attachment:write"]
           }
         ],
         "operationId": "createAttachments",
@@ -11344,6 +10889,23 @@
           "required": true,
           "content": {
             "application/json": {
+              "example": [
+                {
+                  "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
+                  "name": "ick_thoroughly_coincide.text",
+                  "filename": "ick_thoroughly_coincide.text",
+                  "contentType": "application/epub+zip",
+                  "size": "7202058",
+                  "keys": {
+                    "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text"
+                  },
+                  "stx": {
+                    "mutationId": "40639480-2005-4112-8487-03deda0af54e",
+                    "sourceId": "8a6e1786-9e31-40bb-aba6-dc232127f73d",
+                    "fieldTimestamps": {}
+                  }
+                }
+              ],
               "schema": {
                 "type": "array",
                 "items": {
@@ -11694,10 +11256,10 @@
             "cookieAuth": []
           },
           {
-            "apiKey": []
+            "apiKey": ["attachment:write"]
           },
           {
-            "oauth2": []
+            "oauth2": ["attachment:write"]
           }
         ],
         "operationId": "deleteAttachments",
@@ -11736,6 +11298,13 @@
           "required": true,
           "content": {
             "application/json": {
+              "example": {
+                "ids": ["bad021eb-efc6-48ff-835e-959b96d6abdd"],
+                "stx": {
+                  "mutationId": "1e28e2e5-16f2-4797-bc41-af1ed28cb3e9",
+                  "sourceId": "da45143d-83be-4b7e-930a-8ada9fa25470"
+                }
+              },
               "schema": {
                 "type": "object",
                 "properties": {
@@ -11828,10 +11397,10 @@
             "cookieAuth": []
           },
           {
-            "apiKey": []
+            "apiKey": ["attachment:read"]
           },
           {
-            "oauth2": []
+            "oauth2": ["attachment:read"]
           }
         ],
         "operationId": "getPresignedUrls",
@@ -11865,6 +11434,14 @@
           "required": true,
           "content": {
             "application/json": {
+              "example": {
+                "items": [
+                  {
+                    "attachmentId": "bad021eb-efc6-48ff-835e-959b96d6abdd",
+                    "variant": "thumbnail"
+                  }
+                ]
+              },
               "schema": {
                 "type": "object",
                 "properties": {
@@ -11988,10 +11565,10 @@
             "cookieAuth": []
           },
           {
-            "apiKey": []
+            "apiKey": ["attachment:read"]
           },
           {
-            "oauth2": []
+            "oauth2": ["attachment:read"]
           }
         ],
         "operationId": "getAttachment",
@@ -12040,50 +11617,6 @@
             "description": "Attachment",
             "content": {
               "application/json": {
-                "example": {
-                  "createdAt": "2024-05-01T22:40:37.374Z",
-                  "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
-                  "entityType": "attachment",
-                  "tenantId": "t58r8f",
-                  "name": "ick_thoroughly_coincide.text",
-                  "updatedAt": "2024-05-01T22:40:37.374Z",
-                  "stx": {
-                    "mutationId": "d81d96a7-bdc8-427d-b21b-a6fd6449bad7",
-                    "sourceId": "036cee36-25c5-42eb-81ab-e93904602179",
-                    "fieldTimestamps": {}
-                  },
-                  "description": null,
-                  "keywords": "dolores cetera aetas",
-                  "createdBy": {
-                    "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
-                    "kind": "user",
-                    "name": "Francesco Littel",
-                    "slug": "francesco_littel16",
-                    "thumbnailUrl": null
-                  },
-                  "updatedBy": {
-                    "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
-                    "kind": "user",
-                    "name": "Francesco Littel",
-                    "slug": "francesco_littel16",
-                    "thumbnailUrl": null
-                  },
-                  "deletedAt": null,
-                  "deletedBy": null,
-                  "public": false,
-                  "seq": 447,
-                  "publicBucket": false,
-                  "bucketName": "attachments",
-                  "groupId": null,
-                  "filename": "ick_thoroughly_coincide.text",
-                  "contentType": "application/epub+zip",
-                  "convertedContentType": null,
-                  "size": "7202058",
-                  "keys": {
-                    "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text"
-                  },
-                  "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
-                },
                 "schema": {
                   "$ref": "#/components/schemas/Attachment"
                 }
@@ -12116,10 +11649,10 @@
             "cookieAuth": []
           },
           {
-            "apiKey": []
+            "apiKey": ["attachment:write"]
           },
           {
-            "oauth2": []
+            "oauth2": ["attachment:write"]
           }
         ],
         "operationId": "updateAttachment",
@@ -12184,6 +11717,18 @@
           "required": true,
           "content": {
             "application/json": {
+              "example": {
+                "ops": {
+                  "name": "ick_thoroughly_coincide.text (final)"
+                },
+                "stx": {
+                  "mutationId": "2d5489ea-b24d-4bc1-9c6c-fe971f3cbca0",
+                  "sourceId": "ac22409c-2fdd-4048-852a-a3e79f546d91",
+                  "fieldTimestamps": {
+                    "name": "1735732800000:0001:yyln1"
+                  }
+                }
+              },
               "schema": {
                 "type": "object",
                 "properties": {
@@ -12214,50 +11759,6 @@
             "description": "Attachment was updated",
             "content": {
               "application/json": {
-                "example": {
-                  "createdAt": "2024-05-01T22:40:37.374Z",
-                  "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
-                  "entityType": "attachment",
-                  "tenantId": "t58r8f",
-                  "name": "ick_thoroughly_coincide.text",
-                  "updatedAt": "2024-05-01T22:40:37.374Z",
-                  "stx": {
-                    "mutationId": "d81d96a7-bdc8-427d-b21b-a6fd6449bad7",
-                    "sourceId": "036cee36-25c5-42eb-81ab-e93904602179",
-                    "fieldTimestamps": {}
-                  },
-                  "description": null,
-                  "keywords": "dolores cetera aetas",
-                  "createdBy": {
-                    "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
-                    "kind": "user",
-                    "name": "Francesco Littel",
-                    "slug": "francesco_littel16",
-                    "thumbnailUrl": null
-                  },
-                  "updatedBy": {
-                    "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
-                    "kind": "user",
-                    "name": "Francesco Littel",
-                    "slug": "francesco_littel16",
-                    "thumbnailUrl": null
-                  },
-                  "deletedAt": null,
-                  "deletedBy": null,
-                  "public": false,
-                  "seq": 447,
-                  "publicBucket": false,
-                  "bucketName": "attachments",
-                  "groupId": null,
-                  "filename": "ick_thoroughly_coincide.text",
-                  "contentType": "application/epub+zip",
-                  "convertedContentType": null,
-                  "size": "7202058",
-                  "keys": {
-                    "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text"
-                  },
-                  "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
-                },
                 "schema": {
                   "$ref": "#/components/schemas/Attachment"
                 }
@@ -12292,10 +11793,10 @@
             "cookieAuth": []
           },
           {
-            "apiKey": []
+            "apiKey": ["attachment:read"]
           },
           {
-            "oauth2": []
+            "oauth2": ["attachment:read"]
           }
         ],
         "operationId": "linkAttachmentKeys",
@@ -12338,6 +11839,13 @@
           "required": true,
           "content": {
             "application/json": {
+              "example": {
+                "keys": {
+                  "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text",
+                  "thumbnail": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text.thumbnail.webp"
+                },
+                "convertedContentType": null
+              },
               "schema": {
                 "type": "object",
                 "properties": {
@@ -12374,50 +11882,6 @@
             "description": "Attachment with its stored file",
             "content": {
               "application/json": {
-                "example": {
-                  "createdAt": "2024-05-01T22:40:37.374Z",
-                  "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
-                  "entityType": "attachment",
-                  "tenantId": "t58r8f",
-                  "name": "ick_thoroughly_coincide.text",
-                  "updatedAt": "2024-05-01T22:40:37.374Z",
-                  "stx": {
-                    "mutationId": "d81d96a7-bdc8-427d-b21b-a6fd6449bad7",
-                    "sourceId": "036cee36-25c5-42eb-81ab-e93904602179",
-                    "fieldTimestamps": {}
-                  },
-                  "description": null,
-                  "keywords": "dolores cetera aetas",
-                  "createdBy": {
-                    "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
-                    "kind": "user",
-                    "name": "Francesco Littel",
-                    "slug": "francesco_littel16",
-                    "thumbnailUrl": null
-                  },
-                  "updatedBy": {
-                    "id": "91eb1a57-81a6-485a-87ee-9b7e9b6c234f",
-                    "kind": "user",
-                    "name": "Francesco Littel",
-                    "slug": "francesco_littel16",
-                    "thumbnailUrl": null
-                  },
-                  "deletedAt": null,
-                  "deletedBy": null,
-                  "public": false,
-                  "seq": 447,
-                  "publicBucket": false,
-                  "bucketName": "attachments",
-                  "groupId": null,
-                  "filename": "ick_thoroughly_coincide.text",
-                  "contentType": "application/epub+zip",
-                  "convertedContentType": null,
-                  "size": "7202058",
-                  "keys": {
-                    "original": "uploads/q6i415c5jhblgimw4vp8xlg4/ick_thoroughly_coincide.text"
-                  },
-                  "organizationId": "8fed4f40-cfd7-4da0-a6a8-c118563b74fa"
-                },
                 "schema": {
                   "$ref": "#/components/schemas/Attachment"
                 }
@@ -13289,17 +12753,6 @@
             "description": "Invitation was accepted",
             "content": {
               "application/json": {
-                "example": {
-                  "id": "288d15c3-2a96-4d92-903e-dcbb54ecd23d",
-                  "createdAt": "2024-11-30T08:11:29.841Z",
-                  "updatedAt": "2024-12-25T20:49:14.328Z",
-                  "tenantId": "fux7yivt59ywq1bpokswyyxl",
-                  "name": "Hamill - Price",
-                  "entityType": "organization",
-                  "slug": "hamill---price",
-                  "thumbnailUrl": null,
-                  "bannerUrl": null
-                },
                 "schema": {
                   "$ref": "#/components/schemas/ChannelBase"
                 }
@@ -14527,26 +13980,6 @@
             "description": "Service account was updated",
             "content": {
               "application/json": {
-                "example": {
-                  "id": "764ce6e7-55fc-4f5d-b661-0c777df71d45",
-                  "tenantId": "yug3pr",
-                  "name": "system bot",
-                  "status": "active",
-                  "bindings": [
-                    {
-                      "channelType": "organization",
-                      "channelId": "5ff67410-debc-4270-9ca8-327f8f7493ef",
-                      "organizationId": "5ff67410-debc-4270-9ca8-327f8f7493ef",
-                      "role": "member"
-                    }
-                  ],
-                  "oauthClientId": null,
-                  "createdBy": "9363c51c-e97a-4ee4-9dbe-ebe841e8f2f9",
-                  "createdAt": "2024-09-01T22:49:17.262Z",
-                  "updatedAt": "2024-09-01T22:49:17.262Z",
-                  "updatedBy": null,
-                  "lastSeenAt": "2024-09-01T22:49:17.262Z"
-                },
                 "schema": {
                   "$ref": "#/components/schemas/ServiceAccount"
                 }
@@ -14911,26 +14344,6 @@
             "description": "API key was revoked",
             "content": {
               "application/json": {
-                "example": {
-                  "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
-                  "actorId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
-                  "tenantId": "maq9vh",
-                  "name": "reboot key",
-                  "prefix": "cella-development_sk_test_Ab3d",
-                  "last4": "2345",
-                  "scopes": ["attachment:read"],
-                  "expiresAt": null,
-                  "revokedAt": null,
-                  "revokedBy": null,
-                  "createdAt": "2024-11-20T15:58:25.416Z",
-                  "createdBy": {
-                    "id": "f51db79f-5767-434a-9a5a-1f68f22c07d3",
-                    "kind": "user",
-                    "name": "Ford Thompson",
-                    "slug": "ford_thompson68",
-                    "thumbnailUrl": null
-                  }
-                },
                 "schema": {
                   "$ref": "#/components/schemas/ApiKey"
                 }

@@ -32,7 +32,7 @@ describe('parseOpenApiSpec', () => {
     const spec: OpenApiSpec = {
       openapi: '3.1.0',
       info: { title: 'Nullable references', version: '1.0.0' },
-      tags: [{ name: 'data', kind: 'schema', description: 'Data schemas', 'x-default': true }] as OpenApiTag[],
+      tags: [{ name: 'data', 'x-kind': 'schema', description: 'Data schemas', 'x-default': true }] as OpenApiTag[],
       paths: {},
       components: {
         schemas: {
@@ -82,7 +82,7 @@ describe('parseOpenApiSpec', () => {
     const spec: OpenApiSpec = {
       openapi: '3.1.0',
       info: { title: 'Inline nullable references', version: '1.0.0' },
-      tags: [{ name: 'data', kind: 'schema', description: 'Data schemas', 'x-default': true }] as OpenApiTag[],
+      tags: [{ name: 'data', 'x-kind': 'schema', description: 'Data schemas', 'x-default': true }] as OpenApiTag[],
       paths: {},
       components: {
         schemas: {
@@ -130,7 +130,7 @@ describe('parseOpenApiSpec', () => {
     const spec: OpenApiSpec = {
       openapi: '3.1.0',
       info: { title: 'Arrays', version: '1.0.0' },
-      tags: [{ name: 'data', kind: 'schema', 'x-default': true }] as OpenApiTag[],
+      tags: [{ name: 'data', 'x-kind': 'schema', 'x-default': true }] as OpenApiTag[],
       paths: {},
       components: {
         schemas: {
@@ -161,8 +161,8 @@ describe('parseOpenApiSpec', () => {
       openapi: '3.1.0',
       info: { title: 'Test API', version: '1.0.0' },
       tags: [
-        { name: 'users', description: 'User operations', kind: 'module' },
-        { name: 'internal', kind: 'hidden' },
+        { name: 'users', description: 'User operations', 'x-kind': 'module' },
+        { name: 'internal', 'x-kind': 'hidden' },
       ] as OpenApiTag[],
       paths: {
         '/users': {
@@ -223,10 +223,10 @@ const goldenSpec = {
     'x-extensions': [{ key: 'x-guard', id: 'xGuard', description: 'Route guards', kind: 'middleware' }],
   },
   tags: [
-    { name: moduleTag, description: 'User operations', kind: 'module' },
-    { name: 'admin', kind: 'owner' }, // excluded from operations + sidebar
-    { name: 'data', kind: 'schema', description: 'Default schemas', 'x-default': true },
-    { name: 'system', kind: 'schema', description: 'System schemas' },
+    { name: moduleTag, description: 'User operations', 'x-kind': 'module' },
+    { name: 'admin', 'x-kind': 'owner' }, // excluded from operations + sidebar
+    { name: 'data', 'x-kind': 'schema', description: 'Default schemas', 'x-default': true },
+    { name: 'system', 'x-kind': 'schema', description: 'System schemas' },
   ] as OpenApiTag[],
   paths: {
     '/users': {

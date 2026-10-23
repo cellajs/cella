@@ -1,6 +1,15 @@
 import { faker } from '@faker-js/faker';
 import { appConfig } from 'shared';
-import { generateMockEntityChannelIdColumns, mockBatchResponse, mockNanoid, mockPaginated, mockProductColumns, withFakerSeed } from '#/mocks';
+import { hashSourceId } from 'shared/utils/hash-source-id';
+import {
+  generateMockEntityChannelIdColumns,
+  mockBatchResponse,
+  mockNanoid,
+  mockPaginated,
+  mockProductColumns,
+  mockStx,
+  withFakerSeed,
+} from '#/mocks';
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
 import { mockActorRefs } from '#/schemas/entity-base-mocks';
 
@@ -45,3 +54,32 @@ const mockPresignedUrlItem = (key = 'attachment:default') => {
 };
 
 export const mockPresignedUrlsResponse = (count = 2) => mockBatchResponse(mockPresignedUrlItem, count);
+
+// Request bodies of the routes an API key or access token can call, built from the attachment mock so ids agree.
+
+export const mockCreateAttachmentsBody = () =>
+  withFakerSeed('attachment:create-body', () => {
+    const { id, name, filename, contentType, size, keys } = mockAttachment();
+    return [{ id, name, filename, contentType, size, keys, stx: mockStx() }];
+  });
+
+/** Each changed field carries its HLC timestamp, `millis:counter:sourceHash`. */
+export const mockUpdateAttachmentBody = () =>
+  withFakerSeed('attachment:update-body', () => {
+    const stx = mockStx();
+    const fieldTimestamps = { name: `1735732800000:0001:${hashSourceId(stx.sourceId)}` };
+    return { ops: { name: `${mockAttachment().name} (final)` }, stx: { ...stx, fieldTimestamps } };
+  });
+
+export const mockDeleteAttachmentsBody = () =>
+  withFakerSeed('attachment:delete-body', () => {
+    const { mutationId, sourceId } = mockStx();
+    return { ids: [mockAttachment().id], stx: { mutationId, sourceId } };
+  });
+
+export const mockPresignedUrlsBody = () => ({ items: [{ attachmentId: mockAttachment().id, variant: 'thumbnail' as const }] });
+
+export const mockLinkAttachmentKeysBody = () => {
+  const { keys } = mockAttachment();
+  return { keys: { ...keys, thumbnail: `${keys.original}.thumbnail.webp` }, convertedContentType: null };
+};

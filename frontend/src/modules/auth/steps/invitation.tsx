@@ -60,19 +60,17 @@ export function InvitationStep({ tokenData, federations }: InvitationStepProps) 
 
   if (isEntryLoading) return <Spinner size="lg" />;
 
+  // The address shows once the link is sent, on the sent step.
   const emailWay = magicLinkEnabled && (
-    <>
-      <SubmitButton
-        variant={institutionFirst ? 'plain' : 'default'}
-        loading={isPending}
-        icon={<MailIcon />}
-        className="w-full"
-        onClick={() => sendLink()}
-      >
-        {t('c:continue_with_email')}
-      </SubmitButton>
-      <p className="-mt-2 text-center text-muted-foreground text-sm">{t('c:magic_link_goes_to.text', { email })}</p>
-    </>
+    <SubmitButton
+      variant={institutionFirst ? 'plain' : 'default'}
+      loading={isPending}
+      icon={<MailIcon />}
+      className="w-full"
+      onClick={() => sendLink()}
+    >
+      {t('c:continue_with_email')}
+    </SubmitButton>
   );
 
   return (

@@ -19,10 +19,15 @@ export function buildInsertableProduct(
   overrides: Record<string, unknown> = {},
   key?: string,
 ): Record<string, unknown> {
+  const columns = getTableColumns(getEntityTable(entityType));
+  // The insert drops a key that names no column, so a renamed column would leave a test reading a row it never wrote.
+  const unknownProps = Object.keys(overrides).filter((prop) => !(prop in columns));
+  if (unknownProps.length) throw new Error(`No ${entityType} column for override ${unknownProps.join(', ')}`);
+
   const mock = productMocksByType[entityType](key);
   // Generated columns are DB-computed; Postgres rejects an explicit value on insert.
   const generatedProps = new Set(
-    Object.entries(getTableColumns(getEntityTable(entityType)))
+    Object.entries(columns)
       .filter(([, column]) => column.generated)
       .map(([prop]) => prop),
   );

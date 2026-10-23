@@ -2,7 +2,8 @@ import { CheckIcon } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { InputTriggerButton } from '~/modules/common/form-fields/input-trigger-button';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
+import { Button } from '~/modules/ui/button';
+import { Drawer, DrawerContent, DrawerHeader, DrawerRowGroup, DrawerTitle } from '~/modules/ui/drawer';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '~/modules/ui/select';
 import { cn } from '~/utils/cn';
 
@@ -82,15 +83,13 @@ export function ResponsiveSelect({
             <DrawerHeader className={cn(!title && 'sr-only')}>
               <DrawerTitle>{title ?? placeholder}</DrawerTitle>
             </DrawerHeader>
-            <div className="flex flex-col gap-0.5 p-2 pb-6">
+            <DrawerRowGroup className="m-4 mt-0 mb-[calc(1rem+var(--bottom-inset))]">
               {options.map((option) => (
-                <button
+                <Button
                   key={option.value}
-                  type="button"
-                  className={cn(
-                    'flex items-center justify-between rounded-md px-3 py-2.5 text-sm transition-colors',
-                    option.value === value ? 'bg-accent font-medium text-accent-foreground' : 'hover:bg-accent/50',
-                  )}
+                  variant="row"
+                  aria-pressed={option.value === value}
+                  className="justify-between aria-pressed:font-medium"
                   onClick={() => {
                     onChange(option.value);
                     setDrawerOpen(false);
@@ -98,9 +97,9 @@ export function ResponsiveSelect({
                 >
                   {optionRow(option)}
                   {option.value === value && <CheckIcon className="text-success" />}
-                </button>
+                </Button>
               ))}
-            </div>
+            </DrawerRowGroup>
           </DrawerContent>
         </Drawer>
       </>

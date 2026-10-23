@@ -7,7 +7,6 @@ import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
 import { authHealthSchema, emailBodySchema, invokableTokenTypes, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
 import { cookieSchema, locationSchema, validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
-import { mockChannelBase } from '#/schemas/entity-base-mocks';
 
 const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
   health: xRoute({
@@ -84,7 +83,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'Accepts the membership invitation held in the single-use token session as the signed-in user, also when it was sent to a different email address. Only an invitation not yet bound to another user can be accepted this way.',
     request: {},
-    responses: { 200: json('Invitation was accepted', channelBaseSchema, mockChannelBase()) },
+    responses: { 200: json('Invitation was accepted', channelBaseSchema) },
   }),
   resendInvitationWithToken: xRoute({
     method: 'post',

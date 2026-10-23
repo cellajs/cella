@@ -17,7 +17,7 @@ const rootDir = resolve(sdkDir, '..');
 const lockFilePath = resolve(srcDir, '.generate-sdk.lock');
 const specHashFile = resolve(srcDir, '.spec-hash');
 const specPath = resolve(rootDir, 'backend/openapi.cache.json');
-// Single generated output tree: SDK code + openapi.json + docs.gen all live here.
+// Single generated output tree: SDK code and the backend's openapi.json live here.
 const finalOutputPath = resolve(sdkDir, 'gen');
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -159,6 +159,8 @@ const generate = async () => {
     console.info(`${timestamp()} ${loadingMark} Generating SDK to temp folder...`);
 
     await createClient(createOpenApiConfig(tempOutputPath));
+    // The backend's spec as written: hey-api's own copy of its input adds a non-standard `key` to security schemes.
+    cpSync(specPath, resolve(tempOutputPath, 'openapi.json'));
 
     // The temp folder is gitignored, so `--vcs-use-ignore-file=false` keeps biome from skipping it and leaving hey-api's raw output; a non-zero exit is fine, zero files processed is not.
     const biomeResult = spawnSync('pnpm', ['biome', 'check', '--write', '--vcs-use-ignore-file=false', tempOutputPath], {
