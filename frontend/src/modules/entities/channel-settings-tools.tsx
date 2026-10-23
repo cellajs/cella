@@ -1,6 +1,5 @@
 import { TrashIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
-import { Suspense, useRef } from 'react';
+import { type ReactNode, Suspense, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { ChannelEntityType } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
@@ -10,11 +9,7 @@ import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { ToolCard } from '~/modules/common/tool-card';
 import { Button } from '~/modules/ui/button';
 
-/**
- * A module spreads a tool base into its `tools` array and adds the `slot`, app conditions, and a
- * `render`. Order convention: general 10, details 20, tabs 80, danger zone 90; module tools default
- * to 50. Bases without `locked` are hideable and reorderable per channel.
- */
+/** Bases a module spreads into its `tools` with a `slot` and a `render`. Orders: general 10, details 20, tabs 80, danger 90; module tools default to 50. */
 export const generalToolBase = {
   id: 'general',
   label: 'c:general',
@@ -56,7 +51,7 @@ interface DeleteToolCardProps {
 
 export function DeleteToolCard({ name, resource, dialogId, renderDialog }: DeleteToolCardProps) {
   const { t } = useTranslation();
-  const deleteButtonRef = useRef(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
   const resourceName = t(resource).toLowerCase();
 

@@ -3,7 +3,11 @@ import { TableBarContainer } from '~/modules/common/data-table/table-bar-contain
 import { TableCount } from '~/modules/common/data-table/table-count';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
-export function PendingMembershipsTableBar({ queryKey }: { queryKey: QueryKey }) {
+interface PendingMembershipsTableBarProps {
+  queryKey: QueryKey;
+}
+
+export function PendingMembershipsTableBar({ queryKey }: PendingMembershipsTableBarProps) {
   const total = useListQueryTotal(queryKey);
 
   return (

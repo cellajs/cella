@@ -42,9 +42,9 @@ export function MembersTableBar({
 
   const total = useListQueryTotal(queryKey);
 
-  const deleteButtonRef = useRef(null);
-  const inviteButtonRef = useRef(null);
-  const inviteContainerRef = useRef(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  const inviteButtonRef = useRef<HTMLButtonElement>(null);
+  const inviteContainerRef = useRef<HTMLDivElement>(null);
 
   const { q, role, order, sort } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', role: undefined } });
@@ -93,12 +93,12 @@ export function MembersTableBar({
       container: { ref: inviteContainerRef, overlay: !isSheet },
       title: t('c:invite'),
       titleContent: <UnsavedBadge title={t('c:invite')} />,
-      description: `${t('c:invite_members.text')}`,
+      description: t('c:invite_members.text'),
     });
   };
 
-  const fetchExport = async (limit: number, offset: number) => {
-    return fetchMembersForExport({
+  const fetchExport = (limit: number, offset: number) =>
+    fetchMembersForExport({
       limit,
       offset,
       q,
@@ -110,7 +110,6 @@ export function MembersTableBar({
       tenantId: channel.tenantId,
       organizationId,
     });
-  };
 
   return (
     <TableBarShell

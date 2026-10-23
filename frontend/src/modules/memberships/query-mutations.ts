@@ -103,9 +103,7 @@ export const useInviteMemberMutation = () =>
 export const useMemberUpdateMutation = () =>
   useMutation<UpdateMembershipResponse, ApiError, MutationUpdateMembership, MemberUpdateContext>({
     mutationKey: memberQueryKeys.update,
-    mutationFn: async ({ path, body }) => {
-      return await updateMembership({ body, path });
-    },
+    mutationFn: ({ path, body }) => updateMembership({ body, path }),
     onMutate: async (variables) => {
       const { channelId, channelType, path, body } = variables;
       const { tenantId, organizationId, id } = path;
@@ -149,7 +147,7 @@ export const useMemberUpdateMutation = () =>
       toaster.success(toastMessage);
     },
     onError: (_, __, context) => {
-      // Invalidate memberships to undo the optimistic update; the enrichment subscriber syncs entity lists.
+      // Invalidate memberships to undo the optimistic update; the enrichment subscriber rebuilds the entity lists from them.
       queryClient.invalidateQueries({ queryKey: meKeys.memberships, refetchType: 'active' });
       restoreMemberLists(context?.previousLists);
     },
@@ -172,7 +170,6 @@ export const useMembershipsDeleteMutation = () =>
       const similarKey = memberQueryKeys.list.similarMembers({ entityId, entityType, tenantId, organizationId });
       await queryClient.cancelQueries({ queryKey: similarKey });
 
-      // Previous list data, restored by onError.
       return patchMemberLists(similarKey, (members) => members.filter(({ id }) => !ids.includes(id)));
     },
     onSuccess: (_, { query: { entityId, entityType }, path: { organizationId } }) => {
@@ -182,13 +179,10 @@ export const useMembershipsDeleteMutation = () =>
     onError: (_, __, previousLists) => restoreMemberLists(previousLists),
   });
 
-const updateMembers = (members: Member[], updatedMembership: { id: string } & Record<string, unknown>) => {
-  return members.map((member) => {
-    if (member.membership.id === updatedMembership.id) return { ...member, membership: { ...member.membership, ...updatedMembership } };
-
-    return member;
-  });
-};
+const updateMembers = (members: Member[], updatedMembership: { id: string } & Record<string, unknown>) =>
+  members.map((member) =>
+    member.membership.id === updatedMembership.id ? { ...member, membership: { ...member.membership, ...updatedMembership } } : member,
+  );
 
 const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount: number): Organization | undefined => {
   if (!oldEntity?.included.counts) return oldEntity;
@@ -225,7 +219,6 @@ export const useChangeEntityRoleMutation = () =>
       }
 
       const { id: entityId, entityType, tenantId, membership } = entity;
-      // For organization entities, organizationId is the entity itself; for children it comes from the entity data
       const organizationId = entityType === 'organization' ? entityId : entity.organizationId;
       if (!organizationId) throw new Error(`Missing organizationId for ${entityType} entity`);
 

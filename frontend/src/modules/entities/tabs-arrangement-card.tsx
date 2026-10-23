@@ -37,9 +37,9 @@ function rowKeyGetter(row: TabRow) {
 
 // The label cell stacks a tab's name and description, centred in the row
 const labelCellClass = tw('flex-col items-stretch justify-center py-2');
-// Below `sm` a row grows as its description unfolds. The top padding seats the name where a centred row has it (1.5rem is
-// the help toggle's height), and the other cells keep to the row's first line, so nothing shifts while the text opens beneath
+// Below `sm` the top padding seats the name where a centred row has it (1.5rem: the help toggle's height) as the description unfolds
 const helpLabelCellClass = tw('max-sm:justify-start max-sm:pt-[calc((var(--rdg-row-height)-1.5rem)/2)] max-sm:pb-3');
+// Below `sm` the other cells keep to the row's first line, so nothing shifts while a description unfolds beneath
 const firstLineCellClass = tw('justify-center max-sm:h-(--rdg-row-height) max-sm:self-start');
 
 function renderRowDragPreview(row: TabRow) {
@@ -48,22 +48,18 @@ function renderRowDragPreview(row: TabRow) {
 
 interface TabsArrangementCardProps {
   entity: EnrichedChannel & { toolsConfig?: ToolsConfig };
-  /** The tabbed surface whose candidates are managed (route navTabs plus registry slot tools). */
+  /** Layout route whose tabs it arranges: its `navTab` child routes plus the tools of its `tabsSlot`. */
   parentRouteId: string;
   /** Persists the next toolsConfig through the channel's update mutation. */
   persist: (toolsConfig: ToolsConfig) => void;
 }
 
-/**
- * Arranges a channel surface's tabs, persisted in `toolsConfig['<channelType>.tabs']`. Candidates
- * list ungated, so tabs the viewer's own grants would hide stay manageable; `locked` tabs cannot be
- * hidden. UI visibility only, never authorization.
- */
+/** Orders and hides a channel's tabs in `toolsConfig['<channelType>.tabs']`, listed ungated so the viewer's grants hide none; UI only, never authorization. */
 export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArrangementCardProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm');
 
-  const slot = `${entity.entityType}.tabs` as ChannelSlot;
+  const slot: ChannelSlot = `${entity.entityType}.tabs`;
   const slotConfig = entity.toolsConfig?.[slot];
   const hidden = new Set(slotConfig?.hidden ?? []);
 

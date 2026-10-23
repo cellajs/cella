@@ -25,7 +25,7 @@ export interface MembersTableProps {
   isSheet?: boolean;
 }
 
-function MembersTable({ channel, isSheet = false }: MembersTableProps) {
+export function MembersTable({ channel, isSheet = false }: MembersTableProps) {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet });
 
@@ -42,8 +42,7 @@ function MembersTable({ channel, isSheet = false }: MembersTableProps) {
   const [columns, setColumns] = useColumns(canUpdate, isSheet, entityType);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
-  // include=counts feeds the per-member insight columns (last post, authored counts, sub-channel memberships);
-  // include=mfa feeds the MFA column, which the API fills for the organization's admins only
+  // `counts` and `mfa` feed the insight and MFA columns
   const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, organizationId, ...search, include: 'counts,mfa' });
 
   const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
@@ -103,5 +102,3 @@ function MembersTable({ channel, isSheet = false }: MembersTableProps) {
     </>
   );
 }
-
-export { MembersTable };

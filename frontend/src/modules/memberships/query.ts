@@ -25,15 +25,14 @@ const keys = {
 export const memberQueryKeys = keys;
 
 export const membersListQueryOptions = (params: MembersListParams) => {
-  const defaults = membersSearchDefaults;
   const {
     entityId,
     tenantId,
     organizationId,
     entityType,
-    q = defaults.q,
-    sort = defaults.sort,
-    order = defaults.order,
+    q = membersSearchDefaults.q,
+    sort = membersSearchDefaults.sort,
+    order = membersSearchDefaults.order,
     role,
     userIds,
     include,

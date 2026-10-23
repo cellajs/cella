@@ -24,17 +24,15 @@ interface EntityGridBarProps {
   entityType: ChannelEntityType;
   searchVars: EntityGridBarSearch;
   setSearch: (search: EntityGridBarSearch) => void;
+  /** Shows the focus view toggle (default false). */
   focusView?: boolean;
-  /** Slot for surface actions (e.g. a create button), rendered before the count while unfiltered. */
+  /** Buttons before the count, such as a create button: hidden while filtered, shown alone while the bar hides. */
   actions?: ReactNode;
-  /** Always-rendered slot for a grid/table view toggle, placed after the filter bar. */
+  /** A grid/table view toggle after the filters; it hides with the bar. */
   viewToggle?: ReactNode;
-  /**
-   * Show the role filter (default true). Discovery-scoped grids pass false: a role filter
-   * collapses the backend scope to membership-only rows.
-   */
+  /** Shows the role filter (default true); a discovery grid passes false, since a role narrows the backend scope to member rows. */
   roleFilter?: boolean;
-  /** Render the bar even at or below gridPreviewLimit while unfiltered (default false). */
+  /** Keeps the bar at or below gridPreviewLimit while unfiltered (default false). */
   alwaysShow?: boolean;
 }
 
@@ -44,7 +42,7 @@ export function EntityGridBar({
   entityType,
   searchVars,
   setSearch,
-  focusView,
+  focusView = false,
   actions,
   viewToggle,
   roleFilter = true,
@@ -55,7 +53,6 @@ export function EntityGridBar({
   const total = useListQueryTotal(queryKey);
   const barFilters = useTableBarFilters({ searchVars, setSearch, reset: { q: '', role: undefined } });
 
-  // Hide the bar at or below the preview count while unfiltered; the actions slot stays rendered
   if (!alwaysShow && !barFilters.isFiltered && (total ?? 0) <= gridPreviewLimit) {
     return actions ? <div className="flex items-center">{actions}</div> : null;
   }
@@ -75,7 +72,7 @@ export function EntityGridBar({
         </>
       }
       controls={viewToggle}
-      focusView={!!focusView}
+      focusView={focusView}
     />
   );
 }

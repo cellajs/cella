@@ -15,7 +15,6 @@ export const useColumns = (path: { tenantId: string; organizationId: string }) =
     {
       key: 'role',
       name: t('c:role'),
-
       width: 100,
       placeholderValue: '-',
       renderCell: ({ row }) => row.role && t(row.role),
@@ -24,7 +23,6 @@ export const useColumns = (path: { tenantId: string; organizationId: string }) =
     {
       key: 'createdBy',
       name: t('c:invited_by'),
-
       minBreakpoint: 'md',
       minWidth: 160,
       placeholderValue: '-',

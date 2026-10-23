@@ -39,11 +39,14 @@ const descriptionPreview = (html: string) => {
   return text.length > 200 ? `${text.slice(0, 200).trimEnd()}…` : text;
 };
 
-/**
- * The card around a channel tile, and the entity every part inside it reads. The tile link is the card's
- * only focus target, so the card draws its ring, shadow and press state.
- */
-export function ChannelTileCard({ entity, className, children }: { entity: ChannelTileEntity; className?: string; children: ReactNode }) {
+interface ChannelTileCardProps {
+  entity: ChannelTileEntity;
+  className?: string;
+  children: ReactNode;
+}
+
+/** Hands the entity to every part inside, and draws the ring, shadow and press state of the tile link, its only focus target. */
+export function ChannelTileCard({ entity, className, children }: ChannelTileCardProps) {
   return (
     <ChannelTileContext.Provider value={entity}>
       <Card
@@ -61,22 +64,20 @@ export function ChannelTileCard({ entity, className, children }: { entity: Chann
 /** The link to the channel's page; the card styles itself from it through the `tile-link` class. */
 function TileLink({ className, children }: { className?: string; children: ReactNode }) {
   const entity = useTileEntity();
-  const { to, params, search } = getChannelRoute(entity);
   return (
-    <Link
-      to={to}
-      params={params}
-      search={search}
-      {...pageTopHashNav}
-      className={cn('group/tile-link tile-link focus-visible:outline-hidden', className)}
-    >
+    <Link {...getChannelRoute(entity)} {...pageTopHashNav} className={cn('group/tile-link tile-link focus-visible:outline-hidden', className)}>
       {children}
     </Link>
   );
 }
 
+interface ChannelTileBannerProps {
+  overlay?: ReactNode;
+  children?: ReactNode;
+}
+
 /** Banner image (or the entity's color) with a frosted bar holding `children`, by default the heading. `overlay` sits on the banner beside the link. */
-export function ChannelTileBanner({ overlay, children = <ChannelTileHeading /> }: { overlay?: ReactNode; children?: ReactNode }) {
+export function ChannelTileBanner({ overlay, children }: ChannelTileBannerProps) {
   const entity = useTileEntity();
   return (
     <div className="relative">
@@ -87,7 +88,7 @@ export function ChannelTileBanner({ overlay, children = <ChannelTileHeading /> }
         >
           <div className="grow" />
           <div className="flex min-h-14 items-center gap-3 bg-background/50 px-4 py-2 backdrop-blur-xs transition-colors group-hover/tile-link:bg-background/70 dark:bg-background/75 dark:group-hover/tile-link:bg-background/85">
-            {children}
+            {children ?? <ChannelTileHeading />}
           </div>
         </div>
       </TileLink>
@@ -97,13 +98,22 @@ export function ChannelTileBanner({ overlay, children = <ChannelTileHeading /> }
   );
 }
 
+interface ChannelTileRowProps {
+  children?: ReactNode;
+}
+
 /** A banner-less tile: one linked row holding `children`, by default the heading. */
-export function ChannelTileRow({ children = <ChannelTileHeading /> }: { children?: ReactNode }) {
-  return <TileLink className="flex w-full items-center gap-3 p-3 sm:p-6">{children}</TileLink>;
+export function ChannelTileRow({ children }: ChannelTileRowProps) {
+  return <TileLink className="flex w-full items-center gap-3 p-3 sm:p-6">{children ?? <ChannelTileHeading />}</TileLink>;
+}
+
+interface ChannelTileHeadingProps {
+  leading?: ReactNode;
+  meta?: ReactNode;
 }
 
 /** Avatar (or `leading`), name with a draft badge, and the meta line (or `meta`, by default {@link ChannelTileStats}). */
-export function ChannelTileHeading({ leading, meta = <ChannelTileStats /> }: { leading?: ReactNode; meta?: ReactNode }) {
+export function ChannelTileHeading({ leading, meta }: ChannelTileHeadingProps) {
   const { t } = useTranslation();
   const entity = useTileEntity();
   return (
@@ -114,17 +124,19 @@ export function ChannelTileHeading({ leading, meta = <ChannelTileStats /> }: { l
           <span className="truncate">{entity.name}</span>
           {isUnpublishedDraft(entity) && <Badge variant="secondary">{t('c:draft')}</Badge>}
         </div>
-        {meta}
+        {meta ?? <ChannelTileStats />}
       </div>
     </>
   );
 }
 
-/**
- * Compact counts (`formatCount`): members (of `countRole`, or all), a draft's pending invites, posts per
- * `memberStatProductTypes` entry and the latest post date. Without counts on the row, the creation date.
- */
-export function ChannelTileStats({ countRole }: { countRole?: EntityRole }) {
+interface ChannelTileStatsProps {
+  /** Counts only this role's members (default: all members). */
+  countRole?: EntityRole;
+}
+
+/** Compact counts: members, a draft's pending invites and posts per `memberStatProductTypes` entry, then the latest post date (or the creation date). */
+export function ChannelTileStats({ countRole }: ChannelTileStatsProps) {
   const { t } = useTranslation();
   const entity = useTileEntity();
   const counts = entity.included?.counts;
@@ -193,8 +205,12 @@ export function ChannelTileMembers() {
   );
 }
 
+interface ChannelTileParentChipProps {
+  parent: EnrichedChannel | null | undefined;
+}
+
 /** Banner overlay: a chip linking to the channel this one sits in. */
-export function ChannelTileParentChip({ parent }: { parent: EnrichedChannel | null | undefined }) {
+export function ChannelTileParentChip({ parent }: ChannelTileParentChipProps) {
   const { t } = useTranslation();
   if (!parent) return null;
   return (
@@ -208,8 +224,12 @@ export function ChannelTileParentChip({ parent }: { parent: EnrichedChannel | nu
   );
 }
 
+interface ChannelTileFooterProps {
+  children: ReactNode;
+}
+
 /** Area below the banner; it takes the card's remaining height and disappears when its parts render nothing. */
-export function ChannelTileFooter({ children }: { children: ReactNode }) {
+export function ChannelTileFooter({ children }: ChannelTileFooterProps) {
   return <div className="flex grow flex-col gap-3 p-3 empty:hidden">{children}</div>;
 }
 
@@ -221,11 +241,15 @@ export function ChannelTileDescription() {
   return <p className="grow text-muted-foreground text-sm">{(description && descriptionPreview(description)) || t('c:no_description')}</p>;
 }
 
-/**
- * The viewer's own state: a pending-invite badge, or the joined button. `fallback` shows otherwise, and in
- * place of both when `hideOwnRole` is set, for grids that describe another user: typically a join button.
- */
-export function ChannelTileMembership({ hideOwnRole = false, fallback = null }: { hideOwnRole?: boolean; fallback?: ReactNode }) {
+interface ChannelTileMembershipProps {
+  /** Shows only `fallback`, for grids that describe another user. */
+  hideOwnRole?: boolean;
+  /** Shown without a membership or an invite, typically a join button. */
+  fallback?: ReactNode;
+}
+
+/** The viewer's own state: a pending-invite badge or the joined button, else `fallback`. */
+export function ChannelTileMembership({ hideOwnRole = false, fallback = null }: ChannelTileMembershipProps) {
   const { t } = useTranslation();
   const entity = useTileEntity();
   if (hideOwnRole) return fallback;
@@ -234,8 +258,12 @@ export function ChannelTileMembership({ hideOwnRole = false, fallback = null }: 
   return fallback;
 }
 
+interface ChannelTileProps extends Pick<ChannelTileMembershipProps, 'hideOwnRole'> {
+  entity: ChannelTileEntity;
+}
+
 /** The default tile, composed from the parts: banner with member previews, description, and the viewer's membership. */
-export function ChannelTile({ entity, hideOwnRole }: { entity: ChannelTileEntity; hideOwnRole?: boolean }) {
+export function ChannelTile({ entity, hideOwnRole }: ChannelTileProps) {
   return (
     <ChannelTileCard entity={entity}>
       <ChannelTileBanner overlay={<ChannelTileMembers />} />

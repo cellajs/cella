@@ -1,4 +1,3 @@
-import type { VariantProps } from 'class-variance-authority';
 import { CheckIcon, XIcon } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,22 +7,18 @@ import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
 import type { LeaveChannelProps } from '~/modules/memberships/leave-channel-button';
 import { LeaveChannelForm } from '~/modules/memberships/leave-channel-form';
-import { Button, type buttonVariants } from '~/modules/ui/button';
+import { Button, type ButtonProps } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
-type JoinedButtonProps = LeaveChannelProps & {
-  /** Membership role shown on the trigger ("✓ Admin"). */
+interface JoinedButtonProps extends LeaveChannelProps {
+  /** Shown after the check ("✓ Admin"); without a role the button reads "Joined". */
   role?: MembershipBase['role'] | null;
-  size?: VariantProps<typeof buttonVariants>['size'];
+  size?: ButtonProps['size'];
   className?: string;
-};
+}
 
-/**
- * Joined-state membership button: a "✓ Role" trigger whose checkmark swaps to an X on hover/focus
- * to signal that clicking undoes the join. Clicking opens a leave popconfirm through the
- * dropdowner, so it renders as a drawer below the `sm` breakpoint.
- */
-function JoinedButton({ role, size = 'sm', className, ...props }: JoinedButtonProps) {
+/** The joined state: its check turns into an X on hover or focus, and a click asks to leave in a popconfirm (a drawer below `sm`). */
+export function JoinedButton({ role, size = 'sm', className, ...props }: JoinedButtonProps) {
   const { t } = useTranslation();
   const { channel } = props;
 
@@ -53,5 +48,3 @@ function JoinedButton({ role, size = 'sm', className, ...props }: JoinedButtonPr
     </Button>
   );
 }
-
-export { JoinedButton };

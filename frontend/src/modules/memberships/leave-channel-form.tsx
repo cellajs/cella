@@ -3,7 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { type LeaveChannelProps, useLeaveChannel } from '~/modules/memberships/leave-channel-button';
 import { Button } from '~/modules/ui/button';
 
-export function LeaveChannelForm({ channel, redirectPath, callback, onCancel }: LeaveChannelProps & { onCancel: () => void }) {
+interface LeaveChannelFormProps extends LeaveChannelProps {
+  onCancel: () => void;
+}
+
+export function LeaveChannelForm({ channel, redirectPath, callback, onCancel }: LeaveChannelFormProps) {
   const { t } = useTranslation();
   const { leave, isPending } = useLeaveChannel(channel, { redirectPath, callback });
 
@@ -13,7 +17,7 @@ export function LeaveChannelForm({ channel, redirectPath, callback, onCancel }: 
         <UserRoundXIcon />
         {t('c:leave')}
       </Button>
-      <Button type="reset" variant="secondary" data-autofocus onClick={onCancel}>
+      <Button variant="secondary" data-autofocus onClick={onCancel}>
         {t('c:cancel')}
       </Button>
     </div>

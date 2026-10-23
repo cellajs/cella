@@ -11,17 +11,18 @@ import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
 import { invalidateMemberships } from '~/query/realtime/membership-ops';
 
-type LeaveChannelOptions = {
-  /** Where to navigate after leaving; `null` stays put, for surfaces outside the channel itself. */
+interface LeaveChannelOptions {
+  /** Where to navigate after leaving; `null` stays on the page, for a control outside the channel's own pages. */
   redirectPath?: string | null;
   callback?: (args: CallbackArgs) => void;
-};
+}
 
-export type LeaveChannelProps = LeaveChannelOptions & { channel: ChannelBase };
+export interface LeaveChannelProps extends LeaveChannelOptions {
+  channel: ChannelBase;
+}
 
 /**
- * Leaves a channel: removes it from the list cache and refreshes memberships, so the menu updates at once. `leave`
- * warns and does nothing while offline. For an app's own leave control; `LeaveChannelForm` renders the default one.
+ * The leave mutation behind `LeaveChannelForm`, for an app's own leave control; offline, `leave` only warns.
  * @public
  */
 export function useLeaveChannel(channel: ChannelBase, { redirectPath = appConfig.defaultRedirectPath, callback }: LeaveChannelOptions = {}) {
@@ -29,10 +30,7 @@ export function useLeaveChannel(channel: ChannelBase, { redirectPath = appConfig
   const navigate = useNavigate();
 
   const { mutate, isPending } = useMutation({
-    mutationFn: async () => {
-      const entityId = channel.id;
-      return await deleteMyMembership({ query: { entityId, entityType: channel.entityType } });
-    },
+    mutationFn: () => deleteMyMembership({ query: { entityId: channel.id, entityType: channel.entityType } }),
     onSuccess: () => {
       toaster.success(t('c:success.you_left_entity', { entity: channel.entityType }));
       if (redirectPath !== null) navigate({ to: redirectPath, replace: true });
@@ -50,10 +48,7 @@ export function useLeaveChannel(channel: ChannelBase, { redirectPath = appConfig
   });
 
   const leave = () => {
-    if (!onlineManager.isOnline()) {
-      toastOffline();
-      return;
-    }
+    if (!onlineManager.isOnline()) return toastOffline();
     mutate();
   };
 

@@ -12,10 +12,6 @@ import type { Member } from '~/modules/memberships/types';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
 
-// Product types with per-member stat columns, from config (the response only carries these keys).
-// Their icons and the count columns hidden by default come from the module that owns each entity.
-const memberStatProductTypes = appConfig.memberStatProductTypes;
-
 export const useColumns = (canUpdate: boolean, isSheet: boolean, entityType: ChannelEntityType) => {
   const { t } = useTranslation();
 
@@ -88,8 +84,7 @@ export const useColumns = (canUpdate: boolean, isSheet: boolean, entityType: Cha
       renderCell: ({ row }) => dateShort(row.lastSeenAt),
       exportValue: (row) => exportDate(row.lastSeenAt),
     },
-    // Per-member insight columns from include=counts: when the member last posted in this
-    // channel, their authored counts within it, and their sub-channel membership counts.
+    // From include=counts: the member's last post in this channel, their authored counts and their sub-channel memberships
     {
       key: 'lastPostedAt',
       name: t('c:last_post'),
@@ -99,12 +94,13 @@ export const useColumns = (canUpdate: boolean, isSheet: boolean, entityType: Cha
       minWidth: 120,
       placeholderValue: '-',
       renderCell: ({ row }) => {
-        const lastPostedAt = row.counts?.activity[memberStatProductTypes[0]];
+        const lastPostedAt = row.counts?.activity[appConfig.memberStatProductTypes[0]];
         return lastPostedAt ? dateShort(new Date(lastPostedAt)) : null;
       },
-      exportValue: (row) => exportDate(row.counts?.activity[memberStatProductTypes[0]]),
+      exportValue: (row) => exportDate(row.counts?.activity[appConfig.memberStatProductTypes[0]]),
     },
-    ...memberStatProductTypes.map((type) =>
+    // The response counts these product types only; each one's icon and hidden default come from the module that owns it
+    ...appConfig.memberStatProductTypes.map((type) =>
       countColumn<Member>(`${type}Count`, {
         name: t(`c:${type}`, { count: 2 }),
         icon: getMemberStatIcon(type),

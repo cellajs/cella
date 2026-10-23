@@ -17,35 +17,27 @@ export const gridPreviewLimit = 3;
 
 const entityGridClass = tw('grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-6 lg:grid-cols-[repeat(auto-fill,minmax(330px,1fr))]');
 
-type BaseEntityGridProps<TEntity extends { id: string }> = {
+interface BaseEntityGridProps<TEntity extends { id: string }> {
   label: TKey;
-
-  // render
   entities?: TEntity[];
   /** Renders one tile; a grid passes its own props through the closure, and tiles keep their identity when those change. */
   renderTile: (entity: TEntity) => ReactNode;
-
   /** Approximate height of each tile in px while loading (default: 180, a banner ChannelTile). */
   skeletonHeight?: number;
-
-  // state
   isLoading: boolean;
   isFetching: boolean;
+  /** The list query's error: it holds back the empty state, and the loader reports the failed page and stops paging. */
   error: unknown;
-
-  // pagination
   hasNextPage?: boolean;
   fetchNextPage: () => Promise<unknown>;
-
-  // empty-state logic
+  /** A search or filter is active: an empty list shows "No … found" (else "No … yet"). */
   isFiltered: boolean;
-
-  /** When true, only show up to {@link gridPreviewLimit} items with a "Show all" button */
+  /** Shows at most {@link gridPreviewLimit} tiles and a "Show all" button. */
   limitedView?: boolean;
   onExpand?: () => void;
   /** List query key; with limitedView, sources the server total for the "Show all (N)" button. */
   queryKey?: QueryKey;
-};
+}
 
 // Total subscriptions need a key unconditionally; this one never matches a cached list.
 const noTotalKey: QueryKey = ['entity-grid', 'no-total'];

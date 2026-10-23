@@ -14,10 +14,7 @@ export type ChannelSettingsSection<C extends ChannelEntityType> = PlacementDescr
   render: (entity: ChannelEntityContext<C>) => ReactNode;
 };
 
-/**
- * Resolves the `${channelType}.settings` slot tools, arranged by app overrides and the entity's
- * stored `toolsConfig`, gated on the actor's grants (`requires`) and context-role pairs (`visibleTo`).
- */
+/** The `${channelType}.settings` tools, ordered by the app config and the row's `toolsConfig`, gated on grants and context-role pairs. */
 export function useChannelSettingsSections<C extends ChannelEntityType>(entity: ChannelSettingsHost<C>): ChannelSettingsSection<C>[] {
   const channelType = entity.entityType;
   const slot: `${C}.settings` = `${channelType}.settings`;
