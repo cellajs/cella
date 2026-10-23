@@ -22,7 +22,7 @@ export const countersSeed = async () => {
   startSpinner('Recalculating counters...');
 
   const { productRows } = await recalculateViewCounts({ var: { db } });
-  const slot = await db.execute(sql`SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`);
+  const slot = await db.execute<Record<string, unknown>>(sql`SELECT 1 FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`);
 
   if (slot.rows.length > 0) {
     await requestBooks(db, 'rebuild');

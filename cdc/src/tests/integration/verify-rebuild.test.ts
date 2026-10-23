@@ -76,16 +76,18 @@ describe.skipIf(!ready)('Verify and rebuild (integration)', () => {
   const insertAttachment = async (inOrganization = organizationId): Promise<string> => (await insertAttachments(1, inOrganization))[0];
 
   const counts = async (ofOrganization = organizationId) =>
-    ((await cdcDb.execute(sql`SELECT counts FROM channel_counters WHERE channel_key = ${ofOrganization}`)).rows[0]?.counts ?? {}) as Record<
-      string,
-      number
-    >;
+    ((await cdcDb.execute<{ counts: Record<string, number> }>(sql`SELECT counts FROM channel_counters WHERE channel_key = ${ofOrganization}`)).rows[0]
+      ?.counts ?? {}) as Record<string, number>;
   const liveAttachments = async (ofOrganization = organizationId) =>
     Number(
-      (await cdcDb.execute(sql`SELECT count(*) FROM attachments WHERE organization_id = ${ofOrganization} AND deleted_at IS NULL`)).rows[0].count,
+      (await cdcDb.execute<{ count: string }>(sql`SELECT count(*) FROM attachments WHERE organization_id = ${ofOrganization} AND deleted_at IS NULL`))
+        .rows[0].count,
     );
   const highestSeq = async () =>
-    Number((await cdcDb.execute(sql`SELECT coalesce(max(seq), 0) AS seq FROM attachments WHERE organization_id = ${organizationId}`)).rows[0].seq);
+    Number(
+      (await cdcDb.execute<{ seq: string }>(sql`SELECT coalesce(max(seq), 0) AS seq FROM attachments WHERE organization_id = ${organizationId}`))
+        .rows[0].seq,
+    );
   const recordedFor = async (ids: string[]) =>
     (await cdcDb.select({ id: activitiesTable.id }).from(activitiesTable).where(inArray(activitiesTable.subjectId, ids))).length;
   const syncState = async () => (await cdcDb.select().from(syncStateTable).where(eq(syncStateTable.id, 'sync')))[0];

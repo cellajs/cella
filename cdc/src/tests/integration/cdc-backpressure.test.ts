@@ -135,10 +135,8 @@ describe.skipIf(!ready)('CDC backpressure (integration)', () => {
   };
 
   const counts = async () =>
-    ((await cdcDb.execute(sql`SELECT counts FROM channel_counters WHERE channel_key = ${organizationId}`)).rows[0]?.counts ?? {}) as Record<
-      string,
-      number
-    >;
+    ((await cdcDb.execute<{ counts: Record<string, number> }>(sql`SELECT counts FROM channel_counters WHERE channel_key = ${organizationId}`)).rows[0]
+      ?.counts ?? {}) as Record<string, number>;
 
   beforeAll(async () => {
     ({ WebSocketServer } = await import('ws'));

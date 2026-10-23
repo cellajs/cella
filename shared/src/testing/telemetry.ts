@@ -25,7 +25,7 @@ export const collectingLogger = (redactPaths: readonly string[]) => {
   return { logger, lines, parsed: () => lines.map((line) => JSON.parse(line) as Record<string, unknown>) };
 };
 
-/** The error Drizzle throws for a failed query, as drizzle-orm builds it: the SQL and the values in the message. */
+/** The error Drizzle throws for a failed query when the client sets `paramsInErrors`: the SQL and the values in the message. */
 class DrizzleQueryError extends Error {
   query: string;
   params: unknown[];

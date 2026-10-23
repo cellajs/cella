@@ -70,7 +70,7 @@ afterAll(async () => {
   });
 
   it('lets runtime_role read system_roles', async () => {
-    const result = await runtimeDb.execute(sql`SELECT role FROM system_roles WHERE user_id = ${TEST_USER}`);
+    const result = await runtimeDb.execute<{ role: string }>(sql`SELECT role FROM system_roles WHERE user_id = ${TEST_USER}`);
     expect(result.rows).toHaveLength(1);
   });
 
@@ -93,7 +93,7 @@ afterAll(async () => {
     const message = await rejectionMessage(runtimeDb.execute(sql`DELETE FROM system_roles WHERE user_id = ${TEST_USER}`));
     expect(message).toMatch(/not writable by runtime_role/);
 
-    const survived = await adminDb.execute(sql`SELECT 1 FROM system_roles WHERE user_id = ${TEST_USER}`);
+    const survived = await adminDb.execute<Record<string, unknown>>(sql`SELECT 1 FROM system_roles WHERE user_id = ${TEST_USER}`);
     expect(survived.rows).toHaveLength(1);
   });
 
@@ -106,7 +106,7 @@ afterAll(async () => {
     // or account deletion breaks for every user holding a system role.
     await expect(runtimeDb.execute(sql`DELETE FROM users WHERE id = ${TEST_USER}`)).resolves.toBeDefined();
 
-    const orphaned = await adminDb.execute(sql`SELECT 1 FROM system_roles WHERE user_id = ${TEST_USER}`);
+    const orphaned = await adminDb.execute<Record<string, unknown>>(sql`SELECT 1 FROM system_roles WHERE user_id = ${TEST_USER}`);
     expect(orphaned.rows).toHaveLength(0);
   });
 });
