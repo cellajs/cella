@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, eq, getColumns, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import {
   appConfig,
@@ -16,7 +16,7 @@ import type { CollectionReadFilter } from './collection-scope';
 const neverPredicate: SQL = sql`false`;
 
 const resolveColumn = (table: AnyPgTable, columnName: string, conditionName: string): PgColumn => {
-  const column = (table as unknown as Record<string, PgColumn | undefined>)[columnName];
+  const column: PgColumn | undefined = getColumns(table)[columnName];
   if (!column) {
     throw new Error(`[Permission] Row condition "${conditionName}" reads column "${columnName}" which does not exist on the queried table`);
   }

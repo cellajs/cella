@@ -10,7 +10,7 @@ import { checkReplicationSetup } from '../../services/setup-check';
 /** Whether the configured database is set up for the worker at all. */
 async function probeReady(): Promise<boolean> {
   try {
-    const pub = await cdcDb.execute(sql`SELECT 1 FROM pg_publication WHERE pubname = ${cdcPublicationName}`);
+    const pub = await cdcDb.execute<Record<string, unknown>>(sql`SELECT 1 FROM pg_publication WHERE pubname = ${cdcPublicationName}`);
     return pub.rows.length > 0;
   } catch {
     return false;
@@ -24,7 +24,9 @@ describe.skipIf(!ready)('Replication setup check (integration)', () => {
   afterEach(async () => {
     await cdcDb.execute(sql`ALTER TABLE attachments REPLICA IDENTITY FULL`);
     await cdcDb.execute(sql`DROP TABLE IF EXISTS setup_check_stray`);
-    const published = await cdcDb.execute(sql`SELECT 1 FROM pg_publication_tables WHERE pubname = ${cdcPublicationName} AND tablename = 'tenants'`);
+    const published = await cdcDb.execute<Record<string, unknown>>(
+      sql`SELECT 1 FROM pg_publication_tables WHERE pubname = ${cdcPublicationName} AND tablename = 'tenants'`,
+    );
     if (published.rows.length === 0) await cdcDb.execute(sql.raw(`ALTER PUBLICATION ${cdcPublicationName} ADD TABLE tenants`));
   });
 
@@ -154,7 +156,7 @@ describe.skipIf(!ready)("The worker's database sessions (integration)", () => {
       await expect(held).rejects.toThrow();
 
       // The API's edit of that row goes through: nothing holds it any more.
-      const edit = await cdcDb.execute(sql`UPDATE tenants SET name = 'edited' WHERE id = ${tenantId}`);
+      const edit = await cdcDb.execute<never>(sql`UPDATE tenants SET name = 'edited' WHERE id = ${tenantId}`);
       expect(edit.rowCount).toBe(1);
     } finally {
       await cdcDb.execute(sql`DELETE FROM activities WHERE subject_id = ${tenantId}`);

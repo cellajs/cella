@@ -3,11 +3,11 @@ const failedQueryPrefix = 'Failed query: ';
 /** What a failed query's SQL and values become where the database's own reason is not at hand. */
 export const redactedFailedQuery = `${failedQueryPrefix}[REDACTED]`;
 
-/** Drizzle's failed-query text, `Failed query: <sql>\nparams: <values>`: values that span lines end at the first stack frame. */
-const failedQueryPattern = /Failed query: [\s\S]*?\nparams: [\s\S]*?(?=\n {4}at |$)/g;
+/** Drizzle's failed-query text, `Failed query: <sql>` (plus `\nparams: <values>` under `paramsInErrors`), up to the first stack frame. */
+const failedQueryPattern = /Failed query: [\s\S]*?(?=\n {4}at |$)/g;
 
-/** True for the message of Drizzle's `DrizzleQueryError`, which carries the SQL and every value the query bound. */
-export const isFailedQueryMessage = (message: string): boolean => message.startsWith(failedQueryPrefix) && message.includes('\nparams: ');
+/** True for the message of Drizzle's `DrizzleQueryError`: the SQL, and every bound value when the client sets `paramsInErrors`. */
+export const isFailedQueryMessage = (message: string): boolean => message.startsWith(failedQueryPrefix);
 
 /**
  * Replaces the SQL and bound values of every failed query quoted in a text, such as a stack an error took over from a

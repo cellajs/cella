@@ -109,10 +109,10 @@ const requiredRoles = ['runtime_role', 'admin_role'] as const;
  * Returns true if setup can be skipped (avoids catalog writes on hot-reload).
  */
 async function rolesExist(): Promise<boolean> {
-const result = await getAdminDb('role setup').execute(
+const result = await getAdminDb('role setup').execute<{ cnt: number }>(
   sql.raw(`SELECT COUNT(*)::int AS cnt FROM pg_roles WHERE rolname IN ('${requiredRoles.join("','")}')`),
 );
-return (result.rows[0] as { cnt: number }).cnt === requiredRoles.length;
+return result.rows[0].cnt === requiredRoles.length;
 }
 
 /**
@@ -120,8 +120,8 @@ return (result.rows[0] as { cnt: number }).cnt === requiredRoles.length;
  * If so, roles are Scaleway-managed and we only need to ensure grants.
  */
 async function isRoleManagedExternally(): Promise<boolean> {
-  const result = await getAdminDb('role setup').execute(sql.raw('SELECT CURRENT_USER AS cu'));
-  const currentUser = (result.rows[0] as { cu: string }).cu;
+  const result = await getAdminDb('role setup').execute<{ cu: string }>(sql.raw('SELECT CURRENT_USER AS cu'));
+  const currentUser = result.rows[0].cu;
   return requiredRoles.includes(currentUser as typeof requiredRoles[number]);
 }
 

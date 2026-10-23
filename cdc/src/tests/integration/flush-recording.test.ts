@@ -95,7 +95,7 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
   };
 
   /** The row as pgoutput delivers it: snake_case columns. */
-  const storedRow = async (id: string) => (await cdcDb.execute(sql`SELECT * FROM attachments WHERE id = ${id}`)).rows[0] as Record<string, unknown>;
+  const storedRow = async (id: string) => (await cdcDb.execute<Record<string, unknown>>(sql`SELECT * FROM attachments WHERE id = ${id}`)).rows[0];
 
   const eventFor = async (tag: 'insert' | 'update', id: string, lsn: string, oldRow?: Record<string, unknown>): Promise<PendingEvent> => {
     const result = parseMessage(dmlMessage(tag, 'attachments', await storedRow(id), oldRow));
@@ -108,10 +108,8 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
   };
 
   const counts = async () =>
-    ((await cdcDb.execute(sql`SELECT counts FROM channel_counters WHERE channel_key = ${organizationId}`)).rows[0]?.counts ?? {}) as Record<
-      string,
-      number
-    >;
+    ((await cdcDb.execute<{ counts: Record<string, number> }>(sql`SELECT counts FROM channel_counters WHERE channel_key = ${organizationId}`)).rows[0]
+      ?.counts ?? {}) as Record<string, number>;
 
   const activitiesOf = async (ids: string[]) =>
     (await cdcDb.select({ id: activitiesTable.id }).from(activitiesTable).where(inArray(activitiesTable.subjectId, ids))).length;
@@ -245,7 +243,7 @@ describe.skipIf(!ready)('Recording a flush (integration)', () => {
     const [firstTenant, secondTenant] = [nanoidTenant(), nanoidTenant()];
     for (const id of [firstTenant, secondTenant]) await cdcDb.execute(sql`INSERT INTO tenants (id, name) VALUES (${id}, ${`order-${id}`})`);
     const tenantEvent = async (tag: 'insert' | 'update', id: string): Promise<PendingEvent> => {
-      const row = (await cdcDb.execute(sql`SELECT * FROM tenants WHERE id = ${id}`)).rows[0] as Record<string, unknown>;
+      const row = (await cdcDb.execute<Record<string, unknown>>(sql`SELECT * FROM tenants WHERE id = ${id}`)).rows[0];
       // An update without a changed column is no event: the old row carries another name.
       const result = parseMessage(dmlMessage(tag, 'tenants', row, tag === 'update' ? { ...row, name: 'before' } : undefined));
       if (!result) throw new Error(`The parser dropped the ${tag} of tenant ${id}`);

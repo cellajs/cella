@@ -79,7 +79,7 @@
     "cdc-worker": "workspace:*",
     "cross-env": "^10.1.0",
     "drizzle-kit": "1.0.0-rc.5-ab785fc",
-    "drizzle-orm": "1.0.0-rc.3",
+    "drizzle-orm": "1.0.0-rc.5",
     "hono": "^4.13.13",
     "i18next": "^26.5.4",
     "isbot": "^5.2.2",
