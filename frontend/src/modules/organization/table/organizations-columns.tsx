@@ -1,15 +1,15 @@
 import { Link } from '@tanstack/react-router';
 import i18n from 'i18next';
 import { PencilIcon, ShieldIcon, TrashIcon, UserRoundIcon } from 'lucide-react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
-import { hierarchy, isChannel } from 'shared';
+import { hierarchy, isChannel, isProduct } from 'shared';
 import { ConfirmText } from '~/modules/common/confirm-text';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { countColumn, dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { openPopConfirm } from '~/modules/common/popconfirm';
@@ -20,6 +20,10 @@ import type { EnrichedOrganization } from '~/modules/organization/types';
 import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { UserCell } from '~/modules/user/user-cell';
+
+const descendants = hierarchy.getOrderedDescendants('organization');
+const lastChannel = descendants.filter(isChannel).at(-1);
+const firstProduct = descendants.find(isProduct);
 
 export const openUpdateSheet = (organization: Organization, triggerRef: TriggerRef) =>
   openEditSheet({
@@ -131,23 +135,14 @@ export const useColumns = () => {
       maxWidth: 140,
     })),
     // Dynamic entity count columns for org-scoped descendant entities
-    ...(() => {
-      const descendants = hierarchy.getOrderedDescendants('organization');
-      const channelDescendants = descendants.filter((t) => isChannel(t));
-      const productDescendants = descendants.filter((t) => !isChannel(t));
-      // Context: last visible, Product: first visible
-      const lastChannel = channelDescendants[channelDescendants.length - 1];
-      const firstProduct = productDescendants[0];
-
-      return descendants.map((type) =>
-        countColumn<EnrichedOrganization>(`${type}Count`, {
-          name: t(`c:${type}`, { count: 2 }),
-          hidden: type !== lastChannel && type !== firstProduct,
-          get: (row) => (row.included.counts?.entities as Record<string, number>)?.[type],
-        }),
-      );
-    })(),
+    ...descendants.map((type) =>
+      countColumn<EnrichedOrganization>(`${type}Count`, {
+        name: t(`c:${type}`, { count: 2 }),
+        hidden: type !== lastChannel && type !== firstProduct,
+        get: (row) => (row.included.counts?.entities as Record<string, number>)?.[type],
+      }),
+    ),
   ];
 
-  return useState<ColumnOrColumnGroup<EnrichedOrganization>[]>(columns);
+  return useColumnVisibility(columns);
 };

@@ -31,7 +31,7 @@ interface Props {
   callback?: (args: CallbackArgs<Tenant>) => void;
 }
 
-const statusOptions = ['active', 'suspended', 'archived'] as const;
+export const statusOptions = ['active', 'suspended', 'archived'] as const;
 
 type SignInMethod = NonNullable<NonNullable<UpdateTenantData['body']>['authStrategies']>[number];
 

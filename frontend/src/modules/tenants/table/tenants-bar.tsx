@@ -1,18 +1,10 @@
-import type { QueryKey } from '@tanstack/react-query';
-import type { Dispatch, SetStateAction } from 'react';
 import type { Tenant } from 'sdk';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-schemas';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
-interface TenantsTableBarProps {
-  queryKey: QueryKey;
-  columns: ColumnOrColumnGroup<Tenant>[];
-  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Tenant>[]>>;
-  searchVars: TenantsRouteSearchParams & { limit: number };
-  setSearch: (newValues: Partial<TenantsRouteSearchParams>, saveSearch?: boolean) => void;
-}
+type TenantsTableBarProps = Omit<BaseTableBarProps<Tenant, TenantsRouteSearchParams>, 'selected' | 'clearSelection'>;
 
 export function TenantsTableBar({ queryKey, searchVars, setSearch, columns, setColumns }: TenantsTableBarProps) {
   const total = useListQueryTotal(queryKey);

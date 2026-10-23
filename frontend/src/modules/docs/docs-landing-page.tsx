@@ -1,21 +1,15 @@
 import { MDXProvider } from '@mdx-js/react';
 import { Link } from '@tanstack/react-router';
 import { ChevronRightIcon, ExternalLinkIcon } from 'lucide-react';
-import { type ComponentType, lazy, Suspense, useMemo } from 'react';
+import { Suspense } from 'react';
 import { Spinner } from '~/modules/common/spinner';
-import { type DocsTile, docsConfig, getDocPageLoader, getResolvedDocPageComponent } from '~/modules/page/content';
+import { type DocsTile, docsConfig, getDocPageComponent } from '~/modules/page/content';
 import { mdxComponents } from '~/modules/page/mdx-components';
 import { tw } from '~/utils/tw';
 
 /** The /docs landing page, driven by the global docs config (content root index.mdx frontmatter). */
 export function DocsLandingPage() {
-  // The index route loader resolves the body, else a lazy import; the memo keeps that lazy component's identity across renders
-  const Content = useMemo<ComponentType<{ components?: typeof mdxComponents }> | null>(() => {
-    const resolved = getResolvedDocPageComponent('');
-    if (resolved) return resolved;
-    const loader = getDocPageLoader('');
-    return loader ? lazy(async () => ({ default: await loader() })) : null;
-  }, []);
+  const Content = getDocPageComponent('');
 
   return (
     <div className="container">
@@ -45,8 +39,8 @@ export function DocsLandingPage() {
 
 const cardClass = tw('group flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-accent/50');
 
-/** Landing tile; internal targets go through the router. */
-function DocsTileCard({ tile }: { tile: DocsTile }) {
+/** A docs tile: the landing tiles and a page's child pages; internal targets go through the router. */
+export function DocsTileCard({ tile }: { tile: DocsTile }) {
   const isInternal = tile.to.startsWith('/');
   const TrailingIcon = isInternal ? ChevronRightIcon : ExternalLinkIcon;
   const inner = (

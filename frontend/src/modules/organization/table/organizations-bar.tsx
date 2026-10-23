@@ -5,11 +5,10 @@ import { appConfig } from 'shared';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { type SheetTab, SheetTabs } from '~/modules/common/sheet-tabs';
 import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
-import { CreateOrganizationForm } from '~/modules/organization/create-organization-form';
+import { openCreateOrganizationDialog } from '~/modules/organization/create-organization-form';
 import { fetchOrganizationsForExport } from '~/modules/organization/query';
 import type { EnrichedOrganization, OrganizationsRouteSearchParams } from '~/modules/organization/types';
 import { CreateNewsletterForm } from '~/modules/system/create-newsletter-form';
@@ -30,9 +29,6 @@ export function OrganizationsTableBar({
 }: OrganizationsTableBarProps) {
   const { t } = useTranslation();
 
-  const removeDialog = useDialoger((state) => state.remove);
-  const createDialog = useDialoger((state) => state.create);
-
   const total = useListQueryTotal(queryKey);
 
   const createButtonRef = useRef(null);
@@ -40,10 +36,6 @@ export function OrganizationsTableBar({
 
   const { q, order, sort } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '' } });
-
-  const onCreateOrganization = () => {
-    removeDialog('create-organization');
-  };
 
   const openNewsletterSheet = () => {
     const ids = selected.map((o) => o.id);
@@ -72,23 +64,15 @@ export function OrganizationsTableBar({
     return fetchOrganizationsForExport({ limit, offset, q, sort, order });
   };
 
-  const openCreateDialog = () => {
-    createDialog(<CreateOrganizationForm callback={onCreateOrganization} />, {
-      id: 'create-organization',
-      triggerRef: createButtonRef,
-      className: 'md:max-w-2xl',
-      title: t('c:create_resource', { resource: t('c:organization').toLowerCase() }),
-      titleContent: <UnsavedBadge title={t('c:create_resource', { resource: t('c:organization').toLowerCase() })} />,
-    });
-  };
-
   return (
     <TableBarShell
       {...barFilters}
       {...{ searchVars, total, columns, setColumns }}
       label="c:organization"
       searchName="organizationSearch"
-      actions={<TableBarButton ref={createButtonRef} label="c:create" icon={PlusIcon} onClick={openCreateDialog} />}
+      actions={
+        <TableBarButton ref={createButtonRef} label="c:create" icon={PlusIcon} onClick={() => openCreateOrganizationDialog(createButtonRef)} />
+      }
       export={{ filename: `${appConfig.slug}-organizations`, selectedRows: selected, fetchRows: fetchExport }}
       selection={{
         count: selected.length,

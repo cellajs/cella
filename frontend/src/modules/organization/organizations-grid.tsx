@@ -1,6 +1,6 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useSearchParams } from '~/hooks/use-search-params';
+import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { BaseEntityGrid, ChannelTile, EntityGridBar } from '~/modules/entities/entity-grid';
 import { useUserStore } from '~/modules/user/user-store';
 import { organizationsListQueryOptions } from './query';
@@ -30,12 +30,7 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
   const q = search.q ?? '';
   const isFiltered = !!q;
 
-  const { data, isFetching, isLoading, error, hasNextPage, fetchNextPage } = useInfiniteQuery({
-    ...queryOptions,
-    select: (data) => data.pages.flatMap((p) => p.items),
-  });
-
-  const entities = data;
+  const { rows: entities, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
 
   return (
     <div className="flex h-full flex-col gap-2">
@@ -61,7 +56,7 @@ export function OrganizationsGrid({ fixedQuery, saveDataInSearch, focusView, lim
         isFetching={isFetching}
         error={error}
         hasNextPage={hasNextPage}
-        fetchNextPage={fetchNextPage}
+        fetchNextPage={fetchMore}
         isFiltered={isFiltered}
         limitedView={limitedView}
         onExpand={() => setExpanded(true)}

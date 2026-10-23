@@ -27,9 +27,6 @@ function renderRowDragPreview(row: PageTreeRow) {
 
 const defaultExpanded = true;
 
-/** Content is file-based and read-only in the UI; the tree never mutates. */
-const noopMutate = () => {};
-
 /** Renders the build-time MDX index; development edits persist to frontmatter, and bundled production content is read-only. */
 function PagesTable() {
   const { t } = useTranslation();
@@ -37,7 +34,7 @@ function PagesTable() {
 
   const { q } = search;
 
-  const { columns, setColumns } = usePagesTableColumns();
+  const [columns, setColumns] = usePagesTableColumns();
 
   const [pages, setPages] = useState<DocPage[]>(docPages);
   const pagesRef = useRef(pages);
@@ -64,7 +61,7 @@ function PagesTable() {
     defaultExpanded: defaultExpanded,
     rowHeight: pagesRowHeight,
     maxDepth: maxPageDepth,
-    mutate: canEditDocs ? treeMutate : noopMutate,
+    mutate: treeMutate,
   });
 
   const buildRows = tree.buildRows;

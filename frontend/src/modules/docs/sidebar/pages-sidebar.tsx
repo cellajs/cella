@@ -2,15 +2,14 @@ import { useRouterState } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { buildPageNodeTree, computeAncestorIds, PageBranch } from '~/modules/docs/sidebar/page-branch';
-import { docPages } from '~/modules/page/content';
+import { visibleDocPages } from '~/modules/page/content';
 import { SidebarMenu, SidebarMenuItem } from '~/modules/ui/sidebar';
 
-const pages = docPages.filter((page) => !page.draft && !page.hidden);
-const pageTree = buildPageNodeTree(pages);
+const pageTree = buildPageNodeTree(visibleDocPages);
 
 // Effective parent per page id for sibling lookup (orphans count as roots, like buildPageNodeTree)
-const pageIds = new Set(pages.map((page) => page.id));
-const parentById = new Map(pages.map((page) => [page.id, page.parentId && pageIds.has(page.parentId) ? page.parentId : null]));
+const pageIds = new Set(visibleDocPages.map((page) => page.id));
+const parentById = new Map(visibleDocPages.map((page) => [page.id, page.parentId && pageIds.has(page.parentId) ? page.parentId : null]));
 
 /** Accordion: expanding an id collapses its siblings (same effective parent, removed from the set). */
 function expandExclusive(next: Set<string>, id: string) {
@@ -22,7 +21,7 @@ function expandExclusive(next: Set<string>, id: string) {
 /** The set with the page's ancestors opened, each collapsing its siblings; the same set when nothing changes. */
 function expandAncestors(expandedIds: Set<string>, pageId: string | undefined) {
   const next = new Set(expandedIds);
-  for (const id of computeAncestorIds(pages, pageId)) expandExclusive(next, id);
+  for (const id of computeAncestorIds(visibleDocPages, pageId)) expandExclusive(next, id);
   const changed = next.size !== expandedIds.size || [...next].some((id) => !expandedIds.has(id));
   return changed ? next : expandedIds;
 }

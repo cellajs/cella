@@ -6,6 +6,7 @@ import { zUpdateOrganizationBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { useBeforeUnload } from '~/hooks/use-before-unload';
+import { canUploadAttachments } from '~/modules/attachment/helpers/can-upload-attachments';
 import { persistAttachments } from '~/modules/attachment/helpers/persist-attachments';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
@@ -14,7 +15,6 @@ import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { PopConfirm } from '~/modules/common/popconfirm';
-import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
@@ -28,18 +28,12 @@ const formSchema = zUpdateOrganizationBody;
 type FormValues = z.infer<typeof formSchema>;
 interface Props {
   organization: EnrichedOrganization;
-  sheet?: boolean;
   callback?: (args: CallbackArgs<Organization>) => void;
 }
 
-export function UpdateOrganizationDetailsForm({ organization, callback, sheet: isSheet }: Props) {
+export function UpdateOrganizationDetailsForm({ organization, callback }: Props) {
   const { t } = useTranslation();
   const { mutate, isPending } = useOrganizationUpdateMutation();
-
-  // Inline media become org-scoped attachment rows, so the file panel needs attachment CREATE, which
-  // an organization UPDATE grant does not imply, and the organization must be an upload target.
-  const canUploadAttachments =
-    (appConfig.attachmentUploadTargets as readonly string[]).includes('organization') && organization.can?.attachment?.create === true;
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
@@ -59,7 +53,6 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
       { path: { tenantId: organization.tenantId, id: organization.id }, body },
       {
         onSuccess: (updatedOrganization) => {
-          if (isSheet) sheeter.getState().remove(formContainerId);
           form.reset(body);
           toaster.success(t('c:success.update_resource', { resource: t('c:organization') }));
           callback?.({ data: updatedOrganization, status: 'success' });
@@ -118,7 +111,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
               trailingBlock: false,
               className:
                 'min-h-20 max-h-[50vh] overflow-auto bg-background p-3 pr-6 pl-8 border-input ring-offset-background focus-visible:ring-ring w-full rounded-md border text-sm focus-visible:outline-hidden focus-ring:focus-visible:ring-2 focus-visible:ring-offset-2',
-              baseFilePanelProps: canUploadAttachments
+              baseFilePanelProps: canUploadAttachments(organization)
                 ? {
                     mediaMode: 'private-attachment',
                     tenantId: organization.tenantId,

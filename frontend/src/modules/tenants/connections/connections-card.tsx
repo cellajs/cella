@@ -1,14 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { CopyIcon, TrashIcon } from 'lucide-react';
+import type { MouseEvent } from 'react';
 import type { UseFormProps } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import type { Connection, Tenant } from 'sdk';
 import { appConfig } from 'shared';
 import { z } from 'zod';
+import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
+import { ConfirmText } from '~/modules/common/confirm-text';
+import { CopiedIcon } from '~/modules/common/copied-icon';
+import { DeleteForm } from '~/modules/common/delete-form';
+import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { HelpText } from '~/modules/common/help-text';
+import { PopConfirm } from '~/modules/common/popconfirm';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
@@ -28,7 +35,7 @@ import { Switch } from '~/modules/ui/switch';
 import { Textarea } from '~/modules/ui/textarea';
 import { formResolver } from '~/utils/form-resolver';
 
-const federationKeys = Object.keys(appConfig.federations);
+const federationItems = Object.entries(appConfig.federations).map(([value, { label }]) => ({ value, label }));
 const statuses = ['pending', 'active', 'disabled'] as const;
 
 /** The form collects lists as text; the request body gets arrays. */
@@ -60,10 +67,11 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
   const { mutate: create, isPending: creating } = useConnectionCreateMutation();
   const { mutate: update } = useConnectionUpdateMutation();
   const { mutate: remove } = useConnectionDeleteMutation();
+  const { copied, copyToClipboard } = useCopyToClipboard();
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
-    defaultValues: { issuer: federationKeys[0] ?? '', displayName: '', claimValues: '', idpEntityIds: '' },
+    defaultValues: { issuer: federationItems[0]?.value ?? '', displayName: '', claimValues: '', idpEntityIds: '' },
   };
 
   const formContainerId = 'tenant-connections';
@@ -89,9 +97,22 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
     );
   };
 
-  const copyLink = async (connection: Connection) => {
-    await navigator.clipboard.writeText(entryLink(connection));
-    toaster.success(t('c:copied'));
+  // A deleted connection ends its institution's sign-in, so the click asks first.
+  const openDeleteConfirm = (connection: Connection, event: MouseEvent<HTMLButtonElement>) => {
+    const closeConfirm = () => dropdowner.getState().remove();
+    dropdowner.getState().create(
+      <PopConfirm title={<ConfirmText i18nKey="c:delete_confirm.text" values={{ name: connection.displayName }} />}>
+        <DeleteForm
+          pending={false}
+          onCancel={closeConfirm}
+          onDelete={() => {
+            closeConfirm();
+            remove({ path: { tenantId: tenant.id, id: connection.id } });
+          }}
+        />
+      </PopConfirm>,
+      { id: 'delete-connection', triggerId: `delete-connection-${connection.id}`, triggerRef: { current: event.currentTarget }, align: 'end' },
+    );
   };
 
   const sso = (connections ?? []).filter((connection) => connection.kind === 'sso');
@@ -106,9 +127,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
             <div key={connection.id} className="flex flex-col gap-3 rounded-md border p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold">{connection.displayName}</span>
-                <Badge variant="outline">
-                  {appConfig.federations[connection.issuer as keyof typeof appConfig.federations]?.label ?? connection.issuer}
-                </Badge>
+                <Badge variant="outline">{federationItems.find((item) => item.value === connection.issuer)?.label ?? connection.issuer}</Badge>
                 <Select
                   value={connection.status}
                   onValueChange={(status) =>
@@ -148,8 +167,8 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
               </div>
               <div className="flex flex-wrap items-start gap-2">
                 <HelpText content={t('c:sso_entry_link.text')} className="mb-0">
-                  <Button type="button" variant="plain" size="sm" onClick={() => copyLink(connection)}>
-                    <CopyIcon />
+                  <Button type="button" variant="plain" size="sm" onClick={() => copyToClipboard(entryLink(connection))}>
+                    <CopiedIcon copied={copied} icon={CopyIcon} />
                     {t('c:sso_entry_link')}
                   </Button>
                 </HelpText>
@@ -158,7 +177,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
                   variant="plain"
                   size="sm"
                   className="ml-auto text-destructive"
-                  onClick={() => remove({ path: { tenantId: tenant.id, id: connection.id } })}
+                  onClick={(event) => openDeleteConfirm(connection, event)}
                 >
                   <TrashIcon />
                   {t('c:delete')}
@@ -167,7 +186,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
             </div>
           ))}
 
-          {sso.length === 0 && federationKeys.length > 0 && (
+          {sso.length === 0 && federationItems.length > 0 && (
             <Form {...form}>
               <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
                 <FormField
@@ -176,21 +195,14 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
                   render={({ field }) => (
                     <FormItem name="issuer">
                       <FormLabel>{t('c:federation')}</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        items={federationKeys.map((key) => ({
-                          value: key,
-                          label: appConfig.federations[key as keyof typeof appConfig.federations].label,
-                        }))}
-                      >
+                      <Select value={field.value} onValueChange={field.onChange} items={federationItems}>
                         <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {federationKeys.map((key) => (
-                            <SelectItem key={key} value={key}>
-                              {appConfig.federations[key as keyof typeof appConfig.federations].label}
+                          {federationItems.map(({ value, label }) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
                             </SelectItem>
                           ))}
                         </SelectContent>

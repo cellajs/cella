@@ -1,14 +1,14 @@
 import { Link } from '@tanstack/react-router';
 import { GripVerticalIcon } from 'lucide-react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EditCellInput, enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { ExpandToggleColumn } from '~/modules/common/data-table/tree/expand-toggle-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { docRenderModes } from '~/modules/page/content';
 import type { PageTreeRow } from '~/modules/page/table/page-tree';
 import { canEditDocs } from '~/modules/page/utils/edit-doc-page';
-import { RenderModeLabel, renderModeLabelKey } from '~/modules/page/utils/render-mode';
+import { RenderModeLabel } from '~/modules/page/utils/render-mode';
 import { Badge } from '~/modules/ui/badge';
 import { dateShort } from '~/utils/date-short';
 import { tw } from '~/utils/tw';
@@ -110,17 +110,12 @@ export function usePagesTableColumns() {
       minBreakpoint: 'md',
       resizable: true,
       width: 140,
-      renderCell: ({ row }) => <RenderModeLabel mode={row.renderMode} label={t(renderModeLabelKey(row.renderMode))} />,
+      renderCell: ({ row }) => <RenderModeLabel mode={row.renderMode} />,
       ...(canEditDocs && {
         editable: true,
         editorOptions: enumSelectEditorOptions,
         renderEditCell: (props) => (
-          <RenderEnumSelect
-            {...props}
-            field="renderMode"
-            options={docRenderModes}
-            renderOption={(mode) => <RenderModeLabel mode={mode} label={t(renderModeLabelKey(mode))} />}
-          />
+          <RenderEnumSelect {...props} field="renderMode" options={docRenderModes} renderOption={(mode) => <RenderModeLabel mode={mode} />} />
         ),
       }),
     },
@@ -135,8 +130,6 @@ export function usePagesTableColumns() {
     },
   ];
 
-  const [columns, setColumns] = useState(configs);
-
   // Stable array identity: DataGrid passes it to memoized Row/Cell, and a fresh array re-renders every visible row.
-  return { columns, setColumns };
+  return useColumnVisibility(configs);
 }

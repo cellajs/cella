@@ -1,21 +1,19 @@
 import { Link } from '@tanstack/react-router';
 import { Link2OffIcon } from 'lucide-react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Tenant } from 'sdk';
 import { isStrategyEnabled } from 'shared';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { dateColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { ConnectionsCard } from '~/modules/tenants/connections/connections-card';
-import { UpdateTenantForm } from '~/modules/tenants/update-tenant-form';
+import { statusOptions, UpdateTenantForm } from '~/modules/tenants/update-tenant-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-
-const statusOptions = ['active', 'suspended', 'archived'] as const;
 
 export const openUpdateSheet = (tenant: Tenant, triggerRef: TriggerRef) =>
   openEditSheet({
@@ -132,5 +130,5 @@ export const useColumns = () => {
     dateColumn('createdAt', { name: t('c:created_at') }),
   ];
 
-  return useState<ColumnOrColumnGroup<Tenant>[]>(columns);
+  return useColumnVisibility(columns);
 };

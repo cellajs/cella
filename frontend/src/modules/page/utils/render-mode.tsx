@@ -1,8 +1,8 @@
 import { FileTextIcon, LayoutListIcon, WorkflowIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import type { IconComponent } from '~/modules/common/icons/types';
 import type { DocRenderMode } from '~/modules/page/content';
-import { tw } from '~/utils/tw';
 
 const renderModeIcons: Record<DocRenderMode, IconComponent> = { default: FileTextIcon, overview: LayoutListIcon, nodeOnly: WorkflowIcon };
 
@@ -13,20 +13,17 @@ const renderModeLabelKeys = {
   nodeOnly: 'c:render_mode.node_only',
 } as const satisfies Record<DocRenderMode, TKey>;
 
-export const renderModeLabelKey = (mode: DocRenderMode): TKey => renderModeLabelKeys[mode];
-
 interface RenderModeLabelProps {
   mode: DocRenderMode;
-  label: string;
-  className?: string;
 }
 
-export function RenderModeLabel({ mode, label, className = tw('flex items-center gap-1.5') }: RenderModeLabelProps) {
-  const Icon = renderModeIcons[mode] ?? FileTextIcon;
+export function RenderModeLabel({ mode }: RenderModeLabelProps) {
+  const { t } = useTranslation();
+  const Icon = renderModeIcons[mode];
   return (
-    <span className={className}>
+    <span className="flex items-center gap-1.5">
       <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-      <span className="truncate">{label}</span>
+      <span className="truncate">{t(renderModeLabelKeys[mode])}</span>
     </span>
   );
 }

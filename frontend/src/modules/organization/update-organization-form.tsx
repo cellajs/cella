@@ -32,7 +32,7 @@ const formSchema = zUpdateOrganizationBody.omit({ welcomeText: true }).extend({
 
 type FormValues = z.infer<typeof formSchema>;
 interface Props {
-  organization: Organization | Organization;
+  organization: Organization;
   sheet?: boolean;
   callback?: (args: CallbackArgs<Organization>) => void;
 }

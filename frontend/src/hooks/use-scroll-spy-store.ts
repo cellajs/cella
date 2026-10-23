@@ -2,7 +2,7 @@
  * DOM id prefix (e.g. id="spy-intro") prevents auto-scroll on hash change. No element may carry the bare section id:
  * TanStack history patches replaceState, so each hash write runs the router's hash scroll, which jumps to that element.
  */
-const spyPrefix = 'spy-';
+export const spyPrefix = 'spy-';
 
 const sections = new Map<string, number>(); // sectionId → intersection ratio
 let observer: IntersectionObserver | null = null;

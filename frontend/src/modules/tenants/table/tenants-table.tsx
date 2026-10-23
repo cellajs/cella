@@ -1,7 +1,6 @@
 import { BuildingIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Tenant } from 'sdk';
-import { appConfig } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
@@ -13,8 +12,6 @@ import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-s
 import { TenantsTableBar } from '~/modules/tenants/table/tenants-bar';
 import { useColumns } from '~/modules/tenants/table/tenants-columns';
 
-const requestLimit = appConfig.requestLimits.users; // Use users limit as fallback
-
 function rowKeyGetter(row: Tenant) {
   return row.id;
 }
@@ -24,13 +21,12 @@ function TenantsTable() {
   const { search, setSearch } = useSearchParams<TenantsRouteSearchParams>({ from: '/_app/system/tenants' });
 
   const { q, sort, order } = search;
-  const limit = requestLimit;
 
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
   const updateTenant = useTenantUpdateMutation();
 
-  const queryOptions = tenantsListQueryOptions({ ...search, limit });
+  const queryOptions = tenantsListQueryOptions(search);
   const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
 
   const onRowsChange = (changedRows: Tenant[], { indexes, column }: RowsChangeData<Tenant>) => {
@@ -43,13 +39,7 @@ function TenantsTable() {
 
   return (
     <>
-      <TenantsTableBar
-        queryKey={queryOptions.queryKey}
-        columns={columns}
-        setColumns={setColumns}
-        searchVars={{ ...search, limit }}
-        setSearch={setSearch}
-      />
+      <TenantsTableBar queryKey={queryOptions.queryKey} columns={columns} setColumns={setColumns} searchVars={search} setSearch={setSearch} />
       <DataTable<Tenant>
         {...{
           rows,

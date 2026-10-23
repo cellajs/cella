@@ -3,7 +3,7 @@ import { t } from 'i18next';
 import { operationsQueryOptions, schemasQueryOptions } from '~/modules/docs/query';
 import type { EnginePage } from '~/modules/docs/search/engine';
 import type { DocsSearchClient } from '~/modules/docs/search/types';
-import { docPages, getDocPage, pathToSlug } from '~/modules/page/content';
+import { getDocPage, pathToSlug, visibleDocPages } from '~/modules/page/content';
 
 let clientPromise: Promise<DocsSearchClient> | null = null;
 
@@ -37,18 +37,16 @@ async function buildClient(queryClient: QueryClient): Promise<DocsSearchClient> 
   ]);
 
   const sectionsBySlug = new Map(Object.entries(docsSectionsIndex).map(([path, sections]) => [pathToSlug(path), sections]));
-  const pages: EnginePage[] = docPages
-    .filter((page) => !page.draft && !page.hidden)
-    .map((page) => ({
-      slug: page.id,
-      title: page.name,
-      description: page.description,
-      keywords: page.keywords,
-      breadcrumbs: pageBreadcrumbs(page.id),
-      // h1 duplicates the page title; index depth ≥ 2 like the TOC does.
-      headings: page.headings.filter((heading) => heading.depth > 1),
-      sections: sectionsBySlug.get(page.id) ?? [],
-    }));
+  const pages: EnginePage[] = visibleDocPages.map((page) => ({
+    slug: page.id,
+    title: page.name,
+    description: page.description,
+    keywords: page.keywords,
+    breadcrumbs: pageBreadcrumbs(page.id),
+    // h1 duplicates the page title; index depth ≥ 2 like the TOC does.
+    headings: page.headings.filter((heading) => heading.depth > 1),
+    sections: sectionsBySlug.get(page.id) ?? [],
+  }));
 
   // Tier-1 breadcrumb labels match the sidebar's lowercase section rows.
   const engine = createEngine(pages, operations, schemas, {

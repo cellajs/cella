@@ -1,7 +1,6 @@
 import { TextAlignStartIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
-import { nanoid } from 'shared/utils/nanoid';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import { SpyNavItem } from '~/modules/common/spy-nav-item';
@@ -17,7 +16,7 @@ interface TocAsideProps {
 export function TocAside({ headings, className }: TocAsideProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
-  const [layoutId] = useState(() => nanoid());
+  const layoutId = useId();
   const currentSection = useCurrentSection();
 
   return (
