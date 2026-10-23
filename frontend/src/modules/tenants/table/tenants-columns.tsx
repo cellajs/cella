@@ -9,6 +9,7 @@ import { cellLinkTextClass, dateColumn } from '~/modules/common/data-table/colum
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
+import { NamedText } from '~/modules/common/named-text';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { ConnectionsCard } from '~/modules/tenants/connections/connections-card';
@@ -33,6 +34,11 @@ export const openUpdateTenantSheet = (tenant: Tenant, triggerRef: TriggerRef) =>
   openEditSheet({
     id: 'update-tenant',
     resource: 'c:tenant',
+    description: tenant.organization ? (
+      <NamedText i18nKey="c:update_tenant.text" name={tenant.organization.name} values={{ id: tenant.id }} />
+    ) : (
+      <NamedText i18nKey="c:update_tenant_no_organization.text" values={{ id: tenant.id }} />
+    ),
     triggerRef,
     section: { label: 'c:general', id: 'update-tenant-general' },
     children: <UpdateTenantForm tenant={tenant} sheet />,
