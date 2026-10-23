@@ -9,7 +9,7 @@ import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import { create } from 'zustand';
 import type { TKey } from '~/lib/i18n-locales';
-import { type YjsDocScope, yjsTokenKeys, yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
+import { yjsTokenKeys, yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
 import { parkUnsaveable } from '~/modules/common/blocknote/unsaveable-notices';
 import { yDocFragment } from '~/modules/common/blocknote/ydoc-label';
 import { createHttpLink, type HttpLink, wsSyncDeadlineMs } from '~/modules/common/blocknote/yjs-http';
@@ -27,7 +27,7 @@ import {
 import { onTabMessage, postTabMessage, type TabMessage, yDocKeyString } from '~/modules/common/blocknote/yjs-tab-channel';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { userStore, yjsTokenKey } from '~/modules/user/user-store';
-import { getLocalUserDb, type UnsaveableReason, type YDocRecord } from '~/query/local-user-db';
+import { getLocalUserDb, type UnsaveableReason, type YDocRecord, type YjsDocScope } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
 
 const gracePeriodMs = 30_000;

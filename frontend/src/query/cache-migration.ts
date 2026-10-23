@@ -3,17 +3,24 @@
  * Migrations are idempotent, so an interrupted pass is safe to re-run.
  */
 import type { DehydratedState } from '@tanstack/react-query';
-import { appConfig } from 'shared';
+import { isChannel, isProduct, type ProductEntityType } from 'shared';
 import { type LensEntityType, migrateCachedEntity, migrateQueuedMutation } from 'shared/schema-evolution';
 
 type AnyRecord = Record<string, unknown>;
 
-const lensEntitySet = new Set<string>([...appConfig.productEntityTypes, ...appConfig.channelEntityTypes]);
+/** The first item of a query or mutation key, which names the entity type of an entity key. */
+const keyHead = (key: unknown): string | undefined => (Array.isArray(key) && typeof key[0] === 'string' ? key[0] : undefined);
+
+/** The product entity type a query or mutation key starts with, or undefined. */
+export function productTypeOf(key: unknown): ProductEntityType | undefined {
+  const head = keyHead(key);
+  return isProduct(head) ? head : undefined;
+}
 
 /** Returns the lens-capable entity type (product or context) encoded in a query/mutation key, or null. */
 export function entityTypeOf(key: unknown): LensEntityType | null {
-  const head = Array.isArray(key) ? key[0] : undefined;
-  return typeof head === 'string' && lensEntitySet.has(head) ? (head as LensEntityType) : null;
+  const head = keyHead(key);
+  return isProduct(head) || isChannel(head) ? head : null;
 }
 
 function isEntityRecord(value: unknown): value is AnyRecord {

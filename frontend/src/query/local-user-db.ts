@@ -46,10 +46,14 @@ export interface YDocKey {
   entityId: string;
 }
 
-/** A stored document's metadata. Its state lives apart, so eviction, the byte budget and the sign-out list read no state. */
-export interface YDocRecord extends YDocKey {
+/** One collaborative document: its entity, and the tenant and organization its token and HTTP routes check it in. */
+export interface YjsDocScope extends YDocKey {
   tenantId: string;
   organizationId: string;
+}
+
+/** A stored document's metadata. Its state lives apart, so eviction, the byte budget and the sign-out list read no state. */
+export interface YDocRecord extends YjsDocScope {
   /** The document's generation as the relay announced it; another one means the server reseeded the document. */
   generation: string;
   /** The server's state vector as the last proof established it; null before the first. */
@@ -82,10 +86,8 @@ export interface YDocUpdateRecord extends YDocKey {
 export type UnsaveableReason = 'deleted' | 'denied' | 'replaced' | 'refused';
 
 /** Edits that can never be saved, kept until the user copies or discards them. */
-export interface UnsaveableYDocRecord extends YDocKey {
+export interface UnsaveableYDocRecord extends YjsDocScope {
   id?: number;
-  tenantId: string;
-  organizationId: string;
   generation: string;
   reason: UnsaveableReason;
   state: Uint8Array;

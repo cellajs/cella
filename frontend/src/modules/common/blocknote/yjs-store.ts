@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { appConfig, type ProductEntityType } from 'shared';
 import { isRecord } from 'shared/utils/as-record';
 import type * as Y from 'yjs';
-import type { YjsDocScope } from '~/modules/common/blocknote/query';
 import { warnOnStoragePressure } from '~/modules/common/blocknote/storage-warning';
 import { postTabMessage, yDocKeyString } from '~/modules/common/blocknote/yjs-tab-channel';
 import { uiStore } from '~/modules/ui/ui-store';
@@ -16,6 +15,7 @@ import {
   type YDocKey,
   type YDocRecord,
   type YDocUpdateRecord,
+  type YjsDocScope,
 } from '~/query/local-user-db';
 import { isLeader, tabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 

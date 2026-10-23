@@ -1,8 +1,7 @@
 import { liveQuery, type Subscription } from 'dexie';
 import { useSyncExternalStore } from 'react';
 import { type AttachmentBlob, attachmentsDb, type UploadStatus } from '~/modules/attachment/offline/attachments-db';
-import { getLocalUserDb } from '~/query/local-user-db';
-import { subscribeOwnerChange } from '~/query/local-user-storage';
+import { getLocalUserDb, subscribeOwnerChange } from '~/query/local-user-db';
 
 interface BlobUploadInfo {
   /** False when no local blob exists for this attachment, meaning it lives only in the cloud. */

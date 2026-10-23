@@ -10,8 +10,7 @@ import { attachmentStorage } from '~/modules/attachment/offline/storage-service'
 import { attachmentQueryKeys, findAttachmentInCache } from '~/modules/attachment/query';
 import { isPersisted } from '~/modules/attachment/types';
 import { flattenInfiniteData } from '~/query/basic/flatten';
-import { getLocalUserDb } from '~/query/local-user-db';
-import { subscribeOwnerChange } from '~/query/local-user-storage';
+import { getLocalUserDb, subscribeOwnerChange } from '~/query/local-user-db';
 import { entityIdsOf } from '~/query/offline/mutation-variables';
 import { queryClient } from '~/query/query-client';
 

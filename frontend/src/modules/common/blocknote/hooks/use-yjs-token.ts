@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { type YjsDocScope, yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
+import { yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
 import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
+import type { YjsDocScope } from '~/query/local-user-db';
 
 /**
  * Keeps one entity's Yjs token in the user store, where the non-React connection layer reads it, while `enabled`, and

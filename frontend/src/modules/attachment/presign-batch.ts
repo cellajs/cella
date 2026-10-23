@@ -2,7 +2,7 @@ import { onlineManager } from '@tanstack/react-query';
 import { getPresignedUrls } from 'sdk/sdk.gen';
 import type { CloudFileVariant } from '~/modules/attachment/file-url';
 import { groupBy } from '~/modules/attachment/offline/group-by';
-import { subscribeOwnerChange } from '~/query/local-user-storage';
+import { subscribeOwnerChange } from '~/query/local-user-db';
 
 /** The server rejected this attachment id, denied or nonexistent; permanent for this session, so retrying will not help. */
 export class PresignRejectedError extends Error {

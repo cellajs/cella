@@ -5,10 +5,10 @@ import { BlockNote } from '~/modules/common/blocknote/blocknote-editor';
 import { UploadHostProvider } from '~/modules/common/blocknote/custom-file-panel/upload-host';
 import { useYjsToken } from '~/modules/common/blocknote/hooks/use-yjs-token';
 import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
-import type { YjsDocScope } from '~/modules/common/blocknote/query';
 import { useYjsConnection } from '~/modules/common/blocknote/yjs-connections';
 import { isYjsEnabled, useStoredYDoc } from '~/modules/common/blocknote/yjs-store';
 import { useCurrentUser } from '~/modules/user/user-store';
+import type { YjsDocScope } from '~/query/local-user-db';
 import { getRandomColor } from '~/utils/random-color';
 
 // BlockNote's props are a union (filePanel variants), so Omit must distribute over it

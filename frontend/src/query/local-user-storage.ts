@@ -21,7 +21,7 @@ const localUserStores = [seenStore, syncStore, navigationStore, draftStore, aler
 let boundOwner: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();
 
-// The owner listeners live with the database, so light modules subscribe without loading every per-user store.
+/** @public For the apps' copies of `download-service.ts` synced before 2026-10-23; other code imports `~/query/local-user-db`. Drop it after one release. */
 export { subscribeOwnerChange } from '~/query/local-user-db';
 
 /** Owner to bind: the current user, unless impersonated (then ephemeral, no durable DB). */

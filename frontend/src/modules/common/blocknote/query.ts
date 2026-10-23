@@ -3,13 +3,7 @@ import { fromBase64UrlEncoded, toBase64UrlEncoded } from 'lib0/buffer';
 import { getYjsToken, pullYjsDocument, pushYjsUpdate } from 'sdk';
 import type { ProductEntityType } from 'shared';
 import { ApiError } from '~/lib/api';
-import type { YDocKey } from '~/query/local-user-db';
-
-/** One collaborative document: its entity, and the tenant and organization its token and HTTP routes check it in. */
-export interface YjsDocScope extends YDocKey {
-  tenantId: string;
-  organizationId: string;
-}
+import type { YjsDocScope } from '~/query/local-user-db';
 
 /** A token lives five minutes and the relay closes its socket then; refetching at four keeps a fresh one ready for the reconnect. */
 const yjsTokenRefetchMs = 4 * 60 * 1000;

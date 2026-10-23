@@ -1,18 +1,11 @@
 import { MutationCache, onlineManager, QueryCache, QueryClient } from '@tanstack/react-query';
-import { appConfig, type ProductEntityType } from 'shared';
+import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
+import { productTypeOf } from '~/query/cache-migration';
 import { resetConnectivityCache } from '~/query/offline/connectivity';
 import { quarantineFailedSync } from '~/query/offline/failed-sync';
 import { mutationRetry } from '~/query/offline/network-retry';
 import type { QueryMeta } from '~/query/react-query';
-
-const productSet = new Set<string>(appConfig.productEntityTypes);
-
-/** Product entity type encoded in a query/mutation key, or undefined. */
-function entityTypeOf(key: unknown): ProductEntityType | undefined {
-  const head = Array.isArray(key) ? key[0] : undefined;
-  return typeof head === 'string' && productSet.has(head) ? (head as ProductEntityType) : undefined;
-}
 
 // Lazy import breaks the cycle query-client -> on-error -> teardown-user-state -> query-client; a static import makes HMR re-evaluation hit a TDZ error on `onError`.
 const handleError = (error: ApiError, meta: QueryMeta | undefined) => import('~/query/on-error').then((m) => m.onError(error, meta));
@@ -47,7 +40,7 @@ function quarantineOnClientError(error: ApiError, vars: unknown, mutationKey: un
   const status = error?.status;
   if (typeof status !== 'number' || status < 400 || status >= 500) return;
 
-  const entityType = entityTypeOf(mutationKey);
+  const entityType = productTypeOf(mutationKey);
   quarantineFailedSync({ mutationId, entityType, clientCacheVersion: appConfig.clientCacheVersion, status, variables: vars, error }).catch(() => {});
 }
 

@@ -43,7 +43,6 @@ vi.mock('~/modules/attachment/query', () => ({ findAttachmentInCache: () => ({ t
 vi.mock('~/query/query-client', () => ({ queryClient: {} }));
 vi.mock('~/query/realtime/sync-priority', () => ({ getTenantIdForOrg: () => 'tenant-1' }));
 vi.mock('~/lib/tracing', () => ({ reportCriticalError: vi.fn() }));
-vi.mock('~/query/local-user-storage', () => ({ subscribeOwnerChange: () => () => {} }));
 
 import { ApiError } from '~/lib/api';
 import { uploadService } from '~/modules/attachment/offline/upload-service';

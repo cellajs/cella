@@ -1,14 +1,15 @@
 import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('shared', () => ({
-  appConfig: {
-    slug: 'test-app',
-    productEntityTypes: ['task', 'label', 'attachment'],
-    channelEntityTypes: ['organization', 'workspace', 'project'],
-    clientCacheVersion: 'v1',
-  },
-}));
+vi.mock('shared', () => {
+  const productEntityTypes = ['task', 'label', 'attachment'];
+  const channelEntityTypes = ['organization', 'workspace', 'project'];
+  return {
+    appConfig: { slug: 'test-app', productEntityTypes, channelEntityTypes, clientCacheVersion: 'v1' },
+    isProduct: (type: string) => productEntityTypes.includes(type),
+    isChannel: (type: string) => channelEntityTypes.includes(type),
+  };
+});
 
 // Lens engine mock: bundle is at schema v1 with a single attachment rename name → title.
 vi.mock('shared/schema-evolution', () => ({
