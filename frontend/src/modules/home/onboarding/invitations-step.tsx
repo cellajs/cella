@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { type ReactNode, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { useStepper } from '~/modules/common/stepper/stepper';
+import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { meInvitationsQueryOptions, useHandleInvitationMutation } from '~/modules/me/query';
 import { organizationQueryKeys } from '~/modules/organization/query';
 import { Button } from '~/modules/ui/button';

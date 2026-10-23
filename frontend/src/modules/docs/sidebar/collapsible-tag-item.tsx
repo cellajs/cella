@@ -3,10 +3,9 @@ import { ChevronDownIcon } from 'lucide-react';
 import { memo, type ReactNode } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import { collapsiblePanelClass } from '~/modules/docs/collapsible-panel';
 import { ActiveIndicator } from '~/modules/docs/sidebar/active-indicator';
 import { buttonVariants } from '~/modules/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger, collapsiblePanelClass } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
 

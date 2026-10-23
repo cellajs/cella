@@ -1,7 +1,7 @@
-import { ArrowUpRightIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
 import { CountryFlag } from '~/modules/common/country-flag';
+import { ExternalArrow } from '~/modules/marketing/external-arrow';
 import { cards } from '~/modules/marketing/marketing-config';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
@@ -48,7 +48,7 @@ export function InfoCards() {
                 <div className="link-decoration group-active:link-decoration-strong font-semibold group-hover:underline">
                   <CountryFlag countryCode={country} className="mr-2" />
                   {url}
-                  <ArrowUpRightIcon className="-mt-2 ml-1 inline-block size-3 text-primary opacity-50 group-hover:opacity-100" />
+                  <ExternalArrow className="size-3" />
                 </div>
               </div>
             </a>

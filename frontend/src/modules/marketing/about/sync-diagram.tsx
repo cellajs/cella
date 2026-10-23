@@ -1,6 +1,6 @@
 import { ArrowRightIcon, DatabaseIcon, MonitorIcon, ServerIcon } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useInView } from '~/hooks/use-in-view';
@@ -24,36 +24,36 @@ const nodes = {
 
 type NodeKey = keyof typeof nodes;
 
-// REST request/response flow, drawn as solid grey lines.
-const requestEdges: {
-  from: NodeKey;
-  to: NodeKey;
-  label?: string;
-  label2?: string;
-  offset?: number;
-  labelOffset?: number;
-  oneWay?: boolean;
-  bidirectional?: boolean;
-  stroke?: string;
-}[] = [
-  { from: 'cdc', to: 'database', label: 'SQL', offset: -6, oneWay: true, labelOffset: -14 },
-  { from: 'yjs', to: 'database', label: 'SQL', labelOffset: -14, bidirectional: true },
-  { from: 'yjs', to: 'api', label: 'Save', labelOffset: 14, oneWay: true },
-];
-
-// Stream connections, drawn dashed. `bidirectional` adds a start arrowhead. `id` names a second line between the same two nodes.
-const streamEdges: {
+interface Edge {
+  /** Names a second line between the same two nodes. */
   id?: string;
   from: NodeKey;
   to: NodeKey;
+  label?: string;
+  labelOffset?: number;
+  offset?: number;
+  /** Adds a start arrowhead. */
+  bidirectional?: boolean;
+  /** Defaults to `requestStroke`. */
+  stroke?: string;
+}
+
+interface StreamEdge extends Edge {
   stroke: string;
   label: string;
-  label2?: string;
-  labelOffset?: number;
-  label2Offset?: number;
-  offset?: number;
-  bidirectional?: boolean;
-}[] = [
+}
+
+const requestStroke = '#9ca3af';
+
+// REST request/response flow, drawn as solid grey lines.
+const requestEdges: Edge[] = [
+  { from: 'cdc', to: 'database', label: 'SQL', offset: -6, labelOffset: -14 },
+  { from: 'yjs', to: 'database', label: 'SQL', labelOffset: -14, bidirectional: true },
+  { from: 'yjs', to: 'api', label: 'Save', labelOffset: 14 },
+];
+
+// Stream connections, drawn dashed.
+const streamEdges: StreamEdge[] = [
   { from: 'client', to: 'api', stroke: 'var(--primary)', label: 'HTTP', offset: 10, bidirectional: true },
   { from: 'api', to: 'database', stroke: 'var(--primary)', label: 'SQL', labelOffset: 22, bidirectional: true },
   { from: 'database', to: 'cdc', stroke: '#eab308', label: 'WAL stream', offset: -8, labelOffset: -14 },
@@ -65,11 +65,9 @@ const streamEdges: {
   { id: 'vm-socket', from: 'client', to: 'api', stroke: '#a855f7', label: 'Changes', offset: 24, labelOffset: 14, bidirectional: true },
 ];
 
-const edgeKey = (edge: { id?: string; from: NodeKey; to: NodeKey }) => edge.id ?? `${edge.from}-${edge.to}`;
+const edgeKey = (edge: Edge) => edge.id ?? `${edge.from}-${edge.to}`;
 
-const edgeByKey: Record<string, { from: NodeKey; to: NodeKey; offset?: number; stroke?: string }> = Object.fromEntries(
-  [...requestEdges, ...streamEdges].map((edge) => [edgeKey(edge), edge]),
-);
+const edgeByKey: Record<string, Edge> = Object.fromEntries([...requestEdges, ...streamEdges].map((edge) => [edgeKey(edge), edge]));
 
 // Which nodes and edges participate in each mode. Edge keys are `${from}-${to}`, or the edge's `id`.
 const modeConfig: Record<SyncMode, { nodes: NodeKey[]; edges: string[] }> = {
@@ -115,7 +113,10 @@ const vmWorkers = [
 type Fold = { nodes: NodeKey[]; edges: string[] };
 const noFold: Fold = { nodes: [], edges: [] };
 
-type EdgeTiming = { delay: number; duration: number; draw: boolean };
+type EdgeTiming = { delay: number; duration: number };
+
+// A line no mode times draws from the start, over the fade time.
+const fallbackAnim: EdgeTiming = { delay: 0, duration: animTimeline.fade };
 
 // `lead` is the pause before the mode-specific node appears: the full hold on first reveal, 0 on a toggle.
 // `foldAt` is when the last worker line has pulled back in Part 4, which runs on its own clock from the switch.
@@ -136,50 +137,40 @@ const buildTimeline = (lead: number, foldAt = 0) => {
   const T_VM_DRAW = foldAt + foldTimeline.morph + animTimeline.gap;
   const vmAt = { fold: foldAt, workers: foldAt + foldTimeline.swap };
 
+  // A node no mode delays shows from the start.
   const nodeDelay: Record<SyncMode, Partial<Record<NodeKey, number>>> = {
-    rest: { database: 0, api: 0, client: 0 },
-    cdc: { database: 0, api: 0, client: 0, cdc: T_CDC },
-    yjs: { database: 0, api: 0, client: 0, cdc: T_CDC, yjs: T_YJS_NODE },
-    vm: { database: 0, api: 0, client: 0 },
+    rest: {},
+    cdc: { cdc: T_CDC },
+    yjs: { cdc: T_CDC, yjs: T_YJS_NODE },
+    vm: {},
   };
 
-  // `draw` lines are stroked along their trajectory; the rest fade in.
-  const edgeAnim: Record<SyncMode, Record<string, EdgeTiming>> = {
-    rest: {
-      'client-api': { delay: 0, duration: animTimeline.fade, draw: false },
-      'api-database': { delay: 0, duration: animTimeline.fade, draw: false },
-    },
-    cdc: {
-      'client-api': { delay: 0, duration: animTimeline.fade, draw: false },
-      'api-database': { delay: 0, duration: animTimeline.fade, draw: false },
-      'cdc-database': { delay: T_SQL_CDC, duration: animTimeline.sqlDraw, draw: true },
-      'database-cdc': { delay: T_REPLICATION, duration: animTimeline.draw, draw: true },
-      'cdc-api': { delay: T_WS, duration: animTimeline.draw, draw: true },
-      'api-client': { delay: T_SSE, duration: animTimeline.draw, draw: true },
-    },
+  const cdcEdgeAnim = {
+    'cdc-database': { delay: T_SQL_CDC, duration: animTimeline.sqlDraw },
+    'database-cdc': { delay: T_REPLICATION, duration: animTimeline.draw },
+    'cdc-api': { delay: T_WS, duration: animTimeline.draw },
+    'api-client': { delay: T_SSE, duration: animTimeline.draw },
+  };
+
+  const edgeAnim: Record<SyncMode, Partial<Record<string, EdgeTiming>>> = {
+    rest: {},
+    cdc: cdcEdgeAnim,
     yjs: {
-      'client-api': { delay: 0, duration: animTimeline.fade, draw: false },
-      'api-database': { delay: 0, duration: animTimeline.fade, draw: false },
-      'cdc-database': { delay: T_SQL_CDC, duration: animTimeline.sqlDraw, draw: true },
-      'database-cdc': { delay: T_REPLICATION, duration: animTimeline.draw, draw: true },
-      'cdc-api': { delay: T_WS, duration: animTimeline.draw, draw: true },
-      'api-client': { delay: T_SSE, duration: animTimeline.draw, draw: true },
-      'client-yjs': { delay: T_WS_YJS, duration: animTimeline.draw, draw: true },
-      'yjs-database': { delay: T_YJS_PERSIST, duration: animTimeline.sqlDraw, draw: true },
-      'yjs-api': { delay: T_YJS_SAVE, duration: animTimeline.draw, draw: true },
+      ...cdcEdgeAnim,
+      'client-yjs': { delay: T_WS_YJS, duration: animTimeline.draw },
+      'yjs-database': { delay: T_YJS_PERSIST, duration: animTimeline.sqlDraw },
+      'yjs-api': { delay: T_YJS_SAVE, duration: animTimeline.draw },
     },
     vm: {
-      'client-api': { delay: 0, duration: animTimeline.fade, draw: false },
-      'api-database': { delay: 0, duration: animTimeline.fade, draw: false },
-      'api-client': { delay: T_VM_DRAW, duration: animTimeline.draw, draw: true },
-      'vm-wal': { delay: T_VM_DRAW, duration: animTimeline.draw, draw: true },
-      'vm-socket': { delay: T_VM_DRAW + animTimeline.gap, duration: animTimeline.draw, draw: true },
+      'api-client': { delay: T_VM_DRAW, duration: animTimeline.draw },
+      'vm-wal': { delay: T_VM_DRAW, duration: animTimeline.draw },
+      'vm-socket': { delay: T_VM_DRAW + animTimeline.gap, duration: animTimeline.draw },
     },
   };
 
   return { nodeDelay, edgeAnim, vmAt };
 };
-const fallbackAnim = { delay: 0, duration: animTimeline.fade, draw: false };
+
 // Runs of the 0.6 s dash cycle per start: 4.8 s, under the five seconds after which moving content needs a pause control.
 const dashRuns = 8;
 
@@ -187,13 +178,88 @@ const dashRuns = 8;
 const edgePadding = 8;
 
 type Point = { x: number; y: number };
+type Line = { x1: number; y1: number; x2: number; y2: number };
 type Geometry = { width: number; height: number; centers: Record<string, Point>; halves: Record<string, { w: number; h: number }> };
+
+/** The unit vector along `(dx, dy)`; `(0, 0)` for a zero-length one. */
+const unitVector = (dx: number, dy: number) => {
+  const len = Math.hypot(dx, dy) || 1;
+  return { ux: dx / len, uy: dy / len };
+};
+
+// A bidirectional stream splits into two collinear halves with a center gap, so its dashes flow outward.
+const splitLanes = (line: Line) => {
+  const { ux, uy } = unitVector(line.x2 - line.x1, line.y2 - line.y1);
+  const gap = 3;
+  const mx = (line.x1 + line.x2) / 2;
+  const my = (line.y1 + line.y2) / 2;
+  return [
+    { lane: 'fwd', seg: { x1: mx + ux * gap, y1: my + uy * gap, x2: line.x2, y2: line.y2 } },
+    { lane: 'rev', seg: { x1: mx - ux * gap, y1: my - uy * gap, x2: line.x1, y2: line.y1 } },
+  ];
+};
+
+interface ArrowMarkerProps {
+  id: string;
+  fill: string;
+}
+
+function ArrowMarker({ id, fill }: ArrowMarkerProps) {
+  return (
+    <marker id={id} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill={fill} />
+    </marker>
+  );
+}
+
+interface EdgeGroupProps {
+  id: string;
+  line: Line;
+  onHover: (id: string | null) => void;
+  children: ReactNode;
+}
+
+/** An edge's lines and label, over a wide transparent line that makes the thin one easy to hover. */
+function EdgeGroup({ id, line, onHover, children }: EdgeGroupProps) {
+  return (
+    <g onMouseEnter={() => onHover(id)} onMouseLeave={() => onHover(null)}>
+      <line {...line} stroke="transparent" strokeWidth={20} />
+      {children}
+    </g>
+  );
+}
+
+interface EdgeLabelProps {
+  position: Point;
+  fill: string;
+  show: boolean;
+  delay: number;
+  children: string;
+}
+
+function EdgeLabel({ position, fill, show, delay, children }: EdgeLabelProps) {
+  return (
+    <motion.text
+      x={position.x}
+      y={position.y}
+      fill={fill}
+      fontSize={11}
+      textAnchor="middle"
+      dominantBaseline="middle"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: show ? 1 : 0 }}
+      transition={{ delay, duration: 0.3 }}
+    >
+      {children}
+    </motion.text>
+  );
+}
 
 export function SyncDiagram() {
   const containerRef = useRef<HTMLDivElement>(null);
   const boxRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [geom, setGeom] = useState<Geometry | null>(null);
-  // Tracks which draw-mode lines have finished, so arrowheads/dashes appear only then.
+  // Tracks which lines have finished drawing, so arrowheads/dashes appear only then.
   const [drawn, setDrawn] = useState<Record<string, boolean>>({});
   const [mode, setMode] = useState<SyncMode>('rest');
   const activeNodes = modeConfig[mode].nodes;
@@ -307,11 +373,7 @@ export function SyncDiagram() {
     const a = geom.centers[from];
     const b = geom.centers[to];
     if (!a || !b) return null;
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-    const len = Math.hypot(dx, dy) || 1;
-    const ux = dx / len;
-    const uy = dy / len;
+    const { ux, uy } = unitVector(b.x - a.x, b.y - a.y);
     const px = -uy * offset;
     const py = ux * offset;
     const fromTrim = trimOf(geom, from, ux, uy);
@@ -324,11 +386,10 @@ export function SyncDiagram() {
     };
   };
 
-  const labelPos = (line: { x1: number; y1: number; x2: number; y2: number }, offset = 12) => {
-    const dx = line.x2 - line.x1;
-    const dy = line.y2 - line.y1;
-    const len = Math.hypot(dx, dy) || 1;
-    return { x: (line.x1 + line.x2) / 2 + (-dy / len) * offset, y: (line.y1 + line.y2) / 2 + (dx / len) * offset };
+  // `offset` moves the label off the line's midpoint, perpendicular to it.
+  const labelPos = (line: Line, offset = 12) => {
+    const { ux, uy } = unitVector(line.x2 - line.x1, line.y2 - line.y1);
+    return { x: (line.x1 + line.x2) / 2 - uy * offset, y: (line.y1 + line.y2) / 2 + ux * offset };
   };
 
   return (
@@ -354,10 +415,11 @@ export function SyncDiagram() {
           }}
           variant="merged"
         >
-          <ToggleGroupItem value="rest">{t(modeText.rest.label)}</ToggleGroupItem>
-          <ToggleGroupItem value="cdc">{t(modeText.cdc.label)}</ToggleGroupItem>
-          <ToggleGroupItem value="yjs">{t(modeText.yjs.label)}</ToggleGroupItem>
-          <ToggleGroupItem value="vm">{t(modeText.vm.label)}</ToggleGroupItem>
+          {modeOrder.map((m) => (
+            <ToggleGroupItem key={m} value={m}>
+              {t(modeText[m].label)}
+            </ToggleGroupItem>
+          ))}
         </ToggleGroup>
       </div>
 
@@ -395,6 +457,13 @@ export function SyncDiagram() {
           <svg className="absolute inset-0 size-full" viewBox={`0 0 ${geom.width} ${geom.height}`} aria-hidden="true">
             <title>Cella sync engine data flow</title>
 
+            <defs>
+              <ArrowMarker id="request-arrow" fill={requestStroke} />
+              {streamEdges.map((edge) => (
+                <ArrowMarker key={edgeKey(edge)} id={`stream-arrow-${edgeKey(edge)}`} fill={edge.stroke} />
+              ))}
+            </defs>
+
             {/* Part 4: each worker line pulls back into the node that stays, the reverse of how it was drawn. */}
             {fold.edges.map((key, index) => {
               const edge = edgeByKey[key];
@@ -407,11 +476,8 @@ export function SyncDiagram() {
               return (
                 <motion.line
                   key={`${key}-retract`}
-                  x1={line.x1}
-                  y1={line.y1}
-                  x2={line.x2}
-                  y2={line.y2}
-                  stroke={edge.stroke ?? '#9ca3af'}
+                  {...line}
+                  stroke={edge.stroke ?? requestStroke}
                   strokeWidth={2}
                   strokeLinecap="round"
                   initial={{ pathLength: 1, opacity: 1 }}
@@ -424,103 +490,44 @@ export function SyncDiagram() {
               );
             })}
 
-            <g>
-              <defs>
-                <marker id="request-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#9ca3af" />
-                </marker>
-                <marker id="request-arrow-primary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                  <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--primary)" />
-                </marker>
-              </defs>
-              {requestEdges.map(({ from, to, label, label2, offset, labelOffset, oneWay, bidirectional, stroke = '#9ca3af' }) => {
-                const key = `${from}-${to}`;
-                if (!activeEdges.includes(key)) return null;
-                const line = trimmedLine(from, to, offset);
-                if (!line) return null;
-                const anim = edgeAnim[mode][key] ?? fallbackAnim;
-                const lp = label ? labelPos(line, labelOffset) : null;
-                const lp2 = label2 ? labelPos(line, -(labelOffset ?? 12)) : null;
-                const showEnd = !anim.draw || drawn[key];
-                const delay = startDelay(anim.delay, drawn[key]);
-                const labelDelay = delay + (anim.draw ? anim.duration : 0);
-                const markerId = stroke === '#9ca3af' ? 'request-arrow' : 'request-arrow-primary';
-                const relevant = introducedEdges.has(key);
-                const showLabel = relevant || hovered === key || showAllLabels;
-                return (
-                  <g key={key} onMouseEnter={() => setHovered(key)} onMouseLeave={() => setHovered((h) => (h === key ? null : h))}>
-                    <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={20} />
-                    <motion.line
-                      x1={line.x1}
-                      y1={line.y1}
-                      x2={line.x2}
-                      y2={line.y2}
-                      stroke={stroke}
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      markerStart={(bidirectional ? showEnd : !oneWay && !anim.draw) ? `url(#${markerId})` : undefined}
-                      markerEnd={showEnd ? `url(#${markerId})` : undefined}
-                      initial={anim.draw ? { pathLength: 0, opacity: 0 } : { opacity: 0 }}
-                      animate={anim.draw ? { pathLength: 1, opacity: 1 } : { opacity: 1 }}
-                      transition={
-                        anim.draw
-                          ? { pathLength: { delay, duration: anim.duration, ease: 'easeInOut' }, opacity: { delay, duration: 0.001 } }
-                          : { delay, duration: anim.duration, ease: 'easeInOut' }
-                      }
-                      onAnimationComplete={anim.draw ? () => setDrawn((d) => ({ ...d, [key]: true })) : undefined}
-                    />
-                    {lp && (
-                      <motion.text
-                        x={lp.x}
-                        y={lp.y}
-                        fill={stroke}
-                        fontSize={11}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: showLabel ? 1 : 0 }}
-                        transition={{ delay: relevant ? labelDelay : 0, duration: 0.3 }}
-                      >
-                        {label}
-                      </motion.text>
-                    )}
-                    {lp2 && (
-                      <motion.text
-                        x={lp2.x}
-                        y={lp2.y}
-                        fill={stroke}
-                        fontSize={11}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: showLabel ? 1 : 0 }}
-                        transition={{ delay: relevant ? labelDelay : 0, duration: 0.3 }}
-                      >
-                        {label2}
-                      </motion.text>
-                    )}
-                  </g>
-                );
-              })}
-            </g>
+            {requestEdges.map(({ from, to, label, offset, labelOffset, bidirectional }) => {
+              const key = `${from}-${to}`;
+              if (!activeEdges.includes(key)) return null;
+              const line = trimmedLine(from, to, offset);
+              if (!line) return null;
+              const anim = edgeAnim[mode][key] ?? fallbackAnim;
+              const delay = startDelay(anim.delay, drawn[key]);
+              const arrow = drawn[key] ? 'url(#request-arrow)' : undefined;
+              const relevant = introducedEdges.has(key);
+              return (
+                <EdgeGroup key={key} id={key} line={line} onHover={setHovered}>
+                  <motion.line
+                    {...line}
+                    stroke={requestStroke}
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    markerStart={bidirectional ? arrow : undefined}
+                    markerEnd={arrow}
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 1 }}
+                    transition={{ pathLength: { delay, duration: anim.duration, ease: 'easeInOut' }, opacity: { delay, duration: 0.001 } }}
+                    onAnimationComplete={() => setDrawn((d) => ({ ...d, [key]: true }))}
+                  />
+                  {label && (
+                    <EdgeLabel
+                      position={labelPos(line, labelOffset)}
+                      fill={requestStroke}
+                      show={relevant || hovered === key || showAllLabels}
+                      delay={relevant ? delay + anim.duration : 0}
+                    >
+                      {label}
+                    </EdgeLabel>
+                  )}
+                </EdgeGroup>
+              );
+            })}
 
-            <defs>
-              {streamEdges.map(({ stroke, ...edge }) => (
-                <marker
-                  key={`arrow-${edgeKey(edge)}`}
-                  id={`stream-arrow-${edgeKey(edge)}`}
-                  viewBox="0 0 10 10"
-                  refX="8"
-                  refY="5"
-                  markerWidth="5"
-                  markerHeight="5"
-                  orient="auto-start-reverse"
-                >
-                  <path d="M 0 0 L 10 5 L 0 10 z" fill={stroke} />
-                </marker>
-              ))}
-            </defs>
-            {streamEdges.map(({ id, from, to, stroke, label, label2, labelOffset, label2Offset, offset, bidirectional }) => {
+            {streamEdges.map(({ id, from, to, stroke, label, labelOffset, offset, bidirectional }) => {
               const key = edgeKey({ id, from, to });
               if (!activeEdges.includes(key)) return null;
               const line = trimmedLine(from, to, offset);
@@ -528,60 +535,34 @@ export function SyncDiagram() {
               const anim = edgeAnim[mode][key] ?? fallbackAnim;
               // In Part 4 the socket line runs where the HTTP label sits, so that label moves below it: right under on hover, a row lower when all labels show.
               const underSocket = isVm && key === 'client-api';
-              const lp = labelPos(line, underSocket ? (showAllLabels ? 40 : 28) : labelOffset);
-              const lp2 = label2 ? labelPos(line, -(label2Offset ?? labelOffset ?? 12)) : null;
               const delay = startDelay(anim.delay, drawn[key]);
-              const labelDelay = delay + anim.duration;
               const animateDashes = introducedEdges.has(key);
               // Part 4 is the whole picture, so all its lines flow, starting together once its last line is drawn.
               const flows = isVm ? Boolean(drawn['vm-wal'] && drawn['vm-socket']) : animateDashes;
               const flowDashes = flows && inView && !reducedMotion;
               // Part 4 names none of its lines by itself, so no line stands out; hover and the label toggle still reveal each name.
               const ownLabel = animateDashes && !isVm;
-              const showLabel = ownLabel || hovered === key || showAllLabels;
-              // Bidirectional streams split into two collinear halves with a center gap, dashes flowing outward.
-              const flowLanes = (() => {
-                if (!bidirectional) return [{ seg: line, dir: -10, lane: 'flow' }];
-                const dx = line.x2 - line.x1;
-                const dy = line.y2 - line.y1;
-                const len = Math.hypot(dx, dy) || 1;
-                const ux = dx / len;
-                const uy = dy / len;
-                const gap = 3;
-                const mx = (line.x1 + line.x2) / 2;
-                const my = (line.y1 + line.y2) / 2;
-                return [
-                  { seg: { x1: mx + ux * gap, y1: my + uy * gap, x2: line.x2, y2: line.y2 }, dir: -10, lane: 'fwd' },
-                  { seg: { x1: mx - ux * gap, y1: my - uy * gap, x2: line.x1, y2: line.y1 }, dir: -10, lane: 'rev' },
-                ];
-              })();
+              const lanes = bidirectional ? splitLanes(line) : [{ lane: 'flow', seg: line }];
               return (
-                <g key={key} onMouseEnter={() => setHovered(key)} onMouseLeave={() => setHovered((h) => (h === key ? null : h))}>
-                  <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={20} />
+                <EdgeGroup key={key} id={key} line={line} onHover={setHovered}>
                   {drawn[key] ? (
-                    flowLanes.map(({ seg, dir, lane }) => (
+                    lanes.map(({ lane, seg }) => (
                       <motion.line
                         key={`${key}-${lane}`}
-                        x1={seg.x1}
-                        y1={seg.y1}
-                        x2={seg.x2}
-                        y2={seg.y2}
+                        {...seg}
                         stroke={stroke}
                         strokeWidth={2}
                         strokeLinecap="round"
                         strokeDasharray="5 5"
                         markerEnd={`url(#stream-arrow-${key})`}
-                        animate={{ strokeDashoffset: flowDashes ? [0, dir] : 0 }}
+                        animate={{ strokeDashoffset: flowDashes ? [0, -10] : 0 }}
                         transition={flowDashes ? { repeat: dashRuns - 1, ease: 'linear', duration: 0.6 } : { duration: 0 }}
                       />
                     ))
                   ) : (
                     <motion.line
                       key={`${key}-draw`}
-                      x1={line.x1}
-                      y1={line.y1}
-                      x2={line.x2}
-                      y2={line.y2}
+                      {...line}
                       stroke={stroke}
                       strokeWidth={2}
                       strokeLinecap="round"
@@ -591,35 +572,15 @@ export function SyncDiagram() {
                       onAnimationComplete={() => setDrawn((d) => ({ ...d, [key]: true }))}
                     />
                   )}
-                  <motion.text
-                    x={lp.x}
-                    y={lp.y}
+                  <EdgeLabel
+                    position={labelPos(line, underSocket ? (showAllLabels ? 40 : 28) : labelOffset)}
                     fill={stroke}
-                    fontSize={11}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: showLabel ? 1 : 0 }}
-                    transition={{ delay: ownLabel ? labelDelay : 0, duration: 0.3 }}
+                    show={ownLabel || hovered === key || showAllLabels}
+                    delay={ownLabel ? delay + anim.duration : 0}
                   >
                     {label}
-                  </motion.text>
-                  {lp2 && (
-                    <motion.text
-                      x={lp2.x}
-                      y={lp2.y}
-                      fill={stroke}
-                      fontSize={11}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: showLabel ? 1 : 0 }}
-                      transition={{ delay: ownLabel ? labelDelay : 0, duration: 0.3 }}
-                    >
-                      {label2}
-                    </motion.text>
-                  )}
-                </g>
+                  </EdgeLabel>
+                </EdgeGroup>
               );
             })}
           </svg>

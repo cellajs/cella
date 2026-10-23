@@ -11,7 +11,7 @@ import type { LegalSubject } from '~/modules/auth/legal/legal-config';
 import { type LegalSection, legalOverviewId } from '~/modules/auth/legal/legal-types';
 import { SpyNavItem } from '~/modules/common/spy-nav-item';
 import { buttonVariants } from '~/modules/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger, collapsiblePanelClass } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
 
 interface LegalSubjectConfig {
@@ -30,7 +30,6 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
   const { t } = useTranslation();
 
   const isMobile = useBreakpointBelow('sm');
-  // Below `md` the aside stacks above the legal text, so a height animation would relayout the text every frame
 
   const [layoutId] = useState(() => nanoid());
 
@@ -98,10 +97,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
                 <ChevronDownIcon className="invisible ml-auto size-4 opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/subject:rotate-180" />
               </CollapsibleTrigger>
               {/* keepMounted preserves the data-spy-active marks the scroll spy sets on rows outside React */}
-              <CollapsibleContent
-                keepMounted
-                className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}
-              >
+              <CollapsibleContent keepMounted className={collapsiblePanelClass}>
                 <div className="relative flex flex-col px-0 py-1">
                   {subjectSections.map(({ id: sectionId, label: sectionLabel }) => (
                     <SpyNavItem

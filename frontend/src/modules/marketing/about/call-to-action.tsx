@@ -17,7 +17,7 @@ export function CallToAction() {
         <Button
           variant="ghost"
           size="xl"
-          onClick={() => window.open(appConfig.company.githubUrl, '_blank', 'noopener')}
+          render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />}
           className="glow-button relative rounded-full bg-background/95 px-10 hover:bg-background! active:bg-background"
           press={false}
         >

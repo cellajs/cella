@@ -5,7 +5,6 @@ import type { TKey } from '~/lib/i18n-locales';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 import { lazyNamed } from '~/utils/lazy-named';
-import { tw } from '~/utils/tw';
 
 const MorphAnimation = lazyNamed(() => import('~/modules/common/morph-animation/morph-animation'), 'MorphAnimation');
 
@@ -32,11 +31,10 @@ export function Hero({ title, text, children, chips }: HeroProps) {
           color-mix(in oklch, var(--primary), black 20%))`,
       }
     : undefined;
-  const sectionClass = tw('rich-gradient relative flex min-h-[90vh] items-center justify-center overflow-hidden px-4 py-24 lg:py-32');
   const headerClass = cn('transition-all duration-500 ease-out will-change-transform', inView ? 'opacity-100' : 'translate-y-4 scale-95 opacity-0');
 
   return (
-    <section id="spy-welcome" className={sectionClass}>
+    <section id="spy-welcome" className="rich-gradient relative flex min-h-[90vh] items-center justify-center overflow-hidden px-4 py-24 lg:py-32">
       <header
         ref={ref}
         className={cn(

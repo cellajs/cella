@@ -1,16 +1,14 @@
 import { Outlet, useNavigate } from '@tanstack/react-router';
-import { ArrowUpIcon, MenuIcon } from 'lucide-react';
 import { type KeyboardEvent, type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
-import { useFirstTimeHint } from '~/hooks/use-first-time-hint';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { useScrolledPast } from '~/hooks/use-scrolled-past';
 import { type SheetData, sheeter, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toggleDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import { docsSidebarSheetId, isDocsSidebarOpen } from '~/modules/docs/sidebar/docs-sidebar-sheet';
-import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
+import { FloatingNav } from '~/modules/navigation/floating-nav/floating-nav';
+import { useFloatingNavItems } from '~/modules/navigation/floating-nav/use-floating-nav-items';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 import { cancelIdle, scheduleIdle } from '~/utils/schedule-idle';
@@ -32,11 +30,6 @@ export function DocsLayout() {
 
   // The handle's width in px, `null` for the CSS default; `main` is offset by the same variable, and the window scrolls
   const [resizedSidebarWidth, setResizedSidebarWidth] = useState<number | null>(null);
-
-  const showScrollTop = useScrolledPast(300, !isDesktop);
-  // First-visit affordance: the menu button reads "menu" while at the top of the page
-  const isAtTop = !useScrolledPast(8, !isDesktop);
-  const showMenuLabel = useFirstTimeHint('floating-menu-docs', !isDesktop && isAtTop);
 
   const startSidebarResize = (event: ReactPointerEvent) => {
     event.preventDefault();
@@ -121,29 +114,7 @@ export function DocsLayout() {
     }
   };
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const floatingNavItems: FloatingNavItem[] = [
-    {
-      id: 'docs-menu',
-      icon: MenuIcon,
-      onClick: toggleSidebar,
-      ariaLabel: t('c:toggle_menu'),
-      direction: 'left',
-      label: t('c:menu'),
-      labelVisible: showMenuLabel,
-    },
-    {
-      id: 'docs-scroll-top',
-      icon: ArrowUpIcon,
-      onClick: scrollToTop,
-      ariaLabel: t('c:scroll_to_top'),
-      visible: showScrollTop,
-      direction: 'right',
-    },
-  ];
+  const floatingNavItems = useFloatingNavItems({ idPrefix: 'docs', hintKey: 'floating-menu-docs', enabled: !isDesktop, onToggleMenu: toggleSidebar });
 
   const sidebarWidthStyle = resizedSidebarWidth === null ? undefined : { '--docs-sidebar-width': `${resizedSidebarWidth}px` };
 

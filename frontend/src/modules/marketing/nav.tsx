@@ -1,98 +1,68 @@
 import { Link } from '@tanstack/react-router';
-import { ArrowUpIcon, MenuIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import { useFirstTimeHint } from '~/hooks/use-first-time-hint';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import { useScrolledPast } from '~/hooks/use-scrolled-past';
 import { GithubIcon } from '~/modules/common/icons/github';
 import { Logo } from '~/modules/common/logo';
-import type { AboutSectionId } from '~/modules/marketing/about/about-page';
 import { marketingNavConfig } from '~/modules/marketing/marketing-config';
 // import { UserLanguage } from '~/modules/me/user-language';
 import { UserTheme } from '~/modules/me/user-theme';
-import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
+import { FloatingNav } from '~/modules/navigation/floating-nav/floating-nav';
+import { useFloatingNavItems } from '~/modules/navigation/floating-nav/use-floating-nav-items';
 import { Button } from '~/modules/ui/button';
 import { Drawer, DrawerContent, DrawerTitle } from '~/modules/ui/drawer';
+
+interface MarketingNavLinksProps {
+  onNavigate: () => void;
+}
+
+/** The config's page links; a hash link on the about page scrolls to its section in place. */
+function MarketingNavLinks({ onNavigate }: MarketingNavLinksProps) {
+  const { t } = useTranslation();
+  const isAboutPage = location.pathname === '/about';
+
+  return marketingNavConfig.map(({ url, hash, id }) => (
+    <Button
+      key={id}
+      variant="ghost"
+      size="lg"
+      render={
+        <Link
+          to={url}
+          hash={hash}
+          draggable={false}
+          onClick={(e) => {
+            if (hash && isAboutPage) {
+              e.preventDefault();
+              scrollToSectionById(hash);
+            }
+            onNavigate();
+          }}
+        />
+      }
+    >
+      {t(id)}
+    </Button>
+  ));
+}
 
 export function MarketingNav() {
   const { t } = useTranslation();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isMobile = useBreakpointBelow('sm');
+  const isAboutPage = location.pathname === '/about';
 
-  const showScrollTop = useScrolledPast(300, isMobile);
-  // First-visit affordance: the menu button reads "menu" while at the top of the page (iOS overscroll stays <= 0, so it counts as top)
-  const atTop = !useScrolledPast(8, isMobile);
-  const showMenuLabel = useFirstTimeHint('floating-menu-marketing', isMobile && atTop);
+  const floatingNavItems = useFloatingNavItems({
+    idPrefix: 'marketing',
+    hintKey: 'floating-menu-marketing',
+    enabled: isMobile,
+    onToggleMenu: () => setDrawerOpen((prev) => !prev),
+  });
 
   const closeDrawer = () => setDrawerOpen(false);
-
-  const handleNavClick = (target: AboutSectionId) => {
-    scrollToSectionById(target);
-    closeDrawer();
-  };
-
-  const renderNavItems = () => {
-    return marketingNavConfig.map(({ url, hash, id }) => (
-      <Button
-        key={id}
-        variant="ghost"
-        size="lg"
-        render={
-          <Link
-            to={url}
-            hash={hash}
-            draggable={false}
-            onClick={(e) => {
-              if (!hash) {
-                closeDrawer();
-                return;
-              }
-              if (location.pathname === '/about') {
-                e.preventDefault();
-                handleNavClick(hash);
-              } else {
-                closeDrawer();
-              }
-            }}
-          />
-        }
-      >
-        {t(id)}
-      </Button>
-    ));
-  };
-
-  const openInNewTab = (url: string) => {
-    window.open(url, '_blank', 'noreferrer');
-  };
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const floatingNavItems: FloatingNavItem[] = [
-    {
-      id: 'marketing-menu',
-      icon: MenuIcon,
-      onClick: () => setDrawerOpen((prev) => !prev),
-      ariaLabel: t('c:toggle_menu'),
-      direction: 'left',
-      label: t('c:menu'),
-      labelVisible: showMenuLabel,
-    },
-    {
-      id: 'marketing-scroll-top',
-      icon: ArrowUpIcon,
-      onClick: scrollToTop,
-      ariaLabel: t('c:scroll_to_top'),
-      visible: showScrollTop,
-      direction: 'right',
-    },
-  ];
 
   return (
     <>
@@ -104,7 +74,7 @@ export function MarketingNav() {
             <Link
               to="/about"
               hash=""
-              replace={location.pathname === '/about'}
+              replace={isAboutPage}
               className="focus-effect active:press relative rounded-md p-0.5 transition-transform sm:hover:scale-105 md:pr-4"
               aria-label={t('c:go_to_about')}
             >
@@ -125,7 +95,11 @@ export function MarketingNav() {
               </svg>
             </Link>
 
-            {marketingNavConfig?.length && <nav className="hidden h-full items-center gap-1 sm:flex md:gap-4">{renderNavItems()}</nav>}
+            {marketingNavConfig.length > 0 && (
+              <nav className="hidden h-full items-center gap-1 sm:flex md:gap-4">
+                <MarketingNavLinks onNavigate={closeDrawer} />
+              </nav>
+            )}
           </div>
 
           <div className="flex items-center gap-2 px-2">
@@ -139,7 +113,7 @@ export function MarketingNav() {
                 aria-label="Github repository"
                 className="max-sm:hidden"
                 size="icon"
-                onClick={() => openInNewTab(appConfig.company.githubUrl)}
+                render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />}
               >
                 <GithubIcon className="size-6" />
               </Button>
@@ -159,22 +133,12 @@ export function MarketingNav() {
           </span>
           <div className="flex flex-col items-stretch gap-2 px-4">
             <UserTheme buttonClassName="xs:hidden m-1 self-end" />
-            <Button
-              variant="ghost"
-              size="lg"
-              render={<Link to="/about" hash="" replace={location.pathname === '/about'} draggable={false} onClick={closeDrawer} />}
-            >
+            <Button variant="ghost" size="lg" render={<Link to="/about" hash="" replace={isAboutPage} draggable={false} onClick={closeDrawer} />}>
               {t('c:about')}
             </Button>
-            {renderNavItems()}
+            <MarketingNavLinks onNavigate={closeDrawer} />
             {appConfig.company.githubUrl && (
-              <Button
-                size="lg"
-                onClick={() => {
-                  closeDrawer();
-                  openInNewTab(appConfig.company.githubUrl);
-                }}
-              >
+              <Button size="lg" render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />} onClick={closeDrawer}>
                 <GithubIcon className="size-6" />
                 Github
               </Button>

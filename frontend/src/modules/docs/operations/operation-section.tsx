@@ -1,8 +1,7 @@
 import { ChevronDownIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { collapsiblePanelClass } from '~/modules/docs/collapsible-panel';
 import { Button } from '~/modules/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger, collapsiblePanelClass } from '~/modules/ui/collapsible';
 
 interface OperationSectionProps {
   title: string;

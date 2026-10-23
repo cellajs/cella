@@ -1,15 +1,12 @@
 import { useInView } from '~/hooks/use-in-view';
 import { AttachmentsCarousel, type CarouselItemData } from '~/modules/attachment/attachments-carousel';
-import { DeviceFrame } from '~/modules/marketing/device-mockup-frame';
+import { DeviceFrame, type DeviceType } from '~/modules/marketing/device-mockup-frame';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
-type DeviceType = 'mobile' | 'tablet' | 'pc';
-type MockupItem = Pick<CarouselItemData, 'url' | 'id' | 'name'>;
-
 interface DeviceMockupProps {
-  lightItems?: MockupItem[];
-  darkItems?: MockupItem[];
+  lightItems?: CarouselItemData[];
+  darkItems?: CarouselItemData[];
   className?: string;
   type: DeviceType;
 }

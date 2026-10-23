@@ -1,24 +1,25 @@
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import { Button } from '~/modules/ui/button';
 
+export const skipOrganizationDialogId = 'skip-org-creation';
+
 interface SkipOrganizationProps {
-  setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void;
+  onComplete: () => void;
 }
 
-export function SkipOrganization({ setOnboardingState }: SkipOrganizationProps) {
+export function SkipOrganization({ onComplete }: SkipOrganizationProps) {
   const { t } = useTranslation();
 
   const removeDialog = useDialoger((state) => state.remove);
 
   const onDelete = () => {
-    removeDialog('skip-org-creation');
-    setOnboardingState('completed');
+    removeDialog(skipOrganizationDialogId);
+    onComplete();
   };
 
   const onCancel = () => {
-    removeDialog('skip-org-creation');
+    removeDialog(skipOrganizationDialogId);
   };
 
   return (

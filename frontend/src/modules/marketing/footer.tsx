@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import type { TKey } from '~/lib/i18n-locales';
 import { Logo } from '~/modules/common/logo';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
@@ -11,11 +10,36 @@ import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
 const currentYear = new Date().getFullYear();
-const companyName = appConfig.company.name;
-const productName = appConfig.name;
+
+const headingClass = tw('font-heading font-semibold text-sm text-white/60 tracking-wider');
+const textClass = tw('mt-4 text-sm text-white/90');
 
 // The sign-up link only shows where visitors can sign up by themselves
 const isShown = (link: { title: string }) => link.title !== 'c:sign_up' || appConfig.has.selfRegistration;
+
+interface FooterLinkProps {
+  /** Translation key. */
+  title: string;
+  href: string;
+}
+
+/** A footer link; a web page opens in a new tab, an app route in this one. */
+function FooterLink({ title, href }: FooterLinkProps) {
+  const { t } = useTranslation();
+  const isExternal = href.startsWith('http');
+
+  return (
+    <Link
+      to={href}
+      target={isExternal ? '_blank' : undefined}
+      rel={isExternal ? 'noreferrer' : undefined}
+      draggable={false}
+      className="focus-effect link-decoration active:link-decoration-strong rounded-sm p-1 transition hover:underline"
+    >
+      {t(title as TKey)}
+    </Link>
+  );
+}
 
 function FooterLinks() {
   const { t } = useTranslation();
@@ -25,23 +49,14 @@ function FooterLinks() {
       <ul className="grid grid-cols-2 gap-8 sm:grid-cols-3">
         {footerSections.map((section) => (
           <li key={section.title} className={section.hideOnMobile ? 'max-sm:hidden' : ''}>
-            <div className="font-heading font-semibold text-sm text-white/60 tracking-wider">{t(section.title as TKey)}</div>
+            <div className={headingClass}>{t(section.title as TKey)}</div>
 
-            <ul className="mt-4 text-sm text-white/90">
-              {section.links.filter(isShown).map((link) => {
-                const target = isCDNUrl(link.href) ? '_blank' : '_self';
-                return (
-                  <li key={link.title} className="mt-4">
-                    <Link
-                      to={link.href}
-                      target={target}
-                      className="focus-effect link-decoration active:link-decoration-strong rounded-sm p-1 transition hover:underline"
-                    >
-                      {t(link.title as TKey)}
-                    </Link>
-                  </li>
-                );
-              })}
+            <ul className={textClass}>
+              {section.links.filter(isShown).map((link) => (
+                <li key={link.title} className="mt-4">
+                  <FooterLink title={link.title} href={link.href} />
+                </li>
+              ))}
             </ul>
           </li>
         ))}
@@ -56,7 +71,7 @@ function Credits({ className }: { className?: string }) {
   return (
     <div className={cn('pb-12 text-center text-xs', className)}>
       <p>
-        © {currentYear}. {productName} {t('c:is_built_by', { companyName })}.
+        © {currentYear}. {appConfig.name} {t('c:is_built_by', { companyName: appConfig.company.name })}.
       </p>
     </div>
   );
@@ -64,20 +79,19 @@ function Credits({ className }: { className?: string }) {
 
 export function MarketingFooter() {
   const { t } = useTranslation();
-  const sectionClass = tw('rich-gradient dark-gradient relative min-h-[30vw] pt-[15vw]');
   const statusUrl = appConfig.statusUrl?.trim();
   const legalFooterLinks = statusUrl ? [...legalLinks, { title: 'c:status', href: statusUrl }] : legalLinks;
 
   return (
     <div className="relative">
-      <section className={sectionClass}>
+      <section className="rich-gradient dark-gradient relative min-h-[30vw] pt-[15vw]">
         <BackgroundCurve position="top" />
         <div className="container flex max-w-5xl flex-col items-center gap-4 px-8 pt-8">
           <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
             <FooterLinks />
             <div className="">
-              <div className="font-heading font-semibold text-sm text-white/60 tracking-wider">{t('c:request_info')}</div>
-              <div className="mt-4 text-sm text-white/90">{t('c:request_info.text', { appName: appConfig.name })}</div>
+              <div className={headingClass}>{t('c:request_info')}</div>
+              <div className={textClass}>{t('c:request_info.text', { appName: appConfig.name })}</div>
               <SubscribeNewsletterForm />
             </div>
           </div>
@@ -99,13 +113,7 @@ export function MarketingFooter() {
           <ul className="mt-6 mb-12 flex flex-wrap justify-center gap-x-4 gap-y-4 border-white/20 border-t pt-12 text-center text-sm text-white/60">
             {legalFooterLinks.map((link) => (
               <li key={link.title}>
-                <Link
-                  to={link.href}
-                  draggable={false}
-                  className="focus-effect link-decoration active:link-decoration-strong rounded-sm p-1 transition hover:underline"
-                >
-                  {t(link.title as TKey)}
-                </Link>
+                <FooterLink title={link.title} href={link.href} />
               </li>
             ))}
           </ul>

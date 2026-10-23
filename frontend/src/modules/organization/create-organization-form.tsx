@@ -11,7 +11,7 @@ import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { useStepper } from '~/modules/common/stepper/stepper';
+import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationCreateMutation } from '~/modules/organization/query';
 import { useSelfCreateTenantMutation } from '~/modules/tenants/query';

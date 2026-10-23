@@ -2,8 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { XIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import { Step, Stepper, useStepper } from '~/modules/common/stepper/stepper';
+import { Step, Stepper } from '~/modules/common/stepper/stepper';
 import type { StepItem } from '~/modules/common/stepper/types';
+import { useStepper } from '~/modules/common/stepper/use-stepper';
 import { Button } from '~/modules/ui/button';
 
 const steps: StepItem[] = [
@@ -35,9 +36,9 @@ function OnboardingLikeStepper({ items, initialStep = 0 }: { items: StepItem[]; 
 
   return (
     <div className="w-[36rem]">
-      <Stepper initialStep={initialStep} steps={items} onClickStep={(newStep, setStep) => setStep(newStep)} orientation="vertical">
+      <Stepper initialStep={initialStep} steps={items} onClickStep={(newStep, setStep) => setStep(newStep)}>
         {items.map(({ id, label }) => (
-          <Step key={id} label={label} isKeepError={id !== 'profile'} checkIcon={id === 'organization' ? XIcon : undefined}>
+          <Step key={id} label={label} checkIcon={id === 'organization' ? XIcon : undefined}>
             <div className="rounded-md border p-4">
               <p>{label} content</p>
               <StepFooter onComplete={() => setCompleted(true)} />

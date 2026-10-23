@@ -1,4 +1,4 @@
-type DeviceType = 'mobile' | 'tablet' | 'pc';
+export type DeviceType = 'mobile' | 'tablet' | 'pc';
 
 interface DeviceFrameProps {
   type: DeviceType;

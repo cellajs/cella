@@ -1,9 +1,10 @@
-import { ArrowDownIcon, CheckIcon, CopyIcon } from 'lucide-react';
+import { ArrowDownIcon, CopyIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { CopiedIcon } from '~/modules/common/copied-icon';
 import { GithubIcon } from '~/modules/common/icons/github';
 import { CallToAction } from '~/modules/marketing/about/call-to-action';
 // import { Counters } from '~/modules/marketing/about/counters';
@@ -24,7 +25,9 @@ import { Input } from '~/modules/ui/input';
 
 export type AboutSectionId = (typeof aboutSectionIds)[number];
 
-const aboutSectionIds = ['welcome', 'benefits', 'showcase', 'template', 'stack', 'integrations', 'call-to-action'];
+const aboutSectionIds = ['welcome', 'benefits', 'stack', 'integrations', 'showcase', 'call-to-action'];
+
+const installCommand = 'pnpm create @cellajs/cella';
 
 export function AboutPage() {
   const { t } = useTranslation();
@@ -49,7 +52,7 @@ export function AboutPage() {
             <Button
               variant="plain"
               size="lg"
-              onClick={() => window.open(appConfig.company.githubUrl, '_blank', 'noopener')}
+              render={<a href={appConfig.company.githubUrl} target="_blank" rel="noreferrer" />}
               className="group h-14 rounded-full px-8 transition"
               aria-label={t('about:github_star')}
             >
@@ -60,7 +63,7 @@ export function AboutPage() {
               <Input
                 readOnly
                 aria-label={t('c:install_command')}
-                value="pnpm create @cellajs/cella"
+                value={installCommand}
                 className="block h-14 w-80 rounded-full border border-transparent bg-background px-8 py-6 font-light font-mono text-sm ring-4 ring-primary/10 transition focus:border-gray-500 focus:outline-hidden focus-visible:ring-primary/20 sm:w-96"
               />
               {copied && (
@@ -70,13 +73,13 @@ export function AboutPage() {
               )}
 
               <Button
-                onClick={() => copyToClipboard('pnpm create @cellajs/cella')}
+                onClick={() => copyToClipboard(installCommand)}
                 aria-label={t('c:copy')}
                 size="icon"
                 variant="ghost"
                 className="absolute top-2 right-2 rounded-full"
               >
-                {copied ? <CheckIcon /> : <CopyIcon />}
+                <CopiedIcon copied={copied} icon={CopyIcon} />
               </Button>
             </div>
           </div>

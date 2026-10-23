@@ -25,16 +25,14 @@ export type OnboardingStates = 'start' | 'stepper' | 'completed';
 interface OnboardingProps {
   onboarding: OnboardingStates;
   setOnboardingState: (newState: Exclude<OnboardingStates, 'start'>) => void;
-  createdOrganization: Organization | null;
-  setCreatedOrganization: (organization: Organization | null) => void;
 }
 
-export function Onboarding({ onboarding = 'start', setOnboardingState, createdOrganization, setCreatedOrganization }: OnboardingProps) {
+export function Onboarding({ onboarding, setOnboardingState }: OnboardingProps) {
   const user = useCurrentUser();
   const { hasStarted } = useMountedState();
   const { t } = useTranslation();
 
-  const [organization, setOrganization] = useState<Organization | null>(createdOrganization);
+  const [organization, setOrganization] = useState<Organization | null>(null);
 
   const animateClass = cn(
     'transition-all duration-500 ease-out will-change-transform',
@@ -50,6 +48,8 @@ export function Onboarding({ onboarding = 'start', setOnboardingState, createdOr
   // route loads both queries first, so the lock sees real data.
   const [steps] = useState(() => getOnboardingSteps({ hasOrganizations: organizations.length > 0, hasInvitations: invitations.length > 0 }));
 
+  const stepFooter = <StepperFooter onComplete={() => setOnboardingState('completed')} />;
+
   return (
     <div className="flex min-h-[90svh] flex-col items-center sm:min-h-svh">
       <div className="mt-auto mb-auto w-full">
@@ -58,15 +58,13 @@ export function Onboarding({ onboarding = 'start', setOnboardingState, createdOr
           <div className={cn('mx-auto mt-0 flex max-w-3xl flex-col justify-center gap-4 px-4 py-8 sm:w-10/12', animateClass)}>
             {steps.length === 1 && <h2 className="flex justify-center font-semibold text-lg">{steps[0].label}</h2>}
             <Stepper
-              initialStep={0}
               steps={steps}
               onClickStep={(newStep, setStep) => {
                 setStep(newStep);
               }}
-              orientation="vertical"
             >
               {steps.map(({ description, label, id }) => (
-                <Step key={id} label={label} isKeepError={id !== 'profile'} checkIcon={id === 'organization' && !organization ? XIcon : undefined}>
+                <Step key={id} label={label} checkIcon={id === 'organization' && !organization ? XIcon : undefined}>
                   <Card>
                     {description && (
                       <CardHeader>
@@ -74,26 +72,19 @@ export function Onboarding({ onboarding = 'start', setOnboardingState, createdOr
                       </CardHeader>
                     )}
                     <CardContent>
-                      {id === 'invitations' && (
-                        <InvitationsStep>
-                          <StepperFooter setOnboardingState={setOnboardingState} />
-                        </InvitationsStep>
-                      )}
+                      {id === 'invitations' && <InvitationsStep>{stepFooter}</InvitationsStep>}
                       {id === 'profile' && (
                         <UpdateUserForm user={user} compact>
-                          <StepperFooter setOnboardingState={setOnboardingState} />
+                          {stepFooter}
                         </UpdateUserForm>
                       )}
                       {id === 'organization' && !organization && (
                         <CreateOrganizationForm
                           callback={(args: CallbackArgs<Organization>) => {
-                            if (args.status === 'success') {
-                              setOrganization(args.data);
-                              setCreatedOrganization(args.data);
-                            }
+                            if (args.status === 'success') setOrganization(args.data);
                           }}
                         >
-                          <StepperFooter setOnboardingState={setOnboardingState} />
+                          {stepFooter}
                         </CreateOrganizationForm>
                       )}
                       {id === 'organization' && !!organization && (
@@ -101,13 +92,13 @@ export function Onboarding({ onboarding = 'start', setOnboardingState, createdOr
                       )}
                       {id === 'invitation' && organization && (
                         <InviteUsers channel={organization} mode="email">
-                          <StepperFooter setOnboardingState={setOnboardingState} />
+                          {stepFooter}
                         </InviteUsers>
                       )}
                       {id === 'invitation' && !organization && (
                         <div>
                           <p className="mb-4 font-normal text-muted-foreground text-sm">{t('c:need_org_to_invite.text')}</p>
-                          <StepperFooter setOnboardingState={setOnboardingState} />
+                          {stepFooter}
                         </div>
                       )}
                     </CardContent>

@@ -1,27 +1,27 @@
 import { useParams } from '@tanstack/react-router';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
 import { RegisterSpySections } from '~/hooks/use-scroll-spy';
-import { type LegalSubject, legalConfig } from '~/modules/auth/legal/legal-config';
+import { legalConfig } from '~/modules/auth/legal/legal-config';
 import { legalOverviewId } from '~/modules/auth/legal/legal-types';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { MarketingLayout } from '~/modules/marketing/layout';
 import { LegalAside } from '~/modules/marketing/legal/legal-aside';
 import { objectEntries } from '~/utils/object-entries';
 
+const subjects = objectEntries(legalConfig).map(([subject, { label, sections }]) => ({ id: subject, label, sections }));
+
+// Preloaded on mount so switching subject renders without a lazy chunk fetch.
+const lazyComponents = subjects.map(({ id }) => legalConfig[id].component);
+
 export function LegalPage() {
   const { t } = useTranslation();
 
-  const subjects = useMemo(() => objectEntries(legalConfig).map(([subject, { label, sections }]) => ({ id: subject, label, sections })), []);
-
+  // The route parses the subject, so an unknown one is already the default
   const { subject: currentSubject } = useParams({ from: '/_public/_marketing/legal/$subject' });
+  const { component: Component, label, sections } = legalConfig[currentSubject];
 
-  const sectionIds = useMemo(() => legalConfig[currentSubject as LegalSubject]?.sections.map((s: { id: string }) => s.id) || [], [currentSubject]);
-
-  // Preloaded on mount so switching subject renders without a lazy chunk fetch.
-  const lazyComponents = useMemo(() => subjects.map(({ id }) => legalConfig[id].component), [subjects]);
   usePreloadLazyComponents(lazyComponents);
 
   return (
@@ -36,24 +36,16 @@ export function LegalPage() {
         </div>
 
         <div className="flex min-h-svh flex-col gap-8 md:w-3/4">
-          {subjects.map(({ id }) => {
-            const isActive = id === currentSubject;
-            const Component = legalConfig[id].component;
-            return (
-              isActive && (
-                <div
-                  key={id}
-                  id={`spy-${legalOverviewId}`}
-                  className="prose dark:prose-invert mb-40 min-h-svh max-w-full bg-background px-4 pt-4 md:px-8 lg:mx-auto lg:max-w-4xl"
-                >
-                  <h2 className="pt-8 pb-4 font-bold text-2xl">{t(legalConfig[id].label)}</h2>
-                  <Component />
-                  {/* The lazy text suspends inside MarketingLayout; registering here waits for its sections */}
-                  <RegisterSpySections ids={sectionIds} />
-                </div>
-              )
-            );
-          })}
+          <div
+            key={currentSubject}
+            id={`spy-${legalOverviewId}`}
+            className="prose dark:prose-invert mb-40 min-h-svh max-w-full bg-background px-4 pt-4 md:px-8 lg:mx-auto lg:max-w-4xl"
+          >
+            <h2 className="pt-8 pb-4 font-bold text-2xl">{t(label)}</h2>
+            <Component />
+            {/* The lazy text suspends inside MarketingLayout; registering here waits for its sections */}
+            <RegisterSpySections ids={sections.map((section) => section.id)} />
+          </div>
         </div>
       </div>
     </MarketingLayout>

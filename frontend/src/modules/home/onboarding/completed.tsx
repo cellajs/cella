@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { HomeIcon, PlusIcon, UndoIcon } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { appConfig } from 'shared';
@@ -21,7 +21,6 @@ export function OnboardingCompleted() {
 
   const { mutate } = useUpdateSelfFlagsMutation();
 
-  const [isExploding] = useState(true);
   const didRun = useRef(false);
   const createButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -44,7 +43,7 @@ export function OnboardingCompleted() {
 
   return (
     <div className="relative z-1 mx-auto flex h-svh min-w-full max-w-3xl flex-col items-center justify-center gap-6 p-4 text-center">
-      {isExploding && <Confetti fire />}
+      <Confetti />
 
       {user.userFlags.finishedOnboarding && (
         <UndoIcon strokeWidth={0.1} className="-mt-52 -mb-12 size-100 rotate-30 scale-y-75 text-primary max-md:hidden md:-translate-x-24" />

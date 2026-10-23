@@ -62,8 +62,6 @@ interface InfoGridProps<C extends string> {
   namespace?: string;
   /** Icon per category. When set, items are grouped by category with a header. */
   categoryIcons?: Record<C, IconComponent>;
-  /** Hide the per-category icon + title headers (e.g. when a parent section already provides one). */
-  hideCategoryHeader?: boolean;
   /** Render an SVG image icon per tile (from `/static/marketing/features/<id>.svg`). */
   image?: boolean;
   /** Background classes for each tile. Defaults to `bg-card`. */
@@ -78,7 +76,6 @@ export function InfoGrid<C extends string>({
   items,
   namespace = 'features',
   categoryIcons,
-  hideCategoryHeader,
   image,
   tileClassName,
   expandable,
@@ -104,12 +101,10 @@ export function InfoGrid<C extends string>({
           const categoryItems = items.filter((item) => item.category === category);
           return (
             <div key={category}>
-              {!hideCategoryHeader && (
-                <h2 className="mb-6 flex items-center gap-2 pl-6 font-semibold text-xl">
-                  <CategoryIcon className="size-5 text-muted-foreground" />
-                  {t(`about:${namespace}.category_${category}` as TKey)}
-                </h2>
-              )}
+              <h2 className="mb-6 flex items-center gap-2 pl-6 font-semibold text-xl">
+                <CategoryIcon className="size-5 text-muted-foreground" />
+                {t(`about:${namespace}.category_${category}` as TKey)}
+              </h2>
               <div className="grid gap-4 md:grid-cols-2">{categoryItems.map(renderTile)}</div>
             </div>
           );

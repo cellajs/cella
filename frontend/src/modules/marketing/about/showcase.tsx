@@ -1,10 +1,11 @@
-import { ArrowUpRightIcon } from 'lucide-react';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from '~/hooks/use-in-view';
 import type { TKey } from '~/lib/i18n-locales';
+import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { Spinner } from '~/modules/common/spinner';
 import { useCountUp } from '~/modules/marketing/about/counters';
+import { ExternalArrow } from '~/modules/marketing/external-arrow';
 import { showcaseItems } from '~/modules/marketing/marketing-config';
 import { lazyNamed } from '~/utils/lazy-named';
 
@@ -15,8 +16,8 @@ export type ShowcaseItem = {
   url: string;
   cellaLoc?: number;
   totalLoc?: number;
-  lightItems: { id: string; url: string; contentType: string }[];
-  darkItems: { id: string; url: string; contentType: string }[];
+  lightItems: CarouselItemData[];
+  darkItems: CarouselItemData[];
 };
 
 function CellaShare({ cellaLoc, totalLoc }: { cellaLoc: number; totalLoc: number }) {
@@ -54,7 +55,7 @@ export function Showcase() {
                     <a href={item.url} target="_blank" rel="noreferrer" className="focus-effect mt-4 block rounded-md">
                       <h3 className="group mb-2 font-medium text-xl 2xl:text-[1.38rem]">
                         {t(title)}
-                        <ArrowUpRightIcon className="-mt-2 ml-1 inline-block text-primary opacity-50 group-hover:opacity-100" />
+                        <ExternalArrow />
                       </h3>
                     </a>
                     <p className="mb-6 leading-relaxed sm:mb-12">{t(text)}</p>

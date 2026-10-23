@@ -72,5 +72,3 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
     </div>
   );
 }
-
-export { useStepper };

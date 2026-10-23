@@ -1,17 +1,15 @@
-import { XIcon } from 'lucide-react';
 import { useState } from 'react';
-import type { Organization } from 'sdk';
+import { CloseButton } from '~/modules/common/close-button';
 import { OnboardingCompleted } from '~/modules/home/onboarding/completed';
 import type { OnboardingStates } from '~/modules/home/onboarding/steps';
 import { Onboarding } from '~/modules/home/onboarding/steps';
-import { Dialog, DialogClose, DialogContent, DialogTitle } from '~/modules/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '~/modules/ui/dialog';
 import { useCurrentUser } from '~/modules/user/user-store';
 
 function WelcomePage() {
   const user = useCurrentUser();
 
   const [onboarding, setOnboardingState] = useState<OnboardingStates>(user.userFlags.finishedOnboarding ? 'completed' : 'start');
-  const [createdOrganization, setCreatedOrganization] = useState<Organization | null>(null);
 
   const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {
     if (!nextOpen && eventDetails.reason === 'escape-key') {
@@ -23,21 +21,13 @@ function WelcomePage() {
 
   return (
     <>
-      <Dialog open={onboarding !== 'completed'} onOpenChange={onOpenChange} defaultOpen={true}>
+      <Dialog open={onboarding !== 'completed'} onOpenChange={onOpenChange}>
         <DialogContent className="mt-0 flex h-dvh max-h-none min-w-full flex-col overflow-y-auto rounded-none border-0 bg-background/75 p-0">
           <span className="sr-only">
             <DialogTitle>Welcome</DialogTitle>
           </span>
-          <DialogClose className="focus-effect absolute top-4 right-4 z-10 rounded-sm p-1 opacity-70 transition-opacity hover:bg-accent hover:opacity-100">
-            <XIcon className="size-5" strokeWidth={1.5} />
-            <span className="sr-only">Close</span>
-          </DialogClose>
-          <Onboarding
-            onboarding={onboarding}
-            setOnboardingState={setOnboardingState}
-            createdOrganization={createdOrganization}
-            setCreatedOrganization={setCreatedOrganization}
-          />
+          <CloseButton onClick={() => setOnboardingState('completed')} className="absolute top-4 right-4 z-10" />
+          <Onboarding onboarding={onboarding} setOnboardingState={setOnboardingState} />
         </DialogContent>
       </Dialog>
 
