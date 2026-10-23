@@ -1,36 +1,50 @@
 import type { ReactNode } from 'react';
-import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { useInDropdownerDrawer } from '~/modules/common/dropdowner/drawer';
+import { dropdowner, removeIfCurrent } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
-import { Button, type ButtonProps } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { DropdownMenuItem } from '~/modules/ui/dropdown-menu';
 import { cn } from '~/utils/cn';
 
 interface DropdownActionItemProps {
-  /** Renders the drawer row; defaults to the breakpoint at which the dropdowner renders a drawer. */
-  isMobile?: boolean;
   onSelect?: () => void;
   icon?: IconComponent;
   children: ReactNode;
-  variant?: ButtonProps['variant'];
-  className?: ButtonProps['className'];
-  /** Close the menu after selection (desktop only, default true); false for an item that opens a confirmation (`openPopConfirm`). */
+  variant?: 'default' | 'destructive';
+  className?: string;
+  /** Close the dropdown after selection (default true); an item that swaps it for another, such as `openPopConfirm`, stays either way. */
   closeOnSelect?: boolean;
+  /** Marks the row of a single-select list as the current choice. */
+  selected?: boolean;
 }
 
+/** A dropdowner action: a menu item in the desktop popup, a row in the mobile drawer. */
 export function DropdownActionItem({
-  isMobile,
   onSelect,
   icon: Icon,
   children,
-  variant = 'secondary',
+  variant = 'default',
   className,
   closeOnSelect = true,
+  selected,
 }: DropdownActionItemProps) {
-  const isDrawer = useBreakpointBelow('sm');
+  const inDrawer = useInDropdownerDrawer();
 
-  if (isMobile ?? isDrawer) {
+  if (inDrawer) {
+    const select = () => {
+      const key = dropdowner.getState().dropdown?.key;
+      onSelect?.();
+      if (closeOnSelect && key !== undefined) removeIfCurrent(key);
+    };
+
     return (
-      <Button onClick={onSelect} variant={variant} className={cn('flex w-full', className)}>
+      <Button
+        variant="row"
+        data-variant={variant}
+        aria-pressed={selected}
+        onClick={select}
+        className={cn(variant === 'destructive' && 'text-destructive', className)}
+      >
         {Icon && <Icon />}
         {children}
       </Button>
@@ -38,12 +52,7 @@ export function DropdownActionItem({
   }
 
   return (
-    <DropdownMenuItem
-      variant={variant === 'destructive' ? 'destructive' : 'default'}
-      closeOnClick={closeOnSelect}
-      onClick={onSelect}
-      className={className}
-    >
+    <DropdownMenuItem variant={variant} closeOnClick={closeOnSelect} onClick={onSelect} className={className}>
       {Icon && <Icon />}
       {children}
     </DropdownMenuItem>

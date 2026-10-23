@@ -1,15 +1,10 @@
 import { useEffect, useLayoutEffect } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
-import { dropdowner, type InternalDropdown } from '~/modules/common/dropdowner/use-dropdowner';
+import { dropdowner, type InternalDropdown, removeIfCurrent } from '~/modules/common/dropdowner/use-dropdowner';
 import { FocusTrap } from '~/modules/common/focus-trap';
 import { DropdownMenu, DropdownMenuContent } from '~/modules/ui/dropdown-menu';
 import { Popover, PopoverContent } from '~/modules/ui/popover';
 import { isTouchInteraction } from '~/utils/input-modality';
-
-/** Closes the dropdown unless it was already swapped for another (e.g. a menu item opening a confirmation panel). */
-function removeIfCurrent(key: number) {
-  if (dropdowner.getState().dropdown?.key === key) dropdowner.getState().remove();
-}
 
 interface DropdownerDropdownProps {
   dropdown: InternalDropdown;

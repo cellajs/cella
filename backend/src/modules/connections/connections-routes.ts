@@ -28,7 +28,7 @@ export const connectionRoutes = createXRoutes(['connections', 'cella'], {
     description:
       'Connects an institution to the tenant: the federation it signs in through, its domains and its IdP entity ids. Starts `pending` until the institution activated the service at the federation; one SSO connection per tenant, and a domain belongs to one connection.',
     request: { params: tenantOnlyParamSchema, body: jsonBody(createConnectionBodySchema) },
-    responses: { 200: json('Created connection', connectionSchema, mockConnectionResponse()) },
+    responses: { 200: json('Created connection', connectionSchema) },
   }),
   updateConnection: xRoute({
     method: 'put',
@@ -39,7 +39,7 @@ export const connectionRoutes = createXRoutes(['connections', 'cella'], {
     summary: 'Update connection',
     description: 'Changes the name, domains, IdP entity ids, status or provisioning of a connection; the federation stays what it was.',
     request: { params: connectionParamSchema, body: jsonBody(updateConnectionBodySchema) },
-    responses: { 200: json('Updated connection', connectionSchema, mockConnectionResponse()) },
+    responses: { 200: json('Updated connection', connectionSchema) },
   }),
   deleteConnection: xRoute({
     method: 'delete',
@@ -50,6 +50,6 @@ export const connectionRoutes = createXRoutes(['connections', 'cella'], {
     summary: 'Delete connection',
     description: 'Removes a connection. Identities and sessions that came through it keep their rows; members stay members.',
     request: { params: connectionParamSchema },
-    responses: { 200: json('Removed connection', connectionSchema, mockConnectionResponse()) },
+    responses: { 200: json('Removed connection', connectionSchema) },
   }),
 });

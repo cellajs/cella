@@ -29,7 +29,7 @@ export function SheetTabs({ tabs }: SheetTabsProps) {
               variant="none"
               press={false}
               data-current={currentTab.id === tab.id}
-              className="group/sheet-tab relative opacity-80 hover:opacity-100 data-[current=true]:opacity-100"
+              className="group/sheet-tab relative select-none opacity-80 hover:opacity-100 data-[current=true]:opacity-100"
               onClick={() => setCurrentId(tab.id)}
             >
               <span className="group-active/sheet-tab:press block">{t(tab.label)}</span>

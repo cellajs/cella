@@ -23,13 +23,12 @@ describe('Attachment range reads', async () => {
   let tenant: TestTenant;
   let plan: TestEntityHierarchyPlan;
 
-  // Skipping the SDK's request validation sends a query it would refuse, so the server's own rules answer.
-  const listAttachments = async (query: Record<string, string | number>, { validate = true } = {}) => {
+  // The SDK sends requests unchecked, so an out-of-range query reaches the server's own rules.
+  const listAttachments = async (query: Record<string, string | number>) => {
     const result = await call(getAttachments, {
       path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId },
       query,
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-      ...(validate ? {} : { requestValidator: undefined }),
     });
     const data = result.data as { items: { id: string; seq: number; deletedAt: string | null }[] } | undefined;
     return { status: result.response.status, items: data?.items ?? [] };
@@ -88,7 +87,7 @@ describe('Attachment range reads', async () => {
 
   it('B3: limit above 1000 is rejected, not clamped', async () => {
     // Validation failures are malformed requests: 400 via the app's defaultHook, never 403
-    const result = await listAttachments({ limit: 1001 }, { validate: false });
+    const result = await listAttachments({ limit: 1001 });
     expect(result.status).toBe(400);
     expect(result.items).toEqual([]);
   });
@@ -123,7 +122,7 @@ describe('Attachment range reads', async () => {
     ['an offset', { afterSeq: 10, untilSeq: 40, offset: 2 }],
     ['a non-integer bound', { afterSeq: '10.5', untilSeq: 40 }],
   ])('B6: a range read with %s is rejected', async (_, query) => {
-    const result = await listAttachments(query, { validate: false });
+    const result = await listAttachments(query);
     expect(result.status).toBe(400);
   });
 });

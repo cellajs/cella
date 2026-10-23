@@ -1,8 +1,8 @@
 import type { ConfigSwitch } from 'shared';
 
 /**
- * Types for the docs JSON that the openapi-parser plugin writes into `sdk/gen/docs.gen` and the
- * frontend docs module fetches at runtime. The "Gen" prefix marks data generated from the OpenAPI spec.
+ * Types for the docs JSON that `src/openapi-parser` derives from the spec, which Vite serves at `/static/docs.gen/`
+ * and the frontend docs module fetches at runtime. The "Gen" prefix marks data generated from the OpenAPI spec.
  */
 
 /** Metadata for one extension value, such as a specific limiter or guard. */

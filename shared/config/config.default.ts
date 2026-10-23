@@ -296,7 +296,6 @@ export const config = {
 
   // Theming & UI
 
-  themeColor: '#26262b',
   theme: {
     navigation: { hasSidebarTextLabels: false, sidebarWidthExpanded: '16rem', sidebarWidthCollapsed: '4rem', sheetPanelWidth: '20rem' },
     colors: {},

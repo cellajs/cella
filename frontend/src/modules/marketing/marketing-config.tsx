@@ -86,6 +86,7 @@ export const stackItems = [
   { id: 'openapi' },
   { id: 'vite' },
   { id: 'yjs' },
+  { id: 'opentelemetry' },
   { id: 'pulumi' },
 ];
 

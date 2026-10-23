@@ -13,7 +13,7 @@ export type TabNavAvatar = { id: string; thumbnailUrl?: string | null; name: str
 
 /** A tab of either bar: a link in PageTabNav, a button in LocalTabNav. */
 export const tabNavItemClass = tw(
-  'focus-effect focus-inset group/tab relative rounded-sm px-2 py-3 font-medium more-contrast:opacity-100 opacity-70 transition-opacity last:mr-4 hover:opacity-100 focus-visible:opacity-100 data-[active=true]:opacity-100 lg:px-4',
+  'focus-effect focus-inset group/tab relative select-none rounded-sm px-2 py-3 font-medium more-contrast:opacity-100 opacity-70 transition-opacity standalone:[-webkit-touch-callout:none] last:mr-4 hover:opacity-100 focus-visible:opacity-100 data-[active=true]:opacity-100 lg:px-4',
 );
 
 interface TabNavLabelProps {

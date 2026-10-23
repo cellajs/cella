@@ -1,15 +1,11 @@
-import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useInView } from '~/hooks/use-in-view';
 import type { TKey } from '~/lib/i18n-locales';
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
-import { Spinner } from '~/modules/common/spinner';
 import { useCountUp } from '~/modules/marketing/about/counters';
+import { DeviceMockup } from '~/modules/marketing/device-mockup';
 import { ExternalArrow } from '~/modules/marketing/external-arrow';
 import { showcaseItems } from '~/modules/marketing/marketing-config';
-import { lazyNamed } from '~/utils/lazy-named';
-
-const DeviceMockup = lazyNamed(() => import('~/modules/marketing/device-mockup'), 'DeviceMockup');
 
 export interface ShowcaseItem {
   id: string;
@@ -69,9 +65,7 @@ export function Showcase() {
         })}
       </div>
       <div>
-        <Suspense fallback={<Spinner />}>
-          <DeviceMockup type="mobile" lightItems={lightItems} darkItems={darkItems} />
-        </Suspense>
+        <DeviceMockup type="mobile" lightItems={lightItems} darkItems={darkItems} />
       </div>
     </div>
   );

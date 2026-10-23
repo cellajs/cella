@@ -68,7 +68,7 @@ export function SelectEmails({ value: emails = [], onChange, placeholder, inputP
     // biome-ignore lint/a11y/useKeyWithClickEvents: a click on the padding forwards focus to the input, which takes the keys
     <div
       onClick={(event) => event.target === event.currentTarget && inputRef.current?.focus()}
-      className="flex flex-wrap items-center gap-1 rounded-md border border-input bg-background px-3 py-1 shadow-xs ring-offset-background focus-ring:focus-within:ring-2 focus-ring:focus-within:ring-ring focus-ring:focus-within:ring-offset-2"
+      className="flex flex-wrap items-center gap-1 rounded-md border border-input bg-background px-3 py-1 ring-offset-background focus-ring:focus-within:ring-2 focus-ring:focus-within:ring-ring focus-ring:focus-within:ring-offset-2"
     >
       {emails.map((email) => {
         const { state, note } = chipState?.(email) ?? { state: 'new' };
@@ -95,7 +95,7 @@ export function SelectEmails({ value: emails = [], onChange, placeholder, inputP
         onChange={({ target }) => (delimiter.test(target.value) ? commit(target.value) : setText(target.value))}
         onKeyDown={handleKeyDown}
         onBlur={() => text.trim() && commit(text)}
-        className="-my-px h-8 min-w-32 grow basis-32 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="-my-px h-8 min-w-32 grow basis-32 border-0 bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
       />
     </div>
   );

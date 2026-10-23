@@ -7,6 +7,7 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { GithubIcon } from '~/modules/common/icons/github';
 import { Logo } from '~/modules/common/logo';
 import { marketingNavConfig } from '~/modules/marketing/marketing-config';
+import { useIsAboutPage } from '~/modules/marketing/use-is-about-page';
 // import { UserLanguage } from '~/modules/me/user-language';
 import { UserTheme } from '~/modules/me/user-theme';
 import { FloatingNav } from '~/modules/navigation/floating-nav/floating-nav';
@@ -21,7 +22,7 @@ interface MarketingNavLinksProps {
 /** The config's page links; a hash link on the about page scrolls to its section in place. */
 function MarketingNavLinks({ onNavigate }: MarketingNavLinksProps) {
   const { t } = useTranslation();
-  const isAboutPage = location.pathname === '/about';
+  const isAboutPage = useIsAboutPage();
 
   return marketingNavConfig.map(({ url, hash, id }) => (
     <Button
@@ -53,7 +54,7 @@ export function MarketingNav() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isMobile = useBreakpointBelow('sm');
-  const isAboutPage = location.pathname === '/about';
+  const isAboutPage = useIsAboutPage();
 
   const floatingNavItems = useFloatingNavItems({
     idPrefix: 'marketing',

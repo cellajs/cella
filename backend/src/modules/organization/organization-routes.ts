@@ -14,8 +14,8 @@ import { batchResponseSchema, idsBodySchema, paginationSchema, slugIncludeQueryS
 import {
   mockBatchOrganizationsResponse,
   mockOrganizationPublishResponse,
-  mockOrganizationResponse,
   mockPaginatedOrganizationsResponse,
+  mockUpdateOrganizationBody,
 } from './organization-mocks';
 
 const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], {
@@ -42,20 +42,22 @@ const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], 
     method: 'get',
     path: '/{tenantId}/organizations/{id}',
     xGuard: [actorGuard, tenantGuard],
+    xScope: 'organization:read',
     summary: 'Get organization',
     description: 'Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.',
     request: { params: tenantIdParamSchema, query: slugIncludeQuerySchema },
-    responses: { 200: json('Organization', organizationSchema, mockOrganizationResponse()) },
+    responses: { 200: json('Organization', organizationSchema) },
   }),
   updateOrganization: xRoute({
     method: 'put',
     path: '/{tenantId}/organizations/{id}',
     xGuard: [actorGuard, tenantGuard],
+    xScope: 'organization:write',
     xRateLimiter: [singlePointsLimiter],
     summary: 'Update organization',
     description: 'Updates an organization within a tenant.',
-    request: { params: tenantIdParamSchema, body: jsonBody(organizationUpdateBodySchema) },
-    responses: { 200: json('Organization was updated', organizationSchema, mockOrganizationResponse()) },
+    request: { params: tenantIdParamSchema, body: jsonBody(organizationUpdateBodySchema, mockUpdateOrganizationBody()) },
+    responses: { 200: json('Organization was updated', organizationSchema) },
   }),
   publishOrganization: xRoute({
     method: 'put',

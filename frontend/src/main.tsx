@@ -12,7 +12,7 @@ import { client } from 'sdk/client.gen';
 import { appConfig } from 'shared';
 import { renderAscii } from 'shared/utils/ascii';
 import { createClientConfig } from '~/lib/api-client';
-import { reportReactError } from '~/lib/maple';
+import { reportReactError, reportRejectedResponse } from '~/lib/maple';
 import { AppRouter } from '~/modules/common/app/app-router';
 import { assertSurfaces } from '~/modules/common/page/tab-nav';
 import { QueryClientProvider } from '~/query/provider';
@@ -22,6 +22,11 @@ import { initInputModality } from '~/utils/input-modality';
 import { initViewportObserver } from '~/utils/viewport-observer';
 
 client.setConfig(createClientConfig());
+// An error after an ok response is the SDK's response check refusing the body: report it, then rethrow it unchanged.
+client.interceptors.error.use((error, response, request) => {
+  if (response?.ok) reportRejectedResponse(error, request ? new URL(request.url).pathname : '', response.status);
+  return error;
+});
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');

@@ -1,5 +1,6 @@
 import { config } from 'shared/config/config.default';
-import { generateOperationHash } from '../openapi-parser/operation-hash';
+import { generateOperationHash } from '../../openapi-parser/operation-hash';
+import type { OpenApiSpec, OpenApiTag } from '../../openapi-parser/types';
 import type { TsdocPlugin } from './types';
 
 /** The query and hash format must stay aligned with the frontend docs route and `generateOperationHash`. */
@@ -7,8 +8,11 @@ export function buildOperationDocsUrl(method: string, path: string, tag: string)
   return `${config.frontendUrl}/docs/operations?operationTag=${tag}#${generateOperationHash(method, path, [tag])}`;
 }
 
-/** Extends each generated operation description with a method/path heading, hosted-docs links, and tags derived from its parameters and response codes. */
+/** Extends each generated operation description with a method/path heading, a hosted-docs link, and tags derived from its parameters and response codes. */
 export const handler: TsdocPlugin['Handler'] = ({ plugin }) => {
+  const specTags = ((plugin.context.spec as OpenApiSpec).tags ?? []) as OpenApiTag[];
+  const tagKinds = new Map(specTags.map((tag) => [tag.name, tag['x-kind']] as const));
+
   plugin.forEach('operation', (op) => {
     const operation = op.operation;
 
@@ -17,20 +21,18 @@ export const handler: TsdocPlugin['Handler'] = ({ plugin }) => {
     const tags = operation.tags ?? [];
     const parameters = operation.parameters ?? {};
 
+    // The docs list an operation under its module tag only (a tag without a kind counts as one), and leave out an operation with a hidden tag.
+    const isHidden = tags.some((tag) => tagKinds.get(tag) === 'hidden');
+    const docsTag = isHidden ? undefined : tags.find((tag) => (tagKinds.get(tag) ?? 'module') === 'module');
+    const docsLink = docsTag ? ` ·· [${operation.id}](${buildOperationDocsUrl(operation.method, path, docsTag)})` : '';
+
     const paramTags = [
       ...extractParamTags('path', parameters.path),
       ...extractParamTags('query', parameters.query),
       ...extractParamTags('body', operation.body?.schema?.properties),
     ];
 
-    const seeTags = tags.map((tag) => `[${operation.id}](${buildOperationDocsUrl(operation.method, path, tag)})`);
-
-    const tsdocEnhancements = [
-      `**${method} ${path}** ·· ${seeTags.join(' ·· ')} ·· _${tags.join('_')}_`,
-      '',
-      `@param {${operation.id}Data} options`,
-      ...paramTags,
-    ];
+    const tsdocEnhancements = [`**${method} ${path}**${docsLink} ·· _${tags.join(' · ')}_`, '', `@param {${operation.id}Data} options`, ...paramTags];
 
     const returnCodes = extractResponseCodes(operation.responses ?? {});
     if (returnCodes) {
@@ -61,7 +63,9 @@ function extractResponseCodes(responses: Record<string, any>): string | undefine
  * biome-ignore lint/suspicious/noExplicitAny: allows flexibility in schema definitions
  */
 function extractParamTags(location: 'path' | 'query' | 'body', entries: Record<string, any> = {}): string[] {
-  return Object.entries(entries).map(([name, entry]) => {
+  return Object.entries(entries).map(([key, entry]) => {
+    // Path and query parameters are keyed in lower case; the parameter keeps its own name.
+    const name = location === 'body' ? key : (entry.name ?? key);
     const required = entry.required ?? false;
     const type = getSchemaType(location === 'body' ? entry : entry.schema);
     const optional = required ? '' : '=';

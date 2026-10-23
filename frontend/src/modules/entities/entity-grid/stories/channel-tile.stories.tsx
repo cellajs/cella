@@ -111,7 +111,7 @@ export const Draft: Story = {
   },
 };
 
-/** Counts from a thousand up are compact, as in the table count columns. */
+/** Counts from a thousand up are compact, as in the table count columns, the +N bubble on the banner included. */
 export const LargeCounts: Story = {
   args: {
     entity: {
@@ -119,7 +119,7 @@ export const LargeCounts: Story = {
       included: {
         members: previews,
         counts: {
-          membership: { [mostPrivileged]: 7, [leastPrivileged]: 1407, pending: 2, total: 1414 },
+          membership: { [mostPrivileged]: 1203, [leastPrivileged]: 1407, pending: 2, total: 2610 },
           entities: { [postType]: 21_312 },
           activity: { [postType]: { created: Date.parse('2026-10-01T12:00:00Z') } },
         },
@@ -129,9 +129,10 @@ export const LargeCounts: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await expect(canvas.getByText(/^1\.4k members?$/i)).toBeInTheDocument();
+    await expect(canvas.getByText(/^2\.6k members?$/i)).toBeInTheDocument();
+    await expect(canvas.getByText('+1.2k')).toBeInTheDocument();
     await expect(canvas.getByText(/^21k/)).toBeInTheDocument();
-    await expect(canvas.queryByText(/1414|21312/)).toBeNull();
+    await expect(canvas.queryByText(/2610|1200|21312/)).toBeNull();
   },
 };
 

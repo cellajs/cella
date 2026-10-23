@@ -110,7 +110,7 @@ export function BottomBarNavItemButton({ navItem, isActive, onClick }: Omit<NavI
       id={`${navItem.id}-nav`}
       data-active={isActive}
       onClick={() => onClick(navItem.id, buttonRef)}
-      className="group relative flex size-14 items-center justify-center rounded-md text-sidebar-foreground hover:bg-background/30 data-[active=true]:bg-background/50"
+      className="group active:press relative flex size-14 items-center justify-center rounded-md text-sidebar-foreground hover:bg-background/30 data-[active=true]:bg-background/50"
     >
       <NavItemIcon navItem={navItem} />
       <span className="sr-only">{t(`c:${navItem.id}`)}</span>

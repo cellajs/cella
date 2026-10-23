@@ -28,6 +28,8 @@ interface PanelDragContext {
   /** Arrow-key reordering; attach to the handle's onKeyDown. */
   onKeyDown: (e: KeyboardEvent) => void;
   onToggleCollapsed: () => void;
+  /** Set while the browser draws the drag preview; the mounted handle portals its chip into it. */
+  previewContainer: HTMLElement | null;
   index: number;
   total: number;
 }

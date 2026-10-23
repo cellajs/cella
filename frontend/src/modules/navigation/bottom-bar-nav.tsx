@@ -21,7 +21,7 @@ export function BottomBarNav({ onNavItemClick }: BottomBarNavProps) {
     <nav
       id="bottom-bar-nav"
       data-started={hasStarted}
-      className="fixed bottom-0 z-100 w-full chrome-hidden:translate-y-full bg-sidebar pb-[env(safe-area-inset-bottom,0px)] shadow-xs transition-transform ease-out focus-view:hidden data-[started=false]:translate-y-full"
+      className="fixed bottom-0 z-100 w-full chrome-hidden:translate-y-full select-none bg-sidebar pb-[env(safe-area-inset-bottom,0px)] shadow-xs transition-transform ease-out [-webkit-touch-callout:none] focus-view:hidden data-[started=false]:translate-y-full"
     >
       <ul className="flex w-full justify-between px-2 py-1">
         {baseNavItems.map((navItem) => (

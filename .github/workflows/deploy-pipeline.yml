@@ -216,7 +216,22 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --filter frontend...
+        # The backend too: the next step loads its routes to write the spec.
+        run: pnpm install --frozen-lockfile --filter frontend... --filter backend...
+
+      # The docs page serves this environment's spec, with its URLs, title and cookie name, and the build derives the docs
+      # JSON from it. No database is opened; the example env and a placeholder cookie secret only pass validation, as the
+      # spec signs nothing.
+      - name: Write this environment's OpenAPI spec
+        env:
+          APP_MODE: ${{ needs.setup.outputs.environment }}
+          BACKEND_URL: ${{ needs.setup.outputs.frontend_backend_url }}
+          FRONTEND_URL: ${{ needs.setup.outputs.frontend_frontend_url }}
+          COOKIE_SECRET: openapi-spec-placeholder-secret
+        run: |
+          cp backend/.env.example backend/.env
+          pnpm --filter backend generate:openapi --force
+          cp backend/openapi.cache.json sdk/gen/openapi.json
 
       - name: Build frontend
         env:

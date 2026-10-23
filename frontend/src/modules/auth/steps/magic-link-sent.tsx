@@ -2,6 +2,7 @@ import { ArrowLeftIcon, MailIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
+import { NamedText } from '~/modules/common/named-text';
 import { SuccessCheckmark } from '~/modules/common/success-checkmark';
 import { Button } from '~/modules/ui/button';
 
@@ -24,7 +25,9 @@ export function MagicLinkSentStep() {
         }
         title={t('c:magic_link_check_email')}
       >
-        <p>{t(isSignup ? 'c:magic_link_check_email.signup.text' : 'c:magic_link_check_email.text', { email })}</p>
+        <p>
+          <NamedText i18nKey={isSignup ? 'c:magic_link_check_email.signup.text' : 'c:magic_link_check_email.text'} values={{ email }} />
+        </p>
       </AuthHeader>
       {!isSignup && (
         <Button variant="plain" onClick={resetAuthStore} className="mt-2">

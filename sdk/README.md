@@ -15,14 +15,15 @@ sdk
 │   ├── types.gen.ts               All generated TypeScript types
 │   ├── zod.gen.ts                 Zod validation schemas
 │   ├── client.gen.ts              Client configuration
+│   ├── openapi.json               The backend's spec, copied as written
 │   ├── client/                    HTTP client utilities
 │   └── core/                      Internal helpers
 └── src/
     ├── generate-sdk.ts            Generation script (supports --watch mode)
     ├── docs-types.ts              Types for the docs JSON, imported by the frontend as `sdk/docs-types`
     ├── .spec-hash                 Cached spec hash (skip redundant runs)
+    ├── openapi-parser/            Derives the docs JSON from the spec, for Vite to serve
     └── plugins/
-        ├── openapi-parser/        Parses spec, generates docs to sdk/gen/docs.gen/
         └── tsdoc/                 Adds TSDoc comments to generated functions
 ```
 
@@ -34,7 +35,7 @@ sdk
 4. Only changed files are copied, which avoids needless HMR triggers
 5. A lock file prevents concurrent runs
 6. `src/.spec-hash` caches the spec hash so the watcher skips redundant runs on restart
-7. Vite serves `openapi.json` and `docs.gen/` from `sdk/gen` under `/static` (see `frontend/vite.config.ts`)
+7. Vite serves `openapi.json` from `sdk/gen` under `/static`, plus `docs.gen/`, which `frontend/vite/sdk-static.ts` derives from it; a deploy first writes its environment's spec over `openapi.json`
 
 ## Exports
 
@@ -42,8 +43,14 @@ sdk
 | ------------ | --------------------------------------------- |
 | `sdk`        | All generated SDK functions                   |
 | `sdk/client` | HTTP client, `createClient`, config utilities |
-| `sdk/docs-types` | Types for the docs JSON in `gen/docs.gen`    |
+| `sdk/docs-types` | Types for the docs JSON served at `/static/docs.gen/` |
 | `sdk/*`      | Wildcard, e.g. `sdk/types.gen`, `sdk/zod.gen` |
+
+## Auth and validation
+
+The functions carry no auth settings, so the client's `auth` option has no effect. The browser signs in with its session cookie. A server caller sends `Authorization: Bearer <key or token>` itself, as `headers` on a call or from a request interceptor on its client. Which auth each route accepts, and the scope a narrowed key or token needs, is listed under `security` per operation in the spec.
+
+Responses are checked against the spec with the zod schemas. Requests are not: the server validates them, so an older client never refuses a request a newer server accepts. A caller that wants to check a body first can use the `z*` schemas in `sdk/zod.gen`.
 
 ## Scripts
 

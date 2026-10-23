@@ -32,13 +32,13 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
     servers: [{ url: appConfig.backendUrl }],
     info: { title: `${appConfig.name} API`, version: appConfig.apiVersion, description: appConfig.apiDescription, 'x-extensions': extensions },
     openapi: '3.1.0',
-    // Tag registry provides ordered tags with optional 3.2.0 fields (summary, parent, kind, externalDocs).
+    // The registry's summary, parent and kind are OpenAPI 3.2 tag fields: this 3.1 document carries them as `x-` extensions.
     tags: getRegisteredTags().map((t) => ({
       name: t.tag,
       description: t.description,
-      ...(t.summary && { summary: t.summary }),
-      ...(t.parent && { parent: t.parent }),
-      ...(t.kind && { kind: t.kind }),
+      ...(t.summary && { 'x-summary': t.summary }),
+      ...(t.parent && { 'x-parent': t.parent }),
+      ...(t.kind && { 'x-kind': t.kind }),
       ...(t.externalDocs && { externalDocs: t.externalDocs }),
       ...(t.default && { 'x-default': true }),
     })) as { name: string; description: string }[],
@@ -56,7 +56,7 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
     type: 'http',
     scheme: 'bearer',
     description:
-      'Secret API key of a service account (`<app>_sk_live_…`), as `Authorization: Bearer` or `x-api-key`. Only routes that also accept it list it here.',
+      'Secret API key of a service account (`<app>_sk_live_…`), as `Authorization: Bearer` or `x-api-key`. Only routes that also accept it list it here, with the scope a narrowed key needs (a `write` scope covers `read`).',
   });
 
   // The scope vocabulary is derived from the policy matrix (D19); the same ids feed discovery and the consent screen.
@@ -64,7 +64,7 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   registry.registerComponent('securitySchemes', 'oauth2', {
     type: 'oauth2',
     description:
-      'Access token from the authorization server, as `Authorization: Bearer`. Users consent through the authorization code flow (PKCE); service accounts use client credentials with a secret key as the client secret.',
+      'Access token from the authorization server, as `Authorization: Bearer`. Users consent through the authorization code flow (PKCE); service accounts use client credentials with a secret key as the client secret. Each route lists the scope it needs; a `write` scope covers `read`.',
     flows: {
       authorizationCode: {
         authorizationUrl: `${appConfig.oauthUrl}/auth`,
@@ -88,12 +88,13 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
 
   registerAllErrorResponses(registry, errorResponses);
 
-  app.doc31('/openapi.json', openApiConfig);
-
   const openApiDoc = app.getOpenAPI31Document(openApiConfig);
 
   validateOpenApiDocument(openApiDoc as unknown as Record<string, unknown>);
   normalizeOpenApiDocument(openApiDoc as unknown as Record<string, unknown>);
+
+  // The endpoint serves this normalized document: `app.doc31` would rebuild it per request and skip the normalization.
+  app.get('/openapi.json', (ctx) => ctx.json(openApiDoc));
 
   const cachePath = './openapi.cache.json';
   // The SDK and docs are generated from this file and committed, so a checkout on shifted dev ports writes the configured URLs.

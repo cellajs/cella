@@ -128,6 +128,15 @@ function DrawerFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="drawer-footer" className={cn('mt-auto flex flex-col gap-2 p-4', className)} {...props} />;
 }
 
+/** One rounded block of `Button variant="row"` rows. Each row draws the hairline under it; the inner -mb-px clips the last one. */
+function DrawerRowGroup({ className, children, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div data-slot="drawer-row-group" className={cn('overflow-hidden rounded-xl bg-muted/50', className)} {...props}>
+      <div className="-mb-px flex flex-col">{children}</div>
+    </div>
+  );
+}
+
 function DrawerTitle({ className, ...props }: DrawerPrimitive.Title.Props) {
   return <DrawerPrimitive.Title data-slot="drawer-title" className={cn('font-semibold text-foreground', className)} {...props} />;
 }
@@ -143,6 +152,7 @@ export {
   DrawerDescription,
   DrawerFooter,
   DrawerHeader,
+  DrawerRowGroup,
   DrawerTitle,
   DrawerTrigger,
   DrawerVirtualKeyboardProvider,

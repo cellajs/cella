@@ -2,11 +2,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { AppSearch } from '~/modules/navigation/app-search';
 import { navigationStore } from '~/modules/navigation/navigation-store';
+import { Dialog } from '~/modules/ui/dialog';
 import { withApp } from '~/stories/with-app';
 
 const history = ['passkeys', 'sessions', 'tenants'];
 
-/** Recent searches of the app search: a numbered history group and an index shortcut. Docs search: docs-search.test.tsx. */
+/** Recent searches of the app search: a numbered history group and an index shortcut. */
 const meta = { title: 'common/SearchHistory', decorators: [withApp], parameters: { layout: 'padded' } } satisfies Meta;
 
 export default meta;
@@ -19,10 +20,13 @@ export const AppSearchHistory: Story = {
     navigationStore.setState({ recentSearches: [...history] });
     return () => navigationStore.setState({ recentSearches: [] });
   },
+  // The search bar's Cancel is a dialog part, so the search renders inside a dialog root, as the dialoger renders it.
   render: () => (
-    <div className="w-[36rem]">
-      <AppSearch />
-    </div>
+    <Dialog>
+      <div className="w-[36rem]">
+        <AppSearch />
+      </div>
+    </Dialog>
   ),
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);

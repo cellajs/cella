@@ -293,7 +293,7 @@ describe('Attachment mentions (template notification source)', async () => {
     let other: { id: string };
     const subjectIds: string[] = [];
 
-    const newSubject = async (description: string | null = null, columns: { publicAt?: string } = {}) => {
+    const newSubject = async (description: string | null = null, columns: { public?: boolean } = {}) => {
       const id = generateId();
       subjectIds.push(id);
       const row = buildInsertableProduct(
@@ -382,7 +382,7 @@ describe('Attachment mentions (template notification source)', async () => {
       // A public row reads for any id, so only the lookup of the account itself can leave the unknown id out.
       publicReadGrants.attachment = true;
       onTestFinished(() => void delete publicReadGrants.attachment);
-      const subjectId = await newSubject(mentionsOf([generateId(), member.id]), { publicAt: new Date().toISOString() });
+      const subjectId = await newSubject(mentionsOf([generateId(), member.id]), { public: true });
 
       expect(await fanOutNotifications(createdEvent(subjectId))).toBe(true);
       expect(await inboxOf(member.id, subjectId)).toEqual([{ type: 'mention' }]);

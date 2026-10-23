@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from 'hono';
-import type { AccessScopedEntityType, ConfigSwitch } from 'shared';
+import type { AccessScope, AccessScopedEntityType, ConfigSwitch, EntityActionType } from 'shared';
 import type { Env } from '#/core/context';
 
 export type MiddlewareArray<E extends Env = Env> = readonly MiddlewareHandler<E>[];
@@ -57,8 +57,16 @@ export type XTool = {
   entity: AccessScopedEntityType;
 };
 
-/** When adding an extension to `extensionMap`, add its prop here too. */
+/** The action an MCP tool performs: a GET route reads, any other writes. With the tool's entity it names the scope. */
+export const toolAction = (method: string): EntityActionType => (method.toUpperCase() === 'GET' ? 'read' : 'update');
+
+/** When adding an extension to `extensionMap`, add its prop here too. `xScope` is the one prop without an `x-*` key. */
 export type XMiddlewareOptions = {
+  /**
+   * The scope a scoped API key or access token needs on a route whose guards accept one; it fills that route's
+   * security requirements. An MCP tool route leaves it out: its scope follows from `xTool`, as the MCP server enforces it.
+   */
+  xScope?: AccessScope;
   /** The config switch the route belongs to; `createXRoute` refuses the route while it is off, before its guards. */
   xEnabledBy?: ConfigSwitch;
   xGuard: MiddlewareArray;

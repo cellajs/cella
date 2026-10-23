@@ -15,10 +15,10 @@ export type OpenApiSpec = OpenAPIV3_1.Document;
 
 export type OpenApiOperation = OpenAPIV3_1.OperationObject;
 
-/** Tag object plus the non-standard fields this spec adds. */
+/** Tag object plus this spec's extensions: `x-kind` and `x-parent` carry the OpenAPI 3.2 tag fields in a 3.1 document. */
 export type OpenApiTag = OpenAPIV3_1.TagObject & {
-  kind?: string;
-  parent?: string;
+  'x-kind'?: string;
+  'x-parent'?: string;
   /** For schema-kind tags: marks the fallback bucket when a schema has no `x-tags`. */
   'x-default'?: boolean;
 };
