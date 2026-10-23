@@ -50,7 +50,7 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
   const form = useFormWithDraft<FormValues>(newsletterFormId, { formOptions });
 
   // SendIcon newsletter
-  const { mutate: _sendNewsletter, isPending } = useMutation<SendNewsletterResponse, ApiError, MutationData<SendNewsletterData>>({
+  const { mutate: send, isPending } = useMutation<SendNewsletterResponse, ApiError, MutationData<SendNewsletterData>>({
     mutationFn: async ({ body, query }) => {
       return await sendNewsletter({ body, query });
     },
@@ -62,13 +62,13 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
     },
   });
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
     // Imported on submit: blocksToHTML builds a headless BlockNoteEditor, and importing it here keeps
     // @blocknote/core off the boot path for everyone who never opens this form.
     const { blocksToHTML } = await import('~/modules/common/blocknote/helpers/blocknote-helpers');
     // Set organizationIds here to avoind having them in draft & converting string blocks to HTML
-    const body = { ...data, organizationIds, content: blocksToHTML(data.content) };
-    _sendNewsletter({ body, query: { toSelf: !!testOnly } });
+    const body = { ...values, organizationIds, content: blocksToHTML(values.content) };
+    send({ body, query: { toSelf: !!testOnly } });
   };
 
   const canSend = () => {
@@ -77,7 +77,7 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
     return blocknoteFieldIsDirty(content) && roles.length > 0;
   };
 
-  const isDirty = () => {
+  const hasInput = () => {
     if (!form.isDirty) return false;
     const { content, roles, subject } = form.getValues();
     return roles.length > 0 || subject.length > 0 || blocknoteFieldIsDirty(content);
@@ -135,7 +135,7 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
           <SubmitButton disabled={!canSend()} loading={isPending} icon={<SendIcon />}>
             {testOnly ? t('c:send_test_email') : t('c:send')}
           </SubmitButton>
-          <CancelButton dirty={isDirty()} onClick={() => form.reset()} />
+          <CancelButton dirty={hasInput()} onClick={() => form.reset()} />
           <div className="flex items-center gap-2 max-sm:mt-2">
             <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="ml-4 size-4" />
             <label htmlFor="testOnly" className="items-center text-sm">

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { CountBadge } from '~/modules/common/count-badge';
+import { notificationsQueryOptions } from '~/modules/notification/query';
 import { cn } from '~/utils/cn';
-import { notificationsQueryOptions } from './query';
 
 /** Red unread pill; renders nothing at zero. Positioned by the caller (`absolute` over the bell, inline in the sheet header). */
 export function UnreadCountBadge({ className }: { className?: string }) {

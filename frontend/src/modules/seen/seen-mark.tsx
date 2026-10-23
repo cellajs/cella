@@ -30,8 +30,8 @@ function retainObserver() {
 
         try {
           markProductSeen(meta);
-        } catch (err) {
-          console.error('[SeenMark] markProductSeen threw:', err);
+        } catch (error) {
+          console.error('[SeenMark] markProductSeen threw:', error);
         }
         markedIds.add(meta.productId);
         sharedObserver?.unobserve(entry.target);

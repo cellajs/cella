@@ -78,7 +78,7 @@ export const seenStore = createStore<SeenStoreState>()(
           if (isDebugMode)
             console.debug(
               '[SeenStore] flushing',
-              batches.map((b) => `${b.productType}(${b.productIds.size})`),
+              batches.map((batch) => `${batch.productType}(${batch.productIds.size})`),
             );
 
           for (const batch of batches) {

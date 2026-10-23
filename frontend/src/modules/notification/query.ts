@@ -29,7 +29,7 @@ export const notificationsQueryOptions = () =>
 export const invalidateNotifications = () => queryClient.invalidateQueries({ queryKey: notificationKeys.list });
 
 /** Patches the cache so the badge reacts immediately; the `onSettled` refetch is the rollback. */
-export const useMarkNotificationsRead = () =>
+export const useMarkNotificationsReadMutation = () =>
   useMutation({
     mutationFn: (body: { ids?: string[]; contextId?: string }) => markNotificationsRead({ body }),
     onMutate: async (body) => {
@@ -55,7 +55,7 @@ export const notificationPreferencesQueryOptions = () =>
   queryOptions({ queryKey: notificationKeys.preferences, queryFn: () => getNotificationPreferences() });
 
 /** Partial update: the server merges per key, so an older tab cannot clobber a preference it never knew. */
-export const useUpdateNotificationPreferences = () =>
+export const useUpdateNotificationPreferencesMutation = () =>
   useMutation({
     mutationFn: (body: UpdateNotificationPreferencesData['body']) => updateNotificationPreferences({ body }),
     onSuccess: (updated) => queryClient.setQueryData(notificationKeys.preferences, updated),

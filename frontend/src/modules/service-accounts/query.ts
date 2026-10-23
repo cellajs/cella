@@ -23,7 +23,7 @@ import type { MutationData, QueryOrgContext } from '~/query/types';
 const serviceAccountKeys = {
   all: ['service-accounts'] as const,
   list: (path: QueryOrgContext) => ['service-accounts', 'list', path.tenantId, path.organizationId] as const,
-  apiKeys: (path: QueryOrgContext, id: string) => ['service-accounts', 'apiKeys', path.tenantId, path.organizationId, id] as const,
+  apiKeys: (path: QueryOrgContext, accountId: string) => ['service-accounts', 'apiKeys', path.tenantId, path.organizationId, accountId] as const,
   create: ['service-accounts', 'create'] as const,
   revoke: ['service-accounts', 'revoke'] as const,
 };
@@ -37,10 +37,10 @@ export const serviceAccountsQueryOptions = (path: QueryOrgContext) =>
     queryFn: () => getServiceAccounts({ path, query: { limit: appConfig.requestLimits.default } }),
   });
 
-export const apiKeysQueryOptions = (path: QueryOrgContext, id: string) =>
+export const apiKeysQueryOptions = (path: QueryOrgContext, accountId: string) =>
   queryOptions({
-    queryKey: serviceAccountKeys.apiKeys(path, id),
-    queryFn: () => getApiKeys({ path: { ...path, id } }),
+    queryKey: serviceAccountKeys.apiKeys(path, accountId),
+    queryFn: () => getApiKeys({ path: { ...path, id: accountId } }),
   });
 
 /** One-step "create API key": the account and its first key come back together; the secret is in the response once. */

@@ -24,12 +24,12 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
 
   const deleteButtonRef = useRef(null);
 
-  const selectedToWaitlist = selected.filter((r) => r.type === 'waitlist' && !r.wasInvited);
+  const uninvited = selected.filter((request) => request.type === 'waitlist' && !request.wasInvited);
 
   const { q, order, sort } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '' } });
 
-  const { mutate: approveRequests } = useSendApprovalInviteMutation();
+  const { mutate: invite } = useSendApprovalInviteMutation();
 
   const openDeleteDialog = () => {
     const callback = (args: CallbackArgs<Request[]>) => {
@@ -63,7 +63,7 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
     });
   };
 
-  const approveSelectedRequests = () => approveRequests(selectedToWaitlist, { onSuccess: clearSelection });
+  const inviteSelected = () => invite(uninvited, { onSuccess: clearSelection });
 
   const fetchExport = async (limit: number, offset: number) => {
     return fetchRequestsForExport({ limit, offset, q, sort, order });
@@ -81,13 +81,13 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
         onClear: clearSelection,
         children: (
           <>
-            {selectedToWaitlist.length > 0 && (
+            {uninvited.length > 0 && (
               <TableBarButton
-                badge={selectedToWaitlist.length < selected.length ? selectedToWaitlist.length : undefined}
+                badge={uninvited.length < selected.length ? uninvited.length : undefined}
                 variant="success"
                 label="c:invite"
                 icon={PartyPopperIcon}
-                onClick={approveSelectedRequests}
+                onClick={inviteSelected}
               />
             )}
             <TableBarButton ref={deleteButtonRef} variant="destructive" icon={TrashIcon} label="c:remove" onClick={openDeleteDialog} />

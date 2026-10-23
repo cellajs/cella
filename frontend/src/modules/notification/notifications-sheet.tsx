@@ -11,12 +11,12 @@ import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { navigationStore } from '~/modules/navigation/navigation-store';
+import { notificationsQueryOptions, useMarkNotificationsReadMutation } from '~/modules/notification/query';
+import { UnreadCountBadge } from '~/modules/notification/unread-nav-badge';
 import { Button } from '~/modules/ui/button';
 import { getProductRoute, pageTopHashNav } from '~/utils/channel-route';
 import { cn } from '~/utils/cn';
 import { isModifiedClick } from '~/utils/is-modified-click';
-import { notificationsQueryOptions, useMarkNotificationsRead } from './query';
-import { UnreadCountBadge } from './unread-nav-badge';
 
 type Notification = GetNotificationsResponse['items'][number];
 
@@ -24,7 +24,7 @@ type Notification = GetNotificationsResponse['items'][number];
 export function NotificationsSheet() {
   const { t } = useTranslation();
   const { data, isLoading } = useQuery(notificationsQueryOptions());
-  const { mutate: markRead } = useMarkNotificationsRead();
+  const { mutate: markRead } = useMarkNotificationsReadMutation();
 
   const items = data?.items ?? [];
   const hasUnread = (data?.unreadCount ?? 0) > 0;
@@ -64,7 +64,7 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
   const relativeDate = useRelativeDate(notification.createdAt);
   const route = getProductRoute(notification);
 
-  const onActivate = (event: MouseEvent) => {
+  const openNotification = (event: MouseEvent) => {
     // Like the account sheet: a pinned nav sheet stays open beside the content. No id, because this sheet is
     // `nav-sheet` from the bars but stacks over the menu sheet from the floating-nav menu header.
     if (!isModifiedClick(event) && !navigationStore.getState().keepNavOpen) {
@@ -75,7 +75,7 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
   };
 
   const { actor, channelName, subjectTitle } = notification;
-  const body = (
+  const content = (
     <>
       <EntityAvatar
         type="user"
@@ -107,13 +107,13 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
   return (
     <li>
       {route ? (
-        <Link to={route.to} params={route.params} search={route.search} onClick={onActivate} {...pageTopHashNav} className={className}>
-          {body}
+        <Link to={route.to} params={route.params} search={route.search} onClick={openNotification} {...pageTopHashNav} className={className}>
+          {content}
         </Link>
       ) : (
         // An unknown channel type still marks read; it just cannot navigate anywhere sensible.
-        <button type="button" onClick={onActivate} className={className}>
-          {body}
+        <button type="button" onClick={openNotification} className={className}>
+          {content}
         </button>
       )}
     </li>

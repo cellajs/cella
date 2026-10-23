@@ -33,7 +33,7 @@ export function ServiceAccountTile({ account, path, secrets }: ServiceAccountTil
   const { t } = useTranslation();
   const { data } = useQuery(apiKeysQueryOptions(path, account.id));
   const { mutate: revoke, isPending, variables } = useRevokeApiKeyMutation();
-  const live = (data?.items ?? []).filter((apiKey) => !apiKey.revokedAt);
+  const liveKeys = (data?.items ?? []).filter((apiKey) => !apiKey.revokedAt);
   const role = account.bindings[0]?.role;
 
   // A revoked key cannot be restored and whatever uses it stops working, so the click asks first.
@@ -74,14 +74,14 @@ export function ServiceAccountTile({ account, path, secrets }: ServiceAccountTil
   return (
     <Card className="w-full py-0 sm:py-0">
       <CardContent className="flex flex-col gap-3 p-2 sm:p-3">
-        {live.length === 0 && (
+        {liveKeys.length === 0 && (
           <TileRow name={account.name} badges={badges}>
             {data && (
               <p className="truncate text-muted-foreground text-xs sm:text-sm">{t('c:no_resource_yet', { resource: t('c:api_key_other') })}</p>
             )}
           </TileRow>
         )}
-        {live.map((apiKey, index) => {
+        {liveKeys.map((apiKey, index) => {
           const secret = secrets[apiKey.id];
           return (
             <div key={apiKey.id} className="flex flex-col gap-3">

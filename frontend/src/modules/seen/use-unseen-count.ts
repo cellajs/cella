@@ -11,13 +11,13 @@ import { unseenCountsQueryOptions } from '~/modules/seen/query';
  * only tucks the org row into its own section's archived toggle; it must not hide subtree badges,
  * or the total would diverge from the sum of the section toggles.
  */
-const hasArchivedAncestor = (m: MembershipBase, archivedChannelIds: Set<string>) =>
-  hierarchy.resolveNonNullAncestors(m.channelType, m).some(({ type, id }) => type !== 'organization' && archivedChannelIds.has(id));
+const hasArchivedAncestor = (membership: MembershipBase, archivedChannelIds: Set<string>) =>
+  hierarchy.resolveNonNullAncestors(membership.channelType, membership).some(({ type, id }) => type !== 'organization' && archivedChannelIds.has(id));
 
 const sumCounts = (counts: Record<string, number> | undefined) => {
   if (!counts) return 0;
   let total = 0;
-  for (const v of Object.values(counts)) total += v;
+  for (const count of Object.values(counts)) total += count;
   return total;
 };
 
@@ -45,15 +45,15 @@ export function useTotalUnseenCount() {
   // Archived anywhere in the chain excludes a channel: a sub-channel under an archived channel
   // belongs to the archived toggle, not the total (its own membership row stays unarchived).
   const archivedChannelIds = new Set<string>();
-  for (const m of membershipsData.items) {
-    if (m.archived) archivedChannelIds.add(m.channelId);
+  for (const membership of membershipsData.items) {
+    if (membership.archived) archivedChannelIds.add(membership.channelId);
   }
 
   const activeIds = new Set<string>();
-  for (const m of membershipsData.items) {
-    if (!seenGroupingChannelTypes.has(m.channelType) || m.muted || m.archived) continue;
-    if (hasArchivedAncestor(m, archivedChannelIds)) continue;
-    activeIds.add(m.channelId);
+  for (const membership of membershipsData.items) {
+    if (!seenGroupingChannelTypes.has(membership.channelType) || membership.muted || membership.archived) continue;
+    if (hasArchivedAncestor(membership, archivedChannelIds)) continue;
+    activeIds.add(membership.channelId);
   }
 
   let total = 0;

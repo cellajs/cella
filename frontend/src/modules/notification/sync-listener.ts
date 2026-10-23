@@ -1,12 +1,12 @@
 import { hierarchy } from 'shared';
+import { invalidateNotifications } from '~/modules/notification/query';
 import { onChangeEvent } from '~/query/realtime/sync-signals';
-import { invalidateNotifications } from './query';
 
 /**
- * Debounce before refetching the inbox after related rows sync. Absorbs bursts, and covers the
+ * One inbox refetch per burst of change events, this long after the first. The delay also covers the
  * post-commit fan-out writing the notification a moment after the row itself reaches the client.
  */
-const refreshDebounceMs = 2000;
+const refreshDelayMs = 2000;
 
 let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -15,7 +15,7 @@ function scheduleInboxRefresh() {
   timer = setTimeout(() => {
     timer = null;
     invalidateNotifications();
-  }, refreshDebounceMs);
+  }, refreshDelayMs);
 }
 
 /**
@@ -23,7 +23,7 @@ function scheduleInboxRefresh() {
  * decision, so the event is only a trigger. Announcements and not fetched rows, because the sync
  * prioritizer defers muted and archived scopes to open-time while a mention still notifies. The
  * frontend cannot know which product types declare a backend notification source, so every
- * product type triggers the debounced refetch; with no sources the inbox stays empty and the
+ * product type triggers the delayed refetch; with no sources the inbox stays empty and the
  * refetch is a cheap no-op.
  */
 export function registerNotificationSyncListener(): () => void {

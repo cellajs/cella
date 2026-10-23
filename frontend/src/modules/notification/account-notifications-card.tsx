@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { HelpText } from '~/modules/common/help-text';
 import { ToolCard } from '~/modules/common/tool-card';
-import { notificationPreferencesQueryOptions, useUpdateNotificationPreferences } from '~/modules/notification/query';
+import { notificationPreferencesQueryOptions, useUpdateNotificationPreferencesMutation } from '~/modules/notification/query';
 import { usePushSubscription } from '~/modules/notification/use-push-subscription';
 import { FieldContent, FieldLabel, FieldLayout, FieldTitle } from '~/modules/ui/field';
 import { Label } from '~/modules/ui/label';
@@ -26,20 +26,20 @@ const cardClass = tw('mx-auto sm:w-full');
 export function AccountNotificationsCard() {
   const { t } = useTranslation();
   const { data } = useSuspenseQuery(notificationPreferencesQueryOptions());
-  const { mutate } = useUpdateNotificationPreferences();
+  const { mutate: updatePreferences } = useUpdateNotificationPreferencesMutation();
   const push = usePushSubscription();
 
   return (
     <ToolCard label="c:notifications" description={t('c:notifications.text')} className={cardClass}>
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
-          <Switch id="mentionEmail" checked={data.mentionEmail} onCheckedChange={(mentionEmail) => mutate({ mentionEmail })} />
+          <Switch id="mentionEmail" checked={data.mentionEmail} onCheckedChange={(mentionEmail) => updatePreferences({ mentionEmail })} />
           <Label htmlFor="mentionEmail">{t('c:notifications.mention_email')}</Label>
         </div>
 
         {appConfig.has.commentEmail && (
           <div className="flex items-center gap-4">
-            <Switch id="commentEmail" checked={data.commentEmail} onCheckedChange={(commentEmail) => mutate({ commentEmail })} />
+            <Switch id="commentEmail" checked={data.commentEmail} onCheckedChange={(commentEmail) => updatePreferences({ commentEmail })} />
             <Label htmlFor="commentEmail">{t('c:notifications.comment_email')}</Label>
           </div>
         )}
@@ -64,7 +64,7 @@ export function AccountNotificationsCard() {
           <RadioGroup
             aria-labelledby="digest-label"
             value={data.digest}
-            onValueChange={(digest) => mutate({ digest: digest as DigestFrequency })}
+            onValueChange={(digest) => updatePreferences({ digest: digest as DigestFrequency })}
             className="lg:grid-cols-3"
           >
             {digestOptions.map(({ value, label }) => (

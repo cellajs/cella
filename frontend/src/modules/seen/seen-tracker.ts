@@ -46,13 +46,13 @@ export function SeenTracker() {
  */
 function useAppBadge() {
   const { data } = useQuery(notificationsQueryOptions());
-  const total = data?.unreadCount ?? 0;
+  const unreadCount = data?.unreadCount ?? 0;
 
   useEffect(() => {
     if (!('setAppBadge' in navigator)) return;
 
     // Rejects where the badge permission is missing (the notification permission on iOS).
-    if (total > 0) void navigator.setAppBadge(total).catch(() => {});
+    if (unreadCount > 0) void navigator.setAppBadge(unreadCount).catch(() => {});
     else void navigator.clearAppBadge().catch(() => {});
-  }, [total]);
+  }, [unreadCount]);
 }
