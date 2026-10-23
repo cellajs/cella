@@ -78,14 +78,29 @@ describe('fetch-prioritizer', () => {
     expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 2, untilSeq: 3 });
   });
 
-  it('records the known seq but never fetches for muted channel views', async () => {
+  it('holds the changes of a muted channel view until it is opened, then fetches them', async () => {
     getSyncTier.mockReturnValue(onOpen);
     enqueueRange({ ...base, channelId: 'project-9', afterSeq: 3, untilSeq: 7 });
+    // No timer either: a browser runs a timeout past 2^31-1 ms at once, and would spin.
+    expect(vi.getTimerCount()).toBe(0);
 
     await vi.advanceTimersByTimeAsync(60_000);
-
+    // A hidden tab tops up every scope but this one.
+    await flushAllNow();
     expect(fetchRangeAndPatch).not.toHaveBeenCalled();
-    expect(syncStore.getState().getKnownSeq('project-9', 'attachment')).toBe(7);
+
+    // The channel is opened: its list query gains an observer and the tier turns live.
+    getSyncTier.mockReturnValue(viewing);
+    const observer = new QueryObserver(queryClient, { queryKey: ['attachment', 'list', 'org-1', 'project-9'], queryFn: async () => [] });
+    const unsubscribe = observer.subscribe(() => {});
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(fetchRangeAndPatch).toHaveBeenCalledTimes(1);
+    expect(fetchRangeAndPatch.mock.calls[0][3]).toEqual({ afterSeq: 3, untilSeq: 7 });
+    expect(syncStore.getState().getChannelSeq('org-1', 'project-9', 'attachment')).toBe(7);
+
+    unsubscribe();
+    queryClient.clear();
   });
 
   it('self-heals a small live gap by anchoring at caught-up+1', async () => {

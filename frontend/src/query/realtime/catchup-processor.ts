@@ -2,7 +2,7 @@ import type { GetMyMembershipsResponse, PostAppCatchupResponse } from 'sdk';
 import { appConfig, type ProductEntityType } from 'shared';
 import { meKeys } from '~/modules/me/query';
 import { seenKeys } from '~/modules/seen/helpers';
-import { getEntityQueryKeys, getRegisteredProductEntityTypes, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
+import { type EntityQueryKeys, getEntityQueryKeys, getRegisteredProductEntityTypes, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-state';
 import { queryClient } from '~/query/query-client';
 import { syncStore } from '~/query/realtime/sync-store';
@@ -122,7 +122,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
     const { signals, propagation } = changes[organizationId];
 
     // Seed the org entry so the next catchup request declares views for it: an organization the membership cache did not hold yet is learned here.
-    syncState.setOrgTenantId(organizationId, syncState.getOrgTenantId(organizationId) ?? '');
+    syncState.trackOrg(organizationId);
 
     // Membership change via the bump-only membership signal; stored after comparison.
     const serverMembershipSignal = signals?.membership;
@@ -181,10 +181,6 @@ function membershipChannelKeys(): Set<string> {
   return new Set((data?.items ?? []).map((m) => `${m.organizationId}:${m.channelId}`));
 }
 
-export function catchupEntityTypes(): string[] {
-  return getRegisteredProductEntityTypes();
-}
-
 /** Grant-boundary answers refine org-view ingestion: unchanged skips work, opaque falls back to staleness, forbidden drops the view. */
 function processRegisteredViewAnswer(
   answer: NonNullable<PostAppCatchupResponse['views']>[number],
@@ -237,9 +233,8 @@ function splitViewKey(key: string): [string | undefined, string | undefined] {
 }
 
 /** Mirrors the patch target of fetchRangeAndPatch: with nothing cached a range fetch has nothing to patch, and mount hydration resets the cursor itself. */
-function hasAnyCachedList(keys: ReturnType<typeof getEntityQueryKeys>, organizationId: string | null): boolean {
-  const prefix = organizationId ? keys.list.org(organizationId) : keys.list.base;
-  return queryClient.getQueriesData({ queryKey: prefix }).some(([, data]) => data !== undefined);
+function hasAnyCachedList(keys: EntityQueryKeys, organizationId: string): boolean {
+  return queryClient.getQueriesData({ queryKey: keys.list.org(organizationId) }).some(([, data]) => data !== undefined);
 }
 
 /** Compare per-session server counts only with later server counts, never permission-filtered caches. */

@@ -260,7 +260,7 @@ describe('filtered list refetch for a new row', () => {
     registerComments();
     seedLists(lists);
 
-    await fetchEntityAndUpdateList('comment-2', commentKeys, 'create', 'org-1', 'tenant-1', comment);
+    await fetchEntityAndUpdateList(comment, 'comment-2', commentKeys, 'create', 'org-1', 'tenant-1');
 
     expect(isInvalidated(lists.otherItem)).toBe(false);
     expect(isInvalidated(lists.otherItemSorted)).toBe(false);

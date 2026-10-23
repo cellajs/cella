@@ -1,7 +1,6 @@
-import { getMyMemberships } from 'sdk';
 import { appConfig, type ChannelEntityType } from 'shared';
 import { getAndSetMe } from '~/modules/me/helpers';
-import { meKeys } from '~/modules/me/query';
+import { meKeys, myMembershipsQueryOptions } from '~/modules/me/query';
 import { memberQueryKeys } from '~/modules/memberships/query';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { queryClient } from '~/query/query-client';
@@ -43,7 +42,8 @@ export function invalidateMemberships(): void {
 
 /** `query` deduplicates against an in-flight getMyMemberships, which invalidateQueries would not, avoiding a redundant fetch on app init. */
 export function fetchMemberships(): Promise<unknown> {
-  return queryClient.query({ queryKey: meKeys.memberships, queryFn: async ({ signal }) => getMyMemberships({ signal }) });
+  // The client's default stale time: a catchup within 30 seconds of the route loader's read fetches nothing.
+  return queryClient.query({ ...myMembershipsQueryOptions(), staleTime: 30_000 });
 }
 
 /** Called after membership updates, since a role change alters permissions. */

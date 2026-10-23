@@ -52,9 +52,9 @@ describe('sync-store getCatchupViews', () => {
 
   it('declares one org-prefix view per (org, entityType) with the org-slot cursor', () => {
     const store = syncStore.getState();
-    store.setOrgTenantId('org-1', 'tenant-1');
+    store.trackOrg('org-1', 'tenant-1');
     store.setOrgSeq('org-1', 'attachment', 42);
-    store.setOrgTenantId('org-2', 'tenant-2');
+    store.trackOrg('org-2', 'tenant-2');
 
     const views = syncStore.getState().getCatchupViews(['attachment']);
 
@@ -66,7 +66,7 @@ describe('sync-store getCatchupViews', () => {
 
   it('child-channel-view cursors never leak into the org-view cursor (they cover their subtree only)', () => {
     const store = syncStore.getState();
-    store.setOrgTenantId('org-1', 'tenant-1');
+    store.trackOrg('org-1', 'tenant-1');
     store.setChannelSeq('org-1', 'project-9', 'attachment', 4700);
 
     const views = syncStore.getState().getCatchupViews(['attachment']);
@@ -76,7 +76,7 @@ describe('sync-store getCatchupViews', () => {
 
   it('org-homed live channel views (channelId === orgId) share the org slot and drive the cursor', () => {
     const store = syncStore.getState();
-    store.setOrgTenantId('org-1', 'tenant-1');
+    store.trackOrg('org-1', 'tenant-1');
     store.setChannelSeq('org-1', 'org-1', 'attachment', 88);
 
     const views = syncStore.getState().getCatchupViews(['attachment']);
@@ -94,7 +94,6 @@ describe('sync-store adoptGeneration', () => {
     store.setChannelSeq('org-1', 'c1', 'item', 38);
     store.declareSyncView('v1', view);
     store.setViewCursor('v1', 40);
-    store.setKnownSeq('c1', 'item', 41);
   };
 
   it('takes the first generation it hears without touching a cursor', () => {
@@ -129,7 +128,6 @@ describe('sync-store adoptGeneration', () => {
     expect(store.getOrgSeq('org-1', 'item')).toBe(0);
     expect(store.getChannelSeq('org-1', 'c1', 'item')).toBe(0);
     expect(store.getView('v1')?.cursor).toBe(0);
-    expect(store.getKnownSeq('c1', 'item')).toBe(0);
     // The view itself stays declared: only where it stands is forgotten.
     expect(store.getView('v1')?.prefixes).toEqual(['org-1/c1']);
   });

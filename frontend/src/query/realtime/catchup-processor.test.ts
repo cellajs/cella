@@ -104,7 +104,7 @@ describe('catchup processor (view-driven)', () => {
     }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
 
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.detail.byId('attachment-1'), { id: 'attachment-1', organizationId: 'org-1', name: 'stale' });
     queryClient.setQueryData(keys.list.org('org-1'), {
@@ -134,7 +134,7 @@ describe('catchup processor (view-driven)', () => {
     const answer = okViewResponse(6);
 
     // The leader was at 5 when it sent the request this answers.
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 5);
     queryClient.setQueryData(keys.list.org('org-1'), staleList);
     await processAppCatchup(answer);
@@ -161,7 +161,7 @@ describe('catchup processor (view-driven)', () => {
     }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
 
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 10);
     queryClient.setQueryData(keys.detail.byId('att-proj'), { id: 'att-proj', organizationId: 'org-1', projectId: 'proj-9', name: 'stale' });
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
@@ -200,7 +200,7 @@ describe('catchup processor (view-driven)', () => {
     registerEntityQueryKeys('attachment', keys, rangeFetch);
 
     setSyncDeliveryTrusted(true);
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
@@ -258,7 +258,7 @@ describe('catchup processor (view-driven)', () => {
     const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
 
-    syncStore.getState().setOrgTenantId('org-caughtup', 'tenant-1');
+    syncStore.getState().trackOrg('org-caughtup', 'tenant-1');
     syncStore.getState().setOrgSeq('org-caughtup', 'attachment', 6);
     queryClient.setQueryData(keys.list.org('org-caughtup'), { items: [], total: 0 });
     const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
@@ -336,7 +336,7 @@ describe('catchup after the server rebuilt its sync books', () => {
     const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
     syncStore.getState().adoptGeneration(1);
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
     // Sequence values were handed out again after the rebuild: 40 says nothing about the books the frontier 12 belongs to.
     syncStore.getState().setOrgSeq('org-1', 'attachment', 40);
     cached(keys);
@@ -356,7 +356,7 @@ describe('catchup after the server rebuilt its sync books', () => {
     const rangeFetch = vi.fn(async () => ({ items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'fresh', seq: 6 }], total: 1 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
     syncStore.getState().adoptGeneration(2);
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     cached(keys);
 
@@ -444,7 +444,7 @@ describe('catchup → fetch prioritizer fold', () => {
     const rangeFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
 
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
@@ -467,7 +467,7 @@ describe('catchup → fetch prioritizer fold', () => {
     const rangeFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
 
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
@@ -493,7 +493,7 @@ describe('catchup → fetch prioritizer fold', () => {
     const rangeFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
     registerEntityQueryKeys('attachment', keys, rangeFetch);
 
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 

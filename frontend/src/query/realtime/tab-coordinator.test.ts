@@ -159,7 +159,7 @@ describe('a catchup answer, between tabs', () => {
     fakeLocks.request('tab-leader', () => new Promise<void>(() => {}));
     await initTabCoordinator();
     const heard: Array<[PostAppCatchupResponse, boolean]> = [];
-    const stop = onCatchup((response, baselineOnly) => heard.push([response, baselineOnly]));
+    const stop = onCatchup(({ response, baselineOnly }) => heard.push([response, baselineOnly]));
 
     receive({ type: 'catchup', response: answer, baselineOnly: false });
     stop();
@@ -171,7 +171,7 @@ describe('a catchup answer, between tabs', () => {
   it('is not acted on by the leader: it processed the answer to its own request', async () => {
     await initTabCoordinator();
     const heard: Array<[PostAppCatchupResponse, boolean]> = [];
-    const stop = onCatchup((response, baselineOnly) => heard.push([response, baselineOnly]));
+    const stop = onCatchup(({ response, baselineOnly }) => heard.push([response, baselineOnly]));
 
     receive({ type: 'catchup', response: answer, baselineOnly: false });
     stop();

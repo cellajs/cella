@@ -1,5 +1,6 @@
 import type { GetMyMembershipsResponse } from 'sdk';
 import { isProduct } from 'shared';
+import { meKeys } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
 import { isObservedChannel } from '~/query/realtime/observed-channels';
 import { syncStore } from '~/query/realtime/sync-store';
@@ -48,7 +49,7 @@ export function getTenantIdForOrg(organizationId: string): string | null {
   const fromStore = syncStore.getState().getOrgTenantId(organizationId);
   if (fromStore) return fromStore;
 
-  const data = queryClient.getQueryData<GetMyMembershipsResponse>(['me', 'memberships']);
+  const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
   if (!data?.items) return null;
   const membership = data.items.find((m) => m.organizationId === organizationId);
   return membership?.tenantId ?? null;
@@ -61,7 +62,7 @@ export interface SyncTier {
 }
 
 const tierViewing: SyncTier = { min: 0, max: 0 };
-const tierBackground: SyncTier = { min: 2_000, max: 30_000 };
+export const tierBackground: SyncTier = { min: 2_000, max: 30_000 };
 const tierOnOpen: SyncTier = { min: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY };
 
 /** Same org, and for sub-org channel views a mounted view observes a query carrying the channel id, which covers slug routes and boards whose routes do not name every rendered channel. */
@@ -74,7 +75,7 @@ export function isViewingChannel(organizationId: string, channelId: string | nul
 
 /** Membership `muted`/`archived` = the user declared "not urgent" for this scope. */
 function isMutedOrArchived(organizationId: string, channelId: string | null): boolean {
-  const data = queryClient.getQueryData<GetMyMembershipsResponse>(['me', 'memberships']);
+  const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
   if (!data?.items) return false;
   const targetId = channelId ?? organizationId;
   const membership = data.items.find((m) => m.channelId === targetId);

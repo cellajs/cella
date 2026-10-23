@@ -1,12 +1,9 @@
 import { hierarchy as appHierarchy, type EntityHierarchy, getEntityPolicies, getPolicyPermissions, type PolicyMatrix, policyMatrix } from 'shared';
+import type { RegisteredSyncView } from '~/query/realtime/sync-store';
 
 /** Grant-boundary view shape (cursor is owned by the sync store, not the derivation). */
-export interface DerivedSyncView {
+export interface DerivedSyncView extends Omit<RegisteredSyncView, 'cursor'> {
   key: string;
-  organizationId: string;
-  prefixes: string[];
-  entityTypes: string[];
-  depth: 'self' | 'subtree';
 }
 
 export interface ViewMembership {

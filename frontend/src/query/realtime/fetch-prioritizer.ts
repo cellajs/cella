@@ -6,7 +6,7 @@ import { sourceId } from '~/query/offline/stx-utils';
 import { queryClient } from '~/query/query-client';
 import * as cacheOps from './cache-ops';
 import { propagateEmbeddings } from './propagation';
-import { getSyncTier, isViewingChannel } from './sync-priority';
+import { getSyncTier, isViewingChannel, type SyncTier, tierBackground } from './sync-priority';
 import { publishSyncedRows } from './sync-signals';
 import { syncStore } from './sync-store';
 import type { AppStreamNotification } from './types';
@@ -62,38 +62,27 @@ function hashSpread(key: string): number {
 }
 
 /** The negotiated delay: client tier bounds the server-spread slot. */
-function negotiatedDelay(tier: { min: number; max: number }, channelViewKey: string, windowMs: number): number {
+function negotiatedDelay(tier: SyncTier, channelViewKey: string, windowMs: number): number {
   const spread = windowMs > 0 ? hashSpread(`${sourceId}:${channelViewKey}`) % windowMs : 0;
   return Math.min(Math.max(tier.min, spread), tier.max);
 }
 
-/** Enqueue a notified seq range for lazy fetching. Always records the known watermark. */
+/** Enqueue a notified seq range for lazy fetching; a muted or archived scope waits until it is opened. */
 export function enqueueRange(input: EnqueueInput): void {
-  const tier = getSyncTier(input.entityType, input.organizationId, input.channelId);
-  if (tier.min === Number.POSITIVE_INFINITY) {
-    // Muted and archived scopes record the known watermark and fetch when opened.
-    syncStore.getState().setKnownSeq(input.channelId ?? input.organizationId, input.entityType, input.untilSeq);
-    return;
-  }
-  enqueueWithTier(input, tier);
+  enqueueWithTier(input, getSyncTier(input.entityType, input.organizationId, input.channelId));
 }
 
 /** Enqueue catchup gaps, including muted views in spread background work so persisted caches converge. */
 export function enqueueCatchupRange(input: EnqueueInput): void {
   const tier = getSyncTier(input.entityType, input.organizationId, input.channelId);
-  enqueueWithTier(input, tier.min === Number.POSITIVE_INFINITY ? { min: 2_000, max: 30_000 } : tier);
+  enqueueWithTier(input, tier.min === Number.POSITIVE_INFINITY ? tierBackground : tier);
 }
 
-function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }): void {
+function enqueueWithTier(input: EnqueueInput, tier: SyncTier): void {
   const { entityType, organizationId, tenantId, channelId, afterSeq, untilSeq, isCreate, propagation } = input;
-  const store = syncStore.getState();
-  const channelViewId = channelId ?? organizationId;
-
-  // Known watermark: free, recorded even for scopes we never fetch (powers catch-up-on-open).
-  store.setKnownSeq(channelViewId, entityType, untilSeq);
-
   if (!hasEntityQueryKeys(entityType)) return;
 
+  const store = syncStore.getState();
   const caughtUp = channelId ? store.getChannelSeq(organizationId, channelId, entityType) : store.getOrgSeq(organizationId, entityType);
   if (untilSeq <= caughtUp) return; // already have this range
 
@@ -101,28 +90,27 @@ function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }
   const anchoredAfter = caughtUp > 0 ? caughtUp : afterSeq;
 
   const key = entryKey(entityType, organizationId, channelId);
+  // The on-open tier gives an infinite delay: the entry waits for promoteLiveChannels.
   const dueAt = Date.now() + negotiatedDelay(tier, key, input.spreadWindowMs ?? defaultSpreadWindowMs);
+  const entry: DirtyEntry = {
+    entityType,
+    organizationId,
+    tenantId,
+    channelId,
+    afterSeq: anchoredAfter,
+    untilSeq,
+    dueAt,
+    hasCreates: isCreate,
+    attempts: 0,
+    propagations: propagation ? [propagation] : [],
+  };
 
   const existing = dirty.get(key);
   if (existing) {
-    existing.afterSeq = Math.min(existing.afterSeq, anchoredAfter);
-    existing.untilSeq = Math.max(existing.untilSeq, untilSeq);
+    mergeRange(existing, entry);
     existing.dueAt = Math.min(existing.dueAt, dueAt); // more news never postpones
-    existing.hasCreates ||= isCreate;
-    if (propagation) existing.propagations.push(propagation);
   } else {
-    dirty.set(key, {
-      entityType,
-      organizationId,
-      tenantId,
-      channelId,
-      afterSeq: anchoredAfter,
-      untilSeq,
-      dueAt,
-      hasCreates: isCreate,
-      attempts: 0,
-      propagations: propagation ? [propagation] : [],
-    });
+    dirty.set(key, entry);
   }
 
   installListeners();
@@ -141,9 +129,9 @@ export function attachPendingPropagation(
   return true;
 }
 
-/** Flush every dirty scope now (tab hiding, tests). */
+/** Flush every dirty scope now except those waiting to be opened (tab hiding, tests). */
 export function flushAllNow(): Promise<void> {
-  for (const entry of dirty.values()) entry.dueAt = 0;
+  for (const entry of dirty.values()) if (entry.dueAt !== Number.POSITIVE_INFINITY) entry.dueAt = 0;
   return flushDue();
 }
 
@@ -153,9 +141,10 @@ export async function flushChannelViewNow(
   organizationId: string,
   channelId: string | null,
 ): Promise<'ok' | 'fallback' | 'requeued' | 'none'> {
-  const entry = dirty.get(entryKey(entityType, organizationId, channelId));
+  const key = entryKey(entityType, organizationId, channelId);
+  const entry = dirty.get(key);
   if (!entry) return 'none';
-  dirty.delete(entryKey(entityType, organizationId, channelId));
+  dirty.delete(key);
   return flushGroup([{ ...entry, attempts: maxFlushAttempts - 1 }]);
 }
 
@@ -169,9 +158,10 @@ export function resetFetchPrioritizer(): void {
 }
 
 function armTimer(): void {
-  if (dirty.size === 0) return;
   let earliest = Number.POSITIVE_INFINITY;
   for (const entry of dirty.values()) earliest = Math.min(earliest, entry.dueAt);
+  // Nothing is due before an open: a timeout past 2^31-1 ms would fire at once.
+  if (earliest === Number.POSITIVE_INFINITY) return;
 
   const delay = Math.max(0, earliest - Date.now());
   if (timer) clearTimeout(timer);
@@ -296,16 +286,18 @@ function advanceCaughtUp(entry: DirtyEntry): void {
 function requeue(entry: DirtyEntry, delayMs: number): void {
   const key = entryKey(entry.entityType, entry.organizationId, entry.channelId);
   const existing = dirty.get(key);
-  if (existing) {
-    // A newer notification re-enqueued this channel view mid-flight: merge our range back into it.
-    existing.afterSeq = Math.min(existing.afterSeq, entry.afterSeq);
-    existing.untilSeq = Math.max(existing.untilSeq, entry.untilSeq);
-    existing.hasCreates ||= entry.hasCreates;
-    existing.propagations.push(...entry.propagations);
-  } else {
-    dirty.set(key, { ...entry, dueAt: Date.now() + delayMs });
-  }
+  // A newer notification re-enqueued this channel view mid-flight: merge our range back into it.
+  if (existing) mergeRange(existing, entry);
+  else dirty.set(key, { ...entry, dueAt: Date.now() + delayMs });
   armTimer();
+}
+
+/** Widens a pending entry by another range of the same scope; the pending entry keeps its own due time. */
+function mergeRange(into: DirtyEntry, from: Pick<DirtyEntry, 'afterSeq' | 'untilSeq' | 'hasCreates' | 'propagations'>): void {
+  into.afterSeq = Math.min(into.afterSeq, from.afterSeq);
+  into.untilSeq = Math.max(into.untilSeq, from.untilSeq);
+  into.hasCreates ||= from.hasCreates;
+  into.propagations.push(...from.propagations);
 }
 
 /** Flush pending ranges whose scope moved onto the live tier for catch-up on open. */

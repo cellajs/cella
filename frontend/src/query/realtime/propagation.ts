@@ -101,6 +101,12 @@ function patchItems(
   return mutated ? result : items;
 }
 
+/** A fresh embedded copy replaces a cached one without a stamp or with an older one. Same age or older keeps the cached copy, so a concurrent edit is not undone. */
+function isFresher(cached: { updatedAt?: string }, fresh: ItemData): boolean {
+  const freshUpdatedAt = asRecord(fresh).updatedAt;
+  return !cached.updatedAt || (!!freshUpdatedAt && freshUpdatedAt > cached.updatedAt);
+}
+
 /** Patch a single host product's embedded column. Returns same reference if unchanged. */
 function patchSingleHost(
   host: ItemData,
@@ -127,14 +133,8 @@ function patchSingleHost(
     const patched = embedded
       .filter((item: { id?: string }) => !item.id || !removeSet.has(item.id))
       .map((item: { id?: string; updatedAt?: string }) => {
-        if (!item.id || !updateSet.has(item.id)) return item;
-        const fresh = freshEmbedded.get(item.id);
-        if (!fresh) return item;
-        const freshRecord = asRecord(fresh);
-        if (item.updatedAt && freshRecord.updatedAt && freshRecord.updatedAt > item.updatedAt) return fresh;
-        if (!item.updatedAt) return fresh;
-        // Same age or older: keep the cached copy so a concurrent edit is not undone.
-        return item;
+        const fresh = item.id && updateSet.has(item.id) ? freshEmbedded.get(item.id) : undefined;
+        return fresh && isFresher(item, fresh) ? fresh : item;
       });
 
     return { ...host, [hostColumn]: patched } as ItemData;
@@ -146,18 +146,8 @@ function patchSingleHost(
     if (removeSet.has(obj.id)) {
       return { ...host, [hostColumn]: null } as ItemData;
     }
-    if (updateSet.has(obj.id)) {
-      const fresh = freshEmbedded.get(obj.id);
-      if (fresh) {
-        const freshRecord = asRecord(fresh);
-        if (obj.updatedAt && freshRecord.updatedAt && freshRecord.updatedAt > obj.updatedAt) {
-          return { ...host, [hostColumn]: fresh } as ItemData;
-        }
-        if (!obj.updatedAt) {
-          return { ...host, [hostColumn]: fresh } as ItemData;
-        }
-      }
-    }
+    const fresh = updateSet.has(obj.id) ? freshEmbedded.get(obj.id) : undefined;
+    if (fresh && isFresher(obj, fresh)) return { ...host, [hostColumn]: fresh } as ItemData;
   }
 
   return host;

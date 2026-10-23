@@ -3,17 +3,6 @@ import type { ProductEntityType } from 'shared';
 
 export type StreamState = 'disconnected' | 'connecting' | 'catching-up' | 'live' | 'error';
 
-interface BaseStreamOptions {
-  enabled?: boolean;
-}
-
-export interface BaseStreamReturn {
-  state: StreamState;
-  cursor: string | null;
-  reconnect: () => void;
-  disconnect: () => void;
-}
-
 /** Trace context propagated from CDC Worker (debug mode only). */
 export interface StreamTraceContext {
   traceId: string;
@@ -30,7 +19,3 @@ export type MembershipNotification = StreamNotification & { kind: 'membership'; 
 
 /** Discriminated on `kind`, so the entity and membership branches are exhaustive and the compiler proves which fields each carries. */
 export type AppStreamNotification = (EntityNotification | MembershipNotification) & { _trace?: StreamTraceContext };
-
-export interface UseAppStreamOptions extends BaseStreamOptions {}
-
-export type UseAppStreamReturn = BaseStreamReturn;

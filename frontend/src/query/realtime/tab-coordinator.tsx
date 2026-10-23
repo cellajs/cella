@@ -3,6 +3,7 @@ import type { PostAppCatchupResponse } from 'sdk';
 import { currentSchemaVersion } from 'shared/schema-evolution';
 import { createStore } from 'zustand/vanilla';
 import { markBundleStale } from '~/query/schema-version-guard';
+import { createSignal } from './sync-signals';
 import type { AppStreamNotification } from './types';
 
 const channelName = 'tab-sync';
@@ -15,7 +16,7 @@ export interface SyncHealth {
 }
 
 type BroadcastMessage =
-  | { type: 'stream-notification'; notification: AppStreamNotification; organizationId: string }
+  | { type: 'stream-notification'; notification: AppStreamNotification }
   | { type: 'catchup'; response: PostAppCatchupResponse; baselineOnly: boolean }
   | { type: 'sync-health'; health: SyncHealth }
   | { type: 'schema-version'; version: number };
@@ -23,26 +24,22 @@ type BroadcastMessage =
 interface TabCoordinatorState {
   isLeader: boolean;
   isReady: boolean;
-  isActive: boolean;
   setIsLeader: (isLeader: boolean) => void;
   setIsReady: (isReady: boolean) => void;
-  setIsActive: (isActive: boolean) => void;
 }
 
 export const tabCoordinatorStore = createStore<TabCoordinatorState>((set) => ({
   isLeader: false,
   isReady: false,
-  isActive: false,
   setIsLeader: (isLeader) => set({ isLeader }),
   setIsReady: (isReady) => set({ isReady }),
-  setIsActive: (isActive) => set({ isActive }),
 }));
 
 let broadcastChannel: BroadcastChannel | null = null;
 let lockController: AbortController | null = null;
-const notificationHandlers: Set<(notification: AppStreamNotification, organizationId: string) => void> = new Set();
-const catchupHandlers: Set<(response: PostAppCatchupResponse, baselineOnly: boolean) => void> = new Set();
-const syncHealthHandlers: Set<(health: SyncHealth) => void> = new Set();
+const notificationSignal = createSignal<AppStreamNotification>('TabNotification');
+const catchupSignal = createSignal<{ response: PostAppCatchupResponse; baselineOnly: boolean }>('TabCatchup');
+const syncHealthSignal = createSignal<SyncHealth>('TabSyncHealth');
 /** What this tab last broadcast as leader, said again to a tab that opens later. */
 let lastSyncHealth: SyncHealth | null = null;
 let initPromise: Promise<void> | null = null;
@@ -68,8 +65,6 @@ export const initTabCoordinator = async (): Promise<void> => {
 
   initPromise = (async () => {
     const store = tabCoordinatorStore.getState();
-
-    store.setIsActive(true);
 
     if (isBroadcastChannelAvailable() && !broadcastChannel) {
       broadcastChannel = new BroadcastChannel(channelName);
@@ -104,7 +99,6 @@ export const releaseTabLeadership = (): void => {
 
   store.setIsLeader(false);
   store.setIsReady(false);
-  store.setIsActive(false);
 };
 
 /** Acquire the leader lock (first tab to acquire it becomes leader); resolves once leader status is known. */
@@ -201,20 +195,14 @@ const handleBroadcastMessage = (event: MessageEvent<BroadcastMessage>): void => 
     return;
   }
 
-  if (message.type === 'sync-health' && !store.isLeader) {
-    for (const handler of syncHealthHandlers) handler(message.health);
-  }
+  if (message.type === 'sync-health' && !store.isLeader) syncHealthSignal.publish(message.health);
 
-  if (message.type === 'stream-notification' && !store.isLeader) {
-    // The leader already processed this from its own SSE connection.
-    for (const handler of notificationHandlers) {
-      handler(message.notification, message.organizationId);
-    }
-  }
+  // The leader already processed this from its own SSE connection.
+  if (message.type === 'stream-notification' && !store.isLeader) notificationSignal.publish(message.notification);
 
   if (message.type === 'catchup' && !store.isLeader) {
     // The leader processes the answer itself, where its request returns.
-    for (const handler of catchupHandlers) handler(message.response, message.baselineOnly);
+    catchupSignal.publish({ response: message.response, baselineOnly: message.baselineOnly });
   }
 };
 
@@ -224,12 +212,7 @@ export const broadcastCatchup = (response: PostAppCatchupResponse, baselineOnly:
 };
 
 /** Followers register here to receive the leader's catchup answers. */
-export const onCatchup = (handler: (response: PostAppCatchupResponse, baselineOnly: boolean) => void): (() => void) => {
-  catchupHandlers.add(handler);
-  return () => {
-    catchupHandlers.delete(handler);
-  };
-};
+export const onCatchup = catchupSignal.subscribe;
 
 /** Called by the leader when the health of its stream changes: a follower has no stream of its own to judge by. */
 export const broadcastSyncHealth = (health: SyncHealth): void => {
@@ -238,27 +221,15 @@ export const broadcastSyncHealth = (health: SyncHealth): void => {
 };
 
 /** Followers register here to receive the health of the leader's stream. */
-export const onSyncHealth = (handler: (health: SyncHealth) => void): (() => void) => {
-  syncHealthHandlers.add(handler);
-  return () => {
-    syncHealthHandlers.delete(handler);
-  };
-};
+export const onSyncHealth = syncHealthSignal.subscribe;
 
 /** Called by the leader for each SSE notification it receives. */
-export const broadcastNotification = (notification: AppStreamNotification, organizationId: string): void => {
-  if (broadcastChannel) {
-    broadcastChannel.postMessage({ type: 'stream-notification', notification, organizationId } satisfies BroadcastMessage);
-  }
+export const broadcastNotification = (notification: AppStreamNotification): void => {
+  broadcastChannel?.postMessage({ type: 'stream-notification', notification } satisfies BroadcastMessage);
 };
 
 /** Followers register here to receive the leader's notifications. */
-export const onNotification = (handler: (notification: AppStreamNotification, organizationId: string) => void): (() => void) => {
-  notificationHandlers.add(handler);
-  return () => {
-    notificationHandlers.delete(handler);
-  };
-};
+export const onNotification = notificationSignal.subscribe;
 
 export const isLeader = (): boolean => {
   return tabCoordinatorStore.getState().isLeader;

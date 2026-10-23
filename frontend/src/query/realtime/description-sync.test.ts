@@ -182,7 +182,7 @@ describe('server rows while a mutation for the row is pending', () => {
     buildPendingUpdate('task-1');
     const queryFn = detailFetchReturns(row('server'));
 
-    await fetchEntityAndUpdateList('task-1', keys, 'update', 'org-1', 'tenant-1', taskProduct);
+    await fetchEntityAndUpdateList(taskProduct, 'task-1', keys, 'update', 'org-1', 'tenant-1');
 
     expect(queryFn).not.toHaveBeenCalled();
     expect(detail()?.description).toBe('optimistic');
@@ -280,7 +280,7 @@ describe('Yjs-owned fields on a server row', () => {
     patchCollaborativeDescription(taskProduct, row('older'), 'newer');
     const queryFn = detailFetchReturns(staleRead());
 
-    await fetchEntityAndUpdateList('task-1', keys, 'update', 'org-1', 'tenant-1', taskProduct);
+    await fetchEntityAndUpdateList(taskProduct, 'task-1', keys, 'update', 'org-1', 'tenant-1');
 
     expect(queryFn).toHaveBeenCalledOnce();
     expect(detail()?.description).toBe('newer');
@@ -297,7 +297,7 @@ describe('Yjs-owned fields on a server row', () => {
       },
     });
 
-    await fetchEntityAndUpdateList('task-1', keys, 'update', 'org-1', 'tenant-1', taskProduct);
+    await fetchEntityAndUpdateList(taskProduct, 'task-1', keys, 'update', 'org-1', 'tenant-1');
 
     expect(detail()?.description).toBe('typed meanwhile');
     expect(homeRow()?.description).toBe('typed meanwhile');
@@ -307,7 +307,7 @@ describe('Yjs-owned fields on a server row', () => {
     queryClient.setQueryData(detailKey, row('newer'));
     detailFetchReturns(staleRead());
 
-    await fetchEntityAndUpdateList('task-1', keys, 'update', 'org-1', 'tenant-1', taskProduct);
+    await fetchEntityAndUpdateList(taskProduct, 'task-1', keys, 'update', 'org-1', 'tenant-1');
 
     expect(detail()?.description).toBe('newer');
   });

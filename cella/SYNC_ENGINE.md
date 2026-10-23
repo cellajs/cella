@@ -134,7 +134,7 @@ The engine keeps no count of how many hosts reference an embedded row. A count s
 
 Product mutations own optimistic updates and replay registration in their query module: `onMutate` patches matching caches, success merges the authoritative server row, failure rolls back where configured. Mutations run with React Query `networkMode: 'offlineFirst'`.
 
-An edit attempted offline retries network errors only, then pauses and enters the persisted replay queue. Server errors, any HTTP status, settle immediately without queueing. Restored paused mutations wait for the first catchup attempt before replay. Online writes never wait.
+An edit attempted offline retries network errors only, then pauses and enters the persisted replay queue. Server errors, any HTTP status, settle immediately without queueing. Restored paused mutations wait for the first catchup attempt before replay, or for the stream to stop reconnecting ([REST fallback](#rest-fallback)). Online writes never wait.
 
 ### Merge metadata
 

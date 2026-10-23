@@ -32,7 +32,8 @@ export interface SyncedRowsSignal {
 
 type Handler<T> = (signal: T) => void;
 
-function createSignal<T>(name: string) {
+/** One kind of in-process event: `publish` reaches every handler that `subscribe` registered, and `name` labels a failing handler's log line. */
+export function createSignal<T>(name: string) {
   const handlers = new Set<Handler<T>>();
 
   /** Handlers must not throw; one bad subscriber may not break the sync flow. */

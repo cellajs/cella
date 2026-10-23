@@ -4,11 +4,6 @@ import { queryClient } from '~/query/query-client';
 import { waitFor } from '~/utils/wait-for';
 import { getRouteOrgId } from './sync-priority';
 
-// Extended gc time for offline caching. The reads below pin staleTime to 'static', so each query's own staleTime plays no part here.
-const syncQueryConfig = {
-  gcTime: 24 * 60 * 60 * 1000, // 24 hours
-};
-
 /** Seeds offline caches once the stream is live: the current organization first, then the rest when offline access is on. `signal` cancels on unmount or retrigger. */
 export async function runSyncService(offlineAccess: boolean, signal: AbortSignal): Promise<void> {
   // Brief wait so a fleet of tabs does not all hit the server at connect time.
@@ -66,9 +61,8 @@ async function syncMenuItem(item: UserMenuItem, offlineAccess: boolean): Promise
 
   await Promise.allSettled(
     queries.map(async (source) => {
-      const options = { ...source, ...syncQueryConfig };
-      const isInfinite = 'getNextPageParam' in options;
-      const cacheFirst = { ...options, staleTime: 'static' };
+      const isInfinite = 'getNextPageParam' in source;
+      const cacheFirst = { ...source, staleTime: 'static' };
       return isInfinite
         ? // biome-ignore lint/suspicious/noExplicitAny: runtime check narrows type but TS can't infer it
           await queryClient.infiniteQuery(cacheFirst as any)

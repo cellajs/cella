@@ -1,13 +1,14 @@
 import { type PostAppCatchupResponse, postAppCatchup } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, isProduct } from 'shared';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { isDebugMode } from '~/env';
 import { reportCriticalError } from '~/lib/tracing';
+import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { setSyncStreamHealthy, setSyncWorkerAway } from '~/query/basic/sync-stale-state';
 import { type CatchupViewRequest, syncStore } from '~/query/realtime/sync-store';
 import { handleAppStreamNotification } from './app-stream-handler';
-import { catchupEntityTypes, processAppCatchup } from './catchup-processor';
+import { processAppCatchup } from './catchup-processor';
 import {
   broadcastCatchup,
   broadcastNotification,
@@ -86,7 +87,7 @@ const initialCatchupGate: Promise<void> = new Promise<void>((resolve) => {
   initialCatchupResolve = resolve;
 });
 
-/** Called by any StreamManager after its first successful catchup. */
+/** Opens the gate; any later call does nothing. */
 function resolveInitialCatchupGate() {
   initialCatchupResolve?.();
   initialCatchupResolve = null;
@@ -110,9 +111,6 @@ export class StreamManager {
   private silenceTimeout: ReturnType<typeof setTimeout> | null = null;
   /** Time of the last event of any kind on the open EventSource. */
   private lastEventAt = 0;
-
-  /** Resolves when the current connect cycle's catchup completes. Reset on each connect(). */
-  private catchupResolve: (() => void) | null = null;
 
   /** Notifications arriving between SSE open and catchup completion, drained in arrival order so a change committed while catchup reads is not lost. */
   private pendingNotifications: Array<{ notification: AppStreamNotification; eventId: string | undefined }> = [];
@@ -146,13 +144,6 @@ export class StreamManager {
       return;
     }
 
-    // Fresh resolve callback per connect cycle; drives initialCatchupGate.
-    let resolveCatchup: () => void;
-    new Promise<void>((r) => {
-      resolveCatchup = r;
-    });
-    this.catchupResolve = resolveCatchup!;
-
     this.abortController?.abort();
     this.abortController = new AbortController();
     const { signal } = this.abortController;
@@ -168,7 +159,7 @@ export class StreamManager {
         const stopNotifications = onNotification((notification) => {
           if (!isLeader()) this.config.processNotification(notification);
         });
-        const stopCatchup = onCatchup((response, baselineOnly) => {
+        const stopCatchup = onCatchup(({ response, baselineOnly }) => {
           if (!isLeader()) void this.followLeaderCatchup(response, baselineOnly, signal);
         });
         this.broadcastCleanup = () => {
@@ -180,7 +171,7 @@ export class StreamManager {
           console.debug(`[${this.name}] Not leader, listening to broadcasts only`);
           this.useStore.getState().setState('live');
           // A follower runs no catchup of its own: writes that wait for the first one are released now.
-          this.resolvePendingCatchup();
+          resolveInitialCatchupGate();
           return;
         }
       }
@@ -209,10 +200,7 @@ export class StreamManager {
 
         if (newCursor) {
           this.useStore.getState().setCursor(newCursor);
-          if (useTabCoordination) {
-            syncStore.getState().setCursor(newCursor);
-            syncStore.getState().setLastSyncAt(new Date().toISOString());
-          }
+          if (useTabCoordination) syncStore.getState().setCursor(newCursor);
         }
 
         console.debug(`[${this.name}] Catchup complete, cursor:`, newCursor);
@@ -226,8 +214,6 @@ export class StreamManager {
       }
 
       // Release paused mutations before draining; drain is idempotent ingestion.
-      this.catchupResolve?.();
-      this.catchupResolve = null;
       resolveInitialCatchupGate();
 
       // Drain is synchronous, so no notification interleaves; arrivals after this point process directly.
@@ -268,9 +254,7 @@ export class StreamManager {
     reportCriticalError('realtime.catchup_failed', error, { stream: this.name, consecutive_failures: this.consecutiveFailures });
     this.useStore.getState().setState('error');
 
-    // Resolve catchup promise on failure so paused mutations aren't stuck forever
-    this.catchupResolve?.();
-    this.catchupResolve = null;
+    // Open the gate on failure too, so paused mutations are not stuck forever.
     resolveInitialCatchupGate();
 
     // Open circuit breaker for permanent errors or after max failures
@@ -289,7 +273,7 @@ export class StreamManager {
       if (this.config.useTabCoordination) syncStore.getState().setCursor(eventId);
     }
     // Followers get a notification when the leader applies it: one buffered during catchup reaches them after the catchup answer, in the leader's order.
-    if (this.config.useTabCoordination && isLeader()) broadcastNotification(notification, 'user');
+    if (this.config.useTabCoordination && isLeader()) broadcastNotification(notification);
     this.config.processNotification(notification);
   }
 
@@ -438,6 +422,8 @@ export class StreamManager {
     this.circuitOpen = true;
     this.circuitOpenedAt = Date.now();
     console.warn(`[${this.name}] Circuit breaker opened:`, reason);
+    // The stream gave up for now: paused mutations replay through the API, which arbitrates them by their `replayed` stx.
+    resolveInitialCatchupGate();
 
     // Cancel the pending reconnect so it cannot fire while the circuit is open.
     if (this.reconnectTimeout) {
@@ -535,7 +521,7 @@ export class StreamManager {
   disconnect() {
     this.stopVisibilityReconnect();
     this.stopLeaderReconnect();
-    this.resolvePendingCatchup();
+    resolveInitialCatchupGate();
 
     this.buffering = false;
     this.bufferOverflowed = false;
@@ -571,29 +557,18 @@ export class StreamManager {
     this.disconnect();
     this.connect();
   }
-
-  /** Resolve the pending catchup promise so disconnect leaves no waiter hanging. */
-  private resolvePendingCatchup() {
-    this.catchupResolve?.();
-    this.catchupResolve = null;
-    resolveInitialCatchupGate();
-  }
 }
 
 // App Stream
 
 type CatchupBody = NonNullable<Parameters<typeof postAppCatchup>[0]>['body'];
 type CatchupView = NonNullable<CatchupBody['views']>[number];
-type CatchupProductType = CatchupView['entityTypes'][number];
-
-const isCatchupProductType = (entityType: string): entityType is CatchupProductType =>
-  (appConfig.productEntityTypes as readonly string[]).includes(entityType);
 
 /** Drop runtime entity types the catchup endpoint rejects: one unrecognized type would fail the whole request and stall catchup for every view. */
 function toCatchupViews(views: readonly CatchupViewRequest[]): CatchupView[] {
   const accepted: CatchupView[] = [];
   for (const view of views) {
-    const entityTypes = view.entityTypes.filter(isCatchupProductType);
+    const entityTypes = view.entityTypes.filter(isProduct);
     if (entityTypes.length === 0) continue;
     accepted.push({ ...view, entityTypes });
   }
@@ -607,7 +582,7 @@ export const appStreamManager = new StreamManager('AppStream', {
   fetchAndProcessCatchup: async (cursor) => {
     // Combine baseline organization views with membership-derived grant boundaries.
     declareViewsFromMemberships();
-    const views = toCatchupViews(syncStore.getState().getCatchupViews(catchupEntityTypes()));
+    const views = toCatchupViews(syncStore.getState().getCatchupViews(getRegisteredProductEntityTypes()));
     const response = await postAppCatchup({ body: { cursor: cursor ?? undefined, views: views.length > 0 ? views : undefined } });
     const baselineOnly = !cursor;
     // Passed on before the leader processes it: followers fetch their gaps alongside the leader, and get the answer when its processing fails.
@@ -654,7 +629,7 @@ onSyncHealth((health) => {
   applySyncHealth(health);
 });
 
-/** Resolves on the first catchup after page load, or on its failure. Safe to call before any stream connects. */
+/** Resolves on the first catchup after page load or its failure, at once in a follower tab, and when the stream gives up. Safe to call before any stream connects. */
 export function waitForActiveCatchup(): Promise<void> {
   return initialCatchupGate;
 }

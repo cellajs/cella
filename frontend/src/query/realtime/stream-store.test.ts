@@ -9,17 +9,18 @@ vi.mock('~/query/basic/sync-stale-state', () => ({ setSyncStreamHealthy: vi.fn()
 const syncControl = vi.hoisted(() => ({ cursor: null as string | null, setCursor: vi.fn() }));
 vi.mock('~/query/realtime/sync-store', () => ({
   syncStore: {
-    getState: () => ({ cursor: syncControl.cursor, setCursor: syncControl.setCursor, setLastSyncAt: vi.fn(), getCatchupViews: () => [] }),
+    getState: () => ({ cursor: syncControl.cursor, setCursor: syncControl.setCursor, getCatchupViews: () => [] }),
   },
 }));
 vi.mock('./app-stream-handler', () => ({ handleAppStreamNotification: vi.fn() }));
 vi.mock('./view-declaration', () => ({ declareViewsFromMemberships: vi.fn() }));
-vi.mock('./catchup-processor', () => ({ catchupEntityTypes: () => [], processAppCatchup: vi.fn(() => Promise.resolve()) }));
+vi.mock('./catchup-processor', () => ({ processAppCatchup: vi.fn(() => Promise.resolve()) }));
+vi.mock('~/query/basic/entity-query-registry', () => ({ getRegisteredProductEntityTypes: () => [] }));
 // Controllable leader state so tests can drive the follower -> leader promotion transition, and hand a tab what the leader posted.
 const leaderControl = vi.hoisted(() => {
   const state = { isLeader: true };
   const subscribers = new Set<(s: { isLeader: boolean }, p: { isLeader: boolean }) => void>();
-  const catchupHandlers = new Set<(response: PostAppCatchupResponse, baselineOnly: boolean) => void>();
+  const catchupHandlers = new Set<(catchup: { response: PostAppCatchupResponse; baselineOnly: boolean }) => void>();
   const healthHandlers = new Set<(health: { streamHealthy: boolean; workerAway: boolean }) => void>();
   return {
     onSyncHealth: (fn: (health: { streamHealthy: boolean; workerAway: boolean }) => void) => {
@@ -41,13 +42,13 @@ const leaderControl = vi.hoisted(() => {
       state.isLeader = next;
       for (const fn of subscribers) fn({ isLeader: next }, { isLeader: prev });
     },
-    onCatchup: (fn: (response: PostAppCatchupResponse, baselineOnly: boolean) => void) => {
+    onCatchup: (fn: (catchup: { response: PostAppCatchupResponse; baselineOnly: boolean }) => void) => {
       catchupHandlers.add(fn);
       return () => catchupHandlers.delete(fn);
     },
     /** A catchup answer the leader tab posted, as the coordinator hands it to this tab. */
     receiveCatchup: (response: PostAppCatchupResponse, baselineOnly: boolean) => {
-      for (const fn of catchupHandlers) fn(response, baselineOnly);
+      for (const fn of catchupHandlers) fn({ response, baselineOnly });
     },
     reset: () => {
       state.isLeader = true;
@@ -295,7 +296,12 @@ describe('StreamManager leader promotion', () => {
   });
 });
 
+/** Longest first reconnect delay: the initial backoff plus the full jitter. */
+const firstReconnectMs = 7_000;
+
 describe('the gate that paused writes wait on', () => {
+  afterEach(() => vi.useRealTimers());
+
   it('must not stay closed in a follower tab, which runs no catchup of its own', async () => {
     // The gate lives for the page: a fresh module is a fresh page.
     vi.resetModules();
@@ -320,10 +326,41 @@ describe('the gate that paused writes wait on', () => {
     expect(await released()).toBe(true);
     manager.disconnect();
   });
-});
 
-/** Longest first reconnect delay: the initial backoff plus the full jitter. */
-const firstReconnectMs = 7_000;
+  it('opens once a stream that fails in transport gives up, and stays closed while it reconnects', async () => {
+    vi.useFakeTimers();
+    vi.resetModules();
+    const fresh = await import('./stream-store');
+    const manager = new fresh.StreamManager(`TestStream-${managerCount++}`, {
+      endpoint: 'http://api.test/stream',
+      withCredentials: false,
+      useTabCoordination: false,
+      fetchAndProcessCatchup: () => Promise.resolve('c1'),
+      processLeaderCatchup: () => Promise.resolve(),
+      processNotification: () => {},
+    });
+    let released = false;
+    void fresh.waitForActiveCatchup().then(() => {
+      released = true;
+    });
+    // The stream opens and fails before its offset event, so no catchup runs.
+    const failStream = () => FakeEventSource.instances.at(-1)?.onerror?.();
+
+    await manager.connect();
+    failStream();
+    await vi.advanceTimersByTimeAsync(firstReconnectMs);
+    failStream();
+    await vi.advanceTimersByTimeAsync(2 * firstReconnectMs);
+    expect(FakeEventSource.instances).toHaveLength(3);
+    expect(released).toBe(false);
+
+    // The third failure in a row opens the circuit: queued writes replay through the API.
+    failStream();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(released).toBe(true);
+    manager.disconnect();
+  });
+});
 
 describe('StreamManager server-sent errors', () => {
   afterEach(() => vi.useRealTimers());
@@ -551,10 +588,10 @@ describe('StreamManager notifications to follower tabs', () => {
 
     h.resolveCatchup('c1');
     await tick();
-    expect(broadcastNotification).toHaveBeenCalledExactlyOnceWith({ id: 'a1' }, 'user');
+    expect(broadcastNotification).toHaveBeenCalledExactlyOnceWith({ id: 'a1' });
 
     h.es.emit('change', JSON.stringify({ id: 'b1' }), '102');
-    expect(broadcastNotification).toHaveBeenLastCalledWith({ id: 'b1' }, 'user');
+    expect(broadcastNotification).toHaveBeenLastCalledWith({ id: 'b1' });
     expect(h.order).toEqual(['catchup-start', 'catchup-done', 'process:a1', 'process:b1']);
     h.manager.disconnect();
   });

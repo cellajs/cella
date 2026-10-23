@@ -1,5 +1,6 @@
 import type { GetMyMembershipsResponse } from 'sdk';
 import { hierarchy } from 'shared';
+import { meKeys } from '~/modules/me/query';
 import { getRegisteredProductEntityTypes } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { queryClient } from '~/query/query-client';
@@ -26,7 +27,7 @@ export function resolveChannelPath(channelType: string | null, channelId: string
 
 /** Rebuilt from the membership cache before each catchup request: built-in org views absorb equivalent derived views, and a disappeared grant removes its own. */
 export function declareViewsFromMemberships(): void {
-  const data = queryClient.getQueryData<GetMyMembershipsResponse>(['me', 'memberships']);
+  const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
   const memberships = data?.items ?? [];
   const entityTypes = getRegisteredProductEntityTypes();
 
@@ -34,16 +35,11 @@ export function declareViewsFromMemberships(): void {
 
   const store = syncStore.getState();
   const keep = new Set<string>();
-  for (const view of derived) {
+  for (const { key, ...view } of derived) {
     // Exact org-subtree views duplicate the built-in org-view baseline.
     if (view.depth === 'subtree' && view.prefixes.length === 1 && view.prefixes[0] === view.organizationId) continue;
-    keep.add(view.key);
-    store.declareSyncView(view.key, {
-      organizationId: view.organizationId,
-      prefixes: view.prefixes,
-      entityTypes: view.entityTypes,
-      depth: view.depth,
-    });
+    keep.add(key);
+    store.declareSyncView(key, view);
   }
 
   for (const key of Object.keys(syncStore.getState().views)) {
@@ -61,7 +57,7 @@ export function declareViewsFromMemberships(): void {
     }
     // An organization the store has not seen gets its entry here, so the catchup that follows declares its views and stores their baselines on a client's first connection.
     for (const { organizationId, tenantId } of memberships) {
-      if (!syncStore.getState().orgs[organizationId]) store.setOrgTenantId(organizationId, tenantId);
+      if (!syncStore.getState().orgs[organizationId]) store.trackOrg(organizationId, tenantId);
     }
   }
 }

@@ -33,12 +33,9 @@ interface SyncStoreState {
   cursor: string | null;
   /** Generation of the server's sync books this client's cursors belong to; null before the first catchup. */
   generation: number | null;
-  lastSyncAt: string | null;
   orgs: Record<string, OrgSyncState>;
   /** Grant-boundary views registered by the app (views.ts), keyed by view key. */
   views: Record<string, RegisteredSyncView>;
-  /** Server-known sequence per view including muted notifications, not persisted: catchup rebuilds it, while persisted org state holds caught-up sequences. */
-  known: Record<string, Record<string, number>>;
 
   setCursor: (cursor: string | null) => void;
   /**
@@ -47,8 +44,8 @@ interface SyncStoreState {
    * @returns true when the client held another generation and its synced data needs a refetch.
    */
   adoptGeneration: (generation: number | undefined) => boolean;
-  setLastSyncAt: (timestamp: string | null) => void;
-  setOrgTenantId: (orgId: string, tenantId: string) => void;
+  /** Creates the org entry the next catchup declares views for; a non-empty tenant id replaces the stored one. */
+  trackOrg: (organizationId: string, tenantId?: string) => void;
   getOrgTenantId: (orgId: string) => string | null;
   /** Drop a stale org (and its views) from the persisted store; orgs are otherwise never pruned and each one costs entity-type views in every catchup body. */
   removeOrg: (orgId: string) => void;
@@ -56,9 +53,6 @@ interface SyncStoreState {
   getOrgSeq: (orgId: string, entityType: string) => number;
   setChannelSeq: (orgId: string, channelId: string, entityType: string, seq: number) => void;
   getChannelSeq: (orgId: string, channelId: string, entityType: string) => number;
-  /** Record the latest server-mentioned seq for a channel view (monotonic max-merge). */
-  setKnownSeq: (channelViewId: string, entityType: string, seq: number) => void;
-  getKnownSeq: (channelViewId: string, entityType: string) => number;
   /**
    * Register a grant-boundary view. Identity is prefix set plus entity types plus depth, and any identity change resets the cursor to 0:
    * a grown prefix set has history predating the cursor that a range fetch would skip.
@@ -75,10 +69,8 @@ interface SyncStoreState {
 const initStore = {
   cursor: null as string | null,
   generation: null as number | null,
-  lastSyncAt: null as string | null,
   orgs: {} as Record<string, OrgSyncState>,
   views: {} as Record<string, RegisteredSyncView>,
-  known: {} as Record<string, Record<string, number>>,
 };
 
 /** View identity for the re-baseline rule: prefixes + types + depth (order-insensitive). */
@@ -97,7 +89,7 @@ function ensureOrg(orgs: Record<string, OrgSyncState>, orgId: string, tenantId?:
   return existing;
 }
 
-/** Vanilla Zustand store for offline sync state: per-org sequences plus the global cursor and last-sync time. */
+/** Vanilla Zustand store for offline sync state: per-org sequences plus the global cursor. */
 export const syncStore = createStore<SyncStoreState>()(
   devtools(
     persist(
@@ -107,10 +99,6 @@ export const syncStore = createStore<SyncStoreState>()(
         setCursor: (cursor) =>
           set((s) => {
             s.cursor = cursor;
-          }),
-        setLastSyncAt: (ts) =>
-          set((s) => {
-            s.lastSyncAt = ts;
           }),
         adoptGeneration: (generation) => {
           const held = get().generation;
@@ -123,14 +111,13 @@ export const syncStore = createStore<SyncStoreState>()(
               org.contexts = {};
             }
             for (const view of Object.values(s.views)) view.cursor = 0;
-            s.known = {};
           });
           return held !== null;
         },
 
-        setOrgTenantId: (orgId, tenantId) =>
+        trackOrg: (organizationId, tenantId) =>
           set((s) => {
-            ensureOrg(s.orgs, orgId, tenantId);
+            ensureOrg(s.orgs, organizationId, tenantId);
           }),
         getOrgTenantId: (orgId) => get().orgs[orgId]?.tenantId || null,
 
@@ -178,13 +165,6 @@ export const syncStore = createStore<SyncStoreState>()(
           }),
         getView: (key) => get().views[key],
 
-        setKnownSeq: (channelViewId, entityType, seq) =>
-          set((s) => {
-            s.known[channelViewId] ??= {};
-            if (seq > (s.known[channelViewId][entityType] ?? 0)) s.known[channelViewId][entityType] = seq;
-          }),
-        getKnownSeq: (channelViewId, entityType) => get().known[channelViewId]?.[entityType] ?? 0,
-
         getCatchupViews: (entityTypes) => {
           const { orgs } = get();
           const views: CatchupViewRequest[] = [];
@@ -223,7 +203,6 @@ export const syncStore = createStore<SyncStoreState>()(
         partialize: (state) => ({
           cursor: state.cursor,
           generation: state.generation,
-          lastSyncAt: state.lastSyncAt,
           orgs: state.orgs,
           views: state.views,
         }),
