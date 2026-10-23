@@ -37,7 +37,6 @@ const withDefaults = ({
   order = requestsSearchDefaults.order,
 }: RequestFilters) => ({ q, sort, order });
 
-/** One page of requests, search defaults filled in. */
 const fetchRequestsPage = (filters: RequestFilters, limit: number, offset: number, signal?: AbortSignal) =>
   getRequests({ query: { ...withDefaults(filters), ...pageQuery(limit, offset) }, signal });
 
@@ -51,21 +50,21 @@ export const requestsListQueryOptions = ({ limit = appConfig.requestLimits.reque
   });
 };
 
-/** Public forms send one-shot requests: a failure surfaces at once, and the form never waits on offline replay. */
+/** Public forms send one-shot requests: a failure shows at once, and the form never waits on offline replay. */
 export const useCreateRequestMutation = () => {
   return useMutation<CreateRequestResponse, ApiError, CreateRequestData['body']>({
     mutationKey: requestsKeys.create,
     mutationFn: (body) => createRequest({ body }),
     networkMode: 'always',
     retry: false,
-    // The global handler toasts every ApiError and stays silent on the rest (no response, or one that is not an API error).
+    // The global handler toasts only an ApiError; this toasts the rest (no response, or one that is not an API error).
     onError: (error) => {
       if (!(error instanceof ApiError)) toaster.error(t('c:server_unreachable.text'));
     },
   });
 };
 
-/** Approving a request sends the user an invitation email. */
+/** Approves waitlist requests: each address gets an invitation email, and the cached rows read invited. */
 export const useSendApprovalInviteMutation = () => {
   return useMutation<SystemInviteResponse, ApiError, Request[]>({
     mutationKey: requestsKeys.approve,

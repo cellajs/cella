@@ -1,4 +1,5 @@
 import type { ProductEntityType } from 'shared';
+import { isDebugMode } from '~/env';
 import { type SeenMeta, seenStore } from '~/modules/seen/seen-store';
 
 const elementMeta = new WeakMap<Element, SeenMeta>();
@@ -26,7 +27,7 @@ function retainObserver() {
           continue;
         }
 
-        console.debug('[SeenMark] intersected:', meta.productType, meta.productId.slice(0, 8));
+        if (isDebugMode) console.debug('[SeenMark] intersected:', meta.productType, meta.productId.slice(0, 8));
 
         try {
           markProductSeen(meta);

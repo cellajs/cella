@@ -1,6 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { ArrowRightIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { zCreateRequestBody } from 'sdk/zod.gen';
@@ -31,7 +32,7 @@ type FormValues = z.infer<typeof formSchema>;
 interface WaitlistFormProps {
   email?: string;
   inputClassName?: string;
-  buttonContent?: string | React.ReactNode;
+  buttonContent?: ReactNode;
   buttonClassName?: string;
   dialog?: boolean;
   className?: string;
@@ -83,9 +84,7 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
           )}
         />
         <SubmitButton loading={isPending} className={cn('w-full px-6', buttonClassName)}>
-          {buttonContent ? (
-            buttonContent
-          ) : (
+          {buttonContent || (
             <>
               {t('c:join')}
               <ArrowRightIcon />

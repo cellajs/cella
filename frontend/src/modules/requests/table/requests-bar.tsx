@@ -7,7 +7,7 @@ import { ConfirmText } from '~/modules/common/confirm-text';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { DeleteRequests } from '~/modules/requests/delete-requests';
 import { fetchRequestsForExport, useSendApprovalInviteMutation } from '~/modules/requests/query';
@@ -18,15 +18,13 @@ type RequestsTableBarProps = BaseTableBarProps<Request, RequestsRouteSearchParam
 
 export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: RequestsTableBarProps) {
   const { t } = useTranslation();
-  const createDialog = useDialoger((state) => state.create);
 
   const total = useListQueryTotal(queryKey);
 
-  const deleteButtonRef = useRef(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
   const uninvited = selected.filter((request) => request.type === 'waitlist' && !request.wasInvited);
 
-  const { q, order, sort } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '' } });
 
   const { mutate: invite } = useSendApprovalInviteMutation();
@@ -46,7 +44,7 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
       clearSelection();
     };
 
-    createDialog(<DeleteRequests requests={selected} callback={callback} dialog />, {
+    dialoger.getState().create(<DeleteRequests requests={selected} callback={callback} dialog />, {
       id: 'delete-requests',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
@@ -56,7 +54,7 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
           i18nKey="c:confirm.delete_counted_resource"
           values={{
             count: selected.length,
-            resource: selected.length > 1 ? t('c:request_other').toLowerCase() : t('c:request').toLowerCase(),
+            resource: t('c:request', { count: selected.length }).toLowerCase(),
           }}
         />
       ),
@@ -65,17 +63,13 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
 
   const inviteSelected = () => invite(uninvited, { onSuccess: clearSelection });
 
-  const fetchExport = async (limit: number, offset: number) => {
-    return fetchRequestsForExport({ limit, offset, q, sort, order });
-  };
-
   return (
     <TableBarShell
       {...barFilters}
       {...{ searchVars, total, columns, setColumns }}
       label="c:request"
       searchName="requestSearch"
-      export={{ filename: `${appConfig.slug}-requests`, fetchRows: fetchExport }}
+      export={{ filename: `${appConfig.slug}-requests`, fetchRows: (limit, offset) => fetchRequestsForExport({ ...searchVars, limit, offset }) }}
       selection={{
         count: selected.length,
         onClear: clearSelection,

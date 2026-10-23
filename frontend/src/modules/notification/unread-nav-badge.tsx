@@ -1,10 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { CountBadge } from '~/modules/common/count-badge';
+import type { NavBadgeProps } from '~/modules/navigation/types';
 import { notificationsQueryOptions } from '~/modules/notification/query';
 import { cn } from '~/utils/cn';
 
+interface UnreadCountBadgeProps {
+  className?: string;
+}
+
 /** Red unread pill; renders nothing at zero. Positioned by the caller (`absolute` over the bell, inline in the sheet header). */
-export function UnreadCountBadge({ className }: { className?: string }) {
+export function UnreadCountBadge({ className }: UnreadCountBadgeProps) {
   const { data } = useQuery(notificationsQueryOptions());
   const unreadCount = data?.unreadCount ?? 0;
 
@@ -14,7 +19,7 @@ export function UnreadCountBadge({ className }: { className?: string }) {
 }
 
 /** Unread counter over the bell, mirroring `UnseenNavBadge`; hidden while the sheet is open, which shows the count in its header. */
-export function UnreadNavBadge({ isActive, className }: { isActive: boolean; className?: string }) {
+export function UnreadNavBadge({ isActive, className }: NavBadgeProps) {
   if (isActive) return null;
   return <UnreadCountBadge className={cn('absolute', className)} />;
 }

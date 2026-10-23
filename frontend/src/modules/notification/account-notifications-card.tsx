@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import type { GetNotificationPreferencesResponse } from 'sdk';
 import { appConfig } from 'shared';
 import { HelpText } from '~/modules/common/help-text';
 import { ToolCard } from '~/modules/common/tool-card';
@@ -10,16 +11,14 @@ import { Label } from '~/modules/ui/label';
 import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { Switch } from '~/modules/ui/switch';
 
-type DigestFrequency = 'off' | 'daily' | 'weekly';
-
 /** Cadences are mutually exclusive: one enum column, and each notification is digested once. */
 const digestOptions = [
   { value: 'off', label: 'c:notifications.digest_off' },
   { value: 'daily', label: 'c:notifications.digest_daily' },
   { value: 'weekly', label: 'c:notifications.digest_weekly' },
-] as const satisfies { value: DigestFrequency; label: string }[];
+] as const satisfies { value: GetNotificationPreferencesResponse['digest']; label: string }[];
 
-/** Only email is opt-out: the inbox always fills, so every switch off still delivers the mention. */
+/** Each switch adds a delivery: the inbox always fills, so with every switch off a mention still arrives. */
 export function AccountNotificationsCard() {
   const { t } = useTranslation();
   const { data } = useSuspenseQuery(notificationPreferencesQueryOptions());
@@ -57,11 +56,11 @@ export function AccountNotificationsCard() {
           <HelpText content={t('c:notifications.digest.text')}>
             <Label id="digest-label">{t('c:notifications.digest')}</Label>
           </HelpText>
-          {/* One tile per cadence: a bare `grid` is already the stacked column, so only the desktop row needs a class */}
+          {/* RadioGroup's `grid` already stacks the tiles, so only the desktop row needs a class */}
           <RadioGroup
             aria-labelledby="digest-label"
             value={data.digest}
-            onValueChange={(digest) => updatePreferences({ digest: digest as DigestFrequency })}
+            onValueChange={(digest) => updatePreferences({ digest })}
             className="lg:grid-cols-3"
           >
             {digestOptions.map(({ value, label }) => (

@@ -40,9 +40,8 @@ interface CreateNewsletterFormProps {
 
 export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormProps) {
   const { t } = useTranslation();
-  const subjectLabel = t('c:subject').toLowerCase();
 
-  const [testOnly, setTestOnly] = useState<boolean>(false);
+  const [testOnly, setTestOnly] = useState(false);
 
   const formOptions: UseFormProps<FormValues> = {
     resolver: formResolver(formSchema),
@@ -51,11 +50,8 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
 
   const form = useFormWithDraft<FormValues>(newsletterFormId, { formOptions });
 
-  // SendIcon newsletter
   const { mutate: send, isPending } = useMutation<SendNewsletterResponse, ApiError, MutationData<SendNewsletterData>>({
-    mutationFn: async ({ body, query }) => {
-      return await sendNewsletter({ body, query });
-    },
+    mutationFn: (variables) => sendNewsletter(variables),
     onSuccess: () => {
       if (testOnly) return toaster.success(t('c:success.test_email'));
       form.reset();
@@ -65,12 +61,11 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
   });
 
   const onSubmit = async (values: FormValues) => {
-    // Imported on submit: blocksToHTML builds a headless BlockNoteEditor, and importing it here keeps
-    // @blocknote/core off the boot path for everyone who never opens this form.
+    // Imported on submit, so @blocknote/core stays off the boot path.
     const { blocksToHTML } = await import('~/modules/common/blocknote/helpers/blocknote-helpers');
-    // Set organizationIds here to avoind having them in draft & converting string blocks to HTML
+    // The selected organizations, not a restored draft's, and the blocks as HTML.
     const body = { ...values, organizationIds, content: blocksToHTML(values.content) };
-    send({ body, query: { toSelf: !!testOnly } });
+    send({ body, query: { toSelf: testOnly } });
   };
 
   const canSend = () => {
@@ -89,12 +84,12 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
 
   return (
     <Form {...form}>
-      <form noValidate onSubmit={form.handleSubmit(onSubmit)} id="newsletter-form" className="flex flex-col gap-6 pb-8">
+      <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6 pb-8">
         <InputFormField
           control={form.control}
           inputClassName="font-bold"
           name="subject"
-          placeholder={t('c:placeholder.type_input', { inputLabel: subjectLabel })}
+          placeholder={t('c:placeholder.type_input', { inputLabel: t('c:subject').toLowerCase() })}
           label={t('c:subject')}
           required
         />
@@ -138,7 +133,7 @@ export function CreateNewsletterForm({ organizationIds }: CreateNewsletterFormPr
           </SubmitButton>
           <CancelButton dirty={hasInput()} onClick={() => form.reset()} />
           <div className="flex items-center gap-2 max-sm:mt-2">
-            <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="ml-4 size-4" />
+            <Checkbox id="testOnly" checked={testOnly} onCheckedChange={setTestOnly} className="ml-4 size-4" />
             <Label htmlFor="testOnly">{t('c:test_email')}</Label>
           </div>
         </div>

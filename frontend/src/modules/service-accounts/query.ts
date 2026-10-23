@@ -21,7 +21,6 @@ import { queryClient } from '~/query/query-client';
 import type { MutationData, QueryOrgContext } from '~/query/types';
 
 const serviceAccountKeys = {
-  all: ['service-accounts'] as const,
   list: (path: QueryOrgContext) => ['service-accounts', 'list', path.tenantId, path.organizationId] as const,
   apiKeys: (path: QueryOrgContext, accountId: string) => ['service-accounts', 'apiKeys', path.tenantId, path.organizationId, accountId] as const,
   create: ['service-accounts', 'create'] as const,
@@ -47,7 +46,6 @@ export const apiKeysQueryOptions = (path: QueryOrgContext, accountId: string) =>
 export const useCreateServiceAccountMutation = () => {
   return useMutation<CreateServiceAccountResponse, ApiError, MutationData<CreateServiceAccountData>>({
     mutationKey: serviceAccountKeys.create,
-    // Minting a key is an account-security action: the server may ask the user to prove it's them first.
     mutationFn: ({ path, body }) => withStepUp(() => createServiceAccount({ path, body }), apiKeysSection),
     onSuccess: ({ serviceAccount, apiKey }, { path }) => {
       queryClient.setQueryData<GetServiceAccountsResponse>(serviceAccountKeys.list(path), (oldData) => {
@@ -73,8 +71,7 @@ export const useRevokeApiKeyMutation = () => {
     mutationKey: serviceAccountKeys.revoke,
     mutationFn: ({ path }) => revokeApiKey({ path }),
     onSuccess: (revoked, { path }) => {
-      const { tenantId, organizationId, id } = path;
-      queryClient.setQueryData<GetApiKeysResponse>(serviceAccountKeys.apiKeys({ tenantId, organizationId }, id), (oldData) => {
+      queryClient.setQueryData<GetApiKeysResponse>(serviceAccountKeys.apiKeys(path, path.id), (oldData) => {
         if (!oldData) return oldData;
         return { ...oldData, items: oldData.items.map((item) => (item.id === revoked.id ? revoked : item)) };
       });

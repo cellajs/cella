@@ -1,11 +1,11 @@
 import { onlineManager } from '@tanstack/react-query';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { appConfig } from 'shared';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import { fetchPushVapid, registerPushSubscription, removePushSubscription } from '~/modules/notification/query';
 
 /** `applicationServerKey` wants raw bytes; VAPID keys travel base64url-encoded. */
-function urlBase64ToUint8Array(base64: string): Uint8Array {
+function urlBase64ToUint8Array(base64: string) {
   const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
   const raw = atob(padded.replace(/-/g, '+').replace(/_/g, '/'));
   return Uint8Array.from(raw, (char) => char.charCodeAt(0));
@@ -25,9 +25,8 @@ export async function disablePushSubscription(): Promise<void> {
 }
 
 /**
- * Web Push subscription state for this browser installation, driving the settings toggle.
- * `supported` is false when the config flag is off, the browser lacks the APIs, or the deployment
- * serves no VAPID key; `enable` runs the permission prompt, so call it from a user gesture only.
+ * This browser's Web Push subscription. `supported` is false when the config flag is off, the browser lacks the APIs, or the
+ * deployment serves no VAPID key; `enable` runs the permission prompt, so call it from a user gesture only.
  */
 export function usePushSubscription() {
   const [supported, setSupported] = useState(false);
@@ -53,7 +52,7 @@ export function usePushSubscription() {
     };
   }, []);
 
-  const enable = useCallback(async () => {
+  const enable = async () => {
     if (!onlineManager.isOnline()) return toastOffline();
     setBusy(true);
     try {
@@ -65,7 +64,7 @@ export function usePushSubscription() {
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
       const body = subscription.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
       await registerPushSubscription(body);
@@ -75,9 +74,9 @@ export function usePushSubscription() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  };
 
-  const disable = useCallback(async () => {
+  const disable = async () => {
     if (!onlineManager.isOnline()) return toastOffline();
     setBusy(true);
     try {
@@ -88,7 +87,7 @@ export function usePushSubscription() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  };
 
   return { supported, enabled, busy, enable, disable };
 }

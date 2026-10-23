@@ -106,8 +106,7 @@ export const seenStore = createStore<SeenStoreState>()(
 
         reset: () => {
           pending.clear();
-          if (flushIntervalId) clearInterval(flushIntervalId);
-          flushIntervalId = null;
+          get().stopFlushInterval();
           set({ flushedIds: new Set() });
         },
       }),
@@ -132,7 +131,7 @@ export function isSeenLocally(entityId: string): boolean {
 }
 
 /** Flush pending seen data via sendBeacon on page unload. Call once at app init. */
-export const setupSeenBeaconFlush = () => {
+export function setupSeenBeaconFlush() {
   const handler = () => {
     for (const batch of pending.values()) {
       const body = JSON.stringify({ entityIds: [...batch.productIds], entityType: batch.productType });
@@ -141,4 +140,4 @@ export const setupSeenBeaconFlush = () => {
   };
   window.addEventListener('beforeunload', handler);
   return () => window.removeEventListener('beforeunload', handler);
-};
+}

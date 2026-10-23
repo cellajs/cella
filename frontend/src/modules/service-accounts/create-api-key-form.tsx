@@ -30,10 +30,7 @@ interface CreateApiKeyFormProps {
   onCreated: (apiKey: CreatedApiKey) => void;
 }
 
-/**
- * The one-step key experience (substrate D21): creating a key makes an implicit service account named after the key,
- * bound to this organization with its least privileged role. The dialog closes on success and hands the key over.
- */
+/** Creating a key makes a service account named after it, bound to this organization with its least privileged role. */
 export function CreateApiKeyForm({ path, onCreated }: CreateApiKeyFormProps) {
   const { t } = useTranslation();
   const { mutateAsync: create, isPending } = useCreateServiceAccountMutation();

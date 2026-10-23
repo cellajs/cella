@@ -19,7 +19,7 @@ export const useColumns = () => {
       resizable: true,
       width: 160,
       renderCell: ({ row: { type, wasInvited } }) => {
-        const status = t(`c:${wasInvited ? 'pending' : 'not_processed'}`);
+        const status = wasInvited ? t('c:pending') : t('c:not_processed');
         return (
           <div className="flex items-center gap-2">
             {t(`c:${type}`)}

@@ -11,6 +11,12 @@ export type NavItemId = (typeof navItems)[number]['id'];
 
 export type TriggerNavItemFn = (id: NavItemId, ref?: RefObject<HTMLButtonElement | null>) => void | Promise<void>;
 
+/** What a nav item's `badgeSlot` receives: `isActive` while the item's sheet is open, and position classes per bar. */
+export interface NavBadgeProps {
+  isActive: boolean;
+  className?: string;
+}
+
 export type NavItem = {
   id: NavItemId;
   icon: IconComponent;
@@ -21,8 +27,8 @@ export type NavItem = {
   mirrorOnMobile?: boolean;
   /** Replaces the default `icon` rendering (e.g. avatar, loader); receives the base icon classes and the item's `icon`. */
   iconSlot?: ComponentType<{ className?: string; icon: IconComponent }>;
-  /** Renders over the button (e.g. an unseen counter); receives position classes per bar. */
-  badgeSlot?: ComponentType<{ isActive: boolean; className?: string }>;
+  /** Renders over the button (e.g. an unseen counter). */
+  badgeSlot?: ComponentType<NavBadgeProps>;
 };
 
 export type EntityRoute = { to: LinkComponentProps['to']; params: LinkComponentProps['params']; search: LinkComponentProps['search'] };

@@ -3,6 +3,7 @@ import {
   type CreatePushSubscriptionData,
   createPushSubscription,
   deletePushSubscription,
+  type GetNotificationsResponse,
   getNotificationPreferences,
   getNotifications,
   getPushVapid,
@@ -14,10 +15,7 @@ import { queryClient } from '~/query/query-client';
 
 export const notificationKeys = { list: ['me', 'notifications'] as const, preferences: ['me', 'notification-preferences'] as const };
 
-/**
- * Reconciled query: the server response is authoritative and this key is what freshness signals
- * invalidate. `sync-listener` supplies liveness, so there is no polling timer.
- */
+/** The server response is authoritative; `sync-listener` invalidates this key on change events, so nothing polls. */
 export const notificationsQueryOptions = () =>
   queryOptions({
     queryKey: notificationKeys.list,
@@ -34,11 +32,11 @@ export const useMarkNotificationsReadMutation = () =>
     mutationFn: (body: { ids?: string[]; contextId?: string }) => markNotificationsRead({ body }),
     onMutate: async (body) => {
       await queryClient.cancelQueries({ queryKey: notificationKeys.list });
-      const previous = queryClient.getQueryData<Awaited<ReturnType<typeof getNotifications>>>(notificationKeys.list);
+      const previous = queryClient.getQueryData<GetNotificationsResponse>(notificationKeys.list);
       if (!previous) return;
 
       const readAt = new Date().toISOString();
-      const shouldMark = (item: (typeof previous.items)[number]) => {
+      const shouldMark = (item: GetNotificationsResponse['items'][number]) => {
         if (body.contextId) return item.contextId === body.contextId;
         if (body.ids?.length) return body.ids.includes(item.id);
         return true;

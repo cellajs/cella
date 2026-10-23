@@ -14,17 +14,18 @@ import { serviceAccountsQueryOptions } from '~/modules/service-accounts/query';
 import { ServiceAccountTile } from '~/modules/service-accounts/service-account-tile';
 import { Button } from '~/modules/ui/button';
 
-/**
- * Service accounts list with their keys under them, and "Add API key" opens the create dialog. A key created in this
- * visit shows its plaintext in its tile until the card unmounts: a refresh or leaving the page drops it for good.
- */
-export function ApiKeysCard({ organization }: { organization: EnrichedOrganization }) {
+interface ApiKeysCardProps {
+  organization: EnrichedOrganization;
+}
+
+/** Service accounts with their keys; Add API key opens the create dialog. */
+export function ApiKeysCard({ organization }: ApiKeysCardProps) {
   const { t } = useTranslation();
   const path = { tenantId: organization.tenantId, organizationId: organization.id };
   const {
     data: { items: accounts },
   } = useSuspenseQuery(serviceAccountsQueryOptions(path));
-  const addButtonRef = useRef<HTMLButtonElement | null>(null);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
   // Plaintext by key id, in component state only: it never enters the query cache, which persists.
   const [secrets, setSecrets] = useState<Record<string, string>>({});
 
@@ -52,7 +53,7 @@ export function ApiKeysCard({ organization }: { organization: EnrichedOrganizati
   return (
     <ToolCard label="c:api_keys" description={t('c:api_keys.text')}>
       <div className="flex max-sm:flex-col">
-        <Button ref={addButtonRef} type="button" variant="plain" onClick={openCreateDialog}>
+        <Button ref={addButtonRef} variant="plain" onClick={openCreateDialog}>
           <PlusIcon />
           {t('c:add_resource', { resource: t('c:api_key') })}
         </Button>

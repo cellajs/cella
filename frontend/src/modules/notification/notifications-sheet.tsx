@@ -65,8 +65,7 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
   const route = getProductRoute(notification);
 
   const openNotification = (event: MouseEvent) => {
-    // Like the account sheet: a pinned nav sheet stays open beside the content. No id, because this sheet is
-    // `nav-sheet` from the bars but stacks over the menu sheet from the floating-nav menu header.
+    // No id: the bars open this sheet as `navSheetId`, the floating-nav menu header as `notifications-sheet` over the menu sheet.
     if (!isModifiedClick(event) && !navigationStore.getState().keepNavOpen) {
       sheeter.getState().remove();
       navigationStore.getState().setNavSheetOpen(null);

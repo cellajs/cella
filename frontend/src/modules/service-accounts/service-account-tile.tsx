@@ -24,7 +24,7 @@ import { dateShort } from '~/utils/date-short';
 interface ServiceAccountTileProps {
   account: ServiceAccount;
   path: QueryOrgContext;
-  /** Plaintext of the keys created in this visit, by key id. Such a key shows it where the others show their details. */
+  /** Plaintext of the keys created in this visit, by key id. */
   secrets: Record<string, string>;
 }
 
@@ -48,7 +48,7 @@ export function ServiceAccountTile({ account, path, secrets }: ServiceAccountTil
             remove();
             revoke({ path: { ...path, id: account.id, keyId: apiKey.id } });
           }}
-          onCancel={() => remove()}
+          onCancel={remove}
           pending={false}
         />
       </PopConfirm>,
@@ -126,12 +126,11 @@ interface TileRowProps {
   name: string;
   accountName?: string;
   badges: ReactNode;
-  /** The button at the end of the row. */
   action?: ReactNode;
   children?: ReactNode;
 }
 
-/** A row in the session tile's shape and sizes: the icon, one name with its badges, details under it, an action at the end. */
+/** One row of the tile: the key icon, a name with its badges, details under it, and an action button at the end. */
 function TileRow({ name, accountName, badges, action, children }: TileRowProps) {
   return (
     <div className="flex gap-2 sm:gap-3 lg:items-center">
@@ -149,7 +148,6 @@ function TileRow({ name, accountName, badges, action, children }: TileRowProps) 
   );
 }
 
-/** The plaintext of a key created in this visit: the one moment it can be copied. */
 function NewKeySecret({ secret }: { secret: string }) {
   const { t } = useTranslation();
   const { copied, copyToClipboard } = useCopyToClipboard();
@@ -193,13 +191,7 @@ function KeyDetails({ apiKey, lastSeenAt }: KeyDetailsProps) {
         <span className="sr-only">{t('c:created_by')}: </span>
         {createdBy && (
           <TooltipButton toolTipContent={createdBy.name} side="top">
-            <Button
-              variant="none"
-              size="auto"
-              className="rounded-full transition-opacity hover:opacity-80"
-              aria-label={createdBy.name}
-              onClick={() => openProfile(createdBy.id)}
-            >
+            <Button variant="none" size="auto" className="rounded-full transition-opacity hover:opacity-80" onClick={() => openProfile(createdBy.id)}>
               <EntityAvatar type="user" className="size-5 sm:size-6" id={createdBy.id} name={createdBy.name} url={createdBy.thumbnailUrl} />
             </Button>
           </TooltipButton>

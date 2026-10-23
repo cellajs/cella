@@ -17,7 +17,7 @@ function rowKeyGetter(row: Request) {
   return row.id;
 }
 
-function RequestsTable() {
+export function RequestsTable() {
   const { t } = useTranslation();
   const { search, setSearch } = useSearchParams<RequestsRouteSearchParams>({ from: '/_app/system/requests' });
 
@@ -66,5 +66,3 @@ function RequestsTable() {
     </>
   );
 }
-
-export { RequestsTable };

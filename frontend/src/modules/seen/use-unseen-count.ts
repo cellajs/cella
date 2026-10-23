@@ -5,12 +5,7 @@ import { myMembershipsQueryOptions } from '~/modules/me/query';
 import { seenGroupingChannelTypes } from '~/modules/seen/helpers';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
 
-/**
- * True when a sub-organization ancestor channel of this membership (e.g. the channel above a sub-channel) is in
- * `archivedChannelIds`. The organization membership row is an auto-created shell whose archived flag
- * only tucks the org row into its own section's archived toggle; it must not hide subtree badges,
- * or the total would diverge from the sum of the section toggles.
- */
+/** Whether an ancestor below the organization is archived; the organization row's archived flag only files that row under its section's toggle. */
 const hasArchivedAncestor = (membership: MembershipBase, archivedChannelIds: Set<string>) =>
   hierarchy.resolveNonNullAncestors(membership.channelType, membership).some(({ type, id }) => type !== 'organization' && archivedChannelIds.has(id));
 
@@ -42,8 +37,7 @@ export function useTotalUnseenCount() {
 
   if (!unseenData || !membershipsData) return 0;
 
-  // Archived anywhere in the chain excludes a channel: a sub-channel under an archived channel
-  // belongs to the archived toggle, not the total (its own membership row stays unarchived).
+  // A sub-channel under an archived channel belongs to that channel's archived toggle, though its own row stays unarchived.
   const archivedChannelIds = new Set<string>();
   for (const membership of membershipsData.items) {
     if (membership.archived) archivedChannelIds.add(membership.channelId);

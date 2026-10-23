@@ -38,12 +38,7 @@ export function SeenTracker() {
   return null;
 }
 
-/**
- * Syncs the PWA app badge with the unread NOTIFICATION count, not the unseen total: unseen counts
- * effectively never reach zero in an active channel, and a permanently lit badge is one users
- * learn to ignore, while unread notifications are addressed to you and clear by reading. Unseen
- * counts stay on the in-app menu badges. Badging API only (Chrome/Edge/Safari iOS 16.4+).
- */
+/** The PWA badge shows unread notifications: unseen counts rarely reach zero in an active channel, so a badge lit by them gets ignored. */
 function useAppBadge() {
   const { data } = useQuery(notificationsQueryOptions());
   const unreadCount = data?.unreadCount ?? 0;
