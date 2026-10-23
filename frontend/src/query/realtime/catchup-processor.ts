@@ -117,8 +117,8 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   }
 
   // Organization-level membership screening and propagation.
-  const orgIds = Object.keys(changes);
-  for (const organizationId of orgIds) {
+  const organizationIds = Object.keys(changes);
+  for (const organizationId of organizationIds) {
     const { signals, propagation } = changes[organizationId];
 
     // Seed the org entry so the next catchup request declares views for it: an organization the membership cache did not hold yet is learned here.
@@ -143,7 +143,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
   }
 
   if (baselineOnly) {
-    console.debug(`[CatchupProcessor] Baseline: stored cursors for ${views?.length ?? 0} views, ${orgIds.length} orgs`);
+    console.debug(`[CatchupProcessor] Baseline: stored cursors for ${views?.length ?? 0} views, ${organizationIds.length} orgs`);
     return;
   }
 
@@ -178,7 +178,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
 /** Channel identities the caller currently has membership in, as `${organizationId}:${channelId}`. */
 function membershipChannelKeys(): Set<string> {
   const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
-  return new Set((data?.items ?? []).map((m) => `${m.organizationId}:${m.channelId}`));
+  return new Set((data?.items ?? []).map((membership) => `${membership.organizationId}:${membership.channelId}`));
 }
 
 /** Grant-boundary answers refine org-view ingestion: unchanged skips work, opaque falls back to staleness, forbidden drops the view. */
@@ -227,9 +227,9 @@ function processRegisteredViewAnswer(
 
 /** View keys are `${organizationId}:${entityType}` (see sync-store.getCatchupViews). */
 function splitViewKey(key: string): [string | undefined, string | undefined] {
-  const idx = key.lastIndexOf(':');
-  if (idx <= 0) return [undefined, undefined];
-  return [key.slice(0, idx), key.slice(idx + 1)];
+  const separatorIndex = key.lastIndexOf(':');
+  if (separatorIndex <= 0) return [undefined, undefined];
+  return [key.slice(0, separatorIndex), key.slice(separatorIndex + 1)];
 }
 
 /** Mirrors the patch target of fetchRangeAndPatch: with nothing cached a range fetch has nothing to patch, and mount hydration resets the cursor itself. */

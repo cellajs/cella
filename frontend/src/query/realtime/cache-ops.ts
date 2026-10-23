@@ -147,8 +147,8 @@ function invalidateFilteredLists(entityType: string, orgListKey: readonly unknow
   const equalityKeys = getEqualityFilterKeys(entityType);
   queryClient.invalidateQueries({
     queryKey: orgListKey,
-    predicate: (q) => {
-      const filters = q.queryKey.slice(2).filter((seg): seg is object => typeof seg === 'object' && seg !== null);
+    predicate: (query) => {
+      const filters = query.queryKey.slice(2).filter((segment): segment is object => typeof segment === 'object' && segment !== null);
       if (!filters.length) return false;
       if (!equalityKeys || !newRows.length) return true;
       return !newRows.every((row) => filtersExcludeRow(filters, asRecord(row), equalityKeys));

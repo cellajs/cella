@@ -34,16 +34,16 @@ export function declareViewsFromMemberships(): void {
   const derived = deriveGrantBoundaryViews({ memberships, entityTypes, resolvePath: resolveChannelPath });
 
   const store = syncStore.getState();
-  const keep = new Set<string>();
+  const declaredKeys = new Set<string>();
   for (const { key, ...view } of derived) {
     // Exact org-subtree views duplicate the built-in org-view baseline.
     if (view.depth === 'subtree' && view.prefixes.length === 1 && view.prefixes[0] === view.organizationId) continue;
-    keep.add(key);
+    declaredKeys.add(key);
     store.declareSyncView(key, view);
   }
 
   for (const key of Object.keys(syncStore.getState().views)) {
-    if (!keep.has(key)) store.removeSyncView(key);
+    if (!declaredKeys.has(key)) store.removeSyncView(key);
   }
 
   // Stored orgs the caller is no longer (or never was) a member of: prune them, or they accumulate
@@ -51,9 +51,9 @@ export function declareViewsFromMemberships(): void {
   // body until the request overflows the server's views cap and catchup fails outright. Only prune
   // against a loaded membership cache; `data` undefined just means memberships have not arrived yet.
   if (data) {
-    const memberOrgIds = new Set(memberships.map((m) => m.organizationId));
-    for (const orgId of Object.keys(syncStore.getState().orgs)) {
-      if (!memberOrgIds.has(orgId)) store.removeOrg(orgId);
+    const memberOrganizationIds = new Set(memberships.map((membership) => membership.organizationId));
+    for (const organizationId of Object.keys(syncStore.getState().orgs)) {
+      if (!memberOrganizationIds.has(organizationId)) store.removeOrg(organizationId);
     }
     // An organization the store has not seen gets its entry here, so the catchup that follows declares its views and stores their baselines on a client's first connection.
     for (const { organizationId, tenantId } of memberships) {

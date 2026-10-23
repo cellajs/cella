@@ -8,6 +8,8 @@ import type { AppStreamNotification } from './types';
 
 const channelName = 'tab-sync';
 const leaderLockName = 'tab-leader';
+const hasWebLocks = typeof navigator !== 'undefined' && 'locks' in navigator;
+const hasBroadcastChannel = typeof BroadcastChannel !== 'undefined';
 
 /** What the leader's stream says of live delivery: whether the stream itself works, and whether the server's CDC worker reads. */
 export interface SyncHealth {
@@ -44,20 +46,12 @@ const syncHealthSignal = createSignal<SyncHealth>('TabSyncHealth');
 let lastSyncHealth: SyncHealth | null = null;
 let initPromise: Promise<void> | null = null;
 
-const isWebLocksAvailable = (): boolean => {
-  return typeof navigator !== 'undefined' && 'locks' in navigator;
-};
-
 /** Resolves when `signal` aborts. A lock callback awaits this to hold the lock releasably, freeing it for a waiting follower without closing the tab. */
 const untilAborted = (signal: AbortSignal): Promise<void> =>
   new Promise<void>((resolve) => {
     if (signal.aborted) return resolve();
     signal.addEventListener('abort', () => resolve(), { once: true });
   });
-
-const isBroadcastChannelAvailable = (): boolean => {
-  return typeof BroadcastChannel !== 'undefined';
-};
 
 /** Idempotent: resolves once leader status is known, reusing the in-flight promise on repeat calls. */
 export const initTabCoordinator = async (): Promise<void> => {
@@ -66,7 +60,7 @@ export const initTabCoordinator = async (): Promise<void> => {
   initPromise = (async () => {
     const store = tabCoordinatorStore.getState();
 
-    if (isBroadcastChannelAvailable() && !broadcastChannel) {
+    if (hasBroadcastChannel && !broadcastChannel) {
       broadcastChannel = new BroadcastChannel(channelName);
       broadcastChannel.onmessage = handleBroadcastMessage;
       console.debug('[TabCoordinator] BroadcastChannel initialized');
@@ -74,7 +68,7 @@ export const initTabCoordinator = async (): Promise<void> => {
       broadcastChannel.postMessage({ type: 'schema-version', version: currentSchemaVersion } satisfies BroadcastMessage);
     }
 
-    if (isWebLocksAvailable()) {
+    if (hasWebLocks) {
       await attemptLeaderElection();
     } else {
       console.debug('[TabCoordinator] Web Locks not available, assuming leader role');

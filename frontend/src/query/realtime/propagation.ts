@@ -142,12 +142,12 @@ function patchSingleHost(
 
   // Single object column.
   if (embedded && typeof embedded === 'object' && 'id' in embedded) {
-    const obj = embedded as { id: string; updatedAt?: string };
-    if (removeSet.has(obj.id)) {
+    const cached = embedded as { id: string; updatedAt?: string };
+    if (removeSet.has(cached.id)) {
       return { ...host, [hostColumn]: null } as ItemData;
     }
-    const fresh = updateSet.has(obj.id) ? freshEmbedded.get(obj.id) : undefined;
-    if (fresh && isFresher(obj, fresh)) return { ...host, [hostColumn]: fresh } as ItemData;
+    const fresh = updateSet.has(cached.id) ? freshEmbedded.get(cached.id) : undefined;
+    if (fresh && isFresher(cached, fresh)) return { ...host, [hostColumn]: fresh } as ItemData;
   }
 
   return host;

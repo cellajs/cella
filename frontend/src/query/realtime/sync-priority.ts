@@ -7,11 +7,11 @@ import { syncStore } from '~/query/realtime/sync-store';
 import { getRouter } from '~/routes/-router-instance';
 
 /** Null outside an org layout. */
-export function getRouteOrgId(): string | null {
+export function getRouteOrganizationId(): string | null {
   for (const match of getRouter().state.matches) {
-    const ctx = match.context;
-    if (ctx && 'organization' in ctx && ctx.organization) {
-      return (ctx.organization as { id: string }).id;
+    const context = match.context;
+    if (context && 'organization' in context && context.organization) {
+      return (context.organization as { id: string }).id;
     }
   }
   return null;
@@ -20,9 +20,9 @@ export function getRouteOrgId(): string | null {
 /** Null outside an org layout. */
 function getRouteTenantId(): string | null {
   for (const match of getRouter().state.matches) {
-    const ctx = match.context;
-    if (ctx && 'tenantId' in ctx && typeof ctx.tenantId === 'string') {
-      return ctx.tenantId;
+    const context = match.context;
+    if (context && 'tenantId' in context && typeof context.tenantId === 'string') {
+      return context.tenantId;
     }
   }
   return null;
@@ -36,7 +36,7 @@ export function resolveQueryOrgTenantIds(
   cached: OrgTenantIdSource | undefined,
   resource: string,
 ): { organizationId: string; tenantId: string } {
-  const organizationId = meta?.organizationId ?? cached?.organizationId ?? getRouteOrgId();
+  const organizationId = meta?.organizationId ?? cached?.organizationId ?? getRouteOrganizationId();
   const tenantId = meta?.tenantId ?? cached?.tenantId ?? getRouteTenantId();
   if (!organizationId || !tenantId) {
     throw new Error(`Cannot resolve organizationId/tenantId for ${resource} fetch`);
@@ -51,7 +51,7 @@ export function getTenantIdForOrg(organizationId: string): string | null {
 
   const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
   if (!data?.items) return null;
-  const membership = data.items.find((m) => m.organizationId === organizationId);
+  const membership = data.items.find((item) => item.organizationId === organizationId);
   return membership?.tenantId ?? null;
 }
 
@@ -67,8 +67,8 @@ const tierOnOpen: SyncTier = { min: Number.POSITIVE_INFINITY, max: Number.POSITI
 
 /** Same org, and for sub-org channel views a mounted view observes a query carrying the channel id, which covers slug routes and boards whose routes do not name every rendered channel. */
 export function isViewingChannel(organizationId: string, channelId: string | null): boolean {
-  const routeOrgId = getRouteOrgId();
-  if (!routeOrgId || routeOrgId !== organizationId) return false;
+  const routeOrganizationId = getRouteOrganizationId();
+  if (!routeOrganizationId || routeOrganizationId !== organizationId) return false;
   if (!channelId || channelId === organizationId) return true;
   return isObservedChannel(channelId);
 }
@@ -78,7 +78,7 @@ function isMutedOrArchived(organizationId: string, channelId: string | null): bo
   const data = queryClient.getQueryData<GetMyMembershipsResponse>(meKeys.memberships);
   if (!data?.items) return false;
   const targetId = channelId ?? organizationId;
-  const membership = data.items.find((m) => m.channelId === targetId);
+  const membership = data.items.find((item) => item.channelId === targetId);
   return membership ? membership.muted || membership.archived : false;
 }
 

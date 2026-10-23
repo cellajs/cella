@@ -19,7 +19,7 @@ vi.mock('~/query/basic/entity-query-registry', () => ({ getRegisteredProductEnti
 // Controllable leader state so tests can drive the follower -> leader promotion transition, and hand a tab what the leader posted.
 const leaderControl = vi.hoisted(() => {
   const state = { isLeader: true };
-  const subscribers = new Set<(s: { isLeader: boolean }, p: { isLeader: boolean }) => void>();
+  const subscribers = new Set<(state: { isLeader: boolean }, previous: { isLeader: boolean }) => void>();
   const catchupHandlers = new Set<(catchup: { response: PostAppCatchupResponse; baselineOnly: boolean }) => void>();
   const healthHandlers = new Set<(health: { streamHealthy: boolean; workerAway: boolean }) => void>();
   return {
@@ -33,14 +33,14 @@ const leaderControl = vi.hoisted(() => {
     },
     isLeader: () => state.isLeader,
     getState: () => ({ isLeader: state.isLeader }),
-    subscribe: (fn: (s: { isLeader: boolean }, p: { isLeader: boolean }) => void) => {
+    subscribe: (fn: (state: { isLeader: boolean }, previous: { isLeader: boolean }) => void) => {
       subscribers.add(fn);
       return () => subscribers.delete(fn);
     },
     setLeader: (next: boolean) => {
-      const prev = state.isLeader;
+      const previous = state.isLeader;
       state.isLeader = next;
-      for (const fn of subscribers) fn({ isLeader: next }, { isLeader: prev });
+      for (const fn of subscribers) fn({ isLeader: next }, { isLeader: previous });
     },
     onCatchup: (fn: (catchup: { response: PostAppCatchupResponse; baselineOnly: boolean }) => void) => {
       catchupHandlers.add(fn);
@@ -181,7 +181,7 @@ describe('StreamManager subscribe-then-snapshot', () => {
 
     h.es.emit('offset', '100');
     expect(h.order).toEqual(['catchup-start']);
-    expect(h.manager.useStore.getState().state).toBe('catching-up');
+    expect(h.manager.store.getState().state).toBe('catching-up');
   });
 
   it('processes a notification arriving during catchup exactly once, after catchup', async () => {
@@ -198,9 +198,9 @@ describe('StreamManager subscribe-then-snapshot', () => {
 
     expect(h.order).toEqual(['catchup-start', 'catchup-done', 'process:a1']);
     expect(h.processed).toHaveLength(1);
-    expect(h.manager.useStore.getState().state).toBe('live');
+    expect(h.manager.store.getState().state).toBe('live');
     // Cursor advanced by the drained notification (its eventId is newer than the catchup cursor).
-    expect(h.manager.useStore.getState().cursor).toBe('101');
+    expect(h.manager.store.getState().cursor).toBe('101');
   });
 
   it('processes notifications directly once live', async () => {
@@ -212,7 +212,7 @@ describe('StreamManager subscribe-then-snapshot', () => {
 
     h.es.emit('change', JSON.stringify({ id: 'b1' }), '102');
     expect(h.order.at(-1)).toBe('process:b1');
-    expect(h.manager.useStore.getState().cursor).toBe('102');
+    expect(h.manager.store.getState().cursor).toBe('102');
   });
 
   it('re-runs catchup once when the buffer overflows, dropping the buffered batch', async () => {
@@ -234,7 +234,7 @@ describe('StreamManager subscribe-then-snapshot', () => {
 
     expect(round).toBe(2); // one retry after overflow
     expect(h.processed).toHaveLength(0); // dropped batch is covered by the second catchup read
-    expect(h.manager.useStore.getState().state).toBe('live');
+    expect(h.manager.store.getState().state).toBe('live');
   });
 
   it('fails the connect cycle when the buffer overflows twice', async () => {
@@ -252,7 +252,7 @@ describe('StreamManager subscribe-then-snapshot', () => {
     await tick();
 
     expect(round).toBe(2);
-    expect(h.manager.useStore.getState().state).toBe('error');
+    expect(h.manager.store.getState().state).toBe('error');
     expect(h.es.readyState).toBe(FakeEventSource.CLOSED);
   });
 
@@ -263,7 +263,7 @@ describe('StreamManager subscribe-then-snapshot', () => {
     h.es.emit('offset', '100');
     await tick();
 
-    expect(h.manager.useStore.getState().state).toBe('error');
+    expect(h.manager.store.getState().state).toBe('error');
     expect(h.es.readyState).toBe(FakeEventSource.CLOSED);
   });
 });
@@ -277,7 +277,7 @@ describe('StreamManager leader promotion', () => {
 
     // Follower parks in broadcast-only 'live' with no SSE.
     expect(FakeEventSource.instances).toHaveLength(0);
-    expect(h.manager.useStore.getState().state).toBe('live');
+    expect(h.manager.store.getState().state).toBe('live');
 
     // Leader tab closes: the Web Lock transfers and this tab is promoted.
     leaderControl.setLeader(true);
@@ -292,7 +292,7 @@ describe('StreamManager leader promotion', () => {
     h.resolveCatchup('c1');
     await tick();
 
-    expect(h.manager.useStore.getState().state).toBe('live');
+    expect(h.manager.store.getState().state).toBe('live');
   });
 });
 
@@ -391,7 +391,7 @@ describe('StreamManager server-sent errors', () => {
     await vi.advanceTimersByTimeAsync(5 * 60_000);
 
     expect(FakeEventSource.instances).toHaveLength(1);
-    expect(h.manager.useStore.getState().state).toBe('error');
+    expect(h.manager.store.getState().state).toBe('error');
   });
 });
 
@@ -400,16 +400,16 @@ describe('StreamManager silence watchdog', () => {
   afterEach(() => vi.useRealTimers());
 
   /** The server writes a `ping` event this often. */
-  const KEEPALIVE_MS = 30_000;
+  const keepaliveMs = 30_000;
   /** The watchdog's limit: 2.5 keepalive intervals. */
-  const SILENCE_MS = 75_000;
+  const silenceMs = 75_000;
 
   const liveStream = async () => {
     const h = createHarness({ fetchAndProcessCatchup: () => Promise.resolve('c1') });
     await h.manager.connect();
     h.es.emit('offset', '100');
     await vi.advanceTimersByTimeAsync(0);
-    expect(h.manager.useStore.getState().state).toBe('live');
+    expect(h.manager.store.getState().state).toBe('live');
     return h;
   };
 
@@ -417,13 +417,13 @@ describe('StreamManager silence watchdog', () => {
     const h = await liveStream();
 
     for (let i = 0; i < 20; i++) {
-      await vi.advanceTimersByTimeAsync(KEEPALIVE_MS);
+      await vi.advanceTimersByTimeAsync(keepaliveMs);
       h.es.emit('ping', '');
     }
 
     expect(FakeEventSource.instances).toHaveLength(1);
     expect(h.es.readyState).toBe(FakeEventSource.OPEN);
-    expect(h.manager.useStore.getState().state).toBe('live');
+    expect(h.manager.store.getState().state).toBe('live');
     h.manager.disconnect();
   });
 
@@ -431,12 +431,12 @@ describe('StreamManager silence watchdog', () => {
     const h = await liveStream();
     const silent = h.es;
 
-    await vi.advanceTimersByTimeAsync(SILENCE_MS - 1);
+    await vi.advanceTimersByTimeAsync(silenceMs - 1);
     expect(silent.readyState).toBe(FakeEventSource.OPEN);
 
     await vi.advanceTimersByTimeAsync(1);
     expect(silent.readyState).toBe(FakeEventSource.CLOSED);
-    expect(h.manager.useStore.getState().state).toBe('error');
+    expect(h.manager.store.getState().state).toBe('error');
     // Only the reconnect is pending: the watchdog ended with its stream.
     expect(vi.getTimerCount()).toBe(1);
     expect(FakeEventSource.instances).toHaveLength(1);
@@ -454,9 +454,9 @@ describe('StreamManager silence watchdog', () => {
     h.es.emit('change', JSON.stringify({ id: 'a1' }), '101');
 
     // No ping arrived since the stream opened 135 seconds before: the 75 seconds count from the change.
-    await vi.advanceTimersByTimeAsync(SILENCE_MS - 1);
+    await vi.advanceTimersByTimeAsync(silenceMs - 1);
     expect(h.es.readyState).toBe(FakeEventSource.OPEN);
-    expect(h.manager.useStore.getState().state).toBe('live');
+    expect(h.manager.store.getState().state).toBe('live');
 
     await vi.advanceTimersByTimeAsync(1);
     expect(h.es.readyState).toBe(FakeEventSource.CLOSED);
@@ -470,7 +470,7 @@ describe('StreamManager silence watchdog', () => {
     expect(vi.getTimerCount()).toBe(0);
 
     await vi.advanceTimersByTimeAsync(10 * 60_000);
-    expect(h.manager.useStore.getState().state).toBe('disconnected');
+    expect(h.manager.store.getState().state).toBe('disconnected');
     expect(FakeEventSource.instances).toHaveLength(1);
   });
 
@@ -497,7 +497,7 @@ describe('StreamManager silence watchdog', () => {
 
     h.es.onerror?.();
     expect(vi.getTimerCount()).toBe(0);
-    expect(h.manager.useStore.getState().state).toBe('error');
+    expect(h.manager.store.getState().state).toBe('error');
   });
 });
 
@@ -517,7 +517,7 @@ describe('a catchup answer, from the leader to its follower tabs', () => {
     expect(broadcastCatchup).toHaveBeenCalledExactlyOnceWith(answer, false);
     expect(processAppCatchup).toHaveBeenCalledExactlyOnceWith(answer, false);
     expect(vi.mocked(broadcastCatchup).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(processAppCatchup).mock.invocationCallOrder[0]);
-    expect(appStreamManager.useStore.getState().state).toBe('live');
+    expect(appStreamManager.store.getState().state).toBe('live');
   });
 
   it('is processed by a follower, which stores its cursor and sends no request of its own', async () => {
@@ -647,7 +647,7 @@ describe('the health of live delivery', () => {
   it("must not take a follower's own store for the health of a stream: it has none, and takes the leader's word", async () => {
     leaderControl.setLeader(false);
     await appStreamManager.connect();
-    expect(appStreamManager.useStore.getState().state).toBe('live');
+    expect(appStreamManager.store.getState().state).toBe('live');
     expect(setSyncStreamHealthy).not.toHaveBeenCalled();
 
     leaderControl.receiveSyncHealth({ streamHealthy: false, workerAway: true });

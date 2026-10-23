@@ -11,15 +11,15 @@ import * as membershipOps from './membership-ops';
 import { propagateEmbeddings } from './propagation';
 import { getSyncTier } from './sync-priority';
 import { publishChangeEvent } from './sync-signals';
-import type { AppStreamNotification, EntityNotification } from './types';
+import type { AppStreamNotification, ProductNotification } from './types';
 
 /** Notifications omit entity data, so each handler either invalidates or fetches a seq range. */
 export function handleAppStreamNotification(notification: AppStreamNotification): void {
   const { subjectId, action, organizationId, tenantId, channelType, seq, _trace } = notification;
 
-  const spanAttrs = { 'sync.entity_type': notification.productType, 'sync.action': action, 'sync.entity_id': subjectId, _trace };
+  const spanAttributes = { 'sync.entity_type': notification.productType, 'sync.action': action, 'sync.entity_id': subjectId, _trace };
 
-  withSpanSync(syncSpanNames.messageProcess, spanAttrs, () => {
+  withSpanSync(syncSpanNames.messageProcess, spanAttributes, () => {
     // Checked before trackOrg creates the entry: an org the sync store never saw means the SSE connection is not registered on its channel.
     const isUnknownOrg = !!organizationId && !syncStore.getState().orgs[organizationId];
 
@@ -43,7 +43,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
       // A self-membership in a new org arrives on the user channel, so reconnect to register on that org channel. Imported dynamically because stream-store imports this module.
       if (action === 'create' && isUnknownOrg) {
         console.debug('[handleAppStreamNotification] Membership in unknown org, reconnecting stream');
-        void import('./stream-store').then((m) => m.appStreamManager.reconnect());
+        void import('./stream-store').then(({ appStreamManager }) => appStreamManager.reconnect());
       }
       return;
     }
@@ -63,7 +63,7 @@ export function handleAppStreamNotification(notification: AppStreamNotification)
 }
 
 /** Hands a notified range to the fetch prioritizer, which fetches it on the tier of its scope. */
-function enqueueNotifiedRange(notification: EntityNotification, organizationId: string, range: SeqRange): void {
+function enqueueNotifiedRange(notification: ProductNotification, organizationId: string, range: SeqRange): void {
   enqueueRange({
     entityType: notification.productType,
     organizationId,
@@ -99,7 +99,7 @@ function handleMembershipNotification(
 }
 
 /** Product entity events carry no data, so each is answered with invalidation or a seq-range refetch. */
-function handleProductNotification(notification: EntityNotification, keys: EntityQueryKeys): void {
+function handleProductNotification(notification: ProductNotification, keys: EntityQueryKeys): void {
   const { productType: entityType, subjectId: entityId, action, stx, organizationId, tenantId, seq, propagation } = notification;
   const channelId = notification.channelId ?? null;
   if (!organizationId || !entityId) {
@@ -138,7 +138,7 @@ function handleProductNotification(notification: EntityNotification, keys: Entit
           .then(() => {
             if (propagation) propagateEmbeddings(propagation);
           })
-          .catch((err) => console.warn('[AppStream] Entity fetch failed:', err));
+          .catch((error) => console.warn('[AppStream] Entity fetch failed:', error));
       }
 
       // Seq-less events have no synced rows, so they trigger an exact unseen-count recount.

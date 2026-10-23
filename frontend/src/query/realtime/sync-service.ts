@@ -2,7 +2,7 @@ import { buildEntitySyncQueries } from '~/entity-sync-queries';
 import type { UserMenuItem } from '~/modules/me/types';
 import { queryClient } from '~/query/query-client';
 import { waitFor } from '~/utils/wait-for';
-import { getRouteOrgId } from './sync-priority';
+import { getRouteOrganizationId } from './sync-priority';
 
 /** Seeds offline caches once the stream is live: the current organization first, then the rest when offline access is on. `signal` cancels on unmount or retrigger. */
 export async function runSyncService(offlineAccess: boolean, signal: AbortSignal): Promise<void> {
@@ -18,10 +18,10 @@ export async function runSyncService(offlineAccess: boolean, signal: AbortSignal
   const allItems = flattenMenuItems(menu);
   if (allItems.length === 0) return;
 
-  const routeOrgId = getRouteOrgId();
+  const routeOrganizationId = getRouteOrganizationId();
 
-  const highPriority = allItems.filter((item) => item.organizationId === routeOrgId || item.id === routeOrgId);
-  const lowPriority = allItems.filter((item) => item.organizationId !== routeOrgId && item.id !== routeOrgId);
+  const highPriority = allItems.filter((item) => item.organizationId === routeOrganizationId || item.id === routeOrganizationId);
+  const lowPriority = allItems.filter((item) => item.organizationId !== routeOrganizationId && item.id !== routeOrganizationId);
 
   for (const item of highPriority) {
     if (signal.aborted) return;

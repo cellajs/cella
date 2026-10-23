@@ -42,15 +42,15 @@ const project = 'project-1';
 const labelKeys = createEntityKeys<Record<string, never>>(labelType);
 
 describe('propagateEmbeddedProduct', () => {
-  const TASK = 'task' as ProductEntityType;
-  const taskKeys = createEntityKeys<Record<string, never>>(TASK);
+  const taskType = 'task' as ProductEntityType;
+  const taskKeys = createEntityKeys<Record<string, never>>(taskType);
   const infiniteKey = [...taskKeys.list.org(org), { q: '' }];
   const flatKey = taskKeys.list.home(org, project);
 
   const label = (id: string, name: string, updatedAt: string) => ({ id, name, updatedAt });
 
   beforeEach(() => {
-    registerEntityQueryKeys(TASK, taskKeys, async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys(taskType, taskKeys, async () => ({ items: [], total: 0 }));
     registerEntityQueryKeys(labelType, labelKeys, async () => ({ items: [], total: 0 }));
   });
   afterEach(() => queryClient.clear());
