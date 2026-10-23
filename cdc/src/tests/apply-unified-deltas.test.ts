@@ -16,7 +16,7 @@ let upsertReturnValue: Record<string, number> = {};
 const db = {
   execute: vi.fn(async (query: any) => {
     const chunks = query?.queryChunks ?? [];
-    const sqlParts = chunks.map((c: any) => c?.value?.[0] ?? String(c ?? '')).join('');
+    const sqlParts = chunks.map((c: any) => c?.value ?? String(c ?? '')).join('');
     dbOps.push(sqlParts.includes('channel_counters') ? { type: 'upsert' } : { type: 'execute', sql: sqlParts });
     return { rows: [{ counts: upsertReturnValue }], rowCount: 1 };
   }),
