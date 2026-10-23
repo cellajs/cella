@@ -28,7 +28,7 @@ type MemberStatTable = AnyPgTable & {
 };
 
 const memberStatTable = (productType: MemberStatProductType): MemberStatTable =>
-  entityTables[productType as keyof typeof entityTables] as unknown as MemberStatTable;
+  entityTables[productType as keyof typeof entityTables] as MemberStatTable;
 
 /** Channel types a member row can carry a membership count for (all sub-organization channels). */
 const memberStatChannelTypes = hierarchy.getOrderedDescendants('organization').filter((type): type is ChannelEntityType => isChannel(type));
