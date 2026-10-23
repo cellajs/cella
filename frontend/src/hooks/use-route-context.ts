@@ -6,9 +6,9 @@ import type { Organization } from 'sdk';
 type OrganizationContext = { organization: Organization; tenantId: string };
 
 const findOrganizationContext = (matches: { context: unknown }[]) =>
-  matches.find((m) => {
-    const ctx = m.context as Record<string, unknown>;
-    return ctx?.organization && typeof ctx?.tenantId === 'string';
+  matches.find((match) => {
+    const context = match.context as Record<string, unknown>;
+    return context?.organization && typeof context?.tenantId === 'string';
   })?.context as OrganizationContext | undefined;
 
 /**
@@ -16,8 +16,8 @@ const findOrganizationContext = (matches: { context: unknown }[]) =>
  * Selects primitives because match context is rebuilt on every navigation, search-only ones included.
  */
 export const useOrganizationLayoutContext = (): { organizationId: string; tenantId: string } => {
-  const organizationId = useRouterState({ select: (s) => findOrganizationContext(s.matches)?.organization.id });
-  const tenantId = useRouterState({ select: (s) => findOrganizationContext(s.matches)?.tenantId });
+  const organizationId = useRouterState({ select: (state) => findOrganizationContext(state.matches)?.organization.id });
+  const tenantId = useRouterState({ select: (state) => findOrganizationContext(state.matches)?.tenantId });
 
   if (organizationId && tenantId) return { organizationId, tenantId };
 

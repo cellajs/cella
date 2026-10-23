@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
 
-type UseInViewOptions = {
+interface UseInViewOptions {
   /** Stop observing after the first intersection, so `inView` stays true. */
   once?: boolean;
   /** Visible fraction that counts as in view, passed to IntersectionObserver as `threshold`. */
   threshold?: number;
-};
+}
 
 /**
  * Tracks whether an element intersects the viewport. Returns a callback ref, so it follows an element that mounts

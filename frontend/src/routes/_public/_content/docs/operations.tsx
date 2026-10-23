@@ -6,14 +6,14 @@ import { queryClient } from '~/query/query-client';
 import { withSuspense } from '~/routes/-route-utils';
 import { pageHead } from '~/utils/app-title';
 import { lazyNamed } from '~/utils/lazy-named';
-import { stripParams } from '~/utils/strip-search-params';
+import { stripForeignParams } from '~/utils/strip-foreign-params';
 
 const OperationsPage = lazyNamed(() => import('~/modules/docs/operations/operations-page'), 'OperationsPage');
 
 export const Route = createFileRoute('/_public/_content/docs/operations')({
   staticData: { isAuth: false },
   validateSearch: operationsRouteSearchParamsSchema,
-  search: { middlewares: [stripParams('schemaTag')] },
+  search: { middlewares: [stripForeignParams('schemaTag')] },
   head: () => pageHead(i18n.t('c:operation_other')),
   loader: async () => {
     await queryClient.query(operationsQueryOptions);

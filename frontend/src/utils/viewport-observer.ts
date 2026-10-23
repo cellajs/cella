@@ -41,7 +41,7 @@ export const initViewportObserver = () => {
   // innerHeight can change on its own event, after the visual viewport has gone quiet
   window.addEventListener('resize', schedule);
   window.addEventListener('orientationchange', schedule);
-  // A stale value can survive a bfcache restore or a tab switch (keyboard gone, no resize delivered): resync.
+  // A stale value can survive a bfcache restore or a tab switch (keyboard gone, no resize delivered): measure again.
   window.addEventListener('pageshow', schedule);
   document.addEventListener('visibilitychange', schedule);
   schedule();

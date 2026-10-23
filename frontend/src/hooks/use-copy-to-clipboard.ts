@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
-/** Clipboard copy hook; `copied` resets after `timeoutDuration` ms (default 3000), and `copyToClipboard` resolves to whether it worked. */
-export const useCopyToClipboard = (timeoutDuration = 3000) => {
+/** Clipboard copy hook; `copied` resets after `timeoutMs` (default 3000), and `copyToClipboard` resolves to whether it worked. */
+export const useCopyToClipboard = (timeoutMs = 3000) => {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -10,7 +10,7 @@ export const useCopyToClipboard = (timeoutDuration = 3000) => {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => setCopied(false), timeoutDuration);
+      timeoutRef.current = setTimeout(() => setCopied(false), timeoutMs);
       return true;
     } catch {
       return false;

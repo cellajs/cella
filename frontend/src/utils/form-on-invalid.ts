@@ -15,18 +15,18 @@ export const defaultOnInvalid = <TFieldValues extends FieldValues>(errors: Field
 
   // The target, since React has cleared `currentTarget` by the time an async validation ends
   const form = event && event.target instanceof HTMLFormElement ? event.target : undefined;
-  const messages = processErrors(errors, form);
+  const messages = collectMessages(errors, form);
   if (!messages.length) return;
 
   const description = createElement(
     'div',
     null,
-    messages.map((msg, i) => createElement('p', { key: i }, msg)),
+    messages.map((message, i) => createElement('p', { key: i }, message)),
   );
   toaster.error(t('error:form.invalid_form'), { description });
 };
 
-const processErrors = <TFieldValues extends FieldValues>(
+const collectMessages = <TFieldValues extends FieldValues>(
   errors: FieldErrors<TFieldValues>,
   form: HTMLFormElement | undefined,
   parentFieldName?: string,
@@ -43,10 +43,10 @@ const processErrors = <TFieldValues extends FieldValues>(
       const error = value as FieldError;
       if (showsInline(form, fieldName)) continue;
 
-      const own = error.types ? Object.values(error.types) : [error.message];
-      for (const message of own) messages.push(`${label}: ${resolveErrorMessage(message)}`);
+      const fieldMessages = error.types ? Object.values(error.types) : [error.message];
+      for (const message of fieldMessages) messages.push(`${label}: ${resolveErrorMessage(message)}`);
     } else {
-      messages.push(...processErrors(value as FieldErrors<TFieldValues>, form, fieldName));
+      messages.push(...collectMessages(value as FieldErrors<TFieldValues>, form, fieldName));
     }
   }
 
@@ -60,7 +60,7 @@ const showsInline = (form: HTMLFormElement | undefined, fieldName: string) =>
 // Resolve a camelCase field name to a translated label via c:{snake_case} convention
 const resolveFieldLabel = (fieldName: string): string => {
   const leaf = fieldName.includes('.') ? fieldName.split('.').pop()! : fieldName;
-  const key = leaf.replace(/[A-Z]/g, (ch) => `_${ch.toLowerCase()}`);
+  const key = leaf.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
   const translated = t(`c:${key}` as TKey);
   // If i18next returns the key itself, fall back to the raw field name
   return translated !== key && translated !== `c:${key}` ? translated : fieldName;

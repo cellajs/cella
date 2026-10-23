@@ -23,8 +23,8 @@ export const useHasScrolled = ({ delay = 2000, immediate = false }: UseHasScroll
       cleanup();
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (scrollKeys.includes(e.key)) {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (scrollKeys.includes(event.key)) {
         handleScrollIntent();
       }
     };

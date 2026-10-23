@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-interface CloseOnEscapeOptions<Details> {
+interface UseCloseOnEscapeOptions<Details> {
   open?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean, eventDetails: Details) => void;
@@ -12,17 +12,17 @@ interface CloseOnEscapeOptions<Details> {
  * keyboard: those stop the key before it bubbles, which is why this listens in the capture phase. A caller that
  * controls `open` handles Escape itself.
  */
-export function useCloseOnEscape<Details>({ open, defaultOpen = false, onOpenChange }: CloseOnEscapeOptions<Details>) {
+export function useCloseOnEscape<Details>({ open, defaultOpen = false, onOpenChange }: UseCloseOnEscapeOptions<Details>) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const controlled = open !== undefined;
 
   useEffect(() => {
     if (controlled || !uncontrolledOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setUncontrolledOpen(false);
     };
-    document.addEventListener('keydown', onKeyDown, true);
-    return () => document.removeEventListener('keydown', onKeyDown, true);
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [controlled, uncontrolledOpen]);
 
   const handleOpenChange = (nextOpen: boolean, eventDetails: Details) => {

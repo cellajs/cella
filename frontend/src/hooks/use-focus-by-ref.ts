@@ -9,8 +9,7 @@ interface UseFocusByRefOptions {
 }
 
 /** Focuses an input ref on mount or when `trigger` flips true, unless the latest input was touch. */
-export function useFocusByRef(options?: UseFocusByRefOptions) {
-  const { trigger, delay = 0 } = options ?? {};
+export function useFocusByRef({ trigger, delay = 0 }: UseFocusByRefOptions = {}) {
   const focusRef = useRef<HTMLInputElement | null>(null);
 
   const setFocus = () => {

@@ -17,12 +17,11 @@ export { locales };
 if (import.meta.hot) {
   import.meta.hot.accept(async (newModule) => {
     if (!newModule?.locales) return;
-    const i18next = await import('i18next');
-    const i18n = i18next.default;
+    const { default: i18n } = await import('i18next');
     const updated = newModule.locales as typeof locales;
-    for (const [lang, namespaces] of Object.entries(updated)) {
-      for (const [ns, resources] of Object.entries(namespaces)) {
-        i18n.addResourceBundle(lang, ns, resources, true, true);
+    for (const [language, namespaces] of Object.entries(updated)) {
+      for (const [namespace, resources] of Object.entries(namespaces)) {
+        i18n.addResourceBundle(language, namespace, resources, true, true);
       }
     }
     // Trigger react-i18next re-render

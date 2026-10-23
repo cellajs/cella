@@ -7,21 +7,23 @@ const sortedBreakpoints = Object.keys(breakpoints).sort((a, b) => Number.parseIn
 // One media query per breakpoint, so JS agrees with the CSS `md:` variants. `window.innerWidth` does not: on
 // mobile it can follow the visual viewport (pinch zoom, overflowing content) and flip layouts the CSS never flips.
 // jsdom has no matchMedia; tests fall back to innerWidth there.
-const mediaQueries = new Map(sortedBreakpoints.map((bp) => [bp, window.matchMedia?.(`(min-width: ${breakpoints[bp]})`) ?? null] as const));
+const mediaQueries = new Map(
+  sortedBreakpoints.map((breakpoint) => [breakpoint, window.matchMedia?.(`(min-width: ${breakpoints[breakpoint]})`) ?? null] as const),
+);
 
-function matchesBreakpoint(bp: string) {
-  const mql = mediaQueries.get(bp);
-  if (mql) return mql.matches;
-  return window.innerWidth >= Number.parseInt(breakpoints[bp], 10);
+function matchesBreakpoint(breakpoint: string) {
+  const query = mediaQueries.get(breakpoint);
+  if (query) return query.matches;
+  return window.innerWidth >= Number.parseInt(breakpoints[breakpoint], 10);
 }
 
 // Largest breakpoint whose min-width query matches; below the smallest threshold, the smallest (`xs`).
-function getMatchedBreakpoints() {
+function getMatchedBreakpoint() {
   let matched = sortedBreakpoints[0];
 
-  for (const bp of sortedBreakpoints) {
-    if (matchesBreakpoint(bp)) {
-      matched = bp;
+  for (const breakpoint of sortedBreakpoints) {
+    if (matchesBreakpoint(breakpoint)) {
+      matched = breakpoint;
     } else {
       break;
     }
@@ -29,11 +31,11 @@ function getMatchedBreakpoints() {
   return matched;
 }
 
-let currentBreakpoint = getMatchedBreakpoints();
+let currentBreakpoint = getMatchedBreakpoint();
 const listeners = new Set<() => void>();
 
 function updateGlobalBreakpoint() {
-  const newBreakpoint = getMatchedBreakpoints();
+  const newBreakpoint = getMatchedBreakpoint();
   if (newBreakpoint !== currentBreakpoint) {
     currentBreakpoint = newBreakpoint;
     for (const listener of listeners) {
@@ -43,8 +45,8 @@ function updateGlobalBreakpoint() {
 }
 
 // Attach the listeners once per app lifecycle
-for (const mql of mediaQueries.values()) {
-  mql?.addEventListener('change', updateGlobalBreakpoint);
+for (const query of mediaQueries.values()) {
+  query?.addEventListener('change', updateGlobalBreakpoint);
 }
 if (!window.matchMedia) window.addEventListener('resize', updateGlobalBreakpoint);
 
@@ -64,14 +66,14 @@ export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
   return breakpointState as BreakpointKey;
 }
 
-function useBreakpointState(enableReactivity = true) {
+function useBreakpointIndex(enableReactivity = true) {
   return sortedBreakpoints.indexOf(useCurrentBreakpoint(enableReactivity));
 }
 
 export function useBreakpointBelow(breakpoint: BreakpointKey, enableReactivity = true) {
-  return useBreakpointState(enableReactivity) < sortedBreakpoints.indexOf(breakpoint);
+  return useBreakpointIndex(enableReactivity) < sortedBreakpoints.indexOf(breakpoint);
 }
 
 export function useBreakpointAbove(breakpoint: BreakpointKey, enableReactivity = true) {
-  return useBreakpointState(enableReactivity) >= sortedBreakpoints.indexOf(breakpoint);
+  return useBreakpointIndex(enableReactivity) >= sortedBreakpoints.indexOf(breakpoint);
 }

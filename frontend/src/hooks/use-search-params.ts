@@ -7,7 +7,10 @@ import { objectKeys } from '~/utils/object-keys';
 
 type RoutesById = keyof typeof router.routesById;
 
-type SearchParams = { from?: RoutesById; saveDataInSearch?: boolean };
+interface UseSearchParamsOptions {
+  from?: RoutesById;
+  saveDataInSearch?: boolean;
+}
 
 /**
  * Keys owned by URL-driven overlays: the user sheet, each product's registered `deepLinkParam` (its sheet or dialog)
@@ -19,17 +22,18 @@ const isOverlaySearchKey = (key: string) =>
 
 /** Sorted keys and dropped undefined values, so equal search content always serializes to the same string. */
 const serializeSearch = (search: Record<string, unknown>) => {
-  const own: Record<string, unknown> = {};
+  const withoutOverlays: Record<string, unknown> = {};
   for (const key of Object.keys(search).sort()) {
-    if (!isOverlaySearchKey(key)) own[key] = search[key];
+    if (!isOverlaySearchKey(key)) withoutOverlays[key] = search[key];
   }
-  return JSON.stringify(own);
+  return JSON.stringify(withoutOverlays);
 };
 
 /** Query param state; with `saveDataInSearch` it reads and writes the URL. Routes own defaults and stripping. */
-export function useSearchParams<T extends Record<string, string | string[] | undefined>>(searchParams?: SearchParams) {
-  const { from, saveDataInSearch = true } = searchParams ?? {};
-
+export function useSearchParams<T extends Record<string, string | string[] | undefined>>({
+  from,
+  saveDataInSearch = true,
+}: UseSearchParamsOptions = {}) {
   const navigate = useNavigate();
   const params = useParams(from ? { from, strict: true } : { strict: false });
 
@@ -37,9 +41,9 @@ export function useSearchParams<T extends Record<string, string | string[] | und
   const select = (search: Record<string, unknown>) => (saveDataInSearch ? serializeSearch(search) : '{}');
   const searchKey = useSearch(from ? { from, strict: true, select } : { strict: false, select });
 
-  const getMergedSearch = () => JSON.parse(searchKey) as T;
+  const readSearch = () => JSON.parse(searchKey) as T;
 
-  const [currentSearch, setCurrentSearch] = useState<T>(getMergedSearch);
+  const [currentSearch, setCurrentSearch] = useState<T>(readSearch);
 
   const setSearch = (newValues: Partial<T>) => {
     const updatedSearch = { ...currentSearch, ...newValues };
@@ -53,8 +57,8 @@ export function useSearchParams<T extends Record<string, string | string[] | und
 
       // Flatten array values into underscore-joined string
       if (!Array.isArray(updatedSearch[key])) continue;
-      const arr = updatedSearch[key];
-      updatedSearch[key] = (arr.length <= 1 ? arr[0] : arr.join('_')) as T[keyof T];
+      const values = updatedSearch[key];
+      updatedSearch[key] = (values.length <= 1 ? values[0] : values.join('_')) as T[keyof T];
     }
 
     if (!Object.keys(updatedSearch).some((key) => updatedSearch[key] !== currentSearch[key])) return;
@@ -74,7 +78,7 @@ export function useSearchParams<T extends Record<string, string | string[] | und
   // The URL write from setSearch lands here too; only a change made elsewhere (back, link, defaults) needs new state.
   useEffect(() => {
     if (!saveDataInSearch || serializeSearch(currentSearch) === searchKey) return;
-    setCurrentSearch(getMergedSearch());
+    setCurrentSearch(readSearch());
   }, [searchKey]);
 
   return { search: currentSearch, setSearch };

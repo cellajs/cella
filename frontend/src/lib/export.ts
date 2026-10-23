@@ -17,7 +17,7 @@ export function exportToCsv<R extends Row>(columns: ColumnOrColumnGroup<R>[], ro
   if (!rows.length) return;
 
   const { head, body } = toTable(columns, rows);
-  const content = [...head, ...body].map((cells) => cells.map(serialiseCellValue).join(',')).join('\n');
+  const content = [...head, ...body].map((cells) => cells.map(serializeCell).join(',')).join('\n');
 
   downloadFile(fileName, new Blob([content], { type: 'text/csv;charset=utf-8;' }));
 }
@@ -51,22 +51,21 @@ export async function exportToPdf<R extends Row>(columns: ColumnOrColumnGroup<R>
 
 /** The header row and the body rows of the columns the export shows. */
 const toTable = <R extends Row>(columns: ColumnOrColumnGroup<R>[], rows: R[]) => {
-  const shown = columns.filter((column) => filterColumns(column));
-  return { head: [shown.map((column) => String(column.name))], body: formatBodyData(rows, shown) };
+  const shown = columns.filter((column) => isExportedColumn(column));
+  return { head: [shown.map((column) => String(column.name))], body: formatRows(rows, shown) };
 };
 
-const formatRowData = <R extends Row>(row: R, column: ColumnOrColumnGroup<R>) =>
-  (column.exportValue ? column.exportValue(row) : row[column.key]) ?? '-';
+const formatCell = <R extends Row>(row: R, column: ColumnOrColumnGroup<R>) => (column.exportValue ? column.exportValue(row) : row[column.key]) ?? '-';
 
-const formatBodyData = <R extends Row>(rows: R[], columns: ColumnOrColumnGroup<R>[]): (string | number)[][] => {
-  return rows.map((row) => columns.map((column) => formatRowData(row, column)));
+const formatRows = <R extends Row>(rows: R[], columns: ColumnOrColumnGroup<R>[]): (string | number)[][] => {
+  return rows.map((row) => columns.map((column) => formatCell(row, column)));
 };
 
-/** Exports the columns the table shows, leaving out the nameless ones (selection and action columns). */
-const filterColumns = <R extends Row>(column: ColumnOrColumnGroup<R>) => !column.hidden && column.name !== '';
+/** A column the export shows: the table shows it and it has a name (selection and action columns have none). */
+const isExportedColumn = <R extends Row>(column: ColumnOrColumnGroup<R>) => !column.hidden && column.name !== '';
 
 /** A cell with a comma, quote or line break is quoted with its quotes doubled (RFC 4180); a list is one cell. */
-function serialiseCellValue(value: unknown) {
+function serializeCell(value: unknown) {
   const text = Array.isArray(value) ? value.join(', ') : String(value);
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }

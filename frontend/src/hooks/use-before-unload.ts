@@ -6,14 +6,14 @@ export const useBeforeUnload = (isChanged: boolean) => {
   useEffect(() => {
     const message = 'You have unsaved changes. Are you sure you want to leave?';
 
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (isChanged && appConfig.mode === 'development') {
         return console.info('Beforeunload warning is triggered but not shown in dev mode.');
       }
 
       if (isChanged) {
-        e.preventDefault();
-        e.returnValue = message;
+        event.preventDefault();
+        event.returnValue = message;
       }
     };
 

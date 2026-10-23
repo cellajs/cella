@@ -30,14 +30,14 @@ const initOptions: InitOptions = {
   },
 };
 
-const instance = i18n.use(Backend).use(LanguageDetector).use(initReactI18next);
+i18n.use(Backend).use(LanguageDetector).use(initReactI18next);
 
 // The page declares the language its text is in, so screen readers pronounce it right; an unsupported pick falls back
-instance.on('languageChanged', (lng) => {
-  if (typeof document !== 'undefined') document.documentElement.lang = instance.resolvedLanguage ?? lng;
+i18n.on('languageChanged', (language) => {
+  if (typeof document !== 'undefined') document.documentElement.lang = i18n.resolvedLanguage ?? language;
 });
 
-instance.init(initOptions);
+i18n.init(initOptions);
 
 // Every validation message in the user's language and in plain words; a message set on a schema still wins.
 z.config({ customError: formErrorMessage });

@@ -10,18 +10,18 @@ const initialCooldownMs = 500; // Brief cooldown on mount to prevent hiding from
 export const useScrollVisibility = (enabled = true, containerRef?: RefObject<HTMLElement | null>) => {
   const [isVisible, setIsVisible] = useState(true);
   const [container, setContainer] = useState<HTMLElement | Window | null>(null);
-  const lastScrollY = useRef(0);
-  const lastScrollHeight = useRef(0);
-  const shownAt = useRef(0);
-  const ticking = useRef(false);
-  const cooldownUntil = useRef(Date.now() + initialCooldownMs);
+  const lastScrollYRef = useRef(0);
+  const lastScrollHeightRef = useRef(0);
+  const shownAtRef = useRef(0);
+  const tickingRef = useRef(false);
+  const cooldownUntilRef = useRef(Date.now() + initialCooldownMs);
 
   const reset = useCallback(() => {
     setIsVisible(true);
-    shownAt.current = Date.now();
-    lastScrollY.current = containerRef?.current?.scrollTop ?? window.scrollY;
-    lastScrollHeight.current = containerRef?.current?.scrollHeight ?? document.documentElement.scrollHeight;
-    cooldownUntil.current = Date.now() + resetCooldownMs;
+    shownAtRef.current = Date.now();
+    lastScrollYRef.current = containerRef?.current?.scrollTop ?? window.scrollY;
+    lastScrollHeightRef.current = containerRef?.current?.scrollHeight ?? document.documentElement.scrollHeight;
+    cooldownUntilRef.current = Date.now() + resetCooldownMs;
   }, [containerRef]);
 
   // Wait for containerRef to be attached (refs are set after render)
@@ -59,53 +59,53 @@ export const useScrollVisibility = (enabled = true, containerRef?: RefObject<HTM
 
     const getScrollHeight = () => (container instanceof Window ? document.documentElement.scrollHeight : container.scrollHeight);
 
-    // Sync baselines with the actual position to handle restored scroll on page reload
+    // Start the baselines at the actual position to handle restored scroll on page reload
     const initialY = container instanceof Window ? container.scrollY : container.scrollTop;
-    lastScrollY.current = initialY;
-    lastScrollHeight.current = getScrollHeight();
+    lastScrollYRef.current = initialY;
+    lastScrollHeightRef.current = getScrollHeight();
 
-    const handleScroll = () => {
+    const updateVisibility = () => {
       const currentY = container instanceof Window ? container.scrollY : container.scrollTop;
-      ticking.current = false;
+      tickingRef.current = false;
 
-      // Scroll anchoring turns a content-height change into a non-gesture scroll event: resync without flipping.
+      // Scroll anchoring turns a content-height change into a non-gesture scroll event: take the new baseline without flipping.
       const currentHeight = getScrollHeight();
-      if (currentHeight !== lastScrollHeight.current) {
-        lastScrollHeight.current = currentHeight;
-        lastScrollY.current = currentY;
+      if (currentHeight !== lastScrollHeightRef.current) {
+        lastScrollHeightRef.current = currentHeight;
+        lastScrollYRef.current = currentY;
         return;
       }
 
-      if (Date.now() < cooldownUntil.current) {
-        lastScrollY.current = currentY;
+      if (Date.now() < cooldownUntilRef.current) {
+        lastScrollYRef.current = currentY;
         return;
       }
 
-      const delta = currentY - lastScrollY.current;
+      const delta = currentY - lastScrollYRef.current;
       // Sub-threshold moves keep the stale baseline so small deltas accumulate
       if (Math.abs(delta) <= scrollThreshold) return;
-      lastScrollY.current = currentY;
+      lastScrollYRef.current = currentY;
 
       if (Math.abs(delta) > maxGestureDelta) return;
 
       if (delta < 0) {
-        shownAt.current = Date.now();
+        shownAtRef.current = Date.now();
         setIsVisible(true);
-      } else if (Date.now() - shownAt.current > minVisibleMs) {
+      } else if (Date.now() - shownAtRef.current > minVisibleMs) {
         // Anti-flap: hide only once the grace period since showing has passed.
         setIsVisible(false);
       }
     };
 
-    const onScroll = () => {
-      if (!ticking.current) {
-        requestAnimationFrame(handleScroll);
-        ticking.current = true;
+    const handleScroll = () => {
+      if (!tickingRef.current) {
+        requestAnimationFrame(updateVisibility);
+        tickingRef.current = true;
       }
     };
 
-    container.addEventListener('scroll', onScroll, { passive: true });
-    return () => container.removeEventListener('scroll', onScroll);
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
   }, [enabled, container]);
 
   return { isVisible, reset };

@@ -1,12 +1,18 @@
 import { useEffect, useEffectEvent } from 'react';
 
-/** Listens for a window event while `options.enabled` (default true). `passive`: handler never calls preventDefault. */
+interface UseEventListenerOptions {
+  /** Default true. */
+  enabled?: boolean;
+  /** The handler never calls preventDefault. */
+  passive?: boolean;
+}
+
+/** Listens for a window event while `enabled`. */
 export function useEventListener<K extends keyof WindowEventMap>(
   eventName: K,
   handler: (event: WindowEventMap[K]) => void,
-  options?: { enabled?: boolean; passive?: boolean },
+  { enabled = true, passive }: UseEventListenerOptions = {},
 ): void {
-  const { enabled = true, passive } = options ?? {};
   const onEvent = useEffectEvent(handler);
 
   useEffect(() => {

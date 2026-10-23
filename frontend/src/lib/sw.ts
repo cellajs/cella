@@ -74,9 +74,9 @@ async function handleNotificationPush(data: NotificationPushData): Promise<void>
 /** Recount hint: the push carries no number; the API recount is authoritative and cheap. */
 async function updateUnreadBadge(): Promise<void> {
   try {
-    const res = await fetch(`${__BACKEND_URL__}/notifications?limit=1`, { credentials: 'include' });
-    if (!res.ok) return;
-    const { unreadCount }: { unreadCount: number } = await res.json();
+    const response = await fetch(`${__BACKEND_URL__}/notifications?limit=1`, { credentials: 'include' });
+    if (!response.ok) return;
+    const { unreadCount }: { unreadCount: number } = await response.json();
     await (unreadCount > 0 ? self.navigator.setAppBadge(unreadCount) : self.navigator.clearAppBadge());
   } catch {
     // Network error or expired auth: leave the badge unchanged.

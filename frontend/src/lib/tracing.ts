@@ -23,13 +23,13 @@ export function clearSpans(): void {
 
 // Span attribute helpers
 
-interface SpanAttrs {
+interface SpanAttributes {
   [key: string]: string | number | boolean | null | undefined | IncomingTraceContext;
   _trace?: IncomingTraceContext;
 }
 
-function applyAttrs(span: Span, attrs: SpanAttrs): void {
-  const { _trace, ...rest } = attrs;
+function applyAttributes(span: Span, attributes: SpanAttributes): void {
+  const { _trace, ...rest } = attributes;
   for (const [key, value] of Object.entries(rest)) {
     if (value !== undefined && value !== null && typeof value !== 'object') {
       span.setAttribute(key, value);
@@ -55,9 +55,9 @@ function traceContext(span: Span): TraceContext {
 }
 
 /** @public */
-export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => Promise<T>): Promise<T> {
+export async function withSpan<T>(name: string, attributes: SpanAttributes, fn: (context: TraceContext) => Promise<T>): Promise<T> {
   return tracer.startActiveSpan(name, async (span) => {
-    applyAttrs(span, attrs);
+    applyAttributes(span, attributes);
     try {
       const result = await fn(traceContext(span));
       span.setStatus({ code: SpanStatusCode.OK });
@@ -71,9 +71,9 @@ export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: Trac
   });
 }
 
-export function withSpanSync<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => T): T {
+export function withSpanSync<T>(name: string, attributes: SpanAttributes, fn: (context: TraceContext) => T): T {
   const span = tracer.startSpan(name);
-  applyAttrs(span, attrs);
+  applyAttributes(span, attributes);
   try {
     const result = fn(traceContext(span));
     span.setStatus({ code: SpanStatusCode.OK });
@@ -90,17 +90,17 @@ export function withSpanSync<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceC
  * Starts a sync engine span, named from `syncSpanNames`, that the caller ends.
  * @public
  */
-export function startSyncSpan(name: string, attributes: SpanAttrs = {}): Span {
+export function startSyncSpan(name: string, attributes: SpanAttributes = {}): Span {
   const span = tracer.startSpan(name);
-  applyAttrs(span, attributes);
+  applyAttributes(span, attributes);
   return span;
 }
 
 /** Record a swallowed critical failure as an immediate error span for Maple alerting. */
-export function reportCriticalError(name: string, err: unknown, attrs: SpanAttrs = {}): void {
+export function reportCriticalError(name: string, error: unknown, attributes: SpanAttributes = {}): void {
   const span = tracer.startSpan(`client.${name}`);
-  applyAttrs(span, attrs);
-  failSpan(span, err);
+  applyAttributes(span, attributes);
+  failSpan(span, error);
   span.end();
 }
 

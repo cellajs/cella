@@ -18,17 +18,17 @@ export const useRelativeDate = (date: string, addStr?: string) => {
   const [text, setText] = useState(() => dateMini(date, addStr));
 
   useEffect(() => {
-    let id: ReturnType<typeof setTimeout>;
+    let timer: ReturnType<typeof setTimeout>;
 
     const tick = () => {
       setText(dateMini(date, addStr));
-      const ms = getDelay(date);
-      if (ms) id = setTimeout(tick, ms);
+      const delay = getDelay(date);
+      if (delay) timer = setTimeout(tick, delay);
     };
 
     tick();
 
-    return () => clearTimeout(id);
+    return () => clearTimeout(timer);
   }, [date, addStr, language]);
 
   return text;

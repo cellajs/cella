@@ -17,17 +17,17 @@ export const withSuspense = (Component: ComponentType, fallback?: ReactNode) => 
 export const withSuspenseSpinner = (Component: ComponentType) => withSuspense(Component, <SpinnerPage />);
 
 export const createErrorComponent = (boundary: BoundaryType, homePath?: string) => {
-  const ErrorComp = ({ error, reset }: { error: unknown; reset: () => void }) => (
+  const ErrorComponent = ({ error, reset }: { error: unknown; reset: () => void }) => (
     <ErrorNotice error={error as ErrorNoticeError} resetErrorBoundary={reset} boundary={boundary} homePath={homePath} />
   );
-  ErrorComp.displayName = `ErrorComponent(${boundary})`;
-  return ErrorComp;
+  ErrorComponent.displayName = `ErrorComponent(${boundary})`;
+  return ErrorComponent;
 };
 
 export const createNotFoundComponent = (boundary: BoundaryType, homePath?: string) => {
-  const NotFoundComp = () => <ErrorNotice boundary={boundary} error={pageNotFoundError()} homePath={homePath} />;
-  NotFoundComp.displayName = `NotFoundComponent(${boundary})`;
-  return NotFoundComp;
+  const NotFoundComponent = () => <ErrorNotice boundary={boundary} error={pageNotFoundError()} homePath={homePath} />;
+  NotFoundComponent.displayName = `NotFoundComponent(${boundary})`;
+  return NotFoundComponent;
 };
 
 // === Static route components ===

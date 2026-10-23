@@ -2,7 +2,7 @@ type KeyboardModifiers = { alt: boolean; ctrl: boolean; meta: boolean; mod: bool
 
 type Hotkey = KeyboardModifiers & { key?: string };
 
-type CheckHotkeyMatch = (event: KeyboardEvent) => boolean;
+type HotkeyMatcher = (event: KeyboardEvent) => boolean;
 
 function parseHotkey(hotkey: string): Hotkey {
   const keys =
@@ -44,7 +44,7 @@ function isExactHotkey(hotkey: Hotkey, event: KeyboardEvent): boolean {
   return false;
 }
 
-export function getHotkeyMatcher(hotkey: string): CheckHotkeyMatch {
+export function getHotkeyMatcher(hotkey: string): HotkeyMatcher {
   return (event) => isExactHotkey(parseHotkey(hotkey), event);
 }
 
