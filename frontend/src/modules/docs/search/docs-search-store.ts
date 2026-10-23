@@ -25,5 +25,3 @@ export const saveRecentSearch = (value: string) => {
     return searches === state.recentSearches ? state : { recentSearches: searches };
   });
 };
-
-export { useDocsSearchStore as docsSearchStore };

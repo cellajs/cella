@@ -115,7 +115,7 @@ export function getNavTabCandidates(parentRouteId: string): NavCandidate[] {
 }
 
 /** {@link getNavTabCandidates}, gated (`requires` on `grants`, `visibleTo` on `pairs`) and stably sorted on `order` (default 0, lower first). */
-export function resolveNavTabs(parentRouteId: string, options: ResolvePlacementOptions = {}): PageTab[] {
+function resolveNavTabs(parentRouteId: string, options: ResolvePlacementOptions = {}): PageTab[] {
   const slot = getTabsSlot(parentRouteId);
   if (!slot) return [];
 

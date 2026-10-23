@@ -56,7 +56,7 @@ export function registerVariablesVersion(mutationKey: readonly unknown[], versio
 }
 
 /** The version of the variables a mutation of this key is issued with now. */
-export function variablesVersionOf(mutationKey: unknown): number {
+function variablesVersionOf(mutationKey: unknown): number {
   return versions.get(versionKey(mutationKey))?.version ?? 1;
 }
 
