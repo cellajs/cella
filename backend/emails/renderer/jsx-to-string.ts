@@ -3,8 +3,8 @@
  * @license MIT
  */
 import type { FC, ReactNode } from 'react';
-import { AttributeAliases, BooleanAttributes, EmptyObject, VoidElements } from './constants.js';
-import { escapeString } from './escape-string.js';
+import { AttributeAliases, BooleanAttributes, EmptyObject, RAW_TAG, VoidElements } from './constants.js';
+import { escapeAttribute, escapeText } from './escape-string.js';
 import { isValidElement } from './is-valid-element.js';
 import { stringifyStyles } from './stringify-styles.js';
 
@@ -30,7 +30,7 @@ export async function jsxToString(element: ReactNode): Promise<string> {
     return '';
   }
   if (typeof element === 'string') {
-    return escapeString(element);
+    return escapeText(element);
   }
   if (typeof element === 'number') {
     return String(element);
@@ -61,6 +61,9 @@ export async function jsxToString(element: ReactNode): Promise<string> {
   const props = element.props || EmptyObject;
 
   if (typeof type === 'string') {
+    // `Raw` content is written as it is, without a wrapper element.
+    if (type === RAW_TAG) return (props as { dangerouslySetInnerHTML: { __html: string } }).dangerouslySetInnerHTML.__html;
+
     let html = `<${type}`;
 
     let innerHTML = '';
@@ -72,19 +75,22 @@ export async function jsxToString(element: ReactNode): Promise<string> {
       } else if (prop === 'class' || prop === 'className') {
         // This condition is here because it is the most common attribute
         // and short-circuiting results in a ~5% performance boost.
-        html += value ? ` class="${escapeString(value as string)}"` : '';
+        html += value ? ` class="${escapeAttribute(value as string)}"` : '';
       } else if (prop === 'style') {
-        html += ` style="${stringifyStyles(value)}"`;
+        html += ` style="${escapeAttribute(stringifyStyles(value))}"`;
       } else if (prop === 'dangerouslySetInnerHTML') {
         // eslint-disable-next-line no-underscore-dangle
         innerHTML = (value as { __html: string }).__html;
       } else {
-        const name = AttributeAliases[prop as keyof typeof AttributeAliases] || prop;
+        // HTML attribute names are case-insensitive; written lowercase, as a parser reads them (`cellPadding`).
+        const name = AttributeAliases[prop as keyof typeof AttributeAliases] || prop.toLowerCase();
 
         if (BooleanAttributes.has(name)) {
           html += value ? ` ${name}` : '';
+        } else if (value === '') {
+          html += ` ${name}`;
         } else if (typeof value === 'string') {
-          html += ` ${name}="${escapeString(value)}"`;
+          html += ` ${name}="${escapeAttribute(value)}"`;
         } else if (typeof value === 'number') {
           html += ` ${name}="${String(value)}"`;
         } else if (typeof value === 'boolean') {
@@ -94,12 +100,20 @@ export async function jsxToString(element: ReactNode): Promise<string> {
     }
 
     if (VoidElements.has(type)) {
-      html += '/>';
+      html += '>';
     } else {
       html += '>';
 
       if (innerHTML) {
         html += innerHTML;
+      } else if (type === 'style') {
+        // CSS is raw text: written unescaped, only kept from closing its element early (`</style` in any case). Like text
+        // children, `false`, `null` and `undefined` write nothing.
+        html += [(props as { children?: unknown }).children]
+          .flat(Number.POSITIVE_INFINITY)
+          .filter((child) => typeof child === 'string' || typeof child === 'number')
+          .join('')
+          .replace(/<\/(style)/gi, '<\\/$1');
       } else {
         html += await jsxToString((props as { children?: ReactNode }).children);
       }

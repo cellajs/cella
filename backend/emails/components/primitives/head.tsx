@@ -16,7 +16,7 @@ export const Head: JsxEmailComponent<HeadProps> = ({ children, enableFormatDetec
     <meta name="x-apple-disable-message-reformatting" />
     {!enableFormatDetection && <meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no" />}
     {children}
-    <Conditional head mso>
+    <Conditional mso>
       <Raw content="<xml><o:OfficeDocumentSettings><o:AllowPNG /><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>" />
     </Conditional>
   </head>

@@ -317,6 +317,12 @@ export const config = {
   matrixURL: 'https://matrix-client.matrix.org',
   /** Maple.dev public ingest key, safe to embed in the frontend bundle (empty disables frontend export) */
   maplePublicIngestKey: '',
+  /**
+   * Hosts a Web Push subscription endpoint may name: the push services of Chrome and most Chromium browsers (FCM),
+   * Firefox, Safari and Edge (WNS). `*.` matches any subdomain; entries compare lowercased, without one trailing dot.
+   * The server POSTs each push to the stored endpoint, so registration refuses every other host.
+   */
+  pushServiceHosts: ['fcm.googleapis.com', 'updates.push.services.mozilla.com', 'web.push.apple.com', '*.notify.windows.com'],
 
   // Theming & UI
 

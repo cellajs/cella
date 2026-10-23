@@ -1356,7 +1356,7 @@
     "path": "/push/subscriptions",
     "tags": ["push"],
     "summary": "Register a Web Push subscription",
-    "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row.",
+    "description": "Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row. The endpoint must be an https URL of a known browser push service.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,

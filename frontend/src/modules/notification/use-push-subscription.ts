@@ -67,7 +67,11 @@ export function usePushSubscription() {
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
       const body = subscription.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
-      await registerPushSubscription(body);
+      // A subscription the server has no row for would read as enabled after a reload, so the browser drops it too.
+      await registerPushSubscription(body).catch(async (error) => {
+        await subscription.unsubscribe().catch(() => {});
+        throw error;
+      });
       setEnabled(true);
     } catch {
       // A refused subscribe or a failed request leaves the switch off.
