@@ -8,6 +8,12 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { dateShort } from '~/utils/date-short';
 import { formatCount } from '~/utils/format-count';
+import { tw } from '~/utils/tw';
+
+/** The label inside a `cell` Button: a link underline on hover, darker and nudged while the button is held. */
+export const cellLinkTextClass = tw(
+  'group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong truncate group-hover/cell-button:underline',
+);
 
 type DateValue = string | Date | null | undefined;
 

@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { GripVerticalIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { EditCellInput, enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
+import { cellLinkTextClass, dateColumn } from '~/modules/common/data-table/columns';
 import { ExpandToggleColumn } from '~/modules/common/data-table/tree/expand-toggle-column';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
@@ -10,7 +11,8 @@ import type { PageTreeRow } from '~/modules/page/table/page-tree';
 import { canEditDocs } from '~/modules/page/utils/edit-doc-page';
 import { RenderModeLabel } from '~/modules/page/utils/render-mode-label';
 import { Badge } from '~/modules/ui/badge';
-import { dateShort } from '~/utils/date-short';
+import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
 const dragHandleColumnKey = 'drag-handle';
@@ -45,17 +47,14 @@ export function useColumns() {
       resizable: true,
       renderCell: ({ row, tabIndex }) => (
         <div className="flex items-center gap-2 truncate">
-          <Link
-            to="/docs/page/$"
-            tabIndex={tabIndex}
-            draggable={false}
-            params={{ _splat: row.id }}
-            className="group/link flex min-w-0 items-center outline-0"
+          <Button
+            variant="cell"
+            size="cell"
+            className="w-auto min-w-0"
+            render={<Link to="/docs/page/$" tabIndex={tabIndex} draggable={false} params={{ _splat: row.id }} />}
           >
-            <span className="group-active/link:press link-decoration group-active/link:link-decoration-strong truncate font-medium group-hover/link:underline">
-              {row.name}
-            </span>
-          </Link>
+            <span className={cn(cellLinkTextClass, 'font-medium')}>{row.name}</span>
+          </Button>
           {row.draft && <Badge variant="secondary">{t('c:draft')}</Badge>}
           {row._hasChildren && !row._isExpanded && (
             <span
@@ -119,15 +118,7 @@ export function useColumns() {
         ),
       }),
     },
-    {
-      key: 'updatedAt',
-      name: t('c:updated_at'),
-      minBreakpoint: 'lg',
-      resizable: true,
-      minWidth: 120,
-      placeholderValue: '-',
-      renderCell: ({ row }) => (row.updatedAt ? dateShort(row.updatedAt) : '-'),
-    },
+    { ...dateColumn('updatedAt', { name: t('c:updated_at'), sortable: false, minBreakpoint: 'lg' }), resizable: true },
   ];
 
   // Stable array identity: DataGrid passes it to memoized Row/Cell, and a fresh array re-renders every visible row.

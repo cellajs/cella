@@ -172,13 +172,7 @@ export function ConnectionsCard({ tenant, className }: { tenant: Tenant; classNa
                     {t('c:sso_entry_link')}
                   </Button>
                 </HelpText>
-                <Button
-                  type="button"
-                  variant="plain"
-                  size="sm"
-                  className="ml-auto text-destructive"
-                  onClick={(event) => openDeleteConfirm(connection, event)}
-                >
+                <Button type="button" variant="destructive" size="sm" className="ml-auto" onClick={(event) => openDeleteConfirm(connection, event)}>
                   <TrashIcon />
                   {t('c:delete')}
                 </Button>

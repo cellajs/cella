@@ -7,7 +7,7 @@ import { hierarchy, isChannel, isProduct } from 'shared';
 import { ConfirmText } from '~/modules/common/confirm-text';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { countColumn, dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
+import { cellLinkTextClass, countColumn, dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
@@ -20,6 +20,7 @@ import type { EnrichedOrganization } from '~/modules/organization/types';
 import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { UserCell } from '~/modules/user/user-cell';
+import { cn } from '~/utils/cn';
 
 const descendants = hierarchy.getOrderedDescendants('organization');
 const lastChannel = descendants.filter(isChannel).at(-1);
@@ -58,9 +59,7 @@ export const useColumns = () => {
           }
         >
           <EntityAvatar type="organization" className="group-active/cell-button:press size-8" id={row.id} name={row.name} url={row.thumbnailUrl} />
-          <span className="group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong truncate font-medium group-hover/cell-button:underline">
-            {row.name || '-'}
-          </span>
+          <span className={cn(cellLinkTextClass, 'font-medium')}>{row.name || '-'}</span>
         </Button>
       ),
     },

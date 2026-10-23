@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Tenant } from 'sdk';
 import { isStrategyEnabled } from 'shared';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
-import { dateColumn } from '~/modules/common/data-table/columns';
+import { cellLinkTextClass, dateColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
@@ -14,6 +14,7 @@ import { ConnectionsCard } from '~/modules/tenants/connections/connections-card'
 import { statusOptions, UpdateTenantForm } from '~/modules/tenants/update-tenant-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 export const openUpdateTenantSheet = (tenant: Tenant, triggerRef: TriggerRef) =>
   openEditSheet({
@@ -35,7 +36,7 @@ export const useColumns = () => {
       minBreakpoint: 'md',
       resizable: true,
       width: 100,
-      renderCell: ({ row }) => <code className="font-mono text-xs">{row.id}</code>,
+      renderCell: ({ row }) => <code className="text-xs">{row.id}</code>,
     },
     {
       // The name opens the edit sheet, where the tenant and its connections are managed.
@@ -48,9 +49,7 @@ export const useColumns = () => {
       modes: { mobile: { minWidth: 120 } },
       renderCell: ({ row, tabIndex }) => (
         <Button variant="cell" size="cell" tabIndex={tabIndex} onClick={(event) => openUpdateTenantSheet(row, { current: event.currentTarget })}>
-          <span className="group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong truncate font-medium group-hover/cell-button:underline">
-            {row.name || '-'}
-          </span>
+          <span className={cn(cellLinkTextClass, 'font-medium')}>{row.name || '-'}</span>
         </Button>
       ),
     },
@@ -87,9 +86,7 @@ export const useColumns = () => {
             }
           >
             <EntityAvatar type="organization" className="group-active/cell-button:press size-8" id={org.id} name={org.name} url={org.thumbnailUrl} />
-            <span className="group-active/cell-button:press link-decoration group-active/cell-button:link-decoration-strong truncate group-hover/cell-button:underline max-sm:sr-only">
-              {org.name || '-'}
-            </span>
+            <span className={cn(cellLinkTextClass, 'max-sm:sr-only')}>{org.name || '-'}</span>
           </Button>
         );
       },
