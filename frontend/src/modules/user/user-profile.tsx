@@ -21,9 +21,7 @@ interface UserProfileProps {
 
 export function UserProfile({ user, organizationId, isSheet }: UserProfileProps) {
   const { t } = useTranslation();
-  const currentUser = useUserStore((state) => state.user);
-
-  const isSelf = !!currentUser && currentUser.id === user.id;
+  const isSelf = useUserStore((state) => state.user?.id === user.id);
 
   const { mutate: updateUser } = useUpdateUser(user.id);
 
@@ -48,7 +46,7 @@ export function UserProfile({ user, organizationId, isSheet }: UserProfileProps)
         }
       />
       <Suspense>
-        {/* No wrapper: the content owns its own container, so it can run a full-width tab nav */}
+        {/* No wrapper: the slot's tools bring their own container and top padding, so one can run a full-width tab nav */}
         <UserProfileContent user={user} organizationId={organizationId} isSheet={isSheet} />
       </Suspense>
     </>

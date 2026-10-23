@@ -78,8 +78,7 @@ export function InviteUsers({ channel, dialog: isDialog, mode: initialMode, chil
     });
   };
 
-  // The switch to bulk belongs in the header, beside that copy: in the dismissible alert below, dismissing lost it.
-  // Onboarding renders no dialog and no bulk, so there is nothing to place there.
+  // The bulk link joins the dialog's description, where dismissing the alert below cannot hide it; onboarding has no dialog.
   useEffect(() => {
     if (!isDialog || !dialoger.getState().get('invite-users')) return;
 

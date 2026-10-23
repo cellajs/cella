@@ -13,7 +13,7 @@ function rowKeyGetter(row: BaseUser) {
   return row.id;
 }
 
-function UsersTable() {
+export function UsersTable() {
   const { search, setSearch } = useSearchParams<UsersRouteSearchParams>({ from: '/_app/system/users' });
 
   const { q, role, sort, order } = search;
@@ -58,5 +58,3 @@ function UsersTable() {
     </>
   );
 }
-
-export { UsersTable };

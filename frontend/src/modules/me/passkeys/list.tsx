@@ -22,16 +22,13 @@ export function PasskeysList() {
     if (!onlineManager.isOnline()) return toastOffline();
     deletePasskey({ path: { id } });
   };
+
   return (
     <div className="mb-6">
-      <div className="flex max-sm:flex-col">
-        <Button key="createPasskey" type="button" variant="plain" onClick={() => createPasskey()}>
-          {hasPasskey ? <PlusIcon /> : <FingerprintPatternIcon />}
-          {hasPasskey
-            ? t('c:add_resource', { resource: t('c:passkey').toLowerCase() })
-            : t('c:create_resource', { resource: t('c:passkey').toLowerCase() })}
-        </Button>
-      </div>
+      <Button className="max-sm:w-full" variant="plain" onClick={() => createPasskey()}>
+        {hasPasskey ? <PlusIcon /> : <FingerprintPatternIcon />}
+        {t(hasPasskey ? 'c:add_resource' : 'c:create_resource', { resource: t('c:passkey').toLowerCase() })}
+      </Button>
       <div className="flex flex-col gap-2 has-first:mt-4">
         <ExpandableList
           items={passkeys}

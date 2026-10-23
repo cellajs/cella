@@ -10,7 +10,7 @@ interface UserCellProps {
   tabIndex: number;
   compactable?: boolean;
   className?: string;
-  /** When true, render avatar + name without the button/navigate behavior (e.g. in public layouts where the user sheet is not mounted). */
+  /** Avatar and name without the sheet link, for layouts that mount no user sheet (public pages). */
   readOnly?: boolean;
 }
 

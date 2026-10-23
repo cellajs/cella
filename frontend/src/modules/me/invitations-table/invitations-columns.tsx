@@ -21,7 +21,6 @@ export const useColumns = () => {
     {
       key: 'name',
       name: '',
-
       renderCell: ({ row }) => (
         <>
           <EntityAvatar type={row.entity.entityType} className="size-8" id={row.entity.id} name={row.entity.name} url={row.entity.thumbnailUrl} />
@@ -32,13 +31,11 @@ export const useColumns = () => {
     {
       key: 'entityType',
       name: t('c:type'),
-
       renderCell: ({ row }) => t(`c:${row.entity.entityType}`),
     },
     {
       key: 'role',
       name: t('c:role'),
-
       width: 100,
       placeholderValue: '-',
       renderCell: ({ row }) => (row.inactiveMembership.role ? t(`c:${row.inactiveMembership.role}`) : null),
@@ -47,7 +44,6 @@ export const useColumns = () => {
     {
       key: 'createdBy',
       name: t('c:invited_by'),
-
       minBreakpoint: 'md',
       minWidth: 160,
       placeholderValue: '-',
@@ -57,7 +53,6 @@ export const useColumns = () => {
     {
       key: 'actions',
       name: '',
-
       width: 200,
       renderCell: ({ row }) => (
         <div className="flex w-full max-w-50 gap-2">

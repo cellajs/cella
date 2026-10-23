@@ -57,13 +57,11 @@ export const useColumns = () => {
       {
         label: t('c:delete'),
         icon: TrashIcon,
-        onSelect: (row) => {
-          const callback = () => dropdowner.getState().remove();
+        onSelect: (row) =>
           openPopConfirm(
             <ConfirmText i18nKey="c:delete_confirm.text" values={{ name: row.name }} />,
-            <DeleteUsers users={[row]} callback={callback} />,
-          );
-        },
+            <DeleteUsers users={[row]} callback={() => dropdowner.getState().remove()} />,
+          ),
       },
     ]),
     emailColumn({ name: t('c:email'), minBreakpoint: 'md', resizable: true }),
@@ -74,7 +72,7 @@ export const useColumns = () => {
       minBreakpoint: 'md',
       resizable: true,
       width: 100,
-      renderCell: ({ row }) => (row.role ? t(row.role) : t('c:user')),
+      renderCell: ({ row }) => (row.role ? t(`c:${row.role}`) : t('c:user')),
     },
     dateColumn('createdAt', { name: t('c:created_at') }),
     {

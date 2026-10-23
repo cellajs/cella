@@ -35,7 +35,7 @@ export function TotpSetup() {
   // A wrong code remounts the form, so the code must be entered again.
   const onSubmit = (body: { code: string }) => createTotp(body, { onSuccess: closeSetup, onError: () => setFormVersion((version) => version + 1) });
 
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const openManualKey = () => {
     dialoger.getState().create(<TotpManualKey manualKey={data.manualKey} />, {

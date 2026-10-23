@@ -21,7 +21,7 @@ import { formResolver } from '~/utils/form-resolver';
 
 type InviteFormValues = z.infer<typeof zMembershipInviteBody>;
 
-/** The target vocabulary's least-privileged role, falling back to the organization's floor. */
+/** The target vocabulary's least-privileged role; without an entity type, the organization's. */
 const defaultInviteRole = (entityType?: ChannelEntityType): InviteFormValues['role'] =>
   hierarchy.getLeastPrivilegedRole(entityType ?? 'organization') as InviteFormValues['role'];
 
@@ -39,15 +39,13 @@ export function useInviteFormDraft(entityId?: string, entityType?: ChannelEntity
 export interface InviteFormProps {
   /** Without one the form sends a system invite. */
   channel?: EnrichedChannel;
+  /** Rendered in the `invite-users` dialog, which a sent invite closes. */
   dialog?: boolean;
   /** Takes the place of the cancel button, as the onboarding footer does. */
   children?: ReactNode;
 }
 
-/**
- * Sends an invite form as a membership invite to `channel`, or as a system invite without one. A sent invite calls
- * `onSent`, closes the dialog and reports how many addresses were invited and how many were not.
- */
+/** Sends the form as a membership invite to `channel`, or as a system invite without one; a sent invite runs `onSent` and toasts the counts. */
 export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: boolean | undefined, onSent: () => void) {
   const { t } = useTranslation();
 
@@ -69,11 +67,10 @@ export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: 
   });
 
   const onSubmit = (body: InviteFormValues) => {
-    // With no context, this is a system invite; otherwise it is a membership invite.
     if (!channel) return systemInvite(body);
 
     const organizationId = channel.organizationId || channel.id;
-    const path = { tenantId: channel.tenantId, organizationId: organizationId };
+    const path = { tenantId: channel.tenantId, organizationId };
     const query = { entityId: channel.id, entityType: channel.entityType };
 
     membershipInvite({ body, path, query, channel }, { onSuccess: (result) => handleSuccess(result, body.emails) });

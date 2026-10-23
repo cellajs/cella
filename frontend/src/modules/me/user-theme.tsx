@@ -1,5 +1,5 @@
 import { BanIcon, CircleIcon, MoonIcon, SunIcon } from 'lucide-react';
-import { useRef } from 'react';
+import { type CSSProperties, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { DropdownSelectItem } from '~/modules/common/dropdowner/dropdown-select-item';
@@ -15,7 +15,7 @@ interface ThemeItem {
   key: string;
   label: string;
   icon: IconComponent;
-  iconStyle?: React.CSSProperties;
+  iconStyle?: CSSProperties;
   iconClassName?: string;
   selected: boolean;
   onSelect: () => void;
@@ -48,12 +48,12 @@ interface UserThemeProps {
   tooltip?: boolean;
 }
 
-export function UserTheme({ buttonClassName = '', tooltip = false }: UserThemeProps) {
+export function UserTheme({ buttonClassName, tooltip = false }: UserThemeProps) {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const setMode = useUIStore((state) => state.setMode);
   const setTheme = useUIStore((state) => state.setTheme);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const modes = [
     { id: 'light', label: t('c:light'), icon: SunIcon },
@@ -63,19 +63,7 @@ export function UserTheme({ buttonClassName = '', tooltip = false }: UserThemePr
   const themes = objectEntries(appConfig.theme.colors) as [keyof typeof appConfig.theme.colors, string][];
 
   const label = t('c:change_theme');
-  const withTooltip = (button: React.ComponentProps<typeof TooltipButton>['children']) => (
-    <TooltipButton toolTipContent={label} disabled={!tooltip}>
-      {button}
-    </TooltipButton>
-  );
-
-  if (!themes.length) {
-    return withTooltip(
-      <Button variant="ghost" size="icon" className={buttonClassName} aria-label={label} onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}>
-        {mode === 'light' ? <SunIcon className="size-5" /> : <MoonIcon className="size-5" />}
-      </Button>,
-    );
-  }
+  const ModeIcon = mode === 'light' ? SunIcon : MoonIcon;
 
   const openDropdown = () => {
     const { mode: currentMode, theme: currentTheme } = uiStore.getState();
@@ -124,16 +112,18 @@ export function UserTheme({ buttonClassName = '', tooltip = false }: UserThemePr
     });
   };
 
-  return withTooltip(
-    <Button
-      ref={triggerRef}
-      variant="ghost"
-      size="icon"
-      className={cn('data-dropdowner-active:bg-foreground/8', buttonClassName)}
-      aria-label={label}
-      onClick={openDropdown}
-    >
-      {mode === 'light' ? <SunIcon className="size-5" /> : <MoonIcon className="size-5" />}
-    </Button>,
+  return (
+    <TooltipButton toolTipContent={label} disabled={!tooltip}>
+      <Button
+        ref={triggerRef}
+        variant="ghost"
+        size="icon"
+        className={cn('data-dropdowner-active:bg-foreground/8', buttonClassName)}
+        aria-label={label}
+        onClick={themes.length ? openDropdown : () => setMode(mode === 'light' ? 'dark' : 'light')}
+      >
+        <ModeIcon className="size-5" />
+      </Button>
+    </TooltipButton>
   );
 }

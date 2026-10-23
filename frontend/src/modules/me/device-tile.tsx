@@ -14,7 +14,7 @@ interface DeviceTileProps {
   action?: ReactNode;
 }
 
-/** A session or a passkey as a card: the device icon, the title row, the details and the tile's action at the end. */
+/** A session or a passkey as a card. */
 export function DeviceTile({ deviceType, title, details, action }: DeviceTileProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);

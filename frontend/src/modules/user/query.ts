@@ -1,6 +1,5 @@
 import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { User } from 'sdk';
-import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, updateUser } from 'sdk';
+import { deleteUsers, type GetUsersData, getUser, getUsers, type UpdateUserData, type User, updateUser } from 'sdk';
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { useUpdateSelfMutation } from '~/modules/me/query';

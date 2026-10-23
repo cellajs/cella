@@ -5,7 +5,7 @@ import { ConfirmText } from '~/modules/common/confirm-text';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
@@ -19,13 +19,12 @@ type UsersTableBarProps = BaseTableBarProps<BaseUser, UsersRouteSearchParams>;
 
 export function UsersTableBar({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) {
   const { t } = useTranslation();
-  const createDialog = useDialoger((state) => state.create);
 
   const total = useListQueryTotal(queryKey);
 
-  const inviteButtonRef = useRef(null);
-  const deleteButtonRef = useRef(null);
-  const inviteContainerRef = useRef(null);
+  const inviteButtonRef = useRef<HTMLButtonElement>(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  const inviteContainerRef = useRef<HTMLDivElement>(null);
 
   const { role } = searchVars;
   const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', role: undefined } });
@@ -36,7 +35,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
   };
 
   const openInviteDialog = () => {
-    createDialog(<InviteUsers mode={'email'} dialog />, {
+    dialoger.getState().create(<InviteUsers mode="email" dialog />, {
       id: 'invite-users',
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
@@ -44,7 +43,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       container: { ref: inviteContainerRef, overlay: true },
       title: t('c:invite'),
       titleContent: <UnsavedBadge title={t('c:invite')} />,
-      description: `${t('c:invite_users.text')}`,
+      description: t('c:invite_users.text'),
     });
   };
 
@@ -60,7 +59,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       clearSelection();
     };
 
-    createDialog(<DeleteUsers dialog users={selected} callback={callback} />, {
+    dialoger.getState().create(<DeleteUsers dialog users={selected} callback={callback} />, {
       id: 'delete-users',
       triggerRef: deleteButtonRef,
       className: 'max-w-xl',
@@ -90,7 +89,6 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
         onClear: clearSelection,
         children: <TableBarButton ref={deleteButtonRef} variant="destructive" onClick={openDeleteDialog} icon={TrashIcon} label="c:delete" />,
       }}
-      // Container for the embedded invite dialog
       after={<div ref={inviteContainerRef} className="empty:hidden" />}
     />
   );

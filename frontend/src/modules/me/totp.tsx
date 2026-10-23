@@ -20,7 +20,7 @@ export function Totp() {
   const hasTotp = authData.hasTotp;
   const { mutate: deleteTotp, isPending } = useDeleteTotpMutation();
 
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const openTotpSetup = async () => {
     // The key request and the code check need a stepped-up session: the user proves it before the setup opens.
@@ -54,14 +54,14 @@ export function Totp() {
     <div className="mb-6 flex gap-2 max-sm:flex-col">
       {hasTotp && <ConnectedStatus icon={<RotateCcwKeyIcon />}>{t('c:totp_activated')}</ConnectedStatus>}
       {hasTotp ? (
-        <Button key="deleteTotp" type="button" variant="plain" loading={isPending} disabled={user.mfaRequired} onClick={handleDeleteTotp}>
+        <Button variant="plain" loading={isPending} disabled={user.mfaRequired} onClick={handleDeleteTotp}>
           <TrashIcon />
-          <span>{t('c:delete')}</span>
+          {t('c:delete')}
         </Button>
       ) : (
-        <Button key="createTotp" type="button" variant="plain" onClick={openTotpSetup}>
+        <Button ref={triggerRef} variant="plain" onClick={openTotpSetup}>
           <RotateCcwKeyIcon />
-          <span>{t('c:totp_setup')}</span>
+          {t('c:totp_setup')}
         </Button>
       )}
     </div>

@@ -23,6 +23,12 @@ import {
 } from '~/modules/ui/combobox';
 import { usersListQueryOptions } from '~/modules/user/query';
 
+const contentVariants = {
+  hidden: { opacity: 0, y: -5, scale: 0.98 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.1 } },
+  exit: { opacity: 0, y: -5, scale: 0.98, transition: { duration: 0.1 } },
+};
+
 interface UserComboboxProps {
   value: string[];
   onChange: (emails: string[]) => void;
@@ -38,13 +44,9 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const handleUnselect = (email: string) => {
-    onChange(value.filter((selected) => selected !== email));
-  };
+  const handleUnselect = (email: string) => onChange(value.filter((selected) => selected !== email));
 
-  const queryOptions = usersListQueryOptions({ q: debouncedSearchQuery });
-
-  const { data, isFetching } = useInfiniteQuery(queryOptions);
+  const { data, isFetching } = useInfiniteQuery(usersListQueryOptions({ q: debouncedSearchQuery }));
 
   const items = data?.pages.flatMap((page) => page.items) ?? [];
   const userIds = items.map((user) => user.id).join(',');
@@ -61,12 +63,6 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
   });
 
   const existingMemberIds = new Set(membersData?.pages.flatMap((page) => page.items.map((member) => member.id)) ?? []);
-
-  const variants = {
-    hidden: { opacity: 0, y: -5, scale: 0.98 },
-    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.1 } },
-    exit: { opacity: 0, y: -5, scale: 0.98, transition: { duration: 0.1 } },
-  };
 
   return (
     <Combobox<string, true>
@@ -88,7 +84,7 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
           />
         }
       >
-        {value?.length ? (
+        {value.length ? (
           value.map((email) => (
             <Badge size="sm" variant="secondary" key={email} className="max-w-60">
               <span className="truncate">{email}</span>
@@ -125,20 +121,18 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
         <ComboboxList>
           <AnimatePresence mode="wait">
             {!isFetching && !items.length ? (
-              <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={variants}>
-                {debouncedSearchQuery.length ? (
-                  <ComboboxEmpty>
+              <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={contentVariants}>
+                <ComboboxEmpty>
+                  {debouncedSearchQuery.length ? (
                     <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleProps={{ resource: t('c:user_other').toLowerCase() }} />
-                  </ComboboxEmpty>
-                ) : (
-                  <ComboboxEmpty>
+                  ) : (
                     <ContentPlaceholder icon={UsersRoundIcon} title="c:invite_members_search.text" titleProps={{ appName: appConfig.name }} />
-                  </ComboboxEmpty>
-                )}
+                  )}
+                </ComboboxEmpty>
               </motion.div>
             ) : (
               items.length > 0 && (
-                <motion.div key="results" initial="hidden" animate="visible" exit="exit" variants={variants}>
+                <motion.div key="results" initial="hidden" animate="visible" exit="exit" variants={contentVariants}>
                   {items.map(({ id, name, email, entityType, thumbnailUrl }) => {
                     const alreadyMember = existingMemberIds.has(id);
                     return (

@@ -17,6 +17,7 @@ import type {
   RevokeConnectedAppResponse,
   RevokeMySessionsResponse,
   ToggleMfaData,
+  UpdateMeData,
   User,
 } from 'sdk';
 import {
@@ -35,7 +36,6 @@ import {
   revokeConnectedApp,
   revokeMySessions,
   toggleMfa,
-  type UpdateMeData,
   updateMe,
 } from 'sdk';
 import { ApiError } from '~/lib/api';
@@ -70,8 +70,7 @@ export const meKeys = {
   acceptInvitationToken: ['me', 'accept-invitation-token'] as const,
 };
 
-// `persist: false` keeps /me out of the IDB cache: the route guards read it with `staleTime: 'static'`, so a
-// persisted entry would let a session revoked between visits pass the guard and skip getAndSetMe's store write.
+/** Never persisted: the guards read it as `static`, so a stored entry would pass a session revoked between visits and skip the store write. */
 export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn: getAndSetMe, meta: { persist: false } });
 
 export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: () => getMyAuth() });
@@ -80,48 +79,42 @@ export const meConnectedAppsQueryOptions = () => queryOptions({ queryKey: meKeys
 
 export const meInvitationsQueryOptions = () => queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
 
-/**
- * A new authenticator key with its QR code. Once confirmed the key is the account's second factor, so it stays out of
- * the local database and leaves the cache when the setup closes. `static`: only the setup's refresh asks for a new key,
- * since a key requested after the step-up window opens the re-auth dialog, and mails its link, unasked.
- */
+/** A new authenticator key with its QR code; once confirmed it is the second factor, so it is never persisted and leaves with the setup. */
 export const totpKeyQueryOptions = () =>
   queryOptions({
     queryKey: meKeys.totpKey,
     queryFn: () => withStepUp(() => generateTotpKey()),
+    // Only the setup's refresh asks again: a key requested after the step-up window opens the re-auth dialog, which mails a link.
     staleTime: 'static',
     gcTime: 0,
     meta: { persist: false },
   });
 
-export const useUpdateSelfMutation = () => {
-  return useMutation<User, ApiError, Omit<UpdateMeData['body'], 'role' | 'userFlags'>>({
+export const useUpdateSelfMutation = () =>
+  useMutation<User, ApiError, Omit<UpdateMeData['body'], 'userFlags'>>({
     mutationKey: meKeys.update.info,
     mutationFn: (body) => updateMe({ body }),
     onSuccess: (updatedUser) => applyUpdatedSelf(updatedUser),
     gcTime: 1000 * 10,
   });
-};
 
-export const useToggleMfaMutation = () => {
-  return useMutation<User, ApiError, NonNullable<ToggleMfaData['body']>>({
+export const useToggleMfaMutation = () =>
+  useMutation<User, ApiError, NonNullable<ToggleMfaData['body']>>({
     mutationKey: meKeys.update.info,
     mutationFn: (body) => withStepUp(() => toggleMfa({ body })),
     onSuccess: (updatedUser, { mfaRequired: isEnabling }) => {
       applyUpdatedSelf(updatedUser);
       if (isEnabling) queryClient.invalidateQueries({ queryKey: meKeys.auth });
-      toaster.success(t(`mfa_${updatedUser.mfaRequired ? 'enabled' : 'disabled'}`));
+      toaster.success(t(updatedUser.mfaRequired ? 'c:mfa_enabled' : 'c:mfa_disabled'));
     },
     gcTime: 1000 * 10,
   });
-};
 
-export const useUpdateSelfFlagsMutation = () => {
-  return useMutation<User, ApiError, Pick<UpdateMeData['body'], 'userFlags'>>({
+export const useUpdateSelfFlagsMutation = () =>
+  useMutation<User, ApiError, Pick<UpdateMeData['body'], 'userFlags'>>({
     mutationKey: meKeys.update.flags,
     mutationFn: (body) => updateMe({ body }),
-    // Applied before the request and kept when it fails: route guards read flags from the store, so a flag that
-    // waited for the answer would send a user who just finished onboarding back into it.
+    // Applied before the request and kept on failure: guards read flags from the store, so a late flag sends a just-onboarded user back.
     onMutate: ({ userFlags }) => {
       userStore.setState((state) => {
         if (state.user) Object.assign(state.user.userFlags, userFlags);
@@ -130,10 +123,9 @@ export const useUpdateSelfFlagsMutation = () => {
     onSuccess: (updatedUser) => applyUpdatedSelf(updatedUser),
     gcTime: 1000 * 10,
   });
-};
 
-export const useCreatePasskeyMutation = () => {
-  return useMutation<Passkey, ApiError, void>({
+export const useCreatePasskeyMutation = () =>
+  useMutation<Passkey, ApiError, void>({
     mutationKey: meKeys.register.passkey,
     mutationFn: async () => {
       // Stepped up before the ceremony, so the authenticator prompts once.
@@ -151,17 +143,15 @@ export const useCreatePasskeyMutation = () => {
       toaster.success(t('c:success.passkey_added'));
     },
     onError(error) {
-      // A refusal by the server is toasted by the global handler
+      // The global handler toasts the server's refusals; a failure in the browser, a cancelled prompt included, gets this toast.
       if (error instanceof StepUpDismissed || error instanceof ApiError) return;
-      // On cancel throws error NotAllowedError
       console.error('Error during passkey registration:', error);
       toaster.error(t('error:passkey_registration_failed'));
     },
   });
-};
 
-export const useDeletePasskeyMutation = () => {
-  return useMutation<DeletePasskeyResponse, ApiError, MutationData<DeletePasskeyData>>({
+export const useDeletePasskeyMutation = () =>
+  useMutation<DeletePasskeyResponse, ApiError, MutationData<DeletePasskeyData>>({
     mutationKey: meKeys.delete.passkey,
     mutationFn: ({ path }) => withStepUp(() => deletePasskey({ path })),
     onSuccess: (_data, { path: { id } }) => {
@@ -172,7 +162,6 @@ export const useDeletePasskeyMutation = () => {
       toaster.success(t('c:success.delete_resource', { resource: t('c:passkey') }));
     },
   });
-};
 
 /** Confirms the authenticator key with its first code; the key leaves the cache with it. */
 export const useCreateTotpMutation = () =>
@@ -189,8 +178,8 @@ export const useCreateTotpMutation = () =>
     },
   });
 
-export const useDeleteTotpMutation = () => {
-  return useMutation<DeleteTotpResponse, ApiError, void>({
+export const useDeleteTotpMutation = () =>
+  useMutation<DeleteTotpResponse, ApiError, void>({
     mutationKey: meKeys.delete.totp,
     mutationFn: () => withStepUp(() => deleteTotp()),
     onSuccess: () => {
@@ -201,7 +190,6 @@ export const useDeleteTotpMutation = () => {
       });
     },
   });
-};
 
 /** Deletes the signed-in account; the caller signs out. */
 export const useDeleteSelfMutation = () =>
@@ -250,8 +238,8 @@ export const useAcceptInvitationTokenMutation = () =>
   });
 
 /** Revoking a consent deletes its tokens server-side; the list drops the row without a refetch. */
-export const useRevokeConnectedAppMutation = () => {
-  return useMutation<RevokeConnectedAppResponse, ApiError, MutationData<RevokeConnectedAppData>>({
+export const useRevokeConnectedAppMutation = () =>
+  useMutation<RevokeConnectedAppResponse, ApiError, MutationData<RevokeConnectedAppData>>({
     mutationKey: meKeys.delete.connectedApp,
     mutationFn: ({ path }) => revokeConnectedApp({ path }),
     onSuccess: (_data, { path: { id } }) => {
@@ -265,7 +253,6 @@ export const useRevokeConnectedAppMutation = () => {
       console.error('Error revoking connected app:', error);
     },
   });
-};
 
 /** Revokes sessions by id; each cached session takes the server's revoked row, so it moves to the history. */
 export const useRevokeSessionsMutation = () =>

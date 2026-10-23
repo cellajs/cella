@@ -1,10 +1,9 @@
-import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUrlSheet } from '~/modules/common/sheeter/use-url-sheet';
 import { UserSheet } from '~/modules/user/user-sheet';
 import { tw } from '~/utils/tw';
 
-function UserSheetHandlerBase() {
+export function UserSheetHandler() {
   const { t } = useTranslation();
 
   useUrlSheet({
@@ -16,5 +15,3 @@ function UserSheetHandlerBase() {
 
   return null;
 }
-
-export const UserSheetHandler = memo(UserSheetHandlerBase);

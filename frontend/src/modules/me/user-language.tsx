@@ -12,7 +12,7 @@ import { useUserStore } from '~/modules/user/user-store';
 
 export function UserLanguage() {
   const { t } = useTranslation();
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const user = useUserStore((state) => state.user);
   const currentLanguage = user?.language || i18n.languages[0];

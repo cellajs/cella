@@ -1,4 +1,4 @@
-import type { UseFormProps } from 'react-hook-form';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { User } from 'sdk';
 import { zUpdateUserBody } from 'sdk/zod.gen';
@@ -35,7 +35,7 @@ interface UpdateUserFormProps {
   sheet?: boolean;
   /** Show only essential fields (avatar, name) for onboarding */
   compact?: boolean;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 export function UpdateUserForm({ user, sheet: isSheet, compact, children }: UpdateUserFormProps) {
@@ -46,7 +46,7 @@ export function UpdateUserForm({ user, sheet: isSheet, compact, children }: Upda
 
   const { mutate: updateUser, isPending } = useUpdateUser(user.id);
 
-  const formOptions: UseFormProps<FormValues> = { resolver: formResolver(formSchema), defaultValues: user };
+  const formOptions = { resolver: formResolver(formSchema), defaultValues: user };
 
   const formContainerId = 'update-user';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${user.id}`, { formOptions, formContainerId });

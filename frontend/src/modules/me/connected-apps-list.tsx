@@ -9,7 +9,7 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { dateShort } from '~/utils/date-short';
 
-/** The OAuth consents of the current user (MCP clients, registered apps); revoking one deletes its tokens. */
+/** The OAuth consents of the current user: MCP clients and registered apps. */
 export function ConnectedAppsList() {
   const { t } = useTranslation();
   const {

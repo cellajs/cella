@@ -27,7 +27,7 @@ export function PasskeyTile({ passkey, onDelete, loading, onlyPasskeyLeft }: Pas
         <div className="flex items-start gap-1 max-md:flex-col md:gap-2">
           <span className="text-sm max-sm:hidden">{passkey.deviceName || t('c:unknown_device')}</span>
           <TooltipButton toolTipContent={passkey.nameOnDevice} side="top">
-            <Badge size="xs" variant="outline" className="max-w-48">
+            <Badge variant="outline" className="max-w-48">
               <KeyRoundIcon className="shrink-0" />
               <span className="truncate">{passkey.nameOnDevice}</span>
             </Badge>

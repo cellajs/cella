@@ -4,7 +4,7 @@ import { getCurrentUser, userStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
 import { appStreamManager } from '~/query/realtime/stream-store';
 
-/** Fetches who is signed in and writes the answer to the user store in one go: the user, system admin access and an impersonation's admin. */
+/** Fetches who is signed in and writes the answer to the user store. */
 export const getAndSetMe = async () => {
   const me = await getMe();
   const previousUserId = userStore.getState().lastUser?.id;

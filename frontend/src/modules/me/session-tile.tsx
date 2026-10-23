@@ -55,36 +55,16 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
           <span className="text-sm">{session.deviceName || t('c:unknown_device')}</span>
           <div className="flex items-center gap-2 empty:hidden">
             {session.type === 'mfa' && (
-              <Badge size="xs" variant="success" soft>
+              <Badge variant="success" soft>
                 <ShieldCheckIcon />
                 {t('c:mfa_short')}
               </Badge>
             )}
-            {session.isCurrent && (
-              <Badge size="xs" variant="plain">
-                {t('c:current')}
-              </Badge>
-            )}
-            {isCurrentDevice && (
-              <Badge size="xs" variant="outline">
-                {t('c:this_device')}
-              </Badge>
-            )}
-            {session.isNewDevice && !session.isCurrent && !isCurrentDevice && (
-              <Badge size="xs" variant="warning">
-                {t('c:new_device')}
-              </Badge>
-            )}
-            {isRevoked && (
-              <Badge size="xs" variant="secondary">
-                {t('c:revoked')}
-              </Badge>
-            )}
-            {isExpired && (
-              <Badge size="xs" variant="secondary">
-                {t('c:expired')}
-              </Badge>
-            )}
+            {session.isCurrent && <Badge variant="plain">{t('c:current')}</Badge>}
+            {isCurrentDevice && <Badge variant="outline">{t('c:this_device')}</Badge>}
+            {session.isNewDevice && !session.isCurrent && !isCurrentDevice && <Badge variant="warning">{t('c:new_device')}</Badge>}
+            {isRevoked && <Badge variant="secondary">{t('c:revoked')}</Badge>}
+            {isExpired && <Badge variant="secondary">{t('c:expired')}</Badge>}
           </div>
         </div>
       }

@@ -1,5 +1,5 @@
-import i18n from 'i18next';
 import { VenetianMaskIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { startImpersonationFlow } from '~/modules/me/helpers';
@@ -12,28 +12,30 @@ interface ImpersonateCellProps {
   tabIndex: number;
 }
 
-async function handleStartImpersonation(targetUserId: string) {
-  try {
-    await startImpersonationFlow(targetUserId);
-    toaster.success(i18n.t('c:success.impersonated'));
-    getRouter().navigate({ to: appConfig.defaultRedirectPath, replace: true });
-  } catch (error) {
-    toaster.error(i18n.t('error:impersonation_failed'));
-    console.error(error);
-  }
-}
-
 export function ImpersonateCell({ user, tabIndex }: ImpersonateCellProps) {
+  const { t } = useTranslation();
+
+  const impersonate = async () => {
+    try {
+      await startImpersonationFlow(user.id);
+      toaster.success(t('c:success.impersonated'));
+      getRouter().navigate({ to: appConfig.defaultRedirectPath, replace: true });
+    } catch (error) {
+      toaster.error(t('error:impersonation_failed'));
+      console.error(error);
+    }
+  };
+
   return (
     <Button
       variant="cell"
       size="cell"
       tabIndex={tabIndex}
       className="justify-center"
-      aria-label={i18n.t('c:impersonate')}
+      aria-label={t('c:impersonate')}
       data-tooltip="true"
-      data-tooltip-content={i18n.t('c:impersonate')}
-      onClick={() => handleStartImpersonation(user.id)}
+      data-tooltip-content={t('c:impersonate')}
+      onClick={impersonate}
     >
       <VenetianMaskIcon />
     </Button>

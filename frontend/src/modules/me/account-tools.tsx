@@ -80,8 +80,7 @@ export function AccountAuthenticationCard() {
   const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
   const { enabledOAuth } = authData;
 
-  // An SSO recovery link lands here naming the connection to connect. The user need not be a member of its
-  // organization yet, so it is offered beside the institutions of their own organizations.
+  // An SSO recovery link names a connection (`connect`), offered beside the user's own institutions even before they join its organization.
   const { connect } = useSearch({ from: '/_app/account' });
   const listed = authData.institutions.find((institution) => institution.connectionId === connect);
   const { data: entry } = useQuery({ ...ssoEntryQueryOptions(connect), enabled: !!connect && !listed });
@@ -94,9 +93,7 @@ export function AccountAuthenticationCard() {
 
   // The backend pins the next sign-in's callback to this account; the browser then leaves for that sign-in, which links the identity.
   const { mutate: startConnect } = useMutation({
-    mutationFn: async (_target: { id: string; url: string }) => {
-      await withStepUp(() => startOAuthConnect());
-    },
+    mutationFn: (_target: { id: string; url: string }) => withStepUp(() => startOAuthConnect()),
     onMutate: ({ id }) => setConnecting(id),
     onSuccess: (_data, { url }) => window.location.assign(url),
     onError: () => setConnecting(null),
@@ -114,7 +111,7 @@ export function AccountAuthenticationCard() {
           <>
             <AuthSectionTitle title={t('c:mfa')} help={t('c:mfa.text')}>
               {!user.mfaRequired && (
-                <Badge size="xs" variant="success" soft className="max-sm:hidden">
+                <Badge variant="success" soft className="max-sm:hidden">
                   {t('c:recommended')}
                 </Badge>
               )}
@@ -199,7 +196,7 @@ export function AccountAuthenticationCard() {
 export function AccountDeleteCard() {
   const { t } = useTranslation();
   const user = useCurrentUser();
-  const deleteButtonRef = useRef(null);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
   const openDeleteDialog = () => {
     dialoger.getState().create(<DeleteSelf />, {

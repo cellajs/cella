@@ -18,11 +18,10 @@ export function SessionsList() {
   const liveSessions = allSessions.filter(isLiveSession);
   const revocable = liveSessions.filter((session) => !session.isCurrent);
 
-  // Group the current session first, followed by matching device hashes and ungrouped sessions.
   const currentDeviceHash = liveSessions.find((session) => session.isCurrent)?.deviceIdHash ?? null;
   const isCurrentDevice = (session: Session) => !session.isCurrent && session.deviceIdHash !== null && session.deviceIdHash === currentDeviceHash;
   const rank = (session: Session) => (session.isCurrent ? 0 : isCurrentDevice(session) ? 1 : 2);
-  const sessions = Array.from(liveSessions).sort((a, b) => rank(a) - rank(b));
+  const sessions = liveSessions.sort((a, b) => rank(a) - rank(b));
 
   // Revoked and expired sessions of the last 30 days, the most recently ended first.
   const endedAt = (session: Session) => new Date(sessionEndedAt(session)).getTime();

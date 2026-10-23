@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { MfaConfirmation } from '~/modules/me/mfa/confirmation';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { WarningNote } from '~/modules/me/warning-note';
@@ -14,14 +14,12 @@ export function MfaSwitch() {
   const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
   const canEnable = authData.passkeys.length > 0 && authData.hasTotp;
 
-  const createDialog = useDialoger((state) => state.create);
-
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const handleToggleMfa = (mfaRequired: boolean) => {
     const action = mfaRequired ? 'enable' : 'disable';
 
-    createDialog(<MfaConfirmation mfaRequired={mfaRequired} />, {
+    dialoger.getState().create(<MfaConfirmation mfaRequired={mfaRequired} />, {
       id: 'mfa-confirmation',
       triggerRef,
       className: 'max-w-xl',

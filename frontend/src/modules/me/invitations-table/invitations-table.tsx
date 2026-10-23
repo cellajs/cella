@@ -16,8 +16,7 @@ export function InvitationsTable() {
 
   const columns = useColumns();
 
-  const queryOptions = meInvitationsQueryOptions();
-  const { data, isLoading, isFetching, error } = useQuery({ ...queryOptions });
+  const { data, isLoading, isFetching, error } = useQuery(meInvitationsQueryOptions());
 
   return (
     <div className="flex h-full flex-col gap-4">
