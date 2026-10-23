@@ -1,22 +1,18 @@
-import { type ComponentType, type LazyExoticComponent, lazy, useEffect, useRef, useState } from 'react';
+import { type ComponentType, type LazyExoticComponent, useEffect, useState } from 'react';
+import { useLatestRef } from '~/hooks/use-latest-ref';
+import { lazyNamed } from '~/utils/lazy-named';
 
-/** Lazily loads `exportName` from a dynamic import `delay` ms after mount; null until loaded. */
+/** Lazily loads `exportName` from a dynamic import `delay` ms after mount, through the latest render's `importFunc`; null until then. */
 export function useLazyComponent<
-  // biome-ignore lint/suspicious/noExplicitAny: Supports components with any prop shape.
-  T extends ComponentType<any>,
-  TModule extends Record<TKey, T>,
+  // biome-ignore lint/suspicious/noExplicitAny: the constraint only; each call keeps its component's own props.
+  TModule extends Record<TKey, ComponentType<any>>,
   TKey extends keyof TModule,
->(importFunc: () => Promise<TModule>, exportName: TKey, delay: number): LazyExoticComponent<T> | null {
-  const [Component, setComponent] = useState<LazyExoticComponent<T> | null>(null);
-  const importRef = useRef(importFunc);
+>(importFunc: () => Promise<TModule>, exportName: TKey, delay: number): LazyExoticComponent<TModule[TKey]> | null {
+  const [Component, setComponent] = useState<LazyExoticComponent<TModule[TKey]> | null>(null);
+  const importRef = useLatestRef(importFunc);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      importRef.current().then((module) => {
-        setComponent(lazy(() => Promise.resolve({ default: module[exportName] })));
-      });
-    }, delay);
-
+    const timer = setTimeout(() => setComponent(lazyNamed(importRef.current, exportName)), delay);
     return () => clearTimeout(timer);
   }, [delay, exportName]);
 

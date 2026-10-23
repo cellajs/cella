@@ -192,7 +192,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 disabled={isInProgress}
                 aria-label={t('c:download')}
                 className={headerButtonClass}
-                onClick={() => download(currentItem.url, currentItem.filename || 'file')}
+                onClick={() => download(currentItem.url, currentItem.filename)}
               >
                 {isInProgress ? <Spinner className="size-5 text-foreground/80" noDelay /> : <DownloadIcon className="size-5" />}
               </Button>

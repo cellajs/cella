@@ -1,26 +1,14 @@
 import { createEnv } from '@t3-oss/env-core';
 import { z } from 'zod';
 
+const flag = z
+  .string()
+  .default('false')
+  .transform((value) => value === 'true');
+
 /** Provides validated environment variables for the frontend. */
 export const env = createEnv({
-  client: {
-    VITE_DEBUG_MODE: z
-      .string()
-      .default('false')
-      .transform((v) => v === 'true'),
-    VITE_DEBUG_I18N: z
-      .string()
-      .default('false')
-      .transform((v) => v === 'true'),
-    VITE_DEBUG_UI: z
-      .string()
-      .default('false')
-      .transform((v) => v === 'true'),
-    VITE_MAPLE: z
-      .string()
-      .default('false')
-      .transform((v) => v === 'true'),
-  },
+  client: { VITE_DEBUG_MODE: flag, VITE_DEBUG_I18N: flag, VITE_DEBUG_UI: flag, VITE_MAPLE: flag },
   clientPrefix: 'VITE_',
   runtimeEnv: import.meta.env,
   emptyStringAsUndefined: true,

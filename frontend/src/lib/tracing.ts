@@ -43,19 +43,27 @@ function applyAttrs(span: Span, attrs: SpanAttrs): void {
 
 // withSpan helpers
 
+function failSpan(span: Span, error: unknown): void {
+  const exception = error instanceof Error ? error : new Error(String(error));
+  span.recordException(exception);
+  span.setStatus({ code: SpanStatusCode.ERROR, message: exception.message });
+}
+
+function traceContext(span: Span): TraceContext {
+  const { traceId, spanId } = span.spanContext();
+  return { traceId, spanId, cdcTimestamp: Date.now() };
+}
+
 /** @public */
 export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceContext) => Promise<T>): Promise<T> {
   return tracer.startActiveSpan(name, async (span) => {
     applyAttrs(span, attrs);
     try {
-      const { traceId, spanId } = span.spanContext();
-      const ctx: TraceContext = { traceId, spanId, cdcTimestamp: Date.now() };
-      const result = await fn(ctx);
+      const result = await fn(traceContext(span));
       span.setStatus({ code: SpanStatusCode.OK });
       return result;
     } catch (error) {
-      span.setStatus({ code: SpanStatusCode.ERROR, message: error instanceof Error ? error.message : String(error) });
-      span.recordException(error instanceof Error ? error : new Error(String(error)));
+      failSpan(span, error);
       throw error;
     } finally {
       span.end();
@@ -67,30 +75,24 @@ export function withSpanSync<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceC
   const span = tracer.startSpan(name);
   applyAttrs(span, attrs);
   try {
-    const { traceId, spanId } = span.spanContext();
-    const ctx: TraceContext = { traceId, spanId, cdcTimestamp: Date.now() };
-    const result = fn(ctx);
+    const result = fn(traceContext(span));
     span.setStatus({ code: SpanStatusCode.OK });
     return result;
   } catch (error) {
-    span.setStatus({ code: SpanStatusCode.ERROR, message: error instanceof Error ? error.message : String(error) });
-    span.recordException(error instanceof Error ? error : new Error(String(error)));
+    failSpan(span, error);
     throw error;
   } finally {
     span.end();
   }
 }
 
-/** @public */
-export function startSyncSpan(name: string, attributes?: Record<string, string | number | boolean | null>): Span {
+/**
+ * Starts a sync engine span, named from `syncSpanNames`, that the caller ends.
+ * @public
+ */
+export function startSyncSpan(name: string, attributes: SpanAttrs = {}): Span {
   const span = tracer.startSpan(name);
-  if (attributes) {
-    for (const [key, value] of Object.entries(attributes)) {
-      if (value !== undefined && value !== null) {
-        span.setAttribute(key, value);
-      }
-    }
-  }
+  applyAttrs(span, attributes);
   return span;
 }
 
@@ -98,9 +100,7 @@ export function startSyncSpan(name: string, attributes?: Record<string, string |
 export function reportCriticalError(name: string, err: unknown, attrs: SpanAttrs = {}): void {
   const span = tracer.startSpan(`client.${name}`);
   applyAttrs(span, attrs);
-  const error = err instanceof Error ? err : new Error(String(err));
-  span.recordException(error);
-  span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+  failSpan(span, err);
   span.end();
 }
 

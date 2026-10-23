@@ -40,7 +40,13 @@ export class ApiError extends Error implements ApiErrorInit {
  * (502, 503, 504) reads as the service being unavailable and any other 5xx as a server error; a 4xx gets no type, so
  * it is described by what its status means.
  */
-export const apiErrorFromStatus = (status: number) => {
+const apiErrorFromStatus = (status: number) => {
   const type = [502, 503, 504].includes(status) ? 'service_unavailable' : status >= 500 ? 'server_error' : undefined;
   return new ApiError({ status: status as ApiErrorInit['status'], type, severity: status >= 500 ? 'error' : 'warn' });
+};
+
+/** The error of a failed response: its API error body, or {@link apiErrorFromStatus} for a body without a type. */
+export const apiErrorFromResponse = async (response: Response) => {
+  const body: ApiErrorInit | null = await response.json().catch(() => null);
+  return body?.type ? new ApiError(body) : apiErrorFromStatus(response.status);
 };

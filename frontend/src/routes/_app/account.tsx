@@ -1,11 +1,12 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
+import i18n from 'i18next';
 import { z } from 'zod';
 import { errorSearchSchema } from '~/modules/common/search-params-schemas';
 import { type ToastSeverity, toaster } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
 import { withSuspenseSpinner } from '~/routes/-route-utils';
-import { appTitle } from '~/utils/app-title';
+import { pageHead } from '~/utils/app-title';
 import { getErrorInfo } from '~/utils/get-error-info';
 import { lazyNamed } from '~/utils/lazy-named';
 
@@ -18,7 +19,7 @@ const AccountPage = lazyNamed(() => import('~/modules/me/account-page'), 'Accoun
 export const Route = createFileRoute('/_app/account')({
   staticData: { isAuth: true },
   validateSearch: errorSearchSchema.extend({ connect: z.uuid().optional().catch(undefined) }),
-  head: () => ({ meta: [{ title: appTitle('Settings') }] }),
+  head: () => pageHead(i18n.t('c:settings')),
   beforeLoad: ({ search }) => {
     if (search.error) {
       const { title, message } = getErrorInfo({ errorFromQuery: search.error });

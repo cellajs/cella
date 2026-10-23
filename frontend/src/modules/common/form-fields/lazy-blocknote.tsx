@@ -1,10 +1,11 @@
+import type { ComponentType } from 'react';
 import type { FieldValues } from 'react-hook-form';
 import type { BlockNoteContentFormFieldProps } from '~/modules/common/form-fields/blocknote';
 import { lazyNamed } from '~/utils/lazy-named';
 import { tw } from '~/utils/tw';
 
-// `lazyNamed` types the props as any; the wrapper below gives back the field's own, tied to the form's values.
-const LazyField = lazyNamed(() => import('~/modules/common/form-fields/blocknote'), 'BlockNoteContentFormField');
+// biome-ignore lint/suspicious/noExplicitAny: `lazy` loses the field's type parameter, which the wrapper below restores.
+const LazyField: ComponentType<any> = lazyNamed(() => import('~/modules/common/form-fields/blocknote'), 'BlockNoteContentFormField');
 
 /** The input frame for an editor field's root (`baseBlockNoteProps.className`), ringed while focus is inside; each form adds its own left padding. */
 export const blockNoteFieldClass = tw(

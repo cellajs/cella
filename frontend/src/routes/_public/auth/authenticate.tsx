@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
+import i18n from 'i18next';
 import { authStore } from '~/modules/auth/auth-store';
 import { AuthenticatePage } from '~/modules/auth/authenticate-page';
 import { authenticateRouteSearchParamsSchema } from '~/modules/auth/search-params-schemas';
@@ -6,12 +7,12 @@ import { resolvePostAuthRedirect } from '~/modules/auth/use-post-auth-redirect';
 import { meKeys, meQueryOptions } from '~/modules/me/query';
 import { userStore } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
-import { appTitle } from '~/utils/app-title';
+import { pageHead } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_public/auth/authenticate')({
   validateSearch: authenticateRouteSearchParamsSchema,
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: appTitle('Authenticate') }] }),
+  head: () => pageHead(i18n.t('c:authentication')),
   beforeLoad: async ({ cause, search }) => {
     authStore.getState().reset();
 

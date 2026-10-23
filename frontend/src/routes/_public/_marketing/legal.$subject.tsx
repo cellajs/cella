@@ -3,7 +3,7 @@ import i18n from 'i18next';
 import { z } from 'zod';
 import { defaultLegalSubject, legalConfig, legalSubjects } from '~/modules/auth/legal/legal-config';
 import { LegalPage } from '~/modules/marketing/legal/legal-page';
-import { appTitle } from '~/utils/app-title';
+import { pageHead } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_public/_marketing/legal/$subject')({
   params: {
@@ -11,6 +11,6 @@ export const Route = createFileRoute('/_public/_marketing/legal/$subject')({
     stringify: (params) => ({ subject: params.subject }),
   },
   staticData: { isAuth: false },
-  head: ({ params }) => ({ meta: [{ title: appTitle(i18n.t(legalConfig[params.subject].label)) }] }),
+  head: ({ params }) => pageHead(i18n.t(legalConfig[params.subject].label)),
   component: LegalPage,
 });

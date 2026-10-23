@@ -43,10 +43,10 @@ const cleanupOnBoundaryChange = (current?: BoundaryType, pending?: BoundaryType)
 };
 
 // Router lifecycle subscriptions
-// Track the latest history action: PUSH/REPLACE = forward/new, BACK/FORWARD/GO = history traversal.
-let lastHistoryAction = 'PUSH';
+// Whether the latest history action navigated forward (PUSH, REPLACE); BACK, FORWARD and GO traverse the history.
+let isForward = true;
 router.history.subscribe(({ action }) => {
-  lastHistoryAction = action.type;
+  isForward = action.type === 'PUSH' || action.type === 'REPLACE';
 });
 
 router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
@@ -60,14 +60,12 @@ router.subscribe('onBeforeLoad', ({ pathChanged, toLocation }) => {
   // A forward navigation staying on the same leaf route has no scroll delta to mask.
   const fromLeafId = router.state.matches.at(-1)?.routeId;
   const toLeafId = pendingMatches.at(-1)?.routeId;
-  const isForward = lastHistoryAction === 'PUSH' || lastHistoryAction === 'REPLACE';
   setSkipPageEnter(!!fromLeafId && fromLeafId === toLeafId && isForward);
 });
 
 // The router scrolls a hash link only to a target the page renders and skips its scroll to top whenever a hash is set,
 // so a forward link to a page without that target would keep the previous page's scroll.
 router.subscribe('onRendered', ({ pathChanged, toLocation }) => {
-  const isForward = lastHistoryAction === 'PUSH' || lastHistoryAction === 'REPLACE';
   if (!pathChanged || !isForward || !toLocation.hash || document.getElementById(toLocation.hash)) return;
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 });

@@ -1,14 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
+
+const getIsOnline = () => onlineManager.isOnline();
 
 /** Network status sourced from TanStack Query's onlineManager. */
-export const useOnlineManager = () => {
-  const [isOnline, setIsOnline] = useState(onlineManager.isOnline());
-
-  useEffect(() => {
-    const unsubscribe = onlineManager.subscribe((isOnline) => setIsOnline(isOnline));
-    return () => unsubscribe();
-  }, []);
-
-  return isOnline;
-};
+export const useOnlineManager = () => useSyncExternalStore(onlineManager.subscribe, getIsOnline);

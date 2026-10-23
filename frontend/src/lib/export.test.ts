@@ -1,5 +1,8 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import i18n from 'i18next';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import '~/lib/dayjs';
 import { exportToCsv, exportToPdf } from '~/lib/export';
+import { locales } from '~/lib/i18n-locales';
 
 /** Documents the PDF export saved: file name and raw PDF text. jspdf's own `save` writes to disk in Node. */
 const savedPdfs: { name: string; pdf: string }[] = [];
@@ -28,7 +31,7 @@ async function csvText(columns: { key: string; name: string }[], rows: Record<st
     return 'blob:export';
   });
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-  await exportToCsv(columns, rows, 'export.csv');
+  exportToCsv(columns, rows, 'export.csv');
   return file ? file.text() : '';
 }
 
@@ -59,6 +62,10 @@ describe('exportToCsv', () => {
 });
 
 describe('exportToPdf', () => {
+  beforeAll(async () => {
+    await i18n.init({ lng: 'en', resources: locales, ns: ['c'], defaultNS: 'c', interpolation: { escapeValue: false } });
+  });
+
   it('saves a document with the page name and the table rows', async () => {
     await exportToPdf([{ key: 'name', name: 'Name' }], [{ name: 'Ada Lovelace' }], 'members.pdf', '/organization/members', 'light');
 

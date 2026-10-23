@@ -290,14 +290,6 @@
 /* Fixed bottom chrome steps aside: the body carries these classes while the selection action bar or the on-screen keyboard is up. */
 @custom-variant chrome-hidden (&:is(.selection-active *, .keyboard-open *));
 
-/* Serves an app's task board (raak): hide the create-task button when the board is empty (no projects).
-   In the utilities layer: from the base layer the button's own `inline-flex` utility would win. */
-@layer utilities {
-  body:has([data-board-empty]) #create-task {
-    display: none;
-  }
-}
-
 /* Press feedback through a state variant (`active:press`, `group-active/name:press`). `transform` stacks on the
    `translate` of translate utilities, so a centered `-translate-y-1/2` stays centered; an inline transform wins. */
 @utility press {

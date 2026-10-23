@@ -1,21 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { safeRedirectPath } from '~/modules/auth/redirect-path';
+import i18n from 'i18next';
+import { ssoEntryRouteSearchParamsSchema } from '~/modules/auth/search-params-schemas';
 import { SsoEntryPage } from '~/modules/auth/sso-entry-page';
-import { appTitle } from '~/utils/app-title';
-
-const searchSchema = z.object({
-  /** An unsafe redirect reads as absent. */
-  redirect: z
-    .string()
-    .optional()
-    .transform((redirect) => safeRedirectPath(redirect)),
-});
+import { pageHead } from '~/utils/app-title';
 
 /** An institution's sign-in entry, by its connection id: the link an institution shares; lives under the sign-in framing. */
 export const Route = createFileRoute('/_public/auth/sso/$connectionId')({
-  validateSearch: searchSchema,
+  validateSearch: ssoEntryRouteSearchParamsSchema,
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: appTitle('Sign in') }] }),
+  head: () => pageHead(i18n.t('c:sign_in')),
   component: SsoEntryPage,
 });

@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { ssoEntryQueryOptions } from '~/modules/auth/query';
-import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import { ssoStartUrl } from '~/modules/auth/sso-providers';
 import { ErrorNotice } from '~/modules/common/error-notice';
 import { Spinner } from '~/modules/common/spinner';
@@ -40,7 +39,7 @@ export function SsoEntryPage() {
       </AuthHeader>
 
       {status === 'active' ? (
-        <Button className="w-full" render={<a href={ssoStartUrl({ connectionId }, { redirectAfter: safeRedirectPath(redirect) })} />}>
+        <Button className="w-full" render={<a href={ssoStartUrl({ connectionId }, { redirectAfter: redirect })} />}>
           {t('c:continue_to_institution', { institution: institution.displayName })}
           <span className="opacity-70">{t('c:sign_in_via_federation', { federation: federation.label })}</span>
         </Button>

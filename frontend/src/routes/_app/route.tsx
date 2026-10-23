@@ -1,11 +1,10 @@
-import { createFileRoute, defer, redirect } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { ApiError } from '~/lib/api';
 import { meQueryOptions } from '~/modules/me/query';
 import { getMenuData } from '~/modules/navigation/menu-sheet/helpers/get-menu-data';
 import { unseenCountsQueryOptions } from '~/modules/seen/query';
 import { userStore } from '~/modules/user/user-store';
 import { localUserStorageReady } from '~/query/local-user-storage';
-import { onError } from '~/query/on-error';
 import { queryClient } from '~/query/query-client';
 import { appStreamManager } from '~/query/realtime/stream-store';
 import { withSuspenseSpinner } from '~/routes/-route-utils';
@@ -20,16 +19,14 @@ export const Route = createFileRoute('/_app')({
   beforeLoad: async ({ location, cause }) => {
     if (cause !== 'enter') return;
 
-    let storedUser = userStore.getState().user;
-
-    if (!storedUser) {
+    if (!userStore.getState().user) {
       if (location.pathname === '/') {
         const { lastUser } = userStore.getState();
         if (!lastUser) throw redirect({ to: '/about', replace: true });
 
         // The cookie can still be valid while the store is empty after a backend-driven sign-in, so probe /me first.
         try {
-          storedUser = await queryClient.query({ ...meQueryOptions(), staleTime: 'static' });
+          await queryClient.query({ ...meQueryOptions(), staleTime: 'static' });
         } catch {
           throw redirect({ to: '/auth/authenticate', search: { fromRoot: true }, replace: true });
         }
@@ -39,9 +36,7 @@ export const Route = createFileRoute('/_app')({
 
         console.info('Not authenticated -> redirect to sign in');
 
-        const url = new URL(location.pathname, window.location.origin);
-        const redirectPath = url.pathname + url.search;
-        throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: redirectPath } });
+        throw redirect({ to: '/auth/authenticate', search: { fromRoot: true, redirect: location.pathname + location.searchStr } });
       }
     }
 
@@ -56,23 +51,12 @@ export const Route = createFileRoute('/_app')({
     queryClient.query({ ...meQueryOptions(), staleTime: 'static' }).catch((error) => {
       if (error instanceof ApiError && Number(error.status) === 401) appStreamManager.disconnect();
     });
-    return { user: storedUser };
   },
 
   loader: async ({ cause }) => {
     if (cause !== 'enter') return;
 
-    try {
-      console.debug('[AppLayout] Fetching menu while loading app:', location.pathname);
-
-      void queryClient.query(unseenCountsQueryOptions()).catch(() => {});
-
-      return defer(getMenuData());
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error(error);
-        onError(error);
-      }
-    }
+    void queryClient.query(unseenCountsQueryOptions()).catch(() => {});
+    await getMenuData();
   },
 });

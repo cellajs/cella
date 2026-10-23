@@ -2,6 +2,7 @@ import { t } from 'i18next';
 import { InfoIcon } from 'lucide-react';
 import { appConfig } from 'shared';
 import type { AlertBanner } from '~/modules/common/alerter/alert-banner';
+import { tw } from '~/utils/tw';
 
 const alerts: AlertBanner[] = [];
 
@@ -11,7 +12,7 @@ if (appConfig.mode === 'development') {
     id: 'test-credentials',
     modes: ['public'],
     icon: InfoIcon,
-    className: 'rounded-none border-0 border-t z-40 fixed bottom-0 left-0 right-0',
+    className: tw('fixed inset-x-0 bottom-0 z-40 rounded-none border-0 border-t'),
     children: (
       <>
         <strong className="mr-2">Testing credentials</strong>
@@ -27,7 +28,7 @@ if (appConfig.mode === 'production') {
     id: 'prerelease',
     modes: ['app'],
     icon: InfoIcon,
-    className: 'rounded-none border-0 border-b',
+    className: tw('rounded-none border-0 border-b'),
     children: (
       <>
         <strong className="mr-2">{t('about:prerelease')}</strong>

@@ -77,8 +77,7 @@ async function updateUnreadBadge(): Promise<void> {
     const res = await fetch(`${__BACKEND_URL__}/notifications?limit=1`, { credentials: 'include' });
     if (!res.ok) return;
     const { unreadCount }: { unreadCount: number } = await res.json();
-    if (unreadCount > 0) (self.navigator as Navigator).setAppBadge(unreadCount);
-    else (self.navigator as Navigator).clearAppBadge();
+    await (unreadCount > 0 ? self.navigator.setAppBadge(unreadCount) : self.navigator.clearAppBadge());
   } catch {
     // Network error or expired auth: leave the badge unchanged.
   }
@@ -104,11 +103,9 @@ async function focusOrOpenApp(url: string): Promise<void> {
 
 // The push service rotated the subscription: re-subscribe with the same key and re-register, or
 // the device silently stops receiving until the user toggles push off and on again.
-self.addEventListener('pushsubscriptionchange', ((event: ExtendableEvent & { oldSubscription?: PushSubscription }) => {
-  event.waitUntil(resubscribe(event.oldSubscription));
-}) as EventListener);
+self.addEventListener('pushsubscriptionchange', (event) => event.waitUntil(resubscribe(event.oldSubscription)));
 
-async function resubscribe(oldSubscription?: PushSubscription): Promise<void> {
+async function resubscribe(oldSubscription: PushSubscription | null): Promise<void> {
   try {
     const applicationServerKey = oldSubscription?.options.applicationServerKey ?? undefined;
     const subscription = await self.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });

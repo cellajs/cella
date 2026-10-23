@@ -14,7 +14,7 @@ export const withSuspense = (Component: ComponentType, fallback?: ReactNode) => 
   return Wrapped;
 };
 
-export const withSuspenseSpinner = (Component: ComponentType) => withSuspense(Component, <Spinner size="lg" className="mt-[45vh]" />);
+export const withSuspenseSpinner = (Component: ComponentType) => withSuspense(Component, <SpinnerPage />);
 
 export const createErrorComponent = (boundary: BoundaryType, homePath?: string) => {
   const ErrorComp = ({ error, reset }: { error: unknown; reset: () => void }) => (

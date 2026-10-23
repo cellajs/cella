@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addRecentSearch, resolveSearchInput } from './recent-searches';
+import { addRecentSearch, resolveSearchInput, withoutRecentSearch } from './recent-searches';
 
 describe('addRecentSearch', () => {
   it('puts the most recent search on top', () => {
@@ -47,6 +47,14 @@ describe('addRecentSearch', () => {
       list = addRecentSearch(list, term);
     }
     expect(list).toEqual(['six666', 'five555', 'four444', 'three333', 'two222']);
+  });
+});
+
+describe('withoutRecentSearch', () => {
+  it('drops the entry, and hands back the same array when it holds none, so the store skips the write', () => {
+    const list = ['passkeys', 'rate limits'];
+    expect(withoutRecentSearch(list, 'passkeys')).toEqual(['rate limits']);
+    expect(withoutRecentSearch(list, 'missing')).toBe(list);
   });
 });
 

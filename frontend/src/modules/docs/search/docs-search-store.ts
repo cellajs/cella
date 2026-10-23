@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { addRecentSearch } from '~/utils/recent-searches';
+import { addRecentSearch, withoutRecentSearch } from '~/utils/recent-searches';
 
 interface DocsSearchStoreState {
   recentSearches: string[];
@@ -13,8 +13,8 @@ export const useDocsSearchStore = create<DocsSearchStoreState>()(
 
 export const removeRecentSearch = (value: string) => {
   useDocsSearchStore.setState((state) => {
-    const searches = state.recentSearches.filter((entry) => entry !== value);
-    return searches.length === state.recentSearches.length ? state : { recentSearches: searches };
+    const searches = withoutRecentSearch(state.recentSearches, value);
+    return searches === state.recentSearches ? state : { recentSearches: searches };
   });
 };
 

@@ -57,30 +57,21 @@ function getSnapshot() {
   return currentBreakpoint;
 }
 
-function getServerSnapshot() {
-  return sortedBreakpoints[0];
-}
-
 type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
-  const breakpointState = useSyncExternalStore(enableReactivity ? subscribe : () => () => {}, getSnapshot, getServerSnapshot);
+  const breakpointState = useSyncExternalStore(enableReactivity ? subscribe : () => () => {}, getSnapshot);
   return breakpointState as BreakpointKey;
 }
 
 function useBreakpointState(enableReactivity = true) {
-  const breakpointState = useSyncExternalStore(enableReactivity ? subscribe : () => () => {}, getSnapshot, getServerSnapshot);
-  return sortedBreakpoints.indexOf(breakpointState);
+  return sortedBreakpoints.indexOf(useCurrentBreakpoint(enableReactivity));
 }
 
-export function useBreakpointBelow(breakpoint: keyof typeof breakpoints, enableReactivity = true) {
-  const currentIndex = useBreakpointState(enableReactivity);
-  const targetIndex = sortedBreakpoints.indexOf(breakpoint as string);
-  return currentIndex < targetIndex;
+export function useBreakpointBelow(breakpoint: BreakpointKey, enableReactivity = true) {
+  return useBreakpointState(enableReactivity) < sortedBreakpoints.indexOf(breakpoint);
 }
 
-export function useBreakpointAbove(breakpoint: keyof typeof breakpoints, enableReactivity = true) {
-  const currentIndex = useBreakpointState(enableReactivity);
-  const targetIndex = sortedBreakpoints.indexOf(breakpoint as string);
-  return currentIndex >= targetIndex;
+export function useBreakpointAbove(breakpoint: BreakpointKey, enableReactivity = true) {
+  return useBreakpointState(enableReactivity) >= sortedBreakpoints.indexOf(breakpoint);
 }

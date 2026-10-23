@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { guardNavTabs } from '~/modules/common/page/tab-nav';
 import { OrganizationRouteComponent } from '~/modules/organization/route-components';
 import { createErrorComponent } from '~/routes/-route-utils';
-import { appTitle } from '~/utils/app-title';
+import { pageHead } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_app/$tenantId/$organizationSlug/organization')({
   staticData: { isAuth: true, floatingNavButtons: { left: 'menu' }, tabsSlot: 'organization.tabs' },
@@ -12,7 +12,7 @@ export const Route = createFileRoute('/_app/$tenantId/$organizationSlug/organiza
       slotConfig: context.organization?.toolsConfig?.['organization.tabs'],
     });
   },
-  head: ({ match }) => ({ meta: [{ title: appTitle(match.context.organization?.name) }] }),
+  head: ({ match }) => pageHead(match.context.organization?.name),
   errorComponent: createErrorComponent('app'),
   component: OrganizationRouteComponent,
 });

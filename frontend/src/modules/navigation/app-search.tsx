@@ -21,7 +21,7 @@ import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { usersListQueryOptions } from '~/modules/user/query';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
-import { addRecentSearch, resolveSearchInput } from '~/utils/recent-searches';
+import { addRecentSearch, resolveSearchInput, withoutRecentSearch } from '~/utils/recent-searches';
 
 const searchableEntityTypes = ['user', ...appConfig.channelEntityTypes] as const;
 
@@ -61,11 +61,8 @@ export function AppSearch() {
 
   const removeRecentSearch = (search: string) => {
     navigationStore.setState((state) => {
-      const searches = [...state.recentSearches];
-      const index = searches.indexOf(search);
-      if (index === -1) return;
-      searches.splice(index, 1);
-      return { ...state, recentSearches: searches };
+      const searches = withoutRecentSearch(state.recentSearches, search);
+      return searches === state.recentSearches ? state : { ...state, recentSearches: searches };
     });
   };
 

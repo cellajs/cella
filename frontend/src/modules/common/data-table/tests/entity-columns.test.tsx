@@ -302,7 +302,7 @@ describe('csv export', () => {
       return 'blob:export';
     });
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
-    await exportToCsv(columns as never, rows, 'export.csv');
+    exportToCsv(columns as never, rows, 'export.csv');
     return file ? (await file.text()).split('\n') : [];
   }
 
