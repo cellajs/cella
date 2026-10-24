@@ -50,6 +50,15 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     request: { body: jsonBody(emailBodySchema) },
     responses: { 200: json('Whether this browser is recognized for the address', z.object({ recognized: z.boolean() })) },
   }),
+  getPendingMfa: xRoute({
+    method: 'get',
+    path: '/mfa/pending',
+    xGuard: [publicGuard],
+    summary: 'Get pending MFA challenge',
+    description:
+      'For the MFA challenge a sign-in left in this browser: the address of the account it completes, so the MFA page can name it in any browser.',
+    responses: { 200: json('The address of the account the held challenge signs in to', z.object({ email: z.string() })) },
+  }),
   invokeToken: xRoute({
     method: 'get',
     path: '/invoke-token/{type}/{token}',

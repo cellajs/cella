@@ -649,6 +649,13 @@ export const zCheckEmailResponse = z.object({
   recognized: z.boolean(),
 });
 
+/**
+ * The address of the account the held challenge signs in to
+ */
+export const zGetPendingMfaResponse = z.object({
+  email: z.string(),
+});
+
 export const zInvokeTokenPath = z.object({
   type: z.enum(['oauth-verification', 'invitation', 'magic', 'step-up']),
   token: z.string(),
