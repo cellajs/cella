@@ -117,11 +117,12 @@ export function DocsSearch() {
       // On touch the keyboard's Search key would open a highlighted first result the user never chose.
       autoHighlight={!isTouchInteraction()}
     >
-      <div className="flex min-h-0 flex-col rounded-lg shadow-2xl">
+      <div className="flex min-h-0 flex-col rounded-lg shadow-2xl max-sm:flex-1">
         <SearchDialogBar>
           <ComboboxSearchInput
             ref={focusRef}
             value={searchValue}
+            onClear={() => setSearchValue('')}
             isSearching={isSearching}
             spinnerDelay={0}
             enterKeyHint="search"
@@ -133,7 +134,7 @@ export function DocsSearch() {
         {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h/overflow are neutralized. On a phone
             the results take what the dialog has left above the keyboard, below the scope chips. */}
         <ScrollArea
-          className="max-sm:order-1 max-sm:flex max-sm:min-h-0 max-sm:flex-col sm:h-[45vh]"
+          className="max-sm:order-1 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col sm:h-[45vh]"
           viewportClassName="max-sm:min-h-0 overscroll-contain"
         >
           {results === null && recentSearches.length === 0 && (

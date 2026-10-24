@@ -34,6 +34,7 @@ overrides:
   postcss-selector-parser@<7.1.6: ^7.1.6
   # react-scan's CLI linter (eslint, oxlint, a second TypeScript), declared as "latest"; the app imports only the runtime.
   react-scan>react-doctor: '-'
+  zod@<4.6.6: ^4.6.6
 packages:
   - mcp
   - oauth

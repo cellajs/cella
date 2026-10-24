@@ -1,9 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
 import type { Organization } from 'sdk';
 import { appConfig } from 'shared';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
-import { toaster } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
 import { DeleteToolCard } from '~/modules/entities/channel-settings-tools';
 import { TabsArrangementCard } from '~/modules/entities/tabs-arrangement-card';
@@ -62,7 +60,6 @@ export function OrganizationTabsCard({ organization }: OrganizationCardProps) {
 }
 
 export function OrganizationDeleteCard({ organization }: OrganizationCardProps) {
-  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -74,14 +71,10 @@ export function OrganizationDeleteCard({ organization }: OrganizationCardProps) 
       values={{ days: appConfig.retention.archivedTenantDays }}
       renderDialog={() => (
         <DeleteOrganizations
-          dialog
           tenantId={organization.tenantId}
           organizations={[organization]}
           callback={({ status }) => {
-            if (status === 'success') {
-              toaster.success(t('c:success.delete_resource', { resource: t('c:organization') }));
-              navigate({ to: appConfig.defaultRedirectPath, replace: true });
-            }
+            if (status === 'success') navigate({ to: appConfig.defaultRedirectPath, replace: true });
           }}
         />
       )}

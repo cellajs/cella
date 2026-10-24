@@ -1,8 +1,7 @@
-import type { PDFDocumentProxy } from 'pdfjs-dist';
-import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { useEffect, useRef, useState } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
+import { Document, type DocumentProps, Page, pdfjs } from 'react-pdf';
 import { Spinner } from '~/modules/common/spinner';
+import pdfWorkerUrl from '#pdfjs/build/pdf.worker.min.mjs?url';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import '~/modules/attachment/render/react-pdf.css';
@@ -46,7 +45,7 @@ export function RenderPDF({ file, className }: RenderPDFProps) {
   }, []);
 
   // Each page's own width, so landscape, A4, legal and mixed-orientation pages each fit.
-  const handleDocumentLoad = async (pdf: PDFDocumentProxy) => {
+  const handleDocumentLoad: DocumentProps['onLoadSuccess'] = async (pdf) => {
     const widths = await Promise.all(
       Array.from({ length: pdf.numPages }, async (_, i) => (await pdf.getPage(i + 1)).getViewport({ scale: 1 }).width),
     );

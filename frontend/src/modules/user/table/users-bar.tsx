@@ -3,11 +3,11 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
-import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
+import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { dialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
 import { NamedText } from '~/modules/common/named-text';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { openDeleteDialog } from '~/modules/common/open-confirm';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteUsers } from '~/modules/user/delete-users';
 import { InviteUsers } from '~/modules/user/invite-users';
@@ -47,23 +47,13 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
     });
   };
 
-  const openDeleteDialog = () => {
-    const callback = (args: CallbackArgs<BaseUser[]>) => {
-      if (args.status === 'success') {
-        const message =
-          args.data.length === 1
-            ? t('c:success.delete_resource', { resource: t('c:user') })
-            : t('c:success.delete_counted_resources', { count: args.data.length, resources: t('c:user_other').toLowerCase() });
-        toaster.success(message);
-      }
-      clearSelection();
-    };
-
-    dialoger.getState().create(<DeleteUsers dialog users={selected} callback={callback} />, {
+  const confirmDelete = () =>
+    openDeleteDialog({
       id: 'delete-users',
       triggerRef: deleteButtonRef,
-      className: 'max-w-xl',
-      title: t('c:delete'),
+      resource: 'c:user',
+      count: selected.length,
+      content: <DeleteUsers users={selected} callback={clearSelection} />,
       description: (
         <NamedText
           i18nKey="c:confirm.delete_resource"
@@ -74,7 +64,6 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
         />
       ),
     });
-  };
 
   return (
     <TableBarShell
@@ -87,7 +76,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       selection={{
         count: selected.length,
         onClear: clearSelection,
-        children: <TableBarButton ref={deleteButtonRef} variant="destructive" onClick={openDeleteDialog} icon={TrashIcon} label="c:delete" />,
+        children: <TableBarButton ref={deleteButtonRef} variant="destructive" onClick={confirmDelete} icon={TrashIcon} label="c:delete" />,
       }}
       after={<div ref={inviteContainerRef} className="empty:hidden" />}
     />

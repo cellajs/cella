@@ -9,9 +9,7 @@ import { EditCellInput, externalEditorOptions, RenderExternalEditor } from '~/mo
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
 import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { NamedText } from '~/modules/common/named-text';
-import { openPopConfirm } from '~/modules/common/popconfirm';
+import { DeleteQuestion } from '~/modules/common/popconfirm';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { useResolveCan } from '~/modules/entities/use-resolve-can';
 import { SeenMark } from '~/modules/seen/seen-mark';
@@ -102,13 +100,10 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
           label: t('c:delete'),
           icon: TrashIcon,
           variant: 'destructive',
-          onSelect: (row) => {
-            const { remove } = dropdowner.getState();
-            openPopConfirm(
-              <NamedText i18nKey="c:delete_confirm.text" name={row.name} />,
-              <DeleteAttachments attachments={[row]} callback={remove} onCancel={remove} />,
-            );
-          },
+          confirm: (row) => ({
+            title: <DeleteQuestion resource="c:attachment" name={row.name} />,
+            content: <DeleteAttachments attachments={[row]} />,
+          }),
         },
       ];
     }, 'sm'),

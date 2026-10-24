@@ -27,7 +27,7 @@ export function EmailField({ control, hidden = false }: EmailFieldProps) {
       render={({ field }) => (
         // Spacing by margin: a gap would add space around every node a browser extension injects
         <FormItem className={cn('gap-0', hidden && 'hidden')}>
-          {/* Hidden on purpose: the example address is the visible cue */}
+          {/* Hidden on purpose: the placeholder is the visible cue */}
           <FormLabel className="sr-only">{t('c:email')}</FormLabel>
           <FormControl>
             <Input
@@ -37,7 +37,7 @@ export function EmailField({ control, hidden = false }: EmailFieldProps) {
               className="h-12"
               autoFocus={!hidden && !isTouchInteraction()}
               autoComplete={hidden ? 'off' : 'email'}
-              placeholder="name@example.com"
+              placeholder={t('c:your_email_address')}
             />
           </FormControl>
           <FormMessage className="mt-2" />

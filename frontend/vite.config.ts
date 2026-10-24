@@ -1,4 +1,5 @@
 import { execSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import mdx from '@mdx-js/rollup';
 import babel from '@rolldown/plugin-babel';
@@ -430,6 +431,8 @@ const viteConfig = {
     alias: {
       '#json': path.resolve(import.meta.dirname, '../json'),
       '~': path.resolve(import.meta.dirname, './src'),
+      // react-pdf pins pdfjs-dist exactly and pdf.js refuses a worker of another version, so the worker comes from react-pdf's copy.
+      '#pdfjs': path.dirname(createRequire(createRequire(import.meta.url).resolve('react-pdf')).resolve('pdfjs-dist/package.json')),
       // jspdf's optional packages are not installed (ignoredOptionalDependencies); its dynamic imports of them land here.
       canvg: path.resolve(import.meta.dirname, './vite/jspdf-optional-stub.ts'),
       html2canvas: path.resolve(import.meta.dirname, './vite/jspdf-optional-stub.ts'),

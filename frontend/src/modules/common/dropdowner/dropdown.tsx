@@ -1,5 +1,7 @@
-import { useEffect, useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
+import { DropdownerContent } from '~/modules/common/dropdowner/surface';
+import { type MorphTiming, useSwapMorph } from '~/modules/common/dropdowner/swap-morph';
 import { dropdowner, type InternalDropdown, removeIfCurrent } from '~/modules/common/dropdowner/use-dropdowner';
 import { FocusTrap } from '~/modules/common/focus-trap';
 import { DropdownMenu, DropdownMenuContent } from '~/modules/ui/dropdown-menu';
@@ -10,9 +12,29 @@ interface DropdownerDropdownProps {
   dropdown: InternalDropdown;
 }
 
+const popupMorph: MorphTiming = { duration: 240, easing: 'cubic-bezier(0.2, 0, 0, 1)' };
+
 export function DropdownerDropdown({ dropdown }: DropdownerDropdownProps) {
   const trigger = dropdown.triggerRef?.current;
   const triggerFocusRef = useLatestRef(trigger ?? null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useSwapMorph({
+    dropdownKey: dropdown.key,
+    content: dropdown.content,
+    containerRef: popupRef,
+    contentRef,
+    anchor: () => ({ x: dropdown.align, y: popupRef.current?.getAttribute('data-side') === 'top' ? 'bottom' : 'top' }),
+    timing: popupMorph,
+    positioned: true,
+  });
+
+  // A confirmation opened straight from a button starts on its safe option, after Base UI has focused the menu
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => contentRef.current?.querySelector<HTMLElement>('[data-autofocus]')?.focus({ preventScroll: true }));
+    return () => cancelAnimationFrame(frame);
+  }, [dropdown.key]);
 
   // Portaled content can jump the document scroll to the top while the popup still sits at
   // (0,0), across several async frames. Pin the pre-open scroll position and snap back on any
@@ -71,13 +93,16 @@ export function DropdownerDropdown({ dropdown }: DropdownerDropdownProps) {
     return (
       <DropdownMenu key={dropdown.key} open onOpenChange={handleOpenChange} modal={false}>
         <DropdownMenuContent
+          ref={popupRef}
           anchor={trigger}
           align={dropdown.align}
           positionerClassName="z-301"
           className={dropdown.popupClassName}
           finalFocus={triggerFocusRef}
         >
-          {dropdown.content}
+          <DropdownerContent dropdown={dropdown} surface="menu">
+            <div ref={contentRef}>{dropdown.content}</div>
+          </DropdownerContent>
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -96,7 +121,11 @@ export function DropdownerDropdown({ dropdown }: DropdownerDropdownProps) {
         aria-label={dropdown.triggerLabel}
       >
         <FocusTrap active initialFocus returnFocus containFocus>
-          <div className="contents">{dropdown.content}</div>
+          <div className="contents">
+            <DropdownerContent dropdown={dropdown} surface="panel">
+              {dropdown.content}
+            </DropdownerContent>
+          </div>
         </FocusTrap>
       </PopoverContent>
     </Popover>

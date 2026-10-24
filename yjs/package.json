@@ -51,7 +51,7 @@
     "lib0": "^0.2.119",
     "pino-pretty": "^13.2.0",
     "rate-limiter-flexible": "^11.2.3",
-    "rolldown": "~1.2.14",
+    "rolldown": "~1.2.15",
     "shared": "workspace:*",
     "tsx": "^4.23.15",
     "typescript": "6.0.3",

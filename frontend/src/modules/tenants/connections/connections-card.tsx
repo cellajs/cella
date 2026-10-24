@@ -8,14 +8,12 @@ import { appConfig } from 'shared';
 import { z } from 'zod';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { CopiedIcon } from '~/modules/common/copied-icon';
-import { DeleteForm } from '~/modules/common/delete-form';
-import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { HelpText } from '~/modules/common/help-text';
-import { NamedText } from '~/modules/common/named-text';
-import { PopConfirm } from '~/modules/common/popconfirm';
+import { openConfirm } from '~/modules/common/open-confirm';
+import { DeleteQuestion } from '~/modules/common/popconfirm';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { ToolCard } from '~/modules/common/tool-card';
@@ -99,22 +97,12 @@ export function ConnectionsCard({ tenant, className }: ConnectionsCardProps) {
   };
 
   // A deleted connection ends its institution's sign-in, so the click asks first.
-  const openDeleteConfirm = (connection: Connection, event: MouseEvent<HTMLButtonElement>) => {
-    const closeConfirm = () => dropdowner.getState().remove();
-    dropdowner.getState().create(
-      <PopConfirm title={<NamedText i18nKey="c:delete_confirm.text" name={connection.displayName} />}>
-        <DeleteForm
-          pending={false}
-          onCancel={closeConfirm}
-          onDelete={() => {
-            closeConfirm();
-            remove({ path: { tenantId: tenant.id, id: connection.id } });
-          }}
-        />
-      </PopConfirm>,
-      { id: 'delete-connection', triggerId: `delete-connection-${connection.id}`, triggerRef: { current: event.currentTarget }, align: 'end' },
-    );
-  };
+  const openDeleteConfirm = (connection: Connection, event: MouseEvent<HTMLButtonElement>) =>
+    openConfirm(event.currentTarget, {
+      id: `delete-connection-${connection.id}`,
+      title: <DeleteQuestion resource="c:connection" name={connection.displayName} />,
+      onConfirm: () => remove({ path: { tenantId: tenant.id, id: connection.id } }),
+    });
 
   const ssoConnections = (connections ?? []).filter((connection) => connection.kind === 'sso');
 

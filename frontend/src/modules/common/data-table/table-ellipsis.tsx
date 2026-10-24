@@ -1,5 +1,5 @@
 import { EllipsisVerticalIcon } from 'lucide-react';
-import { Fragment, type RefObject, useRef } from 'react';
+import { Fragment, type ReactNode, type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DropdownActionItem, DropdownActionSeparator } from '~/modules/common/dropdowner/dropdown-action-item';
 import { DropdownerTriggerIcon } from '~/modules/common/dropdowner/trigger-icon';
@@ -11,8 +11,11 @@ export type EllipsisOption<T> = {
   label: string;
   icon: IconComponent;
   variant?: 'default' | 'destructive';
-  onSelect: (row: T, triggerRef: RefObject<HTMLButtonElement | null>) => void;
-};
+} & (
+  | { onSelect: (row: T, triggerRef: RefObject<HTMLButtonElement | null>) => void }
+  /** Asks first: the menu turns into this confirmation, whose Cancel steps back to the menu. */
+  | { confirm: (row: T) => { title: ReactNode; content: ReactNode } }
+);
 
 interface TableEllipsisProps<T> {
   row: T;
@@ -29,11 +32,16 @@ export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options
     if (!triggerRef.current) return;
 
     dropdowner.getState().create(
-      options.map(({ label, icon: Icon, variant, onSelect }, index) => (
-        <Fragment key={label}>
-          {variant === 'destructive' && index > 0 && options[index - 1].variant !== 'destructive' && <DropdownActionSeparator />}
-          <DropdownActionItem icon={Icon} variant={variant} onSelect={() => onSelect(row, triggerRef)}>
-            {label}
+      options.map((option, index) => (
+        <Fragment key={option.label}>
+          {option.variant === 'destructive' && index > 0 && options[index - 1].variant !== 'destructive' && <DropdownActionSeparator />}
+          <DropdownActionItem
+            icon={option.icon}
+            variant={option.variant}
+            confirm={'confirm' in option ? option.confirm(row) : undefined}
+            onSelect={'onSelect' in option ? () => option.onSelect(row, triggerRef) : undefined}
+          >
+            {option.label}
           </DropdownActionItem>
         </Fragment>
       )),

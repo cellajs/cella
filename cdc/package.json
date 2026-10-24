@@ -50,7 +50,7 @@
     "drizzle-orm": "1.0.0-rc.5",
     "hono": "^4.13.13",
     "pino-pretty": "^13.2.0",
-    "rolldown": "~1.2.14",
+    "rolldown": "~1.2.15",
     "sdk": "workspace:*",
     "shared": "workspace:*",
     "tsx": "^4.23.15",

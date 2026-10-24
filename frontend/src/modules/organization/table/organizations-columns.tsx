@@ -10,8 +10,7 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useColumnVisibility } from '~/modules/common/data-table/use-column-visibility';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { NamedText } from '~/modules/common/named-text';
-import { openPopConfirm } from '~/modules/common/popconfirm';
+import { DeleteQuestion } from '~/modules/common/popconfirm';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
@@ -74,13 +73,10 @@ export const useColumns = () => {
         label: t('c:delete'),
         icon: TrashIcon,
         variant: 'destructive',
-        onSelect: (row) => {
-          const callback = () => dropdowner.getState().remove();
-          openPopConfirm(
-            <NamedText i18nKey="c:delete_confirm.text" name={row.name} />,
-            <DeleteOrganizations tenantId={row.tenantId} organizations={[row]} callback={callback} />,
-          );
-        },
+        confirm: (row) => ({
+          title: <DeleteQuestion resource="c:organization" name={row.name} />,
+          content: <DeleteOrganizations tenantId={row.tenantId} organizations={[row]} />,
+        }),
       },
     ]),
     {

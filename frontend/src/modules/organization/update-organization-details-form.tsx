@@ -9,13 +9,11 @@ import { useBeforeUnload } from '~/hooks/use-before-unload';
 import { canUploadAttachments } from '~/modules/attachment/helpers/can-upload-attachments';
 import { persistAttachments } from '~/modules/attachment/helpers/persist-attachments';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
-import { DeleteForm } from '~/modules/common/delete-form';
-import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { CancelButton } from '~/modules/common/form-fields/cancel-button';
 import { LazyBlockNoteContentFormField } from '~/modules/common/form-fields/lazy-blocknote';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { PopConfirm } from '~/modules/common/popconfirm';
+import { openConfirm } from '~/modules/common/open-confirm';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
@@ -69,29 +67,16 @@ export function UpdateOrganizationDetailsForm({ organization, callback }: Update
   };
 
   // Discarding drops the unsaved text for good, so the click asks first.
-  const openDiscardConfirm = (event: MouseEvent<HTMLButtonElement>) => {
-    const { create, remove } = dropdowner.getState();
-    create(
-      <PopConfirm title={t('c:confirm.discard_changes')}>
-        <DeleteForm
-          label="c:discard"
-          cancelLabel="c:keep_editing"
-          allowOfflineDelete
-          pending={false}
-          onDelete={() => {
-            remove();
-            discardChanges();
-          }}
-          onCancel={remove}
-        />
-      </PopConfirm>,
-      {
-        id: 'discard-organization-details',
-        triggerId: `discard-organization-details-${organization.id}`,
-        triggerRef: { current: event.currentTarget },
-      },
-    );
-  };
+  const openDiscardConfirm = (event: MouseEvent<HTMLButtonElement>) =>
+    openConfirm(event.currentTarget, {
+      id: `discard-organization-details-${organization.id}`,
+      title: t('c:confirm.discard_changes'),
+      label: 'c:discard',
+      cancelLabel: 'c:keep_editing',
+      allowOffline: true,
+      align: 'start',
+      onConfirm: discardChanges,
+    });
 
   if (form.loading) return null;
 

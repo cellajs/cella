@@ -52,6 +52,20 @@ describe('dropdowner store', () => {
     expect(dropdowner.getState().dropdown).toMatchObject({ align: 'end', content: 'next', triggerId: 't1' });
   });
 
+  it('push steps into new content and back returns to it, then closes', () => {
+    dropdowner.getState().create('menu', dropdown('t1'));
+    const { key } = dropdowner.getState().dropdown ?? {};
+
+    dropdowner.getState().push('confirm');
+    expect(dropdowner.getState().dropdown).toMatchObject({ content: 'confirm', history: ['menu'], key });
+
+    dropdowner.getState().back();
+    expect(dropdowner.getState().dropdown).toMatchObject({ content: 'menu', history: [], key });
+
+    dropdowner.getState().back();
+    expect(dropdowner.getState().dropdown).toBeNull();
+  });
+
   it('complete closes the dropdown and marks its trigger done until the mark times out', () => {
     const data = dropdown('t1');
     dropdowner.getState().create(null, data);
