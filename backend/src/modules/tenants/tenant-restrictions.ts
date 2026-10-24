@@ -12,6 +12,8 @@ export const machineQuotaKeys = ['serviceAccount', 'apiKey'] as const;
 export type QuotaKey = EntityType | (typeof machineQuotaKeys)[number];
 export type Quotas = Record<QuotaKey, number>;
 
+export const quotaKeys: QuotaKey[] = [...appConfig.entityTypes, ...machineQuotaKeys];
+
 /** Time-windowed throughput limits per user in the tenant. 0 = no tenant limit; the limiter's global safety ceiling still applies. */
 export type RateLimits = {
   /** Max API points per hour per user within this tenant */
@@ -28,7 +30,6 @@ export type Restrictions = {
 export const defaultRestrictions = (): Restrictions => {
   const defaultQuotas: Partial<Quotas> = appConfig.defaultRestrictions.quotas;
 
-  const quotaKeys: QuotaKey[] = [...appConfig.entityTypes, ...machineQuotaKeys];
   const quotas = quotaKeys.reduce((acc, key) => {
     acc[key] = defaultQuotas[key] ?? 0;
     return acc;

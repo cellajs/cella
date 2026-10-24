@@ -17,7 +17,7 @@ const webAuthnAttestationSchema = z.object({
     attestationObject: z.string(),
     authenticatorData: z.string().optional(),
     /** Open string set: the spec lets authenticators report transports the enum has not caught up with. */
-    transports: z.array(z.string()).optional(),
+    transports: z.array(z.string()).max(10).optional(),
     publicKeyAlgorithm: z.number().optional(),
     publicKey: z.string().optional(),
   }),
