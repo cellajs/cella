@@ -75,7 +75,9 @@
         "vite/jspdf-optional-stub.ts",
         // The service worker, which @serwist/vite builds from vite.config.ts.
         "src/lib/sw.ts"
-      ]
+      ],
+      // The `virtual:serwist` module of @serwist/vite imports it at runtime, and knip does not read virtual modules.
+      "ignoreDependencies": ["@serwist/window"]
     },
     "infra": {
       "entry": ["index.ts", "tasks/*.ts", "boot/src/entry.ts"]
