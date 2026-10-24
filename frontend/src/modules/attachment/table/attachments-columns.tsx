@@ -1,7 +1,7 @@
 import { TrashIcon, UserIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
-import { hierarchy, seenWindowMs } from 'shared';
+import { appConfig, hierarchy, seenWindowMs } from 'shared';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
 import { DownloadCell, ThumbnailCell } from '~/modules/attachment/table/attachment-cells';
 import { DescriptionCell, openDescriptionSheetFromCell } from '~/modules/attachment/table/description-cell';
@@ -140,7 +140,10 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
         return (
           <span
             className="inline-flex size-full items-center gap-2"
-            {...(outsideSeenWindow && { 'data-tooltip': 'true', 'data-tooltip-content': t('c:views_retention_hint') })}
+            {...(outsideSeenWindow && {
+              'data-tooltip': 'true',
+              'data-tooltip-content': t('c:views_retention_hint', { days: appConfig.retention.activityDays }),
+            })}
           >
             <UserIcon className="text-muted-foreground/70" />
             <span className={cn(outsideSeenWindow && 'text-muted-foreground')}>{row.viewCount ?? 0}</span>

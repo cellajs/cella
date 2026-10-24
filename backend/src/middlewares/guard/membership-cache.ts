@@ -1,9 +1,10 @@
-import { eq, getTableColumns } from 'drizzle-orm';
+import { and, eq, getTableColumns, sql } from 'drizzle-orm';
 import { baseDb } from '#/db/db';
 import { TTLCache } from '#/lib/ttl-cache';
 import { actorsTable } from '#/modules/actors/actors-db';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { coalesce } from '#/utils/request-coalescing';
 
 export type CachedMemberships = (MembershipBaseModel & { createdBy: string | null })[];
@@ -13,6 +14,10 @@ export type CachedMemberships = (MembershipBaseModel & { createdBy: string | nul
  * which a trigger replaces on every membership write (`db/membership-rules.ts`), so nothing drops entries: the TTL
  * bounds memory alone.
  */
+/** A membership counts while its tenant is not archived: an organization deleted by its admin leaves every member's list at once. */
+const activeTenantOf = (tenantId: typeof membershipsTable.tenantId) =>
+  sql`NOT EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${tenantId} AND ${tenantsTable.status} = 'archived')`;
+
 const membershipCache = new TTLCache<{ version: string; memberships: CachedMemberships }>({ maxSize: 5000, defaultTtl: 30 * 60_000 });
 
 /**
@@ -32,7 +37,7 @@ export const loadMemberships = async (userId: string, bindingsVersion: string): 
     const rows = await baseDb
       .select({ version: actorsTable.bindingsVersion, membership: getTableColumns(membershipsTable) })
       .from(actorsTable)
-      .leftJoin(membershipsTable, eq(membershipsTable.userId, actorsTable.id))
+      .leftJoin(membershipsTable, and(eq(membershipsTable.userId, actorsTable.id), activeTenantOf(membershipsTable.tenantId)))
       .where(eq(actorsTable.id, userId));
 
     const memberships = rows.flatMap(({ membership }) => (membership ? [membership] : []));

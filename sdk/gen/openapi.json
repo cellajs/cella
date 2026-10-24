@@ -251,7 +251,7 @@
     },
     {
       "name": "oauth-server",
-      "description": "The authorization server: node-oidc-provider on the app origin under /oauth, issuing the access\n    tokens the API and the MCP endpoint accept. Runs as its own process (MODE=oauth) or folded into the API under\n    singleVM; the store it writes is swept hourly by the jobs worker.",
+      "description": "The authorization server: node-oidc-provider on the app origin under /oauth, issuing the access\n    tokens the API and the MCP endpoint accept. Runs as its own process (MODE=oauth) or folded into the API under\n    singleVM; the store it writes is swept nightly by the database's retention procedure.",
       "x-parent": "cella",
       "x-kind": "module"
     },
@@ -1955,6 +1955,9 @@
             "type": "string",
             "enum": ["active", "suspended", "archived"]
           },
+          "statusChangedAt": {
+            "type": "string"
+          },
           "restrictions": {
             "type": "object",
             "properties": {
@@ -2057,6 +2060,7 @@
           "id",
           "name",
           "status",
+          "statusChangedAt",
           "restrictions",
           "authStrategies",
           "subscriptionId",
@@ -2070,9 +2074,10 @@
         ],
         "description": "The top-level isolation and billing boundary. Tenant and organization are 1:1: a tenant holds one organization, or none until that organization is created. System admins list and update tenants; a signed-in user can create one of their own.",
         "example": {
-          "id": "l6ddop",
+          "id": "ddoplg",
           "name": "Lubowitz, Waters and Haley",
           "status": "active",
+          "statusChangedAt": "2024-08-10T00:42:04.704Z",
           "restrictions": {
             "quotas": {
               "user": 1000,
@@ -2098,10 +2103,10 @@
           "subscriptionId": null,
           "subscriptionStatus": "none",
           "subscriptionPlan": null,
-          "createdAt": "2024-07-03T19:59:03.397Z",
-          "updatedAt": "2024-12-23T11:29:26.053Z",
+          "createdAt": "2024-08-10T00:42:04.704Z",
+          "updatedAt": "2024-09-06T23:31:09.985Z",
           "organization": {
-            "id": "d0d46951-4963-4135-84f8-adf6f9f37990",
+            "id": "8fd0d469-5149-4631-a354-f8adf6f9f379",
             "name": "Lubowitz, Waters and Haley",
             "slug": "lubowitz-waters-and-haley",
             "thumbnailUrl": null,
@@ -8324,9 +8329,10 @@
                 "example": {
                   "items": [
                     {
-                      "id": "svjbtq",
+                      "id": "jbtqtl",
                       "name": "Predovic, Bahringer and Morar",
                       "status": "active",
+                      "statusChangedAt": "2024-10-17T20:38:21.060Z",
                       "restrictions": {
                         "quotas": {
                           "user": 1000,
@@ -8352,10 +8358,10 @@
                       "subscriptionId": null,
                       "subscriptionStatus": "none",
                       "subscriptionPlan": null,
-                      "createdAt": "2024-01-02T04:11:19.941Z",
-                      "updatedAt": "2024-10-23T14:05:26.336Z",
+                      "createdAt": "2024-10-17T20:38:21.060Z",
+                      "updatedAt": "2024-12-22T17:47:41.093Z",
                       "organization": {
-                        "id": "f4ea76c7-bca4-4245-8890-5cb92a293ce2",
+                        "id": "0cf4ea76-c7bc-4a42-b458-905cb92a293c",
                         "name": "Predovic, Bahringer and Morar",
                         "slug": "predovic-bahringer-and-morar",
                         "thumbnailUrl": null,
@@ -8363,9 +8369,10 @@
                       }
                     },
                     {
-                      "id": "b2dbwf",
+                      "id": "dbwf7b",
                       "name": "Crooks, Kuphal and Roob-Blick",
                       "status": "active",
+                      "statusChangedAt": "2024-04-30T09:09:16.797Z",
                       "restrictions": {
                         "quotas": {
                           "user": 1000,
@@ -8391,10 +8398,10 @@
                       "subscriptionId": null,
                       "subscriptionStatus": "none",
                       "subscriptionPlan": null,
-                      "createdAt": "2024-07-14T22:41:52.358Z",
-                      "updatedAt": "2024-09-24T07:05:03.480Z",
+                      "createdAt": "2024-04-30T09:09:16.797Z",
+                      "updatedAt": "2024-05-14T23:22:54.193Z",
                       "organization": {
-                        "id": "63960525-a558-42dd-a277-6db10db417ae",
+                        "id": "86639605-25a5-4582-add2-776db10db417",
                         "name": "Crooks, Kuphal and Roob-Blick",
                         "slug": "crooks-kuphal-and-roob-blick",
                         "thumbnailUrl": null,

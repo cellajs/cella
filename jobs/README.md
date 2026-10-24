@@ -23,12 +23,12 @@ The jobs worker is a `MODE` of the backend image: its own process on `devPorts.j
 
 ## Declaring jobs and queues
 
-A cron job is `{ name, cron, run }` on `defineBackendModule`. The name is also its queue, created with the `singleton` policy: one run per period, and a run that overruns delays the next one, never overlaps it. Cron is five fields in UTC; a period missed while no maintainer ran sends one catch-up job. A throw fails the run and is logged; the next period runs again.
+A cron job is `{ name, cron, run }` on `defineBackendModule`. A rule that only deletes old rows is no job: it belongs to the database's nightly retention procedure. The name is also its queue, created with the `singleton` policy: one run per period, and a run that overruns delays the next one, never overlaps it. Cron is five fields in UTC; a period missed while no maintainer ran sends one catch-up job. A throw fails the run and is logged; the next period runs again.
 
 ```ts
 defineBackendModule({
-  name: 'auth',
-  jobs: [{ name: 'prune-devices', cron: '0 3 * * *', run: () => pruneDevices() }],
+  name: 'notifications',
+  jobs: [{ name: 'notification-digest', cron: '0 * * * *', run: () => runDigest() }],
   queues: [
     { name: 'webhook.deliver', policy: 'stately', retryLimit: 0, deadLetter: 'webhook.deliver.dead', handler: deliver },
     { name: 'webhook.deliver.dead', retentionSeconds: 7 * 24 * 3600 },

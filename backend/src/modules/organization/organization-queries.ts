@@ -10,6 +10,7 @@ import { getChannelCountsSelect } from '#/modules/entities/entities-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationFlagsSelect, setupConfigSelect } from '#/modules/organization/helpers/select';
 import { organizationsTable } from '#/modules/organization/organization-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { textSearchFilter } from '#/utils/sql';
@@ -89,18 +90,6 @@ export const publishOrganization = async (ctx: UserContext, { id }: PublishOrgan
   return published;
 };
 
-interface DeleteOrganizationsByIdsOpts {
-  ids: string[];
-}
-
-export const deleteOrganizationsByIds = async (ctx: ActorContext, { ids }: DeleteOrganizationsByIdsOpts) => {
-  const { db, tenantId } = ctx.var;
-  return db
-    .delete(organizationsTable)
-    .where(and(inArray(organizationsTable.id, ids), eq(organizationsTable.tenantId, tenantId)))
-    .returning();
-};
-
 interface FindOrganizationsPaginatedOpts {
   isSystemAdmin: boolean;
   targetUserId: string;
@@ -136,8 +125,13 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
 
   const membershipOn = and(membershipKeyOn, membershipFilterOn);
 
-  // Org-only filters belong in WHERE (safe for both admin + non-admin)
+  // Org-only filters belong in WHERE (safe for both admin + non-admin); an archived tenant's organization lists for system admins only.
   const orgWhere: SQL[] = [
+    ...(isSystemAdmin
+      ? []
+      : [
+          sql`NOT EXISTS (SELECT 1 FROM ${tenantsTable} WHERE ${tenantsTable.id} = ${organizationsTable.tenantId} AND ${tenantsTable.status} = 'archived')`,
+        ]),
     ...(q ? [textSearchFilter(organizationsTable.name, q)] : []),
     ...(organizationIds ? [inArray(organizationsTable.id, organizationIds)] : []),
   ];

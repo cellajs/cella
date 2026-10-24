@@ -47,8 +47,8 @@ const main = async () => {
 
     console.info(`${timestamp()} [startup] Running migrations...`);
     await pgMigrate(migrationDb, migrateConfig);
-    const { schedulePartitionMaintenance } = await import('../scripts/db/schedule-partition-maintenance');
-    await schedulePartitionMaintenance();
+    const { scheduleRetention } = await import('../scripts/db/schedule-retention');
+    await scheduleRetention();
     // The job store (pg-boss) is installed by the same owner that migrates; the jobs worker runs it.
     const { installJobsSchema } = await import('../scripts/db/install-jobs-schema');
     await installJobsSchema();

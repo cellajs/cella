@@ -41,6 +41,24 @@ export async function closeAppStreams(closings: { subscriber: AppStreamSubscribe
 }
 
 /**
+ * Ends the app streams that hold any of `organizationIds` with `access_changed`: their memberships changed without a
+ * membership write, as when the tenant is archived or restored. Each client reconnects, and its catchup reads the
+ * memberships again.
+ */
+export async function endOrganizationStreams(organizationIds: string[], message: string): Promise<void> {
+  const streams = streamSubscriberManager
+    .all()
+    .filter(isAppStream)
+    .filter((subscriber) => organizationIds.some((id) => subscriber.organizationIds.has(id)));
+  if (streams.length === 0) return;
+  const payload: StreamErrorPayload = { code: 'access_changed', message };
+  await closeAppStreams(
+    streams.map((subscriber) => ({ subscriber, payload })),
+    'Failed to close a stream after a tenant status change',
+  );
+}
+
+/**
  * Ends every app stream with `resync`: the CDC worker corrected or rebuilt its books. Each client reconnects, and the
  * catch-up of the new connection brings the generation that makes it refetch.
  */

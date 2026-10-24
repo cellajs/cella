@@ -30,10 +30,7 @@ const attachmentFieldDescriptions = {
 
 const keysRefinement = { keys: attachmentKeysSchema };
 const attachmentInsertSchema = describeFields(createInsertSchema(attachmentsTable, keysRefinement), attachmentFieldDescriptions);
-// `purgedAt` is the file purge's bookkeeping on deleted rows, never part of the wire shape.
-const attachmentSelectSchema = describeFields(createSelectSchema(attachmentsTable, keysRefinement), attachmentFieldDescriptions).omit({
-  purgedAt: true,
-});
+const attachmentSelectSchema = describeFields(createSelectSchema(attachmentsTable, keysRefinement), attachmentFieldDescriptions);
 
 export const attachmentSchema = z
   .object({

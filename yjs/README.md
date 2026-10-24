@@ -78,7 +78,7 @@ When a socket connects, relay and client exchange what the other lacks, so edits
 
 A few seconds after the last update, and at least every ten seconds while typing goes on, the relay merges base and log and sends the result to the backend's materialize route, with the editors of that window. The backend hands it to the entity's materializer, which runs the normal update operation and its permission check as the newest of those editors who may still update the entity. From there the saved row reaches everyone else like any other change ([Sync engine](../cella/SYNC_ENGINE.md)).
 
-The relay compacts a window only once the entity row holds it. The base therefore holds only written state, and the log holds every edit the entity has not received yet. When the backend is away, or refuses for a reason that can change, the log stays and the next window retries.
+The relay compacts a window only once the entity row holds it. The base therefore holds only written state, and the log holds every edit the entity has not received yet. Compaction also drops the text of what was deleted, keeping only its length, so a sentence removed from a description does not stay in the stored document. When the backend is away, or refuses for a reason that can change, the log stays and the next window retries.
 
 The template registers the attachment update operation as its materializer. An app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and only a product with a materializer persists collaborative content.
 

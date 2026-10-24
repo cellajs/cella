@@ -2,6 +2,7 @@ import { index, json, snakeCase, varchar } from 'drizzle-orm/pg-core';
 import { nanoidTenant } from 'shared/utils/nanoid';
 import { auditColumns } from '#/db/utils/audit-columns';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
+import { isoTimestamp } from '#/db/utils/timestamp-columns';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import { defaultRestrictions, type Restrictions } from '#/modules/tenants/tenant-restrictions';
 
@@ -15,6 +16,8 @@ export const tenantsTable = snakeCase.table(
     id: varchar({ length: tenantIdLength }).primaryKey().$defaultFn(nanoidTenant),
     name: varchar({ length: maxLength.field }).notNull(),
     status: varchar({ enum: tenantStatusValues }).notNull().default('active'),
+    /** When `status` last changed, stamped by the server; an archived tenant is removed `archivedTenantDays` after it. */
+    statusChangedAt: isoTimestamp().defaultNow().notNull(),
     restrictions: json().$type<Restrictions>().notNull().default(defaultRestrictions()),
     // Sign-in strategies a tenant's members may use (empty = all enabled); enforced at the tenant boundary (tenantGuard) once SSO ships.
     authStrategies: json().$type<AuthStrategy[]>().notNull().default([]),

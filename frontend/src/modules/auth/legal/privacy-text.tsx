@@ -11,7 +11,7 @@ export function PrivacyText() {
 
   return (
     <div id="privacy-content">
-      <LegalSection subject="privacy" id="overview" lastUpdated="October 23, 2026">
+      <LegalSection subject="privacy" id="overview" lastUpdated="October 24, 2026">
         <p>
           {company} ("we") runs {appName} (the "Service") for organizations. This policy explains how we handle personal data under the EU General
           Data Protection Regulation (GDPR). We are the controller of your account data. Content your organization puts in the Service, such as files,

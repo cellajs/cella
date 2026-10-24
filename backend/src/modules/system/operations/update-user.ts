@@ -3,6 +3,7 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { releaseReplacedImages } from '#/modules/attachment/operations/release-replaced-images';
 import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
 import { updateUser } from '#/modules/system/system-queries';
 import { findUserById } from '#/modules/user/user-queries';
@@ -38,6 +39,7 @@ export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUs
   };
   const updatedUser = await updateUser(ctx, { id: targetUser.id, values });
   invalidateCache.user(updatedUser.id);
+  await releaseReplacedImages({ owner: { userId: targetUser.id }, before: targetUser, after: { thumbnailUrl, bannerUrl } });
   log.info('User updated', { userId: updatedUser.id });
 
   // Re-select to include the activity times of the user's actors row

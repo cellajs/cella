@@ -5,10 +5,12 @@ import { AppError } from '#/core/error';
 import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { withActorRef } from '#/modules/actors/actor-refs';
+import { applyTenantStatusChange } from '#/modules/tenants/operations/apply-tenant-status-change';
 import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { findTenant, updateTenant } from '#/modules/tenants/tenants-queries';
 import type { updateTenantBodySchema } from '#/modules/tenants/tenants-schema';
+import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 type UpdateTenantInput = z.infer<typeof updateTenantBodySchema>;
@@ -29,14 +31,17 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
       }
     : undefined;
 
+  const statusChanged = otherUpdates.status !== undefined && otherUpdates.status !== existing.status;
   const values = {
     ...otherUpdates,
     ...(mergedRestrictions ? { restrictions: mergedRestrictions } : {}),
+    ...(statusChanged ? { statusChangedAt: getIsoDate() } : {}),
     ...updateStamps(ctx.var.user.id),
   };
   const updated = await updateTenant(ctx, { targetTenantId: tenantId, values });
 
   invalidateCache.tenant(tenantId);
+  if (statusChanged) await applyTenantStatusChange(ctx, tenantId);
 
   log.info('Tenant updated', { tenantId, updates });
 

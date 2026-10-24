@@ -1,8 +1,13 @@
 import { eq } from 'drizzle-orm';
 import { getTenants, selfCreateTenant, type Tenant, updateTenant } from 'sdk';
+import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { mailer } from '#/lib/mailer';
+import { deletedStorageTable } from '#/modules/entities/deleted-storage-db';
+import { organizationsTable } from '#/modules/organization/organization-db';
+import { removeArchivedTenants } from '#/modules/tenants/operations/remove-archived-tenants';
 import { defaultRestrictions, type Restrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { defaultHeaders } from './fixtures';
@@ -107,5 +112,37 @@ describe('tenant responses with the organization the tenant holds', async () => 
     expect((created.data as Tenant).organization).toBeNull();
     expect((retried.data as Tenant).id).toBe((created.data as Tenant).id);
     expect((retried.data as Tenant).organization).toBeNull();
+  });
+});
+
+/**
+ * An organization its admin deleted, or a tenant whose contract ended, is archived and kept for the archived period, so
+ * it can still be restored or handed over; then it goes with everything in it, and the operator gets the record of it.
+ */
+describe('archived-tenant sweep', () => {
+  const archivedDaysAgo = async (days: number, status: 'archived' | 'active' = 'archived') => {
+    const organization = await createTestOrganization();
+    const statusChangedAt = new Date(Date.now() - days * 86_400_000).toISOString();
+    await db.update(tenantsTable).set({ status, statusChangedAt }).where(eq(tenantsTable.id, organization.tenantId));
+    return organization;
+  };
+  const tenantExists = async (id: string) => (await db.select().from(tenantsTable).where(eq(tenantsTable.id, id))).length === 1;
+
+  it('removes a tenant archived longer than the period with its organization, and keeps the rest', async () => {
+    const period = appConfig.retention.archivedTenantDays;
+    const expired = await archivedDaysAgo(period + 1);
+    const recent = await archivedDaysAgo(period - 1);
+    const active = await archivedDaysAgo(period + 1, 'active');
+    vi.mocked(mailer.prepareEmails).mockClear();
+
+    await removeArchivedTenants();
+
+    expect(await tenantExists(expired.tenantId)).toBe(false);
+    expect(await db.select().from(organizationsTable).where(eq(organizationsTable.id, expired.id))).toHaveLength(0);
+    expect(await db.select().from(deletedStorageTable).where(eq(deletedStorageTable.entityId, expired.id))).toHaveLength(1);
+    expect(await tenantExists(recent.tenantId)).toBe(true);
+    expect(await tenantExists(active.tenantId)).toBe(true);
+    const mailed = vi.mocked(mailer.prepareEmails).mock.calls.map(([, statics]) => (statics as { tenantId: string }).tenantId);
+    expect(mailed).toEqual([expired.tenantId]);
   });
 });

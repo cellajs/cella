@@ -110,6 +110,10 @@ opens the pool on first use, only the migrate, seed and mcp-queue paths call it,
 each fails with a clear error when the credential is absent. A process never given the credential
 cannot reach an RLS-bypassing connection. Never call `getAdminDb()` from a request handler.
 
+## Tenant lifecycle
+
+A tenant is `active`, `suspended` or `archived`, and `tenantGuard` refuses every request to one that is not active. Archiving is what deleting its organization does, and what a system admin does when a contract ends. The organization then leaves every member's memberships and lists at once, and their open streams end, so their apps drop it. A system admin restores it by setting the tenant active again. After the archived period (`appConfig.retention.archivedTenantDays`) a nightly sweep removes the tenant with its organization and everything in it, and mails the operator what it removed ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)).
+
 ## Verification
 
 - Builders and helpers: `backend/src/db/rls-helpers.ts`, `tenant-context.ts`, `immutability-triggers.ts`.

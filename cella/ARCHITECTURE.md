@@ -69,6 +69,19 @@ Authentication explains how people prove identity; [Interoperability](./INTEROPE
 
 The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model. The frontend only shapes the interface with it. The backend is authoritative. See [Permissions](./PERMISSIONS.md) and [Multi-tenancy](./MULTI_TENANCY.md).
 
+## Data lifecycle
+
+A row is live, then deleted, then gone, and each step has one meaning:
+
+- **Deleted.** The row becomes a tombstone: hidden everywhere, and dropped by every device through sync. Its files and its collaborative document stay with it, so a system admin can still restore it with a script. The app has no restore.
+- **Gone.** After the deleted-items period, the nightly retention procedure (`apply_retention()`, run by pg_cron) removes the row. However a row leaves the database (that removal, a cascade from a deleted channel or organization, a hand-written `DELETE`), its delete trigger queues what it stored outside its table, and a job deletes those files and retires the collaborative document.
+
+The activity window bounds everything time-limited in sync: activity history, notifications, seen marks, and how long a device may stay away. A device that has not caught up within it starts over, dropping what it holds and reading it again. A tombstone lives longer than that window, so a device that kept up never misses a deletion.
+
+Deleting an organization archives its tenant, and so does the end of a contract: everyone loses access at once, a system admin can still restore it, and after the archived period the organization goes with everything in it ([Tenant lifecycle](./MULTI_TENANCY.md#tenant-lifecycle)).
+
+Every period lives in `appConfig.retention`, the same for every tenant, and the privacy page states them. Tables that only collect rows (sessions, tokens, devices, requests, invitations) get a sweep rule in the same procedure. Backups and the buckets' object versions expire on their own schedule, so a removed row or file leaves them within their window as well.
+
 ## Contracts and operations
 
 Backend modules define Hono routes with Zod schemas, which generate an OpenAPI 3.1 document. The `sdk` package uses that document to generate the fetch client, TypeScript types, and validation schemas consumed by the frontend. It also powers API docs and deterministic examples. Shared mocks serve docs, seeds, tests, and load tests.

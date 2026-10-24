@@ -31,3 +31,12 @@ interface DeleteDanglingActorsOpts {
 export async function deleteDanglingActors(ctx: DbContext, { ids }: DeleteDanglingActorsOpts): Promise<void> {
   if (ids.length > 0) await ctx.var.db.delete(actorsTable).where(inArray(actorsTable.id, ids));
 }
+
+interface ClearActorActivityOpts {
+  ids: string[];
+}
+
+/** Clears the activity times of actors whose kind row is gone, so a deleted account leaves a bare id. */
+export async function clearActorActivity(ctx: DbContext, { ids }: ClearActorActivityOpts): Promise<void> {
+  if (ids.length > 0) await ctx.var.db.update(actorsTable).set({ lastSeenAt: null, lastSignInAt: null }).where(inArray(actorsTable.id, ids));
+}

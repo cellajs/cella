@@ -10,7 +10,7 @@ export function TermsText() {
 
   return (
     <div id="terms-content">
-      <LegalSection subject="terms" id="overview" lastUpdated="October 15, 2026">
+      <LegalSection subject="terms" id="overview" lastUpdated="October 24, 2026">
         <p>
           These Terms of Use ("Terms") govern your use of {appName} (the "Service") at{' '}
           <a href={frontendUrl} target="_blank" rel="noreferrer">
@@ -86,8 +86,8 @@ export function TermsText() {
         </p>
         <p>
           We may suspend or end your access for any reason, including a breach of these Terms. We will try to give notice first so you can retrieve
-          important data, unless that is impractical, unlawful or unsafe. When your organization stops using the Service, it has at least 30 days to
-          request its data before we delete it.
+          important data, unless that is impractical, unlawful or unsafe. When your organization is deleted or stops using the Service, we keep its
+          data {appConfig.retention.archivedTenantDays} more days, so we can restore it or hand it over on request, and then delete it for good.
         </p>
         <p>
           Provisions that by their nature should survive termination (payment obligations, liability limitations, intellectual property, dispute

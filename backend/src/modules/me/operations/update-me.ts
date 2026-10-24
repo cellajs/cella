@@ -2,6 +2,7 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { updateStamps } from '#/db/utils/stamps';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { releaseReplacedImages } from '#/modules/attachment/operations/release-replaced-images';
 import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
 import { findCurrentUser, type UpdateMeOpts, updateMe } from '#/modules/me/me-queries';
 
@@ -41,6 +42,7 @@ export async function updateMeOp(ctx: UserContext, input: UpdateMeInput) {
 
   await updateMe(ctx, { values: updateData as UpdateMeOpts['values'] });
   invalidateCache.user(user.id);
+  await releaseReplacedImages({ owner: { userId: user.id }, before: user, after: input });
 
   const userWithActivity = await findCurrentUser(ctx);
   return userWithActivity;

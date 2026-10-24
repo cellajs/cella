@@ -14,6 +14,7 @@ import {
   requestResponseEmail,
   stepUpEmail,
   systemInviteEmail,
+  tenantRemovedEmail,
   welcomeEmailTemplate,
 } from './index';
 import type { EmailTemplateDef } from './types';
@@ -36,6 +37,7 @@ const previewTemplates = {
   'request-was-sent': requestResponseEmail,
   'request-was-sent-admin': requestInfoEmail,
   'step-up': stepUpEmail,
+  'tenant-removed': tenantRemovedEmail,
   mention: mentionEmail,
   comment: commentEmail,
   digest: digestEmail,

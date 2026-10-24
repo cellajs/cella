@@ -312,6 +312,22 @@ Verify: `curl https://<your-app>/api/health?depth=full` reports every component 
 - **Re-granting is mandatory, and the task owns it.** Deleting a database drops its Scaleway privileges. Neither a recreate nor a backup restore brings them back (`pg_dump` carries table ACLs, not database-level ones), so without it `CONNECT` is absent and the app reports `database_unreachable`.
 - If the task fails after the delete, it prints the exact `scw rdb backup restore` command plus the two `privilege set` calls a restore does not perform.
 
+### Restore a backup
+
+A backup holds the accounts deleted after it was taken, and a deletion someone asked for has to hold on the restored database too. A deleted account leaves its `actors` row behind, so the live database lists them. Before restoring, save that list:
+
+```sql
+SELECT a.id FROM actors a LEFT JOIN users u ON u.id = a.id WHERE a.kind = 'user' AND u.id IS NULL;
+```
+
+Restore and re-grant both roles as above, then delete those accounts again. Their sessions go with the `users` rows:
+
+```sql
+DELETE FROM oidc_payloads WHERE account_id = ANY($1);
+DELETE FROM users WHERE id = ANY($1);
+UPDATE actors SET last_seen_at = NULL, last_sign_in_at = NULL WHERE id = ANY($1);
+```
+
 ### Key rotation
 
 1. Have your Owner API key at hand (`SCW_OWNER_*`, or a key to paste).

@@ -1,4 +1,4 @@
-import { and, count, eq, getColumns, inArray, isNull, or, type SQL } from 'drizzle-orm';
+import { and, count, eq, getColumns, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import type { ActorContext, DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
@@ -144,4 +144,19 @@ export const findAttachmentsPaginated = async (ctx: ActorContext, opts: FindAtta
         };
 
   return resolveListTotal(itemsQuery, totalSource);
+};
+
+interface FindLiveAttachmentKeysOpts {
+  /** Storage keys to look for among the attachments' variants. */
+  keys: string[];
+}
+
+/** The keys among `keys` that a live attachment of the context's tenant still names. */
+export const findLiveAttachmentKeys = async (ctx: DbContext, { keys }: FindLiveAttachmentKeysOpts): Promise<Set<string>> => {
+  if (keys.length === 0) return new Set();
+  const { rows } = await ctx.var.db.execute<{ key: string }>(sql`
+    SELECT DISTINCT variant.value AS key
+    FROM ${attachmentsTable}, jsonb_each_text(${attachmentsTable.keys}) AS variant
+    WHERE ${attachmentsTable.deletedAt} IS NULL AND variant.value IN ${keys}`);
+  return new Set(rows.map((row) => row.key));
 };

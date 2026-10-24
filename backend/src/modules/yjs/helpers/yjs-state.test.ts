@@ -28,7 +28,7 @@ vi.mock('yjs', async (importOriginal) => {
   };
 });
 
-const { classifyUpdate, isIntegrable, mergeLog, mergeState } = await import('./yjs-state');
+const { classifyUpdate, collectGarbage, isIntegrable, mergeLog, mergeState } = await import('./yjs-state');
 
 const row = (id: number, payload: Uint8Array) => ({ id, payload, userId: `user-${id}` });
 
@@ -123,5 +123,24 @@ describe('isIntegrable', () => {
     doc.getText('t').insert(1, 'b');
     expect(isIntegrable(updates[1])).toBe(false);
     expect(isIntegrable(Y.mergeUpdates(updates))).toBe(true);
+  });
+});
+
+describe('collectGarbage', () => {
+  it('keeps what a document shows and none of the text deleted from it', () => {
+    const doc = new Y.Doc();
+    const updates: Uint8Array[] = [];
+    doc.on('update', (update: Uint8Array) => updates.push(update));
+    const text = doc.getText('t');
+    text.insert(0, 'kept ');
+    text.insert(5, 'grade 4.5');
+    text.delete(5, 'grade 4.5'.length);
+
+    const stored = collectGarbage(mergeState(null, updates) as Uint8Array);
+    const read = new Y.Doc();
+    Y.applyUpdate(read, stored);
+
+    expect(read.getText('t').toString()).toBe('kept ');
+    expect(Buffer.from(stored).includes('grade 4.5')).toBe(false);
   });
 });

@@ -8,7 +8,6 @@ import { actorsTable } from '#/modules/actors/actors-db';
 import { devicesTable } from '#/modules/auth/devices/devices-db';
 import { enrollDevice } from '#/modules/auth/devices/operations/enroll-device';
 import { notifyNewSignIn } from '#/modules/auth/devices/operations/notify-sign-in';
-import { pruneDevices } from '#/modules/auth/devices/operations/prune-devices';
 import type { SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
 import { createSession } from '#/modules/auth/sessions/operations/create-session';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
@@ -238,41 +237,5 @@ describe('sessions list flags sessions from a new browser', async () => {
 
     const sessions = await sessionsOf(user);
     expect(sessions.every(({ isNewDevice }) => !isNewDevice)).toBe(true);
-  });
-});
-
-describe('pruneDevices', () => {
-  const insertDevice = (userId: string, lastSeenAt: Date) =>
-    db.insert(devicesTable).values({
-      userId,
-      deviceIdHash: hashDeviceIdForUser(nanoid(24), userId),
-      firstSeenAt: lastSeenAt.toISOString(),
-      lastSeenAt: lastSeenAt.toISOString(),
-    });
-
-  it('removes rows older than the device cookie can live and keeps the rest', async () => {
-    const user = await createTestUser(signUpUser.email);
-    const day = 86_400_000;
-    await insertDevice(user.id, new Date(Date.now() - 401 * day));
-    await insertDevice(user.id, new Date(Date.now() - 399 * day));
-
-    expect(await pruneDevices()).toBe(1);
-    expect(await devicesOf(user.id)).toHaveLength(1);
-  });
-
-  it('keeps each user’s fifty most recently seen browsers', async () => {
-    const user = await createTestUser(signUpUser.email);
-    const other = await createTestUser('other@example.com');
-    for (let i = 0; i < 53; i++) await insertDevice(user.id, new Date(Date.now() - i * 60_000));
-    await insertDevice(other.id, new Date(Date.now() - 1000 * 60_000));
-
-    expect(await pruneDevices()).toBe(3);
-
-    const rows = await devicesOf(user.id);
-    expect(rows).toHaveLength(50);
-    // The three oldest are the ones that went.
-    const oldestKept = Math.min(...rows.map((row) => new Date(row.lastSeenAt).getTime()));
-    expect(Date.now() - oldestKept).toBeLessThan(51 * 60_000);
-    expect(await devicesOf(other.id)).toHaveLength(1);
   });
 });
