@@ -1,4 +1,4 @@
-import { createElement, type ReactNode } from 'react';
+import { createElement, Fragment, type ReactNode } from 'react';
 import { appConfig } from 'shared';
 import { sessionLostTypes } from 'shared/utils/session-lost';
 import { ApiError } from '~/lib/api';
@@ -22,12 +22,15 @@ const toastTypeBySeverity: Record<NonNullable<ApiError['severity']>, 'error' | '
 };
 
 /**
- * What an error toast says under its title: the wait of a rate-limited request, else what happened in a sentence,
- * the cause as a development server names it, and for severity `error` the request id to quote to support.
+ * What an error toast says under its title: the wait of a rate-limited request, after the sentence of a refusal type
+ * of its own, else what happened in a sentence, the cause as a development server names it, and for severity `error`
+ * the request id to quote to support.
  */
 const getToastDescription = (error: ApiError, message: string): ReactNode => {
   if (error.status === 429 && error.meta?.retryAfter) {
-    return createElement(RetryWait, { until: Date.now() + Number(error.meta.retryAfter) * 1000 });
+    const wait = createElement(RetryWait, { until: Date.now() + Number(error.meta.retryAfter) * 1000 });
+    if (error.type === 'too_many_requests' || !message) return wait;
+    return createElement(Fragment, null, `${message} `, wait);
   }
 
   // A server answers a 5xx with its own message in development only; elsewhere that message is a fixed text.

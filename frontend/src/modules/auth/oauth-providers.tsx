@@ -26,7 +26,9 @@ interface OAuthProviderIconProps {
 
 /** A provider's logo, beside text that names the provider. */
 export function OAuthProviderIcon({ id }: OAuthProviderIconProps) {
-  return <img src={`/static/auth/${id}-icon.svg`} alt="" className={cn('size-4', id === 'github' && 'dark:invert')} loading="lazy" />;
+  return (
+    <img src={`/static/auth/${id}-icon.svg`} alt="" className={cn('size-4', id === 'github' && 'dark:invert')} loading="lazy" draggable={false} />
+  );
 }
 
 interface OAuthProvidersProps {

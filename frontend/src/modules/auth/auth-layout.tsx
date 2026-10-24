@@ -43,6 +43,7 @@ export function AuthLayout() {
           <div className="contents group-has-[.error-notice]/auth-layout:hidden">
             <Link
               to="/about"
+              draggable={false}
               className="focus-effect active:press mx-auto rounded-md p-4 transition-transform sm:hover:scale-105"
               aria-label={t('c:go_to_about')}
             >

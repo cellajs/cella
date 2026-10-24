@@ -1,6 +1,6 @@
 import { eq, like } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { checkEmail, invokeToken, sendMagicLink, signInWithTotp, stepUp } from 'sdk';
+import { checkEmail, confirmMagicLink, invokeToken, sendMagicLink, signInWithTotp, signOut, stepUp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { getAdminDb } from '#/db/db';
@@ -10,14 +10,17 @@ import { magicLinkEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
 import {
   authCookie,
+  CookieJar,
   cookieChange,
   createMfaToken,
   createSystemAdminUser,
   createTestUser,
   createTotpUser,
   type ErrorResponse,
+  mailedLink,
   mailsTo,
   sessionRow,
+  setCookiePair,
   totpCode,
   wrongTotpCode,
 } from '../helpers';
@@ -46,17 +49,57 @@ describe('brute-force budgets', async () => {
     const owner = await createTestUser(`magic-limit-${nanoid(8)}@security-test.com`.toLowerCase());
     const other = await createTestUser(`magic-other-${nanoid(8)}@security-test.com`.toLowerCase());
     /** A request for a link to `email`, each from a client address of its own: the budget is the mailbox's. */
-    const request = async (email: string) => (await call(sendMagicLink, { body: { email }, headers: fromIp(randomIp()) })).response;
+    const request = (email: string) => call(sendMagicLink, { body: { email }, headers: fromIp(randomIp()) });
 
-    for (let attempt = 0; attempt < 2; attempt++) expect((await request(owner.email)).status).toBe(204);
+    for (let attempt = 0; attempt < 3; attempt++) expect((await request(owner.email)).response.status).toBe(204);
 
     const blocked = await request(owner.email);
-    expect(blocked.status).toBe(429);
-    expect(magicLinkMailsTo(owner.email)).toHaveLength(2);
+    expect(blocked.response.status).toBe(429);
+    // The sign-in page points at the links already sent by this type.
+    expect((blocked.error as ErrorResponse | undefined)?.type).toBe('magic_link_recently_sent');
+    expect(magicLinkMailsTo(owner.email)).toHaveLength(3);
 
     // Another address is unaffected (positive control).
-    expect((await request(other.email)).status).toBe(204);
+    expect((await request(other.email)).response.status).toBe(204);
     expect(magicLinkMailsTo(other.email)).toHaveLength(1);
+  });
+
+  it('must not tell an address with an account from one without via the magic link budget, once the owner opens a link', async () => {
+    const account = (await createTestUser(`magic-account-${nanoid(8)}@security-test.com`.toLowerCase())).email;
+    const nobody = `magic-nobody-${nanoid(8)}@security-test.com`.toLowerCase();
+    const request = async (email: string) => (await call(sendMagicLink, { body: { email }, headers: fromIp(randomIp()) })).response.status;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await request(account);
+      await request(nobody);
+    }
+
+    // The owner opens the newest link in another browser and confirms it there, as the refusal's text suggests.
+    const opened = await call(invokeToken, { path: { type: 'magic', token: mailedLink('magicLinkUrl').token }, headers: defaultHeaders });
+    const held = setCookiePair(opened.response, 'magic-pending') ?? '';
+    const confirmed = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: held } });
+    expect(cookieChange(confirmed.response, 'session')).toBe('set');
+
+    expect([await request(account), await request(nobody)]).toEqual([429, 429]);
+  });
+
+  it('lets a browser that signed in to the account before keep signing in by link, signed out in between', async () => {
+    const owner = await createTestUser(`magic-again-${nanoid(8)}@security-test.com`.toLowerCase());
+    const browser = new CookieJar();
+    const ip = fromIp(randomIp());
+    const inBrowser = () => ({ ...ip, Cookie: browser.header() });
+
+    for (let signIn = 0; signIn < 4; signIn++) {
+      const sent = await call(sendMagicLink, { body: { email: owner.email }, headers: inBrowser() });
+      expect(sent.response.status).toBe(204);
+      browser.absorb(sent.response);
+
+      const opened = await call(invokeToken, { path: { type: 'magic', token: mailedLink('magicLinkUrl').token }, headers: inBrowser() });
+      expect(cookieChange(opened.response, 'session')).toBe('set');
+      browser.absorb(opened.response);
+
+      browser.absorb((await call(signOut, { headers: inBrowser() })).response);
+    }
   });
 
   it('must not keep guessing authenticator codes via /auth/step-up', async () => {

@@ -75,8 +75,8 @@ export function InfoContent() {
     <div className="flex flex-col gap-6 pt-3 pb-8">
       <div className="flex flex-col gap-1">
         <PanelHeading className="px-3">{t('c:support')}</PanelHeading>
-        <NavSheetRow icon={InfoIcon} label={t('c:about')} render={<Link to={appConfig.aboutUrl} draggable={false} />} />
-        <NavSheetRow icon={BookOpenIcon} label={t('c:api_docs')} render={<Link to="/docs" draggable={false} />} />
+        <NavSheetRow icon={InfoIcon} label={t('c:about')} render={<Link to={appConfig.aboutUrl} />} />
+        <NavSheetRow icon={BookOpenIcon} label={t('c:api_docs')} render={<Link to="/docs" />} />
         {appConfig.has.chatSupport && (
           <NavSheetRow ref={supportRef} icon={LifeBuoyIcon} label={t('c:support')} onClick={() => askForHelp(supportRef)} />
         )}

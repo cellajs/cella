@@ -57,7 +57,7 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
   if (items.length === 0) return null;
 
   return (
-    <nav id="floating-nav">
+    <nav id="floating-nav" className="print:hidden">
       {items.map((item) => {
         const isItemVisible = (showButtons || isLabelCollapsing) && item.visible !== false;
         return (

@@ -11,11 +11,15 @@ import '~/modules'; // Composition root: registers every frontend module before 
 import { client } from 'sdk/client.gen';
 import { appConfig } from 'shared';
 import { renderAscii } from 'shared/utils/ascii';
+import { ApiError } from '~/lib/api';
 import { createClientConfig } from '~/lib/api-client';
 import { reportReactError, reportRejectedResponse } from '~/lib/maple';
 import { AppRouter } from '~/modules/common/app/app-router';
 import { assertSurfaces } from '~/modules/common/page/tab-nav';
+import { ReloadPrompt } from '~/modules/common/reload-prompt';
+import { ToasterProvider } from '~/modules/common/toaster/toaster-provider';
 import { QueryClientProvider } from '~/query/provider';
+import { checkForUpdate } from '~/utils/app-update';
 import { canonicalOriginUrl, leaveForCanonicalOrigin } from '~/utils/canonical-origin';
 import { initFaviconBadge } from '~/utils/init-favicon-badge';
 import { initInputModality } from '~/utils/input-modality';
@@ -25,6 +29,9 @@ client.setConfig(createClientConfig());
 // An error after an ok response is the SDK's response check refusing the body: report it, then rethrow it unchanged.
 client.interceptors.error.use((error, response, request) => {
   if (response?.ok) reportRejectedResponse(error, request ? new URL(request.url).pathname : '', response.status);
+  // A refused body or a server error can mean a newer release is out: look for it now, not at the next periodic check.
+  // A failed status reaches here as the ApiError the client's fetch threw, with no response.
+  if (response?.ok || (error instanceof ApiError && error.status >= 500)) void checkForUpdate();
   return error;
 });
 
@@ -69,6 +76,9 @@ if (canonicalUrl) {
       <LucideProvider size={'1rem' as unknown as number} strokeWidth={appConfig.theme.strokeWidth}>
         <QueryClientProvider>
           <AppRouter />
+          {/* Outside the router: the root error page replaces the root route's component, and both outlive it */}
+          <ReloadPrompt />
+          <ToasterProvider />
         </QueryClientProvider>
       </LucideProvider>
     </StrictMode>,

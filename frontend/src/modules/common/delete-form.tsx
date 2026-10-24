@@ -5,6 +5,7 @@ import { useInDropdownerDrawer } from '~/modules/common/dropdowner/drawer';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
+import { DrawerRowSeparator } from '~/modules/ui/drawer';
 
 interface DeleteFormProps {
   onDelete: () => void;
@@ -44,6 +45,7 @@ export function DeleteForm({
       >
         {t(label)}
       </SubmitButton>
+      {inDrawer && <DrawerRowSeparator />}
       <Button type="reset" variant={inDrawer ? 'row' : 'secondary'} data-autofocus onClick={onCancel}>
         {inDrawer && <XIcon />}
         {t(cancelLabel)}

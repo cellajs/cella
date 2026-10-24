@@ -1,7 +1,7 @@
 import { EllipsisVerticalIcon } from 'lucide-react';
-import { type RefObject, useRef } from 'react';
+import { Fragment, type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
+import { DropdownActionItem, DropdownActionSeparator } from '~/modules/common/dropdowner/dropdown-action-item';
 import { DropdownerTriggerIcon } from '~/modules/common/dropdowner/trigger-icon';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
@@ -10,6 +10,7 @@ import { Button } from '~/modules/ui/button';
 export type EllipsisOption<T> = {
   label: string;
   icon: IconComponent;
+  variant?: 'default' | 'destructive';
   onSelect: (row: T, triggerRef: RefObject<HTMLButtonElement | null>) => void;
 };
 
@@ -28,10 +29,13 @@ export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options
     if (!triggerRef.current) return;
 
     dropdowner.getState().create(
-      options.map(({ label, icon: Icon, onSelect }) => (
-        <DropdownActionItem key={label} icon={Icon} onSelect={() => onSelect(row, triggerRef)}>
-          {label}
-        </DropdownActionItem>
+      options.map(({ label, icon: Icon, variant, onSelect }, index) => (
+        <Fragment key={label}>
+          {variant === 'destructive' && index > 0 && options[index - 1].variant !== 'destructive' && <DropdownActionSeparator />}
+          <DropdownActionItem icon={Icon} variant={variant} onSelect={() => onSelect(row, triggerRef)}>
+            {label}
+          </DropdownActionItem>
+        </Fragment>
       )),
       { id: 'row-dropdown', triggerId: `ellipsis-${row.id}`, triggerRef, align: 'end', kind: 'menu' },
     );

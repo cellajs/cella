@@ -4,8 +4,6 @@ import { Suspense, useEffect } from 'react';
 import { appConfig } from 'shared';
 import { useLazyComponent } from '~/hooks/use-lazy-component';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { ReloadPrompt } from '~/modules/common/reload-prompt';
-import { ToasterProvider } from '~/modules/common/toaster/toaster-provider';
 import { TooltipProvider } from '~/modules/ui/tooltip';
 import { lazyNamed } from '~/utils/lazy-named';
 
@@ -33,8 +31,6 @@ export function Root() {
     <TooltipProvider delay={300} timeout={400}>
       <HeadContent />
       <Outlet />
-      <ReloadPrompt />
-      <ToasterProvider />
       <Suspense fallback={null}>{GleapSupport ? <GleapSupport /> : null}</Suspense>
       <Suspense fallback={null}>
         <Devtools />

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { useUIStore } from '~/modules/ui/ui-store';
+import { reloadApp } from '~/utils/app-update';
 import { cn } from '~/utils/cn';
 
 // Hold the indicator still briefly, then glide it off-screen (ms).
@@ -127,7 +128,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
       Promise.resolve(onRefreshRef.current()).finally(() => {
         // Static routes have nothing to refetch, so skip the animation and hard-reload.
         if (!sawFetchRef.current) {
-          window.location.reload();
+          void reloadApp();
           return;
         }
         setPhase('exiting');

@@ -33,7 +33,6 @@ function MarketingNavLinks({ onNavigate }: MarketingNavLinksProps) {
         <Link
           to={url}
           hash={hash}
-          draggable={false}
           onClick={(e) => {
             if (hash && isAboutPage) {
               e.preventDefault();
@@ -76,6 +75,7 @@ export function MarketingNav() {
               to="/about"
               hash=""
               replace={isAboutPage}
+              draggable={false}
               className="focus-effect active:press relative rounded-md p-0.5 transition-transform sm:hover:scale-105 md:pr-4"
               aria-label={t('c:go_to_about')}
             >
@@ -132,7 +132,7 @@ export function MarketingNav() {
           <DrawerTitle className="sr-only">{t('c:menu')}</DrawerTitle>
           <div className="flex flex-col gap-2 px-4">
             <UserTheme buttonClassName="xs:hidden m-1 self-end" />
-            <Button variant="ghost" size="lg" render={<Link to="/about" hash="" replace={isAboutPage} draggable={false} onClick={closeDrawer} />}>
+            <Button variant="ghost" size="lg" render={<Link to="/about" hash="" replace={isAboutPage} onClick={closeDrawer} />}>
               {t('c:about')}
             </Button>
             <MarketingNavLinks onNavigate={closeDrawer} />

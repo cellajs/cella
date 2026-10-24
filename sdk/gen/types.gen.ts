@@ -204,6 +204,7 @@ export type ApiError = {
   severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
   entityType?: 'user' | 'organization' | 'attachment';
   requestId?: string;
+  version?: string;
   path?: string;
   method?: string;
   timestamp?: string;
@@ -317,10 +318,15 @@ export type User = {
 };
 
 /**
- * How the signed-in user signs in: connected OAuth providers, the institutions of their organizations (connected or not), passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.
+ * How the signed-in user signs in: connected OAuth identities, the institutions of their organizations (connected or not), passkeys, TOTP, and their live sessions, with when each method was added and last used. The account page lists it, where sessions can be ended and sign-in methods changed.
  */
 export type MeAuthData = {
-  enabledOAuth: Array<'github'>;
+  oauthIdentities: Array<{
+    provider: 'github';
+    email: string | null;
+    createdAt: string;
+    lastUsedAt: string | null;
+  }>;
   institutions: Array<{
     connectionId: string;
     displayName: string;
@@ -329,11 +335,21 @@ export type MeAuthData = {
       label: string;
     };
     /**
-     * Whether the account already holds an identity through this connection
+     * The identity the account holds through this connection; null when not connected
      */
-    connected: boolean;
+    identity: {
+      email: string | null;
+      createdAt: string;
+      lastUsedAt: string | null;
+    } | null;
   }>;
-  hasTotp: boolean;
+  /**
+   * Null without TOTP. Its last use is the start of the time step of the newest code it accepted.
+   */
+  totp: {
+    createdAt: string;
+    lastUsedAt: string | null;
+  } | null;
   sessions: Array<{
     id: string;
     type: 'regular' | 'impersonation' | 'mfa';

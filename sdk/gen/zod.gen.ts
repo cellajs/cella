@@ -137,6 +137,7 @@ export const zApiError = z.object({
   severity: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
   entityType: z.enum(['user', 'organization', 'attachment']).optional(),
   requestId: z.string().optional(),
+  version: z.string().optional(),
   path: z.string().optional(),
   method: z.string().optional(),
   timestamp: z.string().optional(),
@@ -260,10 +261,17 @@ export const zMe = z.object({
 });
 
 /**
- * How the signed-in user signs in: connected OAuth providers, the institutions of their organizations (connected or not), passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.
+ * How the signed-in user signs in: connected OAuth identities, the institutions of their organizations (connected or not), passkeys, TOTP, and their live sessions, with when each method was added and last used. The account page lists it, where sessions can be ended and sign-in methods changed.
  */
 export const zMeAuthData = z.object({
-  enabledOAuth: z.array(z.enum(['github'])),
+  oauthIdentities: z.array(
+    z.object({
+      provider: z.enum(['github']),
+      email: z.string().nullable(),
+      createdAt: z.string(),
+      lastUsedAt: z.string().nullable(),
+    }),
+  ),
   institutions: z.array(
     z.object({
       connectionId: z.string(),
@@ -272,10 +280,21 @@ export const zMeAuthData = z.object({
         key: z.string(),
         label: z.string(),
       }),
-      connected: z.boolean(),
+      identity: z
+        .object({
+          email: z.string().nullable(),
+          createdAt: z.string(),
+          lastUsedAt: z.string().nullable(),
+        })
+        .nullable(),
     }),
   ),
-  hasTotp: z.boolean(),
+  totp: z
+    .object({
+      createdAt: z.string(),
+      lastUsedAt: z.string().nullable(),
+    })
+    .nullable(),
   sessions: z.array(
     z.object({
       id: z.uuid(),

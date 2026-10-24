@@ -21,6 +21,7 @@ export class ApiError extends Error implements ApiErrorInit {
   declare entityType?: ApiErrorPayload['entityType'];
   declare severity?: ApiErrorPayload['severity'];
   declare requestId?: string;
+  declare version?: string;
   declare path?: string;
   declare method?: string;
   declare timestamp?: string;

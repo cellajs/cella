@@ -18,6 +18,8 @@ export interface Session {
   storage: StorageState | null;
   /** Resolved `{name}` placeholders of the scope paths. */
   values: Record<string, string | null>;
+  /** The minted session cookie; null for an audit of public pages. */
+  cookie: { name: string; value: string } | null;
 }
 
 /** Elements that exist only in development builds; scans and probes ignore them. */
@@ -34,7 +36,7 @@ function mintCookie(email: string) {
 /** Starts the browser and, when an email is given, a session plus the values of the scope's path placeholders. */
 export async function startSession(email: string | null): Promise<Session> {
   const browser = await chromium.launch();
-  if (!email) return { browser, storage: null, values: {} };
+  if (!email) return { browser, storage: null, values: {}, cookie: null };
 
   const cookie = mintCookie(email);
   const api: AuditApi = async (apiPath, init) => {
@@ -57,7 +59,18 @@ export async function startSession(email: string | null): Promise<Session> {
   const storage = await context.storageState();
   await context.close();
 
-  return { browser, storage, values };
+  return { browser, storage, values, cookie };
+}
+
+/**
+ * Closes the browser and signs the minted session out, so a finished audit leaves no live session in the user's sessions
+ * list. A JSON content type passes the CSRF check without an Origin header; a stack that is already down leaves it to expire.
+ */
+export async function endSession(session: Session) {
+  await session.browser.close();
+  if (!session.cookie) return;
+  const headers = { cookie: `${session.cookie.name}=${session.cookie.value}`, 'content-type': 'application/json' };
+  await fetch(`${appConfig.backendUrl}/auth/sign-out`, { method: 'POST', headers }).catch(() => {});
 }
 
 interface ContextOptions {

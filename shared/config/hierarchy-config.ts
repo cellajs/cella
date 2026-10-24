@@ -18,8 +18,9 @@ export const roles = createRoleRegistry(['admin', 'member'] as const);
  */
 export const hierarchy = createEntityHierarchy(roles)
   .user()
-  // Both org roles are elevated: their product grants cover the whole org subtree, which keeps
-  // catchup/view proving org-wide. Apps adding sub-channels narrow this per channel and role.
-  .organization({ roles: roles.all, elevated: roles.all, drafts: { prepareRoles: ['admin'] } })
+  // Only org admins are elevated: their product grants reach rows homed anywhere in the org, a member's
+  // only rows homed at the organization. Elevating a role that a sub-channel's `organizationRoles` maps to
+  // gives every member of that sub-channel the role's product grants in all its siblings.
+  .organization({ roles: roles.all, elevated: ['admin'], drafts: { prepareRoles: ['admin'] } })
   .product('attachment', { parent: 'organization' })
   .build();

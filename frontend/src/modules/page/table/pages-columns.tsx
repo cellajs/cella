@@ -50,7 +50,7 @@ export const useColumns = () => {
             variant="cell"
             size="cell"
             className="w-auto min-w-0"
-            render={<Link to="/docs/page/$" tabIndex={tabIndex} draggable={false} params={{ _splat: row.id }} />}
+            render={<Link to="/docs/page/$" tabIndex={tabIndex} params={{ _splat: row.id }} />}
           >
             <span className={cn(cellLinkTextClass, 'font-medium')}>{row.name}</span>
           </Button>

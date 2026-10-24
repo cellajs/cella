@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PencilIcon, TrashIcon } from 'lucide-react';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import { TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
+import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import { dropdowner } from '~/modules/common/dropdowner/use-dropdowner';
@@ -10,7 +10,7 @@ import { openPopConfirm } from '~/modules/common/popconfirm';
 const onDelete = fn();
 const onEdit = fn();
 
-const options = [
+const options: EllipsisOption<{ id: string }>[] = [
   {
     label: 'Edit',
     icon: PencilIcon,
@@ -22,6 +22,7 @@ const options = [
   {
     label: 'Delete',
     icon: TrashIcon,
+    variant: 'destructive',
     onSelect: () => {
       const remove = () => dropdowner.getState().remove();
       openPopConfirm(

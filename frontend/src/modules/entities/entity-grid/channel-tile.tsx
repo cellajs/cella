@@ -65,7 +65,12 @@ export function ChannelTileCard({ entity, className, children }: ChannelTileCard
 function TileLink({ className, children }: { className?: string; children: ReactNode }) {
   const entity = useTileEntity();
   return (
-    <Link {...getChannelRoute(entity)} {...pageTopHashNav} className={cn('group/tile-link tile-link focus-visible:outline-hidden', className)}>
+    <Link
+      {...getChannelRoute(entity)}
+      {...pageTopHashNav}
+      draggable={false}
+      className={cn('group/tile-link tile-link focus-visible:outline-hidden', className)}
+    >
       {children}
     </Link>
   );
@@ -217,6 +222,7 @@ export function ChannelTileParentChip({ parent }: ChannelTileParentChipProps) {
     <Link
       {...getChannelRoute(parent)}
       {...pageTopHashNav}
+      draggable={false}
       className="focus-effect absolute top-2 right-2 max-w-40 truncate rounded bg-background/60 px-1.5 py-0.5 text-xs backdrop-blur-xs hover:underline"
     >
       {t('c:in_channel', { name: parent.name })}

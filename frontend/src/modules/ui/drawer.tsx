@@ -115,7 +115,7 @@ function DrawerHeader({ className, sticky, ...props }: React.ComponentProps<'div
     <div
       data-slot="drawer-header"
       className={cn(
-        'flex flex-col gap-0.5 p-4 group-data-[swipe-direction=down]/drawer-content:text-center group-data-[swipe-direction=up]/drawer-content:text-center md:gap-1.5 md:text-left',
+        'flex flex-col gap-0.5 p-4 pb-6 group-data-[swipe-direction=down]/drawer-content:text-center group-data-[swipe-direction=up]/drawer-content:text-center md:gap-1.5 md:text-left',
         sticky && 'sticky top-0 z-20 bg-background/70 backdrop-blur-xs',
         className,
       )}
@@ -128,13 +128,14 @@ function DrawerFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="drawer-footer" className={cn('mt-auto flex flex-col gap-2 p-4', className)} {...props} />;
 }
 
-/** One rounded block of `Button variant="row"` rows. Each row draws the hairline under it; the inner -mb-px clips the last one. */
-function DrawerRowGroup({ className, children, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div data-slot="drawer-row-group" className={cn('overflow-hidden rounded-xl bg-muted/50', className)} {...props}>
-      <div className="-mb-px flex flex-col">{children}</div>
-    </div>
-  );
+/** A list of `Button variant="row"` rows on the sheet itself, without a fill of its own. */
+function DrawerRowGroup({ className, ...props }: React.ComponentProps<'div'>) {
+  return <div data-slot="drawer-row-group" className={cn('flex flex-col', className)} {...props} />;
+}
+
+/** The hairline between two groups of rows that do different kinds of things. */
+function DrawerRowSeparator({ className, ...props }: React.ComponentProps<'hr'>) {
+  return <hr data-slot="drawer-row-separator" className={cn('my-1.5 shrink-0 border-border', className)} {...props} />;
 }
 
 function DrawerTitle({ className, ...props }: DrawerPrimitive.Title.Props) {
@@ -153,6 +154,7 @@ export {
   DrawerFooter,
   DrawerHeader,
   DrawerRowGroup,
+  DrawerRowSeparator,
   DrawerTitle,
   DrawerTrigger,
   DrawerVirtualKeyboardProvider,

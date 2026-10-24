@@ -95,6 +95,8 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-primary: var(--primary);
@@ -260,8 +262,15 @@
   }
 }
 
-/* Active while a FocusViewContainer is in focus view, e.g. `focus-view:hidden` for chrome outside a `.focus-view-scope`. */
-@custom-variant focus-view (&:where(.focus-view *));
+/* Active while a FocusViewContainer is in focus view, and on paper: `focus-view:hidden` for chrome outside a `.focus-view-scope`. */
+@custom-variant focus-view {
+  &:where(.focus-view *) {
+    @slot;
+  }
+  @media print {
+    @slot;
+  }
+}
 
 /* Fixed bottom chrome steps aside: the body carries these classes while the selection action bar or the on-screen keyboard is up. */
 @custom-variant chrome-hidden (&:is(.selection-active *, .keyboard-open *));
@@ -442,6 +451,8 @@
     --success-foreground: oklch(0.9851 0 0);
     --warning: oklch(0.5 0.125 70);
     --warning-foreground: oklch(0.9851 0 0);
+    --info: oklch(0.5 0.16 255);
+    --info-foreground: oklch(0.9851 0 0);
     --brand: oklch(0.2061 0.006 285.56);
     --brand-foreground: oklch(0.9627 0 0);
     /* Modal backdrop scrim, the same in both modes. */
@@ -486,6 +497,8 @@
     --success-foreground: oklch(0.1963 0.0092 285.53);
     --warning: oklch(0.75 0.16 70);
     --warning-foreground: oklch(0.1963 0.0092 285.53);
+    --info: oklch(0.72 0.14 250);
+    --info-foreground: oklch(0.1963 0.0092 285.53);
     --brand: oklch(0.9851 0 0);
     --brand-foreground: oklch(0.3138 0.0102 285.63);
 
@@ -537,6 +550,11 @@
     /* No grey tap flash: controls and rows draw their own pressed state (the press utility, active fills). */
     -webkit-tap-highlight-color: transparent;
 
+    /* Inter's regular reads heavy on phone screens, where font smoothing does not apply: text weighs a little less there. */
+    @variant max-sm {
+      --font-weight-normal: 380;
+    }
+
     &.dark {
       color-scheme: dark;
     }
@@ -558,7 +576,7 @@
   }
 
   body {
-    @apply bg-background text-foreground min-h-full overscroll-none overflow-x-clip antialiased;
+    @apply bg-background text-foreground min-h-full overscroll-none overflow-x-clip antialiased font-normal;
   }
 
   .container {

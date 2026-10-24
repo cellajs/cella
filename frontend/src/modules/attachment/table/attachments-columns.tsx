@@ -101,6 +101,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean): ColumnOr
         {
           label: t('c:delete'),
           icon: TrashIcon,
+          variant: 'destructive',
           onSelect: (row) => {
             const { remove } = dropdowner.getState();
             openPopConfirm(

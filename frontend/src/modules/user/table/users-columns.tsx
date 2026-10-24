@@ -57,6 +57,7 @@ export const useColumns = () => {
       {
         label: t('c:delete'),
         icon: TrashIcon,
+        variant: 'destructive',
         onSelect: (row) =>
           openPopConfirm(
             <NamedText i18nKey="c:delete_confirm.text" name={row.name} />,

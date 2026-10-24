@@ -136,16 +136,7 @@ function PageLeaf({ page, isActive }: { page: DocPage; isActive: boolean }) {
       variant="ghost"
       size="sm"
       className={cn(sidebarLeafClass, 'data-[active=true]:bg-accent')}
-      render={
-        <Link
-          to="/docs/page/$"
-          params={{ _splat: page.id }}
-          preload="intent"
-          draggable={false}
-          data-active={isActive}
-          onClick={closeSidebarSheetAndNavigate}
-        />
-      }
+      render={<Link to="/docs/page/$" params={{ _splat: page.id }} preload="intent" data-active={isActive} onClick={closeSidebarSheetAndNavigate} />}
     >
       <span className="truncate">{page.name}</span>
     </Button>

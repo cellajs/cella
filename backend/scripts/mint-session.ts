@@ -38,6 +38,8 @@ await db.insert(sessionsTable).values({
   id: generateId(),
   secret,
   userId: owner.userId,
+  // The user's sessions list shows this row; the name tells it apart from their own browsers
+  deviceName: 'session:mint',
   type: 'regular',
   authStrategy: 'magic',
   createdAt: new Date().toISOString(),

@@ -48,7 +48,7 @@ function CompanyMarker() {
         </div>
       )}
       <button type="button" onClick={() => setCardOpen(true)} className="block cursor-pointer" title={appConfig.company.name}>
-        <img src={logoUrl} width="30" height="30" alt={appConfig.name} />
+        <img src={logoUrl} width="30" height="30" alt={appConfig.name} draggable={false} />
       </button>
     </div>
   );

@@ -47,7 +47,7 @@ li:has(.is-focused) {
 
 .bn-shadcn p {
   font-size: var(--text-md);
-  font-weight: 400;
+  font-weight: var(--font-weight-normal);
   -webkit-font-smoothing: antialiased;
   overflow-wrap: anywhere;
   padding: 0;
@@ -71,7 +71,7 @@ li:has(.is-focused) {
 .bn-shadcn .bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after {
   font-size: var(--text-md);
   line-height: 1.4;
-  font-weight: 400;
+  font-weight: var(--font-weight-normal);
 }
 
 /* An empty heading's placeholder keeps the heading's type, so nothing jumps when typing starts. */
@@ -95,13 +95,18 @@ li:has(.is-focused) {
   display: none;
 }
 
+/* Inline code wears the docs' chip (`.prose code` in tailwind.css), so code reads alike everywhere and in both themes. */
 .bn-shadcn code {
   font-size: 0.85em;
   line-height: 1rem;
-  background: color-mix(in oklch, var(--input) 50%, transparent);
-  padding: 0.15rem;
-  border-radius: 0.25rem;
-  color: #e8912d;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background-color: var(--muted);
+  padding: 0.125rem 0.375rem;
+  color: var(--foreground);
+  font-weight: 500;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 .dark .bn-block-content[data-content-type="codeBlock"] {
@@ -110,9 +115,11 @@ li:has(.is-focused) {
 }
 
 .bn-block-content[data-content-type="codeBlock"] code {
+  border: 0;
   background: transparent;
   padding: 0;
   color: #fff;
+  font-weight: inherit;
 }
 
 .bn-block-content[data-content-type="codeBlock"] > pre {

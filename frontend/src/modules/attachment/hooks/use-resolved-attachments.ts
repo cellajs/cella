@@ -39,13 +39,16 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
   const [resolvedItems, setResolvedItems] = useState<CarouselItemData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorIds, setErrorIds] = useState<string[]>([]);
+  // The items key the results belong to: a render with new items reads as loading, not as the old items' errors.
+  const [resolvedKey, setResolvedKey] = useState<string | null>(null);
   const isRestoring = useIsRestoring();
   const blobUrlsRef = useRef<Map<string, string>>(new Map());
 
   // Bumped to re-run resolution after a transient failure; reset when the item set changes.
   const [retrySignal, setRetrySignal] = useState(0);
   const retryCountRef = useRef(0);
-  const itemsKey = items.map((item) => `${item.id}:${item.url ?? ''}`).join(',');
+  // The original key counts: a fetched row bringing the keys an id-only item lacked resolves again.
+  const itemsKey = items.map((item) => `${item.id}:${item.url ?? ''}:${item.keys?.original ?? ''}`).join(',');
 
   useEffect(() => {
     retryCountRef.current = 0;
@@ -61,6 +64,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
       setResolvedItems([]);
       setIsLoading(false);
       setErrorIds([]);
+      setResolvedKey(itemsKey);
       return;
     }
 
@@ -122,6 +126,7 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
         setResolvedItems(resolved);
         setErrorIds(errors);
         setIsLoading(false);
+        setResolvedKey(itemsKey);
 
         // Retries are bounded per item set: a transient failure means the blob is still downloading or the cache is mid-sync.
         if (hasTransientErrors && retryCountRef.current < resolveRetryLimit) {
@@ -151,5 +156,5 @@ export function useResolvedAttachments(items: ResolvableItem[]): ResolvedAttachm
     return { ...resolved, name: item?.name ?? resolved.name, description: item?.description ?? resolved.description };
   });
 
-  return { items: liveItems, isLoading, errorIds };
+  return { items: liveItems, isLoading: isLoading || resolvedKey !== itemsKey, errorIds };
 }

@@ -27,7 +27,6 @@ export function NavSheetRow(props: NavSheetRowProps) {
           if (isDisabled) return toastOffline();
           if (!navigationStore.getState().keepNavOpen) sheeter.getState().remove();
         }}
-        draggable={false}
         to={props.to}
       />
     ) : undefined;

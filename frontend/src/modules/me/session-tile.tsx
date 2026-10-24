@@ -1,7 +1,9 @@
+import dayjs from 'dayjs';
 import { ShieldCheckIcon, UnplugIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type FederationKey } from 'shared';
-import { DeviceTile, DeviceTileDetail } from '~/modules/me/device-tile';
+import { ExpandableTileDetail, type TileTone } from '~/modules/common/expandable-tile';
+import { DeviceTile } from '~/modules/me/device-tile';
 import type { Session } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -15,6 +17,20 @@ export const isLiveSession = (session: Session) => session.revokedAt === null &&
 
 /** When the session stopped authenticating, or will: its revocation, else its expiry. */
 export const sessionEndedAt = (session: Session) => session.revokedAt ?? session.expiresAt;
+
+/** Per status: its color and the label of the date it ends. */
+const statuses = {
+  current: { tone: 'success', endLabel: 'c:expires_at' },
+  active: { tone: 'info', endLabel: 'c:expires_at' },
+  expired: { tone: 'warning', endLabel: 'c:expired' },
+  revoked: { tone: 'destructive', endLabel: 'c:revoked' },
+} as const satisfies Record<string, { tone: TileTone; endLabel: string }>;
+
+const sessionStatus = (session: Session): keyof typeof statuses => {
+  if (session.revokedAt !== null) return 'revoked';
+  if (!isLiveSession(session)) return 'expired';
+  return session.isCurrent ? 'current' : 'active';
+};
 
 /** The region's name in `language`, or its code where the browser has no name for it. */
 const regionName = (code: string, language: string) => {
@@ -33,9 +49,11 @@ interface SessionTileProps {
   onRevoke?: (sessionIds: string[]) => void;
   /** This session's revoke is running. */
   loading?: boolean;
+  expanded: boolean;
+  onToggle: () => void;
 }
 
-export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: SessionTileProps) {
+export function SessionTile({ session, isCurrentDevice, onRevoke, loading, expanded, onToggle }: SessionTileProps) {
   const { t, i18n } = useTranslation();
   /** A federation names itself in config; every other method has a locale key. */
   const strategyLabel = (strategy: NonNullable<Session['authStrategy']>) =>
@@ -43,67 +61,52 @@ export function SessionTile({ session, isCurrentDevice, onRevoke, loading }: Ses
       ? appConfig.federations[strategy as FederationKey].label
       : t(`c:${strategy as Exclude<typeof strategy, DeclaredFederation>}`);
 
-  const isRevoked = session.revokedAt !== null;
-  const isExpired = !isRevoked && !isLiveSession(session);
+  const status = sessionStatus(session);
+  const isLive = status === 'current' || status === 'active';
   const countryName = session.ipCountry ? regionName(session.ipCountry, i18n.language) : null;
 
   return (
     <DeviceTile
-      deviceType={session.deviceType}
-      title={
-        <div className="flex gap-1 xs:gap-2 max-xs:flex-col">
-          <span className="text-sm">{session.deviceName || t('c:unknown_device')}</span>
-          <div className="flex items-center gap-2 empty:hidden">
-            {session.type === 'mfa' && (
-              <Badge variant="success" soft>
-                <ShieldCheckIcon />
-                {t('c:mfa_short')}
-              </Badge>
-            )}
-            {session.isCurrent && <Badge variant="plain">{t('c:current')}</Badge>}
-            {isCurrentDevice && <Badge variant="outline">{t('c:this_device')}</Badge>}
-            {session.isNewDevice && !session.isCurrent && !isCurrentDevice && <Badge variant="warning">{t('c:new_device')}</Badge>}
-            {isRevoked && <Badge variant="secondary">{t('c:revoked')}</Badge>}
-            {isExpired && <Badge variant="secondary">{t('c:expired')}</Badge>}
-          </div>
-        </div>
-      }
-      details={
+      device={session}
+      status={{ tone: statuses[status].tone, label: t(`c:${status}`) }}
+      expanded={expanded}
+      onToggle={onToggle}
+      badges={
         <>
-          <DeviceTileDetail label={t('c:period')}>
-            {dateShort(session.createdAt)} - {dateShort(sessionEndedAt(session))}
-          </DeviceTileDetail>
-          {session.revocationReason && (
-            <DeviceTileDetail label={t('c:revoked')}>{t(`c:revocation_reason.${session.revocationReason}`)}</DeviceTileDetail>
+          {session.type === 'mfa' && (
+            <span className="flex shrink-0 items-center gap-1 text-success">
+              <ShieldCheckIcon className="size-4" />
+              <span className="font-medium text-xs max-sm:sr-only">{t('c:mfa_short')}</span>
+            </span>
           )}
-          {session.authStrategy && (
-            <DeviceTileDetail label={t('c:strategy')} expandable>
-              <span className="capitalize">{strategyLabel(session.authStrategy)}</span>
-            </DeviceTileDetail>
-          )}
-          {session.deviceOs && (
-            <DeviceTileDetail label={t('c:os')} expandable>
-              {session.deviceOs}
-            </DeviceTileDetail>
-          )}
-          {session.browser && (
-            <DeviceTileDetail label={t('c:browser')} expandable>
-              {session.browser}
-            </DeviceTileDetail>
-          )}
-          {countryName && (
-            <DeviceTileDetail label={t('c:country')} expandable>
-              {countryName}
-            </DeviceTileDetail>
-          )}
+          {isCurrentDevice && <Badge variant="outline">{t('c:this_device')}</Badge>}
+          {session.isNewDevice && !session.isCurrent && !isCurrentDevice && <Badge variant="warning">{t('c:new_device')}</Badge>}
         </>
       }
-      action={
-        !session.isCurrent &&
+      meta={isLive ? t('c:expires_relative', { time: dayjs(session.expiresAt).fromNow() }).toLowerCase() : dateShort(sessionEndedAt(session))}
+      details={
+        <>
+          <ExpandableTileDetail label={t('c:signed_in')}>{dateShort(session.createdAt)}</ExpandableTileDetail>
+          <ExpandableTileDetail label={t(statuses[status].endLabel)}>{dateShort(sessionEndedAt(session))}</ExpandableTileDetail>
+          {session.revocationReason && (
+            <ExpandableTileDetail label={t('c:reason')}>{t(`c:revocation_reason.${session.revocationReason}`)}</ExpandableTileDetail>
+          )}
+          {session.authStrategy && (
+            <ExpandableTileDetail label={t('c:strategy')}>
+              <span className="capitalize">{strategyLabel(session.authStrategy)}</span>
+            </ExpandableTileDetail>
+          )}
+          {session.browser && <ExpandableTileDetail label={t('c:browser')}>{session.browser}</ExpandableTileDetail>}
+          {session.deviceOs && <ExpandableTileDetail label={t('c:os')}>{session.deviceOs}</ExpandableTileDetail>}
+          {countryName && <ExpandableTileDetail label={t('c:country')}>{countryName}</ExpandableTileDetail>}
+        </>
+      }
+      actions={
+        status === 'active' &&
         onRevoke && (
-          <Button variant="plain" size="sm" loading={loading} onClick={() => onRevoke([session.id])}>
+          <Button variant="plain" size="sm" className="max-sm:w-full" loading={loading} onClick={() => onRevoke([session.id])}>
             <UnplugIcon />
-            <span className="max-md:hidden">{t('c:revoke')}</span>
+            {t('c:revoke')}
           </Button>
         )
       }

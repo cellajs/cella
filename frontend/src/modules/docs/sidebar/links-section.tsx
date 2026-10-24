@@ -33,7 +33,7 @@ export function LinksSection({ label }: LinksSectionProps) {
         {t('c:contact_us')}
       </Button>
 
-      <Button variant="ghost" className={rowClass} render={<Link to="/docs/overview" draggable={false} onClick={closeSidebarSheetAndNavigate} />}>
+      <Button variant="ghost" className={rowClass} render={<Link to="/docs/overview" onClick={closeSidebarSheetAndNavigate} />}>
         openapi.json
       </Button>
 
@@ -41,7 +41,7 @@ export function LinksSection({ label }: LinksSectionProps) {
         <Button
           variant="ghost"
           className={rowClass}
-          render={<Link to="/docs/page/$" params={{ _splat: 'llms' }} draggable={false} onClick={closeSidebarSheetAndNavigate} />}
+          render={<Link to="/docs/page/$" params={{ _splat: 'llms' }} onClick={closeSidebarSheetAndNavigate} />}
         >
           llms.txt
         </Button>

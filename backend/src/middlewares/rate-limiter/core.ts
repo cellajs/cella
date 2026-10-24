@@ -41,7 +41,7 @@ async function openBucketSafely(store: ReturnType<typeof getRateLimiterInstance>
  * @param opts - Limits and middleware metadata.
  */
 export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateLimitKeyPart[], opts?: RateLimiterOpts): RateLimiterHandler => {
-  const { limits, functionName, name, description, getConsumePoints, getPointsBudget, countsInProcess } = opts ?? {};
+  const { limits, functionName, name, description, refusalType, exempt, getConsumePoints, getPointsBudget, countsInProcess } = opts ?? {};
   const config = { ...defaultOptions, ...limits };
   const keyPrefix = `${key}_${mode}`;
   const fastPath = mode === 'limit' && (countsInProcess || getPointsBudget !== undefined);
@@ -82,6 +82,11 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
       // An empty key would share one bucket across all traffic (a userId-keyed limiter on a public route): misconfiguration
       if (!rateLimitKey) throw new AppError(400, 'invalid_request', 'warn');
 
+      if (exempt && (await exempt(ctx, extractedIdentifiers))) {
+        await next();
+        return;
+      }
+
       if (mode === 'limit') {
         // Clamp tenant budgets without mutating the shared prefix limiter; a zero tenant budget uses the global ceiling
         const consumePoints = getConsumePoints ? await getConsumePoints(ctx) : 1;
@@ -97,7 +102,7 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
 
         const limitState = await store.get(rateLimitKey);
         if (limitState !== null && limitState.consumedPoints > effectiveBudget) {
-          return rateLimitError(ctx, limitState);
+          return rateLimitError(ctx, limitState, refusalType);
         }
         // A row opens with the time left in the window the key counts in process, so both counts restart together.
         const windowSeconds = fastPath ? windowSecondsLeft(fastKey, windowMs) : config.duration;
@@ -112,13 +117,13 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
           if (fastPath) syncFromDb(fastKey, consumeResult.consumedPoints, consumeResult.msBeforeNext, windowMs);
           // The library only rejects at the static ceiling; the smaller per-tenant budget is enforced here
           if (consumeResult.consumedPoints > effectiveBudget) {
-            return rateLimitError(ctx, consumeResult);
+            return rateLimitError(ctx, consumeResult, refusalType);
           }
         } catch (rlRejected) {
           if (rlRejected instanceof RateLimiterRes) {
             // A refusal proves the bucket spent, and one from the store's in-memory block reports no count of its own
             if (fastPath) syncFromDb(fastKey, Math.max(rlRejected.consumedPoints, config.points), rlRejected.msBeforeNext, windowMs);
-            return rateLimitError(ctx, rlRejected);
+            return rateLimitError(ctx, rlRejected, refusalType);
           }
           // DB write failed: return the claimed debt so it is settled on a later request.
           restoreDebt(fastKey, debt);
@@ -129,7 +134,7 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
         return;
       }
 
-      const reservation = await reserveTiers(ctx, tiers, rateLimitKey);
+      const reservation = await reserveTiers(ctx, tiers, rateLimitKey, refusalType);
 
       // A handler that throws past the error handler leaves the attempt counted.
       await next();

@@ -41,6 +41,7 @@ export function InfoCards() {
                   alt={name}
                   className={cn('size-8 object-contain', invert && 'dark:invert')}
                   loading="lazy"
+                  draggable={false}
                 />
                 <span className="ml-4 font-semibold">{name}</span>
               </div>

@@ -6,7 +6,7 @@ import { mkdirSync, openSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseEnv } from 'node:util';
-import { chromium, mintSession } from '../two-tab-sync-test/driver-lib.mjs';
+import { chromium, endSession, mintSession } from '../two-tab-sync-test/driver-lib.mjs';
 
 const OUT = process.env.OUT_DIR ?? join(tmpdir(), 'cella-smoke');
 mkdirSync(join(OUT, 'shots'), { recursive: true });
@@ -164,6 +164,7 @@ try {
   check(error instanceof Error ? error.message : String(error), false);
 } finally {
   await browser?.close();
+  await endSession(session);
   stop();
   writeFileSync(join(OUT, 'evidence.json'), JSON.stringify({ checks, evidence }, null, 2));
   const failed = checks.filter((entry) => !entry.ok).length;

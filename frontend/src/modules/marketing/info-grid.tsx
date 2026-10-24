@@ -116,13 +116,7 @@ export function InfoGrid<C extends string>({
   return (
     <div className={cn('mx-auto grid max-w-5xl justify-center gap-4', className)}>
       {expandable ? (
-        <ExpandableList<InfoGridItem<C>>
-          items={items}
-          renderItem={renderTile}
-          initialDisplayCount={4}
-          alwaysShowAll={isMediumScreen}
-          expandText="c:more"
-        />
+        <ExpandableList<InfoGridItem<C>> items={items} renderItem={renderTile} initialDisplayCount={4} alwaysShowAll={isMediumScreen} />
       ) : (
         items.map(renderTile)
       )}

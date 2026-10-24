@@ -5,11 +5,11 @@ import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid/types';
 import { DataTable } from '~/modules/common/data-table/data-table';
+import { RowDragPreview } from '~/modules/common/data-table/row-drag-preview';
 import { TreeProvider } from '~/modules/common/data-table/tree/tree-context';
 import { useTreeRows } from '~/modules/common/data-table/tree/use-tree-rows';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { type DocPage, docPages } from '~/modules/page/content';
-import { PageRowPreview } from '~/modules/page/table/page-row-preview';
 import { maxPageDepth, type PageTreeRow, pagesRowHeight } from '~/modules/page/table/page-tree';
 import { PagesTableBar } from '~/modules/page/table/pages-bar';
 import { useColumns } from '~/modules/page/table/pages-columns';
@@ -22,7 +22,7 @@ function rowKeyGetter(row: PageTreeRow) {
 }
 
 function renderRowDragPreview(row: PageTreeRow) {
-  return <PageRowPreview page={row} />;
+  return <RowDragPreview name={row.name} />;
 }
 
 /** Renders the build-time MDX index; development edits persist to frontmatter, and bundled production content is read-only. */

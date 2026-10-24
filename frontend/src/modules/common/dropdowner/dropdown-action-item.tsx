@@ -3,7 +3,8 @@ import { useInDropdownerDrawer } from '~/modules/common/dropdowner/drawer';
 import { dropdowner, removeIfCurrent } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
-import { DropdownMenuItem } from '~/modules/ui/dropdown-menu';
+import { DrawerRowSeparator } from '~/modules/ui/drawer';
+import { DropdownMenuItem, DropdownMenuSeparator } from '~/modules/ui/dropdown-menu';
 import { cn } from '~/utils/cn';
 
 interface DropdownActionItemProps {
@@ -57,4 +58,10 @@ export function DropdownActionItem({
       {children}
     </DropdownMenuItem>
   );
+}
+
+/** Parts groups of dropdowner actions that do different kinds of things, in the desktop popup and the mobile drawer alike. */
+export function DropdownActionSeparator() {
+  const inDrawer = useInDropdownerDrawer();
+  return inDrawer ? <DrawerRowSeparator /> : <DropdownMenuSeparator />;
 }
