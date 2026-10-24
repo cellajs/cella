@@ -4,6 +4,7 @@
  * once per entrypoint that reaches those registries (app `routes.ts`, MCP worker, seed runner).
  */
 import '#/modules/activities/activities-module';
+import '#/modules/actors/actors-module';
 import '#/modules/attachment/attachment-module';
 import '#/modules/auth/auth-module';
 import '#/modules/entities/entities-module';

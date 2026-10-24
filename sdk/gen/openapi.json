@@ -203,12 +203,6 @@
       "x-kind": "entity"
     },
     {
-      "name": "actors",
-      "description": "Who writes rows: users and service accounts.",
-      "x-parent": "cella",
-      "x-kind": "module"
-    },
-    {
       "name": "internal",
       "description": "Operations hidden from the public API reference.",
       "x-kind": "hidden"
@@ -218,6 +212,12 @@
       "description": "Audit log entries tracking create, update, and delete operations across all resources, written\n    by the CDC worker. Activities provide an audit trail and can be extended for webhook delivery.",
       "x-parent": "cella",
       "x-kind": "hidden"
+    },
+    {
+      "name": "actors",
+      "description": "Who writes rows: users and service accounts.",
+      "x-parent": "cella",
+      "x-kind": "module"
     },
     {
       "name": "attachments",
