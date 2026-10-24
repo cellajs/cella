@@ -1,0 +1,3 @@
+/* The app's own styles: brand tokens, fonts, @theme values. tailwind.css imports this file into the `app` layer, the last
+   layer, so a rule here wins over every layered template rule and utility whatever its specificity. cella ships it empty
+   and never syncs it. */

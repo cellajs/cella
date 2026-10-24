@@ -49,7 +49,7 @@ pnpm offline
 
 ## Customize & contribute
 
-1. Set your app identity in `shared/config/config.default.ts`.
+1. Set your app identity in `shared/config/config.default.ts`, and its colors and fonts in `frontend/src/styling/app.css`.
 2. Model entities in `shared/config/hierarchy-config.ts` and access rules in `shared/config/permissions-config.ts`.
 3. Update root `package.json`. `.env` lists the secrets each feature needs (e.g. email).
 4. Read the [architecture](./ARCHITECTURE.md) in your repo or on the cella docs site.
