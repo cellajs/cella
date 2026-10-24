@@ -1,3 +1,4 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +7,7 @@ import { AuthEmailButton } from '~/modules/auth/auth-email-button';
 import { AuthHeader } from '~/modules/auth/auth-header';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
+import { pendingMfaQueryOptions } from '~/modules/auth/query';
 import { TotpStrategy } from '~/modules/auth/totp-strategy';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -15,7 +17,7 @@ export function MfaPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const lastUser = useUserStore((state) => state.lastUser);
+  const { data: challenge } = useSuspenseQuery(pendingMfaQueryOptions);
   const clearUserStore = useUserStore((state) => state.reset);
   const signedIn = useAuthStore((state) => state.signedIn);
 
@@ -32,13 +34,10 @@ export function MfaPage() {
 
   if (signedIn) return <Spinner size="lg" />;
 
-  // The route lets no visitor in without an address; cancelling clears it while the route change runs.
-  if (!lastUser?.email) return null;
-
   return (
     <>
       <AuthHeader title={t('c:mfa_header')}>
-        <AuthEmailButton email={lastUser.email} onClick={handleCancelMfa} />
+        <AuthEmailButton email={challenge.email} onClick={handleCancelMfa} />
         <p>{t('c:mfa_subheader.text')}</p>
       </AuthHeader>
 

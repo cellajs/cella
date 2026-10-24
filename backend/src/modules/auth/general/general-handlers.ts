@@ -35,6 +35,12 @@ app.openapi(authGeneralRoutes.checkEmail, async (ctx) => {
   return ctx.json({ recognized }, 200);
 });
 
+app.openapi(authGeneralRoutes.getPendingMfa, async (ctx) => {
+  // Reads only: the challenge stays open for its second factor.
+  const { email } = await readBoundToken(ctx, 'confirm-mfa');
+  return ctx.json({ email }, 200);
+});
+
 app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
   const { token, type: tokenType } = ctx.req.valid('param');
   return openLinkToken(ctx, tokenType, token);

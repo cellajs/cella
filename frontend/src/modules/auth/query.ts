@@ -1,5 +1,5 @@
 import { queryOptions, useMutation } from '@tanstack/react-query';
-import { type GetTokenDataData, getAuthHealth, getPendingMagicLink, getSsoEntry, getTokenData } from 'sdk';
+import { type GetTokenDataData, getAuthHealth, getPendingMagicLink, getPendingMfa, getSsoEntry, getTokenData } from 'sdk';
 import { decideConsent, getConsentDetails } from '~/lib/oauth-interaction';
 import { withStepUp } from '~/modules/auth/step-up';
 
@@ -9,6 +9,7 @@ export const authKeys = {
   health: ['auth', 'health'] as const,
   token: (type: TokenType, tokenId?: string) => ['auth', 'token', type, tokenId] as const,
   pendingMagicLink: ['auth', 'magic', 'pending'] as const,
+  pendingMfa: ['auth', 'mfa', 'pending'] as const,
   stepUp: (sentAt: number | null) => ['auth', 'step-up', sentAt] as const,
   ssoEntry: (connectionId?: string) => ['auth', 'sso-entry', connectionId] as const,
   consent: { details: (uid: string) => ['auth', 'consent', uid] as const, decide: ['auth', 'consent', 'decide'] as const },
@@ -41,6 +42,15 @@ export const pendingMagicLinkQueryOptions = queryOptions({
   queryFn: ({ signal }) => getPendingMagicLink({ signal }),
   retry: false,
   meta: { persist: false },
+});
+
+/** The account this browser's MFA challenge completes. The MFA route refetches it per visit and redirects without one, so no toast. */
+export const pendingMfaQueryOptions = queryOptions({
+  queryKey: authKeys.pendingMfa,
+  queryFn: ({ signal }) => getPendingMfa({ signal }),
+  retry: false,
+  staleTime: Number.POSITIVE_INFINITY,
+  meta: { persist: false, suppressGlobalErrorToast: true },
 });
 
 /** What an institution's entry page shows, public by the connection id; disabled without one. */

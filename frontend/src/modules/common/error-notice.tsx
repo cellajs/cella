@@ -52,8 +52,9 @@ function errorDetailRows(error: ApiError) {
 export function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath = '/' }: ErrorNoticeProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const errorFromQuery = useRouterState({ select: (state) => state.location.search.error });
-  const severityFromQuery = useRouterState({ select: (state) => state.location.search.severity });
+  // The search of the page on screen: while a navigation away is pending, `location` already holds the next page's.
+  const errorFromQuery = useRouterState({ select: (state) => (state.resolvedLocation ?? state.location).search.error });
+  const severityFromQuery = useRouterState({ select: (state) => (state.resolvedLocation ?? state.location).search.severity });
   const contactButtonRef = useRef<HTMLButtonElement>(null);
 
   const [showDetails, setShowDetails] = useState(false);

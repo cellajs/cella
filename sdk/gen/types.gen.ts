@@ -816,6 +816,53 @@ export type CheckEmailResponses = {
 
 export type CheckEmailResponse = CheckEmailResponses[keyof CheckEmailResponses];
 
+export type GetPendingMfaData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/mfa/pending';
+};
+
+export type GetPendingMfaErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetPendingMfaError = GetPendingMfaErrors[keyof GetPendingMfaErrors];
+
+export type GetPendingMfaResponses = {
+  /**
+   * The address of the account the held challenge signs in to
+   */
+  200: {
+    email: string;
+  };
+};
+
+export type GetPendingMfaResponse = GetPendingMfaResponses[keyof GetPendingMfaResponses];
+
 export type InvokeTokenData = {
   body?: never;
   path: {

@@ -143,6 +143,9 @@ import type {
   GetPendingMembershipsData,
   GetPendingMembershipsErrors,
   GetPendingMembershipsResponses,
+  GetPendingMfaData,
+  GetPendingMfaErrors,
+  GetPendingMfaResponses,
   GetPresignedUrlsData,
   GetPresignedUrlsErrors,
   GetPresignedUrlsResponses,
@@ -373,6 +376,7 @@ import {
   zGetOrganizationsResponse,
   zGetPendingMagicLinkResponse,
   zGetPendingMembershipsResponse,
+  zGetPendingMfaResponse,
   zGetPresignedUrlsResponse,
   zGetPublicCountsResponse,
   zGetPushVapidResponse,
@@ -489,6 +493,26 @@ export const checkEmail = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Get pending MFA challenge
+ *
+ * For the MFA challenge a sign-in left in this browser: the address of the account it completes, so the MFA page can name it in any browser.
+ *
+ * **GET /auth/mfa/pending** ·· [getPendingMfa](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/mfa/pending) ·· _auth · cella_
+ *
+ * @param {getPendingMfaData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getPendingMfa = <ThrowOnError extends boolean = true>(
+  options?: Options<GetPendingMfaData, ThrowOnError>,
+): RequestResult<GetPendingMfaResponses, GetPendingMfaErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetPendingMfaResponses, GetPendingMfaErrors, ThrowOnError, 'data'>({
+    responseValidator: async (data) => await zGetPendingMfaResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/mfa/pending',
+    ...options,
   });
 
 /**

@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { invokeToken, sendMagicLink } from 'sdk';
+import { getPendingMfa, invokeToken, sendMagicLink } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
@@ -10,7 +10,7 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { addProvenEmail } from '#/modules/user/operations/email-proof';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { authCookie, cookieChange, createTestOrganization, createUser, enableMFAForUser, insertTestToken } from '../helpers';
+import { authCookie, cookieChange, createTestOrganization, createUser, enableMFAForUser, insertTestToken, setCookiePair } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
@@ -178,6 +178,10 @@ describe('Magic link authentication', async () => {
       expect(location.searchParams.get('redirect')).toBe('/orgs/acme');
       // Session must not be set before the MFA challenge completes
       expect(cookieChange(res, 'session')).toBeUndefined();
+
+      // The challenge cookie alone names the account: the MFA page has nothing else in a browser without local state.
+      const { data: pending } = await call(getPendingMfa, { headers: { ...defaultHeaders, Cookie: setCookiePair(res, 'confirm-mfa') } });
+      expect(pending).toEqual({ email: user.email });
     });
     it('should carry an invitation resume path through the MFA challenge, query string intact', async () => {
       const user = await createUser(signUpUser.email);

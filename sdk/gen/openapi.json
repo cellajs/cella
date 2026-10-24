@@ -3192,6 +3192,54 @@
         }
       }
     },
+    "/auth/mfa/pending": {
+      "get": {
+        "security": [],
+        "operationId": "getPendingMfa",
+        "tags": ["auth", "cella"],
+        "summary": "Get pending MFA challenge",
+        "description": "For the MFA challenge a sign-in left in this browser: the address of the account it completes, so the MFA page can name it in any browser.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "The address of the account the held challenge signs in to",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["email"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/auth/invoke-token/{type}/{token}": {
       "get": {
         "security": [],
