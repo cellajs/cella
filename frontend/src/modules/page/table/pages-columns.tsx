@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router';
-import { GripVerticalIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { EditCellInput, enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { cellLinkTextClass, dateColumn } from '~/modules/common/data-table/columns';
@@ -13,31 +12,17 @@ import { RenderModeLabel } from '~/modules/page/utils/render-mode-label';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
-import { tw } from '~/utils/tw';
-
-const dragHandleColumnKey = 'drag-handle';
 
 /** Published/draft is stored as the `draft` frontmatter boolean; the editor works over these labels. */
 const publishStatuses = ['published', 'draft'] as const;
 type PublishStatus = (typeof publishStatuses)[number];
 
-export const useColumns = () => {
+/** `reorder` is the grip column, built by the table from its current rows; null where pages are read-only. */
+export const useColumns = (reorder: ColumnOrColumnGroup<PageTreeRow> | null) => {
   const { t } = useTranslation();
 
   const columns: ColumnOrColumnGroup<PageTreeRow>[] = [
-    ...(canEditDocs
-      ? [
-          {
-            key: dragHandleColumnKey,
-            name: '',
-            width: 32,
-            maxWidth: 32,
-            cellClass: tw('cursor-grab justify-center'),
-            rowDragHandle: true,
-            renderCell: () => <GripVerticalIcon className="size-3.5 text-muted-foreground" />,
-          } satisfies ColumnOrColumnGroup<PageTreeRow>,
-        ]
-      : []),
+    ...(reorder ? [reorder] : []),
     ExpandToggleColumn,
     {
       key: 'name',

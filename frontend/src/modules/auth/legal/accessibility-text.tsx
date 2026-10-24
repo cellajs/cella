@@ -77,9 +77,11 @@ export function AccessibilityText() {
         <ul>
           <li>Use light or dark mode. It starts in the mode your device uses.</li>
           <li>
-            Turn on more contrast under Preferences, in the menu: fields, buttons and panels get stronger edges, and messages stay until you close
-            them. When your device asks for more contrast, {appName} follows it, also before you sign in.
+            Turn on more contrast under Preferences, in the menu: fields, buttons and panels get stronger edges, messages stay until you close them,
+            and a click on a drag handle opens a menu that moves its item, so nothing needs dragging. When your device asks for more contrast,{' '}
+            {appName} follows it, also before you sign in.
           </li>
+          <li>Move an item in a list without dragging: focus its drag handle and press the arrow keys, then Tab or Escape to go on.</li>
           <li>
             Open the menu with Alt + M, search with Ctrl + K and your account with Alt + A (Option and ⌘ on a Mac). Every shortcut needs one of these
             keys, so typing and voice control do not set one off by accident.

@@ -3,6 +3,7 @@ import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-d
 import { attachClosestEdge, type Edge, extractClosestEdge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import { useEffect, useRef, useState } from 'react';
 import { DropIndicator } from '~/modules/common/drop-indicator';
+import { followReorderFocus } from '~/modules/common/reorder-handle/reorder-handle';
 import type { UserMenuItem } from '~/modules/me/types';
 import { MenuSheetArchivedToggle } from '~/modules/navigation/menu-sheet/archived-toggle';
 import { isMenuItemDragData } from '~/modules/navigation/menu-sheet/helpers/is-menu-item-drag-data';
@@ -44,7 +45,13 @@ export function MenuSheetDraggableItem({
     if (!element) return;
     const data = getDraggableItemData(item, item.membership.displayOrder, 'menuItem', item.entityType);
     return combine(
-      draggable({ element, dragHandle: element, canDrag: () => !item.membership.archived, getInitialData: () => data }),
+      draggable({
+        element,
+        dragHandle: element,
+        canDrag: () => !item.membership.archived,
+        getInitialData: () => data,
+        onDrop: () => followReorderFocus(item.id),
+      }),
       dropTargetForElements({
         element,
         canDrop: ({ source }) => canDropItem(source.data),

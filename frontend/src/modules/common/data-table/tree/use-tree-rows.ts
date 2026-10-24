@@ -1,7 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { getRelativeOrder } from 'shared/utils/display-order';
+import { getEdgeOrder, getRelativeOrder } from 'shared/utils/display-order';
 import { buildTree, type TreeItem, type TreeRow } from '~/modules/common/data-table/tree/build-tree';
 import type { TreeContextValue } from '~/modules/common/data-table/tree/tree-context';
+import type { ReorderPosition } from '~/modules/common/reorder-handle/reorder-handle';
 
 export type TreeMutate = (id: string, ops: { displayOrder?: number; parentId?: string | null }) => void;
 
@@ -34,6 +35,26 @@ function isSelfOrDescendantOf(rootId: string, candidateId: string, byId: Map<str
   }
   return false;
 }
+
+// Rows are rebuilt each render, so their sibling places are computed once per rows array
+const siblingPlaces = new WeakMap<readonly TreeItem[], Map<string, ReorderPosition>>();
+
+/** The place of the row at `rowIdx` among its visible siblings. */
+export function siblingPosition(rows: readonly TreeItem[], rowIdx: number): ReorderPosition {
+  let places = siblingPlaces.get(rows);
+  if (!places) {
+    places = new Map();
+    const byParent = Map.groupBy(rows, (row) => row.parentId);
+    for (const siblings of byParent.values()) {
+      for (const [index, row] of siblings.entries()) places.set(row.id, { index, total: siblings.length });
+    }
+    siblingPlaces.set(rows, places);
+  }
+  return places.get(rows[rowIdx]?.id) ?? { index: 0, total: 1 };
+}
+
+const sortedChildren = <T extends TreeItem>(items: readonly T[], parentId: string | null) =>
+  items.filter((item) => item.parentId === parentId).toSorted((a, b) => a.displayOrder - b.displayOrder);
 
 /** Owns expansion, drop validation, reordering, and reparenting; pair its context with `TreeProvider` and `ExpandToggleColumn`. */
 export function useTreeRows<T extends TreeItem>(options: UseTreeRowsOptions) {
@@ -101,28 +122,80 @@ export function useTreeRows<T extends TreeItem>(options: UseTreeRowsOptions) {
     [canDrop],
   );
 
+  // A new parent expands, so the row that moved into it stays visible
+  const expand = useCallback((id: string) => {
+    const { defaultExpanded = false } = optionsRef.current;
+    setToggledIds((prev) => {
+      const isExpanded = defaultExpanded ? !prev.has(id) : prev.has(id);
+      if (isExpanded) return prev;
+      const next = new Set(prev);
+      if (defaultExpanded) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   const onReparent = useCallback(
     (rows: readonly TreeRow<T>[] | undefined, fromIdx: number, toIdx: number) => {
       if (!rows) return;
       const dragged = rows[fromIdx];
       const target = rows[toIdx];
       if (!dragged || !target) return;
-      const { mutate, defaultExpanded = false } = optionsRef.current;
       if (dragged.parentId === target.id) return;
       if (!canDrop(rows, { fromIdx, toIdx, zone: 'center' })) return;
 
-      mutate(dragged.id, { parentId: target.id });
-      // Auto-expand the new parent so the dropped row is visible.
-      setToggledIds((prev) => {
-        const isExpanded = defaultExpanded ? !prev.has(target.id) : prev.has(target.id);
-        if (isExpanded) return prev;
-        const next = new Set(prev);
-        if (defaultExpanded) next.delete(target.id);
-        else next.add(target.id);
-        return next;
-      });
+      optionsRef.current.mutate(dragged.id, { parentId: target.id });
+      expand(target.id);
     },
-    [canDrop],
+    [canDrop, expand],
+  );
+
+  /** Moves the row one place among its visible siblings, its subtree along; a reorder grip's ↑/↓. */
+  const onStep = useCallback((rows: readonly TreeRow<T>[], rowIdx: number, step: -1 | 1) => {
+    const row = rows[rowIdx];
+    if (!row) return;
+    const siblings = rows.filter((sibling) => sibling.parentId === row.parentId);
+    const target = siblings[siblings.indexOf(row) + step];
+    if (!target) return;
+    const displayOrder = getRelativeOrder(siblings, target.displayOrder, row.id, step < 0 ? 'top' : 'bottom');
+    if (displayOrder !== row.displayOrder) optionsRef.current.mutate(row.id, { displayOrder });
+  }, []);
+
+  /**
+   * A reorder grip's ←/→: outdent (-1) puts the row right after its parent, indent (1) makes it the last child of the
+   * sibling above it, within `maxDepth`. `items` is the full list, since a collapsed parent hides its children from `rows`.
+   * @returns The row's new place among its siblings, or null when it cannot go there.
+   */
+  const onShift = useCallback(
+    (items: readonly T[], rows: readonly TreeRow<T>[], rowIdx: number, direction: -1 | 1): ReorderPosition | null => {
+      const row = rows[rowIdx];
+      if (!row) return null;
+      const { mutate, maxDepth } = optionsRef.current;
+
+      if (direction === 1) {
+        const siblings = sortedChildren(items, row.parentId);
+        const parent = siblings[siblings.findIndex((sibling) => sibling.id === row.id) - 1];
+        if (!parent) return null;
+        if (maxDepth !== undefined && row._depth + 1 + row._subtreeHeight > maxDepth - 1) return null;
+        const children = sortedChildren(items, parent.id);
+        mutate(row.id, {
+          parentId: parent.id,
+          displayOrder: getEdgeOrder(
+            children.map((child) => child.displayOrder),
+            'bottom',
+          ),
+        });
+        expand(parent.id);
+        return { index: children.length, total: children.length + 1 };
+      }
+
+      const parent = items.find((item) => item.id === row.parentId);
+      if (!parent) return null;
+      const parentSiblings = sortedChildren(items, parent.parentId);
+      mutate(row.id, { parentId: parent.parentId, displayOrder: getRelativeOrder(parentSiblings, parent.displayOrder, row.id, 'bottom') });
+      return { index: parentSiblings.indexOf(parent) + 1, total: parentSiblings.length + 1 };
+    },
+    [expand],
   );
 
   const context: TreeContextValue = useMemo(
@@ -138,6 +211,8 @@ export function useTreeRows<T extends TreeItem>(options: UseTreeRowsOptions) {
     canDrop,
     onReorder,
     onReparent,
+    onStep,
+    onShift,
     /** Pass to `<TreeProvider value={tree.context}>`. */
     context,
     /** Same value as `options.rowHeight`, so `<DataTable>` and `<TreeProvider>` share one source. */

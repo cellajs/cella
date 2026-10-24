@@ -1,12 +1,12 @@
 import { onlineManager } from '@tanstack/react-query';
 import { ArchiveIcon, ArchiveRestoreIcon, BellIcon, BellOffIcon, GripVerticalIcon } from 'lucide-react';
 import { motion } from 'motion/react';
-import { type KeyboardEvent, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getRelativeOrder } from 'shared/utils/display-order';
 import { env } from '~/env';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import type { IconComponent } from '~/modules/common/icons/types';
+import { ReorderHandle } from '~/modules/common/reorder-handle/reorder-handle';
 import { Spinner } from '~/modules/common/spinner';
 import { toastOffline } from '~/modules/common/toaster/toaster';
 import type { UserMenuItem } from '~/modules/me/types';
@@ -56,9 +56,6 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
     updateMembership(buildMembershipUpdate(item, key === 'archived' ? { archived: !item.membership.archived } : { muted: !item.membership.muted }));
   };
 
-  const dragHandleRef = useRef<HTMLButtonElement>(null);
-  const refocusAtOrderRef = useRef<number | null>(null);
-
   const index = siblings.findIndex((sibling) => sibling.id === item.id);
   const isSortable = !item.membership.archived && siblings.length > 1;
 
@@ -67,21 +64,7 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
     if (!target) return;
     const ordered = siblings.map((sibling) => ({ id: sibling.id, displayOrder: sibling.membership.displayOrder }));
     const displayOrder = getRelativeOrder(ordered, target.membership.displayOrder, item.id, step < 0 ? 'top' : 'bottom');
-    refocusAtOrderRef.current = displayOrder;
     updateMembership(buildMembershipUpdate(item, { displayOrder }));
-  };
-
-  // React re-inserts a row it moves down, and a removed node drops focus
-  useEffect(() => {
-    if (refocusAtOrderRef.current === null || refocusAtOrderRef.current !== item.membership.displayOrder) return;
-    refocusAtOrderRef.current = null;
-    dragHandleRef.current?.focus();
-  });
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
-    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
-    event.preventDefault();
-    move(event.key === 'ArrowUp' ? -1 : 1);
   };
 
   const avatar = (
@@ -108,13 +91,13 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
         </div>
       )}
       {isSortable ? (
-        // A pointer drags the whole row (draggable-item.tsx); the handle gives the keyboard the same reorder
-        <button
-          ref={dragHandleRef}
-          type="button"
-          aria-roledescription={t('c:sortable')}
-          aria-label={t('c:sortable_position', { name: item.name, position: index + 1, total: siblings.length })}
-          onKeyDown={handleKeyDown}
+        // A pointer drags the whole row (draggable-item.tsx); the handle gives the keyboard and the move menu the same reorder
+        <ReorderHandle
+          id={item.id}
+          name={item.name}
+          index={index}
+          total={siblings.length}
+          onMove={move}
           className={cn(avatarBoxClass, 'focus-effect group/drag relative cursor-grab rounded-md active:cursor-grabbing')}
         >
           <span className="inline-flex transition-[opacity,filter] group-hover/options-item:opacity-30 group-hover/options-item:blur-[1px] group-focus-visible/drag:opacity-30 group-focus-visible/drag:blur-[1px]">
@@ -123,7 +106,7 @@ export function MenuSheetItemEdit({ item, siblings, icon: Icon }: MenuSheetItemE
           <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover/options-item:opacity-100 group-focus-visible/drag:opacity-100">
             <GripVerticalIcon className="size-4" />
           </span>
-        </button>
+        </ReorderHandle>
       ) : (
         <span className={avatarBoxClass}>{avatar}</span>
       )}

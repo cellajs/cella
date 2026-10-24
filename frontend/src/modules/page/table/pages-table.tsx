@@ -5,9 +5,10 @@ import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid/types';
 import { DataTable } from '~/modules/common/data-table/data-table';
+import { reorderColumn } from '~/modules/common/data-table/reorder-column';
 import { RowDragPreview } from '~/modules/common/data-table/row-drag-preview';
 import { TreeProvider } from '~/modules/common/data-table/tree/tree-context';
-import { useTreeRows } from '~/modules/common/data-table/tree/use-tree-rows';
+import { siblingPosition, useTreeRows } from '~/modules/common/data-table/tree/use-tree-rows';
 import { FocusViewContainer } from '~/modules/common/focus-view';
 import { type DocPage, docPages } from '~/modules/page/content';
 import { maxPageDepth, type PageTreeRow, pagesRowHeight } from '~/modules/page/table/page-tree';
@@ -31,8 +32,6 @@ export function PagesTable() {
   const { search, setSearch } = useSearchParams<PagesRouteSearchParams>();
 
   const { q } = search;
-
-  const [columns, setColumns] = useColumns();
 
   const [pages, setPages] = useState<DocPage[]>(docPages);
 
@@ -58,6 +57,19 @@ export function PagesTable() {
     : pages;
   // `rows` omits collapsed descendants, so the header count uses `filtered.length` to stay the true total.
   const rows = tree.buildRows(filtered);
+
+  const [columns, setColumns] = useColumns(
+    canEditDocs
+      ? reorderColumn<PageTreeRow>({
+          getId: rowKeyGetter,
+          getName: (row) => row.name,
+          rowCount: rows.length,
+          getPosition: (rowIdx) => siblingPosition(rows, rowIdx),
+          onMove: (rowIdx, step) => tree.onStep(rows, rowIdx, step),
+          onShift: (rowIdx, direction) => tree.onShift(filtered, rows, rowIdx, direction),
+        })
+      : null,
+  );
 
   const onRowsChange = (changedRows: PageTreeRow[], { indexes, column }: RowsChangeData<PageTreeRow>) => {
     if (column.key !== 'name' && column.key !== 'renderMode' && column.key !== 'status') return;
