@@ -3,6 +3,8 @@ import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { buildInsertableProduct } from '#/mocks';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { devicesTable } from '#/modules/auth/devices/devices-db';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
@@ -14,6 +16,7 @@ import { requestsTable } from '#/modules/requests/requests-db';
 import { hashDeviceIdForUser } from '#/utils/hash-pii';
 import { memberRole } from './fixtures';
 import { createTestOrganization, createTestUser, adminDb as db, insertTestSession, insertTestToken } from './helpers';
+import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
 import { clearDatabase } from './test-utils';
 
 const { retention } = appConfig;
@@ -38,6 +41,7 @@ interface RuleCase {
  */
 describe('apply_retention() row rules', () => {
   const cases: RuleCase[] = [];
+  const cleanups: (() => Promise<void>)[] = [];
 
   beforeAll(async () => {
     const user = await createTestUser('retention-rules@example.com');
@@ -174,6 +178,39 @@ describe('apply_retention() row rules', () => {
       removed: [invitations.rejectedLongAgo, invitations.mailedLongAgo],
     });
 
+    // The counter runs ahead of every row but `newest`, which holds the organization's latest position.
+    const plan = await seedAttachmentHome({ id: organization.id, tenantId: organization.tenantId }, user.id);
+    cleanups.push(() => cleanupEntityHierarchy(db, plan));
+    await db.execute(sql`INSERT INTO channel_counters (channel_key, counts) VALUES (${organization.id}, '{"sequence": 100}')
+      ON CONFLICT (channel_key) DO UPDATE SET counts = channel_counters.counts || '{"sequence": 100}'`);
+    const attachment = async (deletedAt: Date | null, seq: number) => {
+      const id = generateId();
+      const row = { id, tenantId: organization.tenantId, ...plan.channelIdColumns, keys: {}, createdBy: user.id, updatedBy: null, seq };
+      await insertAttachmentRow(buildInsertableProduct('attachment', { ...row, deletedAt: deletedAt?.toISOString() ?? null, deletedBy: null }, id));
+      return id;
+    };
+    const tombstones = {
+      expired: await attachment(outside(retention.deletedItemsDays), 5),
+      recent: await attachment(inside(retention.deletedItemsDays), 6),
+      newest: await attachment(outside(retention.deletedItemsDays), 100),
+      live: await attachment(null, 7),
+    };
+    cases.push({
+      rule: 'tombstones',
+      remaining: async () =>
+        (
+          await db
+            .select({ id: attachmentsTable.id })
+            .from(attachmentsTable)
+            .where(inArray(attachmentsTable.id, Object.values(tombstones)))
+        ).map((row) => row.id),
+      kept: [tombstones.recent, tombstones.newest, tombstones.live],
+      removed: [tombstones.expired],
+    });
+    cleanups.push(async () => {
+      await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, Object.values(tombstones)));
+    });
+
     const limits = { gone: `retention-test:${nanoid(8)}`, kept: `retention-test:${nanoid(8)}` };
     await db.insert(rateLimitsTable).values([
       { key: limits.gone, points: 1, expire: outside(retention.rateLimitDaysAfterWindow) },
@@ -225,6 +262,7 @@ describe('apply_retention() row rules', () => {
     await db.delete(rateLimitsTable).where(and(like(rateLimitsTable.key, 'retention-test:%')));
     await db.delete(oidcPayloadsTable).where(like(oidcPayloadsTable.id, 'retention-%'));
     await db.delete(requestsTable).where(like(requestsTable.email, '%@retention.test'));
+    for (const cleanup of cleanups.reverse()) await cleanup();
     await clearDatabase();
   });
 

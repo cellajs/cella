@@ -102,6 +102,8 @@ export interface LocalBlobStorageConfig {
 export interface RetentionConfig {
   /** Activity history, notifications and seen marks; also how long a device may stay away before it starts over. */
   activityDays: number;
+  /** A deleted row, its files and its collaborative document, from the delete; at least `activityDays` + 30. */
+  deletedItemsDays: number;
   sessionDaysAfterExpiry: number;
   tokenDaysAfterExpiry: number;
   deviceDaysUnseen: number;

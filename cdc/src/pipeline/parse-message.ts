@@ -65,8 +65,12 @@ export function parseMessage(message: Pgoutput.Message): ParseMessageResult | nu
         return handleWholeRow(tableMeta, message.new, 'create');
       case 'update':
         return handleUpdate(tableMeta, message);
-      case 'delete':
-        return handleWholeRow(tableMeta, message.old, 'delete');
+      case 'delete': {
+        // The removal of a tombstone (apply_retention()) changes nothing a client holds: the delete reached everyone as
+        // the tombstone, and the counters never counted it.
+        const removed = handleWholeRow(tableMeta, message.old, 'delete');
+        return removed.rowData.deletedAt == null ? removed : null;
+      }
     }
   })();
 

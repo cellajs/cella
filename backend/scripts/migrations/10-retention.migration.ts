@@ -1,6 +1,6 @@
 import { getTableName } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { appPartitionConfigs } from '#/db/product-tables';
+import { appPartitionConfigs, productTables } from '#/db/product-tables';
 import type { PartitionConfig } from '#/tables';
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 
@@ -49,6 +49,12 @@ const sweepRules: { table: string; aged: string }[] = [
   { table: 'rate_limits', aged: `expire < now() - ${days(retention.rateLimitDaysAfterWindow)}` },
   { table: 'push_subscriptions', aged: `coalesce(last_seen_at, created_at) < now() - ${days(retention.pushSubscriptionDaysUnseen)}` },
 ];
+
+/** Product tables, whose tombstones go after `deletedItemsDays`; their deletes feed the deletion queue. */
+const tombstoneTables = Object.values(productTables).map((table) => getTableName(table()));
+
+/** Tombstones one batch removes; a commit between batches keeps each transaction small for the CDC worker. */
+const tombstoneBatchSize = 1000;
 
 /** The procedure pg_cron calls nightly (scheduled by scripts/db/schedule-retention.ts). */
 export const retentionProcedure = 'apply_retention';
@@ -133,17 +139,32 @@ function generateTablePartitionSql(config: PartitionConfig): string {
 const configRow = (c: PartitionConfig): string =>
   `('${c.name}', '${c.partitionColumn}', interval '${c.interval}', ${c.retention ? `interval '${c.retention}'` : 'NULL::interval'})`;
 
+/** One product table's tombstone loop inside the procedure. */
+const generateTombstoneSql = (table: string): string => `LOOP
+    DELETE FROM ${table} t USING (
+      SELECT d.ctid FROM ${table} d
+      WHERE d.deleted_at < now() - ${days(retention.deletedItemsDays)}
+        AND d.seq < coalesce((SELECT (c.counts->>'sequence')::bigint FROM channel_counters c WHERE c.channel_key = d.organization_id::text), 0)
+      LIMIT ${tombstoneBatchSize}
+    ) due WHERE t.ctid = due.ctid;
+    GET DIAGNOSTICS removed = ROW_COUNT;
+    EXIT WHEN removed = 0;
+    IF commit_batches THEN COMMIT; END IF;
+  END LOOP;`;
+
 /**
  * The retention procedure: drops partitions older than the retention window, trims the DEFAULT
  * partition, then creates partitions from the newest upper bound through two intervals ahead.
  * Rows that landed in DEFAULT for a new range are moved out first, because Postgres refuses a
- * partition whose range the DEFAULT partition already holds rows for. Ends with the row sweeps.
+ * partition whose range the DEFAULT partition already holds rows for. Then removes tombstones past the deleted-items
+ * period and ends with the row sweeps. `commit_batches` is false only inside a transaction, where a COMMIT is refused.
  */
 function generateRetentionProcedureSql(): string {
-  return `CREATE OR REPLACE PROCEDURE public.${retentionProcedure}() LANGUAGE plpgsql AS $proc$
+  return `CREATE OR REPLACE PROCEDURE public.${retentionProcedure}(commit_batches boolean DEFAULT true) LANGUAGE plpgsql AS $proc$
 DECLARE
   cfg record;
   child record;
+  removed bigint;
   lo timestamptz;
   hi timestamptz;
   part text;
@@ -190,6 +211,10 @@ BEGIN
     END LOOP;
   END LOOP;
 
+  -- Tombstones: a deleted product row goes for good after the deleted-items period, a batch at a time. The row
+  -- holding its organization's newest sequence position stays: a counter rebuild takes MAX(seq) over the rows.
+  ${tombstoneTables.map(generateTombstoneSql).join('\n  ')}
+
   -- Plain tables: retention by DELETE
   ${sweepRules.map(({ table, aged }) => `DELETE FROM ${table} WHERE ${aged};`).join('\n  ')}
 END $proc$;`;
@@ -225,8 +250,9 @@ ${partitionConfigs
 DROP EXTENSION IF EXISTS pg_partman CASCADE;
 DROP SCHEMA IF EXISTS partman CASCADE;
 
--- The procedure's earlier name; the schedule script moves the pg_cron job over.
+-- The procedure's earlier name, and its signature without arguments; the schedule script moves the pg_cron job over.
 DROP PROCEDURE IF EXISTS public.maintain_partitions();
+DROP PROCEDURE IF EXISTS public.apply_retention();
 
 ${generateRetentionProcedureSql()}
 
@@ -240,7 +266,8 @@ DECLARE
   trg_defs text[];
 BEGIN
 ${tableSetupSql}
-  CALL public.${retentionProcedure}();
+  -- Inside the migration's transaction, where a COMMIT is refused.
+  CALL public.${retentionProcedure}(false);
   RAISE NOTICE 'Retention setup complete.';
 END $$;
 `;

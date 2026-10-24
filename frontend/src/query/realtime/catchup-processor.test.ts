@@ -21,6 +21,7 @@ vi.mock('shared', async (importOriginal) => {
       entityIdColumnKeys: hierarchy.idColumnKeys,
       seenTrackedProductTypes: [],
       productEmbeddings: [{ embeddedProduct: 'label', hostProduct: 'attachment', hostColumn: 'labels' }],
+      retention: { activityDays: 90 },
     },
     hierarchy,
     isChannel: hierarchy.isChannel,
@@ -190,6 +191,36 @@ describe('catchup after the server rebuilt its sync books', () => {
     expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(12);
     expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(keys.detail.byId('attachment-1'))?.isInvalidated).toBe(true);
+  });
+});
+
+describe('catchup after the device was away longer than the activity window', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    queryClient.clear();
+    syncStore.getState().reset();
+    vi.clearAllMocks();
+  });
+
+  // The server removes tombstones older than the deleted-items period, so a range from a cursor that old can miss deletes.
+  it('must not fetch a range from its old cursor: it refetches what is cached and takes the frontier as its baseline', async () => {
+    vi.useFakeTimers();
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    const rangeFetch = vi.fn(async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys('attachment', keys, rangeFetch);
+    syncStore.getState().adoptGeneration(1);
+    syncStore.getState().trackOrg('org-1', 'tenant-1');
+    syncStore.getState().setOrgSeq('org-1', 'attachment', 40);
+    syncStore.getState().markCaughtUp();
+    queryClient.setQueryData(keys.list.org('org-1'), { items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'stale' }], total: 1 });
+
+    vi.setSystemTime(Date.now() + 91 * 24 * 60 * 60 * 1000);
+    await processAppCatchup({ ...okViewResponse(52), generation: 1 });
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    expect(rangeFetch).not.toHaveBeenCalled();
+    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(52);
+    expect(queryClient.getQueryState(keys.list.org('org-1'))?.isInvalidated).toBe(true);
   });
 });
 
