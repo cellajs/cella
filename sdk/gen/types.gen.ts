@@ -445,6 +445,7 @@ export type Tenant = {
   id: string;
   name: string;
   status: 'active' | 'suspended' | 'archived';
+  statusChangedAt: string;
   restrictions: {
     /**
      * Entity quotas (0 = unlimited)

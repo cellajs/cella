@@ -79,6 +79,7 @@ export const MemberAdded = makeEmailStory('member-added');
 export const Newsletter = makeEmailStory('newsletter');
 export const RequestWasSent = makeEmailStory('request-was-sent');
 export const RequestWasSentAdmin = makeEmailStory('request-was-sent-admin');
+export const TenantRemoved = makeEmailStory('tenant-removed');
 export const Mention = makeEmailStory('mention');
 export const Comment = makeEmailStory('comment');
 export const Digest = makeEmailStory('digest');

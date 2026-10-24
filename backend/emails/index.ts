@@ -10,4 +10,5 @@ export { requestResponseEmail } from './templates/request-was-sent';
 export { requestInfoEmail } from './templates/request-was-sent-admin';
 export { stepUpEmail } from './templates/step-up';
 export { systemInviteEmail } from './templates/system-invite';
+export { tenantRemovedEmail } from './templates/tenant-removed';
 export { welcomeEmailTemplate } from './templates/welcome';

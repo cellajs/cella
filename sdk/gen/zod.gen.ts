@@ -386,6 +386,7 @@ export const zTenant = z.object({
   id: z.string().max(24),
   name: z.string().max(255),
   status: z.enum(['active', 'suspended', 'archived']),
+  statusChangedAt: z.string(),
   restrictions: z.object({
     quotas: z.record(z.string(), z.int().gte(0)),
     rateLimits: z.object({

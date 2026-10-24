@@ -6,10 +6,12 @@ import { mockActorRef } from '#/schemas/entity-base-mocks';
 export const mockTenantResponse = (key = 'tenant:default') =>
   withFakerSeed(key, () => {
     const name = faker.company.name();
+    const timestamps = mockTimestamps();
     return {
       id: mockTenantId(),
       name,
       status: 'active' as const,
+      statusChangedAt: timestamps.createdAt,
       restrictions: defaultRestrictions(),
       authStrategies: [],
       createdBy: mockActorRef(`${key}:created-by`),
@@ -17,7 +19,7 @@ export const mockTenantResponse = (key = 'tenant:default') =>
       subscriptionId: null,
       subscriptionStatus: 'none' as const,
       subscriptionPlan: null,
-      ...mockTimestamps(),
+      ...timestamps,
       organization: {
         id: mockUuid(),
         name,

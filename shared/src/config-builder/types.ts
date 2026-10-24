@@ -104,6 +104,8 @@ export interface RetentionConfig {
   activityDays: number;
   /** A deleted row, its files and its collaborative document, from the delete; at least `activityDays` + 30. */
   deletedItemsDays: number;
+  /** An archived tenant (an organization deleted, or a contract ended), from the archiving; a system admin can restore it until then. */
+  archivedTenantDays: number;
   sessionDaysAfterExpiry: number;
   tokenDaysAfterExpiry: number;
   deviceDaysUnseen: number;

@@ -155,6 +155,7 @@
   "delete_account.text": "Permanently delete your {{appName}} account. Please note that this action is irreversible.",
   "delete_confirm.text": "Please confirm you want to delete <strong>{{name}}</strong>.",
   "delete_resource": "Delete {{resource}}",
+  "delete_organization_notice.text": "As an admin you can delete the {{resource}} <strong>{{name}}</strong>. All members lose access to it at once. For {{days}} days support can still restore it; after that it is deleted for good with all its data.",
   "delete_resource_notice.text": "As an admin you can permanently delete the {{resource}} <strong>{{name}}</strong>. All members will lose access to this {{resource}} and its data. Please note that this action is irreversible.",
   "deleted": "Deleted",
   "deploy": "Deploy",
