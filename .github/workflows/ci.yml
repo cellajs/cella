@@ -5,11 +5,10 @@ permissions: {}
 
 # CI runs on pull_request only (there is no merge queue). Two tiers of checks:
 #   • Every PR: cheap checks (lint, pr-title, schema-bust-gate, frontend-build, build-services) for fast feedback.
-#   • Release PR only: the heavy suites (test, storybook-test, docker-images) run on the
-#     release-please PR. That PR is what you merge to cut the release + deploy,
-#     so gating its merge gates production. On feature PRs these jobs are
-#     skipped, which a required status check treats as a pass, so the heavy
-#     suites run only on the release PR, once per release batch.
+#   • Release PR only: the heavy suites (test, storybook-test, all docker-images targets) run on the
+#     release-please PR, which every merge to main refreshes. That PR is what you merge to cut the
+#     release + deploy, so gating its merge gates production. On feature PRs these jobs are skipped.
+# The one required status check is `ci-passed`, the last job, which waits for all the others.
 on:
   pull_request:
     branches: [main]
@@ -164,13 +163,14 @@ jobs:
 
       # A new app starts from config.template.ts: no federation and no `sso` method. This repo's own config
       # has both, so code that leans on them passes the typecheck above and fails in every new app (0.16.0).
-      - name: Typecheck as a new app
-        run: pnpm template:check
+      # `--tests` also runs the sign-in and connections suites under that config, on the database the boot used.
+      - name: Typecheck and run the sign-in tests as a new app
+        run: pnpm template:check --tests
 
-  # Runs all tests (full mode with PostgreSQL). Heavy: runs on the release PR, and in an app on the sync PR
-  # (`cella/sync/<stamp>`, the branch `pnpm cella sync` opens), where upstream changes first meet the app's code.
-  # `pnpm test:full` starts the `db_test` compose container (DB_TEST_PORT) and applies
-  # migrations in the Vitest global setup, so the job needs no service container.
+  # The test suites against PostgreSQL, one job per suite, so the release PR waits for the longest one. Heavy: runs on
+  # the release PR, and in an app on the sync PR (`cella/sync/<stamp>`, the branch `pnpm cella sync` opens), where
+  # upstream changes first meet the app's code. Each job starts the `db_test` compose container (DB_TEST_PORT) and
+  # applies migrations in the Vitest global setup, so it needs no service container.
   test:
     # Same-repo branch only: release-please and the sync push their branches into this
     # repo, so a PR from another repository (whose branch name its author fully controls)
@@ -181,6 +181,10 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [full, runtime, app-shape]
     steps:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -205,29 +209,31 @@ jobs:
       - name: Generate OpenAPI spec
         run: pnpm sdk
 
+      # `pnpm test:full` without its coverage: CI keeps no report, and coverage slows every test.
       - name: Run tests (full mode)
-        run: pnpm test:full
+        if: matrix.suite == 'full'
+        run: pnpm docker:test && pnpm exec cross-env TEST_MODE=full vitest run --silent=passed-only
 
       # RLS parity: the backend core suite again as the RLS-subject runtime_role. Allow and deny
-      # results must match the superuser run above, proving authorization does not lean on RLS.
+      # results must match the superuser run of the full suite, proving authorization does not lean on RLS.
       - name: Run backend tests as runtime_role
+        if: matrix.suite == 'runtime'
         run: pnpm test:core:runtime
-
-      # The sign-in and connections suites again with the config a new app has (see "Typecheck as a new app").
-      - name: Run sign-in tests as a new app
-        run: pnpm template:check --tests
 
       # The core suites again with a config shaped like an app's: listed surfaces, another feature flag, a stricter
       # member policy. A template test that leans on the template's own values fails here and not in an app's sync.
       - name: Run core tests with an app-shaped config
+        if: matrix.suite == 'app-shape'
         run: pnpm app-shape:check
 
-  # The production images are otherwise built for the first time by the release deploy
-  # (0.11.0 failed there on a Node 26 base image without corepack). Build the shared base
-  # stage here whenever its inputs change: the Dockerfile, or the package manager pin.
-  docker-base:
+  # The production images are otherwise built for the first time by the release deploy: 0.11.0 failed there on a
+  # Node 26 base image without corepack, 0.12.1 on a worker env leak and an undeclared dependency that crashed every
+  # image. A PR that changes the shared base stage's inputs (the Dockerfile, the package manager pin) builds that stage;
+  # the release PR and an app's sync PR build every target, without pushing. The targets start from the same stages,
+  # so one job builds them on one layer cache.
+  docker-images:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -236,47 +242,42 @@ jobs:
         with:
           fetch-depth: 0 # need base-branch blobs to diff
 
-      - name: Detect image-input changes
-        id: changes
+      # Every target on the same-repo branches the heavy suites run on (see the `test` job).
+      - name: Decide what to build
+        id: scope
         env:
           BASE_REF: ${{ github.base_ref || 'main' }}
+          ALL_TARGETS: ${{ github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/sync/')) }}
         run: |
           set -euo pipefail
+          if [ "$ALL_TARGETS" = true ]; then
+            echo "base=true" >> "$GITHUB_OUTPUT"
+            echo "targets=backend cdc yjs" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           git fetch --no-tags --depth=1 origin "$BASE_REF"
           if git diff --quiet "origin/$BASE_REF"...HEAD -- Dockerfile package.json pnpm-lock.yaml pnpm-workspace.yaml; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "Image inputs unchanged; skipping the base-stage build."
           else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "base=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build the shared base stage
-        if: steps.changes.outputs.changed == 'true'
+        if: steps.scope.outputs.base == 'true'
         run: docker build --build-arg NODE_VERSION="$(jq -r .engines.node package.json)" --target manifests -t base-check .
 
       - name: pnpm resolves from the pin inside the image
-        if: steps.changes.outputs.changed == 'true'
+        if: steps.scope.outputs.base == 'true'
         run: docker run --rm base-check pnpm --version
 
-  # The production images are otherwise built for the first time by the release deploy (0.12.1 failed
-  # there: a worker env leak and an undeclared dependency crashed every image). Build each target on
-  # the release PR and an app's sync PR, without pushing.
-  docker-images:
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.head_ref, 'release-please--branches--main') || startsWith(github.head_ref, 'cella/sync/'))
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [backend, cdc, yjs]
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-
-      - name: Build the ${{ matrix.target }} image
-        run: docker build --build-arg NODE_VERSION="$(jq -r .engines.node package.json)" --target ${{ matrix.target }} -t ${{ matrix.target }}-check .
+      - name: Build the service images
+        if: steps.scope.outputs.targets != ''
+        env:
+          TARGETS: ${{ steps.scope.outputs.targets }}
+        run: |
+          for target in $TARGETS; do
+            docker build --build-arg NODE_VERSION="$(jq -r .engines.node package.json)" --target "$target" -t "$target-check" .
+          done
 
   # Privileged infra changes (a database privilege, a VM policy rule) need an operator
   # `pnpm infra apply` before the release deploys; this read-only preview under the CI key
@@ -422,3 +423,21 @@ jobs:
           echo "::error file=$CFG::Breaking OpenAPI change detected without a clientCacheVersion bump."
           echo "Bump appConfig.clientCacheVersion (e.g. 'v1' → 'v2') in $CFG and use a 'feat!' PR title so clients wipe stale cache."
           exit 1
+
+  # The one required status check: the `main` ruleset names this job alone, so a job joins the merge gate by joining
+  # `needs`. A skipped job passes (the heavy suites skip on feature PRs); a failed or cancelled one fails the check.
+  ci-passed:
+    if: always()
+    needs: [pr-title, lint, frontend-build, build-services, test, docker-images, infra-preflight, storybook-test, schema-bust-gate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every job passed or skipped
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.value.result)\t\(.key)"'
+          if echo "$NEEDS" | jq -e 'any(.[]; .result == "failure" or .result == "cancelled")' > /dev/null; then
+            echo "::error::A job above failed or was cancelled."
+            exit 1
+          fi
