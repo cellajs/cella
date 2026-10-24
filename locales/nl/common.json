@@ -1,5 +1,6 @@
 {
   "add_provider_account": "{{provider}}-account toevoegen",
+  "ago": "geleden",
   "all_rows": "Alle rijen",
   "allowed_sign_in_methods": "Toegestane inlogmethoden",
   "allowed_sign_in_methods.text": "Leeg staat elke ingeschakelde methode toe. Een lid dat een instellingsaccount koppelde, moet dan via die instelling inloggen.",
