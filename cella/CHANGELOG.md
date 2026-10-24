@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.23.0](https://github.com/cellajs/cella/compare/0.22.0...0.23.0) (2026-10-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* test suites run in parallel on the release PR, ci-passed is the one required check ([#1512](https://github.com/cellajs/cella/issues/1512))
+* actors registers as a module, so its docs tag comes from the module registry ([#1513](https://github.com/cellajs/cella/issues/1513))
+
+### 🐞 Bug fixes
+
+* **attachment:** the create-body mock names the attachment's home channel where it lives below the organization ([#1509](https://github.com/cellajs/cella/issues/1509)) ([1f3acfc](https://github.com/cellajs/cella/commit/1f3acfc0d7a9b8695ba934c2b5103a7f97f15087))
+* **locales:** relative dates in Dutch say geleden ([#1510](https://github.com/cellajs/cella/issues/1510)) ([f675ed5](https://github.com/cellajs/cella/commit/f675ed59c54d92267c05458066cc8dd66d88bd86))
+* **user:** invite search chips remove without opening the picker ([#1514](https://github.com/cellajs/cella/issues/1514)) ([3d56cca](https://github.com/cellajs/cella/commit/3d56ccac456a144d4ecd6a8a164da1ffcf2d01b4))
+
+
+### 🔧 Small improvements
+
+* actors registers as a module, so its docs tag comes from the module registry ([#1513](https://github.com/cellajs/cella/issues/1513)) ([baaee18](https://github.com/cellajs/cella/commit/baaee18ff501ad3f9cc305f41a75e47396f33387))
+
+
+### 🏗️ Build & deps
+
+* test suites run in parallel on the release PR, ci-passed is the one required check ([#1512](https://github.com/cellajs/cella/issues/1512)) ([e604fa7](https://github.com/cellajs/cella/commit/e604fa7075441cbc4055e26cc088ad4b99c23213))
+
+
+### 🧪 Tests
+
+* **yjs:** relay integration tests join their member to the attachment home, as the backend suites do since [#1507](https://github.com/cellajs/cella/issues/1507) ([#1508](https://github.com/cellajs/cella/issues/1508)) ([c689d23](https://github.com/cellajs/cella/commit/c689d23cf881d7b8643ef392efb6a5c60cdc6994))
+
 ## [0.22.0](https://github.com/cellajs/cella/compare/0.21.0...0.22.0) (2026-10-24)
 
 
