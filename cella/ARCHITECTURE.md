@@ -78,6 +78,8 @@ A row is live, then deleted, then gone, and each step has one meaning:
 
 The activity window bounds everything time-limited in sync: activity history, notifications, seen marks, and how long a device may stay away. A device that has not caught up within it starts over, dropping what it holds and reading it again. A tombstone lives longer than that window, so a device that kept up never misses a deletion.
 
+Deleting an organization archives its tenant, and so does the end of a contract: everyone loses access at once, a system admin can still restore it, and after the archived period the organization goes with everything in it ([Tenant lifecycle](./MULTI_TENANCY.md#tenant-lifecycle)).
+
 Every period lives in `appConfig.retention`, the same for every tenant, and the privacy page states them. Tables that only collect rows (sessions, tokens, devices, requests, invitations) get a sweep rule in the same procedure. Backups and the buckets' object versions expire on their own schedule, so a removed row or file leaves them within their window as well.
 
 ## Contracts and operations

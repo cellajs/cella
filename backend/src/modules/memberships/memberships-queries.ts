@@ -588,3 +588,26 @@ export const updateInactiveMemberships = async (ctx: DbContext, { ids, values }:
 export const updateInactiveMembershipRejected = async (ctx: DbContext, { id }: InactiveMembershipIdOpts) => {
   await ctx.var.db.update(inactiveMembershipsTable).set({ rejectedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, id));
 };
+
+interface RotateTenantMemberBindingsOpts {
+  tenantId: string;
+}
+
+/**
+ * Gives every member of the tenant a new `actors.bindings_version`, as a membership write does through its trigger, so
+ * their cached memberships reload: `loadMemberships` reads the tenant's status, which no membership trigger sees change.
+ * @returns The members' user ids.
+ */
+export const rotateTenantMemberBindings = async (ctx: DbContext, { tenantId }: RotateTenantMemberBindingsOpts): Promise<string[]> => {
+  const rotated = await ctx.var.db
+    .update(actorsTable)
+    .set({ bindingsVersion: sql`gen_random_uuid()` })
+    .where(
+      inArray(
+        actorsTable.id,
+        ctx.var.db.select({ id: membershipsTable.userId }).from(membershipsTable).where(eq(membershipsTable.tenantId, tenantId)),
+      ),
+    )
+    .returning({ id: actorsTable.id });
+  return rotated.map(({ id }) => id);
+};

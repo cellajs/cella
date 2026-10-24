@@ -27,6 +27,7 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { mockStxFor } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { adminDb, expectRefusal } from '../helpers';
@@ -77,6 +78,8 @@ describe('Cross-organization API isolation', async () => {
   const headers = (as: Session) => ({ ...defaultHeaders, Cookie: as.sessionCookie });
   const attachmentRow = async (id: string) => (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
   const organizationRow = async (id: string) => (await db.select().from(organizationsTable).where(eq(organizationsTable.id, id)))[0];
+  const tenantStatus = async (id: string) =>
+    (await db.select({ status: tenantsTable.status }).from(tenantsTable).where(eq(tenantsTable.id, id)))[0]?.status;
   const membershipRow = async (id: string) => (await db.select().from(membershipsTable).where(eq(membershipsTable.id, id)))[0];
 
   beforeAll(async () => {
@@ -155,7 +158,8 @@ describe('Cross-organization API isolation', async () => {
           headers: headers(as),
         }),
       refusal: forbidden,
-      unchanged: async () => expect(await organizationRow(orgB.id)).toBeDefined(),
+      // A delete archives the tenant, so the row stays either way: the tenant must still be active.
+      unchanged: async () => expect(await tenantStatus(orgB.tenantId)).toBe('active'),
     },
     {
       route: 'getAttachment',

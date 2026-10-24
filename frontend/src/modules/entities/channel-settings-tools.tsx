@@ -47,9 +47,12 @@ interface DeleteToolCardProps {
   /** Dialog id, also the aside anchor's danger id (e.g. 'delete-organization'). */
   dialogId: string;
   renderDialog: () => ReactNode;
+  /** The card's notice; defaults to the permanent-delete notice, interpolated with `name`, `resource` and `values`. */
+  notice?: TKey;
+  values?: Record<string, string | number>;
 }
 
-export function DeleteToolCard({ name, resource, dialogId, renderDialog }: DeleteToolCardProps) {
+export function DeleteToolCard({ name, resource, dialogId, renderDialog, notice = 'c:delete_resource_notice.text', values }: DeleteToolCardProps) {
   const { t } = useTranslation();
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -70,7 +73,7 @@ export function DeleteToolCard({ name, resource, dialogId, renderDialog }: Delet
     <ToolCard
       label="c:delete_resource"
       resource={resource}
-      description={<NamedText i18nKey="c:delete_resource_notice.text" name={name} values={{ resource: resourceName }} />}
+      description={<NamedText i18nKey={notice} name={name} values={{ resource: resourceName, ...values }} />}
     >
       <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
         <TrashIcon />

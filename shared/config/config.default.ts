@@ -86,6 +86,7 @@ export const config = {
   retention: {
     activityDays: 90,
     deletedItemsDays: 120,
+    archivedTenantDays: 120,
     sessionDaysAfterExpiry: 30,
     tokenDaysAfterExpiry: 30,
     deviceDaysUnseen: 400,

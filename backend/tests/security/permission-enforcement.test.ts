@@ -17,6 +17,7 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { adminDb, createTestOrganization, expectRefusal } from '../helpers';
 import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
@@ -65,6 +66,8 @@ describe('Member escalation over HTTP', async () => {
   const counterpart = ({ admin, member }: Fixture, actor: User) => (actor.id === admin.id ? member : admin);
   const attachmentRow = async (id: string) => (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
   const organizationRow = async (id: string) => (await db.select().from(organizationsTable).where(eq(organizationsTable.id, id)))[0];
+  const tenantStatus = async (id: string) =>
+    (await db.select({ status: tenantsTable.status }).from(tenantsTable).where(eq(tenantsTable.id, id)))[0]?.status;
   const membershipsOf = (userId: string, organizationId: string) =>
     db
       .select()
@@ -150,7 +153,8 @@ describe('Member escalation over HTTP', async () => {
           body: { ids: [org.id] },
           headers: headers(actor),
         }),
-      unchanged: async ({ org }) => expect(await organizationRow(org.id)).toBeDefined(),
+      // A delete archives the tenant, so the row stays either way: the tenant must still be active.
+      unchanged: async ({ org }) => expect(await tenantStatus(org.tenantId)).toBe('active'),
       okStatus: 200,
     },
   ];
@@ -180,10 +184,10 @@ describe('Member escalation over HTTP', async () => {
     expect((data as { rejectedIds: string[] }).rejectedIds).toEqual([]);
     expect((await attachmentRow(mine)).deletedAt).not.toBeNull();
 
-    // The rows end with the organization's deletion.
+    // The rows end with the organization's deletion, which archives its tenant.
     for (const { act, attempt, okStatus } of rows) {
       expect((await attempt(own, own.admin)).response.status, act).toBe(okStatus);
     }
-    expect(await organizationRow(own.org.id)).toBeUndefined();
+    expect(await tenantStatus(own.org.tenantId)).toBe('archived');
   });
 });
