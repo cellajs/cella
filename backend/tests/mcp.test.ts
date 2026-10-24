@@ -2,12 +2,15 @@ import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { getMcpProtectedResourceMetadata, handleMcp } from 'sdk';
 import { appConfig } from 'shared';
+import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { adminRole, defaultHeaders } from './fixtures';
 import { adminDb, createTestOrganization } from './helpers';
-import { homeColumns, seedAttachmentHome } from './hierarchy-helpers';
+import { insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
 import {
   authorizationCodeToken,
   bearerHeaders,
@@ -39,16 +42,6 @@ vi.mock('#/middlewares/rate-limiter/core', () => ({
 
 const REDIRECT_URI = 'http://localhost:9999/callback';
 
-/** A create item as the route's body schema reads it (the sync transaction is added server-side), keyed under the org's upload prefix. */
-const buildItem = (name: string, filename: string, ctx: { home: Record<string, string>; org: { id: string } }) => ({
-  ...ctx.home,
-  id: crypto.randomUUID(),
-  name,
-  filename,
-  contentType: 'application/octet-stream',
-  size: '1234',
-  keys: { original: `${ctx.org.id}/uploads/${filename}` },
-});
 const CLIENT_ID = 'test-portfolio';
 
 describe('MCP on the substrate (Phase E)', async () => {
@@ -62,12 +55,20 @@ describe('MCP on the substrate (Phase E)', async () => {
   afterAll(async () => await as.close());
   afterEach(async () => await clearSecurityTestData());
 
-  /** An organization with its admin; `home` is where attachments live, which a write token needs no read scope on. */
+  /** An organization with its admin; `plan` is where attachments live, which a write token needs no read scope on. */
   async function orgWithAdmin() {
     const org = await createTestOrganization();
     const user = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
-    const home = homeColumns(await seedAttachmentHome(org, user.id));
-    return { org, user, home, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
+    const plan = await seedAttachmentHome(org, user.id);
+    return { org, user, plan, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
+  }
+
+  /** An attachment row in the organization's home: a machine uploads no files, so the rows its tools touch come from users. */
+  async function insertAttachment(ctx: { org: { tenantId: string }; plan: TestEntityHierarchyPlan }, name: string, createdBy: string) {
+    const id = generateId();
+    const columns = { id, name, tenantId: ctx.org.tenantId, ...ctx.plan.channelIdColumns, createdBy, updatedBy: null, deletedBy: null };
+    await insertAttachmentRow(buildInsertableProduct('attachment', columns, id));
+    return id;
   }
 
   /** A service account plus a token for the organization's MCP resource, scoped as asked. */
@@ -139,7 +140,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     const list = await rpc(ctx, 'tools/list');
     const tools = (list.rpc.result as { tools: { name: string; _meta: { scope: string } }[] }).tools;
     expect(tools.map((tool) => tool.name)).toEqual(
-      expect.arrayContaining(['getAttachments', 'getAttachment', 'createAttachments', 'updateAttachment', 'deleteAttachments']),
+      expect.arrayContaining(['getAttachments', 'getAttachment', 'updateAttachment', 'deleteAttachments']),
     );
 
     // An integer query param takes a number; the call writes it into the query string.
@@ -166,30 +167,23 @@ describe('MCP on the substrate (Phase E)', async () => {
     expect(Object.fromEntries(charged)).toEqual({ mcpRequest: 2, serviceBurst: 1, syncRead: 1 });
   });
 
-  it('showcase 3: a service account creates, reads, renames and deletes through the same tools', async () => {
+  it('showcase 3: a service account reads, renames and deletes through the same tools', async () => {
     const ctx = await serviceToken('attachment:write');
-    const created = await toolCall(ctx, 'createAttachments', { items: [buildItem('Build log', 'build.log', ctx)] });
-    expect(created.rpc.error).toBeUndefined();
-    expect(created.response.status).toBe(200);
-    const result = created.rpc.result as ToolResult;
-    expect(result.isError).toBeUndefined();
-    const { data: items } = result.structuredContent as { data: { id: string; name: string }[] };
-    expect(items).toHaveLength(1);
+    const id = await insertAttachment(ctx, 'Build log', ctx.accountId);
     // Provenance is the actor id; the wire shape hydrates users only (service badges are a UI follow-up).
-    const provenance = async (id: string) => (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
-    expect((await provenance(items[0].id)).createdBy).toBe(ctx.accountId);
+    const provenance = async () => (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
 
     // `write` implies `read` (D2).
-    const read = await toolCall(ctx, 'getAttachment', { id: items[0].id });
-    expect(toolResult(read).structuredContent).toMatchObject({ id: items[0].id, name: 'Build log' });
+    const read = await toolCall(ctx, 'getAttachment', { id });
+    expect(toolResult(read).structuredContent).toMatchObject({ id, name: 'Build log' });
 
-    const renamed = await toolCall(ctx, 'updateAttachment', { id: items[0].id, ops: { name: 'Build log (main)' } });
+    const renamed = await toolCall(ctx, 'updateAttachment', { id, ops: { name: 'Build log (main)' } });
     expect(toolResult(renamed).structuredContent).toMatchObject({ name: 'Build log (main)' });
-    expect((await provenance(items[0].id)).updatedBy).toBe(ctx.accountId);
+    expect((await provenance()).updatedBy).toBe(ctx.accountId);
 
-    const deleted = await toolCall(ctx, 'deleteAttachments', { ids: [items[0].id] });
+    const deleted = await toolCall(ctx, 'deleteAttachments', { ids: [id] });
     expect(toolResult(deleted).structuredContent).toMatchObject({ rejectedIds: [] });
-    const row = await provenance(items[0].id);
+    const row = await provenance();
     expect(row.deletedAt).not.toBeNull();
     expect(row.deletedBy).toBe(ctx.accountId);
   });
@@ -199,9 +193,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     expect(reader.consent).toMatchObject({ client: { id: CLIENT_ID, kind: 'registered' }, scopes: ['attachment:read'], refusal: null });
 
     const seed = await serviceToken('attachment:write');
-    const created = await toolCall(seed, 'createAttachments', { items: [buildItem('Thesis', 'thesis.pdf', seed)] });
-    expect(created.rpc.error).toBeUndefined();
-    const { data: items } = toolResult(created).structuredContent as { data: { id: string }[] };
+    const thesisId = await insertAttachment(seed, 'Thesis', seed.user.id);
 
     // The reader is in another tenant: the token's audience refuses this organization outright.
     const wrongTenant = await toolCall({ org: seed.org, jwt: reader.jwt }, 'getAttachments', {});
@@ -210,23 +202,19 @@ describe('MCP on the substrate (Phase E)', async () => {
     const list = await toolCall(reader, 'getAttachments', {});
     expect(list.response.status).toBe(200);
 
-    const refused = await toolCall(reader, 'updateAttachment', { id: items[0].id, ops: { name: 'Thesis v2' } });
+    const refused = await toolCall(reader, 'updateAttachment', { id: thesisId, ops: { name: 'Thesis v2' } });
     expect(refused.response.status).toBe(403);
     expect(refused.response.headers.get('www-authenticate')).toContain('scope="attachment:write"');
 
     // Step up: the same person consents again with the write scope; the grant widens, the write lands as them.
     const writer = await userToken('attachment:read attachment:write', reader);
-    const moved = await toolCall({ org: seed.org, jwt: seed.jwt }, 'getAttachment', { id: items[0].id });
+    const moved = await toolCall({ org: seed.org, jwt: seed.jwt }, 'getAttachment', { id: thesisId });
     expect(moved.response.status).toBe(200);
-    const own = await toolCall(writer, 'createAttachments', { items: [buildItem('Draft', 'draft.pdf', writer)] });
-    expect(own.rpc.error).toBeUndefined();
-    expect(toolResult(own).isError).toBeUndefined();
-    const mine = (toolResult(own).structuredContent as { data: { id: string }[] }).data[0];
-    const renamed = await toolCall(writer, 'updateAttachment', { id: mine.id, ops: { name: 'Draft v2' } });
+    const draftId = await insertAttachment(writer, 'Draft', writer.user.id);
+    const renamed = await toolCall(writer, 'updateAttachment', { id: draftId, ops: { name: 'Draft v2' } });
     expect(renamed.response.status).toBe(200);
     expect(toolResult(renamed).structuredContent).toMatchObject({ name: 'Draft v2' });
-    const [row] = await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, mine.id));
-    expect(row.createdBy).toBe(writer.user.id);
+    const [row] = await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, draftId));
     expect(row.updatedBy).toBe(writer.user.id);
   });
 });

@@ -95,7 +95,10 @@ interface DeleteOrganizationsByIdsOpts {
 
 export const deleteOrganizationsByIds = async (ctx: ActorContext, { ids }: DeleteOrganizationsByIdsOpts) => {
   const { db, tenantId } = ctx.var;
-  return db.delete(organizationsTable).where(and(inArray(organizationsTable.id, ids), eq(organizationsTable.tenantId, tenantId)));
+  return db
+    .delete(organizationsTable)
+    .where(and(inArray(organizationsTable.id, ids), eq(organizationsTable.tenantId, tenantId)))
+    .returning();
 };
 
 interface FindOrganizationsPaginatedOpts {

@@ -46,6 +46,14 @@ export async function tenantReadById<T>(tenantId: string, fn: (tx: DbOrTx) => Pr
 }
 
 /**
+ * Read-write RLS transaction for a scheduled job that works one tenant's deleted rows, with `app.user_id` empty as in
+ * {@link tenantReadById}.
+ */
+export async function tenantContextIncludingDeletedById<T>(tenantId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return tenantTransaction({ tenantId, userId: '', includeDeleted: true }, false, fn);
+}
+
+/**
  * `tenantRead` with an explicit tenant id, for cross-tenant routes (bare `baseDb`, no
  * `ctx.var.tenantId`) that resolved the request's single tenant themselves, e.g. an org-scoped
  * list whose per-row subqueries read RLS-guarded product tables.

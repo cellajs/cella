@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { stepUpGuard, userGuard } from '#/middlewares/guard';
-import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter, singlePointsLimiter, uploadTokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   connectedAppSchema,
   meAuthDataSchema,
@@ -88,6 +88,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
     method: 'get',
     path: '/upload-token',
     xGuard: [userGuard],
+    xRateLimiter: [uploadTokenLimiter],
     summary: 'Get upload token',
     description:
       'Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. Only a system admin gets a newsletter image token.',

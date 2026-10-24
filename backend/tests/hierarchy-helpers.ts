@@ -72,8 +72,8 @@ export function homeColumns(plan: TestEntityHierarchyPlan): Record<string, strin
 }
 
 /**
- * A create body for one attachment in the plan's home, its file under the organization's upload prefix; `fields` add or
- * replace body fields.
+ * A create body for one attachment in the plan's home, its file still local as after an offline upload: a stored key
+ * must lie under the uploader's own prefix, which the plan does not know. `fields` add or replace body fields.
  */
 export const attachmentBody = (
   id: string,
@@ -85,7 +85,7 @@ export const attachmentBody = (
     filename: 'file.pdf',
     contentType: 'application/pdf',
     size: '1024',
-    keys: { original: `${plan.channelIdsByType.organization}/uploads/${id}.pdf` },
+    keys: { original: `blob:http://localhost:3000/${id}` },
     ...homeColumns(plan),
     stx: { mutationId: id, sourceId: 'test', fieldTimestamps: {} },
     ...fields,

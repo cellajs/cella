@@ -1,7 +1,12 @@
 import { Slider as SliderPrimitive } from '@base-ui/react/slider';
 import { cn } from '~/utils/cn';
 
-export function Slider({ className, defaultValue, value, min = 0, max = 100, ...props }: SliderPrimitive.Root.Props) {
+interface SliderProps extends SliderPrimitive.Root.Props {
+  /** Spread on every thumb, the element assistive technology reads: its label and spoken value. */
+  thumbProps?: SliderPrimitive.Thumb.Props;
+}
+
+export function Slider({ className, defaultValue, value, min = 0, max = 100, thumbProps, ...props }: SliderProps) {
   const _values = Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max];
 
   return (
@@ -17,7 +22,10 @@ export function Slider({ className, defaultValue, value, min = 0, max = 100, ...
       )}
       {...props}
     >
-      <SliderPrimitive.Control data-slot="slider-control">
+      <SliderPrimitive.Control
+        data-slot="slider-control"
+        className="relative flex w-full grow items-center data-vertical:h-full data-vertical:w-auto data-vertical:flex-col"
+      >
         <SliderPrimitive.Track
           data-slot="slider-track"
           className="relative grow overflow-hidden rounded-full bg-muted data-horizontal:h-1.5 data-vertical:h-full data-horizontal:w-full data-vertical:w-1.5"
@@ -29,6 +37,7 @@ export function Slider({ className, defaultValue, value, min = 0, max = 100, ...
             data-slot="slider-thumb"
             // biome-ignore lint/suspicious/noArrayIndexKey: slider thumbs are positional and never reordered.
             key={index}
+            {...thumbProps}
             className="focus-effect block size-4 shrink-0 rounded-full border border-primary bg-white shadow-sm transition-[color,box-shadow] hover:ring-4 hover:ring-ring/30 data-disabled:pointer-events-none data-disabled:opacity-50"
           />
         ))}

@@ -13,6 +13,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { makeBlobKey, type UploadStatus } from '~/modules/attachment/offline/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
+import { freshAssemblyOptions } from '~/modules/common/uploader/helpers/fresh-assembly-options';
 import { getImageEditorOptions, isImageTemplate } from '~/modules/common/uploader/helpers/image-editor-options';
 import { prepareFilesForOffline, storeUploadBlobs } from '~/modules/common/uploader/helpers/prepare-for-offline';
 import type { CustomUppy, CustomUppyFile, CustomUppyOptions, Plugins } from '~/modules/common/uploader/types';
@@ -70,12 +71,9 @@ export const createUppy = async (uppyOptions: CustomUppyOptions, tokenQuery: Upl
     if (organizationId) await storeUploadBlobs(uploadFiles, organizationId, templateId, 'pending');
   });
 
-  if (cloudToken?.params && cloudToken?.signature) {
-    uppy.use(Transloadit, {
-      waitForEncoding: true,
-      alwaysRunAssembly: true,
-      assemblyOptions: { params: cloudToken.params, signature: cloudToken.signature },
-    });
+  if (hasCloudUpload) {
+    // The token above only tells whether cloud upload is on: the dialog may stay open past its expiry.
+    uppy.use(Transloadit, { waitForEncoding: true, alwaysRunAssembly: true, assemblyOptions: () => freshAssemblyOptions(tokenQuery) });
 
     uppy.on('transloadit:complete', async (assembly) => {
       // Skip offline assemblies (already marked correctly)

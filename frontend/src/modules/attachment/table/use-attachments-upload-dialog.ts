@@ -1,12 +1,12 @@
 import i18n from 'i18next';
 import { appConfig } from 'shared';
+import { maxFilesPerUpload as maxNumberOfFiles } from 'shared/utils/upload-visibility';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
 import { useAttachmentCreateMutation } from '~/modules/attachment/query';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { UploadResults } from '~/modules/common/uploader/types';
 import { uploader } from '~/modules/common/uploader/use-uploader';
 
-const maxNumberOfFiles = 20;
 const maxTotalFileSize = maxNumberOfFiles * appConfig.uppy.defaultRestrictions.maxFileSize;
 
 export const useAttachmentsUploadDialog = (

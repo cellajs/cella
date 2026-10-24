@@ -19,8 +19,8 @@ const keyOf = (tenant: TestTenant, name: string) => `${tenant.organization.id}/$
 
 /**
  * An attachment row names the object the backend signs for it. The key and bucket come from the client, so the server
- * must hold them to the organization's own upload prefix and the app's buckets: otherwise a user in one tenant plants
- * another tenant's key on their own row and presigns it.
+ * must hold them to the uploader's own prefix and the app's buckets: otherwise a user plants another tenant's or another
+ * member's key on their own row and presigns it.
  */
 describe('Attachment storage keys', async () => {
   const call = await createAppClient();
@@ -70,6 +70,14 @@ describe('Attachment storage keys', async () => {
   it("must not plant another tenant's storage key via createAttachments", async () => {
     const id = generateId();
     const { error, response } = await create(bodyFor(id, { original: keyOf(victim, 'contract.pdf') }));
+    await expectRefusal({ response, error }, 400, 'invalid_request');
+    expect(await rowExists(id)).toBe(false);
+  });
+
+  it("must not register another member's upload via createAttachments", async () => {
+    const coMember = await createOrgUser(call, attacker.tenantId, attacker.organization.id, 'storage-key-owner');
+    const id = generateId();
+    const { error, response } = await create(bodyFor(id, { original: `${attacker.organization.id}/${coMember.id}/payroll.pdf` }));
     await expectRefusal({ response, error }, 400, 'invalid_request');
     expect(await rowExists(id)).toBe(false);
   });

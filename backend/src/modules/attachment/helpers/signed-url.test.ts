@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 // The presigner signs locally (HMAC), so fake credentials produce a real URL offline.
 vi.mock('#/env', () => ({ env: { S3_ACCESS_KEY_ID: 'test-access-key', S3_ACCESS_KEY_SECRET: 'test-secret' } }));
+// The setup's object storage stays mocked across `resetModules`, which would keep the first client below.
+vi.unmock('#/lib/object-storage');
 
 const { getSignedUrlFromKey } = await import('./signed-url');
 

@@ -1,7 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import { Uppy } from '@uppy/core';
 import Transloadit, { type AssemblyResponse } from '@uppy/transloadit';
-// biome-ignore lint/style/noRestrictedImports: runtime calls of a background service (token fetch inside the Uppy assembly callback, key link), not eligible for a React Query hook.
+// biome-ignore lint/style/noRestrictedImports: runtime calls of a background service (cloud availability check, key link), not eligible for a React Query hook.
 import { getUploadToken, linkAttachmentKeys } from 'sdk';
 import { appConfig } from 'shared';
 import { ApiError } from '~/lib/api';
@@ -12,6 +12,7 @@ import { groupBy } from '~/modules/attachment/offline/group-by';
 import { isUploadCandidate } from '~/modules/attachment/offline/is-upload-candidate';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { findAttachmentInCache } from '~/modules/attachment/query';
+import { freshAssemblyOptions } from '~/modules/common/uploader/helpers/fresh-assembly-options';
 import type { UploadResults } from '~/modules/common/uploader/types';
 import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
 import { getLocalUserDb } from '~/query/local-user-db';
@@ -124,15 +125,7 @@ class AttachmentUploadService {
       uppy.use(Transloadit, {
         waitForEncoding: true,
         alwaysRunAssembly: true,
-        assemblyOptions: async () => {
-          const token = await getUploadToken({ query: { templateId, organizationId: blob.organizationId } });
-
-          if (!token?.params || !token?.signature) {
-            throw new Error('Failed to get upload token');
-          }
-
-          return { params: token.params, signature: token.signature };
-        },
+        assemblyOptions: () => freshAssemblyOptions({ templateId, organizationId: blob.organizationId }),
       });
       uppy.on('transloadit:complete', (assembly) => {
         completed.assembly = assembly;
