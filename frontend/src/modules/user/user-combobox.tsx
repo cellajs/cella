@@ -1,7 +1,7 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { ClockIcon, SearchIcon, UserIcon, UsersRoundIcon, XIcon } from 'lucide-react';
+import { ClockIcon, SearchIcon, UserIcon, UsersRoundIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChannelBase } from 'sdk';
 import { appConfig } from 'shared';
@@ -13,6 +13,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { InputTriggerChevron } from '~/modules/common/form-fields/input-trigger-button';
 import { inviteCheckQueryOptions } from '~/modules/memberships/query';
 import { Badge } from '~/modules/ui/badge';
+import { Chip } from '~/modules/ui/chip';
 import {
   Combobox,
   ComboboxContent,
@@ -43,10 +44,15 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
   const nameLabel = t('c:name').toLowerCase();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const handleUnselect = (email: string) => onChange(value.filter((selected) => selected !== email));
+  // A removed chip unmounts its focused remove button, so focus goes to the trigger and not to the page
+  const handleUnselect = (email: string) => {
+    onChange(value.filter((selected) => selected !== email));
+    triggerRef.current?.focus();
+  };
 
   const { data, isFetching } = useInfiniteQuery(usersListQueryOptions({ q: debouncedSearchQuery }));
 
@@ -69,45 +75,29 @@ export function UserCombobox({ value, onChange, channel }: UserComboboxProps) {
       onInputValueChange={setSearchQuery}
       filter={() => true}
     >
-      <ComboboxPrimitive.Trigger
-        render={
-          <button
-            type="button"
-            className="relative flex min-h-10 w-full cursor-pointer flex-wrap items-center gap-1 rounded-md border border-input bg-background p-1.5 pr-10 text-left"
-          />
-        }
-      >
-        {value.length ? (
-          value.map((email) => (
-            <Badge size="sm" variant="secondary" key={email} className="max-w-60">
-              <span className="truncate">{email}</span>
-              {/* biome-ignore lint/a11y/useSemanticElements: a native <button> cannot be nested inside the trigger <button>; this is an intentional removable-chip control. */}
-              <span
-                role="button"
-                tabIndex={0}
-                aria-label={t('c:remove')}
-                className="focus-effect -m-1 ml-1 rounded-full py-1"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  handleUnselect(email);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== 'Enter' && event.key !== ' ') return;
-                  event.preventDefault();
-                  event.stopPropagation();
-                  handleUnselect(email);
-                }}
-              >
-                <XIcon className="opacity-50 hover:opacity-100" />
-              </span>
-            </Badge>
-          ))
-        ) : (
-          <span className="ml-1 text-sm">{t('c:search_users')}</span>
-        )}
-        <InputTriggerChevron className="absolute right-0 mx-2" />
-      </ComboboxPrimitive.Trigger>
+      <div className="relative flex min-h-10 w-full items-center rounded-md border border-input bg-background p-1.5 pr-10">
+        {/* Lies behind the chip row, whose remove buttons cannot nest in a button, and reads out the selection itself */}
+        <ComboboxPrimitive.Trigger
+          ref={triggerRef}
+          render={<button type="button" className="focus-effect absolute inset-0 cursor-pointer rounded-md" />}
+        >
+          <span className="sr-only">{value.length ? value.join(', ') : t('c:search_users')}</span>
+        </ComboboxPrimitive.Trigger>
+        <div className="pointer-events-none relative flex min-w-0 flex-wrap items-center gap-1">
+          {value.length ? (
+            value.map((email) => (
+              <Chip key={email} onRemove={() => handleUnselect(email)} removeLabel={t('c:remove_resource', { resource: email })} className="max-w-60">
+                {email}
+              </Chip>
+            ))
+          ) : (
+            <span aria-hidden="true" className="ml-1 text-sm">
+              {t('c:search_users')}
+            </span>
+          )}
+        </div>
+        <InputTriggerChevron className="pointer-events-none absolute right-0 mx-2" />
+      </div>
 
       <ComboboxContent>
         <ComboboxSearchInput
