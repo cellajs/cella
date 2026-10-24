@@ -4,6 +4,7 @@ import { updateStamps } from '#/db/utils/stamps';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { withActorRef } from '#/modules/actors/actor-refs';
+import { releaseReplacedImages } from '#/modules/attachment/operations/release-replaced-images';
 import { getChannelCounts } from '#/modules/entities/entities-queries';
 import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
 import { isMembershipRow, toMembershipBase } from '#/modules/memberships/helpers/select';
@@ -42,6 +43,7 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
   await dispatchMutation(ctx, 'organization.updated', { before: [withOrganizationDefaults(organization)], after: [updatedOrganizationRecord] });
 
   invalidateCache.org(organization.tenantId, organization.id);
+  await releaseReplacedImages({ owner: { organizationId: organization.id, tenantId: organization.tenantId }, before: organization, after: input });
 
   log.info('Organization updated', { organizationId: updatedOrganizationRecord.id });
 

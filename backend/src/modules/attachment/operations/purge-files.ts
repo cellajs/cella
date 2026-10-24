@@ -1,10 +1,11 @@
-import { and, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm';
+import { and, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { baseDb, type Tx } from '#/db/db';
+import { baseDb } from '#/db/db';
 import { tenantContextIncludingDeletedById } from '#/db/tenant-context';
 import { stripChangedFields } from '#/db/utils/strip-changed-fields';
 import { deleteStoredObjects, deleteStoredPrefix, objectStorageConfigured } from '#/lib/object-storage';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { findLiveAttachmentKeys } from '#/modules/attachment/attachment-queries';
 import { isSignableKey } from '#/modules/attachment/helpers/storage-key';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { getIsoDate } from '#/utils/iso-date';
@@ -17,16 +18,6 @@ const purgeGraceMs = 24 * 60 * 60 * 1000;
 const purgeBatchSize = 500;
 
 type PurgeCandidate = Pick<typeof attachmentsTable.$inferSelect, 'id' | 'organizationId' | 'bucketName' | 'keys'>;
-
-/** The keys among `keys` a live attachment of the transaction's tenant still names. */
-async function liveKeys(tx: Tx, keys: string[]): Promise<Set<string>> {
-  if (keys.length === 0) return new Set();
-  const { rows } = await tx.execute<{ key: string }>(sql`
-    SELECT DISTINCT variant.value AS key
-    FROM ${attachmentsTable}, jsonb_each_text(${attachmentsTable.keys}) AS variant
-    WHERE ${attachmentsTable.deletedAt} IS NULL AND variant.value IN ${keys}`);
-  return new Set(rows.map((row) => row.key));
-}
 
 /** Purges one tenant's batch: reads candidates, deletes their files outside the transaction, then stamps the rows. */
 async function purgeTenantFiles(tenantId: string, deletedBefore: string): Promise<number> {
@@ -42,7 +33,7 @@ async function purgeTenantFiles(tenantId: string, deletedBefore: string): Promis
       .where(and(isNotNull(attachmentsTable.deletedAt), lt(attachmentsTable.deletedAt, deletedBefore), isNull(attachmentsTable.purgedAt)))
       .limit(purgeBatchSize);
     const keys = candidates.flatMap((row) => Object.values(row.keys).filter((key): key is string => !!key));
-    return { candidates, stillUsed: await liveKeys(tx, keys) };
+    return { candidates, stillUsed: await findLiveAttachmentKeys({ var: { db: tx } }, { keys }) };
   });
   if (candidates.length === 0) return 0;
 

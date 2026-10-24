@@ -1,6 +1,7 @@
 import { and, asc, eq, inArray, lt, max, sql, TransactionRollbackError } from 'drizzle-orm';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import type { LogRow, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
+import { collectGarbage } from '#/modules/yjs/helpers/yjs-state';
 import { type AppendResult, appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { seedYjsDocument } from '#/modules/yjs/operations/seed-yjs-document';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
@@ -92,18 +93,20 @@ export async function readLogOf(doc: DocKey, generation: string): Promise<LogRow
 export type FoldResult = 'ok' | 'retired' | 'overlap';
 
 /**
- * Replaces the base state of `generation`, the one the merge was read from, and deletes exactly the log rows merged
- * into it, in one transaction; rows appended meanwhile stay. `retired`, with nothing changed, when the row of that
- * generation is gone. `overlap`, rolled back, when fewer of the rows are left than were merged: another compaction (a
- * second relay during a rollout) folded them meanwhile, and its base holds rows this merge may lack. The document row
- * is locked first, as a retirement locks it, so two folds of one document wait for each other.
+ * Replaces the base state of `generation`, the one the merge was read from, with the merge stripped of deleted content
+ * (`collectGarbage`), and deletes exactly the log rows merged into it, in one transaction; rows appended meanwhile
+ * stay. `retired`, with nothing changed, when the row of that generation is gone. `overlap`, rolled back, when fewer of
+ * the rows are left than were merged: another compaction (a second relay during a rollout) folded them meanwhile, and
+ * its base holds rows this merge may lack. The document row is locked first, as a retirement locks it, so two folds of
+ * one document wait for each other.
  */
 export async function compactState(doc: DocKey, merged: Uint8Array, logIds: number[], generation: string): Promise<FoldResult> {
+  const state = collectGarbage(merged);
   try {
     return await asSystem(doc, async (tx): Promise<FoldResult> => {
       const updated = await tx
         .update(yjsDocumentsTable)
-        .set({ state: Buffer.from(merged), updatedAt: sql`now()` })
+        .set({ state: Buffer.from(state), updatedAt: sql`now()` })
         .where(and(docWhere(doc), eq(yjsDocumentsTable.generation, generation)))
         .returning({ entityId: yjsDocumentsTable.entityId });
       if (updated.length === 0) return 'retired';
