@@ -28,7 +28,7 @@ export type PendingSignUp = {
   lastName?: string;
 };
 
-/** Tokens for email verification and invitation. Rows expired for over 30 days are swept nightly by maintain_partitions(). */
+/** Tokens for email verification and invitation. Expired rows are swept nightly by apply_retention() (`appConfig.retention`). */
 export const tokensTable = snakeCase.table(
   'tokens',
   {

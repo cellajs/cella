@@ -1,5 +1,8 @@
+import { appConfig } from 'shared';
 import type { AccessibilityReview, LegalTexts, SharedDataType, Subprocessor } from '~/modules/auth/legal/legal-types';
 import { lazyNamed } from '~/utils/lazy-named';
+
+const { retention } = appConfig;
 
 export type LegalSubject = keyof typeof legalConfig;
 
@@ -143,8 +146,7 @@ export const sharedDataTypes: SharedDataType[] = [
     dataCategories: ['name', 'email address', 'profile', 'sign-in methods', 'preferences', 'organizations and roles'],
     dataSubjects: ['end users'],
     storageLocation: 'Primary database (EU)',
-    retentionPeriod:
-      'Until you delete your account, and the history of your changes 90 days longer. What you created stays with your organization, credited to a deleted user. Email delivery logs: 30 days.',
+    retentionPeriod: `Until you delete your account, and the history of your changes ${retention.activityDays} days longer. What you created stays with your organization, credited to a deleted user. Email delivery logs: 30 days.`,
   },
   {
     slug: 'auth_sessions',
@@ -154,7 +156,7 @@ export const sharedDataTypes: SharedDataType[] = [
     dataCategories: ['device and browser', 'hashed IP address with country and network'],
     dataSubjects: ['end users'],
     storageLocation: 'Primary database (EU)',
-    retentionPeriod: 'Sessions: 30 days after they end. Known devices: 400 days after you last signed in from one, or until you delete your account.',
+    retentionPeriod: `Sessions: ${retention.sessionDaysAfterExpiry} days after they end. Known devices: ${retention.deviceDaysUnseen} days after you last signed in from one, or until you delete your account.`,
   },
   {
     slug: 'activity',
@@ -164,7 +166,7 @@ export const sharedDataTypes: SharedDataType[] = [
     dataCategories: ['history of your changes', 'notifications', 'what you have seen'],
     dataSubjects: ['end users'],
     storageLocation: 'Primary database (EU)',
-    retentionPeriod: '90 days.',
+    retentionPeriod: `${retention.activityDays} days.`,
   },
   {
     slug: 'page_visits',

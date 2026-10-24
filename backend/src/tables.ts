@@ -63,7 +63,7 @@ export const entityTableNames = Object.values(entityTables).map((t) => getTableN
 /** @public */
 export const resourceTableNames = Object.values(resourceTables).map((t) => getTableName(t));
 
-/** One table converted to native range partitions by the partition side-effect migration; `maintain_partitions()` applies the retention. */
+/** One table converted to native range partitions by the retention side-effect migration; `apply_retention()` drops what is past its retention. */
 export interface PartitionConfig {
   name: string;
   /** Column to partition by; must be NOT NULL and part of the primary key. */

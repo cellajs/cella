@@ -13,7 +13,7 @@ const queue = (name: string, options: Partial<BackendQueue> = {}): BackendQueue 
 describe('job declarations', () => {
   it('registers the template sweeps as cron jobs on singleton queues', () => {
     const names = getBackendJobs().map((declared) => declared.name);
-    expect(names).toEqual(expect.arrayContaining(['notification-digest', 'oidc-payloads-sweep', 'prune-devices']));
+    expect(names).toEqual(expect.arrayContaining(['notification-digest', 'deleted-storage-cleanup']));
     for (const declared of declaredQueues().filter((entry) => names.includes(entry.name))) {
       expect(declared.options.policy).toBe('singleton');
       expect(declared.options.retryLimit).toBe(0);

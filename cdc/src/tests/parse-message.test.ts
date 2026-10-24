@@ -88,3 +88,14 @@ describe('parseMessage: draft entrance guard', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 });
+
+describe('parseMessage: removed tombstones', () => {
+  // apply_retention() removes tombstones every client already learned of; their removal must not reach anyone again.
+  it('drops the hard delete of a tombstone and keeps the hard delete of a live row', () => {
+    const tombstone = parseMessage(dmlMessage('delete', 'attachments', attachmentRow({ deleted_at: '2026-06-01T10:00:00.000Z' })));
+    const live = parseMessage(dmlMessage('delete', 'attachments', attachmentRow({ deleted_at: null })));
+
+    expect(tombstone).toBeNull();
+    expect(live?.activity.action).toBe('delete');
+  });
+});

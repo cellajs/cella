@@ -3,6 +3,7 @@ import { isOrganizationKey } from 'shared/utils/media-ref';
 import { tenantReadById } from '#/db/tenant-context';
 import { deleteStoredObjects, objectStorageConfigured } from '#/lib/object-storage';
 import { findLiveAttachmentKeys } from '#/modules/attachment/attachment-queries';
+import { publicKeyOf } from '#/modules/attachment/helpers/storage-key';
 import { log } from '#/utils/logger';
 
 const imageColumns = ['thumbnailUrl', 'bannerUrl'] as const;
@@ -17,12 +18,6 @@ interface ReleaseReplacedImagesOpts {
   /** The values the write set; a column left out was not written. */
   after: ImageValues;
 }
-
-/** The storage key of a URL on the public CDN, without the leading slash an upload path may keep; null for any other URL. */
-const publicKeyOf = (url: string): string | null => {
-  const base = `${appConfig.s3.publicCDNUrl}/`;
-  return url.startsWith(base) ? url.slice(base.length).replace(/^\/+/, '') : null;
-};
 
 /**
  * Deletes the stored images a committed write replaced or cleared: each `thumbnailUrl` or `bannerUrl` the row held and

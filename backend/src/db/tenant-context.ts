@@ -45,12 +45,9 @@ export async function tenantReadById<T>(tenantId: string, fn: (tx: DbOrTx) => Pr
   return tenantTransaction({ tenantId, userId: '', includeDeleted: false }, true, fn);
 }
 
-/**
- * Read-write RLS transaction for a scheduled job that works one tenant's deleted rows, with `app.user_id` empty as in
- * {@link tenantReadById}.
- */
-export async function tenantContextIncludingDeletedById<T>(tenantId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
-  return tenantTransaction({ tenantId, userId: '', includeDeleted: true }, false, fn);
+/** Read-write RLS transaction for a scheduled job that works one tenant's rows, with `app.user_id` empty as in {@link tenantReadById}. */
+export async function tenantContextById<T>(tenantId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return tenantTransaction({ tenantId, userId: '', includeDeleted: false }, false, fn);
 }
 
 /**

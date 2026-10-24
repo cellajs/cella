@@ -28,7 +28,7 @@ Only product entities sync. A **channel** (`ChannelEntityType`) is a container: 
 | **Cursor** | Latest sequence position a view has ingested |
 | **Stream cursor** | ID of the last activity a connection received. Sent back in the catchup request; the server's `offset` event tells the client to start catchup. |
 | **Range fetch** | Ordinary list request bounded by `afterSeq` and `untilSeq` |
-| **Tombstone** | Soft-deleted row that remains fetchable so absent clients learn the deletion |
+| **Tombstone** | Soft-deleted row that remains fetchable for the deleted-items period, so absent clients learn the deletion ([Data lifecycle](./ARCHITECTURE.md#data-lifecycle)) |
 | **`stx`** | Envelope on every product write (mutation ID, source ID, per-field HLC timestamps) for merge arbitration and echo recognition |
 
 ## Data flow example
@@ -212,6 +212,7 @@ A client that missed notifications while the books stayed right is repaired by i
 | The daily check finds a counter wrong, or the worker restarts in the middle of a rebuild | Every client refetches once | A rebuild from the tables | Nothing |
 | One change can never be processed (a parse error, a transaction over 100,000 changes) | Live updates pause about a minute; then every client refetches once | After five reads the slot moves past the backlog and the books are rebuilt | Activities and notifications of that backlog |
 | The database is restored from a backup | As a lost slot | A new slot and a rebuild | Everything after the backup, as with any restore |
+| A device was away longer than the activity window | It refetches what it holds of each organization once | Its catchup starts over, as after a rebuild: the tombstones it missed may be gone | Nothing |
 
 ### Rebuilt books
 
